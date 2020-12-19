@@ -4890,6 +4890,7 @@ def create(shadername, context):
             location.x += 180   
         
         mat.sollumtype = "GTA"
+        bpy.context.scene.last_created_material = mat
         
 class SOLLUM_OT_createvshader(bpy.types.Operator):
     """Creates a vshader"""

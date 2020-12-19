@@ -82,7 +82,7 @@ def create_material(filepath, td_node, shader):
     
     shadern = shader.find("FileName").text
     bpy.ops.sollum.createvshader(shadername = shadern)
-    mat = bpy.data.materials[len(bpy.data.materials) - 1]
+    mat = bpy.context.scene.last_created_material
     
     print(mat.name)
     
@@ -172,13 +172,13 @@ def create_model(self, context, index_buffer, vertexs, filepath, shader, td_node
     mesh = bpy.data.meshes.new("Geometry")
     mesh.from_pydata(verts, [], faces)
     
-    for poly in mesh.polygons:
-        poly.use_smooth = True
+    mesh.create_normals_split()
+    normals_fixed = []
+    for l in mesh.loops:
+        normals_fixed.append(normals[l.vertex_index])
     
-    # set normals
-    if(len(normals) > 0):
-        for index, vertex in enumerate(mesh.vertices):
-            vertex.normal = normals[index]
+    mesh.normals_split_custom_set(normals_fixed)
+    mesh.use_auto_smooth = True
 
     # set uv 
     if(texcoords):
@@ -186,6 +186,9 @@ def create_model(self, context, index_buffer, vertexs, filepath, shader, td_node
         uv_layer0 = mesh.uv_layers[0]
         for i in range(len(uv_layer0.data)):
             uv = texcoords[mesh.loops[i].vertex_index]
+            u = uv[0]
+            v = uv[1] * -1
+            uv = [u, v]
             uv_layer0.data[i].uv = uv 
     if(texcoords1):
         uv1 = mesh.uv_layers.new()

@@ -155,6 +155,7 @@ class SollumzMaterialPanel(bpy.types.Panel):
         
             
 #sollum properties
+bpy.types.Scene.last_created_material = bpy.props.PointerProperty(type=bpy.types.Material)
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
                                                         default = "None",
