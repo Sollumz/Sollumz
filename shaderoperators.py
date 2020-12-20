@@ -4772,6 +4772,7 @@ def create_image_node(node_tree, param):
 
     if("Diffuse" in param.Name):    
         links.new(imgnode.outputs["Color"], bsdf.inputs["Base Color"])
+        links.new(imgnode.outputs["Alpha"], bsdf.inputs["Alpha"])
     elif("Bump" in param.Name):    
         normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
         links.new(imgnode.outputs["Color"], normalmap.inputs["Color"])
@@ -4879,6 +4880,11 @@ def create(shadername, context):
             elif(p.Type == "Value"):
                 create_value_node(node_tree, p)
         
+        #fix alpha materials
+        mat.blend_method = "HASHED"
+        mat.shadow_method = "HASHED"
+        mat.use_backface_culling = True
+
         #temporary also find a better way to do this... even though it kinda works
         if("terrain" in shadername.lower()):
             link_terrain_shader(mat.node_tree)
