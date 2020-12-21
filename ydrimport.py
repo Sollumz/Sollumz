@@ -91,13 +91,20 @@ def create_material(filepath, td_node, shader):
         for n in nodes: 
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 if(p.attrib["name"] == n.name):
-                    texture_name = p.find("Name").text + ".dds" 
-                    texture_path = texture_dir + texture_name
-                    if(os.path.isfile(texture_dir + texture_name)):
-                        img = bpy.data.images.load(texture_path, check_existing=True)
-                        n.image = img 
-                        print(n.name) 
-                        print(n.image.filepath)
+                    texture_pos = p.find("Name")
+                    if(hasattr(texture_pos, 'text')):
+                        texture_name = texture_pos.text + ".dds" 
+                        texture_path = texture_dir + texture_name
+                        if(os.path.isfile(texture_dir + texture_name)):
+                            img = bpy.data.images.load(texture_path, check_existing=True)
+                            n.image = img 
+                            print(n.name) 
+                            print(n.image.filepath)
+
+                        #deal with special situations
+                        if(p.attrib["name"] == "BumpSampler" and hasattr(n.image, 'colorspace_settings')):
+                            n.image.colorspace_settings.name = 'Non-Color'
+
             elif(isinstance(n, bpy.types.ShaderNodeValue)):
                 if(p.attrib["name"].lower() == n.name[:-2].lower()): #remove _X
                     value_key = n.name[-1] #X,Y,Z,W
