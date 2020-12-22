@@ -717,9 +717,9 @@ def write_imageparam_node(node):
         
     iname = node.name 
     type = "Texture"
-    tname = "None" 
+    tname = "None" #givemechecker? 
     if(node.image != None):
-        tname = node.image.filepath_raw #os.path.basename(node.image.filepath)
+        tname = os.path.splitext(os.path.basename(node.image.filepath))[0]
     
     i_node = Element("Item")
     i_node.set("name", iname)
@@ -1071,14 +1071,26 @@ def write_drawable(obj, filepath):
 
 def write_ydr_xml(context, filepath):
     
+    root = None
+    
+    if(len(bpy.data.objects) == 0):
+        return "No objects in scene for Sollumz export"
+    
     #select the object first?
     for obj in bpy.data.objects:
         if(obj.sollumtype == "Drawable"):
-            root = write_drawable(obj, filepath)
+            try: 
+                root = write_drawable(obj, filepath)
+            except:
+                return str(Exception)
+
+    if(root == None):
+        return "No Sollumz Drawable found to export"
     
     xmlstr = prettify(root)
     with open(filepath, "w") as f:
         f.write(xmlstr)
+        return "Sollumz Drawable was succesfully exported to " + filepath
             
 class ExportYDR(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -1092,9 +1104,11 @@ class ExportYDR(Operator, ExportHelper):
         start = datetime.now    ()
         
         #try:
-        write_ydr_xml(context, self.filepath)
-       # except Exception:
-            #self.report({"ERROR"}, str(Exception) )
+        result = write_ydr_xml(context, self.filepath)
+        self.report({'INFO'}, result)
+        
+        #except Exception:
+        #    self.report({"ERROR"}, str(Exception) )
             
         finished = datetime.now()
         difference = (finished - start).total_seconds()

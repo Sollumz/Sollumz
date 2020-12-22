@@ -4762,6 +4762,101 @@ shaders = {
                 "weapon_normal_spec_palette.sps" : weapon_normal_spec_palettesps, 
                 "weapon_normal_spec_tnt.sps" : weapon_normal_spec_tntsps }
 
+def get_child_node(node):
+    
+    if(node == None): 
+        return None
+    
+    for output in node.outputs:
+        if(len(output.links) == 1):
+            return output.links[0].to_node
+
+def get_list_of_child_nodes(node):
+    
+    all_nodes = []
+    all_nodes.append(node)
+    
+    searching = True 
+    child = get_child_node(node)
+    
+    while(searching):        
+        
+        
+        if(isinstance(child, bpy.types.ShaderNodeBsdfPrincipled)):
+            print()
+        elif(isinstance(child, bpy.types.ShaderNodeOutputMaterial)):
+            print()
+        else:
+            all_nodes.append(child)
+        
+        child = get_child_node(child)
+        
+        if(child == None):
+            searching = False
+            
+        
+        
+    return all_nodes
+
+def check_if_node_has_child(node):
+    
+    haschild = False    
+    for output in node.outputs:
+        if(len(output.links) > 0):
+                    haschild = True
+    return haschild
+
+def organize_node_tree(node_tree):
+    
+    level = 0
+    singles_x = 0
+
+    grid_x = 600
+    grid_y = -300
+    row_count = 0
+    
+    for n in node_tree.nodes:
+        
+        if(isinstance(n, bpy.types.ShaderNodeValue)):
+            n.location.x = grid_x
+            n.location.y = grid_y
+            grid_x += 150
+            row_count += 1
+            if(row_count == 4):
+                grid_y -= 100
+                row_count = 0
+                grid_x = 600
+                
+        if(isinstance(n, bpy.types.ShaderNodeBsdfPrincipled)):
+            n.location.x = 0 
+            n.location.y = -300
+        if(isinstance(n, bpy.types.ShaderNodeOutputMaterial)):
+            n.location.y = -300 
+            n.location.x = 300
+        
+        if(isinstance(n, bpy.types.ShaderNodeTexImage)):
+            
+            haschild = check_if_node_has_child(n)
+            if(haschild):
+                level -= 250
+                all_nodes = get_list_of_child_nodes(n)
+                
+                idx = 0
+                for n in all_nodes:
+                    try:
+                        x = -300 * (len(all_nodes) - idx)
+                        
+                        n.location.x = x
+                        n.location.y = level 
+                        
+                        idx += 1
+                    except: 
+                        print("error")
+            else:
+                n.location.x = singles_x
+                n.location.y = 100
+                singles_x += 300
+
 def create_image_node(node_tree, param):
     
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
@@ -4880,20 +4975,17 @@ def create(shadername, context):
             elif(p.Type == "Value"):
                 create_value_node(node_tree, p)
         
-        #fix alpha materials
-        mat.blend_method = "HASHED"
-        mat.shadow_method = "HASHED"
-        mat.use_backface_culling = True
-
         #temporary also find a better way to do this... even though it kinda works
         if("terrain" in shadername.lower()):
             link_terrain_shader(mat.node_tree)
         
         #organize nodes for now just spread them apart :P
-        location = Vector((0, 0))
-        for node in mat.node_tree.nodes:
-            node.location = location
-            location.x += 180   
+        #location = Vector((0, 0))
+        #for node in mat.node_tree.nodes:
+            #node.location = location
+            #location.x += 180   
+        
+        organize_node_tree(node_tree)
         
         mat.sollumtype = "GTA"
         bpy.context.scene.last_created_material = mat

@@ -5,7 +5,7 @@ from mathutils import Vector
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
-from datetime import datetime 
+import time
 import random 
 
 class v_vertex:
@@ -84,8 +84,6 @@ def create_material(filepath, td_node, shader):
     bpy.ops.sollum.createvshader(shadername = shadern)
     mat = bpy.context.scene.last_created_material
     
-    print(mat.name)
-    
     nodes = mat.node_tree.nodes 
     for p in params:
         for n in nodes: 
@@ -98,8 +96,6 @@ def create_material(filepath, td_node, shader):
                         if(os.path.isfile(texture_dir + texture_name)):
                             img = bpy.data.images.load(texture_path, check_existing=True)
                             n.image = img 
-                            print(n.name) 
-                            print(n.image.filepath)
 
                         #deal with special situations
                         if(p.attrib["name"] == "BumpSampler" and hasattr(n.image, 'colorspace_settings')):
@@ -505,7 +501,7 @@ class ImportYDR(Operator, ImportHelper):
     )
 
     def execute(self, context):
-        start = datetime.now    ()
+        start = time.time()
         
         tree = ET.parse(self.filepath)
         root = tree.getroot()
@@ -531,13 +527,14 @@ class ImportYDR(Operator, ImportHelper):
         vmodel_obj.drawble_distance_low = dd_low
         vmodel_obj.drawble_distance_vlow = dd_vlow
     
-        finished = datetime.now()
+        finished = time.time()
         
-        difference = (finished - start).total_seconds() * 1000
+        difference = finished - start
         
         print("start time: " + str(start))
         print("end time: " + str(finished))
-        print("difference: " + str(difference))
+        print("difference in seconds: " + str(difference))
+        print("difference in milliseconds: " + str(difference * 1000))
                 
         return {'FINISHED'}
 
