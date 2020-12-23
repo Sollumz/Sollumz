@@ -1,12 +1,15 @@
 import bpy
 import os
 import xml.etree.ElementTree as ET
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 import time
 import random 
+from .deps import cats as Cats
+
+bones = []
 
 class v_vertex:
 
@@ -252,7 +255,9 @@ def create_model(self, context, index_buffer, vertexs, filepath, name):
     tangents = []
     vcolors = [] 
     vcolors1 = [] 
-    
+    blendweights = [] 
+    blendindices = [] 
+
     for v in vertexs:
         if(v.Position != None):
             verts.append(Vector((v.Position[0], v.Position[1], v.Position[2])))
@@ -278,16 +283,24 @@ def create_model(self, context, index_buffer, vertexs, filepath, name):
             vcolors.append(v.Color)
         if(v.Color1 != None):
             vcolors1.append(v.Color1)
+        if(v.BlendWeights != None):
+            blendweights.append(v.BlendWeights)
+        if(v.BlendIndices != None):
+            blendindices.append(v.BlendIndices)
         
     #create mesh
     mesh = bpy.data.meshes.new("Geometry")
     mesh.from_pydata(verts, [], faces)
-    
+    verts_num = mesh.vertices
     mesh.create_normals_split()
+    mesh.validate(clean_customdata=False)
     normals_fixed = []
     for l in mesh.loops:
         normals_fixed.append(normals[l.vertex_index])
     
+    polygon_count = len(mesh.polygons)
+    mesh.polygons.foreach_set("use_smooth", [True] * polygon_count)
+
     mesh.normals_split_custom_set(normals_fixed)
     mesh.use_auto_smooth = True
 
@@ -352,11 +365,22 @@ def create_model(self, context, index_buffer, vertexs, filepath, name):
             #mesh.loops[i].tangent = tangents[i]    
     
     #load shaders 
-    #mat = create_material(filepath, td_node, shader)
-    #mesh.materials.append(mat)
-        
-    obj = bpy.data.objects.new(name, mesh)
+    mesh.materials.append(material)
+
+    obj = bpy.data.objects.new(name + ".mesh", mesh)
     
+    #load weights
+    if (len(bones) > 0 and len(blendweights) > 0 and len(mesh.vertices) > 0):
+        for i in range(len(bones)):
+            obj.vertex_groups.new(name=bones[i])
+
+        for vertex_idx in range(len(mesh.vertices)):
+            for i in range(0, 4):
+                if (blendindices[vertex_idx][i] < len(bones) and blendweights[vertex_idx][i] > 0.0):
+                    obj.vertex_groups[blendindices[vertex_idx][i]].add([vertex_idx], blendweights[vertex_idx][i], "ADD")
+
+        Cats.remove_unused_vertex_groups_of_mesh(obj)
+
     return obj
     #context.collection.objects.link(obj)
 
@@ -480,13 +504,14 @@ def get_vertexs_from_data(vb):
         blendw = []
         if(blendw_idx != -1):
             for num in n[blendw_idx].split():
-                blendw.append(float(num))
+                num = float(num) / 255
+                blendw.append(num)
         else:
             blendw = None
         blendi = []
         if(blendi_idx != -1):
             for num in n[blendi_idx].split():
-                blendi.append(float(num))
+                blendi.append(int(num))
         else:
             blendi = None 
             
@@ -568,6 +593,53 @@ def read_drawable_models(self, context, filepath, root, name, shd_node, td_node,
         
     return drawable_objects
 
+def read_bones(self, context, filepath, root):
+
+    skeleton_node = root.find("Skeleton")
+    if (skeleton_node == None):
+        return None
+
+    drawable_name = root.find("Name").text
+    bones_node = skeleton_node.find("Bones")
+    armature = context.object.data
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    for bone_node in bones_node:
+        bone_name = bone_node.find("Name")
+        bone_parentindex = bone_node.find("ParentIndex")
+        bone_translation = bone_node.find("Translation")
+        bone_rotation = bone_node.find("Rotation")
+
+        quaternion = Quaternion()
+        quaternion.w = float(bone_rotation.attrib["w"])
+        quaternion.x = float(bone_rotation.attrib["x"])
+        quaternion.y = float(bone_rotation.attrib["y"])
+        quaternion.z = float(bone_rotation.attrib["z"])
+        matrix = quaternion.to_matrix().to_4x4()
+
+        trans = Vector()
+        trans.x = float(bone_translation.attrib["x"])
+        trans.y = float(bone_translation.attrib["y"])
+        trans.z = float(bone_translation.attrib["z"])
+
+        edit_bone = armature.edit_bones.new(bone_name.text)
+        if bone_parentindex.attrib["value"] != "-1":
+            edit_bone.parent = armature.edit_bones[int(bone_parentindex.attrib["value"])]
+
+        # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
+        edit_bone.head = (0,0,0)
+        edit_bone.tail = (0,0.1,0)
+        edit_bone.matrix = matrix
+        edit_bone.translate(trans)
+        if edit_bone.parent != None:
+            edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
+
+        #build a bones lookup table
+        bones.append(bone_name.text)
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return drawable_name
+
 def read_ydr_xml(self, context, filepath, root):
 
     fname = os.path.basename(filepath)
@@ -577,21 +649,30 @@ def read_ydr_xml(self, context, filepath, root):
 
     #get texture info
     shd_group = root.find("ShaderGroup")
-    shd_node = shd_group.find("Shaders")
+    # shd_node = shd_group.find("Shaders")
     td_node = shd_group.find("TextureDictionary")  
     
-    
+    #load the materials in the beginning instead of doing so when loading models
+    s_node = []
+    for _shader in shd_group.iter('Shaders'):
+        s_node = _shader
+
+    materials = []
+    for shader in s_node:
+        mat = create_material(filepath, td_node, shader)
+        materials.append(mat)
+
     #get objects from drawable info
     high_objects = []
     med_objects = []
     low_objects = []
     
     if(root.find("DrawableModelsHigh") != None):
-        high_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "High")
+        high_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "High")
     if(root.find("DrawableModelsMedium") != None):
-        med_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "Medium")
+        med_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Medium")
     if(root.find("DrawableModelsLow") != None):
-        low_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "Low")
+        low_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Low")
 
     all_objects = []
     for o in high_objects:
@@ -631,14 +712,18 @@ class ImportYDR(Operator, ImportHelper):
         tree = ET.parse(self.filepath)
         root = tree.getroot()
 
-        vmodel_obj = bpy.data.objects.new("", None)
+        name = os.path.basename(self.filepath)[:-8]
+        armature = bpy.data.armatures.new(name + ".skel")
+        vmodel_obj = bpy.data.objects.new(name, armature)
+        context.scene.collection.objects.link(vmodel_obj)
+        context.view_layer.objects.active = vmodel_obj
+        read_bones(self, context, self.filepath, root)
         ydr_objs = read_ydr_xml(self, context, self.filepath, root)
         for obj in ydr_objs:
             context.scene.collection.objects.link(obj)
             obj.parent = vmodel_obj
-    
-        context.scene.collection.objects.link(vmodel_obj)
-        vmodel_obj.name = os.path.basename(self.filepath)[:-8]
+            mod = obj.modifiers.new("Armature", 'ARMATURE')
+            mod.object = vmodel_obj
         
         #set sollum properties 
         dd_high = float(root.find("LodDistHigh").attrib["value"])
@@ -651,7 +736,9 @@ class ImportYDR(Operator, ImportHelper):
         vmodel_obj.drawble_distance_medium = dd_med
         vmodel_obj.drawble_distance_low = dd_low
         vmodel_obj.drawble_distance_vlow = dd_vlow
-    
+
+        bones.clear()
+
         finished = time.time()
         
         difference = finished - start
@@ -678,28 +765,71 @@ class ImportYDD(Operator, ImportHelper):
     )
 
     def execute(self, context):
+        start = time.time()
+
         tree = ET.parse(self.filepath)
         root = tree.getroot()
-        name = os.path.basename(self.filepath)[:-8]
 
-        
+        name = os.path.basename(self.filepath)[:-8]
         vmodels = []
+        # bones are shared in single ydd however they still have to be placed under a paticular drawable
+        # temp armature, to be merged
+        armature_temp = bpy.data.armatures.new("ARMATURE_TEMP")
+        armature_temp_obj = bpy.data.objects.new("ARMATURE_TEMP", armature_temp)
+        context.scene.collection.objects.link(armature_temp_obj)
+        context.view_layer.objects.active = armature_temp_obj
+
+        drawable_with_bones_name = None
+        armature_with_bones_obj = None
+        for ydr in root:
+            drawable_with_bones_name = read_bones(self, context, self.filepath, ydr)
+            if (drawable_with_bones_name != None):
+                break
+
+        mod_objs = []
         ydd_objs = read_ydd_xml(self, context, self.filepath, root)
         for ydd in ydd_objs:
-            vmodel_obj = bpy.data.objects.new("", None)
+            drawable_name = ydd[0].name.split('.')[0]
+            armature = bpy.data.armatures.new(drawable_name + ".skel")
+            # mesh has "_mesh" at the end of its name, so remove that for the parented armature
+            vmodel_obj = bpy.data.objects.new(drawable_name, armature)
             context.scene.collection.objects.link(vmodel_obj)
-            for obj in  ydd:
+            if (armature_with_bones_obj == None and vmodel_obj.name.split('.')[0] == drawable_with_bones_name):
+                armature_with_bones_obj = vmodel_obj
+
+            for obj in ydd:
                 context.scene.collection.objects.link(obj)
                 obj.parent = vmodel_obj
+                mod_objs.append(obj)
                 
             vmodels.append(vmodel_obj)
-        
-        vmodel_dict_obj = bpy.data.objects.new("", None)
+
+        vmodel_dict_obj = bpy.data.objects.new(name, None)
         for vmodel in vmodels:
             vmodel.parent = vmodel_dict_obj
-        
+
         context.scene.collection.objects.link(vmodel_dict_obj)
-        vmodel_dict_obj.name = name
+
+        for obj in mod_objs:
+            mod = obj.modifiers.new("Armature", 'ARMATURE')
+            mod.object = armature_with_bones_obj
+
+        bpy.ops.object.select_all(action='DESELECT')
+        armature_temp_obj.select_set(True)
+        armature_with_bones_obj.select_set(True)
+        context.view_layer.objects.active = armature_with_bones_obj
+        bpy.ops.object.join()
+
+        bones.clear()
+
+        finished = time.time()
+        
+        difference = finished - start
+        
+        print("start time: " + str(start))
+        print("end time: " + str(finished))
+        print("difference in seconds: " + str(difference))
+        print("difference in milliseconds: " + str(difference * 1000))
 
         return {'FINISHED'}
 
