@@ -28,13 +28,6 @@ import re
 import bpy
 import time
 import bmesh
-import platform
-
-from math import degrees
-from mathutils import Vector
-from datetime import datetime
-from html.parser import HTMLParser
-from html.entities import name2codepoint
 
 def remove_unused_vertex_groups_of_mesh(mesh):
     remove_count = 0

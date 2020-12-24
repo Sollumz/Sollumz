@@ -7,9 +7,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 import time
 import random 
-from .deps import cats as Cats
-
-bones = []
+from .tools import cats as Cats
 
 class v_vertex:
 
@@ -241,7 +239,7 @@ def create_material(filepath, td_node, shader):
     
     return mat
 
-def create_model(self, context, index_buffer, vertexs, filepath, name):
+def create_model(self, context, index_buffer, vertexs, filepath, name, bones):
     
     verts = []
     faces = index_buffer
@@ -363,18 +361,15 @@ def create_model(self, context, index_buffer, vertexs, filepath, name):
     #for poly in mesh.polygons:
         #for idx in poly.loop_indicies:
             #mesh.loops[i].tangent = tangents[i]    
-    
-    #load shaders 
-    mesh.materials.append(material)
 
     obj = bpy.data.objects.new(name + ".mesh", mesh)
     
     #load weights
-    if (len(bones) > 0 and len(blendweights) > 0 and len(mesh.vertices) > 0):
+    if (len(bones) > 0 and len(blendweights) > 0 and len(verts_num) > 0):
         for i in range(len(bones)):
             obj.vertex_groups.new(name=bones[i])
 
-        for vertex_idx in range(len(mesh.vertices)):
+        for vertex_idx in range(len(verts_num)):
             for i in range(0, 4):
                 if (blendindices[vertex_idx][i] < len(bones) and blendweights[vertex_idx][i] > 0.0):
                     obj.vertex_groups[blendindices[vertex_idx][i]].add([vertex_idx], blendweights[vertex_idx][i], "ADD")
@@ -519,7 +514,7 @@ def get_vertexs_from_data(vb):
 
     return vertexs
 
-def read_model_info(self, context, filepath, model, shaders, name):
+def read_model_info(self, context, filepath, model, shaders, name, bones):
     
     v_buffer = []
     i_buffer = []
@@ -555,7 +550,7 @@ def read_shader_info(self, context, filepath, shd_node, td_node):
         
     return shaders
 
-def read_drawable_models(self, context, filepath, root, name, shd_node, td_node, key):
+def read_drawable_models(self, context, filepath, root, name, shd_node, td_node, key, bones):
 
     shaders = read_shader_info(self, context, filepath, shd_node, td_node)
 
@@ -581,7 +576,7 @@ def read_drawable_models(self, context, filepath, root, name, shd_node, td_node,
         
         idx = 0
         for model in models:
-            d_obj = read_model_info(self, context, filepath, model, shaders, name)
+            d_obj = read_model_info(self, context, filepath, model, shaders, name, bones)
             
             #set sollum properties 
             d_obj.sollumtype = "Geometry"
@@ -599,6 +594,7 @@ def read_bones(self, context, filepath, root):
     if (skeleton_node == None):
         return None
 
+    bones = []
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
     armature = context.object.data
@@ -634,13 +630,13 @@ def read_bones(self, context, filepath, root):
         if edit_bone.parent != None:
             edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
-        #build a bones lookup table
+        # build a bones lookup table
         bones.append(bone_name.text)
 
     bpy.ops.object.mode_set(mode='OBJECT')
-    return drawable_name
+    return bones, drawable_name
 
-def read_ydr_xml(self, context, filepath, root):
+def read_ydr_xml(self, context, filepath, root, bones=None):
 
     fname = os.path.basename(filepath)
     name = fname[:-8] #removes file extension
@@ -662,17 +658,21 @@ def read_ydr_xml(self, context, filepath, root):
         mat = create_material(filepath, td_node, shader)
         materials.append(mat)
 
+    # ydd specific, if bones are found then don't do that all over again
+    if (bones == None):
+        bones = read_bones(self, context, filepath, root)[0]
+
     #get objects from drawable info
     high_objects = []
     med_objects = []
     low_objects = []
     
     if(root.find("DrawableModelsHigh") != None):
-        high_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "High")
+        high_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "High", bones)
     if(root.find("DrawableModelsMedium") != None):
-        med_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Medium")
+        med_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Medium", bones)
     if(root.find("DrawableModelsLow") != None):
-        low_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Low")
+        low_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Low", bones)
 
     all_objects = []
     for o in high_objects:
@@ -686,11 +686,20 @@ def read_ydr_xml(self, context, filepath, root):
 def read_ydd_xml(self, context, filepath, root):
 
     all_objects = []
+    bones = None
+    drawable_with_bones_name = None
+
+    # we need to get the name of that particular drawable and its bones before loading other data
+    for ydr in root:
+        bones_and_drawable = read_bones(self, context, filepath, ydr)
+        if (bones_and_drawable != None):
+            bones, drawable_with_bones_name = bones_and_drawable
+            break
 
     for ydr in root:
-        all_objects.append(read_ydr_xml(self, context, filepath, ydr))
+        all_objects.append(read_ydr_xml(self, context, filepath, ydr, bones))
 
-    return all_objects
+    return all_objects, drawable_with_bones_name
 
 class ImportYDR(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -717,7 +726,6 @@ class ImportYDR(Operator, ImportHelper):
         vmodel_obj = bpy.data.objects.new(name, armature)
         context.scene.collection.objects.link(vmodel_obj)
         context.view_layer.objects.active = vmodel_obj
-        read_bones(self, context, self.filepath, root)
         ydr_objs = read_ydr_xml(self, context, self.filepath, root)
         for obj in ydr_objs:
             context.scene.collection.objects.link(obj)
@@ -736,8 +744,6 @@ class ImportYDR(Operator, ImportHelper):
         vmodel_obj.drawble_distance_medium = dd_med
         vmodel_obj.drawble_distance_low = dd_low
         vmodel_obj.drawble_distance_vlow = dd_vlow
-
-        bones.clear()
 
         finished = time.time()
         
@@ -781,13 +787,9 @@ class ImportYDD(Operator, ImportHelper):
 
         drawable_with_bones_name = None
         armature_with_bones_obj = None
-        for ydr in root:
-            drawable_with_bones_name = read_bones(self, context, self.filepath, ydr)
-            if (drawable_with_bones_name != None):
-                break
 
         mod_objs = []
-        ydd_objs = read_ydd_xml(self, context, self.filepath, root)
+        ydd_objs, drawable_with_bones_name = read_ydd_xml(self, context, self.filepath, root)
         for ydd in ydd_objs:
             drawable_name = ydd[0].name.split('.')[0]
             armature = bpy.data.armatures.new(drawable_name + ".skel")
@@ -819,8 +821,6 @@ class ImportYDD(Operator, ImportHelper):
         armature_with_bones_obj.select_set(True)
         context.view_layer.objects.active = armature_with_bones_obj
         bpy.ops.object.join()
-
-        bones.clear()
 
         finished = time.time()
         
