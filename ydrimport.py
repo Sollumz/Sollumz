@@ -365,13 +365,17 @@ def create_model(self, context, index_buffer, vertexs, filepath, name, bones):
     obj = bpy.data.objects.new(name + ".mesh", mesh)
     
     #load weights
-    if (len(bones) > 0 and len(blendweights) > 0 and len(verts_num) > 0):
-        for i in range(len(bones)):
-            obj.vertex_groups.new(name=bones[i])
+    # 256 - possibly the maximum of bones?
+    if (bones != None and len(bones) > 0 and len(blendweights) > 0 and len(verts_num) > 0):
+        for i in range(256):
+            if (i < len(bones)):
+                obj.vertex_groups.new(name=bones[i])
+            else:
+                obj.vertex_groups.new(name="UNKNOWN_BONE." + str(i))
 
         for vertex_idx in range(len(verts_num)):
             for i in range(0, 4):
-                if (blendindices[vertex_idx][i] < len(bones) and blendweights[vertex_idx][i] > 0.0):
+                if (blendweights[vertex_idx][i] > 0.0):
                     obj.vertex_groups[blendindices[vertex_idx][i]].add([vertex_idx], blendweights[vertex_idx][i], "ADD")
 
         Cats.remove_unused_vertex_groups_of_mesh(obj)
@@ -534,9 +538,16 @@ def read_model_info(self, context, filepath, model, shaders, name, bones):
 
     index_buffer = [i_buf[i * 3:(i + 1) * 3] for i in range((len(i_buf) + 3 - 1) // 3 )] #split index buffer into 3s for each triangle
 
-    obj = create_model(self, context, index_buffer, vertexs, filepath, name) #supply shaderindex into texturepaths because the shaders are always in order
-    
-    obj.data.materials.append(shaders[shader_index])
+    # this is for the rare cases that model with no bone but have weights
+    if (bones == None):
+        boneids = model.find("BoneIDs")
+        if (boneids != None):
+            boneids = boneids.text.split(", ")
+            bones = []
+            for id in boneids:
+                bones.append("UNKNOWN_BONE." + id)
+
+    obj = create_model(self, context, index_buffer, vertexs, filepath, name, bones) #supply shaderindex into texturepaths because the shaders are always in order
     
     return obj
 
@@ -592,7 +603,7 @@ def read_bones(self, context, filepath, root):
 
     skeleton_node = root.find("Skeleton")
     if (skeleton_node == None):
-        return None
+        return None, None
 
     bones = []
     drawable_name = root.find("Name").text
@@ -691,9 +702,8 @@ def read_ydd_xml(self, context, filepath, root):
 
     # we need to get the name of that particular drawable and its bones before loading other data
     for ydr in root:
-        bones_and_drawable = read_bones(self, context, filepath, ydr)
-        if (bones_and_drawable != None):
-            bones, drawable_with_bones_name = bones_and_drawable
+        bones, drawable_with_bones_name = read_bones(self, context, filepath, ydr)
+        if (drawable_with_bones_name != None):
             break
 
     for ydr in root:
@@ -796,7 +806,7 @@ class ImportYDD(Operator, ImportHelper):
             # mesh has "_mesh" at the end of its name, so remove that for the parented armature
             vmodel_obj = bpy.data.objects.new(drawable_name, armature)
             context.scene.collection.objects.link(vmodel_obj)
-            if (armature_with_bones_obj == None and vmodel_obj.name.split('.')[0] == drawable_with_bones_name):
+            if (armature_with_bones_obj == None and drawable_with_bones_name != None and vmodel_obj.name.split('.')[0] == drawable_with_bones_name):
                 armature_with_bones_obj = vmodel_obj
 
             for obj in ydd:
@@ -812,15 +822,18 @@ class ImportYDD(Operator, ImportHelper):
 
         context.scene.collection.objects.link(vmodel_dict_obj)
 
-        for obj in mod_objs:
-            mod = obj.modifiers.new("Armature", 'ARMATURE')
-            mod.object = armature_with_bones_obj
+        if (armature_with_bones_obj != None):
+            for obj in mod_objs:
+                mod = obj.modifiers.new("Armature", 'ARMATURE')
+                mod.object = armature_with_bones_obj
 
-        bpy.ops.object.select_all(action='DESELECT')
-        armature_temp_obj.select_set(True)
-        armature_with_bones_obj.select_set(True)
-        context.view_layer.objects.active = armature_with_bones_obj
-        bpy.ops.object.join()
+            bpy.ops.object.select_all(action='DESELECT')
+            armature_temp_obj.select_set(True)
+            armature_with_bones_obj.select_set(True)
+            context.view_layer.objects.active = armature_with_bones_obj
+            bpy.ops.object.join()
+        else:
+            bpy.data.objects.remove(armature_temp_obj, do_unlink=True)
 
         finished = time.time()
         
