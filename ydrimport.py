@@ -635,7 +635,7 @@ def read_bones(self, context, filepath, root):
 
         # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
         edit_bone.head = (0,0,0)
-        edit_bone.tail = (0,0.1,0)
+        edit_bone.tail = (0,0.05,0)
         edit_bone.matrix = matrix
         edit_bone.translate(trans)
         if edit_bone.parent != None:
