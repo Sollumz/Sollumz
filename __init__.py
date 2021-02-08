@@ -33,9 +33,10 @@ if "bpy" in locals():
     importlib.reload(shaderoperators)
     importlib.reload(ydrimport)
     importlib.reload(ydrexport)
+    importlib.reload(ybnimport)
     importlib.reload(sollumz_ui)
     importlib.reload(collisionmatoperators)
-    importlib.reload(ybnimport)
+    importlib.reload(tools)
 else:
     from . import shaderoperators
     from . import ydrimport
@@ -43,7 +44,7 @@ else:
     from . import ybnimport 
     from . import sollumz_ui
     from . import collisionmatoperators
-    from . import ybnimport 
+    from . import tools
     
 import bpy
 

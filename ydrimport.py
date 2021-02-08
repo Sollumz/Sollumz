@@ -192,7 +192,11 @@ def create_material(filepath, td_node, shader):
             elif(isinstance(n, bpy.types.ShaderNodeValue)):
                 if(p.attrib["name"].lower() == n.name[:-2].lower()): #remove _X
                     value_key = n.name[-1] #X,Y,Z,W
-                    value = p.attrib[value_key]
+                    if p.attrib["type"] == "Array":
+                        value = p.find("Value").attrib[value_key]
+                    else:
+                        value = p.attrib[value_key]
+
                     n.outputs[0].default_value = float(value)      
         
     #assign all embedded texture properties
