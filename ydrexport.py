@@ -4,8 +4,10 @@ from bpy.types import Operator
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from xml.dom import minidom
+from mathutils import Vector
 import os 
 import sys 
+import shutil
 import ntpath
 from datetime import datetime 
 
@@ -182,11 +184,14 @@ def get_vertex_string(mesh, vlayout):
     for poly in mesh.polygons:
         for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
             vi = mesh.loops[loop_index].vertex_index
-            texcoord = uv_layer[loop_index].uv
+            uv = uv_layer[loop_index].uv
+            u = uv[0]
+            v = uv[1] * -1
+            fixed_uv = Vector((u, v))
             vertices[vi] = mesh.vertices[vi].co
             normals[vi] = mesh.vertices[vi].normal
-            texcoords[vi] = texcoord   
-            clr[vi] = clr0_layer.data[loop_index].color  
+            texcoords[vi] = fixed_uv   
+            clr[vi] = clr0_layer.data[loop_index].color
             tangents[vi] = mesh.loops[loop_index].tangent 
             
     for i in range(len(vertices)):
@@ -219,7 +224,7 @@ def get_vertex_string(mesh, vlayout):
     vertex_string = ""
     for s in allstrings:       
         vertex_string += s
-        
+    
     return vertex_string
 
 def get_index_string(mesh):
@@ -630,7 +635,7 @@ def write_model_node(objs, materials):
         if(shader.sollumtype != "GTA"):
             return
         vlayout = get_vertex_layout(shader.name)        
-        
+
         data2_node = Element("Data2")
         vertex_str = get_vertex_string(model, vlayout)
         data2_node.text = vertex_str
@@ -719,7 +724,7 @@ def write_imageparam_node(node):
     type = "Texture"
     tname = "None" #givemechecker? 
     if(node.image != None):
-        tname = os.path.splitext(os.path.basename(node.image.filepath))[0]
+        tname = os.path.basename(node.image.filepath)
     
     i_node = Element("Item")
     i_node.set("name", iname)
@@ -794,6 +799,8 @@ def write_shaders_node(materials):
     
     shaders_node = Element("Shaders")
     
+    print(len(materials))
+    
     for mat in materials:
         shader_node = write_shader_node(mat)
         shaders_node.append(shader_node)
@@ -804,83 +811,152 @@ def write_shaders_node(materials):
 
 def write_tditem_node(exportpath, mat):
     
-    has_embedded = False
+    i_nodes = []
     
     mat_nodes = mat.node_tree.nodes
     for node in mat_nodes:
         if(isinstance(node, bpy.types.ShaderNodeTexImage)):
             
-                if(node.embedded == False):
-                    return None
-                else:
+            if(node.embedded == False):
+                i_nodes.append(None)
+            else:
+                if(os.path.isdir(os.path.dirname(exportpath) + "\\untitled") == False):
+                    os.mkdir(os.path.dirname(exportpath) + "\\untitled")
+                
+                txtpath = node.image.filepath
+                dstpath = os.path.dirname(exportpath) + "\\untitled\\" + os.path.basename(node.image.filepath)
+                
+                shutil.copyfile(txtpath, dstpath)
+                
+                #node.image.save_render(os.path.dirname(exportpath) + "\\untitled\\"+ os.path.basename(node.image.filepath), scene=None)
+                
+                i_node = Element("Item")
+                
+                name_node = Element("Name")
+                name_node.text = os.path.splitext(os.path.basename(node.image.filepath))[0]
+                i_node.append(name_node)
+                
+                unk32_node = Element("Unk32")
+                unk32_node.set("value", "128")
+                i_node.append(unk32_node)
+                
+                usage_node = Element("Usage")
+                usage_node.text = node.usage
+                i_node.append(usage_node)
+                
+                uflags_node = Element("UsageFlags")
+                uflags_text = "" 
+                 
+                if(node.not_half == True):
+                    uflags_text += "NOT_HALF, "
+                if(node.hd_split == True):
+                    uflags_text += "HD_SPLIT, "
+                if(node.flag_full == True):
+                    uflags_text += "FULL, "
+                if(node.maps_half == True):
+                    uflags_text += "MAPS_HALF, "
+                if(node.x2 == True):
+                    uflags_text += "X2, "
+                if(node.x4 == True):
+                    uflags_text += "X4, "
+                if(node.y4 == True):
+                    uflags_text += "Y4, "
+                if(node.x8 == True):
+                    uflags_text += "MAPS_HALF, "
+                if(node.x16 == True):
+                    uflags_text += "X16, "
+                if(node.x32 == True):
+                    uflags_text += "X32, "
+                if(node.x64 == True):
+                    uflags_text += "X64, "
+                if(node.y64 == True):
+                    uflags_text += "Y64, "
+                if(node.x128 == True):
+                    uflags_text += "X128, "
+                if(node.x256 == True):
+                    uflags_text += "X256, "
+                if(node.x512 == True):
+                    uflags_text += "X512, "
+                if(node.y512 == True):
+                    uflags_text += "Y512, "
+                if(node.x1024 == True):
+                    uflags_text += "X1024, "
+                if(node.y1024 == True):
+                    uflags_text += "Y1024, "
+                if(node.x2048 == True):
+                    uflags_text += "X2048, "
+                if(node.y2048 == True):
+                    uflags_text += "Y2048, "
+                if(node.embeddedscriptrt == True):
+                    uflags_text += "EMBEDDEDSCRIPTRT, "
+                if(node.unk19 == True):
+                    uflags_text += "UNK19, "
+                if(node.unk20 == True):
+                    uflags_text += "UNK20, "
+                if(node.unk21 == True):
+                    uflags_text += "UNK21, "
+                if(node.unk24 == True):
+                    uflags_text += "UNK24, "
+                
+                uflags_text = uflags_text[:-2] #remove , from str
+                uflags_node.text = uflags_text
+                
+                i_node.append(uflags_node)
+
+                eflags_node = Element("ExtraFlags")
+                eflags_node.set("value", str(node.extra_flags))
+                i_node.append(eflags_node)
+                
+                width_node = Element("Width")
+                width_node.set("value", str(node.image.size[0]))
+                i_node.append(width_node)
+                
+                height_node = Element("Height")
+                height_node.set("value", str(node.image.size[1]))
+                i_node.append(height_node)
+                
+                miplevels_node = Element("MipLevels")
+                miplevels_node.set("value", "8")
+                i_node.append(miplevels_node)
+                
+                format_node = Element("Format")
+                format_node.text = "D3DFMT_" + node.format_type
+                i_node.append(format_node)
+                
+                filename_node = Element("FileName")
+                filename_node.text = os.path.basename(node.image.filepath)
+                i_node.append(filename_node)
+                
+                i_nodes.append(i_node)
                     
-                    if(os.path.isdir(os.path.dirname(exportpath) + "\\untitled") == False):
-                        os.mkdir(os.path.dirname(exportpath) + "\\untitled")
-                    
-                    node.image.save_render(os.path.dirname(exportpath) + "\\untitled\\"+ os.path.basename(node.image.filepath), scene=None)
-                    
-                    i_node = Element("Item")
-                    
-                    name_node = Element("Name")
-                    name_node.text = os.path.splitext(os.path.basename(node.image.filepath))[0]
-                    i_node.append(name_node)
-                    
-                    unk32_node = Element("Unk32")
-                    unk32_node.set("value", "128")
-                    i_node.append(unk32_node)
-                    
-                    usage_node = Element("Usage")
-                    usage_node.text = node.usage
-                    i_node.append(usage_node)
-                    
-                    uflags_node = Element("UsageFlags")
-                    if(node.not_half == True):
-                        uflags_node.text += "NOT_HALF"
-                    elif(node.hd_split == True):
-                        uflags_node.text += "HD_SPLIT"
-                    elif(node.full == True):
-                        uflags_node.text += "FULL"
-                    elif(node.maps_half == True):
-                        uflags_node.text += "MAPS_HALF"
-                    i_node.append(uflags_node)
-                    
-                    eflags_node = Element("ExtraFlags")
-                    eflags_node.set("value", str(node.extra_flags))
-                    i_node.append(eflags_node)
-                    
-                    width_node = Element("Width")
-                    width_node.set("value", str(node.image.size[0]))
-                    i_node.append(width_node)
-                    
-                    height_node = Element("Height")
-                    height_node.set("value", str(node.image.size[1]))
-                    i_node.append(height_node)
-                    
-                    miplevels_node = Element("MipLevels")
-                    miplevels_node.set("value", "8")
-                    i_node.append(miplevels_node)
-                    
-                    format_node = Element("Format")
-                    format_node.text = "D3DFMT_" + node.format_type
-                    i_node.append(format_node)
-                    
-                    filename_node = Element("FileName")
-                    filename_node.text = os.path.basename(node.image.filepath)
-                    i_node.append(filename_node)
-                    
-                    return i_node
-                    
+    return i_nodes 
+
 def write_texturedictionary_node(materials, exportpath):
     
     td_node = Element("TextureDictionary")
     
+    all_nodes = []
+    
     for mat in materials:
-        i_node = write_tditem_node(exportpath, mat)
-        if(i_node == None):
-            print("External")
-        else:
-            td_node.append(i_node)
-            
+        i_nodes = write_tditem_node(exportpath, mat)
+        
+        for node in i_nodes:
+            if(node != None):
+                all_nodes.append(node)
+    
+    #removes duplicate embedded textures!
+    for node in all_nodes: 
+        t_name = node[0].text
+        
+        append = True 
+        
+        for t in td_node:
+            if(t[0].text == t_name):
+                append = False
+                
+        if(append == True):
+            td_node.append(node)        
+    
     return td_node
 
 def write_shader_group_node(materials, filepath):
@@ -1032,14 +1108,13 @@ def write_drawable(obj, filepath):
     Unk9a_node.set("value", "0")
     
     geometrys = []
-    materials = []
+    materials = bpy.data.materials
     bounds = []
     
     for c in children:
         if(c.sollumtype == "Geometry"):
             geometrys.append(c)
-            materials.append(c.active_material) 
-    
+            
     shadergroup_node = write_shader_group_node(materials, filepath)
     drawablemodels_node = write_drawablemodels_node(geometrys, materials)
     bounds_node = None
@@ -1079,9 +1154,11 @@ def write_ydr_xml(context, filepath):
     #select the object first?
     for obj in bpy.data.objects:
         if(obj.sollumtype == "Drawable"):
+            root = write_drawable(obj, filepath)
             try: 
-                root = write_drawable(obj, filepath)
+                print("worked")
             except:
+                print(str(Exception))
                 return str(Exception)
 
     if(root == None):

@@ -42,10 +42,33 @@ def get_related_texture(texture_dictionary, img_name):
             format = t.find("Format").text.split("_")[1] 
             usage = t.find("Usage").text
             uf = t.find("UsageFlags").text
+            
             not_half = False
             hd_split = False    
             full = False
             maps_half = False
+            x2 = False
+            x4 = False
+            y4 = False
+            x8 = False
+            x16 = False 
+            x32 = False
+            x64 = False
+            y64 = False
+            x128 = False
+            x256 = False
+            x512 = False
+            y512 = False
+            x1024 = False
+            y1024 = False
+            x2048 = False
+            y2048 = False
+            embeddedscriptrt = False
+            unk19 = False
+            unk20 = False
+            unk21 = False
+            unk24 = False
+            
             if("NOT_HALF" in uf):
                 not_half = True
             if("HD_SPLIT" in uf):
@@ -54,6 +77,49 @@ def get_related_texture(texture_dictionary, img_name):
                 full = True
             if("MAPS_HALF" in uf):
                 maps_half = True
+            if("X2" in uf):
+                x2 = True
+            if("X4" in uf):
+                x4 = True
+            if("Y4" in uf):
+                y4 = True
+            if("X8" in uf):
+                x8 = True
+            if("X16" in uf):
+                x16 = True
+            if("X32" in uf):
+                x32 = True
+            if("X64" in uf):
+                x64 = True
+            if("Y64" in uf):
+                y64 = True
+            if("X128" in uf):
+                x128 = True
+            if("X256" in uf):
+                x256 = True
+            if("X512" in uf):
+                x512 = True
+            if("Y512" in uf):
+                y512 = True
+            if("X1024" in uf):
+                x1024 = True
+            if("Y1024" in uf):
+                y1024 = True
+            if("X2048" in uf):
+                x2048 = True
+            if("Y2048" in uf):
+                y2048 = True
+            if("EMBEDDEDSCRIPTRT" in uf):
+                embeddedscriptrt = True
+            if("UNK19" in uf):
+                unk19 = True
+            if("UNK20" in uf):
+                unk20 = True
+            if("UNK21" in uf):
+                unk21 = True
+            if("UNK24" in uf):
+                unk24 = True
+            
             
             extra_flags = int(t.find("ExtraFlags").attrib["value"])
             
@@ -65,6 +131,27 @@ def get_related_texture(texture_dictionary, img_name):
             props.append(full) 
             props.append(maps_half) 
             props.append(extra_flags)
+            props.append(x2)
+            props.append(x4)
+            props.append(y4)
+            props.append(x8)
+            props.append(x16)
+            props.append(x32)
+            props.append(x64)
+            props.append(y64)
+            props.append(x128)
+            props.append(x256)
+            props.append(x512)
+            props.append(y512)
+            props.append(x1024)
+            props.append(y1024)
+            props.append(x2048)
+            props.append(y2048)
+            props.append(embeddedscriptrt)
+            props.append(unk19)
+            props.append(unk20)
+            props.append(unk21)
+            props.append(unk24)
         
     return props 
 
@@ -122,15 +209,36 @@ def create_material(filepath, td_node, shader):
                         node.usage = texture_properties[1]
                         node.not_half = texture_properties[2] 
                         node.hd_split = texture_properties[3] 
-                        node.full = texture_properties[4] 
-                        node.maps_half = texture_properties[5]
+                        node.flag_full = texture_properties[4] 
+                        node.maps_half = texture_properties[5]  
                         node.extra_flags = texture_properties[6] 
+                        node.x2 = texture_properties[7] 
+                        node.x4 = texture_properties[8] 
+                        node.y4 = texture_properties[9] 
+                        node.x8 = texture_properties[10] 
+                        node.x16 = texture_properties[11] 
+                        node.x32 = texture_properties[12] 
+                        node.x64 = texture_properties[13] 
+                        node.y64 = texture_properties[14] 
+                        node.x128 = texture_properties[15] 
+                        node.x256 = texture_properties[16] 
+                        node.x512 = texture_properties[17] 
+                        node.y512 = texture_properties[18] 
+                        node.x1024 = texture_properties[19] 
+                        node.y1024 = texture_properties[20] 
+                        node.x2048 = texture_properties[21] 
+                        node.y2048 = texture_properties[22] 
+                        node.embeddedscriptrt = texture_properties[23] 
+                        node.unk19 = texture_properties[24] 
+                        node.unk20 = texture_properties[25]
+                        node.unk21 = texture_properties[26]
+                        node.unk24 = texture_properties[27]
     
     mat.sollumtype = "GTA" 
     
     return mat
 
-def create_model(self, context, index_buffer, vertexs, filepath, shader, td_node, name):
+def create_model(self, context, index_buffer, vertexs, filepath, name):
     
     verts = []
     faces = index_buffer
@@ -244,8 +352,8 @@ def create_model(self, context, index_buffer, vertexs, filepath, shader, td_node
             #mesh.loops[i].tangent = tangents[i]    
     
     #load shaders 
-    mat = create_material(filepath, td_node, shader)
-    mesh.materials.append(mat)
+    #mat = create_material(filepath, td_node, shader)
+    #mesh.materials.append(mat)
         
     obj = bpy.data.objects.new(name, mesh)
     
@@ -386,7 +494,7 @@ def get_vertexs_from_data(vb):
 
     return vertexs
 
-def read_model_info(self, context, filepath, model, shd_node, td_node, name):
+def read_model_info(self, context, filepath, model, shaders, name):
     
     v_buffer = []
     i_buffer = []
@@ -406,11 +514,28 @@ def read_model_info(self, context, filepath, model, shd_node, td_node, name):
 
     index_buffer = [i_buf[i * 3:(i + 1) * 3] for i in range((len(i_buf) + 3 - 1) // 3 )] #split index buffer into 3s for each triangle
 
-    obj = create_model(self, context, index_buffer, vertexs, filepath, shd_node[shader_index], td_node, name) #supply shaderindex into texturepaths because the shaders are always in order
+    obj = create_model(self, context, index_buffer, vertexs, filepath, name) #supply shaderindex into texturepaths because the shaders are always in order
+    
+    obj.data.materials.append(shaders[shader_index])
     
     return obj
 
+def read_shader_info(self, context, filepath, shd_node, td_node):
+    
+    shaders = []
+    
+    for shader in shd_node:
+        mat = create_material(filepath, td_node, shader)
+        shaders.append(mat)
+        
+    return shaders
+
 def read_drawable_models(self, context, filepath, root, name, shd_node, td_node, key):
+
+    shaders = read_shader_info(self, context, filepath, shd_node, td_node)
+
+    for shader in shaders: 
+        print(shader.name)
 
     dm_node = root.find("DrawableModels" + key)
     drawable_models = []
@@ -431,7 +556,7 @@ def read_drawable_models(self, context, filepath, root, name, shd_node, td_node,
         
         idx = 0
         for model in models:
-            d_obj = read_model_info(self, context, filepath, model, shd_node, td_node, name)
+            d_obj = read_model_info(self, context, filepath, model, shaders, name)
             
             #set sollum properties 
             d_obj.sollumtype = "Geometry"
