@@ -553,6 +553,7 @@ def read_model_info(self, context, filepath, model, shaders, name, bones):
 
     obj = create_model(self, context, index_buffer, vertexs, filepath, name, bones) #supply shaderindex into texturepaths because the shaders are always in order
     
+    obj.data.materials.append(shaders[shader_index])
     return obj
 
 def read_shader_info(self, context, filepath, shd_node, td_node):
@@ -660,18 +661,8 @@ def read_ydr_xml(self, context, filepath, root, bones=None):
 
     #get texture info
     shd_group = root.find("ShaderGroup")
-    # shd_node = shd_group.find("Shaders")
+    shd_node = shd_group.find("Shaders")
     td_node = shd_group.find("TextureDictionary")  
-    
-    #load the materials in the beginning instead of doing so when loading models
-    s_node = []
-    for _shader in shd_group.iter('Shaders'):
-        s_node = _shader
-
-    materials = []
-    for shader in s_node:
-        mat = create_material(filepath, td_node, shader)
-        materials.append(mat)
 
     # ydd specific, if bones are found then don't do that all over again
     if (bones == None):
@@ -683,11 +674,11 @@ def read_ydr_xml(self, context, filepath, root, bones=None):
     low_objects = []
     
     if(root.find("DrawableModelsHigh") != None):
-        high_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "High", bones)
+        high_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "High", bones)
     if(root.find("DrawableModelsMedium") != None):
-        med_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Medium", bones)
+        med_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "Medium", bones)
     if(root.find("DrawableModelsLow") != None):
-        low_objects = read_drawable_models(self, context, filepath, root, model_name, materials, "Low", bones)
+        low_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "Low", bones)
 
     all_objects = []
     for o in high_objects:
