@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+.cache
+tmp
+*.blend
+*.blend1
