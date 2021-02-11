@@ -1,7 +1,7 @@
 import bpy
 import os
 import xml.etree.ElementTree as ET
-from mathutils import Vector, Quaternion, Matrix
+from mathutils import Vector, Quaternion
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
@@ -157,7 +157,6 @@ def get_related_texture(texture_dictionary, img_name):
     return props 
 
 def create_material(filepath, td_node, shader):
-    
     params = shader.find("Parameters")
     
     filename = os.path.basename(filepath)[:-8]
@@ -182,7 +181,6 @@ def create_material(filepath, td_node, shader):
                     if(hasattr(texture_pos, 'text')):
                         texture_name = texture_pos.text + ".dds" 
                         texture_path = texture_dir + texture_name
-                        n.texture_name = texture_name
                         if(os.path.isfile(texture_dir + texture_name)):
                             img = bpy.data.images.load(texture_path, check_existing=True)
                             n.image = img 
@@ -572,6 +570,9 @@ def read_drawable_models(self, context, filepath, root, name, shd_node, td_node,
 
     shaders = read_shader_info(self, context, filepath, shd_node, td_node)
 
+    for shader in shaders: 
+        print(shader.name)
+
     dm_node = root.find("DrawableModels" + key)
     drawable_models = []
     rm_nodes = []
@@ -612,7 +613,7 @@ def read_bones(self, context, filepath, root):
     bones = []
     bones_dict = {}
     flags_list = []
-    flags_restricted = set(["LimitRotation", "Unk0"])
+    flags_restricted = set(["LimitRotation"])
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
     armature = context.object
@@ -625,26 +626,18 @@ def read_bones(self, context, filepath, root):
         flags_item = bones_item.find("Flags")
         translation_item = bones_item.find("Translation")
         rotation_item = bones_item.find("Rotation")
-        scale_item = bones_item.find("Scale")
 
         quaternion = Quaternion()
         quaternion.w = float(rotation_item.attrib["w"])
         quaternion.x = float(rotation_item.attrib["x"])
         quaternion.y = float(rotation_item.attrib["y"])
         quaternion.z = float(rotation_item.attrib["z"])
-        mat_rot = quaternion.to_matrix().to_4x4()
+        matrix = quaternion.to_matrix().to_4x4()
 
         trans = Vector()
         trans.x = float(translation_item.attrib["x"])
         trans.y = float(translation_item.attrib["y"])
         trans.z = float(translation_item.attrib["z"])
-        mat_loc = Matrix.Translation(trans)
-
-        scale = Vector()
-        scale.x = float(scale_item.attrib["x"])
-        scale.y = float(scale_item.attrib["y"])
-        scale.z = float(scale_item.attrib["z"])
-        mat_sca = Matrix.Scale(1, 4, scale)
 
         edit_bone = armature.data.edit_bones.new(name_item.text)
         # edit_bone.bone_id = int(bone_tag.attrib["value"])
@@ -654,7 +647,8 @@ def read_bones(self, context, filepath, root):
         # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
         edit_bone.head = (0,0,0)
         edit_bone.tail = (0,0.05,0)
-        edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
+        edit_bone.matrix = matrix
+        edit_bone.translate(trans)
         if edit_bone.parent != None:
             edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
@@ -670,12 +664,12 @@ def read_bones(self, context, filepath, root):
 
     i = 0
     for tag, name in bones_dict.items():
-        armature.pose.bones[name].bone_properties.id = tag
+        armature.pose.bones[name].bone_id = tag
         for _flag in flags_list[i]:
             if (_flag in flags_restricted):
                 continue
 
-            flag = armature.pose.bones[name].bone_properties.flags.add()
+            flag = armature.pose.bones[name].sollumz_flags.add()
             flag.name = _flag
         i = i + 1
 

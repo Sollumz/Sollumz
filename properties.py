@@ -1,10 +1,8 @@
 import bpy
-from bpy.types import PropertyGroup
-from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
 
 #sollum properties
-bpy.types.Scene.last_created_material = PointerProperty(type=bpy.types.Material)
-bpy.types.Object.sollumtype = EnumProperty(
+bpy.types.Scene.last_created_material = bpy.props.PointerProperty(type=bpy.types.Material)
+bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
                                                         default = "None",
                                                         items = [
@@ -18,13 +16,13 @@ bpy.types.Object.sollumtype = EnumProperty(
                                                                     ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
                                                                     ("Bound Disc", "Bound Disc", "Bound Disc")])
                                                                     
-bpy.types.Object.level_of_detail = EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
-bpy.types.Object.mask = IntProperty(name = "Mask", default = 255)
-bpy.types.Object.drawble_distance_high = FloatProperty(name = "Lod Distance High", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.drawble_distance_medium = FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.drawble_distance_low = FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.drawble_distance_vlow = FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.shadertype = EnumProperty(
+bpy.types.Object.level_of_detail = bpy.props.EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
+bpy.types.Object.mask = bpy.props.IntProperty(name = "Mask", default = 255)
+bpy.types.Object.drawble_distance_high = bpy.props.FloatProperty(name = "Lod Distance High", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.drawble_distance_medium = bpy.props.FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.drawble_distance_low = bpy.props.FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.drawble_distance_vlow = bpy.props.FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.shadertype = bpy.props.EnumProperty(
                                                         name = "Shader Type", 
                                                         default = "default.sps",
                                                         items = [
@@ -321,78 +319,45 @@ bpy.types.Object.shadertype = EnumProperty(
                                                                     ("weapon_normal_spec_tnt.sps", "weapon_normal_spec_tnt.sps", "weapon_normal_spec_tnt.sps")])
 
 #GIMS ONLY PROPERTY?
-#bpy.types.ShaderNodeTexImage.type = EnumProperty(name = "Type", items = [("Regular", "Regular", "Regular"), ("Cube", "Cube", "Cube"), ("Volume", "Volume", "Volume")])
-bpy.types.ShaderNodeTexImage.texture_name = StringProperty(name="Texture Name", default = "None")
-bpy.types.ShaderNodeTexImage.format_type = EnumProperty(name = "Pixel Format", items = [("DXT1", "DXT1", "DXT1"), ("DXT3", "DXT3", "DXT3"), ("DXT5", "DXT5", "DXT5"), ("ATI1", "ATI1", "ATI1"), ("ATI2", "ATI2", "ATI2"), ("BC7", "BC7", "BC7"), ("A1R5G5B5", "A1R5G5B5", "A1R5G5B5"), ("A1R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8", "A8", "A8"), ("L8", "L8", "L8")])
-bpy.types.ShaderNodeTexImage.usage = EnumProperty(name = "Usage", items = [("TINTPALETTE", "TINTPALETTE", "TINTPALETTE"), ("UNKNOWN", "UNKNOWN", "UNKNOWN"), ("DEFAULT", "DEFAULT", "DEFAULT"), ("TERRAIN", "TERRAIN", "TERRAIN"), ("CLOUDDENSITY", "CLOUDDENSITY", "CLOUDDENSITY"), ("CLOUDNORMAL", "CLOUDNORMAL", "CLOUDNORMAL"), ("CABLE", "CABLE", "CABLE"), ("FENCE", "FENCE", "FENCE"), ("ENV.EFFECT", "ENV.EFFECT", "ENV.EFFECT"), ("SCRIPT", "SCRIPT", "SCRIPT"), ("WATERFLOW", "WATERFLOW", "WATERFLOW"), ("WATERFOAM", "WATERFOAM", "WATERFOAM"), ("WATERFOG", "WATERFOG", "WATERFOG"), ("WATEROCEAN", "WATEROCEAN", "WATEROCEAN"), ("WATER", "WATER", "WATER"), ("FOAMOPACITY", "FOAMOPACITY", "FOAMOPACITY"), ("FOAM", "FOAM", "FOAM"), ("DIFFUSEDETAIL", "DIFFUSEDETAIL", "DIFFUSEDETAIL"), ("DIFFUSEDARK", "DIFFUSEDARK", "DIFFUSEDARK"), ("DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE"), ("DIFFUSE", "DIFFUSE", "DIFFUSE"), ("DETAIL", "DETAIL", "DETAIL"), ("NORMAL", "NORMAL", "NORMAL"), ("SPECULAR", "SPECULAR", "SPECULAR"), ("EMMISIVE", "EMMISIVE", "EMMISIVE"), ("TINTPALLETE", "TINTPALLETE", "TINTPALLETE"), ("SKIPPROCCESING", "SKIPPROCCESING", "SKIPPROCCESING"), ("DONTOPTIMIZE", "DONTOPTIMIZE", "DONTOPTIMIZE"), ("TEST", "TEST", "TEST"), ("COUNT", "COUNT", "COUNT")])
-bpy.types.ShaderNodeTexImage.extra_flags = IntProperty(name = "Extra Flags", default = 0)
-bpy.types.ShaderNodeTexImage.embedded = BoolProperty(name = "Embedded", default = False)
+#bpy.types.ShaderNodeTexImage.type = bpy.props.EnumProperty(name = "Type", items = [("Regular", "Regular", "Regular"), ("Cube", "Cube", "Cube"), ("Volume", "Volume", "Volume")])
+bpy.types.ShaderNodeTexImage.format_type = bpy.props.EnumProperty(name = "Pixel Format", items = [("DXT1", "DXT1", "DXT1"), ("DXT3", "DXT3", "DXT3"), ("DXT5", "DXT5", "DXT5"), ("ATI1", "ATI1", "ATI1"), ("ATI2", "ATI2", "ATI2"), ("BC7", "BC7", "BC7"), ("A1R5G5B5", "A1R5G5B5", "A1R5G5B5"), ("A1R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8", "A8", "A8"), ("L8", "L8", "L8")])
+bpy.types.ShaderNodeTexImage.usage = bpy.props.EnumProperty(name = "Usage", items = [("TINTPALETTE", "TINTPALETTE", "TINTPALETTE"), ("UNKNOWN", "UNKNOWN", "UNKNOWN"), ("DEFAULT", "DEFAULT", "DEFAULT"), ("TERRAIN", "TERRAIN", "TERRAIN"), ("CLOUDDENSITY", "CLOUDDENSITY", "CLOUDDENSITY"), ("CLOUDNORMAL", "CLOUDNORMAL", "CLOUDNORMAL"), ("CABLE", "CABLE", "CABLE"), ("FENCE", "FENCE", "FENCE"), ("ENV.EFFECT", "ENV.EFFECT", "ENV.EFFECT"), ("SCRIPT", "SCRIPT", "SCRIPT"), ("WATERFLOW", "WATERFLOW", "WATERFLOW"), ("WATERFOAM", "WATERFOAM", "WATERFOAM"), ("WATERFOG", "WATERFOG", "WATERFOG"), ("WATEROCEAN", "WATEROCEAN", "WATEROCEAN"), ("WATER", "WATER", "WATER"), ("FOAMOPACITY", "FOAMOPACITY", "FOAMOPACITY"), ("FOAM", "FOAM", "FOAM"), ("DIFFUSEDETAIL", "DIFFUSEDETAIL", "DIFFUSEDETAIL"), ("DIFFUSEDARK", "DIFFUSEDARK", "DIFFUSEDARK"), ("DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE"), ("DIFFUSE", "DIFFUSE", "DIFFUSE"), ("DETAIL", "DETAIL", "DETAIL"), ("NORMAL", "NORMAL", "NORMAL"), ("SPECULAR", "SPECULAR", "SPECULAR"), ("EMMISIVE", "EMMISIVE", "EMMISIVE"), ("TINTPALLETE", "TINTPALLETE", "TINTPALLETE"), ("SKIPPROCCESING", "SKIPPROCCESING", "SKIPPROCCESING"), ("DONTOPTIMIZE", "DONTOPTIMIZE", "DONTOPTIMIZE"), ("TEST", "TEST", "TEST"), ("COUNT", "COUNT", "COUNT")])
+bpy.types.ShaderNodeTexImage.extra_flags = bpy.props.IntProperty(name = "Extra Flags", default = 0)
+bpy.types.ShaderNodeTexImage.embedded = bpy.props.BoolProperty(name = "Embedded", default = False)
 #usage flags whatever this is 
-bpy.types.ShaderNodeTexImage.not_half = BoolProperty(name = "NOT_HALF", default = False)
-bpy.types.ShaderNodeTexImage.hd_split = BoolProperty(name = "HD_SPLIT", default = False)
-bpy.types.ShaderNodeTexImage.x2 = BoolProperty(name = "X2", default = False)
-bpy.types.ShaderNodeTexImage.x4 = BoolProperty(name = "X4", default = False)
-bpy.types.ShaderNodeTexImage.y4 = BoolProperty(name = "Y4", default = False)
-bpy.types.ShaderNodeTexImage.x8 = BoolProperty(name = "X8", default = False)
-bpy.types.ShaderNodeTexImage.x16 = BoolProperty(name = "X16", default = False)
-bpy.types.ShaderNodeTexImage.x32 = BoolProperty(name = "X32", default = False)
-bpy.types.ShaderNodeTexImage.x64 = BoolProperty(name = "X64", default = False)
-bpy.types.ShaderNodeTexImage.y64 = BoolProperty(name = "Y64", default = False)
-bpy.types.ShaderNodeTexImage.x128 = BoolProperty(name = "X128", default = False)
-bpy.types.ShaderNodeTexImage.x256 = BoolProperty(name = "X256", default = False)
-bpy.types.ShaderNodeTexImage.x512 = BoolProperty(name = "X512", default = False)
-bpy.types.ShaderNodeTexImage.y512 = BoolProperty(name = "Y512", default = False)
-bpy.types.ShaderNodeTexImage.x1024 = BoolProperty(name = "X1024", default = False)
-bpy.types.ShaderNodeTexImage.y1024 = BoolProperty(name = "Y1024", default = False)
-bpy.types.ShaderNodeTexImage.x2048 = BoolProperty(name = "X2048", default = False)
-bpy.types.ShaderNodeTexImage.y2048 = BoolProperty(name = "Y2048", default = False)
-bpy.types.ShaderNodeTexImage.embeddedscriptrt = BoolProperty(name = "EMBEDDEDSCRIPTRT", default = False)
-bpy.types.ShaderNodeTexImage.unk19 = BoolProperty(name = "UNK19", default = False)
-bpy.types.ShaderNodeTexImage.unk20 = BoolProperty(name = "UNK20", default = False)
-bpy.types.ShaderNodeTexImage.unk21 = BoolProperty(name = "UNK21", default = False)
-bpy.types.ShaderNodeTexImage.flag_full = BoolProperty(name = "FLAG_FULL", default = False)
-bpy.types.ShaderNodeTexImage.maps_half = BoolProperty(name = "MAPS_HALF", default = False)
-bpy.types.ShaderNodeTexImage.unk24 = BoolProperty(name = "UNK24", default = False)
+bpy.types.ShaderNodeTexImage.not_half = bpy.props.BoolProperty(name = "NOT_HALF", default = False)
+bpy.types.ShaderNodeTexImage.hd_split = bpy.props.BoolProperty(name = "HD_SPLIT", default = False)
+bpy.types.ShaderNodeTexImage.x2 = bpy.props.BoolProperty(name = "X2", default = False)
+bpy.types.ShaderNodeTexImage.x4 = bpy.props.BoolProperty(name = "X4", default = False)
+bpy.types.ShaderNodeTexImage.y4 = bpy.props.BoolProperty(name = "Y4", default = False)
+bpy.types.ShaderNodeTexImage.x8 = bpy.props.BoolProperty(name = "X8", default = False)
+bpy.types.ShaderNodeTexImage.x16 = bpy.props.BoolProperty(name = "X16", default = False)
+bpy.types.ShaderNodeTexImage.x32 = bpy.props.BoolProperty(name = "X32", default = False)
+bpy.types.ShaderNodeTexImage.x64 = bpy.props.BoolProperty(name = "X64", default = False)
+bpy.types.ShaderNodeTexImage.y64 = bpy.props.BoolProperty(name = "Y64", default = False)
+bpy.types.ShaderNodeTexImage.x128 = bpy.props.BoolProperty(name = "X128", default = False)
+bpy.types.ShaderNodeTexImage.x256 = bpy.props.BoolProperty(name = "X256", default = False)
+bpy.types.ShaderNodeTexImage.x512 = bpy.props.BoolProperty(name = "X512", default = False)
+bpy.types.ShaderNodeTexImage.y512 = bpy.props.BoolProperty(name = "Y512", default = False)
+bpy.types.ShaderNodeTexImage.x1024 = bpy.props.BoolProperty(name = "X1024", default = False)
+bpy.types.ShaderNodeTexImage.y1024 = bpy.props.BoolProperty(name = "Y1024", default = False)
+bpy.types.ShaderNodeTexImage.x2048 = bpy.props.BoolProperty(name = "X2048", default = False)
+bpy.types.ShaderNodeTexImage.y2048 = bpy.props.BoolProperty(name = "Y2048", default = False)
+bpy.types.ShaderNodeTexImage.embeddedscriptrt = bpy.props.BoolProperty(name = "EMBEDDEDSCRIPTRT", default = False)
+bpy.types.ShaderNodeTexImage.unk19 = bpy.props.BoolProperty(name = "UNK19", default = False)
+bpy.types.ShaderNodeTexImage.unk20 = bpy.props.BoolProperty(name = "UNK20", default = False)
+bpy.types.ShaderNodeTexImage.unk21 = bpy.props.BoolProperty(name = "UNK21", default = False)
+bpy.types.ShaderNodeTexImage.flag_full = bpy.props.BoolProperty(name = "FLAG_FULL", default = False)
+bpy.types.ShaderNodeTexImage.maps_half = bpy.props.BoolProperty(name = "MAPS_HALF", default = False)
+bpy.types.ShaderNodeTexImage.unk24 = bpy.props.BoolProperty(name = "UNK24", default = False)
 
-bpy.types.Material.sollumtype = EnumProperty(name = "Sollum Type", items = [("Blender", "Blender", "Blender"), ("GTA", "GTA", "GTA")], default = "Blender")
+bpy.types.Material.sollumtype = bpy.props.EnumProperty(name = "Sollum Type", items = [("Blender", "Blender", "Blender"), ("GTA", "GTA", "GTA")], default = "Blender")
 
-class SollumzBoneFlag(PropertyGroup):
-    name: StringProperty(default="Unk0")
-
-    @property
-    def name(self):
-        return self.name
-
-class SollumzBoneProperties(PropertyGroup):
-    id: IntProperty(name = "BoneID", default = 0, min = 0)
-    flags: CollectionProperty(type = SollumzBoneFlag)
-    ul_flags_index: IntProperty(name = "UIListIndex", default = 0)
-
-    @property
-    def id(self):
-        return self.id
-
-    @property
-    def flags(self):
-        return self.flags
-
-    @property
-    def ul_flags_index(self):
-        return self.ul_flags_index
-
-classes = (
-    SollumzBoneFlag,
-    SollumzBoneProperties,
-)
+bpy.types.PoseBone.bone_id = bpy.props.IntProperty(name = "BoneID", default = 0, min = 0)
+bpy.types.PoseBone.sollumz_flags_index = bpy.props.IntProperty(name = "Index", default = 0)
 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
-    bpy.types.PoseBone.bone_properties = PointerProperty(type = SollumzBoneProperties)
+    pass
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    
-    del bpy.types.PoseBone.bone_properties
+    pass

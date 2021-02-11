@@ -1,8 +1,6 @@
 import bpy
-from bpy.types import PropertyGroup, Panel, UIList, Operator
-from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty
 
-class SollumzMainPanel(Panel):
+class SollumzMainPanel(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
     bl_space_type = 'PROPERTIES'
@@ -57,7 +55,7 @@ def param_name_to_title(pname):
     
     return title
 
-class SollumzMaterialPanel(Panel):
+class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
     bl_idname = "Sollumz_PT_MAT_PANEL"
     bl_space_type = 'PROPERTIES'
@@ -120,11 +118,8 @@ class SollumzMaterialPanel(Panel):
                 box.label(text = n.name + " Texture")
                 
                 row = box.row()
-                #print(n.texture_name)
-                row.prop(n, "texture_name")
                 if(n.image != None):
                     row.prop(n.image, "filepath")
-                    row.prop(n.image, "filepath", text= "Texture Path:")
                 row.prop(n, "embedded")
                 
                 row = box.row()
@@ -184,7 +179,7 @@ class SollumzMaterialPanel(Panel):
                 prevname = n.name 
             
         
-class SOLLUMZ_UL_BoneFlags(UIList):
+class SOLLUMZ_UL_BoneFlags(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
         custom_icon = 'FILE'
 
@@ -194,28 +189,28 @@ class SOLLUMZ_UL_BoneFlags(UIList):
             layout.alignment = 'CENTER' 
             layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
 
-class SOLLUMZ_OT_BoneFlags_NewItem(Operator): 
+class SOLLUMZ_OT_BoneFlags_NewItem(bpy.types.Operator): 
     bl_idname = "sollumz_flags.new_item" 
     bl_label = "Add a new item"
     def execute(self, context): 
-        context.active_pose_bone.bone_properties.flags.add() 
+        context.active_pose_bone.sollumz_flags.add() 
         return {'FINISHED'}
 
-class SOLLUMZ_OT_BoneFlags_DeleteItem(Operator): 
+class SOLLUMZ_OT_BoneFlags_DeleteItem(bpy.types.Operator): 
     bl_idname = "sollumz_flags.delete_item" 
     bl_label = "Deletes an item" 
     @classmethod 
     def poll(cls, context): 
-        return context.active_pose_bone.bone_properties.flags
+        return context.active_pose_bone.sollumz_flags
 
     def execute(self, context): 
-        list = context.active_pose_bone.bone_properties.flags
-        index = context.active_pose_bone.bone_properties.ul_flags_index
+        list = context.active_pose_bone.sollumz_flags
+        index = context.active_pose_bone.sollumz_flags_index
         list.remove(index) 
-        context.active_pose_bone.bone_properties.ul_flags_index = min(max(0, index - 1), len(list) - 1) 
+        context.active_pose_bone.sollumz_flags_index = min(max(0, index - 1), len(list) - 1) 
         return {'FINISHED'}
 
-class SollumzBonePanel(Panel):
+class SollumzBonePanel(bpy.types.Panel):
     bl_label = "Sollumz Bone Panel"
     bl_idname = "SOLLUMZ_PT_BONE_PANEL"
     bl_space_type = 'PROPERTIES'
@@ -231,18 +226,21 @@ class SollumzBonePanel(Panel):
             return
 
         layout.prop(bone, "name", text = "Bone Name")
-        layout.prop(bone.bone_properties, "id", text = "BoneID")
+        layout.prop(bone, "bone_id", text = "BoneID")
 
-        layout.label(text="Flags")
-        layout.template_list("SOLLUMZ_UL_BoneFlags", "Flags", bone.bone_properties, "flags", bone.bone_properties, "ul_flags_index")
+        layout.template_list("SOLLUMZ_UL_BoneFlags", "Flags", bone, "sollumz_flags", bone, "sollumz_flags_index")
         row = layout.row() 
-        row.operator('sollumz_flags.new_item', text='New')
-        row.operator('sollumz_flags.delete_item', text='Delete')
+        row.operator('sollumz_flags.new_item', text='NEW')
+        row.operator('sollumz_flags.delete_item', text='DELETE')
+
+class SollumzBoneFlag(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(default="Unk0")
 
 classes = (
     SollumzMaterialPanel,
     SollumzMainPanel,
     SollumzBonePanel,
+    SollumzBoneFlag,
     SOLLUMZ_UL_BoneFlags,
     SOLLUMZ_OT_BoneFlags_NewItem,
     SOLLUMZ_OT_BoneFlags_DeleteItem,
@@ -252,6 +250,10 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    bpy.types.PoseBone.sollumz_flags = bpy.props.CollectionProperty(type = SollumzBoneFlag)
+
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    
+    del bpy.types.PoseBone.sollumz_flags
