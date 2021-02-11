@@ -610,32 +610,38 @@ def read_bones(self, context, filepath, root):
         return None, None
 
     bones = []
+    bones_dict = {}
+    flags_list = []
+    flags_restricted = set(["LimitRotation"])
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
-    armature = context.object.data
+    armature = context.object
     bpy.ops.object.mode_set(mode='EDIT')
 
-    for bone_node in bones_node:
-        bone_name = bone_node.find("Name")
-        bone_parentindex = bone_node.find("ParentIndex")
-        bone_translation = bone_node.find("Translation")
-        bone_rotation = bone_node.find("Rotation")
+    for bones_item in bones_node:
+        name_item = bones_item.find("Name")
+        tag_item = bones_item.find("Tag")
+        parentindex_item = bones_item.find("ParentIndex")
+        flags_item = bones_item.find("Flags")
+        translation_item = bones_item.find("Translation")
+        rotation_item = bones_item.find("Rotation")
 
         quaternion = Quaternion()
-        quaternion.w = float(bone_rotation.attrib["w"])
-        quaternion.x = float(bone_rotation.attrib["x"])
-        quaternion.y = float(bone_rotation.attrib["y"])
-        quaternion.z = float(bone_rotation.attrib["z"])
+        quaternion.w = float(rotation_item.attrib["w"])
+        quaternion.x = float(rotation_item.attrib["x"])
+        quaternion.y = float(rotation_item.attrib["y"])
+        quaternion.z = float(rotation_item.attrib["z"])
         matrix = quaternion.to_matrix().to_4x4()
 
         trans = Vector()
-        trans.x = float(bone_translation.attrib["x"])
-        trans.y = float(bone_translation.attrib["y"])
-        trans.z = float(bone_translation.attrib["z"])
+        trans.x = float(translation_item.attrib["x"])
+        trans.y = float(translation_item.attrib["y"])
+        trans.z = float(translation_item.attrib["z"])
 
-        edit_bone = armature.edit_bones.new(bone_name.text)
-        if bone_parentindex.attrib["value"] != "-1":
-            edit_bone.parent = armature.edit_bones[int(bone_parentindex.attrib["value"])]
+        edit_bone = armature.data.edit_bones.new(name_item.text)
+        # edit_bone.bone_id = int(bone_tag.attrib["value"])
+        if parentindex_item.attrib["value"] != "-1":
+            edit_bone.parent = armature.data.edit_bones[int(parentindex_item.attrib["value"])]
 
         # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
         edit_bone.head = (0,0,0)
@@ -645,8 +651,26 @@ def read_bones(self, context, filepath, root):
         if edit_bone.parent != None:
             edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
+        if (flags_item != None and flags_item.text != None):
+            flags = flags_item.text.strip().split(", ")
+            flags_list.append(flags)
+
         # build a bones lookup table
-        bones.append(bone_name.text)
+        bones.append(name_item.text)
+        bones_dict[int(tag_item.attrib["value"])] = name_item.text
+
+    bpy.ops.object.mode_set(mode='POSE')
+
+    i = 0
+    for tag, name in bones_dict.items():
+        armature.pose.bones[name].bone_id = tag
+        for _flag in flags_list[i]:
+            if (_flag in flags_restricted):
+                continue
+
+            flag = armature.pose.bones[name].sollumz_flags.add()
+            flag.name = _flag
+        i = i + 1
 
     bpy.ops.object.mode_set(mode='OBJECT')
     return bones, drawable_name
