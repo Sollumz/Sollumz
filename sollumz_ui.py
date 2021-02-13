@@ -195,7 +195,7 @@ class SOLLUMZ_OT_BoneFlags_NewItem(Operator):
     bl_idname = "sollumz_flags.new_item" 
     bl_label = "Add a new item"
     def execute(self, context): 
-        context.active_pose_bone.sollumz_properties.flags.add() 
+        context.active_pose_bone.bone_properties.flags.add() 
         return {'FINISHED'}
 
 class SOLLUMZ_OT_BoneFlags_DeleteItem(Operator): 
@@ -203,13 +203,13 @@ class SOLLUMZ_OT_BoneFlags_DeleteItem(Operator):
     bl_label = "Deletes an item" 
     @classmethod 
     def poll(cls, context): 
-        return context.active_pose_bone.sollumz_properties.flags
+        return context.active_pose_bone.bone_properties.flags
 
     def execute(self, context): 
-        list = context.active_pose_bone.sollumz_properties.flags
-        index = context.active_pose_bone.sollumz_properties.ul_flags_index
+        list = context.active_pose_bone.bone_properties.flags
+        index = context.active_pose_bone.bone_properties.ul_flags_index
         list.remove(index) 
-        context.active_pose_bone.sollumz_properties.ul_flags_index = min(max(0, index - 1), len(list) - 1) 
+        context.active_pose_bone.bone_properties.ul_flags_index = min(max(0, index - 1), len(list) - 1) 
         return {'FINISHED'}
 
 class SollumzBonePanel(Panel):
@@ -228,10 +228,10 @@ class SollumzBonePanel(Panel):
             return
 
         layout.prop(bone, "name", text = "Bone Name")
-        layout.prop(bone.sollumz_properties, "id", text = "BoneID")
+        layout.prop(bone.bone_properties, "id", text = "BoneID")
 
         layout.label(text="Flags")
-        layout.template_list("SOLLUMZ_UL_BoneFlags", "Flags", bone.sollumz_properties, "flags", bone.sollumz_properties, "ul_flags_index")
+        layout.template_list("SOLLUMZ_UL_BoneFlags", "Flags", bone.bone_properties, "flags", bone.bone_properties, "ul_flags_index")
         row = layout.row() 
         row.operator('sollumz_flags.new_item', text='New')
         row.operator('sollumz_flags.delete_item', text='Delete')

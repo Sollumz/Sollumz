@@ -612,7 +612,7 @@ def read_bones(self, context, filepath, root):
     bones = []
     bones_dict = {}
     flags_list = []
-    flags_restricted = set(["LimitRotation"])
+    flags_restricted = set(["LimitRotation", "Unk0"])
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
     armature = context.object
@@ -670,12 +670,12 @@ def read_bones(self, context, filepath, root):
 
     i = 0
     for tag, name in bones_dict.items():
-        armature.pose.bones[name].sollumz_properties.id = tag
+        armature.pose.bones[name].bone_properties.id = tag
         for _flag in flags_list[i]:
             if (_flag in flags_restricted):
                 continue
 
-            flag = armature.pose.bones[name].sollumz_properties.flags.add()
+            flag = armature.pose.bones[name].bone_properties.flags.add()
             flag.name = _flag
         i = i + 1
 
