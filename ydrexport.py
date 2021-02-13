@@ -821,26 +821,27 @@ def write_tditem_node(exportpath, mat):
             if(node.embedded == False):
                 i_nodes.append(None)
             else:
-                if(node.image == None):
-                    print("Missing Embedded Texture, please supply texture!")
-                    return
+                if(node.image != None):
+                    
                 
-                foldername = "\\" + os.path.splitext(os.path.splitext(os.path.basename(exportpath))[0])[0]
-                
-                if(os.path.isdir(os.path.dirname(exportpath) + foldername) == False):
-                    os.mkdir(os.path.dirname(exportpath) + foldername)
-                
-                txtpath = node.image.filepath
-                dstpath = os.path.dirname(exportpath) + foldername + "\\" + os.path.basename(node.image.filepath)
-                
-                shutil.copyfile(txtpath, dstpath)
-                
+                    foldername = "\\" + os.path.splitext(os.path.splitext(os.path.basename(exportpath))[0])[0]
+                    
+                    if(os.path.isdir(os.path.dirname(exportpath) + foldername) == False):
+                        os.mkdir(os.path.dirname(exportpath) + foldername)
+                    
+                    txtpath = node.image.filepath
+                    dstpath = os.path.dirname(exportpath) + foldername + "\\" + os.path.basename(node.image.filepath)
+                    
+                    shutil.copyfile(txtpath, dstpath)
+                else:
+                    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
+
                 #node.image.save_render(os.path.dirname(exportpath) + "\\untitled\\"+ os.path.basename(node.image.filepath), scene=None)
                 
                 i_node = Element("Item")
                 
                 name_node = Element("Name")
-                name_node.text = node.texture_name
+                name_node.text = os.path.splitext(node.texture_name)[0]
                 i_node.append(name_node)
                 
                 unk32_node = Element("Unk32")
@@ -915,11 +916,16 @@ def write_tditem_node(exportpath, mat):
                 i_node.append(eflags_node)
                 
                 width_node = Element("Width")
-                width_node.set("value", str(node.image.size[0]))
+                
+                size = [0, 0]
+                if(node.image != None):
+                    size = node.image.size
+                    
+                width_node.set("value", str(size[0]))
                 i_node.append(width_node)
                 
                 height_node = Element("Height")
-                height_node.set("value", str(node.image.size[1]))
+                height_node.set("value", str(size[1]))
                 i_node.append(height_node)
                 
                 miplevels_node = Element("MipLevels")
@@ -931,7 +937,7 @@ def write_tditem_node(exportpath, mat):
                 i_node.append(format_node)
                 
                 filename_node = Element("FileName")
-                filename_node.text = os.path.basename(node.image.filepath)
+                filename_node.text = node.texture_name
                 i_node.append(filename_node)
                 
                 i_nodes.append(i_node)
