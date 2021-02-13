@@ -1,0 +1,4 @@
+TODO 
+
+make materials have a global variable for the shader name since it can be changed, add in the name in the 
+shader operators lookup table.... pain 

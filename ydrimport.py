@@ -157,6 +157,7 @@ def get_related_texture(texture_dictionary, img_name):
     return props 
 
 def create_material(filepath, td_node, shader):
+    
     params = shader.find("Parameters")
     
     filename = os.path.basename(filepath)[:-8]
@@ -181,6 +182,7 @@ def create_material(filepath, td_node, shader):
                     if(hasattr(texture_pos, 'text')):
                         texture_name = texture_pos.text + ".dds" 
                         texture_path = texture_dir + texture_name
+                        n.texture_name = texture_name
                         if(os.path.isfile(texture_dir + texture_name)):
                             img = bpy.data.images.load(texture_path, check_existing=True)
                             n.image = img 
@@ -569,9 +571,6 @@ def read_shader_info(self, context, filepath, shd_node, td_node):
 def read_drawable_models(self, context, filepath, root, name, shd_node, td_node, key, bones):
 
     shaders = read_shader_info(self, context, filepath, shd_node, td_node)
-
-    for shader in shaders: 
-        print(shader.name)
 
     dm_node = root.find("DrawableModels" + key)
     drawable_models = []

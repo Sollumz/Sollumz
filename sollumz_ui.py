@@ -118,8 +118,10 @@ class SollumzMaterialPanel(bpy.types.Panel):
                 box.label(text = n.name + " Texture")
                 
                 row = box.row()
+                #print(n.texture_name)
+                row.prop(n, "texture_name")
                 if(n.image != None):
-                    row.prop(n.image, "filepath")
+                    row.prop(n.image, "filepath", text= "Texture Path:")
                 row.prop(n, "embedded")
                 
                 row = box.row()
@@ -502,6 +504,7 @@ bpy.types.Object.shadertype = bpy.props.EnumProperty(
 
 #GIMS ONLY PROPERTY?
 #bpy.types.ShaderNodeTexImage.type = bpy.props.EnumProperty(name = "Type", items = [("Regular", "Regular", "Regular"), ("Cube", "Cube", "Cube"), ("Volume", "Volume", "Volume")])
+bpy.types.ShaderNodeTexImage.texture_name = bpy.props.StringProperty(name="Texture Name", default = "None")
 bpy.types.ShaderNodeTexImage.format_type = bpy.props.EnumProperty(name = "Pixel Format", items = [("DXT1", "DXT1", "DXT1"), ("DXT3", "DXT3", "DXT3"), ("DXT5", "DXT5", "DXT5"), ("ATI1", "ATI1", "ATI1"), ("ATI2", "ATI2", "ATI2"), ("BC7", "BC7", "BC7"), ("A1R5G5B5", "A1R5G5B5", "A1R5G5B5"), ("A1R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8", "A8", "A8"), ("L8", "L8", "L8")])
 bpy.types.ShaderNodeTexImage.usage = bpy.props.EnumProperty(name = "Usage", items = [("TINTPALETTE", "TINTPALETTE", "TINTPALETTE"), ("UNKNOWN", "UNKNOWN", "UNKNOWN"), ("DEFAULT", "DEFAULT", "DEFAULT"), ("TERRAIN", "TERRAIN", "TERRAIN"), ("CLOUDDENSITY", "CLOUDDENSITY", "CLOUDDENSITY"), ("CLOUDNORMAL", "CLOUDNORMAL", "CLOUDNORMAL"), ("CABLE", "CABLE", "CABLE"), ("FENCE", "FENCE", "FENCE"), ("ENV.EFFECT", "ENV.EFFECT", "ENV.EFFECT"), ("SCRIPT", "SCRIPT", "SCRIPT"), ("WATERFLOW", "WATERFLOW", "WATERFLOW"), ("WATERFOAM", "WATERFOAM", "WATERFOAM"), ("WATERFOG", "WATERFOG", "WATERFOG"), ("WATEROCEAN", "WATEROCEAN", "WATEROCEAN"), ("WATER", "WATER", "WATER"), ("FOAMOPACITY", "FOAMOPACITY", "FOAMOPACITY"), ("FOAM", "FOAM", "FOAM"), ("DIFFUSEDETAIL", "DIFFUSEDETAIL", "DIFFUSEDETAIL"), ("DIFFUSEDARK", "DIFFUSEDARK", "DIFFUSEDARK"), ("DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE"), ("DIFFUSE", "DIFFUSE", "DIFFUSE"), ("DETAIL", "DETAIL", "DETAIL"), ("NORMAL", "NORMAL", "NORMAL"), ("SPECULAR", "SPECULAR", "SPECULAR"), ("EMMISIVE", "EMMISIVE", "EMMISIVE"), ("TINTPALLETE", "TINTPALLETE", "TINTPALLETE"), ("SKIPPROCCESING", "SKIPPROCCESING", "SKIPPROCCESING"), ("DONTOPTIMIZE", "DONTOPTIMIZE", "DONTOPTIMIZE"), ("TEST", "TEST", "TEST"), ("COUNT", "COUNT", "COUNT")])
 bpy.types.ShaderNodeTexImage.extra_flags = bpy.props.IntProperty(name = "Extra Flags", default = 0)

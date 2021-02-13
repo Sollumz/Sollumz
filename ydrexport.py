@@ -723,8 +723,11 @@ def write_imageparam_node(node):
     iname = node.name 
     type = "Texture"
     tname = "None" #givemechecker? 
-    if(node.image != None):
-        tname = os.path.basename(node.image.filepath)
+    
+    #if(node.image != None):
+        #tname = os.path.basename(node.image.filepath)
+    tname = node.texture_name
+    
     
     i_node = Element("Item")
     i_node.set("name", iname)
@@ -798,9 +801,7 @@ def write_shader_node(mat):
 def write_shaders_node(materials):
     
     shaders_node = Element("Shaders")
-    
-    print(len(materials))
-    
+
     for mat in materials:
         shader_node = write_shader_node(mat)
         shaders_node.append(shader_node)
@@ -820,11 +821,17 @@ def write_tditem_node(exportpath, mat):
             if(node.embedded == False):
                 i_nodes.append(None)
             else:
-                if(os.path.isdir(os.path.dirname(exportpath) + "\\untitled") == False):
-                    os.mkdir(os.path.dirname(exportpath) + "\\untitled")
+                if(node.image == None):
+                    print("Missing Embedded Texture, please supply texture!")
+                    return
+                
+                foldername = "\\" + os.path.splitext(os.path.splitext(os.path.basename(exportpath))[0])[0]
+                
+                if(os.path.isdir(os.path.dirname(exportpath) + foldername) == False):
+                    os.mkdir(os.path.dirname(exportpath) + foldername)
                 
                 txtpath = node.image.filepath
-                dstpath = os.path.dirname(exportpath) + "\\untitled\\" + os.path.basename(node.image.filepath)
+                dstpath = os.path.dirname(exportpath) + foldername + "\\" + os.path.basename(node.image.filepath)
                 
                 shutil.copyfile(txtpath, dstpath)
                 
@@ -833,7 +840,7 @@ def write_tditem_node(exportpath, mat):
                 i_node = Element("Item")
                 
                 name_node = Element("Name")
-                name_node.text = os.path.splitext(os.path.basename(node.image.filepath))[0]
+                name_node.text = node.texture_name
                 i_node.append(name_node)
                 
                 unk32_node = Element("Unk32")
@@ -1060,6 +1067,22 @@ def get_sphere_bb(objs, bbminmax):
 
     return [bscen, bsrad]   
 
+#still presents a problem where in a scenario you had other ydrs you didnt want to export in the scene it would pick up 
+#them materials also 
+def get_used_materials():
+    
+    materials = []
+    
+    all_objects = bpy.data.objects
+    
+    for obj in all_objects:
+        if(obj.sollumtype == "Geometry"):
+            mat = obj.active_material
+            if(mat != None):
+                materials.append(mat)          
+
+    return materials
+
 def write_drawable(obj, filepath):
     
     children = get_obj_children(obj)
@@ -1108,7 +1131,7 @@ def write_drawable(obj, filepath):
     Unk9a_node.set("value", "0")
     
     geometrys = []
-    materials = bpy.data.materials
+    materials = get_used_materials()
     bounds = []
     
     for c in children:
