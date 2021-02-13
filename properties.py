@@ -388,10 +388,10 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.PoseBone.sollumz_properties = PointerProperty(type = SollumzBoneProperties)
+    bpy.types.PoseBone.bone_properties = PointerProperty(type = SollumzBoneProperties)
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
     
-    del bpy.types.PoseBone.sollumz_properties
+    del bpy.types.PoseBone.bone_properties
