@@ -120,8 +120,11 @@ class SollumzMaterialPanel(Panel):
                 box.label(text = n.name + " Texture")
                 
                 row = box.row()
+                #print(n.texture_name)
+                row.prop(n, "texture_name")
                 if(n.image != None):
                     row.prop(n.image, "filepath")
+                    row.prop(n.image, "filepath", text= "Texture Path:")
                 row.prop(n, "embedded")
                 
                 row = box.row()
