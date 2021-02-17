@@ -7,3 +7,5 @@ TODO
 -figure out a way to change texture name to match the newly selected texture in the ui
 
 -figure out the precision of the floats being represented as doubles in xml 
+
+-ybn importing needs a couple more things disc's and cloth's bound types imported, and cylinder polys imported 

@@ -187,7 +187,6 @@ collisionmats = {
 def create_with_index(collisionindex, context):
     
     matinfo = collisionmats[collisionindex] 
-    print(matinfo)
     
     mat = bpy.data.materials.new("COLLISION")
     mat.use_nodes = True

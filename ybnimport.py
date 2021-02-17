@@ -184,7 +184,7 @@ def get_closest_axis_point(axis, center, points):
 
 def create_poly_box(polyline, allverts, materials, geocenter):
     
-    #get box verts
+    materialindex = int(polyline.attrib["m"]) 
     idxs = []
     idxs.append(int(polyline.attrib["v1"]))
     idxs.append(int(polyline.attrib["v2"]))
@@ -251,10 +251,8 @@ def create_poly_box(polyline, allverts, materials, geocenter):
     bmesh.ops.create_cube(bm, size=1)
     bm.to_mesh(mesh)
     bm.free()
-
-    materialindex = int(polyline.attrib["m"]) - 1
-    mat = materials[materialindex]
     
+    mat = materials[materialindex]
     mesh.materials.append(mat)
 
     obj = bpy.data.objects.new("box", mesh)
@@ -273,33 +271,41 @@ def create_poly_box(polyline, allverts, materials, geocenter):
 
 def create_poly_triangle(triangleline, vertices, materials, geocenter):
     
+    materialindex = int(triangleline.attrib["m"])
     indicies = []
     indicies.append(int(triangleline.attrib["v1"]))
     indicies.append(int(triangleline.attrib["v2"]))
     indicies.append(int(triangleline.attrib["v3"]))
-    return indicies
+    #return indicies
     verts = []
     for i in indicies:
         verts.append(vertices[i])
-        
+    
+    result = []
+    
+    result.append(indicies)
+    result.append(verts)
+    result.append(materialindex)
+    
     #create mesh
-    mesh = bpy.data.meshes.new("Geometry")
-    mesh.from_pydata(verts, [], [[0, 1, 2]]) 
+    #mesh = bpy.data.meshes.new("Geometry")
+    #mesh.from_pydata(verts, [], [[0, 1, 2]]) 
     
-    materialindex = int(triangleline.attrib["m"]) - 1 
-    mat = materials[materialindex]
-    mesh.materials.append(mat)
     
-    obj = bpy.data.objects.new("Triangle", mesh)
-    obj.sollumtype = "Bound Triangle"
+    #mat = materials[materialindex]
+    #mesh.materials.append(mat)
+    
+    #obj = bpy.data.objects.new("Triangle", mesh)
+    #obj.sollumtype = "Bound Triangle"
 
-    return obj
+    #return obj
+    return result
     
 def create_poly_sphere(sphereline, vertices, materials, geocenter):
     
     radius = float(sphereline.attrib["radius"])
     location = vertices[int(sphereline.attrib["v"])]
-    materialindex = int(sphereline.attrib["m"]) - 1
+    materialindex = int(sphereline.attrib["m"])
     
     mesh = bpy.data.meshes.new("sphere")
     bm   = bmesh.new()
@@ -499,14 +505,24 @@ def read_geometrybvh_info(bounds):
     
     vertices = get_all_vertexs(bounds.find("Vertices"))  
     
-    indicies = []
-    tverts = vertices
+    tindicies = []
+    tverts = []
+    pmaterialidxs = []
     
     polys = []
     
     for p in bounds.find("Polygons"):
         if(p.tag == "Triangle"):
-            indicies.append(create_poly_triangle(p, vertices, materials, geolocation))
+            result = create_poly_triangle(p, vertices, materials, geolocation)
+            
+            tindicies.append(result[0])
+            #for ind in result[0]:
+            #    tindicies.append(ind)
+            for vert in result[1]:
+                tverts.append(vert)
+            pmaterialidxs.append(result[2])
+            
+            #indicies.append(create_poly_triangle(p, vertices, materials, geolocation))
             #way to slow for the plugin...
             t = None#create_triangle(p, vertices, materials)
             if( t!= None):
@@ -543,8 +559,16 @@ def read_geometrybvh_info(bounds):
                 #d.parent = bobj
                 bpy.context.scene.collection.objects.link(d)
     
+    #create triangle mesh
     mesh = bpy.data.meshes.new("Geometry")
-    mesh.from_pydata(vertices, [], indicies)
+    mesh.from_pydata(vertices, [], tindicies)
+    #assign triangle materials
+    for mat in materials:
+        mesh.materials.append(mat)
+    
+    for idx in range(len(mesh.polygons)):
+        mesh.polygons[idx].material_index = pmaterialidxs[idx]
+    
     bobj = bpy.data.objects.new("GeometryBVH", mesh)  
     bobj.location = geolocation
     for poly in polys:
@@ -588,7 +612,7 @@ def read_composite_info(name, bounds):
         if(childtype == "Cloth"):
             print()
             #children.append(read_cloth_info(child))
-
+    
     for child in children:
         bpy.context.scene.collection.objects.link(child)   
         child.parent = cobj 
@@ -655,8 +679,6 @@ def menu_func_import_ybn(self, context):
 def register():
     bpy.utils.register_class(ImportYbnXml)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_ybn)
-    print("registering ybnimport")
-
 
 def unregister():
     bpy.utils.unregister_class(ImportYbnXml)
