@@ -357,6 +357,10 @@ def read_box_info(bounds):
     bm.to_mesh(mesh)
     bm.free()
     
+    matindex = bounds.find("MaterialIndex").attrib["value"]
+    mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
+    mesh.materials.append(mat)
+    
     obj = bpy.data.objects.new("Box", mesh)
     
     locationn = bounds.find("CompositePosition")
@@ -371,7 +375,7 @@ def read_box_info(bounds):
     obj.location = location
     obj.rotation_euler = rotation.to_euler()
     obj.scale = scale
-    
+
     return obj
     
 def read_sphere_info(bounds):
@@ -382,6 +386,10 @@ def read_sphere_info(bounds):
     bmesh.ops.create_uvsphere(bm, u_segments = 16, v_segments = 16, diameter=.5)
     bm.to_mesh(mesh)
     bm.free()
+    
+    matindex = bounds.find("MaterialIndex").attrib["value"]
+    mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
+    mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Sphere", mesh)
     
@@ -411,6 +419,10 @@ def read_capsule_info(bounds):
     bm.to_mesh(mesh)
     bm.free()
     
+    matindex = bounds.find("MaterialIndex").attrib["value"]
+    mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
+    mesh.materials.append(mat)
+    
     locationn = bounds.find("CompositePosition")
     location = Vector((float(locationn.attrib["x"]), float(locationn.attrib["y"]), float(locationn.attrib["z"])))
     
@@ -435,6 +447,10 @@ def read_cylinder_info(bounds):
     bmesh.ops.rotate(bm, verts=bm.verts, cent=(1.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90.0), 3, 'X'))
     bm.to_mesh(mesh)
     bm.free()
+    
+    matindex = bounds.find("MaterialIndex").attrib["value"]
+    mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
+    mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Cylinder", mesh)
     
