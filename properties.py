@@ -358,26 +358,10 @@ bpy.types.Material.sollumtype = EnumProperty(name = "Sollum Type", items = [("Bl
 class SollumzBoneFlag(PropertyGroup):
     name: StringProperty(default="Unk0")
 
-    @property
-    def name(self):
-        return self.name
-
 class SollumzBoneProperties(PropertyGroup):
     id: IntProperty(name = "BoneID", default = 0, min = 0)
     flags: CollectionProperty(type = SollumzBoneFlag)
     ul_flags_index: IntProperty(name = "UIListIndex", default = 0)
-
-    @property
-    def id(self):
-        return self.id
-
-    @property
-    def flags(self):
-        return self.flags
-
-    @property
-    def ul_flags_index(self):
-        return self.ul_flags_index
 
 classes = (
     SollumzBoneFlag,
