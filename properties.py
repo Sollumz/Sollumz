@@ -360,7 +360,7 @@ class SollumzBoneFlag(PropertyGroup):
     name: StringProperty(default="Unk0")
 
 class SollumzBoneProperties(PropertyGroup):
-    id: IntProperty(name = "BoneID", default = 0, min = 0)
+    tag: IntProperty(name = "BoneTag", default = 0, min = 0)
     flags: CollectionProperty(type = SollumzBoneFlag)
     ul_flags_index: IntProperty(name = "UIListIndex", default = 0)
 

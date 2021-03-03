@@ -228,7 +228,7 @@ class SollumzBonePanel(Panel):
             return
 
         layout.prop(bone, "name", text = "Bone Name")
-        layout.prop(bone.bone_properties, "id", text = "BoneID")
+        layout.prop(bone.bone_properties, "tag", text = "BoneTag")
 
         layout.label(text="Flags")
         layout.template_list("SOLLUMZ_UL_BoneFlags", "Flags", bone.bone_properties, "flags", bone.bone_properties, "ul_flags_index")

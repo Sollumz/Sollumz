@@ -611,8 +611,9 @@ def read_bones(self, context, filepath, root):
         return None, None
 
     bones = []
-    bones_dict = {}
+    bones_tag = []
     flags_list = []
+    # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
     flags_restricted = set(["LimitRotation", "Unk0"])
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
@@ -665,20 +666,18 @@ def read_bones(self, context, filepath, root):
 
         # build a bones lookup table
         bones.append(name_item.text)
-        bones_dict[int(tag_item.attrib["value"])] = name_item.text
+        bones_tag.append(int(tag_item.attrib["value"]))
 
     bpy.ops.object.mode_set(mode='POSE')
 
-    i = 0
-    for tag, name in bones_dict.items():
-        armature.pose.bones[name].bone_properties.id = tag
+    for i in range(len(bones)):
+        armature.pose.bones[i].bone_properties.tag = bones_tag[i]
         for _flag in flags_list[i]:
             if (_flag in flags_restricted):
                 continue
 
-            flag = armature.pose.bones[name].bone_properties.flags.add()
+            flag = armature.pose.bones[i].bone_properties.flags.add()
             flag.name = _flag
-        i = i + 1
 
     bpy.ops.object.mode_set(mode='OBJECT')
     return bones, drawable_name
