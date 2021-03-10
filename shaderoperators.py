@@ -4783,9 +4783,9 @@ def get_list_of_child_nodes(node):
         
         
         if(isinstance(child, bpy.types.ShaderNodeBsdfPrincipled)):
-            print()
+            pass
         elif(isinstance(child, bpy.types.ShaderNodeOutputMaterial)):
-            print()
+            pass
         else:
             all_nodes.append(child)
         

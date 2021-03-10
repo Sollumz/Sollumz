@@ -17,8 +17,8 @@ from math import sqrt
 
 from . import collisionmatoperators
 
-def get_all_vertexs(vert_data):
-    vertexs = [] 
+def get_all_vertices(vert_data):
+    vertices = [] 
     
     for vert in vert_data.text.split(" " * 5):
         data = vert.split(",")
@@ -28,11 +28,11 @@ def get_all_vertexs(vert_data):
             y = float(data[1])
             z = float(data[2])
             
-            vertexs.append(Vector((x, y, z)))
+            vertices.append(Vector((x, y, z)))
         except:
             a = 0
     
-    return vertexs 
+    return vertices 
 
 def get_distance_of_verts(a, b):
     locx = b[0] - a[0]
@@ -503,7 +503,7 @@ def read_geometrybvh_info(bounds):
     
     bobj.location = geolocation
     
-    vertices = get_all_vertexs(bounds.find("Vertices"))  
+    vertices = get_all_vertices(bounds.find("Vertices"))  
     
     tindicies = []
     tverts = []
