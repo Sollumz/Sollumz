@@ -24,6 +24,9 @@ class SollumzMainPanel(bpy.types.Panel):
             subbox = mainbox.box() 
             subbox.props_enum(object, "sollumtype")
             
+            if(object.sollumtype == "Fragment"):
+                box = mainbox.box()                
+
             if(object.sollumtype == "Drawable"):
                 box = mainbox.box()
                 row = box.row()
@@ -95,6 +98,7 @@ class SollumzMaterialPanel(bpy.types.Panel):
         if(mat.sollumtype == "GTA"):
             
             box = layout.box()
+            shader_box = box
             box.prop(mat, "name", text = "Shader")
             
             #layout.label(text = "Parameters")
@@ -115,7 +119,7 @@ class SollumzMaterialPanel(bpy.types.Panel):
                 #else:
             
             for n in image_nodes:
-                box = box.box()
+                box = shader_box.box()
                 box.label(text = n.name + " Texture")
                 
                 row = box.row()
@@ -194,6 +198,7 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         default = "None",
                                                         items = [
                                                                     ("None", "None", "None"),
+                                                                    ("Fragment", "Fragment", "Fragment"),
                                                                     ("Drawable", "Drawable", "Drawable"), 
                                                                     ("Geometry", "Geometry", "Geometry"),
                                                                     ("Bound Composite", "Bound Composite", "Bound Composite"),
