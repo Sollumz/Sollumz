@@ -24,105 +24,33 @@ def get_obj_children(obj):
     return children 
 
 def order_vertex_list(list, vlayout):
+    layout_map = {
+        "Position": 0,
+        "Normal": 1,
+        "Colour0": 2,
+        "Colour1": 3,
+        "TexCoord0": 4,
+        "TexCoord1": 5,
+        "TexCoord2": 6,
+        "TexCoord3": 7,
+        "TexCoord4": 8,
+        "TexCoord5": 9,
+        "Tangent": 10,
+        "BlendWeights": 11,
+        "BlendIndices": 12,
+    }
 
-    posidx = -1
-    nrmidx = -1
-    clridx = -1
-    clr1idx = -1 
-    txcidx = -1
-    txc1idx = -1
-    txc2idx = -1
-    txc3idx = -1
-    txc4idx = -1
-    txc5idx = -1
-    tngidx = -1 
-    bldwidx = -1
-    bldiidx = -1
-    
-    pos = None 
-    nrm = None 
-    clr = None 
-    clr1 = None 
-    txc = None 
-    txc1 = None 
-    txc2 = None 
-    txc3 = None
-    txc4 = None 
-    txc5 = None 
-    tng = None 
-    bldw = None
-    bldi = None 
-    
+    newlist = []
+
     for i in range(len(vlayout)):
-        if(vlayout[i] == "Position"):
-            posidx = i
-            pos = list[0]
-        if(vlayout[i] == "Normal"):
-            nrmidx = i
-            nrm = list[1]
-        if(vlayout[i] == "Colour0"):
-            clridx = i
-            clr = list[2]
-        if(vlayout[i] == "Colour1"):
-            clridx = i
-            clr = list[3]
-        if(vlayout[i] == "TexCoord0"):
-            txcidx = i
-            txc = list[4]
-        if(vlayout[i] == "TexCoord1"):
-            txcidx = i
-            txc = list[5]
-        if(vlayout[i] == "TexCoord2"):
-            txcidx = i
-            txc = list[6]
-        if(vlayout[i] == "TexCoord3"):
-            txcidx = i
-            txc = list[7]
-        if(vlayout[i] == "TexCoord4"):
-            txcidx = i
-            txc = list[8]
-        if(vlayout[i] == "TexCoord5"):
-            txcidx = i
-            txc = list[9]
-        if(vlayout[i] == "Tangent"):
-            tngidx = i
-            tng = list[10]
-        if(vlayout[i] == "BlendWeights"):
-            tngidx = i
-            tng = list[11]
-        if(vlayout[i] == "BlendIndices"):
-            tngidx = i
-            tng = list[12]
+        layout_key = layout_map[vlayout[i]]
+        if layout_key != None:
+            newlist.append(list[layout_key])
+        else:
+            print('Incorrect layout element', vlayout[i])
 
-    maxnum = max([posidx, nrmidx, clridx, txcidx, tngidx]) + 1
-    newlist = [None] * maxnum
-    
-    if(posidx != -1):
-        newlist[posidx] = pos
-    if(nrmidx != -1):
-        newlist[nrmidx] = nrm
-    if(clridx != -1):
-        newlist[clridx] = clr
-    if(clr1idx != -1):
-        newlist[clr1idx] = clr1
-    if(txcidx != -1):
-        newlist[txcidx] = txc
-    if(txc1idx != -1):
-        newlist[txc1idx] = txc1
-    if(txc2idx != -1):
-        newlist[txc2idx] = txc2
-    if(txc3idx != -1):
-        newlist[txc3idx] = txc3
-    if(txc4idx != -1):
-        newlist[txc4idx] = txc4
-    if(txc5idx != -1):
-        newlist[txc5idx] = txc5
-    if(tngidx != -1):
-        newlist[tngidx] = tng
-    if(bldwidx != -1):
-        newlist[bldwidx] = bldw
-    if(bldiidx != -1):
-        newlist[bldiidx] = bldi
+    if (len(newlist) != len(vlayout)):
+        print('Incorrect layout parse')
 
     return newlist
 
@@ -151,6 +79,12 @@ def meshloopcolor_tostring(color):
     except:
         return None
     
+def process_uv(uv):
+    u = uv[0]
+    v = (uv[1] - 1.0) * -1
+
+    return [u, v]
+
 def get_vertex_string(mesh, vlayout):
     
     allstrings = []
@@ -161,38 +95,44 @@ def get_vertex_string(mesh, vlayout):
     normals = [None] * vertamount
     clr = [None] * vertamount
     clr1 = [None] * vertamount
-    texcoords = [None] * vertamount
-    texcoords1 = [None] * vertamount
-    texcoords2 = [None] * vertamount
-    texcoords3 = [None] * vertamount
-    texcoords4 = [None] * vertamount
-    texcoords5 = [None] * vertamount
+    texcoords = {}
     tangents = [None] * vertamount
     blendw = [None] * vertamount
     blendi = [None] * vertamount
-       
+
+    for i in range(6):
+        texcoords[i] = [None] * vertamount       
     
     mesh.calc_tangents()
-    uv_layer = mesh.uv_layers.active.data
-    
+
     clr0_layer = None 
     if(mesh.vertex_colors == None):
         clr0_layer = mesh.vertex_colors.new()
     else:
         clr0_layer = mesh.vertex_colors[0]
-        
+
+    for uv_layer_id in range(len(mesh.uv_layers)):
+        uv_layer = mesh.uv_layers[uv_layer_id].data
+        for poly in mesh.polygons:
+            for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+                vi = mesh.loops[loop_index].vertex_index
+                uv = process_uv(uv_layer[loop_index].uv)
+                u = uv[0]
+                v = uv[1]
+                fixed_uv = Vector((u, v))
+                texcoords[uv_layer_id][vi] = fixed_uv
+
+            
     for poly in mesh.polygons:
         for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
             vi = mesh.loops[loop_index].vertex_index
-            uv = uv_layer[loop_index].uv
-            u = uv[0]
-            v = uv[1] * -1
-            fixed_uv = Vector((u, v))
             vertices[vi] = mesh.vertices[vi].co
             normals[vi] = mesh.vertices[vi].normal
-            texcoords[vi] = fixed_uv   
             clr[vi] = clr0_layer.data[loop_index].color
             tangents[vi] = mesh.loops[loop_index].tangent 
+            #FIXME: write actual blend weights and indices
+            blendw[vi] = "0 0 255 0"
+            blendi[vi] = "0 0 0 0"
             
     for i in range(len(vertices)):
         vstring = ""
@@ -201,12 +141,12 @@ def get_vertex_string(mesh, vlayout):
         tlist.append(vector_tostring(normals[i])) 
         tlist.append(meshloopcolor_tostring(clr[i])) 
         tlist.append(meshloopcolor_tostring(clr1[i]))
-        tlist.append(vector_tostring(texcoords[i])) 
-        tlist.append(vector_tostring(texcoords1[i]))
-        tlist.append(vector_tostring(texcoords2[i]))
-        tlist.append(vector_tostring(texcoords3[i]))
-        tlist.append(vector_tostring(texcoords4[i]))
-        tlist.append(vector_tostring(texcoords5[i]))
+        tlist.append(vector_tostring(texcoords[0][i])) 
+        tlist.append(vector_tostring(texcoords[1][i]))
+        tlist.append(vector_tostring(texcoords[2][i]))
+        tlist.append(vector_tostring(texcoords[3][i]))
+        tlist.append(vector_tostring(texcoords[4][i]))
+        tlist.append(vector_tostring(texcoords[5][i]))
         tlist.append(vector_tostring(tangents[i]))
         tlist.append(blendw[i])
         tlist.append(blendi[i])
@@ -218,6 +158,8 @@ def get_vertex_string(mesh, vlayout):
             if(l != None):
                 vstring += l 
                 vstring += " " * 3
+            else:
+                print('Layoutlist elem is None!')
         vstring += "\n" 
         allstrings.append(vstring) 
             
@@ -252,335 +194,208 @@ def fix_shader_name(name, no_extension = False): #because blender renames everyt
 
 def get_vertex_layout(shader):
     shader = fix_shader_name(shader) 
-    if(shader == "normal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_detail.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "default_spec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "None"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissive_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "spec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissivestrong.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "cutout.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "default.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "spec_const.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "terrain_cb_w_4lyr.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
-    if(shader == "normal_detail.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_pxm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_pxm_spm.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
-    if(shader == "normal_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "glass_pv.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_decal_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "default_detail.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissivenight.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "decal_glue.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissive.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_decal_pxm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "normal_cutout.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_pxm.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
-    if(shader == "cpv_only.sps"):
-        return["Position", "Normal", "Colour0"]
-    if(shader == "emissive_speclum.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissivestrong_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "glass_env.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "mirror_decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "decal_normal_only.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "decal_dirt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_spec_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "mirror_default.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "glass_normal_spec_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "cable.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_spec_cutout.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "radar.sps"):
-        return["Position", "Colour0", "TexCoord0", "TexCoord1"]
-    if(shader == "spec_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "glass_pv_env.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "spec_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "water_fountain.sps"):
-        return["Position", "TexCoord0"]
-    if(shader == "water_riverfoam.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "cutout_fence.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "glass_spec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissivenight_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissivenight_geomnightonly.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "water_poolenv.sps"):
-        return["Position", "TexCoord0"]
-    if(shader == "normal_spec_detail_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "spec_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "mirror_crack.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "glass_emissive.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "glass.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_decal_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "decal_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_pxm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_spec_pxm.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
-    if(shader == "emissive_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "default_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "terrain_cb_w_4lyr_spec_int.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "cutout_fence_normal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_cutout_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_pxm_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "spec_decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "emissive_additive_uv_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "glass_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "decal_spec_only.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "emissive_additive_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_spec_emissive.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "decal_amb_only.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "trees.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    if(shader == "decal_diff_only_um.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Colour0", "Colour1", "TexCoord0"]
-    if(shader == "decal_shadow_only.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_spec_decal_detail.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "reflect_decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_spec_decal_pxm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
-    if(shader == "normal_spec_pxm_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "normal_spec_cutout_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "glass_emissive_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_diffspec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "decal_emissive_only.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_spec_reflect_decal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "emissive_alpha_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "gta_radar.sps"):
-        return["Position", "Colour0", "TexCoord0", "TexCoord1"]
-    if(shader == "gta_normal.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "gta_default.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "clouds_animsoft.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "clouds_altitude.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "clouds_fast.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "clouds_anim.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "clouds_soft.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "clouds_fog.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "default_um.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    if(shader == "trees_lod.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    if(shader == "trees_lod2.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord2", "TexCoord3"]
-    if(shader == "normal_spec_reflect_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "gta_reflect_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "gta_spec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "grass_fur.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "default_terrain_wet.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "terrain_cb_w_4lyr_spec.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "emissive_clip.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "grass_fur_mask.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "cutout_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "terrain_cb_w_4lyr_2tex_blend.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
-    if(shader == "cloth_normal_spec.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "distance_map.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "cloth_spec_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_2tex_blend_pxm.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_cm_pxm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
-    if(shader == "water_riverlod.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "weapon_normal_spec_tnt.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "trees_normal_spec.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_cm_pxm_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_2tex.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
-    if(shader == "normal_spec_cubemap_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_lod.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    if(shader == "terrain_cb_w_4lyr_2tex_blend_lod.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1"]
-    if(shader == "glass_displacement.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "trees_normal_diffspec.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "cutout_um.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    if(shader == "default_noedge.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "glass_breakable.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
-    if(shader == "trees_normal.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "normal_reflect_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_tnt_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "reflect_alpha.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "ptfx_model.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "decal_emissivenight_only.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_diffspec_detail.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_diffspec_detail_dpm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord4", "TexCoord5", "Tangent"]
-    if(shader == "normal_spec_detail_dpm_vertdecal_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord4", "TexCoord5", "Tangent"]
-    if(shader == "normal_spec_um.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "normal_um.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    if(shader == "normal_um_tnt.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
-    if(shader == "normal_spec_wrinkle.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "cutout_spec_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "hash_7D3957DA"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_spec_tnt_pxm.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    if(shader == "parallax_specmap.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "spec_reflect_alpha.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "normal_cubemap_reflect.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "vehicle_tire.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
-    if(shader == "weapon_normal_spec_detail_palette.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "weapon_normal_spec_detail_tnt.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "weapon_normal_spec_palette.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "weapon_emissivestrong_alpha.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "weapon_normal_spec_alpha.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "weapon_emissive_tnt.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "weapon_normal_spec_cutout_palette.sps"):
-        return["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "terrain_cb_w_4lyr_spec_int_pxm.sps"):
-        return["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
-    if(shader == "cloth_default.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0"]
-    if(shader == "cloth_spec_cutout.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    if(shader == "normal_decal_pxm_tnt.sps"):
-        return["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
 
+    PT = ["Position", "TexCoord0"]
+    PCTT = ["Position", "Colour0", "TexCoord0", "TexCoord1"]
+    PNC = ["Position", "Normal", "Colour0"]
+    PNCT = ["Position", "Normal", "Colour0", "TexCoord0"]
+    PNCCT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
+    PNCTX = ["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
+    PNCTTX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
+    PBBCCT = ["Position", "BlendWeights", "BlendIndices", "Colour0", "Colour1", "TexCoord0"]
+    PBBNCTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
+    PBBNCTTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
+    PBBNCTT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1"]
+    PBBNCT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0"]
+    PNCCTTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
+    PNCTTTX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
+    PNCCT3TX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
+    PNCTT3TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
+    PBBNCTTT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2"]
+    PNCCTT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1"]
+    PNCCTTTT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord2", "TexCoord3"]
+    PNCCTTTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
+    PNCT4T5TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord4", "TexCoord5", "Tangent"]
+    PNCTT4T5TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord4", "TexCoord5", "Tangent"]
+
+    if shader == "normal.sps": return PNCTX
+    elif shader == "normal_spec.sps": return PNCTX
+    elif shader == "normal_spec_detail.sps": return PNCTX
+    elif shader == "normal_alpha.sps": return PNCTX
+    elif shader == "default_spec.sps": return PNCT
+    elif shader == "None": return PNCT
+    elif shader == "emissive_alpha.sps": return PNCT
+    elif shader == "spec.sps": return PNCT
+    elif shader == "emissivestrong.sps": return PNCT
+    elif shader == "cutout.sps": return PNCT
+    elif shader == "default.sps": return PNCT
+    elif shader == "spec_const.sps": return PNCT
+    elif shader == "normal_decal.sps": return PNCTX
+    elif shader == "decal.sps": return PNCT
+    elif shader == "terrain_cb_w_4lyr.sps": return PNCCTX
+    elif shader == "terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps": return PNCCTTTX
+    elif shader == "normal_detail.sps": return  PNCTX
+    elif shader == "normal_spec_pxm.sps": return PNCTTTX
+    elif shader == "terrain_cb_w_4lyr_pxm_spm.sps": return PNCCT3TX
+    elif shader == "normal_tnt.sps": return  PNCTX
+    elif shader == "glass_pv.sps": return  PNCTX
+    elif shader == "normal_spec_decal.sps": return  PNCTX
+    elif shader == "normal_decal_tnt.sps": return  PNCTX
+    elif shader == "default_detail.sps": return  PNCT
+    elif shader == "emissivenight.sps": return  PNCT
+    elif shader == "decal_glue.sps": return  PNCT
+    elif shader == "alpha.sps": return  PNCT
+    elif shader == "emissive.sps": return  PNCT
+    elif shader == "normal_decal_pxm.sps": return PNCTTTX
+    elif shader == "normal_cutout.sps": return  PNCTX
+    elif shader == "normal_spec_tnt.sps": return  PNCTX
+    elif shader == "terrain_cb_w_4lyr_pxm.sps": return PNCCT3TX
+    elif shader == "cpv_only.sps": return PNC
+    elif shader == "emissive_speclum.sps": return  PNCT
+    elif shader == "emissivestrong_alpha.sps": return  PNCT
+    elif shader == "glass_env.sps": return  PNCTX
+    elif shader == "mirror_decal.sps": return  PNCTX
+    elif shader == "decal_normal_only.sps": return  PNCTX
+    elif shader == "decal_dirt.sps": return  PNCT
+    elif shader == "normal_spec_alpha.sps": return  PNCTX
+    elif shader == "mirror_default.sps": return  PNCTX
+    elif shader == "glass_normal_spec_reflect.sps": return  PNCTX
+    elif shader == "cable.sps": return  PNCT
+    elif shader == "normal_spec_cutout.sps": return  PNCTX
+    elif shader == "normal_spec_reflect.sps": return  PNCTX
+    elif shader == "radar.sps": return PCTT
+    elif shader == "spec_tnt.sps": return  PNCT
+    elif shader == "glass_pv_env.sps": return  PNCTX
+    elif shader == "spec_reflect.sps": return  PNCT
+    elif shader == "water_fountain.sps": return PT
+    elif shader == "water_riverfoam.sps": return  PNCTX
+    elif shader == "cutout_fence.sps": return  PNCT
+    elif shader == "glass_spec.sps": return  PNCT
+    elif shader == "emissivenight_alpha.sps": return  PNCT
+    elif shader == "emissivenight_geomnightonly.sps": return  PNCT
+    elif shader == "water_poolenv.sps": return PT
+    elif shader == "normal_spec_detail_tnt.sps": return  PNCTX
+    elif shader == "spec_alpha.sps": return  PNCT
+    elif shader == "mirror_crack.sps": return  PNCTX
+    elif shader == "glass_emissive.sps": return  PNCTX
+    elif shader == "glass.sps": return  PNCTX
+    elif shader == "normal_spec_decal_tnt.sps": return  PNCTX
+    elif shader == "decal_tnt.sps": return  PNCT
+    elif shader == "normal_pxm.sps": return PNCTTTX
+    elif shader == "terrain_cb_w_4lyr_spec_pxm.sps": return PNCCT3TX
+    elif shader == "emissive_tnt.sps": return  PNCT
+    elif shader == "default_tnt.sps": return  PNCT
+    elif shader == "terrain_cb_w_4lyr_spec_int.sps": return  PNCCTX
+    elif shader == "cutout_fence_normal.sps": return  PNCTX
+    elif shader == "normal_cutout_tnt.sps": return  PNCTX
+    elif shader == "normal_pxm_tnt.sps": return PNCTTTX
+    elif shader == "reflect.sps": return  PNCT
+    elif shader == "spec_decal.sps": return  PNCT
+    elif shader == "normal_reflect.sps": return  PNCTX
+    elif shader == "emissive_additive_uv_alpha.sps": return  PNCT
+    elif shader == "glass_reflect.sps": return  PNCT
+    elif shader == "decal_spec_only.sps": return  PNCT
+    elif shader == "emissive_additive_alpha.sps": return  PNCT
+    elif shader == "normal_spec_emissive.sps": return  PNCTX
+    elif shader == "decal_amb_only.sps": return  PNCT
+    elif shader == "trees.sps": return PNCCT
+    elif shader == "decal_diff_only_um.sps": return PBBCCT
+    elif shader == "decal_shadow_only.sps": return  PNCTX
+    elif shader == "normal_spec_decal_detail.sps": return  PNCTX
+    elif shader == "reflect_decal.sps": return  PNCT
+    elif shader == "normal_spec_decal_pxm.sps": return PNCTTX
+    elif shader == "normal_spec_pxm_tnt.sps": return PNCTTTX
+    elif shader == "normal_spec_cutout_tnt.sps": return  PNCTX
+    elif shader == "glass_emissive_alpha.sps": return  PNCTX
+    elif shader == "normal_diffspec.sps": return  PNCTX
+    elif shader == "decal_emissive_only.sps": return  PNCT
+    elif shader == "normal_spec_reflect_decal.sps": return  PNCTX
+    elif shader == "emissive_alpha_tnt.sps": return  PNCT
+    elif shader == "gta_radar.sps": return PCTT
+    elif shader == "gta_normal.sps": return  PNCTX
+    elif shader == "gta_default.sps": return  PNCT
+    elif shader == "clouds_animsoft.sps": return  PNCTX
+    elif shader == "clouds_altitude.sps": return  PNCTX
+    elif shader == "clouds_fast.sps": return  PNCTX
+    elif shader == "clouds_anim.sps": return  PNCTX
+    elif shader == "clouds_soft.sps": return  PNCTX
+    elif shader == "clouds_fog.sps": return  PNCTX
+    elif shader == "default_um.sps": return PNCCT
+    elif shader == "trees_lod.sps": return PNCCT
+    elif shader == "trees_lod2.sps": return PNCCTTTT
+    elif shader == "normal_spec_reflect_alpha.sps": return  PNCTX
+    elif shader == "gta_reflect_alpha.sps": return  PNCT
+    elif shader == "gta_spec.sps": return  PNCT
+    elif shader == "grass_fur.sps": return  PNCTX
+    elif shader == "default_terrain_wet.sps": return  PNCT
+    elif shader == "terrain_cb_w_4lyr_spec.sps": return  PNCCTX
+    elif shader == "emissive_clip.sps": return  PNCT
+    elif shader == "grass_fur_mask.sps": return PNCTTTX
+    elif shader == "cutout_tnt.sps": return  PNCT
+    elif shader == "terrain_cb_w_4lyr_2tex_blend.sps": return PNCCTTX
+    elif shader == "cloth_normal_spec.sps": return  PNCTX
+    elif shader == "distance_map.sps": return  PNCTX
+    elif shader == "cloth_spec_alpha.sps": return  PNCTX
+    elif shader == "terrain_cb_w_4lyr_2tex_blend_pxm.sps": return PNCCTTTX
+    elif shader == "terrain_cb_w_4lyr_cm_pxm.sps": return PNCTT3TX
+    elif shader == "water_riverlod.sps": return  PNCT
+    elif shader == "weapon_normal_spec_tnt.sps": return PBBNCTX
+    elif shader == "trees_normal_spec.sps": return  PNCCTX
+    elif shader == "terrain_cb_w_4lyr_cm_pxm_tnt.sps": return PNCTT3TX
+    elif shader == "terrain_cb_w_4lyr_2tex.sps": return PNCCTTX
+    elif shader == "normal_spec_cubemap_reflect.sps": return  PNCTX
+    elif shader == "terrain_cb_w_4lyr_lod.sps": return PNCCT
+    elif shader == "terrain_cb_w_4lyr_2tex_blend_lod.sps": return PNCCTT
+    elif shader == "glass_displacement.sps": return  PNCTX
+    elif shader == "trees_normal_diffspec.sps": return  PNCCTX
+    elif shader == "cutout_um.sps": return PNCCT
+    elif shader == "default_noedge.sps": return  PNCT
+    elif shader == "glass_breakable.sps": return PNCTTX
+    elif shader == "trees_normal.sps": return  PNCCTX
+    elif shader == "normal_reflect_alpha.sps": return  PNCTX
+    elif shader == "normal_tnt_alpha.sps": return  PNCTX
+    elif shader == "reflect_alpha.sps": return PBBNCT
+    elif shader == "ptfx_model.sps": return  PNCT
+    elif shader == "decal_emissivenight_only.sps": return  PNCT
+    elif shader == "normal_diffspec_detail.sps": return  PNCTX
+    elif shader == "normal_diffspec_detail_dpm.sps": return PNCT4T5TX
+    elif shader == "normal_spec_detail_dpm_vertdecal_tnt.sps": return PNCTT4T5TX
+    elif shader == "normal_spec_um.sps": return  PNCCTX
+    elif shader == "normal_um.sps": return  PNCCTX
+    elif shader == "normal_um_tnt.sps": return PBBNCTTX
+    elif shader == "normal_spec_wrinkle.sps": return PBBNCTX
+    elif shader == "cutout_spec_tnt.sps": return  PNCT
+    elif shader == "hash_7D3957DA": return  PNCT
+    elif shader == "normal_spec_tnt_pxm.sps": return PNCTTTX
+    elif shader == "parallax_specmap.sps": return  PNCTX
+    elif shader == "spec_reflect_alpha.sps": return  PNCT
+    elif shader == "normal_cubemap_reflect.sps": return  PNCTX
+    elif shader == "vehicle_tire.sps": return PNCTTX
+    elif shader == "weapon_normal_spec_detail_palette.sps": return PBBNCTX
+    elif shader == "weapon_normal_spec_detail_tnt.sps": return PBBNCTX
+    elif shader == "weapon_normal_spec_palette.sps": return PBBNCTX
+    elif shader == "weapon_emissivestrong_alpha.sps": return PBBNCT
+    elif shader == "weapon_normal_spec_alpha.sps": return PBBNCTX
+    elif shader == "weapon_emissive_tnt.sps": return PBBNCT
+    elif shader == "weapon_normal_spec_cutout_palette.sps": return PBBNCTX
+    elif shader == "terrain_cb_w_4lyr_spec_int_pxm.sps": return PNCCT3TX
+    elif shader == "cloth_default.sps": return  PNCT
+    elif shader == "cloth_spec_cutout.sps": return  PNCTX
+    elif shader == "normal_decal_pxm_tnt.sps": return PNCTTTX
+    elif shader == "vehicle_lightsemissive.sps": return PBBNCTT
+    elif shader == "vehicle_interior2.sps": return PBBNCT
+    elif shader == "vehicle_badges.sps": return PBBNCTTX
+    elif shader == "vehicle_mesh.sps": return PBBNCTTX
+    elif shader == "vehicle_interior.sps": return PBBNCTX
+    elif shader == "vehicle_licenseplate.sps": return PBBNCTTX
+    elif shader == "vehicle_vehglass.sps": return PBBNCTTT
+    elif shader == "vehicle_paint3.sps": return PBBNCTT
+    elif shader == "vehicle_dash_emissive.sps": return PBBNCT
+    elif shader == "vehicle_decal2.sps": return PBBNCTX
+    elif shader == "vehicle_detail2.sps": return PBBNCTT
+    elif shader == "vehicle_vehglass_inner.sps": return PBBNCTT
+
+    print('Unknown shader: ', shader)
 
 def write_model_node(objs, materials):
     
@@ -634,7 +449,8 @@ def write_model_node(objs, materials):
         
         if(shader.sollumtype != "GTA"):
             return
-        vlayout = get_vertex_layout(shader.name)        
+        print('Processing shader', shader_index, shader.name)
+        vlayout = get_vertex_layout(shader.name)
 
         data2_node = Element("Data2")
         vertex_str = get_vertex_string(model, vlayout)
@@ -726,21 +542,21 @@ def write_imageparam_node(node):
     
     #if(node.image != None):
         #tname = os.path.basename(node.image.filepath)
-    tname = node.texture_name
-    
+    tname = node.texture_name[:-4] #delete file extension
     
     i_node = Element("Item")
     i_node.set("name", iname)
     i_node.set("type", type)
+
+    if (tname != None and len(tname) > 0):
+        name_node = Element("Name")
+        name_node.text = tname
     
-    name_node = Element("Name")
-    name_node.text = tname[:-4] #delete file extension
+        unk32_node = Element("Unk32")
+        unk32_node.set("value", "128")
     
-    unk32_node = Element("Unk32")    
-    unk32_node.set("value", "128")
-    
-    i_node.append(name_node)
-    i_node.append(unk32_node)
+        i_node.append(name_node)
+        i_node.append(unk32_node)
     
     return i_node 
 
@@ -988,6 +804,97 @@ def write_shader_group_node(materials, filepath):
     
     return shaderg_node
 
+def write_skeleton_node(obj):
+    skeleton_node = Element("Skeleton")
+    bones_node = Element("Bones")
+    skeleton_node.append(bones_node)
+
+    bones = obj.pose.bones
+
+    ind = 0
+    for pbone in bones:
+        bone = pbone.bone
+        bone["BONE_INDEX"] = ind
+        ind = ind + 1
+
+    for pbone in bones:
+        bone = pbone.bone
+
+        bone_node = Element("Item")
+
+        bone_node_name = Element("Name")
+        bone_node_name.text = bone.name
+        bone_node.append(bone_node_name)
+
+        bone_node_tag = Element("Tag")
+
+        if "BONE_TAG" in bone:
+            bone_node_tag.set("value", str(bone["BONE_TAG"]))
+
+        bone_node.append(bone_node_tag)
+
+        bone_node_tag = Element("Index")
+        bone_node_tag.set("value", str(bone["BONE_INDEX"]))
+        bone_node.append(bone_node_tag)
+
+        bone_node_parent_index = Element("ParentIndex")
+        bone_node_sibling_index = Element("SiblingIndex")
+
+        if bone.parent != None:
+            bone_node_parent_index.set("value", str(bone.parent["BONE_INDEX"]))
+
+            sibling = bone.parent.children[0]["BONE_INDEX"]
+            if sibling == bone["BONE_INDEX"]:
+                if len(bone.parent.children) > 1:
+                    sibling = bone.parent.children[1]["BONE_INDEX"]
+                else:
+                    sibling = -1
+
+            bone_node_sibling_index.set("value", str(sibling))
+        else:
+            bone_node_parent_index.set("value", "-1")
+            bone_node_sibling_index.set("value", "-1")
+
+        bone_node.append(bone_node_parent_index)
+        bone_node.append(bone_node_sibling_index)
+
+        bone_node_flags = Element("Flags")
+        bone_node_flags.text = ""
+        bone_node.append(bone_node_flags)
+
+        trans = bone.head
+        bone_node_translation = Element("Translation")
+        bone_node_translation.set("x", str(trans[0]))
+        bone_node_translation.set("y", str(trans[1]))
+        bone_node_translation.set("z", str(trans[2]))
+        bone_node.append(bone_node_translation)
+
+        #quat = bone.rotation_euler.to_quaternion()
+        quat = bone.matrix_local.to_quaternion()
+        bone_node_rotation = Element("Rotation")
+        bone_node_rotation.set("x", str(quat[1]))
+        bone_node_rotation.set("y", str(quat[2]))
+        bone_node_rotation.set("z", str(quat[3]))
+        bone_node_rotation.set("w", str(quat[0]))
+        bone_node.append(bone_node_rotation)
+
+        bone_node_scale = Element("Scale")
+        bone_node_scale.set("x", str(pbone.scale[0]))
+        bone_node_scale.set("y", str(pbone.scale[1]))
+        bone_node_scale.set("z", str(pbone.scale[2]))
+        bone_node.append(bone_node_scale)
+
+        bone_node_transform_unk = Element("TransformUnk")
+        bone_node_transform_unk.set("x", "0")
+        bone_node_transform_unk.set("y", "4")
+        bone_node_transform_unk.set("z", "-3")
+        bone_node_transform_unk.set("w", "0")
+        bone_node.append(bone_node_transform_unk)
+
+        bones_node.append(bone_node)
+
+    return skeleton_node
+
 def get_bbs(objs):
     bounding_boxs = []
     for obj in objs:
@@ -1145,6 +1052,7 @@ def write_drawable(obj, filepath):
             geometrys.append(c)
             
     shadergroup_node = write_shader_group_node(materials, filepath)
+    skeleton_node = write_skeleton_node(obj)
     drawablemodels_node = write_drawablemodels_node(geometrys, materials)
     bounds_node = None
     
@@ -1163,6 +1071,7 @@ def write_drawable(obj, filepath):
     drawable_node.append(flagsvl_node)
     drawable_node.append(Unk9a_node)
     drawable_node.append(shadergroup_node)
+    drawable_node.append(skeleton_node)
     for dm_node in drawablemodels_node:
         drawable_node.append(dm_node)
     if(bounds_node != None):
@@ -1176,16 +1085,18 @@ def write_drawable(obj, filepath):
 def write_ydr_xml(context, filepath):
     
     root = None
-    
-    if(len(bpy.data.objects) == 0):
+
+    objects = bpy.context.scene.collection.objects
+
+    if(len(objects) == 0):
         return "No objects in scene for Sollumz export"
     
     #select the object first?
-    for obj in bpy.data.objects:
+    for obj in objects:
         if(obj.sollumtype == "Drawable"):
             root = write_drawable(obj, filepath)
             try: 
-                print("worked")
+                print("*** Complete ***")
             except:
                 print(str(Exception))
                 return str(Exception)

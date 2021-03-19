@@ -1,7 +1,7 @@
 import bpy
 import os
 import xml.etree.ElementTree as ET
-from mathutils import Vector, Quaternion, Matrix
+from mathutils import Vector, Quaternion
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
@@ -157,6 +157,7 @@ def get_related_texture(texture_dictionary, img_name):
     return props 
 
 def create_material(filepath, td_node, shader):
+    
     params = shader.find("Parameters")
     
     filename = os.path.basename(filepath)[:-8]
@@ -181,6 +182,7 @@ def create_material(filepath, td_node, shader):
                     if(hasattr(texture_pos, 'text')):
                         texture_name = texture_pos.text + ".dds" 
                         texture_path = texture_dir + texture_name
+                        n.texture_name = texture_name
                         if(os.path.isfile(texture_dir + texture_name)):
                             img = bpy.data.images.load(texture_path, check_existing=True)
                             n.image = img 
@@ -243,8 +245,14 @@ def create_material(filepath, td_node, shader):
     
     return mat
 
-def create_model(self, context, index_buffer, vertexs, filepath, name, bones):
-    
+def process_uv(uv):
+    u = uv[0]
+    v = (uv[1] * -1) + 1.0
+
+    return [u, v]
+
+def create_model(self, context, index_buffer, vertices, filepath, name, bones):
+
     verts = []
     faces = index_buffer
     normals = []
@@ -260,7 +268,7 @@ def create_model(self, context, index_buffer, vertexs, filepath, name, bones):
     blendweights = [] 
     blendindices = [] 
 
-    for v in vertexs:
+    for v in vertices:
         if(v.Position != None):
             verts.append(Vector((v.Position[0], v.Position[1], v.Position[2])))
         else:
@@ -311,40 +319,37 @@ def create_model(self, context, index_buffer, vertexs, filepath, name, bones):
         uv0 = mesh.uv_layers.new()
         uv_layer0 = mesh.uv_layers[0]
         for i in range(len(uv_layer0.data)):
-            uv = texcoords[mesh.loops[i].vertex_index]
-            u = uv[0]
-            v = uv[1] * -1
-            uv = [u, v]
+            uv = process_uv(texcoords[mesh.loops[i].vertex_index])
             uv_layer0.data[i].uv = uv 
     if(texcoords1):
         uv1 = mesh.uv_layers.new()
         uv_layer1 = mesh.uv_layers[1]
         for i in range(len(uv_layer1.data)):
-            uv = texcoords[mesh.loops[i].vertex_index]
+            uv = process_uv(texcoords1[mesh.loops[i].vertex_index])
             uv_layer1.data[i].uv = uv 
     if(texcoords2):
         uv2 = mesh.uv_layers.new()
         uv_layer2 = mesh.uv_layers[2]
         for i in range(len(uv_layer2.data)):
-            uv = texcoords[mesh.loops[i].vertex_index]
+            uv = process_uv(texcoords2[mesh.loops[i].vertex_index])
             uv_layer2.data[i].uv = uv 
     if(texcoords3):
         uv3 = mesh.uv_layers.new()
         uv_layer3 = mesh.uv_layers[3]
         for i in range(len(uv_layer3.data)):
-            uv = texcoords[mesh.loops[i].vertex_index]
+            uv = process_uv(texcoords3[mesh.loops[i].vertex_index])
             uv_layer3.data[i].uv = uv 
     if(texcoords4):
         uv4 = mesh.uv_layers.new()
         uv_layer4 = mesh.uv_layers[4]
         for i in range(len(uv_layer4.data)):
-            uv = texcoords[mesh.loops[i].vertex_index]
+            uv = process_uv(texcoords4[mesh.loops[i].vertex_index])
             uv_layer4.data[i].uv = uv 
     if(texcoords5):
         uv5 = mesh.uv_layers.new()
         uv_layer5 = mesh.uv_layers[5]
         for i in range(len(uv_layer5.data)):
-            uv = texcoords[mesh.loops[i].vertex_index]
+            uv = process_uv(texcoords5[mesh.loops[i].vertex_index])
             uv_layer5.data[i].uv = uv 
     
     #set vertex colors 
@@ -387,140 +392,67 @@ def create_model(self, context, index_buffer, vertexs, filepath, name, bones):
     return obj
     #context.collection.objects.link(obj)
 
-def get_vertexs_from_data(vb):
-    #set to -1 cause I can tell if they have not been found
-    pos_idx = -1
-    tc_idx = -1
-    tc1_idx = -1
-    tc2_idx = -1
-    tc3_idx = -1
-    tc4_idx = -1
-    tc5_idx = -1
-    color_idx = -1
-    color1_idx = -1
-    normal_idx = -1
-    tangents_idx = -1
-    blendw_idx = -1
-    blendi_idx = -1
-
+def get_vertices_from_data(layout, v_buffer):
     #find the position of the variable in the vertex layout
-    layout = vb.find("Layout")
+    layers = []
     for idx in range(len(layout)):
-        if(layout[idx].tag == "Position"):
-            pos_idx = idx
-        if(layout[idx].tag == "Normal"):
-            normal_idx = idx
-        if(layout[idx].tag == "Colour0"):
-            color_idx = idx
-        if(layout[idx].tag == "Colour1"):
-            color1_idx = idx
-        if(layout[idx].tag == "TexCoord0"):
-            tc_idx = idx
-        if(layout[idx].tag == "TexCoord1"):
-            tc1_idx = idx
-        if(layout[idx].tag == "TexCoord2"):
-            tc2_idx = idx
-        if(layout[idx].tag == "TexCoord3"):
-            tc3_idx = idx
-        if(layout[idx].tag == "TexCoord4"):
-            tc4_idx = idx
-        if(layout[idx].tag == "TexCoord5"):
-            tc5_idx = idx
-        if(layout[idx].tag == "Tangent"):
-            tangents_idx = idx
-        if(layout[idx].tag == "BlendWeights"):
-            blendw_idx = idx
-        if(layout[idx].tag == "BlendIndices"):
-            blendi_idx = idx
+        layers.append(layout[idx].tag)
         
-    v_buffer = vb[2].text.strip().replace("\n", "").split(" " * 7)
-
-    vertexs = []
+    vertices = []
     for v in v_buffer:
-        n = v.split(" " * 3) #each vert value is split by 3 spaces
-        position = []
-        if(pos_idx != -1):
-            for num in n[pos_idx].split():
-                position.append(float(num))
-        else:
-            position = None
-        texcoords = []
-        if(tc_idx != -1):
-            for num in n[tc_idx].split():
-                texcoords.append(float(num))
-        else:
-            texcoords = None
-        texcoords1 = []
-        if(tc_idx != -1):
-            for num in n[tc1_idx].split():
-                texcoords1.append(float(num))
-        else:
-            texcoords = None
-        texcoords2 = []
-        if(tc_idx != -1):
-            for num in n[tc2_idx].split():
-                texcoords2.append(float(num))
-        else:
-            texcoords2 = None
-        texcoords3 = []
-        if(tc_idx != -1):
-            for num in n[tc3_idx].split():
-                texcoords3.append(float(num))
-        else:
-            texcoords3 = None
-        texcoords4 = []
-        if(tc_idx != -1):
-            for num in n[tc4_idx].split():
-                texcoords4.append(float(num))
-        else:
-            texcoords4 = None
-        texcoords5 = []
-        if(tc_idx != -1):
-            for num in n[tc5_idx].split():
-                texcoords5.append(float(num))
-        else:
-            texcoords5 = None
-        color = []
-        if(color_idx != -1):
-            for num in n[color_idx].split():
-                num = round(float(num) / 255)
-                color.append(num)
-        else:
-            color = None
-        color1 = []
-        if(color1_idx != -1):
-            for num in n[color1_idx].split():
-                num = round(float(num) / 255)
-                color1.append(num)
-        else: 
-            color1 = None
-        normal = []
-        if(normal_idx != -1):
-            for num in n[normal_idx].split():
-                normal.append(float(num))
-        tangents = []
-        if(tangents_idx != -1):
-            for num in n[tangents_idx].split():
-                tangents.append(float(num))
-        else:
-            tangents = None
-        blendw = []
-        if(blendw_idx != -1):
-            for num in n[blendw_idx].split():
-                num = float(num) / 255
-                blendw.append(num)
-        else:
-            blendw = None
-        blendi = []
-        if(blendi_idx != -1):
-            for num in n[blendi_idx].split():
-                blendi.append(int(num))
-        else:
-            blendi = None 
-            
-        vertexs.append(v_vertex(position, texcoords, texcoords1, texcoords2, texcoords3, texcoords4, texcoords5, color, color1, normal, tangents, blendw, blendi))
+        position = None
+        texcoords = None
+        texcoords1 = None
+        texcoords2 = None
+        texcoords3 = None
+        texcoords4 = None
+        texcoords5 = None
+        color = None
+        color1 = None
+        normal = None
+        tangents = None
+        blendw = None
+        blendi = None
 
-    return vertexs
+        tokens = v.split(" " * 3) #each vert value is split by 3 spaces
+
+        if len(tokens) != len(layers):
+            print("Incorrect layout data!")
+
+        for i in range(len(tokens)):
+            layer = layers[i]
+            token = tokens[i]
+
+            if layer == "Position":
+                position = list(map(lambda x: float(x), token.split()))
+            elif layer == "Normal":
+                normal = list(map(lambda x: float(x), token.split()))
+            elif layer == "Colour0":
+                color = list(map(lambda x: float(x) / 255, token.split()))
+            elif layer == "Colour1":
+                color1 = list(map(lambda x: float(x) / 255, token.split()))
+            elif layer == "TexCoord0":
+                texcoords = list(map(lambda x: float(x), token.split()))
+            elif layer == "TexCoord1":
+                texcoords1 = list(map(lambda x: float(x), token.split()))
+            elif layer == "TexCoord2":
+                texcoords2 = list(map(lambda x: float(x), token.split()))
+            elif layer == "TexCoord3":
+                texcoords3 = list(map(lambda x: float(x), token.split()))
+            elif layer == "TexCoord4":
+                texcoords4 = list(map(lambda x: float(x), token.split()))
+            elif layer == "TexCoord5":
+                texcoords5 = list(map(lambda x: float(x), token.split()))
+            elif layer == "Tangent":
+                tangents = list(map(lambda x: float(x), token.split()))
+            elif layer == "BlendWeights":
+                blendw = list(map(lambda x: float(x) / 255, token.split()))
+            elif layer == "BlendIndices":
+                blendi = list(map(lambda x: int(x), token.split()))
+
+        vertices.append(v_vertex(position, texcoords, texcoords1, texcoords2, texcoords3, texcoords4, texcoords5, color, color1, normal, tangents, blendw, blendi))
+
+    return vertices
 
 def read_model_info(self, context, filepath, model, shaders, name, bones):
     
@@ -530,11 +462,12 @@ def read_model_info(self, context, filepath, model, shaders, name, bones):
 
     shader_index = int(model.find("ShaderIndex").attrib["value"])
     vb = model.find("VertexBuffer")
-    v_buffer = vb[2].text.strip().replace("\n", "").split(" " * 7) #split by 7 gets you each line of the data
+    v_buffer = map(lambda line : line.strip(), vb[2].text.strip().split("\n"))
+
     ib = model.find("IndexBuffer")
     i_buffer = ib[0].text.strip().replace("\n", "").split()
 
-    vertexs = get_vertexs_from_data(vb)
+    vertices = get_vertices_from_data(vb.find("Layout"), v_buffer)
 
     i_buf = []
     for num in i_buffer:
@@ -551,7 +484,7 @@ def read_model_info(self, context, filepath, model, shaders, name, bones):
             for id in boneids:
                 bones.append("UNKNOWN_BONE." + id)
 
-    obj = create_model(self, context, index_buffer, vertexs, filepath, name, bones) #supply shaderindex into texturepaths because the shaders are always in order
+    obj = create_model(self, context, index_buffer, vertices, filepath, name, bones) #supply shaderindex into texturepaths because the shaders are always in order
     
     obj.data.materials.append(shaders[shader_index])
     return obj
@@ -566,18 +499,13 @@ def read_shader_info(self, context, filepath, shd_node, td_node):
         
     return shaders
 
-def read_drawable_models(self, context, filepath, root, name, shd_node, td_node, key, bones):
-
-    shaders = read_shader_info(self, context, filepath, shd_node, td_node)
-
-    for shader in shaders: 
-        print(shader.name)
+def read_drawable_models(self, context, filepath, root, name, shaders, key, bones):
 
     dm_node = root.find("DrawableModels" + key)
     drawable_models = []
     rm_nodes = []
     drawable_objects = []
-    
+
     for dm in dm_node:
         drawable_models.append(dm)
         render_mask = int(dm.find("RenderMask").attrib["value"])
@@ -611,88 +539,69 @@ def read_bones(self, context, filepath, root):
         return None, None
 
     bones = []
-    bones_tag = []
-    flags_list = []
-    # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
-    flags_restricted = set(["LimitRotation", "Unk0"])
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
-    armature = context.object
+    armature = context.object.data
     bpy.ops.object.mode_set(mode='EDIT')
 
-    for bones_item in bones_node:
-        name_item = bones_item.find("Name")
-        tag_item = bones_item.find("Tag")
-        parentindex_item = bones_item.find("ParentIndex")
-        flags_item = bones_item.find("Flags")
-        translation_item = bones_item.find("Translation")
-        rotation_item = bones_item.find("Rotation")
-        scale_item = bones_item.find("Scale")
+    for bone_node in bones_node:
+        bone_name = bone_node.find("Name")
+        bone_parentindex = bone_node.find("ParentIndex")
+        bone_translation = bone_node.find("Translation")
+        bone_rotation = bone_node.find("Rotation")
 
         quaternion = Quaternion()
-        quaternion.w = float(rotation_item.attrib["w"])
-        quaternion.x = float(rotation_item.attrib["x"])
-        quaternion.y = float(rotation_item.attrib["y"])
-        quaternion.z = float(rotation_item.attrib["z"])
-        mat_rot = quaternion.to_matrix().to_4x4()
+        quaternion.w = float(bone_rotation.attrib["w"])
+        quaternion.x = float(bone_rotation.attrib["x"])
+        quaternion.y = float(bone_rotation.attrib["y"])
+        quaternion.z = float(bone_rotation.attrib["z"])
+        matrix = quaternion.to_matrix().to_4x4()
 
         trans = Vector()
-        trans.x = float(translation_item.attrib["x"])
-        trans.y = float(translation_item.attrib["y"])
-        trans.z = float(translation_item.attrib["z"])
-        mat_loc = Matrix.Translation(trans)
+        trans.x = float(bone_translation.attrib["x"])
+        trans.y = float(bone_translation.attrib["y"])
+        trans.z = float(bone_translation.attrib["z"])
 
-        scale = Vector()
-        scale.x = float(scale_item.attrib["x"])
-        scale.y = float(scale_item.attrib["y"])
-        scale.z = float(scale_item.attrib["z"])
-        mat_sca = Matrix.Scale(1, 4, scale)
-
-        edit_bone = armature.data.edit_bones.new(name_item.text)
-        # edit_bone.bone_id = int(bone_tag.attrib["value"])
-        if parentindex_item.attrib["value"] != "-1":
-            edit_bone.parent = armature.data.edit_bones[int(parentindex_item.attrib["value"])]
+        edit_bone = armature.edit_bones.new(bone_name.text)
+        if bone_parentindex.attrib["value"] != "-1":
+            edit_bone.parent = armature.edit_bones[int(bone_parentindex.attrib["value"])]
 
         # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
         edit_bone.head = (0,0,0)
         edit_bone.tail = (0,0.05,0)
-        edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
+        edit_bone.matrix = matrix
+        edit_bone.translate(trans)
+        edit_bone["BONE_TAG"] = bone_node.find("Tag").get('value')
         if edit_bone.parent != None:
             edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
-        if (flags_item != None and flags_item.text != None):
-            flags = flags_item.text.strip().split(", ")
-            flags_list.append(flags)
-
         # build a bones lookup table
-        bones.append(name_item.text)
-        bones_tag.append(int(tag_item.attrib["value"]))
-
-    bpy.ops.object.mode_set(mode='POSE')
-
-    for i in range(len(bones)):
-        armature.pose.bones[i].bone_properties.tag = bones_tag[i]
-        for _flag in flags_list[i]:
-            if (_flag in flags_restricted):
-                continue
-
-            flag = armature.pose.bones[i].bone_properties.flags.add()
-            flag.name = _flag
+        bones.append(bone_name.text)
 
     bpy.ops.object.mode_set(mode='OBJECT')
     return bones, drawable_name
 
-def read_ydr_xml(self, context, filepath, root, bones=None):
+def read_ydr_shaders(self, context, filepath, root):
+    shd_group = root.find("ShaderGroup")
+
+    if not shd_group:
+        return None
+
+    shd_node = shd_group.find("Shaders")
+    td_node = shd_group.find("TextureDictionary")  
+
+    shaders = read_shader_info(self, context, filepath, shd_node, td_node)
+    return shaders
+
+def read_ydr_xml(self, context, filepath, root, shaders, bones=None):
 
     fname = os.path.basename(filepath)
     name = fname[:-8] #removes file extension
 
     model_name = root.find("Name").text
 
-    #get texture info
-    shd_group = root.find("ShaderGroup")
-    shd_node = shd_group.find("Shaders")
-    td_node = shd_group.find("TextureDictionary")  
+    if model_name == None:
+        model_name = name
 
     # ydd specific, if bones are found then don't do that all over again
     if (bones == None):
@@ -704,11 +613,11 @@ def read_ydr_xml(self, context, filepath, root, bones=None):
     low_objects = []
     
     if(root.find("DrawableModelsHigh") != None):
-        high_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "High", bones)
+        high_objects = read_drawable_models(self, context, filepath, root, model_name, shaders, "High", bones)
     if(root.find("DrawableModelsMedium") != None):
-        med_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "Medium", bones)
+        med_objects = read_drawable_models(self, context, filepath, root, model_name, shaders, "Medium", bones)
     if(root.find("DrawableModelsLow") != None):
-        low_objects = read_drawable_models(self, context, filepath, root, model_name, shd_node, td_node, "Low", bones)
+        low_objects = read_drawable_models(self, context, filepath, root, model_name, shaders, "Low", bones)
 
     all_objects = []
     for o in high_objects:
@@ -732,7 +641,9 @@ def read_ydd_xml(self, context, filepath, root):
             break
 
     for ydr in root:
-        all_objects.append(read_ydr_xml(self, context, filepath, ydr, bones))
+        shaders = read_ydr_shaders(self, context, filepath, ydr)
+        allobjs = read_ydr_xml(self, context, filepath, ydr, shaders, bones)
+        all_objects.append(allobjs)
 
     return all_objects, drawable_with_bones_name
 
@@ -761,13 +672,16 @@ class ImportYDR(Operator, ImportHelper):
         vmodel_obj = bpy.data.objects.new(name, armature)
         context.scene.collection.objects.link(vmodel_obj)
         context.view_layer.objects.active = vmodel_obj
-        ydr_objs = read_ydr_xml(self, context, self.filepath, root)
+
+        shaders = read_ydr_shaders(self, context, self.filepath, root)
+        ydr_objs = read_ydr_xml(self, context, self.filepath, root, shaders)
+
         for obj in ydr_objs:
             context.scene.collection.objects.link(obj)
             obj.parent = vmodel_obj
             mod = obj.modifiers.new("Armature", 'ARMATURE')
             mod.object = vmodel_obj
-        
+
         #set sollum properties 
         dd_high = float(root.find("LodDistHigh").attrib["value"])
         dd_med = float(root.find("LodDistMed").attrib["value"])
