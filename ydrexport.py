@@ -860,9 +860,15 @@ def write_skeleton_node(obj):
         bone_node_flags = Element("Flags")
         flags = ""
         for i in range(len(bone.bone_properties.flags)):
-            flags = flags + bone.bone_properties.flags[i].name
+            flags += bone.bone_properties.flags[i].name
             if (i != len(bone.bone_properties.flags) - 1):
-                flags = flags + ", "
+                flags += ", "
+
+        if len(bone.children) > 0:
+            if (len(bone.bone_properties.flags) > 0):
+                flags += ", "
+
+            flags += "Unk0"
 
         bone_node_flags.text = flags
         bone_node.append(bone_node_flags)
