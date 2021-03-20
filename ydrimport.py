@@ -635,7 +635,8 @@ def read_bones(self, context, filepath, root):
 
         if (flags_item != None and flags_item.text != None):
             flags = flags_item.text.strip().split(", ")
-            flags_list.append(flags)
+            
+        flags_list.append(flags)
 
         # build a bones lookup table
         bones.append(name_item.text)
