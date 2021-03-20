@@ -828,8 +828,7 @@ def write_skeleton_node(obj):
 
         bone_node_tag = Element("Tag")
 
-        if "BONE_TAG" in bone:
-            bone_node_tag.set("value", str(bone["BONE_TAG"]))
+        bone_node_tag.set("value", str(bone.bone_properties.tag))
 
         bone_node.append(bone_node_tag)
 
@@ -859,7 +858,13 @@ def write_skeleton_node(obj):
         bone_node.append(bone_node_sibling_index)
 
         bone_node_flags = Element("Flags")
-        bone_node_flags.text = ""
+        flags = ""
+        for i in range(len(bone.bone_properties.flags)):
+            flags = flags + bone.bone_properties.flags[i].name
+            if (i != len(bone.bone_properties.flags) - 1):
+                flags = flags + ", "
+
+        bone_node_flags.text = flags
         bone_node.append(bone_node_flags)
 
         trans = bone.head
