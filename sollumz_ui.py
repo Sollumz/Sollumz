@@ -233,10 +233,10 @@ class SollumzBonePanel(Panel):
     def draw(self, context):
         layout = self.layout
 
-        bone = context.active_pose_bone.bone
-                
-        if(bone == None):
+        if (context.active_pose_bone == None):
             return
+
+        bone = context.active_pose_bone.bone
 
         layout.prop(bone, "name", text = "Bone Name")
         layout.prop(bone.bone_properties, "tag", text = "BoneTag")
