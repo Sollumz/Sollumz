@@ -858,19 +858,20 @@ def write_skeleton_node(obj):
         bone_node.append(bone_node_sibling_index)
 
         bone_node_flags = Element("Flags")
-        flags = ""
-        for i in range(len(bone.bone_properties.flags)):
-            flags += bone.bone_properties.flags[i].name
-            if (i != len(bone.bone_properties.flags) - 1):
-                flags += ", "
+        flags = []
+        flags_text = ""
+        for flag in bone.bone_properties.flags:
+            flags.append(flag.name)
 
         if len(bone.children) > 0:
-            if (len(bone.bone_properties.flags) > 0):
-                flags += ", "
+            flags.append("Unk0")
 
-            flags += "Unk0"
+        for i in range(len(flags)):
+            flags_text += flags[i]
+            if (i != len(flags) - 1):
+                flags_text += ", "
 
-        bone_node_flags.text = flags
+        bone_node_flags.text = flags_text
         bone_node.append(bone_node_flags)
 
         mat = bone.matrix_local
