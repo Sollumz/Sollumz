@@ -503,12 +503,14 @@ def create_materials(emats):
         
     return mats
 
-def read_geometrybvh_info(bounds):
-    
+def read_geometry_info(bounds, bvh=False):
+
+    objectName = "GeometryBVH" if bvh else "Geometry"    
+
     #read materials
     materials = create_materials(bounds.find("Materials"))   
     
-    bobj = bpy.data.objects.new("GeometryBVH", None)
+    bobj = bpy.data.objects.new(objectName, None)
     
     geocenter = bounds.find("GeometryCenter")
     geolocation = Vector((float(geocenter.attrib["x"]), float(geocenter.attrib["y"]), float(geocenter.attrib["z"])))
@@ -581,7 +583,7 @@ def read_geometrybvh_info(bounds):
     for idx in range(len(mesh.polygons)):
         mesh.polygons[idx].material_index = pmaterialidxs[idx]
     
-    bobj = bpy.data.objects.new("GeometryBVH", mesh)  
+    bobj = bpy.data.objects.new(objectName, mesh)  
     set_bound_transform(bounds, bobj)
     bobj.location += geolocation
     for poly in polys:
@@ -610,7 +612,9 @@ def read_composite_info(name, bounds):
         childtype = child.attrib["type"]
         
         if(childtype == "GeometryBVH"):
-            children.append(read_geometrybvh_info(child))
+            children.append(read_geometry_info(child, True))
+        if(childtype == "Geometry"):
+            children.append(read_geometry_info(child, False))
         if(childtype == "Box"):
             children.append(read_box_info(child))
         if(childtype == "Sphere"):
