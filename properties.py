@@ -1,227 +1,9 @@
 import bpy
-import os 
-from .tools import meshgen as MeshGen
-from bpy.types import PropertyGroup, Panel, UIList, Operator
-from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty
+from bpy.types import PropertyGroup
+from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
 
-class SollumzMainPanel(bpy.types.Panel):
-    bl_label = "Sollumz"
-    bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-
-    def draw(self, context):
-        layout = self.layout
-
-        object = context.active_object
-                
-        if(object == None):
-            layout.label(text = "No objects in scene")            
-        else:
-            mainbox = layout.box()
-            
-            textbox = mainbox.box()
-            textbox.prop(object, "name", text = "Object Name")
-
-            subbox = mainbox.box() 
-            subbox.props_enum(object, "sollumtype")
-            
-            box = mainbox.box()
-
-            if(object.sollumtype == "Drawable"):
-                row = box.row()
-                box.prop(object, "drawble_distance_high")
-                box.prop(object, "drawble_distance_medium")
-                row = box.row()
-                box.prop(object, "drawble_distance_low")
-                box.prop(object, "drawble_distance_vlow")
-
-            if(object.sollumtype == "Geometry"):
-                box.prop(object, "level_of_detail")
-                box.prop(object, "mask")   
-
-            if(object.sollumtype == "Bound Geometry"):
-                box.prop(object, "bounds_bvh")
-
-            if(object.sollumtype == "Bound Capsule"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
-
-            if(object.sollumtype == "Bound Cylinder"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
-
-            if(object.sollumtype == "Bound Disc"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
-
-            if(object.sollumtype == "Bound Sphere"):
-                box.prop(object, "bounds_radius")
-
-        
-        box = layout.box()
-        box.label(text = "Tools") 
-        
-def param_name_to_title(pname):
-    
-    title = ""
-    
-    a = pname.split("_")
-    b = a[0]
-    glue = ' '
-    c = ''.join(glue + x if x.isupper() else x for x in b).strip(glue).split(glue)
-    d = ""
-    for word in c:
-        d += word
-        d += " "
-    title = d.title() #+ a[1].upper() dont add back the X, Y, Z, W
-    
-    return title
-
-def bounds_update(self, context):
-    if(self.sollumtype == "Bound Sphere"):
-        MeshGen.BoundSphere(mesh=self.data, radius=self.bounds_radius)
-
-    if(self.sollumtype == "Bound Cylinder"):
-        MeshGen.BoundCylinder(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
-
-    if(self.sollumtype == "Bound Disc"):
-        MeshGen.BoundDisc(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
-
-    if(self.sollumtype == "Bound Capsule"):
-        MeshGen.BoundCapsule(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
-
-class SollumzMaterialPanel(bpy.types.Panel):
-    bl_label = "Sollumz Material Panel"
-    bl_idname = "Sollumz_PT_MAT_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "material"
-    
-    shadername : bpy.props.StringProperty(default = "default.sps")
-    
-    def draw(self, context):
-        layout = self.layout
-
-        object = context.active_object        
-        if(object == None):
-            return
-        mat = object.active_material  
-        
-        tbox = layout.box()
-        tbox.label(text = "Tools")
-        box = tbox.box()
-        box.label(text = "Create Shader")
-        row = box.row()  
-        row.label(text = "Shader Type:")
-        row.prop_menu_enum(object, "shadertype", text = object.shadertype)
-        box.operator("sollum.createvshader").shadername = object.shadertype
-        
-        if(mat == None):
-            return
-        
-        if(mat.sollumtype == "Blender"):
-            box = tbox.box()
-            row = box.row()
-            row.label(text = "Convert To Shader")
-            row.operator("sollum.converttov") 
-        
-        
-        if(mat.sollumtype == "GTA"):
-            
-            box = layout.box()
-            shader_box = box
-            box.prop(mat, "name", text = "Shader")
-            
-            #layout.label(text = "Parameters")
-            
-            #box = layout.box()
-            #box.label(text = "Parameters")
-            
-            mat_nodes = mat.node_tree.nodes
-            
-            image_nodes = []
-            value_nodes = []
-            
-            for n in mat_nodes:
-                if(isinstance(n, bpy.types.ShaderNodeTexImage)):
-                    image_nodes.append(n)
-                elif(isinstance(n, bpy.types.ShaderNodeValue)):
-                    value_nodes.append(n)
-                #else:
-            
-            for n in image_nodes:
-                box = shader_box.box()
-                box.label(text = n.name + " Texture")
-                
-                row = box.row()
-                
-                row.prop(n, "texture_name")
-                if(n.image != None):
-                    row.prop(n.image, "filepath", text= "Texture Path:")
-                    #n.texture_name = os.path.basename(n.image.filepath)
-                
-                row.prop(n, "embedded")
-                
-                row = box.row()
-                #row.prop(specnode, "type") #gims fault
-                row.prop(n, "format_type")
-                
-                #row = box.row() #gims fault
-                row.prop(n, "usage")
-                
-                uf_box = box.box()
-                uf_box.label(text = "Usage Flags:")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "not_half")
-                uf_row.prop(n, "hd_split")
-                uf_row.prop(n, "flag_full")
-                uf_row.prop(n, "maps_half")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "x2")
-                uf_row.prop(n, "x4")
-                uf_row.prop(n, "y4")
-                uf_row.prop(n, "x8")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "x16")
-                uf_row.prop(n, "x32")
-                uf_row.prop(n, "x64")
-                uf_row.prop(n, "y64")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "x128")
-                uf_row.prop(n, "x256")
-                uf_row.prop(n, "x512")
-                uf_row.prop(n, "y512")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "x1024")
-                uf_row.prop(n, "y1024")
-                uf_row.prop(n, "x2048")
-                uf_row.prop(n, "y2048")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "embeddedscriptrt")
-                uf_row.prop(n, "unk19")
-                uf_row.prop(n, "unk20")
-                uf_row.prop(n, "unk21")
-                uf_row = uf_box.row()
-                uf_row.prop(n, "unk24")
-                
-                uf_box.prop(n, "extra_flags")
-                
-            prevname = ""
-            #value_nodes.insert(1, value_nodes.pop(len(value_nodes) - 1)) #shift last item to second because params are messed up for some reason ? (fixed?)
-            for n in value_nodes:
-                if(n.name[:-2] not in prevname):
-                    #new parameter
-                    parambox = box.box()
-                    parambox.label(text = param_name_to_title(n.name)) 
-                      
-                parambox.prop(n.outputs[0], "default_value", text = n.name[-1].upper())
-                
-                prevname = n.name        
-            
 #sollum properties
-bpy.types.Scene.last_created_material = bpy.props.PointerProperty(type=bpy.types.Material)
+bpy.types.Scene.last_created_material = PointerProperty(type=bpy.types.Material)
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
                                                         default = "None",
@@ -232,26 +14,18 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                                     ("Geometry", "Geometry", "Geometry"),
                                                                     ("Bound Composite", "Bound Composite", "Bound Composite"),
                                                                     ("Bound Box", "Bound Box", "Bound Box"),
-                                                                    ("Bound Geometry", "Bound Geometry", "Bound Geometry"), 
+                                                                    ("Bound Triangle", "Bound Triangle", "Bound Triangle"), 
                                                                     ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
                                                                     ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
-                                                                    ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder"),
                                                                     ("Bound Disc", "Bound Disc", "Bound Disc")])
                                                                     
-bpy.types.Object.level_of_detail = bpy.props.EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
-bpy.types.Object.mask = bpy.props.IntProperty(name = "Mask", default = 255)
-bpy.types.Object.drawble_distance_high = bpy.props.FloatProperty(name = "Lod Distance High", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.drawble_distance_medium = bpy.props.FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.drawble_distance_low = bpy.props.FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
-bpy.types.Object.drawble_distance_vlow = bpy.props.FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
-
-bpy.types.Object.bounds_length = bpy.props.FloatProperty(name="Length", default=1, min=0, max=100, update=bounds_update)
-bpy.types.Object.bounds_radius = bpy.props.FloatProperty(name="Radius", default=1, min=0, max=100, update=bounds_update)
-bpy.types.Object.bounds_rings = bpy.props.IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
-bpy.types.Object.bounds_segments = bpy.props.IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
-bpy.types.Object.bounds_bvh = bpy.props.BoolProperty(name="BVH (Bounding volume hierarchy)", default=False, update=bounds_update)
-
-bpy.types.Object.shadertype = bpy.props.EnumProperty(
+bpy.types.Object.level_of_detail = EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
+bpy.types.Object.mask = IntProperty(name = "Mask", default = 255)
+bpy.types.Object.drawble_distance_high = FloatProperty(name = "Lod Distance High", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.drawble_distance_medium = FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.drawble_distance_low = FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.drawble_distance_vlow = FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
+bpy.types.Object.shadertype = EnumProperty(
                                                         name = "Shader Type", 
                                                         default = "default.sps",
                                                         items = [
@@ -546,78 +320,64 @@ bpy.types.Object.shadertype = bpy.props.EnumProperty(
                                                                     ("weapon_normal_spec_detail_tnt.sps", "weapon_normal_spec_detail_tnt.sps", "weapon_normal_spec_detail_tnt.sps"), 
                                                                     ("weapon_normal_spec_palette.sps", "weapon_normal_spec_palette.sps", "weapon_normal_spec_palette.sps"), 
                                                                     ("weapon_normal_spec_tnt.sps", "weapon_normal_spec_tnt.sps", "weapon_normal_spec_tnt.sps")])
-class SOLLUMZ_UL_BoneFlags(UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
-        custom_icon = 'FILE'
 
-        if self.layout_type in {'DEFAULT', 'COMPACT'}: 
-            layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
-        elif self.layout_type in {'GRID'}: 
-            layout.alignment = 'CENTER' 
-            layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
+#GIMS ONLY PROPERTY?
+#bpy.types.ShaderNodeTexImage.type = EnumProperty(name = "Type", items = [("Regular", "Regular", "Regular"), ("Cube", "Cube", "Cube"), ("Volume", "Volume", "Volume")])
+bpy.types.ShaderNodeTexImage.texture_name = StringProperty(name="Texture Name", default = "None")
+bpy.types.ShaderNodeTexImage.format_type = EnumProperty(name = "Pixel Format", items = [("DXT1", "DXT1", "DXT1"), ("DXT3", "DXT3", "DXT3"), ("DXT5", "DXT5", "DXT5"), ("ATI1", "ATI1", "ATI1"), ("ATI2", "ATI2", "ATI2"), ("BC7", "BC7", "BC7"), ("A1R5G5B5", "A1R5G5B5", "A1R5G5B5"), ("A1R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8R8G8B8", "A1R8G8B8", "A8R8G8B8"), ("A8", "A8", "A8"), ("L8", "L8", "L8")])
+bpy.types.ShaderNodeTexImage.usage = EnumProperty(name = "Usage", items = [("TINTPALETTE", "TINTPALETTE", "TINTPALETTE"), ("UNKNOWN", "UNKNOWN", "UNKNOWN"), ("DEFAULT", "DEFAULT", "DEFAULT"), ("TERRAIN", "TERRAIN", "TERRAIN"), ("CLOUDDENSITY", "CLOUDDENSITY", "CLOUDDENSITY"), ("CLOUDNORMAL", "CLOUDNORMAL", "CLOUDNORMAL"), ("CABLE", "CABLE", "CABLE"), ("FENCE", "FENCE", "FENCE"), ("ENV.EFFECT", "ENV.EFFECT", "ENV.EFFECT"), ("SCRIPT", "SCRIPT", "SCRIPT"), ("WATERFLOW", "WATERFLOW", "WATERFLOW"), ("WATERFOAM", "WATERFOAM", "WATERFOAM"), ("WATERFOG", "WATERFOG", "WATERFOG"), ("WATEROCEAN", "WATEROCEAN", "WATEROCEAN"), ("WATER", "WATER", "WATER"), ("FOAMOPACITY", "FOAMOPACITY", "FOAMOPACITY"), ("FOAM", "FOAM", "FOAM"), ("DIFFUSEDETAIL", "DIFFUSEDETAIL", "DIFFUSEDETAIL"), ("DIFFUSEDARK", "DIFFUSEDARK", "DIFFUSEDARK"), ("DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE", "DIFFUSEALPHAOPAQUE"), ("DIFFUSE", "DIFFUSE", "DIFFUSE"), ("DETAIL", "DETAIL", "DETAIL"), ("NORMAL", "NORMAL", "NORMAL"), ("SPECULAR", "SPECULAR", "SPECULAR"), ("EMMISIVE", "EMMISIVE", "EMMISIVE"), ("TINTPALLETE", "TINTPALLETE", "TINTPALLETE"), ("SKIPPROCCESING", "SKIPPROCCESING", "SKIPPROCCESING"), ("DONTOPTIMIZE", "DONTOPTIMIZE", "DONTOPTIMIZE"), ("TEST", "TEST", "TEST"), ("COUNT", "COUNT", "COUNT")])
+bpy.types.ShaderNodeTexImage.extra_flags = IntProperty(name = "Extra Flags", default = 0)
+bpy.types.ShaderNodeTexImage.embedded = BoolProperty(name = "Embedded", default = False)
+#usage flags whatever this is 
+bpy.types.ShaderNodeTexImage.not_half = BoolProperty(name = "NOT_HALF", default = False)
+bpy.types.ShaderNodeTexImage.hd_split = BoolProperty(name = "HD_SPLIT", default = False)
+bpy.types.ShaderNodeTexImage.x2 = BoolProperty(name = "X2", default = False)
+bpy.types.ShaderNodeTexImage.x4 = BoolProperty(name = "X4", default = False)
+bpy.types.ShaderNodeTexImage.y4 = BoolProperty(name = "Y4", default = False)
+bpy.types.ShaderNodeTexImage.x8 = BoolProperty(name = "X8", default = False)
+bpy.types.ShaderNodeTexImage.x16 = BoolProperty(name = "X16", default = False)
+bpy.types.ShaderNodeTexImage.x32 = BoolProperty(name = "X32", default = False)
+bpy.types.ShaderNodeTexImage.x64 = BoolProperty(name = "X64", default = False)
+bpy.types.ShaderNodeTexImage.y64 = BoolProperty(name = "Y64", default = False)
+bpy.types.ShaderNodeTexImage.x128 = BoolProperty(name = "X128", default = False)
+bpy.types.ShaderNodeTexImage.x256 = BoolProperty(name = "X256", default = False)
+bpy.types.ShaderNodeTexImage.x512 = BoolProperty(name = "X512", default = False)
+bpy.types.ShaderNodeTexImage.y512 = BoolProperty(name = "Y512", default = False)
+bpy.types.ShaderNodeTexImage.x1024 = BoolProperty(name = "X1024", default = False)
+bpy.types.ShaderNodeTexImage.y1024 = BoolProperty(name = "Y1024", default = False)
+bpy.types.ShaderNodeTexImage.x2048 = BoolProperty(name = "X2048", default = False)
+bpy.types.ShaderNodeTexImage.y2048 = BoolProperty(name = "Y2048", default = False)
+bpy.types.ShaderNodeTexImage.embeddedscriptrt = BoolProperty(name = "EMBEDDEDSCRIPTRT", default = False)
+bpy.types.ShaderNodeTexImage.unk19 = BoolProperty(name = "UNK19", default = False)
+bpy.types.ShaderNodeTexImage.unk20 = BoolProperty(name = "UNK20", default = False)
+bpy.types.ShaderNodeTexImage.unk21 = BoolProperty(name = "UNK21", default = False)
+bpy.types.ShaderNodeTexImage.flag_full = BoolProperty(name = "FLAG_FULL", default = False)
+bpy.types.ShaderNodeTexImage.maps_half = BoolProperty(name = "MAPS_HALF", default = False)
+bpy.types.ShaderNodeTexImage.unk24 = BoolProperty(name = "UNK24", default = False)
 
-class SOLLUMZ_OT_BoneFlags_NewItem(Operator): 
-    bl_idname = "sollumz_flags.new_item" 
-    bl_label = "Add a new item"
-    def execute(self, context): 
-        bone = context.active_pose_bone.bone
-        bone.bone_properties.flags.add() 
-        return {'FINISHED'}
+bpy.types.Material.sollumtype = EnumProperty(name = "Sollum Type", items = [("Blender", "Blender", "Blender"), ("GTA", "GTA", "GTA")], default = "Blender")
 
-class SOLLUMZ_OT_BoneFlags_DeleteItem(Operator): 
-    bl_idname = "sollumz_flags.delete_item" 
-    bl_label = "Deletes an item" 
-    @classmethod 
-    def poll(cls, context): 
-        return context.active_pose_bone.bone.bone_properties.flags
+class SollumzBoneFlag(PropertyGroup):
+    name: StringProperty(default="Unk0")
 
-    def execute(self, context): 
-        bone = context.active_pose_bone.bone
-
-        list = bone.bone_properties.flags
-        index = bone.bone_properties.ul_flags_index
-        list.remove(index) 
-        bone.bone_properties.ul_flags_index = min(max(0, index - 1), len(list) - 1) 
-        return {'FINISHED'}
-
-class SollumzBonePanel(Panel):
-    bl_label = "Sollumz Bone Panel"
-    bl_idname = "SOLLUMZ_PT_BONE_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "bone"
-
-    def draw(self, context):
-        layout = self.layout
-
-        if (context.active_pose_bone == None):
-            return
-
-        bone = context.active_pose_bone.bone
-
-        layout.prop(bone, "name", text = "Bone Name")
-        layout.prop(bone.bone_properties, "tag", text = "BoneTag")
-
-        layout.label(text="Flags")
-        layout.template_list("SOLLUMZ_UL_BoneFlags", "Flags", bone.bone_properties, "flags", bone.bone_properties, "ul_flags_index")
-        row = layout.row() 
-        row.operator('sollumz_flags.new_item', text='New')
-        row.operator('sollumz_flags.delete_item', text='Delete')
-        
+class SollumzBoneProperties(PropertyGroup):
+    tag: IntProperty(name = "BoneTag", default = 0, min = 0)
+    flags: CollectionProperty(type = SollumzBoneFlag)
+    ul_flags_index: IntProperty(name = "UIListIndex", default = 0)
 
 classes = (
-    SollumzMaterialPanel,
-    SollumzMainPanel,
-    SollumzBonePanel,
-    SOLLUMZ_UL_BoneFlags,
-    SOLLUMZ_OT_BoneFlags_NewItem,
-    SOLLUMZ_OT_BoneFlags_DeleteItem,
+    SollumzBoneFlag,
+    SollumzBoneProperties,
 )
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    bpy.types.Bone.bone_properties = PointerProperty(type = SollumzBoneProperties)
+
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    
+    del bpy.types.Bone.bone_properties

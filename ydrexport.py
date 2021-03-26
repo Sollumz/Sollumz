@@ -4,7 +4,7 @@ from bpy.types import Operator
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from xml.dom import minidom
-from mathutils import Vector
+from mathutils import Vector, Matrix
 import os 
 import sys 
 import shutil
@@ -828,8 +828,7 @@ def write_skeleton_node(obj):
 
         bone_node_tag = Element("Tag")
 
-        if "BONE_TAG" in bone:
-            bone_node_tag.set("value", str(bone["BONE_TAG"]))
+        bone_node_tag.set("value", str(bone.bone_properties.tag))
 
         bone_node.append(bone_node_tag)
 
@@ -859,10 +858,29 @@ def write_skeleton_node(obj):
         bone_node.append(bone_node_sibling_index)
 
         bone_node_flags = Element("Flags")
-        bone_node_flags.text = ""
+        flags = []
+        flags_text = ""
+        for flag in bone.bone_properties.flags:
+            flags.append(flag.name)
+
+        if len(bone.children) > 0:
+            flags.append("Unk0")
+
+        for i in range(len(flags)):
+            flags_text += flags[i]
+            if (i != len(flags) - 1):
+                flags_text += ", "
+
+        bone_node_flags.text = flags_text
         bone_node.append(bone_node_flags)
 
-        trans = bone.head
+        mat = bone.matrix_local
+        if (bone.parent != None):
+            mat = bone.parent.matrix_local.inverted() @ bone.matrix_local
+
+        mat_decomposed = mat.decompose()
+
+        trans = mat_decomposed[0]
         bone_node_translation = Element("Translation")
         bone_node_translation.set("x", str(trans[0]))
         bone_node_translation.set("y", str(trans[1]))
@@ -870,7 +888,7 @@ def write_skeleton_node(obj):
         bone_node.append(bone_node_translation)
 
         #quat = bone.rotation_euler.to_quaternion()
-        quat = bone.matrix_local.to_quaternion()
+        quat = mat_decomposed[1]
         bone_node_rotation = Element("Rotation")
         bone_node_rotation.set("x", str(quat[1]))
         bone_node_rotation.set("y", str(quat[2]))
@@ -878,10 +896,11 @@ def write_skeleton_node(obj):
         bone_node_rotation.set("w", str(quat[0]))
         bone_node.append(bone_node_rotation)
 
+        scale = mat_decomposed[2]
         bone_node_scale = Element("Scale")
-        bone_node_scale.set("x", str(pbone.scale[0]))
-        bone_node_scale.set("y", str(pbone.scale[1]))
-        bone_node_scale.set("z", str(pbone.scale[2]))
+        bone_node_scale.set("x", str(scale[0]))
+        bone_node_scale.set("y", str(scale[1]))
+        bone_node_scale.set("z", str(scale[2]))
         bone_node.append(bone_node_scale)
 
         bone_node_transform_unk = Element("TransformUnk")

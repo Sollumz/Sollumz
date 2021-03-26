@@ -1,7 +1,7 @@
 import bpy
 import os
 import xml.etree.ElementTree as ET
-from mathutils import Vector, Quaternion
+from mathutils import Vector, Quaternion, Matrix
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
@@ -532,6 +532,51 @@ def read_drawable_models(self, context, filepath, root, name, shaders, key, bone
         
     return drawable_objects
 
+def build_bones_dict(armature):
+    if (armature == None):
+        return None
+
+    bones_dict = {}
+    for pose_bone in armature.pose.bones:
+        bones_dict[pose_bone.bone.bone_properties.tag] = pose_bone.name
+
+    return bones_dict
+
+def read_joints(self, context, filepath, root, bones_dict=None):
+
+    joints_node = root.find("Joints")
+    if (joints_node == None):
+        return None
+
+    rotationlimits_node = joints_node.find("RotationLimits")
+    if (rotationlimits_node == None):
+        return None
+
+    armature = context.object
+    if (bones_dict == None):
+        bones_dict = build_bones_dict(armature)
+
+    rotationlimits = []
+    for rotationlimits_item in rotationlimits_node:
+        rotationlimits_bone_id = rotationlimits_item.find("BoneId")
+        rotationlimits_min = rotationlimits_item.find("Min")
+        rotationlimits_max = rotationlimits_item.find("Max")
+        bone = armature.pose.bones.get(bones_dict[int(rotationlimits_bone_id.attrib["value"])])
+        constraint = bone.constraints.new('LIMIT_ROTATION')
+        constraint.owner_space = 'LOCAL'
+        constraint.use_limit_x = True
+        constraint.use_limit_y = True
+        constraint.use_limit_z = True
+        constraint.max_x = float(rotationlimits_max.attrib["x"])
+        constraint.max_y = float(rotationlimits_max.attrib["y"])
+        constraint.max_z = float(rotationlimits_max.attrib["z"])
+        constraint.min_x = float(rotationlimits_min.attrib["x"])
+        constraint.min_y = float(rotationlimits_min.attrib["y"])
+        constraint.min_z = float(rotationlimits_min.attrib["z"])
+        rotationlimits.append(bone.name)
+
+    return rotationlimits
+
 def read_bones(self, context, filepath, root):
 
     skeleton_node = root.find("Skeleton")
@@ -539,44 +584,74 @@ def read_bones(self, context, filepath, root):
         return None, None
 
     bones = []
+    bones_tag = []
+    flags_list = []
+    # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
+    flags_restricted = set(["LimitRotation", "Unk0"])
     drawable_name = root.find("Name").text
     bones_node = skeleton_node.find("Bones")
-    armature = context.object.data
+    armature = context.object
     bpy.ops.object.mode_set(mode='EDIT')
 
-    for bone_node in bones_node:
-        bone_name = bone_node.find("Name")
-        bone_parentindex = bone_node.find("ParentIndex")
-        bone_translation = bone_node.find("Translation")
-        bone_rotation = bone_node.find("Rotation")
+    for bones_item in bones_node:
+        name_item = bones_item.find("Name")
+        tag_item = bones_item.find("Tag")
+        parentindex_item = bones_item.find("ParentIndex")
+        flags_item = bones_item.find("Flags")
+        translation_item = bones_item.find("Translation")
+        rotation_item = bones_item.find("Rotation")
+        scale_item = bones_item.find("Scale")
 
         quaternion = Quaternion()
-        quaternion.w = float(bone_rotation.attrib["w"])
-        quaternion.x = float(bone_rotation.attrib["x"])
-        quaternion.y = float(bone_rotation.attrib["y"])
-        quaternion.z = float(bone_rotation.attrib["z"])
-        matrix = quaternion.to_matrix().to_4x4()
+        quaternion.w = float(rotation_item.attrib["w"])
+        quaternion.x = float(rotation_item.attrib["x"])
+        quaternion.y = float(rotation_item.attrib["y"])
+        quaternion.z = float(rotation_item.attrib["z"])
+        mat_rot = quaternion.to_matrix().to_4x4()
 
         trans = Vector()
-        trans.x = float(bone_translation.attrib["x"])
-        trans.y = float(bone_translation.attrib["y"])
-        trans.z = float(bone_translation.attrib["z"])
+        trans.x = float(translation_item.attrib["x"])
+        trans.y = float(translation_item.attrib["y"])
+        trans.z = float(translation_item.attrib["z"])
+        mat_loc = Matrix.Translation(trans)
 
-        edit_bone = armature.edit_bones.new(bone_name.text)
-        if bone_parentindex.attrib["value"] != "-1":
-            edit_bone.parent = armature.edit_bones[int(bone_parentindex.attrib["value"])]
+        scale = Vector()
+        scale.x = float(scale_item.attrib["x"])
+        scale.y = float(scale_item.attrib["y"])
+        scale.z = float(scale_item.attrib["z"])
+        mat_sca = Matrix.Scale(1, 4, scale)
+
+        edit_bone = armature.data.edit_bones.new(name_item.text)
+        # edit_bone.bone_id = int(bone_tag.attrib["value"])
+        if parentindex_item.attrib["value"] != "-1":
+            edit_bone.parent = armature.data.edit_bones[int(parentindex_item.attrib["value"])]
 
         # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
         edit_bone.head = (0,0,0)
         edit_bone.tail = (0,0.05,0)
-        edit_bone.matrix = matrix
-        edit_bone.translate(trans)
-        edit_bone["BONE_TAG"] = bone_node.find("Tag").get('value')
+        edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
         if edit_bone.parent != None:
             edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
+        if (flags_item != None and flags_item.text != None):
+            flags = flags_item.text.strip().split(", ")
+            
+        flags_list.append(flags)
+
         # build a bones lookup table
-        bones.append(bone_name.text)
+        bones.append(name_item.text)
+        bones_tag.append(int(tag_item.get('value')))
+
+    bpy.ops.object.mode_set(mode='POSE')
+
+    for i in range(len(bones)):
+        armature.pose.bones[i].bone.bone_properties.tag = bones_tag[i]
+        for _flag in flags_list[i]:
+            if (_flag in flags_restricted):
+                continue
+
+            flag = armature.pose.bones[i].bone.bone_properties.flags.add()
+            flag.name = _flag
 
     bpy.ops.object.mode_set(mode='OBJECT')
     return bones, drawable_name
@@ -606,6 +681,9 @@ def read_ydr_xml(self, context, filepath, root, shaders, bones=None):
     # ydd specific, if bones are found then don't do that all over again
     if (bones == None):
         bones = read_bones(self, context, filepath, root)[0]
+
+    if (bones != None):
+        joints = read_joints(self, context, filepath, root)
 
     #get objects from drawable info
     high_objects = []

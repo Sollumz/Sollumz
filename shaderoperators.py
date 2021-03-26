@@ -1,5 +1,6 @@
 import bpy
 from mathutils import Vector
+from .tools import jenkhash as JenkHash
 
 class shader_parameter:
     
@@ -4761,6 +4762,15 @@ shaders = {
                 "weapon_normal_spec_detail_tnt.sps" : weapon_normal_spec_detail_tntsps, 
                 "weapon_normal_spec_palette.sps" : weapon_normal_spec_palettesps, 
                 "weapon_normal_spec_tnt.sps" : weapon_normal_spec_tntsps }
+
+shaders_hash = {}
+
+for k,v in shaders.items():
+    h = JenkHash.Generate(k)
+    name = 'hash_{:X}'.format(h)
+    shaders_hash[name] = v
+
+shaders.update(shaders_hash)
 
 def get_child_node(node):
     
