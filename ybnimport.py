@@ -16,6 +16,7 @@ from math import sin
 from math import sqrt 
 
 from . import collisionmatoperators
+from .tools import meshgen as MeshGen
 
 def get_all_vertices(vert_data):
     vertices = [] 
@@ -53,117 +54,24 @@ def get_direction_of_verts(a, b):
     
     return q.to_euler('XYZ')
 
-def create_capsule_mesh(l, r):
+
+def set_bound_transform(bounds, obj):
+    locationn = bounds.find("CompositePosition")
+
+    location = Vector((float(locationn.attrib["x"]), float(locationn.attrib["y"]), float(locationn.attrib["z"])))
+    obj.location = location
     
-    length = l
-    radius = r
-    rings = 9
-    segments = 16
+    rotationn = bounds.find("CompositeRotation")
 
-    topRings = []
-    bottomRings = []
-    topCap = []
-    bottomCap = []
-
-    vertId = 0
-
-    for j in range(0, rings + 1):
-
-        if j == rings:
-            
-            topVertex = Vector((0, 0, ((length / 2) + radius)))
-            bottomVertex = Vector((0, 0, -((length / 2) + radius)))
-
-            topCap.append(topVertex)
-            bottomCap.append(bottomVertex)
-        else:
-
-            heightAngle = radians((90 / rings) * (j + 1))
-
-            topRing = []
-            bottomRing = []
-
-            for i in range(0, segments):
-
-                zAngle = radians((360 / segments) * i)
-
-                x = radius * cos(zAngle) * sin(heightAngle)
-                y = radius * sin(zAngle) * sin(heightAngle)
-                z = radius * cos(heightAngle)
-
-                topVertex = Vector((x, y, z + (length / 2)))
-                bottomVertex = Vector((x, y, -(z + (length / 2))))
-
-                topRing.append(vertId)
-                bottomRing.append(vertId + ((rings * segments) + 1))
-                topCap.append(topVertex)
-                bottomCap.append(bottomVertex)
-
-                vertId += 1
-
-            topRings.append(topRing)
-            bottomRings.append(bottomRing)
-
-    verts = topCap + bottomCap
-
-    faces = []
-
-    ringIndex = len(topRings) - 1
-    while ringIndex > 0:
-        
-        topRing = topRings[ringIndex]
-        topNextRing = topRings[ringIndex - 1]
-
-        bottomRing = bottomRings[ringIndex]
-        bottomNextRing = bottomRings[ringIndex - 1]
-        
-        for i in range(0, segments):
-
-            index1 = i
-            index2 = 0 if i + 1 == segments else i + 1
-
-            topCapFace = [topRing[index1], topRing[index2], topNextRing[index2], topNextRing[index1]]
-            bottomCapFace = [bottomRing[index2], bottomRing[index1], bottomNextRing[index1], bottomNextRing[index2]]
-            faces.append(topCapFace)
-            faces.append(bottomCapFace)
-
-        ringIndex -= 1
-
-    topRing = topRings[rings - 1]
-    bottomRing = bottomRings[rings - 1]
-
-    topCapRing = topRings[0]
-    bottomCapRing = bottomRings[0]
-
-    topCapFaces = []
-    bottomCapFaces = []
-
-    for i in range(0, segments):
-        
-        index1 = i
-        index2 = 0 if i + 1 == segments else i + 1
-
-        bodyFace = [topRing[index2], topRing[index1], bottomRing[index1], bottomRing[index2]]
-        topCapFace = [topCapRing[index1], topCapRing[index2], rings * segments]
-        bottomCapFace = [bottomCapRing[index2], bottomCapRing[index1], ((rings * segments) * 2) + 1]
-
-        faces.append(bodyFace)
-        topCapFaces.append(topCapFace)
-        bottomCapFaces.append(bottomCapFace)
-
-    faces += topCapFaces + bottomCapFaces
-
-    mesh = bpy.data.meshes.new(name="Capsule")
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-
-    mesh = bpy.data.meshes.new(name="Capsule")
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
+    rotation = Quaternion((float(rotationn.attrib["w"]), float(rotationn.attrib["x"]), float(rotationn.attrib["y"]), float(rotationn.attrib["z"]))) 
+    obj.rotation_euler = rotation.to_euler()
     
-    return mesh
-    
-    #return object_data_add(context, mesh, operator=None)
+    scalen = bounds.find("CompositeScale")
+
+    scale = Vector((float(scalen.attrib["x"]), float(scalen.attrib["y"]), float(scalen.attrib["z"])))
+    obj.scale = scale
+
+    return obj
 
 ######################## STOLEN FROM GIZZ (edited) ###########################
 def get_closest_axis_point(axis, center, points):
@@ -259,7 +167,7 @@ def create_poly_box(polyline, allverts, materials, geocenter):
 
     #obj.data.materials.append(material)
     
-    location = center + geocenter 
+    #location = center + geocenter 
     
     obj.location                = center#location #boxes dont use geocenter to offset? 
     obj.rotation_euler          = rotation
@@ -308,24 +216,20 @@ def create_poly_sphere(sphereline, vertices, materials, geocenter):
     materialindex = int(sphereline.attrib["m"])
     
     mesh = bpy.data.meshes.new("sphere")
-    bm   = bmesh.new()
+    MeshGen.BoundSphere(mesh, radius)
 
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=radius * 2)
-    bm.to_mesh(mesh)
-    bm.free()
-    
     mat = materials[materialindex]
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("sphere", mesh)
     obj.sollumtype = "Bound Sphere"
     obj.location = location
+    obj.bounds_radius = radius
     
     return obj
 
 
 def create_poly_capsule(capsuleline, vertices, materials, geocenter):
-    #obj.sollumtype = "Bound Capsule"
     
     materialindex = int(capsuleline.attrib["m"])
     radius = float(capsuleline.attrib["radius"])
@@ -334,7 +238,8 @@ def create_poly_capsule(capsuleline, vertices, materials, geocenter):
     length = get_distance_of_verts(v1, v2)    
     rot = get_direction_of_verts(v1, v2)
     
-    mesh = create_capsule_mesh(length, radius)
+    mesh = bpy.data.meshes.new("capsule")
+    MeshGen.BoundCapsule(mesh, radius, length)
     
     mesh.materials.append(materials[materialindex])
     
@@ -342,12 +247,35 @@ def create_poly_capsule(capsuleline, vertices, materials, geocenter):
     
     obj.location = (v1 + v2) / 2     
     obj.rotation_euler = rot
+
+    obj.sollumtype = "Bound Capsule"
+    obj.bounds_radius = radius
+    obj.bounds_length = length
     
     return obj
 
 def create_poly_cylinder(cylinderline, vertices, materials, geocenter):
-    #obj.sollumtype = "Bound Cylinder"
-    return None
+    radius = float(cylinderline.attrib["radius"])
+    v1 = vertices[int(cylinderline.attrib["v1"])]
+    v2 = vertices[int(cylinderline.attrib["v2"])]
+    length = get_distance_of_verts(v1, v2)    
+    rot = get_direction_of_verts(v1, v2)
+    materialindex = int(cylinderline.attrib["m"])
+    
+    mesh = bpy.data.meshes.new("cylinder")
+    MeshGen.BoundCylinder(mesh, radius, length)
+    
+    mat = materials[materialindex]
+    mesh.materials.append(mat)
+    
+    obj = bpy.data.objects.new("cylinder", mesh)
+    obj.sollumtype = "Bound Cylinder"
+    obj.location = (v1 + v2) / 2     
+    obj.rotation_euler = rot
+    obj.bounds_radius = radius
+    obj.bounds_length = length
+
+    return obj
 
 ## NOT USED ## at least codewalker doesnt use it?
 def create_poly_disc(discline, vertices, materials, geocenter):
@@ -368,20 +296,8 @@ def read_box_info(bounds):
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Box", mesh)
+    set_bound_transform(bounds, obj)
     
-    locationn = bounds.find("CompositePosition")
-    location = Vector((float(locationn.attrib["x"]), float(locationn.attrib["y"]), float(locationn.attrib["z"])))
-    
-    rotationn = bounds.find("CompositeRotation")
-    rotation = Quaternion((float(rotationn.attrib["x"]), float(rotationn.attrib["y"]), float(rotationn.attrib["z"]), float(rotationn.attrib["w"]))) 
-    
-    scalen = bounds.find("CompositeScale")
-    scale = Vector((float(scalen.attrib["x"]), float(scalen.attrib["y"]), float(scalen.attrib["z"])))
-    
-    obj.location = location
-    obj.rotation_euler = rotation.to_euler()
-    obj.scale = scale
-
     return obj
     
 def read_sphere_info(bounds):
@@ -398,25 +314,14 @@ def read_sphere_info(bounds):
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Sphere", mesh)
-    
-    locationn = bounds.find("CompositePosition")
-    location = Vector((float(locationn.attrib["x"]), float(locationn.attrib["y"]), float(locationn.attrib["z"])))
-    
-    rotationn = bounds.find("CompositeRotation")
-    rotation = Quaternion((float(rotationn.attrib["x"]), float(rotationn.attrib["y"]), float(rotationn.attrib["z"]), float(rotationn.attrib["w"]))) 
-    
-    scalen = bounds.find("CompositeScale")
-    scale = Vector((float(scalen.attrib["x"]), float(scalen.attrib["y"]), float(scalen.attrib["z"])))
-    
-    obj.location = location
-    obj.rotation_euler = rotation.to_euler()
-    obj.scale = scale
+    set_bound_transform(bounds, obj)
     
     return obj
 
 def read_capsule_info(bounds):
     
-    mesh = create_capsule_mesh(.975, .01)
+    mesh = bpy.data.meshes.new(name="Capsule")
+    MeshGen.BoundCapsule(mesh, .01, .975)
     obj = bpy.data.objects.new("Capsule", mesh)
     
     bm = bmesh.new()
@@ -428,19 +333,8 @@ def read_capsule_info(bounds):
     matindex = bounds.find("MaterialIndex").attrib["value"]
     mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
     mesh.materials.append(mat)
-    
-    locationn = bounds.find("CompositePosition")
-    location = Vector((float(locationn.attrib["x"]), float(locationn.attrib["y"]), float(locationn.attrib["z"])))
-    
-    rotationn = bounds.find("CompositeRotation")
-    rotation = Quaternion((float(rotationn.attrib["x"]), float(rotationn.attrib["y"]), float(rotationn.attrib["z"]), float(rotationn.attrib["w"]))) 
-    
-    scalen = bounds.find("CompositeScale")
-    scale = Vector((float(scalen.attrib["x"]), float(scalen.attrib["y"]), float(scalen.attrib["z"])))
-    
-    obj.location = location
-    obj.rotation_euler = rotation.to_euler()
-    obj.scale = scale
+
+    set_bound_transform(bounds, obj)
     
     return obj
 
@@ -459,24 +353,29 @@ def read_cylinder_info(bounds):
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Cylinder", mesh)
-    
-    locationn = bounds.find("CompositePosition")
-    location = Vector((float(locationn.attrib["x"]), float(locationn.attrib["y"]), float(locationn.attrib["z"])))
-    
-    rotationn = bounds.find("CompositeRotation")
-    rotation = Quaternion((float(rotationn.attrib["x"]), float(rotationn.attrib["y"]), float(rotationn.attrib["z"]), float(rotationn.attrib["w"]))) 
-    
-    scalen = bounds.find("CompositeScale")
-    scale = Vector((float(scalen.attrib["x"]), float(scalen.attrib["y"]), float(scalen.attrib["z"])))
-    
-    obj.location = location
-    obj.rotation_euler = rotation.to_euler()
-    obj.scale = scale
+    set_bound_transform(bounds, obj)
     
     return obj
 
 def read_disc_info(bounds):
-    print("ERROR")
+    mesh = bpy.data.meshes.new("Disc")
+    radius = float(bounds.find("SphereRadius").attrib["value"])
+    margin = float(bounds.find("Margin").attrib["value"])
+
+    MeshGen.BoundDisc(mesh=mesh, radius=radius, length=margin)
+
+    matindex = bounds.find("MaterialIndex").attrib["value"]
+    mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
+    mesh.materials.append(mat)
+    
+    obj = bpy.data.objects.new("Disc", mesh)
+    set_bound_transform(bounds, obj)
+
+    obj.sollumtype = "Bound Disc"
+    obj.bounds_radius = radius
+    obj.bounds_length = margin
+    
+    return obj
 
 def read_cloth_info(bounds):
     print("ERROR")
@@ -491,12 +390,14 @@ def create_materials(emats):
         
     return mats
 
-def read_geometrybvh_info(bounds):
-    
+def read_geometry_info(bounds, bvh=False):
+
+    objectName = "GeometryBVH" if bvh else "Geometry"    
+
     #read materials
     materials = create_materials(bounds.find("Materials"))   
     
-    bobj = bpy.data.objects.new("GeometryBVH", None)
+    bobj = bpy.data.objects.new(objectName, None)
     
     geocenter = bounds.find("GeometryCenter")
     geolocation = Vector((float(geocenter.attrib["x"]), float(geocenter.attrib["y"]), float(geocenter.attrib["z"])))
@@ -569,8 +470,9 @@ def read_geometrybvh_info(bounds):
     for idx in range(len(mesh.polygons)):
         mesh.polygons[idx].material_index = pmaterialidxs[idx]
     
-    bobj = bpy.data.objects.new("GeometryBVH", mesh)  
-    bobj.location = geolocation
+    bobj = bpy.data.objects.new(objectName, mesh)  
+    set_bound_transform(bounds, bobj)
+    bobj.location += geolocation
     for poly in polys:
         poly.parent = bobj
     
@@ -580,6 +482,8 @@ def read_geometrybvh_info(bounds):
     #bpy.ops.mesh.select_loose()
     #bpy.ops.mesh.delete(type='VERT')
     
+    bobj.sollumtype = "Bound Geometry"
+    bobj.bounds_bvh = bvh
     return bobj
 
 def read_composite_info(name, bounds):
@@ -597,7 +501,9 @@ def read_composite_info(name, bounds):
         childtype = child.attrib["type"]
         
         if(childtype == "GeometryBVH"):
-            children.append(read_geometrybvh_info(child))
+            children.append(read_geometry_info(child, True))
+        if(childtype == "Geometry"):
+            children.append(read_geometry_info(child, False))
         if(childtype == "Box"):
             children.append(read_box_info(child))
         if(childtype == "Sphere"):
@@ -607,8 +513,7 @@ def read_composite_info(name, bounds):
         if(childtype == "Cylinder"):
             children.append(read_cylinder_info(child))
         if(childtype == "Disc"):
-            print()
-            #children.append(read_disc_info(child))
+            children.append(read_disc_info(child))
         if(childtype == "Cloth"):
             print()
             #children.append(read_cloth_info(child))
@@ -617,6 +522,8 @@ def read_composite_info(name, bounds):
         bpy.context.scene.collection.objects.link(child)   
         child.parent = cobj 
         
+    cobj.sollumtype = "Bound Composite"
+
     return cobj
     
 def read_bounds(name, bounds):

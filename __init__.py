@@ -35,6 +35,7 @@ if "bpy" in locals():
     importlib.reload(ydrimport)
     importlib.reload(ydrexport)
     importlib.reload(ybnimport)
+    importlib.reload(ybnexport)
     importlib.reload(yftimport)
     importlib.reload(sollumz_ui)
     importlib.reload(collisionmatoperators)
@@ -45,6 +46,7 @@ else:
     from . import ydrimport
     from . import ydrexport 
     from . import ybnimport 
+    from . import ybnexport 
     from . import yftimport 
     from . import sollumz_ui
     from . import collisionmatoperators
@@ -60,6 +62,7 @@ def register():
     sollumz_ui.register()
     collisionmatoperators.register()
     ybnimport.register()
+    ybnexport.register()
     yftimport.register()
     
 def unregister():
@@ -70,6 +73,7 @@ def unregister():
     sollumz_ui.unregister()
     collisionmatoperators.unregister()
     ybnimport.unregister()
+    ybnexport.unregister()
     yftimport.unregister()
 
 if __name__ == "__main__":
