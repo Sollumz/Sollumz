@@ -16,6 +16,7 @@ from math import sin
 from math import sqrt 
 
 from . import collisionmatoperators
+from .tools import meshgen as MeshGen
 
 def get_all_vertices(vert_data):
     vertices = [] 
@@ -53,117 +54,6 @@ def get_direction_of_verts(a, b):
     
     return q.to_euler('XYZ')
 
-def create_capsule_mesh(l, r):
-    
-    length = l
-    radius = r
-    rings = 9
-    segments = 16
-
-    topRings = []
-    bottomRings = []
-    topCap = []
-    bottomCap = []
-
-    vertId = 0
-
-    for j in range(0, rings + 1):
-
-        if j == rings:
-            
-            topVertex = Vector((0, 0, ((length / 2) + radius)))
-            bottomVertex = Vector((0, 0, -((length / 2) + radius)))
-
-            topCap.append(topVertex)
-            bottomCap.append(bottomVertex)
-        else:
-
-            heightAngle = radians((90 / rings) * (j + 1))
-
-            topRing = []
-            bottomRing = []
-
-            for i in range(0, segments):
-
-                zAngle = radians((360 / segments) * i)
-
-                x = radius * cos(zAngle) * sin(heightAngle)
-                y = radius * sin(zAngle) * sin(heightAngle)
-                z = radius * cos(heightAngle)
-
-                topVertex = Vector((x, y, z + (length / 2)))
-                bottomVertex = Vector((x, y, -(z + (length / 2))))
-
-                topRing.append(vertId)
-                bottomRing.append(vertId + ((rings * segments) + 1))
-                topCap.append(topVertex)
-                bottomCap.append(bottomVertex)
-
-                vertId += 1
-
-            topRings.append(topRing)
-            bottomRings.append(bottomRing)
-
-    verts = topCap + bottomCap
-
-    faces = []
-
-    ringIndex = len(topRings) - 1
-    while ringIndex > 0:
-        
-        topRing = topRings[ringIndex]
-        topNextRing = topRings[ringIndex - 1]
-
-        bottomRing = bottomRings[ringIndex]
-        bottomNextRing = bottomRings[ringIndex - 1]
-        
-        for i in range(0, segments):
-
-            index1 = i
-            index2 = 0 if i + 1 == segments else i + 1
-
-            topCapFace = [topRing[index1], topRing[index2], topNextRing[index2], topNextRing[index1]]
-            bottomCapFace = [bottomRing[index2], bottomRing[index1], bottomNextRing[index1], bottomNextRing[index2]]
-            faces.append(topCapFace)
-            faces.append(bottomCapFace)
-
-        ringIndex -= 1
-
-    topRing = topRings[rings - 1]
-    bottomRing = bottomRings[rings - 1]
-
-    topCapRing = topRings[0]
-    bottomCapRing = bottomRings[0]
-
-    topCapFaces = []
-    bottomCapFaces = []
-
-    for i in range(0, segments):
-        
-        index1 = i
-        index2 = 0 if i + 1 == segments else i + 1
-
-        bodyFace = [topRing[index2], topRing[index1], bottomRing[index1], bottomRing[index2]]
-        topCapFace = [topCapRing[index1], topCapRing[index2], rings * segments]
-        bottomCapFace = [bottomCapRing[index2], bottomCapRing[index1], ((rings * segments) * 2) + 1]
-
-        faces.append(bodyFace)
-        topCapFaces.append(topCapFace)
-        bottomCapFaces.append(bottomCapFace)
-
-    faces += topCapFaces + bottomCapFaces
-
-    mesh = bpy.data.meshes.new(name="Capsule")
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-
-    mesh = bpy.data.meshes.new(name="Capsule")
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    
-    return mesh
-    
-    #return object_data_add(context, mesh, operator=None)
 
 def set_bound_transform(bounds, obj):
     locationn = bounds.find("CompositePosition")
@@ -277,7 +167,7 @@ def create_poly_box(polyline, allverts, materials, geocenter):
 
     #obj.data.materials.append(material)
     
-    location = center + geocenter 
+    #location = center + geocenter 
     
     obj.location                = center#location #boxes dont use geocenter to offset? 
     obj.rotation_euler          = rotation
@@ -326,24 +216,20 @@ def create_poly_sphere(sphereline, vertices, materials, geocenter):
     materialindex = int(sphereline.attrib["m"])
     
     mesh = bpy.data.meshes.new("sphere")
-    bm   = bmesh.new()
+    MeshGen.BoundSphere(mesh, radius)
 
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=radius * 2)
-    bm.to_mesh(mesh)
-    bm.free()
-    
     mat = materials[materialindex]
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("sphere", mesh)
     obj.sollumtype = "Bound Sphere"
     obj.location = location
+    obj.bounds_radius = radius
     
     return obj
 
 
 def create_poly_capsule(capsuleline, vertices, materials, geocenter):
-    #obj.sollumtype = "Bound Capsule"
     
     materialindex = int(capsuleline.attrib["m"])
     radius = float(capsuleline.attrib["radius"])
@@ -352,7 +238,8 @@ def create_poly_capsule(capsuleline, vertices, materials, geocenter):
     length = get_distance_of_verts(v1, v2)    
     rot = get_direction_of_verts(v1, v2)
     
-    mesh = create_capsule_mesh(length, radius)
+    mesh = bpy.data.meshes.new("capsule")
+    MeshGen.BoundCapsule(mesh, radius, length)
     
     mesh.materials.append(materials[materialindex])
     
@@ -360,6 +247,10 @@ def create_poly_capsule(capsuleline, vertices, materials, geocenter):
     
     obj.location = (v1 + v2) / 2     
     obj.rotation_euler = rot
+
+    obj.sollumtype = "Bound Capsule"
+    obj.bounds_radius = radius
+    obj.bounds_length = length
     
     return obj
 
@@ -372,11 +263,7 @@ def create_poly_cylinder(cylinderline, vertices, materials, geocenter):
     materialindex = int(cylinderline.attrib["m"])
     
     mesh = bpy.data.meshes.new("cylinder")
-    bm   = bmesh.new()
-
-    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=32, diameter1=radius, diameter2=radius, depth=length)
-    bm.to_mesh(mesh)
-    bm.free()
+    MeshGen.BoundCylinder(mesh, radius, length)
     
     mat = materials[materialindex]
     mesh.materials.append(mat)
@@ -385,6 +272,8 @@ def create_poly_cylinder(cylinderline, vertices, materials, geocenter):
     obj.sollumtype = "Bound Cylinder"
     obj.location = (v1 + v2) / 2     
     obj.rotation_euler = rot
+    obj.bounds_radius = radius
+    obj.bounds_length = length
 
     return obj
 
@@ -431,7 +320,8 @@ def read_sphere_info(bounds):
 
 def read_capsule_info(bounds):
     
-    mesh = create_capsule_mesh(.975, .01)
+    mesh = bpy.data.meshes.new(name="Capsule")
+    MeshGen.BoundCapsule(mesh, .01, .975)
     obj = bpy.data.objects.new("Capsule", mesh)
     
     bm = bmesh.new()
@@ -469,24 +359,21 @@ def read_cylinder_info(bounds):
 
 def read_disc_info(bounds):
     mesh = bpy.data.meshes.new("Disc")
-    bm   = bmesh.new()
     radius = float(bounds.find("SphereRadius").attrib["value"])
     margin = float(bounds.find("Margin").attrib["value"])
 
-    bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=12, diameter1=radius, diameter2=radius, depth=margin)
+    MeshGen.BoundDisc(mesh=mesh, radius=radius, length=margin)
 
-    #FIXME: pretty sure it is not how the rotation should be calculated
-    bmesh.ops.rotate(bm, verts=bm.verts, cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90.0), 3, 'Y'))
-    bmesh.ops.rotate(bm, verts=bm.verts, cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90.0), 3, 'X'))
-    bm.to_mesh(mesh)
-    bm.free()
-    
     matindex = bounds.find("MaterialIndex").attrib["value"]
     mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Disc", mesh)
     set_bound_transform(bounds, obj)
+
+    obj.sollumtype = "Bound Disc"
+    obj.bounds_radius = radius
+    obj.bounds_length = margin
     
     return obj
 

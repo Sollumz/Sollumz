@@ -1,5 +1,6 @@
 import bpy
 import os 
+from .tools import meshgen as MeshGen
 
 class SollumzMainPanel(bpy.types.Panel):
     bl_label = "Sollumz"
@@ -20,25 +21,39 @@ class SollumzMainPanel(bpy.types.Panel):
             
             textbox = mainbox.box()
             textbox.prop(object, "name", text = "Object Name")
-            
+
             subbox = mainbox.box() 
             subbox.props_enum(object, "sollumtype")
             
-            if(object.sollumtype == "Fragment"):
-                box = mainbox.box()                
+            box = mainbox.box()
 
             if(object.sollumtype == "Drawable"):
-                box = mainbox.box()
                 row = box.row()
                 box.prop(object, "drawble_distance_high")
                 box.prop(object, "drawble_distance_medium")
                 row = box.row()
                 box.prop(object, "drawble_distance_low")
                 box.prop(object, "drawble_distance_vlow")
+
             if(object.sollumtype == "Geometry"):
-                box = mainbox.box()
                 box.prop(object, "level_of_detail")
                 box.prop(object, "mask")   
+
+            if(object.sollumtype == "Bound Capsule"):
+                box.prop(object, "bounds_length")
+                box.prop(object, "bounds_radius")
+
+            if(object.sollumtype == "Bound Cylinder"):
+                box.prop(object, "bounds_length")
+                box.prop(object, "bounds_radius")
+
+            if(object.sollumtype == "Bound Disc"):
+                box.prop(object, "bounds_length")
+                box.prop(object, "bounds_radius")
+
+            if(object.sollumtype == "Bound Sphere"):
+                box.prop(object, "bounds_radius")
+
         
         box = layout.box()
         box.label(text = "Tools") 
@@ -58,6 +73,19 @@ def param_name_to_title(pname):
     title = d.title() #+ a[1].upper() dont add back the X, Y, Z, W
     
     return title
+
+def bounds_update(self, context):
+    if(self.sollumtype == "Bound Sphere"):
+        MeshGen.BoundSphere(mesh=self.data, radius=self.bounds_radius)
+
+    if(self.sollumtype == "Bound Cylinder"):
+        MeshGen.BoundCylinder(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+    if(self.sollumtype == "Bound Disc"):
+        MeshGen.BoundDisc(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+    if(self.sollumtype == "Bound Capsule"):
+        MeshGen.BoundCapsule(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
 
 class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
@@ -215,6 +243,12 @@ bpy.types.Object.drawble_distance_high = bpy.props.FloatProperty(name = "Lod Dis
 bpy.types.Object.drawble_distance_medium = bpy.props.FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
 bpy.types.Object.drawble_distance_low = bpy.props.FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
 bpy.types.Object.drawble_distance_vlow = bpy.props.FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
+
+bpy.types.Object.bounds_length = bpy.props.FloatProperty(name="Length", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_radius = bpy.props.FloatProperty(name="Radius", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_rings = bpy.props.IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
+bpy.types.Object.bounds_segments = bpy.props.IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
+
 bpy.types.Object.shadertype = bpy.props.EnumProperty(
                                                         name = "Shader Type", 
                                                         default = "default.sps",
