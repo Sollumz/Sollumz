@@ -482,6 +482,8 @@ def read_geometry_info(bounds, bvh=False):
     #bpy.ops.mesh.select_loose()
     #bpy.ops.mesh.delete(type='VERT')
     
+    bobj.sollumtype = "Bound Geometry"
+    bobj.bounds_bvh = bvh
     return bobj
 
 def read_composite_info(name, bounds):
@@ -520,6 +522,8 @@ def read_composite_info(name, bounds):
         bpy.context.scene.collection.objects.link(child)   
         child.parent = cobj 
         
+    cobj.sollumtype = "Bound Composite"
+
     return cobj
     
 def read_bounds(name, bounds):

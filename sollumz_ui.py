@@ -39,6 +39,9 @@ class SollumzMainPanel(bpy.types.Panel):
                 box.prop(object, "level_of_detail")
                 box.prop(object, "mask")   
 
+            if(object.sollumtype == "Bound Geometry"):
+                box.prop(object, "bounds_bvh")
+
             if(object.sollumtype == "Bound Capsule"):
                 box.prop(object, "bounds_length")
                 box.prop(object, "bounds_radius")
@@ -231,7 +234,7 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                                     ("Geometry", "Geometry", "Geometry"),
                                                                     ("Bound Composite", "Bound Composite", "Bound Composite"),
                                                                     ("Bound Box", "Bound Box", "Bound Box"),
-                                                                    ("Bound Triangle", "Bound Triangle", "Bound Triangle"), 
+                                                                    ("Bound Geometry", "Bound Geometry", "Bound Geometry"), 
                                                                     ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
                                                                     ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
                                                                     ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder"),
@@ -248,6 +251,7 @@ bpy.types.Object.bounds_length = bpy.props.FloatProperty(name="Length", default=
 bpy.types.Object.bounds_radius = bpy.props.FloatProperty(name="Radius", default=1, min=0, max=100, update=bounds_update)
 bpy.types.Object.bounds_rings = bpy.props.IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
 bpy.types.Object.bounds_segments = bpy.props.IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
+bpy.types.Object.bounds_bvh = bpy.props.BoolProperty(name="BVH (Bounding volume hierarchy)", default=False, update=bounds_update)
 
 bpy.types.Object.shadertype = bpy.props.EnumProperty(
                                                         name = "Shader Type", 
