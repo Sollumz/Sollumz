@@ -8,7 +8,7 @@ from bpy.types import Operator
 import time
 import random 
 from .tools import cats as Cats
-from .ydrimport import read_ydr_xml, read_ydr_shaders
+from .ydrimport import read_ydr_xml, read_ydr_shaders, build_bones_dict
 
 class ImportYFT(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -60,14 +60,13 @@ class ImportYFT(Operator, ImportHelper):
         context.scene.collection.objects.link(node_lod1)
         node_lod1.parent = node_physics
 
+        bones_dict = build_bones_dict(node_fragment)
+
         for item in LOD1.find('Children').getchildren():
 
-            bone_tag = item.find('BoneTag').get('value')
-            loc = Vector((0,0,0))
+            bone_tag = int(item.find('BoneTag').get('value'))
 
-            for bone in armature.bones:
-                if bone["BONE_TAG"] == bone_tag:
-                    loc = bone.head
+            loc = armature.bones[bones_dict[bone_tag]].head
 
             node_item = bpy.data.objects.new('Item', None)
             context.scene.collection.objects.link(node_item)

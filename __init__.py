@@ -30,6 +30,7 @@ bl_info = {
 
 if "bpy" in locals():
     import importlib
+    importlib.reload(properties)
     importlib.reload(shaderoperators)
     importlib.reload(ydrimport)
     importlib.reload(ydrexport)
@@ -39,6 +40,7 @@ if "bpy" in locals():
     importlib.reload(collisionmatoperators)
     importlib.reload(tools)
 else:
+    from . import properties
     from . import shaderoperators
     from . import ydrimport
     from . import ydrexport 
@@ -51,6 +53,7 @@ else:
 import bpy
 
 def register():
+    properties.register()
     shaderoperators.register()
     ydrimport.register()
     ydrexport.register()
@@ -60,6 +63,7 @@ def register():
     yftimport.register()
     
 def unregister():
+    properties.unregister()
     shaderoperators.unregister()
     ydrimport.unregister()
     ydrexport.unregister()
