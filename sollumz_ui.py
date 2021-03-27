@@ -1,6 +1,5 @@
 import bpy
 import os 
-from .tools import meshgen as MeshGen
 from bpy.types import PropertyGroup, Panel, UIList, Operator
 from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty
 

@@ -1,4 +1,5 @@
 import bpy
+from .tools import meshgen as MeshGen
 from bpy.types import PropertyGroup
 from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
 
