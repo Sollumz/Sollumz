@@ -20,6 +20,10 @@ class SollumzMainPanel(bpy.types.Panel):
             layout.label(text = "No objects in scene")            
         else:
             mainbox = layout.box()
+
+            mainbox.label(text = 'Active LOD')
+            subrow = mainbox.row(align=True)
+            subrow.prop_tabs_enum(context.scene, "level_of_detail")
             
             textbox = mainbox.box()
             textbox.prop(object, "name", text = "Object Name")
@@ -91,6 +95,15 @@ def bounds_update(self, context):
 
     if(self.sollumtype == "Bound Capsule"):
         MeshGen.BoundCapsule(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+def scene_lod_update(self, context):
+    lod = self.level_of_detail
+
+    for obj in context.scene.objects: 
+        if lod == "All":
+            obj.hide_viewport = False
+        else:
+            obj.hide_viewport = obj.level_of_detail != lod
 
 class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
@@ -222,21 +235,35 @@ class SollumzMaterialPanel(bpy.types.Panel):
             
 #sollum properties
 bpy.types.Scene.last_created_material = bpy.props.PointerProperty(type=bpy.types.Material)
+bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
+    name = "Level Of Detail",
+    items = [
+        ("All", "All", "All"),
+        ("High", "High", "High"),
+        ("Medium", "Medium", "Medium"),
+        ("Low", "Low", "Low"),
+        ("Very Low", "Very Low", "Very Low")
+    ],
+    update = scene_lod_update,
+)
+
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
-                                                        name = "Vtype", 
-                                                        default = "None",
-                                                        items = [
-                                                                    ("None", "None", "None"),
-                                                                    ("Fragment", "Fragment", "Fragment"),
-                                                                    ("Drawable", "Drawable", "Drawable"), 
-                                                                    ("Geometry", "Geometry", "Geometry"),
-                                                                    ("Bound Composite", "Bound Composite", "Bound Composite"),
-                                                                    ("Bound Box", "Bound Box", "Bound Box"),
-                                                                    ("Bound Geometry", "Bound Geometry", "Bound Geometry"), 
-                                                                    ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
-                                                                    ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
-                                                                    ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder"),
-                                                                    ("Bound Disc", "Bound Disc", "Bound Disc")])
+    name = "Vtype",
+    default = "None",
+    items = [
+        ("None", "None", "None"),
+        ("Fragment", "Fragment", "Fragment"),
+        ("Drawable", "Drawable", "Drawable"), 
+        ("Geometry", "Geometry", "Geometry"),
+        ("Bound Composite", "Bound Composite", "Bound Composite"),
+        ("Bound Box", "Bound Box", "Bound Box"),
+        ("Bound Geometry", "Bound Geometry", "Bound Geometry"), 
+        ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
+        ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
+        ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder"),
+        ("Bound Disc", "Bound Disc", "Bound Disc")
+    ]
+)
                                                                     
 bpy.types.Object.level_of_detail = bpy.props.EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
 bpy.types.Object.mask = bpy.props.IntProperty(name = "Mask", default = 255)
