@@ -24,6 +24,7 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         items = [
                                                                     ("None", "None", "None"),
                                                                     ("Fragment", "Fragment", "Fragment"),
+                                                                    ("Drawable Dictionary", "Drawable Dictionary", "Drawable Dictionary"),
                                                                     ("Drawable", "Drawable", "Drawable"), 
                                                                     ("Geometry", "Geometry", "Geometry"),
                                                                     ("Bound Composite", "Bound Composite", "Bound Composite"),
