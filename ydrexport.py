@@ -166,8 +166,8 @@ def get_vertex_string(obj, vlayout, bones, depsgraph):
                 blendi_list = []
                 valid_weights = 0
                 total_weights = 0
-                min_weights = 255
-                min_weights_position = -1
+                max_weights = 0
+                max_weights_position = -1
                 for element in vertex_group_elements:
                     vertex_group = vertex_groups[element.group]
                     bone_index = bones_index_dict.get(vertex_group.name, -1)
@@ -176,9 +176,9 @@ def get_vertex_string(obj, vlayout, bones, depsgraph):
                     if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
                         blendw_list.append(weight)
                         blendi_list.append(bone_index)
-                        if (min_weights > weight):
-                            min_weights_position = valid_weights
-                            min_weights = weight
+                        if (max_weights < weight):
+                            max_weights_position = valid_weights
+                            max_weights = weight
 
                         valid_weights += 1
                         total_weights += weight
@@ -192,8 +192,8 @@ def get_vertex_string(obj, vlayout, bones, depsgraph):
                 # weights verification stuff
                 # wtf rockstar
                 # why do you even use int for weights
-                if valid_weights > 0 and min_weights_position != -1:
-                    blendw_list[min_weights_position] = blendw_list[min_weights_position] + (255 - total_weights)
+                if valid_weights > 0 and max_weights_position != -1:
+                    blendw_list[max_weights_position] = blendw_list[max_weights_position] + (255 - total_weights)
 
                 blendw[vi] = ' '.join(str(i) for i in blendw_list)
                 blendi[vi] = ' '.join(str(i) for i in blendi_list)
