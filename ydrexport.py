@@ -1311,7 +1311,7 @@ class ExportYDR(Operator, ExportHelper):
     filename_ext = ".ydr.xml"
 
     filter_glob: StringProperty(
-        default="*.ydd.xml",
+        default="*.ydr.xml",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
