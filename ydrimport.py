@@ -171,7 +171,7 @@ def create_material(filepath, td_node, shader):
             texture_dictionary.append(i)
     
     shadern_node = shader.find("FileName")
-    if shadern_node:
+    if shadern_node is not None:
         shadern = shadern_node.text
     else:
         shadern = "default.sps"
@@ -768,7 +768,7 @@ class ImportYDR(Operator, ImportHelper):
         
         bound_obj = read_ybn_xml(context, self.filepath, root)
         
-        if(bound_obj != None):
+        if bound_obj is not None:
             bound_obj.parent = vmodel_obj
             context.scene.collection.objects.link(bound_obj)
         
