@@ -141,11 +141,12 @@ class SollumzMaterialPanel(bpy.types.Panel):
         if(mat == None):
             return
         
-        if(mat.sollumtype == "Blender"):
-            box = tbox.box()
-            row = box.row()
-            row.label(text = "Convert To Shader")
-            row.operator("sollum.converttov") 
+        #FIX ME ##################################
+        #if(mat.sollumtype == "Blender"):
+           # box = tbox.box()
+            #row = box.row()
+           # row.label(text = "Convert To Shader")
+            #row.operator("sollum.converttov") 
         
         
         if(mat.sollumtype == "GTA"):
