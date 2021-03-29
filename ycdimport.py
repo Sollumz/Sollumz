@@ -218,20 +218,12 @@ def read_sequence_item_rot(bone, channels):
 
         #armature_mat = bone.bone.matrix_local
         rotation = Quaternion((values[3], values[0], values[1], values[2]))
-        rotation = rotation.to_matrix() * bone.bone.matrix
 
-        # if bone.parent:
-        #     rotation *= bone.bone.parent.matrix.inverted_safe()
+        if bone.bone.parent is not None:
+            rotation = bone.bone.convert_local_to_pose(rotation.to_matrix().to_4x4(), bone.bone.matrix.to_4x4(), parent_matrix=bone.bone.parent.matrix.to_4x4(), invert=True)
+        else:
+            rotation = bone.bone.convert_local_to_pose(rotation.to_matrix().to_4x4(), bone.bone.matrix.to_4x4(), invert=True)
 
-        #mat_rot = rotation.to_matrix().to_4x4()
-        # mat_rot = bone.rotation_quaternion.to_matrix().to_4x4()
-        # mat_loc = Matrix.Translation(bone.location)
-        # mat_sca = Matrix.Scale(1, 4, bone.scale)
-
-        # bone.matrix = mat_loc @ mat_rot @ mat_sca
-
-        # if bone.parent != None:
-        #     bone.matrix = bone.parent.matrix @ bone.matrix
 
         bone.rotation_quaternion = rotation.to_quaternion()
         #bone.matrix = rotation
