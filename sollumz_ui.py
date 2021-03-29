@@ -20,6 +20,10 @@ class SollumzMainPanel(bpy.types.Panel):
             layout.label(text = "No objects in scene")            
         else:
             mainbox = layout.box()
+
+            mainbox.label(text = 'Active LOD')
+            subrow = mainbox.row(align=True)
+            subrow.prop_tabs_enum(context.scene, "level_of_detail")
             
             textbox = mainbox.box()
             textbox.prop(object, "name", text = "Object Name")
@@ -91,6 +95,15 @@ def bounds_update(self, context):
 
     if(self.sollumtype == "Bound Capsule"):
         MeshGen.BoundCapsule(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+def scene_lod_update(self, context):
+    lod = self.level_of_detail
+
+    for obj in context.scene.objects: 
+        if lod == "All":
+            obj.hide_viewport = False
+        else:
+            obj.hide_viewport = obj.level_of_detail != lod
 
 class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"

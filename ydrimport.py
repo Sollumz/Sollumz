@@ -170,7 +170,12 @@ def create_material(filepath, td_node, shader):
         for i in td_node:
             texture_dictionary.append(i)
     
-    shadern = shader.find("FileName").text
+    shadern_node = shader.find("FileName")
+    if shadern_node:
+        shadern = shadern_node.text
+    else:
+        shadern = "default.sps"
+
     bpy.ops.sollum.createvshader(shadername = shadern)
     mat = bpy.context.scene.last_created_material
     
