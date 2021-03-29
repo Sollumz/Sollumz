@@ -35,7 +35,7 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                                     ("Bound Triangle", "Bound Triangle", "Bound Triangle"), 
                                                                     ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
                                                                     ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
-                                                                    ("Bound Disc", "Bound Disc", "Bound Disc")]),
+                                                                    ("Bound Disc", "Bound Disc", "Bound Disc"),
                                                                     ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder")]),
                                                                     
 bpy.types.Object.level_of_detail = EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
