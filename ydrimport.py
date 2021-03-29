@@ -8,6 +8,7 @@ from bpy.types import Operator
 import time
 import random 
 from .tools import cats as Cats
+from .ybnimport import read_ybn_xml 
 
 class v_vertex:
 
@@ -371,7 +372,7 @@ def create_model(self, context, index_buffer, vertices, filepath, name, bones):
         #for idx in poly.loop_indicies:
             #mesh.loops[i].tangent = tangents[i]    
 
-    obj = bpy.data.objects.new(name + ".mesh", mesh)
+    obj = bpy.data.objects.new(name.replace(".#dr", "") + "_mesh", mesh)
     
     #load weights
     # 256 - possibly the maximum of bones?
@@ -759,7 +760,13 @@ class ImportYDR(Operator, ImportHelper):
             obj.parent = vmodel_obj
             mod = obj.modifiers.new("Armature", 'ARMATURE')
             mod.object = vmodel_obj
-
+        
+        bound_obj = read_ybn_xml(context, self.filepath, root)
+        
+        if(bound_obj != None):
+            bound_obj.parent = vmodel_obj
+            context.scene.collection.objects.link(bound_obj)
+        
         #set sollum properties 
         dd_high = float(root.find("LodDistHigh").attrib["value"])
         dd_med = float(root.find("LodDistMed").attrib["value"])
@@ -829,14 +836,20 @@ class ImportYDD(Operator, ImportHelper):
             for obj in ydd:
                 context.scene.collection.objects.link(obj)
                 obj.parent = vmodel_obj
-                mod_objs.append(obj)
-                
+                mod_objs.append(obj)    
+        
+            for ydr in root:
+                bound_obj = read_ybn_xml(context, self.filepath, ydr)
+                if(bound_obj != None):
+                    bound_obj.parent = vmodel_obj
+                    context.scene.collection.link(bound_obj)
+                    
             vmodels.append(vmodel_obj)
-
+        
         vmodel_dict_obj = bpy.data.objects.new(name, None)
         for vmodel in vmodels:
             vmodel.parent = vmodel_dict_obj
-
+        
         context.scene.collection.objects.link(vmodel_dict_obj)
 
         if (armature_with_bones_obj != None):

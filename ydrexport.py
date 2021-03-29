@@ -448,7 +448,9 @@ def write_model_node(objs, materials):
         vblayout_node.set("type", "GTAV1")
         
         if(shader.sollumtype != "GTA"):
-            return
+            print("Error Material Type Is Not GTA!!")
+            return m_node
+        
         print('Processing shader', shader_index, shader.name)
         vlayout = get_vertex_layout(shader.name)
 
