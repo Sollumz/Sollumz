@@ -1,6 +1,8 @@
 import bpy
 from bpy.types import PropertyGroup
 from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
+from .sollumz_ui import bounds_update
+
 
 #sollum properties
 bpy.types.Scene.last_created_material = PointerProperty(type=bpy.types.Material)
@@ -356,6 +358,12 @@ bpy.types.ShaderNodeTexImage.maps_half = BoolProperty(name = "MAPS_HALF", defaul
 bpy.types.ShaderNodeTexImage.unk24 = BoolProperty(name = "UNK24", default = False)
 
 bpy.types.Material.sollumtype = EnumProperty(name = "Sollum Type", items = [("Blender", "Blender", "Blender"), ("GTA", "GTA", "GTA")], default = "Blender")
+
+bpy.types.Object.bounds_length = bpy.props.FloatProperty(name="Length", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_radius = bpy.props.FloatProperty(name="Radius", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_rings = bpy.props.IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
+bpy.types.Object.bounds_segments = bpy.props.IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
+bpy.types.Object.bounds_bvh = bpy.props.BoolProperty(name="BVH (Bounding volume hierarchy)", default=False, update=bounds_update)
 
 class SollumzBoneFlag(PropertyGroup):
     name: StringProperty(default="Unk0")

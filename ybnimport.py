@@ -488,7 +488,7 @@ def read_geometry_info(bounds, bvh=False):
 
 def read_composite_info(name, bounds):
     
-    cobj = bpy.data.objects.new(name, None)
+    cobj = bpy.data.objects.new(name + "_col", None)
         
     if(cobj == None):
         return #log error 
@@ -530,10 +530,16 @@ def read_bounds(name, bounds):
     
     type = bounds.attrib["type"]
     
-    bobjs = []
+    #bobjs = []
     
     if(type == "Composite"):
-        bobjs.append(read_composite_info(name, bounds))
+        return read_composite_info(name, bounds)
+        #bobjs.append(read_composite_info(name, bounds))
+    else:
+        print("ERROR UNKNOWN BOUND TYPE OF : " + type)
+        return None
+        
+    """ not needed since all R* bounds have a composite as the root of all objects
     if(type == "Box"):
         read_box_info(bounds)
     if(type == "Sphere"):
@@ -548,17 +554,18 @@ def read_bounds(name, bounds):
     if(type == "Cloth"):
         print()
         #bobjs.append(read_cloth_info(child))
-
-    return bobjs
+    """
+    
+    #return bobjs
 
 def read_ybn_xml(context, filepath, root):
     
     filename = os.path.basename(filepath[:-8]) 
     
-    bound = root.find("Bounds") 
-    objs = read_bounds(filename, bound)
+    bound_node = root.find("Bounds") 
+    bound_obj = read_bounds(filename, bound_node)
     
-    return objs
+    return bound_obj
     
 class ImportYbnXml(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -572,11 +579,13 @@ class ImportYbnXml(Operator, ImportHelper):
         tree = ET.parse(self.filepath)
         root = tree.getroot() 
         
-        objs = read_ybn_xml(context, self.filepath, root) 
-
-        for obj in objs:
-            context.scene.collection.objects.link(obj)
-
+        bound_obj = read_ybn_xml(context, self.filepath, root)
+        
+        if(bound_obj != None):
+            context.scene.collection.link(bound_obj)
+        else:
+            self.report("Error importing ybn located at: " + self.filepath)
+            
         return {'FINISHED'}
     
 # Only needed if you want to add into a dynamic menu
