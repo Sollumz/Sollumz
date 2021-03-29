@@ -9,6 +9,7 @@ import time
 import random 
 from .tools import cats as Cats
 from .ydrimport import read_ydr_xml, read_ydr_shaders, build_bones_dict
+from .ybnimport import read_composite_info
 
 class ImportYFT(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -59,6 +60,21 @@ class ImportYFT(Operator, ImportHelper):
         node_lod1 = bpy.data.objects.new('LOD1', None)
         context.scene.collection.objects.link(node_lod1)
         node_lod1.parent = node_physics
+
+        # Collision
+        archetype = LOD1.find('Archetype')
+
+        if archetype != None:
+            node_archetype = bpy.data.objects.new('Archetype', None)
+            context.scene.collection.objects.link(node_archetype)
+            node_archetype.parent = node_lod1
+
+            archetype_name = archetype.find('Name').text
+            bounds = archetype.find('Bounds')
+            
+            node_bounds = read_composite_info(archetype_name, bounds)
+            context.scene.collection.objects.link(node_bounds)
+            node_bounds.parent = node_archetype
 
         bones_dict = build_bones_dict(node_fragment)
 

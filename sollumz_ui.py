@@ -18,49 +18,56 @@ class SollumzMainPanel(bpy.types.Panel):
         if(object == None):
             layout.label(text = "No objects in scene")            
         else:
-            mainbox = layout.box()
             
-            textbox = mainbox.box()
+            toolbox = layout.box()
+            toolbox.label(text = "Tools") 
+            
+            actlodbox = toolbox.box()
+            actlodbox.label(text = 'Active LOD')
+            subrow = actlodbox.row(align=True)
+            subrow.prop_tabs_enum(context.scene, "level_of_detail")
+            
+            selectionbox = layout.box()
+            selectionbox.label(text = "Selection Info")
+            textbox = selectionbox.box()
             textbox.prop(object, "name", text = "Object Name")
 
-            subbox = mainbox.box() 
+            subbox = selectionbox.box() 
             subbox.props_enum(object, "sollumtype")
             
-            box = mainbox.box()
 
             if(object.sollumtype == "Drawable"):
-                row = box.row()
-                box.prop(object, "drawble_distance_high")
-                box.prop(object, "drawble_distance_medium")
-                row = box.row()
-                box.prop(object, "drawble_distance_low")
-                box.prop(object, "drawble_distance_vlow")
+                row = subbox.row()
+                subbox.prop(object, "drawble_distance_high")
+                subbox.prop(object, "drawble_distance_medium")
+                row = subbox.row()
+                subbox.prop(object, "drawble_distance_low")
+                subbox.prop(object, "drawble_distance_vlow")
 
             if(object.sollumtype == "Geometry"):
-                box.prop(object, "level_of_detail")
-                box.prop(object, "mask")   
+                subbox.prop(object, "level_of_detail")
+                subbox.prop(object, "mask")   
 
             if(object.sollumtype == "Bound Geometry"):
-                box.prop(object, "bounds_bvh")
+                subbox.prop(object, "bounds_bvh")
 
             if(object.sollumtype == "Bound Capsule"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_length")
+                subbox.prop(object, "bounds_radius")
 
             if(object.sollumtype == "Bound Cylinder"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_length")
+                subbox.prop(object, "bounds_radius")
 
             if(object.sollumtype == "Bound Disc"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_length")
+                subbox.prop(object, "bounds_radius")
 
             if(object.sollumtype == "Bound Sphere"):
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_radius")
 
         
-        box = layout.box()
-        box.label(text = "Tools") 
+        
         
 def param_name_to_title(pname):
     
@@ -77,6 +84,28 @@ def param_name_to_title(pname):
     title = d.title() #+ a[1].upper() dont add back the X, Y, Z, W
     
     return title
+
+def bounds_update(self, context):
+    if(self.sollumtype == "Bound Sphere"):
+        MeshGen.BoundSphere(mesh=self.data, radius=self.bounds_radius)
+
+    if(self.sollumtype == "Bound Cylinder"):
+        MeshGen.BoundCylinder(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+    if(self.sollumtype == "Bound Disc"):
+        MeshGen.BoundDisc(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+    if(self.sollumtype == "Bound Capsule"):
+        MeshGen.BoundCapsule(mesh=self.data, radius=self.bounds_radius, length=self.bounds_length)
+
+def scene_lod_update(self, context):
+    lod = self.level_of_detail
+
+    for obj in context.scene.objects: 
+        if lod == "All":
+            obj.hide_viewport = False
+        else:
+            obj.hide_viewport = obj.level_of_detail != lod
 
 class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
@@ -204,7 +233,7 @@ class SollumzMaterialPanel(bpy.types.Panel):
                       
                 parambox.prop(n.outputs[0], "default_value", text = n.name[-1].upper())
                 
-                prevname = n.name
+                prevname = n.name        
 
 class SOLLUMZ_UL_BoneFlags(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
