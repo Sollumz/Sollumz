@@ -586,7 +586,7 @@ class ImportYbnXml(Operator, ImportHelper):
         bound_obj = read_ybn_xml(context, self.filepath, root)
         
         if(bound_obj != None):
-            context.scene.collection.link(bound_obj)
+            context.scene.collection.objects.link(bound_obj)
         else:
             self.report("Error importing ybn located at: " + self.filepath)
             
