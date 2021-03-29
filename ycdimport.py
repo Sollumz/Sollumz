@@ -112,16 +112,23 @@ class ChannelIndirectQuantizeFloat(Channel):
         frameId = self.frames[frame % len(self.frames)]
         return self.values[frameId % len(self.values)]
 
+def find_armatures():
+    armatures = []
+    for obj in bpy.context.scene.collection.objects:
+        if isinstance(obj.data, bpy.types.Armature):
+            armatures.append(obj)
+
+    return armatures
 
 def find_bone_by_tag(tag):
-    armature_object = bpy.context.scene.objects['head_000_r']
+    for armature_object in find_armatures():
 
-    bpy.context.view_layer.objects.active = armature_object
-    bpy.ops.object.mode_set(mode='POSE')
+        bpy.context.view_layer.objects.active = armature_object
+        bpy.ops.object.mode_set(mode='POSE')
 
-    for bone in armature_object.pose.bones:
-        if str(bone.bone.bone_properties.tag) == tag:
-            return bone
+        for bone in armature_object.pose.bones:
+            if str(bone.bone.bone_properties.tag) == tag:
+                return bone
     return None
 
 
@@ -274,12 +281,10 @@ def read_animation(root):
 
     action = bpy.data.actions.new(hashname)
     
-    ob = bpy.context.scene.objects['head_000_r']
-
-    if ob.animation_data is None:
-        ob.animation_data_create()
-
-    ob.animation_data.action = action
+    for ob in find_armatures():
+        if ob.animation_data is None:
+            ob.animation_data_create()
+        ob.animation_data.action = action
 
     for sequence in sequences:
         read_sequence(sequence, bones)
