@@ -296,6 +296,7 @@ def read_box_info(bounds):
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Box", mesh)
+    obj.sollumtype = "Bound Box"
     set_bound_transform(bounds, obj)
     
     return obj
@@ -314,6 +315,7 @@ def read_sphere_info(bounds):
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Sphere", mesh)
+    obj.sollumtype = "Bound Sphere"
     set_bound_transform(bounds, obj)
     
     return obj
@@ -333,7 +335,8 @@ def read_capsule_info(bounds):
     matindex = bounds.find("MaterialIndex").attrib["value"]
     mat = collisionmatoperators.create_with_index(matindex, bpy.context) 
     mesh.materials.append(mat)
-
+    
+    obj.sollumtype = "Bound Capsule"
     set_bound_transform(bounds, obj)
     
     return obj
@@ -353,6 +356,7 @@ def read_cylinder_info(bounds):
     mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Cylinder", mesh)
+    obj.sollumtype = "Bound Cylinder"
     set_bound_transform(bounds, obj)
     
     return obj
