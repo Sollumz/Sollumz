@@ -1,25 +1,42 @@
 import bpy
 from bpy.types import PropertyGroup
 from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
-from .sollumz_ui import bounds_update
+from .sollumz_ui import bounds_update, scene_lod_update, scene_hide_collision
 
 
 #sollum properties
 bpy.types.Scene.last_created_material = PointerProperty(type=bpy.types.Material)
+bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
+    name = "Level Of Detail",
+    items = [
+        ("All", "All", "All"),
+        ("High", "High", "High"),
+        ("Medium", "Medium", "Medium"),
+        ("Low", "Low", "Low"),
+        ("Very Low", "Very Low", "Very Low")
+    ],
+    update = scene_lod_update,
+)
+
+bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", update = scene_hide_collision)
+
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
                                                         default = "None",
                                                         items = [
                                                                     ("None", "None", "None"),
                                                                     ("Fragment", "Fragment", "Fragment"),
+                                                                    ("Drawable Dictionary", "Drawable Dictionary", "Drawable Dictionary"),
                                                                     ("Drawable", "Drawable", "Drawable"), 
                                                                     ("Geometry", "Geometry", "Geometry"),
                                                                     ("Bound Composite", "Bound Composite", "Bound Composite"),
+                                                                    ("Bound Geometry", "Bound Geometry", "Bound Geometry"),
                                                                     ("Bound Box", "Bound Box", "Bound Box"),
                                                                     ("Bound Triangle", "Bound Triangle", "Bound Triangle"), 
                                                                     ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
                                                                     ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
-                                                                    ("Bound Disc", "Bound Disc", "Bound Disc")])
+                                                                    ("Bound Disc", "Bound Disc", "Bound Disc"),
+                                                                    ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder")])
                                                                     
 bpy.types.Object.level_of_detail = EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
 bpy.types.Object.mask = IntProperty(name = "Mask", default = 255)
@@ -27,6 +44,13 @@ bpy.types.Object.drawble_distance_high = FloatProperty(name = "Lod Distance High
 bpy.types.Object.drawble_distance_medium = FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
 bpy.types.Object.drawble_distance_low = FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
 bpy.types.Object.drawble_distance_vlow = FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
+
+bpy.types.Object.bounds_length = FloatProperty(name="Length", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_radius = FloatProperty(name="Radius", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_rings = IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
+bpy.types.Object.bounds_segments = IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
+bpy.types.Object.bounds_bvh = BoolProperty(name="BVH (Bounding volume hierarchy)", default=False, update=bounds_update)
+
 bpy.types.Object.shadertype = EnumProperty(
                                                         name = "Shader Type", 
                                                         default = "default.sps",
@@ -364,6 +388,8 @@ bpy.types.Object.bounds_radius = bpy.props.FloatProperty(name="Radius", default=
 bpy.types.Object.bounds_rings = bpy.props.IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
 bpy.types.Object.bounds_segments = bpy.props.IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
 bpy.types.Object.bounds_bvh = bpy.props.BoolProperty(name="BVH (Bounding volume hierarchy)", default=False, update=bounds_update)
+
+
 
 class SollumzBoneFlag(PropertyGroup):
     name: StringProperty(default="Unk0")

@@ -19,54 +19,56 @@ class SollumzMainPanel(bpy.types.Panel):
         if(object == None):
             layout.label(text = "No objects in scene")            
         else:
-            mainbox = layout.box()
-
-            mainbox.label(text = 'Active LOD')
-            subrow = mainbox.row(align=True)
+            
+            toolbox = layout.box()
+            toolbox.label(text = "Tools") 
+            
+            actlodbox = toolbox.box()
+            actlodbox.label(text = 'Active LOD')
+            subrow = actlodbox.row(align=True)
             subrow.prop_tabs_enum(context.scene, "level_of_detail")
             
-            textbox = mainbox.box()
+            toolbox.prop(context.scene, "hide_collision")
+            
+            selectionbox = layout.box()
+            selectionbox.label(text = "Selection Info")
+            textbox = selectionbox.box()
             textbox.prop(object, "name", text = "Object Name")
 
-            subbox = mainbox.box() 
+            subbox = selectionbox.box() 
             subbox.props_enum(object, "sollumtype")
             
-            box = mainbox.box()
 
             if(object.sollumtype == "Drawable"):
-                row = box.row()
-                box.prop(object, "drawble_distance_high")
-                box.prop(object, "drawble_distance_medium")
-                row = box.row()
-                box.prop(object, "drawble_distance_low")
-                box.prop(object, "drawble_distance_vlow")
+                row = subbox.row()
+                subbox.prop(object, "drawble_distance_high")
+                subbox.prop(object, "drawble_distance_medium")
+                row = subbox.row()
+                subbox.prop(object, "drawble_distance_low")
+                subbox.prop(object, "drawble_distance_vlow")
 
             if(object.sollumtype == "Geometry"):
-                box.prop(object, "level_of_detail")
-                box.prop(object, "mask")   
+                subbox.prop(object, "level_of_detail")
+                subbox.prop(object, "mask")   
 
             if(object.sollumtype == "Bound Geometry"):
-                box.prop(object, "bounds_bvh")
+                subbox.prop(object, "bounds_bvh")
 
             if(object.sollumtype == "Bound Capsule"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_length")
+                subbox.prop(object, "bounds_radius")
 
             if(object.sollumtype == "Bound Cylinder"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_length")
+                subbox.prop(object, "bounds_radius")
 
             if(object.sollumtype == "Bound Disc"):
-                box.prop(object, "bounds_length")
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_length")
+                subbox.prop(object, "bounds_radius")
 
             if(object.sollumtype == "Bound Sphere"):
-                box.prop(object, "bounds_radius")
+                subbox.prop(object, "bounds_radius")
 
-        
-        box = layout.box()
-        box.label(text = "Tools") 
-        
 def param_name_to_title(pname):
     
     title = ""
@@ -105,6 +107,11 @@ def scene_lod_update(self, context):
         else:
             obj.hide_viewport = obj.level_of_detail != lod
 
+def scene_hide_collision(self, context):
+    for obj in context.scene.objects:
+        if "Bound" in obj.sollumtype:
+            obj.hide_viewport = self.hide_collision 
+
 class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
     bl_idname = "Sollumz_PT_MAT_PANEL"
@@ -134,11 +141,12 @@ class SollumzMaterialPanel(bpy.types.Panel):
         if(mat == None):
             return
         
-        if(mat.sollumtype == "Blender"):
-            box = tbox.box()
-            row = box.row()
-            row.label(text = "Convert To Shader")
-            row.operator("sollum.converttov") 
+        #FIX ME ##################################
+        #if(mat.sollumtype == "Blender"):
+           # box = tbox.box()
+            #row = box.row()
+           # row.label(text = "Convert To Shader")
+            #row.operator("sollum.converttov") 
         
         
         if(mat.sollumtype == "GTA"):
