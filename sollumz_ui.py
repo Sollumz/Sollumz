@@ -28,6 +28,8 @@ class SollumzMainPanel(bpy.types.Panel):
             subrow = actlodbox.row(align=True)
             subrow.prop_tabs_enum(context.scene, "level_of_detail")
             
+            toolbox.prop(context.scene, "hide_collision")
+            
             selectionbox = layout.box()
             selectionbox.label(text = "Selection Info")
             textbox = selectionbox.box()
@@ -67,9 +69,6 @@ class SollumzMainPanel(bpy.types.Panel):
             if(object.sollumtype == "Bound Sphere"):
                 subbox.prop(object, "bounds_radius")
 
-        
-        
-        
 def param_name_to_title(pname):
     
     title = ""
@@ -107,6 +106,11 @@ def scene_lod_update(self, context):
             obj.hide_viewport = False
         else:
             obj.hide_viewport = obj.level_of_detail != lod
+
+def scene_hide_collision(self, context):
+    for obj in context.scene.objects:
+        if "Bound" in obj.sollumtype:
+            obj.hide_viewport = self.hide_collision 
 
 class SollumzMaterialPanel(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"

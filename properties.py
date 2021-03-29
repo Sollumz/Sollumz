@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import PropertyGroup
 from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
-from .sollumz_ui import bounds_update, scene_lod_update
+from .sollumz_ui import bounds_update, scene_lod_update, scene_hide_collision
 
 
 #sollum properties
@@ -17,6 +17,8 @@ bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
     ],
     update = scene_lod_update,
 )
+
+bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", update = scene_hide_collision)
 
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
