@@ -26,6 +26,7 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         items = [
                                                                     ("None", "None", "None"),
                                                                     ("Fragment", "Fragment", "Fragment"),
+                                                                    ("Drawable Dictionary", "Drawable Dictionary", "Drawable Dictionary"),
                                                                     ("Drawable", "Drawable", "Drawable"), 
                                                                     ("Geometry", "Geometry", "Geometry"),
                                                                     ("Bound Composite", "Bound Composite", "Bound Composite"),
@@ -42,6 +43,13 @@ bpy.types.Object.drawble_distance_high = FloatProperty(name = "Lod Distance High
 bpy.types.Object.drawble_distance_medium = FloatProperty(name = "Lod Distance Medium", default = 9998.0, min = 0, max = 100000)
 bpy.types.Object.drawble_distance_low = FloatProperty(name = "Lod Distance Low", default = 9998.0, min = 0, max = 100000)
 bpy.types.Object.drawble_distance_vlow = FloatProperty(name = "Lod Distance vlow", default = 9998.0, min = 0, max = 100000)
+
+bpy.types.Object.bounds_length = FloatProperty(name="Length", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_radius = FloatProperty(name="Radius", default=1, min=0, max=100, update=bounds_update)
+bpy.types.Object.bounds_rings = IntProperty(name="Rings", default=6, min=1, max=100, update=bounds_update)
+bpy.types.Object.bounds_segments = IntProperty(name="Segments", default=12, min=3, max=100, update=bounds_update)
+bpy.types.Object.bounds_bvh = BoolProperty(name="BVH (Bounding volume hierarchy)", default=False, update=bounds_update)
+
 bpy.types.Object.shadertype = EnumProperty(
                                                         name = "Shader Type", 
                                                         default = "default.sps",
