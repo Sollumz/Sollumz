@@ -19,9 +19,11 @@ def prettify(elem):
 
 def get_obj_children(obj):
     children = [] 
-    for ob in bpy.data.objects: 
-        if ob.parent == obj: 
+    objects = bpy.context.scene.objects
+    for ob in obj.children: 
+        if objects.get(ob.name):
             children.append(ob) 
+
     return children 
 
 def order_vertex_list(list, vlayout):
@@ -1235,7 +1237,11 @@ def write_drawable(obj, filepath, root_name="Drawable", bones=None):
     
 def write_drawable_dictionary(obj, filepath):
     drawable_dictionary_node = Element("DrawableDictionary")
-    children = get_obj_children(obj)
+    children = None
+    if len(obj.drawable_dict_properties.exportables) > 0:
+        children = [i.drawable for i in obj.drawable_dict_properties.exportables]
+    else:
+        children = get_obj_children(obj)
 
     bones = None
     for c in children:

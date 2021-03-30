@@ -41,14 +41,15 @@ class ImportYFT(Operator, ImportHelper):
         # Drawable
         drawable = root.find('Drawable')
         shaders = read_ydr_shaders(self, context, self.filepath, drawable)
-        ydr_objs = read_ydr_xml(self, context, self.filepath, drawable, shaders)
+        drawable = read_ydr_xml(self, context, self.filepath, drawable, shaders)
         node_fragment.sollumtype = "Fragment"
 
-        for obj in ydr_objs:
-            context.scene.collection.objects.link(obj)
-            obj.parent = node_fragment
-            mod = obj.modifiers.new("Armature", 'ARMATURE')
-            mod.object = node_fragment
+        if drawable.objects is not None:
+            for obj in drawable.objects:
+                context.scene.collection.objects.link(obj)
+                obj.parent = node_fragment
+                mod = obj.modifiers.new("Armature", 'ARMATURE')
+                mod.object = node_fragment
 
         # Physics
         Physics = root.find('Physics')
@@ -89,17 +90,17 @@ class ImportYFT(Operator, ImportHelper):
             node_item.parent = node_lod1
 
             item_drawable = item.find('Drawable')
-            ydr_objs = read_ydr_xml(self, context, self.filepath, item_drawable, shaders)
+            drawable = read_ydr_xml(self, context, self.filepath, item_drawable, shaders)
             # matrix = list(map(lambda line : line.strip().split(), item_drawable.find('Matrix').text.strip().split('\n')))
 
             node_item.location = loc # should be somehow offsetted
             
-
-            for obj in ydr_objs:
-                context.scene.collection.objects.link(obj)
-                obj.parent = node_item
-                mod = obj.modifiers.new("Armature", 'ARMATURE')
-                mod.object = node_fragment
+            if drawable.objects is not None:
+                for obj in drawable.objects:
+                    context.scene.collection.objects.link(obj)
+                    obj.parent = node_item
+                    mod = obj.modifiers.new("Armature", 'ARMATURE')
+                    mod.object = node_fragment
 
         finished = time.time()
         
