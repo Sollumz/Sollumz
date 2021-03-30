@@ -567,6 +567,10 @@ def read_ybn_xml(context, filepath, root):
     filename = os.path.basename(filepath[:-8]) 
     
     bound_node = root.find("Bounds") 
+
+    if bound_node is None:
+        return None
+
     bound_obj = read_bounds(filename, bound_node)
     
     return bound_obj
