@@ -135,6 +135,36 @@ class ChannelIndirectQuantizeFloat(Channel):
         frameId = self.frames[frame % len(self.frames)]
         return self.values[frameId % len(self.values)]
 
+class ClipDictionary:
+
+    Clips = None
+    Animations = None
+
+    def __init__(self, xml):
+        self.Clips = []
+
+        for clipNode in xml.find("Clips"):
+            self.Clips.append(Clip(clipNode))
+
+        self.Animations = []
+
+        for animNode in xml.find("Animations"):
+            anim = Animation(animNode)
+            self.Animations.append(anim)
+            anim.apply()
+
+    def toObject(self):
+        dictNode = bpy.data.objects.new('Clip Dictionary', None)
+        bpy.context.collection.objects.link(dictNode)
+
+        for clip in self.Clips:
+            clipNode = clip.toObject()
+            clipNode.parent = dictNode
+
+        dictNode.sollumtype = "Clip Dictionary"
+
+        return dictNode
+
 class Clip:
     Hash = None
     Name = None
@@ -162,6 +192,23 @@ class Clip:
         self.StartTime = xml_read_value(xml.find("StartTime"), 0, float)
         self.EndTime = xml_read_value(xml.find("EndTime"), 0, float)
         self.Rate = xml_read_value(xml.find("Rate"), 0, float)
+
+    def toObject(self):
+        clipNode = bpy.data.objects.new(self.Name, None)
+        bpy.context.collection.objects.link(clipNode)
+        clipNode.sollumtype = "Clip"
+
+        props = clipNode.clip_properties
+        props.Hash = self.Hash
+        props.Name = self.Name
+        props.Type = self.Type
+        props.Unknown30 = self.Unknown30
+        props.AnimationHash = self.AnimationHash
+        props.StartTime = self.StartTime
+        props.EndTime = self.EndTime
+        props.Rate = self.Rate        
+
+        return clipNode
 
 
 class Animation:
@@ -401,27 +448,14 @@ def read_bones(root):
 
     return bones
 
-def read_clip_dict(name, root):
-
-    clips = []
-
-    for clipNode in root.find("Clips"):
-        clips.append(Clip(clipNode))
-
-    animations = []
-
-    for animNode in root.find("Animations"):
-        anim = Animation(animNode)
-        animations.append(anim)
-        anim.apply()
-
-    return clips, animations
 
 def read_ycd_xml(context, filepath, root):
     
     filename = os.path.basename(filepath[:-8]) 
+
+    clipDict = ClipDictionary(root)
     
-    clips, animations = read_clip_dict(filename, root)
+    clipDict.toObject()
     
 class ImportYcdXml(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""

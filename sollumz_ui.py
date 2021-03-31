@@ -69,6 +69,10 @@ class SollumzMainPanel(bpy.types.Panel):
             if(object.sollumtype == "Bound Sphere"):
                 subbox.prop(object, "bounds_radius")
 
+            if(object.sollumtype == "Clip"):
+                for k in ["Hash", "Name", "Type", "Unknown30", "AnimationHash", "StartTime", "EndTime", "Rate"]:
+                    subbox.prop(object.clip_properties, k)
+
 def param_name_to_title(pname):
     
     title = ""
