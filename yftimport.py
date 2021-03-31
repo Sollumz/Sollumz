@@ -44,8 +44,8 @@ class ImportYFT(Operator, ImportHelper):
         drawable = read_ydr_xml(self, context, self.filepath, drawable, shaders)
         node_fragment.sollumtype = "Fragment"
 
-        if drawable.objects is not None:
-            for obj in drawable.objects:
+        if drawable.Objects is not None:
+            for obj in drawable.Objects:
                 context.scene.collection.objects.link(obj)
                 obj.parent = node_fragment
                 mod = obj.modifiers.new("Armature", 'ARMATURE')
@@ -95,8 +95,8 @@ class ImportYFT(Operator, ImportHelper):
 
             node_item.location = loc # should be somehow offsetted
             
-            if drawable.objects is not None:
-                for obj in drawable.objects:
+            if drawable.Objects is not None:
+                for obj in drawable.Objects:
                     context.scene.collection.objects.link(obj)
                     obj.parent = node_item
                     mod = obj.modifiers.new("Armature", 'ARMATURE')
