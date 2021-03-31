@@ -135,6 +135,35 @@ class ChannelIndirectQuantizeFloat(Channel):
         frameId = self.frames[frame % len(self.frames)]
         return self.values[frameId % len(self.values)]
 
+class Clip:
+    Hash = None
+    Name = None
+    Type = None
+    Unknown30 = None
+
+    Tags = []
+    Properties = []
+    AnimationHash = None
+    StartTime = None
+    EndTime = None
+    Rate = None
+
+    def __init__(self, xml):
+        self.Hash = xml_read_text(xml.find("Hash"), "", str)
+        self.Name = xml_read_text(xml.find("Name"), "", str)
+        self.Type = xml_read_value(xml.find("Type"), "", str)
+        self.Unknown30 = xml_read_value(xml.find("Unknown30"), 0, int)
+
+        # TODO: Tags
+        # TODO: Properties
+        # hashes: boneid,left,right,blocked,create,release,destroy,allowed
+
+        self.AnimationHash = xml_read_text(xml.find("AnimationHash"), "", str)
+        self.StartTime = xml_read_value(xml.find("StartTime"), 0, float)
+        self.EndTime = xml_read_value(xml.find("EndTime"), 0, float)
+        self.Rate = xml_read_value(xml.find("Rate"), 0, float)
+
+
 class Animation:
     Hash = None
     Unknown10 = 0
@@ -373,9 +402,12 @@ def read_bones(root):
     return bones
 
 def read_clip_dict(name, root):
-    clips = root.find("Clips") 
 
-    actions = []
+    clips = []
+
+    for clipNode in root.find("Clips"):
+        clips.append(Clip(clipNode))
+
     animations = []
 
     for animNode in root.find("Animations"):
@@ -383,15 +415,13 @@ def read_clip_dict(name, root):
         animations.append(anim)
         anim.apply()
 
-    return actions
+    return clips, animations
 
 def read_ycd_xml(context, filepath, root):
     
     filename = os.path.basename(filepath[:-8]) 
     
-    actions = read_clip_dict(filename, root)
-    
-    return actions
+    clips, animations = read_clip_dict(filename, root)
     
 class ImportYcdXml(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -405,7 +435,7 @@ class ImportYcdXml(Operator, ImportHelper):
         tree = ET.parse(self.filepath)
         root = tree.getroot() 
         
-        actions = read_ycd_xml(context, self.filepath, root) 
+        read_ycd_xml(context, self.filepath, root) 
 
         # for obj in objs:
             # context.scene.collection.objects.link(obj)

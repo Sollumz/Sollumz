@@ -314,6 +314,10 @@ class SollumzAnimPanel(bpy.types.Panel):
         if active_object is None:
             layout.label(text = "No objects selected")
             return
+
+        if active_object.animation_data is None:
+            layout.label(text = "Selected object has no animation assigned")
+            return
         
         action = active_object.animation_data.action
 
