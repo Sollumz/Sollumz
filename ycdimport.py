@@ -147,12 +147,12 @@ class Animation:
     Sequences = None
 
     def __init__(self, xml):
-        self.Hash = xml_read_text(xml.find("Hash"), None, str)
-        self.FrameCount = xml_read_value(xml.find("FrameCount"), None, int)
-        self.Unknown10 = xml_read_value(xml.find("Unknown10"), None, int)
-        self.SequenceFrameLimit = xml_read_value(xml.find("SequenceFrameLimit"), None, int)
-        self.Duration = xml_read_value(xml.find("Duration"), None, float)
-        self.Unknown1C = xml_read_value(xml.find("Unknown1C"), None, str)
+        self.Hash = xml_read_text(xml.find("Hash"), "", str)
+        self.FrameCount = xml_read_value(xml.find("FrameCount"), 1, int)
+        self.Unknown10 = xml_read_value(xml.find("Unknown10"), 0, int)
+        self.SequenceFrameLimit = xml_read_value(xml.find("SequenceFrameLimit"), 1, int)
+        self.Duration = xml_read_value(xml.find("Duration"), 0, float)
+        self.Unknown1C = xml_read_value(xml.find("Unknown1C"), "", str)
 
         self.BoneIds = []
         for boneIdNode in xml.find("BoneIds"):
@@ -188,7 +188,13 @@ class Animation:
 
     def create_action(self):
         action = bpy.data.actions.new(self.Hash)
-        
+        action.Hash = self.Hash
+        action.FrameCount = self.FrameCount
+        action.SequenceFrameLimit = self.SequenceFrameLimit
+        action.Duration  = self.Duration
+        action.Unknown10 = self.Unknown10
+        action.Unknown1C = self.Unknown1C
+
         for ob in find_armatures():
             if ob.animation_data is None:
                 ob.animation_data_create()

@@ -20,6 +20,13 @@ bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
 
 bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", update = scene_hide_collision)
 
+bpy.types.Action.Hash = StringProperty(name="Hash", default = "")
+bpy.types.Action.FrameCount = IntProperty(name="FrameCount", default=100, min=1, max=1000)
+bpy.types.Action.SequenceFrameLimit = IntProperty(name="SequenceFrameLimit", default=100, min=1, max=1000)
+bpy.types.Action.Duration = FloatProperty(name = "Duration", default = 10.0, min = 0, max = 1000)
+bpy.types.Action.Unknown10 = IntProperty(name="Unknown10", default=0, min=0, max=1000)
+bpy.types.Action.Unknown1C = StringProperty(name="Unknown1C", default = "")
+
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
                                                         default = "None",
