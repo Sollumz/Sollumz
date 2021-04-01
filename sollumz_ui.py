@@ -69,6 +69,10 @@ class SollumzMainPanel(bpy.types.Panel):
             if(object.sollumtype == "Bound Sphere"):
                 subbox.prop(object, "bounds_radius")
 
+            if(object.sollumtype == "Clip"):
+                for k in ["Hash", "Name", "Type", "Unknown30", "AnimationHash", "StartTime", "EndTime", "Rate"]:
+                    subbox.prop(object.clip_properties, k)
+
 def param_name_to_title(pname):
     
     title = ""
@@ -298,12 +302,45 @@ class SollumzBonePanel(Panel):
         row = layout.row() 
         row.operator('sollumz_flags.new_item', text='New')
         row.operator('sollumz_flags.delete_item', text='Delete')
+
+class SollumzAnimPanel(bpy.types.Panel):
+    bl_label = "Sollumz Animation"
+    bl_idname = "SOLLUMZ_PT_ANIM_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+    def draw(self, context):
+        layout = self.layout
+
+        active_object = context.active_object
+
+        if active_object is None:
+            layout.label(text = "No objects selected")
+            return
+
+        if active_object.animation_data is None:
+            layout.label(text = "Selected object has no animation assigned")
+            return
         
+        action = active_object.animation_data.action
+
+        if action is None:
+            layout.label(text = "No animations selected")
+            return
+
+        layout.prop(action, "Hash", text = "Hash")
+        layout.prop(action, "FrameCount", text = "Frame Count")
+        layout.prop(action, "SequenceFrameLimit", text = "Sequence Frame Limit")
+        layout.prop(action, "Duration", text = "Duration (sec)")
+        layout.prop(action, "Unknown10", text = "Unknown10")
+        layout.prop(action, "Unknown1C", text = "Unknown1C")        
 
 classes = (
     SollumzMaterialPanel,
     SollumzMainPanel,
     SollumzBonePanel,
+    SollumzAnimPanel,
     SOLLUMZ_UL_BoneFlags,
     SOLLUMZ_OT_BoneFlags_NewItem,
     SOLLUMZ_OT_BoneFlags_DeleteItem,

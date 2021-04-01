@@ -135,6 +135,82 @@ class ChannelIndirectQuantizeFloat(Channel):
         frameId = self.frames[frame % len(self.frames)]
         return self.values[frameId % len(self.values)]
 
+class ClipDictionary:
+
+    Clips = None
+    Animations = None
+
+    def __init__(self, xml):
+        self.Clips = []
+
+        for clipNode in xml.find("Clips"):
+            self.Clips.append(Clip(clipNode))
+
+        self.Animations = []
+
+        for animNode in xml.find("Animations"):
+            anim = Animation(animNode)
+            self.Animations.append(anim)
+            anim.apply()
+
+    def toObject(self):
+        dictNode = bpy.data.objects.new('Clip Dictionary', None)
+        bpy.context.collection.objects.link(dictNode)
+
+        for clip in self.Clips:
+            clipNode = clip.toObject()
+            clipNode.parent = dictNode
+
+        dictNode.sollumtype = "Clip Dictionary"
+
+        return dictNode
+
+class Clip:
+    Hash = None
+    Name = None
+    Type = None
+    Unknown30 = None
+
+    Tags = []
+    Properties = []
+    AnimationHash = None
+    StartTime = None
+    EndTime = None
+    Rate = None
+
+    def __init__(self, xml):
+        self.Hash = xml_read_text(xml.find("Hash"), "", str)
+        self.Name = xml_read_text(xml.find("Name"), "", str)
+        self.Type = xml_read_value(xml.find("Type"), "", str)
+        self.Unknown30 = xml_read_value(xml.find("Unknown30"), 0, int)
+
+        # TODO: Tags
+        # TODO: Properties
+        # hashes: boneid,left,right,blocked,create,release,destroy,allowed
+
+        self.AnimationHash = xml_read_text(xml.find("AnimationHash"), "", str)
+        self.StartTime = xml_read_value(xml.find("StartTime"), 0, float)
+        self.EndTime = xml_read_value(xml.find("EndTime"), 0, float)
+        self.Rate = xml_read_value(xml.find("Rate"), 0, float)
+
+    def toObject(self):
+        clipNode = bpy.data.objects.new(self.Name, None)
+        bpy.context.collection.objects.link(clipNode)
+        clipNode.sollumtype = "Clip"
+
+        props = clipNode.clip_properties
+        props.Hash = self.Hash
+        props.Name = self.Name
+        props.Type = self.Type
+        props.Unknown30 = self.Unknown30
+        props.AnimationHash = self.AnimationHash
+        props.StartTime = self.StartTime
+        props.EndTime = self.EndTime
+        props.Rate = self.Rate        
+
+        return clipNode
+
+
 class Animation:
     Hash = None
     Unknown10 = 0
@@ -147,12 +223,12 @@ class Animation:
     Sequences = None
 
     def __init__(self, xml):
-        self.Hash = xml_read_text(xml.find("Hash"), None, str)
-        self.FrameCount = xml_read_value(xml.find("FrameCount"), None, int)
-        self.Unknown10 = xml_read_value(xml.find("Unknown10"), None, int)
-        self.SequenceFrameLimit = xml_read_value(xml.find("SequenceFrameLimit"), None, int)
-        self.Duration = xml_read_value(xml.find("Duration"), None, float)
-        self.Unknown1C = xml_read_value(xml.find("Unknown1C"), None, str)
+        self.Hash = xml_read_text(xml.find("Hash"), "", str)
+        self.FrameCount = xml_read_value(xml.find("FrameCount"), 1, int)
+        self.Unknown10 = xml_read_value(xml.find("Unknown10"), 0, int)
+        self.SequenceFrameLimit = xml_read_value(xml.find("SequenceFrameLimit"), 1, int)
+        self.Duration = xml_read_value(xml.find("Duration"), 0, float)
+        self.Unknown1C = xml_read_value(xml.find("Unknown1C"), "", str)
 
         self.BoneIds = []
         for boneIdNode in xml.find("BoneIds"):
@@ -188,7 +264,13 @@ class Animation:
 
     def create_action(self):
         action = bpy.data.actions.new(self.Hash)
-        
+        action.Hash = self.Hash
+        action.FrameCount = self.FrameCount
+        action.SequenceFrameLimit = self.SequenceFrameLimit
+        action.Duration  = self.Duration
+        action.Unknown10 = self.Unknown10
+        action.Unknown1C = self.Unknown1C
+
         for ob in find_armatures():
             if ob.animation_data is None:
                 ob.animation_data_create()
@@ -366,26 +448,14 @@ def read_bones(root):
 
     return bones
 
-def read_clip_dict(name, root):
-    clips = root.find("Clips") 
-
-    actions = []
-    animations = []
-
-    for animNode in root.find("Animations"):
-        anim = Animation(animNode)
-        animations.append(anim)
-        anim.apply()
-
-    return actions
 
 def read_ycd_xml(context, filepath, root):
     
     filename = os.path.basename(filepath[:-8]) 
+
+    clipDict = ClipDictionary(root)
     
-    actions = read_clip_dict(filename, root)
-    
-    return actions
+    clipDict.toObject()
     
 class ImportYcdXml(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -399,7 +469,7 @@ class ImportYcdXml(Operator, ImportHelper):
         tree = ET.parse(self.filepath)
         root = tree.getroot() 
         
-        actions = read_ycd_xml(context, self.filepath, root) 
+        read_ycd_xml(context, self.filepath, root) 
 
         # for obj in objs:
             # context.scene.collection.objects.link(obj)

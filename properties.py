@@ -20,6 +20,13 @@ bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
 
 bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", update = scene_hide_collision)
 
+bpy.types.Action.Hash = StringProperty(name="Hash", default = "")
+bpy.types.Action.FrameCount = IntProperty(name="FrameCount", default=100, min=1, max=1000)
+bpy.types.Action.SequenceFrameLimit = IntProperty(name="SequenceFrameLimit", default=100, min=1, max=1000)
+bpy.types.Action.Duration = FloatProperty(name = "Duration", default = 10.0, min = 0, max = 1000)
+bpy.types.Action.Unknown10 = IntProperty(name="Unknown10", default=0, min=0, max=1000)
+bpy.types.Action.Unknown1C = StringProperty(name="Unknown1C", default = "")
+
 bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                         name = "Vtype", 
                                                         default = "None",
@@ -36,7 +43,11 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                                     ("Bound Sphere", "Bound Sphere", "Bound Sphere"),
                                                                     ("Bound Capsule", "Bound Capsule", "Bound Capsule"),
                                                                     ("Bound Disc", "Bound Disc", "Bound Disc"),
-                                                                    ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder")])
+                                                                    ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder"),
+                                                                    ("Clip Dictionary", "Clip Dictionary", "Clip Dictionary"),
+                                                                    ("Clip", "Clip", "Clip"),
+                                                        ]
+)
                                                                     
 bpy.types.Object.level_of_detail = EnumProperty(name = "Level Of Detail", items = [("High", "High", "High"), ("Medium", "Medium", "Medium"), ("Low", "Low", "Low"), ("Very Low", "Very Low", "Very Low")])
 bpy.types.Object.mask = IntProperty(name = "Mask", default = 255)
@@ -399,9 +410,20 @@ class SollumzBoneProperties(PropertyGroup):
     flags: CollectionProperty(type = SollumzBoneFlag)
     ul_flags_index: IntProperty(name = "UIListIndex", default = 0)
 
+class SollumzClipProperties(PropertyGroup):
+    Hash: StringProperty(name="Hash", default = "")
+    Name: StringProperty(name="Name", default = "")
+    Type: StringProperty(name="Type", default = "")
+    Unknown30: IntProperty(name="Unknown30", default=12, min=3, max=100)
+    AnimationHash: StringProperty(name="Animation Hash", default = "")
+    StartTime: FloatProperty(name = "Start Time", default = 0.0, min = 0, max = 1000)
+    EndTime: FloatProperty(name = "End Time", default = 0.0, min = 0, max = 1000)
+    Rate: FloatProperty(name = "Rate", default = 1.0, min = 0, max = 1000)
+
 classes = (
     SollumzBoneFlag,
     SollumzBoneProperties,
+    SollumzClipProperties,
 )
 
 def register():
@@ -409,6 +431,7 @@ def register():
         bpy.utils.register_class(cls)
 
     bpy.types.Bone.bone_properties = PointerProperty(type = SollumzBoneProperties)
+    bpy.types.Object.clip_properties = PointerProperty(type = SollumzClipProperties)
 
 def unregister():
     for cls in classes:
