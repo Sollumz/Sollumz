@@ -14,10 +14,12 @@ class ShaderProperty:
         self.W = w
 
     def write(self):
-        node = Element(self.Type)
+        node = None
         if self.X == None:
+            node = Element(self.Type)
             node.set("value", str(self.Name))
         else:
+            node = Element(self.Name)
             node.set("x", str(self.X))
             node.set("y", str(self.Y))
             node.set("z", str(self.Z))
