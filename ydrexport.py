@@ -11,6 +11,7 @@ import sys
 import shutil
 import ntpath
 from datetime import datetime 
+from . import shaderoperators as Shader
 
 def prettify(elem):
     rough_string = tostring(elem, encoding='UTF-8')
@@ -170,7 +171,11 @@ def get_vertex_string(obj, vlayout, bones, depsgraph):
                 total_weights = 0
                 max_weights = 0
                 max_weights_position = -1
+
                 for element in vertex_group_elements:
+                    if element.group >= len(vertex_groups):
+                        continue
+
                     vertex_group = vertex_groups[element.group]
                     bone_index = bones_index_dict.get(vertex_group.name, -1)
                     # 1/255 = 0.0039 the minimal weight for one vertex group
@@ -261,218 +266,12 @@ def fix_shader_name(name, no_extension = False): #because blender renames everyt
 def get_vertex_layout(shader):
     shader = fix_shader_name(shader) 
 
-    PT = ["Position", "TexCoord0"]
-    PCTT = ["Position", "Colour0", "TexCoord0", "TexCoord1"]
-    PNC = ["Position", "Normal", "Colour0"]
-    PNCT = ["Position", "Normal", "Colour0", "TexCoord0"]
-    PNCCT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    PNCTX = ["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    PNCCTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    PNCTTX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
-    PBBCCT = ["Position", "BlendWeights", "BlendIndices", "Colour0", "Colour1", "TexCoord0"]
-    PBBNCTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
-    PBBNCTTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
-    PBBNCTT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1"]
-    PBBNCT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0"]
-    PBBNCCT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "Colour1", "TexCoord0"]
-    PBBNCCTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
-    PBBNCCTTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
-    PNCCTTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
-    PNCTTTX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
-    PNCCT3TX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
-    PNCTT3TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
-    PBBNCTTT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2"]
-    PNCCTT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1"]
-    PNCCTTTT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord2", "TexCoord3"]
-    PNCCTTTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
-    PNCT4T5TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord4", "TexCoord5", "Tangent"]
-    PNCTT4T5TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord4", "TexCoord5", "Tangent"]
-
-    if shader == "normal.sps": return PNCTX
-    elif shader == "normal_spec.sps": return PNCTX
-    elif shader == "normal_spec_detail.sps": return PNCTX
-    elif shader == "normal_alpha.sps": return PNCTX
-    elif shader == "default_spec.sps": return PNCT
-    elif shader == "None": return PNCT
-    elif shader == "emissive_alpha.sps": return PNCT
-    elif shader == "spec.sps": return PNCT
-    elif shader == "emissivestrong.sps": return PNCT
-    elif shader == "cutout.sps": return PNCT
-    elif shader == "default.sps": return PNCT
-    elif shader == "spec_const.sps": return PNCT
-    elif shader == "normal_decal.sps": return PNCTX
-    elif shader == "decal.sps": return PNCT
-    elif shader == "terrain_cb_w_4lyr.sps": return PNCCTX
-    elif shader == "terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps": return PNCCTTTX
-    elif shader == "normal_detail.sps": return  PNCTX
-    elif shader == "normal_spec_pxm.sps": return PNCTTTX
-    elif shader == "terrain_cb_w_4lyr_pxm_spm.sps": return PNCCT3TX
-    elif shader == "normal_tnt.sps": return  PNCTX
-    elif shader == "glass_pv.sps": return  PNCTX
-    elif shader == "normal_spec_decal.sps": return  PNCTX
-    elif shader == "normal_decal_tnt.sps": return  PNCTX
-    elif shader == "default_detail.sps": return  PNCT
-    elif shader == "emissivenight.sps": return  PNCT
-    elif shader == "decal_glue.sps": return  PNCT
-    elif shader == "alpha.sps": return  PNCT
-    elif shader == "emissive.sps": return  PNCT
-    elif shader == "normal_decal_pxm.sps": return PNCTTTX
-    elif shader == "normal_cutout.sps": return  PNCTX
-    elif shader == "normal_spec_tnt.sps": return  PNCTX
-    elif shader == "terrain_cb_w_4lyr_pxm.sps": return PNCCT3TX
-    elif shader == "cpv_only.sps": return PNC
-    elif shader == "emissive_speclum.sps": return  PNCT
-    elif shader == "emissivestrong_alpha.sps": return  PNCT
-    elif shader == "glass_env.sps": return  PNCTX
-    elif shader == "mirror_decal.sps": return  PNCTX
-    elif shader == "decal_normal_only.sps": return  PNCTX
-    elif shader == "decal_dirt.sps": return  PNCT
-    elif shader == "normal_spec_alpha.sps": return  PNCTX
-    elif shader == "mirror_default.sps": return  PNCTX
-    elif shader == "glass_normal_spec_reflect.sps": return  PNCTX
-    elif shader == "cable.sps": return  PNCT
-    elif shader == "normal_spec_cutout.sps": return  PNCTX
-    elif shader == "normal_spec_reflect.sps": return  PNCTX
-    elif shader == "radar.sps": return PCTT
-    elif shader == "spec_tnt.sps": return  PNCT
-    elif shader == "glass_pv_env.sps": return  PNCTX
-    elif shader == "spec_reflect.sps": return  PNCT
-    elif shader == "water_fountain.sps": return PT
-    elif shader == "water_riverfoam.sps": return  PNCTX
-    elif shader == "cutout_fence.sps": return  PNCT
-    elif shader == "glass_spec.sps": return  PNCT
-    elif shader == "emissivenight_alpha.sps": return  PNCT
-    elif shader == "emissivenight_geomnightonly.sps": return  PNCT
-    elif shader == "water_poolenv.sps": return PT
-    elif shader == "normal_spec_detail_tnt.sps": return  PNCTX
-    elif shader == "spec_alpha.sps": return  PNCT
-    elif shader == "mirror_crack.sps": return  PNCTX
-    elif shader == "glass_emissive.sps": return  PNCTX
-    elif shader == "glass.sps": return  PNCTX
-    elif shader == "normal_spec_decal_tnt.sps": return  PNCTX
-    elif shader == "decal_tnt.sps": return  PNCT
-    elif shader == "normal_pxm.sps": return PNCTTTX
-    elif shader == "terrain_cb_w_4lyr_spec_pxm.sps": return PNCCT3TX
-    elif shader == "emissive_tnt.sps": return  PNCT
-    elif shader == "default_tnt.sps": return  PNCT
-    elif shader == "terrain_cb_w_4lyr_spec_int.sps": return  PNCCTX
-    elif shader == "cutout_fence_normal.sps": return  PNCTX
-    elif shader == "normal_cutout_tnt.sps": return  PNCTX
-    elif shader == "normal_pxm_tnt.sps": return PNCTTTX
-    elif shader == "reflect.sps": return  PNCT
-    elif shader == "spec_decal.sps": return  PNCT
-    elif shader == "normal_reflect.sps": return  PNCTX
-    elif shader == "emissive_additive_uv_alpha.sps": return  PNCT
-    elif shader == "glass_reflect.sps": return  PNCT
-    elif shader == "decal_spec_only.sps": return  PNCT
-    elif shader == "emissive_additive_alpha.sps": return  PNCT
-    elif shader == "normal_spec_emissive.sps": return  PNCTX
-    elif shader == "decal_amb_only.sps": return  PNCT
-    elif shader == "trees.sps": return PNCCT
-    elif shader == "decal_diff_only_um.sps": return PBBCCT
-    elif shader == "decal_shadow_only.sps": return  PNCTX
-    elif shader == "normal_spec_decal_detail.sps": return  PNCTX
-    elif shader == "reflect_decal.sps": return  PNCT
-    elif shader == "normal_spec_decal_pxm.sps": return PNCTTX
-    elif shader == "normal_spec_pxm_tnt.sps": return PNCTTTX
-    elif shader == "normal_spec_cutout_tnt.sps": return  PNCTX
-    elif shader == "glass_emissive_alpha.sps": return  PNCTX
-    elif shader == "normal_diffspec.sps": return  PNCTX
-    elif shader == "decal_emissive_only.sps": return  PNCT
-    elif shader == "normal_spec_reflect_decal.sps": return  PNCTX
-    elif shader == "emissive_alpha_tnt.sps": return  PNCT
-    elif shader == "gta_radar.sps": return PCTT
-    elif shader == "gta_normal.sps": return  PNCTX
-    elif shader == "gta_default.sps": return  PNCT
-    elif shader == "clouds_animsoft.sps": return  PNCTX
-    elif shader == "clouds_altitude.sps": return  PNCTX
-    elif shader == "clouds_fast.sps": return  PNCTX
-    elif shader == "clouds_anim.sps": return  PNCTX
-    elif shader == "clouds_soft.sps": return  PNCTX
-    elif shader == "clouds_fog.sps": return  PNCTX
-    elif shader == "default_um.sps": return PNCCT
-    elif shader == "trees_lod.sps": return PNCCT
-    elif shader == "trees_lod2.sps": return PNCCTTTT
-    elif shader == "normal_spec_reflect_alpha.sps": return  PNCTX
-    elif shader == "gta_reflect_alpha.sps": return  PNCT
-    elif shader == "gta_spec.sps": return  PNCT
-    elif shader == "grass_fur.sps": return  PNCTX
-    elif shader == "default_terrain_wet.sps": return  PNCT
-    elif shader == "terrain_cb_w_4lyr_spec.sps": return  PNCCTX
-    elif shader == "emissive_clip.sps": return  PNCT
-    elif shader == "grass_fur_mask.sps": return PNCTTTX
-    elif shader == "cutout_tnt.sps": return  PNCT
-    elif shader == "terrain_cb_w_4lyr_2tex_blend.sps": return PNCCTTX
-    elif shader == "cloth_normal_spec.sps": return  PNCTX
-    elif shader == "distance_map.sps": return  PNCTX
-    elif shader == "cloth_spec_alpha.sps": return  PNCTX
-    elif shader == "terrain_cb_w_4lyr_2tex_blend_pxm.sps": return PNCCTTTX
-    elif shader == "terrain_cb_w_4lyr_cm_pxm.sps": return PNCTT3TX
-    elif shader == "water_riverlod.sps": return  PNCT
-    elif shader == "weapon_normal_spec_tnt.sps": return PBBNCTX
-    elif shader == "trees_normal_spec.sps": return  PNCCTX
-    elif shader == "terrain_cb_w_4lyr_cm_pxm_tnt.sps": return PNCTT3TX
-    elif shader == "terrain_cb_w_4lyr_2tex.sps": return PNCCTTX
-    elif shader == "normal_spec_cubemap_reflect.sps": return  PNCTX
-    elif shader == "terrain_cb_w_4lyr_lod.sps": return PNCCT
-    elif shader == "terrain_cb_w_4lyr_2tex_blend_lod.sps": return PNCCTT
-    elif shader == "glass_displacement.sps": return  PNCTX
-    elif shader == "trees_normal_diffspec.sps": return  PNCCTX
-    elif shader == "cutout_um.sps": return PNCCT
-    elif shader == "default_noedge.sps": return  PNCT
-    elif shader == "glass_breakable.sps": return PNCTTX
-    elif shader == "trees_normal.sps": return  PNCCTX
-    elif shader == "normal_reflect_alpha.sps": return  PNCTX
-    elif shader == "normal_tnt_alpha.sps": return  PNCTX
-    elif shader == "reflect_alpha.sps": return PBBNCT
-    elif shader == "ptfx_model.sps": return  PNCT
-    elif shader == "decal_emissivenight_only.sps": return  PNCT
-    elif shader == "normal_diffspec_detail.sps": return  PNCTX
-    elif shader == "normal_diffspec_detail_dpm.sps": return PNCT4T5TX
-    elif shader == "normal_spec_detail_dpm_vertdecal_tnt.sps": return PNCTT4T5TX
-    elif shader == "normal_spec_um.sps": return  PNCCTX
-    elif shader == "normal_um.sps": return  PNCCTX
-    elif shader == "normal_um_tnt.sps": return PBBNCTTX
-    elif shader == "normal_spec_wrinkle.sps": return PBBNCTX
-    elif shader == "cutout_spec_tnt.sps": return  PNCT
-    elif shader == "hash_7D3957DA": return  PNCT
-    elif shader == "normal_spec_tnt_pxm.sps": return PNCTTTX
-    elif shader == "parallax_specmap.sps": return  PNCTX
-    elif shader == "spec_reflect_alpha.sps": return  PNCT
-    elif shader == "normal_cubemap_reflect.sps": return  PNCTX
-    elif shader == "vehicle_tire.sps": return PNCTTX
-    elif shader == "weapon_normal_spec_detail_palette.sps": return PBBNCTX
-    elif shader == "weapon_normal_spec_detail_tnt.sps": return PBBNCTX
-    elif shader == "weapon_normal_spec_palette.sps": return PBBNCTX
-    elif shader == "weapon_emissivestrong_alpha.sps": return PBBNCT
-    elif shader == "weapon_normal_spec_alpha.sps": return PBBNCTX
-    elif shader == "weapon_emissive_tnt.sps": return PBBNCT
-    elif shader == "weapon_normal_spec_cutout_palette.sps": return PBBNCTX
-    elif shader == "terrain_cb_w_4lyr_spec_int_pxm.sps": return PNCCT3TX
-    elif shader == "cloth_default.sps": return  PNCT
-    elif shader == "cloth_spec_cutout.sps": return  PNCTX
-    elif shader == "normal_decal_pxm_tnt.sps": return PNCTTTX
-    elif shader == "vehicle_lightsemissive.sps": return PBBNCTT
-    elif shader == "vehicle_interior2.sps": return PBBNCT
-    elif shader == "vehicle_badges.sps": return PBBNCTTX
-    elif shader == "vehicle_mesh.sps": return PBBNCTTX
-    elif shader == "vehicle_interior.sps": return PBBNCTX
-    elif shader == "vehicle_licenseplate.sps": return PBBNCTTX
-    elif shader == "vehicle_vehglass.sps": return PBBNCTTT
-    elif shader == "vehicle_paint3.sps": return PBBNCTT
-    elif shader == "vehicle_dash_emissive.sps": return PBBNCT
-    elif shader == "vehicle_decal2.sps": return PBBNCTX
-    elif shader == "vehicle_detail2.sps": return PBBNCTT
-    elif shader == "vehicle_vehglass_inner.sps": return PBBNCTT
-    elif shader == "ped.sps": return PBBNCCTTX
-    elif shader == "ped_alpha.sps": return PBBNCCTTX
-    elif shader == "ped_default.sps": return PBBNCCT
-    elif shader == "ped_emissive.sps": return PBBNCCTTX
-    elif shader == "ped_decal_expensive.sps": return PBBNCCTTX
-    elif shader == "ped_hair_spiked.sps": return PBBNCCTX
-    elif shader == "ped_hair_cutout_alpha.sps": return PBBNCCTX
-    elif shader == "ped_fur.sps": return PBBNCCTX
-    elif shader == "ped_wrinkle_cs.sps": return PBBNCCTTX
+    parameter_set = Shader.shaders.get(shader)
+    if parameter_set is not None:
+        for p in parameter_set:
+            if isinstance(p, Shader.ExportShaderProperties):
+                if p.name == "Layout":
+                    return p.value
 
     print('Unknown shader: ', shader)
 
@@ -688,6 +487,13 @@ def write_shader_node(mat):
     
     renderbucket_node = Element("RenderBucket")
     renderbucket_node.set("value", "0")
+    parameter_set = Shader.shaders.get(fix_shader_name(mat.name))
+    if parameter_set is not None:
+        for p in parameter_set:
+            if isinstance(p, Shader.ExportShaderProperties):
+                if p.name == "RenderBucket":
+                    renderbucket_node = p.write()
+                    break
     
     params_node = Element("Parameters")
     
