@@ -830,12 +830,12 @@ class ImportYDD(Operator, ImportHelper):
         mod_objs = []
         ydd_objs, drawable_with_bones_name = read_ydd_xml(self, context, self.filepath, root)
         for ydd in ydd_objs:
-            drawable_name = ydd[0].name.split('.')[0]
+            drawable_name = ydd[0].name.split('.')[0][:-5]
             armature = bpy.data.armatures.new(drawable_name + ".skel")
             # mesh has "_mesh" at the end of its name, so remove that for the parented armature
             vmodel_obj = bpy.data.objects.new(drawable_name, armature)
             context.scene.collection.objects.link(vmodel_obj)
-            if (armature_with_bones_obj == None and drawable_with_bones_name != None and vmodel_obj.name.split('.')[0] == drawable_with_bones_name):
+            if (armature_with_bones_obj == None and drawable_with_bones_name != None and drawable_name == drawable_with_bones_name):
                 armature_with_bones_obj = vmodel_obj
 
             for obj in ydd:
@@ -860,18 +860,18 @@ class ImportYDD(Operator, ImportHelper):
         
         context.scene.collection.objects.link(vmodel_dict_obj)
 
-        if (armature_with_bones_obj != None):
-            for obj in mod_objs:
-                mod = obj.modifiers.new("Armature", 'ARMATURE')
-                mod.object = armature_with_bones_obj
+        if (armature_with_bones_obj == None):
+            armature_with_bones_obj = vmodels[0]
 
-            bpy.ops.object.select_all(action='DESELECT')
-            armature_temp_obj.select_set(True)
-            armature_with_bones_obj.select_set(True)
-            context.view_layer.objects.active = armature_with_bones_obj
-            bpy.ops.object.join()
-        else:
-            bpy.data.objects.remove(armature_temp_obj, do_unlink=True)
+        for obj in mod_objs:
+            mod = obj.modifiers.new("Armature", 'ARMATURE')
+            mod.object = armature_with_bones_obj
+
+        bpy.ops.object.select_all(action='DESELECT')
+        armature_temp_obj.select_set(True)
+        armature_with_bones_obj.select_set(True)
+        context.view_layer.objects.active = armature_with_bones_obj
+        bpy.ops.object.join()
 
         finished = time.time()
         

@@ -19,9 +19,11 @@ def prettify(elem):
 
 def get_obj_children(obj):
     children = [] 
-    for ob in bpy.data.objects: 
-        if ob.parent == obj: 
+    objects = bpy.context.scene.objects
+    for ob in obj.children: 
+        if objects.get(ob.name):
             children.append(ob) 
+
     return children 
 
 def order_vertex_list(list, vlayout):
