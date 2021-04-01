@@ -269,9 +269,8 @@ def get_vertex_layout(shader):
     parameter_set = Shader.shaders.get(shader)
     if parameter_set is not None:
         for p in parameter_set:
-            if isinstance(p, Shader.ExportShaderProperties):
-                if p.name == "Layout":
-                    return p.value
+            if p.Type == "Layout":
+                return p.get_value()
 
     print('Unknown shader: ', shader)
 
@@ -490,10 +489,9 @@ def write_shader_node(mat):
     parameter_set = Shader.shaders.get(fix_shader_name(mat.name))
     if parameter_set is not None:
         for p in parameter_set:
-            if isinstance(p, Shader.ExportShaderProperties):
-                if p.name == "RenderBucket":
-                    renderbucket_node = p.write()
-                    break
+            if p.Type == "RenderBucket":
+                renderbucket_node = p.write()
+                break
     
     params_node = Element("Parameters")
     
