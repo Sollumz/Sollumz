@@ -1,6 +1,7 @@
 import bpy
 from mathutils import Vector
 from .tools import jenkhash as JenkHash
+from xml.etree.ElementTree import Element
 
 class shader_parameter:
     
@@ -11,6 +12,50 @@ class shader_parameter:
         self.Y = y
         self.Z = z
         self.W = w
+
+class ExportShaderProperties:
+    
+    name = None
+    value = None
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def write(self):
+        node = Element(self.name)
+        node.set("value", str(self.value))
+        return node
+
+    def get_value(self):
+        return self.value
+
+PT = ["Position", "TexCoord0"]
+PCTT = ["Position", "Colour0", "TexCoord0", "TexCoord1"]
+PNC = ["Position", "Normal", "Colour0"]
+PNCT = ["Position", "Normal", "Colour0", "TexCoord0"]
+PNCCT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0"]
+PNCTX = ["Position", "Normal", "Colour0", "TexCoord0", "Tangent"]
+PNCCTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
+PNCTTX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
+PBBCCT = ["Position", "BlendWeights", "BlendIndices", "Colour0", "Colour1", "TexCoord0"]
+PBBNCTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "Tangent"]
+PBBNCTTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "Tangent"]
+PBBNCTT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1"]
+PBBNCT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0"]
+PBBNCCT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "Colour1", "TexCoord0"]
+PBBNCCTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "Colour1", "TexCoord0", "Tangent"]
+PBBNCCTTX = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
+PNCCTTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "Tangent"]
+PNCTTTX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2", "Tangent"]
+PNCCT3TX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord3", "Tangent"]
+PNCTT3TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
+PBBNCTTT = ["Position", "BlendWeights", "BlendIndices", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord2"]
+PNCCTT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1"]
+PNCCTTTT = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord2", "TexCoord3"]
+PNCCTTTX = ["Position", "Normal", "Colour0", "Colour1", "TexCoord0", "TexCoord1", "TexCoord3", "Tangent"]
+PNCT4T5TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord4", "TexCoord5", "Tangent"]
+PNCTT4T5TX = ["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1", "TexCoord4", "TexCoord5", "Tangent"]
 
 blend_2lyrsps = [
                 shader_parameter("Image", "TextureSampler_layer0"),
@@ -23,6 +68,7 @@ blend_2lyrsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 32.0, 0.0, 0.0, 0.0)]
 
 cablesps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Value", "TextureSamp"),
                 shader_parameter("Value", "AlphaTestValue", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "gCableParams", 0.0, 0.0, 0.0, 0.0),
@@ -49,7 +95,8 @@ cloth_normal_specsps = [
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTX)]
 
 cloth_normal_spec_alphasps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -95,7 +142,8 @@ cloth_spec_alphasps = [
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTX)]
 
 cloth_spec_cutoutsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -103,9 +151,11 @@ cloth_spec_cutoutsps = [
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTX)]
 
 clouds_altitudesps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DensitySampler"),
                 shader_parameter("Image", "NormalSampler"),
                 shader_parameter("Image", "DetailDensitySampler"),
@@ -145,6 +195,7 @@ clouds_altitudesps = [
                 shader_parameter("Value", "gSkyColor", 0.0, 0.0, 0.0, 0.0)]
 
 clouds_animsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DensitySampler"),
                 shader_parameter("Image", "NormalSampler"),
                 shader_parameter("Image", "DetailDensitySampler"),
@@ -184,6 +235,7 @@ clouds_animsps = [
                 shader_parameter("Value", "gSkyColor", 0.0, 0.0, 0.0, 0.0)]
 
 clouds_animsoftsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DensitySampler"),
                 shader_parameter("Image", "NormalSampler"),
                 shader_parameter("Image", "DetailDensitySampler"),
@@ -223,6 +275,7 @@ clouds_animsoftsps = [
                 shader_parameter("Value", "gSkyColor", 0.0, 0.0, 0.0, 0.0)]
 
 clouds_fastsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DensitySampler"),
                 shader_parameter("Image", "NormalSampler"),
                 shader_parameter("Value", "CloudLayerAnimScale3", 1.0, 1.0, 0.0, 0.0),
@@ -252,6 +305,7 @@ clouds_fastsps = [
                 shader_parameter("Value", "gSkyColor", 0.0, 0.0, 0.0, 0.0)]
 
 clouds_fogsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DensitySampler"),
                 shader_parameter("Image", "NormalSampler"),
                 shader_parameter("Image", "DepthMapTexSampler"),
@@ -283,6 +337,7 @@ clouds_fogsps = [
                 shader_parameter("Value", "gSkyColor", 0.0, 0.0, 0.0, 0.0)]
 
 clouds_softsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DensitySampler"),
                 shader_parameter("Image", "NormalSampler"),
                 shader_parameter("Image", "DepthMapTexSampler"),
@@ -315,14 +370,17 @@ clouds_softsps = [
                 shader_parameter("Value", "gSkyColor", 0.0, 0.0, 0.0, 0.0)]
 
 cpv_onlysps = [
+                ExportShaderProperties("Layout", PNC),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0)]
 
 cutout_fencesps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0)]
 
 cutout_fence_normalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -337,6 +395,7 @@ cutout_hardsps = [
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0)]
 
 decalsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "WetnessMultiplier", 1.0, 0.0, 0.0, 0.0),
@@ -345,12 +404,14 @@ decalsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 decal_amb_onlysps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "AmbientDecalMask", 1.0, 0.0, 0.0, 0.0)]
 
 decal_diff_only_umsps = [
+                ExportShaderProperties("Layout", PBBCCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -359,6 +420,7 @@ decal_diff_only_umsps = [
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.025, 1.0, 1.0)]
 
 decal_dirtsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
@@ -367,18 +429,21 @@ decal_dirtsps = [
                 shader_parameter("Value", "DirtDecalMask", 1.0, 0.0, 0.0, 0.0)]
 
 decal_emissivenight_onlysps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 decal_emissive_onlysps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 decal_gluesps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
@@ -386,6 +451,7 @@ decal_gluesps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 decal_normal_onlysps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -395,11 +461,13 @@ decal_normal_onlysps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 decal_shadow_onlysps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0)]
 
 decal_spec_onlysps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -409,6 +477,7 @@ decal_spec_onlysps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 decal_tntsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -437,6 +506,7 @@ defaultsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 default_noedgesps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -446,6 +516,7 @@ default_noedgesps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 gta_defaultsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -455,6 +526,7 @@ gta_defaultsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -464,6 +536,7 @@ alphasps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 cutoutsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -473,6 +546,7 @@ cutoutsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 default_detailsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DetailSampler"),
                 shader_parameter("Value", "DetailSettings", 0.0, 0.0, 24.0, 24.0),
@@ -481,6 +555,7 @@ default_detailsps = [
                 shader_parameter("Value", "WetnessMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 default_specsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
@@ -488,6 +563,7 @@ default_specsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 spec_constsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
@@ -495,6 +571,7 @@ spec_constsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 default_terrain_wetsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -504,6 +581,7 @@ default_terrain_wetsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 default_tntsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
@@ -513,6 +591,7 @@ default_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 cutout_tntsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
@@ -522,6 +601,7 @@ cutout_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 default_umsps = [
+                ExportShaderProperties("Layout", PNCCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -530,6 +610,7 @@ default_umsps = [
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.025, 1.0, 1.0)]
 
 cutout_umsps = [
+                ExportShaderProperties("Layout", PNCCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -538,10 +619,12 @@ cutout_umsps = [
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.025, 1.0, 1.0)]
 
 distance_mapsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DistanceMapSampler"),
                 shader_parameter("Value", "FillColor", 0.0, 0.0, 1.0, 0.0)]
 
 emissivesps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -551,6 +634,7 @@ emissivesps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 emissive_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -560,6 +644,7 @@ emissive_alphasps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 emissivenightsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -567,6 +652,7 @@ emissivenightsps = [
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 emissivenight_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -574,6 +660,7 @@ emissivenight_alphasps = [
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 emissivenight_geomnightonlysps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -581,6 +668,7 @@ emissivenight_geomnightonlysps = [
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 emissivestrongsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -590,6 +678,7 @@ emissivestrongsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 emissivestrong_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -599,12 +688,14 @@ emissivestrong_alphasps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 emissive_additive_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 emissive_additive_uv_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -613,6 +704,7 @@ emissive_additive_uv_alphasps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 emissive_clipsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -622,6 +714,7 @@ emissive_clipsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 emissive_speclumsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -641,6 +734,7 @@ emissive_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 emissive_alpha_tntsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
@@ -650,6 +744,7 @@ emissive_alpha_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 glasssps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
@@ -677,7 +772,8 @@ glass_breakablesps = [
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTTX)]
 
 glass_breakable_screendooralphasps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -699,6 +795,7 @@ glass_breakable_screendooralphasps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 glass_displacementsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -713,6 +810,7 @@ glass_displacementsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 glass_emissivesps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
@@ -727,6 +825,7 @@ glass_emissivesps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 glass_emissive_alphasps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
@@ -765,6 +864,7 @@ glass_emissivenight_alphasps = [
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 glass_envsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -778,6 +878,7 @@ glass_envsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 glass_normal_spec_reflectsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -791,6 +892,7 @@ glass_normal_spec_reflectsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 glass_pvsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "DecalTint", 1.0, 1.0, 1.0, 1.0),
                 shader_parameter("Value", "CrackDecalBumpAlphaThreshold", 0.0, 0.0, 0.0, 0.0),
@@ -806,6 +908,7 @@ glass_pvsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 glass_pv_envsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "DecalTint", 1.0, 1.0, 1.0, 1.0),
                 shader_parameter("Value", "CrackDecalBumpAlphaThreshold", 0.0, 0.0, 0.0, 0.0),
@@ -821,6 +924,7 @@ glass_pv_envsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 glass_reflectsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -830,6 +934,7 @@ glass_reflectsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 glass_specsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -924,9 +1029,11 @@ grass_fursps = [
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCT)]
 
 grass_fur_masksps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -956,6 +1063,7 @@ minimapsps = [
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0)]
 
 mirror_cracksps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "gMirrorCrackSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -966,6 +1074,7 @@ mirror_cracksps = [
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0)]
 
 mirror_decalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "gMirrorBounds", 0.0, 0.0, 0.0, 0.0),
@@ -976,6 +1085,7 @@ mirror_decalsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 mirror_defaultsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Value", "gMirrorBounds", 0.0, 0.0, 0.0, 0.0),
@@ -984,6 +1094,7 @@ mirror_defaultsps = [
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0)]
 
 gta_normalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -997,6 +1108,7 @@ gta_normalsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -1010,6 +1122,7 @@ normalsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_alphasps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -1036,6 +1149,7 @@ water_decalsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_cutoutsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -1067,9 +1181,11 @@ normal_cubemap_reflectsps = [
                 shader_parameter("Image", "EnvironmentSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "ReflectivePower", 0.45, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTX)]
 
 normal_decalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -1082,6 +1198,7 @@ normal_decalsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_decal_pxmsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "HeightSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1098,6 +1215,7 @@ normal_decal_pxmsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_decal_pxm_tntsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "HeightSampler"),
@@ -1113,6 +1231,7 @@ normal_decal_pxm_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_decal_tntsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1124,6 +1243,7 @@ normal_decal_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_detailsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DetailSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1154,6 +1274,7 @@ normal_detail_dpmsps = [
                 shader_parameter("Value", "TessellationMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 normal_diffspecsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -1178,7 +1299,8 @@ normal_diffspec_detailsps = [
                 shader_parameter("Value", "SpecDesaturateIntensity", 0.3, 0.6, 0.1, 0.0625),
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTX)]
 
 normal_diffspec_detail_dpmsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -1197,7 +1319,8 @@ normal_diffspec_detail_dpmsps = [
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "TessellationMultiplier", 1.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "TessellationMultiplier", 1.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCT4T5TX)]
 
 normal_diffspec_detail_dpm_tntsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -1253,6 +1376,7 @@ normal_diffspec_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_pxmsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "HeightSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1270,6 +1394,7 @@ normal_pxmsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_pxm_tntsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "HeightSampler"),
@@ -1287,6 +1412,7 @@ normal_pxm_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_tnt_pxmsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "HeightSampler"),
@@ -1304,6 +1430,7 @@ normal_tnt_pxmsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_reflectsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
@@ -1319,7 +1446,8 @@ normal_reflect_alphasps = [
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "ReflectivePower", 0.45, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTX)]
 
 normal_reflect_screendooralphasps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -1339,6 +1467,7 @@ normal_reflect_decalsps = [
                 shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0)]
 
 normal_specsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1352,6 +1481,7 @@ normal_specsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_alphasps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1365,6 +1495,7 @@ normal_spec_alphasps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_cutoutsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1409,6 +1540,7 @@ normal_spec_batchsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_cubemap_reflectsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1422,6 +1554,7 @@ normal_spec_cubemap_reflectsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_decalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1436,6 +1569,7 @@ normal_spec_decalsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_spec_decal_detailsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DetailSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1461,6 +1595,7 @@ normal_spec_decal_nopuddlesps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_decal_pxmsps = [
+                ExportShaderProperties("Layout", PNCTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "HeightSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1479,6 +1614,7 @@ normal_spec_decal_pxmsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 normal_spec_decal_tntsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1493,6 +1629,7 @@ normal_spec_decal_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_detailsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DetailSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1547,6 +1684,7 @@ normal_spec_detail_dpm_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_detail_dpm_vertdecal_tntsps = [
+                ExportShaderProperties("Layout", PNCTT4T5TX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "DetailSampler"),
@@ -1569,6 +1707,7 @@ normal_spec_detail_dpm_vertdecal_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_detail_tntsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "DetailSampler"),
@@ -1603,6 +1742,7 @@ normal_spec_dpmsps = [
                 shader_parameter("Value", "TessellationMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 normal_spec_emissivesps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1616,6 +1756,7 @@ normal_spec_emissivesps = [
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 normal_spec_pxmsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "HeightSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1633,6 +1774,7 @@ normal_spec_pxmsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_pxm_tntsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "HeightSampler"),
@@ -1652,6 +1794,7 @@ normal_spec_pxm_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_tnt_pxmsps = [
+                ExportShaderProperties("Layout", PNCTTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "HeightSampler"),
@@ -1671,6 +1814,7 @@ normal_spec_tnt_pxmsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_reflectsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1697,6 +1841,7 @@ normal_spec_reflect_alphasps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 normal_spec_reflect_decalsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1734,6 +1879,7 @@ normal_spec_reflect_emissivenight_alphasps = [
                 shader_parameter("Value", "EmissiveMultiplier", 1.0, 0.0, 0.0, 0.0)]
 
 normal_spec_tntsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1749,6 +1895,7 @@ normal_spec_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_cutout_tntsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1764,6 +1911,7 @@ normal_spec_cutout_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_spec_umsps = [
+                ExportShaderProperties("Layout", PNCCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1777,6 +1925,7 @@ normal_spec_umsps = [
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.025, 1.0, 1.0)]
 
 normal_spec_wrinklesps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "WrinkleMaskSampler_0"),
                 shader_parameter("Image", "WrinkleMaskSampler_1"),
@@ -1825,6 +1974,7 @@ normal_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_tnt_alphasps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1838,6 +1988,7 @@ normal_tnt_alphasps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_cutout_tntsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1851,6 +2002,7 @@ normal_cutout_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 normal_umsps = [
+                ExportShaderProperties("Layout", PNCCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -1875,6 +2027,7 @@ normal_cutout_umsps = [
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.025, 1.0, 1.0)]
 
 normal_um_tntsps = [
+                ExportShaderProperties("Layout", PBBNCTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1898,6 +2051,7 @@ parallaxsps = [
                 shader_parameter("Value", "ParallaxScaleBias", 0.03, 0.0, 0.0, 0.0)]
 
 parallax_specmapsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1910,6 +2064,7 @@ parallax_specmapsps = [
                 shader_parameter("Value", "ParallaxScaleBias", 0.03, 0.0, 0.0, 0.0)]
 
 pedsps = [
+                ExportShaderProperties("Layout", PBBNCCTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1924,6 +2079,8 @@ pedsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_alphasps = [
+                ExportShaderProperties("Layout", PBBNCCTTX),
+                ExportShaderProperties("RenderBucket", 1),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -1965,6 +2122,7 @@ ped_cloth_enveffsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_decalsps = [
+                ExportShaderProperties("RenderBucket", 2),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1979,6 +2137,7 @@ ped_decalsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_decal_decorationsps = [
+                ExportShaderProperties("RenderBucket", 2),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -1993,6 +2152,8 @@ ped_decal_decorationsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_decal_expensivesps = [
+                ExportShaderProperties("Layout", PBBNCCTTX),
+                ExportShaderProperties("RenderBucket", 2),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2006,6 +2167,7 @@ ped_decal_expensivesps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_decal_nodiffsps = [
+                ExportShaderProperties("RenderBucket", 2),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2019,6 +2181,7 @@ ped_decal_nodiffsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_defaultsps = [
+                ExportShaderProperties("Layout", PBBNCCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2033,6 +2196,7 @@ ped_defaultsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_default_cutoutsps = [
+                ExportShaderProperties("RenderBucket", 3),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2104,6 +2268,7 @@ ped_default_palettesps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_emissivesps = [
+                ExportShaderProperties("Layout", PBBNCCTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2134,6 +2299,8 @@ ped_enveffsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_fursps = [
+                ExportShaderProperties("Layout", PBBNCCTX),
+                ExportShaderProperties("RenderBucket", 3),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "NoiseSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2158,6 +2325,8 @@ ped_fursps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_hair_cutout_alphasps = [
+                ExportShaderProperties("Layout", PBBNCCTX),
+                ExportShaderProperties("RenderBucket", 3),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "anisoNoiseSpecSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2177,6 +2346,8 @@ ped_hair_cutout_alphasps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_hair_spikedsps = [
+                ExportShaderProperties("Layout", PBBNCCTX),
+                ExportShaderProperties("RenderBucket", 3),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "anisoNoiseSpecSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2286,6 +2457,7 @@ ped_wrinkle_cloth_enveffsps = [
                 shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
 
 ped_wrinkle_cssps = [
+                ExportShaderProperties("Layout", PBBNCCTTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "VolumeSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -2326,9 +2498,11 @@ ped_wrinkle_enveffsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DetailSettings", 0.0, 0.0, 24.0, 0.0),
-                shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)]
+                shader_parameter("Value", "StubbleControl", 2.0, 0.6, 0.0, 0.0)
+                ]
 
 ptfx_modelsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
@@ -2338,34 +2512,40 @@ ptfx_modelsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 gta_radarsps = [
+                ExportShaderProperties("Layout", PCTT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "ClippingPlane", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DiffuseCol", 1.0, 1.0, 1.0, 1.0)]
 
 radarsps = [
+                ExportShaderProperties("Layout", PCTT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "ClippingPlane", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DiffuseCol", 1.0, 1.0, 1.0, 1.0)]
 
 reflectsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "ReflectivePower", 0.45, 0.0, 0.0, 0.0)]
 
 gta_reflect_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "ReflectivePower", 0.45, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "ReflectivePower", 0.45, 0.0, 0.0, 0.0),]
 
 reflect_alphasps = [
+                ExportShaderProperties("Layout", PBBNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "ReflectivePower", 0.45, 0.0, 0.0, 0.0)]
 
 reflect_decalsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -2419,6 +2599,7 @@ sky_systemsps = [
                 shader_parameter("Value", "AzimuthEastColor", 0.0, 0.0, 0.0, 0.0)]
 
 gta_specsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -2432,6 +2613,7 @@ gta_specsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 specsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -2445,6 +2627,7 @@ specsps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 spec_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Value", "HardAlphaBlend", 1.0, 0.0, 0.0, 0.0),
@@ -2480,6 +2663,7 @@ spec_decalsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 spec_reflectsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
@@ -2492,6 +2676,7 @@ spec_reflectsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 spec_reflect_alphasps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "SpecSampler"),
                 shader_parameter("Image", "EnvironmentSampler"),
@@ -2515,6 +2700,7 @@ spec_reflect_decalsps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 spec_tntsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -2536,7 +2722,8 @@ cutout_spec_tntsps = [
                 shader_parameter("Value", "SpecularIntensityMult", 0.125, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCT)]
 
 spec_twiddle_tntsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -2581,6 +2768,7 @@ terrain_cb_4lyr_2texsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyrsps = [
+                ExportShaderProperties("Layout", PNCCTX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "TextureSampler_layer1"),
@@ -2608,7 +2796,8 @@ terrain_cb_w_4lyr_2texsps = [
                 shader_parameter("Value", "BumpSelfShadowAmount", 0.3, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCCTTX)]
 
 terrain_cb_w_4lyr_2tex_blendsps = [
                 shader_parameter("Image", "TextureSampler_layer0"),
@@ -2624,7 +2813,8 @@ terrain_cb_w_4lyr_2tex_blendsps = [
                 shader_parameter("Value", "BumpSelfShadowAmount", 0.3, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCCTTX)]
 
 terrain_cb_w_4lyr_2tex_blend_lodsps = [
                 shader_parameter("Image", "TextureSampler_layer0"),
@@ -2635,9 +2825,11 @@ terrain_cb_w_4lyr_2tex_blend_lodsps = [
                 shader_parameter("Value", "MaterialWetnessMultiplier", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "BumpSelfShadowAmount", 0.3, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCCTT)]
 
 terrain_cb_w_4lyr_2tex_blend_pxmsps = [
+                ExportShaderProperties("Layout", PNCCTTTX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "HeightMapSamplerLayer0"),
@@ -2667,6 +2859,7 @@ terrain_cb_w_4lyr_2tex_blend_pxmsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_2tex_blend_pxm_spmsps = [
+                ExportShaderProperties("Layout", PNCCTTTX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "HeightMapSamplerLayer0"),
@@ -2769,7 +2962,8 @@ terrain_cb_w_4lyr_cm_pxmsps = [
                 shader_parameter("Value", "ParallaxSelfShadowAmount", 0.95, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTT3TX)]
 
 terrain_cb_w_4lyr_cm_pxm_tntsps = [
                 shader_parameter("Image", "TintPaletteSampler"),
@@ -2800,7 +2994,8 @@ terrain_cb_w_4lyr_cm_pxm_tntsps = [
                 shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCTT3TX)]
 
 terrain_cb_w_4lyr_cm_tntsps = [
                 shader_parameter("Image", "TintPaletteSampler"),
@@ -2821,6 +3016,7 @@ terrain_cb_w_4lyr_cm_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_lodsps = [
+                ExportShaderProperties("Layout", PNCCT),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "TextureSampler_layer1"),
                 shader_parameter("Image", "TextureSampler_layer2"),
@@ -2831,6 +3027,7 @@ terrain_cb_w_4lyr_lodsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_pxmsps = [
+                ExportShaderProperties("Layout", PNCCT3TX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "HeightMapSamplerLayer0"),
@@ -2859,6 +3056,7 @@ terrain_cb_w_4lyr_pxmsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_pxm_spmsps = [
+                ExportShaderProperties("Layout", PNCCT3TX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "HeightMapSamplerLayer0"),
@@ -2890,6 +3088,7 @@ terrain_cb_w_4lyr_pxm_spmsps = [
                 shader_parameter("Value", "SpecularFalloffMultSpecMap", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_specsps = [
+                ExportShaderProperties("Layout", PNCCTX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "TextureSampler_layer1"),
@@ -2905,6 +3104,7 @@ terrain_cb_w_4lyr_specsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_spec_intsps = [
+                ExportShaderProperties("Layout", PNCCTX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "TextureSampler_layer1"),
@@ -2920,6 +3120,7 @@ terrain_cb_w_4lyr_spec_intsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_spec_int_pxmsps = [
+                ExportShaderProperties("Layout", PNCCT3TX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "HeightMapSamplerLayer0"),
@@ -2948,6 +3149,7 @@ terrain_cb_w_4lyr_spec_int_pxmsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 terrain_cb_w_4lyr_spec_pxmsps = [
+                ExportShaderProperties("Layout", PNCCT3TX),
                 shader_parameter("Image", "TextureSampler_layer0"),
                 shader_parameter("Image", "BumpSampler_layer0"),
                 shader_parameter("Image", "HeightMapSamplerLayer0"),
@@ -2976,6 +3178,7 @@ terrain_cb_w_4lyr_spec_pxmsps = [
                 shader_parameter("Value", "SpecularFalloffMult", 48.0, 0.0, 0.0, 0.0)]
 
 treessps = [
+                ExportShaderProperties("Layout", PNCCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "ShadowFalloff", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "AlphaTest", 0.0, 0.0, 0.0, 0.0),
@@ -2986,6 +3189,7 @@ treessps = [
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.02, 1.0, 0.5)]
 
 trees_lodsps = [
+                ExportShaderProperties("Layout", PNCCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "ShadowFalloff", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "AlphaTest", 0.0, 0.0, 0.0, 0.0),
@@ -2994,6 +3198,7 @@ trees_lodsps = [
                 shader_parameter("Value", "UseTreeNormals", 1.0, 0.0, 0.0, 0.0)]
 
 trees_lod2sps = [
+                ExportShaderProperties("Layout", PNCCTTTT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "ShadowFalloff", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "AlphaTest", 0.0, 0.0, 0.0, 0.0),
@@ -3022,7 +3227,8 @@ trees_normalsps = [
                 shader_parameter("Value", "UseTreeNormals", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "WindGlobalParams", 1.0, 5.0, 5.0, 1.0),
                 shader_parameter("Value", "umGlobalParams", 0.025, 0.02, 1.0, 0.5),
-                shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "Bumpiness", 1.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCCTX)]
 
 trees_normal_diffspecsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3039,7 +3245,8 @@ trees_normal_diffspecsps = [
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCCTX)]
 
 trees_normal_diffspec_tntsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3075,7 +3282,8 @@ trees_normal_specsps = [
                 shader_parameter("Value", "SpecMapIntMask", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensityMult", 1.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularFalloffMult", 100.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PNCCTX)]
 
 trees_normal_spec_tntsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3136,7 +3344,8 @@ vehicle_badgessps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTTX)]
 
 vehicle_basicsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3261,7 +3470,8 @@ vehicle_dash_emissivesps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCT)]
 
 vehicle_dash_emissive_opaquesps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3312,7 +3522,8 @@ vehicle_decal2sps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTX)]
 
 vehicle_detailsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3353,7 +3564,8 @@ vehicle_detail2sps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTT)]
 
 vehicle_emissive_alphasps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3446,7 +3658,8 @@ vehicle_interior2sps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCT)]
 
 vehicle_licenseplatesps = [
                 shader_parameter("Image", "DamageSampler"),
@@ -3475,7 +3688,8 @@ vehicle_licenseplatesps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTTX)]
 
 vehicle_lightsemissivesps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3495,7 +3709,8 @@ vehicle_lightsemissivesps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTT)]
 
 vehicle_meshsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3514,7 +3729,8 @@ vehicle_meshsps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTTX)]
 
 vehicle_mesh2_enveffsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -3719,7 +3935,8 @@ vehicle_paint3sps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTT)]
 
 vehicle_paint3_enveffsps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -4115,7 +4332,8 @@ vehicle_tiresps = [
                 shader_parameter("Value", "matWheelWorldViewProj", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "matWheelWorld", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "TyreDeformParams2", 0.262, 1495.05, 0.0, 0.0),
-                shader_parameter("Value", "TyreDeformParams", 0.0, 0.0, 0.0, 1.0)]
+                shader_parameter("Value", "TyreDeformParams", 0.0, 0.0, 0.0, 1.0),
+                ExportShaderProperties("Layout", PNCTTX)]
 
 vehicle_tire_emissivesps = [
                 shader_parameter("Image", "DiffuseSampler"),
@@ -4267,9 +4485,11 @@ vehicle_vehglasssps = [
                 shader_parameter("Value", "DamagedWheelOffsets", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageTextureOffset", 0.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "DamageMultiplier", 0.0, 0.0, 0.0, 0.0),
-                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
+                shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0),
+                ExportShaderProperties("Layout", PBBNCTTT)]
 
 vehicle_vehglass_innersps = [
+                ExportShaderProperties("Layout", PBBNCTT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DamageSampler"),
                 shader_parameter("Image", "DirtSampler"),
@@ -4288,6 +4508,7 @@ vehicle_vehglass_innersps = [
                 shader_parameter("Value", "BoundRadius", 0.0, 0.0, 0.0, 0.0)]
 
 water_fountainsps = [
+                ExportShaderProperties("Layout", PT),
                 shader_parameter("Value", "FogColor", 0.416, 0.6, 0.631, 0.055),
                 shader_parameter("Value", "SpecularFalloff", 1118.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensity", 1.0, 0.0, 0.0, 0.0),
@@ -4295,6 +4516,7 @@ water_fountainsps = [
                 shader_parameter("Value", "RippleBumpiness", 0.356, 0.0, 0.0, 0.0)]
 
 water_poolenvsps = [
+                ExportShaderProperties("Layout", PT),
                 shader_parameter("Value", "FogColor", 0.416, 0.6, 0.631, 0.055),
                 shader_parameter("Value", "SpecularFalloff", 1118.0, 0.0, 0.0, 0.0),
                 shader_parameter("Value", "SpecularIntensity", 1.0, 0.0, 0.0, 0.0),
@@ -4311,10 +4533,12 @@ water_riversps = [
                 shader_parameter("Value", "RippleBumpiness", 0.356, 0.0, 0.0, 0.0)]
 
 water_riverfoamsps = [
+                ExportShaderProperties("Layout", PNCTX),
                 shader_parameter("Image", "FoamSampler"),
                 shader_parameter("Value", "RippleSpeed", 0.0, 0.0, 0.0, 0.0)]
 
 water_riverlodsps = [
+                ExportShaderProperties("Layout", PNCT),
                 shader_parameter("Image", "FlowSampler"),
                 shader_parameter("Image", "FogSampler"),
                 shader_parameter("Value", "SpecularFalloff", 1118.0, 0.0, 0.0, 0.0),
@@ -4356,6 +4580,7 @@ water_terrainfoamsps = [
                 shader_parameter("Value", "WaveOffset", 0.25, 0.0, 0.0, 0.0)]
 
 weapon_emissivestrong_alphasps = [
+                ExportShaderProperties("Layout", PBBNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
                 shader_parameter("Value", "UseTessellation", 0.0, 0.0, 0.0, 0.0),
@@ -4364,6 +4589,7 @@ weapon_emissivestrong_alphasps = [
                 shader_parameter("Value", "GlobalAnimUV0", 1.0, 0.0, 0.0, 0.0)]
 
 weapon_emissive_tntsps = [
+                ExportShaderProperties("Layout", PBBNCT),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Value", "matMaterialColorScale", 1.0, 0.0, 0.0, 1.0),
@@ -4373,6 +4599,7 @@ weapon_emissive_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 weapon_normal_spec_alphasps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "BumpSampler"),
                 shader_parameter("Image", "SpecSampler"),
@@ -4385,6 +4612,7 @@ weapon_normal_spec_alphasps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 weapon_normal_spec_cutout_palettesps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DiffuseExtraSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -4402,6 +4630,7 @@ weapon_normal_spec_cutout_palettesps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 weapon_normal_spec_detail_palettesps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DetailSampler"),
                 shader_parameter("Image", "DiffuseExtraSampler"),
@@ -4420,6 +4649,7 @@ weapon_normal_spec_detail_palettesps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 weapon_normal_spec_detail_tntsps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "DetailSampler"),
@@ -4438,6 +4668,7 @@ weapon_normal_spec_detail_tntsps = [
                 shader_parameter("Value", "TintPaletteSelector", 0.0, 0.0, 0.0, 0.0)]
 
 weapon_normal_spec_palettesps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "DiffuseExtraSampler"),
                 shader_parameter("Image", "BumpSampler"),
@@ -4455,6 +4686,7 @@ weapon_normal_spec_palettesps = [
                 shader_parameter("Value", "SpecularFresnel", 0.97, 0.0, 0.0, 0.0)]
 
 weapon_normal_spec_tntsps = [
+                ExportShaderProperties("Layout", PBBNCTX),
                 shader_parameter("Image", "DiffuseSampler"),
                 shader_parameter("Image", "TintPaletteSampler"),
                 shader_parameter("Image", "DiffuseExtraSampler"),
@@ -4980,10 +5212,11 @@ def create(shadername, context):
         node_tree = mat.node_tree
                 
         for p in parameter_set:
-            if(p.Type == "Image"):
-                create_image_node(node_tree, p)
-            elif(p.Type == "Value"):
-                create_value_node(node_tree, p)
+            if isinstance(p, shader_parameter):
+                if(p.Type == "Image"):
+                    create_image_node(node_tree, p)
+                elif(p.Type == "Value"):
+                    create_value_node(node_tree, p)
         
         #temporary also find a better way to do this... even though it kinda works
         if("terrain" in shadername.lower()):
