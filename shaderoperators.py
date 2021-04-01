@@ -15,7 +15,14 @@ class ShaderProperty:
 
     def write(self):
         node = Element(self.Type)
-        node.set("value", str(self.Name))
+        if self.X == None:
+            node.set("value", str(self.Name))
+        else:
+            node.set("x", str(self.X))
+            node.set("y", str(self.Y))
+            node.set("z", str(self.Z))
+            node.set("w", str(self.W))
+
         return node
 
     def get_value(self):
