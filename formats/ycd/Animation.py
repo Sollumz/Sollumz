@@ -2,7 +2,7 @@ from xml.etree.ElementTree import Element
 import bpy
 
 from ...tools import xml as Xml
-from .utils import find_bone_by_tag, find_armatures
+from .utils import find_armatures
 from .AnimSequence import AnimSequence
 
 class Animation:
@@ -26,6 +26,8 @@ class Animation:
         self.Duration = Xml.ReadValue(node.find("Duration"), 0, float)
         self.Unknown1C = Xml.ReadValue(node.find("Unknown1C"), "", str)
 
+        print('Parsing anim from xml:', self.Hash)
+
         self.BoneIds = []
         for boneIdNode in node.find("BoneIds"):
             self.BoneIds.append(AnimBoneId.fromXml(boneIdNode))
@@ -37,15 +39,37 @@ class Animation:
         return self
 
     @staticmethod
-    def fromAction(action):
-        #TODO: stub
+    def fromObject(obj):
         self = Animation()
-        self.Hash = action.Hash
-        self.FrameCount = action.FrameCount
-        self.Unknown10 = action.Unknown10
-        self.SequenceFrameLimit = action.SequenceFrameLimit
-        self.Duration = action.Duration
-        self.Unknown1C = action.Unknown1C
+
+        props = obj.anim_properties
+
+        self.Hash = props.Hash
+        self.FrameCount = props.FrameCount
+        self.Unknown10 = props.Unknown10
+        self.SequenceFrameLimit = props.SequenceFrameLimit
+        self.Duration = props.Duration
+        self.Unknown1C = props.Unknown1C
+
+        armatures = find_armatures()
+        assert len(armatures) > 0
+
+        armature = armatures[0]
+
+        self.BoneIds = []
+        self.Sequences = []
+
+        for pbone in armature.pose.bones:
+            bone = pbone.bone
+            tag = pbone.bone.bone_properties.tag
+
+            self.BoneIds.append(AnimBoneId(tag, 0, 0))
+            self.BoneIds.append(AnimBoneId(tag, 1, 0))
+
+
+        for act in bpy.data.actions:
+            if act.ParentAnimHash == self.Hash:
+                self.Sequences.append(AnimSequence.fromAction(armature, self, act))
 
         return self
 
@@ -59,59 +83,49 @@ class Animation:
         Xml.CreateValueNode("Duration", self.Duration, animNode)
         Xml.CreateTextNode("Unknown1C", self.Unknown10, animNode)
 
-        #TODO: bone ids
-        Xml.CreateNode("BoneIds", animNode)
+        boneIdsNode = Xml.CreateNode("BoneIds", animNode)
+        sequencesNode = Xml.CreateNode("Sequences", animNode)
 
-        #TODO: sequences
-        Xml.CreateNode("Sequences", animNode)
+        for boneId in self.BoneIds:
+            boneIdsNode.append(boneId.toXml())
+
+        for seq in self.Sequences:
+            sequencesNode.append(seq.toXml())
 
         return animNode
 
-    def __apply(self):
+    def toObject(self):
+        armature = find_armatures()[0]
+
+        obj = bpy.data.objects.new(self.Hash, None)
+        bpy.context.collection.objects.link(obj)
+        obj.sollumtype = "Animation"
+
+        props = obj.anim_properties
+
+        props.Hash = self.Hash
+        props.FrameCount = self.FrameCount
+        props.SequenceFrameLimit = self.SequenceFrameLimit
+        props.Duration  = self.Duration
+        props.Unknown10 = self.Unknown10
+        props.Unknown1C = self.Unknown1C
+
         for seq in self.Sequences:
-            for seqData in seq.SequenceData:
-                bone = find_bone_by_tag(seqData.BoneId.BoneId)
-                for frame in range(self.FrameCount):
-                    seqData.apply(frame, bone)
+            print('Converting sequence to action', seq.Hash)
+            seq.toAction(armature)
 
-            bone1 = find_bone_by_tag(23639)
-            bone2 = find_bone_by_tag(58271)
-
-            if bone1 is not None and bone2 is not None:
-                bone1.matrix = bone2.matrix
-                bone1.keyframe_insert(data_path="rotation_quaternion", frame=frame)
-
-            bone1 = find_bone_by_tag(6442)
-            bone2 = find_bone_by_tag(51826)
-
-            if bone1 is not None and bone2 is not None:
-                bone1.matrix = bone2.matrix
-                bone1.keyframe_insert(data_path="rotation_quaternion", frame=frame)
-
-
-    def toAction(self):
-        action = bpy.data.actions.new(self.Hash)
-        action.Hash = self.Hash
-        action.FrameCount = self.FrameCount
-        action.SequenceFrameLimit = self.SequenceFrameLimit
-        action.Duration  = self.Duration
-        action.Unknown10 = self.Unknown10
-        action.Unknown1C = self.Unknown1C
-
-        for ob in find_armatures():
-            if ob.animation_data is None:
-                ob.animation_data_create()
-            ob.animation_data.action = action
-
-        self.__apply()
-
-        return action
+        return obj
 
 
 class AnimBoneId:
     BoneId = None
     Track = None
     Unk0 = None
+
+    def __init__(self, BoneId = None, Track = None, Unk0 = None):
+        self.BoneId = BoneId
+        self.Track = Track
+        self.Unk0 = Unk0
 
     @staticmethod
     def fromXml(node):
@@ -121,3 +135,10 @@ class AnimBoneId:
         self.Unk0 = Xml.ReadValue(node.find("Unk0"), None, int)
 
         return self
+
+    def toXml(self):
+        node = Element("Item")
+        Xml.CreateValueNode("BoneId", self.BoneId, node)
+        Xml.CreateValueNode("Track", self.Track, node)
+        Xml.CreateValueNode("Unk0", self.Unk0, node)
+        return node

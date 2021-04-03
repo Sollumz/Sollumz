@@ -73,6 +73,10 @@ class SollumzMainPanel(bpy.types.Panel):
                 for k in ["Hash", "Name", "Type", "Unknown30", "AnimationHash", "StartTime", "EndTime", "Rate"]:
                     subbox.prop(object.clip_properties, k)
 
+            if(object.sollumtype == "Animation"):
+                for k in ["Hash", "FrameCount", "SequenceFrameLimit", "Duration", "Unknown10", "Unknown1C"]:
+                    subbox.prop(object.anim_properties, k)
+
 def param_name_to_title(pname):
     
     title = ""
@@ -330,6 +334,7 @@ class SollumzAnimPanel(bpy.types.Panel):
             return
 
         layout.prop(action, "Hash", text = "Hash")
+        layout.prop(action, "ParentAnimHash", text = "Parent Animation Hash")
         layout.prop(action, "FrameCount", text = "Frame Count")
         layout.prop(action, "SequenceFrameLimit", text = "Sequence Frame Limit")
         layout.prop(action, "Duration", text = "Duration (sec)")

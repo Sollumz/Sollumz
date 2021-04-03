@@ -12,6 +12,11 @@ class Channel:
     def getValue(self, frame, calcValues): # pylint: disable=unused-argument
         return NotImplemented
 
+    def toXml(self):
+        node = Xml.CreateNode("Item")
+        #TODO: implement
+        return node
+
 class ChannelConst(Channel):
     def __init__(self, value):
         self.value = value
@@ -23,6 +28,9 @@ class ChannelStaticFloat(Channel):
 
     value = None
 
+    def __init__(self, value = None):
+        self.value = value
+
     @staticmethod
     def fromXml(node):
         self = ChannelStaticFloat()
@@ -32,6 +40,12 @@ class ChannelStaticFloat(Channel):
 
     def getValue(self, frame, calcValues):
         return self.value
+
+    def toXml(self):
+        node = Xml.CreateNode("Item")
+        Xml.CreateValueNode("Type", "StaticFloat", node)
+        Xml.CreateValueNode("Value", self.value, node)
+        return node
 
 class ChannelStaticVector(Channel):
 
@@ -82,6 +96,9 @@ class ChannelQuantizeFloat(Channel):
 
     values = None
 
+    def __init__(self, values = None):
+        self.values = values
+
     @staticmethod
     def fromXml(node):
         self = ChannelQuantizeFloat()
@@ -92,6 +109,14 @@ class ChannelQuantizeFloat(Channel):
 
     def getValue(self, frame, calcValues):
         return self.values[frame % len(self.values)]
+
+    def toXml(self):
+        node = Xml.CreateNode("Item")
+        Xml.CreateValueNode("Type", "QuantizeFloat", node)
+        Xml.CreateValueNode("Quantum", "0", node)
+        Xml.CreateValueNode("Offset", "0", node)
+        Xml.CreateTextNode("Values", ' '.join(map(str, self.values)), node)
+        return node
 
 class ChannelIndirectQuantizeFloat(Channel):
 

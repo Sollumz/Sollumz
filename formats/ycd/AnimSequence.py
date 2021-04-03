@@ -1,24 +1,128 @@
 from mathutils import Vector, Quaternion
+from collections import Counter
 
 from ...tools import xml as Xml
 from .utils import find_bone_by_tag
 from .Channel import ChannelConst, ChannelStaticFloat, ChannelQuantizeFloat, ChannelIndirectQuantizeFloat, ChannelCachedQuaternion1, ChannelStaticVector, ChannelStaticQuaternion
+import bpy
 
 class AnimSequence:
     Hash = None
     FrameCount = None
     SequenceData = []
+    ParentAnimHash = None
 
     @staticmethod
     def fromXml(node, anim):
         self = AnimSequence()
         self.Hash = Xml.ReadText(node.find("Hash"), None, str)
         self.FrameCount = Xml.ReadValue(node.find("FrameCount"), None, int)
+        self.ParentAnimHash = anim.Hash
+        print('Parsing anim sequence from xml:', self.Hash)
 
         for seqItem, boneId in zip(node.find("SequenceData"), anim.BoneIds):
             self.SequenceData.append(AnimSequenceDataItem.fromXml(seqItem, boneId))
 
         return self
+
+    def toXml(self):
+        node = Xml.CreateNode("Item")
+
+        Xml.CreateTextNode("Hash", self.Hash, node)
+        Xml.CreateValueNode("FrameCount", self.FrameCount, node)
+        seqDataNode = Xml.CreateNode("SequenceData", node)
+
+        for seq in self.SequenceData:
+            seqNode = seq.toXml()
+            seqDataNode.append(seqNode)
+
+        return node
+
+    def apply(self, armature):
+
+        for seqData in self.SequenceData:
+            bone = find_bone_by_tag(armature, seqData.BoneId.BoneId)
+            for frame in range(self.FrameCount):
+                seqData.apply(frame, bone)
+
+        bone1 = find_bone_by_tag(armature, 23639)
+        bone2 = find_bone_by_tag(armature, 58271)
+
+        if bone1 is not None and bone2 is not None:
+            bone1.matrix = bone2.matrix
+            bone1.keyframe_insert(data_path="rotation_quaternion", frame=frame)
+
+        bone1 = find_bone_by_tag(armature, 6442)
+        bone2 = find_bone_by_tag(armature, 51826)
+
+        if bone1 is not None and bone2 is not None:
+            bone1.matrix = bone2.matrix
+            bone1.keyframe_insert(data_path="rotation_quaternion", frame=frame)
+
+    def toAction(self, armature):
+        action = bpy.data.actions.new(self.Hash)
+        action.Hash = self.Hash
+        action.FrameCount = self.FrameCount
+        action.ParentAnimHash = self.ParentAnimHash
+
+        if armature.animation_data is None:
+            armature.animation_data_create()
+        armature.animation_data.action = action
+
+        self.apply(armature)
+        return action
+
+    @staticmethod
+    def retrieveAnimSequenceDataFromAction(armature, anim, action):
+        pos_frames = {}
+        rot_frames = {}
+        bones = {}
+
+        for boneIdNode in anim.BoneIds:
+            bid = boneIdNode.BoneId
+            pos_frames[bid] = []
+            rot_frames[bid] = []
+            bones[bid] = find_bone_by_tag(armature, bid)
+
+        scene = bpy.context.scene
+        armature.animation_data.action = action
+        for f in range(scene.frame_start, scene.frame_end+1):
+            scene.frame_set(f)
+
+            for boneIdNode in anim.BoneIds:
+                bid = boneIdNode.BoneId
+                track = boneIdNode.Track
+                pbone = bones[bid]
+
+                if track == 0:
+                    pos_frames[bid].append(armature.matrix_world @ pbone.head)
+                elif track == 1:
+                    rot_frames[bid].append(pbone.rotation_quaternion)
+
+        return pos_frames, rot_frames, bones
+
+
+    @staticmethod
+    def fromAction(armature, anim, action):
+        self = AnimSequence()
+        self.Hash = action.Hash
+        self.FrameCount = action.FrameCount
+        self.ParentAnimHash = action.ParentAnimHash
+
+        print('Retrieving anim sequence from action:', self.Hash)
+
+        pos_frames, rot_frames, bones = AnimSequence.retrieveAnimSequenceDataFromAction(armature, anim, action)
+
+        for boneIdNode in anim.BoneIds:
+            bid = boneIdNode.BoneId
+            track = boneIdNode.Track
+            if track == 0:
+                self.SequenceData.append(AnimSequenceDataItem.fromBone(bones[bid], track, pos_frames[bid]))
+            elif track == 1:
+                self.SequenceData.append(AnimSequenceDataItem.fromBone(bones[bid], track, rot_frames[bid]))
+
+        return self
+
 
 class AnimSequenceDataItem:
 
@@ -135,5 +239,50 @@ class AnimSequenceDataItem:
 
             else:
                 raise Exception('Unknown channel type: ', chanType)
+
+        return self
+
+    def toXml(self):
+        node = Xml.CreateNode("Item")
+        channelsNode = Xml.CreateNode("Channels", node)
+
+        for chan in self.Channels:
+            channelsNode.append(chan.toXml())
+
+        return node
+
+    @staticmethod
+    def genProperChannelFromValues(values):
+        counter = Counter(values)
+        numUniq = len(counter)
+        if numUniq == 1:
+            return ChannelStaticFloat(values[0])
+
+        return ChannelQuantizeFloat(values)
+
+    @staticmethod
+    def fromBone(pbone, track, frames):
+        self = AnimSequenceDataItem()
+
+        self.BoneId = pbone.bone.bone_properties.tag
+        self.Channels = []
+
+        if track == 0:
+            channel_x = list(map(lambda vec: vec.x, frames))
+            channel_y = list(map(lambda vec: vec.y, frames))
+            channel_z = list(map(lambda vec: vec.z, frames))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_x))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_y))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_z))
+
+        elif track == 1:
+            channel_x = list(map(lambda quat: quat.x, frames))
+            channel_y = list(map(lambda quat: quat.y, frames))
+            channel_z = list(map(lambda quat: quat.z, frames))
+            channel_w = list(map(lambda quat: quat.w, frames))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_x))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_y))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_z))
+            self.Channels.append(AnimSequenceDataItem.genProperChannelFromValues(channel_w))
 
         return self

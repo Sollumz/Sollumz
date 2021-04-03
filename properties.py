@@ -3,7 +3,6 @@ from bpy.types import PropertyGroup
 from bpy.props import CollectionProperty, PointerProperty, StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty
 from .sollumz_ui import bounds_update, scene_lod_update, scene_hide_collision
 
-
 #sollum properties
 bpy.types.Scene.last_created_material = PointerProperty(type=bpy.types.Material)
 bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
@@ -21,6 +20,7 @@ bpy.types.Scene.level_of_detail = bpy.props.EnumProperty(
 bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", update = scene_hide_collision)
 
 bpy.types.Action.Hash = StringProperty(name="Hash", default = "")
+bpy.types.Action.ParentAnimHash = StringProperty(name="Parent Animation Hash", default = "")
 bpy.types.Action.FrameCount = IntProperty(name="FrameCount", default=100, min=1, max=1000)
 bpy.types.Action.SequenceFrameLimit = IntProperty(name="SequenceFrameLimit", default=100, min=1, max=1000)
 bpy.types.Action.Duration = FloatProperty(name = "Duration", default = 10.0, min = 0, max = 1000)
@@ -46,6 +46,7 @@ bpy.types.Object.sollumtype = bpy.props.EnumProperty(
                                                                     ("Bound Cylinder", "Bound Cylinder", "Bound Cylinder"),
                                                                     ("Clip Dictionary", "Clip Dictionary", "Clip Dictionary"),
                                                                     ("Clip", "Clip", "Clip"),
+                                                                    ("Animation", "Animation", "Animation"),
                                                         ]
 )
                                                                     
@@ -419,11 +420,22 @@ class SollumzClipProperties(PropertyGroup):
     StartTime: FloatProperty(name = "Start Time", default = 0.0, min = 0, max = 1000)
     EndTime: FloatProperty(name = "End Time", default = 0.0, min = 0, max = 1000)
     Rate: FloatProperty(name = "Rate", default = 1.0, min = 0, max = 1000)
+    Animations: CollectionProperty(type = bpy.types.PropertyGroup)
+    ul_flags_index: IntProperty(name = "UIListIndex", default = 0)
+
+class SollumzAnimProperties(PropertyGroup):
+    Hash: StringProperty(name="Hash", default = "")
+    FrameCount: IntProperty(name="Frame Count", default=1, min=1, max=1000)
+    SequenceFrameLimit: IntProperty(name="Sequence Frame Limit", default=1, min=1, max=1000)
+    Duration: FloatProperty(name = "Duration", default = 0.0, min = 0, max = 1000)
+    Unknown10: IntProperty(name="Unknown10", default=0, min=0, max=100)
+    Unknown1C: StringProperty(name="Unknown1C", default = "")
 
 classes = (
     SollumzBoneFlag,
     SollumzBoneProperties,
     SollumzClipProperties,
+    SollumzAnimProperties,
 )
 
 def register():
@@ -432,6 +444,7 @@ def register():
 
     bpy.types.Bone.bone_properties = PointerProperty(type = SollumzBoneProperties)
     bpy.types.Object.clip_properties = PointerProperty(type = SollumzClipProperties)
+    bpy.types.Object.anim_properties = PointerProperty(type = SollumzAnimProperties)
 
 def unregister():
     for cls in classes:

@@ -24,6 +24,8 @@ class Clip:
         self.Type = Xml.ReadValue(node.find("Type"), "", str)
         self.Unknown30 = Xml.ReadValue(node.find("Unknown30"), 0, int)
 
+        print('Parsing clip from xml:', self.Hash)
+
         # TODO: Tags
         # TODO: Properties
         # hashes: boneid,left,right,blocked,create,release,destroy,allowed

@@ -24,15 +24,15 @@ class ClipDictionary:
         self = ClipDictionary()
         self.Clips = []
 
+        print('Parsing clip dictionary from xml')
+
         for clipNode in node.find("Clips"):
             self.Clips.append(Clip.fromXml(clipNode))
 
         self.Animations = []
 
         for animNode in node.find("Animations"):
-            anim = Animation.fromXml(animNode)
-            anim.toAction()
-            self.Animations.append(anim)
+            self.Animations.append(Animation.fromXml(animNode))
 
         return self
 
@@ -40,9 +40,16 @@ class ClipDictionary:
         dictNode = bpy.data.objects.new('Clip Dictionary', None)
         bpy.context.collection.objects.link(dictNode)
 
+        print('Creating clip objects')
         for clip in self.Clips:
             clipNode = clip.toObject()
             clipNode.parent = dictNode
+
+        print('Creating anim objects')
+        for anim in self.Animations:
+            print('Creating anim', anim.Hash)
+            animNode = anim.toObject()
+            animNode.parent = dictNode
 
         dictNode.sollumtype = "Clip Dictionary"
 
@@ -54,9 +61,13 @@ class ClipDictionary:
         self.Clips = []
         self.Animations = []
 
-        for clipNode in obj.children:
-            clip = Clip.fromObject(clipNode)
-            self.Clips.append(clip)
+        for node in obj.children:
+            if node.sollumtype == "Clip":
+                clip = Clip.fromObject(node)
+                self.Clips.append(clip)
+            elif node.sollumtype == "Animation":
+                anim = Animation.fromObject(node)
+                self.Animations.append(anim)
 
         return self
 
@@ -69,8 +80,7 @@ class ClipDictionary:
         for clip in self.Clips:
             clipsNode.append(clip.toXml())
 
-        for act in bpy.data.actions:
-            anim = Animation.fromAction(act)
+        for anim in self.Animations:
             animsNode.append(anim.toXml())
 
         clipDictNode.append(clipsNode)

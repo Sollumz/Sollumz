@@ -19,7 +19,9 @@ class ImportYcdXml(Operator, ImportHelper):
         root = tree.getroot()
 
         clipDict = ClipDictionary.fromXml(root)
+        print('Clip dictionary parsed')
         clipDict.toObject()
+        print('Clip dictionary import finished')
 
         return {'FINISHED'}
 
