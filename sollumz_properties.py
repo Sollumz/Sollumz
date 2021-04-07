@@ -19,6 +19,7 @@ class GeometryProperties(bpy.types.PropertyGroup):
     )
 
 class TextureProperties(bpy.types.PropertyGroup):
+    embedded : bpy.props.BoolProperty(name = "Embedded", default = False)
     ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     usage : bpy.props.EnumProperty(
         items = [
@@ -105,7 +106,6 @@ class TextureProperties(bpy.types.PropertyGroup):
     extra_flags : bpy.props.IntProperty(name = "Extra Flags", default = 0)
 
 class ShaderProperties(bpy.types.PropertyGroup):
-    embedded : bpy.props.BoolProperty(name = "Embedded", default = False)
     renderbucket : bpy.props.EnumProperty(
         items = [
             ("sollumz_rb_0", "0", "Sollumz RenderBucket 0"),
@@ -125,8 +125,6 @@ class ShaderProperties(bpy.types.PropertyGroup):
     )
     #LAYOUT ENUM? 
 
-    texture_properties : bpy.props.PointerProperty(type = TextureProperties)
-
 def assign_properties():
     
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
@@ -141,3 +139,4 @@ def assign_properties():
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
+    bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)

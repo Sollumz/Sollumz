@@ -159,13 +159,15 @@ def shader_group_to_blender(shadermanager, shadergroup, filepath):
                         if(shadergroup.texture_dictionary != None):
                             for txt in shadergroup.texture_dictionary.textures:
                                 if(txt.name == param.texture_name):
-                                    material.shader_properties.embedded = True
-                                    material.shader_properties.texture_properties.usage = "sollumz_" + txt.usage.lower()
-                                    material.shader_properties.texture_properties.extra_flags = txt.extra_flags
+                                    print()
                                     
                         if(os.path.isfile(texture_path)):
                             img = bpy.data.images.load(texture_path, check_existing=True)
                             n.image = img 
+
+                        if(param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings')):
+                            n.image.colorspace_settings.name = 'Non-Color'
+                            
                 elif(isinstance(n, bpy.types.ShaderNodeValue)):
                     if(param.name == n.name[:-2]):
                         key = n.name[-1]
