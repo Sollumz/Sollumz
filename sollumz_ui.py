@@ -82,9 +82,18 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
             return 
 
         box = layout.box()
+
         row = box.row()
         row.prop(mat.shader_properties, "renderbucket")
         row.prop(mat.shader_properties, "filename")
+
+        box = layout.box()
+        row = box.row()
+        row.prop(mat.collision_properties, "procedural_id")
+        row.prop(mat.collision_properties, "room_id")
+        row = box.row()
+        row.prop(mat.collision_properties, "ped_density")
+        row.prop(mat.collision_properties, "flags")
 
 class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
@@ -102,6 +111,15 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
     def draw_geometry_properties(self, context, layout, obj):
         layout.prop(obj.geometry_properties, "sollum_lod")
 
+    def draw_bound_properties(self, context, layout, obj):
+        layout.prop(obj.bound_properties, "procedural_id")
+        layout.prop(obj.bound_properties, "room_id")
+        layout.prop(obj.bound_properties, "ped_density")
+        layout.prop(obj.bound_properties, "poly_flags")
+        layout.prop(obj.bound_properties, "composite_flags1")
+        layout.prop(obj.bound_properties, "composite_flags2")
+        
+
     def draw(self, context):
         layout = self.layout
 
@@ -116,3 +134,5 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             self.draw_drawable_properties(context, layout, obj)
         elif(obj.sollum_type == "sollumz_geometry"):
             self.draw_geometry_properties(context, layout, obj)
+        elif("bound" in obj.sollum_type):
+            self.draw_bound_properties(context, layout, obj)

@@ -6,6 +6,7 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 from bpy_extras.io_utils import ImportHelper
 from .resources.bound import Bound
+from .sollumz_shaders import create_collision_material_from_index
 import meshgen
 from mathutils import Vector, Matrix, Quaternion
 import math 
@@ -39,27 +40,24 @@ def set_bound_transform(obj, bound):
     obj.rotation_euler  = rotation.to_euler()
     obj.scale = scale
 
-def bound_poly_cylinder_to_blender(cylinder, vertices):
+def bound_poly_cylinder_to_blender(cylinder, vertices, materials):
     radius = cylinder.radius
     v1 = vertices[cylinder.v1]
     v2 = vertices[cylinder.v2]
     length = get_distance_of_verts(v1, v2)    
     rot = get_direction_of_verts(v1, v2)
-    #materialindex = int(cylinderline.attrib["m"])
+    materialindex = cylinder.material_index
     
     mesh = bpy.data.meshes.new("cylinder")
     meshgen.bound_cylinder(mesh, radius, length)
     
-    #mat = materials[materialindex]
-    #mesh.materials.append(mat)
+    mat = materials[materialindex]
+    mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("cylinder", mesh)
-    #obj = bpy.data.objects.new("cylinder", mesh)
-    #obj.sollumtype = "Bound Cylinder"
+    obj.sollum_type = "sollumz_bound_poly_cylinder"
     obj.location = (v1 + v2) / 2     
     obj.rotation_euler = rot
-    #obj.bounds_radius = radius
-    #obj.bounds_length = length
 
     return obj
 
@@ -79,8 +77,8 @@ def get_closest_axis_point(axis, center, points):
 
     return closest
 
-def bound_poly_box_to_blender(box, vertices):
-    #materialindex = int(polyline.attrib["m"]) 
+def bound_poly_box_to_blender(box, vertices, materials):
+    materialindex = box.material_index
     idxs = []
     idxs.append(box.v1)
     idxs.append(box.v2)
@@ -148,24 +146,20 @@ def bound_poly_box_to_blender(box, vertices):
     bm.to_mesh(mesh)
     bm.free()
     
-    #mat = materials[materialindex]
-    #mesh.materials.append(mat)
+    mat = materials[materialindex]
+    mesh.materials.append(mat)
 
     obj = bpy.data.objects.new("box", mesh)
 
-    #obj.data.materials.append(material)
-    
-    #location = center + geocenter 
-    
     obj.location                = center#location #boxes dont use geocenter to offset? 
     obj.rotation_euler          = rotation
     obj.scale                   = scale
-    #obj.sollumtype = "Bound Box"
+    obj.sollum_type = "sollumz_bound_poly_box"
     
     return obj
 
-def bound_poly_capsule_to_blender(capsule, vertices):
-    #materialindex = int(capsuleline.attrib["m"])
+def bound_poly_capsule_to_blender(capsule, vertices, materials):
+    materialindex = capsule.material_index
     radius = capsule.radius
     v1 = vertices[capsule.v1]
     v2 = vertices[capsule.v2]
@@ -175,34 +169,31 @@ def bound_poly_capsule_to_blender(capsule, vertices):
     mesh = bpy.data.meshes.new("capsule")
     meshgen.bound_capsule(mesh, radius, length)
     
-    #mesh.materials.append(materials[materialindex])
+    mat = materials[materialindex]
+    mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("Capsule", mesh)
     
     obj.location = (v1 + v2) / 2     
     obj.rotation_euler = rot
 
-    #obj.sollumtype = "Bound Capsule"
-    #obj.bounds_radius = radius
-    #obj.bounds_length = length
+    obj.sollum_type = "sollumz_bound_poly_capsule"
     
     return obj
 
-def bound_poly_sphere_to_blender(sphere, vertices):
+def bound_poly_sphere_to_blender(sphere, vertices, materials):
     radius = sphere.radius
     location = vertices[sphere.v]
-    #materialindex = int(sphereline.attrib["m"])
+    materialindex = sphere.material_index
     
     mesh = bpy.data.meshes.new("sphere")
     meshgen.bound_sphere(mesh, radius)
 
-    #mat = materials[materialindex]
-    #mesh.materials.append(mat)
+    mat = materials[materialindex]
+    mesh.materials.append(mat)
     
     obj = bpy.data.objects.new("sphere", mesh)
-    #obj.sollumtype = "Bound Sphere"
-    #obj.location = location
-    #obj.bounds_radius = radius
+    obj.sollum_type = "sollumz_bound_poly_sphere"
     
     return obj
 
@@ -216,36 +207,54 @@ def bound_geometry_to_blender(geometry):
         name += "BVH"
     obj = bpy.data.objects.new(name, None)
 
+    materials = []
+    for gmat in geometry.materials:
+        mat = create_collision_material_from_index(gmat.type)
+        mat.collision_properties.procedural_id = gmat.procedural_id
+        mat.collision_properties.room_id = gmat.room_id
+        mat.collision_properties.ped_density = gmat.ped_density
+        materials.append(mat)
+
     vertices = []
     indicies = []
+    material_idxs = []
     for vert in geometry.vertices:
         vertices.append(Vector((vert[0], vert[1], vert[2])))
 
     poly_objs = []
-
     for poly in geometry.polygons:
         if(poly.type == "Triangle"):
             #poly_objs.append(bound_poly_triangle_to_blender(poly)) cant use this TO SLOW
             inds = []
-            inds.append(poly.v1)
+            inds.append(poly.v1)    
             inds.append(poly.v2)
             inds.append(poly.v3)
             indicies.append(inds)
+            print(poly.material_index)
+            material_idxs.append(poly.material_index)
         if(poly.type == "Sphere"):
-            poly_objs.append(bound_poly_sphere_to_blender(poly, vertices))
+            poly_objs.append(bound_poly_sphere_to_blender(poly, vertices, materials))
         if(poly.type == "Capsule"):
-            poly_objs.append(bound_poly_capsule_to_blender(poly, vertices))
+            poly_objs.append(bound_poly_capsule_to_blender(poly, vertices, materials))
         if(poly.type == "Box"):
-            poly_objs.append(bound_poly_box_to_blender(poly, vertices))
+            poly_objs.append(bound_poly_box_to_blender(poly, vertices, materials))
         if(poly.type == "Cylinder"):
-            poly_objs.append(bound_poly_cylinder_to_blender(poly, vertices))
+            poly_objs.append(bound_poly_cylinder_to_blender(poly, vertices, materials))
 
     #create triangle mesh
     mesh = bpy.data.meshes.new("TriangleMesh")
     mesh.from_pydata(vertices, [], indicies)
+    
+    for mat in materials:
+        mesh.materials.append(mat)
+    for idx in range(len(mesh.polygons)):
+        mesh.polygons[idx].material_index = material_idxs[idx]
+
     triangle_obj = bpy.data.objects.new("Triangle", mesh)  
     bpy.context.scene.collection.objects.link(triangle_obj)
+    triangle_obj.sollum_type = "sollumz_bound_poly_triangle"
     triangle_obj.parent = obj
+
 
     for poly in poly_objs:
         bpy.context.scene.collection.objects.link(poly)
@@ -254,6 +263,7 @@ def bound_geometry_to_blender(geometry):
     set_bound_transform(obj, geometry)
 
     obj.location += Vector((geometry.geometry_center[0], geometry.geometry_center[1], geometry.geometry_center[2]))
+    obj.sollum_type = "sollumz_bound_" + name.lower()
 
     return obj
 
@@ -261,7 +271,14 @@ def bound_cloth_to_blender(cloth):
     obj = bpy.data.objects.new("Cloth", None)
     set_bound_transform(obj, cloth)
 
-    #obj.sollumtype = "Bound Cloth"
+    material = create_collision_material_from_index(cloth.material_index)
+    material.collision_properties.procedural_id = cloth.procedural_id
+    material.collision_properties.room_id = cloth.room_id
+    material.collision_properties.ped_density = cloth.ped_density
+    #mesh.materials.append(material)
+
+    obj.sollum_type = "sollumz_bound_cloth"
+
     return obj
 
 def bound_disc_to_blender(disc):
@@ -271,12 +288,17 @@ def bound_disc_to_blender(disc):
 
     meshgen.bound_disc(mesh=mesh, radius=radius, length=margin)
 
+    material = create_collision_material_from_index(disc.material_index)
+    material.collision_properties.procedural_id = disc.procedural_id
+    material.collision_properties.room_id = disc.room_id
+    material.collision_properties.ped_density = disc.ped_density
+    mesh.materials.append(material)
+
     obj = bpy.data.objects.new("Disc", mesh)
     set_bound_transform(obj, disc)
 
-    #obj.sollumtype = "Bound Disc"
-    #obj.bounds_radius = radius
-    #obj.bounds_length = margin
+    obj.sollum_type = "sollumz_bound_disc"
+
     return obj
 
 def bound_cylinder_to_blender(cylinder):
@@ -288,9 +310,16 @@ def bound_cylinder_to_blender(cylinder):
     bm.to_mesh(mesh)
     bm.free()
 
+    material = create_collision_material_from_index(cylinder.material_index)
+    material.collision_properties.procedural_id = cylinder.procedural_id
+    material.collision_properties.room_id = cylinder.room_id
+    material.collision_properties.ped_density = cylinder.ped_density
+    mesh.materials.append(material)
+
     obj = bpy.data.objects.new("Cylinder", mesh)
-    #obj.sollumtype = "Bound Cylinder"
     set_bound_transform(obj, cylinder)
+
+    obj.sollum_type = "sollumz_bound_cylinder"
     
     return obj
 
@@ -305,8 +334,15 @@ def bound_capsule_to_blender(capsule):
     bm.to_mesh(mesh)
     bm.free()
     
-    #obj.sollumtype = "Bound Capsule"
+    material = create_collision_material_from_index(capsule.material_index)
+    material.collision_properties.procedural_id = capsule.procedural_id
+    material.collision_properties.room_id = capsule.room_id
+    material.collision_properties.ped_density = capsule.ped_density
+    mesh.materials.append(material)
+
     set_bound_transform(obj, capsule)
+    
+    obj.sollum_type = "sollumz_bound_capsule"
     
     return obj
 
@@ -318,9 +354,16 @@ def bound_sphere_to_blender(sphere):
     bm.to_mesh(mesh)
     bm.free()
     
+    material = create_collision_material_from_index(sphere.material_index)
+    material.collision_properties.procedural_id = sphere.procedural_id
+    material.collision_properties.room_id = sphere.room_id
+    material.collision_properties.ped_density = sphere.ped_density
+    mesh.materials.append(material)
+
     obj = bpy.data.objects.new("Sphere", mesh)
-    #obj.sollumtype = "Bound Sphere"
     set_bound_transform(obj, sphere)
+
+    obj.sollum_type = "sollumz_bound_sphere"
     
     return obj
 
@@ -332,9 +375,17 @@ def bound_box_to_blender(box):
     bm.to_mesh(mesh)
     bm.free()
     
+    material = create_collision_material_from_index(box.material_index)
+    material.collision_properties.procedural_id = box.procedural_id
+    material.collision_properties.room_id = box.room_id
+    material.collision_properties.ped_density = box.ped_density
+    ######### materials.flags = box.flags ######### not done
+    mesh.materials.append(material)
+
     obj = bpy.data.objects.new("Box", mesh)
-    #obj.sollumtype = "Bound Box"
     set_bound_transform(obj, box)
+
+    obj.sollum_type = "sollumz_bound_box"
     
     return obj
 
@@ -362,7 +413,9 @@ def bound_composite_to_blender(composite):
     for obj in children_objs:
         bpy.context.scene.collection.objects.link(obj)
         obj.parent = composite_obj
-        
+    
+    composite_obj.sollum_type = "sollumz_bound_composite"
+
     bpy.context.scene.collection.objects.link(composite_obj)
 
 class ImportYbnXml(bpy.types.Operator, ImportHelper):

@@ -43,11 +43,11 @@ class Poly():
 
     def __init__(self):
         self.type = ""
-        self.m = 0
+        self.material_index = 0
 
     def read_xml(self, root):
         self.type = root.tag 
-        self.m = int(root.attrib["m"])
+        self.material_index = int(root.attrib["m"])
 
         if(self.type == "Triangle"):
             self.v1 = int(root.attrib["v1"])
