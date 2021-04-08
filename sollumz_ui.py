@@ -2,7 +2,7 @@ import bpy
 
 class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
     bl_label = "Sollumz Shader Panel"
-    bl_idname = "Sollumz_PT_SHADER_PANEL"
+    bl_idname = "SOLLUMZ_PT_SHADER_PANEL"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
     bl_category = "Item"
@@ -68,7 +68,7 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
-    bl_idname = "Sollumz_PT_MAT_PANEL"
+    bl_idname = "SOLLUMZ_PT_MAT_PANEL"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"

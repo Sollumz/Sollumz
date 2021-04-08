@@ -207,6 +207,6 @@ class ImportYdrXml(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
 
-def menu_func_import(self, context):
+def ydr_menu_func_import(self, context):
     self.layout.operator(ImportYdrXml.bl_idname, text="Import .ydr.xml")
 

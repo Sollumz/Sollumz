@@ -24,19 +24,23 @@ bl_info = {
 
 import bpy
 
-from .ydrimport import ImportYdrXml, menu_func_import
+from .ydrimport import ImportYdrXml, ydr_menu_func_import
+from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .sollumz_properties import DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, assign_properties
 from .sollumz_ui import SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL
 
-classes = (ImportYdrXml, SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties)
+classes = (ImportYdrXml, ImportYbnXml, SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties)
 
 def register():
     for c in classes:
         bpy.utils.register_class(c)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
     assign_properties()
 
 def unregister():
     for c in classes:
         bpy.utils.unregister_class(c)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
+
