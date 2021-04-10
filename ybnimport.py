@@ -389,8 +389,8 @@ def bound_box_to_blender(box):
     
     return obj
 
-def bound_composite_to_blender(composite):
-    composite_obj = bpy.data.objects.new("Composite", None)
+def bound_composite_to_blender(composite, name):
+    composite_obj = bpy.data.objects.new(name, None)
 
     children_objs = []
 
@@ -411,12 +411,14 @@ def bound_composite_to_blender(composite):
             children_objs.append(bound_geometry_to_blender(child))
 
     for obj in children_objs:
-        bpy.context.scene.collection.objects.link(obj)
+        bpy.context.collection.objects.link(obj)
         obj.parent = composite_obj
     
     composite_obj.sollum_type = "sollumz_bound_composite"
 
-    bpy.context.scene.collection.objects.link(composite_obj)
+    bpy.context.collection.objects.link(composite_obj)
+
+    return composite_obj
 
 class ImportYbnXml(bpy.types.Operator, ImportHelper):
     """Imports .ybn.xml file exported from codewalker."""
@@ -434,7 +436,7 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         b = Bound()
         b.read_xml(ET.parse(self.filepath).getroot()[0])
         
-        bound_composite_to_blender(b)
+        bound_composite_to_blender(b, os.path.basename(self.filepath))
 
         return {'FINISHED'}
 

@@ -8,6 +8,8 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import tools.xmlhelper as xmlhelper
+from resources.bound import Bound
+import numpy as np 
 
 class Texture:
 
@@ -311,8 +313,9 @@ class Drawable:
         self.flags_vlow = 0
         self.unknown_9A = 0
 
-        self.skeleton = None
         self.shader_group = None
+        self.skeleton = None
+        self.bound = None
         self.drawable_models_high = []
         self.drawable_models_med = []
         self.drawable_models_low = []
@@ -346,6 +349,12 @@ class Drawable:
             skeleton.read_xml(skel)
             self.skeleton = skeleton
 
+        bnd = root.find("Bounds")
+        if(bnd != None):
+            bound = Bound()
+            bound.read_xml(bnd)
+            self.bound = bound
+
         dmh = root.find("DrawableModelsHigh")
         if(dmh != None):
             for node in dmh:
@@ -373,3 +382,14 @@ class Drawable:
                 dm = DrawableModel()
                 dm.read_xml(node)
                 self.drawable_models_vlow.append(dm)
+
+class DrawableDictionary():
+
+    def __init__(self):
+        self.drawables = []
+
+    def read_xml(self, root):
+        for node in root.getroot():
+            d = Drawable()
+            d.read_xml(node)
+            self.drawables.append(d)

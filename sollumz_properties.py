@@ -163,6 +163,7 @@ def assign_properties():
         items = [("sollumz_none", "None", "Sollumz None"),
                 ("sollumz_drawable", "Drawable", "Sollumz Drawable"),
                 ("sollumz_geometry", "Geometry", "Sollumz Geometry"),
+                ("sollumz_skeleton", "Skeleton", "Sollumz Skeleton"),
                 ("sollumz_bound_composite", "Bound Composite", "Sollumz Bound Composite"),
                 ("sollumz_bound_box", "Bound Box", "Sollumz Bound Box"),
                 ("sollumz_bound_sphere", "Bound Sphere", "Sollumz Bound Sphere"),
