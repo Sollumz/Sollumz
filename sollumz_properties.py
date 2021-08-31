@@ -51,7 +51,7 @@ class TextureProperties(bpy.types.PropertyGroup):
                 ("sollumz_count", "COUNT", "Sollumz Count"),
                 ("sollumz_diffuse", "DIFFUSE", "Sollumz Diffuse")
                 ],
-        name = "Texture Usage",
+        name = "Usage",
         default = "sollumz_diffuse"
     )
 
@@ -96,33 +96,27 @@ class TextureProperties(bpy.types.PropertyGroup):
                 ("sollumz_a8", "D3DFMT_DXT1", "Sollumz A8"),
                 ("sollumz_l8", "D3DFMT_DXT1", "Sollumz L8")
                 ],
-        name = "Texture Format",
+        name = "Format",
         default = "sollumz_dxt1"
     )
 
     extra_flags : bpy.props.IntProperty(name = "Extra Flags", default = 0)
 
 class ShaderProperties(bpy.types.PropertyGroup):
-    renderbucket : bpy.props.EnumProperty(
-        items = [("sollumz_rb_0", "0", "Sollumz RenderBucket 0"),
-                ("sollumz_rb_1", "1", "Sollumz RenderBucket 1"),
-                ("sollumz_rb_3", "3", "Sollumz RenderBucket 3")
-                ],
-        name = "RenderBucket",
-        default = "sollumz_rb_0"
-    )
+    renderbucket : bpy.props.IntProperty(name = "Render Bucket", default = 0)
     #????????? DONT KNOW IF I WANNA DO THIS
-    filename : bpy.props.EnumProperty(
-        items = [("sollumz_none", "None", "Sollumz None")
-                ],
-        name = "FileName",
-        default = "sollumz_none"
-    )
+    #filename : bpy.props.EnumProperty(
+    #    items = [("sollumz_none", "None", "Sollumz None")
+    #            ],
+    #    name = "FileName",
+    #    default = "sollumz_none"
+    #)
     #LAYOUT ENUM? 
+    filename : bpy.props.StringProperty(name = "FileName", default = "default")
 
 class CollisionProperties(bpy.types.PropertyGroup):
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
-    room_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
+    room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     flags : bpy.props.EnumProperty( ############### NOT DONE ############### 
         items = [("sollumz_none", "None", "Sollumz None")
@@ -133,7 +127,7 @@ class CollisionProperties(bpy.types.PropertyGroup):
 
 class BoundProperties(bpy.types.PropertyGroup):
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
-    room_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
+    room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     poly_flags : bpy.props.EnumProperty( ############### NOT DONE ############### 
         items = [("sollumz_none", "None", "Sollumz None")
@@ -182,7 +176,16 @@ def assign_properties():
         name = "Sollumz Type",
         default = "sollumz_none"
     )
-    
+
+    bpy.types.Material.sollum_type = bpy.props.EnumProperty(
+        items = [("sollumz_none", "None", "Sollumz None"),
+                ("sollumz_gta_material", "Gta Material", "Sollumz Gta Material"),
+                ("sollumz_gta_collision_material", "Gta Collision Material", "Sollumz Gta Collision Material")
+                ],
+        name = "Sollumz Material Type",
+        default = "sollumz_none"
+    )
+
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(type = BoundProperties)

@@ -134,6 +134,7 @@ def create_vector_nodes(node_tree, param):
 def create_shader(shadername, shadermanager):
 
     mat = bpy.data.materials.new(shadername)
+    mat.sollum_type = "sollumz_gta_material"
     mat.use_nodes = True
 
     parameters = shadermanager.shaders[shadername].parameters
@@ -338,6 +339,7 @@ def create_collision_material_from_index(collisionindex):
     matinfo = collisionmats[collisionindex] 
     
     mat = bpy.data.materials.new(matinfo[0])
+    mat.sollum_type = "sollumz_gta_collision_material"
     mat.use_nodes = True
     r = matinfo[1][0] / 255
     g = matinfo[1][1] / 255

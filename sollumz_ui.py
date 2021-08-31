@@ -11,7 +11,11 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
         layout = self.layout
 
         nodes = context.selected_nodes
-        mat = bpy.context.active_object.data.materials[0]
+
+        if(bpy.context.active_object != None):
+            mat = bpy.context.active_object.data.materials[0]
+        else:
+            return
 
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
@@ -21,6 +25,7 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
                 row.prop(n.texture_properties, "embedded")
                 row.prop(n.texture_properties, "format")
                 row.prop(n.texture_properties, "extra_flags")
+                row.prop(n.texture_properties, "usage")
                 box = box.box()
                 row = box.row()
                 row.prop(n.texture_properties, "not_half")
@@ -54,17 +59,25 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
                 row.prop(n.texture_properties, "unk21")
                 row.prop(n.texture_properties, "unk24") 
 
-        i = 0
-        box = layout.box()
-        for n in mat.node_tree.nodes:
             if(isinstance(n, bpy.types.ShaderNodeValue)):
-                if(i == 4):
-                    box = layout.box()
-                    i = 0
-                box.label(text = n.name)
-                row = box.row()
-                row.prop(n.outputs[0], "default_value")
-                i += 1
+                i = 0
+                box = layout.box()
+                for n in mat.node_tree.nodes:
+                    if(isinstance(n, bpy.types.ShaderNodeValue)):
+                        if(i == 4):
+                            box = layout.box()
+                            i = 0
+
+                        #fix variable name for display
+                        n_array = n.name.split('_')
+                        name = n_array[0].capitalize()
+                        letter = n_array[1].upper()
+                        label = name + " " + letter
+                        box.label(text = label)
+                        
+                        row = box.row()
+                        row.prop(n.outputs[0], "default_value")
+                        i += 1
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz Material Panel"
@@ -76,24 +89,29 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        mat = bpy.context.active_object.data.materials[0]
+        if(bpy.context.active_object.data != None):
+            mat = bpy.context.active_object.data.materials[0]
+        else:
+            return
 
         if(mat == None):
             return 
 
-        box = layout.box()
-
-        row = box.row()
-        row.prop(mat.shader_properties, "renderbucket")
-        row.prop(mat.shader_properties, "filename")
-
-        box = layout.box()
-        row = box.row()
-        row.prop(mat.collision_properties, "procedural_id")
-        row.prop(mat.collision_properties, "room_id")
-        row = box.row()
-        row.prop(mat.collision_properties, "ped_density")
-        row.prop(mat.collision_properties, "flags")
+        if(mat.sollum_type == "sollumz_gta_material"):
+            box = layout.box()
+            row = box.row()
+            row.prop(mat.shader_properties, "renderbucket")
+            row.prop(mat.shader_properties, "filename")
+        elif(mat.sollum_type == "sollumz_gta_collision_material"):
+            box = layout.box()
+            row = box.row()
+            row.prop(mat.collision_properties, "procedural_id")
+            row.prop(mat.collision_properties, "room_id")
+            row = box.row()
+            row.prop(mat.collision_properties, "ped_density")
+            row.prop(mat.collision_properties, "flags")
+        else:
+            box = layout.box()
 
 class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"

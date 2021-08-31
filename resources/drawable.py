@@ -9,7 +9,6 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import tools.xmlhelper as xmlhelper
 from resources.bound import Bound
-import numpy as np 
 
 class Texture:
 
@@ -29,7 +28,7 @@ class Texture:
         self.name = root.find("Name").text
         self.unk32 = xmlhelper.ReadInt(root.find("Unk32"))
         self.usage = root.find("Usage").text #ENUM?
-        self.usage_flags = root.find("UsageFlags").text
+        self.usage_flags = root.find("UsageFlags").text.split(', ')
         self.extra_flags = xmlhelper.ReadInt(root.find("ExtraFlags"))
         self.width = xmlhelper.ReadInt(root.find("Width"))
         self.height = xmlhelper.ReadInt(root.find("Height"))

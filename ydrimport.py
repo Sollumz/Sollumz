@@ -238,6 +238,11 @@ def shader_group_to_blender(shadermanager, shadergroup, filepath):
     for shader in shadergroup.shaders:
         material = sollumz_shaders.create_shader(shader.name, shadermanager)
 
+        #################### GETTING ERROR FOR NO REASON #########################
+        #material.shader_properties.renderbucket = shader.renderbucket[0] 
+        ##########################################################################
+        material.shader_properties.filename = shader.filename
+
         for param in shader.parameters:
             for n in material.node_tree.nodes:
                 if(isinstance(n, bpy.types.ShaderNodeTexImage)):
@@ -269,6 +274,25 @@ def shader_group_to_blender(shadermanager, shadergroup, filepath):
                             n.outputs[0].default_value = param.quaternion[3]
 
         #assign embedded texture dictionary properties
+        if(shadergroup.texture_dictionary != None):
+            idx = -1
+            for node in material.node_tree.nodes:
+                if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                    if(node.image != None):
+                        idx += 1
+                        texturepath = node.image.filepath
+                        texturename = os.path.basename(texturepath)
+                        texture = shadergroup.texture_dictionary.textures[idx]
+                        node.texture_properties.embedded = True
+                        node.texture_properties.format = "sollumz_" + texture.format.split('_')[1].lower()
+                        node.texture_properties.usage = "sollumz_" + texture.usage.lower()
+                        node.texture_properties.extra_flags = texture.extra_flags
+                        
+                        for prop in dir(node.texture_properties):
+                            for uf in texture.usage_flags:
+                                if(uf.lower() == prop):
+                                    setattr(node.texture_properties, prop, True)                      
+                                    
         mats.append(material)
         
     return mats

@@ -35,7 +35,7 @@ class Shader:
             self.filename.append(fn.text)
 
         self.renderbucket = xmlhelper.StringListToIntList(root.find("RenderBucket").text.split())
-
+        
         layouts = root.find("Layout")
         idx = 0
         for layout in layouts:

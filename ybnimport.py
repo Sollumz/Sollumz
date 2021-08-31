@@ -210,6 +210,7 @@ def bound_geometry_to_blender(geometry):
     materials = []
     for gmat in geometry.materials:
         mat = create_collision_material_from_index(gmat.type)
+        mat.sollum_type = "sollumz_gta_collision_material"
         mat.collision_properties.procedural_id = gmat.procedural_id
         mat.collision_properties.room_id = gmat.room_id
         mat.collision_properties.ped_density = gmat.ped_density
@@ -230,7 +231,6 @@ def bound_geometry_to_blender(geometry):
             inds.append(poly.v2)
             inds.append(poly.v3)
             indicies.append(inds)
-            print(poly.material_index)
             material_idxs.append(poly.material_index)
         if(poly.type == "Sphere"):
             poly_objs.append(bound_poly_sphere_to_blender(poly, vertices, materials))
@@ -254,7 +254,6 @@ def bound_geometry_to_blender(geometry):
     bpy.context.scene.collection.objects.link(triangle_obj)
     triangle_obj.sollum_type = "sollumz_bound_poly_triangle"
     triangle_obj.parent = obj
-
 
     for poly in poly_objs:
         bpy.context.scene.collection.objects.link(poly)
@@ -386,7 +385,7 @@ def bound_box_to_blender(box):
     set_bound_transform(obj, box)
 
     obj.sollum_type = "sollumz_bound_box"
-    
+
     return obj
 
 def bound_composite_to_blender(composite, name):
@@ -410,9 +409,12 @@ def bound_composite_to_blender(composite, name):
         if("Geometry" in child.type):
             children_objs.append(bound_geometry_to_blender(child))
 
+    print(children_objs)
+
     for obj in children_objs:
         bpy.context.collection.objects.link(obj)
         obj.parent = composite_obj
+        print(obj.name)
     
     composite_obj.sollum_type = "sollumz_bound_composite"
 
