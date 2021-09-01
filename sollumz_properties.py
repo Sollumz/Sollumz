@@ -118,6 +118,7 @@ class CollisionProperties(bpy.types.PropertyGroup):
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
     room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
+    material_color_index : bpy.props.IntProperty(name = "Material Color Index", default = 0)
     flags : bpy.props.EnumProperty( ############### NOT DONE ############### 
         items = [("sollumz_none", "None", "Sollumz None")
                 ],
@@ -125,31 +126,45 @@ class CollisionProperties(bpy.types.PropertyGroup):
         default = "sollumz_none"
     )
 
+class BoundFlags(bpy.types.PropertyGroup):
+
+    unknown : bpy.props.BoolProperty(name = "UNKNOWN", default = False)
+    map_weapon : bpy.props.BoolProperty(name = "MAP WEAPON", default = False)
+    map_dynamic : bpy.props.BoolProperty(name = "MAP DYNAMIC", default = False)
+    map_animal : bpy.props.BoolProperty(name = "MAP ANIMAL", default = False)
+    map_cover : bpy.props.BoolProperty(name = "MAP COVER", default = False)
+    map_vehicle : bpy.props.BoolProperty(name = "MAP VEHICLE", default = False)
+    vehicle_not_bvh : bpy.props.BoolProperty(name = "VEHICLE NOT BVH", default = False)
+    vehicle_bvh : bpy.props.BoolProperty(name = "VEHICLE BVH", default = False)
+    ped : bpy.props.BoolProperty(name = "PED", default = False)
+    ragdoll : bpy.props.BoolProperty(name = "RAGDOLL", default = False)
+    animal : bpy.props.BoolProperty(name = "ANIMAL", default = False)
+    animal_ragdoll : bpy.props.BoolProperty(name = "ANIMAL RAGDOLL", default = False)
+    object : bpy.props.BoolProperty(name = "OBJECT", default = False)
+    object_env_cloth : bpy.props.BoolProperty(name = "OBJECT_ENV_CLOTH", default = False)
+    plant : bpy.props.BoolProperty(name = "PLANT", default = False)
+    projectile : bpy.props.BoolProperty(name = "PROJECTILE", default = False)
+    explosion : bpy.props.BoolProperty(name = "EXPLOSION", default = False)
+    pickup : bpy.props.BoolProperty(name = "PICKUP", default = False)
+    foliage : bpy.props.BoolProperty(name = "FOLIAGE", default = False)
+    forklift_forks : bpy.props.BoolProperty(name = "FORKLIFT FORKS", default = False)
+    test_weapon : bpy.props.BoolProperty(name = "TEST WEAPON", default = False)
+    test_camera : bpy.props.BoolProperty(name = "TEST CAMERA", default = False)
+    test_ai : bpy.props.BoolProperty(name = "TEST AI", default = False)
+    test_script : bpy.props.BoolProperty(name = "TEST SCRIPT", default = False)
+    test_vehicle_wheel : bpy.props.BoolProperty(name = "TEST VEHICLE WHEEL", default = False)
+    glass : bpy.props.BoolProperty(name = "GLASS", default = False)
+    map_river : bpy.props.BoolProperty(name = "MAP RIVER", default = False)
+    smoke : bpy.props.BoolProperty(name = "SMOKE", default = False)
+    unsmashed : bpy.props.BoolProperty(name = "UNSMASHED", default = False)
+    map_stairs : bpy.props.BoolProperty(name = "MAP STAIRS", default = False)
+    map_deep_surface : bpy.props.BoolProperty(name = "MAP DEEP SURFACE", default = False)
+
 class BoundProperties(bpy.types.PropertyGroup):
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
     room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
-    poly_flags : bpy.props.EnumProperty( ############### NOT DONE ############### 
-        items = [("sollumz_none", "None", "Sollumz None")
-                ],
-        name = "Poly Flags",
-        default = "sollumz_none"
-    )
-    ## UNK_FLAGS ? ##
-    composite_flags1 : bpy.props.EnumProperty( ############### NOT DONE ############### 
-        items = [("sollumz_none", "None", "Sollumz None")
-                ],
-        name = "Composite Flags 1",
-        default = "sollumz_none"
-    )
-
-    composite_flags2 : bpy.props.EnumProperty( ############### NOT DONE ############### 
-        items = [
-            ("sollumz_none", "None", "Sollumz None")
-        ],
-        name = "Composite Flags 2",
-        default = "sollumz_none"
-    )
+    poly_flags : bpy.props.IntProperty(name = "Poly Flags", default = 0)
 
 def assign_properties():
     
@@ -189,6 +204,12 @@ def assign_properties():
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(type = BoundProperties)
+    
+    #nest these in object.bound_properties ? is it possible#
+    bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(type = BoundFlags)
+    bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type = BoundFlags)
+    ##
+    
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)

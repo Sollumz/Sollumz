@@ -205,7 +205,19 @@ def bound_geometry_to_blender(geometry):
     name = "Geometry"
     if(geometry.isbvh == True):
         name += "BVH"
+    
     obj = bpy.data.objects.new(name, None)
+
+    #assign obj composite flags
+    for prop in dir(obj.composite_flags1):
+        for f in geometry.composite_flags1:
+            if(f.lower() == prop):
+                setattr(obj.composite_flags1, prop, True)  
+
+    for prop in dir(obj.composite_flags2):
+        for f in geometry.composite_flags2:
+            if(f.lower() == prop):
+                setattr(obj.composite_flags2, prop, True)  
 
     materials = []
     for gmat in geometry.materials:
@@ -214,6 +226,7 @@ def bound_geometry_to_blender(geometry):
         mat.collision_properties.procedural_id = gmat.procedural_id
         mat.collision_properties.room_id = gmat.room_id
         mat.collision_properties.ped_density = gmat.ped_density
+        mat.collision_properties.material_color_index = gmat.material_color_index
         materials.append(mat)
 
     vertices = []
@@ -251,12 +264,12 @@ def bound_geometry_to_blender(geometry):
         mesh.polygons[idx].material_index = material_idxs[idx]
 
     triangle_obj = bpy.data.objects.new("Triangle", mesh)  
-    bpy.context.scene.collection.objects.link(triangle_obj)
+    bpy.context.collection.objects.link(triangle_obj)
     triangle_obj.sollum_type = "sollumz_bound_poly_triangle"
     triangle_obj.parent = obj
 
     for poly in poly_objs:
-        bpy.context.scene.collection.objects.link(poly)
+        bpy.context.collection.objects.link(poly)
         poly.parent = obj
     
     set_bound_transform(obj, geometry)
@@ -274,7 +287,7 @@ def bound_cloth_to_blender(cloth):
     material.collision_properties.procedural_id = cloth.procedural_id
     material.collision_properties.room_id = cloth.room_id
     material.collision_properties.ped_density = cloth.ped_density
-    #mesh.materials.append(material)
+    mesh.materials.append(material)
 
     obj.sollum_type = "sollumz_bound_cloth"
 
@@ -378,7 +391,6 @@ def bound_box_to_blender(box):
     material.collision_properties.procedural_id = box.procedural_id
     material.collision_properties.room_id = box.room_id
     material.collision_properties.ped_density = box.ped_density
-    ######### materials.flags = box.flags ######### not done
     mesh.materials.append(material)
 
     obj = bpy.data.objects.new("Box", mesh)
@@ -409,12 +421,9 @@ def bound_composite_to_blender(composite, name):
         if("Geometry" in child.type):
             children_objs.append(bound_geometry_to_blender(child))
 
-    print(children_objs)
-
     for obj in children_objs:
         bpy.context.collection.objects.link(obj)
         obj.parent = composite_obj
-        print(obj.name)
     
     composite_obj.sollum_type = "sollumz_bound_composite"
 
@@ -435,9 +444,10 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
     )
 
     def execute(self, context):
+        
         b = Bound()
         b.read_xml(ET.parse(self.filepath).getroot()[0])
-        
+
         bound_composite_to_blender(b, os.path.basename(self.filepath))
 
         return {'FINISHED'}

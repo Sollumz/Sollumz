@@ -142,8 +142,8 @@ class Bound(BoundBase):
         self.composite_position = xmlhelper.ReadVector(root.find("CompositePosition"))
         self.composite_rotation = xmlhelper.ReadQuaternion(root.find("CompositeRotation"))
         self.composite_scale = xmlhelper.ReadVector(root.find("CompositeScale"))
-        self.composite_flags1 = root.find("CompositeFlags1").text.split()
-        self.composite_flags2 = root.find("CompositeFlags2").text.split()
+        self.composite_flags1 = root.find("CompositeFlags1").text.split(', ')
+        self.composite_flags2 = root.find("CompositeFlags2").text.split(', ')
 
     def read_xml(self, root):
         super().read_xml(root)

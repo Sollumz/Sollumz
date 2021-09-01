@@ -27,11 +27,11 @@ import bpy
 from .ydrimport import ImportYdrXml, ydr_menu_func_import
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .yddimport import ImportYddXml, ydd_menu_func_import
-from .sollumz_properties import DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, assign_properties
+from .sollumz_properties import DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, assign_properties
 from .sollumz_ui import SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL
 
 classes = (ImportYdrXml, ImportYbnXml, ImportYddXml, SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, 
-DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties)
+DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags)
 
 def register():
     for c in classes:
