@@ -227,6 +227,13 @@ def bound_geometry_to_blender(geometry):
         mat.collision_properties.room_id = gmat.room_id
         mat.collision_properties.ped_density = gmat.ped_density
         mat.collision_properties.material_color_index = gmat.material_color_index
+        
+        #assign flags 
+        for prop in dir(mat.collision_properties):
+            for f in gmat.flags:
+                if(f[5:].lower() == prop):
+                    setattr(mat.collision_properties, prop, True)
+
         materials.append(mat)
 
     vertices = []
@@ -287,7 +294,7 @@ def bound_cloth_to_blender(cloth):
     material.collision_properties.procedural_id = cloth.procedural_id
     material.collision_properties.room_id = cloth.room_id
     material.collision_properties.ped_density = cloth.ped_density
-    mesh.materials.append(material)
+    #mesh.materials.append(material)
 
     obj.sollum_type = "sollumz_bound_cloth"
 
