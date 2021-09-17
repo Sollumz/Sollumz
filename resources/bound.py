@@ -39,6 +39,9 @@ class BoundBase:
         self.poly_flags = xmlhelper.ReadInt(root.find("PolyFlags"))
         self.unk_type = xmlhelper.ReadInt(root.find("UnkType"))
 
+    def write_xml(self):
+        return NotImplementedError
+
 class Poly():
 
     def __init__(self):
@@ -77,6 +80,9 @@ class Poly():
             self.v2 = int(root.attrib["v2"])
             self.radius = float(root.attrib["radius"]) 
 
+    def write_xml(self):
+        return NotImplementedError
+
 class PolyMaterial():
 
     def __init__(self):
@@ -97,19 +103,22 @@ class PolyMaterial():
         self.material_color_index = xmlhelper.ReadInt(root.find("MaterialColourIndex"))
         self.unk = xmlhelper.ReadInt(root.find("Unk"))
 
+    def write_xml(self):
+        return NotImplementedError
+
 class Bound(BoundBase):
 
     def __init__(self):
         self.type = ""
-        #self.children = []
-        #self.composite_position = []
-        #self.composite_rotation = []
-        #self.composite_scale = []
-        #self.composite_flags1 = []
-        #self.composite_flags2 = []
-        #self.polys = []
-        #self.vertices = []
-        #self.materials = []
+        self.children = []
+        self.composite_position = []
+        self.composite_rotation = []
+        self.composite_scale = []
+        self.composite_flags1 = []
+        self.composite_flags2 = []
+        self.polygons = []
+        self.vertices = []
+        self.materials = []
 
     def read_geometry_bound(self, root, isbvh):
         self.isbvh = isbvh
@@ -145,6 +154,7 @@ class Bound(BoundBase):
         self.composite_flags1 = root.find("CompositeFlags1").text.split(', ')
         self.composite_flags2 = root.find("CompositeFlags2").text.split(', ')
 
+    
     def read_xml(self, root):
         super().read_xml(root)
 
@@ -173,3 +183,7 @@ class Bound(BoundBase):
             self.read_geometry_bound(root, False)
         if(self.type == "GeometryBVH"):
             self.read_geometry_bound(root, True)
+    
+    def write_xml(self):
+        print(xmlhelper.WriteClass(self))
+        

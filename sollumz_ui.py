@@ -156,12 +156,13 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
         layout.prop(obj.geometry_properties, "sollum_lod")
 
     def draw_bound_properties(self, context, layout, obj):
-        row = layout.row()
-        row.prop(obj.bound_properties, "procedural_id")
-        row.prop(obj.bound_properties, "room_id")
-        row = layout.row()
-        row.prop(obj.bound_properties, "ped_density")
-        row.prop(obj.bound_properties, "poly_flags")
+        if("poly" not in obj.sollum_type):
+            row = layout.row()
+            row.prop(obj.bound_properties, "procedural_id")
+            row.prop(obj.bound_properties, "room_id")
+            row = layout.row()
+            row.prop(obj.bound_properties, "ped_density")
+            row.prop(obj.bound_properties, "poly_flags")
 
         if("poly" not in obj.sollum_type and obj.sollum_type != "sollumz_bound_composite"):
             #flags1

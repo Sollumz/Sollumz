@@ -1,0 +1,23 @@
+
+BUGS / TESTING
+________________________
+- test ybn importing fully finished and fully editable? 
+- test ydr importing to see what else needs finished importing if anything
+
+BIG THANGS 
+________________________
+- ydr exporting
+- ybn exporting
+
+THOUGHTS 
+________________________
+- combine shader panel and material panel?
+
+TOOL PANEL 
+________________________
+- button for creating bound composite ready to place geometrys in 
+- buttons for creating polys / shape bounds 
+- button to create collision material by index / enum
+- button for creating base drawable so you can add the objects in it that you want in your drawable
+- parent objects button ? 
+- button for creating a gta shader (material)

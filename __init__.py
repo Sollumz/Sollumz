@@ -26,11 +26,12 @@ import bpy
 
 from .ydrimport import ImportYdrXml, ydr_menu_func_import
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
+from .ybnexport import ExportYbnXml, ybn_menu_func_export
 from .yddimport import ImportYddXml, ydd_menu_func_import
 from .sollumz_properties import DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, assign_properties
 from .sollumz_ui import SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL
 
-classes = (ImportYdrXml, ImportYbnXml, ImportYddXml, SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, 
+classes = (ImportYdrXml, ImportYbnXml, ExportYbnXml, ImportYddXml, SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, 
 DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags)
 
 def register():
@@ -38,6 +39,7 @@ def register():
         bpy.utils.register_class(c)
     bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.append(ydd_menu_func_import)
     assign_properties()
 
@@ -46,5 +48,6 @@ def unregister():
         bpy.utils.unregister_class(c)
     bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.remove(ydd_menu_func_import)
 
