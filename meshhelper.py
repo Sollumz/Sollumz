@@ -2,6 +2,7 @@ import bpy
 import bmesh
 from math import cos, sin, degrees, radians, sqrt
 from mathutils import Vector, Matrix, Quaternion, Euler
+import numpy as np
 
 def bound_sphere(mesh, radius):
     bm = bmesh.new()
@@ -61,48 +62,51 @@ def get_vector_list_length(list):
     length = (sx + sy + sz) ** 0.5
     return length 
 
-def get_min_max_bounding_box(objs):
-    bounding_boxs = []
+# see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
+"""Multiply 3d coord list by matrix"""
+def np_matmul_coords(coords, matrix, space=None):
+    M = (space @ matrix @ space.inverted()
+         if space else matrix).transposed()
+    ones = np.ones((coords.shape[0], 1))
+    coords4d = np.hstack((coords, ones))
+    
+    return np.dot(coords4d, M)[:,:-1]
 
-    for obj in objs:
-        bounding_boxs.append(obj.bound_box)
-                
-    bounding_boxmin = []
-    bounding_boxmax = []
 
-    for b in bounding_boxs:
-        bounding_boxmin.append(b[0])
-        bounding_boxmax.append(b[6])
-    
-    min_xs = []
-    min_ys = []
-    min_zs = []
-    for v in bounding_boxmin:
-        min_xs.append(v[0])
-        min_ys.append(v[1])
-        min_zs.append(v[2])
-        
-    max_xs = []
-    max_ys = []
-    max_zs = []
-    for v in bounding_boxmax:
-        max_xs.append(v[0])
-        max_ys.append(v[1])
-        max_zs.append(v[2])
-    
-    bounding_box_min = []    
-    bounding_box_min.append(min(min_xs))
-    bounding_box_min.append(min(min_ys))
-    bounding_box_min.append(min(min_zs))
-    
-    bounding_box_max = []    
-    bounding_box_max.append(max(max_xs))
-    bounding_box_max.append(max(max_ys))
-    bounding_box_max.append(max(max_zs))
-    
-    return [bounding_box_min, bounding_box_max]
+"""Get min and max bounds for an object and all of its children"""
+def get_total_bbs(obj) -> list:
+    objects = [obj, *obj.children]
+    # get the global coordinates of all object bounding box corners    
+    coords = np.vstack(
+        tuple(np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
+            for o in  
+                objects
+                if o.type == 'MESH'
+                )
+            )
+    # bottom front left (all the mins)
+    bb_min = coords.min(axis=0)
+    # top back right
+    bb_max = coords.max(axis=0)
+    return [Vector(bb_min), Vector(bb_max)]
 
-def get_sphere_bb(objs, bbminmax):
+def get_children_recursive(obj): 
+    children = [] 
+    for child in obj.children:
+        children.append(child)
+        if len(child.children) > 0: 
+            children.append(*get_children_recursive(child))
+            
+    return children 
+
+def get_bound_center(obj) -> Vector:
+    # Get the center of the object's bounds for later use. Credit: https://blender.stackexchange.com/questions/62040/get-center-of-geometry-of-an-object
+    local_bbox_center = 0.125 * sum((Vector(b)
+                                     for b in obj.bound_box), Vector())
+    center = obj.matrix_world @ local_bbox_center
+    return Vector(center)
+
+def get_sphere_bb(objs, bbminmax) -> list:
     allverts = []
     for obj in objs:
         mesh = obj.data
