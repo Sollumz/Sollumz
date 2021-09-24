@@ -1,6 +1,19 @@
 from abc import ABC
 from .cwxml import XMLElementTree, XMLAttributeProperty, XMLList, XMLVector, XMLValue, XMLVerticesList, XMLQuaternion, XMLFlags
 from mathutils import Vector
+from enum import Enum
+
+class BoundsType(Enum):
+    Sphere = 1,
+    Capsule = 2,
+    Box = 3,
+    Geometry = 4,
+    GeometryBVH = 5,
+    Composite = 6,
+    Disc = 7,
+    Cylinder = 8,
+    Cloth = 9
+
 
 class Bounds(XMLElementTree, ABC):
     def __init__(self, tag_name: str):

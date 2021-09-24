@@ -1,3 +1,5 @@
+"""Manages reading/writing Codewalker XML files"""
+
 from abc import abstractmethod, ABC, abstractclassmethod
 from dataclasses import dataclass
 from typing import Any
@@ -30,7 +32,7 @@ def indent(elem: ET.Element, level=0):
             elem.text = '\n' + '\n'.join(lines) + i
 
 
-"""Abstract XML element (contains no children)"""
+"""Abstract XML element to base all other XML elements off of"""
 class XMLElement(ABC):
     def __init__(self, tag_name):
         self.tag_name = tag_name
@@ -56,7 +58,6 @@ class XMLElement(ABC):
         elementTree = ET.ElementTree(element)
         # ET.indent(element)
         elementTree.write(filepath, encoding="UTF-8", xml_declaration=True)
-
 
 
 """XML element that contains children defined by it's properties"""
