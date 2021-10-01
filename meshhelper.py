@@ -75,8 +75,8 @@ def np_matmul_coords(coords, matrix, space=None):
 
 """Get min and max bounds for an object and all of its children"""
 def get_total_bbs(obj) -> list:
-    objects = [obj, *obj.children]
-    # get the global coordinates of all object bounding box corners    
+    objects = [obj, *get_children_recursive(obj)]
+    # get the global coordinates of all object bounding box corners
     coords = np.vstack(
         tuple(np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
             for o in  
@@ -97,14 +97,50 @@ def get_children_recursive(obj):
         if len(child.children) > 0: 
             children.append(*get_children_recursive(child))
             
-    return children 
+    return children
 
-def get_bound_center(obj) -> Vector:
+"""Get the radius of an object's bounding box"""
+def get_obj_radius(obj):
+    bb_min, bb_max = get_total_bbs(obj)
+    # Distance between bb_min and bb_max x,y values
+    distance = sqrt(pow((bb_max.x - bb_min.x), 2) + pow((bb_max.y - bb_min.y), 2))
+    return distance / 2
+
+def get_bound_center(obj, local=False) -> Vector:
     # Get the center of the object's bounds for later use. Credit: https://blender.stackexchange.com/questions/62040/get-center-of-geometry-of-an-object
     local_bbox_center = 0.125 * sum((Vector(b)
                                      for b in obj.bound_box), Vector())
-    center = obj.matrix_world @ local_bbox_center
+    center = obj.matrix_world @ local_bbox_center if not local else local_bbox_center
     return Vector(center)
+
+def signed_volume_of_triangle(p1: Vector, p2: Vector, p3: Vector) -> float:
+    v321 = p3.x * p2.y * p1.z 
+    v231 = p2.x * p3.y * p1.z 
+    v312 = p3.x * p1.y * p2.z 
+    v132 = p1.x * p3.y * p2.z 
+    v213 = p2.x * p1.y * p3.z 
+    v123 = p1.x * p2.y * p3.z 
+    return (1.0/6.0)*(-v321 + v231 + v312 - v132 - v213 + v123)
+
+"""Get the volume of an object and all of it's children""" #https://stackoverflow.com/questions/1406029/how-to-calculate-the-volume-of-a-3d-mesh-object-the-surface-of-which-is-made-up
+def get_obj_volume(obj) -> int:
+    vols = []
+    for child in [obj, *get_children_recursive(obj)]:
+        if not obj.data:
+            continue
+
+        mesh = child.to_mesh()
+        mesh.calc_normals_split()
+        mesh.calc_loop_triangles()
+
+        for tri in mesh.loop_triangles:
+            p1 = obj.matrix_world @ mesh.vertices[tri.vertices[0]].co
+            p2 = obj.matrix_world @ mesh.vertices[tri.vertices[1]].co
+            p3 = obj.matrix_world @ mesh.vertices[tri.vertices[2]].co
+            vols.append(signed_volume_of_triangle(p1, p2, p3))
+
+    return int(abs(sum(vols)))
+
 
 def get_sphere_bb(objs, bbminmax) -> list:
     allverts = []
@@ -122,6 +158,9 @@ def get_sphere_bb(objs, bbminmax) -> list:
         bsrad = max(bsrad, get_vector_list_length(subtract_vector_list(v.co, bscen)))
 
     return [bscen, bsrad]  
+
+
+
 
 def get_bound_box_verts(verts):
 

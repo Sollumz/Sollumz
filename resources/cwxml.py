@@ -1,12 +1,14 @@
 """Manages reading/writing Codewalker XML files"""
 
-from abc import abstractmethod, ABC, abstractclassmethod
+import bpy
+from bpy.types import Object as BlenderObject
+from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
 from typing import Any
 from mathutils import Vector, Quaternion
 from xml.etree import ElementTree as ET
 
-# Custom indentation to get elements like <XMLVerticesList /> to output nicely
+# Custom indentation to get elements like <VerticesProperty /> to output nicely
 def indent(elem: ET.Element, level=0):
     amount = "  "
     i = "\n" + level*amount
@@ -23,33 +25,42 @@ def indent(elem: ET.Element, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-        # Indent innertext of elements on new lines. Used in cases like <XMLVerticesList />
+        # Indent innertext of elements on new lines. Used in cases like <VerticesProperty />
         if elem.text and len(elem.text.strip()) > 0 and elem.text.find('\n') != -1:
             lines = elem.text.strip().split('\n')
             for index, line in enumerate(lines):
-                print(line)
                 lines[index] = ((level + 1) * amount) + line
             elem.text = '\n' + '\n'.join(lines) + i
 
 
-"""Abstract XML element to base all other XML elements off of"""
-class XMLElement(ABC):
-    def __init__(self, tag_name):
-        self.tag_name = tag_name
+class Element(AbstractClass):
+    """Abstract XML element to base all other XML elements off of"""
+    @property
+    @abstractmethod
+    def tag_name(self):
+        raise NotImplementedError
 
     @classmethod
-    def read_value_error(cls):
-        return ValueError(f"Invalid XML element for type '{cls.__name__}'!")
+    def read_value_error(cls, element):
+        raise ValueError(f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!")
 
-    """Convert ET.Element object to XMLElement"""
+    """Convert ET.Element object to Element"""
     @abstractclassmethod
     def from_xml(cls, element: ET.Element):
-        pass
+        raise NotImplementedError
     
     """Convert object to ET.Element object"""
     @abstractmethod
     def to_xml(self):
-        pass
+        raise NotImplementedError
+    
+    """Read XML from filepath"""
+    @classmethod
+    def from_xml_file(cls, filepath):
+        elementTree = ET.ElementTree()
+        elementTree.parse(filepath)
+        return cls.from_xml(elementTree.getroot())
+
     
     """Write object as XML to filepath"""
     def write_xml(self, filepath):
@@ -60,35 +71,40 @@ class XMLElement(ABC):
         elementTree.write(filepath, encoding="UTF-8", xml_declaration=True)
 
 
-"""XML element that contains children defined by it's properties"""
-class XMLElementTree(XMLElement):
-    def __init__(self, tag_name: str):
-        super().__init__(tag_name)
+class ElementTree(Element):
+    """XML element that contains children defined by it's properties"""
+
     
-    """Convert ET.Element object to XMLElementTree"""
+    """Convert ET.Element object to ElementTree"""
     @classmethod
-    def from_xml(cls, element: ET.Element):
+    def from_xml(cls: type[Element], element: ET.Element):
+        # print(cls.__name__)
         new = cls()
 
-        for child in element.iter():
-            for prop_name, obj_element in vars(new).items:
-                if isinstance(obj_element, XMLElement):
+        # for child in element.iter():
+        #     if child == element:
+        #         continue
+        for prop_name, obj_element in vars(new).items():
+            if isinstance(obj_element, Element):
+                child = element.find(obj_element.tag_name)
+                if child != None and obj_element.tag_name == child.tag:
                     # Add element to object if tag is defined in class definition
-                    if obj_element.tag_name == child.tag:
-                        setattr(new, prop_name, type(obj_element).from_xml(child))
-                elif isinstance(obj_element, XMLAttributeProperty):
-                    # Add attribute to element if attribute is defined in class definition
-                    if obj_element.name in child.attrib:
-                        obj_element.value = child[obj_element.name]
+                    setattr(new, prop_name, type(obj_element).from_xml(child))
+            elif isinstance(obj_element, AttributeProperty):
+                # Add attribute to element if attribute is defined in class definition
+                if obj_element.name in element.attrib and new.tag_name == element.tag:
+                    obj_element.value = element.get(obj_element.name)
+
+        return new
 
     
-    """Convert XMLElementTree to ET.Element object"""
+    """Convert ElementTree to ET.Element object"""
     def to_xml(self):
         root = ET.Element(self.tag_name)
         for child in vars(self).values():
-            if isinstance(child, XMLElement):
+            if isinstance(child, Element):
                 root.append(child.to_xml())
-            elif isinstance(child, XMLAttributeProperty):
+            elif isinstance(child, AttributeProperty):
                 root.set(child.name, child.value)
 
         return root
@@ -98,8 +114,8 @@ class XMLElementTree(XMLElement):
         # Try and see if key exists
         try:
             obj = object.__getattribute__(self, key)
-            if isinstance(obj, (XMLElementProperty, XMLAttributeProperty)) and onlyValue:
-                # If the property is an XMLElementProperty or XMLAttributeProperty, and onlyValue is true, return just the value of the XMLElement property
+            if isinstance(obj, (ElementProperty, AttributeProperty)) and onlyValue:
+                # If the property is an ElementProperty or AttributeProperty, and onlyValue is true, return just the value of the Element property
                 return obj.value
             else:
                 return obj
@@ -110,8 +126,8 @@ class XMLElementTree(XMLElement):
     def __setattr__(self, name: str, value) -> None:
         # Get the full object
         obj = self.__getattribute__(name, False)
-        if obj and isinstance(obj, (XMLElementProperty, XMLAttributeProperty)):
-            # If the object is an XMLElementProperty or XMLAttributeProperty, set it's value
+        if obj and isinstance(obj, (ElementProperty, AttributeProperty)) and not isinstance(value, (ElementProperty, AttributeProperty)):
+            # If the object is an ElementProperty or AttributeProperty, set it's value
             obj.value = value
             super().__setattr__(name, obj)
         else:
@@ -120,13 +136,12 @@ class XMLElementTree(XMLElement):
     def get_element(self, key):
         obj = self.__getattribute__(key, False)
 
-        if isinstance(obj, XMLElementProperty):
-       
+        if isinstance(obj, ElementProperty):
             return obj
     
 
 @dataclass
-class XMLAttributeProperty:
+class AttributeProperty:
     name: str
     _value: Any = ''
 
@@ -139,29 +154,23 @@ class XMLAttributeProperty:
         self._value = str(new_value)
 
 
-class XMLElementProperty(XMLElement, ABC):
-    value_types = (None)
-
-    """Convert ET.Element to XMLElementProperty"""
-    @abstractclassmethod
-    def from_xml(cls, element: ET.Element):
-        pass
-
-    
-    """Convert XMLElementProperty to ET.Element object"""
+class ElementProperty(Element, AbstractClass):
+    @property
     @abstractmethod
-    def to_xml(self):
-        pass
+    def value_types(self) -> tuple[type]:
+        raise NotImplementedError
+    
+    tag_name = None
 
-
-    def __init__(self, tag_name: str, value):
-        super().__init__(tag_name)
+    def __init__(self, tag_name: str, value: value_types):
+        super().__init__()
+        self.tag_name = tag_name
         if value and not isinstance(value, self.value_types):
             raise TypeError(f'Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!')
         self.value = value
 
 
-class XMLVector(XMLElementProperty):
+class VectorProperty(ElementProperty):
     value_types = (Vector)
 
     def __init__(self, tag_name: str, value = None):
@@ -170,15 +179,15 @@ class XMLVector(XMLElementProperty):
     @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z']):
-            return XMLElement.read_value_error()
+            return VectorProperty.read_value_error(element)
 
-        return XMLVector(element.tag, Vector((element.get('x'),element.get('y'),element.get('z'))))
+        return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')), float(element.get('z')))))
 
     def to_xml(self):
         return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z)})
     
 
-class XMLQuaternion(XMLElementProperty):
+class QuaternionProperty(ElementProperty):
     value_types = (Quaternion)
 
     def __init__(self, tag_name: str, value = None):
@@ -187,28 +196,35 @@ class XMLQuaternion(XMLElementProperty):
     @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z', 'w']):
-            XMLElement.read_value_error()
+            QuaternionProperty.read_value_error(element)
 
-        return XMLQuaternion(element.tag, Vector((element.get('x'),element.get('y'),element.get('z'), element.get('w'))))
+        return QuaternionProperty(element.tag, Quaternion((float(element.get('x')), float(element.get('y')), float(element.get('z'))), float(element.get('w'))))
 
     def to_xml(self):
-        return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z)})
+        return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z), 'w': str(self.value.w)})
 
 
-class XMLList(XMLElementProperty):
+class ListProperty(ElementProperty, AbstractClass):
+    """Holds a list value. List can only contain values of one type."""
+
     value_types = (list)
+    
+    @property
+    @abstractmethod
+    def list_type(self) -> Element:
+        raise NotImplementedError
 
-    def __init__(self, tag_name: str, list_type: XMLElement, value = None):
+    def __init__(self, tag_name: str, value = None):
         super().__init__(tag_name, value or [])
-        if not issubclass(list_type, XMLElement):
-            raise TypeError('XMLList can only hold XMLElements!')
-        self.list_type = list_type
+    
 
-    @staticmethod
-    def from_xml(element: ET.Element, list_type: XMLElement):
-        new = XMLList(element.tag, list_type)
-        for child in element.iter():
-            new.value.append(list_type.from_xml(child))
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls(element.tag)
+        children = element.findall(new.list_type.tag_name)
+
+        for child in children:
+            new.value.append(new.list_type.from_xml(child))
         return new
 
 
@@ -217,10 +233,13 @@ class XMLList(XMLElementProperty):
         for item in self.value:
             if isinstance(item, self.list_type):
                 element.append(item.to_xml())
+            else:
+                raise TypeError(f"ListProperty can only hold objects of type '{self.list_type.__name__}'', not '{type(item)}'")
+
         return element
 
 
-class XMLVerticesList(XMLElementProperty):
+class VerticesProperty(ElementProperty):
     value_types = (list)
 
     def __init__(self, tag_name: str = 'Vertices', value = None):
@@ -228,16 +247,15 @@ class XMLVerticesList(XMLElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = XMLVerticesList(element.tag, [])
+        new = VerticesProperty(element.tag, [])
         text = element.text.strip().split('\n')
-        if not len(text) > 0:
-            return XMLElement.read_value_error()
+        if len(text) > 0:
+            for line in text:
+                coords = line.strip().split(',')
+                if not len(coords) == 3:
+                    return VerticesProperty.read_value_error(element)
 
-        for line in text:
-            coords = enumerate(line.strip(','))
-            if not len(coords) == 3:
-                return XMLElement.read_value_error()
-            new.value.append(Vector(coords[0], coords[1], coords[2]))
+                new.value.append(Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
         
         return new
 
@@ -248,7 +266,7 @@ class XMLVerticesList(XMLElementProperty):
         for vertex in self.value:
             # Should be a list of Vectors
             if not isinstance(vertex, Vector):
-                raise TypeError('XMLVerticesList can only contain Vector objects!')
+                raise TypeError('VerticesProperty can only contain Vector objects!')
             for index, component in enumerate(vertex):
                 element.text += str(component)
                 if index < len(vertex) - 1:
@@ -258,7 +276,7 @@ class XMLVerticesList(XMLElementProperty):
         return element
 
 
-class XMLFlags(XMLElementProperty):
+class FlagsProperty(ElementProperty):
     value_types = (list)
 
     def __init__(self, tag_name: str = 'Flags', value = None):
@@ -266,16 +284,14 @@ class XMLFlags(XMLElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = XMLVerticesList(element.tag, [])
-        text = element.text.strip().split('\n')
-        if not len(text) > 0:
-            return XMLElement.read_value_error()
+        new = FlagsProperty(element.tag, [])
+        if element.text and len(element.text.strip()) > 0:
+            text = element.text.strip().split(',')
+            if not len(text) > 0:
+                return FlagsProperty.read_value_error(element)
 
-        for line in text:
-            coords = enumerate(line.strip(','))
-            if not len(coords) == 3:
-                return XMLElement.read_value_error()
-            new.value.append(Vector(coords[0], coords[1], coords[2]))
+            for flag in text:
+                new.value.append(flag)
         
         return new
 
@@ -285,14 +301,14 @@ class XMLFlags(XMLElementProperty):
         for item in self.value:
             # Should be a list of strings
             if not isinstance(item, str):
-                return TypeError('XMLFlags can only contain str objects!')
+                return TypeError('FlagsProperty can only contain str objects!')
 
         if len(self.value) > 0:
             element.text = ','.join(self.value)
         return element
 
 
-class XMLValue(XMLElementProperty):
+class ValueProperty(ElementProperty):
     value_types = (int, str, bool, float)
 
     def __init__(self, tag_name: str, value):
@@ -301,9 +317,25 @@ class XMLValue(XMLElementProperty):
     @staticmethod
     def from_xml(element: ET.Element):
         if not 'value' in element.attrib:
-            XMLElement.read_value_error()
+            ValueError.read_value_error(element)
 
-        return XMLValue(element.tag, element.get('value'))
+        return ValueProperty(element.tag, element.get('value'))
 
     def to_xml(self):
         return ET.Element(self.tag_name, attrib={'value': str(self.value)})
+
+class GTAObject(ElementTree, AbstractClass):
+    """Converts GTA V objects to blender objects"""
+
+    # @property
+    # @abstractmethod
+    # def sollum_type(self):
+    #     raise NotImplementedError
+
+    # @abstractmethod
+    def to_obj(self) -> BlenderObject:
+        pass
+    
+    # @abstractmethod
+    def load_obj(self):
+        pass

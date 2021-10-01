@@ -1,4 +1,6 @@
-import bpy 
+import bpy
+from resources.bound import BoundType
+from resources.polygon import PolygonType
 
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance High")
@@ -179,6 +181,7 @@ class BoundProperties(bpy.types.PropertyGroup):
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     poly_flags : bpy.props.IntProperty(name = "Poly Flags", default = 0)
 
+
 def assign_properties():
     
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
@@ -186,20 +189,20 @@ def assign_properties():
                 ("sollumz_drawable", "Drawable", "Sollumz Drawable"),
                 ("sollumz_geometry", "Geometry", "Sollumz Geometry"),
                 ("sollumz_skeleton", "Skeleton", "Sollumz Skeleton"),
-                ("sollumz_bound_composite", "Bound Composite", "Sollumz Bound Composite"),
-                ("sollumz_bound_box", "Bound Box", "Sollumz Bound Box"),
-                ("sollumz_bound_sphere", "Bound Sphere", "Sollumz Bound Sphere"),
-                ("sollumz_bound_capsule", "Bound Capsule", "Sollumz Bound Capsule"),
-                ("sollumz_bound_cylinder", "Bound Cylinder", "Sollumz Bound Cylinder"),
-                ("sollumz_bound_disc", "Bound Disc", "Sollumz Bound Disc"),
-                ("sollumz_bound_cloth", "Bound Cloth", "Sollumz Bound Cloth"),
-                ("sollumz_bound_geometry", "Bound Geometry", "Sollumz Bound Geometry"),
-                ("sollumz_bound_geometrybvh", "Bound GeometryBVH", "Sollumz Bound GeometryBVH"),
-                ("sollumz_bound_poly_triangle", "Bound Poly Triangle", "Sollumz Bound Poly Triangle"),
-                ("sollumz_bound_poly_sphere", "Bound Poly Sphere", "Sollumz Bound Poly Sphere"),
-                ("sollumz_bound_poly_capsule", "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
-                ("sollumz_bound_poly_box", "Bound Poly Box", "Sollumz Bound Poly Box"),
-                ("sollumz_bound_poly_cylinder", "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
+                (BoundType.COMPOSITE.value, "Bound Composite", "Sollumz Bound Composite"),
+                (BoundType.BOX.value, "Bound Box", "Sollumz Bound Box"),
+                (BoundType.SPHERE.value, "Bound Sphere", "Sollumz Bound Sphere"),
+                (BoundType.CAPSULE.value, "Bound Capsule", "Sollumz Bound Capsule"),
+                (BoundType.CYLINDER.value, "Bound Cylinder", "Sollumz Bound Cylinder"),
+                (BoundType.DISC.value, "Bound Disc", "Sollumz Bound Disc"),
+                (BoundType.CLOTH.value, "Bound Cloth", "Sollumz Bound Cloth"),
+                (BoundType.GEOMETRY.value, "Bound Geometry", "Sollumz Bound Geometry"),
+                (BoundType.GEOMETRYBVH.value, "Bound GeometryBVH", "Sollumz Bound GeometryBVH"),
+                (PolygonType.TRIANGLE.value, "Bound Poly Triangle", "Sollumz Bound Poly Triangle"),
+                (PolygonType.SPHERE.value, "Bound Poly Sphere", "Sollumz Bound Poly Sphere"),
+                (PolygonType.CAPSULE.value, "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
+                (PolygonType.BOX.value, "Bound Poly Box", "Sollumz Bound Poly Box"),
+                (PolygonType.CYLINDER.value, "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
                 ],
         name = "Sollumz Type",
         default = "sollumz_none"
