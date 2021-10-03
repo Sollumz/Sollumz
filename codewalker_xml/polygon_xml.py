@@ -58,7 +58,7 @@ class Sphere_XML(Polygon_XML):
 
     def __init__(self):
         super().__init__()
-        self.v1 = AttributeProperty('v1', 0)
+        self.v = AttributeProperty('v', 0)
         self.radius = AttributeProperty('radius', 0)
 
     

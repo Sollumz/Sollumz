@@ -109,7 +109,7 @@ def np_matmul_coords(coords, matrix, space=None):
 
 
 """Get min and max bounds for an object and all of its children"""
-def get_total_bbs(obj) -> list:
+def get_bb_extents(obj) -> list[Vector]:
     objects = [obj, *get_children_recursive(obj)]
     # get the global coordinates of all object bounding box corners
     coords = np.vstack(
@@ -123,7 +123,7 @@ def get_total_bbs(obj) -> list:
     bb_min = coords.min(axis=0)
     # top back right
     bb_max = coords.max(axis=0)
-    return [Vector(bb_min), Vector(bb_max)]
+    return Vector(bb_min), Vector(bb_max)
 
 def get_children_recursive(obj): 
     children = [] 
@@ -134,11 +134,20 @@ def get_children_recursive(obj):
             
     return children
 
+def get_bound_world(obj) -> list[Vector]:
+    bound_box = []
+    for vert_list in obj.bound_box:
+        vert = Vector(vert_list)
+        bound_box.append(obj.matrix_world @ vert)
+    return bound_box
+
 """Get the radius of an object's bounding box"""
 def get_obj_radius(obj) -> float:
-    bb_min, bb_max = get_total_bbs(obj)
+    bb_min, bb_max = get_bb_extents(obj)
+    p1 = Vector((bb_min.x, bb_min.y, 0))
+    p2 = Vector((bb_max.x, bb_max.y, 0))
     # Distance between bb_min and bb_max x,y values
-    distance = get_distance_of_vectors(bb_min, bb_max)
+    distance = get_distance_of_vectors(p1, p2)
     return distance / 2
 
 def get_bound_center(obj, local=False) -> Vector:

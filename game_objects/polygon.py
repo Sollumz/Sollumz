@@ -2,7 +2,7 @@ import bpy
 import bmesh
 from xml.etree import ElementTree as ET
 from abc import ABC as AbstractClass
-from bpy.types import Object as BlenderObject
+from bpy.types import MeshLoopTriangle, Object as BlenderObject
 from .gameobject import GameObject
 from Sollumz.codewalker_xml.polygon_xml import *
 from Sollumz.meshhelper import *
@@ -18,13 +18,23 @@ class PolygonType(str, Enum):
     TRIANGLE = 'sollumz_bound_poly_triangle'
 
 
-class Polygon(GameObject):
+class Polygon(GameObject, AbstractClass):
     def __init__(self, data: Polygon_XML) -> None:
         super().__init__(data)
+    
+    @classmethod
+    def from_obj(cls, obj: BlenderObject):
+        self: Polygon_XML = cls()
+        materials = obj.parent.data.materials.values()
+        mat_index = materials.index(obj.active_material)
+        self.data.material_index = mat_index
+
+        return self
 
     def to_obj(self, materials) -> BlenderObject:
         mesh = bpy.data.meshes.new(self.sollum_type.value)
-        mesh.materials.append(materials[self.data.material_index - 1])
+        if self.data.material_index < len(materials):
+            mesh.materials.append(materials[self.data.material_index])
 
         obj = bpy.data.objects.new(self.sollum_type.value, mesh)
         obj.sollum_type = self.sollum_type.value
@@ -39,13 +49,13 @@ class Triangle(Polygon):
         super().__init__(data or Triangle_XML())
     
     @classmethod
-    def from_obj(cls, obj: BlenderObject):
+    def from_obj(cls, obj: MeshLoopTriangle):
         self = Triangle()
+        self.data.material_index = obj.material_index
 
-        index = obj.index * 3
-        self.data.v1 = index
-        self.data.v2 = index + 1
-        self.data.v3 = index + 2
+        self.data.v1 = obj.vertices[0]
+        self.data.v2 = obj.vertices[1]
+        self.data.v3 = obj.vertices[2]
 
         return self
     
@@ -57,8 +67,10 @@ class Sphere(Polygon):
         super().__init__(data or Sphere_XML())
     
     @classmethod
-    def from_obj(cls, obj: BlenderObject):
-        self = Sphere()
+    def from_obj(cls, obj: BlenderObject, vertices):
+        self = super().from_obj(obj)
+        vertices.append(obj.location)
+        self.data.v = len(vertices) - 1
         self.data.radius = get_obj_radius(obj)
         
         return self
@@ -73,13 +85,17 @@ class Sphere(Polygon):
 class Capsule(Polygon):
     sollum_type = PolygonType.CAPSULE
 
-    def __init__(self, data: Capsule_XML) -> None:
+    def __init__(self, data: Capsule_XML = None) -> None:
         super().__init__(data or Capsule_XML())
     
     @classmethod
-    def from_obj(cls, obj: BlenderObject):
-        self = Capsule()
-        self.data.radius = get_obj_radius(obj)
+    def from_obj(cls, obj: BlenderObject, vertices):
+        self = super().from_obj(obj)
+        cylinder = Cylinder().from_obj(obj, vertices)
+
+        self.data.v1 = cylinder.data.v1
+        self.data.v2 = cylinder.data.v2
+        self.data.radius = cylinder.data.radius
         
         return self
     
@@ -103,12 +119,19 @@ class Capsule(Polygon):
 class Box(Polygon):
     sollum_type = PolygonType.BOX
 
-    def __init__(self, data: Box_XML) -> None:
+    def __init__(self, data: Box_XML = None) -> None:
         super().__init__(data or Box_XML())
     
     @classmethod
-    def from_obj(cls, obj: BlenderObject, indices):
-        self = Box()
+    def from_obj(cls, obj: BlenderObject, vertices: list):
+        self = super().from_obj(obj)
+
+        indices = []
+        bound_box = get_bound_world(obj)
+        neighbors = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
+        for vert in neighbors:
+            vertices.append(vert)
+            indices.append(len(vertices) - 1)
 
         self.data.v1 = indices[0]
         self.data.v2 = indices[1]
@@ -184,13 +207,27 @@ class Box(Polygon):
 class Cylinder(Polygon):
     sollum_type = PolygonType.CYLINDER
 
-    def __init__(self, data: Cylinder_XML) -> None:
-        super().__init__(data) or Cylinder_XML
+    def __init__(self, data: Cylinder_XML = None) -> None:
+        super().__init__(data or Cylinder_XML())
     
     @classmethod
-    def from_obj(cls, obj: BlenderObject):
-        self = Cylinder()
-        self.data.radius = get_obj_radius(obj)
+    def from_obj(cls, obj: BlenderObject, vertices):
+        self = super().from_obj(obj)
+        bound_box = get_bound_world(obj)
+        # Get bound height
+        height = get_distance_of_vectors(bound_box[0], bound_box[1])
+        distance = Vector((0, 0, height / 2))
+        center = get_bound_center(obj)
+        radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
+        v1 = center - distance
+        v2 = center + distance
+        vertices.append(v1)
+        vertices.append(v2)
+
+        self.data.v1 = len(vertices) - 2
+        self.data.v2 = len(vertices) - 1
+
+        self.data.radius = radius
 
         return self
     

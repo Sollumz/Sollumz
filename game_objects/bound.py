@@ -43,9 +43,9 @@ class Bounds(GameObject):
     @classmethod
     def from_obj(cls, obj: BlenderObject):
         self = cls()
-        bbs = get_total_bbs(obj)
-        self.data.box_min = bbs[0]
-        self.data.box_max = bbs[1]
+        bb_min, bb_max = get_bb_extents(obj)
+        self.data.box_min = bb_min
+        self.data.box_max = bb_max
         self.data.box_center = get_bound_center(obj)
         self.data.sphere_center = get_bound_center(obj)
         self.data.sphere_radius = get_obj_radius(obj)
@@ -234,40 +234,37 @@ class BoundGeometryBVH(BoundItem):
         mesh.calc_normals_split()
         mesh.calc_loop_triangles()
 
-        # Get vertices from object
+        for vertex in mesh.vertices:
+            self.data.vertices.append(obj.matrix_world @ vertex.co)
+
         for face in mesh.loop_triangles:
-            for face_vert in face.vertices:
-                vertex = obj.matrix_world @ mesh.vertices[face_vert].co
-                self.data.vertices.append(vertex)
             self.data.polygons.append(Triangle.from_obj(face).data)
         
         for material in mesh.materials:
             if material.sollum_type == "sollumz_gta_collision_material":
                 mat_item = MaterialItem_XML()
-                mat_item.type = material.collision_index
+                mat_item.type = material.collision_properties.collision_index
                 mat_item.procedural_id = material.collision_properties.procedural_id
                 mat_item.room_id = material.collision_properties.room_id
                 mat_item.ped_density = material.collision_properties.ped_density
                 mat_item.material_color_index = material.collision_properties.material_color_index
+                # TODO: flags
                 self.data.materials.append(mat_item)
 
 
         # Get child poly bounds
         for child in get_children_recursive(obj):
             if child.sollum_type == PolygonType.BOX:
-                indices = []
-                for vert in child.data.vertices:
-                    self.data.vertices.append(obj.matrix_world @ vert.co)
-                    indices.append(len(self.data.vertices)) 
-                self.data.polygons.append(Box.from_obj(child, indices).data)
+                self.data.polygons.append(Box.from_obj(child, self.data.vertices).data)
             elif child.sollum_type == PolygonType.SPHERE:
-                self.data.polygons.append(Sphere.from_obj(child).data)
+                self.data.polygons.append(Sphere.from_obj(child, self.data.vertices).data)
             elif child.sollum_type == PolygonType.CAPSULE:
-                self.data.polygons.append(Capsule.from_obj(child).data)
+                self.data.polygons.append(Capsule.from_obj(child, self.data.vertices).data)
             elif child.sollum_type == PolygonType.CYLINDER:
-                self.data.polygons.append(Cylinder.from_obj(child).data)
+                self.data.polygons.append(Cylinder.from_obj(child, self.data.vertices).data)
 
         return self
+
     
     def to_obj(self) -> BlenderObject:
         obj = super().to_obj()
@@ -290,13 +287,31 @@ class BoundGeometryBVH(BoundItem):
 
         vertices = []
         faces = []
+        tri_materials = []
 
         for poly in self.data.polygons:
             if type(poly) == Triangle_XML:
-                vert_index = len(vertices)
-                
-                faces.append((vert_index, vert_index + 1, vert_index + 2))
-                vertices.extend([self.data.vertices[poly.v1], self.data.vertices[poly.v2], self.data.vertices[poly.v3]])
+                tri_materials.append(poly.material_index)
+                face = []
+                v1 = self.data.vertices[poly.v1]
+                v2 = self.data.vertices[poly.v2]
+                v3 = self.data.vertices[poly.v3]
+                if not v1 in vertices:
+                    vertices.append(v1)
+                    face.append(len(vertices) - 1)
+                else:
+                    face.append(vertices.index(v1))
+                if not v2 in vertices:
+                    vertices.append(v2)
+                    face.append(len(vertices) - 1)
+                else:
+                    face.append(vertices.index(v2))
+                if not v3 in vertices:
+                    vertices.append(v3)
+                    face.append(len(vertices) - 1)
+                else:
+                    face.append(vertices.index(v3))
+                faces.append(face)
             else:
                 poly_obj = None
                 if type(poly) == Box_XML:
@@ -314,6 +329,12 @@ class BoundGeometryBVH(BoundItem):
                 poly_obj.parent = obj
 
         obj.data.from_pydata(vertices, [], faces)
+
+        # Apply triangle materials
+        for index, poly in obj.data.polygons.items():
+            if tri_materials[index]:
+                poly.material_index = tri_materials[index]
+
         obj.location = self.data.geometry_center
 
         return obj

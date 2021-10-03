@@ -14,6 +14,7 @@ class YBN_XML(ElementTree):
         super().__init__()
         self.bounds = BoundComposite_XML()
 
+
 class Bounds_XML(ElementTree, AbstractClass):
     tag_name = 'Bounds'
 
