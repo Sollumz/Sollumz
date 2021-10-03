@@ -1,1 +1,0 @@
-"""Handles conversion of blender objects to/from Codewalker structures."""

@@ -25,8 +25,13 @@ bl_info = {
 import bpy
 
 # Development: Reload submodules
-from Sollumz.load_submodules import load_submodules
-load_submodules()
+import importlib
+from . import resources
+import Sollumz
+packages = [Sollumz, resources]
+
+for package in packages:
+    importlib.reload(package)
 
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .ybnexport import ExportYbnXml, ybn_menu_func_export

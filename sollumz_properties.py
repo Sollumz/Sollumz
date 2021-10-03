@@ -1,6 +1,5 @@
 import bpy
-from Sollumz.game_objects.bound import BoundType
-from Sollumz.game_objects.polygon import PolygonType
+from Sollumz.resources.bound import BoundType, PolygonType
 
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance High")
