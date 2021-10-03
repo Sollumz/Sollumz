@@ -8,7 +8,7 @@ from typing import Any
 from mathutils import Vector, Quaternion
 from xml.etree import ElementTree as ET
 
-# Custom indentation to get elements like <VerticesProperty /> to output nicely
+"""Custom indentation to get elements like <VerticesProperty /> to output nicely"""
 def indent(elem: ET.Element, level=0):
     amount = "  "
     i = "\n" + level*amount
@@ -32,6 +32,22 @@ def indent(elem: ET.Element, level=0):
                 lines[index] = ((level + 1) * amount) + line
             elem.text = '\n' + '\n'.join(lines) + i
 
+"""Determine if a string is a bool, int, or float"""
+def get_str_type(value: str):
+    if isinstance(value, str):
+        if value.lower() == 'true' or value.lower() == 'false':
+            return bool(value)
+        
+        try:
+            return int(value)
+        except:
+            pass
+        try:
+            return float(value)
+        except:
+            pass
+        
+    return value
 
 class Element(AbstractClass):
     """Abstract XML element to base all other XML elements off of"""
@@ -78,12 +94,8 @@ class ElementTree(Element):
     """Convert ET.Element object to ElementTree"""
     @classmethod
     def from_xml(cls: type[Element], element: ET.Element):
-        # print(cls.__name__)
         new = cls()
 
-        # for child in element.iter():
-        #     if child == element:
-        #         continue
         for prop_name, obj_element in vars(new).items():
             if isinstance(obj_element, Element):
                 child = element.find(obj_element.tag_name)
@@ -105,7 +117,7 @@ class ElementTree(Element):
             if isinstance(child, Element):
                 root.append(child.to_xml())
             elif isinstance(child, AttributeProperty):
-                root.set(child.name, child.value)
+                root.set(child.name, str(child.value))
 
         return root
 
@@ -143,15 +155,15 @@ class ElementTree(Element):
 @dataclass
 class AttributeProperty:
     name: str
-    _value: Any = ''
+    _value: Any
 
     @property
     def value(self):
-        return str(self._value)
+        return get_str_type(self._value)
     
     @value.setter
-    def value(self, new_value):
-        self._value = str(new_value)
+    def value(self, value):
+        self._value = value
 
 
 class ElementProperty(Element, AbstractClass):
@@ -234,7 +246,7 @@ class ListProperty(ElementProperty, AbstractClass):
             if isinstance(item, self.list_type):
                 element.append(item.to_xml())
             else:
-                raise TypeError(f"ListProperty can only hold objects of type '{self.list_type.__name__}'', not '{type(item)}'")
+                raise TypeError(f"ListProperty can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
 
         return element
 
@@ -266,7 +278,7 @@ class VerticesProperty(ElementProperty):
         for vertex in self.value:
             # Should be a list of Vectors
             if not isinstance(vertex, Vector):
-                raise TypeError('VerticesProperty can only contain Vector objects!')
+                raise TypeError(f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
             for index, component in enumerate(vertex):
                 element.text += str(component)
                 if index < len(vertex) - 1:
@@ -319,23 +331,7 @@ class ValueProperty(ElementProperty):
         if not 'value' in element.attrib:
             ValueError.read_value_error(element)
 
-        return ValueProperty(element.tag, element.get('value'))
+        return ValueProperty(element.tag, get_str_type(element.get('value')))
 
     def to_xml(self):
         return ET.Element(self.tag_name, attrib={'value': str(self.value)})
-
-class GTAObject(ElementTree, AbstractClass):
-    """Converts GTA V objects to blender objects"""
-
-    # @property
-    # @abstractmethod
-    # def sollum_type(self):
-    #     raise NotImplementedError
-
-    # @abstractmethod
-    def to_obj(self) -> BlenderObject:
-        pass
-    
-    # @abstractmethod
-    def load_obj(self):
-        pass

@@ -1,27 +1,22 @@
+import bpy
+import bmesh
 from xml.etree import ElementTree as ET
 from abc import ABC as AbstractClass
 from bpy.types import Object as BlenderObject
-from .cwxml import GTAObject, AttributeProperty, ListProperty
-from meshhelper import get_obj_radius
+from .codewalker_xml import ElementTree, AttributeProperty, ListProperty
+from Sollumz.meshhelper import *
+from mathutils import Vector, Matrix
 from enum import Enum
 
 
-class PolygonType(str, Enum):
-    BOX = 'sollumz_bound_poly_box'
-    SPHERE = 'sollumz_bound__poly_sphere'
-    CAPSULE = 'sollumz_bound_poly_capsule'
-    CYLINDER = 'sollumz_bound_poly_cylinder'
-    TRIANGLE = 'sollumz_bound_poly_triangle'
-
-
-class Polygon(GTAObject, AbstractClass):
+class Polygon_XML(ElementTree, AbstractClass):
     def __init__(self):
         super().__init__()
         self.material_index = AttributeProperty('m', 0)
 
 
 class PolygonsProperty(ListProperty):
-    list_type = Polygon
+    list_type = Polygon_XML
 
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Polygons', value=value or [])
@@ -32,20 +27,20 @@ class PolygonsProperty(ListProperty):
 
         for child in element.iter():
             if child.tag == 'Box':
-                new.value.append(Box.from_xml(child))
+                new.value.append(Box_XML.from_xml(child))
             elif child.tag == 'Sphere':
-                new.value.append(Sphere.from_xml(child))
+                new.value.append(Sphere_XML.from_xml(child))
             elif child.tag == 'Capsule':
-                new.value.append(Capsule.from_xml(child))
+                new.value.append(Capsule_XML.from_xml(child))
             elif child.tag == 'Cylinder':
-                new.value.append(Cylinder.from_xml(child))
+                new.value.append(Cylinder_XML.from_xml(child))
             elif child.tag == 'Triangle':
-                new.value.append(Triangle.from_xml(child))
+                new.value.append(Triangle_XML.from_xml(child))
 
         return new
 
 
-class Triangle(Polygon):
+class Triangle_XML(Polygon_XML):
     tag_name = 'Triangle'
 
     def __init__(self):
@@ -57,32 +52,18 @@ class Triangle(Polygon):
         self.f2 = AttributeProperty('f2', 0)
         self.f3 = AttributeProperty('f3', 0)
     
-    
-    def load_obj(self, obj: BlenderObject):
-        index = obj.index * 3
-        self.v1 = index
-        self.v2 = index + 1
-        self.v3 = index + 2
 
-        return self
-    
-
-class Sphere(Polygon):
+class Sphere_XML(Polygon_XML):
     tag_name = 'Sphere'
 
     def __init__(self):
         super().__init__()
         self.v1 = AttributeProperty('v1', 0)
-        # TODO GET RADIUS
         self.radius = AttributeProperty('radius', 0)
-    
-    def load_obj(self, obj: BlenderObject):
-        self.radius = get_obj_radius(obj)
-        
-        return self
+
     
 
-class Capsule(Polygon):
+class Capsule_XML(Polygon_XML):
     tag_name = 'Capsule'
 
     def __init__(self):
@@ -90,14 +71,9 @@ class Capsule(Polygon):
         self.v1 = AttributeProperty('v1', 0)
         self.v2 = AttributeProperty('v2', 1)
         self.radius = AttributeProperty('radius', 0)
-    
-    def load_obj(self, obj: BlenderObject):
-        self.radius = get_obj_radius(obj)
-        
-        return self
 
 
-class Box(Polygon):
+class Box_XML(Polygon_XML):
     tag_name = 'Box'
 
     def __init__(self):
@@ -108,7 +84,8 @@ class Box(Polygon):
         self.v4 = AttributeProperty('v4', 3)
 
 
-class Cylinder(Polygon):
+
+class Cylinder_XML(Polygon_XML):
     tag_name = 'Cylinder'
 
     def __init__(self):
@@ -116,8 +93,3 @@ class Cylinder(Polygon):
         self.v1 = AttributeProperty('v1', 0)
         self.v2 = AttributeProperty('v2', 1)
         self.radius = AttributeProperty('radius', 0)
-    
-    def load_obj(self, obj: BlenderObject):
-        self.radius = get_obj_radius(obj)
-
-        return self

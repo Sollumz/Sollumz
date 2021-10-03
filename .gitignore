@@ -6,3 +6,4 @@ tmp
 *.blend1
 .vscode
 .venv
+load_submodules

@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-from math import cos, sin, degrees, radians, sqrt
+from math import cos, inf, sin, degrees, radians, sqrt
 from mathutils import Vector, Matrix, Quaternion, Euler
 import numpy as np
 
@@ -36,6 +36,41 @@ def bound_capsule(mesh, radius, length, rings = 9, segments = 16):
     bm.to_mesh(mesh)
     bm.free()
     return mesh
+
+def get_closest_axis_point(axis: Vector, center: Vector, points: list) -> Vector:
+
+    closest     = None
+    closestDist = inf
+
+    for p in points:
+        
+        rel  = (p - center).normalized()
+        dist = (rel - axis).length
+
+        if dist < closestDist:
+            closest     = p
+            closestDist = dist
+
+    return closest
+
+def get_distance_of_vectors(a: Vector, b: Vector) -> float:
+    locx = b.x - a.x
+    locy = b.y - a.y
+    locz = b.z - a.z
+
+    distance = sqrt((locx)**2 + (locy)**2 + (locz)**2) 
+    return distance
+
+def get_direction_of_vectors(a: Vector, b: Vector) -> Euler:
+    direction  = (a - b).normalized()
+    axis_align = Vector((0.0, 0.0, 1.0))
+
+    angle = axis_align.angle(direction)
+    axis  = axis_align.cross(direction)
+
+    q = Quaternion(axis, angle)
+    
+    return q.to_euler('XYZ')
 
 def add_vector_list(list1, list2):
     x = list1[0] + list2[0]
@@ -95,15 +130,15 @@ def get_children_recursive(obj):
     for child in obj.children:
         children.append(child)
         if len(child.children) > 0: 
-            children.append(*get_children_recursive(child))
+            children.extend(get_children_recursive(child))
             
     return children
 
 """Get the radius of an object's bounding box"""
-def get_obj_radius(obj):
+def get_obj_radius(obj) -> float:
     bb_min, bb_max = get_total_bbs(obj)
     # Distance between bb_min and bb_max x,y values
-    distance = sqrt(pow((bb_max.x - bb_min.x), 2) + pow((bb_max.y - bb_min.y), 2))
+    distance = get_distance_of_vectors(bb_min, bb_max)
     return distance / 2
 
 def get_bound_center(obj, local=False) -> Vector:
@@ -141,7 +176,6 @@ def get_obj_volume(obj) -> int:
 
     return int(abs(sum(vols)))
 
-
 def get_sphere_bb(objs, bbminmax) -> list:
     allverts = []
     for obj in objs:
@@ -158,30 +192,3 @@ def get_sphere_bb(objs, bbminmax) -> list:
         bsrad = max(bsrad, get_vector_list_length(subtract_vector_list(v.co, bscen)))
 
     return [bscen, bsrad]  
-
-
-
-
-def get_bound_box_verts(verts):
-
-    #xs = []
-    #zs = []
-    #for vert in verts:
-    #    xs.append(vert.co[0])
-    #    zs.append(vert.co[2])
-
-    #xmax = max(xs)
-    #zmax = max(zs)
-
-    #diagonals = []
-
-    #for vert in verts:
-    #    if(vert.co[0] == xmax):
-    #        diagonals.append(vert.co)
-    #    if(vert.co[2] == zmax):
-    #        diagonals.append(vert.co) 
- 
-    #alldiagonals = [diagonals[0], diagonals[1], verts[0], verts[1]]
-
-    #return alldiagonals
-    return None

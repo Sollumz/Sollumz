@@ -1,6 +1,6 @@
 import bpy
-from resources.bound import BoundType
-from resources.polygon import PolygonType
+from Sollumz.game_objects.bound import BoundType
+from Sollumz.game_objects.polygon import PolygonType
 
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance High")
@@ -117,6 +117,7 @@ class ShaderProperties(bpy.types.PropertyGroup):
     filename : bpy.props.StringProperty(name = "FileName", default = "default")
 
 class CollisionProperties(bpy.types.PropertyGroup):
+    collision_index : bpy.props.IntProperty(name = 'Collision Index', default = 0)
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
     room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
@@ -220,12 +221,12 @@ def assign_properties():
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(type = BoundProperties)
-    
+
     #nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(type = BoundFlags)
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type = BoundFlags)
     ##
-    
+
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)

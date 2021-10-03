@@ -2,7 +2,7 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 import os, sys
 sys.path.append(os.path.dirname(__file__))
-from resources.bound import YBN
+from Sollumz.game_objects.bound import YBN
 
 class ExportYbnXml(bpy.types.Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -20,9 +20,12 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
         if(len(objects) == 0):
             return "No objects in scene for Sollumz export"
 
+        print('Exporting')
         for obj in objects:
             if(obj.sollum_type == "sollumz_bound_composite"):
-                YBN().load_obj(obj).write_xml(self.filepath)
+                yobj = YBN.from_obj(obj).data
+                # print(vars(yobj.bounds.children[0]))
+                yobj.write_xml(self.filepath)
 
         return {'FINISHED'}
 
