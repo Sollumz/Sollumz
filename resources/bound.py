@@ -1,9 +1,6 @@
 from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
-from Sollumz.meshhelper import *
-from mathutils import Vector
-from Sollumz.sollumz_shaders import create_collision_material_from_index
 from enum import Enum
 
 

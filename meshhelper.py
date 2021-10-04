@@ -109,7 +109,7 @@ def np_matmul_coords(coords, matrix, space=None):
 
 
 """Get min and max bounds for an object and all of its children"""
-def get_bb_extents(obj) -> list[Vector]:
+def get_bb_extents(obj):
     objects = [obj, *get_children_recursive(obj)]
     # get the global coordinates of all object bounding box corners
     coords = np.vstack(
@@ -134,7 +134,7 @@ def get_children_recursive(obj):
             
     return children
 
-def get_bound_world(obj) -> list[Vector]:
+def get_bound_world(obj):
     bound_box = []
     for vert_list in obj.bound_box:
         vert = Vector(vert_list)

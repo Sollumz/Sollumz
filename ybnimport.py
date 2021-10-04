@@ -3,6 +3,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from Sollumz.sollumz_properties import CollisionFlags
 from Sollumz.resources.bound import *
+from Sollumz.sollumz_shaders import create_collision_material_from_index
 
 def init_poly_obj(poly, sollum_type, materials):
     mesh = bpy.data.meshes.new(sollum_type.value)

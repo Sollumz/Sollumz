@@ -7,3 +7,4 @@ tmp
 .vscode
 .venv
 load_submodules
+vsdevelopment.code-workspace

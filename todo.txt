@@ -1,15 +1,9 @@
-
-BUGS / TESTING
+GENERAL
 ________________________
-- test ybn importing fully finished and fully editable? 
-- test ydr importing to see what else needs finished importing if anything
+- update error display not showing enough info 
+- remove function annotations
 
-BIG THANGS 
-________________________
-- ydr exporting
-- ybn exporting
-
-THOUGHTS 
+IDEAS 
 ________________________
 - combine shader panel and material panel?
 
@@ -18,6 +12,19 @@ ________________________
 - button for creating bound composite ready to place geometrys in 
 - buttons for creating polys / shape bounds 
 - button to create collision material by index / enum
-- button for creating base drawable so you can add the objects in it that you want in your drawable
 - parent objects button ? 
 - button for creating a gta shader (material)
+
+YBN IMPORT / EXPORT
+________________________
+- update ybn object import names
+- ybn poly sphere importing not working
+- ybn poly box importing not working
+- ybn poly cylinder importing not working
+- ybn poly capsule importing not working
+- ybn poly disc importing not working
+- ybn poly cloth importing not working
+- TEST
+
+YDR IMPORT / EXPORT
+________________________

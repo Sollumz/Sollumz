@@ -1,7 +1,4 @@
 """Manages reading/writing Codewalker XML files"""
-
-import bpy
-from bpy.types import Object as BlenderObject
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
 from typing import Any
@@ -90,10 +87,9 @@ class Element(AbstractClass):
 class ElementTree(Element):
     """XML element that contains children defined by it's properties"""
 
-    
     """Convert ET.Element object to ElementTree"""
     @classmethod
-    def from_xml(cls: type[Element], element: ET.Element):
+    def from_xml(cls: Element, element: ET.Element):
         new = cls()
 
         for prop_name, obj_element in vars(new).items():
@@ -165,11 +161,10 @@ class AttributeProperty:
     def value(self, value):
         self._value = value
 
-
 class ElementProperty(Element, AbstractClass):
     @property
     @abstractmethod
-    def value_types(self) -> tuple[type]:
+    def value_types(self):
         raise NotImplementedError
     
     tag_name = None
@@ -180,6 +175,20 @@ class ElementProperty(Element, AbstractClass):
         if value and not isinstance(value, self.value_types):
             raise TypeError(f'Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!')
         self.value = value
+
+class TextProperty(ElementProperty):
+    value_types = (str)
+
+    '''default = Name ?'''
+    def __init__(self, tag_name: str = 'Name', value = None):
+        super().__init__(tag_name, value or "")
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        return TextProperty(element.tag, element.text.strip())
+
+    def to_xml(self):
+        return ET.Element(self.tag_name, text = self.value)
 
 
 class VectorProperty(ElementProperty):

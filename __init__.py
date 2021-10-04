@@ -33,18 +33,20 @@ packages = [Sollumz, resources]
 for package in packages:
     importlib.reload(package)
 
+from .ydrimport import ImportYdrXml, ydr_menu_func_import
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .ybnexport import ExportYbnXml, ybn_menu_func_export
 from .sollumz_properties import DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, assign_properties
 from .sollumz_ui import SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL
 
-classes = (ExportYbnXml, SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, 
-DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, ImportYbnXml)
+classes = (SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, 
+DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, ImportYdrXml, ImportYbnXml, ExportYbnXml)
 
 
 def register():
     for c in classes:
         bpy.utils.register_class(c)
+    bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
     assign_properties()
@@ -52,6 +54,7 @@ def register():
 def unregister():
     for c in classes:
         bpy.utils.unregister_class(c)
+    bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
 
