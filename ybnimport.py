@@ -1,6 +1,7 @@
 import os
 import bpy
 from bpy_extras.io_utils import ImportHelper
+from Sollumz.sollumz_properties import CollisionFlags
 from Sollumz.resources.bound import *
 
 def init_poly_obj(poly, sollum_type, materials):
@@ -112,6 +113,7 @@ def poly_to_obj(poly, materials, vertices):
 
 def bvh_to_obj(bvh):
     obj = init_bound_obj(bvh, BoundType.GEOMETRYBVH)
+    print(bvh)
     for gmat in bvh.materials:
         mat = create_collision_material_from_index(gmat.type)
         mat.sollum_type = "sollumz_gta_collision_material"
@@ -119,12 +121,11 @@ def bvh_to_obj(bvh):
         mat.collision_properties.room_id = gmat.room_id
         mat.collision_properties.ped_density = gmat.ped_density
         mat.collision_properties.material_color_index = gmat.material_color_index
-        
-        #assign flags 
-        for prop in dir(mat.collision_properties):
-            for f in gmat.flags:
-                if(f[5:].lower() == prop):
-                    setattr(mat.collision_properties, prop, True)
+
+        # Assign flags
+        for flag_name in CollisionFlags.__annotations__.keys():
+            if f"FLAG_{flag_name.upper()}" in gmat.flags:
+                setattr(mat.collision_properties, flag_name, True)
 
         obj.data.materials.append(mat)
 

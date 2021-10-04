@@ -23,7 +23,7 @@ bl_info = {
 }
 
 import bpy
-
+ 
 # Development: Reload submodules
 import importlib
 from . import resources

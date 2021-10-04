@@ -1,6 +1,8 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
 import os, sys
+
+from Sollumz.sollumz_properties import CollisionFlags
 sys.path.append(os.path.dirname(__file__))
 from Sollumz.resources.bound import *
 from meshhelper import *
@@ -15,7 +17,7 @@ def init_poly_bound(poly_bound, obj):
 
 def polygon_from_object(poly_type, obj, vertices):
     if obj.sollum_type == PolygonType.BOX:
-        box = init_poly_bound(Box())
+        box = init_poly_bound(Box(), obj)
         indices = []
         bound_box = get_bound_world(obj)
         neighbors = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
@@ -30,14 +32,14 @@ def polygon_from_object(poly_type, obj, vertices):
 
         return box
     elif obj.sollum_type == PolygonType.SPHERE:
-        sphere = init_poly_bound(Sphere())
+        sphere = init_poly_bound(Sphere(), obj)
         vertices.append(obj.location)
         sphere.v = len(vertices) - 1
         sphere.radius = get_obj_radius(obj)
         
         return sphere
     elif obj.sollum_type == PolygonType.CAPSULE:
-        capsule = init_poly_bound(Capsule())
+        capsule = init_poly_bound(Capsule(), obj)
         # Same method for getting verts as cylinder
         cylinder = polygon_from_object(PolygonType.CYLINDER, obj, vertices)
 
@@ -47,7 +49,7 @@ def polygon_from_object(poly_type, obj, vertices):
         
         return cylinder
     elif obj.sollum_type == PolygonType.CYLINDER:
-        cylinder = init_poly_bound(Cylinder())
+        cylinder = init_poly_bound(Cylinder(), obj)
         bound_box = get_bound_world(obj)
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
@@ -76,19 +78,29 @@ def triangle_from_face(face):
 
     return triangle
 
-def bvh_from_object(obj):
-    bvh = init_bound_item(BoundGeometryBVH())
-    bvh.geometry_center = get_bound_center(obj, True)
+
+def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
+    geometry = None
+
+    if sollum_type == BoundType.GEOMETRYBVH:
+        geometry = BoundGeometryBVH()
+    elif sollum_type == BoundType.GEOMETRY:
+        geometry = BoundGeometry()
+    else:
+        return ValueError('Invalid argument for geometry sollum_type!')
+
+    geometry = init_bound_item(geometry, obj)
+    geometry.geometry_center = get_bound_center(obj, True)
 
     mesh = obj.to_mesh()
     mesh.calc_normals_split()
     mesh.calc_loop_triangles()
 
     for vertex in mesh.vertices:
-        bvh.vertices.append(obj.matrix_world @ vertex.co)
+        geometry.vertices.append(obj.matrix_world @ vertex.co)
 
     for face in mesh.loop_triangles:
-        bvh.polygons.append(triangle_from_face(face))
+        geometry.polygons.append(triangle_from_face(face))
     
     for material in mesh.materials:
         if material.sollum_type == "sollumz_gta_collision_material":
@@ -98,15 +110,23 @@ def bvh_from_object(obj):
             mat_item.room_id = material.collision_properties.room_id
             mat_item.ped_density = material.collision_properties.ped_density
             mat_item.material_color_index = material.collision_properties.material_color_index
-            # TODO: flags
-            bvh.materials.append(mat_item)
+            
+            # Assign flags
+            for flag_name in CollisionFlags.__annotations__.keys():
+                flag_exists = getattr(material.collision_properties, flag_name)
+                if flag_exists == True:
+                    mat_item.flags.append(f"FLAG_{flag_name.upper()}")
+            geometry.materials.append(mat_item)
 
 
     # Get child poly bounds
     for child in get_children_recursive(obj):
-        bvh.polygons.append(polygon_from_object(obj.sollum_type, child, bvh.vertices))
+        geometry.polygons.append(polygon_from_object(obj.sollum_type, child, geometry.vertices))
+    
+    return geometry
 
 def init_bound_item(bound_item, obj):
+    init_bound(bound_item, obj)
     # Get flags from object
     for prop in dir(obj.composite_flags1):
         value = getattr(obj.composite_flags1, prop)
@@ -148,16 +168,16 @@ def bound_from_object(obj):
     elif obj.sollum_type == BoundType.CLOTH:
         raise NotImplementedError
     elif obj.sollum_type == BoundType.GEOMETRY:
-        raise NotImplementedError
+        return geometry_from_object(obj, BoundType.GEOMETRY)
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
-        return bvh_from_object(obj)
+        return geometry_from_object(obj)
 
 def ybn_from_object(obj):
     ybn = YBN()
     init_bound(ybn.bounds, obj)
 
     for child in get_children_recursive(obj):
-        bound = bound_from_object(obj)
+        bound = bound_from_object(child)
         if bound:
             ybn.bounds.children.append(bound)
     
@@ -183,7 +203,7 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
 
         print('Exporting')
         for obj in objects:
-            if(obj.sollum_type == "sollumz_bound_ybn.bounds"):
+            if(obj.sollum_type == "sollumz_bound_composite"):
                 ybn_from_object(obj).write_xml(self.filepath)
 
         return {'FINISHED'}

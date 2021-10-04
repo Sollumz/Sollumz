@@ -115,14 +115,8 @@ class ShaderProperties(bpy.types.PropertyGroup):
     #LAYOUT ENUM? 
     filename : bpy.props.StringProperty(name = "FileName", default = "default")
 
-class CollisionProperties(bpy.types.PropertyGroup):
-    collision_index : bpy.props.IntProperty(name = 'Collision Index', default = 0)
-    procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
-    room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
-    ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
-    material_color_index : bpy.props.IntProperty(name = "Material Color Index", default = 0)
-    
-    #flags
+
+class CollisionFlags(bpy.types.PropertyGroup):
     none : bpy.props.BoolProperty(name = "NONE", default = False)
     stairs : bpy.props.BoolProperty(name = "STAIRS", default = False)
     not_climbable : bpy.props.BoolProperty(name = "NOT CLIMBABLE", default = False)
@@ -140,6 +134,15 @@ class CollisionProperties(bpy.types.PropertyGroup):
     too_steep_for_player : bpy.props.BoolProperty(name = "TOO STEEP FOR PLAYER", default = False)
     no_network_spawn : bpy.props.BoolProperty(name = "NO NETWORK SPAWN", default = False)
     no_cam_collision_allow_clipping : bpy.props.BoolProperty(name = "NO CAM COLLISION ALLOW CLIPPING", default = False)
+
+
+class CollisionProperties(CollisionFlags):
+    collision_index : bpy.props.IntProperty(name = 'Collision Index', default = 0)
+    procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
+    room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
+    ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
+    material_color_index : bpy.props.IntProperty(name = "Material Color Index", default = 0)
+
 
 class BoundFlags(bpy.types.PropertyGroup):
 

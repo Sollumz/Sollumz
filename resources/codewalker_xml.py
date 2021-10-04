@@ -246,7 +246,7 @@ class ListProperty(ElementProperty, AbstractClass):
             if isinstance(item, self.list_type):
                 element.append(item.to_xml())
             else:
-                raise TypeError(f"ListProperty can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
 
         return element
 
@@ -298,7 +298,7 @@ class FlagsProperty(ElementProperty):
     def from_xml(element: ET.Element):
         new = FlagsProperty(element.tag, [])
         if element.text and len(element.text.strip()) > 0:
-            text = element.text.strip().split(',')
+            text = element.text.replace(' ', '').split(',')
             if not len(text) > 0:
                 return FlagsProperty.read_value_error(element)
 
@@ -316,7 +316,7 @@ class FlagsProperty(ElementProperty):
                 return TypeError('FlagsProperty can only contain str objects!')
 
         if len(self.value) > 0:
-            element.text = ','.join(self.value)
+            element.text = ', '.join(self.value)
         return element
 
 

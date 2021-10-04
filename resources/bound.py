@@ -107,10 +107,6 @@ class BoundCloth(BoundItem):
     type = 'Cloth'
 
 
-class BoundGeometry(BoundItem):
-    type = 'Geometry'
-
-
 class BoundGeometryBVH(BoundItem):
     type = 'GeometryBVH'
 
@@ -120,6 +116,15 @@ class BoundGeometryBVH(BoundItem):
         self.materials = MaterialsListProperty()
         self.vertices = VerticesProperty('Vertices')
         self.polygons = PolygonsProperty()
+
+
+class BoundGeometry(BoundGeometryBVH):
+    type = 'Geometry'
+
+    def __init__(self):
+        super().__init__()
+        # Placeholder: Currently not implemented by CodeWalker
+        self.octants = PolygonsProperty('Octants')
 
 
 class BoundListProperty(ListProperty):
