@@ -1,9 +1,10 @@
-import os
+import os, traceback
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from Sollumz.sollumz_properties import CollisionFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_shaders import create_collision_material_from_index
+from .meshhelper import * 
 
 def init_poly_obj(poly, sollum_type, materials):
     mesh = bpy.data.meshes.new(sollum_type.value)
@@ -80,7 +81,7 @@ def poly_to_obj(poly, materials, vertices):
     elif type(poly) == Sphere:
         sphere = init_poly_obj(poly, PolygonType.SPHERE, materials)
         mesh = sphere.data
-        bound_sphere(mesh, poly.radius)
+        create_sphere(mesh, poly.radius)
 
         return sphere
     elif type(poly) == Capsule:
@@ -91,7 +92,7 @@ def poly_to_obj(poly, materials, vertices):
         rot = get_direction_of_vectors(v1, v2)
         
         mesh = capsule.data
-        bound_capsule(mesh, poly.radius, length)
+        create_capsule(mesh, poly.radius, length)
         
         capsule.location = (v1 + v2) / 2     
         capsule.rotation_euler = rot
@@ -105,7 +106,7 @@ def poly_to_obj(poly, materials, vertices):
         length = get_distance_of_vectors(v1, v2)
         rot = get_direction_of_vectors(v1, v2)
 
-        cylinder.data = bound_cylinder(cylinder.data, poly.radius, length)
+        cylinder.data = create_cylinder(cylinder.data, poly.radius, length)
 
         cylinder.location = (v1 + v2) / 2
         cylinder.rotation_euler = rot
@@ -260,8 +261,9 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
             bpy.context.collection.objects.link(ybn_obj)
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
-            self.report({'ERROR'}, f"YBN failed to import: {e}")
-
+            #self.report({'ERROR'}, f"YBN failed to import: {e}")
+            self.report({'ERROR'}, traceback.format_exc())
+            
         return {'FINISHED'}
 
 def ybn_menu_func_import(self, context):

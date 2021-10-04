@@ -22,6 +22,8 @@ class PolygonType(str, Enum):
     CAPSULE = 'sollumz_bound_poly_capsule'
     CYLINDER = 'sollumz_bound_poly_cylinder'
     TRIANGLE = 'sollumz_bound_poly_triangle'
+    DISC = 'sollumz_bound_poly_disc'
+    CLOTH = 'sollumz_bound_poly_cloth'
 
 
 class YBN(ElementTree):

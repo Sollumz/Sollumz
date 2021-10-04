@@ -206,9 +206,24 @@ def assign_properties():
                 (PolygonType.CAPSULE.value, "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
                 (PolygonType.BOX.value, "Bound Poly Box", "Sollumz Bound Poly Box"),
                 (PolygonType.CYLINDER.value, "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
+                (PolygonType.DISC.value, "Bound Poly Disc", "Sollumz Bound Disc Cylinder"),
+                (PolygonType.CLOTH.value, "Bound Poly Cloth", "Sollumz Bound Cloth Cylinder"),
                 ],
         name = "Sollumz Type",
         default = "sollumz_none"
+    )
+
+    bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
+        items = [(PolygonType.TRIANGLE.value, "Bound Poly Triangle", "Sollumz Bound Poly Triangle"),
+                (PolygonType.SPHERE.value, "Bound Poly Sphere", "Sollumz Bound Poly Sphere"),
+                (PolygonType.CAPSULE.value, "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
+                (PolygonType.BOX.value, "Bound Poly Box", "Sollumz Bound Poly Box"),
+                (PolygonType.CYLINDER.value, "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
+                (PolygonType.DISC.value, "Bound Poly Disc", "Sollumz Bound Disc Cylinder"),
+                (PolygonType.CLOTH.value, "Bound Poly Cloth", "Sollumz Bound Cloth Cylinder"),
+                ],
+        name = "Poly Type",
+        default = PolygonType.TRIANGLE.value
     )
 
     bpy.types.Material.sollum_type = bpy.props.EnumProperty(

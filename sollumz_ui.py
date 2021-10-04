@@ -141,6 +141,24 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         else:
             box = layout.box()
 
+class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Collision Tools"
+    bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row()
+        row.operator("sollumz.createcompositebound")
+        row.operator("sollumz.creategeometrybvhbound")
+        row = layout.row()
+        row.prop(context.scene, "poly_bound_type")
+        row.operator("sollumz.createpolybound")
+        
+
 class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
@@ -252,17 +270,27 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             row.prop(obj.composite_flags2, "map_stairs")
             row.prop(obj.composite_flags2, "map_deep_surface")
         
+    def draw_tools(self, context, layout, obj):
+        box = layout.box()
+        box.label(text = "Tools")
 
     def draw(self, context):
         layout = self.layout
 
         obj = bpy.context.active_object
 
+        self.draw_tools(context, layout, obj)
+
         if(obj == None):
             return
 
-        layout.prop(obj, "sollum_type")
-        
+        row = layout.row()
+
+        if("poly" in obj.sollum_type):
+            row.enabled = False
+
+        row.prop(obj, "sollum_type")
+
         if(obj.sollum_type == "sollumz_drawable"):
             self.draw_drawable_properties(context, layout, obj)
         elif(obj.sollum_type == "sollumz_geometry"):

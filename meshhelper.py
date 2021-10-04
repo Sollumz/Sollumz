@@ -4,21 +4,29 @@ from math import cos, inf, sin, degrees, radians, sqrt
 from mathutils import Vector, Matrix, Quaternion, Euler
 import numpy as np
 
-def bound_sphere(mesh, radius):
+def create_box(mesh, size = 1):
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=radius)
+    bmesh.ops.create_cube(bm, size=1)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
 
-def bound_cylinder(mesh, radius, length):
+def create_sphere(mesh, radius = 0.5):
+    bpy.data.meshes.new("mesh")
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=radius)
+    bm.to_mesh(mesh)
+    bm.free()
+    return mesh 
+
+def create_cylinder(mesh, radius = 0.5, length = 1):
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=32, diameter1=radius, diameter2=radius, depth=length)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
 
-def bound_disc(mesh, radius, length):
+def create_disc(mesh, radius = 0.5, length = 0.1):
     bm = bmesh.new()
     rot_mat = Matrix.Rotation(radians(90.0), 4, 'Y')
     bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=True, segments=32, diameter1=radius, diameter2=radius, depth=length, matrix=rot_mat)
@@ -26,7 +34,7 @@ def bound_disc(mesh, radius, length):
     bm.free()
     return mesh
 
-def bound_capsule(mesh, radius, length, rings = 9, segments = 16):
+def create_capsule(mesh, radius = 0.5, length = 1, rings = 9, segments = 16):
     bm = bmesh.new()
     mat_loc = Matrix.Translation((0.0, 0.0, length/2))
     bmesh.ops.create_uvsphere(bm, u_segments=segments, v_segments=rings, diameter=radius, matrix=mat_loc)
@@ -106,7 +114,6 @@ def np_matmul_coords(coords, matrix, space=None):
     coords4d = np.hstack((coords, ones))
     
     return np.dot(coords4d, M)[:,:-1]
-
 
 """Get min and max bounds for an object and all of its children"""
 def get_bb_extents(obj):

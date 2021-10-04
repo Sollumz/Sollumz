@@ -1,6 +1,6 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
-import os, sys
+import os, sys, traceback
 
 from Sollumz.sollumz_properties import CollisionFlags
 sys.path.append(os.path.dirname(__file__))
@@ -20,7 +20,15 @@ def polygon_from_object(poly_type, obj, vertices):
         box = init_poly_bound(Box(), obj)
         indices = []
         bound_box = get_bound_world(obj)
-        neighbors = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
+
+        #get local vert position
+        bound_center = get_bound_center(obj)
+        a = bound_box[0] - bound_center
+        b = bound_box[5] - bound_center
+        c = bound_box[2] - bound_center
+        d = bound_box[7] - bound_center
+
+        neighbors = [a, b, c, d]
         for vert in neighbors:
             vertices.append(vert)
             indices.append(len(vertices) - 1)
@@ -93,14 +101,14 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
         return ValueError('Invalid argument for geometry sollum_type!')
 
     geometry = init_bound_item(geometry, obj)
-    geometry.geometry_center = get_bound_center(obj, True)
+    geometry.geometry_center = obj.location#get_bound_center(obj, True)
 
     mesh = obj.to_mesh()
     mesh.calc_normals_split()
     mesh.calc_loop_triangles()
 
     for vertex in mesh.vertices:
-        geometry.vertices.append(obj.matrix_world @ vertex.co)
+        geometry.vertices.append(vertex.co)
 
     for face in mesh.loop_triangles:
         geometry.polygons.append(triangle_from_face(face))
@@ -115,7 +123,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
             mat_item.material_color_index = material.collision_properties.material_color_index
             
             # Assign flags
-            for flag_name in CollisionFlags.__annotations__.keys():
+            for flag_name in CollisionFlags.__dict__.keys():
                 flag_exists = getattr(material.collision_properties, flag_name)
                 if flag_exists == True:
                     mat_item.flags.append(f"FLAG_{flag_name.upper()}")
@@ -185,17 +193,13 @@ def ybn_from_object(obj):
             ybn.bounds.children.append(bound)
     
     return ybn
-    
-    
 
 class ExportYbnXml(bpy.types.Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "exportxml.ybn"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export Ybn Xml (.ybn.xml)"
 
-    # ExportHelper mixin class uses this
     filename_ext = ".ybn.xml"
-    check_extension = False
 
     def execute(self, context):
 
@@ -210,10 +214,11 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
                         ybn_from_object(obj).write_xml(self.filepath)
                         self.report({'INFO'}, 'YBN Successfully exported.')
                     except Exception as e:
-                        self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
+                        #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
+                        self.report({'ERROR'}, traceback.format_exc())
         
         if not found:
-            self.report({'INFO'}, "No objects in scene for Sollumz export")
+            self.report({'INFO'}, "No bound object types in scene for Sollumz export")
 
         return {'FINISHED'}
 

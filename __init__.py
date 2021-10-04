@@ -36,10 +36,12 @@ for package in packages:
 from .ydrimport import ImportYdrXml, ydr_menu_func_import
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .ybnexport import ExportYbnXml, ybn_menu_func_export
-from .sollumz_properties import DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, assign_properties
-from .sollumz_ui import SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL
+from .sollumz_properties import *
+from .sollumz_ui import *
+from .sollum_operators import *
 
-classes = (SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, 
+classes = (SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, SOLLUMZ_PT_COLLISION_TOOL_PANEL, SOLLUMZ_OT_create_poly_bound, SOLLUMZ_OT_create_composite_bound, 
+SOLLUMZ_OT_create_geometrybvh_bound, 
 DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, ImportYdrXml, ImportYbnXml, ExportYbnXml)
 
 

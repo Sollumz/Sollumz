@@ -2,6 +2,7 @@ GENERAL
 ________________________
 - update error display not showing enough info 
 - remove function annotations
+- order xml element attributes on export to make it more readable
 
 IDEAS 
 ________________________
@@ -24,6 +25,7 @@ ________________________
 - ybn poly capsule importing not working
 - ybn poly disc importing not working
 - ybn poly cloth importing not working
+- ybn composite box center / sphere center need to be calculated through all children objects also
 - TEST
 
 YDR IMPORT / EXPORT

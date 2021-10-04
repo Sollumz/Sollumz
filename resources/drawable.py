@@ -69,15 +69,6 @@ class ShadersListProperty(ListProperty):
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
 
-    @staticmethod
-    def from_xml(element: ET.Element):
-        new = ShadersListProperty()
-
-        for child in element.iter():
-            new.value.append(ShaderItem.from_xml(ShaderItem.from_xml(child)))
-
-        return new
-
 
 class TextureItem(ElementTree):
     tag_name = "Item"
