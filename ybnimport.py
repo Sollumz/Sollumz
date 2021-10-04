@@ -111,10 +111,10 @@ def poly_to_obj(poly, materials, vertices):
 
         return cylinder
 
-def bvh_to_obj(bvh):
-    obj = init_bound_obj(bvh, BoundType.GEOMETRYBVH)
-    print(bvh)
-    for gmat in bvh.materials:
+def geometry_to_obj(geometry, sollum_type):
+    obj = init_bound_obj(geometry, sollum_type)
+
+    for gmat in geometry.materials:
         mat = create_collision_material_from_index(gmat.type)
         mat.sollum_type = "sollumz_gta_collision_material"
         mat.collision_properties.procedural_id = gmat.procedural_id
@@ -133,13 +133,13 @@ def bvh_to_obj(bvh):
     faces = []
     tri_materials = []
 
-    for poly in bvh.polygons:
+    for poly in geometry.polygons:
         if type(poly) == Triangle:
             tri_materials.append(poly.material_index)
             face = []
-            v1 = bvh.vertices[poly.v1]
-            v2 = bvh.vertices[poly.v2]
-            v3 = bvh.vertices[poly.v3]
+            v1 = geometry.vertices[poly.v1]
+            v2 = geometry.vertices[poly.v2]
+            v3 = geometry.vertices[poly.v3]
             if not v1 in vertices:
                 vertices.append(v1)
                 face.append(len(vertices) - 1)
@@ -157,7 +157,7 @@ def bvh_to_obj(bvh):
                 face.append(vertices.index(v3))
             faces.append(face)
         else:
-            poly_obj = poly_to_obj(poly, obj.data.materials, bvh.vertices)
+            poly_obj = poly_to_obj(poly, obj.data.materials, geometry.vertices)
             if poly_obj:
                 bpy.context.collection.objects.link(poly_obj)
                 poly_obj.parent = obj
@@ -169,7 +169,7 @@ def bvh_to_obj(bvh):
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
 
-    obj.location = bvh.geometry_center
+    obj.location = geometry.geometry_center
 
     return obj
 
@@ -222,10 +222,10 @@ def bound_to_obj(bound):
         cloth = init_bound_obj(bound, BoundType.CLOTH)
         return cloth
     elif bound.type == 'Geometry':
-        geometry = init_bound_obj(bound, BoundType.GEOMETRY)
+        geometry = geometry_to_obj(bound, BoundType.GEOMETRY)
         return geometry
     elif bound.type == 'GeometryBVH':
-        bvh = bvh_to_obj(bound)
+        bvh = geometry_to_obj(bound, BoundType.GEOMETRYBVH)
         return bvh
 
 def composite_to_obj(composite, name):
@@ -253,9 +253,13 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         
-        ybn_xml = YBN.from_xml_file(self.filepath)
-        ybn_obj = composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
-        bpy.context.collection.objects.link(ybn_obj)
+        try:
+            ybn_xml = YBN.from_xml_file(self.filepath)
+            ybn_obj = composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
+            bpy.context.collection.objects.link(ybn_obj)
+            self.report({'INFO'}, 'YBN Successfully imported.')
+        except Exception as e:
+            self.report({'ERROR'}, f"YBN failed to import: {e}")
 
         return {'FINISHED'}
 

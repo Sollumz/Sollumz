@@ -80,6 +80,9 @@ def triangle_from_face(face):
 
 
 def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
+    if not obj.type == 'MESH':
+        raise TypeError(f"Sollumz geometry object '{obj.name}' must be a mesh object.")
+
     geometry = None
 
     if sollum_type == BoundType.GEOMETRYBVH:
@@ -198,13 +201,19 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
 
         objects = bpy.context.collection.objects
 
-        if(len(objects) == 0):
-            return "No objects in scene for Sollumz export"
-
-        print('Exporting')
-        for obj in objects:
-            if(obj.sollum_type == "sollumz_bound_composite"):
-                ybn_from_object(obj).write_xml(self.filepath)
+        found = False
+        if len(objects) > 0:
+            for obj in objects:
+                if obj.sollum_type == "sollumz_bound_composite":
+                    found = True
+                    try:
+                        ybn_from_object(obj).write_xml(self.filepath)
+                        self.report({'INFO'}, 'YBN Successfully exported.')
+                    except Exception as e:
+                        self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
+        
+        if not found:
+            self.report({'INFO'}, "No objects in scene for Sollumz export")
 
         return {'FINISHED'}
 
