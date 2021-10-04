@@ -89,8 +89,10 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        if(bpy.context.active_object.data != None):
-            mat = bpy.context.active_object.data.materials[0]
+        mat = None
+
+        if(bpy.context.active_object.data != None and len(bpy.context.active_object.data.materials) > 0):
+            mat = bpy.context.active_object.active_material
         else:
             return
 

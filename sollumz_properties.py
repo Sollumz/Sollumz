@@ -1,4 +1,5 @@
-import bpy 
+import bpy
+from Sollumz.resources.bound import BoundType, PolygonType
 
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance High")
@@ -114,13 +115,8 @@ class ShaderProperties(bpy.types.PropertyGroup):
     #LAYOUT ENUM? 
     filename : bpy.props.StringProperty(name = "FileName", default = "default")
 
-class CollisionProperties(bpy.types.PropertyGroup):
-    procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
-    room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
-    ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
-    material_color_index : bpy.props.IntProperty(name = "Material Color Index", default = 0)
-    
-    #flags
+
+class CollisionFlags(bpy.types.PropertyGroup):
     none : bpy.props.BoolProperty(name = "NONE", default = False)
     stairs : bpy.props.BoolProperty(name = "STAIRS", default = False)
     not_climbable : bpy.props.BoolProperty(name = "NOT CLIMBABLE", default = False)
@@ -138,6 +134,15 @@ class CollisionProperties(bpy.types.PropertyGroup):
     too_steep_for_player : bpy.props.BoolProperty(name = "TOO STEEP FOR PLAYER", default = False)
     no_network_spawn : bpy.props.BoolProperty(name = "NO NETWORK SPAWN", default = False)
     no_cam_collision_allow_clipping : bpy.props.BoolProperty(name = "NO CAM COLLISION ALLOW CLIPPING", default = False)
+
+
+class CollisionProperties(CollisionFlags):
+    collision_index : bpy.props.IntProperty(name = 'Collision Index', default = 0)
+    procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
+    room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
+    ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
+    material_color_index : bpy.props.IntProperty(name = "Material Color Index", default = 0)
+
 
 class BoundFlags(bpy.types.PropertyGroup):
 
@@ -179,6 +184,7 @@ class BoundProperties(bpy.types.PropertyGroup):
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     poly_flags : bpy.props.IntProperty(name = "Poly Flags", default = 0)
 
+
 def assign_properties():
     
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
@@ -186,20 +192,20 @@ def assign_properties():
                 ("sollumz_drawable", "Drawable", "Sollumz Drawable"),
                 ("sollumz_geometry", "Geometry", "Sollumz Geometry"),
                 ("sollumz_skeleton", "Skeleton", "Sollumz Skeleton"),
-                ("sollumz_bound_composite", "Bound Composite", "Sollumz Bound Composite"),
-                ("sollumz_bound_box", "Bound Box", "Sollumz Bound Box"),
-                ("sollumz_bound_sphere", "Bound Sphere", "Sollumz Bound Sphere"),
-                ("sollumz_bound_capsule", "Bound Capsule", "Sollumz Bound Capsule"),
-                ("sollumz_bound_cylinder", "Bound Cylinder", "Sollumz Bound Cylinder"),
-                ("sollumz_bound_disc", "Bound Disc", "Sollumz Bound Disc"),
-                ("sollumz_bound_cloth", "Bound Cloth", "Sollumz Bound Cloth"),
-                ("sollumz_bound_geometry", "Bound Geometry", "Sollumz Bound Geometry"),
-                ("sollumz_bound_geometrybvh", "Bound GeometryBVH", "Sollumz Bound GeometryBVH"),
-                ("sollumz_bound_poly_triangle", "Bound Poly Triangle", "Sollumz Bound Poly Triangle"),
-                ("sollumz_bound_poly_sphere", "Bound Poly Sphere", "Sollumz Bound Poly Sphere"),
-                ("sollumz_bound_poly_capsule", "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
-                ("sollumz_bound_poly_box", "Bound Poly Box", "Sollumz Bound Poly Box"),
-                ("sollumz_bound_poly_cylinder", "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
+                (BoundType.COMPOSITE.value, "Bound Composite", "Sollumz Bound Composite"),
+                (BoundType.BOX.value, "Bound Box", "Sollumz Bound Box"),
+                (BoundType.SPHERE.value, "Bound Sphere", "Sollumz Bound Sphere"),
+                (BoundType.CAPSULE.value, "Bound Capsule", "Sollumz Bound Capsule"),
+                (BoundType.CYLINDER.value, "Bound Cylinder", "Sollumz Bound Cylinder"),
+                (BoundType.DISC.value, "Bound Disc", "Sollumz Bound Disc"),
+                (BoundType.CLOTH.value, "Bound Cloth", "Sollumz Bound Cloth"),
+                (BoundType.GEOMETRY.value, "Bound Geometry", "Sollumz Bound Geometry"),
+                (BoundType.GEOMETRYBVH.value, "Bound GeometryBVH", "Sollumz Bound GeometryBVH"),
+                (PolygonType.TRIANGLE.value, "Bound Poly Triangle", "Sollumz Bound Poly Triangle"),
+                (PolygonType.SPHERE.value, "Bound Poly Sphere", "Sollumz Bound Poly Sphere"),
+                (PolygonType.CAPSULE.value, "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
+                (PolygonType.BOX.value, "Bound Poly Box", "Sollumz Bound Poly Box"),
+                (PolygonType.CYLINDER.value, "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
                 ],
         name = "Sollumz Type",
         default = "sollumz_none"
@@ -217,12 +223,12 @@ def assign_properties():
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(type = BoundProperties)
-    
+
     #nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(type = BoundFlags)
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type = BoundFlags)
     ##
-    
+
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)

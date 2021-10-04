@@ -334,12 +334,17 @@ collisionmats = {
         180:["BUSHES_NOINST",(85,160,30,255)],
         181:["METAL_SOLID_ROAD_SURFACE",(155,180,190,255)]}
 
-def create_collision_material_from_index(collisionindex):
-    
+def create_collision_material_from_index(collisionindex: int):
+
     matinfo = collisionmats[collisionindex] 
     
+    # Check for existing material
+    # if matinfo[0] in bpy.data.materials.keys():
+    #     return bpy.data.materials[matinfo[0]]
+
     mat = bpy.data.materials.new(matinfo[0])
     mat.sollum_type = "sollumz_gta_collision_material"
+    mat.collision_properties.collision_index = collisionindex
     mat.use_nodes = True
     r = matinfo[1][0] / 255
     g = matinfo[1][1] / 255
