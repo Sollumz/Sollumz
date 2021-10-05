@@ -167,17 +167,17 @@ def init_bound(bound, obj):
 
 def bound_from_object(obj):
     if obj.sollum_type == BoundType.BOX:
-        raise NotImplementedError
+        return init_bound(BoundBox(), obj)
     elif obj.sollum_type == BoundType.SPHERE:
-        raise NotImplementedError
+        return init_bound(BoundSphere(), obj)
     elif obj.sollum_type == BoundType.CAPSULE:
-        raise NotImplementedError
+        return init_bound(BoundCapsule(), obj)
     elif obj.sollum_type == BoundType.CYLINDER:
-        raise NotImplementedError
+        return init_bound(BoundCylinder(), obj)
     elif obj.sollum_type == BoundType.DISC:
-        raise NotImplementedError
+        return init_bound(BoundDisc(), obj)
     elif obj.sollum_type == BoundType.CLOTH:
-        raise NotImplementedError
+        return init_bound(BoundCloth(), obj)
     elif obj.sollum_type == BoundType.GEOMETRY:
         return geometry_from_object(obj, BoundType.GEOMETRY)
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
