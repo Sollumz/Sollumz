@@ -1,4 +1,23 @@
 import bpy
+from Sollumz.resources.bound import BoundType, PolygonType
+
+SOLLUMZ_UI_NAMES = {
+    BoundType.BOX: 'Bound Box',
+    BoundType.SPHERE: 'Bound Sphere',
+    BoundType.CAPSULE: 'Bound Capsule',
+    BoundType.CYLINDER: 'Bound Cylinder',
+    BoundType.DISC: 'Bound Disc',
+    BoundType.CLOTH: 'Bound Cloth',
+    BoundType.GEOMETRY: 'Bound Geometry',
+    BoundType.GEOMETRYBVH: 'GeometryBVH',
+    BoundType.COMPOSITE: 'Composite',
+
+    PolygonType.BOX: 'Bound Poly Box',
+    PolygonType.SPHERE: 'Bound Poly Sphere',
+    PolygonType.CAPSULE: 'Bound Poly Capsule',
+    PolygonType.CYLINDER: 'Bound Poly Cylinder',
+    PolygonType.TRIANGLE: 'Bound Poly Mesh',
+}
 
 class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
     bl_label = "Sollumz Shader Panel"

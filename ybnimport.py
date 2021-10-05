@@ -4,14 +4,16 @@ from bpy_extras.io_utils import ImportHelper
 from Sollumz.sollumz_properties import CollisionFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_shaders import create_collision_material_from_index
+from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
 from .meshhelper import * 
 
 def init_poly_obj(poly, sollum_type, materials):
-    mesh = bpy.data.meshes.new(sollum_type.value)
+    name = SOLLUMZ_UI_NAMES[sollum_type]
+    mesh = bpy.data.meshes.new(name)
     if poly.material_index < len(materials):
         mesh.materials.append(materials[poly.material_index])
 
-    obj = bpy.data.objects.new(sollum_type.value, mesh)
+    obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type.value
 
     return obj
@@ -115,6 +117,8 @@ def poly_to_obj(poly, materials, vertices):
 
 def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
+    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])
+    triangle_obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], mesh)
 
     for gmat in geometry.materials:
         mat = create_collision_material_from_index(gmat.type)
@@ -129,7 +133,7 @@ def geometry_to_obj(geometry, sollum_type):
             if f"FLAG_{flag_name.upper()}" in gmat.flags:
                 setattr(mat.collision_properties, flag_name, True)
 
-        obj.data.materials.append(mat)
+        triangle_obj.data.materials.append(mat)
 
     vertices = []
     faces = []
@@ -159,15 +163,17 @@ def geometry_to_obj(geometry, sollum_type):
                 face.append(vertices.index(v3))
             faces.append(face)
         else:
-            poly_obj = poly_to_obj(poly, obj.data.materials, geometry.vertices)
+            poly_obj = poly_to_obj(poly, triangle_obj.data.materials, geometry.vertices)
             if poly_obj:
                 bpy.context.collection.objects.link(poly_obj)
                 poly_obj.parent = obj
 
-    obj.data.from_pydata(vertices, [], faces)
+    triangle_obj.data.from_pydata(vertices, [], faces)
+    bpy.context.collection.objects.link(triangle_obj)
+    triangle_obj.parent = obj
 
     # Apply triangle materials
-    for index, poly in obj.data.polygons.items():
+    for index, poly in triangle_obj.data.polygons.items():
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
 
@@ -176,8 +182,12 @@ def geometry_to_obj(geometry, sollum_type):
     return obj
 
 def init_bound_obj(bound, sollum_type):
-    mesh = bpy.data.meshes.new(sollum_type.value)
-    obj = bpy.data.objects.new(sollum_type.value, mesh)
+    mesh = None
+    name = SOLLUMZ_UI_NAMES[sollum_type]
+    if not (sollum_type == BoundType.COMPOSITE or sollum_type == BoundType.GEOMETRYBVH or sollum_type == BoundType.GEOMETRY):
+        mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, mesh)
+    obj.empty_display_size = 0
     obj.sollum_type = sollum_type.value
 
     obj.bound_properties.procedural_id = int(bound.procedural_id)
@@ -232,12 +242,15 @@ def bound_to_obj(bound):
 
 def composite_to_obj(composite, name):
     obj = bpy.data.objects.new(name, None)
+    obj.empty_display_size = 0
     obj.sollum_type = BoundType.COMPOSITE
 
     for child in composite.children:
         child_obj = bound_to_obj(child)
         if child_obj:
             child_obj.parent = obj
+    
+    bpy.context.collection.objects.link(obj)
 
     return obj
 
@@ -258,7 +271,6 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
             ybn_obj = composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
-            bpy.context.collection.objects.link(ybn_obj)
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
