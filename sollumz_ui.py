@@ -142,7 +142,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
             box = layout.box()
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Collision Tools"
+    bl_label = "Ybn Tools"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
     bl_category = "Sollumz"
     bl_space_type = 'VIEW_3D'
@@ -151,20 +151,37 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        row = layout.row()
-        row.operator("sollumz.createcompositebound")
-        row.operator("sollumz.creategeometrybvhbound")
-        row = layout.row()
+        box = layout.box()
+        box.label(text = "Create Material")
+        row = box.row()
+        row.operator("sollumz.createcollisionmaterial").index = context.scene.collision_material_index
+        row.prop(context.scene, "collision_material_index")
+        box = layout.box()
+        box.label(text = "Create Collision Objects")
+        row = box.row()
+        row.operator("sollumz.createboundcomposite")
+        row.operator("sollumz.creategeometrybound")
+        row = box.row()
+        row.operator("sollumz.creategeometryboundbvh")
+        row.operator("sollumz.createboxbound")
+        row = box.row()
+        row.operator("sollumz.createspherebound")
+        row.operator("sollumz.createcapsulebound")
+        row = box.row()
+        row.operator("sollumz.createcylinderbound")
+        row.operator("sollumz.creatediscbound")
+        row = box.row()
+        row.operator("sollumz.createclothbound")
+        row = box.row()
+        row.operator("sollumz.createpolygonbound")
         row.prop(context.scene, "poly_bound_type")
-        row.operator("sollumz.createpolybound")
         
-
 class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
-    bl_label = "Sollumz"
+    bl_label = "Object Properties"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
 
     def draw_drawable_properties(self, context, layout, obj):
         layout.prop(obj.drawable_properties, "lod_dist_high")
@@ -269,31 +286,23 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             row.prop(obj.composite_flags2, "unsmashed")
             row.prop(obj.composite_flags2, "map_stairs")
             row.prop(obj.composite_flags2, "map_deep_surface")
-        
-    def draw_tools(self, context, layout, obj):
-        box = layout.box()
-        box.label(text = "Tools")
-
+    
     def draw(self, context):
         layout = self.layout
 
         obj = bpy.context.active_object
 
-        self.draw_tools(context, layout, obj)
-
         if(obj == None):
             return
 
-        row = layout.row()
-
-        if("poly" in obj.sollum_type):
-            row.enabled = False
-
+        box = layout.box()
+        row = box.row()
+        row.enabled = False
         row.prop(obj, "sollum_type")
 
         if(obj.sollum_type == "sollumz_drawable"):
-            self.draw_drawable_properties(context, layout, obj)
+            self.draw_drawable_properties(context, box, obj)
         elif(obj.sollum_type == "sollumz_geometry"):
-            self.draw_geometry_properties(context, layout, obj)
+            self.draw_geometry_properties(context, box, obj)
         elif("bound" in obj.sollum_type):
-            self.draw_bound_properties(context, layout, obj)
+            self.draw_bound_properties(context, box, obj)

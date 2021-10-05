@@ -40,9 +40,21 @@ from .sollumz_properties import *
 from .sollumz_ui import *
 from .sollum_operators import *
 
-classes = (SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, SOLLUMZ_PT_COLLISION_TOOL_PANEL, SOLLUMZ_OT_create_poly_bound, SOLLUMZ_OT_create_composite_bound, 
-SOLLUMZ_OT_create_geometrybvh_bound, 
-DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, ImportYdrXml, ImportYbnXml, ExportYbnXml)
+classes = (
+SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, SOLLUMZ_PT_COLLISION_TOOL_PANEL, 
+SOLLUMZ_OT_create_bound_composite,
+SOLLUMZ_OT_create_geometry_bound,
+SOLLUMZ_OT_create_geometrybvh_bound,
+SOLLUMZ_OT_create_box_bound,
+SOLLUMZ_OT_create_sphere_bound,
+SOLLUMZ_OT_create_capsule_bound,
+SOLLUMZ_OT_create_cylinder_bound,
+SOLLUMZ_OT_create_disc_bound,
+SOLLUMZ_OT_create_cloth_bound,
+SOLLUMZ_OT_create_polygon_bound,
+SOLLUMZ_OT_create_collision_material,
+DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, 
+ImportYdrXml, ImportYbnXml, ExportYbnXml)
 
 
 def register():
