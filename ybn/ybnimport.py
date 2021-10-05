@@ -1,11 +1,11 @@
 import os, traceback
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from Sollumz.sollumz_properties import CollisionFlags
+from .properties import CollisionFlags
 from Sollumz.resources.bound import *
-from Sollumz.sollumz_shaders import create_collision_material_from_index
-from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
-from .meshhelper import * 
+from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType, SOLLUMZ_UI_NAMES
+from .collision_materials import create_collision_material_from_index
+from Sollumz.meshhelper import * 
 
 def init_poly_obj(poly, sollum_type, materials):
     name = SOLLUMZ_UI_NAMES[sollum_type]
@@ -119,10 +119,11 @@ def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])
     triangle_obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], mesh)
+    triangle_obj.sollum_type = PolygonType.TRIANGLE
 
     for gmat in geometry.materials:
         mat = create_collision_material_from_index(gmat.type)
-        mat.sollum_type = "sollumz_gta_collision_material"
+        mat.sollum_type = MaterialType.COLLISION
         mat.collision_properties.procedural_id = gmat.procedural_id
         mat.collision_properties.room_id = gmat.room_id
         mat.collision_properties.ped_density = gmat.ped_density
@@ -183,6 +184,7 @@ def geometry_to_obj(geometry, sollum_type):
 
 def init_bound_obj(bound, sollum_type):
     mesh = None
+    obj = None
     name = SOLLUMZ_UI_NAMES[sollum_type]
     if not (sollum_type == BoundType.COMPOSITE or sollum_type == BoundType.GEOMETRYBVH or sollum_type == BoundType.GEOMETRY):
         mesh = bpy.data.meshes.new(name)
@@ -280,3 +282,9 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
 
 def ybn_menu_func_import(self, context):
     self.layout.operator(ImportYbnXml.bl_idname, text="Import .ybn.xml")
+
+def register():
+    bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
+
+def unregister():
+    bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)

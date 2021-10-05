@@ -1,8 +1,7 @@
 import bpy
-from Sollumz.resources.bound import BoundType, PolygonType
-from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
-from .meshhelper import * 
-from .sollumz_shaders import create_collision_material_from_index
+from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
+from Sollumz.meshhelper import * 
+from .collision_materials import create_collision_material_from_index
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -193,7 +192,6 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
         aobj = bpy.context.active_object
         type = context.scene.poly_bound_type
 
-        print(aobj.sollum_type)
         if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
             self.report({'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
             return {'CANCELLED'}
@@ -228,9 +226,8 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
         if(aobj == None):
             return {'CANCELLED'}
         
-        # Check if acitve object is of PolygonType
-        if aobj.sollum_type in PolygonType._value2member_map_:
-            mat = create_collision_material_from_index(self.index)
+        if is_sollum_type(aobj, PolygonType):
+            mat = create_collision_material_from_index(context.scene.collision_material_index)
             aobj.data.materials.append(mat)
         
         return {'FINISHED'}
