@@ -222,6 +222,8 @@ def assign_properties():
         default = PolygonType.TRIANGLE.value
     )
 
+    bpy.types.Scene.collision_material_index = bpy.props.IntProperty(name = "Material Index") #MAKE ENUM WITH THE MATERIALS NAMES
+
     bpy.types.Material.sollum_type = bpy.props.EnumProperty(
         items = [("sollumz_none", "None", "Sollumz None"),
                 ("sollumz_gta_material", "Gta Material", "Sollumz Gta Material"),
