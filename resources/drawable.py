@@ -4,12 +4,6 @@ from .codewalker_xml import *
 from .bound import Bounds, BoundsComposite
 from enum import Enum
 
-class YDR(ElementTree):
-    tag_name = "Drawable"
-
-    def __init__(self):
-        super().__init__()
-        self.drawable = Drawable()
 
 class ParameterItem(ElementTree):
     tag_name = "Item"
@@ -124,7 +118,7 @@ class BoneItem(ElementTree):
 class BonesListProperty(ListProperty):
     list_type = BoneItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "Bones", value=value or [])
 
 
@@ -157,7 +151,7 @@ class VertexLayoutItem(ElementTree):
 class VertexLayoutListProperty(ListProperty):
     list_type = VertexLayoutItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "Layout", value=value or [])
         self.type = AttributeProperty("Type", "")
 
@@ -194,7 +188,7 @@ class GeometryItem(ElementTree):
 class GeometriesListProperty(ListProperty):
     list_type = GeometryItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
 
 
@@ -214,7 +208,7 @@ class DrawableModelItem(ElementTree):
 class DrawableModelListProperty(ListProperty):
     list_type = DrawableModelItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
 
 
@@ -225,7 +219,7 @@ class Drawable(ElementTree, AbstractClass):
         super().__init__()
         self.name = TextProperty("Name", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
-        self.bounding_sphere_radius = VectorProperty("BoundingSphereRadius")
+        self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius", 0.0)
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
         self.lod_dist_high = ValueProperty('LodDistHigh', 0) #9998?
