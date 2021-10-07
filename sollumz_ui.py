@@ -185,8 +185,10 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
         layout.prop(obj.drawable_properties, "lod_dist_low")
         layout.prop(obj.drawable_properties, "lod_dist_vlow")
     
-    def draw_geometry_properties(self, context, layout, obj):
-        layout.prop(obj.geometry_properties, "sollum_lod")
+    def draw_drawable_model_properties(self, context, layout, obj):
+        layout.prop(obj.drawable_model_properties, "render_mask")
+        layout.prop(obj.drawable_model_properties, "flags")
+        layout.prop(obj.drawable_model_properties, "sollum_lod")
 
     def draw_bound_properties(self, context, layout, obj):
         if("poly" not in obj.sollum_type):
@@ -298,7 +300,7 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
 
         if(obj.sollum_type == "sollumz_drawable"):
             self.draw_drawable_properties(context, box, obj)
-        elif(obj.sollum_type == "sollumz_geometry"):
-            self.draw_geometry_properties(context, box, obj)
+        elif(obj.sollum_type == "sollumz_drawable_model"):
+            self.draw_drawable_model_properties(context, box, obj)
         elif("bound" in obj.sollum_type):
             self.draw_bound_properties(context, box, obj)

@@ -34,6 +34,7 @@ for package in packages:
     importlib.reload(package)
 
 from .ydrimport import ImportYdrXml, ydr_menu_func_import
+from .ydrexport import ExportYdrXml, ydr_menu_func_export
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .ybnexport import ExportYbnXml, ybn_menu_func_export
 from .sollumz_properties import *
@@ -53,14 +54,15 @@ SOLLUMZ_OT_create_disc_bound,
 SOLLUMZ_OT_create_cloth_bound,
 SOLLUMZ_OT_create_polygon_bound,
 SOLLUMZ_OT_create_collision_material,
-DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, CollisionFlags, BoundProperties, BoundFlags, 
-ImportYdrXml, ImportYbnXml, ExportYbnXml)
+DrawableProperties, DrawableModelProperties, TextureProperties, ShaderProperties, CollisionProperties, CollisionFlags, BoundProperties, BoundFlags, 
+ImportYdrXml, ExportYdrXml, ImportYbnXml, ExportYbnXml)
 
 
 def register():
     for c in classes:
         bpy.utils.register_class(c)
     bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
     assign_properties()
@@ -69,6 +71,7 @@ def unregister():
     for c in classes:
         bpy.utils.unregister_class(c)
     bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
 

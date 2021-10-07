@@ -7,7 +7,9 @@ class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_low : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance Low")
     lod_dist_vlow : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance Vlow")
 
-class GeometryProperties(bpy.types.PropertyGroup):
+class DrawableModelProperties(bpy.types.PropertyGroup):
+    render_mask : bpy.props.IntProperty(name = "Render Mask", default = 255)
+    flags : bpy.props.IntProperty(name = "Flags", default = 0)
     sollum_lod : bpy.props.EnumProperty(
         items = [("sollumz_high", "High", "High Lod"),
                 ("sollumz_med", "Med", "Med Lod"),
@@ -186,6 +188,7 @@ def assign_properties():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items = [("sollumz_none", "None", "Sollumz None"),
                 ("sollumz_drawable", "Drawable", "Sollumz Drawable"),
+                ("sollumz_drawable_model", "Drawable Model", "Sollumz Drawable Model"),
                 ("sollumz_geometry", "Geometry", "Sollumz Geometry"),
                 ("sollumz_skeleton", "Skeleton", "Sollumz Skeleton"),
                 (BoundType.COMPOSITE.value, "Bound Composite", "Sollumz Bound Composite"),
@@ -417,7 +420,7 @@ def assign_properties():
     )
 
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
-    bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
+    bpy.types.Object.drawable_model_properties = bpy.props.PointerProperty(type = DrawableModelProperties)
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(type = BoundProperties)
 
     #nest these in object.bound_properties ? is it possible#

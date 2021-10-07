@@ -24,7 +24,7 @@ class Shader:
         self.name = ""
         self.filename = []
         self.renderbucket = []
-        self.layout = {}
+        self.layouts = {}
         self.parameters = []
 
     def read_xml(self, root):
@@ -42,7 +42,7 @@ class Shader:
             lay = []
             for semantic in layout:
                 lay.append(semantic.tag)
-            self.layout["0x" + str(idx)] = lay   
+            self.layouts["0x" + str(idx)] = lay   
             idx += 1
 
         params = root.find("Parameters")

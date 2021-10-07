@@ -11,6 +11,10 @@ class YDR:
     def from_xml_file(filepath):
         return Drawable.from_xml_file(filepath)
 
+    @staticmethod
+    def write_xml(drawable, filepath):
+        return drawable.write_xml(filepath)
+
 class ParameterItem(ElementTree):
     tag_name = "Item"
 
@@ -203,8 +207,9 @@ class Vertex:
 class VertexLayoutItem(ElementTree):
     tag_name = ""
 
-    def __init__(self):
+    def __init__(self, tag_name = ""):
         super().__init__()
+        self.tag_name = tag_name
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -218,18 +223,28 @@ class VertexLayoutListProperty(ListProperty):
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name=tag_name or "Layout", value=value or [])
-        self.type = AttributeProperty("Type", "")
 
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls(element.tag)
 
-        new.type.value = element.get(new.type.name)
-
         for child in element:
             new.value.append(new.list_type.from_xml(child))
 
         return new
+
+    #only way I could figure out how to add an attribute to a list property, 
+    #dont like how it is hard coded but its the only case we need it so maybe its fine?
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.set("type", "GTAV1")
+        for item in self.value:
+            if isinstance(item, self.list_type):
+                element.append(item.to_xml())
+            else:
+                raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+
+        return element
 
 class VertexBufferProperty(ElementTree):
     tag_name = "VertexBuffer"
@@ -293,7 +308,7 @@ class DrawableModelItem(ElementTree):
         super().__init__()
         self.render_mask = ValueProperty("RenderMask", 0)
         self.flags = ValueProperty("Flags", 0)
-        self.has_skin = ValueProperty("Flags", 0) #0 = false, 1 = true
+        self.has_skin = ValueProperty("HasSkin", 0) #0 = false, 1 = true
         self.bone_index = ValueProperty("BoneIndex", 0)
         self.unknown_1 = ValueProperty("Unknown1", 0)
         self.geometries = GeometriesListProperty("Geometries")

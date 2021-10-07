@@ -6,7 +6,6 @@ import os, sys, traceback
 sys.path.append(os.path.dirname(__file__))
 from meshhelper import *
 
-
 def init_poly_bound(poly_bound, obj):
     materials = obj.parent.data.materials.values()
     mat_index = materials.index(obj.active_material)
@@ -85,7 +84,6 @@ def triangle_from_face(face):
 
     return triangle
 
-
 def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
     if not obj.type == 'MESH':
         raise TypeError(f"Sollumz geometry object '{obj.name}' must be a mesh object.")
@@ -127,7 +125,6 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 if flag_exists == True:
                     mat_item.flags.append(f"FLAG_{flag_name.upper()}")
             geometry.materials.append(mat_item)
-
 
     # Get child poly bounds
     for child in get_children_recursive(obj):

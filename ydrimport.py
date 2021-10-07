@@ -223,6 +223,24 @@ def geometry_to_obj(geometry):
         Cats.remove_unused_vertex_groups_of_mesh(obj)
 '''
 
+def drawable_model_to_obj(model, materials, name, lodlevel):
+    dobj = bpy.data.objects.new("Drawable Model", None)
+    dobj.sollum_type = "sollumz_drawable_model"
+    dobj.drawable_model_properties.sollum_lod = "sollumz_" + lodlevel
+    dobj.drawable_model_properties.render_mask = model.render_mask
+    dobj.drawable_model_properties.flags = model.flags
+
+    for geo in model.geometries:
+        mesh = geometry_to_obj(geo)
+        geo_obj = bpy.data.objects.new(name + "_mesh", mesh)
+        geo_obj.sollum_type = "sollumz_geometry"
+        geo_obj.data.materials.append(materials[geo.shader_index])
+        geo_obj.parent = dobj
+        bpy.context.collection.objects.link(geo_obj)
+
+    bpy.context.collection.objects.link(dobj)
+    
+    return dobj
 
 def drawable_to_obj(drawable, filepath, name):
 
@@ -235,33 +253,22 @@ def drawable_to_obj(drawable, filepath, name):
     obj.drawable_properties.lod_dist_low = drawable.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable.lod_dist_vlow
 
-    all_models = [*drawable.drawable_models_high, *drawable.drawable_models_med, *drawable.drawable_models_low,  *drawable.drawable_models_vlow]
+    for model in drawable.drawable_models_high:
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "high")
+        dobj.parent = obj
+        
+    for model in drawable.drawable_models_med:
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "med")
+        dobj.parent = obj
 
-    i = 0
-    for model in all_models:
-        for geo in model.geometries:
-            mesh = geometry_to_obj(geo)
-            geo_obj = bpy.data.objects.new(drawable.name + "_mesh", mesh)
-            geo_obj.sollum_type = "sollumz_geometry"
-            geo_obj.data.materials.append(materials[geo.shader_index])
+    for model in drawable.drawable_models_low:
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "low")
+        dobj.parent = obj
 
-            lod = ""
-            if(model in drawable.drawable_models_high):
-                lod = "sollumz_high"
-            elif(model in drawable.drawable_models_med):
-                lod = "sollumz_med"
-            elif(model in drawable.drawable_models_low):
-                lod = "sollumz_low"
-            else:
-                lod = "sollumz_vlow"
+    for model in drawable.drawable_models_vlow:
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "vlow")
+        dobj.parent = obj
 
-            geo_obj.geometry_properties.sollum_lod = lod
-
-            geo_obj.parent = obj
-            bpy.context.collection.objects.link(geo_obj)    
-        i += 1
-
-    
     return obj
 
 class ImportYdrXml(bpy.types.Operator, ImportHelper):

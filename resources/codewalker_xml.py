@@ -188,8 +188,9 @@ class TextProperty(ElementProperty):
         return TextProperty(element.tag, element.text)#.strip())
 
     def to_xml(self):
-        return ET.Element(self.tag_name, text = self.value)
-
+        result = ET.Element(self.tag_name)
+        result.text = self.value
+        return result
 
 class VectorProperty(ElementProperty):
     value_types = (Vector)
