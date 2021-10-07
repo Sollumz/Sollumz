@@ -4,6 +4,7 @@ from Sollumz.resources.drawable import *
 from .resources.shader import ShaderManager
 import os, sys, traceback
 from .meshhelper import *
+from .tools.utils import *
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -26,7 +27,7 @@ def get_shaders_from_blender(obj):
     materials = get_used_materials(obj)
     for material in materials:
         shader = ShaderItem()
-        shader.name = fix_shader_name(material.name)
+        shader.name = FixShaderName(material.name)
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
 
@@ -61,11 +62,6 @@ def get_shaders_from_blender(obj):
         shaders.append(shader)
 
     return shaders
-
-def fix_shader_name(name):
-    if("." in name):
-        name = name[:-4]
-    return name
 
 def get_index_string(mesh):
     

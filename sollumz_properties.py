@@ -218,18 +218,17 @@ def assign_properties():
         default = "sollumz_none"
     )
 
+    #COLLISION TOOLS UI PROPERTIES
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
-        items = [(PolygonType.TRIANGLE.value, "Bound Poly Triangle", "Sollumz Bound Poly Triangle"),
+        items = [#(PolygonType.TRIANGLE.value, "Bound Poly Triangle", "Sollumz Bound Poly Triangle"), dont add this because most people will be using QUICK CONVERT?
                 (PolygonType.SPHERE.value, "Bound Poly Sphere", "Sollumz Bound Poly Sphere"),
                 (PolygonType.CAPSULE.value, "Bound Poly Capsule", "Sollumz Bound Poly Capsule"),
                 (PolygonType.BOX.value, "Bound Poly Box", "Sollumz Bound Poly Box"),
                 (PolygonType.CYLINDER.value, "Bound Poly Cylinder", "Sollumz Bound Poly Cylinder"),
                 ],
         name = "Poly Type",
-        default = PolygonType.TRIANGLE.value
+        default = PolygonType.BOX.value    
     )
-
-    #COLLISION TOOLS UI PROPERTIES
     bpy.types.Scene.create_collision_material_type = bpy.props.EnumProperty(
         items = [("sollumz_default", "Default ", "Sollumz Default "),
                  ("sollumz_concrete", "Concrete ", "Sollumz Concrete "),
@@ -417,7 +416,8 @@ def assign_properties():
         name = "Material Type",
         default = "sollumz_default"
     )
-
+    #
+    
     bpy.types.Material.sollum_type = bpy.props.EnumProperty(
         items = [("sollumz_none", "None", "Sollumz None"),
                 ("sollumz_gta_material", "Gta Material", "Sollumz Gta Material"),

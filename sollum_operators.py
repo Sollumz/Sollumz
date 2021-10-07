@@ -49,7 +49,7 @@ class SOLLUMZ_OT_create_geometrybvh_bound(bpy.types.Operator):
     bl_idname = "sollumz.creategeometryboundbvh"
     bl_label = "Create Geometry Bound BVH"
 
-    def execute(self, context):
+    def draw(self, context):
         
         aobj = bpy.context.active_object
         if(aobj == None):
@@ -295,6 +295,34 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
             aobj.data.materials.append(mat)
             parent.data.materials.append(mat)
         
+        return {'FINISHED'}
+
+class SOLLUMZ_OT_quick_convert_mesh_to_collision(bpy.types.Operator):
+    """Quickly setup a gta bound via a mesh object"""
+    bl_idname = "sollumz.quickconvertmeshtocollision"
+    bl_label = "Quick Convert Mesh To Collision"
+
+    def execute(self, context):
+        
+        aobj = bpy.context.active_object
+        if(aobj == None):
+            return {'CANCELLED'}
+        
+        #create material
+        mat = create_collision_material_from_type("DEFAULT")
+        aobj.data.materials.append(mat)
+        
+        #set parents
+        bpy.ops.sollumz.createboundcomposite()
+        bobj = bpy.context.active_object
+        bpy.ops.sollumz.creategeometryboundbvh()
+        gobj = bpy.context.active_object
+        gobj.parent = bobj
+        aobj.parent = gobj
+
+        #set properties
+        aobj.sollum_type = PolygonType.TRIANGLE.value
+
         return {'FINISHED'}
 
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(bpy.types.Operator): 

@@ -12,3 +12,8 @@ def StringListToIntList(lst):
     for num in lst:
         result.append(int(num))
     return result
+
+def FixShaderName(name):
+    if("." in name):
+        name = name[:-4]
+    return name

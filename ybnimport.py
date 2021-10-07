@@ -115,7 +115,10 @@ def poly_to_obj(poly, materials, vertices):
 
 def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
-
+    mesh = bpy.data.meshes.new(sollum_type.value)
+    triangle_obj = bpy.data.objects.new(PolygonType.TRIANGLE, mesh)
+    triangle_obj.sollum_type = PolygonType.TRIANGLE
+    
     for gmat in geometry.materials:
         mat = create_collision_material_from_index(gmat.type)
         mat.sollum_type = "sollumz_gta_collision_material"
@@ -129,7 +132,7 @@ def geometry_to_obj(geometry, sollum_type):
             if f"FLAG_{flag_name.upper()}" in gmat.flags:
                 setattr(mat.collision_flags, flag_name, True)
 
-        obj.data.materials.append(mat)
+        triangle_obj.data.materials.append(mat)
 
     vertices = []
     faces = []
@@ -159,15 +162,17 @@ def geometry_to_obj(geometry, sollum_type):
                 face.append(vertices.index(v3))
             faces.append(face)
         else:
-            poly_obj = poly_to_obj(poly, obj.data.materials, geometry.vertices)
+            poly_obj = poly_to_obj(poly, triangle_obj.data.materials, geometry.vertices)
             if poly_obj:
                 bpy.context.collection.objects.link(poly_obj)
                 poly_obj.parent = obj
 
-    obj.data.from_pydata(vertices, [], faces)
+    triangle_obj.data.from_pydata(vertices, [], faces)
+    bpy.context.collection.objects.link(triangle_obj)
+    triangle_obj.parent = obj
 
     # Apply triangle materials
-    for index, poly in obj.data.polygons.items():
+    for index, poly in triangle_obj.data.polygons.items():
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
 
@@ -176,8 +181,12 @@ def geometry_to_obj(geometry, sollum_type):
     return obj
 
 def init_bound_obj(bound, sollum_type):
-    mesh = bpy.data.meshes.new(sollum_type.value)
-    obj = bpy.data.objects.new(sollum_type.value, mesh)
+    mesh = None
+    name = sollum_type.value
+    if not (sollum_type == BoundType.COMPOSITE or sollum_type == BoundType.GEOMETRYBVH or sollum_type == BoundType.GEOMETRY):
+        mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, mesh)
+    obj.empty_display_size = 0
     obj.sollum_type = sollum_type.value
 
     obj.bound_properties.procedural_id = int(bound.procedural_id)
@@ -238,6 +247,8 @@ def composite_to_obj(composite, name):
         child_obj = bound_to_obj(child)
         if child_obj:
             child_obj.parent = obj
+
+    #bpy.context.collection.objects.link(obj)
 
     return obj
 
