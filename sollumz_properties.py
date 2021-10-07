@@ -183,6 +183,14 @@ class BoundProperties(bpy.types.PropertyGroup):
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     poly_flags : bpy.props.IntProperty(name = "Poly Flags", default = 0)
 
+class BoneFlag(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(default = "")
+
+class BoneProperties(bpy.types.PropertyGroup):
+    tag: bpy.props.IntProperty(name = "BoneTag", default = 0, min = 0)
+    flags: bpy.props.CollectionProperty(type = BoneFlag)
+    ul_index: bpy.props.IntProperty(name = "UIListIndex", default = 0)
+
 def assign_properties():
     
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
@@ -432,3 +440,5 @@ def assign_properties():
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionFlags)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)
+
+    bpy.types.Bone.bone_properties = bpy.props.PointerProperty(type = BoneProperties)
