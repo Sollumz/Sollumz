@@ -1,9 +1,11 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 import os, traceback
+from mathutils import Vector, Quaternion, Matrix
 from .sollumz_shaders import *
 from .resources.shader import ShaderManager
 from .resources.drawable import *
+from .tools import cats as Cats
 
 def shadergroup_to_materials(shadergroup, filepath):
     shadermanager = ShaderManager()
@@ -95,7 +97,7 @@ def create_vertexcolor_layer(mesh, num, colors):
         rgba = colors[mesh.loops[i].vertex_index]
         color_layer.data[i].color = rgba
 
-def geometry_to_obj(geometry):
+def geometry_to_obj(geometry, bones=None, name=None):
 
     vertices = []
     faces = []
@@ -201,9 +203,8 @@ def geometry_to_obj(geometry):
         #for idx in poly.loop_indicies:
             #mesh.loops[i].tangent = tangents[i]    
 
-    return mesh
+    obj = bpy.data.objects.new(name + "_mesh", mesh)
 
-'''
     #load weights
     if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
         num = max(256, len(bones))
@@ -221,9 +222,10 @@ def geometry_to_obj(geometry):
                     obj.vertex_groups[index].add([vertex_idx], weight, "ADD")
 
         Cats.remove_unused_vertex_groups_of_mesh(obj)
-'''
 
-def drawable_model_to_obj(model, materials, name, lodlevel):
+    return obj
+
+def drawable_model_to_obj(model, materials, name, lodlevel, bones=None):
     dobj = bpy.data.objects.new("Drawable Model", None)
     dobj.sollum_type = "sollumz_drawable_model"
     dobj.drawable_model_properties.sollum_lod = "sollumz_" + lodlevel
@@ -231,8 +233,7 @@ def drawable_model_to_obj(model, materials, name, lodlevel):
     dobj.drawable_model_properties.flags = model.flags
 
     for geo in model.geometries:
-        mesh = geometry_to_obj(geo)
-        geo_obj = bpy.data.objects.new(name + "_mesh", mesh)
+        geo_obj = geometry_to_obj(geo, bones=bones, name=name)
         geo_obj.sollum_type = "sollumz_geometry"
         geo_obj.data.materials.append(materials[geo.shader_index])
         geo_obj.parent = dobj
@@ -242,31 +243,100 @@ def drawable_model_to_obj(model, materials, name, lodlevel):
     
     return dobj
 
+def bone_to_obj(bone, armature):
+
+    if armature is None:
+        return None
+
+    # bpy.context.view_layer.objects.active = armature
+    edit_bone = armature.data.edit_bones.new(bone.name)
+    if bone.parent_index != -1:
+        edit_bone.parent = armature.data.edit_bones[bone.parent_index]
+
+    # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
+    mat_rot = bone.rotation.to_matrix().to_4x4()
+    mat_loc = Matrix.Translation(bone.translation)
+    mat_sca = Matrix.Scale(1, 4, bone.scale)
+
+    edit_bone.head = (0,0,0)
+    edit_bone.tail = (0,0.05,0)
+    edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
+    if edit_bone.parent != None:
+        edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
+
+    return bone.name
+
+def set_bone_properties(bone, armature):
+
+    bl_bone = armature.pose.bones[bone.name].bone
+    bl_bone.bone_properties.tag = bone.tag
+    # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
+    flags_restricted = set(["LimitRotation", "Unk0"])
+    for _flag in bone.flags:
+        if (_flag in flags_restricted):
+            continue
+
+        flag = bl_bone.bone_properties.flags.add()
+        flag.name = _flag
+
+def skeleton_to_obj(skeleton, armature):
+    
+    if skeleton is None:
+        return None
+
+    bpy.context.view_layer.objects.active = armature
+    bones = skeleton.bones
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    for bone in bones:
+        bone_to_obj(bone, armature)
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    for bone in bones:
+        set_bone_properties(bone, armature)
+
+    return armature
+
 def drawable_to_obj(drawable, filepath, name):
 
     materials = shadergroup_to_materials(drawable.shader_group, filepath)
 
-    obj = bpy.data.objects.new(name, None)
+    obj = None
+    if drawable.skeleton is not None:
+        skel = bpy.data.armatures.new(name + ".skel")
+        obj = bpy.data.objects.new(name, skel)
+    else:
+        obj = bpy.data.objects.new(name, None)
+
     obj.sollum_type = "sollumz_drawable"
     obj.drawable_properties.lod_dist_high = drawable.lod_dist_high
     obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable.lod_dist_vlow
 
+    bpy.context.collection.objects.link(obj)
+    bpy.context.view_layer.objects.active = obj
+    skeleton_to_obj(drawable.skeleton, obj)
+
+    bones = None
+    if drawable.skeleton is not None:
+        bones = drawable.skeleton.bones
+
     for model in drawable.drawable_models_high:
-        dobj = drawable_model_to_obj(model, materials, drawable.name, "high")
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "high", bones=bones)
         dobj.parent = obj
         
     for model in drawable.drawable_models_med:
-        dobj = drawable_model_to_obj(model, materials, drawable.name, "med")
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "med", bones=bones)
         dobj.parent = obj
 
     for model in drawable.drawable_models_low:
-        dobj = drawable_model_to_obj(model, materials, drawable.name, "low")
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "low", bones=bones)
         dobj.parent = obj
 
     for model in drawable.drawable_models_vlow:
-        dobj = drawable_model_to_obj(model, materials, drawable.name, "vlow")
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "vlow", bones=bones)
         dobj.parent = obj
 
     return obj
@@ -288,7 +358,7 @@ class ImportYdrXml(bpy.types.Operator, ImportHelper):
         try:
             ydr_xml = YDR.from_xml_file(self.filepath)
             ydr_obj = drawable_to_obj(ydr_xml, self.filepath, os.path.basename(self.filepath))
-            bpy.context.collection.objects.link(ydr_obj)
+            # bpy.context.collection.objects.link(ydr_obj)
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
