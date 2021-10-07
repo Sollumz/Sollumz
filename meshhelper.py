@@ -148,8 +148,6 @@ def get_vector_list_length(list):
 
 # see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
 """Multiply 3d coord list by matrix"""
-
-
 def np_matmul_coords(coords, matrix, space=None):
     M = (space @ matrix @ space.inverted() if space else matrix).transposed()
     ones = np.ones((coords.shape[0], 1))
@@ -159,18 +157,8 @@ def np_matmul_coords(coords, matrix, space=None):
 
 
 """Get min and max bounds for an object and all of its children"""
-
-
 def get_bb_extents(obj):
-    objects = [obj, *get_children_recursive(obj)]
-    # get the global coordinates of all object bounding box corners
-    coords = np.vstack(
-        tuple(
-            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
-            for o in objects
-            if o.type == "MESH"
-        )
-    )
+    coords = get_bound_world(obj)
     # bottom front left (all the mins)
     bb_min = coords.min(axis=0)
     # top back right
@@ -188,17 +176,20 @@ def get_children_recursive(obj):
     return children
 
 
+"""Get the bounding box of an object and all of it's children in world space"""
 def get_bound_world(obj):
-    bound_box = []
-    for vert_list in obj.bound_box:
-        vert = Vector(vert_list)
-        bound_box.append(obj.matrix_world @ vert)
-    return bound_box
+    objects = [obj, *get_children_recursive(obj)]
+    # get the global coordinates of all object bounding box corners
+    return np.vstack(
+        tuple(
+            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
+            for o in objects
+            if o.type == "MESH"
+        )
+    )
 
 
 """Get the radius of an object's bounding box"""
-
-
 def get_obj_radius(obj) -> float:
     bb_min, bb_max = get_bb_extents(obj)
     p1 = Vector((bb_min.x, bb_min.y, 0))
@@ -226,8 +217,6 @@ def signed_volume_of_triangle(p1: Vector, p2: Vector, p3: Vector) -> float:
 
 
 """Get the volume of an object and all of it's children"""  # https://stackoverflow.com/questions/1406029/how-to-calculate-the-volume-of-a-3d-mesh-object-the-surface-of-which-is-made-up
-
-
 def get_obj_volume(obj) -> int:
     vols = []
     for child in [obj, *get_children_recursive(obj)]:
