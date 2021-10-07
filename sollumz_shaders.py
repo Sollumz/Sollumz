@@ -353,3 +353,10 @@ def create_collision_material_from_index(collisionindex: int):
     bsdf = mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (r, g, b, 1)
     
     return mat
+
+def create_collision_material_from_type(materialtype : str):
+
+    for i in range(len(collisionmats)):
+        type = collisionmats[i][0]
+        if(type == materialtype):
+            return create_collision_material_from_index(i)

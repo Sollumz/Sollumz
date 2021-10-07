@@ -1,7 +1,7 @@
 import bpy
 from Sollumz.resources.bound import BoundType, PolygonType
 from .meshhelper import * 
-from .sollumz_shaders import create_collision_material_from_index
+from .sollumz_shaders import create_collision_material_from_type
 
 class SOLLUMZ_OT_create_bound_composite(bpy.types.Operator):
     """Create a sollumz bound composite"""
@@ -276,7 +276,7 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
     bl_idname = "sollumz.createcollisionmaterial"
     bl_label = "Create Collision Material"
 
-    index : bpy.props.IntProperty(name = "Index")
+    material_type : bpy.props.StringProperty(default = "sollumz_default")
 
     def execute(self, context):
         
@@ -286,7 +286,12 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
         
         if("poly" in aobj.sollum_type):
             parent = aobj.parent
-            mat = create_collision_material_from_index(self.index)
+            material_type = ""
+            split = self.material_type.replace("sollumz_", "").upper().split('_')
+            for w in split:
+                material_type += w + "_"
+            material_type = material_type[:-1]
+            mat = create_collision_material_from_type(material_type)
             aobj.data.materials.append(mat)
             parent.data.materials.append(mat)
         
