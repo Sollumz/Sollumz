@@ -53,7 +53,7 @@ SOLLUMZ_OT_create_disc_bound,
 SOLLUMZ_OT_create_cloth_bound,
 SOLLUMZ_OT_create_polygon_bound,
 SOLLUMZ_OT_create_collision_material,
-DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, 
+DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, CollisionFlags, BoundProperties, BoundFlags, 
 ImportYdrXml, ImportYbnXml, ExportYbnXml)
 
 

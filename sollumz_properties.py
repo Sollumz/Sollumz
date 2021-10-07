@@ -115,7 +115,6 @@ class ShaderProperties(bpy.types.PropertyGroup):
     #LAYOUT ENUM? 
     filename : bpy.props.StringProperty(name = "FileName", default = "default")
 
-
 class CollisionFlags(bpy.types.PropertyGroup):
     none : bpy.props.BoolProperty(name = "NONE", default = False)
     stairs : bpy.props.BoolProperty(name = "STAIRS", default = False)
@@ -135,7 +134,6 @@ class CollisionFlags(bpy.types.PropertyGroup):
     no_network_spawn : bpy.props.BoolProperty(name = "NO NETWORK SPAWN", default = False)
     no_cam_collision_allow_clipping : bpy.props.BoolProperty(name = "NO CAM COLLISION ALLOW CLIPPING", default = False)
 
-
 class CollisionProperties(CollisionFlags):
     collision_index : bpy.props.IntProperty(name = 'Collision Index', default = 0)
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
@@ -143,9 +141,7 @@ class CollisionProperties(CollisionFlags):
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     material_color_index : bpy.props.IntProperty(name = "Material Color Index", default = 0)
 
-
 class BoundFlags(bpy.types.PropertyGroup):
-
     unknown : bpy.props.BoolProperty(name = "UNKNOWN", default = False)
     map_weapon : bpy.props.BoolProperty(name = "MAP WEAPON", default = False)
     map_dynamic : bpy.props.BoolProperty(name = "MAP DYNAMIC", default = False)
@@ -183,7 +179,6 @@ class BoundProperties(bpy.types.PropertyGroup):
     room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     poly_flags : bpy.props.IntProperty(name = "Poly Flags", default = 0)
-
 
 def assign_properties():
     
@@ -244,4 +239,5 @@ def assign_properties():
 
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
+    bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionFlags)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)

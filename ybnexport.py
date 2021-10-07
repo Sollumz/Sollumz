@@ -1,10 +1,9 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
-import os, sys, traceback
-
 from Sollumz.sollumz_properties import CollisionFlags
-sys.path.append(os.path.dirname(__file__))
 from Sollumz.resources.bound import *
+import os, sys, traceback
+sys.path.append(os.path.dirname(__file__))
 from meshhelper import *
 
 

@@ -1,9 +1,9 @@
-import os, traceback
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from Sollumz.sollumz_properties import CollisionFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_shaders import create_collision_material_from_index
+import os, traceback
 from .meshhelper import * 
 
 def init_poly_obj(poly, sollum_type, materials):
@@ -127,7 +127,7 @@ def geometry_to_obj(geometry, sollum_type):
         # Assign flags
         for flag_name in CollisionFlags.__annotations__.keys():
             if f"FLAG_{flag_name.upper()}" in gmat.flags:
-                setattr(mat.collision_properties, flag_name, True)
+                setattr(mat.collision_flags, flag_name, True)
 
         obj.data.materials.append(mat)
 

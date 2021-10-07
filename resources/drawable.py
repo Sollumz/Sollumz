@@ -1,39 +1,29 @@
 from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
 from xml.etree import ElementTree as ET
-from .codewalker_xml import *
-from .bound import Bounds, BoundsComposite
 from enum import Enum
+from .codewalker_xml import *
+from ..tools.utils import *
+from .bound import Bounds, BoundsComposite
 
-class YDR(ElementTree):
-    tag_name = "Drawable"
-
-    def __init__(self):
-        super().__init__()
-        self.drawable = Drawable()
+class YDR:
+    
+    @staticmethod
+    def from_xml_file(filepath):
+        return Drawable.from_xml_file(filepath)
 
 class ParameterItem(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
         super().__init__()
-        self.name = AttributeProperty("Name", "") 
-        self.type = AttributeProperty("Type", "") #ENUM?
-
-
-class TextureNameElement(ElementTree):
-    tag_name = "Name"
-
-    def __init__(self):
-        super().__init__()
-        self.text = TextProperty("Name", "")
-
+        self.name = AttributeProperty("name", "") 
+        self.type = AttributeProperty("type", "") #ENUM?
 
 class TextureParameterItem(ParameterItem):
     
     def __init__(self):
         super().__init__()
-        self.texture_name = TextureNameElement()
-
+        self.texture_name = TextProperty("Name", "")
 
 class ValueParameterItem(ParameterItem):
     
@@ -44,13 +34,25 @@ class ValueParameterItem(ParameterItem):
         self.quaternion_z = AttributeProperty("z", 0)
         self.quaternion_w = AttributeProperty("w", 0)
 
-
 class ParametersListProperty(ListProperty):
     list_type = ParameterItem
 
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
 
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = ParametersListProperty()
+
+        for child in element.iter():
+            if 'type' in child.attrib:
+                param_type = child.get('type')
+                if(param_type == "Texture"):
+                    new.value.append(TextureParameterItem.from_xml(child))
+                if(param_type == "Vector"):
+                    new.value.append(ValueParameterItem.from_xml(child))
+
+        return new
 
 class ShaderItem(ElementTree):
     tag_name = 'Item'
@@ -60,15 +62,13 @@ class ShaderItem(ElementTree):
         self.name = TextProperty("Name", "")
         self.filename = TextProperty("FileName", "")
         self.render_bucket = ValueProperty("RenderBucket", 0)
-        self.parameters = ParametersListProperty()
-
+        self.parameters = ParametersListProperty("Parameters")
 
 class ShadersListProperty(ListProperty):
     list_type = ShaderItem
 
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
-
 
 class TextureItem(ElementTree):
     tag_name = "Item"
@@ -86,13 +86,11 @@ class TextureItem(ElementTree):
         self.format = FlagsProperty("Format")
         self.filename = TextProperty("FileName", "")
 
-
 class TextureDictionaryListProperty(ListProperty):
     list_type = TextureItem
 
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "TextureDictionary", value=value or [])
-
 
 class ShaderGroupProperty(ElementTree):
     tag_name = "ShaderGroup"
@@ -102,7 +100,6 @@ class ShaderGroupProperty(ElementTree):
         self.unknown_30 = ValueProperty("Unknown30", 0)
         self.shaders = ShadersListProperty()
         self.texture_dictionary = TextureDictionaryListProperty()
-
 
 class BoneItem(ElementTree):
     tag_name = "Item"
@@ -120,13 +117,11 @@ class BoneItem(ElementTree):
         self.scale = VectorProperty("Scale")
         self.transform_unk = QuaternionProperty("TransformUnk")
 
-
 class BonesListProperty(ListProperty):
     list_type = BoneItem
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name=tag_name or "Bones", value=value or [])
-
 
 class SkeletonProperty(ElementTree):
     tag_name = "Skeleton"
@@ -139,13 +134,71 @@ class SkeletonProperty(ElementTree):
         self.unknown_58 = ValueProperty("Unknown58", 0)
         self.bones = BonesListProperty("Bones")
 
-
 class IndexBufferProperty(ElementTree):
     tag_name = "IndexBuffer"
 
     def __init__(self):
         super().__init__()
 
+class Vertex:
+
+    def __init__(self):
+        self.position = None
+        self.blendweights = None
+        self.blendindices = None
+        self.colors0 = None
+        self.colors1 = None
+        self.texcoord0 = None
+        self.texcoord1 = None
+        self.texcoord2 = None
+        self.texcoord3 = None
+        self.texcoord4 = None
+        self.texcoord5 = None
+        self.texcoord6 = None
+        self.texcoord7 = None
+        self.tangent = None
+        self.normal = None
+
+    @staticmethod    
+    def from_xml(layout, data):
+
+        result = Vertex()
+
+        for i in range(len(layout)):
+            current_data = data[i].split()
+            current_layout_key = layout[i].tag_name
+            if(current_layout_key == "Position"):
+                result.position = StringListToFloatList(current_data)
+            elif(current_layout_key == "BlendWeights"):
+                result.blendweights = StringListToIntList(current_data)
+            elif(current_layout_key == "BlendIndices"):
+                result.blendindices = StringListToIntList(current_data)
+            elif(current_layout_key == "Colour0"):
+                result.colors0 = StringListToFloatList(current_data)
+            elif(current_layout_key == "Colour1"):
+                result.colors1 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord0"):
+                result.texcoord0 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord1"):
+                result.texcoord1 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord2"):
+                result.texcoord2 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord3"):
+                result.texcoord3 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord4"):
+                result.texcoord4 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord5"):
+                result.texcoord5 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord6"):
+                result.texcoord6 = StringListToFloatList(current_data)
+            elif(current_layout_key == "TexCoord7"):
+                result.texcoord7 = StringListToFloatList(current_data)
+            elif(current_layout_key == "Tangent"):
+                result.tangent = StringListToFloatList(current_data)
+            elif(current_layout_key == "Normal"):
+                result.normal = StringListToFloatList(current_data)
+
+        return result
 
 class VertexLayoutItem(ElementTree):
     tag_name = ""
@@ -153,6 +206,12 @@ class VertexLayoutItem(ElementTree):
     def __init__(self):
         super().__init__()
 
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        new.tag_name = element.tag
+
+        return new
 
 class VertexLayoutListProperty(ListProperty):
     list_type = VertexLayoutItem
@@ -161,6 +220,16 @@ class VertexLayoutListProperty(ListProperty):
         super().__init__(tag_name=tag_name or "Layout", value=value or [])
         self.type = AttributeProperty("Type", "")
 
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls(element.tag)
+
+        new.type.value = element.get(new.type.name)
+
+        for child in element:
+            new.value.append(new.list_type.from_xml(child))
+
+        return new
 
 class VertexBufferProperty(ElementTree):
     tag_name = "VertexBuffer"
@@ -168,9 +237,18 @@ class VertexBufferProperty(ElementTree):
     def __init__(self):
         super().__init__()
         self.flags = ValueProperty("Flags", 0)
-        self.layout = VertexLayoutListProperty()
+        self.layout = VertexLayoutListProperty("Layout")
         self.data = TextProperty("Data", "")
 
+    def data_to_vertices(self):
+        vertices = []
+        text = self.data.strip().split('\n')
+        if len(text) > 0:
+            for line in text:
+                v = Vertex.from_xml(self.layout, line.strip().split(" " * 3))
+                vertices.append(v)
+
+        return vertices
 
 class IndexBufferProperty(ElementTree):
     tag_name = "IndexBuffer"
@@ -178,6 +256,18 @@ class IndexBufferProperty(ElementTree):
     def __init__(self):
         super().__init__()
         self.data = TextProperty("Data", "")
+
+    def data_to_indices(self):
+        indices = []
+        text = self.data.strip().replace("\n", "").split()
+        i_buf = []
+        for num in text:
+            i_buf.append(int(num))
+
+        if len(text) > 0:
+            indices = [i_buf[i * 3:(i + 1) * 3] for i in range((len(i_buf) + 3 - 1) // 3 )] #split index buffer into 3s for each triangle
+
+        return indices
 
 class GeometryItem(ElementTree):
     tag_name = "Item"
@@ -190,13 +280,11 @@ class GeometryItem(ElementTree):
         self.vertex_buffer = VertexBufferProperty()
         self.index_buffer = IndexBufferProperty()
 
-
 class GeometriesListProperty(ListProperty):
     list_type = GeometryItem
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
-
 
 class DrawableModelItem(ElementTree):
     tag_name = "Item"
@@ -208,15 +296,13 @@ class DrawableModelItem(ElementTree):
         self.has_skin = ValueProperty("Flags", 0) #0 = false, 1 = true
         self.bone_index = ValueProperty("BoneIndex", 0)
         self.unknown_1 = ValueProperty("Unknown1", 0)
-        self.geometries = GeometriesListProperty()
-
+        self.geometries = GeometriesListProperty("Geometries")
 
 class DrawableModelListProperty(ListProperty):
     list_type = DrawableModelItem
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
-
 
 class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
@@ -225,7 +311,7 @@ class Drawable(ElementTree, AbstractClass):
         super().__init__()
         self.name = TextProperty("Name", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
-        self.bounding_sphere_radius = VectorProperty("BoundingSphereRadius")
+        self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius", 0)
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
         self.lod_dist_high = ValueProperty('LodDistHigh', 0) #9998?

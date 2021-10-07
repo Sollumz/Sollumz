@@ -80,21 +80,20 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
                         i += 1
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
-    bl_label = "Sollumz Material Panel"
+    bl_label = "Material Properties"
     bl_idname = "SOLLUMZ_PT_MAT_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "material"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
 
     def draw(self, context):
         layout = self.layout
 
-        mat = None
-
-        if(bpy.context.active_object.data != None and len(bpy.context.active_object.data.materials) > 0):
-            mat = bpy.context.active_object.active_material
-        else:
+        if(bpy.context.active_object == None):
             return
+
+        mat = None
+        mat = bpy.context.active_object.active_material
 
         if(mat == None):
             return 
@@ -118,28 +117,25 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
             box = box.box()
             box.label(text = "Flags")            
             row = box.row()
-            row.prop(mat.collision_properties, "stairs")
-            row.prop(mat.collision_properties, "not_climbable")
-            row.prop(mat.collision_properties, "see_through")
-            row.prop(mat.collision_properties, "shoot_through")
+            row.prop(mat.collision_flags, "stairs")
+            row.prop(mat.collision_flags, "not_climbable")
+            row.prop(mat.collision_flags, "see_through")
+            row.prop(mat.collision_flags, "shoot_through")
             row = box.row()
-            row.prop(mat.collision_properties, "not_cover")
-            row.prop(mat.collision_properties, "walkable_path")
-            row.prop(mat.collision_properties, "no_cam_collision")
-            row.prop(mat.collision_properties, "shoot_through_fx")
+            row.prop(mat.collision_flags, "not_cover")
+            row.prop(mat.collision_flags, "walkable_path")
+            row.prop(mat.collision_flags, "no_cam_collision")
+            row.prop(mat.collision_flags, "shoot_through_fx")
             row = box.row()
-            row.prop(mat.collision_properties, "no_decal")
-            row.prop(mat.collision_properties, "no_navmesh")
-            row.prop(mat.collision_properties, "no_ragdoll")
-            row.prop(mat.collision_properties, "vehicle_wheel")
+            row.prop(mat.collision_flags, "no_decal")
+            row.prop(mat.collision_flags, "no_navmesh")
+            row.prop(mat.collision_flags, "no_ragdoll")
+            row.prop(mat.collision_flags, "vehicle_wheel")
             row = box.row()
-            row.prop(mat.collision_properties, "no_ptfx")
-            row.prop(mat.collision_properties, "too_steep_for_player")
-            row.prop(mat.collision_properties, "no_network_spawn")
-            row.prop(mat.collision_properties, "no_cam_collision_allow_clipping")
-            
-        else:
-            box = layout.box()
+            row.prop(mat.collision_flags, "no_ptfx")
+            row.prop(mat.collision_flags, "too_steep_for_player")
+            row.prop(mat.collision_flags, "no_network_spawn")
+            row.prop(mat.collision_flags, "no_cam_collision_allow_clipping")
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Ybn Tools"

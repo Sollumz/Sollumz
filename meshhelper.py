@@ -1,8 +1,8 @@
 import bpy
 import bmesh
-from math import cos, inf, sin, degrees, radians, sqrt
-from mathutils import Vector, Matrix, Quaternion, Euler
 import numpy as np
+from mathutils import Vector, Matrix, Quaternion, Euler
+from math import cos, inf, sin, degrees, radians, sqrt
 
 def create_box(mesh, size = 1):
     bm = bmesh.new()

@@ -1,8 +1,8 @@
 """Manages reading/writing Codewalker XML files"""
+from mathutils import Vector, Quaternion
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
 from typing import Any
-from mathutils import Vector, Quaternion
 from xml.etree import ElementTree as ET
 
 """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
@@ -185,7 +185,7 @@ class TextProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return TextProperty(element.tag, element.text.strip())
+        return TextProperty(element.tag, element.text)#.strip())
 
     def to_xml(self):
         return ET.Element(self.tag_name, text = self.value)
