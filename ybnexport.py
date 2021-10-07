@@ -1,12 +1,12 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
+from Sollumz.sollumz_properties import CollisionFlags
+from Sollumz.resources.bound import *
 import os, sys, traceback
 
-from Sollumz.sollumz_properties import CollisionFlags
+from resources.bound import PolygonType
 sys.path.append(os.path.dirname(__file__))
-from Sollumz.resources.bound import *
 from meshhelper import *
-
 
 def init_poly_bound(poly_bound, obj):
     materials = obj.parent.data.materials.values()
@@ -15,7 +15,7 @@ def init_poly_bound(poly_bound, obj):
 
     return poly_bound
 
-def polygon_from_object(poly_type, obj, vertices):
+def polygon_from_object(poly_type, obj, vertices, geometry):
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj)
         indices = []
@@ -78,7 +78,7 @@ def polygon_from_object(poly_type, obj, vertices):
 
 def triangle_from_face(face):
     triangle = Triangle()
-    triangle.material_index = face.material_index
+    triangle.material_index = face.material_index #may have to use the new materials array
 
     triangle.v1 = face.vertices[0]
     triangle.v2 = face.vertices[1]
@@ -86,10 +86,7 @@ def triangle_from_face(face):
 
     return triangle
 
-
 def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
-    if not obj.type == 'MESH':
-        raise TypeError(f"Sollumz geometry object '{obj.name}' must be a mesh object.")
 
     geometry = None
 
@@ -102,18 +99,26 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
 
     geometry = init_bound_item(geometry, obj)
     geometry.geometry_center = obj.location#get_bound_center(obj, True)
-
-    mesh = obj.to_mesh()
-    mesh.calc_normals_split()
-    mesh.calc_loop_triangles()
-
-    for vertex in mesh.vertices:
-        geometry.vertices.append(vertex.co)
-
-    for face in mesh.loop_triangles:
-        geometry.polygons.append(triangle_from_face(face))
     
-    for material in mesh.materials:
+    materials = []
+    for child in get_children_recursive(obj):
+        if(child.sollum_type == PolygonType.TRIANGLE):
+            mesh = child.to_mesh()
+            mesh.calc_normals_split()
+            mesh.calc_loop_triangles()
+
+            for mat in child.data.materials:
+                materials.append(mat)
+            for vertex in child.data.vertices:
+                geometry.vertices.append(vertex.co)
+            
+            for face in mesh.loop_triangles:
+                geometry.polygons.append(triangle_from_face(face))
+        else:
+            # Get child poly bounds
+            geometry.polygons.append(polygon_from_object(obj.sollum_type, child, geometry, geometry.vertices))
+
+    for material in materials:
         if material.sollum_type == "sollumz_gta_collision_material":
             mat_item = MaterialItem()
             mat_item.type = material.collision_properties.collision_index
@@ -129,11 +134,6 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                     mat_item.flags.append(f"FLAG_{flag_name.upper()}")
             geometry.materials.append(mat_item)
 
-
-    # Get child poly bounds
-    for child in get_children_recursive(obj):
-        geometry.polygons.append(polygon_from_object(obj.sollum_type, child, geometry.vertices))
-    
     return geometry
 
 def init_bound_item(bound_item, obj):

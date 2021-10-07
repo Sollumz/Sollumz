@@ -1,8 +1,8 @@
 """Manages reading/writing Codewalker XML files"""
+from mathutils import Vector, Quaternion
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
 from typing import Any
-from mathutils import Vector, Quaternion
 from xml.etree import ElementTree as ET
 
 """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
@@ -185,11 +185,12 @@ class TextProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return TextProperty(element.tag, element.text.strip())
+        return TextProperty(element.tag, element.text)#.strip())
 
     def to_xml(self):
-        return ET.Element(self.tag_name, text = self.value)
-
+        result = ET.Element(self.tag_name)
+        result.text = self.value
+        return result
 
 class VectorProperty(ElementProperty):
     value_types = (Vector)
@@ -212,14 +213,14 @@ class QuaternionProperty(ElementProperty):
     value_types = (Quaternion)
 
     def __init__(self, tag_name: str, value = None):
-        super().__init__(tag_name, value or Quaternion((0, 0, 0), 1))
+        super().__init__(tag_name, value or Quaternion())
 
     @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z', 'w']):
             QuaternionProperty.read_value_error(element)
 
-        return QuaternionProperty(element.tag, Quaternion((float(element.get('x')), float(element.get('y')), float(element.get('z'))), float(element.get('w'))))
+        return QuaternionProperty(element.tag, Quaternion((float(element.get('w')), float(element.get('x')), float(element.get('y')), float(element.get('z')))))
 
     def to_xml(self):
         return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z), 'w': str(self.value.w)})

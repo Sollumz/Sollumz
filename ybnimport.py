@@ -1,11 +1,11 @@
-import os, traceback
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from Sollumz.sollumz_properties import CollisionFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_shaders import create_collision_material_from_index
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
-from .meshhelper import * 
+from .meshhelper import *
+import os, traceback 
 
 def init_poly_obj(poly, sollum_type, materials):
     name = SOLLUMZ_UI_NAMES[sollum_type]
@@ -131,7 +131,7 @@ def geometry_to_obj(geometry, sollum_type):
         # Assign flags
         for flag_name in CollisionFlags.__annotations__.keys():
             if f"FLAG_{flag_name.upper()}" in gmat.flags:
-                setattr(mat.collision_properties, flag_name, True)
+                setattr(mat.collision_flags, flag_name, True)
 
         triangle_obj.data.materials.append(mat)
 
@@ -251,6 +251,8 @@ def composite_to_obj(composite, name):
             child_obj.parent = obj
     
     bpy.context.collection.objects.link(obj)
+
+    #bpy.context.collection.objects.link(obj)
 
     return obj
 

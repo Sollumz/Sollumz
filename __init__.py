@@ -34,6 +34,7 @@ for package in packages:
     importlib.reload(package)
 
 from .ydrimport import ImportYdrXml, ydr_menu_func_import
+from .ydrexport import ExportYdrXml, ydr_menu_func_export
 from .ybnimport import ImportYbnXml, ybn_menu_func_import
 from .ybnexport import ExportYbnXml, ybn_menu_func_export
 from .sollumz_properties import *
@@ -41,7 +42,8 @@ from .sollumz_ui import *
 from .sollum_operators import *
 
 classes = (
-SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, SOLLUMZ_PT_COLLISION_TOOL_PANEL, 
+SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_BONE_PANEL, SOLLUMZ_UL_BONE_FLAGS, SOLLUMZ_PT_COLLISION_TOOL_PANEL, 
+SOLLUMZ_MT_sollumz, SOLLUMZ_MT_create, SOLLUMZ_MT_polygon_bound_create, SOLLUMZ_MT_bound_objects_create,
 SOLLUMZ_OT_create_bound_composite,
 SOLLUMZ_OT_create_geometry_bound,
 SOLLUMZ_OT_create_geometrybvh_bound,
@@ -53,22 +55,34 @@ SOLLUMZ_OT_create_disc_bound,
 SOLLUMZ_OT_create_cloth_bound,
 SOLLUMZ_OT_create_polygon_bound,
 SOLLUMZ_OT_create_collision_material,
-DrawableProperties, GeometryProperties, TextureProperties, ShaderProperties, CollisionProperties, BoundProperties, BoundFlags, 
-ImportYdrXml, ImportYbnXml, ExportYbnXml)
+SOLLUMZ_OT_quick_convert_mesh_to_collision,
+SOLLUMZ_OT_BONE_FLAGS_NewItem,
+SOLLUMZ_OT_BONE_FLAGS_DeleteItem,
+DrawableProperties, DrawableModelProperties, TextureProperties, ShaderProperties, CollisionProperties, CollisionFlags, BoundProperties, BoundFlags, BoneFlag, BoneProperties, 
+ImportYdrXml, ExportYdrXml, ImportYbnXml, ExportYbnXml)
 
 
 def register():
     for c in classes:
         bpy.utils.register_class(c)
     bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
+    bpy.types.VIEW3D_MT_mesh_add.append(SollumzContextMenu)
+    bpy.types.SOLLUMZ_MT_sollumz.append(SollumzCreateContextMenu)
+    bpy.types.SOLLUMZ_MT_create.append(SollumzBoundContextMenu)
+    bpy.types.SOLLUMZ_MT_create.append(SollumzPolygonBoundContextMenu)
     assign_properties()
 
 def unregister():
     for c in classes:
         bpy.utils.unregister_class(c)
     bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
-
+    bpy.types.VIEW3D_MT_mesh_add.remove(SollumzContextMenu)
+    bpy.types.SOLLUMZ_MT_sollumz.remove(SollumzCreateContextMenu)
+    bpy.types.SOLLUMZ_MT_create.remove(SollumzBoundContextMenu)
+    bpy.types.SOLLUMZ_MT_create.remove(SollumzPolygonBoundContextMenu)

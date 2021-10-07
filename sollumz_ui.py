@@ -1,5 +1,6 @@
 import bpy
 from Sollumz.resources.bound import BoundType, PolygonType
+from sollum_operators import *
 
 SOLLUMZ_UI_NAMES = {
     BoundType.BOX: 'Bound Box',
@@ -19,33 +20,37 @@ SOLLUMZ_UI_NAMES = {
     PolygonType.TRIANGLE: 'Bound Poly Mesh',
 }
 
-class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
-    bl_label = "Sollumz Shader Panel"
-    bl_idname = "SOLLUMZ_PT_SHADER_PANEL"
-    bl_space_type = 'NODE_EDITOR'
+class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
+    bl_label = "Material Properties"
+    bl_idname = "SOLLUMZ_PT_MAT_PANEL"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Item"
 
-    def draw(self, context):
-        layout = self.layout
+    def draw_shader(self, layout, mat):
+        
+        layout.label(text = "Material Properties")
+        box = layout.box()
+        row = box.row()
+        row.prop(mat.shader_properties, "renderbucket")
+        row.prop(mat.shader_properties, "filename")
 
-        nodes = context.selected_nodes
-
-        if(bpy.context.active_object != None):
-            mat = bpy.context.active_object.data.materials[0]
-        else:
-            return
-
-        for n in nodes:
+        layout.label(text = "Texture Parameters")
+        nodes = mat.node_tree.nodes
+        for n in nodes:   
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 box = layout.box()
-                box.prop(n, "image")
+                row = box.row(align = True)
+                row.label(text = "Texture Type: " + n.name)
+                row.label(text = "Texture Name: " + n.image.name)
                 row = box.row()
+                row.prop(n.image, "filepath", text = "Texture Path")
+                row = box.row(align = True)
                 row.prop(n.texture_properties, "embedded")
                 row.prop(n.texture_properties, "format")
-                row.prop(n.texture_properties, "extra_flags")
                 row.prop(n.texture_properties, "usage")
-                box = box.box()
+                #box = box.box()
+                box.label(text = "Flags")
                 row = box.row()
                 row.prop(n.texture_properties, "not_half")
                 row.prop(n.texture_properties, "hd_split")
@@ -76,89 +81,79 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
                 row.prop(n.texture_properties, "unk19")
                 row.prop(n.texture_properties, "unk20")
                 row.prop(n.texture_properties, "unk21")
+                row = box.row()
                 row.prop(n.texture_properties, "unk24") 
+                row.prop(n.texture_properties, "extra_flags")
+        
+        layout.label(text = "Shader Parameters")
+        value_param_box = layout.box()
 
+        for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
             if(isinstance(n, bpy.types.ShaderNodeValue)):
-                i = 0
-                box = layout.box()
-                for n in mat.node_tree.nodes:
-                    if(isinstance(n, bpy.types.ShaderNodeValue)):
-                        if(i == 4):
-                            box = layout.box()
-                            i = 0
+                if(n.name[-1] == "x"):
+                    row = value_param_box.row()
+                    row.label(text = n.name[:-2])    
 
-                        #fix variable name for display
-                        n_array = n.name.split('_')
-                        name = n_array[0].capitalize()
-                        letter = n_array[1].upper()
-                        label = name + " " + letter
-                        box.label(text = label)
-                        
-                        row = box.row()
-                        row.prop(n.outputs[0], "default_value")
-                        i += 1
+                    x = n
+                    y = mat.node_tree.nodes[n.name[:-1] + "y"]
+                    z = mat.node_tree.nodes[n.name[:-1] + "z"]
+                    w = mat.node_tree.nodes[n.name[:-1] + "w"]
 
-class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
-    bl_label = "Sollumz Material Panel"
-    bl_idname = "SOLLUMZ_PT_MAT_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "material"
+                    row.prop(x.outputs[0], "default_value", text = "X:")
+                    row.prop(y.outputs[0], "default_value", text = "Y:")
+                    row.prop(z.outputs[0], "default_value", text = "Z:")
+                    row.prop(w.outputs[0], "default_value", text = "W:")
+
+    def draw_collision_material(self, layout, mat):
+        box = layout.box()
+        row = box.row()
+        #do this for material type? 
+        #row.enabled = False
+        row = box.row()
+        row.prop(mat.collision_properties, "procedural_id")
+        row.prop(mat.collision_properties, "room_id")
+        row = box.row()
+        row.prop(mat.collision_properties, "ped_density")
+        row.prop(mat.collision_properties, "material_color_index")
+        box = box.box()
+        box.label(text = "Flags")            
+        row = box.row()
+        row.prop(mat.collision_flags, "stairs")
+        row.prop(mat.collision_flags, "not_climbable")
+        row.prop(mat.collision_flags, "see_through")
+        row.prop(mat.collision_flags, "shoot_through")
+        row = box.row()
+        row.prop(mat.collision_flags, "not_cover")
+        row.prop(mat.collision_flags, "walkable_path")
+        row.prop(mat.collision_flags, "no_cam_collision")
+        row.prop(mat.collision_flags, "shoot_through_fx")
+        row = box.row()
+        row.prop(mat.collision_flags, "no_decal")
+        row.prop(mat.collision_flags, "no_navmesh")
+        row.prop(mat.collision_flags, "no_ragdoll")
+        row.prop(mat.collision_flags, "vehicle_wheel")
+        row = box.row()
+        row.prop(mat.collision_flags, "no_ptfx")
+        row.prop(mat.collision_flags, "too_steep_for_player")
+        row.prop(mat.collision_flags, "no_network_spawn")
+        row.prop(mat.collision_flags, "no_cam_collision_allow_clipping")
 
     def draw(self, context):
         layout = self.layout
 
-        mat = None
-
-        if(bpy.context.active_object.data != None and len(bpy.context.active_object.data.materials) > 0):
-            mat = bpy.context.active_object.active_material
-        else:
+        if(context.active_object == None):
             return
+
+        mat = None
+        mat = context.active_object.active_material
 
         if(mat == None):
             return 
 
         if(mat.sollum_type == "sollumz_gta_material"):
-            box = layout.box()
-            row = box.row()
-            row.prop(mat.shader_properties, "renderbucket")
-            row.prop(mat.shader_properties, "filename")
+            self.draw_shader(layout, mat)
         elif(mat.sollum_type == "sollumz_gta_collision_material"):
-            box = layout.box()
-            row = box.row()
-            #do this for material type? 
-            #row.enabled = False
-            row = box.row()
-            row.prop(mat.collision_properties, "procedural_id")
-            row.prop(mat.collision_properties, "room_id")
-            row = box.row()
-            row.prop(mat.collision_properties, "ped_density")
-            row.prop(mat.collision_properties, "material_color_index")
-            box = box.box()
-            box.label(text = "Flags")            
-            row = box.row()
-            row.prop(mat.collision_properties, "stairs")
-            row.prop(mat.collision_properties, "not_climbable")
-            row.prop(mat.collision_properties, "see_through")
-            row.prop(mat.collision_properties, "shoot_through")
-            row = box.row()
-            row.prop(mat.collision_properties, "not_cover")
-            row.prop(mat.collision_properties, "walkable_path")
-            row.prop(mat.collision_properties, "no_cam_collision")
-            row.prop(mat.collision_properties, "shoot_through_fx")
-            row = box.row()
-            row.prop(mat.collision_properties, "no_decal")
-            row.prop(mat.collision_properties, "no_navmesh")
-            row.prop(mat.collision_properties, "no_ragdoll")
-            row.prop(mat.collision_properties, "vehicle_wheel")
-            row = box.row()
-            row.prop(mat.collision_properties, "no_ptfx")
-            row.prop(mat.collision_properties, "too_steep_for_player")
-            row.prop(mat.collision_properties, "no_network_spawn")
-            row.prop(mat.collision_properties, "no_cam_collision_allow_clipping")
-            
-        else:
-            box = layout.box()
+            self.draw_collision_material(layout, mat)
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Ybn Tools"
@@ -173,28 +168,33 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         box = layout.box()
         box.label(text = "Create Material")
         row = box.row()
-        row.operator("sollumz.createcollisionmaterial").index = context.scene.collision_material_index
-        row.prop(context.scene, "collision_material_index")
+        row.operator(SOLLUMZ_OT_create_collision_material.bl_idname).material_type = context.scene.create_collision_material_type
+        row.prop(context.scene, "create_collision_material_type")
         box = layout.box()
-        box.label(text = "Create Collision Objects")
+        box.label(text = "Create Bound Objects")
         row = box.row()
-        row.operator("sollumz.createboundcomposite")
-        row.operator("sollumz.creategeometrybound")
+        row.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
         row = box.row()
-        row.operator("sollumz.creategeometryboundbvh")
-        row.operator("sollumz.createboxbound")
+        row.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
+        row.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname)
         row = box.row()
-        row.operator("sollumz.createspherebound")
-        row.operator("sollumz.createcapsulebound")
+        row.operator(SOLLUMZ_OT_create_box_bound.bl_idname)
+        row.operator(SOLLUMZ_OT_create_sphere_bound.bl_idname)
         row = box.row()
-        row.operator("sollumz.createcylinderbound")
-        row.operator("sollumz.creatediscbound")
+        row.operator(SOLLUMZ_OT_create_capsule_bound.bl_idname)
+        row.operator(SOLLUMZ_OT_create_cylinder_bound.bl_idname)
         row = box.row()
-        row.operator("sollumz.createclothbound")
+        row.operator(SOLLUMZ_OT_create_disc_bound.bl_idname)
+        row.operator(SOLLUMZ_OT_create_cloth_bound.bl_idname)
+        box = layout.box()
+        box.label(text = "Create Polygon Bound Objects")
         row = box.row()
-        row.operator("sollumz.createpolygonbound")
+        row.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
         row.prop(context.scene, "poly_bound_type")
-        
+        box = layout.box()
+        box.label(text = "Quick Convert Tools")
+        box.operator(SOLLUMZ_OT_quick_convert_mesh_to_collision.bl_idname)
+
 class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
     bl_label = "Object Properties"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
@@ -208,8 +208,10 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
         layout.prop(obj.drawable_properties, "lod_dist_low")
         layout.prop(obj.drawable_properties, "lod_dist_vlow")
     
-    def draw_geometry_properties(self, context, layout, obj):
-        layout.prop(obj.geometry_properties, "sollum_lod")
+    def draw_drawable_model_properties(self, context, layout, obj):
+        layout.prop(obj.drawable_model_properties, "render_mask")
+        layout.prop(obj.drawable_model_properties, "flags")
+        layout.prop(obj.drawable_model_properties, "sollum_lod")
 
     def draw_bound_properties(self, context, layout, obj):
         if("poly" not in obj.sollum_type):
@@ -321,7 +323,93 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
 
         if(obj.sollum_type == "sollumz_drawable"):
             self.draw_drawable_properties(context, box, obj)
-        elif(obj.sollum_type == "sollumz_geometry"):
-            self.draw_geometry_properties(context, box, obj)
+        elif(obj.sollum_type == "sollumz_drawable_model"):
+            self.draw_drawable_model_properties(context, box, obj)
         elif("bound" in obj.sollum_type):
             self.draw_bound_properties(context, box, obj)
+
+class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
+        custom_icon = 'FILE'
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}: 
+            layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
+        elif self.layout_type in {'GRID'}: 
+            layout.alignment = 'CENTER' 
+            layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
+
+class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
+    bl_label = "Bone Properties"
+    bl_idname = "SOLLUMZ_PT_BONE_PANEL"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    #bl_context = "bone"
+    
+    def draw(self, context):
+        layout = self.layout
+
+        if (context.active_pose_bone == None):
+            return
+
+        bone = context.active_pose_bone.bone
+
+        layout.prop(bone, "name", text = "Bone Name")
+        layout.prop(bone.bone_properties, "tag", text = "BoneTag")
+
+        layout.label(text="Flags")
+        layout.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags", bone.bone_properties, "flags", bone.bone_properties, "ul_index")
+        row = layout.row() 
+        row.operator('sollumz.bone_flags_new_item', text='New')
+        row.operator('sollumz.bone_flags_delete_item', text='Delete')
+
+class SOLLUMZ_MT_sollumz(bpy.types.Menu):
+    bl_label = "Sollumz"
+    bl_idname = "SOLLUMZ_MT_sollumz"
+
+    def draw(self, context):
+        layout = self.layout
+
+def SollumzContextMenu(self, context):
+    self.layout.menu(SOLLUMZ_MT_sollumz.bl_idname)
+
+class SOLLUMZ_MT_create(bpy.types.Menu):
+    bl_label = "Create"
+    bl_idname = "SOLLUMZ_MT_create"
+
+    def draw(self, context):
+        layout = self.layout
+
+def SollumzCreateContextMenu(self, context):
+    self.layout.menu(SOLLUMZ_MT_create.bl_idname)
+
+class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
+    bl_label = "Bound Objects"
+    bl_idname = "SOLLUMZ_MT_bound_objects_create"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_box_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_sphere_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_capsule_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_cylinder_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_disc_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_cloth_bound.bl_idname)
+
+def SollumzBoundContextMenu(self, context):
+    self.layout.menu(SOLLUMZ_MT_bound_objects_create.bl_idname)
+
+class SOLLUMZ_MT_polygon_bound_create(bpy.types.Menu):
+    bl_label = "Polygon Bound Objects"
+    bl_idname = "SOLLUMZ_MT_polygon_bound_create"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(context.scene, "poly_bound_type")
+        layout.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname) 
+
+def SollumzPolygonBoundContextMenu(self, context):
+    self.layout.menu(SOLLUMZ_MT_polygon_bound_create.bl_idname)
