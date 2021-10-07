@@ -42,7 +42,8 @@ from .sollumz_ui import *
 from .sollum_operators import *
 
 classes = (
-SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, SOLLUMZ_PT_COLLISION_TOOL_PANEL, 
+SOLLUMZ_PT_MAIN_PANEL, SOLLUMZ_PT_MAT_PANEL, SOLLUMZ_PT_SHADER_PANEL, SOLLUMZ_PT_COLLISION_TOOL_PANEL, SOLLUMZ_PT_BONE_PANEL, 
+SOLLUMZ_UL_BONE_FLAGS, 
 SOLLUMZ_OT_create_bound_composite,
 SOLLUMZ_OT_create_geometry_bound,
 SOLLUMZ_OT_create_geometrybvh_bound,
@@ -54,7 +55,9 @@ SOLLUMZ_OT_create_disc_bound,
 SOLLUMZ_OT_create_cloth_bound,
 SOLLUMZ_OT_create_polygon_bound,
 SOLLUMZ_OT_create_collision_material,
-DrawableProperties, DrawableModelProperties, TextureProperties, ShaderProperties, CollisionProperties, CollisionFlags, BoundProperties, BoundFlags, 
+SOLLUMZ_OT_BONE_FLAGS_NewItem,
+SOLLUMZ_OT_BONE_FLAGS_DeleteItem,
+DrawableProperties, DrawableModelProperties, TextureProperties, ShaderProperties, CollisionProperties, CollisionFlags, BoundProperties, BoundFlags, BoneFlag, BoneProperties, 
 ImportYdrXml, ExportYdrXml, ImportYbnXml, ExportYbnXml)
 
 

@@ -304,3 +304,37 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             self.draw_drawable_model_properties(context, box, obj)
         elif("bound" in obj.sollum_type):
             self.draw_bound_properties(context, box, obj)
+
+class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
+        custom_icon = 'FILE'
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}: 
+            layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
+        elif self.layout_type in {'GRID'}: 
+            layout.alignment = 'CENTER' 
+            layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
+
+class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
+    bl_label = "Sollumz Bone Panel"
+    bl_idname = "SOLLUMZ_PT_BONE_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "bone"
+
+    def draw(self, context):
+        layout = self.layout
+
+        if (context.active_pose_bone == None):
+            return
+
+        bone = context.active_pose_bone.bone
+
+        layout.prop(bone, "name", text = "Bone Name")
+        layout.prop(bone.bone_properties, "tag", text = "BoneTag")
+
+        layout.label(text="Flags")
+        layout.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags", bone.bone_properties, "flags", bone.bone_properties, "ul_index")
+        row = layout.row() 
+        row.operator('sollumz.bone_flags_new_item', text='New')
+        row.operator('sollumz.bone_flags_delete_item', text='Delete')
