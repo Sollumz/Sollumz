@@ -81,6 +81,7 @@ class CollisionMaterial(bpy.types.PropertyGroup):
 # Handler sets the default value of the CollisionMaterials collection on blend file load
 @persistent
 def on_file_loaded(_):
+    bpy.context.scene.collision_materials.clear()
     for index, mat in enumerate(collisionmats):
         item = bpy.context.scene.collision_materials.add()
         item.index = index
