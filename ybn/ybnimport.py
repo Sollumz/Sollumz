@@ -1,17 +1,20 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from Sollumz.sollumz_properties import CollisionFlags
+from .properties import CollisionFlags
 from Sollumz.resources.bound import *
-from Sollumz.sollumz_shaders import create_collision_material_from_index
-import os, traceback
-from .meshhelper import * 
+from Sollumz.sollumz_properties import *
+from .collision_materials import create_collision_material_from_index
+from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
+from Sollumz.meshhelper import *
+import os, traceback 
 
 def init_poly_obj(poly, sollum_type, materials):
-    mesh = bpy.data.meshes.new(sollum_type.value)
+    name = SOLLUMZ_UI_NAMES[sollum_type]
+    mesh = bpy.data.meshes.new(name)
     if poly.material_index < len(materials):
         mesh.materials.append(materials[poly.material_index])
 
-    obj = bpy.data.objects.new(sollum_type.value, mesh)
+    obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type.value
 
     return obj
@@ -115,20 +118,20 @@ def poly_to_obj(poly, materials, vertices):
 
 def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
-    mesh = bpy.data.meshes.new(sollum_type.value)
-    triangle_obj = bpy.data.objects.new(PolygonType.TRIANGLE, mesh)
+    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])
+    triangle_obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], mesh)
     triangle_obj.sollum_type = PolygonType.TRIANGLE
-    
+
     for gmat in geometry.materials:
         mat = create_collision_material_from_index(gmat.type)
-        mat.sollum_type = "sollumz_gta_collision_material"
+        mat.sollum_type = MaterialType.COLLISION
         mat.collision_properties.procedural_id = gmat.procedural_id
         mat.collision_properties.room_id = gmat.room_id
         mat.collision_properties.ped_density = gmat.ped_density
         mat.collision_properties.material_color_index = gmat.material_color_index
 
         # Assign flags
-        for flag_name in CollisionFlags.__annotations__.keys():
+        for flag_name in CollisionFlags.__dict__.keys():
             if f"FLAG_{flag_name.upper()}" in gmat.flags:
                 setattr(mat.collision_flags, flag_name, True)
 
@@ -182,7 +185,8 @@ def geometry_to_obj(geometry, sollum_type):
 
 def init_bound_obj(bound, sollum_type):
     mesh = None
-    name = sollum_type.value
+    obj = None
+    name = SOLLUMZ_UI_NAMES[sollum_type]
     if not (sollum_type == BoundType.COMPOSITE or sollum_type == BoundType.GEOMETRYBVH or sollum_type == BoundType.GEOMETRY):
         mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
@@ -241,12 +245,15 @@ def bound_to_obj(bound):
 
 def composite_to_obj(composite, name):
     obj = bpy.data.objects.new(name, None)
+    obj.empty_display_size = 0
     obj.sollum_type = BoundType.COMPOSITE
 
     for child in composite.children:
         child_obj = bound_to_obj(child)
         if child_obj:
             child_obj.parent = obj
+    
+    bpy.context.collection.objects.link(obj)
 
     #bpy.context.collection.objects.link(obj)
 
@@ -269,7 +276,6 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
             ybn_obj = composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
-            bpy.context.collection.objects.link(ybn_obj)
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
@@ -279,3 +285,9 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
 
 def ybn_menu_func_import(self, context):
     self.layout.operator(ImportYbnXml.bl_idname, text="Import .ybn.xml")
+
+def register():
+    bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
+
+def unregister():
+    bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)

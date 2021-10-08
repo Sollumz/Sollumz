@@ -2,7 +2,7 @@ from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstr
 from xml.etree import ElementTree as ET
 from enum import Enum
 from .codewalker_xml import *
-from ..tools.utils import *
+from Sollumz.tools.utils import *
 from .bound import Bounds, BoundsComposite
 
 class YDR:
@@ -124,7 +124,7 @@ class BoneItem(ElementTree):
 class BonesListProperty(ListProperty):
     list_type = BoneItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "Bones", value=value or [])
 
 class SkeletonProperty(ElementTree):
@@ -221,7 +221,7 @@ class VertexLayoutItem(ElementTree):
 class VertexLayoutListProperty(ListProperty):
     list_type = VertexLayoutItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "Layout", value=value or [])
 
     @classmethod
@@ -298,7 +298,7 @@ class GeometryItem(ElementTree):
 class GeometriesListProperty(ListProperty):
     list_type = GeometryItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
 
 class DrawableModelItem(ElementTree):
@@ -316,7 +316,7 @@ class DrawableModelItem(ElementTree):
 class DrawableModelListProperty(ListProperty):
     list_type = DrawableModelItem
 
-    def __init__(self, tag_name: str, value=None):
+    def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
 
 class Drawable(ElementTree, AbstractClass):
