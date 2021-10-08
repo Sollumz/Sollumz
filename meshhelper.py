@@ -146,19 +146,19 @@ def get_vector_list_length(list):
     return length
 
 
-# see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
-"""Multiply 3d coord list by matrix"""
-def np_matmul_coords(coords, matrix, space=None):
-    M = (space @ matrix @ space.inverted() if space else matrix).transposed()
-    ones = np.ones((coords.shape[0], 1))
-    coords4d = np.hstack((coords, ones))
-
-    return np.dot(coords4d, M)[:, :-1]
 
 
 """Get min and max bounds for an object and all of its children"""
 def get_bb_extents(obj):
-    coords = get_bound_world(obj)
+    objects = [obj, *get_children_recursive(obj)]
+    # get the global coordinates of all object bounding box corners
+    coords = np.vstack(
+        tuple(
+            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
+            for o in objects
+            if o.type == "MESH"
+        )
+    )
     # bottom front left (all the mins)
     bb_min = coords.min(axis=0)
     # top back right
@@ -175,18 +175,22 @@ def get_children_recursive(obj):
 
     return children
 
+# see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
+"""Multiply 3d coord list by matrix"""
+def np_matmul_coords(coords, matrix, space=None):
+    M = (space @ matrix @ space.inverted() if space else matrix).transposed()
+    ones = np.ones((coords.shape[0], 1))
+    coords4d = np.hstack((coords, ones))
+
+    return np.dot(coords4d, M)[:, :-1]
 
 """Get the bounding box of an object and all of it's children in world space"""
 def get_bound_world(obj):
-    objects = [obj, *get_children_recursive(obj)]
-    # get the global coordinates of all object bounding box corners
-    return np.vstack(
-        tuple(
-            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
-            for o in objects
-            if o.type == "MESH"
-        )
-    )
+    bound_box = []
+    for vert_list in obj.bound_box:
+        vert = Vector(vert_list)
+        bound_box.append(obj.matrix_world @ vert)
+    return bound_box
 
 
 """Get the radius of an object's bounding box"""
