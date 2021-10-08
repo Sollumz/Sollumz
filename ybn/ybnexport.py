@@ -30,8 +30,8 @@ def add_material(material, materials):
         
         # Assign flags
         for flag_name in CollisionFlags.__dict__.keys():
-            flag_exists = getattr(material.collision_flags, flag_name)
-            if flag_exists == True:
+            # flag_exists = getattr(material.collision_flags, flag_name)
+            if flag_name in material.collision_flags:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
 
         materials.append(mat_item)

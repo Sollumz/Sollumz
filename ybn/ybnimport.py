@@ -131,7 +131,7 @@ def geometry_to_obj(geometry, sollum_type):
         mat.collision_properties.material_color_index = gmat.material_color_index
 
         # Assign flags
-        for flag_name in CollisionFlags.__annotations__.keys():
+        for flag_name in CollisionFlags.__dict__.keys():
             if f"FLAG_{flag_name.upper()}" in gmat.flags:
                 setattr(mat.collision_flags, flag_name, True)
 

@@ -1,6 +1,7 @@
 import bpy
 from Sollumz.sollumz_properties import PolygonType, is_sollum_type
 from .properties import BoundProperties, BoundFlags, CollisionProperties, CollisionFlags
+from .collision_materials import collisionmats
 from .operators import *
 
 def draw_collision_material_properties(box, mat):
@@ -69,14 +70,15 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
+        name = collisionmats[item.index].ui_name
         # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=item.name, icon='MATERIAL')
+            row.label(text=name, icon='MATERIAL')
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=item.name, emboss=False, icon='MATERIAL')
+                        text=name, emboss=False, icon='MATERIAL')
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
