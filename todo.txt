@@ -10,21 +10,12 @@ ________________________
 
 TOOL PANEL 
 ________________________
-- button for creating bound composite ready to place geometrys in 
-- buttons for creating polys / shape bounds 
-- button to create collision material by index / enum
 - parent objects button ? 
 - button for creating a gta shader (material)
 
 YBN IMPORT / EXPORT
 ________________________
 - update ybn object import names
-- ybn poly sphere importing not working
-- ybn poly box importing not working
-- ybn poly cylinder importing not working
-- ybn poly capsule importing not working
-- ybn poly disc importing not working
-- ybn poly cloth importing not working
 - ybn composite box center / sphere center need to be calculated through all children objects also
 - TEST
 

@@ -4,26 +4,6 @@ from .codewalker_xml import *
 from enum import Enum
 
 
-class BoundType(str, Enum):
-    BOX = 'sollumz_bound_box'
-    SPHERE = 'sollumz_bound_sphere'
-    CAPSULE = 'sollumz_bound_capsule'
-    CYLINDER = 'sollumz_bound_cylinder'
-    DISC = 'sollumz_bound_disc'
-    CLOTH = 'sollumz_bound_cloth'
-    GEOMETRY = 'sollumz_bound_geometry'
-    GEOMETRYBVH = 'sollumz_bound_geometrybvh'
-    COMPOSITE = 'sollumz_bound_composite'
-
-
-class PolygonType(str, Enum):
-    BOX = 'sollumz_bound_poly_box'
-    SPHERE = 'sollumz_bound__poly_sphere'
-    CAPSULE = 'sollumz_bound_poly_capsule'
-    CYLINDER = 'sollumz_bound_poly_cylinder'
-    TRIANGLE = 'sollumz_bound_poly_triangle'
-
-
 class YBN(ElementTree):
     tag_name = 'BoundsFile'
 

@@ -1,8 +1,7 @@
 import bpy
-from Sollumz.resources.bound import BoundType, PolygonType
-from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
-from .meshhelper import * 
-from .sollumz_shaders import create_collision_material_from_type
+from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
+from Sollumz.meshhelper import * 
+from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -193,7 +192,6 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
         aobj = bpy.context.active_object
         type = context.scene.poly_bound_type
 
-        print(aobj.sollum_type)
         if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
             self.report({'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
             return {'CANCELLED'}
@@ -228,17 +226,12 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
         if(aobj == None):
             return {'CANCELLED'}
         
-        if aobj.sollum_type in PolygonType._value2member_map_:
-            parent = aobj.parent
-            material_type = ""
-            split = self.material_type.replace("sollumz_", "").upper().split('_')
-            for w in split:
-                material_type += w + "_"
-            material_type = material_type[:-1]
-            mat = create_collision_material_from_type(material_type)
+        if is_sollum_type(aobj, PolygonType):
+            mat = create_collision_material_from_index(context.scene.collision_material_index)
             aobj.data.materials.append(mat)
         
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_quick_convert_mesh_to_collision(bpy.types.Operator):
     """Quickly setup a gta bound via a mesh object"""
@@ -266,28 +259,4 @@ class SOLLUMZ_OT_quick_convert_mesh_to_collision(bpy.types.Operator):
         #set properties
         aobj.sollum_type = PolygonType.TRIANGLE.value
 
-        return {'FINISHED'}
-
-class SOLLUMZ_OT_BONE_FLAGS_NewItem(bpy.types.Operator): 
-    bl_idname = "sollumz.bone_flags_new_item" 
-    bl_label = "Add a new item"
-    def execute(self, context): 
-        bone = context.active_pose_bone.bone
-        bone.bone_properties.flags.add() 
-        return {'FINISHED'}
-
-class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(bpy.types.Operator): 
-    bl_idname = "sollumz.bone_flags_delete_item" 
-    bl_label = "Deletes an item" 
-    @classmethod 
-    def poll(cls, context): 
-        return context.active_pose_bone.bone.bone_properties.flags
-
-    def execute(self, context): 
-        bone = context.active_pose_bone.bone
-
-        list = bone.bone_properties.flags
-        index = bone.bone_properties.ul_index
-        list.remove(index) 
-        bone.bone_properties.ul_index = min(max(0, index - 1), len(list) - 1) 
         return {'FINISHED'}

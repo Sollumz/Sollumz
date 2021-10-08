@@ -1,10 +1,10 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
 from Sollumz.resources.drawable import *
-from .resources.shader import ShaderManager
+from Sollumz.resources.shader import ShaderManager
 import os, sys, traceback
-from .meshhelper import *
-from .tools.utils import *
+from Sollumz.meshhelper import *
+from Sollumz.tools.utils import *
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -254,7 +254,7 @@ def geometry_from_object(obj):
             geometry.shader_index = i
 
     sm = ShaderManager()
-    layout = sm.shaders[fix_shader_name(obj.active_material.name)].layouts["0x0"]
+    layout = sm.shaders[FixShaderName(obj.active_material.name)].layouts["0x0"]
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
     geometry.vertex_buffer.data = get_vertex_string(obj, layout)
@@ -359,3 +359,9 @@ class ExportYdrXml(bpy.types.Operator, ExportHelper):
 
 def ydr_menu_func_export(self, context):
     self.layout.operator(ExportYdrXml.bl_idname, text="Export .ydr.xml")
+
+def register():
+    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
+
+def unregister():
+    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)

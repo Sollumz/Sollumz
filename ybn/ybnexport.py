@@ -1,35 +1,57 @@
 import bpy
 from bpy_extras.io_utils import ExportHelper
-from Sollumz.sollumz_properties import CollisionFlags
+import traceback
+from .properties import CollisionFlags
 from Sollumz.resources.bound import *
-import os, sys, traceback
+from Sollumz.meshhelper import *
+from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
 
-from resources.bound import PolygonType
-sys.path.append(os.path.dirname(__file__))
-from meshhelper import *
 
-def init_poly_bound(poly_bound, obj):
-    materials = obj.parent.data.materials.values()
-    mat_index = materials.index(obj.active_material)
+def init_poly_bound(poly_bound, obj, materials):
+    # materials = obj.parent.data.materials.values()
+    mat_index = 0
+    try:
+        mat_index = materials.index(obj.active_material)
+    except:
+        add_material(obj.active_material, materials)
+        mat_index = len(materials) - 1
     poly_bound.material_index = mat_index
 
     return poly_bound
 
-def polygon_from_object(poly_type, obj, vertices, geometry):
+def add_material(material, materials):
+    if material.sollum_type == MaterialType.COLLISION:
+        mat_item = MaterialItem()
+        mat_item.type = material.collision_properties.collision_index
+        mat_item.procedural_id = material.collision_properties.procedural_id
+        mat_item.room_id = material.collision_properties.room_id
+        mat_item.ped_density = material.collision_properties.ped_density
+        mat_item.material_color_index = material.collision_properties.material_color_index
+        
+        # Assign flags
+        for flag_name in CollisionFlags.__dict__.keys():
+            flag_exists = getattr(material.collision_flags, flag_name)
+            if flag_exists == True:
+                mat_item.flags.append(f"FLAG_{flag_name.upper()}")
+
+        materials.append(mat_item)
+
+def polygon_from_object(obj, vertices, materials):
     if obj.sollum_type == PolygonType.BOX:
-        box = init_poly_bound(Box(), obj)
+        box = init_poly_bound(Box(), obj, materials)
         indices = []
         bound_box = get_bound_world(obj)
 
         #get local vert position
-        bound_center = get_bound_center(obj)
-        a = bound_box[0] - bound_center
-        b = bound_box[5] - bound_center
-        c = bound_box[2] - bound_center
-        d = bound_box[7] - bound_center
+        # bound_center = get_bound_center(obj)
+        # a = bound_box[0] - bound_center
+        # b = bound_box[5] - bound_center
+        # c = bound_box[2] - bound_center
+        # d = bound_box[7] - bound_center
+        # corners = [a, b, c, d]
 
-        neighbors = [a, b, c, d]
-        for vert in neighbors:
+        corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
+        for vert in corners:
             vertices.append(vert)
             indices.append(len(vertices) - 1)
 
@@ -40,14 +62,14 @@ def polygon_from_object(poly_type, obj, vertices, geometry):
 
         return box
     elif obj.sollum_type == PolygonType.SPHERE:
-        sphere = init_poly_bound(Sphere(), obj)
+        sphere = init_poly_bound(Sphere(), obj, materials)
         vertices.append(obj.location)
         sphere.v = len(vertices) - 1
         sphere.radius = get_obj_radius(obj)
         
         return sphere
     elif obj.sollum_type == PolygonType.CAPSULE:
-        capsule = init_poly_bound(Capsule(), obj)
+        capsule = init_poly_bound(Capsule(), obj, materials)
         # Same method for getting verts as cylinder
         cylinder = polygon_from_object(PolygonType.CYLINDER, obj, vertices)
 
@@ -57,7 +79,7 @@ def polygon_from_object(poly_type, obj, vertices, geometry):
         
         return cylinder
     elif obj.sollum_type == PolygonType.CYLINDER:
-        cylinder = init_poly_bound(Cylinder(), obj)
+        cylinder = init_poly_bound(Cylinder(), obj, materials)
         bound_box = get_bound_world(obj)
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
@@ -87,7 +109,6 @@ def triangle_from_face(face):
     return triangle
 
 def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
-
     geometry = None
 
     if sollum_type == BoundType.GEOMETRYBVH:
@@ -98,42 +119,29 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
         return ValueError('Invalid argument for geometry sollum_type!')
 
     geometry = init_bound_item(geometry, obj)
-    geometry.geometry_center = obj.location#get_bound_center(obj, True)
-    
-    materials = []
+    geometry.geometry_center = get_bound_center(obj, True)
+
+    # Get child poly bounds
     for child in get_children_recursive(obj):
-        if(child.sollum_type == PolygonType.TRIANGLE):
+        if child.sollum_type == PolygonType.TRIANGLE:
             mesh = child.to_mesh()
             mesh.calc_normals_split()
             mesh.calc_loop_triangles()
 
-            for mat in child.data.materials:
-                materials.append(mat)
-            for vertex in child.data.vertices:
-                geometry.vertices.append(vertex.co)
-            
+            for material in mesh.materials:
+                add_material(material, geometry.materials)
+
+            for vertex in mesh.vertices:
+                geometry.vertices.append(obj.matrix_world @ vertex.co)
+
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
-        else:
-            # Get child poly bounds
-            geometry.polygons.append(polygon_from_object(obj.sollum_type, child, geometry, geometry.vertices))
-
-    for material in materials:
-        if material.sollum_type == "sollumz_gta_collision_material":
-            mat_item = MaterialItem()
-            mat_item.type = material.collision_properties.collision_index
-            mat_item.procedural_id = material.collision_properties.procedural_id
-            mat_item.room_id = material.collision_properties.room_id
-            mat_item.ped_density = material.collision_properties.ped_density
-            mat_item.material_color_index = material.collision_properties.material_color_index
-            
-            # Assign flags
-            for flag_name in CollisionFlags.__dict__.keys():
-                flag_exists = getattr(material.collision_properties, flag_name)
-                if flag_exists == True:
-                    mat_item.flags.append(f"FLAG_{flag_name.upper()}")
-            geometry.materials.append(mat_item)
-
+        
+    for child in get_children_recursive(obj):
+        poly = polygon_from_object(child, geometry.vertices, geometry.materials)
+        if poly:
+            geometry.polygons.append(poly)
+    
     return geometry
 
 def init_bound_item(bound_item, obj):
@@ -208,7 +216,7 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == "sollumz_bound_composite":
+                if obj.sollum_type == BoundType.COMPOSITE:
                     found = True
                     try:
                         ybn_from_object(obj).write_xml(self.filepath)
@@ -224,3 +232,9 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
 
 def ybn_menu_func_export(self, context):
     self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")
+
+def register():
+    bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
+
+def unregister():
+    bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
