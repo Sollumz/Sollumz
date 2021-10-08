@@ -4,6 +4,7 @@ from enum import Enum
 class ObjectType(str, Enum):
     NONE = 'sollumz_none'
     DRAWABLE = 'sollumz_drawable'
+    DRAWABLE_MODEL = 'sollumz_drawable_model'
     GEOMETRY = 'sollumz_geometry'
     SKELETON = 'sollumz_skeleton'
 
@@ -155,6 +156,7 @@ SOLLUMZ_UI_NAMES = {
 
     ObjectType.NONE: 'Sollumz None',
     ObjectType.DRAWABLE: 'Sollumz Drawable',
+    ObjectType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
     ObjectType.GEOMETRY: 'Sollumz Geometry',
     ObjectType.SKELETON: 'Sollumz Skeleton',
 }
