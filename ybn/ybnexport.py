@@ -29,7 +29,7 @@ def add_material(material, materials):
         mat_item.material_color_index = material.collision_properties.material_color_index
         
         # Assign flags
-        for flag_name in CollisionFlags.__dict__.keys():
+        for flag_name in CollisionFlags.__annotations__.keys():
             # flag_exists = getattr(material.collision_flags, flag_name)
             if flag_name in material.collision_flags:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")

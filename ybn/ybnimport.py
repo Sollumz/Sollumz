@@ -3,7 +3,7 @@ from bpy_extras.io_utils import ImportHelper
 from .properties import CollisionFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_properties import *
-from .collision_materials import create_collision_material_from_index
+from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
 from Sollumz.meshhelper import *
 import os, traceback 
@@ -116,6 +116,21 @@ def poly_to_obj(poly, materials, vertices):
 
         return cylinder
 
+def mat_to_obj(gmat):
+    mat = create_collision_material_from_index(gmat.type)
+    mat.sollum_type = MaterialType.COLLISION
+    mat.collision_properties.procedural_id = gmat.procedural_id
+    mat.collision_properties.room_id = gmat.room_id
+    mat.collision_properties.ped_density = gmat.ped_density
+    mat.collision_properties.material_color_index = gmat.material_color_index
+
+    # Assign flags
+    for flag_name in CollisionFlags.__annotations__.keys():
+        if f"FLAG_{flag_name.upper()}" in gmat.flags:
+            setattr(mat.collision_flags, flag_name, True)
+    
+    return mat
+
 def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])
@@ -123,19 +138,7 @@ def geometry_to_obj(geometry, sollum_type):
     triangle_obj.sollum_type = PolygonType.TRIANGLE
 
     for gmat in geometry.materials:
-        mat = create_collision_material_from_index(gmat.type)
-        mat.sollum_type = MaterialType.COLLISION
-        mat.collision_properties.procedural_id = gmat.procedural_id
-        mat.collision_properties.room_id = gmat.room_id
-        mat.collision_properties.ped_density = gmat.ped_density
-        mat.collision_properties.material_color_index = gmat.material_color_index
-
-        # Assign flags
-        for flag_name in CollisionFlags.__dict__.keys():
-            if f"FLAG_{flag_name.upper()}" in gmat.flags:
-                setattr(mat.collision_flags, flag_name, True)
-
-        triangle_obj.data.materials.append(mat)
+        triangle_obj.data.materials.append(mat_to_obj(gmat))
 
     vertices = []
     faces = []
@@ -184,12 +187,20 @@ def geometry_to_obj(geometry, sollum_type):
     return obj
 
 def init_bound_obj(bound, sollum_type):
-    mesh = None
     obj = None
     name = SOLLUMZ_UI_NAMES[sollum_type]
     if not (sollum_type == BoundType.COMPOSITE or sollum_type == BoundType.GEOMETRYBVH or sollum_type == BoundType.GEOMETRY):
         mesh = bpy.data.meshes.new(name)
-    obj = bpy.data.objects.new(name, mesh)
+        obj = bpy.data.objects.new(name, mesh)
+        mat_index = bound.material_index
+        try:
+            mat = create_collision_material_from_index(mat_index)
+            mesh.materials.append(mat)
+        except IndexError:
+            print(f"Warning: Failed to set materials for {name}. Material index {mat_index} does not exist in collisionmats list.")
+    else:
+        obj = bpy.data.objects.new(name, None)
+
     obj.empty_display_size = 0
     obj.sollum_type = sollum_type.value
 
@@ -218,20 +229,66 @@ def init_bound_obj(bound, sollum_type):
     return obj
 
 def bound_to_obj(bound):
+    # TODO: Materials for non geometry bound types
     if bound.type == 'Box':
-        obj = init_bound_obj(bound, BoundType.BOX)
-        return obj
+        box = init_bound_obj(bound, BoundType.BOX)
+        bbmin, bbmax = bound.box_min, bound.box_max
+        # Create box from bbmin and bbmax
+        vertices = [
+            bbmin,
+            Vector((bbmin.x, bbmin.y, bbmax.z)),
+            Vector((bbmin.x, bbmax.y, bbmax.z)),
+            Vector((bbmin.x, bbmax.y, bbmin.z)),
+
+            Vector((bbmax.x, bbmin.y, bbmax.z)),
+            Vector((bbmax.x, bbmin.y, bbmin.z)),
+            Vector((bbmax.x, bbmax.y, bbmin.z)),
+            bbmax
+        ]
+
+        faces = [
+            [0, 1, 2, 3],
+            [0, 1, 4, 5],
+            [0, 3, 6, 5],
+
+            [7, 4, 5, 6],
+            [7, 2, 3, 6],
+            [7, 4, 1, 2]
+        ]
+        box.data.from_pydata(vertices, [], faces)
+        
+        return box
     elif bound.type == 'Sphere':
         sphere = init_bound_obj(bound, BoundType.SPHERE)
+        create_sphere(sphere.data, bound.sphere_radius)
+
         return sphere
     elif bound.type == 'Capsule':
         capsule = init_bound_obj(bound, BoundType.CAPSULE)
+        bbmin, bbmax = bound.box_min, bound.box_max
+        create_capsule(capsule.data, bound.sphere_radius, bbmax.z - bbmin.z)
+
         return capsule
     elif bound.type == 'Cylinder':
+        # print(cylinder.name, bound.composite_rotation, bound.composite_scale)
         cylinder = init_bound_obj(bound, BoundType.CYLINDER)
+        # bbmin, bbmax = bound.box_min, bound.box_max
+        # extent = bbmax - bbmin
+        # length = extent.y
+        # radius = extent.x * 0.5
+        # bound.composite_rotation.x = 0
+        # bound.composite_rotation.y = 0
+        # bound.composite_rotation.z = 0
+        # cylinder.rotation_euler = bound.composite_rotation.to_euler() 
+        # cylinder.scale = Vector([1, 1, 1])
+        # # Vector3.TransformCoordinate(bcyl.SphereCenter - new Vector3(0, length * 0.5f, 0), xform)
+        # create_cylinder(cylinder.data, radius, length)
+
         return cylinder
     elif bound.type == 'Disc':
         disc = init_bound_obj(bound, BoundType.DISC)
+        create_disc(disc.data, bound.sphere_radius)
+
         return disc
     elif bound.type == 'Cloth':
         cloth = init_bound_obj(bound, BoundType.CLOTH)
