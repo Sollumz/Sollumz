@@ -123,7 +123,7 @@ class SOLLUMZ_OT_create_capsule_bound(bpy.types.Operator):
         
         aobj = bpy.context.active_object
         gobj = create_mesh(BoundType.CAPSULE)
-        create_capsule(gobj.data)
+        create_capsule(gobj)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
 
@@ -203,7 +203,7 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
         elif type == PolygonType.SPHERE:
             create_sphere(pobj.data)
         elif type == PolygonType.CAPSULE:
-            create_capsule(pobj.data)
+            create_capsule(pobj)
         elif type == PolygonType.CYLINDER:
             create_cylinder(pobj.data)
 

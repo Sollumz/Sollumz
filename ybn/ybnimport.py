@@ -6,7 +6,8 @@ from Sollumz.sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
 from Sollumz.meshhelper import *
-import os, traceback 
+import os, traceback
+from mathutils import Matrix
 
 def init_poly_obj(poly, sollum_type, materials):
     name = SOLLUMZ_UI_NAMES[sollum_type]
@@ -94,8 +95,7 @@ def poly_to_obj(poly, materials, vertices):
         length = get_distance_of_vectors(v1, v2)    
         rot = get_direction_of_vectors(v1, v2)
         
-        mesh = capsule.data
-        create_capsule(mesh, poly.radius, length)
+        create_capsule(capsule, poly.radius, length)
         
         capsule.location = (v1 + v2) / 2     
         capsule.rotation_euler = rot
@@ -266,28 +266,25 @@ def bound_to_obj(bound):
     elif bound.type == 'Capsule':
         capsule = init_bound_obj(bound, BoundType.CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
-        create_capsule(capsule.data, bound.sphere_radius, bbmax.z - bbmin.z)
+        create_capsule(capsule, bound.sphere_radius, bbmax.z - bbmin.z)
 
         return capsule
     elif bound.type == 'Cylinder':
-        # print(cylinder.name, bound.composite_rotation, bound.composite_scale)
         cylinder = init_bound_obj(bound, BoundType.CYLINDER)
-        # bbmin, bbmax = bound.box_min, bound.box_max
-        # extent = bbmax - bbmin
-        # length = extent.y
-        # radius = extent.x * 0.5
-        # bound.composite_rotation.x = 0
-        # bound.composite_rotation.y = 0
-        # bound.composite_rotation.z = 0
-        # cylinder.rotation_euler = bound.composite_rotation.to_euler() 
-        # cylinder.scale = Vector([1, 1, 1])
-        # # Vector3.TransformCoordinate(bcyl.SphereCenter - new Vector3(0, length * 0.5f, 0), xform)
-        # create_cylinder(cylinder.data, radius, length)
+        bbmin, bbmax = bound.box_min, bound.box_max
+        extent = bbmax - bbmin
+        length = extent.y
+        radius = extent.x * 0.5
+        cylinder.rotation_euler = bound.composite_rotation.to_euler() 
+        cylinder.scale = Vector([1, 1, 1])
+        create_cylinder(cylinder.data, radius, length)
 
         return cylinder
     elif bound.type == 'Disc':
         disc = init_bound_obj(bound, BoundType.DISC)
-        create_disc(disc.data, bound.sphere_radius)
+        bbmin, bbmax = bound.box_min, bound.box_max
+        length = bbmax.x - bbmin.x
+        create_disc(disc.data, bound.sphere_radius, length)
 
         return disc
     elif bound.type == 'Cloth':

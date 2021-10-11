@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import numpy as np
 from mathutils import Vector, Matrix, Quaternion, Euler
+from mathutils.geometry import distance_point_to_plane
 from math import cos, inf, sin, degrees, radians, sqrt
 
 
@@ -54,28 +55,47 @@ def create_disc(mesh, radius=0.5, length=0.1):
     bm.free()
     return mesh
 
-
-def create_capsule(mesh, radius=0.5, length=1, rings=9, segments=16):
+def create_capsule(obj, diameter=0.5, length=2):
+    length = length if length > diameter * 2 else diameter * 2
     bm = bmesh.new()
-    mat_loc = Matrix.Translation((0.0, 0.0, length / 2))
-    bmesh.ops.create_uvsphere(
-        bm, u_segments=segments, v_segments=rings, diameter=radius, matrix=mat_loc
-    )
-    mat_loc = Matrix.Translation((0.0, 0.0, -length / 2))
-    bmesh.ops.create_uvsphere(
-        bm, u_segments=segments, v_segments=rings, diameter=radius, matrix=mat_loc
-    )
-    bmesh.ops.create_cone(
-        bm,
-        cap_ends=False,
-        cap_tris=False,
-        segments=segments,
-        diameter1=radius,
-        diameter2=radius,
-        depth=length,
-    )
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=diameter)
+    mesh = obj.data
+
+    center = get_bound_center(obj)
+    bb = [Vector(b) for b in obj.bound_box]
+    z = bb[1] - bb[0]
+
+    # Get top half of vertices
+    top = []
+    top_faces = []
+    for v in bm.verts:
+        if distance_point_to_plane(v.co, center, z) >= 0:
+            top.append(v)
+            for face in v.link_faces:
+                if not face in top_faces:
+                    top_faces.append(face)
+
+    # Extrude top half
+    ret = bmesh.ops.extrude_face_region(bm, geom=top_faces)
+    extruded = ret["geom"]
+    del ret
+    translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec = (0.0, 0.0, length - (diameter * 2)), verts=translate_verts)
+
     bm.to_mesh(mesh)
     bm.free()
+
+    # Fix origin
+    if not obj.name in bpy.context.view_layer.objects:
+        bpy.context.collection.objects.link(obj)
+
+    obj.select_set(True)
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+    obj.select_set(False)
+    obj.location = center
+
+    bpy.context.collection.objects.unlink(obj)
+
     return mesh
 
 

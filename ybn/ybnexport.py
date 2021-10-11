@@ -68,18 +68,13 @@ def polygon_from_object(obj, vertices, materials):
         sphere.radius = get_obj_radius(obj)
         
         return sphere
-    elif obj.sollum_type == PolygonType.CAPSULE:
-        capsule = init_poly_bound(Capsule(), obj, materials)
-        # Same method for getting verts as cylinder
-        cylinder = polygon_from_object(PolygonType.CYLINDER, obj, vertices)
+    elif obj.sollum_type == PolygonType.CYLINDER or obj.sollum_type == PolygonType.CAPSULE:
+        bound = None
+        if obj.sollum_type == PolygonType.CYLINDER:
+            bound = init_poly_bound(Cylinder(), obj, materials)
+        elif obj.sollum_type == PolygonType.CAPSULE:
+            bound = init_poly_bound(Capsule(), obj, materials)
 
-        capsule.v1 = cylinder.data.v1
-        capsule.v2 = cylinder.data.v2
-        capsule.radius = cylinder.data.radius
-        
-        return cylinder
-    elif obj.sollum_type == PolygonType.CYLINDER:
-        cylinder = init_poly_bound(Cylinder(), obj, materials)
         bound_box = get_bound_world(obj)
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
@@ -91,12 +86,12 @@ def polygon_from_object(obj, vertices, materials):
         vertices.append(v1)
         vertices.append(v2)
 
-        cylinder.v1 = len(vertices) - 2
-        cylinder.v2 = len(vertices) - 1
+        bound.v1 = len(vertices) - 2
+        bound.v2 = len(vertices) - 1
 
-        cylinder.radius = radius
+        bound.radius = radius
 
-        return cylinder
+        return bound
 
 def triangle_from_face(face):
     triangle = Triangle()
