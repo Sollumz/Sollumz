@@ -86,7 +86,8 @@ def create_capsule(obj, diameter=0.5, length=2):
     bm.free()
 
     # Fix origin
-    if not obj.name in bpy.context.view_layer.objects:
+    linked = obj.name in bpy.context.collection.objects
+    if not linked:
         bpy.context.collection.objects.link(obj)
 
     obj.select_set(True)
@@ -94,7 +95,8 @@ def create_capsule(obj, diameter=0.5, length=2):
     obj.select_set(False)
     obj.location = center
 
-    bpy.context.collection.objects.unlink(obj)
+    if not linked:
+        bpy.context.collection.objects.unlink(obj)
 
     return mesh
 
