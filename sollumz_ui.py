@@ -101,7 +101,7 @@ class SOLLUMZ_MT_create(bpy.types.Menu):
 
 def SollumzCreateContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_create.bl_idname)
-
+    
 
 def register():
     bpy.types.VIEW3D_MT_mesh_add.append(SollumzContextMenu)

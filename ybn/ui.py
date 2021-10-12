@@ -22,7 +22,7 @@ def draw_collision_material_properties(box, mat):
     for prop in CollisionFlags.__annotations__:
         if index % 4 == 0 and index > 1:
             row = box.row()
-        row.prop(mat.collision_properties, prop)
+        row.prop(mat.collision_flags, prop)
         index += 1
 
 def generate_flags(box, prop):
@@ -32,7 +32,6 @@ def generate_flags(box, prop):
         # 4 rows per box
         if index % 4 == 0 and index > 0:
             row = box.row()
-        
         row.prop(prop, prop_name)
         index += 1
 
@@ -46,7 +45,6 @@ def draw_bound_properties(layout, obj):
                 row = layout.row()
             row.prop(obj.bound_properties, prop)
             index += 1
-    elif is_poly:
         generate_flags(layout.box(), obj.composite_flags1)
         generate_flags(layout.box(), obj.composite_flags2)
 
