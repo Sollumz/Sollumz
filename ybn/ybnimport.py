@@ -109,7 +109,7 @@ def poly_to_obj(poly, materials, vertices):
         length = get_distance_of_vectors(v1, v2)
         rot = get_direction_of_vectors(v1, v2)
 
-        cylinder.data = create_cylinder(cylinder.data, poly.radius, length)
+        cylinder.data = create_cylinder(cylinder.data, poly.radius, length, False)
 
         cylinder.location = (v1 + v2) / 2
         cylinder.rotation_euler = rot
@@ -182,7 +182,7 @@ def geometry_to_obj(geometry, sollum_type):
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
 
-    obj.location = geometry.geometry_center
+    obj.location += geometry.geometry_center
 
     return obj
 
@@ -221,8 +221,8 @@ def init_bound_obj(bound, sollum_type):
                 setattr(obj.composite_flags2, prop, True)
 
     obj.location = bound.composite_position
-    obj.rotation_euler  = bound.composite_rotation.to_euler()
-    obj.scale = bound.composite_scale
+    obj.rotation_euler = bound.composite_rotation.to_euler()
+    obj.scale = Vector([1, 1, 1])
 
     bpy.context.collection.objects.link(obj)
 
@@ -232,30 +232,7 @@ def bound_to_obj(bound):
     # TODO: Materials for non geometry bound types
     if bound.type == 'Box':
         box = init_bound_obj(bound, BoundType.BOX)
-        bbmin, bbmax = bound.box_min, bound.box_max
-        # Create box from bbmin and bbmax
-        vertices = [
-            bbmin,
-            Vector((bbmin.x, bbmin.y, bbmax.z)),
-            Vector((bbmin.x, bbmax.y, bbmax.z)),
-            Vector((bbmin.x, bbmax.y, bbmin.z)),
-
-            Vector((bbmax.x, bbmin.y, bbmax.z)),
-            Vector((bbmax.x, bbmin.y, bbmin.z)),
-            Vector((bbmax.x, bbmax.y, bbmin.z)),
-            bbmax
-        ]
-
-        faces = [
-            [0, 1, 2, 3],
-            [0, 1, 4, 5],
-            [0, 3, 6, 5],
-
-            [7, 4, 5, 6],
-            [7, 2, 3, 6],
-            [7, 4, 1, 2]
-        ]
-        box.data.from_pydata(vertices, [], faces)
+        create_box_from_extents(box.data, bound.box_min, bound.box_max)
         
         return box
     elif bound.type == 'Sphere':
@@ -275,7 +252,6 @@ def bound_to_obj(bound):
         extent = bbmax - bbmin
         length = extent.y
         radius = extent.x * 0.5
-        cylinder.rotation_euler = bound.composite_rotation.to_euler() 
         cylinder.scale = Vector([1, 1, 1])
         create_cylinder(cylinder.data, radius, length)
 
@@ -283,7 +259,8 @@ def bound_to_obj(bound):
     elif bound.type == 'Disc':
         disc = init_bound_obj(bound, BoundType.DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
-        length = bbmax.x - bbmin.x
+        length = bound.margin * 2
+        radius = bound.sphere_radius
         create_disc(disc.data, bound.sphere_radius, length)
 
         return disc
@@ -308,8 +285,6 @@ def composite_to_obj(composite, name):
             child_obj.parent = obj
     
     bpy.context.collection.objects.link(obj)
-
-    #bpy.context.collection.objects.link(obj)
 
     return obj
 

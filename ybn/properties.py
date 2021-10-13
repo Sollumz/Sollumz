@@ -94,6 +94,7 @@ def register():
         name = "Poly Type",
         default = PolygonType.TRIANGLE.value
     )
+
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(type = BoundProperties)
 
     #nest these in object.bound_properties ? is it possible#
@@ -107,6 +108,7 @@ def register():
 
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionFlags)
+
 
     #COLLISION TOOLS UI PROPERTIES
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(

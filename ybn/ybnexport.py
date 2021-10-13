@@ -36,23 +36,15 @@ def add_material(material, materials):
 
         materials.append(mat_item)
 
-def polygon_from_object(obj, vertices, materials):
+def polygon_from_object(obj, vertices, materials, geom_center):
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
         bound_box = get_bound_world(obj)
 
-        #get local vert position
-        # bound_center = get_bound_center(obj)
-        # a = bound_box[0] - bound_center
-        # b = bound_box[5] - bound_center
-        # c = bound_box[2] - bound_center
-        # d = bound_box[7] - bound_center
-        # corners = [a, b, c, d]
-
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
-            vertices.append(vert)
+            vertices.append(vert - geom_center)
             indices.append(len(vertices) - 1)
 
         box.v1 = indices[0]
@@ -79,7 +71,7 @@ def polygon_from_object(obj, vertices, materials):
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
         distance = Vector((0, 0, height / 2))
-        center = get_bound_center(obj)
+        center = obj.location
         radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
         v1 = center - distance
         v2 = center + distance
@@ -114,7 +106,9 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
         return ValueError('Invalid argument for geometry sollum_type!')
 
     geometry = init_bound_item(geometry, obj)
-    geometry.geometry_center = get_bound_center(obj, True)
+    pos = get_local_pos(obj)
+    geometry.geometry_center = obj.location
+    geometry.composite_position = pos
 
     # Get child poly bounds
     for child in get_children_recursive(obj):
@@ -127,13 +121,13 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 add_material(material, geometry.materials)
 
             for vertex in mesh.vertices:
-                geometry.vertices.append(obj.matrix_world @ vertex.co)
+                geometry.vertices.append(vertex.co)
 
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
         
     for child in get_children_recursive(obj):
-        poly = polygon_from_object(child, geometry.vertices, geometry.materials)
+        poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
         if poly:
             geometry.polygons.append(poly)
     
@@ -151,6 +145,10 @@ def init_bound_item(bound_item, obj):
         value = getattr(obj.composite_flags2, prop)
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
+    
+    bound_item.composite_position = obj.location
+    bound_item.composite_rotation = obj.rotation_euler.to_quaternion().normalized()
+    bound_item.composite_scale = Vector([1, 1, 1])
 
     return bound_item
 
@@ -158,8 +156,9 @@ def init_bound(bound, obj):
     bb_min, bb_max = get_bb_extents(obj)
     bound.box_min = bb_min
     bound.box_max = bb_max
-    bound.box_center = get_bound_center(obj)
-    bound.sphere_center = get_bound_center(obj)
+    center = get_bound_center(obj)
+    bound.box_center = center
+    bound.sphere_center = center
     bound.sphere_radius = get_obj_radius(obj)
     bound.procedural_id = obj.bound_properties.procedural_id
     bound.room_id = obj.bound_properties.room_id
@@ -170,17 +169,17 @@ def init_bound(bound, obj):
 
 def bound_from_object(obj):
     if obj.sollum_type == BoundType.BOX:
-        return init_bound(BoundBox(), obj)
+        return init_bound_item(BoundBox(), obj)
     elif obj.sollum_type == BoundType.SPHERE:
-        return init_bound(BoundSphere(), obj)
-    elif obj.sollum_type == BoundType.CAPSULE:
-        return init_bound(BoundCapsule(), obj)
+        return init_bound_item(BoundSphere(), obj)
     elif obj.sollum_type == BoundType.CYLINDER:
-        return init_bound(BoundCylinder(), obj)
+        return init_bound_item(BoundCylinder(), obj)
+    elif obj.sollum_type == BoundType.CAPSULE:
+        return init_bound_item(BoundCapsule(), obj)
     elif obj.sollum_type == BoundType.DISC:
-        return init_bound(BoundDisc(), obj)
+        return init_bound_item(BoundDisc(), obj)
     elif obj.sollum_type == BoundType.CLOTH:
-        return init_bound(BoundCloth(), obj)
+        return init_bound_item(BoundCloth(), obj)
     elif obj.sollum_type == BoundType.GEOMETRY:
         return geometry_from_object(obj, BoundType.GEOMETRY)
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
