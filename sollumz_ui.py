@@ -77,7 +77,7 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             draw_drawable_properties(box, obj)
         elif obj.sollum_type == ObjectType.GEOMETRY:
             draw_geometry_properties(box, obj)
-        elif(obj.sollum_type == "sollumz_drawable_model"):
+        elif(obj.sollum_type == ObjectType.DRAWABLE_MODEL):
             self.draw_drawable_model_properties(context, box, obj)
         elif is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType):
             draw_bound_properties(box, obj)

@@ -70,7 +70,7 @@ class TextureFlags(bpy.types.PropertyGroup):
     unk24 : bpy.props.BoolProperty(name = "UNK24", default = False)
 
 
-class TextureProperties(TextureFlags, bpy.types.PropertyGroup):
+class TextureProperties(bpy.types.PropertyGroup):
     embedded : bpy.props.BoolProperty(name = "Embedded", default = False)
     ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     usage : bpy.props.EnumProperty(
@@ -104,6 +104,7 @@ def register():
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)
+    bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(type = TextureFlags)
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(type = BoneProperties)
 
 def unregister():

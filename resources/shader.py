@@ -64,3 +64,10 @@ class ShaderManager():
             s = Shader()
             s.read_xml(node)
             self.shaders[s.name] = s
+
+    def print_shader_enum(self):
+        string = ""
+        for shader in self.shaders.values():
+            string += shader.name.upper() + " = \"" +  shader.name.lower() +"\"\n"
+
+        print(string)

@@ -45,7 +45,9 @@ def draw_bound_properties(layout, obj):
                 row = layout.row()
             row.prop(obj.bound_properties, prop)
             index += 1
+        layout.label(text = "Composite Flags 1")
         generate_flags(layout.box(), obj.composite_flags1)
+        layout.label(text = "Composite Flags 2")
         generate_flags(layout.box(), obj.composite_flags2)
 
 class SOLLUMZ_UL_COLLISION_FLAGS_LIST(bpy.types.UIList):
