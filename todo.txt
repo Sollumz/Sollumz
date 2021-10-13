@@ -16,6 +16,7 @@ ________________________
 YBN IMPORT / EXPORT
 ________________________
 - TEST
+- Finish Cylinder, Disc, and Capsule bound types
 
 YDR IMPORT / EXPORT
 ________________________
