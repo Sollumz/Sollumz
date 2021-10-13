@@ -15,11 +15,7 @@ ________________________
 
 YBN IMPORT / EXPORT
 ________________________
-- update ybn object import names
-- ybn composite box center / sphere center need to be calculated through all children objects also
 - TEST
-- Blender crashes when attempting to undo import EXCEPTION_ACCESS_VIOLATION
-- Export by composite name
 
 YDR IMPORT / EXPORT
 ________________________

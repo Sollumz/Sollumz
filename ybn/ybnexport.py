@@ -1,10 +1,10 @@
 import bpy
-from bpy_extras.io_utils import ExportHelper
 import traceback
 from .properties import CollisionFlags
 from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
+from Sollumz.sollumz_operators import SollumzExportHelper
 
 
 def init_poly_bound(poly_bound, obj, materials):
@@ -196,12 +196,12 @@ def ybn_from_object(obj):
     
     return ybn
 
-class ExportYbnXml(bpy.types.Operator, ExportHelper):
+class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "exportxml.ybn"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "exportxml.ybn" 
     bl_label = "Export Ybn Xml (.ybn.xml)"
-
-    filename_ext = ".ybn.xml"
+    
+    filename_ext = '.ybn.xml'
 
     def execute(self, context):
 
@@ -213,16 +213,16 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
                 if obj.sollum_type == BoundType.COMPOSITE:
                     found = True
                     try:
-                        ybn_from_object(obj).write_xml(self.filepath)
+                        ybn_from_object(obj).write_xml(self.get_filepath(obj))
                         self.report({'INFO'}, 'YBN Successfully exported.')
-                    except Exception as e:
-                        #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
+                    except:
                         self.report({'ERROR'}, traceback.format_exc())
         
         if not found:
             self.report({'INFO'}, "No bound object types in scene for Sollumz export")
 
         return {'FINISHED'}
+    
 
 def ybn_menu_func_export(self, context):
     self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")

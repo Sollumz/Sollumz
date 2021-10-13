@@ -5,6 +5,7 @@ from Sollumz.resources.shader import ShaderManager
 import os, sys, traceback
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
+from Sollumz.sollumz_operators import SollumzExportHelper
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -329,7 +330,7 @@ def drawable_from_object(obj):
 
     return drawable
     
-class ExportYdrXml(bpy.types.Operator, ExportHelper):
+class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "exportxml.ydr"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export Ydr Xml (.ydr.xml)"
@@ -346,7 +347,7 @@ class ExportYdrXml(bpy.types.Operator, ExportHelper):
                 if obj.sollum_type == "sollumz_drawable":
                     found = True
                     try:
-                        drawable_from_object(obj).write_xml(self.filepath)
+                        drawable_from_object(obj).write_xml(self.get_filepath(obj))
                         self.report({'INFO'}, 'Ydr Successfully exported.')
                     except Exception as e:
                         #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")

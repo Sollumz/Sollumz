@@ -293,6 +293,7 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
     bl_idname = "sollumz.importybn" 
     bl_label = "Import ybn.xml"
     filename_ext = ".ybn.xml"
+    bl_options = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(
         default="*.ybn.xml",
@@ -304,7 +305,7 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
-            ybn_obj = composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
+            composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
