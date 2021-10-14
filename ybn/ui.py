@@ -46,6 +46,7 @@ def draw_bound_properties(layout, obj):
 
     if obj.sollum_type != BoundType.COMPOSITE:
         generate_flags(layout.box(), obj.composite_flags1)
+        layout.label(text = "Composite Flags 2")
         generate_flags(layout.box(), obj.composite_flags2)
         row = layout.row()
         row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)

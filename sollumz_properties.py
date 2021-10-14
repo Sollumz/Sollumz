@@ -94,8 +94,8 @@ SOLLUMZ_UI_NAMES = {
     BoundType.DISC: 'Bound Disc',
     BoundType.CLOTH: 'Bound Cloth',
     BoundType.GEOMETRY: 'Bound Geometry',
-    BoundType.GEOMETRYBVH: 'GeometryBVH',
-    BoundType.COMPOSITE: 'Composite',
+    BoundType.GEOMETRYBVH: 'Bound GeometryBVH',
+    BoundType.COMPOSITE: 'Bound Composite',
 
     PolygonType.BOX: 'Bound Poly Box',
     PolygonType.SPHERE: 'Bound Poly Sphere',

@@ -2,8 +2,8 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 import os, traceback
 from mathutils import Vector, Quaternion, Matrix
-from Sollumz.sollumz_shaders import *
 from Sollumz.resources.shader import ShaderManager
+from Sollumz.ydr.shader_materials import create_shader
 from Sollumz.resources.drawable import *
 from Sollumz.tools import cats as Cats
 
@@ -16,26 +16,39 @@ def shadergroup_to_materials(shadergroup, filepath):
     for shader in shadergroup.shaders:
         
         material = create_shader(shader.name, shadermanager)
-
+        
         #################### GETTING ERROR FOR NO REASON #########################
         #material.shader_properties.renderbucket = shader.renderbucket[0] 
         ##########################################################################
         material.shader_properties.filename = shader.filename
+
+        embedded_texture_names = []
 
         for param in shader.parameters:
             for n in material.node_tree.nodes:
                 if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                     if(param.name == n.name):
                         texture_path = os.path.join(texture_folder, param.texture_name + ".dds")
-                        
+                        if(os.path.isfile(texture_path) == False):
+                            texture_path = os.path.dirname(__file__)[:-4] + "\\resources\\givemechecker.jpg"
+                        img = bpy.data.images.load(texture_path, check_existing=True)
+                        n.image = img 
+
+                        #assign embedded texture dictionary properties
                         if(shadergroup.texture_dictionary != None):
-                            for txt in shadergroup.texture_dictionary:
-                                if(txt.name == param.texture_name):
-                                    continue
-                        
-                        if(os.path.isfile(texture_path)):
-                            img = bpy.data.images.load(texture_path, check_existing=True)
-                            n.image = img 
+                            for texture in shadergroup.texture_dictionary:
+                                if(texture.name == param.texture_name):
+                                    n.texture_properties.embedded = True
+                                    format = "sollumz_" + texture.format[0].split("_")[1].lower()
+                                    n.texture_properties.format = format
+                                    usage = "sollumz_" + texture.usage[0].lower()
+                                    n.texture_properties.usage = usage
+                                    n.texture_properties.extra_flags = texture.extra_flags
+                                    
+                                    for prop in dir(n.texture_properties):
+                                        for uf in texture.usage_flags:
+                                            if(uf.lower() == prop):
+                                                setattr(n.texture_properties, prop, True)
 
                         if(param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings')):
                             n.image.colorspace_settings.name = 'Non-Color'
@@ -51,28 +64,6 @@ def shadergroup_to_materials(shadergroup, filepath):
                             n.outputs[0].default_value = param.quaternion_z
                         if(key == "w"):
                             n.outputs[0].default_value = param.quaternion_w
-
-        #assign embedded texture dictionary properties
-        if(shadergroup.texture_dictionary != None):
-            idx = -1
-            for node in material.node_tree.nodes:
-                if(isinstance(node, bpy.types.ShaderNodeTexImage)):
-                    if(node.image != None):
-                        idx += 1
-                        texturepath = node.image.filepath
-                        texturename = os.path.basename(texturepath)
-                        texture = shadergroup.texture_dictionary[idx]
-                        node.texture_properties.embedded = True
-                        format = "sollumz_" + texture.format[0].split("_")[1].lower()
-                        node.texture_properties.format = format
-                        usage = "sollumz_" + texture.usage[0].lower()
-                        node.texture_properties.usage = usage
-                        node.texture_properties.extra_flags = texture.extra_flags
-                        
-                        for prop in dir(node.texture_properties):
-                            for uf in texture.usage_flags:
-                                if(uf.lower() == prop):
-                                    setattr(node.texture_properties, prop, True)     
 
         materials.append(material)
 
@@ -359,7 +350,7 @@ class ImportYdrXml(bpy.types.Operator, ImportHelper):
             ydr_xml = YDR.from_xml_file(self.filepath)
             ydr_obj = drawable_to_obj(ydr_xml, self.filepath, os.path.basename(self.filepath))
             # bpy.context.collection.objects.link(ydr_obj)
-            self.report({'INFO'}, 'YBN Successfully imported.')
+            self.report({'INFO'}, 'YDR Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
 

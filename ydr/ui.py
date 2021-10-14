@@ -1,5 +1,6 @@
 import bpy
 from Sollumz.sollumz_properties import is_sollum_type, ObjectType
+from Sollumz.ydr.shader_materials import *
 from .properties import TextureFlags, TextureProperties
 
 
@@ -37,42 +38,44 @@ def draw_shader(layout, mat):
                 row.prop(n.image, "filepath", text = "Texture Path")
                 row = box.row(align = True)
                 row.prop(n.texture_properties, "embedded")
+                if(n.texture_properties.embedded == False):
+                    break
                 row.prop(n.texture_properties, "format")
                 row.prop(n.texture_properties, "usage")
                 #box = box.box()
                 box.label(text = "Flags")
                 row = box.row()
-                row.prop(n.texture_properties, "not_half")
-                row.prop(n.texture_properties, "hd_split")
-                row.prop(n.texture_properties, "flag_full")
-                row.prop(n.texture_properties, "maps_half")
+                row.prop(n.texture_flags, "not_half")
+                row.prop(n.texture_flags, "hd_split")
+                row.prop(n.texture_flags, "flag_full")
+                row.prop(n.texture_flags, "maps_half")
                 row = box.row()
-                row.prop(n.texture_properties, "x2")
-                row.prop(n.texture_properties, "x4")
-                row.prop(n.texture_properties, "y4")
-                row.prop(n.texture_properties, "x8")
+                row.prop(n.texture_flags, "x2")
+                row.prop(n.texture_flags, "x4")
+                row.prop(n.texture_flags, "y4")
+                row.prop(n.texture_flags, "x8")
                 row = box.row()
-                row.prop(n.texture_properties, "x16")
-                row.prop(n.texture_properties, "x32")
-                row.prop(n.texture_properties, "x64")
-                row.prop(n.texture_properties, "y64")
+                row.prop(n.texture_flags, "x16")
+                row.prop(n.texture_flags, "x32")
+                row.prop(n.texture_flags, "x64")
+                row.prop(n.texture_flags, "y64")
                 row = box.row()
-                row.prop(n.texture_properties, "x128")
-                row.prop(n.texture_properties, "x256")
-                row.prop(n.texture_properties, "x512")
-                row.prop(n.texture_properties, "y512")
+                row.prop(n.texture_flags, "x128")
+                row.prop(n.texture_flags, "x256")
+                row.prop(n.texture_flags, "x512")
+                row.prop(n.texture_flags, "y512")
                 row = box.row()
-                row.prop(n.texture_properties, "x1024")
-                row.prop(n.texture_properties, "y1024")
-                row.prop(n.texture_properties, "x2048")
-                row.prop(n.texture_properties, "y2048")
+                row.prop(n.texture_flags, "x1024")
+                row.prop(n.texture_flags, "y1024")
+                row.prop(n.texture_flags, "x2048")
+                row.prop(n.texture_flags, "y2048")
                 row = box.row()
-                row.prop(n.texture_properties, "embeddedscriptrt")
-                row.prop(n.texture_properties, "unk19")
-                row.prop(n.texture_properties, "unk20")
-                row.prop(n.texture_properties, "unk21")
+                row.prop(n.texture_flags, "embeddedscriptrt")
+                row.prop(n.texture_flags, "unk19")
+                row.prop(n.texture_flags, "unk20")
+                row.prop(n.texture_flags, "unk21")
                 row = box.row()
-                row.prop(n.texture_properties, "unk24") 
+                row.prop(n.texture_flags, "unk24") 
                 row.prop(n.texture_properties, "extra_flags")
         
         layout.label(text = "Shader Parameters")
@@ -149,6 +152,39 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
                         row = box.row()
                         row.prop(n.outputs[0], "default_value")
                         i += 1
+
+class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_SHADER_MATERIALS_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        name = shadermats[item.index].ui_name
+        # If the object is selected
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=name, icon='MATERIAL')
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=name, emboss=False, icon='MATERIAL')
+
+class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Ydr Tools"
+    bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+
+        box = layout.box()
+        box.label(text = "Create Shader")
+        row = box.row()
+        row.template_list(
+            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
+        )
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 

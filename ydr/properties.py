@@ -1,5 +1,7 @@
 import bpy
 from Sollumz.sollumz_properties import items_from_enums, TextureType, TextureFormat, LodType
+from Sollumz.ydr.shader_materials import shadermats, ShaderMaterial
+from bpy.app.handlers import persistent
 
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high : bpy.props.FloatProperty(min = 0, max = 10000, default = 9998, name = "Lod Distance High")
@@ -70,7 +72,7 @@ class TextureFlags(bpy.types.PropertyGroup):
     unk24 : bpy.props.BoolProperty(name = "UNK24", default = False)
 
 
-class TextureProperties(TextureFlags, bpy.types.PropertyGroup):
+class TextureProperties(bpy.types.PropertyGroup):
     embedded : bpy.props.BoolProperty(name = "Embedded", default = False)
     ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     usage : bpy.props.EnumProperty(
@@ -98,18 +100,39 @@ class BoneProperties(bpy.types.PropertyGroup):
     flags: bpy.props.CollectionProperty(type = BoneFlag)
     ul_index: bpy.props.IntProperty(name = "UIListIndex", default = 0)
 
+class ShaderMaterial(bpy.types.PropertyGroup):
+    index : bpy.props.IntProperty('Index')
+    name : bpy.props.StringProperty('Name')
+
+# Handler sets the default value of the ShaderMaterials collection on blend file load
+@persistent
+def on_file_loaded(_):
+    bpy.context.scene.shader_materials.clear()
+    for index, mat in enumerate(shadermats):
+        item = bpy.context.scene.shader_materials.add()
+        item.index = index
+        item.name = mat.name
+
 def register():
+    bpy.types.Scene.shader_material_index = bpy.props.IntProperty(name = "Shader Material Index") #MAKE ENUM WITH THE MATERIALS NAMES
+    bpy.types.Scene.shader_materials = bpy.props.CollectionProperty(type = ShaderMaterial, name = 'Shader Materials')
+    bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.drawable_model_properties = bpy.props.PointerProperty(type = DrawableModelProperties)
     bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)
+    bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(type = TextureFlags)
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(type = BoneProperties)
 
 def unregister():
+    del bpy.types.Scene.shader_material_index
+    del bpy.types.Scene.shader_materials
     del bpy.types.Object.drawable_properties
     del bpy.types.Object.drawable_model_properties
     del bpy.types.Object.geometry_properties
     del bpy.types.Material.shader_properties
     del bpy.types.ShaderNodeTexImage.texture_properties
     del bpy.types.Bone.bone_properties
+
+    bpy.app.handlers.load_post.remove(on_file_loaded)

@@ -64,3 +64,13 @@ class ShaderManager():
             s = Shader()
             s.read_xml(node)
             self.shaders[s.name] = s
+
+    def print_shader_collection(self):
+        string = ""
+        for shader in self.shaders.values():
+            name = shader.name.upper()
+            ui_name = shader.name.replace("_", " ").upper()
+            value = shader.name.lower()
+            string += "ShaderMaterial(\"" + name + "\", \"" + ui_name + "\", \"" + value + "\"),\n"
+
+        print(string)
