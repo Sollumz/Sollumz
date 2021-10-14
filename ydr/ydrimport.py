@@ -349,7 +349,6 @@ class ImportYdrXml(bpy.types.Operator, ImportHelper):
         try:
             ydr_xml = YDR.from_xml_file(self.filepath)
             drawable_to_obj(ydr_xml, self.filepath, os.path.basename(self.filepath.replace(self.filename_ext, '')))
-            # bpy.context.collection.objects.link(ydr_obj)
             self.report({'INFO'}, 'YDR Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
