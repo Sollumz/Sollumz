@@ -144,7 +144,7 @@ def order_vertex_list(list, vlayout):
 
     return newlist
 
-def get_vertex_string(obj, layout):
+def get_vertex_string(obj, mesh, layout, bones=None):
 
     mesh = obj.data
 
@@ -158,8 +158,8 @@ def get_vertex_string(obj, layout):
     clr1 = [None] * vertamount
     texcoords = {}
     tangents = [None] * vertamount
-    blendw = [None] * vertamount
-    blendi = [None] * vertamount
+    blendw = [[]] * vertamount
+    blendi = [[]] * vertamount
 
     for i in range(6):
         texcoords[i] = [None] * vertamount       
@@ -172,6 +172,10 @@ def get_vertex_string(obj, layout):
     mesh.calc_tangents()
 
     vertex_groups = obj.vertex_groups
+
+    bones_index_dict = {}
+    for i in range(len(bones)):
+        bones_index_dict[bones[i].name] = i
 
     clr0_layer = None 
     clr1_layer = None
@@ -211,6 +215,41 @@ def get_vertex_string(obj, layout):
             #FIXME: one vert can only be influenced by 4 weights at most
             vertex_group_elements = mesh.vertices[vi].groups
 
+            if len(vertex_group_elements) > 0:
+                blendw[vi] = [0] * 4
+                blendi[vi] = [0] * 4
+                valid_weights = 0
+                total_weights = 0
+                max_weights = 0
+                max_weights_index = -1
+
+                for element in vertex_group_elements:
+                    if element.group >= len(vertex_groups):
+                        continue
+
+                    vertex_group = vertex_groups[element.group]
+                    bone_index = bones_index_dict.get(vertex_group.name, -1)
+                    # 1/255 = 0.0039 the minimal weight for one vertex group
+                    weight = round(element.weight * 255)
+                    if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
+                        blendw[vi][valid_weights] = weight
+                        blendi[vi][valid_weights] = bone_index
+                        if (max_weights < weight):
+                            max_weights_index = valid_weights
+                            max_weights = weight
+
+                        valid_weights += 1
+                        total_weights += weight
+
+                # weights verification stuff
+                # wtf rockstar
+                # why do you even use int for weights
+                if valid_weights > 0 and max_weights_index != -1:
+                    blendw[vi][max_weights_index] = blendw[vi][max_weights_index] + (255 - total_weights)
+            else:
+                blendw[vi] = [0, 0, 255, 0]
+                blendi[vi] = [0] * 4
+
     for i in range(len(vertices)):
         vstring = ""
         tlist = []
@@ -225,8 +264,8 @@ def get_vertex_string(obj, layout):
         tlist.append(vector_tostring(texcoords[4][i]))
         tlist.append(vector_tostring(texcoords[5][i]))
         tlist.append(vector_tostring(tangents[i]))
-        tlist.append(blendw[i])
-        tlist.append(blendi[i])
+        tlist.append(' '.join(str(j) for j in blendw[i]))
+        tlist.append(' '.join(str(j) for j in blendi[i]))
         
         layoutlist = order_vertex_list(tlist, layout)
         
@@ -242,44 +281,109 @@ def get_vertex_string(obj, layout):
     
     return vertex_string
 
-def geometry_from_object(obj):
+def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
 
-    bbmin, bbmax = get_bb_extents(obj)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    obj_eval = obj.evaluated_get(depsgraph)
+    mesh = bpy.data.meshes.new_from_object(obj, preserve_all_data_layers=True, depsgraph=depsgraph)
+
+    bbmin, bbmax = get_bb_extents(obj_eval)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
     
-    materials = get_used_materials(obj.parent.parent)
+    materials = get_used_materials(obj_eval.parent.parent)
     for i in range(len(materials)):
-        if(materials[i] == obj.active_material):
+        if(materials[i] == obj_eval.active_material):
             geometry.shader_index = i
 
     sm = ShaderManager()
-    layout = sm.shaders[FixShaderName(obj.active_material.name)].layouts["0x0"]
+    layout = sm.shaders[FixShaderName(obj_eval.active_material.name)].layouts["0x0"]
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
-    geometry.vertex_buffer.data = get_vertex_string(obj, layout)
-    geometry.index_buffer.data = get_index_string(obj.data)
+    geometry.vertex_buffer.data = get_vertex_string(obj_eval, mesh, layout, bones)
+    geometry.index_buffer.data = get_index_string(mesh)
     
     return geometry
 
-def drawable_model_from_object(obj):
+def drawable_model_from_object(obj, bones=None):
     drawable_model = DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
     #drawable_model.hasskin = 0
     #rawable_model.bone_index = 0
-    #drawable_model.unknown_1 = ?
+    if bones is not None:
+        drawable_model.unknown_1 = len(bones)
 
     for child in obj.children:
         if(child.sollum_type == "sollumz_geometry"):
-            geometry = geometry_from_object(child)
+            geometry = geometry_from_object(child, bones)
             drawable_model.geometries.append(geometry)
 
     return drawable_model
 
-def drawable_from_object(obj):
+def bone_from_object(obj):
+
+    bone = BoneItem()
+    bone.name = obj.name
+    bone.tag = obj.bone_properties.tag
+    bone.index = obj["BONE_INDEX"]
+
+    if obj.parent != None:
+        bone.parent_index = obj.parent["BONE_INDEX"]
+        children = obj.parent.children
+        sibling = -1
+        if len(children) > 1:
+            for i, child in enumerate(children):
+                if child["BONE_INDEX"] == obj["BONE_INDEX"] and i + 1 < len(children):
+                    sibling = children[i + 1]["BONE_INDEX"]
+                    break
+
+        bone.sibling_index = sibling
+
+    for flag in obj.bone_properties.flags:
+        if len(flag.name) == 0:
+            continue
+
+        bone.flags.append(flag.name)
+
+    if len(obj.children) > 0:
+        bone.flags.append("Unk0")
+
+    mat = obj.matrix_local
+    if (obj.parent != None):
+        mat = obj.parent.matrix_local.inverted() @ obj.matrix_local
+
+    mat_decomposed = mat.decompose()
+
+    bone.translation = mat_decomposed[0]
+    bone.rotation = mat_decomposed[1]
+    bone.scale = mat_decomposed[2]
+
+    return bone
+
+def skeleton_from_object(obj):
+
+    skeleton = SkeletonProperty()
+    if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
+        return skeleton
+
+    bones = obj.pose.bones
+
+    ind = 0
+    for pbone in bones:
+        bone = pbone.bone
+        bone["BONE_INDEX"] = ind
+        ind = ind + 1
+
+    for pbone in bones:
+        bone = bone_from_object(pbone.bone)
+        skeleton.bones.append(bone)
+
+    return skeleton
+
+def drawable_from_object(obj, bones=None):
     drawable = Drawable()
 
     drawable.name = obj.name
@@ -300,6 +404,11 @@ def drawable_from_object(obj):
 
     #drawable.shader_group.texture_dictionary = None #NOT IMPLEMENTED
 
+    if bones is None:
+        bones = obj.pose.bones
+
+    drawable.skeleton = skeleton_from_object(obj)
+
     highmodel_count = 0
     medmodel_count = 0
     lowhmodel_count = 0
@@ -307,7 +416,7 @@ def drawable_from_object(obj):
 
     for child in obj.children:
         if(child.sollum_type == "sollumz_drawable_model"):
-            drawable_model = drawable_model_from_object(child)
+            drawable_model = drawable_model_from_object(child, bones)
             if("high" in child.drawable_model_properties.sollum_lod):
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)
