@@ -3,8 +3,44 @@ import bmesh
 import numpy as np
 from mathutils import Vector, Matrix, Quaternion, Euler
 from mathutils.geometry import distance_point_to_plane
-from math import cos, inf, sin, degrees, radians, sqrt
+from math import cos, inf, sin, degrees, radians, sqrt, atan2
 
+def create_box_from_extents(mesh, bbmin, bbmax):
+    # Create box from bbmin and bbmax
+    vertices = [
+        bbmin,
+        Vector((bbmin.x, bbmin.y, bbmax.z)),
+        Vector((bbmin.x, bbmax.y, bbmax.z)),
+        Vector((bbmin.x, bbmax.y, bbmin.z)),
+
+        Vector((bbmax.x, bbmin.y, bbmax.z)),
+        Vector((bbmax.x, bbmin.y, bbmin.z)),
+        Vector((bbmax.x, bbmax.y, bbmin.z)),
+        bbmax
+    ]
+
+    faces = [
+        [0, 1, 2, 3],
+        [0, 1, 4, 5],
+        [0, 3, 6, 5],
+
+        [7, 4, 5, 6],
+        [7, 2, 3, 6],
+        [7, 4, 1, 2]
+    ]
+    mesh.from_pydata(vertices, [], faces)
+
+    # Recalculate normals
+    bm = bmesh.new()
+    
+    bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(mesh)
+    bm.clear()
+    mesh.update()
+    bm.free()
+
+    return mesh
 
 def create_box(mesh, size=1):
     bm = bmesh.new()
@@ -22,8 +58,9 @@ def create_sphere(mesh, radius=0.5):
     return mesh
 
 
-def create_cylinder(mesh, radius=0.5, length=1):
+def create_cylinder(mesh, radius=0.5, length=1, use_rot=True):
     bm = bmesh.new()
+    rot_mat = Matrix.Rotation(radians(90.0), 4, "X") if use_rot else Matrix()
     bmesh.ops.create_cone(
         bm,
         cap_ends=True,
@@ -32,6 +69,7 @@ def create_cylinder(mesh, radius=0.5, length=1):
         diameter1=radius,
         diameter2=radius,
         depth=length,
+        matrix=rot_mat
     )
     bm.to_mesh(mesh)
     bm.free()
@@ -61,7 +99,7 @@ def create_capsule(obj, diameter=0.5, length=2):
     bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=diameter)
     mesh = obj.data
 
-    center = get_bound_center(obj)
+    center = obj.location
     bb = [Vector(b) for b in obj.bound_box]
     z = bb[1] - bb[0]
 
@@ -168,35 +206,6 @@ def get_vector_list_length(list):
     return length
 
 
-
-
-"""Get min and max bounds for an object and all of its children"""
-def get_bb_extents(obj):
-    objects = [obj, *get_children_recursive(obj)]
-    # get the global coordinates of all object bounding box corners
-    coords = np.vstack(
-        tuple(
-            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
-            for o in objects
-            if o.type == "MESH"
-        )
-    )
-    # bottom front left (all the mins)
-    bb_min = coords.min(axis=0)
-    # top back right
-    bb_max = coords.max(axis=0)
-    return Vector(bb_min), Vector(bb_max)
-
-
-def get_children_recursive(obj):
-    children = []
-    for child in obj.children:
-        children.append(child)
-        if len(child.children) > 0:
-            children.extend(get_children_recursive(child))
-
-    return children
-
 # see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
 """Multiply 3d coord list by matrix"""
 def np_matmul_coords(coords, matrix, space=None):
@@ -206,18 +215,70 @@ def np_matmul_coords(coords, matrix, space=None):
 
     return np.dot(coords4d, M)[:, :-1]
 
-"""Get the bounding box of an object and all of it's children in world space"""
-def get_bound_world(obj):
-    bound_box = []
-    for vert_list in obj.bound_box:
-        vert = Vector(vert_list)
-        bound_box.append(obj.matrix_world @ vert)
-    return bound_box
+
+"""Get min and max bounds for an object and all of its children"""
+def get_bb_extents(obj):
+    bbs = get_bound_world(obj, True)
+
+    return Vector(bbs.min(axis=0)), Vector(bbs.max(axis=0))
+
+
+"""Get the bounding box of an object and all of it's children"""
+def get_bound_world(obj, np_array=False):
+    objects = []
+
+    # Ensure all objects are meshes
+    for obj in [obj, *get_children_recursive(obj)]:
+        if obj.type == "MESH":
+            objects.append(obj)
+
+    if len(objects) < 1:
+        raise ValueError('Failed to get bounds: Object has no geometry data or children with geometry data.')
+
+    # get the global coordinates of all object bounding box corners
+    np_bounds = np.vstack(
+        tuple(
+            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
+            for o in objects
+            if o.type == "MESH"
+        )
+    )
+
+    if np_array:
+        return np_bounds
+
+    bounds = []
+    for vert in np_bounds:
+        bounds.append(Vector(vert))
+
+    return bounds
+
+
+def get_bound_center(obj):
+    bbmin, bbmax = get_bb_extents(obj)
+    center = (bbmin + bbmax) / 2
+
+    return center
+
+
+def get_children_recursive(obj):
+    children = []
+
+    if len(obj.children) < 1:
+        return children
+
+    for child in obj.children:
+        children.append(child)
+        if len(child.children) > 0:
+            children.extend(get_children_recursive(child))
+
+    return children
 
 
 """Get the radius of an object's bounding box"""
 def get_obj_radius(obj) -> float:
     bb_min, bb_max = get_bb_extents(obj)
+
     p1 = Vector((bb_min.x, bb_min.y, 0))
     p2 = Vector((bb_max.x, bb_max.y, 0))
     # Distance between bb_min and bb_max x,y values
@@ -225,11 +286,8 @@ def get_obj_radius(obj) -> float:
     return distance / 2
 
 
-def get_bound_center(obj, local=False) -> Vector:
-    # Get the center of the object's bounds for later use. Credit: https://blender.stackexchange.com/questions/62040/get-center-of-geometry-of-an-object
-    local_bbox_center = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
-    center = obj.matrix_world @ local_bbox_center if not local else local_bbox_center
-    return Vector(center)
+def get_local_pos(obj):
+    return Vector(obj.matrix_world.inverted() @ obj.matrix_world.translation)
 
 
 def signed_volume_of_triangle(p1: Vector, p2: Vector, p3: Vector) -> float:

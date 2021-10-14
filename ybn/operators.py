@@ -2,6 +2,17 @@ import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
 from Sollumz.meshhelper import * 
 from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
+from .properties import BoundFlags
+
+def load_default_flags(obj):
+    obj.composite_flags1['map_weapon'] = True
+    obj.composite_flags1['map_dynamic'] = True
+    obj.composite_flags1['map_animal'] = True
+    obj.composite_flags1['map_vehicle'] = True
+    obj.composite_flags1['map_cover'] = True
+
+    for flag_name in BoundFlags.__annotations__.keys():
+        obj.composite_flags2[flag_name] = True
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -229,6 +240,41 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
         if is_sollum_type(aobj, PolygonType):
             mat = create_collision_material_from_index(context.scene.collision_material_index)
             aobj.data.materials.append(mat)
+        
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_load_default_col_flags(bpy.types.Operator):
+    """Load commonly used collision flags"""
+    bl_idname = "sollumz.load_default_col_flags"
+    bl_label = "Load Default Collision Flags"
+
+    def execute(self, context):
+        
+        aobj = bpy.context.active_object
+        if(aobj == None):
+            return {'CANCELLED'}
+        
+        load_default_flags(aobj)
+        
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_clear_col_flags(bpy.types.Operator):
+    """Load commonly used collision flags"""
+    bl_idname = "sollumz.clear_col_flags"
+    bl_label = "Clear Collision Flags"
+
+    def execute(self, context):
+        
+        aobj = bpy.context.active_object
+        if(aobj == None):
+            return {'CANCELLED'}
+        
+        if is_sollum_type(aobj, BoundType):
+            for flag_name in BoundFlags.__annotations__.keys():
+                aobj.composite_flags1[flag_name] = False
+                aobj.composite_flags2[flag_name] = False
         
         return {'FINISHED'}
 

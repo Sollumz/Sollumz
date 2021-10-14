@@ -15,9 +15,8 @@ ________________________
 
 YBN IMPORT / EXPORT
 ________________________
-- update ybn object import names
-- ybn composite box center / sphere center need to be calculated through all children objects also
 - TEST
+- Finish Cylinder, Disc, and Capsule bound types
 
 YDR IMPORT / EXPORT
 ________________________

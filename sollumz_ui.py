@@ -1,5 +1,7 @@
 import bpy
+from bpy.types import Object
 from Sollumz.sollumz_properties import BoundType, PolygonType, ObjectType, MaterialType, is_sollum_type
+from Sollumz.sollumz_operators import SOLLUMZ_OT_toggle_export
 from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
 from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
 
@@ -73,13 +75,22 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
         row.enabled = False
         row.prop(obj, "sollum_type")
 
+        try:
+            getattr(obj, 'sollum_type')
+        except:
+            return
+        
+        if obj.sollum_type == ObjectType.DRAWABLE or obj.sollum_type == BoundType.COMPOSITE:
+            row = layout.row()
+            row.prop(obj, 'enable_export', text='Toggle Export')
+
         if obj.sollum_type == ObjectType.DRAWABLE:
             draw_drawable_properties(box, obj)
         elif obj.sollum_type == ObjectType.GEOMETRY:
             draw_geometry_properties(box, obj)
         elif(obj.sollum_type == ObjectType.DRAWABLE_MODEL):
             self.draw_drawable_model_properties(context, box, obj)
-        elif is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType):
+        elif is_sollum_type(obj, BoundType):
             draw_bound_properties(box, obj)
 
 class SOLLUMZ_MT_sollumz(bpy.types.Menu):

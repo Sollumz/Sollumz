@@ -1,11 +1,13 @@
 import bpy
-from bpy_extras.io_utils import ExportHelper
 import traceback
-from .properties import CollisionFlags
+from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
+from Sollumz.sollumz_operators import SollumzExportHelper
 
+class NoGeometryError(Exception):
+    message = 'Sollumz Geometry has no geometry!'
 
 def init_poly_bound(poly_bound, obj, materials):
     # materials = obj.parent.data.materials.values()
@@ -29,30 +31,25 @@ def add_material(material, materials):
         mat_item.material_color_index = material.collision_properties.material_color_index
         
         # Assign flags
-        for flag_name in CollisionFlags.__annotations__.keys():
+        for flag_name in CollisionMatFlags.__annotations__.keys():
             # flag_exists = getattr(material.collision_flags, flag_name)
             if flag_name in material.collision_flags:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
 
         materials.append(mat_item)
 
-def polygon_from_object(obj, vertices, materials):
+def polygon_from_object(obj, vertices, materials, geom_center):
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
         bound_box = get_bound_world(obj)
 
-        #get local vert position
-        # bound_center = get_bound_center(obj)
-        # a = bound_box[0] - bound_center
-        # b = bound_box[5] - bound_center
-        # c = bound_box[2] - bound_center
-        # d = bound_box[7] - bound_center
-        # corners = [a, b, c, d]
+        if not bound_box:
+            return None
 
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
-            vertices.append(vert)
+            vertices.append(vert - geom_center)
             indices.append(len(vertices) - 1)
 
         box.v1 = indices[0]
@@ -76,10 +73,14 @@ def polygon_from_object(obj, vertices, materials):
             bound = init_poly_bound(Capsule(), obj, materials)
 
         bound_box = get_bound_world(obj)
+
+        if not bound_box:
+            return None
+
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
         distance = Vector((0, 0, height / 2))
-        center = get_bound_center(obj)
+        center = obj.location
         radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
         v1 = center - distance
         v2 = center + distance
@@ -114,11 +115,17 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
         return ValueError('Invalid argument for geometry sollum_type!')
 
     geometry = init_bound_item(geometry, obj)
-    geometry.geometry_center = get_bound_center(obj, True)
+    pos = get_local_pos(obj)
+    geometry.geometry_center = obj.location
+    geometry.composite_position = pos
+
+    # Ensure object has geometry
+    found = False
 
     # Get child poly bounds
     for child in get_children_recursive(obj):
         if child.sollum_type == PolygonType.TRIANGLE:
+            found = True
             mesh = child.to_mesh()
             mesh.calc_normals_split()
             mesh.calc_loop_triangles()
@@ -127,16 +134,20 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 add_material(material, geometry.materials)
 
             for vertex in mesh.vertices:
-                geometry.vertices.append(obj.matrix_world @ vertex.co)
+                geometry.vertices.append(vertex.co)
 
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
-        
+
     for child in get_children_recursive(obj):
-        poly = polygon_from_object(child, geometry.vertices, geometry.materials)
+        poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
         if poly:
+            found = True
             geometry.polygons.append(poly)
     
+    if not found:
+        raise NoGeometryError()
+
     return geometry
 
 def init_bound_item(bound_item, obj):
@@ -151,6 +162,10 @@ def init_bound_item(bound_item, obj):
         value = getattr(obj.composite_flags2, prop)
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
+    
+    bound_item.composite_position = obj.location
+    bound_item.composite_rotation = obj.rotation_euler.to_quaternion().normalized()
+    bound_item.composite_scale = Vector([1, 1, 1])
 
     return bound_item
 
@@ -158,8 +173,9 @@ def init_bound(bound, obj):
     bb_min, bb_max = get_bb_extents(obj)
     bound.box_min = bb_min
     bound.box_max = bb_max
-    bound.box_center = get_bound_center(obj)
-    bound.sphere_center = get_bound_center(obj)
+    center = get_bound_center(obj)
+    bound.box_center = center
+    bound.sphere_center = center
     bound.sphere_radius = get_obj_radius(obj)
     bound.procedural_id = obj.bound_properties.procedural_id
     bound.room_id = obj.bound_properties.room_id
@@ -170,17 +186,17 @@ def init_bound(bound, obj):
 
 def bound_from_object(obj):
     if obj.sollum_type == BoundType.BOX:
-        return init_bound(BoundBox(), obj)
+        return init_bound_item(BoundBox(), obj)
     elif obj.sollum_type == BoundType.SPHERE:
-        return init_bound(BoundSphere(), obj)
-    elif obj.sollum_type == BoundType.CAPSULE:
-        return init_bound(BoundCapsule(), obj)
+        return init_bound_item(BoundSphere(), obj)
     elif obj.sollum_type == BoundType.CYLINDER:
-        return init_bound(BoundCylinder(), obj)
+        return init_bound_item(BoundCylinder(), obj)
+    elif obj.sollum_type == BoundType.CAPSULE:
+        return init_bound_item(BoundCapsule(), obj)
     elif obj.sollum_type == BoundType.DISC:
-        return init_bound(BoundDisc(), obj)
+        return init_bound_item(BoundDisc(), obj)
     elif obj.sollum_type == BoundType.CLOTH:
-        return init_bound(BoundCloth(), obj)
+        return init_bound_item(BoundCloth(), obj)
     elif obj.sollum_type == BoundType.GEOMETRY:
         return geometry_from_object(obj, BoundType.GEOMETRY)
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
@@ -189,6 +205,7 @@ def bound_from_object(obj):
 def ybn_from_object(obj):
     ybn = YBN()
     init_bound(ybn.bounds, obj)
+    
 
     for child in get_children_recursive(obj):
         bound = bound_from_object(child)
@@ -197,12 +214,12 @@ def ybn_from_object(obj):
     
     return ybn
 
-class ExportYbnXml(bpy.types.Operator, ExportHelper):
+class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "exportxml.ybn"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "exportxml.ybn" 
     bl_label = "Export Ybn Xml (.ybn.xml)"
-
-    filename_ext = ".ybn.xml"
+    
+    filename_ext = '.ybn.xml'
 
     def execute(self, context):
 
@@ -211,19 +228,21 @@ class ExportYbnXml(bpy.types.Operator, ExportHelper):
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == BoundType.COMPOSITE:
+                if obj.sollum_type == BoundType.COMPOSITE and obj.enable_export:
                     found = True
                     try:
-                        ybn_from_object(obj).write_xml(self.filepath)
+                        ybn_from_object(obj).write_xml(self.get_filepath(obj))
                         self.report({'INFO'}, 'YBN Successfully exported.')
-                    except Exception as e:
-                        #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
+                    except NoGeometryError:
+                        self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
+                    except:
                         self.report({'ERROR'}, traceback.format_exc())
         
         if not found:
             self.report({'INFO'}, "No bound object types in scene for Sollumz export")
 
         return {'FINISHED'}
+    
 
 def ybn_menu_func_export(self, context):
     self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")
