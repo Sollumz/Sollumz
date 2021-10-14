@@ -269,7 +269,6 @@ class VertexBufferProperty(ElementTree):
         vertices = []
         text = self.data.strip().split('\n')
         if len(text) > 0:
-            print(text)
             for line in text:
                 v = Vertex.from_xml(self.layout, line.strip().split(" " * 3))
                 vertices.append(v)

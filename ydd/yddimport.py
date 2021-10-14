@@ -21,11 +21,17 @@ def drawable_dict_to_obj(drawable_dict, filepath):
 
     for drawable in drawable_dict.value:
         drawable_obj = drawable_to_obj(drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones)
-        if (armature_with_skel_obj is None and drawable_with_skel is not None and drawable.skeleton is not None):
+        if (armature_with_skel_obj is None and drawable_with_skel is not None and len(drawable.skeleton.bones) > 0):
             armature_with_skel_obj = drawable_obj
 
-        for drawable_model in drawable_obj.children:
-            for geo in drawable_model.children:
+        for model in drawable_obj.children:
+            if model.sollum_type != "sollumz_drawable_model":
+                continue
+
+            for geo in model.children:
+                if geo.sollum_type != "sollumz_geometry":
+                    continue
+
                 mod_objs.append(geo)
             
         vmodels.append(drawable_obj)
@@ -38,7 +44,7 @@ def drawable_dict_to_obj(drawable_dict, filepath):
     
     bpy.context.collection.objects.link(dict_obj)
 
-    if (armature_with_skel_obj is not None):
+    if armature_with_skel_obj is not None:
         for obj in mod_objs:
             mod = obj.modifiers.get("Armature")
             if mod is None:
