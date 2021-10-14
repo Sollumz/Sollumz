@@ -111,7 +111,9 @@ class ElementTree(Element):
         root = ET.Element(self.tag_name)
         for child in vars(self).values():
             if isinstance(child, Element):
-                root.append(child.to_xml())
+                element = child.to_xml()
+                if(element != None):
+                    root.append(element)
             elif isinstance(child, AttributeProperty):
                 root.set(child.name, str(child.value))
 

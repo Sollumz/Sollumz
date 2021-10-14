@@ -135,16 +135,27 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
             mesh.calc_normals_split()
             mesh.calc_loop_triangles()
 
+            #mats
             for material in mesh.materials:
                 add_material(material, geometry.materials)
 
+            #verts
             for vertex in mesh.vertices:
                 geometry.vertices.append((child.matrix_world @ vertex.co) - geometry.geometry_center)
 
+            #vert colors
+            for poly in mesh.polygons:
+                for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+                    #vi = mesh.loops[loop_index].vertex_index
+                    #geometry.vertices.append((child.matrix_world @ mesh.vertices[vi].co) - geometry.geometry_center)
+                    if(len(mesh.vertex_colors) > 0):
+                        geometry.vertex_colors.append(mesh.vertex_colors[0].data[loop_index].color)
+                    #geometry.polygons.append(tiangle_from_mesh_loop(mesh.loops[loop_index]))
+
+            #indicies
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
             
-
     for child in get_children_recursive(obj):
         poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
         if poly:
@@ -237,7 +248,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
                 if obj.sollum_type == BoundType.COMPOSITE and obj.enable_export:
                     found = True
                     try:
-                        ybn_from_object(obj).write_xml(self.get_filepath(obj))
+                        ybn_from_object(obj).write_xml(self.get_filepath(obj) + ".ybn.xml")
                         self.report({'INFO'}, 'YBN Successfully exported.')
                     except NoGeometryError:
                         self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
