@@ -288,12 +288,12 @@ def skeleton_to_obj(skeleton, armature):
 
     return armature
 
-def drawable_to_obj(drawable, filepath, name):
+def drawable_to_obj(drawable, filepath, name, bones_override=None):
 
     materials = shadergroup_to_materials(drawable.shader_group, filepath)
 
     obj = None
-    if drawable.skeleton is not None:
+    if len(drawable.skeleton.bones) > 0:
         skel = bpy.data.armatures.new(name + ".skel")
         obj = bpy.data.objects.new(name, skel)
     else:
@@ -307,11 +307,14 @@ def drawable_to_obj(drawable, filepath, name):
 
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
-    skeleton_to_obj(drawable.skeleton, obj)
 
     bones = None
-    if drawable.skeleton is not None:
+    if len(drawable.skeleton.bones) > 0:
         bones = drawable.skeleton.bones
+        skeleton_to_obj(drawable.skeleton, obj)
+
+    if bones_override is not None:
+        bones = bones_override
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(model, materials, drawable.name, "high", bones=bones)
@@ -328,6 +331,17 @@ def drawable_to_obj(drawable, filepath, name):
     for model in drawable.drawable_models_vlow:
         dobj = drawable_model_to_obj(model, materials, drawable.name, "vlow", bones=bones)
         dobj.parent = obj
+
+    for model in obj.children:
+        if model.sollum_type != "sollumz_drawable_model":
+            continue
+
+        for geo in model.children:
+            if geo.sollum_type != "sollumz_geometry":
+                continue
+
+            mod = geo.modifiers.new("Armature", 'ARMATURE')
+            mod.object = obj
 
     return obj
 

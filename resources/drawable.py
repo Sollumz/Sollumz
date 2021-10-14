@@ -5,6 +5,16 @@ from .codewalker_xml import *
 from Sollumz.tools.utils import *
 from .bound import Bounds, BoundsComposite
 
+class YDD:
+    
+    @staticmethod
+    def from_xml_file(filepath):
+        return DrawableDictionary.from_xml_file(filepath)
+
+    @staticmethod
+    def write_xml(drawable_dict, filepath):
+        return drawable_dict.write_xml(filepath)
+
 class YDR:
     
     @staticmethod
@@ -347,3 +357,30 @@ class Drawable(ElementTree, AbstractClass):
         self.drawable_models_low = DrawableModelListProperty("DrawableModelsLow")
         self.drawable_models_vlow = DrawableModelListProperty("DrawableModelsVlow")
 
+class DrawableDictionary(ListProperty):
+    list_type = Drawable
+
+    def __init__(self, tag_name: str=None, value=None):
+        super().__init__(tag_name=tag_name or "DrawableDictionary", value=value or [])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        new.tag_name = "Item"
+        children = element.findall(new.tag_name)
+
+        for child in children:
+            new.value.append(new.list_type.from_xml(child))
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        for item in self.value:
+            if isinstance(item, self.list_type):
+                item.tag_name = "Item"
+                element.append(item.to_xml())
+            else:
+                raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+
+        return element
