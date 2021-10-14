@@ -228,7 +228,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == BoundType.COMPOSITE:
+                if obj.sollum_type == BoundType.COMPOSITE and obj.enable_export:
                     found = True
                     try:
                         ybn_from_object(obj).write_xml(self.get_filepath(obj))

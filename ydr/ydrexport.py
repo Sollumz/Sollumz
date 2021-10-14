@@ -344,7 +344,7 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == "sollumz_drawable":
+                if obj.sollum_type == "sollumz_drawable" and obj.enable_export:
                     found = True
                     try:
                         drawable_from_object(obj).write_xml(self.get_filepath(obj))
