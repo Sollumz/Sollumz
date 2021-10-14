@@ -29,10 +29,9 @@ def shadergroup_to_materials(shadergroup, filepath):
                 if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                     if(param.name == n.name):
                         texture_path = os.path.join(texture_folder, param.texture_name + ".dds")
-                        if(os.path.isfile(texture_path) == False):
-                            texture_path = os.path.dirname(__file__)[:-4] + "\\resources\\givemechecker.jpg"
-                        img = bpy.data.images.load(texture_path, check_existing=True)
-                        n.image = img 
+                        if(os.path.isfile(texture_path)):
+                            img = bpy.data.images.load(texture_path, check_existing=True)
+                            n.image = img 
 
                         #assign embedded texture dictionary properties
                         if(shadergroup.texture_dictionary != None):

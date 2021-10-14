@@ -1,6 +1,7 @@
 import bpy
 from Sollumz.sollumz_properties import MaterialType
 from collections import namedtuple 
+import os
 
 ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
 
@@ -351,6 +352,10 @@ def create_image_node(node_tree, param):
 
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     imgnode.name = param.name
+    texture_path = os.path.dirname(__file__)[:-4] + "\\resources\\givemechecker.jpg"
+    gmc_texture = bpy.data.images.load(texture_path, check_existing=True)
+    imgnode.image = gmc_texture
+
     # imgnode.img = param.DefaultValue
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links

@@ -28,11 +28,22 @@ def draw_shader(layout, mat):
 
         layout.label(text = "Texture Parameters")
         nodes = mat.node_tree.nodes
-        for n in nodes:   
+
+        #only using selected nodes because if you use the node tree weird bug 
+        #where if you select one of the image nodes it swaps around the order that you edit them in...
+        #I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front..... 
+        #annoyying as hell
+        selected_nodes = []
+        for n in nodes:
+            if(n.select == True):
+                selected_nodes.append(n)
+
+        for n in selected_nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
+            #if(n.name == "SpecSampler"):
                 box = layout.box()
                 row = box.row(align = True)
-                row.label(text = "Texture Type: " + n.name)
+                row.label(text = "Texture Type: " + n.name) 
                 row.label(text = "Texture Name: " + n.image.name)
                 row = box.row()
                 row.prop(n.image, "filepath", text = "Texture Path")
@@ -97,62 +108,6 @@ def draw_shader(layout, mat):
                     row.prop(z.outputs[0], "default_value", text = "Z:")
                     row.prop(w.outputs[0], "default_value", text = "W:")
 
-class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
-    bl_label = "Sollumz Shader Panel"
-    bl_idname = "SOLLUMZ_PT_SHADER_PANEL"
-    bl_space_type = 'NODE_EDITOR'
-    bl_region_type = 'UI'
-    bl_category = "Item"
-
-    def draw(self, context):
-        layout = self.layout
-
-        nodes = context.selected_nodes
-        aobj = bpy.context.active_object
-
-        if aobj and aobj.data: #and aobj.sollum_type and is_sollum_type(aobj, ObjectType):
-            mat = bpy.context.active_object.data.materials[0]
-        else:
-            return
-
-        for n in nodes:
-            if(isinstance(n, bpy.types.ShaderNodeTexImage)):
-                box = layout.box()
-                box.prop(n, "image")
-                row = box.row()
-                for prop in TextureProperties.__annotations__:
-                    row.prop(n.texture_properties, prop)
-
-                # Flags
-                box = box.box()
-                row = box.row()
-                item_index = 0
-                for prop in TextureFlags.__annotations__:
-                    if item_index % 4 == 0 and item_index > 1:
-                        row = box.row()
-                    row.prop(n.texture_properties, prop)
-                    item_index += 1
-
-            if(isinstance(n, bpy.types.ShaderNodeValue)):
-                i = 0
-                box = layout.box()
-                for n in mat.node_tree.nodes:
-                    if(isinstance(n, bpy.types.ShaderNodeValue)):
-                        if(i == 4):
-                            box = layout.box()
-                            i = 0
-
-                        #fix variable name for display
-                        n_array = n.name.split('_')
-                        name = n_array[0].capitalize()
-                        letter = n_array[1].upper()
-                        label = name + " " + letter
-                        box.label(text = label)
-                        
-                        row = box.row()
-                        row.prop(n.outputs[0], "default_value")
-                        i += 1
-
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_SHADER_MATERIALS_LIST"
 
@@ -185,6 +140,8 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
         row.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
+        row = box.row()
+        row.operator("sollumz.createshadermaterial")
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
