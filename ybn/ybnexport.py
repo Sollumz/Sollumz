@@ -240,23 +240,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
 
     def execute(self, context):
 
-        objects = bpy.context.collection.objects
-
-        found = False
-        if len(objects) > 0:
-            for obj in objects:
-                if obj.sollum_type == BoundType.COMPOSITE and obj.enable_export:
-                    found = True
-                    try:
-                        ybn_from_object(obj).write_xml(self.get_filepath(obj) + ".ybn.xml")
-                        self.report({'INFO'}, 'YBN Successfully exported.')
-                    except NoGeometryError:
-                        self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
-                    except:
-                        self.report({'ERROR'}, traceback.format_exc())
-        
-        if not found:
-            self.report({'INFO'}, "No bound object types in scene for Sollumz export")
+        self.export_all(context)
 
         return {'FINISHED'}
     
