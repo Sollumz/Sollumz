@@ -3,7 +3,7 @@ from Sollumz.sollumz_properties import PolygonType, items_from_enums
 from bpy.app.handlers import persistent
 from .collision_materials import create_collision_material_from_index, collisionmats
 
-class CollisionFlags(bpy.types.PropertyGroup):
+class CollisionMatFlags(bpy.types.PropertyGroup):
     none : bpy.props.BoolProperty(name = "NONE", default = False)
     stairs : bpy.props.BoolProperty(name = "STAIRS", default = False)
     not_climbable : bpy.props.BoolProperty(name = "NOT CLIMBABLE", default = False)
@@ -23,7 +23,7 @@ class CollisionFlags(bpy.types.PropertyGroup):
     no_cam_collision_allow_clipping : bpy.props.BoolProperty(name = "NO CAM COLLISION ALLOW CLIPPING", default = False)
 
 
-class CollisionProperties(CollisionFlags, bpy.types.PropertyGroup):
+class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
     collision_index : bpy.props.IntProperty(name = 'Collision Index', default = 0)
     procedural_id : bpy.props.IntProperty(name = "Procedural ID", default = 0)
     room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
@@ -32,7 +32,6 @@ class CollisionProperties(CollisionFlags, bpy.types.PropertyGroup):
 
 
 class BoundFlags(bpy.types.PropertyGroup):
-
     unknown : bpy.props.BoolProperty(name = "UNKNOWN", default = False)
     map_weapon : bpy.props.BoolProperty(name = "MAP WEAPON", default = False)
     map_dynamic : bpy.props.BoolProperty(name = "MAP DYNAMIC", default = False)
@@ -102,12 +101,12 @@ def register():
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type = BoundFlags)
     ##
 
-    bpy.types.Scene.collision_material_index = bpy.props.IntProperty(name = "Material Index") #MAKE ENUM WITH THE MATERIALS NAMES
+    bpy.types.Scene.collision_material_index = bpy.props.IntProperty(name = "Material Index")
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(type = CollisionMaterial, name = 'Collision Materials')
     bpy.app.handlers.load_post.append(on_file_loaded)
 
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
-    bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionFlags)
+    bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionMatFlags)
 
 
     #COLLISION TOOLS UI PROPERTIES

@@ -1,11 +1,13 @@
 import bpy
 import traceback
-from .properties import CollisionFlags
+from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
 from Sollumz.sollumz_operators import SollumzExportHelper
 
+class NoGeometryError(Exception):
+    message = 'Sollumz Geometry has no geometry!'
 
 def init_poly_bound(poly_bound, obj, materials):
     # materials = obj.parent.data.materials.values()
@@ -29,7 +31,7 @@ def add_material(material, materials):
         mat_item.material_color_index = material.collision_properties.material_color_index
         
         # Assign flags
-        for flag_name in CollisionFlags.__annotations__.keys():
+        for flag_name in CollisionMatFlags.__annotations__.keys():
             # flag_exists = getattr(material.collision_flags, flag_name)
             if flag_name in material.collision_flags:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
@@ -41,6 +43,9 @@ def polygon_from_object(obj, vertices, materials, geom_center):
         box = init_poly_bound(Box(), obj, materials)
         indices = []
         bound_box = get_bound_world(obj)
+
+        if not bound_box:
+            return None
 
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
@@ -68,6 +73,10 @@ def polygon_from_object(obj, vertices, materials, geom_center):
             bound = init_poly_bound(Capsule(), obj, materials)
 
         bound_box = get_bound_world(obj)
+
+        if not bound_box:
+            return None
+
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
         distance = Vector((0, 0, height / 2))
@@ -110,9 +119,13 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
     geometry.geometry_center = obj.location
     geometry.composite_position = pos
 
+    # Ensure object has geometry
+    found = False
+
     # Get child poly bounds
     for child in get_children_recursive(obj):
         if child.sollum_type == PolygonType.TRIANGLE:
+            found = True
             mesh = child.to_mesh()
             mesh.calc_normals_split()
             mesh.calc_loop_triangles()
@@ -125,12 +138,16 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
 
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
-        
+
     for child in get_children_recursive(obj):
         poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
         if poly:
+            found = True
             geometry.polygons.append(poly)
     
+    if not found:
+        raise NoGeometryError()
+
     return geometry
 
 def init_bound_item(bound_item, obj):
@@ -188,6 +205,7 @@ def bound_from_object(obj):
 def ybn_from_object(obj):
     ybn = YBN()
     init_bound(ybn.bounds, obj)
+    
 
     for child in get_children_recursive(obj):
         bound = bound_from_object(child)
@@ -215,6 +233,8 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
                     try:
                         ybn_from_object(obj).write_xml(self.get_filepath(obj))
                         self.report({'INFO'}, 'YBN Successfully exported.')
+                    except NoGeometryError:
+                        self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
                     except:
                         self.report({'ERROR'}, traceback.format_exc())
         

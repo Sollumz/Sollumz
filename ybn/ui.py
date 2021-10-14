@@ -1,6 +1,6 @@
 import bpy
 from Sollumz.sollumz_properties import PolygonType, is_sollum_type
-from .properties import BoundProperties, BoundFlags, CollisionProperties, CollisionFlags
+from .properties import BoundProperties, BoundFlags, CollisionProperties, CollisionMatFlags
 from .collision_materials import collisionmats
 from .operators import *
 
@@ -14,12 +14,12 @@ def draw_collision_material_properties(box, mat):
             row = box.row()
         row.prop(mat.collision_properties, prop)
         index += 1
-    
+
     box = box.box()
     box.label(text = "Flags")  
     row = box.row()
     index = 0
-    for prop in CollisionFlags.__annotations__:
+    for prop in CollisionMatFlags.__annotations__:
         if index % 4 == 0 and index > 1:
             row = box.row()
         row.prop(mat.collision_flags, prop)
@@ -36,17 +36,23 @@ def generate_flags(box, prop):
         index += 1
 
 def draw_bound_properties(layout, obj):
-    is_poly = is_sollum_type(obj, PolygonType)
-    if not is_poly:
-        index = 0
-        row = layout.row()
-        for prop in BoundProperties.__annotations__:
-            if index % 2 == 0 and index > 0:
-                row = layout.row()
-            row.prop(obj.bound_properties, prop)
-            index += 1
+    index = 0
+    row = layout.row()
+    for prop in BoundProperties.__annotations__:
+        if index % 2 == 0 and index > 0:
+            row = layout.row()
+        row.prop(obj.bound_properties, prop)
+        index += 1
+
+    if obj.sollum_type != BoundType.COMPOSITE:
         generate_flags(layout.box(), obj.composite_flags1)
         generate_flags(layout.box(), obj.composite_flags2)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)
+        row.operator(SOLLUMZ_OT_load_default_col_flags.bl_idname)
+    
+        
+
 
 class SOLLUMZ_UL_COLLISION_FLAGS_LIST(bpy.types.UIList):
     def draw_item(

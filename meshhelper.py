@@ -225,7 +225,16 @@ def get_bb_extents(obj):
 
 """Get the bounding box of an object and all of it's children"""
 def get_bound_world(obj, np_array=False):
-    objects = [obj, *get_children_recursive(obj)]
+    objects = []
+
+    # Ensure all objects are meshes
+    for obj in [obj, *get_children_recursive(obj)]:
+        if obj.type == "MESH":
+            objects.append(obj)
+
+    if len(objects) < 1:
+        raise ValueError('Failed to get bounds: Object has no geometry data or children with geometry data.')
+
     # get the global coordinates of all object bounding box corners
     np_bounds = np.vstack(
         tuple(
@@ -254,6 +263,10 @@ def get_bound_center(obj):
 
 def get_children_recursive(obj):
     children = []
+
+    if len(obj.children) < 1:
+        return children
+
     for child in obj.children:
         children.append(child)
         if len(child.children) > 0:
@@ -265,6 +278,7 @@ def get_children_recursive(obj):
 """Get the radius of an object's bounding box"""
 def get_obj_radius(obj) -> float:
     bb_min, bb_max = get_bb_extents(obj)
+
     p1 = Vector((bb_min.x, bb_min.y, 0))
     p2 = Vector((bb_max.x, bb_max.y, 0))
     # Distance between bb_min and bb_max x,y values

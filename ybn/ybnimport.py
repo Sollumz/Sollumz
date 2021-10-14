@@ -1,6 +1,6 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from .properties import CollisionFlags
+from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
@@ -125,7 +125,7 @@ def mat_to_obj(gmat):
     mat.collision_properties.material_color_index = gmat.material_color_index
 
     # Assign flags
-    for flag_name in CollisionFlags.__annotations__.keys():
+    for flag_name in CollisionMatFlags.__annotations__.keys():
         if f"FLAG_{flag_name.upper()}" in gmat.flags:
             setattr(mat.collision_flags, flag_name, True)
     
@@ -305,7 +305,7 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
-            composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath))
+            composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath.replace('.ybn.xml', '')))
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
