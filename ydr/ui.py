@@ -153,13 +153,13 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
                         row.prop(n.outputs[0], "default_value")
                         i += 1
 
-class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_COLLISION_MATERIALS_LIST"
+class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_SHADER_MATERIALS_LIST"
 
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        name = ShaderMaterial[item.index].ui_name
+        name = shadermats[item.index].ui_name
         # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
@@ -169,6 +169,22 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
             layout.prop(item, "name",
                         text=name, emboss=False, icon='MATERIAL')
 
+class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Ydr Tools"
+    bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+
+        box = layout.box()
+        box.label(text = "Create Shader")
+        row = box.row()
+        row.template_list(
+            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
+        )
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 

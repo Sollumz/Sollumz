@@ -16,7 +16,7 @@ def shadergroup_to_materials(shadergroup, filepath):
     for shader in shadergroup.shaders:
         
         material = create_shader(shader.name, shadermanager)
-
+        
         #################### GETTING ERROR FOR NO REASON #########################
         #material.shader_properties.renderbucket = shader.renderbucket[0] 
         ##########################################################################
