@@ -288,7 +288,7 @@ def skeleton_to_obj(skeleton, armature):
 
     return armature
 
-def drawable_to_obj(drawable, filepath, name):
+def drawable_to_obj(drawable, filepath, name, bones_override=None):
 
     materials = shadergroup_to_materials(drawable.shader_group, filepath)
 
@@ -310,8 +310,11 @@ def drawable_to_obj(drawable, filepath, name):
     skeleton_to_obj(drawable.skeleton, obj)
 
     bones = None
-    if drawable.skeleton is not None:
+    if len(drawable.skeleton.bones) > 0:
         bones = drawable.skeleton.bones
+
+    if bones_override is not None:
+        bones = bones_override
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(model, materials, drawable.name, "high", bones=bones)
