@@ -87,15 +87,18 @@ def poly_to_obj(poly, materials, vertices):
         mesh = sphere.data
         create_sphere(mesh, poly.radius)
 
+        sphere.location = vertices[poly.v]
+
         return sphere
     elif type(poly) == Capsule:
         capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = get_distance_of_vectors(v1, v2)    
+        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2)
+        print(v1, v2)    
         rot = get_direction_of_vectors(v1, v2)
-        print(capsule.name, length, poly.radius)
-        create_capsule(capsule, poly.radius * 2, length)
+
+        create_capsule(capsule, poly.radius, length)
         
         capsule.location = (v1 + v2) / 2     
         capsule.rotation_euler = rot
