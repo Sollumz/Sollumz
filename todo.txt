@@ -17,8 +17,6 @@ YBN IMPORT / EXPORT
 ________________________
 - TEST
 - Export vertex colors
-- Fix capsule poly import
-- Fix spacing of vertex positions
 - Finish Cylinder, Disc, and Capsule bound types
 - Add buttons for converting to all bound types
 - Some values aren't exporting? (i.e Inertia)
