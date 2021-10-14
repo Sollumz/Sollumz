@@ -22,7 +22,7 @@ def init_poly_bound(poly_bound, obj, materials):
     return poly_bound
 
 def add_material(material, materials):
-    if material.sollum_type == MaterialType.COLLISION:
+    if material and material.sollum_type == MaterialType.COLLISION:
         mat_item = MaterialItem()
         mat_item.type = material.collision_properties.collision_index
         mat_item.procedural_id = material.collision_properties.procedural_id
@@ -39,13 +39,11 @@ def add_material(material, materials):
         materials.append(mat_item)
 
 def polygon_from_object(obj, vertices, materials, geom_center):
+    world_pos = obj.matrix_world.to_translation()
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
         bound_box = get_bound_world(obj)
-
-        if not bound_box:
-            return None
 
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
@@ -60,9 +58,13 @@ def polygon_from_object(obj, vertices, materials, geom_center):
         return box
     elif obj.sollum_type == PolygonType.SPHERE:
         sphere = init_poly_bound(Sphere(), obj, materials)
-        vertices.append(obj.location)
+        vertices.append(world_pos - geom_center)
         sphere.v = len(vertices) - 1
-        sphere.radius = get_obj_radius(obj)
+        bound_box = get_bound_world(obj)
+
+        radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
+
+        sphere.radius = radius
         
         return sphere
     elif obj.sollum_type == PolygonType.CYLINDER or obj.sollum_type == PolygonType.CAPSULE:
@@ -74,18 +76,22 @@ def polygon_from_object(obj, vertices, materials, geom_center):
 
         bound_box = get_bound_world(obj)
 
-        if not bound_box:
-            return None
-
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
-        distance = Vector((0, 0, height / 2))
-        center = obj.location
         radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
-        v1 = center - distance
-        v2 = center + distance
-        vertices.append(v1)
-        vertices.append(v2)
+
+        if obj.sollum_type == PolygonType.CAPSULE:
+            height = height - (radius * 2)
+
+        vertical = Vector((0, 0, height / 2))
+        vertical.rotate(obj.matrix_world.to_euler('XYZ')) 
+        
+        v1 = world_pos - vertical
+        v2 = world_pos + vertical
+
+
+        vertices.append(v1 - geom_center)
+        vertices.append(v2 - geom_center)
 
         bound.v1 = len(vertices) - 2
         bound.v2 = len(vertices) - 1
@@ -96,7 +102,7 @@ def polygon_from_object(obj, vertices, materials, geom_center):
 
 def triangle_from_face(face):
     triangle = Triangle()
-    triangle.material_index = face.material_index #may have to use the new materials array
+    triangle.material_index = face.material_index
 
     triangle.v1 = face.vertices[0]
     triangle.v2 = face.vertices[1]
@@ -115,9 +121,8 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
         return ValueError('Invalid argument for geometry sollum_type!')
 
     geometry = init_bound_item(geometry, obj)
-    pos = get_local_pos(obj)
     geometry.geometry_center = obj.location
-    geometry.composite_position = pos
+    geometry.composite_position = Vector()
 
     # Ensure object has geometry
     found = False
@@ -134,10 +139,11 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 add_material(material, geometry.materials)
 
             for vertex in mesh.vertices:
-                geometry.vertices.append(vertex.co)
+                geometry.vertices.append((child.matrix_world @ vertex.co) - geometry.geometry_center)
 
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
+            
 
     for child in get_children_recursive(obj):
         poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
