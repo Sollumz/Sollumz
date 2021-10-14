@@ -93,7 +93,7 @@ def create_disc(mesh, radius=0.5, length=0.1):
     bm.free()
     return mesh
 
-def create_capsule(obj, diameter=0.5, length=2):
+def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     length = length if length > diameter * 2 else diameter * 2
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=diameter)
@@ -101,13 +101,15 @@ def create_capsule(obj, diameter=0.5, length=2):
 
     center = obj.location
     bb = [Vector(b) for b in obj.bound_box]
-    z = bb[1] - bb[0]
+    axis = bb[1] - bb[0]
+    if use_rot:
+        axis = bb[4] - bb[0]
 
     # Get top half of vertices
     top = []
     top_faces = []
     for v in bm.verts:
-        if distance_point_to_plane(v.co, center, z) >= 0:
+        if distance_point_to_plane(v.co, center, axis) >= 0:
             top.append(v)
             for face in v.link_faces:
                 if not face in top_faces:
@@ -118,7 +120,13 @@ def create_capsule(obj, diameter=0.5, length=2):
     extruded = ret["geom"]
     del ret
     translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
-    bmesh.ops.translate(bm, vec = (0.0, 0.0, length - (diameter * 2)), verts=translate_verts)
+
+    amount = length - (diameter * 2)
+    vec = (0, 0, amount)
+    if use_rot:
+        vec = (amount, 0, 0)
+
+    bmesh.ops.translate(bm, vec=vec, verts=translate_verts)
 
     bm.to_mesh(mesh)
     bm.free()
@@ -276,63 +284,16 @@ def get_children_recursive(obj):
 
 
 """Get the radius of an object's bounding box"""
-def get_obj_radius(obj) -> float:
+def get_obj_radius(obj):
     bb_min, bb_max = get_bb_extents(obj)
 
     p1 = Vector((bb_min.x, bb_min.y, 0))
     p2 = Vector((bb_max.x, bb_max.y, 0))
+
     # Distance between bb_min and bb_max x,y values
     distance = get_distance_of_vectors(p1, p2)
     return distance / 2
 
 
 def get_local_pos(obj):
-    return Vector(obj.matrix_world.inverted() @ obj.matrix_world.translation)
-
-
-def signed_volume_of_triangle(p1: Vector, p2: Vector, p3: Vector) -> float:
-    v321 = p3.x * p2.y * p1.z
-    v231 = p2.x * p3.y * p1.z
-    v312 = p3.x * p1.y * p2.z
-    v132 = p1.x * p3.y * p2.z
-    v213 = p2.x * p1.y * p3.z
-    v123 = p1.x * p2.y * p3.z
-    return (1.0 / 6.0) * (-v321 + v231 + v312 - v132 - v213 + v123)
-
-
-"""Get the volume of an object and all of it's children"""  # https://stackoverflow.com/questions/1406029/how-to-calculate-the-volume-of-a-3d-mesh-object-the-surface-of-which-is-made-up
-def get_obj_volume(obj) -> int:
-    vols = []
-    for child in [obj, *get_children_recursive(obj)]:
-        if not obj.data:
-            continue
-
-        mesh = child.to_mesh()
-        mesh.calc_normals_split()
-        mesh.calc_loop_triangles()
-
-        for tri in mesh.loop_triangles:
-            p1 = obj.matrix_world @ mesh.vertices[tri.vertices[0]].co
-            p2 = obj.matrix_world @ mesh.vertices[tri.vertices[1]].co
-            p3 = obj.matrix_world @ mesh.vertices[tri.vertices[2]].co
-            vols.append(signed_volume_of_triangle(p1, p2, p3))
-
-    return int(abs(sum(vols)))
-
-
-def get_sphere_bb(objs, bbminmax) -> list:
-    allverts = []
-    for obj in objs:
-        mesh = obj.data
-        for vert in mesh.vertices:
-            allverts.append(vert)
-    bscen = [0, 0, 0]
-    bsrad = 0
-
-    av = add_vector_list(bbminmax[0], bbminmax[1])
-    bscen = multiple_vector_list(av, 0.5)
-
-    for v in allverts:
-        bsrad = max(bsrad, get_vector_list_length(subtract_vector_list(v.co, bscen)))
-
-    return [bscen, bsrad]
+    return Vector(obj.parent.matrix_world.inverted() @ obj.matrix_world.translation)

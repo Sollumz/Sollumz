@@ -354,7 +354,7 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
                         self.report({'ERROR'}, traceback.format_exc())
         
         if not found:
-            self.report({'INFO'}, "No bound object types in scene for Sollumz export")
+            self.report({'INFO'}, "No drawable object types in scene for Sollumz export")
 
         return {'FINISHED'}
 

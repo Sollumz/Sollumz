@@ -94,8 +94,8 @@ def poly_to_obj(poly, materials, vertices):
         v2 = vertices[poly.v2]
         length = get_distance_of_vectors(v1, v2)    
         rot = get_direction_of_vectors(v1, v2)
-        
-        create_capsule(capsule, poly.radius, length)
+        print(capsule.name, length, poly.radius)
+        create_capsule(capsule, poly.radius * 2, length)
         
         capsule.location = (v1 + v2) / 2     
         capsule.rotation_euler = rot
@@ -243,7 +243,7 @@ def bound_to_obj(bound):
     elif bound.type == 'Capsule':
         capsule = init_bound_obj(bound, BoundType.CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
-        create_capsule(capsule, bound.sphere_radius, bbmax.z - bbmin.z)
+        create_capsule(capsule, bound.sphere_radius, bbmax.z - bbmin.z, True)
 
         return capsule
     elif bound.type == 'Cylinder':
