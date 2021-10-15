@@ -70,6 +70,9 @@ class BoundProperties(bpy.types.PropertyGroup):
     room_id : bpy.props.IntProperty(name = "Room ID", default = 0)
     ped_density : bpy.props.IntProperty(name = "Ped Density", default = 0)
     poly_flags : bpy.props.IntProperty(name = "Poly Flags", default = 0)
+    inertia : bpy.props.FloatVectorProperty(name = "Inertia")
+    margin : bpy.props.FloatProperty(name = "Margin")
+
 
 
 class CollisionMaterial(bpy.types.PropertyGroup):

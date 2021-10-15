@@ -158,6 +158,7 @@ class MaterialsListProperty(ListProperty):
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Materials', value=value or [])
 
+
 class VertexColorProperty(ElementProperty):
     value_types = (list)
 
@@ -193,6 +194,7 @@ class VertexColorProperty(ElementProperty):
             element.text += '\n'
         
         return element
+
 
 class Polygon(ElementTree, AbstractClass):
     def __init__(self):

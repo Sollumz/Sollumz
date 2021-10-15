@@ -1,6 +1,6 @@
 import bpy
 from .properties import CollisionMatFlags
-from Sollumz.resources.bound import Triangle
+from Sollumz.resources.bound import *
 from Sollumz.sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
@@ -221,7 +221,7 @@ def init_bound_obj(bound, sollum_type):
     obj.bound_properties.procedural_id = int(bound.procedural_id)
     obj.bound_properties.room_id = int(bound.room_id)
     obj.bound_properties.ped_density = int(bound.ped_density)
-    obj.bound_properties.ped_density = int(bound.poly_flags)
+    obj.bound_properties.poly_flags = int(bound.poly_flags)
 
     #assign obj composite flags
     for prop in dir(obj.composite_flags1):
@@ -243,7 +243,6 @@ def init_bound_obj(bound, sollum_type):
     return obj
 
 def bound_to_obj(bound):
-    # TODO: Materials for non geometry bound types
     if bound.type == 'Box':
         box = init_bound_obj(bound, BoundType.BOX)
         create_box_from_extents(box.data, bound.box_min, bound.box_max)

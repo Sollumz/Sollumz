@@ -37,16 +37,19 @@ def add_material(material, materials):
 
         materials.append(mat_item)
 
-def polygon_from_object(obj, vertices, materials, geom_center):
+def polygon_from_object(obj, geometry):
+    vertices = geometry.vertices
+    materials = geometry.materials
+    geom_center = geometry.geometry_center
     world_pos = obj.matrix_world.to_translation()
+
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
-        bound_box = get_bound_world(obj)
-
-        corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
+        bound_box = get_total_bounds(obj)
+        corners = [bound_box[0], bound_box[6], bound_box[4], bound_box[2]]
         for vert in corners:
-            vertices.append(vert - geom_center)
+            vertices.append((obj.matrix_world @ vert) - geom_center)
             indices.append(len(vertices) - 1)
 
         box.v1 = indices[0]
@@ -59,7 +62,7 @@ def polygon_from_object(obj, vertices, materials, geom_center):
         sphere = init_poly_bound(Sphere(), obj, materials)
         vertices.append(world_pos - geom_center)
         sphere.v = len(vertices) - 1
-        bound_box = get_bound_world(obj)
+        bound_box = get_total_bounds(obj)
 
         radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
 
@@ -73,7 +76,7 @@ def polygon_from_object(obj, vertices, materials, geom_center):
         elif obj.sollum_type == PolygonType.CAPSULE:
             bound = init_poly_bound(Capsule(), obj, materials)
 
-        bound_box = get_bound_world(obj)
+        bound_box = get_total_bounds(obj)
 
         # Get bound height
         height = get_distance_of_vectors(bound_box[0], bound_box[1])
@@ -156,7 +159,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 geometry.polygons.append(triangle_from_face(face))
             
     for child in get_children_recursive(obj):
-        poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
+        poly = polygon_from_object(child, geometry)
         if poly:
             found = True
             geometry.polygons.append(poly)
@@ -186,9 +189,9 @@ def init_bound_item(bound_item, obj):
     return bound_item
 
 def init_bound(bound, obj):
-    bb_min, bb_max = get_bb_extents(obj)
-    bound.box_min = bb_min
-    bound.box_max = bb_max
+    bbmin, bbmax = get_bb_extents(obj)
+    bound.box_min = bbmin
+    bound.box_max = bbmax
     center = get_bound_center(obj)
     bound.box_center = center
     bound.sphere_center = center
