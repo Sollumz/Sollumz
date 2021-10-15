@@ -234,14 +234,21 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "exportxml.ybn" 
     bl_label = "Export Ybn Xml (.ybn.xml)"
+    sollum_type = BoundType.COMPOSITE.value
     
     filename_ext = '.ybn.xml'
 
+    def export(self, obj):
+        try:
+            ybn_from_object(obj).write_xml(self.get_filepath(obj))
+            self.report({'INFO'}, 'YBN Successfully exported.')
+        except NoGeometryError:
+            self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
+        except:
+            self.report({'ERROR'}, traceback.format_exc())
+    
     def execute(self, context):
-
-        self.export_all(context)
-
-        return {'FINISHED'}
+        return self.export_all()
     
 
 def ybn_menu_func_export(self, context):
