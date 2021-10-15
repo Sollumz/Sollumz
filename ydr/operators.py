@@ -51,22 +51,17 @@ class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
     bl_idname = "sollumz.quickconvertmeshtodrawable"
     bl_label = "Quick Convert Mesh To Drawable"
 
-    def execute(self, context):
-        
-        aobj = bpy.context.active_object
-        if(aobj == None):
-            return {'CANCELLED'}
-        
+    def convert(self, obj):
         #create material
-        if(len(aobj.data.materials) > 0):
-            mat = aobj.data.materials[0]
+        if(len(obj.data.materials) > 0):
+            mat = obj.data.materials[0]
             if(mat.sollum_type != MaterialType.MATERIAL):
                 #remove old materials
-                for i in range(len(aobj.material_slots)):
-                    bpy.ops.object.material_slot_remove({'object': aobj})
+                for i in range(len(obj.material_slots)):
+                    bpy.ops.object.material_slot_remove({'object': obj})
                 sm = ShaderManager()
                 mat = create_shader("default", sm)
-                aobj.data.materials.append(mat)
+                obj.data.materials.append(mat)
         
         #set parents
         bpy.ops.sollumz.createdrawable()
@@ -74,15 +69,20 @@ class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
         bpy.ops.sollumz.createdrawablemodel()
         dmobj = bpy.context.active_object
         dmobj.parent = dobj
-        aobj.parent = dmobj
+        obj.parent = dmobj
 
         #set properties
-        aobj.sollum_type = ObjectType.GEOMETRY
+        obj.sollum_type = ObjectType.GEOMETRY
 
         #add object to collection
-        new_obj = aobj.copy()
-        bpy.data.objects.remove(aobj, do_unlink=True)
+        new_obj = obj.copy()
+        bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
+
+    def execute(self, context):
+        
+        for obj in context.selected_objects:
+            self.convert(obj)
 
         return {'FINISHED'}
 
@@ -96,11 +96,8 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
         return {'CANCELLED'}
 
     def convert_material(self, obj):
-        if(obj == None):
-            self.fail("", "No active object selected.")
-        
         if(len(obj.data.materials) != 1):
-            self.fail("", "Active object can only have one material.")
+            self.fail("", "Object " + obj.name + " can only have one material.")
 
         mat = obj.data.materials[0]
 

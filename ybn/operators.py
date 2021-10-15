@@ -281,15 +281,10 @@ class SOLLUMZ_OT_quick_convert_mesh_to_collision(bpy.types.Operator):
     bl_idname = "sollumz.quickconvertmeshtocollision"
     bl_label = "Quick Convert Mesh To Collision"
 
-    def execute(self, context):
-        
-        aobj = bpy.context.active_object
-        if(aobj == None):
-            return {'CANCELLED'}
-        
+    def convert(self, obj):
         #create material
         mat = create_collision_material_from_type("DEFAULT")
-        aobj.data.materials.append(mat)
+        obj.data.materials.append(mat)
         
         #set parents
         bpy.ops.sollumz.createboundcomposite()
@@ -297,9 +292,14 @@ class SOLLUMZ_OT_quick_convert_mesh_to_collision(bpy.types.Operator):
         bpy.ops.sollumz.creategeometryboundbvh()
         gobj = bpy.context.active_object
         gobj.parent = bobj
-        aobj.parent = gobj
+        obj.parent = gobj
 
         #set properties
-        aobj.sollum_type = PolygonType.TRIANGLE.value
+        obj.sollum_type = PolygonType.TRIANGLE.value
+
+    def execute(self, context):
+        
+        for obj in context.selected_objects:
+            self.convert(obj)
 
         return {'FINISHED'}
