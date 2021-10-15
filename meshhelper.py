@@ -7,7 +7,17 @@ from math import cos, inf, sin, degrees, radians, sqrt, atan2
 
 def create_box_from_extents(mesh, bbmin, bbmax):
     # Create box from bbmin and bbmax
-    vertices = bb_from_extents(bbmin, bbmax)
+    vertices = [
+        bbmin,
+        Vector((bbmin.x, bbmin.y, bbmax.z)),
+        Vector((bbmin.x, bbmax.y, bbmax.z)),
+        Vector((bbmin.x, bbmax.y, bbmin.z)),
+
+        Vector((bbmax.x, bbmin.y, bbmax.z)),
+        Vector((bbmax.x, bbmin.y, bbmin.z)),
+        Vector((bbmax.x, bbmax.y, bbmin.z)),
+        bbmax
+    ]
 
     faces = [
         [0, 1, 2, 3],
@@ -213,9 +223,15 @@ def np_matmul_coords(coords, matrix, space=None):
 
     return np.dot(coords4d, M)[:, :-1]
 
-
 """Get min and max bounds for an object and all of its children"""
 def get_bb_extents(obj):
+    bbs = get_total_bounds(obj, True)
+
+    return Vector(bbs.min(axis=0) - obj.location), Vector(bbs.max(axis=0) - obj.location)
+
+
+"""Get the bounding box of an object and all of it's children"""
+def get_total_bounds(obj, np_array=False):
     objects = []
 
     # Ensure all objects are meshes
@@ -227,7 +243,7 @@ def get_bb_extents(obj):
         raise ValueError('Failed to get bounds: Object has no geometry data or children with geometry data.')
 
     # get the global coordinates of all object bounding box corners
-    bbs = np.vstack(
+    np_bounds = np.vstack(
         tuple(
             np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
             for o in objects
@@ -235,27 +251,14 @@ def get_bb_extents(obj):
         )
     )
 
-    return Vector(bbs.min(axis=0)) - obj.location, Vector(bbs.max(axis=0)) - obj.location
+    if np_array:
+        return np_bounds
 
+    bounds = []
+    for vert in np_bounds:
+        bounds.append(Vector(vert))
 
-def bb_from_extents(bbmin, bbmax):
-    return [
-        bbmin,
-        Vector((bbmin.x, bbmin.y, bbmax.z)),
-        Vector((bbmin.x, bbmax.y, bbmax.z)),
-        Vector((bbmin.x, bbmax.y, bbmin.z)),
-
-        Vector((bbmax.x, bbmin.y, bbmax.z)),
-        Vector((bbmax.x, bbmin.y, bbmin.z)),
-        Vector((bbmax.x, bbmax.y, bbmin.z)),
-        bbmax
-    ]
-
-
-"""Get the bounding box of an object and all of it's children"""
-def get_total_bounds(obj):
-    bbmin, bbmax = get_bb_extents(obj)
-    return bb_from_extents(bbmin + obj.location, bbmax + obj.location)
+    return bounds
 
 
 def get_bound_center(obj):
