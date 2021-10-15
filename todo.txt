@@ -3,6 +3,7 @@ ________________________
 - update error display not showing enough info 
 - remove function annotations
 - order xml element attributes on export to make it more readable
+- add overwrite warning to sollumzexporthelper?
 
 IDEAS 
 ________________________
@@ -19,7 +20,7 @@ ________________________
 - Export vertex colors
 - Finish Cylinder, Disc, and Capsule bound types
 - Add buttons for converting to all bound types
-- Some values aren't exporting? (i.e Inertia)
+- Inertia, Volume, and Margin properties
 
 YDR IMPORT / EXPORT
 ________________________

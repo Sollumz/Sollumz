@@ -1,4 +1,5 @@
 import bpy
+from os.path import exists
 
 
 class SOLLUMZ_OT_toggle_export(bpy.types.Operator):
