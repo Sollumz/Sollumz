@@ -129,6 +129,9 @@ class SollumzExportHelper():
     #         #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
     #         self.report({'ERROR'}, traceback.format_exc())
 
+    def no_objects_message(self):
+        return f"No {self.sollum_type} object types in scene for Sollumz export"
+
     def execute(self, context):
         if(self.export_type == "export_all"):
             return self.export_all(context)
@@ -138,11 +141,6 @@ class SollumzExportHelper():
             self.export_first(context)
         return {'CANCELLED'}
 
-    def export_first(self, context):
-        pass
-
-    def export_selected(self, context):
-        pass
 
     def export_all(self, context):
         objects = context.collection.objects
@@ -155,13 +153,42 @@ class SollumzExportHelper():
                     self.export(obj)
 
         if not found:
-            self.report({'INFO'}, f"No {self.sollum_type} object types in scene for Sollumz export")
+            self.report({'INFO'}, self.no_objects_message())
             return {'CANCELLED'}
         
         return {'FINISHED'}
+    
+
+    def export_selected(self, context):
+        objects = context.selected_objects
+
+        found = False
+        if len(objects) > 0:
+            for obj in objects:
+                if obj.sollum_type == self.sollum_type and obj.enable_export:
+                    found = True
+                    self.export(obj)
+
+        if not found:
+            self.report({'INFO'}, self.no_objects_message())
+
+    def export_first(self, context):
+        objects = context.collection.objects
+
+        found = False
+        if len(objects) > 0:
+            for obj in objects:
+                if obj.sollum_type == self.sollum_type and obj.enable_export:
+                    found = True
+                    self.export(obj)
+                    break
+
+        if not found:
+            self.report({'INFO'}, self.no_objects_message())
+
 
 class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
+    """Export static collisions (.ybn)"""
     bl_idname = "exportxml.ybn" 
     bl_label = "Export Ybn Xml (.ybn.xml)"
     sollum_type = BoundType.COMPOSITE.value
@@ -178,11 +205,53 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
             self.report({'ERROR'}, traceback.format_exc())
 
 
+class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
+    """Export drawable (.ydr)"""
+    bl_idname = "exportxml.ydr"
+    bl_label = "Export Ydr Xml (.ydr.xml)"
+    sollum_type = ObjectType.DRAWABLE
+
+    filename_ext = ".ydr.xml"
+
+    def export(self, obj):
+        try:
+            drawable_from_object(obj).write_xml(self.get_filepath(obj))
+            self.report({'INFO'}, 'YDR Successfully exported.')
+        except:
+            self.report({'ERROR'}, traceback.format_exc())
+
+
+class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
+    """Export drawable dictionary (.ydd)"""
+    bl_idname = "exportxml.ydd" 
+    bl_label = "Export Ydd Xml (.ydd.xml)"
+    sollum_type = ObjectType.DRAWABLE_DICTIONARY
+
+    filename_ext = ".ydd.xml"
+
+    def export(self, obj):
+        try:
+            drawable_dict_from_object(obj).write_xml(self.get_filepath(obj))
+            self.report({'INFO'}, 'Ydd Successfully exported.')
+        except:
+            self.report({'ERROR'}, traceback.format_exc())
+
+
+def ydr_menu_func_export(self, context):
+    self.layout.operator(ExportYdrXml.bl_idname, text="Export .ydr.xml")
+
 def ybn_menu_func_export(self, context):
     self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")
 
+def ydd_menu_func_export(self, context):
+    self.layout.operator(ExportYddXml.bl_idname, text="Export .ydd.xml")
+
 def register():
     bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(ydd_menu_func_export)
 
 def unregister():
     bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(ydd_menu_func_export)

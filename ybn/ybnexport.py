@@ -49,7 +49,7 @@ def polygon_from_object(obj, geometry):
         bound_box = get_total_bounds(obj)
         corners = [bound_box[0], bound_box[6], bound_box[4], bound_box[2]]
         for vert in corners:
-            vertices.append(vert - geom_center)
+            vertices.append((obj.matrix_world @ vert) - geom_center)
             indices.append(len(vertices) - 1)
 
         box.v1 = indices[0]
