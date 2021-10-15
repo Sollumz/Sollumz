@@ -91,13 +91,13 @@ class TextureItem(ElementTree):
         super().__init__()
         self.name = TextProperty("Name", "")
         self.unk32 = ValueProperty("Unk32", 0)
-        self.usage = FlagsProperty("Usage")
+        self.usage = TextProperty("Usage")
         self.usage_flags = FlagsProperty("UsageFlags")
         self.extra_flags = ValueProperty("ExtraFlags", 0)
         self.width = ValueProperty("Width", 0)
         self.height = ValueProperty("Height", 0)
         self.miplevels = ValueProperty("MipLevels", 0)
-        self.format = FlagsProperty("Format")
+        self.format = TextProperty("Format")
         self.filename = TextProperty("FileName", "")
 
 class TextureDictionaryListProperty(ListProperty):

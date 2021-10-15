@@ -121,7 +121,6 @@ def unregister():
     del bpy.types.Scene.shader_materials
     del bpy.types.Object.drawable_properties
     del bpy.types.Object.drawable_model_properties
-    del bpy.types.Object.geometry_properties
     del bpy.types.Material.shader_properties
     del bpy.types.ShaderNodeTexImage.texture_properties
     del bpy.types.Bone.bone_properties

@@ -73,6 +73,11 @@ class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
         #set properties
         aobj.sollum_type = ObjectType.GEOMETRY
 
+        #add object to collection
+        new_obj = aobj.copy()
+        bpy.data.objects.remove(aobj, do_unlink=True)
+        bpy.context.collection.objects.link(new_obj)
+
         return {'FINISHED'}
 
 class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):

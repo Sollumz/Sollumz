@@ -199,7 +199,7 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
 
     def export(self, obj):
         try:
-            drawable_from_object(obj).write_xml(self.get_filepath(obj))
+            drawable_from_object(obj, None, self.directory).write_xml(self.get_filepath(obj))
             self.report({'INFO'}, 'YDR Successfully exported.')
         except:
             self.report({'ERROR'}, traceback.format_exc())
@@ -222,22 +222,22 @@ class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
 
 
 def ydr_menu_func_export(self, context):
-    self.layout.operator(ExportYdrXml.bl_idname, text="Export .ydr.xml")
+    self.layout.operator(ExportYdrXml.bl_idname, text="Codewalker Xml (.ydr.xml)")
 
 def ybn_menu_func_export(self, context):
-    self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")
+    self.layout.operator(ExportYbnXml.bl_idname, text="Codewalker Xml (.ybn.xml)")
 
 def ydd_menu_func_export(self, context):
-    self.layout.operator(ExportYddXml.bl_idname, text="Export .ydd.xml")
+    self.layout.operator(ExportYddXml.bl_idname, text="Codewalker Xml (.ydd.xml)")
 
 def ydr_menu_func_import(self, context):
-    self.layout.operator(ImportYdrXml.bl_idname, text="Import .ydr.xml")
+    self.layout.operator(ImportYdrXml.bl_idname, text="Codewalker Xml (.ydr.xml)")
 
 def ybn_menu_func_import(self, context):
-    self.layout.operator(ImportYbnXml.bl_idname, text="Import .ybn.xml")
+    self.layout.operator(ImportYbnXml.bl_idname, text="Codewalker Xml (.ybn.xml)")
 
 def ydd_menu_func_import(self, context):
-    self.layout.operator(ImportYddXml.bl_idname, text="Import .ydd.xml")
+    self.layout.operator(ImportYddXml.bl_idname, text="Codewalker Xml (.ydd.xml)")
 
 
 def register():
