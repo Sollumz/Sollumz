@@ -5,7 +5,6 @@ from Sollumz.resources.shader import ShaderManager
 import os, sys, traceback
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
-from Sollumz.sollumz_operators import SollumzExportHelper
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -174,8 +173,9 @@ def get_vertex_string(obj, mesh, layout, bones=None):
     vertex_groups = obj.vertex_groups
 
     bones_index_dict = {}
-    for i in range(len(bones)):
-        bones_index_dict[bones[i].name] = i
+    if(bones != None):
+        for i in range(len(bones)):
+            bones_index_dict[bones[i].name] = i
 
     clr0_layer = None 
     clr1_layer = None
@@ -405,7 +405,8 @@ def drawable_from_object(obj, bones=None):
     #drawable.shader_group.texture_dictionary = None #NOT IMPLEMENTED
 
     if bones is None:
-        bones = obj.pose.bones
+        if(obj.pose != None):
+            bones = obj.pose.bones
 
     drawable.skeleton = skeleton_from_object(obj)
 
@@ -439,39 +440,3 @@ def drawable_from_object(obj, bones=None):
 
     return drawable
     
-class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "exportxml.ydr"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Export Ydr Xml (.ydr.xml)"
-
-    filename_ext = ".ydr.xml"
-
-    def execute(self, context):
-
-        objects = bpy.context.collection.objects
-
-        found = False
-        if len(objects) > 0:
-            for obj in objects:
-                if obj.sollum_type == "sollumz_drawable" and obj.enable_export:
-                    found = True
-                    try:
-                        drawable_from_object(obj).write_xml(self.get_filepath(obj))
-                        self.report({'INFO'}, 'Ydr Successfully exported.')
-                    except Exception as e:
-                        #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
-                        self.report({'ERROR'}, traceback.format_exc())
-        
-        if not found:
-            self.report({'INFO'}, "No drawable object types in scene for Sollumz export")
-
-        return {'FINISHED'}
-
-def ydr_menu_func_export(self, context):
-    self.layout.operator(ExportYdrXml.bl_idname, text="Export .ydr.xml")
-
-def register():
-    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
-
-def unregister():
-    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
