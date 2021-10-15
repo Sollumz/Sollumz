@@ -17,7 +17,6 @@ ________________________
 YBN IMPORT / EXPORT
 ________________________
 - TEST
-- Export vertex colors
 - Finish Cylinder, Disc, and Capsule bound types
 - Add buttons for converting to all bound types
 - Inertia, Volume, and Margin properties

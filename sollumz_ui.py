@@ -1,7 +1,5 @@
 import bpy
-from bpy.types import Object
 from Sollumz.sollumz_properties import BoundType, PolygonType, ObjectType, MaterialType, is_sollum_type
-from Sollumz.sollumz_operators import SOLLUMZ_OT_toggle_export
 from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
 from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
 

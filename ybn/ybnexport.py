@@ -38,8 +38,12 @@ def add_material(material, materials):
 
         materials.append(mat_item)
 
-def polygon_from_object(obj, vertices, materials, geom_center):
+def polygon_from_object(obj, geometry):
+    vertices = geometry.vertices
+    materials = geometry.materials
+    geom_center = geometry.geometry_center
     world_pos = obj.matrix_world.to_translation()
+
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
@@ -156,7 +160,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 geometry.polygons.append(triangle_from_face(face))
             
     for child in get_children_recursive(obj):
-        poly = polygon_from_object(child, geometry.vertices, geometry.materials, geometry.geometry_center)
+        poly = polygon_from_object(child, geometry)
         if poly:
             found = True
             geometry.polygons.append(poly)

@@ -1,4 +1,6 @@
 import bpy
+from Sollumz.ybn.ybnimport import *
+from Sollumz.resources.bound import *
 
 class SOLLUMZ_OT_toggle_export(bpy.types.Operator):
     """Toggle object for export"""
@@ -45,7 +47,6 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                print(self.sollum_type)
                 if obj.sollum_type == self.sollum_type and obj.enable_export:
                     found = True
                     self.export(obj)
