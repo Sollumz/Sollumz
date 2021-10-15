@@ -1,4 +1,25 @@
 import bpy
+from Sollumz.ydr.shader_materials import create_shader, shadermats
+from Sollumz.resources.shader import ShaderManager
+from Sollumz.sollumz_properties import ObjectType, is_sollum_type
+
+class SOLLUMZ_OT_create_shader_material(bpy.types.Operator):
+    """Create a sollumz shader material"""
+    bl_idname = "sollumz.createshadermaterial"
+    bl_label = "Create Shader Material"
+
+    def execute(self, context):
+        
+        aobj = bpy.context.active_object
+        if(aobj == None):
+            return {'CANCELLED'}
+        
+        if is_sollum_type(aobj, ObjectType.GEOMETRY):
+            sm = ShaderManager()
+            mat = create_shader(shadermats[context.scene.shader_material_index].value, sm)
+            aobj.data.materials.append(mat)
+        
+        return {'FINISHED'}
 
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(bpy.types.Operator): 
     bl_idname = "sollumz.bone_flags_new_item" 

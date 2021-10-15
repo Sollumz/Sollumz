@@ -94,8 +94,7 @@ def poly_to_obj(poly, materials, vertices):
         capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2)
-        print(v1, v2)    
+        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2) 
         rot = get_direction_of_vectors(v1, v2)
 
         create_capsule(capsule, poly.radius, length)
@@ -179,6 +178,19 @@ def geometry_to_obj(geometry, sollum_type):
     triangle_obj.data.from_pydata(vertices, [], faces)
     bpy.context.collection.objects.link(triangle_obj)
     triangle_obj.parent = obj
+
+    #Apply vertex colors
+    mesh = triangle_obj.data
+    if(len(geometry.vertex_colors) > 0):
+        mesh.vertex_colors.new(name = "Vertex Colors") 
+        color_layer = mesh.vertex_colors[0]
+        for i in range(len(color_layer.data)):
+            rgba = geometry.vertex_colors[mesh.loops[i].vertex_index]
+            r = rgba[0] / 255
+            g = rgba[1] / 255
+            b = rgba[2] / 255
+            a = rgba[3] / 255
+            color_layer.data[i].color = [r, g, b, a]
 
     # Apply triangle materials
     for index, poly in triangle_obj.data.polygons.items():

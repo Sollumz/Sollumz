@@ -32,7 +32,6 @@ def create_mesh(sollum_type):
 
     return obj
 
-
 def aobj_is_composite(self, sollum_type):
     aobj = bpy.context.active_object
     if not (aobj and aobj.sollum_type == BoundType.COMPOSITE):
@@ -228,8 +227,6 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"
     bl_label = "Create Collision Material"
-
-    material_type : bpy.props.StringProperty(default = "sollumz_default")
 
     def execute(self, context):
         

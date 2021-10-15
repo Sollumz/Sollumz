@@ -90,8 +90,9 @@ class BoundGeometryBVH(BoundItem):
     def __init__(self):
         super().__init__()
         self.geometry_center = VectorProperty('GeometryCenter')
-        self.materials = MaterialsListProperty()
+        self.materials = MaterialsListProperty() 
         self.vertices = VerticesProperty('Vertices')
+        self.vertex_colors = VertexColorProperty("VertexColours")
         self.polygons = PolygonsProperty()
 
 
@@ -157,6 +158,41 @@ class MaterialsListProperty(ListProperty):
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Materials', value=value or [])
 
+class VertexColorProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str = 'VertexColours', value = None):
+        super().__init__(tag_name, value or [])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = VertexColorProperty(element.tag, [])
+        text = element.text.strip().split('\n')
+        if len(text) > 0:
+            for line in text:
+                colors = line.strip().split(',')
+                if not len(colors) == 4:
+                    return VertexColorProperty.read_value_error(element)
+
+                new.value.append([int(colors[0]), int(colors[1]), int(colors[2]), int(colors[3])])
+        
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.text = '\n'
+        
+        if(len(self.value) == 0):
+            return None 
+        
+        for color in self.value:
+            for index, component in enumerate(color):
+                element.text += str(int(component * 255))
+                if index < len(color) - 1:
+                    element.text += ', '
+            element.text += '\n'
+        
+        return element
 
 class Polygon(ElementTree, AbstractClass):
     def __init__(self):

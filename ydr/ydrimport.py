@@ -29,10 +29,9 @@ def shadergroup_to_materials(shadergroup, filepath):
                 if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                     if(param.name == n.name):
                         texture_path = os.path.join(texture_folder, param.texture_name + ".dds")
-                        if(os.path.isfile(texture_path) == False):
-                            texture_path = os.path.dirname(__file__)[:-4] + "\\resources\\givemechecker.jpg"
-                        img = bpy.data.images.load(texture_path, check_existing=True)
-                        n.image = img 
+                        if(os.path.isfile(texture_path)):
+                            img = bpy.data.images.load(texture_path, check_existing=True)
+                            n.image = img 
 
                         #assign embedded texture dictionary properties
                         if(shadergroup.texture_dictionary != None):
@@ -289,12 +288,12 @@ def skeleton_to_obj(skeleton, armature):
 
     return armature
 
-def drawable_to_obj(drawable, filepath, name):
+def drawable_to_obj(drawable, filepath, name, bones_override=None):
 
     materials = shadergroup_to_materials(drawable.shader_group, filepath)
 
     obj = None
-    if drawable.skeleton is not None:
+    if len(drawable.skeleton.bones) > 0:
         skel = bpy.data.armatures.new(name + ".skel")
         obj = bpy.data.objects.new(name, skel)
     else:
@@ -308,11 +307,14 @@ def drawable_to_obj(drawable, filepath, name):
 
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
-    skeleton_to_obj(drawable.skeleton, obj)
 
     bones = None
-    if drawable.skeleton is not None:
+    if len(drawable.skeleton.bones) > 0:
         bones = drawable.skeleton.bones
+        skeleton_to_obj(drawable.skeleton, obj)
+
+    if bones_override is not None:
+        bones = bones_override
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(model, materials, drawable.name, "high", bones=bones)
@@ -329,6 +331,17 @@ def drawable_to_obj(drawable, filepath, name):
     for model in drawable.drawable_models_vlow:
         dobj = drawable_model_to_obj(model, materials, drawable.name, "vlow", bones=bones)
         dobj.parent = obj
+
+    for model in obj.children:
+        if model.sollum_type != "sollumz_drawable_model":
+            continue
+
+        for geo in model.children:
+            if geo.sollum_type != "sollumz_geometry":
+                continue
+
+            mod = geo.modifiers.new("Armature", 'ARMATURE')
+            mod.object = obj
 
     return obj
 

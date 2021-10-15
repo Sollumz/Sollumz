@@ -3,11 +3,11 @@ from enum import Enum
 
 class ObjectType(str, Enum):
     NONE = 'sollumz_none'
+    DRAWABLE_DICTIONARY = 'sollumz_drawable_dictionary'
     DRAWABLE = 'sollumz_drawable'
     DRAWABLE_MODEL = 'sollumz_drawable_model'
     GEOMETRY = 'sollumz_geometry'
     SKELETON = 'sollumz_skeleton'
-
 
 class BoundType(str, Enum):
     BOX = 'sollumz_bound_box'
@@ -155,6 +155,7 @@ SOLLUMZ_UI_NAMES = {
     LodType.VLOW: 'Vlow',
 
     ObjectType.NONE: 'Sollumz None',
+    ObjectType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
     ObjectType.DRAWABLE: 'Sollumz Drawable',
     ObjectType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
     ObjectType.GEOMETRY: 'Sollumz Geometry',
