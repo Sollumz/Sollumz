@@ -2,7 +2,7 @@ import bpy
 import traceback
 from Sollumz.ydr.shader_materials import create_shader, shadermats
 from Sollumz.resources.shader import ShaderManager
-from Sollumz.sollumz_properties import ObjectType, is_sollum_type, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import ObjectType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -58,9 +58,15 @@ class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
             return {'CANCELLED'}
         
         #create material
-        sm = ShaderManager()
-        mat = create_shader("default", sm)
-        aobj.data.materials.append(mat)
+        if(len(aobj.data.materials) > 0):
+            mat = aobj.data.materials[0]
+            if(mat.sollum_type != MaterialType.MATERIAL):
+                #remove old materials
+                for i in range(len(aobj.material_slots)):
+                    bpy.ops.object.material_slot_remove({'object': aobj})
+                sm = ShaderManager()
+                mat = create_shader("default", sm)
+                aobj.data.materials.append(mat)
         
         #set parents
         bpy.ops.sollumz.createdrawable()
@@ -89,16 +95,14 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
         self.report({"INFO"}, "Material " + name + " can not be converted due to: " + reason)
         return {'CANCELLED'}
 
-    def execute(self, context):
-        
-        aobj = bpy.context.active_object
-        if(aobj == None):
+    def convert_material(self, obj):
+        if(obj == None):
             self.fail("", "No active object selected.")
         
-        if(len(aobj.data.materials) != 1):
+        if(len(obj.data.materials) != 1):
             self.fail("", "Active object can only have one material.")
 
-        mat = aobj.data.materials[0]
+        mat = obj.data.materials[0]
 
         try:
             bsdf = mat.node_tree.nodes["Principled BSDF"]
@@ -143,13 +147,13 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
                 shader_name = "spec"
 
             #remove old materials
-            for i in range(len(aobj.material_slots)):
-                bpy.ops.object.material_slot_remove({'object': aobj})
+            for i in range(len(obj.material_slots)):
+                bpy.ops.object.material_slot_remove({'object': obj})
 
             sm = ShaderManager()
             new_mat = create_shader(shader_name, sm)
             #new_mat.name = mat.name
-            aobj.data.materials.append(new_mat) 
+            obj.data.materials.append(new_mat) 
 
             bsdf = new_mat.node_tree.nodes["Principled BSDF"]       
 
@@ -181,6 +185,11 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
                 new_normal_node.image = normal_node.image
         except:
             self.fail(mat.name, traceback.format_exc())
+
+    def execute(self, context):
+        
+        for obj in context.selected_objects:
+            self.convert_material(obj)
 
         return {'FINISHED'}
 
