@@ -3,6 +3,7 @@ import traceback, os
 from Sollumz.sollumz_properties import ObjectType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.bound import YBN
+from Sollumz.resources.ymap import YMAP
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.ybn.ybnexport import ybn_from_object, NoGeometryError
 from Sollumz.ydr.ydrexport import drawable_from_object
@@ -10,6 +11,31 @@ from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper
+
+class ImportYmapXml(bpy.types.Operator, ImportHelper):
+    """Imports .ymap.xml file exported from codewalker."""
+    bl_idname = "sollumz.importymap" 
+    bl_label = "Import ymap.xml"
+    filename_ext = ".ymap.xml"
+    bl_options = {'UNDO'}
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.ymap.xml",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+
+    def execute(self, context):
+        
+        ymap = YMAP.from_xml_file(self.filepath)
+
+
+        for obj in bpy.context.collection.objects:
+            for entity in ymap.entities:
+                if(entity.archetype_name == obj.name):
+                    obj.location = entity.position
+
+        return {'FINISHED'}
 
 class ImportYbnXml(bpy.types.Operator, ImportHelper):
     """Imports .ybn.xml file exported from codewalker."""
@@ -25,7 +51,6 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
     )
 
     def execute(self, context):
-        
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
             composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath.replace('.ybn.xml', '')))

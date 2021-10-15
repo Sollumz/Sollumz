@@ -21,6 +21,18 @@ SOLLUMZ_UI_NAMES = {
     PolygonType.TRIANGLE: 'Bound Poly Mesh',
 }
 
+class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "General Tools"
+    bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
+    bl_category = "Sollumz"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("sollumz.importymap")
+
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Material Properties"
     bl_idname = "SOLLUMZ_PT_MAT_PANEL"

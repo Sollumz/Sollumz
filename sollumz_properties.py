@@ -37,7 +37,7 @@ class MaterialType(str, Enum):
 
 class TextureType(str, Enum):
     UNKNOWN = 'sollumz_unknown'
-    TINTPALLETE = 'sollumz_tintpallete'
+    TINTPALETTE = 'sollumz_tintpalette'
     DEFAULT = 'sollumz_default'
     TERRAIN = 'sollumz_terrain'
     CLOUDDENSITY = 'sollumz_clouddensity'
@@ -108,7 +108,7 @@ SOLLUMZ_UI_NAMES = {
     MaterialType.COLLISION: 'Sollumz Collision Material',
 
     TextureType.UNKNOWN: 'UNKNOWN',
-    TextureType.TINTPALLETE: 'TINTPALLETE',
+    TextureType.TINTPALETTE: 'TINTPALETTE',
     TextureType.DEFAULT: 'DEFAULT',
     TextureType.TERRAIN: 'TERRAIN',
     TextureType.CLOUDDENSITY: 'CLOUDDENSITY',
