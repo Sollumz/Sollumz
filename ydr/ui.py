@@ -11,7 +11,8 @@ def draw_drawable_properties(layout, obj):
     layout.prop(obj.drawable_properties, "lod_dist_vlow")
     
 def draw_geometry_properties(layout, obj):
-    layout.prop(obj.geometry_properties, "sollum_lod")
+    return 
+    #layout.label(text = "")
 
 def draw_material_properties(layout, mat):
     box = layout.box()
@@ -136,12 +137,20 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
 
         box = layout.box()
         box.label(text = "Create Shader")
-        row = box.row()
-        row.template_list(
+        box.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
+        box.operator("sollumz.createshadermaterial")
+        box = layout.box()
+        box.label(text = "Create Drawable Objects")
+        box.operator("sollumz.createdrawable")
         row = box.row()
-        row.operator("sollumz.createshadermaterial")
+        row.operator("sollumz.createdrawablemodel")
+        row.operator("sollumz.creategeometry")
+        box = layout.box()
+        box.label(text = "Quick Convert Tools")
+        box.operator("sollumz.quickconvertmeshtodrawable")
+        box.operator("sollumz.converttoshadermaterial")
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 

@@ -9,17 +9,23 @@ IDEAS
 ________________________
 - combine shader panel and material panel?
 
-TOOL PANEL 
+GENERAL TOOLS
 ________________________
 - parent objects button ? 
-- button for creating a gta shader (material)
+- 
 
-YBN IMPORT / EXPORT
+YBN IMPORT / EXPORT / TOOLS
 ________________________
 - TEST
 - Finish Cylinder, Disc, and Capsule bound types
 - Add buttons for converting to all bound types
 - Inertia, Volume, and Margin properties
+- custom presets (mr vicho)
 
-YDR IMPORT / EXPORT
+YDR IMPORT / EXPORT / TOOLS
 ________________________
+- quick convert mesh
+- convert blender material to shader material
+- EXPORT EMBEDDED TEXTURES 
+- vertex color layer creation if not created by user... 
+- on drawable quick convert add object to collection objects...

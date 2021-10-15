@@ -98,12 +98,10 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
 
         box = layout.box()
         box.label(text = "Create Material")
-        row = box.row()
-        row.template_list(
+        box.template_list(
             SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
         )
-        row = box.row()
-        row.operator("sollumz.createcollisionmaterial")
+        box.operator("sollumz.createcollisionmaterial")
         box = layout.box()
         box.label(text = "Create Bound Objects")
         row = box.row()

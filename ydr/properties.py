@@ -23,14 +23,6 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
         default = "sollumz_high"
     )
 
-
-class GeometryProperties(bpy.types.PropertyGroup):
-    sollum_lod : bpy.props.EnumProperty(
-        items = items_from_enums(LodType),
-        name = "LOD",
-        default = LodType.HIGH
-    )
-
 class ShaderProperties(bpy.types.PropertyGroup):
     renderbucket : bpy.props.IntProperty(name = "Render Bucket", default = 0)
     #????????? DONT KNOW IF I WANNA DO THIS
@@ -119,7 +111,6 @@ def register():
     bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(type = DrawableProperties)
     bpy.types.Object.drawable_model_properties = bpy.props.PointerProperty(type = DrawableModelProperties)
-    bpy.types.Object.geometry_properties = bpy.props.PointerProperty(type = GeometryProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(type = ShaderProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(type = TextureProperties)
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(type = TextureFlags)
