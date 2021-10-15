@@ -1,6 +1,6 @@
 import bpy
 import traceback, os
-from Sollumz.sollumz_properties import ObjectType, BoundType
+from Sollumz.sollumz_properties import ObjectType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.bound import YBN
 from Sollumz.ybn.ybnimport import composite_to_obj
@@ -85,8 +85,8 @@ class ImportYddXml(bpy.types.Operator, ImportHelper):
 
 class SollumzExportHelper():
     bl_options = {"REGISTER"}
-    sollum_type = bpy.props.StringProperty(name='Sollum Type')
-    filename_ext = bpy.props.StringProperty(name='File Extension', description='File extension to be appended to exported file')
+    sollum_type = None
+    filename_ext = None
 
     # Define this to tell 'fileselect_add' that we want a directoy
     directory : bpy.props.StringProperty(
@@ -113,24 +113,8 @@ class SollumzExportHelper():
         return {"RUNNING_MODAL"}
 
 
-    # def export_ydr(self, obj):
-    #     try:
-    #         drawable_from_object(obj).write_xml(self.get_filepath(obj))
-    #         self.report({'INFO'}, 'Ydr Successfully exported.')
-    #     except Exception as e:
-    #         #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
-    #         self.report({'ERROR'}, traceback.format_exc())
-
-    # def export_ydd(self, obj):
-    #     try:
-    #         drawable_dict_from_object(obj).write_xml(self.get_filepath(obj))
-    #         self.report({'INFO'}, 'Ydd Successfully exported.')
-    #     except Exception as e:
-    #         #self.report({'ERROR'}, f"Composite {obj.name} failed to export: {e}")
-    #         self.report({'ERROR'}, traceback.format_exc())
-
     def no_objects_message(self):
-        return f"No {self.sollum_type} object types in scene for Sollumz export"
+        return f"No {SOLLUMZ_UI_NAMES[self.sollum_type]} object types in scene for Sollumz export"
 
     def execute(self, context):
         if(self.export_type == "export_all"):
@@ -246,12 +230,28 @@ def ybn_menu_func_export(self, context):
 def ydd_menu_func_export(self, context):
     self.layout.operator(ExportYddXml.bl_idname, text="Export .ydd.xml")
 
+def ydr_menu_func_import(self, context):
+    self.layout.operator(ImportYdrXml.bl_idname, text="Import .ydr.xml")
+
+def ybn_menu_func_import(self, context):
+    self.layout.operator(ImportYbnXml.bl_idname, text="Import .ybn.xml")
+
+def ydd_menu_func_import(self, context):
+    self.layout.operator(ImportYddXml.bl_idname, text="Import .ydd.xml")
+
+
 def register():
     bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
     bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
     bpy.types.TOPBAR_MT_file_export.append(ydd_menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(ydd_menu_func_import)
 
 def unregister():
     bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
     bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
     bpy.types.TOPBAR_MT_file_export.remove(ydd_menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(ydd_menu_func_import)
