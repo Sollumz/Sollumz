@@ -85,8 +85,8 @@ class ImportYddXml(bpy.types.Operator, ImportHelper):
 
 class SollumzExportHelper():
     bl_options = {"REGISTER"}
-    sollum_type = bpy.props.StringProperty(name='Sollum Type')
-    filename_ext = bpy.props.StringProperty(name='File Extension', description='File extension to be appended to exported file')
+    sollum_type = None
+    filename_ext = None
 
     # Define this to tell 'fileselect_add' that we want a directoy
     directory : bpy.props.StringProperty(
