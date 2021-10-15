@@ -1,5 +1,4 @@
 import bpy
-from bpy_extras.io_utils import ImportHelper
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_properties import *
@@ -301,36 +300,3 @@ def composite_to_obj(composite, name):
     bpy.context.collection.objects.link(obj)
 
     return obj
-
-class ImportYbnXml(bpy.types.Operator, ImportHelper):
-    """Imports .ybn.xml file exported from codewalker."""
-    bl_idname = "sollumz.importybn" 
-    bl_label = "Import ybn.xml"
-    filename_ext = ".ybn.xml"
-    bl_options = {'UNDO'}
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.ybn.xml",
-        options={'HIDDEN'},
-        maxlen=255,  
-    )
-
-    def execute(self, context):
-        
-        try:
-            ybn_xml = YBN.from_xml_file(self.filepath)
-            composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath.replace('.ybn.xml', '')))
-            self.report({'INFO'}, 'YBN Successfully imported.')
-        except:
-            self.report({'ERROR'}, traceback.format_exc())
-            
-        return {'FINISHED'}
-
-def ybn_menu_func_import(self, context):
-    self.layout.operator(ImportYbnXml.bl_idname, text="Import .ybn.xml")
-
-def register():
-    bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
-
-def unregister():
-    bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)

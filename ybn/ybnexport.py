@@ -4,7 +4,6 @@ from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
-from Sollumz.sollumz_operators import SollumzExportHelper
 
 class NoGeometryError(Exception):
     message = 'Sollumz Geometry has no geometry!'
@@ -234,32 +233,3 @@ def ybn_from_object(obj):
     
     return ybn
 
-class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "exportxml.ybn" 
-    bl_label = "Export Ybn Xml (.ybn.xml)"
-    sollum_type = BoundType.COMPOSITE.value
-    
-    filename_ext = '.ybn.xml'
-
-    def export(self, obj):
-        try:
-            ybn_from_object(obj).write_xml(self.get_filepath(obj))
-            self.report({'INFO'}, 'YBN Successfully exported.')
-        except NoGeometryError:
-            self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
-        except:
-            self.report({'ERROR'}, traceback.format_exc())
-    
-    def execute(self, context):
-        return self.export_all()
-    
-
-def ybn_menu_func_export(self, context):
-    self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")
-
-def register():
-    bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
-
-def unregister():
-    bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)

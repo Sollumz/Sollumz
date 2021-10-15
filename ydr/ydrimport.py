@@ -1,5 +1,4 @@
 import bpy
-from bpy_extras.io_utils import ImportHelper
 import os, traceback
 from mathutils import Vector, Quaternion, Matrix
 from Sollumz.resources.shader import ShaderManager
@@ -345,34 +344,3 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None):
 
     return obj
 
-class ImportYdrXml(bpy.types.Operator, ImportHelper):
-    """Imports .ydr.xml file exported from codewalker."""
-    bl_idname = "sollumz.importydr" 
-    bl_label = "Import ydr.xml"
-    filename_ext = ".ydr.xml"
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.ydr.xml",
-        options={'HIDDEN'},
-        maxlen=255,  
-    )
-
-    def execute(self, context):
-        
-        try:
-            ydr_xml = YDR.from_xml_file(self.filepath)
-            drawable_to_obj(ydr_xml, self.filepath, os.path.basename(self.filepath.replace(self.filename_ext, '')))
-            self.report({'INFO'}, 'YDR Successfully imported.')
-        except Exception as e:
-            self.report({'ERROR'}, traceback.format_exc())
-
-        return {'FINISHED'}
-
-def ydr_menu_func_import(self, context):
-    self.layout.operator(ImportYdrXml.bl_idname, text="Import .ydr.xml")
-
-def register():
-    bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
-
-def unregister():
-    bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)

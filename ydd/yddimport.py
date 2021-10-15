@@ -1,5 +1,4 @@
 import bpy
-from bpy_extras.io_utils import ImportHelper
 import os, traceback
 from mathutils import Vector, Quaternion, Matrix
 from Sollumz.resources.drawable import *
@@ -54,34 +53,3 @@ def drawable_dict_to_obj(drawable_dict, filepath):
 
     return dict_obj
 
-class ImportYddXml(bpy.types.Operator, ImportHelper):
-    """Imports .ydd.xml file exported from codewalker."""
-    bl_idname = "sollumz.importydd" 
-    bl_label = "Import ydd.xml"
-    filename_ext = ".ydd.xml"
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.ydd.xml",
-        options={'HIDDEN'},
-        maxlen=255,  
-    )
-
-    def execute(self, context):
-        
-        try:
-            ydd_xml = YDD.from_xml_file(self.filepath)
-            drawable_dict_to_obj(ydd_xml, self.filepath)
-            self.report({'INFO'}, 'YDD Successfully imported.')
-        except Exception as e:
-            self.report({'ERROR'}, traceback.format_exc())
-
-        return {'FINISHED'}
-
-def ydd_menu_func_import(self, context):
-    self.layout.operator(ImportYddXml.bl_idname, text="Import .ydd.xml")
-
-def register():
-    bpy.types.TOPBAR_MT_file_import.append(ydd_menu_func_import)
-
-def unregister():
-    bpy.types.TOPBAR_MT_file_import.remove(ydd_menu_func_import)

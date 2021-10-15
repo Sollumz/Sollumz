@@ -77,10 +77,6 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             getattr(obj, 'sollum_type')
         except:
             return
-        
-        if obj.sollum_type == ObjectType.DRAWABLE or obj.sollum_type == BoundType.COMPOSITE:
-            row = layout.row()
-            row.prop(obj, 'enable_export', text='Toggle Export')
 
         if obj.sollum_type == ObjectType.DRAWABLE:
             draw_drawable_properties(box, obj)

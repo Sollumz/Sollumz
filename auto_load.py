@@ -25,6 +25,13 @@ def init():
     modules = get_all_submodules(Path(__file__).parent)
     ordered_classes = get_ordered_classes_to_register(modules)
 
+def checkIfDuplicates_1(listOfElems):
+    ''' Check if given list contains any duplicates '''
+    if len(listOfElems) == len(set(listOfElems)):
+        return False
+    else:
+        return True
+
 def register():
     for cls in ordered_classes:
         bpy.utils.register_class(cls)
@@ -36,11 +43,15 @@ def register():
             module.register()
 
 def unregister():
+    called = []
     for module in modules:
         if module.__name__ == __name__:
             continue
         if hasattr(module, "unregister"):
-            module.unregister()
+            # Check if unregister method has already been called
+            if not module.unregister in called:
+                module.unregister()
+                called.append(module.unregister)
             
     for cls in reversed(ordered_classes):
         bpy.utils.unregister_class(cls)
