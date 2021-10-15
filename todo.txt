@@ -4,10 +4,13 @@ ________________________
 - remove function annotations
 - order xml element attributes on export to make it more readable
 - add overwrite warning to sollumzexporthelper?
+- move property panels to correct locations
 
 GENERAL TOOLS
 ________________________
 - parent objects button ? 
+- export ymap
+- export ytyp 
 
 YBN IMPORT / EXPORT / TOOLS
 ________________________
@@ -21,3 +24,4 @@ YDR IMPORT / EXPORT / TOOLS
 ________________________
 - MIP LEVELS FOR EMBEDDED TEXTURES?
 - check embedded bounds
+- GET CUTOUT SHADERS WORKING

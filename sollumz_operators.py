@@ -29,11 +29,17 @@ class ImportYmapXml(bpy.types.Operator, ImportHelper):
         
         ymap = YMAP.from_xml_file(self.filepath)
 
+        names = []
 
         for obj in bpy.context.collection.objects:
             for entity in ymap.entities:
+                if entity.archetype_name not in names:
+                    names.append(entity.archetype_name)
                 if(entity.archetype_name == obj.name):
                     obj.location = entity.position
+
+        for name in names:
+            print(name)
 
         return {'FINISHED'}
 
@@ -73,14 +79,29 @@ class ImportYdrXml(bpy.types.Operator, ImportHelper):
         maxlen=255,  
     )
 
-    def execute(self, context):
-        
+    import_directory : bpy.props.BoolProperty(
+        name = "Import Directory",
+        default = False,
+    )
+
+    def importydr(self, filepath):
         try:
-            ydr_xml = YDR.from_xml_file(self.filepath)
-            drawable_to_obj(ydr_xml, self.filepath, os.path.basename(self.filepath.replace(self.filename_ext, '')))
+            ydr_xml = YDR.from_xml_file(filepath)
+            drawable_to_obj(ydr_xml, filepath, os.path.basename(filepath.replace(self.filename_ext, '')))
             self.report({'INFO'}, 'YDR Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
+
+    def execute(self, context):
+        
+        if(self.import_directory):
+            folderpath = os.path.dirname(self.filepath)
+            for file in os.listdir(folderpath):
+                 if file.endswith(self.filename_ext):
+                    filepath = os.path.join(folderpath, file)
+                    self.importydr(filepath)
+        else:
+            self.importydr(self.filepath)
 
         return {'FINISHED'}
 

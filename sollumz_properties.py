@@ -60,7 +60,7 @@ class TextureType(str, Enum):
     NORMAL = 'sollumz_normal'
     SPECULAR = 'sollumz_specular'
     EMMISIVE = 'sollumz_emmisive'
-    SKIPPROCCESING = 'sollumz_skipproccesing'
+    SKIPPROCESSING = 'sollumz_skipprocessing'
     DONTOPTIMIZE = 'sollumz_dontoptimize'
     TEST = 'sollumz_test'
     COUNT = 'sollumz_count'
@@ -131,7 +131,7 @@ SOLLUMZ_UI_NAMES = {
     TextureType.NORMAL: 'NORMAL',
     TextureType.SPECULAR: 'SPECULAR',
     TextureType.EMMISIVE: 'EMMISIVE',
-    TextureType.SKIPPROCCESING: 'SKIPPROCCESING',
+    TextureType.SKIPPROCESSING: 'SKIPPROCESSING',
     TextureType.DONTOPTIMIZE: 'DONTOPTIMIZE',
     TextureType.TEST: 'TEST',
     TextureType.COUNT: 'COUNT',
