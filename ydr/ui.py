@@ -44,8 +44,9 @@ def draw_shader(layout, mat):
             #if(n.name == "SpecSampler"):
                 box = layout.box()
                 row = box.row(align = True)
+                name = os.path.splitext(os.path.basename(n.image.filepath))[0]
                 row.label(text = "Texture Type: " + n.name) 
-                row.label(text = "Texture Name: " + n.image.name)
+                row.label(text = "Texture Name: " + name)
                 row = box.row()
                 row.prop(n.image, "filepath", text = "Texture Path")
                 row = box.row(align = True)

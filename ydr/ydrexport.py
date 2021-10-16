@@ -44,7 +44,8 @@ def get_shaders_from_blender(obj):
                 param = TextureParameterItem()
                 param.name = node.name
                 param.type = "Texture"
-                param.texture_name = os.path.splitext(node.image.name)[0]
+                name = os.path.basename(node.image.filepath)
+                param.texture_name = os.path.splitext(name)[0]
                 shader.parameters.append(param)
             elif(isinstance(node, bpy.types.ShaderNodeValue)):
                 if(node.name[-1] == "x"):
@@ -78,8 +79,10 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 if(n.texture_properties.embedded == True):
                     texture_item = TextureItem()
-                    texture_item.name = os.path.splitext(n.image.name)[0]
+                    name = os.path.basename(n.image.filepath)
+                    texture_item.name = os.path.splitext(name)[0]
                     #texture_item.unk32 = 0
+                    print(name)
                     texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
                     for prop in dir(n.texture_flags):
                         value = getattr(n.texture_flags, prop)
@@ -90,7 +93,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     texture_item.height = n.image.size[1]
                     texture_item.miplevels = 8 #?????????????????????????????????????????????????????????????????????????????????????????????
                     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
-                    texture_item.filename = n.image.name
+                    texture_item.filename = name
                     texture_dictionary.append(texture_item)
 
                     #if(n.image != None):
