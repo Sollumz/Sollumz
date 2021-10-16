@@ -132,6 +132,7 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
     bl_category = "Sollumz Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -150,8 +151,11 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
         row.operator("sollumz.creategeometry")
         box = layout.box()
         box.label(text = "Quick Convert Tools")
-        box.operator("sollumz.quickconvertmeshtodrawable")
-        box.operator("sollumz.converttoshadermaterial")
+        row = box.row()
+        row.operator("sollumz.convertmeshtodrawable")
+        row.prop(context.scene, 'multiple_ydrs')
+        row = box.row()
+        row.operator("sollumz.converttoshadermaterial")
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 

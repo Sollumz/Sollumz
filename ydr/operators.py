@@ -46,12 +46,13 @@ class SOLLUMZ_OT_create_geometry(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
-    """Quickly setup a gta drawable via a mesh object"""
-    bl_idname = "sollumz.quickconvertmeshtodrawable"
-    bl_label = "Quick Convert Mesh To Drawable"
+class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
+    """Setup a gta drawable via a mesh object"""
+    bl_idname = "sollumz.convertmeshtodrawable"
+    bl_label = "Convert Mesh To Drawable"
+    bl_options = {'UNDO'}
 
-    def convert(self, obj):
+    def convert(self, obj, parent):
         #create material
         if(len(obj.data.materials) > 0):
             mat = obj.data.materials[0]
@@ -62,12 +63,10 @@ class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
                 sm = ShaderManager()
                 mat = create_shader("default", sm)
                 obj.data.materials.append(mat)
-        
+            
         #set parents
-        bpy.ops.sollumz.createdrawable()
-        dobj = bpy.context.active_object
-        bpy.ops.sollumz.createdrawablemodel()
-        dmobj = bpy.context.active_object
+        dobj = parent or create_empty(ObjectType.DRAWABLE)
+        dmobj = create_empty(ObjectType.DRAWABLE_MODEL)
         dmobj.parent = dobj
         obj.parent = dmobj
 
@@ -80,9 +79,12 @@ class SOLLUMZ_OT_quick_convert_mesh_to_drawable(bpy.types.Operator):
         bpy.context.collection.objects.link(new_obj)
 
     def execute(self, context):
+        parent = None
+        if not bpy.context.scene.multiple_ydrs:
+            parent = create_empty(ObjectType.DRAWABLE)
         
         for obj in context.selected_objects:
-            self.convert(obj)
+            self.convert(obj, parent)
 
         return {'FINISHED'}
 

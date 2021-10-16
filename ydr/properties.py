@@ -116,6 +116,8 @@ def register():
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(type = TextureFlags)
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(type = BoneProperties)
 
+    bpy.types.Scene.multiple_ydrs = bpy.props.BoolProperty(name='Multiple Drawables', description='Create a Drawable for each selected mesh.')
+
 def unregister():
     del bpy.types.Scene.shader_material_index
     del bpy.types.Scene.shader_materials
