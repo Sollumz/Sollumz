@@ -85,11 +85,16 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
         bpy.context.collection.objects.link(new_obj)
 
     def execute(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.report({'INFO'}, 'No objects selected for conversion!')
+            return {'CANCELLED'}
+
         parent = None
         if not bpy.context.scene.multiple_ydrs:
             parent = create_empty(DrawableType.DRAWABLE)
         
-        for obj in context.selected_objects:
+        for obj in selected:
             self.convert(obj, parent)
 
         return {'FINISHED'}

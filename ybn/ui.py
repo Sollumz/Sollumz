@@ -53,24 +53,7 @@ def draw_bound_properties(layout, obj):
         layout.label(text = "Composite Flags 2")
         generate_flags(layout.box(), obj.composite_flags2)
         row = layout.row()
-        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)
-        row.operator(SOLLUMZ_OT_load_default_col_flags.bl_idname)
-    
-        
-
-
-class SOLLUMZ_UL_COLLISION_FLAGS_LIST(bpy.types.UIList):
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        # If the object is selected
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=item.name, icon='MATERIAL')
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon='MATERIAL')
+        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
 
 
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
@@ -90,6 +73,22 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
                         text=name, emboss=False, icon='MATERIAL')
 
 
+class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_FLAG_PRESET_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        # If the object is selected
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon='BOOKMARKS')
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon='BOOKMARKS')
+
+
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Static Collision Tools"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
@@ -106,7 +105,19 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         box.template_list(
             SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
         )
-        box.operator("sollumz.createcollisionmaterial")
+        box.operator(SOLLUMZ_OT_create_collision_material.bl_idname)
+        box = layout.box()
+        box.label(text = "Flag Presets")
+        box.template_list(
+            SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "", context.scene, "flag_presets", context.scene, "flag_preset_index"
+        )
+        row = box.row()
+        row.operator(SOLLUMZ_OT_save_flag_preset.bl_idname)
+        row.prop(context.scene, 'new_flag_preset_name', text='Name')
+        row = box.row()
+        row.operator(SOLLUMZ_OT_delete_flag_preset.bl_idname)
+        row = box.row()
+        row.operator(SOLLUMZ_OT_load_flag_preset.bl_idname)
         box = layout.box()
         box.label(text = "Create Bound Objects")
         row = box.row()
