@@ -294,6 +294,13 @@ class SOLLUMZ_OT_mesh_to_polygon_bound(bpy.types.Operator):
         elif aobj and not context.active_object.mode == 'EDIT':
             self.report({'WARNING'}, 'Operator can only be ran in edit mode!')
             return {'CANCELLED'}
+        
+        if not parent:
+            self.report({'WARNING'}, 'Must specify a parent object!')
+            return {'CANCELLED'}
+        elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
+            self.report({'WARNING'}, f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
+            return {'CANCELLED'}
 
         # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
         bpy.ops.object.mode_set(mode='OBJECT')
