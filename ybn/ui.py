@@ -87,9 +87,9 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Ybn Tools"
+    bl_label = "Static Collision Tools"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
-    bl_category = "Sollumz"
+    bl_category = "Sollumz Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
 
@@ -126,8 +126,13 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         row.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
         row.prop(context.scene, "poly_bound_type")
         box = layout.box()
-        box.label(text = "Quick Convert Tools")
-        box.operator(SOLLUMZ_OT_quick_convert_mesh_to_collision.bl_idname)
+        box.label(text = "Conversion Tools")
+        box.operator(SOLLUMZ_OT_convert_mesh_to_collision.bl_idname)
+        row = box.row()
+        if context.active_object and context.active_object.mode == 'EDIT':
+            row.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname)
+            row.prop(context.scene, "convert_poly_bound_type")
+            row.prop(context.scene, "convert_poly_parent")
 
 
 class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
@@ -149,6 +154,7 @@ class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
 def SollumzBoundContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_bound_objects_create.bl_idname)
 
+
 class SOLLUMZ_MT_polygon_bound_create(bpy.types.Menu):
     bl_label = "Polygon Bound Objects"
     bl_idname = "SOLLUMZ_MT_polygon_bound_create"
@@ -158,9 +164,19 @@ class SOLLUMZ_MT_polygon_bound_create(bpy.types.Menu):
         layout.prop(context.scene, "poly_bound_type")
         layout.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname) 
 
+
+class SOLLUMZ_MT_polygon_bound_convert(bpy.types.Menu):
+    bl_label = "Convert Polygon Bound Objects"
+    bl_idname = "SOLLUMZ_MT_polygon_bound_convert"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(context.scene, "convert_poly_bound_type")
+        layout.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname) 
+
+
 def SollumzPolygonBoundContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_polygon_bound_create.bl_idname)
-        
 
 def register():
     bpy.types.SOLLUMZ_MT_create.append(SollumzBoundContextMenu)

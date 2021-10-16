@@ -22,11 +22,17 @@ SOLLUMZ_UI_NAMES = {
 }
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
-    bl_label = "Material Properties"
+    bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAT_PANEL"
-    bl_category = "Sollumz"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'material'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        # mat = context.active_object.active_material
+        return True
 
     def draw(self, context):
         layout = self.layout
@@ -36,6 +42,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         mat = None
         mat = context.active_object.active_material
+        print('test')
 
         if(mat == None):
             return 
@@ -43,16 +50,16 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         if mat.sollum_type == MaterialType.MATERIAL:
             draw_shader(layout, mat)
         elif mat.sollum_type == MaterialType.COLLISION:
-            box = layout.box()
-            draw_collision_material_properties(box, mat)
+            draw_collision_material_properties(layout, mat)
 
 
-class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
-    bl_label = "Object Properties"
+class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
+    bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
-    bl_category = "Sollumz"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_options = {'DEFAULT_CLOSED'}
     
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")

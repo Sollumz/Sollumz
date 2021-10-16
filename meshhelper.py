@@ -42,6 +42,7 @@ def create_box_from_extents(mesh, bbmin, bbmax):
 
     return mesh
 
+
 def create_box(mesh, size=1):
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1)
@@ -93,56 +94,62 @@ def create_disc(mesh, radius=0.5, length=0.1):
     bm.free()
     return mesh
 
+
 def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     length = length if length > diameter * 2 else diameter * 2
+    if diameter < 0:
+        raise ValueError('Cannot create capsule with a diameter less than 0!')
+
+    mesh = obj.data
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=diameter)
-    mesh = obj.data
+    bm.to_mesh(mesh)
 
-    center = obj.location
-    bb = [Vector(b) for b in obj.bound_box]
-    axis = bb[1] - bb[0]
+    center = Vector()
+    axis = Vector((0, 0, 1))
     if use_rot:
-        axis = bb[4] - bb[0]
+        axis = Vector(0, 0, 1)
 
-    # Get top half of vertices
+
+    # Get top and bottom halves of vertices
     top = []
     top_faces = []
+    bottom = []
+    bottom_faces = []
+
+    amount = length - (diameter * 2)
+    vec = Vector((0, 0, amount)) if not use_rot else Vector((amount, 0, 0))
+
     for v in bm.verts:
         if distance_point_to_plane(v.co, center, axis) >= 0:
-            top.append(v)
+            top.append(v.co)            
             for face in v.link_faces:
                 if not face in top_faces:
                     top_faces.append(face)
+        elif distance_point_to_plane(v.co, center, axis) <= 0:
+            bottom.append(v.co)
+            for face in v.link_faces:
+                if not face in bottom_faces and face not in top_faces:
+                    bottom_faces.append(face)
 
     # Extrude top half
     ret = bmesh.ops.extrude_face_region(bm, geom=top_faces)
     extruded = ret["geom"]
     del ret
     translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec=vec / 2, verts=translate_verts)
 
-    amount = length - (diameter * 2)
-    vec = (0, 0, amount)
-    if use_rot:
-        vec = (amount, 0, 0)
+    # Extrude bottom half
+    ret = bmesh.ops.extrude_face_region(bm, geom=bottom_faces)
+    extruded = ret["geom"]
+    del ret
+    translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec=-vec / 2, verts=translate_verts)
 
-    bmesh.ops.translate(bm, vec=vec, verts=translate_verts)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 
     bm.to_mesh(mesh)
     bm.free()
-
-    # Fix origin
-    linked = obj.name in bpy.context.collection.objects
-    if not linked:
-        bpy.context.collection.objects.link(obj)
-
-    obj.select_set(True)
-    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-    obj.select_set(False)
-    obj.location = center
-
-    if not linked:
-        bpy.context.collection.objects.unlink(obj)
 
     return mesh
 

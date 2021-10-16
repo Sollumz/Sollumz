@@ -19,6 +19,93 @@ def init_poly_obj(poly, sollum_type, materials):
 
     return obj
 
+def poly_box(obj, v1, v2, v3, v4):
+    cf1 = (v1 + v2) / 2
+    cf2 = (v3 + v4) / 2
+    cf3 = (v1 + v4) / 2
+    cf4 = (v2 + v3) / 2
+    cf5 = (v1 + v3) / 2
+    cf6 = (v2 + v4) / 2
+
+    # caclulate obj center
+    center = (cf3 + cf4) / 2
+
+    rightest = get_closest_axis_point(Vector((1, 0, 0)), center, [cf1, cf2, cf3, cf4, cf5, cf6])
+    upest    = get_closest_axis_point(Vector((0, 0, 1)), center, [cf1, cf2, cf3, cf4, cf5, cf6])
+    right    = (rightest - center).normalized()
+    up       = (upest    - center).normalized()
+    forward  = Vector.cross(right, up).normalized()
+
+    mat = Matrix.Identity(4)
+
+    mat[0] = (right.x,   right.y,   right.z,   0)
+    mat[1] = (up.x,      up.y,      up.z,      0)
+    mat[2] = (forward.x, forward.y, forward.z, 0)
+    mat[3] = (0,         0,         0,         1)
+
+    mat.normalize()
+
+    rotation = mat.to_quaternion().inverted().normalized().to_euler('XYZ')
+
+    # calculate scale
+    seq = [cf1, cf2, cf3, cf4, cf5, cf6]
+
+    _cf1 = get_closest_axis_point(right,    center, seq)
+    _cf2 = get_closest_axis_point(-right,   center, seq)
+    _cf3 = get_closest_axis_point(-up,      center, seq)
+    _cf4 = get_closest_axis_point(up,       center, seq)
+    _cf5 = get_closest_axis_point(-forward, center, seq)
+    _cf6 = get_closest_axis_point(forward,  center, seq)
+
+    W = (_cf2 - _cf1).length
+    L = (_cf3 - _cf4).length
+    H = (_cf5 - _cf6).length
+
+    scale = Vector((W, L, H))
+
+    mesh = obj.data
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1)
+    bm.to_mesh(mesh)
+    bm.free()
+
+    obj.location = center
+    obj.rotation_euler = rotation
+    obj.scale = scale
+
+    return obj
+
+def poly_sphere(obj, v, radius):
+    mesh = obj.data
+    create_sphere(mesh, radius)
+
+    obj.location = v
+
+    return obj
+
+def poly_capsule(obj, v1, v2, radius):
+    length = get_distance_of_vectors(v1, v2) + (radius * 2) 
+    rot = get_direction_of_vectors(v1, v2)
+
+    create_capsule(obj, radius, length)
+    
+    obj.location = (v1 + v2) / 2     
+    obj.rotation_euler = rot
+    
+    return obj
+
+def poly_cylinder(obj, v1, v2, radius):
+    length = get_distance_of_vectors(v1, v2)
+    rot = get_direction_of_vectors(v1, v2)
+
+    create_cylinder(obj.data, radius, length, False)
+
+    obj.location = (v1 + v2) / 2
+    obj.rotation_euler = rot
+
+    return obj
+
+
 def poly_to_obj(poly, materials, vertices):
     if type(poly) == Box:
         obj = init_poly_obj(poly, PolygonType.BOX, materials)
@@ -27,93 +114,27 @@ def poly_to_obj(poly, materials, vertices):
         v3 = vertices[poly.v3]
         v4 = vertices[poly.v4]
 
-        cf1 = (v1 + v2) / 2
-        cf2 = (v3 + v4) / 2
-        cf3 = (v1 + v4) / 2
-        cf4 = (v2 + v3) / 2
-        cf5 = (v1 + v3) / 2
-        cf6 = (v2 + v4) / 2
-
-        # caclulate obj center
-        center = (cf3 + cf4) / 2
-
-        rightest = get_closest_axis_point(Vector((1, 0, 0)), center, [cf1, cf2, cf3, cf4, cf5, cf6])
-        upest    = get_closest_axis_point(Vector((0, 0, 1)), center, [cf1, cf2, cf3, cf4, cf5, cf6])
-        right    = (rightest - center).normalized()
-        up       = (upest    - center).normalized()
-        forward  = Vector.cross(right, up).normalized()
-
-        mat = Matrix.Identity(4)
-
-        mat[0] = (right.x,   right.y,   right.z,   0)
-        mat[1] = (up.x,      up.y,      up.z,      0)
-        mat[2] = (forward.x, forward.y, forward.z, 0)
-        mat[3] = (0,         0,         0,         1)
-
-        mat.normalize()
-
-        rotation = mat.to_quaternion().inverted().normalized().to_euler('XYZ')
-
-        # calculate scale
-        seq = [cf1, cf2, cf3, cf4, cf5, cf6]
-
-        _cf1 = get_closest_axis_point(right,    center, seq)
-        _cf2 = get_closest_axis_point(-right,   center, seq)
-        _cf3 = get_closest_axis_point(-up,      center, seq)
-        _cf4 = get_closest_axis_point(up,       center, seq)
-        _cf5 = get_closest_axis_point(-forward, center, seq)
-        _cf6 = get_closest_axis_point(forward,  center, seq)
-
-        W = (_cf2 - _cf1).length
-        L = (_cf3 - _cf4).length
-        H = (_cf5 - _cf6).length
-
-        scale = Vector((W, L, H))
-
-        mesh = obj.data
-        bm = bmesh.new()
-        bmesh.ops.create_cube(bm, size=1)
-        bm.to_mesh(mesh)
-        bm.free()
-
-        obj.location = center
-        obj.rotation_euler = rotation
-        obj.scale = scale
+        poly_box(obj, v1, v2, v3, v4)
 
         return obj
     elif type(poly) == Sphere:
         sphere = init_poly_obj(poly, PolygonType.SPHERE, materials)
-        mesh = sphere.data
-        create_sphere(mesh, poly.radius)
-
-        sphere.location = vertices[poly.v]
+        poly_sphere(sphere, vertices[poly.v], poly.radius)
 
         return sphere
     elif type(poly) == Capsule:
         capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2) 
-        rot = get_direction_of_vectors(v1, v2)
-
-        create_capsule(capsule, poly.radius, length)
         
-        capsule.location = (v1 + v2) / 2     
-        capsule.rotation_euler = rot
+        poly_capsule(capsule, v1, v2, poly.radius)
         
         return capsule
     elif type(poly) == Cylinder:
         cylinder = init_poly_obj(poly, PolygonType.CYLINDER, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-
-        length = get_distance_of_vectors(v1, v2)
-        rot = get_direction_of_vectors(v1, v2)
-
-        cylinder.data = create_cylinder(cylinder.data, poly.radius, length, False)
-
-        cylinder.location = (v1 + v2) / 2
-        cylinder.rotation_euler = rot
+        poly_cylinder(cylinder, v1, v2, poly.radius)
 
         return cylinder
 

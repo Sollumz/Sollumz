@@ -125,9 +125,9 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
                         text=name, emboss=False, icon='MATERIAL')
 
 class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Ydr Tools"
+    bl_label = "Drawable Tools"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
-    bl_category = "Sollumz"
+    bl_category = "Sollumz Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
 
@@ -153,17 +153,17 @@ class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
             layout.alignment = 'CENTER' 
             layout.prop(item, 'name', text='', icon = custom_icon, emboss=False, translate=False)
 
+
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
     bl_label = "Bone Properties"
     bl_idname = "SOLLUMZ_PT_BONE_PANEL"
-    bl_category = "Sollumz"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    #bl_context = "bone"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "bone"
     
     def draw(self, context):
         layout = self.layout
-
+        print('test')
         if (context.active_pose_bone == None):
             return
 

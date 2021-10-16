@@ -116,9 +116,16 @@ def register():
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
         #maybe remove PolygonType.TRIANGLE from list?
         items = items_from_enums(PolygonType),
-        name = "Poly Type",
+        name = "Type",
         default = PolygonType.BOX.value    
     )
+    bpy.types.Scene.convert_poly_bound_type = bpy.props.EnumProperty(
+        #maybe remove PolygonType.TRIANGLE from list?
+        items = items_from_enums(PolygonType),
+        name = "Type",
+        default = PolygonType.BOX.value    
+    )
+    bpy.types.Scene.convert_poly_parent = bpy.props.PointerProperty(type=bpy.types.Object, name='Parent', description='Parent object for the newly created polys')
     bpy.types.Scene.create_collision_material_type = bpy.props.EnumProperty(
         items = [("sollumz_default", "Default ", "Sollumz Default "),
                  ("sollumz_concrete", "Concrete ", "Sollumz Concrete "),
@@ -309,6 +316,8 @@ def register():
 
 def unregister():
     del bpy.types.Scene.poly_bound_type
+    del bpy.types.Scene.convert_poly_bound_type
+    del bpy.types.Scene.convert_poly_parent
     del bpy.types.Object.bound_properties
     del bpy.types.Object.composite_flags1 
     del bpy.types.Object.composite_flags2 
