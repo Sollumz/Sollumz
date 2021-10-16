@@ -96,92 +96,94 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
         return {'CANCELLED'}
 
     def convert_material(self, obj):
-        if(len(obj.data.materials) != 1):
-            self.fail("", "Object " + obj.name + " can only have one material.")
+        # if(len(obj.data.materials) != 1):
+        #     self.fail("", "Object " + obj.name + " can only have one material.")
+        if len(obj.data.materials) < 1:
+            self.fail("", f"{obj.name} has no materials to convert!")
 
-        mat = obj.data.materials[0]
+        
+        for mat in obj.data.materials:
+            try:
+                bsdf = mat.node_tree.nodes["Principled BSDF"]
 
-        try:
-            bsdf = mat.node_tree.nodes["Principled BSDF"]
+                if(bsdf == None):
+                    self.fail(mat.name, "Material must have a Principled BSDF node.")
 
-            if(bsdf == None):
-                self.fail(mat.name, "Material must have a Principled BSDF node.")
+                diffuse_node = None
+                diffuse_input = bsdf.inputs["Base Color"]
+                if diffuse_input.is_linked:
+                    diffuse_node = diffuse_input.links[0].from_node
 
-            diffuse_node = None
-            diffuse_input = bsdf.inputs["Base Color"]
-            if diffuse_input.is_linked:
-                diffuse_node = diffuse_input.links[0].from_node
-
-            if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-                self.fail(mat.name, "Material has no diffuse image.")
-                
-            specular_node = None
-            specular_input = bsdf.inputs["Specular"]
-            if specular_input.is_linked:
-                specular_node = specular_input.links[0].from_node
-
-            if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
+                if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
+                    self.fail(mat.name, "Material has no diffuse image.")
+                    
                 specular_node = None
-            
-            normal_node = None
-            normal_input = bsdf.inputs["Normal"]
-            if len(normal_input.links) > 0:
-                normal_map_node = normal_input.links[0].from_node
-                normal_map_input = normal_map_node.inputs["Color"]
-                if len(normal_map_input.links) > 0:
-                    normal_node = normal_map_input.links[0].from_node
+                specular_input = bsdf.inputs["Specular"]
+                if specular_input.is_linked:
+                    specular_node = specular_input.links[0].from_node
 
-            if not isinstance(normal_node, bpy.types.ShaderNodeTexImage):
+                if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
+                    specular_node = None
+                
                 normal_node = None
+                normal_input = bsdf.inputs["Normal"]
+                if len(normal_input.links) > 0:
+                    normal_map_node = normal_input.links[0].from_node
+                    normal_map_input = normal_map_node.inputs["Color"]
+                    if len(normal_map_input.links) > 0:
+                        normal_node = normal_map_input.links[0].from_node
 
-            shader_name = "default"
+                if not isinstance(normal_node, bpy.types.ShaderNodeTexImage):
+                    normal_node = None
 
-            if normal_node != None and specular_node != None:
-                shader_name = "normal_spec"
-            elif normal_node != None and specular_node == None:
-                shader_name = "normal"
-            elif normal_node == None and specular_node != None:
-                shader_name = "spec"
+                shader_name = "default"
 
-            #remove old materials
-            for i in range(len(obj.material_slots)):
-                bpy.ops.object.material_slot_remove({'object': obj})
+                if normal_node != None and specular_node != None:
+                    shader_name = "normal_spec"
+                elif normal_node != None and specular_node == None:
+                    shader_name = "normal"
+                elif normal_node == None and specular_node != None:
+                    shader_name = "spec"
 
-            sm = ShaderManager()
-            new_mat = create_shader(shader_name, sm)
-            #new_mat.name = mat.name
-            obj.data.materials.append(new_mat) 
+                #remove old materials
+                for i in range(len(obj.material_slots)):
+                    bpy.ops.object.material_slot_remove({'object': obj})
 
-            bsdf = new_mat.node_tree.nodes["Principled BSDF"]       
+                sm = ShaderManager()
+                new_mat = create_shader(shader_name, sm)
+                #new_mat.name = mat.name
+                obj.data.materials.append(new_mat) 
 
-            new_diffuse_node = None
-            diffuse_input = bsdf.inputs["Base Color"]
-            if diffuse_input.is_linked:
-                new_diffuse_node = diffuse_input.links[0].from_node
+                bsdf = new_mat.node_tree.nodes["Principled BSDF"]       
 
-            if(diffuse_node != None):
-                new_diffuse_node.image = diffuse_node.image
+                new_diffuse_node = None
+                diffuse_input = bsdf.inputs["Base Color"]
+                if diffuse_input.is_linked:
+                    new_diffuse_node = diffuse_input.links[0].from_node
 
-            new_specular_node = None
-            specular_input = bsdf.inputs["Specular"]
-            if specular_input.is_linked:
-                new_specular_node = specular_input.links[0].from_node
+                if(diffuse_node != None):
+                    new_diffuse_node.image = diffuse_node.image
 
-            if(specular_node != None):
-                new_specular_node.image = specular_node.image
+                new_specular_node = None
+                specular_input = bsdf.inputs["Specular"]
+                if specular_input.is_linked:
+                    new_specular_node = specular_input.links[0].from_node
 
-            new_normal_node = None
-            normal_input = bsdf.inputs["Normal"]
-            if len(normal_input.links) > 0:
-                normal_map_node = normal_input.links[0].from_node
-                normal_map_input = normal_map_node.inputs["Color"]
-                if len(normal_map_input.links) > 0:
-                    new_normal_node = normal_map_input.links[0].from_node
+                if(specular_node != None):
+                    new_specular_node.image = specular_node.image
 
-            if(normal_node != None):
-                new_normal_node.image = normal_node.image
-        except:
-            self.fail(mat.name, traceback.format_exc())
+                new_normal_node = None
+                normal_input = bsdf.inputs["Normal"]
+                if len(normal_input.links) > 0:
+                    normal_map_node = normal_input.links[0].from_node
+                    normal_map_input = normal_map_node.inputs["Color"]
+                    if len(normal_map_input.links) > 0:
+                        new_normal_node = normal_map_input.links[0].from_node
+
+                if(normal_node != None):
+                    new_normal_node.image = normal_node.image
+            except:
+                self.fail(mat.name, traceback.format_exc())
 
     def execute(self, context):
         
