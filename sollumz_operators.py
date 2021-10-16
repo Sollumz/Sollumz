@@ -146,7 +146,7 @@ class SollumzExportHelper():
         ("export_first", "Export First", "This option lets you export the first found object of your choosen export type to be exported.")],
         description = "The method in which you want to export your scene.",
         name = "Export Type",
-        default = "export_first"
+        default = "export_all"
     )
 
     def get_filepath(self, obj):
@@ -227,6 +227,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     def export(self, obj):
         try:
             ybn_from_object(obj).write_xml(self.get_filepath(obj))
+            print(obj)
             self.report({'INFO'}, 'YBN Successfully exported.')
         except NoGeometryError:
             self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')

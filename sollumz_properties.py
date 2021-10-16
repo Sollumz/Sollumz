@@ -182,13 +182,15 @@ def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items = items_from_enums(BoundType, PolygonType, ObjectType),
         name = "Sollumz Type",
-        default = "sollumz_none"
+        default = "sollumz_none",
+        options={'HIDDEN'}
     )
     
     bpy.types.Material.sollum_type = bpy.props.EnumProperty(
             items = items_from_enums(MaterialType),
             name = "Sollumz Material Type",
-            default = MaterialType.NONE
+            default = MaterialType.NONE,
+            options={'HIDDEN'}
     )
     
 def unregister():

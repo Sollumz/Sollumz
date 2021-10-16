@@ -24,9 +24,10 @@ SOLLUMZ_UI_NAMES = {
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
-    bl_category = "Sollumz"
+    bl_category = "Sollumz Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -34,11 +35,17 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         layout.operator("sollumz.importymap")
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
-    bl_label = "Material Properties"
+    bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAT_PANEL"
-    bl_category = "Sollumz"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'material'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        # mat = context.active_object.active_material
+        return True
 
     def draw(self, context):
         layout = self.layout
@@ -55,16 +62,16 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         if mat.sollum_type == MaterialType.MATERIAL:
             draw_shader(layout, mat)
         elif mat.sollum_type == MaterialType.COLLISION:
-            box = layout.box()
-            draw_collision_material_properties(box, mat)
+            draw_collision_material_properties(layout, mat)
 
 
-class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
-    bl_label = "Object Properties"
+class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
+    bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
-    bl_category = "Sollumz"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_options = {'DEFAULT_CLOSED'}
     
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")
@@ -89,6 +96,9 @@ class SOLLUMZ_PT_MAIN_PANEL(bpy.types.Panel):
             getattr(obj, 'sollum_type')
         except:
             return
+        
+        row = layout.row()
+        row.prop(obj, 'enable_export', text='Toggle Export')
 
         if obj.sollum_type == ObjectType.DRAWABLE:
             draw_drawable_properties(box, obj)

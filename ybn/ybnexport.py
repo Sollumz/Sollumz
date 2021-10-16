@@ -201,6 +201,9 @@ def init_bound(bound, obj):
     bound.room_id = obj.bound_properties.room_id
     bound.ped_density = obj.bound_properties.ped_density
     bound.poly_flags = obj.bound_properties.poly_flags
+    bound.inertia = Vector(obj.bound_properties.inertia)
+    bound.volume = obj.bound_properties.volume
+    bound.margin = obj.bound_properties.margin
 
     return bound
 
