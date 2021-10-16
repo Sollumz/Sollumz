@@ -218,10 +218,13 @@ def init_bound_obj(bound, sollum_type):
     obj.empty_display_size = 0
     obj.sollum_type = sollum_type.value
 
-    obj.bound_properties.procedural_id = int(bound.procedural_id)
-    obj.bound_properties.room_id = int(bound.room_id)
-    obj.bound_properties.ped_density = int(bound.ped_density)
-    obj.bound_properties.poly_flags = int(bound.poly_flags)
+    obj.bound_properties.procedural_id = bound.procedural_id
+    obj.bound_properties.room_id = bound.room_id
+    obj.bound_properties.ped_density = bound.ped_density
+    obj.bound_properties.poly_flags = bound.poly_flags
+    obj.bound_properties.inertia = bound.inertia
+    obj.bound_properties.margin = bound.margin
+    obj.bound_properties.volume = bound.volume
 
     #assign obj composite flags
     for prop in dir(obj.composite_flags1):

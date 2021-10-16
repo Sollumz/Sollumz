@@ -16,7 +16,6 @@ YBN IMPORT / EXPORT / TOOLS
 ________________________
 - TEST
 - Finish Cylinder, Disc, and Capsule bound types
-- Inertia, Volume, and Margin properties
 - custom presets (mr vicho)
 
 YDR IMPORT / EXPORT / TOOLS

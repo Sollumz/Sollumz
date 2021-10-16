@@ -38,11 +38,15 @@ def generate_flags(box, prop):
 def draw_bound_properties(layout, obj):
     index = 0
     row = layout.row()
-    for prop in BoundProperties.__annotations__:
-        if index % 2 == 0 and index > 0:
-            row = layout.row()
-        row.prop(obj.bound_properties, prop)
-        index += 1
+    row.prop(obj.bound_properties, "procedural_id")
+    row.prop(obj.bound_properties, "room_id")
+    row = layout.row()
+    row.prop(obj.bound_properties, "ped_density")
+    row.prop(obj.bound_properties, "poly_flags")
+    row = layout.row()
+    row.prop(obj.bound_properties, "inertia")
+    row.prop(obj.bound_properties, "margin")
+    row.prop(obj.bound_properties, "volume")
 
     if obj.sollum_type != BoundType.COMPOSITE:
         generate_flags(layout.box(), obj.composite_flags1)
