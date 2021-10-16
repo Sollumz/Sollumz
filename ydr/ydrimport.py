@@ -37,16 +37,16 @@ def shadergroup_to_materials(shadergroup, filepath):
                             for texture in shadergroup.texture_dictionary:
                                 if(texture.name == param.texture_name):
                                     n.texture_properties.embedded = True
-                                    format = "sollumz_" + texture.format[0].split("_")[1].lower()
+                                    format = "sollumz_" + texture.format.split("_")[1].lower()
                                     n.texture_properties.format = format
-                                    usage = "sollumz_" + texture.usage[0].lower()
+                                    usage = "sollumz_" + texture.usage.lower()
                                     n.texture_properties.usage = usage
                                     n.texture_properties.extra_flags = texture.extra_flags
                                     
-                                    for prop in dir(n.texture_properties):
+                                    for prop in dir(n.texture_flags):
                                         for uf in texture.usage_flags:
                                             if(uf.lower() == prop):
-                                                setattr(n.texture_properties, prop, True)
+                                                setattr(n.texture_flags, prop, True)
 
                         if(param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings')):
                             n.image.colorspace_settings.name = 'Non-Color'

@@ -4,22 +4,25 @@ ________________________
 - remove function annotations
 - order xml element attributes on export to make it more readable
 - add overwrite warning to sollumzexporthelper?
+- move property panels to correct locations
 
-IDEAS 
-________________________
-- combine shader panel and material panel?
-
-TOOL PANEL 
+GENERAL TOOLS
 ________________________
 - parent objects button ? 
-- button for creating a gta shader (material)
+- export ymap
+- export ytyp 
 
-YBN IMPORT / EXPORT
+YBN IMPORT / EXPORT / TOOLS
 ________________________
 - TEST
 - Finish Cylinder, Disc, and Capsule bound types
 - Add buttons for converting to all bound types
 - Inertia, Volume, and Margin properties
+- custom presets (mr vicho)
 
-YDR IMPORT / EXPORT
+YDR IMPORT / EXPORT / TOOLS
 ________________________
+- MIP LEVELS FOR EMBEDDED TEXTURES?
+- check embedded bounds
+- GET CUTOUT SHADERS WORKING
+- 

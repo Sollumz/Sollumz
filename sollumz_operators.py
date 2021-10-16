@@ -3,6 +3,7 @@ import traceback, os
 from Sollumz.sollumz_properties import ObjectType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.bound import YBN
+from Sollumz.resources.ymap import YMAP
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.ybn.ybnexport import ybn_from_object, NoGeometryError
 from Sollumz.ydr.ydrexport import drawable_from_object
@@ -11,7 +12,60 @@ from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper
 
-class ImportYbnXml(bpy.types.Operator, ImportHelper):
+class ImportYmapXml(bpy.types.Operator, ImportHelper):
+    """Imports .ymap.xml file exported from codewalker."""
+    bl_idname = "sollumz.importymap" 
+    bl_label = "Import ymap.xml"
+    filename_ext = ".ymap.xml"
+    bl_options = {'UNDO'}
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.ymap.xml",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+
+    def execute(self, context):
+        
+        ymap = YMAP.from_xml_file(self.filepath)
+
+        names = []
+
+        for obj in bpy.context.collection.objects:
+            for entity in ymap.entities:
+                if entity.archetype_name not in names:
+                    names.append(entity.archetype_name)
+                if(entity.archetype_name == obj.name):
+                    obj.location = entity.position
+
+        for name in names:
+            print(name)
+
+        return {'FINISHED'}
+
+class SollumzImportHelper(ImportHelper):
+    bl_options = {'REGISTER'}
+    filename_ext = None
+
+    import_directory : bpy.props.BoolProperty(
+        name = "Import Directory",
+        default = False,
+    )
+
+    def execute(self, context):
+        if(self.import_directory):
+            folderpath = os.path.dirname(self.filepath)
+            for file in os.listdir(folderpath):
+                 if file.endswith(self.filename_ext):
+                    filepath = os.path.join(folderpath, file)
+                    self.importfile(filepath)
+        else:
+            self.importfile(self.filepath)
+
+        return {'FINISHED'}
+
+
+class ImportYbnXml(bpy.types.Operator, SollumzImportHelper):
     """Imports .ybn.xml file exported from codewalker."""
     bl_idname = "sollumz.importybn" 
     bl_label = "Import ybn.xml"
@@ -23,9 +77,8 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         options={'HIDDEN'},
         maxlen=255,  
     )
-
-    def execute(self, context):
-        
+    
+    def importfile(self, context):
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
             composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath.replace('.ybn.xml', '')))
@@ -33,10 +86,8 @@ class ImportYbnXml(bpy.types.Operator, ImportHelper):
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
             self.report({'ERROR'}, traceback.format_exc())
-            
-        return {'FINISHED'}
 
-class ImportYdrXml(bpy.types.Operator, ImportHelper):
+class ImportYdrXml(bpy.types.Operator, SollumzImportHelper):
     """Imports .ydr.xml file exported from codewalker."""
     bl_idname = "sollumz.importydr" 
     bl_label = "Import ydr.xml"
@@ -48,18 +99,15 @@ class ImportYdrXml(bpy.types.Operator, ImportHelper):
         maxlen=255,  
     )
 
-    def execute(self, context):
-        
+    def importfile(self, filepath):
         try:
-            ydr_xml = YDR.from_xml_file(self.filepath)
-            drawable_to_obj(ydr_xml, self.filepath, os.path.basename(self.filepath.replace(self.filename_ext, '')))
+            ydr_xml = YDR.from_xml_file(filepath)
+            drawable_to_obj(ydr_xml, filepath, os.path.basename(filepath.replace(self.filename_ext, '')))
             self.report({'INFO'}, 'YDR Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
 
-        return {'FINISHED'}
-
-class ImportYddXml(bpy.types.Operator, ImportHelper):
+class ImportYddXml(bpy.types.Operator, SollumzImportHelper):
     """Imports .ydd.xml file exported from codewalker."""
     bl_idname = "sollumz.importydd" 
     bl_label = "Import ydd.xml"
@@ -71,16 +119,13 @@ class ImportYddXml(bpy.types.Operator, ImportHelper):
         maxlen=255,  
     )
 
-    def execute(self, context):
-        
+    def importfile(self, context):
         try:
             ydd_xml = YDD.from_xml_file(self.filepath)
             drawable_dict_to_obj(ydd_xml, self.filepath)
             self.report({'INFO'}, 'YDD Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
-
-        return {'FINISHED'}
 
 
 class SollumzExportHelper():
@@ -199,7 +244,7 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
 
     def export(self, obj):
         try:
-            drawable_from_object(obj).write_xml(self.get_filepath(obj))
+            drawable_from_object(obj, None, self.directory).write_xml(self.get_filepath(obj))
             self.report({'INFO'}, 'YDR Successfully exported.')
         except:
             self.report({'ERROR'}, traceback.format_exc())
@@ -222,22 +267,22 @@ class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
 
 
 def ydr_menu_func_export(self, context):
-    self.layout.operator(ExportYdrXml.bl_idname, text="Export .ydr.xml")
+    self.layout.operator(ExportYdrXml.bl_idname, text="Codewalker Xml (.ydr.xml)")
 
 def ybn_menu_func_export(self, context):
-    self.layout.operator(ExportYbnXml.bl_idname, text="Export .ybn.xml")
+    self.layout.operator(ExportYbnXml.bl_idname, text="Codewalker Xml (.ybn.xml)")
 
 def ydd_menu_func_export(self, context):
-    self.layout.operator(ExportYddXml.bl_idname, text="Export .ydd.xml")
+    self.layout.operator(ExportYddXml.bl_idname, text="Codewalker Xml (.ydd.xml)")
 
 def ydr_menu_func_import(self, context):
-    self.layout.operator(ImportYdrXml.bl_idname, text="Import .ydr.xml")
+    self.layout.operator(ImportYdrXml.bl_idname, text="Codewalker Xml (.ydr.xml)")
 
 def ybn_menu_func_import(self, context):
-    self.layout.operator(ImportYbnXml.bl_idname, text="Import .ybn.xml")
+    self.layout.operator(ImportYbnXml.bl_idname, text="Codewalker Xml (.ybn.xml)")
 
 def ydd_menu_func_import(self, context):
-    self.layout.operator(ImportYddXml.bl_idname, text="Import .ydd.xml")
+    self.layout.operator(ImportYddXml.bl_idname, text="Codewalker Xml (.ydd.xml)")
 
 
 def register():

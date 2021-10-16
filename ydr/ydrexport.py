@@ -2,9 +2,10 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 from Sollumz.resources.drawable import *
 from Sollumz.resources.shader import ShaderManager
-import os, sys, traceback
+import os, sys, traceback, shutil
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -21,6 +22,13 @@ def get_used_materials(obj):
 
     return materials
 
+def get_shader_index(obj, mat):
+    mats = get_used_materials(obj.parent.parent)
+
+    for i in range(len(mats)):
+        if mats[i] == mat:
+            return i
+
 def get_shaders_from_blender(obj):
     shaders = []
 
@@ -36,10 +44,7 @@ def get_shaders_from_blender(obj):
                 param = TextureParameterItem()
                 param.name = node.name
                 param.type = "Texture"
-                if(node.image != None):
-                    param.texture_name = os.path.splitext(node.image.name)[0]
-                else:
-                    param.texture_name = "givemechecker"
+                param.texture_name = os.path.splitext(node.image.name)[0]
                 shader.parameters.append(param)
             elif(isinstance(node, bpy.types.ShaderNodeValue)):
                 if(node.name[-1] == "x"):
@@ -62,6 +67,53 @@ def get_shaders_from_blender(obj):
         shaders.append(shader)
 
     return shaders
+
+def texture_dictionary_from_materials(obj, materials, exportpath):
+    texture_dictionary = []
+    found = False
+    
+    for mat in materials:
+        nodes = mat.node_tree.nodes
+
+        for n in nodes:
+            if(isinstance(n, bpy.types.ShaderNodeTexImage)):
+                if(n.texture_properties.embedded == True):
+                    found = True
+                    texture_item = TextureItem()
+                    texture_item.name = os.path.splitext(n.image.name)[0]
+                    #texture_item.unk32 = 0
+                    texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
+                    for prop in dir(n.texture_flags):
+                        value = getattr(n.texture_flags, prop)
+                        if value == True:
+                            texture_item.usage_flags.append(prop.upper())
+                    texture_item.extra_flags = n.texture_properties.extra_flags
+                    texture_item.width = n.image.size[0]
+                    texture_item.height = n.image.size[1]
+                    texture_item.miplevels = 8 #?????????????????????????????????????????????????????????????????????????????????????????????
+                    texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
+                    texture_item.filename = n.image.name
+                    texture_dictionary.append(texture_item)
+
+                    #if(n.image != None):
+                    foldername = obj.name
+                    folderpath = exportpath + foldername
+
+                    if(os.path.isdir(folderpath) == False):
+                        os.mkdir(folderpath)
+                    
+                    txtpath = n.image.filepath
+                    dstpath = folderpath +  "\\" + os.path.basename(n.image.filepath)
+
+                    # check if paths are the same because if they are no need to copy
+                    if txtpath != dstpath:
+                        shutil.copyfile(txtpath, dstpath)
+                    #else:
+                    #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
+    if not found:
+        texture_dictionary = None
+
+    return texture_dictionary
 
 def get_index_string(mesh):
     
@@ -179,15 +231,15 @@ def get_vertex_string(obj, mesh, layout, bones=None):
 
     clr0_layer = None 
     clr1_layer = None
-    if(mesh.vertex_colors == None):
-        clr0_layer = mesh.vertex_colors.new()
-        clr1_layer = mesh.vertex_colors.new()
-    else:
+    if(len(mesh.vertex_colors) > 0):
         clr0_layer = mesh.vertex_colors[0]
         if len(mesh.vertex_colors) >= 2:
             clr1_layer = mesh.vertex_colors[1]
         else:
             clr1_layer = mesh.vertex_colors.new()
+    else:
+        clr0_layer = mesh.vertex_colors.new()
+        clr1_layer = mesh.vertex_colors.new()
 
     for uv_layer_id in range(len(mesh.uv_layers)):
         uv_layer = mesh.uv_layers[uv_layer_id].data
@@ -288,6 +340,8 @@ def geometry_from_object(obj, bones=None):
     obj_eval = obj.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(obj, preserve_all_data_layers=True, depsgraph=depsgraph)
 
+    geometry.shader_index = get_shader_index(obj, mesh.materials[0])
+
     bbmin, bbmax = get_bb_extents(obj_eval)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
@@ -367,7 +421,7 @@ def skeleton_from_object(obj):
 
     skeleton = SkeletonProperty()
     if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
-        return skeleton
+        return None
 
     bones = obj.pose.bones
 
@@ -383,7 +437,7 @@ def skeleton_from_object(obj):
 
     return skeleton
 
-def drawable_from_object(obj, bones=None):
+def drawable_from_object(obj, bones=None, exportpath = ""):
     drawable = Drawable()
 
     drawable.name = obj.name
@@ -402,7 +456,9 @@ def drawable_from_object(obj, bones=None):
     for shader in shaders:
         drawable.shader_group.shaders.append(shader)
 
-    #drawable.shader_group.texture_dictionary = None #NOT IMPLEMENTED
+    drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(obj, get_used_materials(obj), exportpath)
+
+    drawable.bound = None
 
     if bones is None:
         if(obj.pose != None):

@@ -37,7 +37,7 @@ class MaterialType(str, Enum):
 
 class TextureType(str, Enum):
     UNKNOWN = 'sollumz_unknown'
-    TINTPALLETE = 'sollumz_tintpallete'
+    TINTPALETTE = 'sollumz_tintpalette'
     DEFAULT = 'sollumz_default'
     TERRAIN = 'sollumz_terrain'
     CLOUDDENSITY = 'sollumz_clouddensity'
@@ -60,7 +60,7 @@ class TextureType(str, Enum):
     NORMAL = 'sollumz_normal'
     SPECULAR = 'sollumz_specular'
     EMMISIVE = 'sollumz_emmisive'
-    SKIPPROCCESING = 'sollumz_skipproccesing'
+    SKIPPROCESSING = 'sollumz_skipprocessing'
     DONTOPTIMIZE = 'sollumz_dontoptimize'
     TEST = 'sollumz_test'
     COUNT = 'sollumz_count'
@@ -108,7 +108,7 @@ SOLLUMZ_UI_NAMES = {
     MaterialType.COLLISION: 'Sollumz Collision Material',
 
     TextureType.UNKNOWN: 'UNKNOWN',
-    TextureType.TINTPALLETE: 'TINTPALLETE',
+    TextureType.TINTPALETTE: 'TINTPALETTE',
     TextureType.DEFAULT: 'DEFAULT',
     TextureType.TERRAIN: 'TERRAIN',
     TextureType.CLOUDDENSITY: 'CLOUDDENSITY',
@@ -131,7 +131,7 @@ SOLLUMZ_UI_NAMES = {
     TextureType.NORMAL: 'NORMAL',
     TextureType.SPECULAR: 'SPECULAR',
     TextureType.EMMISIVE: 'EMMISIVE',
-    TextureType.SKIPPROCCESING: 'SKIPPROCCESING',
+    TextureType.SKIPPROCESSING: 'SKIPPROCESSING',
     TextureType.DONTOPTIMIZE: 'DONTOPTIMIZE',
     TextureType.TEST: 'TEST',
     TextureType.COUNT: 'COUNT',
