@@ -54,7 +54,6 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         mat = None
         mat = context.active_object.active_material
-        print('test')
 
         if(mat == None):
             return 
@@ -96,6 +95,9 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
             getattr(obj, 'sollum_type')
         except:
             return
+        
+        row = layout.row()
+        row.prop(obj, 'enable_export', text='Toggle Export')
 
         if obj.sollum_type == ObjectType.DRAWABLE:
             draw_drawable_properties(box, obj)

@@ -254,11 +254,13 @@ class ListProperty(ElementProperty, AbstractClass):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        for item in self.value:
-            if isinstance(item, self.list_type):
-                element.append(item.to_xml())
-            else:
-                raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+        
+        if self.value:
+            for item in self.value:
+                if isinstance(item, self.list_type):
+                    element.append(item.to_xml())
+                else:
+                    raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
 
         return element
 

@@ -146,7 +146,7 @@ class SollumzExportHelper():
         ("export_first", "Export First", "This option lets you export the first found object of your choosen export type to be exported.")],
         description = "The method in which you want to export your scene.",
         name = "Export Type",
-        default = "export_first"
+        default = "export_all"
     )
 
     def get_filepath(self, obj):

@@ -77,7 +77,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 if(n.texture_properties.embedded == True):
-                    found = True
                     texture_item = TextureItem()
                     texture_item.name = os.path.splitext(n.image.name)[0]
                     #texture_item.unk32 = 0
