@@ -81,6 +81,12 @@ class CollisionMaterial(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty('Name')
 
 
+class FlagPreset(bpy.types.PropertyGroup):
+    index : bpy.props.IntProperty('Index')
+    name : bpy.props.StringProperty('Name')
+    file_path: bpy.props.StringProperty('File Path')
+
+
 # Handler sets the default value of the CollisionMaterials collection on blend file load
 @persistent
 def on_file_loaded(_):
@@ -109,6 +115,9 @@ def register():
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(type = CollisionMaterial, name = 'Collision Materials')
     bpy.app.handlers.load_post.append(on_file_loaded)
 
+    bpy.types.Scene.flag_preset_index = bpy.props.IntProperty(name = "Flag Preset Index")
+    bpy.types.Scene.flag_presets = bpy.props.CollectionProperty(type = CollisionMaterial, name = 'Flag Presets')
+
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionMatFlags)
 
@@ -127,6 +136,8 @@ def register():
         default = PolygonType.BOX.value    
     )
     bpy.types.Scene.convert_poly_parent = bpy.props.PointerProperty(type=bpy.types.Object, name='Parent', description='Parent object for the newly created polys')
+    bpy.types.Scene.multiple_ybns = bpy.props.BoolProperty(name='Multiple Composites', description='Create a Composite for each selected mesh.')
+    bpy.types.Scene.convert_ybn_use_mesh_names = bpy.props.BoolProperty(name='Use Mesh Names', description='Use the names of the meshes for the composites.', default=True)
 
 def unregister():
     del bpy.types.Scene.poly_bound_type

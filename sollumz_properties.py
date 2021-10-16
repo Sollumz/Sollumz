@@ -177,8 +177,6 @@ def items_from_enums(*enums):
 
 
 def register():
-    bpy.types.Object.enable_export = bpy.props.BoolProperty('Enable Export', default=True)
-
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items = items_from_enums(BoundType, PolygonType, ObjectType),
         name = "Sollumz Type",

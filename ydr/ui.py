@@ -154,7 +154,7 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
         row = box.row()
         row.operator("sollumz.convertmeshtodrawable")
         row.prop(context.scene, 'multiple_ydrs')
-        row.prop(context.scene, 'convert_use_names')
+        row.prop(context.scene, 'convert_ydr_use_mesh_names')
         row = box.row()
         row.operator("sollumz.converttoshadermaterial")
 

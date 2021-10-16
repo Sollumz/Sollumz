@@ -28,6 +28,7 @@ def create_mesh(sollum_type):
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type
+    obj.data.materials.append(create_collision_material_from_index(0))
     bpy.context.collection.objects.link(obj)
 
     return obj
@@ -241,10 +242,10 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_load_default_col_flags(bpy.types.Operator):
-    """Load commonly used collision flags"""
-    bl_idname = "sollumz.load_default_col_flags"
-    bl_label = "Load Default Collision Flags"
+class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
+    """Load a flag preset to the selected Geometry bounds"""
+    bl_idname = "sollumz.load_flag_preset"
+    bl_label = "Load Flag Preset"
 
     def execute(self, context):
         
@@ -352,26 +353,35 @@ class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
     """Setup a gta bound via a mesh object"""
     bl_idname = "sollumz.quickconvertmeshtocollision"
     bl_label = "Convert Mesh To Collision"
-
-    def convert(self, obj):
-        #create material
-        mat = create_collision_material_from_type("DEFAULT")
-        obj.data.materials.append(mat)
-        
+    bl_options = {'UNDO'}
+    
+    def convert(self, obj, parent):
         #set parents
-        bpy.ops.sollumz.createboundcomposite()
-        bobj = bpy.context.active_object
-        bpy.ops.sollumz.creategeometryboundbvh()
-        gobj = bpy.context.active_object
-        gobj.parent = bobj
-        obj.parent = gobj
+        dobj = parent or create_empty(BoundType.COMPOSITE)
+        dmobj = create_empty(BoundType.GEOMETRYBVH)
+        dmobj.parent = dobj
+        obj.parent = dmobj
 
+        if bpy.context.scene.convert_ybn_use_mesh_names:
+            if bpy.context.scene.multiple_ybns:
+                dobj.name = obj.name
+            else:
+                dmobj.name = obj.name
+            
         #set properties
-        obj.sollum_type = PolygonType.TRIANGLE.value
+        obj.sollum_type = PolygonType.TRIANGLE
+
+        #add object to collection
+        new_obj = obj.copy()
+        bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.context.collection.objects.link(new_obj)
 
     def execute(self, context):
+        parent = None
+        if not bpy.context.scene.multiple_ybns:
+            parent = create_empty(BoundType.COMPOSITE)
         
         for obj in context.selected_objects:
-            self.convert(obj)
+            self.convert(obj, parent)
 
         return {'FINISHED'}

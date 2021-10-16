@@ -130,7 +130,10 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         row.prop(context.scene, "poly_bound_type")
         box = layout.box()
         box.label(text = "Conversion Tools")
-        box.operator(SOLLUMZ_OT_convert_mesh_to_collision.bl_idname)
+        row = box.row()
+        row.operator(SOLLUMZ_OT_convert_mesh_to_collision.bl_idname)
+        row.prop(context.scene, 'multiple_ybns')
+        row.prop(context.scene, 'convert_ybn_use_mesh_names')
         row = box.row()
         if context.active_object and context.active_object.mode == 'EDIT':
             row.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname)

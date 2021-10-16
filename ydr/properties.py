@@ -116,7 +116,7 @@ def register():
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(type = TextureFlags)
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(type = BoneProperties)
     bpy.types.Scene.multiple_ydrs = bpy.props.BoolProperty(name='Multiple Drawables', description='Create a Drawable for each selected mesh.')
-    bpy.types.Scene.convert_use_names = bpy.props.BoolProperty(name='Use Mesh Names', description='Use the names of the meshes for the drawables.', default=True)
+    bpy.types.Scene.convert_ydr_use_mesh_names = bpy.props.BoolProperty(name='Use Mesh Names', description='Use the names of the meshes for the drawables.', default=True)
 
 def unregister():
     del bpy.types.Scene.shader_material_index
@@ -127,6 +127,6 @@ def unregister():
     del bpy.types.ShaderNodeTexImage.texture_properties
     del bpy.types.Bone.bone_properties
     del bpy.types.Scene.multiple_ydrs
-    del bpy.types.Scene.convert_use_names
+    del bpy.types.Scene.convert_ydr_use_mesh_names
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

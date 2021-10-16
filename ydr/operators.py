@@ -70,7 +70,7 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
         dmobj.parent = dobj
         obj.parent = dmobj
 
-        if bpy.context.scene.convert_use_names:
+        if bpy.context.scene.convert_ydr_use_mesh_names:
             if bpy.context.scene.multiple_ydrs:
                 dobj.name = obj.name
             else:
