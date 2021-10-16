@@ -24,7 +24,7 @@ SOLLUMZ_UI_NAMES = {
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
-    bl_category = "Sollumz"
+    bl_category = "Sollumz Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
 
