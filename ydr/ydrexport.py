@@ -70,7 +70,6 @@ def get_shaders_from_blender(obj):
 
 def texture_dictionary_from_materials(obj, materials, exportpath):
     texture_dictionary = []
-    found = False
     
     for mat in materials:
         nodes = mat.node_tree.nodes
@@ -110,8 +109,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         shutil.copyfile(txtpath, dstpath)
                     #else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
-    if not found:
-        texture_dictionary = None
 
     return texture_dictionary
 

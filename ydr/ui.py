@@ -172,7 +172,6 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
     
     def draw(self, context):
         layout = self.layout
-        print('test')
         if (context.active_pose_bone == None):
             return
 
