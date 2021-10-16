@@ -2,7 +2,7 @@ import bpy
 import traceback
 from Sollumz.ydr.shader_materials import create_shader, shadermats
 from Sollumz.resources.shader import ShaderManager
-from Sollumz.sollumz_properties import ObjectType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
+from Sollumz.sollumz_properties import DrawableType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -16,33 +16,33 @@ def create_empty(sollum_type):
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
     """Create a sollumz drawable"""
     bl_idname = "sollumz.createdrawable"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[ObjectType.DRAWABLE]}"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}"
 
     def execute(self, context):
         
-        create_empty(ObjectType.DRAWABLE)
+        create_empty(DrawableType.DRAWABLE)
 
         return {'FINISHED'}
 
 class SOLLUMZ_OT_create_drawable_model(bpy.types.Operator):
     """Create a sollumz drawable model"""
     bl_idname = "sollumz.createdrawablemodel"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[ObjectType.DRAWABLE_MODEL]}"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]}"
 
     def execute(self, context):
         
-        create_empty(ObjectType.DRAWABLE_MODEL)
+        create_empty(DrawableType.DRAWABLE_MODEL)
 
         return {'FINISHED'}
 
 class SOLLUMZ_OT_create_geometry(bpy.types.Operator):
     """Create a sollumz geometry"""
     bl_idname = "sollumz.creategeometry"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[ObjectType.GEOMETRY]}"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}"
 
     def execute(self, context):
         
-        create_empty(ObjectType.GEOMETRY)
+        create_empty(DrawableType.GEOMETRY)
 
         return {'FINISHED'}
 
@@ -65,8 +65,8 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
                 obj.data.materials.append(mat)
             
         #set parents
-        dobj = parent or create_empty(ObjectType.DRAWABLE)
-        dmobj = create_empty(ObjectType.DRAWABLE_MODEL)
+        dobj = parent or create_empty(DrawableType.DRAWABLE)
+        dmobj = create_empty(DrawableType.DRAWABLE_MODEL)
         dmobj.parent = dobj
         obj.parent = dmobj
 
@@ -77,7 +77,7 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
                 dmobj.name = obj.name
             
         #set properties
-        obj.sollum_type = ObjectType.GEOMETRY
+        obj.sollum_type = DrawableType.GEOMETRY
 
         #add object to collection
         new_obj = obj.copy()
@@ -87,7 +87,7 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
     def execute(self, context):
         parent = None
         if not bpy.context.scene.multiple_ydrs:
-            parent = create_empty(ObjectType.DRAWABLE)
+            parent = create_empty(DrawableType.DRAWABLE)
         
         for obj in context.selected_objects:
             self.convert(obj, parent)
@@ -109,89 +109,89 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
         if len(obj.data.materials) < 1:
             self.fail("", f"{obj.name} has no materials to convert!")
 
-        
-        for mat in obj.data.materials:
-            try:
-                bsdf = mat.node_tree.nodes["Principled BSDF"]
+        material = obj.active_material
 
-                if(bsdf == None):
-                    self.fail(mat.name, "Material must have a Principled BSDF node.")
+        try:
+            bsdf = material.node_tree.nodes["Principled BSDF"]
 
-                diffuse_node = None
-                diffuse_input = bsdf.inputs["Base Color"]
-                if diffuse_input.is_linked:
-                    diffuse_node = diffuse_input.links[0].from_node
+            if(bsdf == None):
+                self.fail(material.name, "Material must have a Principled BSDF node.")
 
-                if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-                    self.fail(mat.name, "Material has no diffuse image.")
-                    
-                specular_node = None
-                specular_input = bsdf.inputs["Specular"]
-                if specular_input.is_linked:
-                    specular_node = specular_input.links[0].from_node
+            diffuse_node = None
+            diffuse_input = bsdf.inputs["Base Color"]
+            if diffuse_input.is_linked:
+                diffuse_node = diffuse_input.links[0].from_node
 
-                if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-                    specular_node = None
+            if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
+                self.fail(material.name, "Material has no diffuse image.")
                 
+            specular_node = None
+            specular_input = bsdf.inputs["Specular"]
+            if specular_input.is_linked:
+                specular_node = specular_input.links[0].from_node
+
+            if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
+                specular_node = None
+            
+            normal_node = None
+            normal_input = bsdf.inputs["Normal"]
+            if len(normal_input.links) > 0:
+                normal_map_node = normal_input.links[0].from_node
+                normal_map_input = normal_map_node.inputs["Color"]
+                if len(normal_map_input.links) > 0:
+                    normal_node = normal_map_input.links[0].from_node
+
+            if not isinstance(normal_node, bpy.types.ShaderNodeTexImage):
                 normal_node = None
-                normal_input = bsdf.inputs["Normal"]
-                if len(normal_input.links) > 0:
-                    normal_map_node = normal_input.links[0].from_node
-                    normal_map_input = normal_map_node.inputs["Color"]
-                    if len(normal_map_input.links) > 0:
-                        normal_node = normal_map_input.links[0].from_node
 
-                if not isinstance(normal_node, bpy.types.ShaderNodeTexImage):
-                    normal_node = None
+            shader_name = "default"
 
-                shader_name = "default"
+            if normal_node != None and specular_node != None:
+                shader_name = "normal_spec"
+            elif normal_node != None and specular_node == None:
+                shader_name = "normal"
+            elif normal_node == None and specular_node != None:
+                shader_name = "spec"
 
-                if normal_node != None and specular_node != None:
-                    shader_name = "normal_spec"
-                elif normal_node != None and specular_node == None:
-                    shader_name = "normal"
-                elif normal_node == None and specular_node != None:
-                    shader_name = "spec"
+            #remove old materials
+            for i in range(len(obj.material_slots)):
+                bpy.ops.object.material_slot_remove({'object': obj})
 
-                #remove old materials
-                for i in range(len(obj.material_slots)):
-                    bpy.ops.object.material_slot_remove({'object': obj})
+            sm = ShaderManager()
+            new_material = create_shader(shader_name, sm)
+            #new_mat.name = mat.name
+            obj.data.materials.append(new_material) 
 
-                sm = ShaderManager()
-                new_mat = create_shader(shader_name, sm)
-                #new_mat.name = mat.name
-                obj.data.materials.append(new_mat) 
+            bsdf = new_material.node_tree.nodes["Principled BSDF"]       
 
-                bsdf = new_mat.node_tree.nodes["Principled BSDF"]       
+            new_diffuse_node = None
+            diffuse_input = bsdf.inputs["Base Color"]
+            if diffuse_input.is_linked:
+                new_diffuse_node = diffuse_input.links[0].from_node
 
-                new_diffuse_node = None
-                diffuse_input = bsdf.inputs["Base Color"]
-                if diffuse_input.is_linked:
-                    new_diffuse_node = diffuse_input.links[0].from_node
+            if(diffuse_node != None):
+                new_diffuse_node.image = diffuse_node.image
 
-                if(diffuse_node != None):
-                    new_diffuse_node.image = diffuse_node.image
+            new_specular_node = None
+            specular_input = bsdf.inputs["Specular"]
+            if specular_input.is_linked:
+                new_specular_node = specular_input.links[0].from_node
 
-                new_specular_node = None
-                specular_input = bsdf.inputs["Specular"]
-                if specular_input.is_linked:
-                    new_specular_node = specular_input.links[0].from_node
+            if(specular_node != None):
+                new_specular_node.image = specular_node.image
 
-                if(specular_node != None):
-                    new_specular_node.image = specular_node.image
+            new_normal_node = None
+            normal_input = bsdf.inputs["Normal"]
+            if len(normal_input.links) > 0:
+                normal_map_node = normal_input.links[0].from_node
+                normal_map_input = normal_map_node.inputs["Color"]
+                if len(normal_map_input.links) > 0:
+                    new_normal_node = normal_map_input.links[0].from_node
 
-                new_normal_node = None
-                normal_input = bsdf.inputs["Normal"]
-                if len(normal_input.links) > 0:
-                    normal_map_node = normal_input.links[0].from_node
-                    normal_map_input = normal_map_node.inputs["Color"]
-                    if len(normal_map_input.links) > 0:
-                        new_normal_node = normal_map_input.links[0].from_node
-
-                if(normal_node != None):
-                    new_normal_node.image = normal_node.image
-            except:
-                self.fail(mat.name, traceback.format_exc())
+            if(normal_node != None):
+                new_normal_node.image = normal_node.image
+        except:
+            self.fail(material.name, traceback.format_exc())
 
     def execute(self, context):
         
@@ -211,7 +211,7 @@ class SOLLUMZ_OT_create_shader_material(bpy.types.Operator):
         if(aobj == None):
             return {'CANCELLED'}
         
-        if is_sollum_type(aobj, ObjectType.GEOMETRY):
+        if is_sollum_type(aobj, DrawableType.GEOMETRY):
             sm = ShaderManager()
             mat = create_shader(shadermats[context.scene.shader_material_index].value, sm)
             aobj.data.materials.append(mat)

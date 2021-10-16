@@ -1,5 +1,5 @@
 import bpy
-from Sollumz.sollumz_properties import BoundType, PolygonType, ObjectType, MaterialType, is_sollum_type
+from Sollumz.sollumz_properties import BoundType, PolygonType, DrawableType, MaterialType, is_sollum_type
 from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
 from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
 
@@ -96,12 +96,12 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
             getattr(obj, 'sollum_type')
         except:
             return
-
-        if obj.sollum_type == ObjectType.DRAWABLE:
+        
+        if obj.sollum_type == DrawableType.DRAWABLE:
             draw_drawable_properties(box, obj)
-        elif obj.sollum_type == ObjectType.GEOMETRY:
+        elif obj.sollum_type == DrawableType.GEOMETRY:
             draw_geometry_properties(box, obj)
-        elif(obj.sollum_type == ObjectType.DRAWABLE_MODEL):
+        elif(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             self.draw_drawable_model_properties(context, box, obj)
         elif is_sollum_type(obj, BoundType):
             draw_bound_properties(box, obj)

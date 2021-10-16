@@ -1,8 +1,8 @@
 import bpy
-from Sollumz.sollumz_properties import is_sollum_type, ObjectType
+from Sollumz.sollumz_properties import is_sollum_type, DrawableType
 from Sollumz.ydr.shader_materials import *
+import os
 from .properties import TextureFlags, TextureProperties
-
 
 def draw_drawable_properties(layout, obj):
     layout.prop(obj.drawable_properties, "lod_dist_high")
