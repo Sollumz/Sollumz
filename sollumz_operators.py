@@ -1,6 +1,6 @@
 import bpy
 import traceback, os
-from Sollumz.sollumz_properties import ObjectType, BoundType, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.bound import YBN
 from Sollumz.resources.ymap import YMAP
@@ -239,7 +239,7 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
     """Export drawable (.ydr)"""
     bl_idname = "exportxml.ydr"
     bl_label = "Export Ydr Xml (.ydr.xml)"
-    sollum_type = ObjectType.DRAWABLE
+    sollum_type = DrawableType.DRAWABLE
 
     filename_ext = ".ydr.xml"
 
@@ -255,7 +255,7 @@ class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
     """Export drawable dictionary (.ydd)"""
     bl_idname = "exportxml.ydd" 
     bl_label = "Export Ydd Xml (.ydd.xml)"
-    sollum_type = ObjectType.DRAWABLE_DICTIONARY
+    sollum_type = DrawableType.DRAWABLE_DICTIONARY
 
     filename_ext = ".ydd.xml"
 

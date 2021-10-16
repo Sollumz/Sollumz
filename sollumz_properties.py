@@ -1,7 +1,7 @@
 import bpy
 from enum import Enum
 
-class ObjectType(str, Enum):
+class DrawableType(str, Enum):
     NONE = 'sollumz_none'
     DRAWABLE_DICTIONARY = 'sollumz_drawable_dictionary'
     DRAWABLE = 'sollumz_drawable'
@@ -154,12 +154,12 @@ SOLLUMZ_UI_NAMES = {
     LodType.LOW: 'Low',
     LodType.VLOW: 'Vlow',
 
-    ObjectType.NONE: 'Sollumz None',
-    ObjectType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
-    ObjectType.DRAWABLE: 'Sollumz Drawable',
-    ObjectType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
-    ObjectType.GEOMETRY: 'Sollumz Geometry',
-    ObjectType.SKELETON: 'Sollumz Skeleton',
+    DrawableType.NONE: 'Sollumz None',
+    DrawableType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
+    DrawableType.DRAWABLE: 'Sollumz Drawable',
+    DrawableType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
+    DrawableType.GEOMETRY: 'Sollumz Geometry',
+    DrawableType.SKELETON: 'Sollumz Skeleton',
 }
 
 def is_sollum_type(obj, type):
@@ -177,10 +177,8 @@ def items_from_enums(*enums):
 
 
 def register():
-    bpy.types.Object.enable_export = bpy.props.BoolProperty('Enable Export', default=True)
-
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
-        items = items_from_enums(BoundType, PolygonType, ObjectType),
+        items = items_from_enums(BoundType, PolygonType, DrawableType),
         name = "Sollumz Type",
         default = "sollumz_none",
         options={'HIDDEN'}
