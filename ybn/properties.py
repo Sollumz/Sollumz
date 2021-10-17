@@ -3,7 +3,7 @@ import bpy
 from Sollumz.sollumz_properties import PolygonType, items_from_enums
 from bpy.app.handlers import persistent
 from .collision_materials import create_collision_material_from_index, collisionmats
-from Sollumz.resources.flag_preset import FlagPreset
+from Sollumz.resources.flag_preset import FlagPresetsFile, Presets
 import os
 
 class CollisionMatFlags(bpy.types.PropertyGroup):
@@ -88,19 +88,20 @@ class FlagPresetProp(bpy.types.PropertyGroup):
     index : bpy.props.IntProperty('Index')
     name : bpy.props.StringProperty('Name')
 
-flag_presets = []
+
+flag_presets = FlagPresetsFile()
+
 
 def load_flag_presets():
     bpy.context.scene.flag_presets.clear()
-    directory = os.path.abspath('./ybn/flag_presets')
-    if os.path.exists(directory):
-        for index, filename in enumerate(os.listdir(directory)):
-            if filename.endswith(".xml"):
-                preset = FlagPreset.from_xml_file(f"{directory}/{filename}")
-                item = bpy.context.scene.flag_presets.add()
-                item.name = preset.name
-                item.index = index
-                flag_presets.append(preset)
+    path = os.path.abspath('./ybn/flag_presets.xml')
+    if os.path.exists(path):
+        file = FlagPresetsFile.from_xml_file(path)
+        flag_presets.presets = file.presets
+        for index, preset in enumerate(flag_presets.presets):
+            item = bpy.context.scene.flag_presets.add()
+            item.name = preset.name
+            item.index = index
 
 
 def load_collision_materials():
@@ -130,8 +131,7 @@ def register():
     #nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(type = BoundFlags)
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type = BoundFlags)
-    ##
-
+    
     bpy.types.Scene.collision_material_index = bpy.props.IntProperty(name = "Material Index")
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(type = CollisionMaterial, name = 'Collision Materials')
     bpy.app.handlers.load_post.append(on_file_loaded)

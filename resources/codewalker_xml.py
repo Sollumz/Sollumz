@@ -171,7 +171,7 @@ class ElementProperty(Element, AbstractClass):
     
     tag_name = None
 
-    def __init__(self, tag_name: str, value: value_types):
+    def __init__(self, tag_name, value):
         super().__init__()
         self.tag_name = tag_name
         if value and not isinstance(value, self.value_types):
@@ -245,6 +245,7 @@ class ListProperty(ElementProperty, AbstractClass):
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls(element.tag)
+
         children = element.findall(new.list_type.tag_name)
 
         for child in children:
