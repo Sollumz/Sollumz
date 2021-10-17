@@ -347,7 +347,7 @@ def geometry_from_object(obj, bones=None):
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
-    mesh = bpy.data.meshes.new_from_object(obj, preserve_all_data_layers=True, depsgraph=depsgraph)
+    mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
 
