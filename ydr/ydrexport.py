@@ -344,27 +344,29 @@ def get_vertex_string(obj, mesh, layout, bones=None):
 
 def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
+    
+    triangulate_object(obj) #make sure object is triangulated
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
-    geometry.shader_index = get_shader_index(obj, obj.active_material)
+    geometry.shader_index = get_shader_index(obj, obj_eval.active_material)
 
-    bbmin, bbmax = get_bb_extents(obj)
+    bbmin, bbmax = get_bb_extents(obj_eval)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
     
     materials = get_used_materials(obj.parent.parent)
     for i in range(len(materials)):
-        if(materials[i] == obj.active_material):
+        if(materials[i] == obj_eval.active_material):
             geometry.shader_index = i
 
     sm = ShaderManager()
-    layout = sm.shaders[FixShaderName(obj.active_material.name)].layouts["0x0"]
+    layout = sm.shaders[FixShaderName(obj_eval.active_material.name)].layouts["0x0"]
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
-    geometry.vertex_buffer.data = get_vertex_string(obj, mesh, layout, bones)
+    geometry.vertex_buffer.data = get_vertex_string(obj_eval, mesh, layout, bones)
     geometry.index_buffer.data = get_index_string(mesh)
     
     return geometry
@@ -381,11 +383,10 @@ def drawable_model_from_object(obj, bones=None):
 
     for child in obj.children:
         if(child.sollum_type == DrawableType.GEOMETRY):
-            triangulate_object(child) #make sure object is triangulated
             if(len(child.data.materials) > 1):
                 objs = split_object(child, obj)
                 for obj in objs:
-                    geometry = geometry_from_object(obj, None) #MAYBE WRONG ASK LOYALIST
+                    geometry = geometry_from_object(obj, bones) #MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 join_objects(objs)
             else:

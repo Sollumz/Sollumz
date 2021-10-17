@@ -69,7 +69,7 @@ class ChildrenItem(ElementTree):
         self.unk_vec = VectorProperty("UnkVec")
         self.inertia_tensor = QuaternionProperty("InertiaTensor")
         #self.event_set = None # ?????????? FIND
-        self.drawable
+        self.drawable = Drawable()
 
 class ChildrenListProperty(ListProperty):
     list_type = ChildrenItem
