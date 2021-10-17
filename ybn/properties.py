@@ -1,7 +1,10 @@
+from collections import namedtuple
 import bpy
 from Sollumz.sollumz_properties import PolygonType, items_from_enums
 from bpy.app.handlers import persistent
 from .collision_materials import create_collision_material_from_index, collisionmats
+from Sollumz.resources.flag_preset import FlagPreset
+import os
 
 class CollisionMatFlags(bpy.types.PropertyGroup):
     none : bpy.props.BoolProperty(name = "NONE", default = False)
@@ -81,14 +84,38 @@ class CollisionMaterial(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty('Name')
 
 
-# Handler sets the default value of the CollisionMaterials collection on blend file load
-@persistent
-def on_file_loaded(_):
+class FlagPresetProp(bpy.types.PropertyGroup):
+    index : bpy.props.IntProperty('Index')
+    name : bpy.props.StringProperty('Name')
+
+flag_presets = []
+
+def load_flag_presets():
+    bpy.context.scene.flag_presets.clear()
+    directory = os.path.abspath('./ybn/flag_presets')
+    if os.path.exists(directory):
+        for index, filename in enumerate(os.listdir(directory)):
+            if filename.endswith(".xml"):
+                preset = FlagPreset.from_xml_file(f"{directory}/{filename}")
+                item = bpy.context.scene.flag_presets.add()
+                item.name = preset.name
+                item.index = index
+                flag_presets.append(preset)
+
+
+def load_collision_materials():
     bpy.context.scene.collision_materials.clear()
     for index, mat in enumerate(collisionmats):
         item = bpy.context.scene.collision_materials.add()
         item.index = index
         item.name = mat.name
+
+
+# Handler sets the default value of the CollisionMaterials collection on blend file load
+@persistent
+def on_file_loaded(_):
+    load_collision_materials()
+    load_flag_presets()
 
 
 def register():
@@ -109,6 +136,10 @@ def register():
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(type = CollisionMaterial, name = 'Collision Materials')
     bpy.app.handlers.load_post.append(on_file_loaded)
 
+    bpy.types.Scene.new_flag_preset_name = bpy.props.StringProperty(name = 'Flag Preset Name')
+    bpy.types.Scene.flag_preset_index = bpy.props.IntProperty(name = "Flag Preset Index")
+    bpy.types.Scene.flag_presets = bpy.props.CollectionProperty(type = FlagPresetProp, name = 'Flag Presets')
+
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(type = CollisionProperties)
     bpy.types.Material.collision_flags = bpy.props.PointerProperty(type = CollisionMatFlags)
 
@@ -127,6 +158,8 @@ def register():
         default = PolygonType.BOX.value    
     )
     bpy.types.Scene.convert_poly_parent = bpy.props.PointerProperty(type=bpy.types.Object, name='Parent', description='Parent object for the newly created polys')
+    bpy.types.Scene.multiple_ybns = bpy.props.BoolProperty(name='Multiple Composites', description='Create a Composite for each selected mesh.')
+    bpy.types.Scene.convert_ybn_use_mesh_names = bpy.props.BoolProperty(name='Use Mesh Names', description='Use the names of the meshes for the composites.', default=True)
 
 def unregister():
     del bpy.types.Scene.poly_bound_type
@@ -138,5 +171,8 @@ def unregister():
     del bpy.types.Scene.collision_material_index
     del bpy.types.Scene.collision_materials
     del bpy.types.Material.collision_properties
+    del bpy.types.Scene.flag_presets
+    del bpy.types.Scene.flag_preset_index
+    del bpy.types.Scene.new_flag_preset_name
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

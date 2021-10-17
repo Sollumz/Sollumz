@@ -1,18 +1,12 @@
+from genericpath import exists
 import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
-from Sollumz.meshhelper import * 
+from Sollumz.meshhelper import *
 from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
-from .properties import BoundFlags
+from .properties import BoundFlags, flag_presets, load_flag_presets
+from Sollumz.resources.flag_preset import FlagPreset
+import os, traceback
 
-def load_default_flags(obj):
-    obj.composite_flags1['map_weapon'] = True
-    obj.composite_flags1['map_dynamic'] = True
-    obj.composite_flags1['map_animal'] = True
-    obj.composite_flags1['map_vehicle'] = True
-    obj.composite_flags1['map_cover'] = True
-
-    for flag_name in BoundFlags.__annotations__.keys():
-        obj.composite_flags2[flag_name] = True
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -28,6 +22,7 @@ def create_mesh(sollum_type):
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type
+    obj.data.materials.append(create_collision_material_from_index(0))
     bpy.context.collection.objects.link(obj)
 
     return obj
@@ -241,18 +236,133 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_load_default_col_flags(bpy.types.Operator):
-    """Load commonly used collision flags"""
-    bl_idname = "sollumz.load_default_col_flags"
-    bl_label = "Load Default Collision Flags"
+class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
+    """Delete a flag preset"""
+    bl_idname = "sollumz.delete_flag_preset"
+    bl_label = "Delete Flag Preset"
+
+    preset_blacklist = ['Default']
 
     def execute(self, context):
-        
-        aobj = bpy.context.active_object
-        if(aobj == None):
+        index = context.scene.flag_preset_index
+        directory = os.path.abspath('./ybn/flag_presets')
+        load_flag_presets()
+
+        try:
+            preset = flag_presets[index]
+            if preset.name in self.preset_blacklist:
+                self.report({'INFO'}, f"Cannot delete a default preset!")
+                return {'CANCELLED'}
+
+            filepath = f"{directory}/{preset.name.lower()}.xml"
+
+            try:
+                os.remove(filepath)
+                load_flag_presets()
+
+                return {'FINISHED'}
+            except:
+                self.report({'ERROR'}, traceback.format_exc())
+                return {'CANCELLED'}
+
+        except IndexError:
+            self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the 'Sollumz/ybn/flag_presets' directory.")
+            return {'CANCELLED'}
+
+
+class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
+    """Save a flag preset"""
+    bl_idname = "sollumz.save_flag_preset"
+    bl_label = "Save Flag Preset"
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if not obj:
+            self.report({'INFO'}, 'No object selected!')
+            return {'CANCELLED'}
+
+        if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
+            self.report({'INFO'}, f'Selected object must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!')
             return {'CANCELLED'}
         
-        load_default_flags(aobj)
+        name = context.scene.new_flag_preset_name
+        if len(name) < 1:
+            self.report({'INFO'}, f'Please specify a name for the new flag preset.')
+            return {'CANCELLED'}
+
+        flag_preset = FlagPreset()
+        flag_preset.name = name
+
+        for prop in dir(obj.composite_flags1):
+            value = getattr(obj.composite_flags1, prop)
+            if value == True:
+                flag_preset.flags1.append(prop) 
+
+        for prop in dir(obj.composite_flags2):
+            value = getattr(obj.composite_flags2, prop)
+            if value == True:
+                flag_preset.flags2.append(prop) 
+
+        directory = os.path.abspath('./ybn/flag_presets')
+        filepath = f'{directory}/{name.lower()}.xml'
+
+        if os.path.exists(filepath):
+            self.report({'INFO'}, f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
+            return {'CANCELLED'}
+
+        try: 
+            flag_preset.write_xml(filepath)
+            load_flag_presets()
+
+            return {'FINISHED'}
+        except:
+            self.report({'ERROR'}, traceback.format_exc())
+            return {'CANCELLED'}
+        
+
+
+class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
+    """Load a flag preset to the selected Geometry bounds"""
+    bl_idname = "sollumz.load_flag_preset"
+    bl_label = "Apply Flags Preset"
+
+    def invalid_flag(self, flag, preset_name):
+        self.report({'INFO'}, f"Flag '{flag}'' in preset '{preset_name}' does not exist.")
+
+    def execute(self, context):
+        index = context.scene.flag_preset_index
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.report({'INFO'}, 'No objects selected!')
+            return {'CANCELLED'}
+        
+        load_flag_presets()
+        
+        for obj in selected:
+            if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
+                self.report({'INFO'}, f'Selected objects must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!')
+                return {'CANCELLED'}
+            
+            try:
+                preset = flag_presets[index]
+                for flag in preset.flags1:
+                    try:
+                        obj.composite_flags1[flag.lower()] = True
+                    except IndexError:
+                        self.invalid_flag(flag, preset.name)
+
+                for flag in preset.flags2:
+                    try:
+                        obj.composite_flags2[flag.lower()] = True
+                    except IndexError:
+                        self.invalid_flag(flag, preset.name)
+
+            except IndexError:
+                self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the 'Sollumz/ybn/flag_presets' directory.")
+                return {'CANCELLED'}
+
+
         
         return {'FINISHED'}
 
@@ -352,26 +462,38 @@ class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
     """Setup a gta bound via a mesh object"""
     bl_idname = "sollumz.quickconvertmeshtocollision"
     bl_label = "Convert Mesh To Collision"
-
-    def convert(self, obj):
-        #create material
-        mat = create_collision_material_from_type("DEFAULT")
-        obj.data.materials.append(mat)
-        
-        #set parents
-        bpy.ops.sollumz.createboundcomposite()
-        bobj = bpy.context.active_object
-        bpy.ops.sollumz.creategeometryboundbvh()
-        gobj = bpy.context.active_object
-        gobj.parent = bobj
-        obj.parent = gobj
-
-        #set properties
-        obj.sollum_type = PolygonType.TRIANGLE.value
+    bl_options = {'UNDO'}
 
     def execute(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.report({'INFO'}, 'No objects selected for conversion!')
+            return {'CANCELLED'}
+
+        parent = None
+        if not bpy.context.scene.multiple_ybns:
+            parent = create_empty(BoundType.COMPOSITE)
         
-        for obj in context.selected_objects:
-            self.convert(obj)
+        for obj in selected:
+            #set parents
+            dobj = parent or create_empty(BoundType.COMPOSITE)
+            dmobj = create_empty(BoundType.GEOMETRYBVH)
+            dmobj.parent = dobj
+            obj.parent = dmobj
+
+            name = obj.name
+            obj.name = name + "_mesh"
+
+            if bpy.context.scene.convert_ybn_use_mesh_names:
+                dobj.name = name
+
+                
+            #set properties
+            obj.sollum_type = PolygonType.TRIANGLE
+
+            #add object to collection
+            new_obj = obj.copy()
+            bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.context.collection.objects.link(new_obj)
 
         return {'FINISHED'}

@@ -1,6 +1,5 @@
 import bpy
-from Sollumz.sollumz_properties import PolygonType, is_sollum_type
-from .properties import BoundProperties, BoundFlags, CollisionProperties, CollisionMatFlags
+from .properties import BoundFlags, CollisionProperties, CollisionMatFlags
 from .collision_materials import collisionmats
 from .operators import *
 
@@ -48,29 +47,27 @@ def draw_bound_properties(layout, obj):
     row.prop(obj.bound_properties, "margin")
     row.prop(obj.bound_properties, "volume")
 
-    if obj.sollum_type != BoundType.COMPOSITE:
-        generate_flags(layout.box(), obj.composite_flags1)
-        layout.label(text = "Composite Flags 2")
-        generate_flags(layout.box(), obj.composite_flags2)
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)
-        row.operator(SOLLUMZ_OT_load_default_col_flags.bl_idname)
-    
-        
 
+class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
+    bl_label = 'Collision Flags'
+    bl_idname = "SOLLUMZ_PT_FLAGS_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
 
-class SOLLUMZ_UL_COLLISION_FLAGS_LIST(bpy.types.UIList):
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        # If the object is selected
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
+    def draw(self, context):
+        obj = bpy.context.active_object
+        if obj and obj.sollum_type != BoundType.COMPOSITE:
+            layout = self.layout
+            layout.label(text = "Composite Flags 1")
+            generate_flags(layout.box(), obj.composite_flags1)
+            layout.label(text = "Composite Flags 2")
+            generate_flags(layout.box(), obj.composite_flags2)
             row = layout.row()
-            row.label(text=item.name, icon='MATERIAL')
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon='MATERIAL')
+            row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
+
 
 
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
@@ -90,6 +87,22 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
                         text=name, emboss=False, icon='MATERIAL')
 
 
+class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_FLAG_PRESET_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        # If the object is selected
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon='BOOKMARKS')
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon='BOOKMARKS')
+
+
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Static Collision Tools"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
@@ -106,7 +119,19 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         box.template_list(
             SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
         )
-        box.operator("sollumz.createcollisionmaterial")
+        box.operator(SOLLUMZ_OT_create_collision_material.bl_idname)
+        box = layout.box()
+        box.label(text = "Flag Presets")
+        box.template_list(
+            SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "", context.scene, "flag_presets", context.scene, "flag_preset_index"
+        )
+        row = box.row()
+        row.operator(SOLLUMZ_OT_save_flag_preset.bl_idname)
+        row.prop(context.scene, 'new_flag_preset_name', text='Name')
+        row = box.row()
+        row.operator(SOLLUMZ_OT_delete_flag_preset.bl_idname)
+        row = box.row()
+        row.operator(SOLLUMZ_OT_load_flag_preset.bl_idname)
         box = layout.box()
         box.label(text = "Create Bound Objects")
         row = box.row()
@@ -130,7 +155,10 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         row.prop(context.scene, "poly_bound_type")
         box = layout.box()
         box.label(text = "Conversion Tools")
-        box.operator(SOLLUMZ_OT_convert_mesh_to_collision.bl_idname)
+        row = box.row()
+        row.operator(SOLLUMZ_OT_convert_mesh_to_collision.bl_idname)
+        row.prop(context.scene, 'multiple_ybns')
+        row.prop(context.scene, 'convert_ybn_use_mesh_names')
         row = box.row()
         if context.active_object and context.active_object.mode == 'EDIT':
             row.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname)

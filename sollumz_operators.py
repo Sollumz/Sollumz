@@ -177,8 +177,9 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                found = True
-                self.export(obj)
+                if obj.sollum_type == self.sollum_type:
+                    found = True
+                    self.export(obj)
 
         if not found:
             self.report({'INFO'}, self.no_objects_message())
@@ -193,8 +194,9 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                found = True
-                self.export(obj)
+                if obj.sollum_type == self.sollum_type:
+                    found = True
+                    self.export(obj)
 
         if not found:
             self.report({'INFO'}, self.no_objects_message())
@@ -205,9 +207,10 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                found = True
-                self.export(obj)
-                break
+                if obj.sollum_type == self.sollum_type:
+                    found = True
+                    self.export(obj)
+                    break
 
         if not found:
             self.report({'INFO'}, self.no_objects_message())
