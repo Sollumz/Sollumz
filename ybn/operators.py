@@ -7,6 +7,11 @@ from .properties import BoundFlags, load_flag_presets, flag_presets, get_flag_pr
 from Sollumz.resources.flag_preset import FlagPreset
 import os, traceback
 
+def handle_load_flag_presets(self):
+    try:
+        load_flag_presets()
+    except FileNotFoundError:
+        self.report({'ERROR'}, traceback.format_exc())
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -16,7 +21,7 @@ def create_empty(sollum_type):
     bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
     return empty
-
+print(bpy.utils.user_resource('SCRIPTS', "addons"))
 def create_mesh(sollum_type):
     name = SOLLUMZ_UI_NAMES[sollum_type]
     mesh = bpy.data.meshes.new(name)
@@ -245,7 +250,7 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
 
     def execute(self, context):
         index = context.scene.flag_preset_index
-        load_flag_presets()
+        handle_load_flag_presets(self)
 
         try:
             preset = flag_presets.presets[index]
@@ -258,7 +263,7 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
 
             try:
                 flag_presets.write_xml(filepath)
-                load_flag_presets()
+                handle_load_flag_presets(self)
 
                 return {'FINISHED'}
             except:
@@ -277,7 +282,7 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
 
     def execute(self, context):
         obj = context.active_object
-        load_flag_presets()
+        handle_load_flag_presets(self)
 
         if not obj:
             self.report({'INFO'}, 'No object selected!')
@@ -315,7 +320,7 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
         try: 
             flag_presets.presets.append(flag_preset)
             flag_presets.write_xml(filepath)
-            load_flag_presets()
+            handle_load_flag_presets(self)
 
             return {'FINISHED'}
         except:
@@ -339,7 +344,7 @@ class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
             self.report({'INFO'}, 'No objects selected!')
             return {'CANCELLED'}
         
-        load_flag_presets()
+        handle_load_flag_presets(self)
         
         for obj in selected:
             if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
