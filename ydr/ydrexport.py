@@ -5,7 +5,8 @@ from Sollumz.resources.shader import ShaderManager
 import os, sys, traceback, shutil
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES
+from Sollumz.tools.blender_helper import *
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -15,10 +16,14 @@ def get_used_materials(obj):
     
     for child in obj.children:
         for grandchild in child.children:
-            if(grandchild.sollum_type == "sollumz_geometry"):
-                mat = grandchild.active_material
-                if(mat != None):
-                    materials.append(mat)          
+            if(grandchild.sollum_type == DrawableType.GEOMETRY):
+                mats = grandchild.data.materials
+                if(len(mats) < 0):
+                    print(f"Object: {grandchild.name} has no materials to export.")
+                for mat in mats:
+                    if(mat.sollum_type != MaterialType.MATERIAL):
+                        print(f"Object: {grandchild.name} has a material: {mat.name} that is not going to be exported because it is not a sollum material.")
+                    materials.append(mat)
 
     return materials
 
@@ -44,7 +49,8 @@ def get_shaders_from_blender(obj):
                 param = TextureParameterItem()
                 param.name = node.name
                 param.type = "Texture"
-                param.texture_name = os.path.splitext(node.image.name)[0]
+                name = os.path.basename(node.image.filepath)
+                param.texture_name = os.path.splitext(name)[0]
                 shader.parameters.append(param)
             elif(isinstance(node, bpy.types.ShaderNodeValue)):
                 if(node.name[-1] == "x"):
@@ -70,17 +76,19 @@ def get_shaders_from_blender(obj):
 
 def texture_dictionary_from_materials(obj, materials, exportpath):
     texture_dictionary = []
-    found = False
     
+    has_td = False
+
     for mat in materials:
         nodes = mat.node_tree.nodes
 
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 if(n.texture_properties.embedded == True):
-                    found = True
+                    has_td = True
                     texture_item = TextureItem()
-                    texture_item.name = os.path.splitext(n.image.name)[0]
+                    name = os.path.basename(n.image.filepath)
+                    texture_item.name = os.path.splitext(name)[0]
                     #texture_item.unk32 = 0
                     texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
                     for prop in dir(n.texture_flags):
@@ -92,7 +100,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     texture_item.height = n.image.size[1]
                     texture_item.miplevels = 8 #?????????????????????????????????????????????????????????????????????????????????????????????
                     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
-                    texture_item.filename = n.image.name
+                    texture_item.filename = name
                     texture_dictionary.append(texture_item)
 
                     #if(n.image != None):
@@ -110,11 +118,12 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         shutil.copyfile(txtpath, dstpath)
                     #else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
-    if not found:
-        texture_dictionary = None
-
-    return texture_dictionary
-
+    
+    if(has_td):
+        return texture_dictionary
+    else:
+        return None
+        
 def get_index_string(mesh):
     
     index_string = ""
@@ -255,7 +264,7 @@ def get_vertex_string(obj, mesh, layout, bones=None):
     for poly in mesh.polygons:
         for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
             vi = mesh.loops[loop_index].vertex_index
-            vertices[vi] = mesh.vertices[vi].co
+            vertices[vi] = (obj.matrix_world @ mesh.vertices[vi].co)
             # normals[vi] = mesh.vertices[vi].normal
             normals[vi] = mesh.loops[loop_index].normal
             clr[vi] = clr0_layer.data[loop_index].color
@@ -340,22 +349,22 @@ def geometry_from_object(obj, bones=None):
     obj_eval = obj.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
-    geometry.shader_index = get_shader_index(obj_eval, mesh.materials[0])
+    geometry.shader_index = get_shader_index(obj, obj.active_material)
 
-    bbmin, bbmax = get_bb_extents(obj_eval)
+    bbmin, bbmax = get_bb_extents(obj)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
     
-    materials = get_used_materials(obj_eval.parent.parent)
+    materials = get_used_materials(obj.parent.parent)
     for i in range(len(materials)):
-        if(materials[i] == obj_eval.active_material):
+        if(materials[i] == obj.active_material):
             geometry.shader_index = i
 
     sm = ShaderManager()
-    layout = sm.shaders[FixShaderName(obj_eval.active_material.name)].layouts["0x0"]
+    layout = sm.shaders[FixShaderName(obj.active_material.name)].layouts["0x0"]
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
-    geometry.vertex_buffer.data = get_vertex_string(obj_eval, mesh, layout, bones)
+    geometry.vertex_buffer.data = get_vertex_string(obj, mesh, layout, bones)
     geometry.index_buffer.data = get_index_string(mesh)
     
     return geometry
@@ -371,9 +380,16 @@ def drawable_model_from_object(obj, bones=None):
         drawable_model.unknown_1 = len(bones)
 
     for child in obj.children:
-        if(child.sollum_type == "sollumz_geometry"):
-            geometry = geometry_from_object(child, bones)
-            drawable_model.geometries.append(geometry)
+        if(child.sollum_type == DrawableType.GEOMETRY):
+            triangulate_object(child) #make sure object is triangulated
+            if(len(child.data.materials) > 1):
+                for obj in objs:
+                    geometry = geometry_from_object(obj, None) #MAYBE WRONG ASK LOYALIST
+                    drawable_model.geometries.append(geometry)
+                join_objects(objs)
+            else:
+                geometry = geometry_from_object(child, None) #MAYBE WRONG ASK LOYALIST
+                drawable_model.geometries.append(geometry)
 
     return drawable_model
 

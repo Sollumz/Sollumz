@@ -222,7 +222,7 @@ class QuaternionProperty(ElementProperty):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z', 'w']):
             QuaternionProperty.read_value_error(element)
 
-        return QuaternionProperty(element.tag, Quaternion((float(element.get('x')), float(element.get('y')), float(element.get('z')), float(element.get('w')))))
+        return QuaternionProperty(element.tag, Quaternion((float(element.get('w')), float(element.get('x')), float(element.get('y')), float(element.get('z')))))
 
     def to_xml(self):
         return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z), 'w': str(self.value.w)})
@@ -254,11 +254,13 @@ class ListProperty(ElementProperty, AbstractClass):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        for item in self.value:
-            if isinstance(item, self.list_type):
-                element.append(item.to_xml())
-            else:
-                raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+        
+        if self.value:
+            for item in self.value:
+                if isinstance(item, self.list_type):
+                    element.append(item.to_xml())
+                else:
+                    raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
 
         return element
 

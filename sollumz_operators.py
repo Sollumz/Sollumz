@@ -1,6 +1,6 @@
 import bpy
 import traceback, os
-from Sollumz.sollumz_properties import ObjectType, BoundType, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.bound import YBN
 from Sollumz.resources.ymap import YMAP
@@ -146,7 +146,7 @@ class SollumzExportHelper():
         ("export_first", "Export First", "This option lets you export the first found object of your choosen export type to be exported.")],
         description = "The method in which you want to export your scene.",
         name = "Export Type",
-        default = "export_first"
+        default = "export_all"
     )
 
     def get_filepath(self, obj):
@@ -177,9 +177,8 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == self.sollum_type and obj.enable_export:
-                    found = True
-                    self.export(obj)
+                found = True
+                self.export(obj)
 
         if not found:
             self.report({'INFO'}, self.no_objects_message())
@@ -194,9 +193,8 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == self.sollum_type and obj.enable_export:
-                    found = True
-                    self.export(obj)
+                found = True
+                self.export(obj)
 
         if not found:
             self.report({'INFO'}, self.no_objects_message())
@@ -207,10 +205,9 @@ class SollumzExportHelper():
         found = False
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == self.sollum_type and obj.enable_export:
-                    found = True
-                    self.export(obj)
-                    break
+                found = True
+                self.export(obj)
+                break
 
         if not found:
             self.report({'INFO'}, self.no_objects_message())
@@ -227,6 +224,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     def export(self, obj):
         try:
             ybn_from_object(obj).write_xml(self.get_filepath(obj))
+            print(obj)
             self.report({'INFO'}, 'YBN Successfully exported.')
         except NoGeometryError:
             self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
@@ -238,7 +236,7 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
     """Export drawable (.ydr)"""
     bl_idname = "exportxml.ydr"
     bl_label = "Export Ydr Xml (.ydr.xml)"
-    sollum_type = ObjectType.DRAWABLE
+    sollum_type = DrawableType.DRAWABLE
 
     filename_ext = ".ydr.xml"
 
@@ -254,7 +252,7 @@ class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
     """Export drawable dictionary (.ydd)"""
     bl_idname = "exportxml.ydd" 
     bl_label = "Export Ydd Xml (.ydd.xml)"
-    sollum_type = ObjectType.DRAWABLE_DICTIONARY
+    sollum_type = DrawableType.DRAWABLE_DICTIONARY
 
     filename_ext = ".ydd.xml"
 

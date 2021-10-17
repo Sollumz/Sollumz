@@ -276,10 +276,82 @@ class SOLLUMZ_OT_clear_col_flags(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_quick_convert_mesh_to_collision(bpy.types.Operator):
-    """Quickly setup a gta bound via a mesh object"""
+class SOLLUMZ_OT_mesh_to_polygon_bound(bpy.types.Operator):
+    """Convert selected objects to a poly bound"""
+    bl_idname = "sollumz.meshtopolygonbound"
+    bl_label = "Convert Object to Poly"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        aobj = context.active_object
+        type = context.scene.convert_poly_bound_type
+        parent = context.scene.convert_poly_parent
+
+
+        if not aobj or (aobj and not aobj.type == 'MESH'):
+            self.report({'WARNING'}, 'No object with mesh data selected!')
+            return {'CANCELLED'}
+        elif aobj and not context.active_object.mode == 'EDIT':
+            self.report({'WARNING'}, 'Operator can only be ran in edit mode!')
+            return {'CANCELLED'}
+        
+        if not parent:
+            self.report({'WARNING'}, 'Must specify a parent object!')
+            return {'CANCELLED'}
+        elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
+            self.report({'WARNING'}, f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
+            return {'CANCELLED'}
+
+        # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        selected_verts = [Vector((v.co.x, v.co.y, v.co.z)) for v in aobj.data.vertices if v.select]
+        bpy.ops.object.mode_set(mode='EDIT')
+
+
+        if len(selected_verts) < 1:
+            self.report({'INFO'}, 'No vertices selected.')
+            return {'CANCELLED'}
+
+        pobj = create_mesh(type)
+
+        np_array = np.array(selected_verts)
+        bbmin_local = Vector(np_array.min(axis=0))
+        bbmax_local = Vector(np_array.max(axis=0))
+        bbmin = aobj.matrix_world @ bbmin_local
+        bbmax = aobj.matrix_world @ bbmax_local
+
+        radius = ((aobj.matrix_local @ bbmax).x - (aobj.matrix_local @ bbmin).x) / 2
+        height = get_distance_of_vectors(bbmin, bbmax)
+        center = (bbmin + bbmax) / 2
+        pobj.location = center
+
+        if type == PolygonType.BOX:
+            scale = aobj.matrix_world.to_scale()
+            min = (bbmin_local) * scale
+            max = (bbmax_local) * scale
+            center = (min + max) / 2
+            create_box_from_extents(pobj.data, min - center, max - center)
+            # pobj.location = Vector()
+        elif type == PolygonType.SPHERE:
+            create_sphere(pobj.data, height / 2)
+        elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
+            if type == PolygonType.CAPSULE:
+                # height = height - (radius * 2)
+                create_capsule(pobj, radius, height)
+            elif type == PolygonType.CYLINDER:
+                create_cylinder(pobj.data, radius, height, False)
+        
+        pobj.rotation_euler = aobj.rotation_euler
+        
+        pobj.parent = parent
+
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
+    """Setup a gta bound via a mesh object"""
     bl_idname = "sollumz.quickconvertmeshtocollision"
-    bl_label = "Quick Convert Mesh To Collision"
+    bl_label = "Convert Mesh To Collision"
 
     def convert(self, obj):
         #create material
