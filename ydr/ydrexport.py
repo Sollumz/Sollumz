@@ -5,7 +5,8 @@ from Sollumz.resources.shader import ShaderManager
 import os, sys, traceback, shutil
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES
+from Sollumz.tools.blender_helper import *
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -15,10 +16,14 @@ def get_used_materials(obj):
     
     for child in obj.children:
         for grandchild in child.children:
-            if(grandchild.sollum_type == "sollumz_geometry"):
-                mat = grandchild.active_material
-                if(mat != None):
-                    materials.append(mat)          
+            if(grandchild.sollum_type == DrawableType.GEOMETRY):
+                mats = grandchild.data.materials
+                if(len(mats) < 0):
+                    print(f"Object: {grandchild.name} has no materials to export.")
+                for mat in mats:
+                    if(mat.sollum_type != MaterialType.MATERIAL):
+                        print(f"Object: {grandchild.name} has a material: {mat.name} that is not going to be exported because it is not a sollum material.")
+                    materials.append(mat)
 
     return materials
 
@@ -72,17 +77,19 @@ def get_shaders_from_blender(obj):
 def texture_dictionary_from_materials(obj, materials, exportpath):
     texture_dictionary = []
     
+    has_td = False
+
     for mat in materials:
         nodes = mat.node_tree.nodes
 
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 if(n.texture_properties.embedded == True):
+                    has_td = True
                     texture_item = TextureItem()
                     name = os.path.basename(n.image.filepath)
                     texture_item.name = os.path.splitext(name)[0]
                     #texture_item.unk32 = 0
-                    print(name)
                     texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
                     for prop in dir(n.texture_flags):
                         value = getattr(n.texture_flags, prop)
@@ -111,9 +118,12 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         shutil.copyfile(txtpath, dstpath)
                     #else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
-
-    return texture_dictionary
-
+    
+    if(has_td):
+        return texture_dictionary
+    else:
+        return None
+        
 def get_index_string(mesh):
     
     index_string = ""
@@ -371,8 +381,16 @@ def drawable_model_from_object(obj, bones=None):
 
     for child in obj.children:
         if(child.sollum_type == "sollumz_geometry"):
-            geometry = geometry_from_object(child, bones)
-            drawable_model.geometries.append(geometry)
+            
+            if(len(child.data.materials) > 1):
+                objs = split_object(child, obj)
+                for obj in objs:
+                    geometry = geometry_from_object(obj, None) #MAYBE WRONG ASK LOYALIST
+                    drawable_model.geometries.append(geometry)
+                join_objects(objs)
+            else:
+                geometry = geometry_from_object(obj, None) #MAYBE WRONG ASK LOYALIST
+                drawable_model.geometries.append(geometry)
 
     return drawable_model
 
