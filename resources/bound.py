@@ -3,14 +3,12 @@ from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from enum import Enum
 
-
 class YBN(ElementTree):
     tag_name = 'BoundsFile'
 
     def __init__(self) -> None:
         super().__init__()
         self.bounds = BoundsComposite()
-
 
 class Bounds(ElementTree, AbstractClass):
     tag_name = 'Bounds'
@@ -34,13 +32,11 @@ class Bounds(ElementTree, AbstractClass):
         self.poly_flags = ValueProperty('PolyFlags', 0)
         self.unk_type = ValueProperty('UnkType', 0)
 
-
 class BoundsComposite(Bounds):
     def __init__(self):
         super().__init__()
         self.type = AttributeProperty('type', 'Composite')
         self.children = BoundListProperty()
-
 
 class BoundItem(Bounds, AbstractClass):
     tag_name = 'Item'
@@ -59,30 +55,23 @@ class BoundItem(Bounds, AbstractClass):
         self.composite_flags1 = FlagsProperty('CompositeFlags1')
         self.composite_flags2 = FlagsProperty('CompositeFlags2')
 
-
 class BoundBox(BoundItem):
     type = 'Box'
-
 
 class BoundSphere(BoundItem):
     type = 'Sphere'
 
-
 class BoundCapsule(BoundItem):
     type = 'Capsule'
-
 
 class BoundCylinder(BoundItem):
     type = 'Cylinder'
 
-
 class BoundDisc(BoundItem):
     type = 'Disc'
-    
 
 class BoundCloth(BoundItem):
     type = 'Cloth'
-
 
 class BoundGeometryBVH(BoundItem):
     type = 'GeometryBVH'
@@ -95,7 +84,6 @@ class BoundGeometryBVH(BoundItem):
         self.vertex_colors = VertexColorProperty("VertexColours")
         self.polygons = PolygonsProperty()
 
-
 class BoundGeometry(BoundGeometryBVH):
     type = 'Geometry'
 
@@ -103,7 +91,6 @@ class BoundGeometry(BoundGeometryBVH):
         super().__init__()
         # Placeholder: Currently not implemented by CodeWalker
         self.octants = PolygonsProperty('Octants')
-
 
 class BoundListProperty(ListProperty):
     list_type = BoundItem
@@ -137,7 +124,6 @@ class BoundListProperty(ListProperty):
 
         return new
 
-
 class MaterialItem(ElementTree):
     tag_name = 'Item'
 
@@ -151,13 +137,11 @@ class MaterialItem(ElementTree):
         self.material_color_index = ValueProperty('MaterialColourIndex', 0)
         self.unk = ValueProperty('Unk', 0)
 
-
 class MaterialsListProperty(ListProperty):
     list_type = MaterialItem
 
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or 'Materials', value=value or [])
-
 
 class VertexColorProperty(ElementProperty):
     value_types = (list)
@@ -195,12 +179,10 @@ class VertexColorProperty(ElementProperty):
         
         return element
 
-
 class Polygon(ElementTree, AbstractClass):
     def __init__(self):
         super().__init__()
         self.material_index = AttributeProperty('m', 0)
-
 
 class PolygonsProperty(ListProperty):
     list_type = Polygon
@@ -226,7 +208,6 @@ class PolygonsProperty(ListProperty):
 
         return new
 
-
 class Triangle(Polygon):
     tag_name = 'Triangle'
 
@@ -238,7 +219,6 @@ class Triangle(Polygon):
         self.f1 = AttributeProperty('f1', 0)
         self.f2 = AttributeProperty('f2', 0)
         self.f3 = AttributeProperty('f3', 0)
-    
 
 class Sphere(Polygon):
     tag_name = 'Sphere'
@@ -247,8 +227,6 @@ class Sphere(Polygon):
         super().__init__()
         self.v = AttributeProperty('v', 0)
         self.radius = AttributeProperty('radius', 0)
-
-    
 
 class Capsule(Polygon):
     tag_name = 'Capsule'
@@ -259,7 +237,6 @@ class Capsule(Polygon):
         self.v2 = AttributeProperty('v2', 1)
         self.radius = AttributeProperty('radius', 0)
 
-
 class Box(Polygon):
     tag_name = 'Box'
 
@@ -269,8 +246,6 @@ class Box(Polygon):
         self.v2 = AttributeProperty('v2', 1)
         self.v3 = AttributeProperty('v3', 2)
         self.v4 = AttributeProperty('v4', 3)
-
-
 
 class Cylinder(Polygon):
     tag_name = 'Cylinder'

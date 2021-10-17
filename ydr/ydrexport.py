@@ -383,12 +383,13 @@ def drawable_model_from_object(obj, bones=None):
         if(child.sollum_type == DrawableType.GEOMETRY):
             triangulate_object(child) #make sure object is triangulated
             if(len(child.data.materials) > 1):
+                objs = split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(obj, None) #MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 join_objects(objs)
             else:
-                geometry = geometry_from_object(child, None) #MAYBE WRONG ASK LOYALIST
+                geometry = geometry_from_object(child, bones) 
                 drawable_model.geometries.append(geometry)
 
     return drawable_model

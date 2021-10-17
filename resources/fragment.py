@@ -2,6 +2,7 @@ from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstr
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from .drawable import Drawable
+from .bound import YBN
 
 class YDD:
     
@@ -13,7 +14,7 @@ class YDD:
     def write_xml(fragment, filepath):
         return fragment.write_xml(filepath)
 
-class BoneTransformItem(ElementTree):
+class BoneTransformItem(TextProperty):
     tag_name = "Item"
 
     def __init__(self):
@@ -25,6 +26,63 @@ class BoneTransformsListProperty(ListProperty):
     def __init__(self):
         super().__init__()
         self.unk = AttributeProperty("unk", 0)
+
+class ArchetypeProperty(ElementTree):
+    tag_name = "Archetype"
+
+    def __init__(self):
+        super().__init__()
+        self.name = TextProperty("Name")
+        self.mass = ValueProperty("Mass")
+        self.mass_inv = ValueProperty("MassInv")
+        self.unknown_48 = ValueProperty("Unknown48")
+        self.unknown_4c = ValueProperty("Unknown4C")
+        self.unknown_50 = ValueProperty("Unknown50")
+        self.unknown_54 = ValueProperty("Unknown54")
+        self.inertia_tensor = VectorProperty("InertiaTensor")
+        self.inertia_tensor_inv = VectorProperty("InertiaTensorInv")
+        self.bounds = YBN()
+
+class TransformItem(TextProperty):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+
+class TransformsListProperty(ListProperty):
+    list_type = BoneTransformItem
+
+    def __init__(self):
+        super().__init__()
+        self.unk = AttributeProperty("unk", 0)
+
+class ChildrenItem(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.group_index = ValueProperty("GroupIndex")
+        self.bone_tag = ValueProperty("BoneTag")
+        self.mass_1 = ValueProperty("Mass1")
+        self.mass_2 = ValueProperty("Mass2")
+        self.unk_float = ValueProperty("UnkFloat")
+        self.unk_vec = VectorProperty("UnkVec")
+        self.inertia_tensor = QuaternionProperty("InertiaTensor")
+        #self.event_set = None # ?????????? FIND
+        self.drawable
+
+class ChildrenListProperty(ListProperty):
+    list_type = ChildrenItem
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value=value)
+
+class GroupsProperty(ElementTree):
+    tag_name = "Groups"
+
+    def __init__(self):
+        super().__init__()
+        self.children = ChildrenListProperty("Children")
 
 class LOD1Property(ElementTree):
     tag_name = "LOD1"
@@ -43,6 +101,8 @@ class LOD1Property(ElementTree):
         self.unknown_90 = VectorProperty("Unknown90")
         self.unknown_a0 = VectorProperty("UnknownA0")
         self.unknown_b0 = VectorProperty("UnknownB0")
+        self.archetype = ArchetypeProperty("Archetype")
+        self.transforms = TransformsListProperty("Transforms")
 
 class PhysicsProperty(ElementTree):
     tag_name = "Physics"
