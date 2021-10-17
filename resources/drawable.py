@@ -354,9 +354,9 @@ class Drawable(ElementTree, AbstractClass):
         self.skeleton = SkeletonProperty()
         self.bound = BoundsComposite() #is embedded collision always type of composite? have to check
         self.drawable_models_high = DrawableModelListProperty("DrawableModelsHigh")
-        self.drawable_models_med = DrawableModelListProperty("DrawableModelsMed")
+        self.drawable_models_med = DrawableModelListProperty("DrawableModelsMedium")
         self.drawable_models_low = DrawableModelListProperty("DrawableModelsLow")
-        self.drawable_models_vlow = DrawableModelListProperty("DrawableModelsVlow")
+        self.drawable_models_vlow = DrawableModelListProperty("DrawableModelsVeryLow")
 
 class DrawableDictionary(ListProperty):
     list_type = Drawable

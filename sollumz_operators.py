@@ -1,16 +1,43 @@
 import bpy
 import traceback, os
-from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import DrawableType, BoundType, LodType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
+from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN
 from Sollumz.resources.ymap import YMAP
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.ybn.ybnexport import ybn_from_object, NoGeometryError
 from Sollumz.ydr.ydrexport import drawable_from_object
 from Sollumz.ydr.ydrimport import drawable_to_obj
+from Sollumz.yft.yftimport import fragment_to_obj
 from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper
+
+class ShowLODLevel(bpy.types.Operator):
+    """Displays the selected lod level"""
+    bl_idname = "sollumz.showlodlevel" 
+    bl_label = "Show"
+
+    def unhide_all(self, context):
+        for obj in context.collection.objects:
+            obj.hide_set(False)
+
+    def execute(self, context):
+        level = context.scene.lod_level
+        self.unhide_all(context)
+
+        if(level == LodType.ALL):
+            return {"FINISHED"}
+        else:
+            for obj in context.collection.objects:
+                if(obj.sollum_type == DrawableType.DRAWABLE):
+                    for child in obj.children:
+                        if(child.sollum_type == DrawableType.DRAWABLE_MODEL and child.drawable_model_properties.sollum_lod != level):
+                            for obj in child.children:
+                                obj.hide_set(True)
+
+        return {'FINISHED'}
 
 class ImportYmapXml(bpy.types.Operator, ImportHelper):
     """Imports .ymap.xml file exported from codewalker."""
@@ -26,7 +53,6 @@ class ImportYmapXml(bpy.types.Operator, ImportHelper):
     )
 
     def execute(self, context):
-        
         ymap = YMAP.from_xml_file(self.filepath)
 
         names = []
@@ -104,6 +130,26 @@ class ImportYdrXml(bpy.types.Operator, SollumzImportHelper):
             ydr_xml = YDR.from_xml_file(filepath)
             drawable_to_obj(ydr_xml, filepath, os.path.basename(filepath.replace(self.filename_ext, '')))
             self.report({'INFO'}, 'YDR Successfully imported.')
+        except Exception as e:
+            self.report({'ERROR'}, traceback.format_exc())
+
+class ImportYftXml(bpy.types.Operator, SollumzImportHelper):
+    """Imports .yft.xml file exported from codewalker."""
+    bl_idname = "sollumz.importyft" 
+    bl_label = "Import yft.xml"
+    filename_ext = ".yft.xml"
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.yft.xml",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+
+    def importfile(self, filepath):
+        try:
+            yft_xml = YFT.from_xml_file(filepath)
+            fragment_to_obj(yft_xml, filepath)
+            self.report({'INFO'}, 'YFT Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
 
@@ -266,38 +312,42 @@ class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
         except:
             self.report({'ERROR'}, traceback.format_exc())
 
-
-def ydr_menu_func_export(self, context):
-    self.layout.operator(ExportYdrXml.bl_idname, text="Codewalker Xml (.ydr.xml)")
-
-def ybn_menu_func_export(self, context):
-    self.layout.operator(ExportYbnXml.bl_idname, text="Codewalker Xml (.ybn.xml)")
-
-def ydd_menu_func_export(self, context):
-    self.layout.operator(ExportYddXml.bl_idname, text="Codewalker Xml (.ydd.xml)")
-
 def ydr_menu_func_import(self, context):
-    self.layout.operator(ImportYdrXml.bl_idname, text="Codewalker Xml (.ydr.xml)")
+    self.layout.operator(ImportYdrXml.bl_idname, text="Codewalker XML (.ydr.xml)")
+
+def yft_menu_func_import(self, context):
+    self.layout.operator(ImportYftXml.bl_idname, text="Codewalker XML (.yft.xml)")
 
 def ybn_menu_func_import(self, context):
-    self.layout.operator(ImportYbnXml.bl_idname, text="Codewalker Xml (.ybn.xml)")
+    self.layout.operator(ImportYbnXml.bl_idname, text="Codewalker XML (.ybn.xml)")
 
 def ydd_menu_func_import(self, context):
-    self.layout.operator(ImportYddXml.bl_idname, text="Codewalker Xml (.ydd.xml)")
+    self.layout.operator(ImportYddXml.bl_idname, text="Codewalker XML (.ydd.xml)")
 
+def ydr_menu_func_export(self, context):
+    self.layout.operator(ExportYdrXml.bl_idname, text="Codewalker XML (.ydr.xml)")
+
+def ybn_menu_func_export(self, context):
+    self.layout.operator(ExportYbnXml.bl_idname, text="Codewalker XML (.ybn.xml)")
+
+def ydd_menu_func_export(self, context):
+    self.layout.operator(ExportYddXml.bl_idname, text="Codewalker XML (.ydd.xml)")
 
 def register():
-    bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.append(ydd_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.append(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(yft_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.append(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.append(ydd_menu_func_import)
-
+    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(ydd_menu_func_export)
+    
 def unregister():
-    bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.remove(ydd_menu_func_export)
     bpy.types.TOPBAR_MT_file_import.remove(ydr_menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(yft_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.remove(ybn_menu_func_import)
     bpy.types.TOPBAR_MT_file_import.remove(ydd_menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(ydd_menu_func_export)
+    

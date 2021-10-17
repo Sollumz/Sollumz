@@ -320,7 +320,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None):
         dobj.parent = obj
         
     for model in drawable.drawable_models_med:
-        dobj = drawable_model_to_obj(model, materials, drawable.name, "med", bones=bones)
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "medium", bones=bones)
         dobj.parent = obj
 
     for model in drawable.drawable_models_low:
@@ -328,7 +328,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None):
         dobj.parent = obj
 
     for model in drawable.drawable_models_vlow:
-        dobj = drawable_model_to_obj(model, materials, drawable.name, "vlow", bones=bones)
+        dobj = drawable_model_to_obj(model, materials, drawable.name, "verylow", bones=bones)
         dobj.parent = obj
 
     for model in obj.children:

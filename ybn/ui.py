@@ -47,7 +47,6 @@ def draw_bound_properties(layout, obj):
     row.prop(obj.bound_properties, "margin")
     row.prop(obj.bound_properties, "volume")
 
-
 class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
     bl_label = 'Collision Flags'
     bl_idname = "SOLLUMZ_PT_FLAGS_PANEL"
@@ -59,7 +58,7 @@ class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         obj = bpy.context.active_object
-        if obj and obj.sollum_type != BoundType.COMPOSITE:
+        if obj and obj.sollum_type == BoundType.COMPOSITE:
             layout = self.layout
             layout.label(text = "Composite Flags 1")
             generate_flags(layout.box(), obj.composite_flags1)
@@ -67,8 +66,6 @@ class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
             generate_flags(layout.box(), obj.composite_flags2)
             row = layout.row()
             row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
-
-
 
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_COLLISION_MATERIALS_LIST"
@@ -86,7 +83,6 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
             layout.prop(item, "name",
                         text=name, emboss=False, icon='MATERIAL')
 
-
 class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_FLAG_PRESET_LIST"
 
@@ -101,7 +97,6 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
             layout.alignment = "CENTER"
             layout.prop(item, "name",
                         text=item.name, emboss=False, icon='BOOKMARKS')
-
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Static Collision Tools"
@@ -165,7 +160,6 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
             row.prop(context.scene, "convert_poly_bound_type")
             row.prop(context.scene, "convert_poly_parent")
 
-
 class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
     bl_label = "Bound Objects"
     bl_idname = "SOLLUMZ_MT_bound_objects_create"
@@ -185,7 +179,6 @@ class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
 def SollumzBoundContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_bound_objects_create.bl_idname)
 
-
 class SOLLUMZ_MT_polygon_bound_create(bpy.types.Menu):
     bl_label = "Polygon Bound Objects"
     bl_idname = "SOLLUMZ_MT_polygon_bound_create"
@@ -195,7 +188,6 @@ class SOLLUMZ_MT_polygon_bound_create(bpy.types.Menu):
         layout.prop(context.scene, "poly_bound_type")
         layout.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname) 
 
-
 class SOLLUMZ_MT_polygon_bound_convert(bpy.types.Menu):
     bl_label = "Convert Polygon Bound Objects"
     bl_idname = "SOLLUMZ_MT_polygon_bound_convert"
@@ -204,7 +196,6 @@ class SOLLUMZ_MT_polygon_bound_convert(bpy.types.Menu):
         layout = self.layout
         layout.prop(context.scene, "convert_poly_bound_type")
         layout.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname) 
-
 
 def SollumzPolygonBoundContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_polygon_bound_create.bl_idname)

@@ -32,7 +32,13 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        layout.operator("sollumz.importymap")
+        row = layout.row()
+        row.prop(context.scene, "lod_level")
+        row.operator("sollumz.showlodlevel")
+
+        box = layout.box()
+        box.label(text="Ymap Tools")
+        box.operator("sollumz.importymap")
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
@@ -77,7 +83,6 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         layout.prop(obj.drawable_model_properties, "render_mask")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
-
     
     def draw(self, context):
         layout = self.layout

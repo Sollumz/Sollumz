@@ -337,7 +337,7 @@ class FlagsProperty(ElementProperty):
 class ValueProperty(ElementProperty):
     value_types = (int, str, bool, float)
 
-    def __init__(self, tag_name: str, value):
+    def __init__(self, tag_name: str, value = 0):
         super().__init__(tag_name, value)
 
     @staticmethod

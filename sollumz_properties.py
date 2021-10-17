@@ -80,11 +80,11 @@ class TextureFormat(str, Enum):
     L8 = 'sollumz_l8'
 
 class LodType(str, Enum):
+    ALL = "sollumz_all" #for ui
     HIGH = 'sollumz_high'
-    MED = 'sollumz_med'
+    MEDIUM = 'sollumz_medium'
     LOW = 'sollumz_low'
-    VLOW = 'sollumz_vlow'
-
+    VERYLOW = 'sollumz_verylow'
 
 SOLLUMZ_UI_NAMES = {
     BoundType.BOX: 'Bound Box',
@@ -149,10 +149,11 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.A8: 'D3DFMT_DXT1',
     TextureFormat.L8: 'D3DFMT_DXT1',
 
+    LodType.ALL: 'ALL',
     LodType.HIGH: 'High',
-    LodType.MED: 'Med',
+    LodType.MEDIUM: 'Med',
     LodType.LOW: 'Low',
-    LodType.VLOW: 'Vlow',
+    LodType.VERYLOW: 'Vlow',
 
     DrawableType.NONE: 'Sollumz None',
     DrawableType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
@@ -190,7 +191,15 @@ def register():
             default = MaterialType.NONE,
             options={'HIDDEN'}
     )
+
+    bpy.types.Scene.lod_level = bpy.props.EnumProperty(
+            items = items_from_enums(LodType),
+            name = "LOD Level",
+            default = LodType.ALL,
+            options={'HIDDEN'}
+    )
     
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
+    del bpy.types.Scene.lod_level

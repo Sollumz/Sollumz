@@ -14,25 +14,13 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
     render_mask : bpy.props.IntProperty(name = "Render Mask", default = 255)
     flags : bpy.props.IntProperty(name = "Flags", default = 0)
     sollum_lod : bpy.props.EnumProperty(
-        items = [("sollumz_high", "High", "High Lod"),
-                ("sollumz_med", "Med", "Med Lod"),
-                ("sollumz_low", "Low", "Low Lod"),
-                ("sollumz_vlow", "Vlow", "Vlow Lod"),
-                ],
-        name = "LOD",
+        items = items_from_enums(LodType),
+        name = "LOD Level",
         default = "sollumz_high"
     )
 
 class ShaderProperties(bpy.types.PropertyGroup):
     renderbucket : bpy.props.IntProperty(name = "Render Bucket", default = 0)
-    #????????? DONT KNOW IF I WANNA DO THIS
-    #filename : bpy.props.EnumProperty(
-    #    items = [("sollumz_none", "None", "Sollumz None")
-    #            ],
-    #    name = "FileName",
-    #    default = "sollumz_none"
-    #)
-    #LAYOUT ENUM? 
     filename : bpy.props.StringProperty(name = "FileName", default = "default")
 
 class TextureFlags(bpy.types.PropertyGroup):

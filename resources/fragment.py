@@ -4,7 +4,7 @@ from .codewalker_xml import *
 from .drawable import Drawable
 from .bound import YBN
 
-class YDD:
+class YFT:
     
     @staticmethod
     def from_xml_file(filepath):
@@ -23,8 +23,8 @@ class BoneTransformItem(TextProperty):
 class BoneTransformsListProperty(ListProperty):
     list_type = BoneTransformItem
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tag_name: str=None, value=None):
+        super().__init__(tag_name=tag_name or "BoneTransforms", value=value or [])
         self.unk = AttributeProperty("unk", 0)
 
 class ArchetypeProperty(ElementTree):
@@ -50,10 +50,10 @@ class TransformItem(TextProperty):
         super().__init__()
 
 class TransformsListProperty(ListProperty):
-    list_type = BoneTransformItem
+    list_type = TransformItem
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tag_name: str=None, value=None):
+        super().__init__(tag_name=tag_name or "Transforms", value=value or [])
         self.unk = AttributeProperty("unk", 0)
 
 class ChildrenItem(ElementTree):
@@ -74,15 +74,15 @@ class ChildrenItem(ElementTree):
 class ChildrenListProperty(ListProperty):
     list_type = ChildrenItem
 
-    def __init__(self, tag_name: str, value=None):
-        super().__init__(tag_name, value=value)
+    def __init__(self, tag_name: str=None, value=None):
+        super().__init__(tag_name=tag_name or "Children", value=value or [])
 
 class GroupsProperty(ElementTree):
     tag_name = "Groups"
 
     def __init__(self):
         super().__init__()
-        self.children = ChildrenListProperty("Children")
+        self.children = ChildrenListProperty()
 
 class LOD1Property(ElementTree):
     tag_name = "LOD1"
@@ -101,15 +101,48 @@ class LOD1Property(ElementTree):
         self.unknown_90 = VectorProperty("Unknown90")
         self.unknown_a0 = VectorProperty("UnknownA0")
         self.unknown_b0 = VectorProperty("UnknownB0")
-        self.archetype = ArchetypeProperty("Archetype")
-        self.transforms = TransformsListProperty("Transforms")
+        self.archetype = ArchetypeProperty()
+        self.transforms = TransformsListProperty()
 
 class PhysicsProperty(ElementTree):
     tag_name = "Physics"
 
     def __init__(self):
         super().__init__()
-        self.lod1 = LOD1Property("LOD1")
+        self.lod1 = LOD1Property()
+
+class WindowItem(ElementTree):
+    tag_name = "Window"
+
+    def __init__(self):
+        super().__init__()
+        self.item_id = ValueProperty("ItemID")
+        self.unk_ushort_1 = ValueProperty("UnkUshort1")
+        self.unk_ushort_4 = ValueProperty("UnkUshort4")
+        self.unk_ushort_5 = ValueProperty("UnkUshort5")
+        self.unk_float_1 = ValueProperty("UnkFloat1")
+        self.unk_float_2 = ValueProperty("UnkFloat2")
+        self.unk_float_3 = ValueProperty("UnkFloat3")
+        self.unk_float_5 = ValueProperty("UnkFloat5")
+        self.unk_float_6 = ValueProperty("UnkFloat6")
+        self.unk_float_7 = ValueProperty("UnkFloat7")
+        self.unk_float_9 = ValueProperty("UnkFloat9")
+        self.unk_float_10 = ValueProperty("UnkFloat10")
+        self.unk_float_11 = ValueProperty("UnkFloat11")
+        self.unk_float_13 = ValueProperty("UnkFloat13")
+        self.unk_float_14 = ValueProperty("UnkFloat14")
+        self.unk_float_15 = ValueProperty("UnkFloat15")
+        self.unk_float_16 = ValueProperty("UnkFloat16")
+        self.unk_float_17 = ValueProperty("UnkFloat17")
+        self.unk_float_18 = ValueProperty("UnkFloat18")
+        self.cracks_texture_tiling = ValueProperty("CracksTextureTiling")
+        self.shattermap = TextProperty("ShatterMap")
+        
+class VehicleGlassWindows(ListProperty):
+    list_type = WindowItem
+
+    def __init__(self, tag_name: str=None, value=None):
+        super().__init__(tag_name=tag_name or "VehicleGlassWindows", value=value or [])
 
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
@@ -128,6 +161,6 @@ class Fragment(ElementTree, AbstractClass):
         self.unknown_d0 = ValueProperty("UnknownD0")
         self.unknown_d4 = ValueProperty("UnknownD4")
         self.drawable = Drawable()
-        self.bones_transforms = BoneTransformsListProperty("BoneTransforms")
-        self.physics = PhysicsProperty("Physics")
+        self.bones_transforms = BoneTransformsListProperty()
+        self.physics = PhysicsProperty()
 
