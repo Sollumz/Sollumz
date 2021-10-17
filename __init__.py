@@ -12,11 +12,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "sollumz",
-    "author" : "skylumz",
-    "description" : "",
+    "name" : "Sollumz",
+    "author" : "Skylumz",
+    "description" : "This plugins allows you to import/export codewalker xml files.",
     "blender" : (2, 80, 0),
-    "version" : (0, 0, 1),
+    "version" : (1, 0, 1),
     "location" : "",
     "warning" : "",
     "category" : "Import-Export"
