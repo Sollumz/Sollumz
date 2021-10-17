@@ -89,12 +89,23 @@ class FlagPresetProp(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty('Name')
 
 
-flag_presets = FlagPresetsFile()
+def get_flag_presets_path():
+    name = 'flag_presets.xml'
+    dir = os.path.abspath('./')
+    found = False
+    for root, dirs, files in os.walk(dir):
+        if name in files:
+            found = True
+            return os.path.join(root, name)
+    
+    if not found:
+        raise FileNotFoundError(f"flag_presets.xml file not found! Please redownload this file from the github and place it in '{dir}\ybn'")
 
+flag_presets = FlagPresetsFile()
 
 def load_flag_presets():
     bpy.context.scene.flag_presets.clear()
-    path = os.path.abspath('./ybn/flag_presets.xml')
+    path = get_flag_presets_path()
     if os.path.exists(path):
         file = FlagPresetsFile.from_xml_file(path)
         flag_presets.presets = file.presets

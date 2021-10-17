@@ -3,7 +3,7 @@ import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
 from Sollumz.meshhelper import *
 from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
-from .properties import BoundFlags, load_flag_presets, flag_presets
+from .properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from Sollumz.resources.flag_preset import FlagPreset
 import os, traceback
 
@@ -253,7 +253,7 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
                 self.report({'INFO'}, f"Cannot delete a default preset!")
                 return {'CANCELLED'}
 
-            filepath = os.path.abspath('./ybn/flag_presets.xml')
+            filepath = get_flag_presets_path()
             flag_presets.presets.remove(preset)
 
             try:
@@ -266,7 +266,7 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
                 return {'CANCELLED'}
 
         except IndexError:
-            self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the 'Sollumz/ybn/flag_presets' directory.")
+            self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
             return {'CANCELLED'}
 
 
@@ -305,7 +305,7 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
             if value == True:
                 flag_preset.flags2.append(prop) 
 
-        filepath = os.path.abspath('./ybn/flag_presets.xml')
+        filepath = get_flag_presets_path()
         
         for preset in flag_presets.presets:
             if preset.name == name:
@@ -359,12 +359,13 @@ class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
                         obj.composite_flags2[flag_name] = True
                     else:
                         obj.composite_flags2[flag_name] = False
-                
+
                 # Hacky way to force the UI to redraw. For some reason setting custom properties will not cause the object properties panel to redraw, so we have to do this.
                 obj.location = obj.location
 
             except IndexError:
-                self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the 'Sollumz/ybn/flag_presets' directory.")
+                filepath = get_flag_presets_path()
+                self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
                 return {'CANCELLED'}
         
         return {'FINISHED'}
