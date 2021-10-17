@@ -81,6 +81,7 @@ class TextureFormat(str, Enum):
 
 class LodType(str, Enum):
     ALL = "sollumz_all" #for ui
+    NONE = "sollumz_none" #for ui
     HIGH = 'sollumz_high'
     MEDIUM = 'sollumz_medium'
     LOW = 'sollumz_low'
@@ -149,7 +150,8 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.A8: 'D3DFMT_DXT1',
     TextureFormat.L8: 'D3DFMT_DXT1',
 
-    LodType.ALL: 'ALL',
+    LodType.ALL: 'All',
+    LodType.NONE: 'None',
     LodType.HIGH: 'High',
     LodType.MEDIUM: 'Med',
     LodType.LOW: 'Low',

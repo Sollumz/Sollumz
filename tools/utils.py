@@ -1,5 +1,11 @@
+import numpy
+from io import StringIO
+
 def ReadQuaternion(node):
     return [float(node.attrib["x"]), float(node.attrib["y"]), float(node.attrib["z"]), float(node.attrib["w"])]
+
+def StringToFloatList(string):
+    return numpy.loadtxt(StringIO(string), delimiter=', ') #https://numpy.org/doc/stable/reference/generated/numpy.loadtxt.html
 
 def StringListToFloatList(lst):
     result = []

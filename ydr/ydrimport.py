@@ -287,8 +287,11 @@ def skeleton_to_obj(skeleton, armature):
 
     return armature
 
-def drawable_to_obj(drawable, filepath, name, bones_override=None):
+def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group = None):
 
+    if shader_group:
+        drawable.shader_group = shader_group
+    
     materials = shadergroup_to_materials(drawable.shader_group, filepath)
 
     obj = None

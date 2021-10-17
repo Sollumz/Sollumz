@@ -2,7 +2,7 @@ from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstr
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from .drawable import Drawable
-from .bound import YBN
+from .bound import BoundsComposite
 
 class YFT:
     
@@ -41,7 +41,7 @@ class ArchetypeProperty(ElementTree):
         self.unknown_54 = ValueProperty("Unknown54")
         self.inertia_tensor = VectorProperty("InertiaTensor")
         self.inertia_tensor_inv = VectorProperty("InertiaTensorInv")
-        self.bounds = YBN()
+        self.bounds = BoundsComposite()
 
 class TransformItem(TextProperty):
     tag_name = "Item"
@@ -77,12 +77,51 @@ class ChildrenListProperty(ListProperty):
     def __init__(self, tag_name: str=None, value=None):
         super().__init__(tag_name=tag_name or "Children", value=value or [])
 
-class GroupsProperty(ElementTree):
-    tag_name = "Groups"
+class GroupItem(ElementTree):
+    tag_name = "Item"
 
     def __init__(self):
         super().__init__()
-        self.children = ChildrenListProperty()
+        self.name = TextProperty("Name")
+        self.index = ValueProperty("Index")
+        self.parent_index = ValueProperty("ParentIndex")
+        self.unk_byte_4c = ValueProperty("UnkByte4C")
+        self.unk_byte_4f = ValueProperty("UnkByte4F")
+        self.unk_byte_50 = ValueProperty("UnkByte50")
+        self.unk_byte_51 = ValueProperty("UnkByte51") #always 255
+        self.unk_byte_52 = ValueProperty("UnkByte52")
+        self.unk_byte_53 = ValueProperty("UnkByte53")
+        self.unk_float_10 = ValueProperty("UnkFloat10")
+        self.unk_float_14 = ValueProperty("UnkFloat14")
+        self.unk_float_18 = ValueProperty("UnkFloat18")
+        self.unk_float_1c = ValueProperty("UnkFloat1C")
+        self.unk_float_20 = ValueProperty("UnkFloat20")
+        self.unk_float_24 = ValueProperty("UnkFloat24")
+        self.unk_float_28 = ValueProperty("UnkFloat28")
+        self.unk_float_2c = ValueProperty("UnkFloat2C")
+        self.unk_float_30 = ValueProperty("UnkFloat30")
+        self.unk_float_34 = ValueProperty("UnkFloat34")
+        self.unk_float_38 = ValueProperty("UnkFloat38")
+        self.unk_float_3c = ValueProperty("UnkFloat3C")
+        self.unk_float_40 = ValueProperty("UnkFloat40")
+        self.mass = ValueProperty("Mass")
+        self.unk_float_54 = ValueProperty("UnkFloat54")
+        self.unk_float_58 = ValueProperty("UnkFloat58")
+        self.unk_float_5c = ValueProperty("UnkFloat5C")
+        self.unk_float_60 = ValueProperty("UnkFloat60")
+        self.unk_float_64 = ValueProperty("UnkFloat64")
+        self.unk_float_68 = ValueProperty("UnkFloat68")
+        self.unk_float_6c = ValueProperty("UnkFloat6C")
+        self.unk_float_70 = ValueProperty("UnkFloat70")
+        self.unk_float_74 = ValueProperty("UnkFloat74")
+        self.unk_float_78 = ValueProperty("UnkFloat78")
+        self.unk_float_a8 = ValueProperty("UnkFloatA8")
+
+class GroupsListProperty(ListProperty):
+    list_type = GroupItem 
+
+    def __init__(self, tag_name: str=None, value=None):
+        super().__init__(tag_name=tag_name or "Groups", value=value or [])
 
 class LOD1Property(ElementTree):
     tag_name = "LOD1"
@@ -103,6 +142,8 @@ class LOD1Property(ElementTree):
         self.unknown_b0 = VectorProperty("UnknownB0")
         self.archetype = ArchetypeProperty()
         self.transforms = TransformsListProperty()
+        self.groups = GroupsListProperty()
+        self.children = ChildrenListProperty()
 
 class PhysicsProperty(ElementTree):
     tag_name = "Physics"
