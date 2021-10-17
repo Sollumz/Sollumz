@@ -325,7 +325,7 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
 class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
     """Load a flag preset to the selected Geometry bounds"""
     bl_idname = "sollumz.load_flag_preset"
-    bl_label = "Load Flags Preset"
+    bl_label = "Apply Flags Preset"
 
     def invalid_flag(self, flag, preset_name):
         self.report({'INFO'}, f"Flag '{flag}'' in preset '{preset_name}' does not exist.")
