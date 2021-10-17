@@ -463,27 +463,6 @@ class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
     bl_idname = "sollumz.quickconvertmeshtocollision"
     bl_label = "Convert Mesh To Collision"
     bl_options = {'UNDO'}
-    
-    def convert(self, obj, parent):
-        #set parents
-        dobj = parent or create_empty(BoundType.COMPOSITE)
-        dmobj = create_empty(BoundType.GEOMETRYBVH)
-        dmobj.parent = dobj
-        obj.parent = dmobj
-
-        if bpy.context.scene.convert_ybn_use_mesh_names:
-            if bpy.context.scene.multiple_ybns:
-                dobj.name = obj.name
-            else:
-                dmobj.name = obj.name
-            
-        #set properties
-        obj.sollum_type = PolygonType.TRIANGLE
-
-        #add object to collection
-        new_obj = obj.copy()
-        bpy.data.objects.remove(obj, do_unlink=True)
-        bpy.context.collection.objects.link(new_obj)
 
     def execute(self, context):
         selected = context.selected_objects
@@ -496,6 +475,25 @@ class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
             parent = create_empty(BoundType.COMPOSITE)
         
         for obj in selected:
-            self.convert(obj, parent)
+            #set parents
+            dobj = parent or create_empty(BoundType.COMPOSITE)
+            dmobj = create_empty(BoundType.GEOMETRYBVH)
+            dmobj.parent = dobj
+            obj.parent = dmobj
+
+            name = obj.name
+            obj.name = name + "_mesh"
+
+            if bpy.context.scene.convert_ybn_use_mesh_names:
+                dobj.name = name
+
+                
+            #set properties
+            obj.sollum_type = PolygonType.TRIANGLE
+
+            #add object to collection
+            new_obj = obj.copy()
+            bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.context.collection.objects.link(new_obj)
 
         return {'FINISHED'}

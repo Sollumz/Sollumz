@@ -1,6 +1,5 @@
 import bpy
-from Sollumz.sollumz_properties import PolygonType, is_sollum_type
-from .properties import BoundProperties, BoundFlags, CollisionProperties, CollisionMatFlags
+from .properties import BoundFlags, CollisionProperties, CollisionMatFlags
 from .collision_materials import collisionmats
 from .operators import *
 
@@ -48,12 +47,27 @@ def draw_bound_properties(layout, obj):
     row.prop(obj.bound_properties, "margin")
     row.prop(obj.bound_properties, "volume")
 
-    if obj.sollum_type != BoundType.COMPOSITE:
-        generate_flags(layout.box(), obj.composite_flags1)
-        layout.label(text = "Composite Flags 2")
-        generate_flags(layout.box(), obj.composite_flags2)
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
+
+class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
+    bl_label = 'Collision Flags'
+    bl_idname = "SOLLUMZ_PT_FLAGS_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
+
+    def draw(self, context):
+        obj = bpy.context.active_object
+        if obj and obj.sollum_type != BoundType.COMPOSITE:
+            layout = self.layout
+            layout.label(text = "Composite Flags 1")
+            generate_flags(layout.box(), obj.composite_flags1)
+            layout.label(text = "Composite Flags 2")
+            generate_flags(layout.box(), obj.composite_flags2)
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
+
 
 
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):

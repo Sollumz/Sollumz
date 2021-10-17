@@ -52,38 +52,6 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
     bl_label = "Convert Mesh To Drawable"
     bl_options = {'UNDO'}
 
-    def convert(self, obj, parent):
-        #create material
-        if(len(obj.data.materials) > 0):
-            mat = obj.data.materials[0]
-            if(mat.sollum_type != MaterialType.MATERIAL):
-                #remove old materials
-                for i in range(len(obj.material_slots)):
-                    bpy.ops.object.material_slot_remove({'object': obj})
-                sm = ShaderManager()
-                mat = create_shader("default", sm)
-                obj.data.materials.append(mat)
-            
-        #set parents
-        dobj = parent or create_empty(DrawableType.DRAWABLE)
-        dmobj = create_empty(DrawableType.DRAWABLE_MODEL)
-        dmobj.parent = dobj
-        obj.parent = dmobj
-
-        if bpy.context.scene.convert_ydr_use_mesh_names:
-            if bpy.context.scene.multiple_ydrs:
-                dobj.name = obj.name
-            else:
-                dmobj.name = obj.name
-            
-        #set properties
-        obj.sollum_type = DrawableType.GEOMETRY
-
-        #add object to collection
-        new_obj = obj.copy()
-        bpy.data.objects.remove(obj, do_unlink=True)
-        bpy.context.collection.objects.link(new_obj)
-
     def execute(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
@@ -95,7 +63,36 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
             parent = create_empty(DrawableType.DRAWABLE)
         
         for obj in selected:
-            self.convert(obj, parent)
+            #create material
+            if(len(obj.data.materials) > 0):
+                mat = obj.data.materials[0]
+                if(mat.sollum_type != MaterialType.MATERIAL):
+                    #remove old materials
+                    for i in range(len(obj.material_slots)):
+                        bpy.ops.object.material_slot_remove({'object': obj})
+                    sm = ShaderManager()
+                    mat = create_shader("default", sm)
+                    obj.data.materials.append(mat)
+                
+            #set parents
+            dobj = parent or create_empty(DrawableType.DRAWABLE)
+            dmobj = create_empty(DrawableType.DRAWABLE_MODEL)
+            dmobj.parent = dobj
+            obj.parent = dmobj
+
+            name = obj.name
+            obj.name = name + "_geom"
+
+            if bpy.context.scene.convert_ybn_use_mesh_names:
+                dobj.name = name
+                
+            #set properties
+            obj.sollum_type = DrawableType.GEOMETRY
+
+            #add object to collection
+            new_obj = obj.copy()
+            bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.context.collection.objects.link(new_obj)
 
         return {'FINISHED'}
 

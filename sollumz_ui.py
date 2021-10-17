@@ -87,8 +87,7 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         if(obj == None):
             return
 
-        box = layout.box()
-        row = box.row()
+        row = layout.row()
         row.enabled = False
         row.prop(obj, "sollum_type")
 
@@ -98,13 +97,13 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
             return
         
         if obj.sollum_type == DrawableType.DRAWABLE:
-            draw_drawable_properties(box, obj)
+            draw_drawable_properties(layout, obj)
         elif obj.sollum_type == DrawableType.GEOMETRY:
-            draw_geometry_properties(box, obj)
+            draw_geometry_properties(layout, obj)
         elif(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
-            self.draw_drawable_model_properties(context, box, obj)
+            self.draw_drawable_model_properties(context, layout, obj)
         elif is_sollum_type(obj, BoundType):
-            draw_bound_properties(box, obj)
+            draw_bound_properties(layout, obj)
 
 class SOLLUMZ_MT_sollumz(bpy.types.Menu):
     bl_label = "Sollumz"
