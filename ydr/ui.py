@@ -1,8 +1,7 @@
 import bpy
-from Sollumz.sollumz_properties import is_sollum_type, DrawableType
 from Sollumz.ydr.shader_materials import *
+from .operators import *
 import os
-from .properties import TextureFlags, TextureProperties
 
 def draw_drawable_properties(layout, obj):
     layout.prop(obj.drawable_properties, "lod_dist_high")
@@ -135,28 +134,58 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        layout = self.layout
+        pass
 
-        box = layout.box()
-        box.label(text = "Create Shader")
-        box.template_list(
+class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
+    bl_label = "Create Shader"
+    bl_idname = "SOLLUMZ_PT_CREATE_SHADER_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
-        box.operator("sollumz.createshadermaterial")
-        box = layout.box()
-        box.label(text = "Create Drawable Objects")
-        box.operator("sollumz.createdrawable")
-        row = box.row()
-        row.operator("sollumz.createdrawablemodel")
-        row.operator("sollumz.creategeometry")
-        box = layout.box()
-        box.label(text = "Quick Convert Tools")
-        row = box.row()
-        row.operator("sollumz.convertmeshtodrawable")
+        layout.operator(SOLLUMZ_OT_create_shader_material.bl_idname)
+
+class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
+    bl_label = "Create Drawable Objects"
+    bl_idname = "SOLLUMZ_PT_CREATE_DRAWABLE_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_create_drawable_model.bl_idname)
+        row.operator(SOLLUMZ_OT_create_geometry.bl_idname)
+
+class SOLLUMZ_PT_DRAWABLE_CONVERSION_PANEL(bpy.types.Panel):
+    bl_label = "Conversion"
+    bl_idname = "SOLLUMZ_PT_DRAWABLE_CONVERSION_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_convert_mesh_to_drawable.bl_idname)
         row.prop(context.scene, 'multiple_ydrs')
         row.prop(context.scene, 'convert_ydr_use_mesh_names')
-        row = box.row()
-        row.operator("sollumz.converttoshadermaterial")
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_convert_to_shader_material.bl_idname)
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index): 
