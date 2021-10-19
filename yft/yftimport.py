@@ -3,12 +3,12 @@ from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.ybn.ybnimport import composite_to_obj
 from time import time
 
-def fragment_to_obj(fragment):
+def fragment_to_obj(fragment, filepath):
 
     start = time()
 
     if(fragment.drawable != None):
-        parent = drawable_to_obj(fragment.drawable, "", fragment.name)
+        parent = drawable_to_obj(fragment.drawable, filepath, fragment.name)
     
     end = time()
     print(str(end - start) + " seconds to import to import main drawable")
@@ -26,7 +26,7 @@ def fragment_to_obj(fragment):
 
     children_obj = bpy.data.objects.new("Children", None)
     children_obj.parent = parent 
-    bpy.context.collection.objects.link(children_obj)
+    bpy.context.collection.objects.link(children_obj)   
 
     for item in lod1.children:
         #if(item.drawable != None):

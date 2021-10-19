@@ -200,7 +200,7 @@ def register():
             default = LodType.ALL,
             options={'HIDDEN'}
     )
-    
+
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
