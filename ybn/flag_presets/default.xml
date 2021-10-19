@@ -1,5 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<FlagPreset name="Default">
-  <Flags1>map_animal, map_cover, map_dynamic, map_vehicle, map_weapon</Flags1>
-  <Flags2>animal, animal_ragdoll, explosion, foliage, forklift_forks, glass, map_animal, map_cover, map_deep_surface, map_dynamic, map_river, map_stairs, map_vehicle, map_weapon, object, object_env_cloth, ped, pickup, plant, projectile, ragdoll, smoke, test_ai, test_camera, test_script, test_vehicle_wheel, test_weapon, unknown, unsmashed, vehicle_bvh, vehicle_not_bvh</Flags2>
-</FlagPreset>

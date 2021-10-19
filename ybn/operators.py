@@ -3,10 +3,15 @@ import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
 from Sollumz.meshhelper import *
 from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
-from .properties import BoundFlags, flag_presets, load_flag_presets
+from .properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from Sollumz.resources.flag_preset import FlagPreset
 import os, traceback
 
+def handle_load_flag_presets(self):
+    try:
+        load_flag_presets()
+    except FileNotFoundError:
+        self.report({'ERROR'}, traceback.format_exc())
 
 def create_empty(sollum_type):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -16,7 +21,7 @@ def create_empty(sollum_type):
     bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
     return empty
-
+print(bpy.utils.user_resource('SCRIPTS', "addons"))
 def create_mesh(sollum_type):
     name = SOLLUMZ_UI_NAMES[sollum_type]
     mesh = bpy.data.meshes.new(name)
@@ -245,20 +250,20 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
 
     def execute(self, context):
         index = context.scene.flag_preset_index
-        directory = os.path.abspath('./ybn/flag_presets')
-        load_flag_presets()
+        handle_load_flag_presets(self)
 
         try:
-            preset = flag_presets[index]
+            preset = flag_presets.presets[index]
             if preset.name in self.preset_blacklist:
                 self.report({'INFO'}, f"Cannot delete a default preset!")
                 return {'CANCELLED'}
 
-            filepath = f"{directory}/{preset.name.lower()}.xml"
+            filepath = get_flag_presets_path()
+            flag_presets.presets.remove(preset)
 
             try:
-                os.remove(filepath)
-                load_flag_presets()
+                flag_presets.write_xml(filepath)
+                handle_load_flag_presets(self)
 
                 return {'FINISHED'}
             except:
@@ -266,7 +271,7 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
                 return {'CANCELLED'}
 
         except IndexError:
-            self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the 'Sollumz/ybn/flag_presets' directory.")
+            self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
             return {'CANCELLED'}
 
 
@@ -277,6 +282,7 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
 
     def execute(self, context):
         obj = context.active_object
+        handle_load_flag_presets(self)
 
         if not obj:
             self.report({'INFO'}, 'No object selected!')
@@ -304,16 +310,17 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
             if value == True:
                 flag_preset.flags2.append(prop) 
 
-        directory = os.path.abspath('./ybn/flag_presets')
-        filepath = f'{directory}/{name.lower()}.xml'
-
-        if os.path.exists(filepath):
-            self.report({'INFO'}, f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
-            return {'CANCELLED'}
+        filepath = get_flag_presets_path()
+        
+        for preset in flag_presets.presets:
+            if preset.name == name:
+                self.report({'INFO'}, f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
+                return {'CANCELLED'}
 
         try: 
-            flag_preset.write_xml(filepath)
-            load_flag_presets()
+            flag_presets.presets.append(flag_preset)
+            flag_presets.write_xml(filepath)
+            handle_load_flag_presets(self)
 
             return {'FINISHED'}
         except:
@@ -326,9 +333,9 @@ class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
     """Load a flag preset to the selected Geometry bounds"""
     bl_idname = "sollumz.load_flag_preset"
     bl_label = "Apply Flags Preset"
+    bl_context = 'object'
+    bl_options = {'REGISTER', 'UNDO'}
 
-    def invalid_flag(self, flag, preset_name):
-        self.report({'INFO'}, f"Flag '{flag}'' in preset '{preset_name}' does not exist.")
 
     def execute(self, context):
         index = context.scene.flag_preset_index
@@ -337,7 +344,7 @@ class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
             self.report({'INFO'}, 'No objects selected!')
             return {'CANCELLED'}
         
-        load_flag_presets()
+        handle_load_flag_presets(self)
         
         for obj in selected:
             if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
@@ -345,24 +352,26 @@ class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
                 return {'CANCELLED'}
             
             try:
-                preset = flag_presets[index]
-                for flag in preset.flags1:
-                    try:
-                        obj.composite_flags1[flag.lower()] = True
-                    except IndexError:
-                        self.invalid_flag(flag, preset.name)
+                preset = flag_presets.presets[index]
 
-                for flag in preset.flags2:
-                    try:
-                        obj.composite_flags2[flag.lower()] = True
-                    except IndexError:
-                        self.invalid_flag(flag, preset.name)
+                for flag_name in BoundFlags.__annotations__.keys():
+                    if flag_name in preset.flags1:
+                        obj.composite_flags1[flag_name] = True
+                    else:
+                        obj.composite_flags1[flag_name] = False
+
+                    if flag_name in preset.flags2:
+                        obj.composite_flags2[flag_name] = True
+                    else:
+                        obj.composite_flags2[flag_name] = False
+
+                # Hacky way to force the UI to redraw. For some reason setting custom properties will not cause the object properties panel to redraw, so we have to do this.
+                obj.location = obj.location
 
             except IndexError:
-                self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the 'Sollumz/ybn/flag_presets' directory.")
+                filepath = get_flag_presets_path()
+                self.report({'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
                 return {'CANCELLED'}
-
-
         
         return {'FINISHED'}
 

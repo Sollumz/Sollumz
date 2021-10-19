@@ -56,16 +56,20 @@ class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
 
+    @classmethod
+    def poll(self, context):
+        obj = context.active_object
+        return obj and (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH)
+
     def draw(self, context):
-        obj = bpy.context.active_object
-        if obj and obj.sollum_type == BoundType.COMPOSITE:
-            layout = self.layout
-            layout.label(text = "Composite Flags 1")
-            generate_flags(layout.box(), obj.composite_flags1)
-            layout.label(text = "Composite Flags 2")
-            generate_flags(layout.box(), obj.composite_flags2)
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
+        obj = context.active_object
+        layout = self.layout
+        layout.label(text = "Composite Flags 1")
+        generate_flags(layout.box(), obj.composite_flags1)
+        layout.label(text = "Composite Flags 2")
+        generate_flags(layout.box(), obj.composite_flags2)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)   
 
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_COLLISION_MATERIALS_LIST"
