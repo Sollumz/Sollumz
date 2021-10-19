@@ -148,7 +148,7 @@ class ImportYftXml(bpy.types.Operator, SollumzImportHelper):
     def importfile(self, filepath):
         try:
             yft_xml = YFT.from_xml_file(filepath)
-            fragment_to_obj(yft_xml)
+            fragment_to_obj(yft_xml, filepath)
             self.report({'INFO'}, 'YFT Successfully imported.')
         except Exception as e:
             self.report({'ERROR'}, traceback.format_exc())
