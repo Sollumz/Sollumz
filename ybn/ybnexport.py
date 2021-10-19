@@ -1,12 +1,13 @@
-import bpy
-import traceback
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
 
 class NoGeometryError(Exception):
-    message = 'Sollumz Geometry has no geometry!'
+    message = 'Sollumz Bound Geometry has no geometry!'
+
+class VerticesLimitError(Exception):
+    pass
 
 def init_poly_bound(poly_bound, obj, materials):
     # materials = obj.parent.data.materials.values()
@@ -123,16 +124,17 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
     else:
         return ValueError('Invalid argument for geometry sollum_type!')
 
+
     geometry = init_bound_item(geometry, obj)
     geometry.geometry_center = obj.location
     geometry.composite_position = Vector()
 
     # Ensure object has geometry
     found = False
-
     # Get child poly bounds
     for child in get_children_recursive(obj):
         if child.sollum_type == PolygonType.TRIANGLE:
+
             found = True
             mesh = child.to_mesh()
             mesh.calc_normals_split()
@@ -167,6 +169,10 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
     
     if not found:
         raise NoGeometryError()
+    
+    # Check vert count
+    if len(geometry.vertices) > 32767:
+        raise VerticesLimitError(f"{obj.name} can only have at most 32767 vertices!")
 
     return geometry
 
@@ -182,10 +188,12 @@ def init_bound_item(bound_item, obj):
         value = getattr(obj.composite_flags2, prop)
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
-    
+
     bound_item.composite_position = obj.location
     bound_item.composite_rotation = obj.rotation_euler.to_quaternion().normalized()
     bound_item.composite_scale = Vector([1, 1, 1])
+    if obj.active_material and obj.active_material.sollum_type == MaterialType.COLLISION:
+        bound_item.material_index = obj.active_material.collision_properties.collision_index
 
     return bound_item
 

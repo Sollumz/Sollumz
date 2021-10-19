@@ -21,7 +21,7 @@ def create_empty(sollum_type):
     bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
     return empty
-print(bpy.utils.user_resource('SCRIPTS', "addons"))
+
 def create_mesh(sollum_type):
     name = SOLLUMZ_UI_NAMES[sollum_type]
     mesh = bpy.data.meshes.new(name)
@@ -223,6 +223,33 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class SOLLUMZ_OT_center_composite(bpy.types.Operator):
+    """Center a bound composite with the rest of it's geometry. Note: Has no effect on export"""
+    bl_idname = "sollumz.centercomposite"
+    bl_label = "Center Composite"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        aobj = context.active_object
+        if not aobj:
+            self.report({'INFO'}, f'No {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} selected.')
+            return {'CANCELLED'}
+        elif aobj.sollum_type != BoundType.COMPOSITE:
+            self.report({'INFO'}, f'{aobj.name} must be a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}!')
+            return {'CANCELLED'}
+
+        if context.mode != 'OBJECT':
+            self.report({'INFO'}, f'Operator can only be ran in Object mode.')
+            return {'CANCELLED'}
+
+        center = get_bound_center(aobj)
+        aobj.location = center
+        for obj in aobj.children:
+            obj.delta_location = -center
+
+        return {'FINISHED'}
+
+
 class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"
@@ -230,13 +257,21 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
 
     def execute(self, context):
         
-        aobj = bpy.context.active_object
-        if(aobj == None):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.report({'INFO'}, 'No objects selected!')
             return {'CANCELLED'}
-        
-        if is_sollum_type(aobj, PolygonType):
-            mat = create_collision_material_from_index(context.scene.collision_material_index)
-            aobj.data.materials.append(mat)
+
+
+        for obj in selected:
+            correct_type = False
+            if is_sollum_type(obj, PolygonType) or is_sollum_type(obj, BoundType):
+                if obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH:
+                    correct_type = True
+                    mat = create_collision_material_from_index(context.scene.collision_material_index)
+                    obj.data.materials.append(mat)
+            if not correct_type:
+                self.report({'INFO'}, f"{obj.name} must be a Poly Bound or Bound other than {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}, {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}, or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}. Object skipped.")
         
         return {'FINISHED'}
 

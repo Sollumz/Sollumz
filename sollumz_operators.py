@@ -273,7 +273,6 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     def export(self, obj):
         try:
             ybn_from_object(obj).write_xml(self.get_filepath(obj))
-            print(obj)
             self.report({'INFO'}, 'YBN Successfully exported.')
         except NoGeometryError:
             self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')

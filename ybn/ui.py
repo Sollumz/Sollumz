@@ -47,6 +47,7 @@ def draw_bound_properties(layout, obj):
     row.prop(obj.bound_properties, "margin")
     row.prop(obj.bound_properties, "volume")
 
+
 class SOLLUMZ_PT_FLAGS_PANEL(bpy.types.Panel):
     bl_label = 'Collision Flags'
     bl_idname = "SOLLUMZ_PT_FLAGS_PANEL"
@@ -163,6 +164,11 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
             row.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname)
             row.prop(context.scene, "convert_poly_bound_type")
             row.prop(context.scene, "convert_poly_parent")
+        box = layout.box()
+        box.label(text = 'Other')
+        row = box.row()
+        if context.active_object and context.active_object.sollum_type == BoundType.COMPOSITE:
+            row.operator(SOLLUMZ_OT_center_composite.bl_idname)
 
 class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
     bl_label = "Bound Objects"

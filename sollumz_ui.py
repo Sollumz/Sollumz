@@ -55,7 +55,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
+        aobj = context.active_object
         if(context.active_object == None):
             return
 
@@ -67,7 +67,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if mat.sollum_type == MaterialType.MATERIAL:
             draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION:
+        elif mat.sollum_type == MaterialType.COLLISION and is_sollum_type(aobj, PolygonType):
             draw_collision_material_properties(layout, mat)
 
 
