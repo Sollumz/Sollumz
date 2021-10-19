@@ -28,6 +28,7 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
+    bl_order = -1
 
     def draw(self, context):
         layout = self.layout
@@ -35,10 +36,10 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.prop(context.scene, "lod_level")
         row.operator("sollumz.showlodlevel")
-        
-        box = layout.box()
-        box.label(text="Ymap Tools")
-        box.operator("sollumz.importymap")
+
+        row = layout.row()
+        row.label(text="Ymap Tools")
+        row.operator("sollumz.importymap")
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
@@ -50,12 +51,13 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        # mat = context.active_object.active_material
-        return True
+        mat = context.active_object.active_material
+        return mat and (is_sollum_type(mat, MaterialType) and mat.sollum_type != MaterialType.NONE)
 
     def draw(self, context):
         layout = self.layout
-
+        layout.use_property_split = True
+        aobj = context.active_object
         if(context.active_object == None):
             return
 
@@ -67,7 +69,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if mat.sollum_type == MaterialType.MATERIAL:
             draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION:
+        elif mat.sollum_type == MaterialType.COLLISION and is_sollum_type(aobj, PolygonType):
             draw_collision_material_properties(layout, mat)
 
 
@@ -78,6 +80,11 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_region_type = 'WINDOW'
     bl_context = 'object'
     bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj and obj.sollum_type != DrawableType.NONE
     
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")
@@ -86,20 +93,14 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
 
-        obj = bpy.context.active_object
 
-        if(obj == None):
-            return
+        obj = context.active_object
 
         row = layout.row()
         row.enabled = False
         row.prop(obj, "sollum_type")
-
-        try:
-            getattr(obj, 'sollum_type')
-        except:
-            return
         
         if obj.sollum_type == DrawableType.DRAWABLE:
             draw_drawable_properties(layout, obj)

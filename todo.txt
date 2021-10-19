@@ -5,6 +5,7 @@ ________________________
 - order xml element attributes on export to make it more readable
 - add overwrite warning to sollumzexporthelper?
 - move property panels to correct locations
+- organize ui into seperate panels using poll methods
 
 GENERAL TOOLS
 ________________________
@@ -16,8 +17,9 @@ YBN IMPORT / EXPORT / TOOLS
 ________________________
 - TEST
 - Finish Cylinder, Disc, and Capsule bound types
-- Flag presets with support for custom presets (mr vicho)
+- Bounds don't export with materials
 - Ensure bound polys other than triangle only have one material
+- Vertices limit
 
 YDR IMPORT / EXPORT / TOOLS
 ________________________
