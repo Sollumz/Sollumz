@@ -4,13 +4,16 @@ from io import StringIO
 def ReadQuaternion(node):
     return [float(node.attrib["x"]), float(node.attrib["y"]), float(node.attrib["z"]), float(node.attrib["w"])]
 
-def StringToFloatList(string):
-    return numpy.loadtxt(StringIO(string), delimiter=', ') #https://numpy.org/doc/stable/reference/generated/numpy.loadtxt.html
+#def StringToFloatList(string):
+    #return numpy.loadtxt(StringIO(string), delimiter=', ') #https://numpy.org/doc/stable/reference/generated/numpy.loadtxt.html
 
-def StringListToFloatList(lst):
+def StringListToFloatList(lst, colors = False):
     result = []
     for num in lst:
-        result.append(float(num))
+        if colors:
+            result.append(float(num) / 255)
+        else:
+            result.append(float(num))
     return result
 
 def StringListToIntList(lst):

@@ -188,9 +188,9 @@ class Vertex:
             elif(current_layout_key == "BlendIndices"):
                 result.blendindices = StringListToIntList(current_data)
             elif(current_layout_key == "Colour0"):
-                result.colors0 = StringListToFloatList(current_data)
+                result.colors0 = StringListToFloatList(current_data, True)
             elif(current_layout_key == "Colour1"):
-                result.colors1 = StringListToFloatList(current_data)
+                result.colors1 = StringListToFloatList(current_data, True)
             elif(current_layout_key == "TexCoord0"):
                 result.texcoord0 = StringListToFloatList(current_data)
             elif(current_layout_key == "TexCoord1"):
