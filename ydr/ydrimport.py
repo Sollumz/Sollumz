@@ -3,6 +3,8 @@ import os, traceback
 from mathutils import Vector, Quaternion, Matrix
 from Sollumz.resources.shader import ShaderManager
 from Sollumz.ydr.shader_materials import create_shader
+from Sollumz.ybn.ybnimport import composite_to_obj
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType
 from Sollumz.resources.drawable import *
 from Sollumz.tools import cats as Cats
 
@@ -84,9 +86,13 @@ def create_uv_layer(mesh, num, texcoords):
 def create_vertexcolor_layer(mesh, num, colors):
     mesh.vertex_colors.new(name = "Vertex Colors " + str(num)) 
     color_layer = mesh.vertex_colors[num]
-    for i in range(len(color_layer.data)):
-        rgba = colors[mesh.loops[i].vertex_index]
-        color_layer.data[i].color = rgba
+    i = 0
+    for poly in mesh.polygons:
+        for idx in poly.loop_indices:
+            vi = mesh.loops[i].vertex_index
+            rgba = colors[vi]
+            color_layer.data[i].color = rgba
+            i += 1
 
 def geometry_to_obj(geometry, bones=None, name=None):
 
@@ -319,6 +325,10 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group 
 
     if bones_override is not None:
         bones = bones_override
+
+    if(drawable.bound != None):
+        bobj = composite_to_obj(drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
+    bobj.parent = obj
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(model, materials, drawable.name, "high", bones=bones)

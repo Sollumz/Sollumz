@@ -290,7 +290,11 @@ def bound_to_obj(bound):
         bvh = geometry_to_obj(bound, BoundType.GEOMETRYBVH)
         return bvh
 
-def composite_to_obj(composite, name):
+def composite_to_obj(bounds, name, from_drawable):
+    if(from_drawable):
+        composite = bounds 
+    else:
+        composite = bounds.composite
     obj = bpy.data.objects.new(name, None)
     obj.empty_display_size = 0
     obj.sollum_type = BoundType.COMPOSITE

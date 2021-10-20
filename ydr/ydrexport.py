@@ -6,7 +6,8 @@ import os, sys, traceback, shutil
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
 from Sollumz.tools.blender_helper import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType
+from Sollumz.ybn.ybnexport import composite_from_object
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -480,8 +481,6 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
 
     drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(obj, get_used_materials(obj), exportpath)
 
-    drawable.bound = None
-
     if bones is None:
         if(obj.pose != None):
             bones = obj.pose.bones
@@ -494,7 +493,7 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
     vlowmodel_count = 0
 
     for child in obj.children:
-        if(child.sollum_type == "sollumz_drawable_model"):
+        if(child.sollum_type == DrawableType.DRAWABLE_MODEL):
             drawable_model = drawable_model_from_object(child, bones)
             if("high" in child.drawable_model_properties.sollum_lod):
                 highmodel_count += 1
@@ -508,6 +507,8 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
             elif("vlow" in child.drawable_model_properties.sollum_lod):
                 vlowmodel_count += 1
                 drawable.drawable_models_vlow.append(drawable_model)
+        elif(child.sollum_type == BoundType.COMPOSITE):
+            drawable.bound = composite_from_object(child)        
 
     #flags = model count for each lod 
     drawable.flags_high = highmodel_count

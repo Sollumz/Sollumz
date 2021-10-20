@@ -6,7 +6,7 @@ from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN
 from Sollumz.resources.ymap import YMAP, EntityItem
 from Sollumz.ybn.ybnimport import composite_to_obj
-from Sollumz.ybn.ybnexport import ybn_from_object, NoGeometryError
+from Sollumz.ybn.ybnexport import bounds_from_object, NoGeometryError
 from Sollumz.ydr.ydrexport import drawable_from_object
 from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.yft.yftimport import fragment_to_obj
@@ -103,7 +103,7 @@ class ImportYbnXml(bpy.types.Operator, SollumzImportHelper):
     def importfile(self, context):
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
-            composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath.replace('.ybn.xml', '')))
+            composite_to_obj(ybn_xml, os.path.basename(self.filepath.replace('.ybn.xml', '')))
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
@@ -289,7 +289,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
 
     def export(self, obj):
         try:
-            ybn_from_object(obj).write_xml(self.get_filepath(obj))
+            bounds_from_object(obj).write_xml(self.get_filepath(obj))
             self.report({'INFO'}, 'YBN Successfully exported.')
         except NoGeometryError:
             self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
