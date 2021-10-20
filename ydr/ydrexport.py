@@ -248,6 +248,7 @@ def get_vertex_string(obj, mesh, layout, bones=None):
         clr0_layer = mesh.vertex_colors.new()
         clr1_layer = mesh.vertex_colors.new()
 
+    vis = []
     for uv_layer_id in range(len(mesh.uv_layers)):
         uv_layer = mesh.uv_layers[uv_layer_id].data
         for poly in mesh.polygons:
@@ -257,7 +258,12 @@ def get_vertex_string(obj, mesh, layout, bones=None):
                 u = uv[0]
                 v = uv[1]
                 fixed_uv = Vector((u, v))
-                texcoords[uv_layer_id][vi] = fixed_uv
+                if(vi not in vis):
+                    vis.append(vi)
+                    texcoords[uv_layer_id][vi] = fixed_uv
+                else:       
+                    continue
+                    #print("duplicate")
 
     for poly in mesh.polygons:
         for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
@@ -308,7 +314,7 @@ def get_vertex_string(obj, mesh, layout, bones=None):
             else:
                 blendw[vi] = [0, 0, 255, 0]
                 blendi[vi] = [0] * 4
-
+    
     for i in range(len(vertices)):
         vstring = ""
         tlist = []

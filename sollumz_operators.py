@@ -4,7 +4,7 @@ from Sollumz.sollumz_properties import DrawableType, BoundType, LodType, SOLLUMZ
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN
-from Sollumz.resources.ymap import YMAP
+from Sollumz.resources.ymap import YMAP, EntityItem
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.ybn.ybnexport import ybn_from_object, NoGeometryError
 from Sollumz.ydr.ydrexport import drawable_from_object
@@ -12,7 +12,7 @@ from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.yft.yftimport import fragment_to_obj
 from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
-from bpy_extras.io_utils import ImportHelper
+from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 class ShowLODLevel(bpy.types.Operator):
     """Displays the selected lod level"""
@@ -39,36 +39,6 @@ class ShowLODLevel(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class ImportYmapXml(bpy.types.Operator, ImportHelper):
-    """Imports .ymap.xml file exported from codewalker."""
-    bl_idname = "sollumz.importymap" 
-    bl_label = "Import ymap.xml"
-    filename_ext = ".ymap.xml"
-    bl_options = {'UNDO'}
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.ymap.xml",
-        options={'HIDDEN'},
-        maxlen=255,  
-    )
-
-    def execute(self, context):
-        ymap = YMAP.from_xml_file(self.filepath)
-
-        names = []
-
-        for obj in bpy.context.collection.objects:
-            for entity in ymap.entities:
-                if entity.archetype_name not in names:
-                    names.append(entity.archetype_name)
-                if(entity.archetype_name == obj.name):
-                    obj.location = entity.position
-
-        for name in names:
-            print(name)
-
-        return {'FINISHED'}
-
 class SollumzImportHelper(ImportHelper):
     bl_options = {'REGISTER'}
     filename_ext = None
@@ -90,6 +60,32 @@ class SollumzImportHelper(ImportHelper):
 
         return {'FINISHED'}
 
+class ImportYmapXml(bpy.types.Operator, SollumzImportHelper):
+    """Imports .ymap.xml file exported from codewalker."""
+    bl_idname = "sollumz.importymap" 
+    bl_label = "Import ymap.xml"
+    filename_ext = ".ymap.xml"
+    bl_options = {'UNDO'}
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.ymap.xml",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+
+    def importfile(self, filepath):
+        ymap = YMAP.from_xml_file(filepath)
+
+        names = []
+
+        for obj in bpy.context.collection.objects:
+            for entity in ymap.entities:
+                if entity.archetype_name not in names:
+                    names.append(entity.archetype_name)
+                if(entity.archetype_name == obj.name):
+                    obj.location = entity.position
+
+        return {'FINISHED'}
 
 class ImportYbnXml(bpy.types.Operator, SollumzImportHelper):
     """Imports .ybn.xml file exported from codewalker."""
@@ -261,6 +257,27 @@ class SollumzExportHelper():
         if not found:
             self.report({'INFO'}, self.no_objects_message())
 
+class ExportYmapXml(bpy.types.Operator, ExportHelper):
+    """Exports .ymap.xml file exported from codewalker."""
+    bl_idname = "sollumz.exportymap" 
+    bl_label = "Export ymap.xml"
+    filename_ext = ".ymap.xml"
+    bl_options = {'UNDO'}
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.ymap.xml",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+
+    def entity_from_obj(obj):
+        ent = EntityItem()
+
+    def execute(self, context):
+
+
+
+        return {'FINISHED'}
 
 class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
     """Export static collisions (.ybn)"""
