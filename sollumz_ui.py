@@ -56,7 +56,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.use_property_split = True
+        # layout.use_property_split = True
         aobj = context.active_object
         if(context.active_object == None):
             return

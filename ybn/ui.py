@@ -71,7 +71,7 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         mat = context.active_object.active_material
-        return mat and (is_sollum_type(mat, MaterialType) and mat.sollum_type != MaterialType.NONE)
+        return mat and mat.sollum_type == MaterialType.COLLISION
 
     def draw(self, context):
         mat = context.active_object.active_material

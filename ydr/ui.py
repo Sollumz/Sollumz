@@ -24,7 +24,7 @@ def draw_shader(layout, mat):
         box = layout.box()
         row = box.row()
         row.prop(mat.shader_properties, "renderbucket")
-        row.prop(mat.shader_properties, "filename")
+        row.prop(mat.shader_properties, "filename", text='Shader Name')
 
         layout.label(text = "Texture Parameters")
         nodes = mat.node_tree.nodes
