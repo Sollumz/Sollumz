@@ -26,3 +26,17 @@ def FixShaderName(name):
     if("." in name):
         name = name[:-4]
     return name
+
+def vector_tostring(vector):
+    string = [str(vector.x), str(vector.y)]
+    if(hasattr(vector, "z")):
+        string.append(str(vector.z))
+
+    if(hasattr(vector, "w")):
+        string.append(str(vector.w))
+
+    return " ".join(string)
+
+def meshloopcolor_tostring(color):
+    string = " ".join(str(round(color[i] * 255)) for i in range(4))
+    return string 
