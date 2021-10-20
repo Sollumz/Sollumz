@@ -181,6 +181,16 @@ class EntityProperties(bpy.types.PropertyGroup):
     artificial_ambient_occlusion = bpy.props.FloatProperty(name =  "Artificial Ambient Occlusion")
     tint_value = bpy.props.FloatProperty(name =  "Tint Value")
 
+def get_show_collisions(self):
+    return self["show_collisions"]
+
+def set_show_collisions(self, value):
+    self["show_collisions"] = value
+
+    for obj in bpy.context.collection.objects:
+        if(obj.sollum_type in BoundType._value2member_map_ or obj.sollum_type in PolygonType._value2member_map_):
+            obj.hide_set(value)
+
 def is_sollum_type(obj, type):
     return obj.sollum_type in type._value2member_map_
 
@@ -218,7 +228,10 @@ def register():
 
     bpy.types.Object.ymap_properties = bpy.props.PointerProperty(type = EntityProperties)
 
+    bpy.types.Scene.show_collisions = bpy.props.BoolProperty(name = "Show Collisions", default = True, get=get_show_collisions, set=set_show_collisions)
+
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
     del bpy.types.Scene.lod_level
+    del bpy.types.Scene.show_collisions

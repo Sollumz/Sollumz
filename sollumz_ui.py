@@ -36,6 +36,9 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.prop(context.scene, "lod_level")
         row.operator("sollumz.showlodlevel")
+        
+        row = layout.row()
+        row.prop(context.scene, "show_collisions")
 
         layout.label(text="Ymap Tools")
         row = layout.row()

@@ -86,13 +86,9 @@ def create_uv_layer(mesh, num, texcoords):
 def create_vertexcolor_layer(mesh, num, colors):
     mesh.vertex_colors.new(name = "Vertex Colors " + str(num)) 
     color_layer = mesh.vertex_colors[num]
-    i = 0
-    for poly in mesh.polygons:
-        for idx in poly.loop_indices:
-            vi = mesh.loops[i].vertex_index
-            rgba = colors[vi]
-            color_layer.data[i].color = rgba
-            i += 1
+    for i in range(len(color_layer.data)):
+        rgba = colors[mesh.loops[i].vertex_index]
+        color_layer.data[i].color = rgba
 
 def geometry_to_obj(geometry, bones=None, name=None):
 
