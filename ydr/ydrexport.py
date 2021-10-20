@@ -49,8 +49,7 @@ def get_shaders_from_blender(obj):
                 param = TextureParameterItem()
                 param.name = node.name
                 param.type = "Texture"
-                name = os.path.basename(node.image.filepath)
-                param.texture_name = os.path.splitext(name)[0]
+                param.texture_name = os.path.splitext(node.image.name)[0]
                 shader.parameters.append(param)
             elif(isinstance(node, bpy.types.ShaderNodeValue)):
                 if(node.name[-1] == "x"):
@@ -87,8 +86,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                 if(n.texture_properties.embedded == True):
                     has_td = True
                     texture_item = TextureItem()
-                    name = os.path.basename(n.image.filepath)
-                    texture_item.name = os.path.splitext(name)[0]
+                    texture_item.name = os.path.splitext(n.image.name)[0]
                     #texture_item.unk32 = 0
                     texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
                     for prop in dir(n.texture_flags):
@@ -100,7 +98,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     texture_item.height = n.image.size[1]
                     texture_item.miplevels = 8 #?????????????????????????????????????????????????????????????????????????????????????????????
                     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
-                    texture_item.filename = name
+                    texture_item.filename = n.image.name
                     texture_dictionary.append(texture_item)
 
                     #if(n.image != None):
@@ -250,6 +248,7 @@ def get_vertex_string(obj, mesh, layout, bones=None):
         clr0_layer = mesh.vertex_colors.new()
         clr1_layer = mesh.vertex_colors.new()
 
+    vis = []
     for uv_layer_id in range(len(mesh.uv_layers)):
         uv_layer = mesh.uv_layers[uv_layer_id].data
         for poly in mesh.polygons:
@@ -259,7 +258,12 @@ def get_vertex_string(obj, mesh, layout, bones=None):
                 u = uv[0]
                 v = uv[1]
                 fixed_uv = Vector((u, v))
-                texcoords[uv_layer_id][vi] = fixed_uv
+                if(vi not in vis):
+                    vis.append(vi)
+                    texcoords[uv_layer_id][vi] = fixed_uv
+                else:       
+                    continue
+                    #print("duplicate")
 
     for poly in mesh.polygons:
         for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
@@ -310,7 +314,7 @@ def get_vertex_string(obj, mesh, layout, bones=None):
             else:
                 blendw[vi] = [0, 0, 255, 0]
                 blendi[vi] = [0] * 4
-
+    
     for i in range(len(vertices)):
         vstring = ""
         tlist = []
@@ -345,13 +349,13 @@ def get_vertex_string(obj, mesh, layout, bones=None):
 def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
     
-    triangulate_object(obj) #make sure object is triangulated
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
+    triangulate_object(obj) #make sure object is triangulated
     mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
-    geometry.shader_index = get_shader_index(obj, obj_eval.active_material)
+    geometry.shader_index = get_shader_index(obj, obj.active_material)
 
     bbmin, bbmax = get_bb_extents(obj_eval)
     geometry.bounding_box_min = bbmin

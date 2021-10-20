@@ -20,7 +20,6 @@ class BoundType(str, Enum):
     GEOMETRYBVH = 'sollumz_bound_geometrybvh'
     COMPOSITE = 'sollumz_bound_composite'
 
-
 class PolygonType(str, Enum):
     BOX = 'sollumz_bound_poly_box'
     SPHERE = 'sollumz_bound_poly_sphere'
@@ -28,12 +27,10 @@ class PolygonType(str, Enum):
     CYLINDER = 'sollumz_bound_poly_cylinder'
     TRIANGLE = 'sollumz_bound_poly_triangle'
 
-
 class MaterialType(str, Enum):
     NONE = 'sollumz_material_none',
     MATERIAL = 'sollumz_material',
     COLLISION = 'sollumz_material_collision'
-
 
 class TextureType(str, Enum):
     UNKNOWN = 'sollumz_unknown'
@@ -165,6 +162,25 @@ SOLLUMZ_UI_NAMES = {
     DrawableType.SKELETON: 'Sollumz Skeleton',
 }
 
+class EntityProperties(bpy.types.PropertyGroup):
+    archetype_name = bpy.props.StringProperty(name = "ArchetypeName")
+    flags = bpy.props.IntProperty(name = "Flags")
+    guid = bpy.props.IntProperty(name = "Guid")
+    position = bpy.props.FloatVectorProperty(name = "Position")
+    rotation = bpy.props.FloatVectorProperty(name = "Rotation", size = 4)
+    scale_xy = bpy.props.FloatProperty(name = "ScaleXY")
+    scale_z = bpy.props.FloatProperty(name = "ScaleZ")
+    parent_index = bpy.props.IntProperty(name = "ParentIndex")
+    lod_dist = bpy.props.FloatProperty(name = "Lod Distance")
+    child_lod_dist = bpy.props.FloatProperty(name = "Child Lod Distance")
+    lod_level = bpy.props.EnumProperty(items = [("","", "")], name = "LOD Level")
+    num_children = bpy.props.IntProperty(name = "Number of Children")
+    priority_level = bpy.props.EnumProperty(items = [("","", "")], name = "Priority Level")
+    #extensions?
+    ambient_occlusion_multiplier = bpy.props.FloatProperty(name =  "Ambient Occlusion Multiplier")
+    artificial_ambient_occlusion = bpy.props.FloatProperty(name =  "Artificial Ambient Occlusion")
+    tint_value = bpy.props.FloatProperty(name =  "Tint Value")
+
 def is_sollum_type(obj, type):
     return obj.sollum_type in type._value2member_map_
 
@@ -177,7 +193,6 @@ def items_from_enums(*enums):
                 raise KeyError(f"UI name mapping not found for key {item} of {enum}.")
             items.append((item.value, SOLLUMZ_UI_NAMES[item], ''))
     return items
-
 
 def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
@@ -200,7 +215,9 @@ def register():
             default = LodType.ALL,
             options={'HIDDEN'}
     )
-    
+
+    bpy.types.Object.ymap_properties = bpy.props.PointerProperty(type = EntityProperties)
+
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type

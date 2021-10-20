@@ -32,6 +32,8 @@ def shadergroup_to_materials(shadergroup, filepath):
                             img = bpy.data.images.load(texture_path, check_existing=True)
                             n.image = img 
 
+                        n.image.name = param.texture_name + ".dds" 
+
                         #assign embedded texture dictionary properties
                         if(shadergroup.texture_dictionary != None):
                             for texture in shadergroup.texture_dictionary:
