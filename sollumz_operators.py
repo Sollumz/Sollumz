@@ -14,31 +14,6 @@ from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
-class ShowLODLevel(bpy.types.Operator):
-    """Displays the selected lod level"""
-    bl_idname = "sollumz.showlodlevel" 
-    bl_label = "Show"
-
-    def unhide_all(self, context):
-        for obj in context.collection.objects:
-            obj.hide_set(False)
-
-    def execute(self, context):
-        level = context.scene.lod_level
-        self.unhide_all(context)
-
-        if(level == LodType.ALL):
-            return {"FINISHED"}
-        else:
-            for obj in context.collection.objects:
-                if(obj.sollum_type == DrawableType.DRAWABLE):
-                    for child in obj.children:
-                        if(child.sollum_type == DrawableType.DRAWABLE_MODEL and child.drawable_model_properties.sollum_lod != level):
-                            for obj in child.children:
-                                obj.hide_set(True)
-
-        return {'FINISHED'}
-
 class SollumzImportHelper(ImportHelper):
     bl_options = {'REGISTER'}
     filename_ext = None

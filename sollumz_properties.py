@@ -77,8 +77,6 @@ class TextureFormat(str, Enum):
     L8 = 'sollumz_l8'
 
 class LodType(str, Enum):
-    ALL = "sollumz_all" #for ui
-    NONE = "sollumz_none" #for ui
     HIGH = 'sollumz_high'
     MEDIUM = 'sollumz_medium'
     LOW = 'sollumz_low'
@@ -147,8 +145,6 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.A8: 'D3DFMT_DXT1',
     TextureFormat.L8: 'D3DFMT_DXT1',
 
-    LodType.ALL: 'All',
-    LodType.NONE: 'None',
     LodType.HIGH: 'High',
     LodType.MEDIUM: 'Med',
     LodType.LOW: 'Low',
@@ -163,33 +159,82 @@ SOLLUMZ_UI_NAMES = {
 }
 
 class EntityProperties(bpy.types.PropertyGroup):
-    archetype_name = bpy.props.StringProperty(name = "ArchetypeName")
-    flags = bpy.props.IntProperty(name = "Flags")
-    guid = bpy.props.IntProperty(name = "Guid")
-    position = bpy.props.FloatVectorProperty(name = "Position")
-    rotation = bpy.props.FloatVectorProperty(name = "Rotation", size = 4)
-    scale_xy = bpy.props.FloatProperty(name = "ScaleXY")
-    scale_z = bpy.props.FloatProperty(name = "ScaleZ")
-    parent_index = bpy.props.IntProperty(name = "ParentIndex")
-    lod_dist = bpy.props.FloatProperty(name = "Lod Distance")
-    child_lod_dist = bpy.props.FloatProperty(name = "Child Lod Distance")
-    lod_level = bpy.props.EnumProperty(items = [("","", "")], name = "LOD Level")
-    num_children = bpy.props.IntProperty(name = "Number of Children")
-    priority_level = bpy.props.EnumProperty(items = [("","", "")], name = "Priority Level")
+    archetype_name : bpy.props.StringProperty(name = "ArchetypeName")
+    flags : bpy.props.IntProperty(name = "Flags")
+    guid : bpy.props.IntProperty(name = "Guid")
+    position : bpy.props.FloatVectorProperty(name = "Position")
+    rotation : bpy.props.FloatVectorProperty(name = "Rotation", size = 4)
+    scale_xy : bpy.props.FloatProperty(name = "ScaleXY")
+    scale_z : bpy.props.FloatProperty(name = "ScaleZ")
+    parent_index : bpy.props.IntProperty(name = "ParentIndex")
+    lod_dist : bpy.props.FloatProperty(name = "Lod Distance")
+    child_lod_dist : bpy.props.FloatProperty(name = "Child Lod Distance")
+    lod_level : bpy.props.EnumProperty(items = [("","", "")], name = "LOD Level")
+    num_children : bpy.props.IntProperty(name = "Number of Children")
+    priority_level : bpy.props.EnumProperty(items = [("","", "")], name = "Priority Level")
     #extensions?
-    ambient_occlusion_multiplier = bpy.props.FloatProperty(name =  "Ambient Occlusion Multiplier")
-    artificial_ambient_occlusion = bpy.props.FloatProperty(name =  "Artificial Ambient Occlusion")
-    tint_value = bpy.props.FloatProperty(name =  "Tint Value")
+    ambient_occlusion_multiplier : bpy.props.FloatProperty(name =  "Ambient Occlusion Multiplier")
+    artificial_ambient_occlusion : bpy.props.FloatProperty(name =  "Artificial Ambient Occlusion")
+    tint_value : bpy.props.FloatProperty(name =  "Tint Value")
 
-def get_show_collisions(self):
-    return self["show_collisions"]
+def hide_obj_and_children(obj, value):
+    obj.hide_set(value)
+    for child in obj.children:
+        hide_obj_and_children(child, value)
 
-def set_show_collisions(self, value):
-    self["show_collisions"] = value
+def get_hide_collisions(self):
+    return self["hide_collision"]
+
+def set_hide_collisions(self, value):
+    self["hide_collision"] = value
 
     for obj in bpy.context.collection.objects:
         if(obj.sollum_type in BoundType._value2member_map_ or obj.sollum_type in PolygonType._value2member_map_):
             obj.hide_set(value)
+
+def get_hide_high_lods(self):
+    return self["hide_high_lods"]
+
+def set_hide_high_lods(self, value):
+    self["hide_high_lods"] = value
+
+    for obj in bpy.context.collection.objects:
+        if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
+            if(obj.drawable_model_properties.sollum_lod == LodType.HIGH):
+                hide_obj_and_children(obj, value)
+
+def get_hide_medium_lods(self):
+    return self["hide_medium_lods"]
+
+def set_hide_medium_lods(self, value):
+    self["hide_medium_lods"] = value
+
+    for obj in bpy.context.collection.objects:
+        if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
+            if(obj.drawable_model_properties.sollum_lod == LodType.MEDIUM):
+                hide_obj_and_children(obj, value)
+
+def get_hide_low_lods(self):
+    return self["hide_low_lods"]
+
+def set_hide_low_lods(self, value):
+    self["hide_low_lods"] = value
+
+    for obj in bpy.context.collection.objects:
+        if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
+            if(obj.drawable_model_properties.sollum_lod == LodType.LOW):
+                hide_obj_and_children(obj, value)
+
+def get_hide_very_low_lods(self):
+    return self["hide_very_low_lods"]
+
+def set_hide_very_low_lods(self, value):
+    self["hide_very_low_lods"] = value
+
+    for obj in bpy.context.collection.objects:
+        if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
+            if(obj.drawable_model_properties.sollum_lod == LodType.VERYLOW):
+                hide_obj_and_children(obj, value)
 
 def is_sollum_type(obj, type):
     return obj.sollum_type in type._value2member_map_
@@ -219,19 +264,19 @@ def register():
             options={'HIDDEN'}
     )
 
-    bpy.types.Scene.lod_level = bpy.props.EnumProperty(
-            items = items_from_enums(LodType),
-            name = "LOD Level",
-            default = LodType.ALL,
-            options={'HIDDEN'}
-    )
-
     bpy.types.Object.ymap_properties = bpy.props.PointerProperty(type = EntityProperties)
 
-    bpy.types.Scene.show_collisions = bpy.props.BoolProperty(name = "Show Collisions", default = True, get=get_show_collisions, set=set_show_collisions)
+    bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", get=get_hide_collisions, set=set_hide_collisions)
+    bpy.types.Scene.hide_high_lods = bpy.props.BoolProperty(name = "Hide High LODS", get=get_hide_high_lods, set=set_hide_high_lods)
+    bpy.types.Scene.hide_medium_lods = bpy.props.BoolProperty(name = "Hide Medium LODS", get=get_hide_medium_lods, set=set_hide_medium_lods)
+    bpy.types.Scene.hide_low_lods = bpy.props.BoolProperty(name = "Hide Low LODS", get=get_hide_low_lods, set=set_hide_low_lods)
+    bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(name = "Hide Very Low LODS", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
 
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
-    del bpy.types.Scene.lod_level
-    del bpy.types.Scene.show_collisions
+    del bpy.types.Scene.hide_collision
+    del bpy.types.Scene.hide_high_lods
+    del bpy.types.Scene.hide_medium_lods
+    del bpy.types.Scene.hide_low_lods
+    del bpy.types.Scene.hide_very_low_lods

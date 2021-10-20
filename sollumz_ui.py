@@ -32,15 +32,23 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.label(text = "View")
+        layout.prop(context.scene, "hide_collision")
+        layout.prop(context.scene, "hide_high_lods")
+        layout.prop(context.scene, "hide_medium_lods")
+        layout.prop(context.scene, "hide_low_lods")
+        layout.prop(context.scene, "hide_very_low_lods")
 
-        row = layout.row()
-        row.prop(context.scene, "lod_level")
-        row.operator("sollumz.showlodlevel")
-        
-        row = layout.row()
-        row.prop(context.scene, "show_collisions")
+class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Ymap Tools"
+    bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
-        layout.label(text="Ymap Tools")
+    def draw(self, context):
+        layout = self.layout
         row = layout.row()
         row.operator("sollumz.importymap")
         row.operator("sollumz.exportymap")
@@ -51,7 +59,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_parent_id = SOLLUMZ_PT_YMAP_TOOL_PANEL.bl_idname
 
     def draw(self, context):
         layout = self.layout

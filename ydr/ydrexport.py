@@ -348,7 +348,6 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
 
 def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
-    
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)

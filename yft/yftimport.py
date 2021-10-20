@@ -16,7 +16,7 @@ def fragment_to_obj(fragment, filepath):
     start = time()
 
     if(fragment.physics.lod1.archetype.bounds != None):
-        obj = composite_to_obj(fragment.physics.lod1.archetype.bounds, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE])
+        obj = composite_to_obj(fragment.physics.lod1.archetype.bounds, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
     obj.parent = parent
 
     end = time()
