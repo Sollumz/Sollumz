@@ -235,8 +235,14 @@ def hide_obj_and_children(obj, value):
     for child in obj.children:
         hide_obj_and_children(child, value)
 
+def get_bool_prop(obj, key):
+    try:
+        return obj[key]
+    except KeyError:
+        return False
+
 def get_hide_collisions(self):
-    return self["hide_collision"]
+    return get_bool_prop(self, 'hide_collision')
 
 def set_hide_collisions(self, value):
     self["hide_collision"] = value
@@ -246,7 +252,7 @@ def set_hide_collisions(self, value):
             obj.hide_set(value)
 
 def get_hide_high_lods(self):
-    return self["hide_high_lods"]
+    return get_bool_prop(self, 'hide_high_lods')
 
 def set_hide_high_lods(self, value):
     self["hide_high_lods"] = value
@@ -257,7 +263,7 @@ def set_hide_high_lods(self, value):
                 hide_obj_and_children(obj, value)
 
 def get_hide_medium_lods(self):
-    return self["hide_medium_lods"]
+    return get_bool_prop(self, 'hide_medium_lods')
 
 def set_hide_medium_lods(self, value):
     self["hide_medium_lods"] = value
@@ -268,8 +274,7 @@ def set_hide_medium_lods(self, value):
                 hide_obj_and_children(obj, value)
 
 def get_hide_low_lods(self):
-    return self["hide_low_lods"]
-
+    return get_bool_prop(self, 'hide_low_lods')
 def set_hide_low_lods(self, value):
     self["hide_low_lods"] = value
 
@@ -279,7 +284,7 @@ def set_hide_low_lods(self, value):
                 hide_obj_and_children(obj, value)
 
 def get_hide_very_low_lods(self):
-    return self["hide_very_low_lods"]
+    return get_bool_prop(self, 'hide_very_low_lods')
 
 def set_hide_very_low_lods(self, value):
     self["hide_very_low_lods"] = value
