@@ -483,7 +483,7 @@ class Drawable(ElementTree, AbstractClass):
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
         self.lod_dist_high = ValueProperty('LodDistHigh', 0) #9998?
-        self.lod_dist_med= ValueProperty('LodDistMed', 0) #9998?
+        self.lod_dist_med = ValueProperty('LodDistMed', 0) #9998?
         self.lod_dist_low = ValueProperty('LodDistLow', 0) #9998?
         self.lod_dist_vlow = ValueProperty('LodDistVlow', 0) #9998?
         self.flags_high = ValueProperty('FlagsHigh', 0) 

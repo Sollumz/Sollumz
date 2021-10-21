@@ -2,7 +2,11 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 from Sollumz.resources.drawable import *
 from Sollumz.resources.shader import ShaderManager
-import os, sys, traceback, shutil, copy
+import os
+import sys
+import traceback
+import shutil
+import copy
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
 from Sollumz.tools.blender_helper import *
@@ -12,22 +16,26 @@ from mathutils import Vector, Matrix
 
 sys.path.append(os.path.dirname(__file__))
 
+
 def get_used_materials(obj):
-    
+
     materials = []
-    
+
     for child in obj.children:
         for grandchild in child.children:
             if(grandchild.sollum_type == DrawableType.GEOMETRY):
                 mats = grandchild.data.materials
                 if(len(mats) < 0):
-                    print(f"Object: {grandchild.name} has no materials to export.")
+                    print(
+                        f"Object: {grandchild.name} has no materials to export.")
                 for mat in mats:
-                    if(mat.sollum_type != MaterialType.MATERIAL):
-                        print(f"Object: {grandchild.name} has a material: {mat.name} that is not going to be exported because it is not a sollum material.")
+                    if(mat.sollum_type != MaterialType.DRAWABLE):
+                        print(
+                            f"Object: {grandchild.name} has a material: {mat.name} that is not going to be exported because it is not a sollum material.")
                     materials.append(mat)
 
     return materials
+
 
 def get_shader_index(obj, mat):
     mats = get_used_materials(obj.parent.parent)
@@ -35,6 +43,7 @@ def get_shader_index(obj, mat):
     for i in range(len(mats)):
         if mats[i] == mat:
             return i
+
 
 def get_shaders_from_blender(obj):
     shaders = []
@@ -64,9 +73,9 @@ def get_shaders_from_blender(obj):
                     z = material.node_tree.nodes[node.name[:-1] + "z"]
                     w = material.node_tree.nodes[node.name[:-1] + "w"]
 
-                    param.quaternion_x = x.outputs[0].default_value 
-                    param.quaternion_y = y.outputs[0].default_value 
-                    param.quaternion_z = z.outputs[0].default_value 
+                    param.quaternion_x = x.outputs[0].default_value
+                    param.quaternion_y = y.outputs[0].default_value
+                    param.quaternion_z = z.outputs[0].default_value
                     param.quaternion_w = w.outputs[0].default_value
 
                     shader.parameters.append(param)
@@ -75,9 +84,10 @@ def get_shaders_from_blender(obj):
 
     return shaders
 
+
 def texture_dictionary_from_materials(obj, materials, exportpath):
     texture_dictionary = []
-    
+
     has_td = False
 
     for mat in materials:
@@ -98,37 +108,41 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     texture_item.extra_flags = n.texture_properties.extra_flags
                     texture_item.width = n.image.size[0]
                     texture_item.height = n.image.size[1]
-                    texture_item.miplevels = 8 #?????????????????????????????????????????????????????????????????????????????????????????????
+                    # ?????????????????????????????????????????????????????????????????????????????????????????????
+                    texture_item.miplevels = 8
                     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
                     texture_item.filename = n.image.name
                     texture_dictionary.append(texture_item)
 
-                    #if(n.image != None):
+                    # if(n.image != None):
                     foldername = obj.name
                     folderpath = exportpath + foldername
 
                     if(os.path.isdir(folderpath) == False):
                         os.mkdir(folderpath)
-                    
+
                     txtpath = n.image.filepath
-                    dstpath = folderpath +  "\\" + os.path.basename(n.image.filepath)
+                    dstpath = folderpath + "\\" + \
+                        os.path.basename(n.image.filepath)
 
                     # check if paths are the same because if they are no need to copy
                     if txtpath != dstpath:
                         shutil.copyfile(txtpath, dstpath)
-                    #else:
+                    # else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
-    
+
     if(has_td):
         return texture_dictionary
     else:
         return None
+
 
 def process_uv(uv):
     u = uv[0]
     v = (uv[1] - 1.0) * -1
 
     return [u, v]
+
 
 def vector_tostring(vector):
     try:
@@ -143,6 +157,7 @@ def vector_tostring(vector):
     except:
         return None
 
+
 def meshloopcolor_tostring(color):
     try:
         string = ""
@@ -150,9 +165,10 @@ def meshloopcolor_tostring(color):
         string += str(round(color[1] * 255)) + " "
         string += str(round(color[2] * 255)) + " "
         string += str(round(color[3] * 255))
-        return string 
+        return string
     except:
         return None
+
 
 def order_vertex_list(list, vlayout):
 
@@ -189,16 +205,17 @@ def order_vertex_list(list, vlayout):
 
     return newlist
 
+
 def mesh_to_faces(obj, mesh, layout, bones=None):
-    
+
     vertamount = len(mesh.vertices)
     texcoords = {}
 
     faces = []
 
     for i in range(6):
-        texcoords[i] = [None] * vertamount       
-    
+        texcoords[i] = [None] * vertamount
+
     if mesh.has_custom_normals:
         mesh.calc_normals_split()
     else:
@@ -206,7 +223,7 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
 
     mesh.calc_tangents()
     mesh.calc_loop_triangles()
-    
+
     vertex_groups = obj.vertex_groups
 
     bones_index_dict = {}
@@ -214,7 +231,7 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
         for i in range(len(bones)):
             bones_index_dict[bones[i].name] = i
 
-    clr0_layer = None 
+    clr0_layer = None
     clr1_layer = None
     if(len(mesh.vertex_colors) > 0):
         clr0_layer = mesh.vertex_colors[0]
@@ -256,7 +273,7 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
             vertex.tangent = mesh.loops[loop_index].tangent.to_4d()
             # bitangent = bitangent_sign * cross(normal, tangent)
             vertex.tangent.w = mesh.loops[loop_index].bitangent_sign
-            #FIXME: one vert can only be influenced by 4 weights at most
+            # FIXME: one vert can only be influenced by 4 weights at most
             vertex_group_elements = mesh.vertices[vi].groups
 
             if len(vertex_group_elements) > 0:
@@ -289,23 +306,24 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
                 # wtf rockstar
                 # why do you even use int for weights
                 if valid_weights > 0 and max_weights_index != -1:
-                    vertex.blendweights[max_weights_index] = vertex.blendweights[max_weights_index] + (255 - total_weights)
+                    vertex.blendweights[max_weights_index] = vertex.blendweights[max_weights_index] + (
+                        255 - total_weights)
             else:
                 vertex.blendweights = [0, 0, 255, 0]
                 vertex.blendindices = [0] * 4
-            
+
             vi_vert_map[vi] = vertex
             face.append(vertex)
             vertex_index += 1
 
         faces.append(face)
-    #return faces 
+    # return faces
 
     # takes only the first uv layer into account for now
     uv_layer = mesh.uv_layers[0].data
     vert_loop_map = {}
     threshold = 0.0001
-    increments = 0 # indicates how many split operations will be and, therefore, how many vertices will be added
+    increments = 0  # indicates how many split operations will be and, therefore, how many vertices will be added
     for face_index, poly in enumerate(mesh.polygons):
         for vertex_index, loop_index in enumerate(range(poly.loop_start, poly.loop_start + poly.loop_total)):
             vi = mesh.loops[loop_index].vertex_index
@@ -339,7 +357,8 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
                         layer = "texcoord" + str(uv_layer_id)
                         setattr(desired_vertex, layer, fixed_uv)
 
-                    desired_vertex.tangent = mesh.loops[loop_index].tangent.to_4d()
+                    desired_vertex.tangent = mesh.loops[loop_index].tangent.to_4d(
+                    )
                     desired_vertex.tangent.w = mesh.loops[loop_index].bitangent_sign
 
                     increments += 1
@@ -348,34 +367,39 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
 
     return faces
 
+
 def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
-    mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
+    mesh = bpy.data.meshes.new_from_object(
+        obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
 
     bbmin, bbmax = get_bb_extents(obj_eval)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
-    
+
     materials = get_used_materials(obj.parent.parent)
     for i in range(len(materials)):
         if(materials[i] == obj_eval.active_material):
             geometry.shader_index = i
 
     sm = ShaderManager()
-    layout = sm.shaders[FixShaderName(obj_eval.active_material.name)].layouts["0x0"]
+    layout = sm.shaders[FixShaderName(
+        obj_eval.active_material.name)].layouts["0x0"]
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
 
     faces = mesh_to_faces(obj_eval, mesh, layout, bones)
-    geometry.vertex_buffer.data = geometry.vertex_buffer.faces_to_data(faces, layout)
+    geometry.vertex_buffer.data = geometry.vertex_buffer.faces_to_data(
+        faces, layout)
     geometry.index_buffer.data = geometry.index_buffer.faces_to_data(faces)
 
     return geometry
+
 
 def drawable_model_from_object(obj, bones=None):
     drawable_model = DrawableModelItem()
@@ -392,14 +416,16 @@ def drawable_model_from_object(obj, bones=None):
             if(len(child.data.materials) > 1):
                 objs = split_object(child, obj)
                 for obj in objs:
-                    geometry = geometry_from_object(obj, bones) #MAYBE WRONG ASK LOYALIST
+                    geometry = geometry_from_object(
+                        obj, bones)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 join_objects(objs)
             else:
-                geometry = geometry_from_object(child, bones) 
+                geometry = geometry_from_object(child, bones)
                 drawable_model.geometries.append(geometry)
 
     return drawable_model
+
 
 def bone_from_object(obj):
 
@@ -441,6 +467,7 @@ def bone_from_object(obj):
 
     return bone
 
+
 def skeleton_from_object(obj):
 
     skeleton = SkeletonProperty()
@@ -461,26 +488,28 @@ def skeleton_from_object(obj):
 
     return skeleton
 
-def drawable_from_object(obj, bones=None, exportpath = ""):
+
+def drawable_from_object(obj, bones=None, exportpath=""):
     drawable = Drawable()
 
     drawable.name = obj.name
     drawable.bounding_sphere_center = get_bound_center(obj)
-    drawable.bounding_sphere_radius  = get_obj_radius(obj)
+    drawable.bounding_sphere_radius = get_obj_radius(obj)
     bbmin, bbmax = get_bb_extents(obj)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
-    
+
     drawable.lod_dist_high = obj.drawable_properties.lod_dist_high
     drawable.lod_dist_med = obj.drawable_properties.lod_dist_high
     drawable.lod_dist_low = obj.drawable_properties.lod_dist_high
     drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_high
-    
+
     shaders = get_shaders_from_blender(obj)
     for shader in shaders:
         drawable.shader_group.shaders.append(shader)
 
-    drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(obj, get_used_materials(obj), exportpath)
+    drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(
+        obj, get_used_materials(obj), exportpath)
 
     if bones is None:
         if(obj.pose != None):
@@ -513,14 +542,13 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
         elif(child.sollum_type == BoundType.COMPOSITE):
             embedded_bound = composite_from_object(child)
 
-    drawable.bound = embedded_bound        
+    drawable.bound = embedded_bound
 
-    #flags = model count for each lod 
+    # flags = model count for each lod
     drawable.flags_high = highmodel_count
     drawable.flags_med = medmodel_count
     drawable.flags_low = lowhmodel_count
     drawable.flags_vlow = vlowmodel_count
-    #drawable.unknown_9A = ?
+    # drawable.unknown_9A = ?
 
     return drawable
-    
