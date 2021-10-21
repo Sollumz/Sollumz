@@ -120,6 +120,7 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 2
 
 
     def draw(self, context):

@@ -28,7 +28,7 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = -1
+    bl_order = 0
 
     def draw(self, context):
         layout = self.layout
