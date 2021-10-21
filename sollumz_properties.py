@@ -82,6 +82,21 @@ class LodType(str, Enum):
     LOW = 'sollumz_low'
     VERYLOW = 'sollumz_verylow'
 
+class EntityLodLevel(str, Enum):
+    LODTYPES_DEPTH_HD = "sollumz_lodtypes_depth_hd"
+    LODTYPES_DEPTH_LOD = "sollumz_lodtypes_depth_lod"
+    LODTYPES_DEPTH_SLOD1 = "sollumz_lodtypes_depth_slod1"
+    LODTYPES_DEPTH_SLOD2 = "sollumz_lodtypes_depth_slod2"
+    LODTYPES_DEPTH_SLOD3 = "sollumz_lodtypes_depth_slod3"
+    LODTYPES_DEPTH_SLOD4 = "sollumz_lodtypes_depth_slod4"
+    LODTYPES_DEPTH_ORPHANHD = "sollumz_lodtypes_depth_orphanhd"
+
+class EntityPriorityLevel(str, Enum):
+    PRI_REQUIRED = "sollumz_pri_required"
+    PRI_OPTIONAL_HIGH = "sollumz_pri_optional_high"
+    PRI_OPTIONAL_MEDIUM = "sollumz_pri_optional_medium"
+    PRI_OPTIONAL_LOW = "sollumz_pri_optional_low"
+
 SOLLUMZ_UI_NAMES = {
     BoundType.BOX: 'Bound Box',
     BoundType.SPHERE: 'Bound Sphere',
@@ -156,12 +171,40 @@ SOLLUMZ_UI_NAMES = {
     DrawableType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
     DrawableType.GEOMETRY: 'Sollumz Geometry',
     DrawableType.SKELETON: 'Sollumz Skeleton',
+
+    EntityLodLevel.LODTYPES_DEPTH_HD: "DEPTH HD",
+    EntityLodLevel.LODTYPES_DEPTH_LOD: "DEPTH LOD",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD1: "DEPTH SLOD1",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD2: "DEPTH SLOD2",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD3: "DEPTH SLOD3",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD4: "DEPTH SLOD4",
+    EntityLodLevel.LODTYPES_DEPTH_ORPHANHD: "DEPTH ORPHAN HD",
+
+    EntityPriorityLevel.PRI_REQUIRED: "REQUIRED",
+    EntityPriorityLevel.PRI_OPTIONAL_HIGH: "OPTIONAL HIGH",
+    EntityPriorityLevel.PRI_OPTIONAL_MEDIUM: "OPTIONAL MEDIUM",
+    EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
 }
+
+def is_sollum_type(obj, type):
+    return obj.sollum_type in type._value2member_map_
+
+# Generate items from provided enums
+def items_from_enums(*enums):
+    items = []
+    for enum in enums:
+        for item in enum:
+            if item not in SOLLUMZ_UI_NAMES:
+                raise KeyError(f"UI name mapping not found for key {item} of {enum}.")
+            items.append((item.value, SOLLUMZ_UI_NAMES[item], ''))
+    return items
+
+
 
 class EntityProperties(bpy.types.PropertyGroup):
     archetype_name : bpy.props.StringProperty(name = "ArchetypeName")
     flags : bpy.props.IntProperty(name = "Flags")
-    guid : bpy.props.IntProperty(name = "Guid")
+    guid : bpy.props.FloatProperty(name = "Guid")
     position : bpy.props.FloatVectorProperty(name = "Position")
     rotation : bpy.props.FloatVectorProperty(name = "Rotation", size = 4)
     scale_xy : bpy.props.FloatProperty(name = "ScaleXY")
@@ -169,9 +212,19 @@ class EntityProperties(bpy.types.PropertyGroup):
     parent_index : bpy.props.IntProperty(name = "ParentIndex")
     lod_dist : bpy.props.FloatProperty(name = "Lod Distance")
     child_lod_dist : bpy.props.FloatProperty(name = "Child Lod Distance")
-    lod_level : bpy.props.EnumProperty(items = [("","", "")], name = "LOD Level")
+    lod_level : bpy.props.EnumProperty(
+            items = items_from_enums(EntityLodLevel),
+            name = "LOD Level",
+            default = EntityLodLevel.LODTYPES_DEPTH_HD,
+            options={'HIDDEN'}
+    )
     num_children : bpy.props.IntProperty(name = "Number of Children")
-    priority_level : bpy.props.EnumProperty(items = [("","", "")], name = "Priority Level")
+    priority_level : bpy.props.EnumProperty(
+            items = items_from_enums(EntityPriorityLevel),
+            name = "Priority Level",
+            default = EntityPriorityLevel.PRI_REQUIRED,
+            options={'HIDDEN'}
+    )
     #extensions?
     ambient_occlusion_multiplier : bpy.props.FloatProperty(name =  "Ambient Occlusion Multiplier")
     artificial_ambient_occlusion : bpy.props.FloatProperty(name =  "Artificial Ambient Occlusion")
@@ -236,19 +289,6 @@ def set_hide_very_low_lods(self, value):
             if(obj.drawable_model_properties.sollum_lod == LodType.VERYLOW):
                 hide_obj_and_children(obj, value)
 
-def is_sollum_type(obj, type):
-    return obj.sollum_type in type._value2member_map_
-
-# Generate items from provided enums
-def items_from_enums(*enums):
-    items = []
-    for enum in enums:
-        for item in enum:
-            if item not in SOLLUMZ_UI_NAMES:
-                raise KeyError(f"UI name mapping not found for key {item} of {enum}.")
-            items.append((item.value, SOLLUMZ_UI_NAMES[item], ''))
-    return items
-
 def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items = items_from_enums(BoundType, PolygonType, DrawableType),
@@ -264,7 +304,7 @@ def register():
             options={'HIDDEN'}
     )
 
-    bpy.types.Object.ymap_properties = bpy.props.PointerProperty(type = EntityProperties)
+    bpy.types.Object.entity_properties = bpy.props.PointerProperty(type = EntityProperties)
 
     bpy.types.Scene.hide_collision = bpy.props.BoolProperty(name = "Hide Collision", get=get_hide_collisions, set=set_hide_collisions)
     bpy.types.Scene.hide_high_lods = bpy.props.BoolProperty(name = "Hide High LODS", get=get_hide_high_lods, set=set_hide_high_lods)

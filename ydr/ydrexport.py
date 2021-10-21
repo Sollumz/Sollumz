@@ -205,7 +205,8 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
         mesh.calc_normals()
 
     mesh.calc_tangents()
-
+    mesh.calc_loop_triangles()
+    
     vertex_groups = obj.vertex_groups
 
     bones_index_dict = {}
@@ -298,7 +299,8 @@ def mesh_to_faces(obj, mesh, layout, bones=None):
             vertex_index += 1
 
         faces.append(face)
-    
+    #return faces 
+
     # takes only the first uv layer into account for now
     uv_layer = mesh.uv_layers[0].data
     vert_loop_map = {}
@@ -352,7 +354,6 @@ def geometry_from_object(obj, bones=None):
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
-    triangulate_object(mesh) #make sure object is triangulated
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
 
