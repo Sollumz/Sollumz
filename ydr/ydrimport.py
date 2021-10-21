@@ -23,9 +23,9 @@ def shadergroup_to_materials(shadergroup, filepath):
         ##########################################################################
         material.shader_properties.filename = shader.filename
 
-        embedded_texture_names = []
 
         for param in shader.parameters:
+            print(param.name)
             for n in material.node_tree.nodes:
                 if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                     if(param.name == n.name):
