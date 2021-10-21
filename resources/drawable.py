@@ -4,6 +4,7 @@ from enum import Enum
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
 from .bound import Bounds, BoundsComposite
+from collections import deque
 
 class YDD:
     
@@ -157,6 +158,7 @@ class IndexBufferProperty(ElementTree):
 class Vertex:
 
     def __init__(self):
+        self.index = None
         self.position = None
         self.blendweights = None
         self.blendindices = None
@@ -188,9 +190,9 @@ class Vertex:
             elif(current_layout_key == "BlendIndices"):
                 result.blendindices = StringListToIntList(current_data)
             elif(current_layout_key == "Colour0"):
-                result.colors0 = StringListToFloatList(current_data)
+                result.colors0 = StringListToFloatList(current_data, True)
             elif(current_layout_key == "Colour1"):
-                result.colors1 = StringListToFloatList(current_data)
+                result.colors1 = StringListToFloatList(current_data, True)
             elif(current_layout_key == "TexCoord0"):
                 result.texcoord0 = StringListToFloatList(current_data)
             elif(current_layout_key == "TexCoord1"):
@@ -213,6 +215,89 @@ class Vertex:
                 result.normal = StringListToFloatList(current_data)
 
         return result
+
+    def to_string(self, vlayout):
+        layout_map = {
+            "Position": 0,
+            "Normal": 1,
+            "Colour0": 2,
+            "Colour1": 3,
+            "TexCoord0": 4,
+            "TexCoord1": 5,
+            "TexCoord2": 6,
+            "TexCoord3": 7,
+            "TexCoord4": 8,
+            "TexCoord5": 9,
+            "TexCoord6": 10,
+            "TexCoord7": 11,
+            "Tangent": 12,
+            "BlendWeights": 13,
+            "BlendIndices": 14,
+        }
+
+        vertex_str = [None] * 15
+
+        if self.position is not None:
+            vertex_str[0] = vector_tostring(self.position)
+
+        if self.normal is not None:
+            vertex_str[1] = vector_tostring(self.normal)
+
+        if self.colors0 is not None:
+            vertex_str[2] = meshloopcolor_tostring(self.colors0)
+
+        if self.colors1 is not None:
+            vertex_str[3] = meshloopcolor_tostring(self.colors1)
+
+        if self.texcoord0 is not None:
+            vertex_str[4] = vector_tostring(self.texcoord0)
+
+        if self.texcoord1 is not None:
+            vertex_str[5] = vector_tostring(self.texcoord1)
+
+        if self.texcoord2 is not None:
+            vertex_str[6] = vector_tostring(self.texcoord2)
+
+        if self.texcoord3 is not None:
+            vertex_str[7] = vector_tostring(self.texcoord3)
+
+        if self.texcoord4 is not None:
+            vertex_str[8] = vector_tostring(self.texcoord4)
+
+        if self.texcoord5 is not None:
+            vertex_str[9] = vector_tostring(self.texcoord5)
+
+        if self.texcoord6 is not None:
+            vertex_str[10] = vector_tostring(self.texcoord6)
+
+        if self.texcoord7 is not None:
+            vertex_str[11] = vector_tostring(self.texcoord7)
+
+        if self.tangent is not None:
+            vertex_str[12] = vector_tostring(self.tangent)
+
+        if self.blendweights is not None:
+            vertex_str[13] = ' '.join(str(i) for i in self.blendweights)
+
+        if self.blendindices is not None:
+            vertex_str[14] = ' '.join(str(i) for i in self.blendindices)
+
+        newlist = deque()
+
+        for i in range(len(vlayout)):
+            layout_key = layout_map[vlayout[i]]
+            if layout_key != None:
+                if vertex_str[layout_key] is None:
+                    raise TypeError("Missing layout item " + vlayout[i])
+
+                newlist.append(vertex_str[layout_key])
+            else:
+                print('Incorrect layout element', vlayout[i])
+
+        if (len(newlist) != len(vlayout)):
+            print('Incorrect layout parse')
+
+        return (" " * 3).join(newlist)
 
 class VertexLayoutItem(ElementTree):
     tag_name = ""
@@ -275,6 +360,47 @@ class VertexBufferProperty(ElementTree):
 
         return vertices
 
+    @staticmethod
+    def vertices_to_data(vertices, layout):
+        allstrings = deque()
+        allstrings.append("\n") #makes xml a little prettier
+
+        for vertex in vertices:
+            vstring = (" " * 5, vertex.to_string(layout))
+            allstrings.append("".join(vstring))
+            allstrings.append('\n')
+        
+        data = "".join(allstrings)
+
+        return data
+
+    @staticmethod
+    def faces_to_data(faces, layout):
+        def get_index(vertex):
+            return vertex.index
+
+        allstrings = deque()
+        allstrings.append("\n") #makes xml a little prettier
+
+        unique_verts = set()
+        for face in faces:
+            for vertex in face:
+                if vertex in unique_verts:
+                    continue
+
+                unique_verts.add(vertex)
+
+        vertices = list(unique_verts)
+        vertices.sort(key=get_index)
+        for vertex in vertices:
+            vstring = (" " * 3, vertex.to_string(layout))
+            allstrings.append("".join(vstring))
+            allstrings.append('\n')
+
+        data = "".join(allstrings)
+
+        return data
+
 class IndexBufferProperty(ElementTree):
     tag_name = "IndexBuffer"
 
@@ -293,6 +419,22 @@ class IndexBufferProperty(ElementTree):
             indices = [i_buf[i * 3:(i + 1) * 3] for i in range((len(i_buf) + 3 - 1) // 3 )] #split index buffer into 3s for each triangle
 
         return indices
+
+    @staticmethod
+    def faces_to_data(faces):
+        
+        index_string = ""
+        
+        i = 0
+        for face in faces:
+            for vertex in face:
+                index_string += str(vertex.index) + " "
+                i += 1
+                if(i == 24): # MATCHES CW's FORMAT
+                    index_string += "\n"
+                    i = 0
+
+        return index_string
 
 class GeometryItem(ElementTree):
     tag_name = "Item"

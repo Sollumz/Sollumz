@@ -32,12 +32,23 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.label(text = "View")
+        layout.prop(context.scene, "hide_collision")
+        layout.prop(context.scene, "hide_high_lods")
+        layout.prop(context.scene, "hide_medium_lods")
+        layout.prop(context.scene, "hide_low_lods")
+        layout.prop(context.scene, "hide_very_low_lods")
 
-        row = layout.row()
-        row.prop(context.scene, "lod_level")
-        row.operator("sollumz.showlodlevel")
+class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Ymap Tools"
+    bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
-        layout.label(text="Ymap Tools")
+    def draw(self, context):
+        layout = self.layout
         row = layout.row()
         row.operator("sollumz.importymap")
         row.operator("sollumz.exportymap")
@@ -48,7 +59,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_parent_id = SOLLUMZ_PT_YMAP_TOOL_PANEL.bl_idname
 
     def draw(self, context):
         layout = self.layout
@@ -67,23 +78,23 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
         #box.prop(aobj.ymap_properties, "scale_xy")
         #box.prop(aobj.ymap_properties, "scale_z")
         row = layout.row()
-        row.prop(aobj, "scale", text = "ScaleXYZ")
+        row.prop(aobj, "scale", text = "ScaleXYZ")  
         row = layout.row()
-        row.prop(aobj.ymap_properties, "flags")
-        row.prop(aobj.ymap_properties, "guid")
+        row.prop(aobj.entity_properties, "flags")
+        row.prop(aobj.entity_properties, "guid")
         row = layout.row()
-        row.prop(aobj.ymap_properties, "parent_index")
+        row.prop(aobj.entity_properties, "parent_index")
         row = layout.row()
-        row.prop(aobj.ymap_properties, "lod_dist")
-        row.prop(aobj.ymap_properties, "child_lod_dist")
-        row.prop(aobj.ymap_properties, "num_children")
+        row.prop(aobj.entity_properties, "lod_dist")
+        row.prop(aobj.entity_properties, "child_lod_dist")
+        row.prop(aobj.entity_properties, "num_children")
         row = layout.row()
-        row.prop(aobj.ymap_properties, "ambient_occlusion_multiplier")
-        row.prop(aobj.ymap_properties, "artificial_ambient_occlusion")
-        row.prop(aobj.ymap_properties, "tint_value")
+        row.prop(aobj.entity_properties, "ambient_occlusion_multiplier")
+        row.prop(aobj.entity_properties, "artificial_ambient_occlusion")
+        row.prop(aobj.entity_properties, "tint_value")
         row = layout.row()
-        row.prop(aobj.ymap_properties, "lod_level")
-        row.prop(aobj.ymap_properties, "priority_level")
+        row.prop(aobj.entity_properties, "lod_level")
+        row.prop(aobj.entity_properties, "priority_level")
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"

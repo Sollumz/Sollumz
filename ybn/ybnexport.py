@@ -233,15 +233,20 @@ def bound_from_object(obj):
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
         return geometry_from_object(obj)
 
-def ybn_from_object(obj):
-    ybn = YBN()
-    init_bound(ybn.bounds, obj)
-    
+def composite_from_object(obj):
+    composite = init_bound(BoundsComposite(), obj)
 
     for child in get_children_recursive(obj):
         bound = bound_from_object(child)
         if bound:
-            ybn.bounds.children.append(bound)
-    
-    return ybn
+            composite.children.append(bound)
 
+    return composite
+
+def bounds_from_object(obj):
+    bounds = BoundFile()
+    
+    composite = composite_from_object(obj)
+    bounds.composite = composite
+    
+    return bounds

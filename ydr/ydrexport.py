@@ -2,11 +2,13 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 from Sollumz.resources.drawable import *
 from Sollumz.resources.shader import ShaderManager
-import os, sys, traceback, shutil
+import os, sys, traceback, shutil, copy
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
 from Sollumz.tools.blender_helper import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType
+from Sollumz.ybn.ybnexport import composite_from_object
+from mathutils import Vector, Matrix
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -121,21 +123,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
         return texture_dictionary
     else:
         return None
-        
-def get_index_string(mesh):
-    
-    index_string = ""
-    
-    i = 0
-    for poly in mesh.polygons:
-        for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-            index_string += str(mesh.loops[loop_index].vertex_index) + " "
-            i += 1
-            if(i == 24): # MATCHES CW's FORMAT
-                index_string += "\n"
-                i = 0
-
-    return index_string
 
 def process_uv(uv):
     u = uv[0]
@@ -202,22 +189,12 @@ def order_vertex_list(list, vlayout):
 
     return newlist
 
-def get_vertex_string(obj, mesh, layout, bones=None):
-
-    mesh = obj.data
-
-    allstrings = []
-    allstrings.append("\n") #makes xml a little prettier
+def mesh_to_faces(obj, mesh, layout, bones=None):
     
     vertamount = len(mesh.vertices)
-    vertices = [None] * vertamount
-    normals = [None] * vertamount
-    clr = [None] * vertamount
-    clr1 = [None] * vertamount
     texcoords = {}
-    tangents = [None] * vertamount
-    blendw = [[]] * vertamount
-    blendi = [[]] * vertamount
+
+    faces = []
 
     for i in range(6):
         texcoords[i] = [None] * vertamount       
@@ -228,7 +205,8 @@ def get_vertex_string(obj, mesh, layout, bones=None):
         mesh.calc_normals()
 
     mesh.calc_tangents()
-
+    mesh.calc_loop_triangles()
+    
     vertex_groups = obj.vertex_groups
 
     bones_index_dict = {}
@@ -248,41 +226,42 @@ def get_vertex_string(obj, mesh, layout, bones=None):
         clr0_layer = mesh.vertex_colors.new()
         clr1_layer = mesh.vertex_colors.new()
 
-    vis = []
-    for uv_layer_id in range(len(mesh.uv_layers)):
-        uv_layer = mesh.uv_layers[uv_layer_id].data
-        for poly in mesh.polygons:
-            for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-                vi = mesh.loops[loop_index].vertex_index
+    vi_vert_map = {}
+    vertex_index = 0
+    for poly in mesh.polygons:
+        face = []
+        for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+            vi = mesh.loops[loop_index].vertex_index
+            vertex = vi_vert_map.get(vi)
+            if vertex != None:
+                face.append(vertex)
+                continue
+
+            vertex = Vertex()
+            vertex.index = vertex_index
+            vertex.position = (obj.matrix_world @ mesh.vertices[vi].co)
+            vertex.normal = mesh.loops[loop_index].normal
+            vertex.colors0 = clr0_layer.data[loop_index].color
+            vertex.colors1 = clr1_layer.data[loop_index].color
+            for uv_layer_id in range(len(mesh.uv_layers)):
+                uv_layer = mesh.uv_layers[uv_layer_id].data
                 uv = process_uv(uv_layer[loop_index].uv)
                 u = uv[0]
                 v = uv[1]
                 fixed_uv = Vector((u, v))
-                if(vi not in vis):
-                    vis.append(vi)
-                    texcoords[uv_layer_id][vi] = fixed_uv
-                else:       
-                    continue
-                    #print("duplicate")
+                # texcoords[uv_layer_id][vi] = fixed_uv
+                layer = "texcoord" + str(uv_layer_id)
+                setattr(vertex, layer, fixed_uv)
 
-    for poly in mesh.polygons:
-        for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-            vi = mesh.loops[loop_index].vertex_index
-            vertices[vi] = (obj.matrix_world @ mesh.vertices[vi].co)
-            # normals[vi] = mesh.vertices[vi].normal
-            normals[vi] = mesh.loops[loop_index].normal
-            clr[vi] = clr0_layer.data[loop_index].color
-            clr1[vi] = clr1_layer.data[loop_index].color
-            tangents[vi] = mesh.loops[loop_index].tangent.to_4d()
-            # https://github.com/labnation/MonoGame/blob/master/MonoGame.Framework.Content.Pipeline/Graphics/MeshHelper.cs#L298
+            vertex.tangent = mesh.loops[loop_index].tangent.to_4d()
             # bitangent = bitangent_sign * cross(normal, tangent)
-            tangents[vi].w = mesh.loops[loop_index].bitangent_sign
+            vertex.tangent.w = mesh.loops[loop_index].bitangent_sign
             #FIXME: one vert can only be influenced by 4 weights at most
             vertex_group_elements = mesh.vertices[vi].groups
 
             if len(vertex_group_elements) > 0:
-                blendw[vi] = [0] * 4
-                blendi[vi] = [0] * 4
+                vertex.blendweights = [0] * 4
+                vertex.blendindices = [0] * 4
                 valid_weights = 0
                 total_weights = 0
                 max_weights = 0
@@ -297,8 +276,8 @@ def get_vertex_string(obj, mesh, layout, bones=None):
                     # 1/255 = 0.0039 the minimal weight for one vertex group
                     weight = round(element.weight * 255)
                     if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
-                        blendw[vi][valid_weights] = weight
-                        blendi[vi][valid_weights] = bone_index
+                        vertex.blendweights[valid_weights] = weight
+                        vertex.blendindices[valid_weights] = bone_index
                         if (max_weights < weight):
                             max_weights_index = valid_weights
                             max_weights = weight
@@ -310,49 +289,70 @@ def get_vertex_string(obj, mesh, layout, bones=None):
                 # wtf rockstar
                 # why do you even use int for weights
                 if valid_weights > 0 and max_weights_index != -1:
-                    blendw[vi][max_weights_index] = blendw[vi][max_weights_index] + (255 - total_weights)
+                    vertex.blendweights[max_weights_index] = vertex.blendweights[max_weights_index] + (255 - total_weights)
             else:
-                blendw[vi] = [0, 0, 255, 0]
-                blendi[vi] = [0] * 4
-    
-    for i in range(len(vertices)):
-        vstring = ""
-        tlist = []
-        tlist.append(vector_tostring(vertices[i])) 
-        tlist.append(vector_tostring(normals[i])) 
-        tlist.append(meshloopcolor_tostring(clr[i])) 
-        tlist.append(meshloopcolor_tostring(clr1[i]))
-        tlist.append(vector_tostring(texcoords[0][i])) 
-        tlist.append(vector_tostring(texcoords[1][i]))
-        tlist.append(vector_tostring(texcoords[2][i]))
-        tlist.append(vector_tostring(texcoords[3][i]))
-        tlist.append(vector_tostring(texcoords[4][i]))
-        tlist.append(vector_tostring(texcoords[5][i]))
-        tlist.append(vector_tostring(tangents[i]))
-        tlist.append(' '.join(str(j) for j in blendw[i]))
-        tlist.append(' '.join(str(j) for j in blendi[i]))
-        
-        layoutlist = order_vertex_list(tlist, layout)
-        
-        for l in layoutlist:
-            vstring += l 
-            vstring += " " * 3
-        vstring += "\n" 
-        allstrings.append(vstring) 
+                vertex.blendweights = [0, 0, 255, 0]
+                vertex.blendindices = [0] * 4
             
-    vertex_string = ""
-    for s in allstrings:       
-        vertex_string += s
-    
-    return vertex_string
+            vi_vert_map[vi] = vertex
+            face.append(vertex)
+            vertex_index += 1
+
+        faces.append(face)
+    #return faces 
+
+    # takes only the first uv layer into account for now
+    uv_layer = mesh.uv_layers[0].data
+    vert_loop_map = {}
+    threshold = 0.0001
+    increments = 0 # indicates how many split operations will be and, therefore, how many vertices will be added
+    for face_index, poly in enumerate(mesh.polygons):
+        for vertex_index, loop_index in enumerate(range(poly.loop_start, poly.loop_start + poly.loop_total)):
+            vi = mesh.loops[loop_index].vertex_index
+            vertex = vi_vert_map[vi]
+            loop = vert_loop_map.get(vertex)
+            if loop is None:
+                vert_loop_map[vertex] = loop_index
+            else:
+                # we might be going to consider vertex colors etc for this
+                uv = uv_layer[loop_index].uv
+                uv_value = uv_layer[loop].uv
+                indicator_uv = (uv - uv_value).length
+
+                normal = mesh.loops[loop_index].normal
+                normal_value = mesh.loops[loop].normal
+                indicator_normal = (normal - normal_value).length
+
+                if not (indicator_uv < threshold and indicator_normal < threshold):
+                    desired_vertex = copy.copy(vertex)
+                    desired_vertex.index = vertamount + increments
+                    desired_vertex.normal = mesh.loops[loop_index].normal
+                    desired_vertex.colors0 = clr0_layer.data[loop_index].color
+                    desired_vertex.colors1 = clr1_layer.data[loop_index].color
+                    for uv_layer_id in range(len(mesh.uv_layers)):
+                        uv_layer = mesh.uv_layers[uv_layer_id].data
+                        uv = process_uv(uv_layer[loop_index].uv)
+                        u = uv[0]
+                        v = uv[1]
+                        fixed_uv = Vector((u, v))
+                        # texcoords[uv_layer_id][vi] = fixed_uv
+                        layer = "texcoord" + str(uv_layer_id)
+                        setattr(desired_vertex, layer, fixed_uv)
+
+                    desired_vertex.tangent = mesh.loops[loop_index].tangent.to_4d()
+                    desired_vertex.tangent.w = mesh.loops[loop_index].bitangent_sign
+
+                    increments += 1
+                    # split 'em!
+                    faces[face_index][vertex_index] = desired_vertex
+
+    return faces
 
 def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
-    
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
-    triangulate_object(obj) #make sure object is triangulated
     mesh = bpy.data.meshes.new_from_object(obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
@@ -370,9 +370,11 @@ def geometry_from_object(obj, bones=None):
     layout = sm.shaders[FixShaderName(obj_eval.active_material.name)].layouts["0x0"]
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
-    geometry.vertex_buffer.data = get_vertex_string(obj_eval, mesh, layout, bones)
-    geometry.index_buffer.data = get_index_string(mesh)
-    
+
+    faces = mesh_to_faces(obj_eval, mesh, layout, bones)
+    geometry.vertex_buffer.data = geometry.vertex_buffer.faces_to_data(faces, layout)
+    geometry.index_buffer.data = geometry.index_buffer.faces_to_data(faces)
+
     return geometry
 
 def drawable_model_from_object(obj, bones=None):
@@ -480,8 +482,6 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
 
     drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(obj, get_used_materials(obj), exportpath)
 
-    drawable.bound = None
-
     if bones is None:
         if(obj.pose != None):
             bones = obj.pose.bones
@@ -494,7 +494,7 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
     vlowmodel_count = 0
 
     for child in obj.children:
-        if(child.sollum_type == "sollumz_drawable_model"):
+        if(child.sollum_type == DrawableType.DRAWABLE_MODEL):
             drawable_model = drawable_model_from_object(child, bones)
             if("high" in child.drawable_model_properties.sollum_lod):
                 highmodel_count += 1
@@ -508,6 +508,8 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
             elif("vlow" in child.drawable_model_properties.sollum_lod):
                 vlowmodel_count += 1
                 drawable.drawable_models_vlow.append(drawable_model)
+        elif(child.sollum_type == BoundType.COMPOSITE):
+            drawable.bound = composite_from_object(child)        
 
     #flags = model count for each lod 
     drawable.flags_high = highmodel_count

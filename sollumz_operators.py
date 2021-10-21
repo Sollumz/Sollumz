@@ -4,40 +4,15 @@ from Sollumz.sollumz_properties import DrawableType, BoundType, LodType, SOLLUMZ
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN
-from Sollumz.resources.ymap import YMAP, EntityItem
+from Sollumz.resources.ymap import YMAP, EntityItem, CMapData
 from Sollumz.ybn.ybnimport import composite_to_obj
-from Sollumz.ybn.ybnexport import ybn_from_object, NoGeometryError
+from Sollumz.ybn.ybnexport import bounds_from_object, NoGeometryError
 from Sollumz.ydr.ydrexport import drawable_from_object
 from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.yft.yftimport import fragment_to_obj
 from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper, ExportHelper
-
-class ShowLODLevel(bpy.types.Operator):
-    """Displays the selected lod level"""
-    bl_idname = "sollumz.showlodlevel" 
-    bl_label = "Show"
-
-    def unhide_all(self, context):
-        for obj in context.collection.objects:
-            obj.hide_set(False)
-
-    def execute(self, context):
-        level = context.scene.lod_level
-        self.unhide_all(context)
-
-        if(level == LodType.ALL):
-            return {"FINISHED"}
-        else:
-            for obj in context.collection.objects:
-                if(obj.sollum_type == DrawableType.DRAWABLE):
-                    for child in obj.children:
-                        if(child.sollum_type == DrawableType.DRAWABLE_MODEL and child.drawable_model_properties.sollum_lod != level):
-                            for obj in child.children:
-                                obj.hide_set(True)
-
-        return {'FINISHED'}
 
 class SollumzImportHelper(ImportHelper):
     bl_options = {'REGISTER'}
@@ -73,17 +48,32 @@ class ImportYmapXml(bpy.types.Operator, SollumzImportHelper):
         maxlen=255,  
     )
 
+    def apply_entity_properties(self, obj, entity):
+        obj.entity_properties.archetype_name = entity.archetype_name
+        obj.entity_properties.flags = entity.flags
+        obj.entity_properties.guid = entity.guid
+        obj.entity_properties.position = entity.position
+        obj.entity_properties.rotation = entity.rotation
+        obj.entity_properties.scale_xy = entity.scale_xy
+        obj.entity_properties.scale_z = entity.scale_z
+        obj.entity_properties.parent_index = entity.parent_index
+        obj.entity_properties.lod_dist = entity.lod_dist
+        obj.entity_properties.child_lod_dist = entity.child_lod_dist
+        obj.entity_properties.lod_level = "sollumz_" + entity.lod_level.lower()
+        obj.entity_properties.num_children = entity.num_children
+        obj.entity_properties.priority_level = "sollumz_" + entity.priority_level.lower()
+        obj.entity_properties.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
+        obj.entity_properties.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
+        obj.entity_properties.tint_value = entity.tint_value
+
     def importfile(self, filepath):
         ymap = YMAP.from_xml_file(filepath)
 
-        names = []
-
         for obj in bpy.context.collection.objects:
             for entity in ymap.entities:
-                if entity.archetype_name not in names:
-                    names.append(entity.archetype_name)
                 if(entity.archetype_name == obj.name):
                     obj.location = entity.position
+                    self.apply_entity_properties(obj, entity)
 
         return {'FINISHED'}
 
@@ -103,7 +93,7 @@ class ImportYbnXml(bpy.types.Operator, SollumzImportHelper):
     def importfile(self, context):
         try:
             ybn_xml = YBN.from_xml_file(self.filepath)
-            composite_to_obj(ybn_xml.bounds, os.path.basename(self.filepath.replace('.ybn.xml', '')))
+            composite_to_obj(ybn_xml, os.path.basename(self.filepath.replace('.ybn.xml', '')))
             self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             #self.report({'ERROR'}, f"YBN failed to import: {e}")
@@ -270,13 +260,51 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
         maxlen=255,  
     )
 
-    def entity_from_obj(obj):
-        ent = EntityItem()
+    def entity_from_obj(self, obj):
+        entity = EntityItem()
+        
+        #entity.archetype_name = obj.entity_properties.archetype_name
+        entity.archetype_name = obj.name
+        entity.flags = obj.entity_properties.flags
+        entity.guid = obj.entity_properties.guid
+        #entity.position = obj.entity_properties.position
+        entity.position = obj.location
+        #entity.rotation = obj.entity_properties.rotation
+        entity.rotation = obj.rotation_quaternion
+        #entity.scale_xy = obj.entity_properties.scale_xy
+        entity.scale_xy = 1
+        #entity.scale_z = obj.entity_properties.scale_z
+        entity.scale_z = 1
+        entity.parent_index = obj.entity_properties.parent_index
+        entity.lod_dist = obj.entity_properties.lod_dist 
+        entity.child_lod_dist = obj.entity_properties.child_lod_dist 
+        entity.lod_level = obj.entity_properties.lod_level.upper()
+        entity.num_children = obj.entity_properties.num_children
+        entity.priority_level = obj.entity_properties.priority_level.upper()
+        entity.ambient_occlusion_multiplier = obj.entity_properties.ambient_occlusion_multiplier
+        entity.artificial_ambient_occlusion = obj.entity_properties.artificial_ambient_occlusion
+        entity.tint_value = obj.entity_properties.tint_value
+
+        return entity
 
     def execute(self, context):
 
+        ymap = CMapData()
+        ymap.name = os.path.splitext(os.path.basename(context.blend_data.filepath))[0]
+        ymap.parent = ""
+        ymap.flags = 0
+        ymap.content_flags = 0
+        #ymap.streaming_extents_min 
+        #ymap.streaming_extents_max 
+        #ymap.entities_extents_min 
+        #ymap.entities_extents_max 
 
+        for obj in context.collection.objects:
+            if(obj.sollum_type == DrawableType.DRAWABLE):
+                ent = self.entity_from_obj(obj)
+                ymap.entities.append(ent)
 
+        ymap.write_xml(self.filepath)
         return {'FINISHED'}
 
 class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
@@ -289,7 +317,7 @@ class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
 
     def export(self, obj):
         try:
-            ybn_from_object(obj).write_xml(self.get_filepath(obj))
+            bounds_from_object(obj).write_xml(self.get_filepath(obj))
             self.report({'INFO'}, 'YBN Successfully exported.')
         except NoGeometryError:
             self.report({'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')

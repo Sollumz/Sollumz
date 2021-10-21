@@ -3,12 +3,22 @@ from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from enum import Enum
 
-class YBN(ElementTree):
-    tag_name = 'BoundsFile'
+class YBN:
+    
+    @staticmethod
+    def from_xml_file(filepath):
+        return BoundFile.from_xml_file(filepath)
 
-    def __init__(self) -> None:
+    @staticmethod
+    def write_xml(bound_file, filepath):
+        return bound_file.write_xml(filepath)
+
+class BoundFile(ElementTree):
+    tag_name = "BoundsFile"
+
+    def __init__(self):
         super().__init__()
-        self.bounds = BoundsComposite()
+        self.composite = BoundsComposite()
 
 class Bounds(ElementTree, AbstractClass):
     tag_name = 'Bounds'

@@ -23,12 +23,11 @@ def join_objects(objs):
     bpy.ops.object.select_all(action='DESELECT')
     return
 
-def triangulate_object(obj):
-    me = obj.data
+def triangulate_object(mesh):
     bm = bmesh.new()
-    bm.from_mesh(me)
+    bm.from_mesh(mesh)
 
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
 
-    bm.to_mesh(me)
+    bm.to_mesh(mesh)
     bm.free()
