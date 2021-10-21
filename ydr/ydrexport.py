@@ -493,6 +493,8 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
     lowhmodel_count = 0
     vlowmodel_count = 0
 
+    embedded_bound = None
+
     for child in obj.children:
         if(child.sollum_type == DrawableType.DRAWABLE_MODEL):
             drawable_model = drawable_model_from_object(child, bones)
@@ -509,7 +511,9 @@ def drawable_from_object(obj, bones=None, exportpath = ""):
                 vlowmodel_count += 1
                 drawable.drawable_models_vlow.append(drawable_model)
         elif(child.sollum_type == BoundType.COMPOSITE):
-            drawable.bound = composite_from_object(child)        
+            embedded_bound = composite_from_object(child)
+
+    drawable.bound = embedded_bound        
 
     #flags = model count for each lod 
     drawable.flags_high = highmodel_count
