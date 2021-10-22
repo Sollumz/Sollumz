@@ -21,6 +21,7 @@ SOLLUMZ_UI_NAMES = {
     PolygonType.TRIANGLE: 'Bound Poly Mesh',
 }
 
+
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
@@ -32,12 +33,13 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text = "View")
+        layout.label(text="View")
         layout.prop(context.scene, "hide_collision")
         layout.prop(context.scene, "hide_high_lods")
         layout.prop(context.scene, "hide_medium_lods")
         layout.prop(context.scene, "hide_low_lods")
         layout.prop(context.scene, "hide_very_low_lods")
+
 
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Ymap Tools"
@@ -53,6 +55,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
         row.operator("sollumz.importymap")
         row.operator("sollumz.exportymap")
 
+
 class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_label = "Entity"
     bl_idname = 'SOLLUMZ_PT_ENTITY_PANEL'
@@ -66,19 +69,19 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
         aobj = context.active_object
         if(aobj == None):
             return
-        layout.label(text = "Entity Fields")
+        layout.label(text="Entity Fields")
         #box.prop(aobj.ymap_properties, "archetype_name")
-        layout.prop(aobj, "name", text = "Archetype Name")
+        layout.prop(aobj, "name", text="Archetype Name")
         #box.prop(aobj.ymap_properties, "position")
         row = layout.row()
-        row.prop(aobj, "location", text = "Position")
+        row.prop(aobj, "location", text="Position")
         #box.prop(aobj.ymap_properties, "rotation")
         row = layout.row()
-        row.prop(aobj, "rotation_quaternion", text = "Rotation")
+        row.prop(aobj, "rotation_quaternion", text="Rotation")
         #box.prop(aobj.ymap_properties, "scale_xy")
         #box.prop(aobj.ymap_properties, "scale_z")
         row = layout.row()
-        row.prop(aobj, "scale", text = "ScaleXYZ")  
+        row.prop(aobj, "scale", text="ScaleXYZ")
         row = layout.row()
         row.prop(aobj.entity_properties, "flags")
         row.prop(aobj.entity_properties, "guid")
@@ -95,6 +98,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
         row = layout.row()
         row.prop(aobj.entity_properties, "lod_level")
         row.prop(aobj.entity_properties, "priority_level")
+
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
@@ -120,7 +124,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         mat = context.active_object.active_material
 
         if(mat == None):
-            return 
+            return
 
         if mat.sollum_type == MaterialType.MATERIAL:
             draw_shader(layout, mat)
@@ -140,23 +144,22 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     def poll(cls, context):
         obj = context.active_object
         return obj and obj.sollum_type != DrawableType.NONE
-    
+
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
-    
+
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
-
 
         obj = context.active_object
 
         row = layout.row()
         row.enabled = False
         row.prop(obj, "sollum_type")
-        
+
         if obj.sollum_type == DrawableType.DRAWABLE:
             draw_drawable_properties(layout, obj)
         elif obj.sollum_type == DrawableType.GEOMETRY:
@@ -166,6 +169,7 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         elif is_sollum_type(obj, BoundType):
             draw_bound_properties(layout, obj)
 
+
 class SOLLUMZ_MT_sollumz(bpy.types.Menu):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_MT_sollumz"
@@ -173,8 +177,10 @@ class SOLLUMZ_MT_sollumz(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
+
 def SollumzContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_sollumz.bl_idname)
+
 
 class SOLLUMZ_MT_create(bpy.types.Menu):
     bl_label = "Create"
@@ -183,13 +189,15 @@ class SOLLUMZ_MT_create(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
+
 def SollumzCreateContextMenu(self, context):
     self.layout.menu(SOLLUMZ_MT_create.bl_idname)
-    
+
 
 def register():
     bpy.types.VIEW3D_MT_mesh_add.append(SollumzContextMenu)
     bpy.types.SOLLUMZ_MT_sollumz.append(SollumzCreateContextMenu)
+
 
 def unregister():
     bpy.types.SOLLUMZ_MT_sollumz.remove(SollumzCreateContextMenu)

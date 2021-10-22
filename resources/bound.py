@@ -3,8 +3,9 @@ from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from enum import Enum
 
+
 class YBN:
-    
+
     @staticmethod
     def from_xml_file(filepath):
         return BoundFile.from_xml_file(filepath)
@@ -13,12 +14,14 @@ class YBN:
     def write_xml(bound_file, filepath):
         return bound_file.write_xml(filepath)
 
+
 class BoundFile(ElementTree):
     tag_name = "BoundsFile"
 
     def __init__(self):
         super().__init__()
         self.composite = BoundsComposite()
+
 
 class Bounds(ElementTree, AbstractClass):
     tag_name = 'Bounds'
@@ -42,11 +45,13 @@ class Bounds(ElementTree, AbstractClass):
         self.poly_flags = ValueProperty('PolyFlags', 0)
         self.unk_type = ValueProperty('UnkType', 0)
 
+
 class BoundsComposite(Bounds):
     def __init__(self):
         super().__init__()
         self.type = AttributeProperty('type', 'Composite')
         self.children = BoundListProperty()
+
 
 class BoundItem(Bounds, AbstractClass):
     tag_name = 'Item'
@@ -61,27 +66,35 @@ class BoundItem(Bounds, AbstractClass):
         self.type = AttributeProperty('type', self.type)
         self.composite_position = VectorProperty('CompositePosition')
         self.composite_rotation = QuaternionProperty('CompositeRotation')
-        self.composite_scale = VectorProperty('CompositeScale', Vector([1, 1, 1]))
+        self.composite_scale = VectorProperty(
+            'CompositeScale', Vector([1, 1, 1]))
         self.composite_flags1 = FlagsProperty('CompositeFlags1')
         self.composite_flags2 = FlagsProperty('CompositeFlags2')
+
 
 class BoundBox(BoundItem):
     type = 'Box'
 
+
 class BoundSphere(BoundItem):
     type = 'Sphere'
+
 
 class BoundCapsule(BoundItem):
     type = 'Capsule'
 
+
 class BoundCylinder(BoundItem):
     type = 'Cylinder'
+
 
 class BoundDisc(BoundItem):
     type = 'Disc'
 
+
 class BoundCloth(BoundItem):
     type = 'Cloth'
+
 
 class BoundGeometryBVH(BoundItem):
     type = 'GeometryBVH'
@@ -89,10 +102,11 @@ class BoundGeometryBVH(BoundItem):
     def __init__(self):
         super().__init__()
         self.geometry_center = VectorProperty('GeometryCenter')
-        self.materials = MaterialsListProperty() 
+        self.materials = MaterialsListProperty()
         self.vertices = VerticesProperty('Vertices')
         self.vertex_colors = VertexColorProperty("VertexColours")
         self.polygons = PolygonsProperty()
+
 
 class BoundGeometry(BoundGeometryBVH):
     type = 'Geometry'
@@ -102,12 +116,13 @@ class BoundGeometry(BoundGeometryBVH):
         # Placeholder: Currently not implemented by CodeWalker
         self.octants = PolygonsProperty('Octants')
 
+
 class BoundListProperty(ListProperty):
     list_type = BoundItem
 
-    def __init__(self, tag_name: str=None, value=None):
+    def __init__(self, tag_name: str = None, value=None):
         super().__init__(tag_name=tag_name or 'Children', value=value or [])
-    
+
     @staticmethod
     def from_xml(element: ET.Element):
         new = BoundListProperty()
@@ -134,6 +149,7 @@ class BoundListProperty(ListProperty):
 
         return new
 
+
 class MaterialItem(ElementTree):
     tag_name = 'Item'
 
@@ -147,16 +163,18 @@ class MaterialItem(ElementTree):
         self.material_color_index = ValueProperty('MaterialColourIndex', 0)
         self.unk = ValueProperty('Unk', 0)
 
+
 class MaterialsListProperty(ListProperty):
     list_type = MaterialItem
 
-    def __init__(self, tag_name: str=None, value=None):
+    def __init__(self, tag_name: str = None, value=None):
         super().__init__(tag_name=tag_name or 'Materials', value=value or [])
+
 
 class VertexColorProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self, tag_name: str = 'VertexColours', value = None):
+    def __init__(self, tag_name: str = 'VertexColours', value=None):
         super().__init__(tag_name, value or [])
 
     @staticmethod
@@ -169,40 +187,43 @@ class VertexColorProperty(ElementProperty):
                 if not len(colors) == 4:
                     return VertexColorProperty.read_value_error(element)
 
-                new.value.append([int(colors[0]), int(colors[1]), int(colors[2]), int(colors[3])])
-        
+                new.value.append([int(colors[0]), int(
+                    colors[1]), int(colors[2]), int(colors[3])])
+
         return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
         element.text = '\n'
-        
+
         if(len(self.value) == 0):
-            return None 
-        
+            return None
+
         for color in self.value:
             for index, component in enumerate(color):
                 element.text += str(int(component * 255))
                 if index < len(color) - 1:
                     element.text += ', '
             element.text += '\n'
-        
+
         return element
+
 
 class Polygon(ElementTree, AbstractClass):
     def __init__(self):
         super().__init__()
         self.material_index = AttributeProperty('m', 0)
 
+
 class PolygonsProperty(ListProperty):
     list_type = Polygon
 
-    def __init__(self, tag_name: str=None, value=None):
+    def __init__(self, tag_name: str = None, value=None):
         super().__init__(tag_name=tag_name or 'Polygons', value=value or [])
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = PolygonsProperty()    
+        new = PolygonsProperty()
 
         for child in element.iter():
             if child.tag == 'Box':
@@ -218,6 +239,7 @@ class PolygonsProperty(ListProperty):
 
         return new
 
+
 class Triangle(Polygon):
     tag_name = 'Triangle'
 
@@ -230,6 +252,7 @@ class Triangle(Polygon):
         self.f2 = AttributeProperty('f2', 0)
         self.f3 = AttributeProperty('f3', 0)
 
+
 class Sphere(Polygon):
     tag_name = 'Sphere'
 
@@ -237,6 +260,7 @@ class Sphere(Polygon):
         super().__init__()
         self.v = AttributeProperty('v', 0)
         self.radius = AttributeProperty('radius', 0)
+
 
 class Capsule(Polygon):
     tag_name = 'Capsule'
@@ -247,6 +271,7 @@ class Capsule(Polygon):
         self.v2 = AttributeProperty('v2', 1)
         self.radius = AttributeProperty('radius', 0)
 
+
 class Box(Polygon):
     tag_name = 'Box'
 
@@ -256,6 +281,7 @@ class Box(Polygon):
         self.v2 = AttributeProperty('v2', 1)
         self.v3 = AttributeProperty('v3', 2)
         self.v4 = AttributeProperty('v4', 3)
+
 
 class Cylinder(Polygon):
     tag_name = 'Cylinder'

@@ -3,11 +3,14 @@ from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
 
+
 class NoGeometryError(Exception):
     message = 'Sollumz Bound Geometry has no geometry!'
 
+
 class VerticesLimitError(Exception):
     pass
+
 
 def init_poly_bound(poly_bound, obj, materials):
     # materials = obj.parent.data.materials.values()
@@ -21,6 +24,7 @@ def init_poly_bound(poly_bound, obj, materials):
 
     return poly_bound
 
+
 def add_material(material, materials):
     if material and material.sollum_type == MaterialType.COLLISION:
         mat_item = MaterialItem()
@@ -29,7 +33,7 @@ def add_material(material, materials):
         mat_item.room_id = material.collision_properties.room_id
         mat_item.ped_density = material.collision_properties.ped_density
         mat_item.material_color_index = material.collision_properties.material_color_index
-        
+
         # Assign flags
         for flag_name in CollisionMatFlags.__annotations__.keys():
             # flag_exists = getattr(material.collision_flags, flag_name)
@@ -37,6 +41,7 @@ def add_material(material, materials):
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
 
         materials.append(mat_item)
+
 
 def polygon_from_object(obj, geometry):
     vertices = geometry.vertices
@@ -69,7 +74,7 @@ def polygon_from_object(obj, geometry):
         radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
 
         sphere.radius = radius
-        
+
         return sphere
     elif obj.sollum_type == PolygonType.CYLINDER or obj.sollum_type == PolygonType.CAPSULE:
         bound = None
@@ -88,11 +93,10 @@ def polygon_from_object(obj, geometry):
             height = height - (radius * 2)
 
         vertical = Vector((0, 0, height / 2))
-        vertical.rotate(obj.matrix_world.to_euler('XYZ')) 
-        
+        vertical.rotate(obj.matrix_world.to_euler('XYZ'))
+
         v1 = world_pos - vertical
         v2 = world_pos + vertical
-
 
         vertices.append(v1 - geom_center)
         vertices.append(v2 - geom_center)
@@ -104,6 +108,7 @@ def polygon_from_object(obj, geometry):
 
         return bound
 
+
 def triangle_from_face(face):
     triangle = Triangle()
     triangle.material_index = face.material_index
@@ -114,6 +119,7 @@ def triangle_from_face(face):
 
     return triangle
 
+
 def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
     geometry = None
 
@@ -123,7 +129,6 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
         geometry = BoundGeometry()
     else:
         return ValueError('Invalid argument for geometry sollum_type!')
-
 
     geometry = init_bound_item(geometry, obj)
     geometry.geometry_center = obj.location
@@ -140,41 +145,45 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
             mesh.calc_normals_split()
             mesh.calc_loop_triangles()
 
-            #mats
+            # mats
             for material in mesh.materials:
                 add_material(material, geometry.materials)
 
-            #verts
+            # verts
             for vertex in mesh.vertices:
-                geometry.vertices.append((child.matrix_world @ vertex.co) - geometry.geometry_center)
+                geometry.vertices.append(
+                    (child.matrix_world @ vertex.co) - geometry.geometry_center)
 
-            #vert colors
+            # vert colors
             for poly in mesh.polygons:
                 for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
                     #vi = mesh.loops[loop_index].vertex_index
                     #geometry.vertices.append((child.matrix_world @ mesh.vertices[vi].co) - geometry.geometry_center)
                     if(len(mesh.vertex_colors) > 0):
-                        geometry.vertex_colors.append(mesh.vertex_colors[0].data[loop_index].color)
-                    #geometry.polygons.append(tiangle_from_mesh_loop(mesh.loops[loop_index]))
+                        geometry.vertex_colors.append(
+                            mesh.vertex_colors[0].data[loop_index].color)
+                    # geometry.polygons.append(tiangle_from_mesh_loop(mesh.loops[loop_index]))
 
-            #indicies
+            # indicies
             for face in mesh.loop_triangles:
                 geometry.polygons.append(triangle_from_face(face))
-            
+
     for child in get_children_recursive(obj):
         poly = polygon_from_object(child, geometry)
         if poly:
             found = True
             geometry.polygons.append(poly)
-    
+
     if not found:
         raise NoGeometryError()
-    
+
     # Check vert count
     if len(geometry.vertices) > 32767:
-        raise VerticesLimitError(f"{obj.name} can only have at most 32767 vertices!")
+        raise VerticesLimitError(
+            f"{obj.name} can only have at most 32767 vertices!")
 
     return geometry
+
 
 def init_bound_item(bound_item, obj):
     init_bound(bound_item, obj)
@@ -197,6 +206,7 @@ def init_bound_item(bound_item, obj):
 
     return bound_item
 
+
 def init_bound(bound, obj):
     bbmin, bbmax = get_bb_extents(obj)
     bound.box_min = bbmin
@@ -214,6 +224,7 @@ def init_bound(bound, obj):
     bound.margin = obj.bound_properties.margin
 
     return bound
+
 
 def bound_from_object(obj):
     if obj.sollum_type == BoundType.BOX:
@@ -233,6 +244,7 @@ def bound_from_object(obj):
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
         return geometry_from_object(obj)
 
+
 def composite_from_object(obj):
     composite = init_bound(BoundsComposite(), obj)
 
@@ -243,10 +255,11 @@ def composite_from_object(obj):
 
     return composite
 
+
 def bounds_from_object(obj):
     bounds = BoundFile()
-    
+
     composite = composite_from_object(obj)
     bounds.composite = composite
-    
+
     return bounds

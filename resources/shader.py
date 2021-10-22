@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
-import os 
+import os
 from ..tools.utils import *
+
 
 class ShaderParameter:
 
@@ -14,9 +15,10 @@ class ShaderParameter:
         self.name = root.attrib["name"]
 
         if(type == "Texture"):
-            self.value = "#givemechecker" #? 
+            self.value = "#givemechecker"  # ?
         elif(self.type == "Vector"):
             self.value = ReadQuaternion(root)
+
 
 class Shader:
 
@@ -29,20 +31,21 @@ class Shader:
 
     def read_xml(self, root):
         self.name = root.find("Name").text
-        
+
         filenames = root.find("FileName")
         for fn in filenames:
             self.filename.append(fn.text)
 
-        self.renderbucket = StringListToIntList(root.find("RenderBucket").text.split())
-        
+        self.renderbucket = StringListToIntList(
+            root.find("RenderBucket").text.split())
+
         layouts = root.find("Layout")
         idx = 0
         for layout in layouts:
             lay = []
             for semantic in layout:
                 lay.append(semantic.tag)
-            self.layouts["0x" + str(idx)] = lay   
+            self.layouts["0x" + str(idx)] = lay
             idx += 1
 
         params = root.find("Parameters")
@@ -50,6 +53,7 @@ class Shader:
             p = ShaderParameter()
             p.read_xml(param)
             self.parameters.append(p)
+
 
 class ShaderManager():
 
@@ -71,6 +75,7 @@ class ShaderManager():
             name = shader.name.upper()
             ui_name = shader.name.replace("_", " ").upper()
             value = shader.name.lower()
-            string += "ShaderMaterial(\"" + name + "\", \"" + ui_name + "\", \"" + value + "\"),\n"
+            string += "ShaderMaterial(\"" + name + "\", \"" + \
+                ui_name + "\", \"" + value + "\"),\n"
 
         print(string)

@@ -5,8 +5,10 @@ from Sollumz.sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
 from Sollumz.meshhelper import *
-import os, traceback
+import os
+import traceback
 from mathutils import Matrix
+
 
 def init_poly_obj(poly, sollum_type, materials):
     name = SOLLUMZ_UI_NAMES[sollum_type]
@@ -18,6 +20,7 @@ def init_poly_obj(poly, sollum_type, materials):
     obj.sollum_type = sollum_type.value
 
     return obj
+
 
 def poly_to_obj(poly, materials, vertices):
     if type(poly) == Box:
@@ -37,11 +40,13 @@ def poly_to_obj(poly, materials, vertices):
         # caclulate obj center
         center = (cf3 + cf4) / 2
 
-        rightest = get_closest_axis_point(Vector((1, 0, 0)), center, [cf1, cf2, cf3, cf4, cf5, cf6])
-        upest    = get_closest_axis_point(Vector((0, 0, 1)), center, [cf1, cf2, cf3, cf4, cf5, cf6])
-        right    = (rightest - center).normalized()
-        up       = (upest    - center).normalized()
-        forward  = Vector.cross(right, up).normalized()
+        rightest = get_closest_axis_point(Vector((1, 0, 0)), center, [
+                                          cf1, cf2, cf3, cf4, cf5, cf6])
+        upest = get_closest_axis_point(Vector((0, 0, 1)), center, [
+                                       cf1, cf2, cf3, cf4, cf5, cf6])
+        right = (rightest - center).normalized()
+        up = (upest - center).normalized()
+        forward = Vector.cross(right, up).normalized()
 
         mat = Matrix.Identity(4)
 
@@ -93,14 +98,14 @@ def poly_to_obj(poly, materials, vertices):
         capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2) 
+        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2)
         rot = get_direction_of_vectors(v1, v2)
 
         create_capsule(capsule, poly.radius, length)
-        
-        capsule.location = (v1 + v2) / 2     
+
+        capsule.location = (v1 + v2) / 2
         capsule.rotation_euler = rot
-        
+
         return capsule
     elif type(poly) == Cylinder:
         cylinder = init_poly_obj(poly, PolygonType.CYLINDER, materials)
@@ -110,12 +115,14 @@ def poly_to_obj(poly, materials, vertices):
         length = get_distance_of_vectors(v1, v2)
         rot = get_direction_of_vectors(v1, v2)
 
-        cylinder.data = create_cylinder(cylinder.data, poly.radius, length, False)
+        cylinder.data = create_cylinder(
+            cylinder.data, poly.radius, length, False)
 
         cylinder.location = (v1 + v2) / 2
         cylinder.rotation_euler = rot
 
         return cylinder
+
 
 def mat_to_obj(gmat):
     mat = create_collision_material_from_index(gmat.type)
@@ -129,13 +136,15 @@ def mat_to_obj(gmat):
     for flag_name in CollisionMatFlags.__annotations__.keys():
         if f"FLAG_{flag_name.upper()}" in gmat.flags:
             setattr(mat.collision_flags, flag_name, True)
-    
+
     return mat
+
 
 def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])
-    triangle_obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], mesh)
+    triangle_obj = bpy.data.objects.new(
+        SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], mesh)
     triangle_obj.sollum_type = PolygonType.TRIANGLE
 
     for gmat in geometry.materials:
@@ -169,7 +178,8 @@ def geometry_to_obj(geometry, sollum_type):
                 face.append(vertices.index(v3))
             faces.append(face)
         else:
-            poly_obj = poly_to_obj(poly, triangle_obj.data.materials, geometry.vertices)
+            poly_obj = poly_to_obj(
+                poly, triangle_obj.data.materials, geometry.vertices)
             if poly_obj:
                 bpy.context.collection.objects.link(poly_obj)
                 poly_obj.parent = obj
@@ -178,10 +188,10 @@ def geometry_to_obj(geometry, sollum_type):
     bpy.context.collection.objects.link(triangle_obj)
     triangle_obj.parent = obj
 
-    #Apply vertex colors
+    # Apply vertex colors
     mesh = triangle_obj.data
     if(len(geometry.vertex_colors) > 0):
-        mesh.vertex_colors.new(name = "Vertex Colors") 
+        mesh.vertex_colors.new(name="Vertex Colors")
         color_layer = mesh.vertex_colors[0]
         for i in range(len(color_layer.data)):
             rgba = geometry.vertex_colors[mesh.loops[i].vertex_index]
@@ -200,6 +210,7 @@ def geometry_to_obj(geometry, sollum_type):
 
     return obj
 
+
 def init_bound_obj(bound, sollum_type):
     obj = None
     name = SOLLUMZ_UI_NAMES[sollum_type]
@@ -211,7 +222,8 @@ def init_bound_obj(bound, sollum_type):
             mat = create_collision_material_from_index(mat_index)
             mesh.materials.append(mat)
         except IndexError:
-            print(f"Warning: Failed to set materials for {name}. Material index {mat_index} does not exist in collisionmats list.")
+            print(
+                f"Warning: Failed to set materials for {name}. Material index {mat_index} does not exist in collisionmats list.")
     else:
         obj = bpy.data.objects.new(name, None)
 
@@ -226,11 +238,11 @@ def init_bound_obj(bound, sollum_type):
     obj.bound_properties.margin = bound.margin
     obj.bound_properties.volume = bound.volume
 
-    #assign obj composite flags
+    # assign obj composite flags
     for prop in dir(obj.composite_flags1):
         for f in bound.composite_flags1:
             if f.lower() == prop:
-                setattr(obj.composite_flags1, prop, True)  
+                setattr(obj.composite_flags1, prop, True)
 
     for prop in dir(obj.composite_flags2):
         for f in bound.composite_flags2:
@@ -245,11 +257,12 @@ def init_bound_obj(bound, sollum_type):
 
     return obj
 
+
 def bound_to_obj(bound):
     if bound.type == 'Box':
         box = init_bound_obj(bound, BoundType.BOX)
         create_box_from_extents(box.data, bound.box_min, bound.box_max)
-        
+
         return box
     elif bound.type == 'Sphere':
         sphere = init_bound_obj(bound, BoundType.SPHERE)
@@ -290,12 +303,13 @@ def bound_to_obj(bound):
         bvh = geometry_to_obj(bound, BoundType.GEOMETRYBVH)
         return bvh
 
-def composite_to_obj(bounds, name, from_drawable = False):
+
+def composite_to_obj(bounds, name, from_drawable=False):
     if(from_drawable):
-        composite = bounds 
+        composite = bounds
     else:
         composite = bounds.composite
-        
+
     obj = bpy.data.objects.new(name, None)
     obj.empty_display_size = 0
     obj.sollum_type = BoundType.COMPOSITE
@@ -304,7 +318,7 @@ def composite_to_obj(bounds, name, from_drawable = False):
         child_obj = bound_to_obj(child)
         if child_obj:
             child_obj.parent = obj
-    
+
     bpy.context.collection.objects.link(obj)
 
     return obj

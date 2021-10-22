@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 
+
 def split_object(obj, parent):
     objs = []
     bpy.ops.object.select_all(action='DESELECT')
@@ -11,9 +12,10 @@ def split_object(obj, parent):
     bpy.ops.mesh.separate(type='MATERIAL')
     bpy.ops.object.mode_set(mode='OBJECT')
     for child in parent.children:
-            objs.append(child)
+        objs.append(child)
     return objs
-    
+
+
 def join_objects(objs):
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = objs[0]
@@ -22,6 +24,7 @@ def join_objects(objs):
     bpy.ops.object.join()
     bpy.ops.object.select_all(action='DESELECT')
     return
+
 
 def triangulate_object(mesh):
     bm = bmesh.new()
