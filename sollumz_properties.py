@@ -33,7 +33,7 @@ class PolygonType(str, Enum):
 
 class MaterialType(str, Enum):
     NONE = 'sollumz_material_none',
-    DRAWABLE = 'sollumz_material_drawable',
+    SHADER = 'sollumz_material_shader',
     COLLISION = 'sollumz_material_collision'
 
 
@@ -125,7 +125,7 @@ SOLLUMZ_UI_NAMES = {
     PolygonType.TRIANGLE: 'Bound Poly Mesh',
 
     MaterialType.NONE: 'None',
-    MaterialType.DRAWABLE: 'Sollumz Material',
+    MaterialType.SHADER: 'Sollumz Material',
     MaterialType.COLLISION: 'Sollumz Collision Material',
 
     TextureType.UNKNOWN: 'UNKNOWN',

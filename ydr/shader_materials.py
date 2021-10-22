@@ -505,7 +505,7 @@ def create_vector_nodes(node_tree, param):
 def create_shader(shadername, shadermanager):
 
     mat = bpy.data.materials.new(shadername)
-    mat.sollum_type = MaterialType.DRAWABLE
+    mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
 
     parameters = shadermanager.shaders[shadername].parameters

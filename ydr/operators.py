@@ -71,7 +71,7 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
             # create material
             if(len(obj.data.materials) > 0):
                 mat = obj.data.materials[0]
-                if(mat.sollum_type != MaterialType.DRAWABLE):
+                if(mat.sollum_type != MaterialType.SHADER):
                     # remove old materials
                     for i in range(len(obj.material_slots)):
                         bpy.ops.object.material_slot_remove({'object': obj})

@@ -4,7 +4,7 @@ from mathutils import Matrix
 from Sollumz.resources.shader import ShaderManager
 from Sollumz.ydr.shader_materials import create_shader
 from Sollumz.ybn.ybnimport import composite_to_obj
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel
 from Sollumz.resources.drawable import *
 from Sollumz.tools import cats as Cats
 
@@ -104,23 +104,12 @@ def geometry_to_obj(geometry, bones=None, name=None):
     vertices = []
     faces = []
     normals = []
-    texcoords0 = []
-    texcoords1 = []
-    texcoords2 = []
-    texcoords3 = []
-    texcoords4 = []
-    texcoords5 = []
-    texcoords6 = []
-    texcoords7 = []
-    colors0 = []
-    colors1 = []
-    blendweights = []
-    blendindices = []
+    texcoords = []
+    colors = 0
 
-    data = geometry.vertex_buffer.data_to_vertices()
-    for v in data:
-        vertices.append(v.position)
-        normals.append(v.normal)
+    for vertex in geometry.vertex_buffer.data:
+        vertices.append(vertex.position)
+        normals.append(vertex.normal)
 
         if(v.texcoord0 != None):
             texcoords0.append(v.texcoord0)
@@ -143,11 +132,6 @@ def geometry_to_obj(geometry, bones=None, name=None):
             colors0.append(v.colors0)
         if(v.colors1 != None):
             colors1.append(v.colors1)
-
-        # if(v.blendweights != None):
-        #     blendweights.append(v.blendweights)
-        # if(v.blendindices != None):
-        #     blendindices.append(v.blendindices)
 
     faces = geometry.index_buffer.data_to_indices()
 
@@ -229,18 +213,19 @@ def geometry_to_obj(geometry, bones=None, name=None):
 
 
 def drawable_model_to_obj(model, materials, name, lod, bones=None):
-    dobj = bpy.data.objects.new("Drawable Model", None)
+    dobj = bpy.data.objects.new(
+        SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL], None)
     dobj.sollum_type = DrawableType.DRAWABLE_MODEL
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
     dobj.drawable_model_properties.flags = model.flags
 
-    for geo in model.geometries:
-        geo_obj = geometry_to_obj(geo, bones=bones, name=name)
-        geo_obj.sollum_type = "sollumz_geometry"
-        geo_obj.data.materials.append(materials[geo.shader_index])
-        geo_obj.parent = dobj
-        bpy.context.collection.objects.link(geo_obj)
+    for child in model.geometries:
+        child_obj = geometry_to_obj(child, bones=bones, name=name)
+        child_obj.sollum_type = DrawableType.GEOMETRY
+        child_obj.data.materials.append(materials[child.shader_index])
+        child_obj.parent = dobj
+        bpy.context.collection.objects.link(child_obj)
 
     bpy.context.collection.objects.link(dobj)
 
@@ -342,22 +327,22 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, "high", bones=bones)
+            model, materials, drawable.name, LODLevel.HIGH, bones=bones)
         dobj.parent = obj
 
     for model in drawable.drawable_models_med:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, "medium", bones=bones)
+            model, materials, drawable.name, LODLevel.MEDIUM, bones=bones)
         dobj.parent = obj
 
     for model in drawable.drawable_models_low:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, "low", bones=bones)
+            model, materials, drawable.name, LODLevel.LOW, bones=bones)
         dobj.parent = obj
 
     for model in drawable.drawable_models_vlow:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, "verylow", bones=bones)
+            model, materials, drawable.name, LODLevel.VERYLOW, bones=bones)
         dobj.parent = obj
 
     for model in obj.children:
