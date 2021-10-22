@@ -5,6 +5,7 @@ from mathutils import Vector, Matrix, Quaternion, Euler
 from mathutils.geometry import distance_point_to_plane
 from math import cos, inf, sin, degrees, radians, sqrt, atan2
 
+
 def create_box_from_extents(mesh, bbmin, bbmax):
     # Create box from bbmin and bbmax
     vertices = [
@@ -32,7 +33,7 @@ def create_box_from_extents(mesh, bbmin, bbmax):
 
     # Recalculate normals
     bm = bmesh.new()
-    
+
     bm.from_mesh(mesh)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)
@@ -53,7 +54,8 @@ def create_box(mesh, size=1):
 
 def create_sphere(mesh, radius=0.5):
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=radius)
+    bmesh.ops.create_uvsphere(
+        bm, u_segments=32, v_segments=16, diameter=radius)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
@@ -102,14 +104,14 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
 
     mesh = obj.data
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=diameter)
+    bmesh.ops.create_uvsphere(
+        bm, u_segments=32, v_segments=16, diameter=diameter)
     bm.to_mesh(mesh)
 
     center = Vector()
     axis = Vector((0, 0, 1))
     if use_rot:
         axis = Vector(0, 0, 1)
-
 
     # Get top and bottom halves of vertices
     top = []
@@ -122,7 +124,7 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
 
     for v in bm.verts:
         if distance_point_to_plane(v.co, center, axis) >= 0:
-            top.append(v.co)            
+            top.append(v.co)
             for face in v.link_faces:
                 if not face in top_faces:
                     top_faces.append(face)
@@ -136,14 +138,16 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     ret = bmesh.ops.extrude_face_region(bm, geom=top_faces)
     extruded = ret["geom"]
     del ret
-    translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    translate_verts = [
+        v for v in extruded if isinstance(v, bmesh.types.BMVert)]
     bmesh.ops.translate(bm, vec=vec / 2, verts=translate_verts)
 
     # Extrude bottom half
     ret = bmesh.ops.extrude_face_region(bm, geom=bottom_faces)
     extruded = ret["geom"]
     del ret
-    translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    translate_verts = [
+        v for v in extruded if isinstance(v, bmesh.types.BMVert)]
     bmesh.ops.translate(bm, vec=-vec / 2, verts=translate_verts)
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -223,6 +227,8 @@ def get_vector_list_length(list):
 
 # see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
 """Multiply 3d coord list by matrix"""
+
+
 def np_matmul_coords(coords, matrix, space=None):
     M = (space @ matrix @ space.inverted() if space else matrix).transposed()
     ones = np.ones((coords.shape[0], 1))
@@ -230,7 +236,10 @@ def np_matmul_coords(coords, matrix, space=None):
 
     return np.dot(coords4d, M)[:, :-1]
 
+
 """Get min and max bounds for an object and all of its children"""
+
+
 def get_bb_extents(obj):
     bbs = get_total_bounds(obj, True)
 
@@ -238,6 +247,8 @@ def get_bb_extents(obj):
 
 
 """Get the bounding box of an object and all of it's children"""
+
+
 def get_total_bounds(obj, np_array=False):
     objects = []
 
@@ -247,7 +258,8 @@ def get_total_bounds(obj, np_array=False):
             objects.append(obj)
 
     if len(objects) < 1:
-        raise ValueError('Failed to get bounds: Object has no geometry data or children with geometry data.')
+        raise ValueError(
+            'Failed to get bounds: Object has no geometry data or children with geometry data.')
 
     # get the global coordinates of all object bounding box corners
     np_bounds = np.vstack(
@@ -290,6 +302,8 @@ def get_children_recursive(obj):
 
 
 """Get the radius of an object's bounding box"""
+
+
 def get_obj_radius(obj):
     bb_min, bb_max = get_bb_extents(obj)
 

@@ -2,8 +2,9 @@ from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstr
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 
+
 class YMAP:
-    
+
     @staticmethod
     def from_xml_file(filepath):
         return CMapData.from_xml_file(filepath)
@@ -11,6 +12,7 @@ class YMAP:
     @staticmethod
     def write_xml(cmap_data, filepath):
         return cmap_data.write_xml(filepath)
+
 
 class EntityItem(ElementTree):
     tag_name = "Item"
@@ -32,15 +34,19 @@ class EntityItem(ElementTree):
         self.num_children = ValueProperty("numChildren", 0)
         self.priority_level = TextProperty("priorityLevel")
         self.extensions = None
-        self.ambient_occlusion_multiplier = ValueProperty("ambientOcclusionMultiplier", 0)
-        self.artificial_ambient_occlusion = ValueProperty("artificialAmbientOcclusion", 0)
+        self.ambient_occlusion_multiplier = ValueProperty(
+            "ambientOcclusionMultiplier", 0)
+        self.artificial_ambient_occlusion = ValueProperty(
+            "artificialAmbientOcclusion", 0)
         self.tint_value = ValueProperty("tintValue", 0)
+
 
 class EntityListProperty(ListProperty):
     list_type = EntityItem
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value=value)
+
 
 class CMapData(ElementTree, AbstractClass):
     tag_name = "CMapData"

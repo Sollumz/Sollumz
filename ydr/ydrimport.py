@@ -104,38 +104,24 @@ def geometry_to_obj(geometry, bones=None, name=None):
     vertices = []
     faces = []
     normals = []
-    texcoords = []
-    colors = 0
+    texcoords = {}
+    colors = {}
 
-    for vertex in geometry.vertex_buffer.data:
+    data = geometry.vertex_buffer.data
+    for vertex in data:
         vertices.append(vertex.position)
         normals.append(vertex.normal)
 
-        if(v.texcoord0 != None):
-            texcoords0.append(v.texcoord0)
-        if(v.texcoord1 != None):
-            texcoords1.append(v.texcoord1)
-        if(v.texcoord2 != None):
-            texcoords2.append(v.texcoord2)
-        if(v.texcoord3 != None):
-            texcoords3.append(v.texcoord3)
-        if(v.texcoord4 != None):
-            texcoords4.append(v.texcoord4)
-        if(v.texcoord5 != None):
-            texcoords5.append(v.texcoord5)
-        if(v.texcoord6 != None):
-            texcoords6.append(v.texcoord6)
-        if(v.texcoord7 != None):
-            texcoords7.append(v.texcoord7)
+        for key, value in vars(vertex):
+            index = key[len(key) - 1]
+            if 'texcoord' in key:
+                texcoords[index] = value
+            if 'colors' in key:
+                colors[index] = value
 
-        if(v.colors0 != None):
-            colors0.append(v.colors0)
-        if(v.colors1 != None):
-            colors1.append(v.colors1)
+    faces = geometry.index_buffer.data
 
-    faces = geometry.index_buffer.data_to_indices()
-
-    mesh = bpy.data.meshes.new("Geometry")
+    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY])
     mesh.from_pydata(vertices, [], faces)
     mesh.create_normals_split()
     mesh.validate(clean_customdata=False)
@@ -152,42 +138,13 @@ def geometry_to_obj(geometry, bones=None, name=None):
     mesh.use_auto_smooth = True
 
     # set uvs
-    uv_layer_count = 0
-    if(len(texcoords0) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords0)
-        uv_layer_count += 1
-    if(len(texcoords1) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords1)
-        uv_layer_count += 1
-    if(len(texcoords2) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords2)
-        uv_layer_count += 1
-    if(len(texcoords3) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords3)
-        uv_layer_count += 1
-    if(len(texcoords4) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords4)
-        uv_layer_count += 1
-    if(len(texcoords5) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords5)
-        uv_layer_count += 1
-    if(len(texcoords6) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords6)
-        uv_layer_count += 1
-    if(len(texcoords7) > 0):
-        create_uv_layer(mesh, uv_layer_count, texcoords7)
-        uv_layer_count += 1
+    uv_layer_count = len(texcoords)
+    for uv_layer in texcoords:
+        create_uv_layer(mesh, uv_layer_count, uv_layer)
 
     # set vertex colors
-    if(len(colors0) > 0):
-        create_vertexcolor_layer(mesh, 0, colors0)
-    if(len(colors1) > 0):
-        create_vertexcolor_layer(mesh, 1, colors1)
-
-    # set tangents - .tangent is read only so can't set them
-    # for poly in mesh.polygons:
-        # for idx in poly.loop_indicies:
-        #mesh.loops[i].tangent = tangents[i]
+    for color_layer in colors:
+        create_vertexcolor_layer(mesh, 1, color_layer)
 
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 

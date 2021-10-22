@@ -11,24 +11,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from . import auto_load
 bl_info = {
-    "name" : "Sollumz",
-    "author" : "Skylumz",
-    "description" : "This plugins allows you to import/export codewalker xml files.",
-    "blender" : (2, 80, 0),
-    "version" : (1, 0, 1),
-    "location" : "",
-    "warning" : "",
-    "category" : "Import-Export"
+    "name": "Sollumz",
+    "author": "Skylumz",
+    "description": "This plugins allows you to import/export codewalker xml files.",
+    "blender": (2, 80, 0),
+    "version": (1, 0, 1),
+    "location": "",
+    "warning": "",
+    "category": "Import-Export"
 }
 
-from . import auto_load
 
 auto_load.init()
+
 
 def register():
     auto_load.register()
 
+
 def unregister():
     auto_load.unregister()
-

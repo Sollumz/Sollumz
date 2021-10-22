@@ -3,7 +3,7 @@ from .codewalker_xml import AttributeProperty, ElementTree, ListProperty, FlagsP
 
 class FlagPresetsFile(ElementTree):
     tag_name = 'FlagPresetsFile'
-    
+
     def __init__(self):
         super().__init__()
         self.presets = Presets()
