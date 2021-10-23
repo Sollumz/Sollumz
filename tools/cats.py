@@ -29,6 +29,7 @@ import bpy
 import time
 import bmesh
 
+
 def remove_unused_vertex_groups_of_mesh(mesh):
     remove_count = 0
     mesh.update_from_editmode()

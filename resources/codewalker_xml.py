@@ -6,6 +6,8 @@ from typing import Any
 from xml.etree import ElementTree as ET
 
 """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
+
+
 def indent(elem: ET.Element, level=0):
     amount = "  "
     i = "\n" + level*amount
@@ -29,12 +31,15 @@ def indent(elem: ET.Element, level=0):
                 lines[index] = ((level + 1) * amount) + line
             elem.text = '\n' + '\n'.join(lines) + i
 
+
 """Determine if a string is a bool, int, or float"""
+
+
 def get_str_type(value: str):
     if isinstance(value, str):
         if value.lower() == 'true' or value.lower() == 'false':
             return bool(value)
-        
+
         try:
             return int(value)
         except:
@@ -43,8 +48,9 @@ def get_str_type(value: str):
             return float(value)
         except:
             pass
-        
+
     return value
+
 
 class Element(AbstractClass):
     """Abstract XML element to base all other XML elements off of"""
@@ -55,18 +61,19 @@ class Element(AbstractClass):
 
     @classmethod
     def read_value_error(cls, element):
-        raise ValueError(f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!")
+        raise ValueError(
+            f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!")
 
     """Convert ET.Element object to Element"""
     @abstractclassmethod
     def from_xml(cls, element: ET.Element):
         raise NotImplementedError
-    
+
     """Convert object to ET.Element object"""
     @abstractmethod
     def to_xml(self):
         raise NotImplementedError
-    
+
     """Read XML from filepath"""
     @classmethod
     def from_xml_file(cls, filepath):
@@ -74,8 +81,8 @@ class Element(AbstractClass):
         elementTree.parse(filepath)
         return cls.from_xml(elementTree.getroot())
 
-    
     """Write object as XML to filepath"""
+
     def write_xml(self, filepath):
         element = self.to_xml()
         indent(element)
@@ -105,8 +112,8 @@ class ElementTree(Element):
 
         return new
 
-    
     """Convert ElementTree to ET.Element object"""
+
     def to_xml(self):
         root = ET.Element(self.tag_name)
         for child in vars(self).values():
@@ -119,7 +126,7 @@ class ElementTree(Element):
 
         return root
 
-    def __getattribute__(self, key: str, onlyValue: bool=True):
+    def __getattribute__(self, key: str, onlyValue: bool = True):
         obj = None
         # Try and see if key exists
         try:
@@ -132,7 +139,7 @@ class ElementTree(Element):
         except AttributeError:
             # Key doesn't exist, return None
             return None
-    
+
     def __setattr__(self, name: str, value) -> None:
         # Get the full object
         obj = self.__getattribute__(name, False)
@@ -148,7 +155,7 @@ class ElementTree(Element):
 
         if isinstance(obj, ElementProperty):
             return obj
-    
+
 
 @dataclass
 class AttributeProperty:
@@ -158,46 +165,51 @@ class AttributeProperty:
     @property
     def value(self):
         return get_str_type(self._value)
-    
+
     @value.setter
     def value(self, value):
         self._value = value
+
 
 class ElementProperty(Element, AbstractClass):
     @property
     @abstractmethod
     def value_types(self):
         raise NotImplementedError
-    
+
     tag_name = None
 
     def __init__(self, tag_name, value):
         super().__init__()
         self.tag_name = tag_name
         if value and not isinstance(value, self.value_types):
-            raise TypeError(f'Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!')
+            raise TypeError(
+                f'Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!')
         self.value = value
+
 
 class TextProperty(ElementProperty):
     value_types = (str)
 
     '''default = Name ?'''
-    def __init__(self, tag_name: str = 'Name', value = None):
+
+    def __init__(self, tag_name: str = 'Name', value=None):
         super().__init__(tag_name, value or "")
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return TextProperty(element.tag, element.text)#.strip())
+        return TextProperty(element.tag, element.text)  # .strip())
 
     def to_xml(self):
         result = ET.Element(self.tag_name)
         result.text = self.value
         return result
 
+
 class VectorProperty(ElementProperty):
     value_types = (Vector)
 
-    def __init__(self, tag_name: str, value = None):
+    def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0, 0)))
 
     @staticmethod
@@ -209,12 +221,12 @@ class VectorProperty(ElementProperty):
 
     def to_xml(self):
         return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z)})
-    
+
 
 class QuaternionProperty(ElementProperty):
     value_types = (Quaternion)
 
-    def __init__(self, tag_name: str, value = None):
+    def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Quaternion())
 
     @staticmethod
@@ -232,15 +244,14 @@ class ListProperty(ElementProperty, AbstractClass):
     """Holds a list value. List can only contain values of one type."""
 
     value_types = (list)
-    
+
     @property
     @abstractmethod
     def list_type(self) -> Element:
         raise NotImplementedError
 
-    def __init__(self, tag_name: str, value = None):
+    def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or [])
-    
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -252,16 +263,16 @@ class ListProperty(ElementProperty, AbstractClass):
             new.value.append(new.list_type.from_xml(child))
         return new
 
-
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        
+
         if self.value and len(self.value) > 0:
             for item in self.value:
                 if isinstance(item, self.list_type):
                     element.append(item.to_xml())
                 else:
-                    raise TypeError(f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                    raise TypeError(
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
 
             return element
         
@@ -271,7 +282,7 @@ class ListProperty(ElementProperty, AbstractClass):
 class VerticesProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self, tag_name: str = 'Vertices', value = None):
+    def __init__(self, tag_name: str = 'Vertices', value=None):
         super().__init__(tag_name, value or [])
 
     @staticmethod
@@ -284,10 +295,10 @@ class VerticesProperty(ElementProperty):
                 if not len(coords) == 3:
                     return VerticesProperty.read_value_error(element)
 
-                new.value.append(Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
-        
-        return new
+                new.value.append(
+                    Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
 
+        return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
@@ -295,7 +306,8 @@ class VerticesProperty(ElementProperty):
         for vertex in self.value:
             # Should be a list of Vectors
             if not isinstance(vertex, Vector):
-                raise TypeError(f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
+                raise TypeError(
+                    f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
             for index, component in enumerate(vertex):
                 element.text += str(component)
                 if index < len(vertex) - 1:
@@ -308,7 +320,7 @@ class VerticesProperty(ElementProperty):
 class FlagsProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self, tag_name: str = 'Flags', value = None):
+    def __init__(self, tag_name: str = 'Flags', value=None):
         super().__init__(tag_name, value or [])
 
     @staticmethod
@@ -321,9 +333,8 @@ class FlagsProperty(ElementProperty):
 
             for flag in text:
                 new.value.append(flag)
-        
-        return new
 
+        return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
@@ -340,7 +351,7 @@ class FlagsProperty(ElementProperty):
 class ValueProperty(ElementProperty):
     value_types = (int, str, bool, float)
 
-    def __init__(self, tag_name: str, value = 0):
+    def __init__(self, tag_name: str, value=0):
         super().__init__(tag_name, value)
 
     @staticmethod
