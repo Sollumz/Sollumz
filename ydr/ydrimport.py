@@ -31,6 +31,16 @@ def shadergroup_to_materials(shadergroup, filepath):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
                             n.image = img
+                        # check shared texture folder
+                        else:
+                            shared_folder = bpy.context.preferences.addons[
+                                "Sollumz"].preferences.shared_texture_folder
+                            texture_path = os.path.join(
+                                shared_folder, param.texture_name + ".dds")
+                            if os.path.isfile(texture_path):
+                                img = bpy.data.images.load(
+                                    texture_path, check_existing=True)
+                                n.image = img
 
                         n.image.name = param.texture_name + ".dds"
 

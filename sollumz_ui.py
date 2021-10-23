@@ -67,7 +67,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         aobj = context.active_object
-        if(aobj == None):
+        if(aobj == None or aobj.sollum_type != DrawableType.DRAWABLE):
             return
         layout.label(text="Entity Fields")
         #box.prop(aobj.ymap_properties, "archetype_name")
@@ -77,7 +77,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
         row.prop(aobj, "location", text="Position")
         #box.prop(aobj.ymap_properties, "rotation")
         row = layout.row()
-        row.prop(aobj, "rotation_quaternion", text="Rotation")
+        row.prop(aobj, "rotation_euler", text="Rotation")
         #box.prop(aobj.ymap_properties, "scale_xy")
         #box.prop(aobj.ymap_properties, "scale_z")
         row = layout.row()

@@ -1,7 +1,7 @@
 import bpy
 import traceback
 import os
-from Sollumz.sollumz_properties import DrawableType, BoundType, LODLevel, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN
@@ -14,6 +14,7 @@ from Sollumz.yft.yftimport import fragment_to_obj
 from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper, ExportHelper
+from Sollumz.meshhelper import *
 
 
 class SollumzImportHelper(ImportHelper):
@@ -272,8 +273,8 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
 
         #entity.archetype_name = obj.entity_properties.archetype_name
         entity.archetype_name = obj.name
-        entity.flags = obj.entity_properties.flags
-        entity.guid = obj.entity_properties.guid
+        entity.flags = int(obj.entity_properties.flags)
+        entity.guid = int(obj.entity_properties.guid)
         #entity.position = obj.entity_properties.position
         entity.position = obj.location
         #entity.rotation = obj.entity_properties.rotation
@@ -282,35 +283,64 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
         entity.scale_xy = 1
         #entity.scale_z = obj.entity_properties.scale_z
         entity.scale_z = 1
-        entity.parent_index = obj.entity_properties.parent_index
+        entity.parent_index = int(obj.entity_properties.parent_index)
         entity.lod_dist = obj.entity_properties.lod_dist
         entity.child_lod_dist = obj.entity_properties.child_lod_dist
-        entity.lod_level = obj.entity_properties.lod_level.upper()
-        entity.num_children = obj.entity_properties.num_children
-        entity.priority_level = obj.entity_properties.priority_level.upper()
-        entity.ambient_occlusion_multiplier = obj.entity_properties.ambient_occlusion_multiplier
-        entity.artificial_ambient_occlusion = obj.entity_properties.artificial_ambient_occlusion
-        entity.tint_value = obj.entity_properties.tint_value
+        entity.lod_level = obj.entity_properties.lod_level.upper().replace("SOLLUMZ_", "")
+        entity.num_children = int(obj.entity_properties.num_children)
+        entity.priority_level = obj.entity_properties.priority_level.upper().replace("SOLLUMZ_", "")
+        entity.ambient_occlusion_multiplier = int(
+            obj.entity_properties.ambient_occlusion_multiplier)
+        entity.artificial_ambient_occlusion = int(
+            obj.entity_properties.artificial_ambient_occlusion)
+        entity.tint_value = int(obj.entity_properties.tint_value)
 
         return entity
+
+    # calculating wrong because radius is off.... error ask colton
+    def calculate_extents(self, objs):
+        emin = Vector((0, 0, 0))
+        emax = Vector((0, 0, 0))
+        smin = Vector((0, 0, 0))
+        smax = Vector((0, 0, 0))
+
+        for obj in objs:
+            loddist = obj.entity_properties.lod_dist
+            radius = 10  # get_obj_radius(obj)
+
+            bbmin = subtract_from_vector(obj.location, radius)
+            bbmax = add_to_vector(obj.location, radius)
+            sbmin = subtract_from_vector(bbmin, loddist)
+            sbmax = add_to_vector(bbmax, loddist)
+
+            emin = get_min_vector(emin, bbmin)
+            emax = get_max_vector(emax, bbmax)
+            smin = get_min_vector(smin, sbmin)
+            smax = get_max_vector(smax, sbmax)
+
+        return emin, emax, smin, smax
 
     def execute(self, context):
 
         ymap = CMapData()
         ymap.name = os.path.splitext(
-            os.path.basename(context.blend_data.filepath))[0]
-        ymap.parent = ""
+            os.path.basename(context.blend_data.filepath))[0]  # use blender files name ? idk
+        ymap.parent = ""  # add a property ? if so how?
         ymap.flags = 0
         ymap.content_flags = 0
-        # ymap.streaming_extents_min
-        # ymap.streaming_extents_max
-        # ymap.entities_extents_min
-        # ymap.entities_extents_max
 
+        objs = []
         for obj in context.collection.objects:
             if(obj.sollum_type == DrawableType.DRAWABLE):
                 ent = self.entity_from_obj(obj)
                 ymap.entities.append(ent)
+                objs.append(obj)
+
+        emin, emax, smin, smax = self.calculate_extents(objs)
+        ymap.streaming_extents_min = emin
+        ymap.streaming_extents_max = emax
+        ymap.entities_extents_min = smin
+        ymap.entities_extents_max = smax
 
         ymap.write_xml(self.filepath)
         return {'FINISHED'}

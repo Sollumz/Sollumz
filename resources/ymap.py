@@ -19,7 +19,7 @@ class EntityItem(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.type = AttributeProperty("type", "")
+        self.type = AttributeProperty("type", "CEntityDef")
         self.archetype_name = TextProperty("archetypeName")
         self.flags = ValueProperty("flags", 0)
         self.guid = ValueProperty("guid", 0)
