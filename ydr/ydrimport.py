@@ -337,12 +337,11 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
 
     if bones_override is not None:
         bones = bones_override
-
-    if(drawable.bound != None):
-        bobj = composite_to_obj(
-            drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
-    bobj.parent = obj
-
+        
+    if(len(drawable.bound.children) > 0):
+        bobj = composite_to_obj(drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
+        bobj.parent = obj
+        
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(
             model, materials, drawable.name, "high", bones=bones)

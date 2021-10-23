@@ -24,7 +24,7 @@ def draw_shader(layout, mat):
         box = layout.box()
         row = box.row()
         row.prop(mat.shader_properties, "renderbucket")
-        row.prop(mat.shader_properties, "filename")
+        row.prop(mat.shader_properties, "filename", text='Shader Name')
 
         layout.label(text = "Texture Parameters")
         nodes = mat.node_tree.nodes
@@ -132,6 +132,7 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 1
 
     def draw(self, context):
         pass

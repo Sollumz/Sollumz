@@ -29,7 +29,7 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = -1
+    bl_order = 0
 
     def draw(self, context):
         layout = self.layout
@@ -115,7 +115,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.use_property_split = True
+        # layout.use_property_split = True
         aobj = context.active_object
         if(context.active_object == None):
             return
