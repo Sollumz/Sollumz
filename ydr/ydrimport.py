@@ -38,6 +38,17 @@ def shadergroup_to_materials(shadergroup, filepath):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
                             n.image = img
+                        # check shared texture folder
+                        else:
+                            shared_folder = bpy.context.preferences.addons[
+                                "Sollumz"].preferences.shared_texture_folder
+                            texture_path = os.path.join(
+                                shared_folder, param.texture_name + ".dds")
+                            print(texture_path)
+                            if os.path.isfile(texture_path):
+                                img = bpy.data.images.load(
+                                    texture_path, check_existing=True)
+                                n.image = img
 
                         n.image.name = param.texture_name + ".dds"
 
@@ -337,11 +348,12 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
 
     if bones_override is not None:
         bones = bones_override
-        
+
     if(len(drawable.bound.children) > 0):
-        bobj = composite_to_obj(drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
+        bobj = composite_to_obj(
+            drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
         bobj.parent = obj
-        
+
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(
             model, materials, drawable.name, "high", bones=bones)
