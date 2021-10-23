@@ -287,13 +287,23 @@ class VertexBufferProperty(ElementTree):
         self.flags = ValueProperty("Flags", 0)
         self.layout = VertexLayoutListProperty("Layout")
         self.data = TextProperty("Data", "")
+        self.data2 = TextProperty("Data2", "")
 
     def data_to_vertices(self):
         vertices = []
-        text = self.data.strip().split('\n')
+
+        currentdata = None
+
+        if not self.data:
+            currentdata = self.data2
+        else:
+            currentdata = self.data
+
+        text = currentdata.strip().split('\n')
         if len(text) > 0:
             for line in text:
-                v = Vertex.from_xml(self.layout, line.strip().split(" " * 3))
+                v = Vertex.from_xml(
+                    self.layout, line.strip().split(" " * 3))
                 vertices.append(v)
 
         return vertices

@@ -128,7 +128,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
     colors1 = []
     blendweights = []
     blendindices = []
-
+    
     data = geometry.vertex_buffer.data_to_vertices()
     for v in data:
         vertices.append(v.position)
