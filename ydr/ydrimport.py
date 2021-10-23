@@ -26,7 +26,6 @@ def shadergroup_to_materials(shadergroup, filepath):
         material.shader_properties.filename = shader.filename
 
         for param in shader.parameters:
-            print(param.name)
             for n in material.node_tree.nodes:
                 if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                     if(param.name == n.name):
@@ -112,14 +111,24 @@ def geometry_to_obj(geometry, bones=None, name=None):
         vertices.append(vertex.position)
         normals.append(vertex.normal)
 
-        for key, value in vars(vertex):
+        for key, value in vertex._asdict().items():
             index = key[len(key) - 1]
             if 'texcoord' in key:
-                texcoords[index] = value
+                index = int(index)
+                # layer = texcoords[index]
+                if not index in texcoords.keys():
+                    texcoords[index] = []
+                texcoords[index].append(value)
             if 'colors' in key:
-                colors[index] = value
+                index = int(index)
+                if not index in colors.keys():
+                    colors[index] = []
+                colors[index].append(value)
 
-    faces = geometry.index_buffer.data
+    indices = geometry.index_buffer.data
+    # Split indices into groups of 3
+    faces = [indices[i * 3:(i + 1) * 3]
+             for i in range((len(indices) + 3 - 1) // 3)]
 
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY])
     mesh.from_pydata(vertices, [], faces)
@@ -131,20 +140,20 @@ def geometry_to_obj(geometry, bones=None, name=None):
     if data[0].normal is not None:
         normals_fixed = []
         for l in mesh.loops:
-            normals_fixed.append(data[l.vertex_index].normal)
+            vert = data[l.vertex_index]
+            normals_fixed.append(vert.normal)
 
         mesh.normals_split_custom_set(normals_fixed)
 
     mesh.use_auto_smooth = True
 
     # set uvs
-    uv_layer_count = len(texcoords)
-    for uv_layer in texcoords:
-        create_uv_layer(mesh, uv_layer_count, uv_layer)
+    for index, coords in texcoords.items():
+        create_uv_layer(mesh, index, coords)
 
     # set vertex colors
-    for color_layer in colors:
-        create_vertexcolor_layer(mesh, 1, color_layer)
+    for index, color in colors.items():
+        create_vertexcolor_layer(mesh, index, color)
 
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 

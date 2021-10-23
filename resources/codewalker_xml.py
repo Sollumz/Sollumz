@@ -97,7 +97,11 @@ class ElementTree(Element):
     """Convert ET.Element object to ElementTree"""
     @classmethod
     def from_xml(cls: Element, element: ET.Element):
-        new = cls()
+        try:
+            new = cls()
+        except TypeError:
+            raise TypeError(
+                f'Cannot append element of type {cls.__name__}! Class constructor cannot require arguments.')
 
         for prop_name, obj_element in vars(new).items():
             if isinstance(obj_element, Element):
@@ -240,19 +244,26 @@ class QuaternionProperty(ElementProperty):
         return ET.Element(self.tag_name, attrib={'x': str(self.value.x), 'y': str(self.value.y), 'z': str(self.value.z), 'w': str(self.value.w)})
 
 
-class ListProperty(ElementProperty):
+class ListProperty(ElementProperty, AbstractClass):
     """Holds a list value. List can only contain values of one type."""
 
     value_types = (list)
 
-    list_type = None
+    @property
+    @abstractmethod
+    def list_type(self) -> Element:
+        raise NotImplementedError
 
-    def __init__(self, tag_name: str = None, list_type=None, value=None):
-        super().__init__(tag_name or self.tag_name, list_type or str, value or [])
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or [])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
-        new = cls(element.tag)
+        try:
+            new = cls(element.tag)
+        except TypeError:
+            raise TypeError(
+                f'Cannot append element of type {cls.__name__}! Class constructor must only require a single argument that sets the tag_name.')
 
         children = element.findall(new.list_type.tag_name)
 

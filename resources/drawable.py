@@ -165,9 +165,18 @@ class SkeletonProperty(ElementTree):
         self.bones = BonesListProperty("Bones")
 
 
-class VertexLayoutItem(ElementTree):
+class VertexLayoutItem(Element):
+    tag_name = None
+
     def __init__(self, tag_name):
-        super().__init__(tag_name)
+        self.tag_name = tag_name
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        return cls(element.tag)
+
+    def to_xml(self):
+        return ET.Element(self.tag_name)
 
 
 class VertexLayoutListProperty(ListProperty):
@@ -183,16 +192,23 @@ class VertexLayoutListProperty(ListProperty):
                 attribs.append(item.tag_name.lower())
         return namedtuple('Layout', attribs)
 
-    def __init__(self):
+    def __init__(self, tag_name=None):
         super().__init__(self.tag_name)
-        self.type = AttributeProperty('type')
+        self.type = AttributeProperty('type', 'GTAV1')
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+
+        for child in element:
+            new.value.append(new.list_type.from_xml(child))
+        return new
 
 
 class VertexDataProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self, get_type):
-        self.get_type = get_type
+    def __init__(self):
         super().__init__(tag_name='Data', value=[])
 
     @classmethod
@@ -204,11 +220,12 @@ class VertexDataProperty(ElementProperty):
                 items = line.strip().split("   ")
                 vert = []
                 for item in items:
+                    words = item.strip().split(" ")
+                    # Convert item to correct type
+                    item = [get_str_type(word) for word in words]
                     vert.append(item)
 
-                # Use a namedtuple generated from the layout
-                vert_type = new.get_type()
-                new.value.append(vert_type(*vert))
+                new.value.append(vert)
 
         return new
 
@@ -225,14 +242,21 @@ class VertexBuffer(ElementTree):
     def __init__(self):
         super().__init__()
         self.flags = ValueProperty("Flags", 0)
-        self.layout = VertexLayoutListProperty("Layout")
-        self.data = VertexDataProperty(self.get_vertex_type)
+        self.layout = VertexLayoutListProperty()
+        self.data = VertexDataProperty()
 
-    def get_vertex_type(self):
-        return self.get_element('layout').vertex_type
+    @classmethod
+    def from_xml(cls: Element, element: ET.Element):
+        new = super().from_xml(element)
+        # Convert data to namedtuple matching the layout
+        vert_type = new.get_element('layout').vertex_type
+        for index, vert in enumerate(new.data):
+            new.data[index] = vert_type(*vert)
+        return new
 
 
 class IndexDataProperty(ElementProperty):
+    value_types = (int)
 
     def __init__(self):
         super().__init__(tag_name='Data', value=[])
@@ -241,7 +265,7 @@ class IndexDataProperty(ElementProperty):
     def from_xml(cls, element: ET.Element):
         new = cls()
         indices = element.text.strip().replace("\n", "").split()
-        new.value = [float(i) for i in indices]
+        new.value = [int(i) for i in indices]
 
         return new
 
@@ -264,7 +288,7 @@ class IndexBuffer(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.data = IndexDataProperty
+        self.data = IndexDataProperty()
 
 
 class GeometryItem(ElementTree):
@@ -279,6 +303,13 @@ class GeometryItem(ElementTree):
         self.index_buffer = IndexBuffer()
 
 
+class GeometriesListProperty(ListProperty):
+    list_type = GeometryItem
+
+    def __init__(self, tag_name: str = None, value=None):
+        super().__init__(tag_name=tag_name or "Geometries", value=value or [])
+
+
 class DrawableModelItem(ElementTree):
     tag_name = "Item"
 
@@ -289,7 +320,14 @@ class DrawableModelItem(ElementTree):
         self.has_skin = ValueProperty("HasSkin", 0)  # 0 = false, 1 = true
         self.bone_index = ValueProperty("BoneIndex", 0)
         self.unknown_1 = ValueProperty("Unknown1", 0)
-        self.geometries = ListProperty(GeometryItem, "Geometries")
+        self.geometries = GeometriesListProperty()
+
+
+class DrawableModelListProperty(ListProperty):
+    list_type = DrawableModelItem
+
+    def __init__(self, tag_name: str = None, value=None):
+        super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
 
 
 class Drawable(ElementTree, AbstractClass):
@@ -317,14 +355,14 @@ class Drawable(ElementTree, AbstractClass):
         self.skeleton = SkeletonProperty()
         # is embedded collision always type of composite? have to check
         self.bound = BoundsComposite()
-        self.drawable_models_high = ListProperty(
-            DrawableModelItem, "DrawableModelsHigh")
-        self.drawable_models_med = ListProperty(
-            DrawableModelItem, "DrawableModelsMedium")
-        self.drawable_models_low = ListProperty(
-            DrawableModelItem, "DrawableModelsLow")
-        self.drawable_models_vlow = ListProperty(
-            DrawableModelItem, "DrawableModelsVeryLow")
+        self.drawable_models_high = DrawableModelListProperty(
+            "DrawableModelsHigh")
+        self.drawable_models_med = DrawableModelListProperty(
+            "DrawableModelsMedium")
+        self.drawable_models_low = DrawableModelListProperty(
+            "DrawableModelsLow")
+        self.drawable_models_vlow = DrawableModelListProperty(
+            "DrawableModelsVeryLow")
 
 
 class DrawableDictionary(ListProperty):
