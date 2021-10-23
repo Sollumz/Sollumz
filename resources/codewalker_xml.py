@@ -97,11 +97,7 @@ class ElementTree(Element):
     """Convert ET.Element object to ElementTree"""
     @classmethod
     def from_xml(cls: Element, element: ET.Element):
-        try:
-            new = cls()
-        except TypeError:
-            raise TypeError(
-                f'Cannot append element of type {cls.__name__}! Class constructor cannot require arguments.')
+        new = cls()
 
         for prop_name, obj_element in vars(new).items():
             if isinstance(obj_element, Element):
@@ -164,7 +160,7 @@ class ElementTree(Element):
 @dataclass
 class AttributeProperty:
     name: str
-    _value: Any
+    _value: Any = None
 
     @property
     def value(self):
@@ -259,11 +255,7 @@ class ListProperty(ElementProperty, AbstractClass):
 
     @classmethod
     def from_xml(cls, element: ET.Element):
-        try:
-            new = cls(element.tag)
-        except TypeError:
-            raise TypeError(
-                f'Cannot append element of type {cls.__name__}! Class constructor must only require a single argument that sets the tag_name.')
+        new = cls(element.tag)
 
         children = element.findall(new.list_type.tag_name)
 

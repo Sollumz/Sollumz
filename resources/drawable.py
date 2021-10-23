@@ -1,10 +1,9 @@
 from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
 from xml.etree import ElementTree as ET
-from enum import Enum
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
-from .bound import Bounds, BoundsComposite
-from collections import deque, namedtuple
+from .bound import BoundsComposite
+from collections import namedtuple
 
 
 class YDD:
@@ -29,71 +28,6 @@ class YDR:
         return drawable.write_xml(filepath)
 
 
-class ParameterItem(ElementTree):
-    tag_name = "Item"
-
-    def __init__(self):
-        super().__init__()
-        self.name = AttributeProperty("name", "")
-        self.type = AttributeProperty("type", "")  # ENUM?
-
-
-class TextureParameterItem(ParameterItem):
-
-    def __init__(self):
-        super().__init__()
-        self.texture_name = TextProperty("Name", "")
-
-
-class ValueParameterItem(ParameterItem):
-
-    def __init__(self):
-        super().__init__()
-        self.quaternion_x = AttributeProperty("x", 0)
-        self.quaternion_y = AttributeProperty("y", 0)
-        self.quaternion_z = AttributeProperty("z", 0)
-        self.quaternion_w = AttributeProperty("w", 0)
-
-
-class ParametersListProperty(ListProperty):
-    list_type = ParameterItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
-
-    @staticmethod
-    def from_xml(element: ET.Element):
-        new = ParametersListProperty()
-
-        for child in element.iter():
-            if 'type' in child.attrib:
-                param_type = child.get('type')
-                if(param_type == "Texture"):
-                    new.value.append(TextureParameterItem.from_xml(child))
-                if(param_type == "Vector"):
-                    new.value.append(ValueParameterItem.from_xml(child))
-
-        return new
-
-
-class ShaderItem(ElementTree):
-    tag_name = 'Item'
-
-    def __init__(self):
-        super().__init__()
-        self.name = TextProperty("Name", "")
-        self.filename = TextProperty("FileName", "")
-        self.render_bucket = ValueProperty("RenderBucket", 0)
-        self.parameters = ParametersListProperty("Parameters")
-
-
-class ShadersListProperty(ListProperty):
-    list_type = ShaderItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
-
-
 class TextureItem(ElementTree):
     tag_name = "Item"
 
@@ -116,6 +50,86 @@ class TextureDictionaryListProperty(ListProperty):
 
     def __init__(self, tag_name: str = None, value=None):
         super().__init__(tag_name=tag_name or "TextureDictionary", value=value or [])
+
+
+class ShaderParameter(ElementTree, AbstractClass):
+    tag_name = "Item"
+
+    @property
+    @abstractmethod
+    def type():
+        raise NotImplementedError
+
+    def __init__(self):
+        super().__init__()
+        self.name = AttributeProperty("name")
+        self.type = AttributeProperty("type", self.type)  # ENUM?
+
+
+class TextureShaderParameter(ShaderParameter):
+    type = 'Texture'
+
+    def __init__(self):
+        super().__init__()
+        self.texture_name = TextProperty("Name", "")
+
+
+class VectorShaderParameter(ShaderParameter):
+    type = 'Vector'
+
+    def __init__(self):
+        super().__init__()
+        self.x = AttributeProperty("x", 0)
+        self.y = AttributeProperty("y", 0)
+        self.z = AttributeProperty("z", 0)
+        self.w = AttributeProperty("w", 0)
+
+
+class ArrayShaderParameterProperty(ShaderParameter, ListProperty):
+    type = 'Array'
+    list_type = QuaternionProperty
+
+
+class ParametersListProperty(ListProperty):
+    list_type = ShaderParameter
+
+    def __init__(self, tag_name: str = None, value=None):
+        super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = ParametersListProperty()
+
+        for child in element.iter():
+            if 'type' in child.attrib:
+                param_type = child.get('type')
+                if param_type == TextureShaderParameter.type:
+                    new.value.append(TextureShaderParameter.from_xml(child))
+                if param_type == VectorShaderParameter.type:
+                    new.value.append(VectorShaderParameter.from_xml(child))
+                if param_type == ArrayShaderParameterProperty.type:
+                    new.value.append(
+                        ArrayShaderParameterProperty.from_xml(child))
+
+        return new
+
+
+class ShaderItem(ElementTree):
+    tag_name = 'Item'
+
+    def __init__(self):
+        super().__init__()
+        self.name = TextProperty("Name", "")
+        self.filename = TextProperty("FileName", "")
+        self.render_bucket = ValueProperty("RenderBucket", 0)
+        self.parameters = ParametersListProperty("Parameters")
+
+
+class ShadersListProperty(ListProperty):
+    list_type = ShaderItem
+
+    def __init__(self, tag_name: str = None, value=None):
+        super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
 
 
 class ShaderGroupProperty(ElementTree):

@@ -485,30 +485,20 @@ def create_image_node(node_tree, param):
 
 def create_vector_nodes(node_tree, param):
 
-    vnodex = node_tree.nodes.new("ShaderNodeValue")
-    vnodex.name = param.name + "_x"
-    vnodex.outputs[0].default_value = param.value[0]
-
-    vnodey = node_tree.nodes.new("ShaderNodeValue")
-    vnodey.name = param.name + "_y"
-    vnodey.outputs[0].default_value = param.value[1]
-
-    vnodez = node_tree.nodes.new("ShaderNodeValue")
-    vnodez.name = param.name + "_z"
-    vnodez.outputs[0].default_value = param.value[2]
-
-    vnodew = node_tree.nodes.new("ShaderNodeValue")
-    vnodew.name = param.name + "_w"
-    vnodew.outputs[0].default_value = param.value[3]
+    node = node_tree.nodes.new("ShaderNodeValue")
+    for attr in vars(param).values():
+        if attr.name != 'name' and attr.name != 'type':
+            node = node_tree.nodes.new("ShaderNodeValue")
+            node.name = f"{param.name}_{attr.name}"
+            node.outputs[0].default_value = float(attr.value)
 
 
-def create_shader(shadername, shadermanager):
+def create_shader(name, parameters):
 
-    mat = bpy.data.materials.new(shadername)
+    mat = bpy.data.materials.new(name)
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
 
-    parameters = shadermanager.shaders[shadername].parameters
     node_tree = mat.node_tree
 
     for param in parameters:
