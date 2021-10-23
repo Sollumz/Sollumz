@@ -225,6 +225,38 @@ def get_vector_list_length(list):
     return length
 
 
+def subtract_from_vector(v, f):
+    r = Vector((0, 0, 0))
+    r.x = v.x - f
+    r.y = v.y - f
+    r.z = v.z - f
+    return r
+
+
+def add_to_vector(v, f):
+    r = Vector((0, 0, 0))
+    r.x = v.x + f
+    r.y = v.y + f
+    r.z = v.z + f
+    return r
+
+
+def get_min_vector(v, c):
+    r = Vector((0, 0, 0))
+    r.x = min(v.x, c.x)
+    r.y = min(v.y, c.y)
+    r.z = min(v.z, c.z)
+    return r
+
+
+def get_max_vector(v, c):
+    r = Vector((0, 0, 0))
+    r.x = max(v.x, c.x)
+    r.y = max(v.y, c.y)
+    r.z = max(v.z, c.z)
+    return r
+
+
 # see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
 """Multiply 3d coord list by matrix"""
 

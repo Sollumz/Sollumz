@@ -275,7 +275,7 @@ class ListProperty(ElementProperty, AbstractClass):
                         f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
 
             return element
-        
+
         return None
 
 
