@@ -163,9 +163,10 @@ def list_tostring(list):
         if len(list) == 4:
             return ' '.join(str(round(n)) for n in list)
         else:
-            return None
+            return ' '.join(str(n) for n in list)
     except:
         return None
+
 
 def order_vertex_list(vertex, layout):
 
@@ -195,7 +196,7 @@ def order_vertex_list(vertex, layout):
                 raise TypeError("Missing layout item " + layout[i])
 
             if hasattr(data, "x"):
-              result.append(vector_tostring(data))
+                result.append(vector_tostring(data))
             # color
             elif(isinstance(data, list)):
                 result.append(list_tostring(data))
@@ -210,6 +211,7 @@ def order_vertex_list(vertex, layout):
         print('Incorrect layout parse')
 
     return '   '.join(result)
+
 
 def mesh_to_buffers(obj, mesh, layout, bones=None):
     # thanks dexy
@@ -226,7 +228,7 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
         for i in range(len(bones)):
             bone_index_map[bones[i].name] = i
     vertex_groups = obj.vertex_groups
-    
+
     blend_weights = []
     blend_indices = []
     for v in mesh.vertices:
@@ -237,7 +239,7 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
             total_weights = 0
             max_weights = 0
             max_weights_index = -1
-            
+
             for element in v.groups:
                 if element.group >= len(vertex_groups):
                     continue
@@ -257,14 +259,15 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
 
             # weights normalization
             if valid_weights > 0 and max_weights_index != -1:
-                bw[max_weights_index] = bw[max_weights_index] + (255 - total_weights)
+                bw[max_weights_index] = bw[max_weights_index] + \
+                    (255 - total_weights)
 
             blend_weights.append(bw)
             blend_indices.append(bi)
         else:
             blend_weights.append([0, 0, 255, 0])
             blend_indices.append([0, 0, 0, 0])
-        
+
     vertex_strings = {}
     index_strings = []
     texcoord = [[0]*2 for i in range(6)]
@@ -276,11 +279,11 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
             vert_idx = loop.vertex_index
             position = (obj.matrix_world @ mesh.vertices[vert_idx].co)
             normal = loop.normal
-            
+
             for i in range(len(mesh.uv_layers)):
                 data = mesh.uv_layers[i].data
-                texcoord[i] = data[loop_idx].uv
-            
+                texcoord[i] = process_uv(data[loop_idx].uv)
+
             for i in range(len(mesh.vertex_colors)):
                 data = mesh.vertex_colors[i].data
                 clr = data[loop_idx].color
@@ -303,7 +306,6 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
                 vertex_strings[string] = idx
 
             index_strings.append(str(idx))
-
 
     vertex_buffer = '\n'.join(vertex_strings)
 
@@ -340,7 +342,8 @@ def geometry_from_object(obj, bones=None):
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
 
-    vertex_buffer, index_buffer = mesh_to_buffers(obj_eval, mesh, layout, bones)
+    vertex_buffer, index_buffer = mesh_to_buffers(
+        obj_eval, mesh, layout, bones)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
@@ -489,7 +492,7 @@ def drawable_from_object(obj, bones=None, exportpath=""):
         elif(child.sollum_type == BoundType.COMPOSITE):
             embedded_bound = composite_from_object(child)
 
-    drawable.bound = embedded_bound        
+    drawable.bound = embedded_bound
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count
