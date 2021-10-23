@@ -160,15 +160,12 @@ def vector_tostring(vector):
 
 def list_tostring(list):
     try:
-        string = ""
-        string += str(round(list[0])) + " "
-        string += str(round(list[1])) + " "
-        string += str(round(list[2])) + " "
-        string += str(round(list[3]))
-        return string
+        if len(list) == 4:
+            return ' '.join(str(round(n)) for n in list)
+        else:
+            return None
     except:
         return None
-
 
 def order_vertex_list(vertex, layout):
 
@@ -188,36 +185,31 @@ def order_vertex_list(vertex, layout):
         "BlendIndices": 12,
     }
 
-    ordered = []
+    result = []
 
     for i in range(len(layout)):
         layout_key = layout_map[layout[i]]
         if layout_key != None:
-            if vertex[layout_key] == None:
+            data = vertex[layout_key]
+            if data == None:
                 raise TypeError("Missing layout item " + layout[i])
 
-            ordered.append(vertex[layout_key])
+            if hasattr(data, "x"):
+              result.append(vector_tostring(data))
+            # color
+            elif(isinstance(data, list)):
+                result.append(list_tostring(data))
+            # floats (dexy: not sure if it should ever get here? all components should be either vector or list)
+            else:
+                result.append(' '.join(str(j) for j in data[i]))
+
         else:
             print('Incorrect layout element', layout[i])
 
-    if (len(ordered) != len(layout)):
+    if (len(result) != len(layout)):
         print('Incorrect layout parse')
 
-    result = ""
-
-    for data in ordered:
-        # vector
-        if hasattr(data, "x"):
-            result += vector_tostring(data) + " "
-        # color
-        elif(isinstance(data, list)):
-            result += list_tostring(data) + " "
-        # floats
-        else:
-            result.join(' '.join(str(j) for j in data[i]))
-
-    return result
-
+    return '   '.join(result)
 
 def mesh_to_buffers(obj, mesh, layout, bones=None):
     # thanks dexy
@@ -229,44 +221,80 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
     mesh.calc_tangents()
     mesh.calc_loop_triangles()
 
-    bones_index_dict = {}
+    bone_index_map = {}
     if(bones != None):
         for i in range(len(bones)):
-            bones_index_dict[bones[i].name] = i
+            bone_index_map[bones[i].name] = i
     vertex_groups = obj.vertex_groups
+    
+    blend_weights = []
+    blend_indices = []
+    for v in mesh.vertices:
+        if len(v.groups) > 0:
+            bw = [0] * 4
+            bi = [0] * 4
+            valid_weights = 0
+            total_weights = 0
+            max_weights = 0
+            max_weights_index = -1
+            
+            for element in v.groups:
+                if element.group >= len(vertex_groups):
+                    continue
 
+                vertex_group = vertex_groups[element.group]
+                bone_index = bone_index_map.get(vertex_group.name, -1)
+                # 1/255 = 0.0039 the minimal weight for one vertex group
+                weight = round(element.weight * 255)
+                if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
+                    bw[valid_weights] = weight
+                    bi[valid_weights] = bone_index
+                    if (max_weights < weight):
+                        max_weights_index = valid_weights
+                        max_weights = weight
+                    valid_weights += 1
+                    total_weights += weight
+
+            # weights normalization
+            if valid_weights > 0 and max_weights_index != -1:
+                bw[max_weights_index] = bw[max_weights_index] + (255 - total_weights)
+
+            blend_weights.append(bw)
+            blend_indices.append(bi)
+        else:
+            blend_weights.append([0, 0, 255, 0])
+            blend_indices.append([0, 0, 0, 0])
+        
     vertex_strings = {}
     index_strings = []
+    texcoord = [[0]*2 for i in range(6)]
+    color = [[255]*4 for i in range(2)]
+
     for tri in mesh.loop_triangles:
         for loop_idx in tri.loops:
             loop = mesh.loops[loop_idx]
             vert_idx = loop.vertex_index
             position = (obj.matrix_world @ mesh.vertices[vert_idx].co)
             normal = loop.normal
-            texcoord = {}
-            for i in range(6):
-                texcoord[i] = [None] * 2
+            
             for i in range(len(mesh.uv_layers)):
                 data = mesh.uv_layers[i].data
                 texcoord[i] = data[loop_idx].uv
-            color = {}
-            for i in range(2):
-                color[i] = [None] * 4
-            if len(mesh.vertex_colors) > 0:
-                for i in range(len(mesh.vertex_colors)):
-                    data = mesh.vertex_colors[i].data
-                    clr = data[loop_idx].color
-                    color[i] = [clr[0] * 255, clr[1] *
-                                255, clr[2] * 255, clr[3] * 255]
-            else:
-                for i in range(len(color)):
-                    color[i] = [255, 255, 255, 255]
+            
+            for i in range(len(mesh.vertex_colors)):
+                data = mesh.vertex_colors[i].data
+                clr = data[loop_idx].color
+                color[i] = [clr[0] * 255, clr[1] *
+                            255, clr[2] * 255, clr[3] * 255]
 
             tangent = loop.tangent.to_4d()
             tangent[3] = loop.bitangent_sign
 
+            bw = blend_weights[vert_idx]
+            bi = blend_indices[vert_idx]
+
             string = order_vertex_list([position, normal, color[0], color[1], texcoord[0],
-                                        texcoord[1], texcoord[2], texcoord[3], texcoord[4], texcoord[5], tangent], layout)
+                                        texcoord[1], texcoord[2], texcoord[3], texcoord[4], texcoord[5], tangent, bw, bi], layout)
 
             if string in vertex_strings:
                 idx = vertex_strings[string]
@@ -275,11 +303,14 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
                 vertex_strings[string] = idx
 
             index_strings.append(str(idx))
-            if len(index_strings) % 24 == 0:  # dexys "hack"
-                index_strings.append("\n")
+
 
     vertex_buffer = '\n'.join(vertex_strings)
-    index_buffer = ' '.join(index_strings)
+
+    index_lines = []
+    for i in range(0, len(index_strings), 24):
+        index_lines.append(' '.join(index_strings[i:i+24]))
+    index_buffer = '\n'.join(index_lines)
 
     return vertex_buffer, index_buffer
 
@@ -309,7 +340,7 @@ def geometry_from_object(obj, bones=None):
     for l in layout:
         geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
 
-    vertex_buffer, index_buffer = mesh_to_buffers(obj_eval, mesh, layout)
+    vertex_buffer, index_buffer = mesh_to_buffers(obj_eval, mesh, layout, bones)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
