@@ -1,4 +1,5 @@
 from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
+from os import name
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
@@ -85,15 +86,22 @@ class VectorShaderParameter(ShaderParameter):
         self.w = AttributeProperty("w", 0)
 
 
-class ArrayShaderParameterProperty(ShaderParameter, ListProperty):
+class ArrayShaderParameterProperty(ListProperty, ShaderParameter):
     type = 'Array'
-    list_type = QuaternionProperty
+
+    class Value(QuaternionProperty):
+        tag_name = 'Value'
+
+    list_type = Value
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name=tag_name or 'Item', value=value or [])
 
 
 class ParametersListProperty(ListProperty):
     list_type = ShaderParameter
 
-    def __init__(self, tag_name: str = None, value=None):
+    def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
 
     @staticmethod
@@ -138,8 +146,8 @@ class ShaderGroupProperty(ElementTree):
     def __init__(self):
         super().__init__()
         self.unknown_30 = ValueProperty("Unknown30", 0)
-        self.shaders = ShadersListProperty()
         self.texture_dictionary = TextureDictionaryListProperty()
+        self.shaders = ShadersListProperty()
 
 
 class BoneItem(ElementTree):
@@ -179,44 +187,33 @@ class SkeletonProperty(ElementTree):
         self.bones = BonesListProperty("Bones")
 
 
-class VertexLayoutItem(Element):
-    tag_name = None
-
-    def __init__(self, tag_name):
-        self.tag_name = tag_name
-
-    @classmethod
-    def from_xml(cls, element: ET.Element):
-        return cls(element.tag)
-
-    def to_xml(self):
-        return ET.Element(self.tag_name)
-
-
-class VertexLayoutListProperty(ListProperty):
-    list_type = VertexLayoutItem
+class VertexLayoutListProperty(ElementProperty):
+    value_types = (list)
     tag_name = 'Layout'
 
     # Generate a namedtuple from a vertex layout
     @property
     def vertex_type(self):
-        attribs = []
-        if len(self.value) > 0:
-            for item in self.value:
-                attribs.append(item.tag_name.lower())
-        return namedtuple('Layout', attribs)
+        return namedtuple('Layout', [name.lower() for name in self.value])
 
     def __init__(self, tag_name=None):
-        super().__init__(self.tag_name)
-        self.type = AttributeProperty('type', 'GTAV1')
+        super().__init__(self.tag_name, [])
+        self.type = 'GTAV1'
 
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
-
+        new.type = element.get('type')
         for child in element:
-            new.value.append(new.list_type.from_xml(child))
+            new.value.append(child.tag)
         return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.set('type', self.type)
+        for item in self.value:
+            element.append(ET.Element(item))
+        return element
 
 
 class VertexDataProperty(ElementProperty):
@@ -245,7 +242,12 @@ class VertexDataProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.text = '\n'.join(self.value)
+        element.text = ''
+        for vertex in self.value:
+            for property in vertex:
+                element.text += ' '.join([str(item)
+                                         for item in property]) + '   '
+            element.text += '\n'
 
         return element
 
@@ -259,11 +261,14 @@ class VertexBuffer(ElementTree):
         self.layout = VertexLayoutListProperty()
         self.data = VertexDataProperty()
 
+    def get_vertex_type(self):
+        return self.get_element('layout').vertex_type
+
     @classmethod
     def from_xml(cls: Element, element: ET.Element):
         new = super().from_xml(element)
         # Convert data to namedtuple matching the layout
-        vert_type = new.get_element('layout').vertex_type
+        vert_type = new.get_vertex_type()
         for index, vert in enumerate(new.data):
             new.data[index] = vert_type(*vert)
         return new
@@ -286,12 +291,13 @@ class IndexDataProperty(ElementProperty):
     def to_xml(self):
         element = ET.Element(self.tag_name)
         columns = 24
+        element.text = ''
 
         for index, vert_index in enumerate(self.value):
             element.text += str(vert_index)
             if index < len(self.value) - 1:
                 element.text += ' '
-            if index % columns:
+            if index % columns == 0 and index > 0:
                 element.text += '\n'
 
         return element

@@ -225,6 +225,13 @@ def get_vector_list_length(list):
     return length
 
 
+def flip_uv(uv):
+    u = uv[0]
+    v = (uv[1] - 1.0) * -1
+
+    return [u, v]
+
+
 # see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
 """Multiply 3d coord list by matrix"""
 

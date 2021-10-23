@@ -1,81 +1,65 @@
 import xml.etree.ElementTree as ET
 import os
+from .codewalker_xml import *
+from .drawable import ParametersListProperty, VertexLayoutListProperty
 from ..tools.utils import *
 
 
-class ShaderParameter:
+class RenderBucketProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or 'RenderBucket', value or [])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        items = element.text.strip().split(' ')
+        for item in items:
+            new.value.append(int(item))
+        return items
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.text = ' '.join(self.value)
+
+
+class FileNameListProperty(ListProperty):
+    class Item(TextProperty):
+        tag_name = 'Item'
+
+    list_type = Item
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or 'FileName', value=value or [])
+
+
+class LayoutListProperty(ListProperty):
+    class Layout(VertexLayoutListProperty):
+        tag_name = 'Item'
+
+    list_type = Layout
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name=tag_name or 'Layout', value=[])
+
+
+class Shader(ElementTree):
+    tag_name = 'Item'
 
     def __init__(self):
-        self.type = ""
-        self.name = ""
-        self.value = None
-
-    def read_xml(self, root):
-        self.type = root.attrib["type"]
-        self.name = root.attrib["name"]
-
-        if(type == "Texture"):
-            self.value = "#givemechecker"  # ?
-        elif(self.type == "Vector"):
-            self.value = ReadQuaternion(root)
+        super().__init__()
+        self.name = TextProperty("Name", "")
+        self.filename = FileNameListProperty
+        self.render_bucket = RenderBucketProperty()
+        self.layouts = LayoutListProperty()
+        self.parameters = ParametersListProperty("Parameters")
 
 
-class Shader:
+SHADERS = {}
+path = os.path.join(os.path.dirname(__file__), 'Shaders.xml')
+tree = ET.parse(path)
 
-    def __init__(self):
-        self.name = ""
-        self.filename = []
-        self.renderbucket = []
-        self.layouts = {}
-        self.parameters = []
-
-    def read_xml(self, root):
-        self.name = root.find("Name").text
-
-        filenames = root.find("FileName")
-        for fn in filenames:
-            self.filename.append(fn.text)
-
-        self.renderbucket = StringListToIntList(
-            root.find("RenderBucket").text.split())
-
-        layouts = root.find("Layout")
-        idx = 0
-        for layout in layouts:
-            lay = []
-            for semantic in layout:
-                lay.append(semantic.tag)
-            self.layouts["0x" + str(idx)] = lay
-            idx += 1
-
-        params = root.find("Parameters")
-        for param in params:
-            p = ShaderParameter()
-            p.read_xml(param)
-            self.parameters.append(p)
-
-
-class ShaderManager():
-
-    def __init__(self):
-        self.shaderxml = os.path.join(os.path.dirname(__file__), 'Shaders.xml')
-        self.shaders = {}
-        self.load_shaders()
-
-    def load_shaders(self):
-        tree = ET.parse(self.shaderxml)
-        for node in tree.getroot():
-            s = Shader()
-            s.read_xml(node)
-            self.shaders[s.name] = s
-
-    def print_shader_collection(self):
-        string = ""
-        for shader in self.shaders.values():
-            name = shader.name.upper()
-            ui_name = shader.name.replace("_", " ").upper()
-            value = shader.name.lower()
-            string += "ShaderMaterial(\"" + name + "\", \"" + \
-                ui_name + "\", \"" + value + "\"),\n"
-
-        print(string)
+for node in tree.getroot():
+    shader = Shader.from_xml(node)
+    SHADERS[shader.name] = shader

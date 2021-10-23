@@ -1,7 +1,7 @@
 import bpy
 import traceback
 from Sollumz.ydr.shader_materials import create_shader, shadermats
-from Sollumz.resources.shader import ShaderManager
+from Sollumz.resources.shader import SHADERS
 from Sollumz.sollumz_properties import DrawableType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
 
 
@@ -75,8 +75,7 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
                     # remove old materials
                     for i in range(len(obj.material_slots)):
                         bpy.ops.object.material_slot_remove({'object': obj})
-                    sm = ShaderManager()
-                    mat = create_shader("default", sm)
+                    mat = create_shader("default")
                     obj.data.materials.append(mat)
 
             # set parents
@@ -157,8 +156,7 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
             elif normal_node == None and specular_node != None:
                 shader_name = "spec"
 
-            sm = ShaderManager()
-            new_material = create_shader(shader_name, sm)
+            new_material = create_shader(shader_name)
             #new_mat.name = mat.name
 
             bsdf = new_material.node_tree.nodes["Principled BSDF"]
@@ -223,9 +221,8 @@ class SOLLUMZ_OT_create_shader_material(bpy.types.Operator):
             return {'CANCELLED'}
 
         if is_sollum_type(aobj, DrawableType.GEOMETRY):
-            sm = ShaderManager()
             mat = create_shader(
-                shadermats[context.scene.shader_material_index].value, sm)
+                shadermats[context.scene.shader_material_index].value)
             aobj.data.materials.append(mat)
 
         return {'FINISHED'}

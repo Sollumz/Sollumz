@@ -5,6 +5,7 @@ from Sollumz.ydr.shader_materials import create_shader
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
+from Sollumz.meshhelper import flip_uv
 from Sollumz.tools import cats as Cats
 
 
@@ -15,7 +16,7 @@ def shadergroup_to_materials(shadergroup, filepath):
         filepath) + "\\" + os.path.basename(filepath)[:-8]
     for shader in shadergroup.shaders:
 
-        material = create_shader(shader.name, shader.parameters)
+        material = create_shader(shader.name)
 
         material.shader_properties.renderbucket = shader.render_bucket
         material.shader_properties.filename = shader.filename
@@ -81,17 +82,11 @@ def shadergroup_to_materials(shadergroup, filepath):
     return materials
 
 
-def process_uv(uv):
-    u = uv[0]
-    v = (uv[1] * -1) + 1.0
-    return [u, v]
-
-
 def create_uv_layer(mesh, num, texcoords):
     mesh.uv_layers.new()
     uv_layer = mesh.uv_layers[num]
     for i in range(len(uv_layer.data)):
-        uv = process_uv(texcoords[mesh.loops[i].vertex_index])
+        uv = flip_uv(texcoords[mesh.loops[i].vertex_index])
         uv_layer.data[i].uv = uv
 
 
@@ -124,7 +119,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
                 if not index in texcoords.keys():
                     texcoords[index] = []
                 texcoords[index].append(value)
-            if 'colors' in key:
+            if 'colour' in key:
                 index = int(index)
                 if not index in colors.keys():
                     colors[index] = []
