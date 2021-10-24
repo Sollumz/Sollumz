@@ -1,7 +1,6 @@
 import bpy
 import traceback
 from Sollumz.ydr.shader_materials import create_shader, shadermats
-from Sollumz.resources.shader import SHADERS
 from Sollumz.sollumz_properties import DrawableType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
 
 

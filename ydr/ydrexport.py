@@ -2,7 +2,7 @@ import os
 import shutil
 import bpy
 from Sollumz.resources.drawable import *
-from Sollumz.resources.shader import SHADERS
+from Sollumz.resources.shader import ShaderManager
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import StringHelper
 from Sollumz.tools.blender_helper import BlenderHelper
@@ -280,7 +280,7 @@ def geometry_from_object(obj, bones=None):
             geometry.shader_index = i
 
     shader_name = StringHelper.FixShaderName(obj_eval.active_material.name)
-    layout = SHADERS[shader_name].layouts[0]
+    layout = ShaderManager.shaders[shader_name].layouts[0]
     geometry.vertex_buffer.layout = layout.value
 
     vertex_buffer, index_buffer = get_mesh_buffers(

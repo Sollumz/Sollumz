@@ -56,10 +56,27 @@ class Shader(ElementTree):
         self.parameters = ParametersListProperty("Parameters")
 
 
-SHADERS = {}
-path = os.path.join(os.path.dirname(__file__), 'Shaders.xml')
-tree = ET.parse(path)
+class ShaderManager:
+    shaderxml = os.path.join(os.path.dirname(__file__), 'Shaders.xml')
+    shaders = {}
 
-for node in tree.getroot():
-    shader = Shader.from_xml(node)
-    SHADERS[shader.name] = shader
+    @staticmethod
+    def load_shaders():
+        tree = ET.parse(ShaderManager.shaderxml)
+        for node in tree.getroot():
+            shader = Shader.from_xml(node)
+            ShaderManager.shaders[shader.name] = shader
+
+    def print_shader_collection(self):
+        string = ""
+        for shader in self.shaders.values():
+            name = shader.name.upper()
+            ui_name = shader.name.replace("_", " ").upper()
+            value = shader.name.lower()
+            string += "ShaderMaterial(\"" + name + "\", \"" + \
+                ui_name + "\", \"" + value + "\"),\n"
+
+        print(string)
+
+
+ShaderManager.load_shaders()

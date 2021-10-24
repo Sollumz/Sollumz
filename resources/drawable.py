@@ -219,8 +219,8 @@ class VertexLayoutListProperty(ElementProperty):
 class VertexDataProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self):
-        super().__init__(tag_name='Data', value=[])
+    def __init__(self, tag_name=None):
+        super().__init__(tag_name=tag_name or 'Data', value=[])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -261,6 +261,7 @@ class VertexBuffer(ElementTree):
         self.flags = ValueProperty("Flags", 0)
         self.layout = VertexLayoutListProperty()
         self.data = VertexDataProperty()
+        self.data2 = VertexDataProperty('Data2')
 
     def get_vertex_type(self):
         return self.get_element('layout').vertex_type
