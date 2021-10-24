@@ -171,22 +171,24 @@ def geometry_to_obj(geometry, bones=None, name=None):
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 
     # load weights
-    if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
-        num = max(256, len(bones))
-        for i in range(num):
-            if (i < len(bones)):
-                obj.vertex_groups.new(name=bones[i].name)
-            else:
-                obj.vertex_groups.new(name="UNKNOWN_BONE." + str(i))
+    if hasattr(data[0], " blendweights"):
+        if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
+            num = max(256, len(bones))
+            for i in range(num):
+                if (i < len(bones)):
+                    obj.vertex_groups.new(name=bones[i].name)
+                else:
+                    obj.vertex_groups.new(name="UNKNOWN_BONE." + str(i))
 
-        for vertex_idx, vertex in enumerate(data):
-            for i in range(0, 4):
-                weight = vertex.blendweights[i] / 255
-                index = vertex.blendindices[i]
-                if (weight > 0.0):
-                    obj.vertex_groups[index].add([vertex_idx], weight, "ADD")
+            for vertex_idx, vertex in enumerate(data):
+                for i in range(0, 4):
+                    weight = vertex.blendweights[i] / 255
+                    index = vertex.blendindices[i]
+                    if (weight > 0.0):
+                        obj.vertex_groups[index].add(
+                            [vertex_idx], weight, "ADD")
 
-        BlenderHelper.remove_unused_vertex_groups_of_mesh(obj)
+            BlenderHelper.remove_unused_vertex_groups_of_mesh(obj)
 
     return obj
 
@@ -282,8 +284,6 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
     if len(drawable.skeleton.bones) > 0:
         skel = bpy.data.armatures.new(name + ".skel")
         obj = bpy.data.objects.new(name, skel)
-        bones = drawable.skeleton.bones
-        skeleton_to_obj(drawable.skeleton, obj)
     else:
         obj = bpy.data.objects.new(name, None)
 
@@ -295,6 +295,11 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
 
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
+
+    bones = None
+    if len(drawable.skeleton.bones) > 0:
+        bones = drawable.skeleton.bones
+        skeleton_to_obj(drawable.skeleton, obj)
 
     if bones_override is not None:
         bones = bones_override
