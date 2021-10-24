@@ -551,6 +551,11 @@ class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
 
             # add object to collection
             new_obj = obj.copy()
+
+            # Remove materials
+            if new_obj.type == 'MESH':
+                new_obj.data.materials.clear()
+
             bpy.data.objects.remove(obj, do_unlink=True)
             bpy.context.collection.objects.link(new_obj)
 

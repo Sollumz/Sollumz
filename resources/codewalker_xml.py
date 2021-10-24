@@ -2,7 +2,7 @@
 from mathutils import Vector, Quaternion
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Type
 from xml.etree import ElementTree as ET
 
 """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
@@ -160,7 +160,7 @@ class ElementTree(Element):
 @dataclass
 class AttributeProperty:
     name: str
-    _value: Any
+    _value: Any = None
 
     @property
     def value(self):
@@ -266,6 +266,10 @@ class ListProperty(ElementProperty, AbstractClass):
     def to_xml(self):
         element = ET.Element(self.tag_name)
 
+        for child in vars(self).values():
+            if isinstance(child, AttributeProperty):
+                element.set(child.name, str(child.value))
+
         if self.value and len(self.value) > 0:
             for item in self.value:
                 if isinstance(item, self.list_type):
@@ -277,44 +281,6 @@ class ListProperty(ElementProperty, AbstractClass):
             return element
 
         return None
-
-
-class VerticesProperty(ElementProperty):
-    value_types = (list)
-
-    def __init__(self, tag_name: str = 'Vertices', value=None):
-        super().__init__(tag_name, value or [])
-
-    @staticmethod
-    def from_xml(element: ET.Element):
-        new = VerticesProperty(element.tag, [])
-        text = element.text.strip().split('\n')
-        if len(text) > 0:
-            for line in text:
-                coords = line.strip().split(',')
-                if not len(coords) == 3:
-                    return VerticesProperty.read_value_error(element)
-
-                new.value.append(
-                    Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
-
-        return new
-
-    def to_xml(self):
-        element = ET.Element(self.tag_name)
-        element.text = '\n'
-        for vertex in self.value:
-            # Should be a list of Vectors
-            if not isinstance(vertex, Vector):
-                raise TypeError(
-                    f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
-            for index, component in enumerate(vertex):
-                element.text += str(component)
-                if index < len(vertex) - 1:
-                    element.text += ', '
-            element.text += '\n'
-
-        return element
 
 
 class FlagsProperty(ElementProperty):

@@ -96,6 +96,44 @@ class BoundCloth(BoundItem):
     type = 'Cloth'
 
 
+class VerticesProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str = 'Vertices', value=None):
+        super().__init__(tag_name, value or [])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = VerticesProperty(element.tag, [])
+        text = element.text.strip().split('\n')
+        if len(text) > 0:
+            for line in text:
+                coords = line.strip().split(',')
+                if not len(coords) == 3:
+                    return VerticesProperty.read_value_error(element)
+
+                new.value.append(
+                    Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.text = '\n'
+        for vertex in self.value:
+            # Should be a list of Vectors
+            if not isinstance(vertex, Vector):
+                raise TypeError(
+                    f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
+            for index, component in enumerate(vertex):
+                element.text += str(component)
+                if index < len(vertex) - 1:
+                    element.text += ', '
+            element.text += '\n'
+
+        return element
+
+
 class BoundGeometryBVH(BoundItem):
     type = 'GeometryBVH'
 

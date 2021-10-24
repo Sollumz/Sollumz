@@ -1,8 +1,7 @@
 import bpy
 import traceback
 import os
-from mathutils import Vector
-from Sollumz.sollumz_properties import DrawableType, BoundType, LodType, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN

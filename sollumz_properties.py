@@ -33,11 +33,11 @@ class PolygonType(str, Enum):
 
 class MaterialType(str, Enum):
     NONE = 'sollumz_material_none',
-    MATERIAL = 'sollumz_material',
+    SHADER = 'sollumz_material_shader',
     COLLISION = 'sollumz_material_collision'
 
 
-class TextureType(str, Enum):
+class TextureUsage(str, Enum):
     UNKNOWN = 'sollumz_unknown'
     TINTPALETTE = 'sollumz_tintpalette'
     DEFAULT = 'sollumz_default'
@@ -83,7 +83,7 @@ class TextureFormat(str, Enum):
     L8 = 'sollumz_l8'
 
 
-class LodType(str, Enum):
+class LODLevel(str, Enum):
     HIGH = 'sollumz_high'
     MEDIUM = 'sollumz_medium'
     LOW = 'sollumz_low'
@@ -125,38 +125,38 @@ SOLLUMZ_UI_NAMES = {
     PolygonType.TRIANGLE: 'Bound Poly Mesh',
 
     MaterialType.NONE: 'None',
-    MaterialType.MATERIAL: 'Sollumz Material',
+    MaterialType.SHADER: 'Sollumz Material',
     MaterialType.COLLISION: 'Sollumz Collision Material',
 
-    TextureType.UNKNOWN: 'UNKNOWN',
-    TextureType.TINTPALETTE: 'TINTPALETTE',
-    TextureType.DEFAULT: 'DEFAULT',
-    TextureType.TERRAIN: 'TERRAIN',
-    TextureType.CLOUDDENSITY: 'CLOUDDENSITY',
-    TextureType.CLOUDNORMAL: 'CLOUDNORMAL',
-    TextureType.CABLE: 'CABLE',
-    TextureType.FENCE: 'FENCE',
-    TextureType.ENVEFFECT: 'ENV.EFFECT',
-    TextureType.SCRIPT: 'SCRIPT',
-    TextureType.WATERFLOW: 'WATERFLOW',
-    TextureType.WATERFOAM: 'WATERFOAM',
-    TextureType.WATERFOG: 'WATERFOG',
-    TextureType.WATEROCEAN: 'WATEROCEAN',
-    TextureType.WATER: 'WATER',
-    TextureType.FOAMOPACITY: 'FOAMOPACITY',
-    TextureType.FOAM: 'FOAM',
-    TextureType.DIFFUSEDETAIL: 'DIFFUSEDETAIL',
-    TextureType.DIFFUSEDARK: 'DIFFUSEDARK',
-    TextureType.DIFFUSEALPHAOPAQUE: 'DIFFUSEALPHAOPAQUE',
-    TextureType.DETAIL: 'DETAIL',
-    TextureType.NORMAL: 'NORMAL',
-    TextureType.SPECULAR: 'SPECULAR',
-    TextureType.EMMISIVE: 'EMMISIVE',
-    TextureType.SKIPPROCESSING: 'SKIPPROCESSING',
-    TextureType.DONTOPTIMIZE: 'DONTOPTIMIZE',
-    TextureType.TEST: 'TEST',
-    TextureType.COUNT: 'COUNT',
-    TextureType.DIFFUSE: 'DIFFUSE',
+    TextureUsage.UNKNOWN: 'UNKNOWN',
+    TextureUsage.TINTPALETTE: 'TINTPALETTE',
+    TextureUsage.DEFAULT: 'DEFAULT',
+    TextureUsage.TERRAIN: 'TERRAIN',
+    TextureUsage.CLOUDDENSITY: 'CLOUDDENSITY',
+    TextureUsage.CLOUDNORMAL: 'CLOUDNORMAL',
+    TextureUsage.CABLE: 'CABLE',
+    TextureUsage.FENCE: 'FENCE',
+    TextureUsage.ENVEFFECT: 'ENV.EFFECT',
+    TextureUsage.SCRIPT: 'SCRIPT',
+    TextureUsage.WATERFLOW: 'WATERFLOW',
+    TextureUsage.WATERFOAM: 'WATERFOAM',
+    TextureUsage.WATERFOG: 'WATERFOG',
+    TextureUsage.WATEROCEAN: 'WATEROCEAN',
+    TextureUsage.WATER: 'WATER',
+    TextureUsage.FOAMOPACITY: 'FOAMOPACITY',
+    TextureUsage.FOAM: 'FOAM',
+    TextureUsage.DIFFUSEDETAIL: 'DIFFUSEDETAIL',
+    TextureUsage.DIFFUSEDARK: 'DIFFUSEDARK',
+    TextureUsage.DIFFUSEALPHAOPAQUE: 'DIFFUSEALPHAOPAQUE',
+    TextureUsage.DETAIL: 'DETAIL',
+    TextureUsage.NORMAL: 'NORMAL',
+    TextureUsage.SPECULAR: 'SPECULAR',
+    TextureUsage.EMMISIVE: 'EMMISIVE',
+    TextureUsage.SKIPPROCESSING: 'SKIPPROCESSING',
+    TextureUsage.DONTOPTIMIZE: 'DONTOPTIMIZE',
+    TextureUsage.TEST: 'TEST',
+    TextureUsage.COUNT: 'COUNT',
+    TextureUsage.DIFFUSE: 'DIFFUSE',
 
     TextureFormat.DXT1: 'D3DFMT_DXT1',
     TextureFormat.DXT3: 'D3DFMT_DXT3',
@@ -170,10 +170,10 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.A8: 'D3DFMT_DXT1',
     TextureFormat.L8: 'D3DFMT_DXT1',
 
-    LodType.HIGH: 'High',
-    LodType.MEDIUM: 'Med',
-    LodType.LOW: 'Low',
-    LodType.VERYLOW: 'Vlow',
+    LODLevel.HIGH: 'High',
+    LODLevel.MEDIUM: 'Med',
+    LODLevel.LOW: 'Low',
+    LODLevel.VERYLOW: 'Vlow',
 
     DrawableType.NONE: 'Sollumz None',
     DrawableType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
@@ -251,12 +251,14 @@ def hide_obj_and_children(obj, value):
     for child in obj.children:
         hide_obj_and_children(child, value)
 
+
 def get_bool_prop(obj, key):
     try:
         return obj[key]
     except KeyError:
         return False
-      
+
+
 def get_hide_collisions(self):
     return get_bool_prop(self, 'hide_collision')
 
@@ -278,7 +280,7 @@ def set_hide_high_lods(self, value):
 
     for obj in bpy.context.collection.objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LodType.HIGH):
+            if(obj.drawable_model_properties.sollum_lod == LODLevel.HIGH):
                 hide_obj_and_children(obj, value)
 
 
@@ -291,19 +293,20 @@ def set_hide_medium_lods(self, value):
 
     for obj in bpy.context.collection.objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LodType.MEDIUM):
+            if(obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM):
                 hide_obj_and_children(obj, value)
 
 
 def get_hide_low_lods(self):
     return get_bool_prop(self, 'hide_low_lods')
 
+
 def set_hide_low_lods(self, value):
     self["hide_low_lods"] = value
 
     for obj in bpy.context.collection.objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LodType.LOW):
+            if(obj.drawable_model_properties.sollum_lod == LODLevel.LOW):
                 hide_obj_and_children(obj, value)
 
 
@@ -316,7 +319,7 @@ def set_hide_very_low_lods(self, value):
 
     for obj in bpy.context.collection.objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LodType.VERYLOW):
+            if(obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW):
                 hide_obj_and_children(obj, value)
 
 

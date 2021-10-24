@@ -1,15 +1,13 @@
-import bpy
-from bpy_extras.io_utils import ExportHelper
 from Sollumz.resources.drawable import *
-from Sollumz.resources.shader import ShaderManager
-import os, sys, traceback
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
 from Sollumz.ydr.ydrexport import drawable_from_object
 import Sollumz.tools.jenkhash as Jenkhash
 
+
 def get_hash(obj):
     return Jenkhash.Generate(obj.name.split(".")[0])
+
 
 def drawable_dict_from_object(obj):
 
@@ -29,4 +27,3 @@ def drawable_dict_from_object(obj):
     drawable_dict.value.sort(key=get_hash)
 
     return drawable_dict
-

@@ -1,18 +1,14 @@
 import bpy
-from bpy_extras.io_utils import ExportHelper
 from Sollumz.resources.drawable import *
-from Sollumz.resources.shader import ShaderManager
+from Sollumz.resources.shader import SHADERS
 import os
 import sys
-import traceback
 import shutil
-import copy
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
 from Sollumz.tools.blender_helper import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel
 from Sollumz.ybn.ybnexport import composite_from_object
-from mathutils import Vector, Matrix
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -29,7 +25,7 @@ def get_used_materials(obj):
                     print(
                         f"Object: {grandchild.name} has no materials to export.")
                 for mat in mats:
-                    if(mat.sollum_type != MaterialType.MATERIAL):
+                    if(mat.sollum_type != MaterialType.SHADER):
                         print(
                             f"Object: {grandchild.name} has a material: {mat.name} that is not going to be exported because it is not a sollum material.")
                     materials.append(mat)
@@ -51,20 +47,21 @@ def get_shaders_from_blender(obj):
     materials = get_used_materials(obj)
     for material in materials:
         shader = ShaderItem()
+        # Maybe make this a property?
         shader.name = FixShaderName(material.name)
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
 
         for node in material.node_tree.nodes:
-            if(isinstance(node, bpy.types.ShaderNodeTexImage)):
-                param = TextureParameterItem()
+            if isinstance(node, bpy.types.ShaderNodeTexImage):
+                param = TextureShaderParameter()
                 param.name = node.name
                 param.type = "Texture"
                 param.texture_name = os.path.splitext(node.image.name)[0]
                 shader.parameters.append(param)
-            elif(isinstance(node, bpy.types.ShaderNodeValue)):
-                if(node.name[-1] == "x"):
-                    param = ValueParameterItem()
+            elif isinstance(node, bpy.types.ShaderNodeValue):
+                if node.name[-1] == "x":
+                    param = VectorShaderParameter()
                     param.name = node.name[:-2]
                     param.type = "Vector"
 
@@ -137,97 +134,11 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
         return None
 
 
-def process_uv(uv):
-    u = uv[0]
-    v = (uv[1] - 1.0) * -1
-
-    return [u, v]
-
-
-def vector_tostring(vector):
-    try:
-        string = [str(vector.x), str(vector.y)]
-        if(hasattr(vector, "z")):
-            string.append(str(vector.z))
-
-        if(hasattr(vector, "w")):
-            string.append(str(vector.w))
-
-        return " ".join(string)
-    except:
-        return None
-
-
-def list_tostring(list):
-    try:
-        if len(list) == 4:
-            return ' '.join(str(round(n)) for n in list)
-        else:
-            return ' '.join(str(n) for n in list)
-    except:
-        return None
-
-
-def order_vertex_list(vertex, layout):
-
-    layout_map = {
-        "Position": 0,
-        "Normal": 1,
-        "Colour0": 2,
-        "Colour1": 3,
-        "TexCoord0": 4,
-        "TexCoord1": 5,
-        "TexCoord2": 6,
-        "TexCoord3": 7,
-        "TexCoord4": 8,
-        "TexCoord5": 9,
-        "Tangent": 10,
-        "BlendWeights": 11,
-        "BlendIndices": 12,
-    }
-
-    result = []
-
-    for i in range(len(layout)):
-        layout_key = layout_map[layout[i]]
-        if layout_key != None:
-            data = vertex[layout_key]
-            if data == None:
-                raise TypeError("Missing layout item " + layout[i])
-
-            if hasattr(data, "x"):
-                result.append(vector_tostring(data))
-            # color
-            elif(isinstance(data, list)):
-                result.append(list_tostring(data))
-            # floats (dexy: not sure if it should ever get here? all components should be either vector or list)
-            else:
-                result.append(' '.join(str(j) for j in data[i]))
-
-        else:
-            print('Incorrect layout element', layout[i])
-
-    if (len(result) != len(layout)):
-        print('Incorrect layout parse')
-
-    return '   '.join(result)
-
-
-def mesh_to_buffers(obj, mesh, layout, bones=None):
-    # thanks dexy
-    if mesh.has_custom_normals:
-        mesh.calc_normals_split()
-    else:
-        mesh.calc_normals()
-
-    mesh.calc_tangents()
-    mesh.calc_loop_triangles()
-
+def get_blended_verts(mesh, vertex_groups, bones=None):
     bone_index_map = {}
     if(bones != None):
         for i in range(len(bones)):
             bone_index_map[bones[i].name] = i
-    vertex_groups = obj.vertex_groups
 
     blend_weights = []
     blend_indices = []
@@ -268,53 +179,87 @@ def mesh_to_buffers(obj, mesh, layout, bones=None):
             blend_weights.append([0, 0, 255, 0])
             blend_indices.append([0, 0, 0, 0])
 
-    vertex_strings = {}
-    index_strings = []
-    texcoord = [[0]*2 for i in range(6)]
-    color = [[255]*4 for i in range(2)]
+    return blend_weights, blend_indices
+
+
+def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
+    mesh = obj.data
+    # thanks dexy
+    if mesh.has_custom_normals:
+        mesh.calc_normals_split()
+    else:
+        mesh.calc_normals()
+
+    mesh.calc_tangents()
+    mesh.calc_loop_triangles()
+
+    blend_weights, blend_indices = get_blended_verts(
+        mesh, obj.vertex_groups, bones)
+
+    hash_table = {}
+    vertices = []
+    indices = []
 
     for tri in mesh.loop_triangles:
         for loop_idx in tri.loops:
             loop = mesh.loops[loop_idx]
             vert_idx = loop.vertex_index
-            position = (obj.matrix_world @ mesh.vertices[vert_idx].co)
-            normal = loop.normal
 
-            for i in range(len(mesh.uv_layers)):
-                data = mesh.uv_layers[i].data
-                texcoord[i] = process_uv(data[loop_idx].uv)
+            kwargs = {}
 
-            for i in range(len(mesh.vertex_colors)):
-                data = mesh.vertex_colors[i].data
-                clr = data[loop_idx].color
-                color[i] = [clr[0] * 255, clr[1] *
-                            255, clr[2] * 255, clr[3] * 255]
+            # Set vertex values based on layout fields
+            for field in vertex_type._fields:
+                if 'position' == field:
+                    kwargs['position'] = tuple(
+                        obj.matrix_world @ mesh.vertices[vert_idx].co)
+                elif 'normal' == field:
+                    kwargs['normal'] = tuple(loop.normal)
+                elif 'blendweights' == field:
+                    kwargs['blendweights'] = blend_weights[vert_idx]
+                elif 'blendindices' == field:
+                    kwargs['blendindices'] = blend_indices[vert_idx]
+                elif 'tangent' == field:
+                    tangent = loop.tangent.to_4d()
+                    tangent[3] = loop.bitangent_sign
+                    kwargs['tangent'] = tuple(tangent)
+                elif 'texcoord' in field:
+                    for i, layer in enumerate(mesh.uv_layers):
+                        key = f'texcoord{i}'
+                        # Ensure layer # is supported
+                        if key in field:
+                            data = layer.data
+                            coord = flip_uv(data[loop_idx].uv)
+                            kwargs[key] = tuple(coord)
+                        else:
+                            print(
+                                f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} UV layer(s). Skipping layer {i}...")
+                elif 'colour' in field:
+                    if len(mesh.vertex_colors) > 0:
+                        for i, color in enumerate(mesh.vertex_colors):
+                            key = f'colour{i}'
+                            # Ensure layer # is supported
+                            if key in field:
+                                data = color.data
+                                kwargs[key] = [
+                                    val * 255 for val in data[loop_idx].color]
+                            else:
+                                print(
+                                    f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} vertex color layer(s). Skipping layer {i}...")
+                    else:
+                        kwargs['colour0'] = (255, 255, 255, 255)
 
-            tangent = loop.tangent.to_4d()
-            tangent[3] = loop.bitangent_sign
+            vertex = vertex_type(**kwargs)
+            vert_hash = hash(vertex)
 
-            bw = blend_weights[vert_idx]
-            bi = blend_indices[vert_idx]
-
-            string = order_vertex_list([position, normal, color[0], color[1], texcoord[0],
-                                        texcoord[1], texcoord[2], texcoord[3], texcoord[4], texcoord[5], tangent, bw, bi], layout)
-
-            if string in vertex_strings:
-                idx = vertex_strings[string]
+            if vert_hash in hash_table.keys():
+                idx = hash_table[vert_hash]
             else:
-                idx = len(vertex_strings)
-                vertex_strings[string] = idx
+                idx = len(hash_table)
+                hash_table[vert_hash] = idx
+                vertices.append([*vertex])
 
-            index_strings.append(str(idx))
-
-    vertex_buffer = '\n'.join(vertex_strings)
-
-    index_lines = []
-    for i in range(0, len(index_strings), 24):
-        index_lines.append(' '.join(index_strings[i:i+24]))
-    index_buffer = '\n'.join(index_lines)
-
-    return vertex_buffer, index_buffer
+            indices.append(idx)
+    return vertices, indices
 
 
 def geometry_from_object(obj, bones=None):
@@ -336,14 +281,12 @@ def geometry_from_object(obj, bones=None):
         if(materials[i] == obj_eval.active_material):
             geometry.shader_index = i
 
-    sm = ShaderManager()
-    layout = sm.shaders[FixShaderName(
-        obj_eval.active_material.name)].layouts["0x0"]
-    for l in layout:
-        geometry.vertex_buffer.layout.append(VertexLayoutItem(l))
+    shader_name = FixShaderName(obj_eval.active_material.name)
+    layout = SHADERS[shader_name].layouts[0]
+    geometry.vertex_buffer.layout = layout.value
 
-    vertex_buffer, index_buffer = mesh_to_buffers(
-        obj_eval, mesh, layout, bones)
+    vertex_buffer, index_buffer = get_mesh_buffers(
+        mesh, obj, layout.vertex_type)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
@@ -362,8 +305,8 @@ def drawable_model_from_object(obj, bones=None):
         drawable_model.unknown_1 = len(bones)
 
     for child in obj.children:
-        if(child.sollum_type == DrawableType.GEOMETRY):
-            if(len(child.data.materials) > 1):
+        if child.sollum_type == DrawableType.GEOMETRY:
+            if len(child.data.materials) > 1:
                 objs = split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
@@ -472,27 +415,26 @@ def drawable_from_object(obj, bones=None, exportpath=""):
     lowhmodel_count = 0
     vlowmodel_count = 0
 
-    embedded_bound = None
-
     for child in obj.children:
-        if(child.sollum_type == DrawableType.DRAWABLE_MODEL):
+        if child.sollum_type == DrawableType.DRAWABLE_MODEL:
             drawable_model = drawable_model_from_object(child, bones)
-            if("high" in child.drawable_model_properties.sollum_lod):
+            if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)
-            elif("med" in child.drawable_model_properties.sollum_lod):
+            elif child.drawable_model_properties.sollum_lod == LODLevel.MEDIUM:
                 medmodel_count += 1
                 drawable.drawable_models_med.append(drawable_model)
-            elif("low" in child.drawable_model_properties.sollum_lod):
+            elif child.drawable_model_properties.sollum_lod == LODLevel.LOW:
                 lowhmodel_count += 1
                 drawable.drawable_models_low.append(drawable_model)
-            elif("vlow" in child.drawable_model_properties.sollum_lod):
+            elif child.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
                 vlowmodel_count += 1
                 drawable.drawable_models_vlow.append(drawable_model)
-        elif(child.sollum_type == BoundType.COMPOSITE):
-            embedded_bound = composite_from_object(child)
+        elif child.sollum_type == BoundType.COMPOSITE:
+            drawable.bound = composite_from_object(child)
 
-    drawable.bound = embedded_bound
+    if not len(drawable.bound.children) > 0:
+        drawable.bound = None
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count
