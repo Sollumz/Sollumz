@@ -214,9 +214,9 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                 elif 'normal' == field:
                     kwargs['normal'] = tuple(loop.normal)
                 elif 'blendweights' == field:
-                    kwargs['blendweights'] = blend_weights[vert_idx]
+                    kwargs['blendweights'] = tuple(blend_weights[vert_idx])
                 elif 'blendindices' == field:
-                    kwargs['blendindices'] = blend_indices[vert_idx]
+                    kwargs['blendindices'] = tuple(blend_indices[vert_idx])
                 elif 'tangent' == field:
                     tangent = loop.tangent.to_4d()
                     tangent[3] = loop.bitangent_sign
@@ -239,8 +239,8 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                             # Ensure layer # is supported
                             if key in field:
                                 data = color.data
-                                kwargs[key] = [
-                                    val * 255 for val in data[loop_idx].color]
+                                kwargs[key] = (
+                                    val * 255 for val in data[loop_idx].color)
                             else:
                                 print(
                                     f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} vertex color layer(s). Skipping layer {i}...")

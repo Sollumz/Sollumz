@@ -5,13 +5,19 @@ from .codewalker_xml import *
 from Sollumz.tools.utils import *
 from .bound import BoundsComposite
 from collections import namedtuple
+import pathlib
 
 
 class YDD:
 
+    file_extension = ".ydd.xml"
+
     @staticmethod
     def from_xml_file(filepath):
-        return DrawableDictionary.from_xml_file(filepath)
+        if "".join(pathlib.Path(filepath).suffixes()) != YDD.file_extension:
+            print(f"{filepath} cannot be read because it is not a YDD file type.")
+        else:
+            return DrawableDictionary.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(drawable_dict, filepath):
@@ -20,9 +26,14 @@ class YDD:
 
 class YDR:
 
+    file_extension = ".ydr.xml"
+
     @staticmethod
     def from_xml_file(filepath):
-        return Drawable.from_xml_file(filepath)
+        if "".join(pathlib.Path(filepath).suffixes()) != YDR.file_extension:
+            print(f"{filepath} cannot be read because it is not a YDR file type.")
+        else:
+            return Drawable.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(drawable, filepath):

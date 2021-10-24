@@ -4,6 +4,7 @@ from enum import Enum
 
 class DrawableType(str, Enum):
     NONE = 'sollumz_none'
+    FRAGMENT = "sollumz_fragment"
     DRAWABLE_DICTIONARY = 'sollumz_drawable_dictionary'
     DRAWABLE = 'sollumz_drawable'
     DRAWABLE_MODEL = 'sollumz_drawable_model'
@@ -176,6 +177,7 @@ SOLLUMZ_UI_NAMES = {
     LODLevel.VERYLOW: 'Vlow',
 
     DrawableType.NONE: 'Sollumz None',
+    DrawableType.FRAGMENT: 'Sollumz Fragment',
     DrawableType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
     DrawableType.DRAWABLE: 'Sollumz Drawable',
     DrawableType.DRAWABLE_MODEL: 'Sollumz Drawable Model',

@@ -21,26 +21,29 @@ from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 class SollumzImporter():
 
+    @staticmethod
     def import_ydr(filepath):
         try:
             ydr_xml = YDR.from_xml_file(filepath)
             drawable_to_obj(ydr_xml, filepath, os.path.basename(
-                filepath.replace(".ydr.xml", '')))
+                filepath.replace(YDR.file_extension, '')))
             # self.report({'INFO'}, 'YDR Successfully imported.')
         except Exception as e:
             print(e)
             # self.report({'ERROR'}, traceback.format_exc())
 
+    @staticmethod
     def import_ybn(filepath):
         try:
             ybn_xml = YBN.from_xml_file(filepath)
             composite_to_obj(ybn_xml, os.path.basename(
-                filepath.replace('.ybn.xml', '')))
+                filepath.replace(YBN.file_extension, '')))
             # self.report({'INFO'}, 'YBN Successfully imported.')
         except Exception as e:
             print(e)
             # self.report({'ERROR'}, traceback.format_exc())
 
+    @staticmethod
     def import_yft(filepath):
         try:
             yft_xml = YFT.from_xml_file(filepath)
@@ -50,6 +53,7 @@ class SollumzImporter():
             print(e)
             # self.report({'ERROR'}, traceback.format_exc())
 
+    @staticmethod
     def import_ydd(filepath):
         try:
             ydd_xml = YDD.from_xml_file(filepath)
@@ -64,15 +68,16 @@ class SollumzImportHelper(bpy.types.Operator, ImportHelper):
     """Imports xml files exported by codewalker."""
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
-    bl_options = {'UNDO'}
+    # bl_options = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(
-        default="*.ydr.xml;*.ydd.xml;*.yft.xml;*.ybn.xml",
+        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
         options={'HIDDEN'},
         maxlen=255,
     )
 
-    filename_exts = [".ydr.xml", ".ydd.xml", ".yft.xml", ".ybn.xml"]
+    filename_exts = [YDR.file_extension, YDD.file_extension,
+                     YFT.file_extension, YBN.file_extension]
 
     import_directory: bpy.props.BoolProperty(
         name="Import Directory",
@@ -80,13 +85,13 @@ class SollumzImportHelper(bpy.types.Operator, ImportHelper):
     )
 
     def import_file(self, filepath, ext):
-        if "ydr" in ext:
+        if ext == YDR.file_extension:
             SollumzImporter.import_ydr(filepath)
-        elif "ydd" in ext:
+        elif ext == YDD.file_extension:
             SollumzImporter.import_ydd(filepath)
-        elif "yft" in ext:
+        elif ext == YFT.file_extension:
             SollumzImporter.import_yft(filepath)
-        elif "ybn" in ext:
+        elif ext == YBN.file_extension:
             SollumzImporter.import_ybn(filepath)
         else:
             print(f"Error unknown filetype: {filepath}")  # should never happen
@@ -105,6 +110,93 @@ class SollumzImportHelper(bpy.types.Operator, ImportHelper):
         else:
             ext = ''.join(pathlib.Path(self.filepath).suffixes)
             self.import_file(self.filepath, ext)
+
+        return {'FINISHED'}
+
+
+class SollumzExporter():
+
+    @staticmethod
+    def export_ydr(obj, filepath):
+        try:
+            drawable_from_object(obj, None, "").write_xml(filepath)
+            # self.report({'INFO'}, 'YDR Successfully exported.')
+        except:
+            print()
+            # self.report({'ERROR'}, traceback.format_exc())
+
+    @staticmethod
+    def export_ydd(obj, filepath):
+        try:
+            drawable_dict_from_object(obj).write_xml(filepath)
+            # self.report({'INFO'}, 'Ydd Successfully exported.')
+        except:
+            print()
+            # self.report({'ERROR'}, traceback.format_exc())
+
+    @staticmethod
+    def export_yft(obj, filepath):
+        raise NotImplementedError
+
+    @staticmethod
+    def export_ybn(obj, filepath):
+        try:
+            bounds_from_object(obj).write_xml(filepath)
+            # self.report({'INFO'}, 'YBN Successfully exported.')
+        except:
+            print()
+            # self.report({'ERROR'}, traceback.format_exc())
+
+
+class SollumzExportHelper(bpy.types.Operator, ExportHelper):
+    """Exports codewalker xml files."""
+    bl_idname = "sollumz.export"
+    bl_label = "Export Codewalker XML"
+    # bl_options = {'UNDO'}
+
+    filter_glob: bpy.props.StringProperty(
+        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
+        options={'HIDDEN'},
+        maxlen=255,
+    )
+
+    export_type: bpy.props.EnumProperty(
+        items=[("export_all", "Export All", "This option lets you export all objects in the scene of your choosen export type to be exported."),
+               ("export_selected", "Export Selected",
+                "This option lets you export the selected objects of your choosen export type to be exported.")],
+        description="The method in which you want to export your scene.",
+        name="Export Type",
+        default="export_selected"
+    )
+
+    def get_directory(self):
+        return os.path.dirname(self.filepath)
+
+    def get_filepath(self, filename):
+        return os.path.join(self.get_directory(), filename)
+
+    def execute(self, context):
+        objects = []
+
+        if(self.export_type == "export_all"):
+            objects = context.collection.objects
+        else:
+            objects = context.selected_objects
+
+        if len(objects) > 0:
+            for obj in objects:
+                if obj.sollum_type == DrawableType.DRAWABLE:
+                    SollumzExporter.export_ydr(
+                        obj, self.get_filepath(obj.name + YDR.file_extension))
+                elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
+                    SollumzExporter.export_ydd(
+                        obj, self.get_filepath(obj.name + YDD.file_extension))
+                elif obj.sollum_type == DrawableType.FRAGMENT:
+                    SollumzExporter.export_yft(
+                        obj, self.get_filepath(obj.name + YFT.file_extension))
+                elif obj.sollum_type == BoundType.COMPOSITE:
+                    SollumzExporter.export_ybn(
+                        obj, self.get_filepath(obj.name + YBN.file_extension))
 
         return {'FINISHED'}
 
@@ -151,91 +243,6 @@ class ImportYmapXml(bpy.types.Operator, ImportHelper):
                     self.apply_entity_properties(obj, entity)
 
         return {'FINISHED'}
-
-
-class SollumzExportHelper():
-    bl_options = {"REGISTER"}
-    sollum_type = None
-    filename_ext = None
-
-    # Define this to tell 'fileselect_add' that we want a directoy
-    directory: bpy.props.StringProperty(
-        name="Output directory",
-        description="Select export output directory",
-        subtype="DIR_PATH",
-    )
-
-    export_type: bpy.props.EnumProperty(
-        items=[("export_all", "Export All", "This option lets you export all objects in the scene of your choosen export type to be exported."),
-               ("export_selected", "Export Selected",
-                "This option lets you export the selected objects of your choosen export type to be exported."),
-               ("export_first", "Export First", "This option lets you export the first found object of your choosen export type to be exported.")],
-        description="The method in which you want to export your scene.",
-        name="Export Type",
-        default="export_all"
-    )
-
-    def get_filepath(self, obj):
-        return f"{self.directory}\{obj.name}{self.filename_ext}"
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
-
-    def no_objects_message(self):
-        return f"No {SOLLUMZ_UI_NAMES[self.sollum_type]} object types in scene for Sollumz export"
-
-    def execute(self, context):
-        if(self.export_type == "export_all"):
-            return self.export_all(context)
-        elif(self.export_type == "export_selected"):
-            self.export_selected(context)
-        else:
-            self.export_first(context)
-        return {'CANCELLED'}
-
-    def export_all(self, context):
-        objects = context.collection.objects
-
-        found = False
-        if len(objects) > 0:
-            for obj in objects:
-                if obj.sollum_type == self.sollum_type:
-                    found = True
-                    self.export(obj)
-
-        if not found:
-            self.report({'INFO'}, self.no_objects_message())
-            return {'CANCELLED'}
-
-        return {'FINISHED'}
-
-    def export_selected(self, context):
-        objects = context.selected_objects
-
-        found = False
-        if len(objects) > 0:
-            for obj in objects:
-                if obj.sollum_type == self.sollum_type:
-                    found = True
-                    self.export(obj)
-
-        if not found:
-            self.report({'INFO'}, self.no_objects_message())
-
-    def export_first(self, context):
-        objects = context.collection.objects
-
-        found = False
-        if len(objects) > 0:
-            for obj in objects:
-                if obj.sollum_type == self.sollum_type:
-                    found = True
-                    self.export(obj)
-                    break
-
-        if not found:
-            self.report({'INFO'}, self.no_objects_message())
 
 
 class ExportYmapXml(bpy.types.Operator, ExportHelper):
@@ -334,87 +341,21 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
-class ExportYbnXml(bpy.types.Operator, SollumzExportHelper):
-    """Export static collisions (.ybn)"""
-    bl_idname = "exportxml.ybn"
-    bl_label = "Export Ybn Xml (.ybn.xml)"
-    sollum_type = BoundType.COMPOSITE.value
-
-    filename_ext = '.ybn.xml'
-
-    def export(self, obj):
-        try:
-            bounds_from_object(obj).write_xml(self.get_filepath(obj))
-            self.report({'INFO'}, 'YBN Successfully exported.')
-        except NoGeometryError:
-            self.report(
-                {'WARNING'}, f'{obj.name} was not exported: {NoGeometryError.message}')
-        except:
-            self.report({'ERROR'}, traceback.format_exc())
-
-
-class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
-    """Export drawable (.ydr)"""
-    bl_idname = "exportxml.ydr"
-    bl_label = "Export Ydr Xml (.ydr.xml)"
-    sollum_type = DrawableType.DRAWABLE
-
-    filename_ext = ".ydr.xml"
-
-    def export(self, obj):
-        try:
-            drawable_from_object(obj, None, self.directory).write_xml(
-                self.get_filepath(obj))
-            self.report({'INFO'}, 'YDR Successfully exported.')
-        except:
-            self.report({'ERROR'}, traceback.format_exc())
-
-
-class ExportYddXml(bpy.types.Operator, SollumzExportHelper):
-    """Export drawable dictionary (.ydd)"""
-    bl_idname = "exportxml.ydd"
-    bl_label = "Export Ydd Xml (.ydd.xml)"
-    sollum_type = DrawableType.DRAWABLE_DICTIONARY
-
-    filename_ext = ".ydd.xml"
-
-    def export(self, obj):
-        try:
-            drawable_dict_from_object(obj).write_xml(self.get_filepath(obj))
-            self.report({'INFO'}, 'Ydd Successfully exported.')
-        except:
-            self.report({'ERROR'}, traceback.format_exc())
-
-
 def sollumz_menu_func_import(self, context):
     self.layout.operator(SollumzImportHelper.bl_idname,
-                         text="Codewalker XML (.ydr.xml, .ydd.xml, .yft.xml, .ybn.xml)")
+                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")
 
 
-def ydr_menu_func_export(self, context):
-    self.layout.operator(ExportYdrXml.bl_idname,
-                         text="Codewalker XML (.ydr.xml)")
-
-
-def ybn_menu_func_export(self, context):
-    self.layout.operator(ExportYbnXml.bl_idname,
-                         text="Codewalker XML (.ybn.xml)")
-
-
-def ydd_menu_func_export(self, context):
-    self.layout.operator(ExportYddXml.bl_idname,
-                         text="Codewalker XML (.ydd.xml)")
+def sollumz_menu_func_export(self, context):
+    self.layout.operator(SollumzExportHelper.bl_idname,
+                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")
 
 
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
-    bpy.types.TOPBAR_MT_file_export.append(ydr_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.append(ybn_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.append(ydd_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(sollumz_menu_func_export)
 
 
 def unregister():
     bpy.types.TOPBAR_MT_file_import.remove(sollumz_menu_func_import)
-    bpy.types.TOPBAR_MT_file_export.remove(ydr_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.remove(ybn_menu_func_export)
-    bpy.types.TOPBAR_MT_file_export.remove(ydd_menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(sollumz_menu_func_export)

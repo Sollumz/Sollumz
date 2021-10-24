@@ -1,7 +1,7 @@
 import bpy
 from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.ybn.ybnimport import composite_to_obj
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, BoundType
 from time import time
 
 
@@ -11,6 +11,7 @@ def fragment_to_obj(fragment, filepath):
 
     if(fragment.drawable != None):
         parent = drawable_to_obj(fragment.drawable, filepath, fragment.name)
+    parent.sollum_type = DrawableType.FRAGMENT
 
     end = time()
     print(str(end - start) + " seconds to import to import main drawable")

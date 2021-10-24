@@ -1,14 +1,20 @@
 from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
+import pathlib
 from enum import Enum
 
 
 class YBN:
 
+    file_extension = ".ybn.xml"
+
     @staticmethod
     def from_xml_file(filepath):
-        return BoundFile.from_xml_file(filepath)
+        if "".join(pathlib.Path(filepath).suffixes()) != YBN.file_extension:
+            print(f"{filepath} cannot be read because it is not a YBN file type.")
+        else:
+            return BoundFile.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(bound_file, filepath):
