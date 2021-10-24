@@ -223,8 +223,8 @@ class VertexLayoutListProperty(ElementProperty):
 class VertexDataProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self):
-        super().__init__(tag_name='Data', value=[])
+    def __init__(self, tag_name=None):
+        super().__init__(tag_name=tag_name or 'Data', value=[])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -246,12 +246,13 @@ class VertexDataProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.text = ''
+        text = []
         for vertex in self.value:
             for property in vertex:
-                element.text += ' '.join([str(item)
-                                         for item in property]) + '   '
-            element.text += '\n'
+                text.append(' '.join([str(item)
+                                      for item in property]) + '   ')
+            text.append('\n')
+        element.text = ''.join(text)
 
         return element
 
@@ -264,6 +265,7 @@ class VertexBuffer(ElementTree):
         self.flags = ValueProperty("Flags", 0)
         self.layout = VertexLayoutListProperty()
         self.data = VertexDataProperty()
+        self.data2 = VertexDataProperty('Data2')
 
     def get_vertex_type(self):
         return self.get_element('layout').vertex_type
@@ -273,8 +275,7 @@ class VertexBuffer(ElementTree):
         new = super().from_xml(element)
         # Convert data to namedtuple matching the layout
         vert_type = new.get_vertex_type()
-        for index, vert in enumerate(new.data):
-            new.data[index] = vert_type(*vert)
+        new.data = list(map(lambda vert: vert_type(*vert), new.data))
         return new
 
 
@@ -295,14 +296,16 @@ class IndexDataProperty(ElementProperty):
     def to_xml(self):
         element = ET.Element(self.tag_name)
         columns = 24
-        element.text = ''
+        text = []
 
         for index, vert_index in enumerate(self.value):
-            element.text += str(vert_index)
+            text.append(str(vert_index))
             if index < len(self.value) - 1:
-                element.text += ' '
+                text.append(' ')
             if index % columns == 0 and index > 0:
-                element.text += '\n'
+                text.append('\n')
+
+        element.text = ''.join(text)
 
         return element
 
