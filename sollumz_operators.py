@@ -94,7 +94,8 @@ class SollumzImportHelper(bpy.types.Operator, ImportHelper):
         elif ext == YBN.file_extension:
             SollumzImporter.import_ybn(filepath)
         else:
-            print(f"Error unknown filetype: {filepath}")  # should never happen
+            # should never happen
+            print(f"Error unknown filetype: {filepath}")
 
     def execute(self, context):
 
@@ -119,10 +120,10 @@ class SollumzExporter():
     @staticmethod
     def export_ydr(obj, filepath):
         try:
-            drawable_from_object(obj, None, "").write_xml(filepath)
+            drawable_from_object(obj, filepath, None).write_xml(filepath)
             # self.report({'INFO'}, 'YDR Successfully exported.')
         except:
-            print()
+            print(traceback.format_exc())
             # self.report({'ERROR'}, traceback.format_exc())
 
     @staticmethod
@@ -131,7 +132,7 @@ class SollumzExporter():
             drawable_dict_from_object(obj).write_xml(filepath)
             # self.report({'INFO'}, 'Ydd Successfully exported.')
         except:
-            print()
+            print(traceback.format_exc())
             # self.report({'ERROR'}, traceback.format_exc())
 
     @staticmethod
@@ -144,7 +145,7 @@ class SollumzExporter():
             bounds_from_object(obj).write_xml(filepath)
             # self.report({'INFO'}, 'YBN Successfully exported.')
         except:
-            print()
+            print(traceback.format_exc())
             # self.report({'ERROR'}, traceback.format_exc())
 
 
@@ -152,6 +153,7 @@ class SollumzExportHelper(bpy.types.Operator, ExportHelper):
     """Exports codewalker xml files."""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
+    filename_ext = ".cw.xml"
     # bl_options = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(
@@ -166,7 +168,7 @@ class SollumzExportHelper(bpy.types.Operator, ExportHelper):
                 "This option lets you export the selected objects of your choosen export type to be exported.")],
         description="The method in which you want to export your scene.",
         name="Export Type",
-        default="export_selected"
+        default="export_all"
     )
 
     def get_directory(self):

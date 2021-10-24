@@ -3,7 +3,6 @@ from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from .drawable import Drawable
 from .bound import BoundsComposite
-import pathlib
 
 
 class YFT:
@@ -12,10 +11,7 @@ class YFT:
 
     @staticmethod
     def from_xml_file(filepath):
-        if "".join(pathlib.Path(filepath).suffixes()) != YFT.file_extension:
-            print(f"{filepath} cannot be read because it is not a YFT file type.")
-        else:
-            return Fragment.from_xml_file(filepath)
+        return Fragment.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(fragment, filepath):

@@ -112,7 +112,9 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
 
                     # if(n.image != None):
                     foldername = obj.name
-                    folderpath = exportpath + foldername
+                    folderpath = os.path.join(exportpath, foldername)
+
+                    print(folderpath)
 
                     if(os.path.isdir(folderpath) == False):
                         os.mkdir(folderpath)
@@ -381,7 +383,7 @@ def skeleton_from_object(obj):
     return skeleton
 
 
-def drawable_from_object(obj, bones=None, exportpath=""):
+def drawable_from_object(obj, exportpath, bones=None):
     drawable = Drawable()
 
     drawable.name = obj.name
@@ -401,7 +403,7 @@ def drawable_from_object(obj, bones=None, exportpath=""):
         drawable.shader_group.shaders.append(shader)
 
     drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(
-        obj, get_used_materials(obj), exportpath)
+        obj, get_used_materials(obj), os.path.dirname(exportpath))
 
     if bones is None:
         if(obj.pose != None):
@@ -436,10 +438,12 @@ def drawable_from_object(obj, bones=None, exportpath=""):
         drawable.bound = None
 
     # flags = model count for each lod
-    drawable.flags_high = highmodel_count
+    drawable.flags_high = highmodel_counta
     drawable.flags_med = medmodel_count
     drawable.flags_low = lowhmodel_count
     drawable.flags_vlow = vlowmodel_count
     # drawable.unknown_9A = ?
+
+    print("done")
 
     return drawable
