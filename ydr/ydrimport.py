@@ -6,7 +6,8 @@ from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
 from Sollumz.meshhelper import flip_uv
-from Sollumz.tools import cats as Cats
+from Sollumz.tools.utils import ListHelper
+from Sollumz.tools.blender_helper import BlenderHelper
 
 
 def shadergroup_to_materials(shadergroup, filepath):
@@ -92,20 +93,22 @@ def shadergroup_to_materials(shadergroup, filepath):
     return materials
 
 
-def create_uv_layer(mesh, num, texcoords):
+def create_uv_layer(mesh, num, name, texcoords):
     mesh.uv_layers.new()
     uv_layer = mesh.uv_layers[num]
+    uv_layer.name = name
     for i in range(len(uv_layer.data)):
         uv = flip_uv(texcoords[mesh.loops[i].vertex_index])
         uv_layer.data[i].uv = uv
 
 
-def create_vertexcolor_layer(mesh, num, colors):
+def create_vertexcolor_layer(mesh, num, name, colors):
     mesh.vertex_colors.new(name="Vertex Colors " + str(num))
     color_layer = mesh.vertex_colors[num]
+    color_layer.name = name
     for i in range(len(color_layer.data)):
         rgba = colors[mesh.loops[i].vertex_index]
-        color_layer.data[i].color = rgba
+        color_layer.data[i].color = ListHelper.divide_list(rgba, 255)
 
 
 def geometry_to_obj(geometry, bones=None, name=None):
@@ -122,18 +125,14 @@ def geometry_to_obj(geometry, bones=None, name=None):
         normals.append(vertex.normal)
 
         for key, value in vertex._asdict().items():
-            index = key[len(key) - 1]
             if 'texcoord' in key:
-                index = int(index)
-                # layer = texcoords[index]
-                if not index in texcoords.keys():
-                    texcoords[index] = []
-                texcoords[index].append(value)
+                if not key in texcoords.keys():
+                    texcoords[key] = []
+                texcoords[key].append(value)
             if 'colour' in key:
-                index = int(index)
-                if not index in colors.keys():
-                    colors[index] = []
-                colors[index].append(value)
+                if not key in colors.keys():
+                    colors[key] = []
+                colors[key].append(value)
 
     indices = geometry.index_buffer.data
     # Split indices into groups of 3
@@ -158,12 +157,16 @@ def geometry_to_obj(geometry, bones=None, name=None):
     mesh.use_auto_smooth = True
 
     # set uvs
-    for index, coords in texcoords.items():
-        create_uv_layer(mesh, index, coords)
+    i = 0
+    for layer_name, coords in texcoords.items():
+        create_uv_layer(mesh, i, layer_name, coords)
+        i += 1
 
     # set vertex colors
-    for index, color in colors.items():
-        create_vertexcolor_layer(mesh, index, color)
+    i = 0
+    for layer_name, color in colors.items():
+        create_vertexcolor_layer(mesh, i, layer_name, color)
+        i += 1
 
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 
@@ -183,7 +186,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
                 if (weight > 0.0):
                     obj.vertex_groups[index].add([vertex_idx], weight, "ADD")
 
-        Cats.remove_unused_vertex_groups_of_mesh(obj)
+        BlenderHelper.remove_unused_vertex_groups_of_mesh(obj)
 
     return obj
 

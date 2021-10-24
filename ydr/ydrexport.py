@@ -1,16 +1,15 @@
-import bpy
-from Sollumz.resources.drawable import *
-from Sollumz.resources.shader import SHADERS
 import os
 import sys
 import shutil
+import bpy
+from Sollumz.resources.drawable import *
+from Sollumz.resources.shader import SHADERS
 from Sollumz.meshhelper import *
-from Sollumz.tools.utils import *
+from Sollumz.tools.utils import StringHelper
+from Sollumz.tools.blender_helper import BlenderHelper
 from Sollumz.tools.blender_helper import *
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel
 from Sollumz.ybn.ybnexport import composite_from_object
-
-sys.path.append(os.path.dirname(__file__))
 
 
 def get_used_materials(obj):
@@ -48,7 +47,7 @@ def get_shaders_from_blender(obj):
     for material in materials:
         shader = ShaderItem()
         # Maybe make this a property?
-        shader.name = FixShaderName(material.name)
+        shader.name = StringHelper.FixShaderName(material.name)
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
 
@@ -281,7 +280,7 @@ def geometry_from_object(obj, bones=None):
         if(materials[i] == obj_eval.active_material):
             geometry.shader_index = i
 
-    shader_name = FixShaderName(obj_eval.active_material.name)
+    shader_name = StringHelper.FixShaderName(obj_eval.active_material.name)
     layout = SHADERS[shader_name].layouts[0]
     geometry.vertex_buffer.layout = layout.value
 
@@ -307,12 +306,12 @@ def drawable_model_from_object(obj, bones=None):
     for child in obj.children:
         if child.sollum_type == DrawableType.GEOMETRY:
             if len(child.data.materials) > 1:
-                objs = split_object(child, obj)
+                objs = BlenderHelper.split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
                         obj, bones)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
-                join_objects(objs)
+                BlenderHelper.join_objects(objs)
             else:
                 geometry = geometry_from_object(child, bones)
                 drawable_model.geometries.append(geometry)
