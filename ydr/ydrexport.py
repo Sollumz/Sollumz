@@ -114,8 +114,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     foldername = obj.name
                     folderpath = os.path.join(exportpath, foldername)
 
-                    print(folderpath)
-
                     if(os.path.isdir(folderpath) == False):
                         os.mkdir(folderpath)
 
@@ -438,12 +436,10 @@ def drawable_from_object(obj, exportpath, bones=None):
         drawable.bound = None
 
     # flags = model count for each lod
-    drawable.flags_high = highmodel_counta
+    drawable.flags_high = highmodel_count
     drawable.flags_med = medmodel_count
     drawable.flags_low = lowhmodel_count
     drawable.flags_vlow = vlowmodel_count
     # drawable.unknown_9A = ?
-
-    print("done")
 
     return drawable
