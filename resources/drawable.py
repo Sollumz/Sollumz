@@ -242,12 +242,13 @@ class VertexDataProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.text = ''
+        text = []
         for vertex in self.value:
             for property in vertex:
-                element.text += ' '.join([str(item)
-                                         for item in property]) + '   '
-            element.text += '\n'
+                text.append(' '.join([str(item)
+                                      for item in property]) + '   ')
+            text.append('\n')
+        element.text = ''.join(text)
 
         return element
 
@@ -269,8 +270,7 @@ class VertexBuffer(ElementTree):
         new = super().from_xml(element)
         # Convert data to namedtuple matching the layout
         vert_type = new.get_vertex_type()
-        for index, vert in enumerate(new.data):
-            new.data[index] = vert_type(*vert)
+        new.data = list(map(lambda vert: vert_type(*vert), new.data))
         return new
 
 
@@ -291,14 +291,16 @@ class IndexDataProperty(ElementProperty):
     def to_xml(self):
         element = ET.Element(self.tag_name)
         columns = 24
-        element.text = ''
+        text = []
 
         for index, vert_index in enumerate(self.value):
-            element.text += str(vert_index)
+            text.append(str(vert_index))
             if index < len(self.value) - 1:
-                element.text += ' '
+                text.append(' ')
             if index % columns == 0 and index > 0:
-                element.text += '\n'
+                text.append('\n')
+
+        element.text = ''.join(text)
 
         return element
 

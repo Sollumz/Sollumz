@@ -15,6 +15,7 @@ from Sollumz.ydd.yddimport import drawable_dict_to_obj
 from Sollumz.ydd.yddexport import drawable_dict_from_object
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from Sollumz.meshhelper import *
+import time
 
 
 class SollumzImportHelper(ImportHelper):

@@ -2,7 +2,7 @@
 from mathutils import Vector, Quaternion
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
-from typing import Any, Type
+from typing import Any
 from xml.etree import ElementTree as ET
 
 """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
@@ -87,7 +87,6 @@ class Element(AbstractClass):
         element = self.to_xml()
         indent(element)
         elementTree = ET.ElementTree(element)
-        # ET.indent(element)
         elementTree.write(filepath, encoding="UTF-8", xml_declaration=True)
 
 
