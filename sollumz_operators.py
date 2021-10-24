@@ -375,12 +375,14 @@ class ExportYdrXml(bpy.types.Operator, SollumzExportHelper):
     filename_ext = ".ydr.xml"
 
     def export(self, obj):
+        t0 = time.time()
         try:
             drawable_from_object(obj, None, self.directory).write_xml(
                 self.get_filepath(obj))
             self.report({'INFO'}, 'YDR Successfully exported.')
         except:
             self.report({'ERROR'}, traceback.format_exc())
+        print(f'Time elapsed: {time.time() - t0}')
 
 
 class ExportYddXml(bpy.types.Operator, SollumzExportHelper):

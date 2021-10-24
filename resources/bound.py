@@ -119,17 +119,20 @@ class VerticesProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.text = '\n'
+        text = ['\n']
+
         for vertex in self.value:
             # Should be a list of Vectors
             if not isinstance(vertex, Vector):
                 raise TypeError(
                     f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
             for index, component in enumerate(vertex):
-                element.text += str(component)
+                text.append(str(component))
                 if index < len(vertex) - 1:
-                    element.text += ', '
-            element.text += '\n'
+                    text.append(', ')
+            text.append('\n')
+
+        element.text = ''.join(text)
 
         return element
 
