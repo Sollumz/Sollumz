@@ -14,20 +14,103 @@ class YCD:
         return clips_dict.write_xml(filepath)
 
 
-class AttributesListProperty(ListProperty):
-    class Attribute(ElementTree):
-        tag_name = 'Item'
+class Attribute(ElementTree, AbstractClass):
+    tag_name = 'Item'
 
-        def __init__(self):
-            super().__init__()
-            self.name_hash = TextProperty('NameHash', '')
-            self.type = ValueProperty('Type', 'Int')
-            self.value = ValueProperty('Value', 0)
+    @property
+    @abstractmethod
+    def type(self) -> str:
+        raise NotImplementedError
+
+    def __init__(self):
+        super().__init__()
+        self.name_hash = TextProperty('NameHash', '')
+
+
+class FloatAttribute(Attribute):
+    type = 'Float'
+
+    def __init__(self):
+        super().__init__()
+        self.value = ValueProperty('Value', 0.0)
+
+
+class IntAttribute(Attribute):
+    type = 'Int'
+
+    def __init__(self):
+        super().__init__()
+        self.value = ValueProperty('Value', 0)
+
+
+class BoolAttribute(Attribute):
+    type = 'Bool'
+
+    def __init__(self):
+        super().__init__()
+        # Check if this is correct
+        self.value = ValueProperty('Value', True)
+
+
+class Vector3Attribute(Attribute):
+    type = 'Vector3'
+
+    def __init__(self):
+        super().__init__()
+        self.value = VectorProperty('Value')
+
+
+class Vector4Attribute(Attribute):
+    type = 'Vector4'
+
+    def __init__(self):
+        super().__init__()
+        self.value = QuaternionProperty('Value')
+
+
+class StringAttribute(Attribute):
+    type = 'String'
+
+    def __init__(self):
+        super().__init__()
+        self.value = ValueProperty('Value', '')
+
+
+class HashStringAttribute(Attribute):
+    type = 'HashString'
+
+    def __init__(self):
+        super().__init__()
+        self.value = ValueProperty('Value', '')
+
+
+class AttributesListProperty(ListProperty):
 
     list_type = Attribute
 
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name or 'Tags', value=value or [])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+
+        for child in element:
+            type = child.get('type')
+            if type == FloatAttribute.type:
+                new.value.append(FloatAttribute.from_xml(child))
+            if type == IntAttribute.type:
+                new.value.append(IntAttribute.from_xml(child))
+            if type == BoolAttribute.type:
+                new.value.append(BoolAttribute.from_xml(child))
+            if type == StringAttribute.type:
+                new.value.append(StringAttribute.from_xml(child))
+            if type == Vector3Attribute.type:
+                new.value.append(Vector3Attribute.from_xml(child))
+            if type == Vector4Attribute.type:
+                new.value.append(Vector4Attribute.from_xml(child))
+            if type == HashStringAttribute.type:
+                new.value.append(HashStringAttribute.from_xml(child))
 
 
 class TagListProperty(ListProperty):
@@ -39,11 +122,29 @@ class TagListProperty(ListProperty):
             self.name_hash = TextProperty('NameHash', '')
             self.unk_hash = TextProperty('UnkHash', '')
             self.attributes = AttributesListProperty()
+            self.unknown40 = ValueProperty('Unknown40', 0.0)
+            self.unknown44 = ValueProperty('Unknown44', 0.0)
 
     list_type = Tag
 
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name or 'Tags', value=value or [])
+
+
+class PropertiesListProperty(ListProperty):
+    class Property(ElementTree):
+        tag_name = 'Item'
+
+        def __init__(self):
+            super().__init__()
+            self.name_hash = TextProperty('NameHash', '')
+            self.unk_hash = TextProperty('UnkHash', '')
+            self.attributes = AttributesListProperty()
+
+    list_type = Property
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or 'Properties', value=value or [])
 
 
 class ClipsListProperty(ListProperty):
@@ -57,6 +158,11 @@ class ClipsListProperty(ListProperty):
             self.type = ValueProperty('Type', 'Animation')
             self.unknown30 = ValueProperty('Unknown30', 0)
             self.tags = TagListProperty()
+            self.properties = PropertiesListProperty()
+            self.animation_hash = TextProperty('AnimationHash', '')
+            self.start_time = ValueProperty('StartTime', 0.0)
+            self.end_time = ValueProperty('EndTime', 0.0)
+            self.rate = ValueProperty('Rate', 0.0)
 
     list_type = Clip
 
@@ -109,16 +215,6 @@ class Channel(ElementTree, AbstractClass):
 
     def __init__(self):
         super().__init__()
-        # Types
-        # StaticQuaternion = 0,
-        # StaticVector3 = 1,
-        # StaticFloat = 2,
-        # RawFloat = 3,
-        # QuantizeFloat = 4,
-        # IndirectQuantizeFloat = 5,
-        # LinearFloat = 6,
-        # CachedQuaternion1 = 7,
-        # CachedQuaternion2 = 8,
         self.type = ValueProperty('Type', '')
 
 
