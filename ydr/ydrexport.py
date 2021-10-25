@@ -85,6 +85,8 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
 
     has_td = False
 
+    t_names = []
+    print("texture dictionary")
     for mat in materials:
         nodes = mat.node_tree.nodes
 
@@ -93,7 +95,13 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                 if(n.texture_properties.embedded == True):
                     has_td = True
                     texture_item = TextureItem()
-                    texture_item.name = os.path.splitext(n.image.name)[0]
+                    texture_name = os.path.splitext(n.image.name)[0]
+                    print(texture_name)
+                    if texture_name in t_names:
+                        continue
+                    else:
+                        t_names.append(texture_name)
+                    texture_item.name = texture_name
                     # texture_item.unk32 = 0
                     texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
                     for prop in dir(n.texture_flags):
@@ -107,6 +115,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     texture_item.miplevels = 8
                     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
                     texture_item.filename = n.image.name
+
                     texture_dictionary.append(texture_item)
 
                     # if(n.image != None):
@@ -125,6 +134,10 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         shutil.copyfile(txtpath, dstpath)
                     # else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
+
+    print()
+    for name in t_names:
+        print(name)
 
     if(has_td):
         return texture_dictionary
