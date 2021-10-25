@@ -240,7 +240,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                             if key in field:
                                 data = color.data
                                 kwargs[key] = (
-                                    val * 255 for val in data[loop_idx].color)
+                                    round(val * 255) for val in data[loop_idx].color)
                             else:
                                 print(
                                     f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} vertex color layer(s). Skipping layer {i}...")
