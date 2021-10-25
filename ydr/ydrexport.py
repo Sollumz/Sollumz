@@ -86,7 +86,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
     has_td = False
 
     t_names = []
-    print("texture dictionary")
     for mat in materials:
         nodes = mat.node_tree.nodes
 
@@ -96,7 +95,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     has_td = True
                     texture_item = TextureItem()
                     texture_name = os.path.splitext(n.image.name)[0]
-                    print(texture_name)
                     if texture_name in t_names:
                         continue
                     else:
@@ -134,10 +132,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         shutil.copyfile(txtpath, dstpath)
                     # else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
-
-    print()
-    for name in t_names:
-        print(name)
 
     if(has_td):
         return texture_dictionary
@@ -207,8 +201,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     blend_weights, blend_indices = get_blended_verts(
         mesh, obj.vertex_groups, bones)
 
-    hash_table = {}
-    vertices = []
+    vertices = {}
     indices = []
 
     for tri in mesh.loop_triangles:
@@ -251,7 +244,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                             # Ensure layer # is supported
                             if key in field:
                                 data = color.data
-                                kwargs[key] = (
+                                kwargs[key] = tuple(
                                     round(val * 255) for val in data[loop_idx].color)
                             else:
                                 print(
@@ -260,17 +253,16 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                         kwargs['colour0'] = (255, 255, 255, 255)
 
             vertex = vertex_type(**kwargs)
-            vert_hash = hash(vertex)
 
-            if vert_hash in hash_table.keys():
-                idx = hash_table[vert_hash]
+            if vertex in vertices:
+                idx = vertices[vertex]
             else:
-                idx = len(hash_table)
-                hash_table[vert_hash] = idx
-                vertices.append([*vertex])
+                idx = len(vertices)
+                vertices[vertex] = idx
 
             indices.append(idx)
-    return vertices, indices
+
+    return vertices.keys(), indices
 
 
 def geometry_from_object(obj, bones=None):
