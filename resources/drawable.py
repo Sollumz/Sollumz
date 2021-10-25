@@ -228,6 +228,9 @@ class VertexDataProperty(ElementProperty):
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
+        if not element.text:
+            return new
+
         text = element.text.strip().split('\n')
         if len(text) > 0:
             for line in text:
