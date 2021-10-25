@@ -8,6 +8,8 @@ from collections import namedtuple
 
 class YDD:
 
+    file_extension = ".ydd.xml"
+
     @staticmethod
     def from_xml_file(filepath):
         return DrawableDictionary.from_xml_file(filepath)
@@ -18,6 +20,8 @@ class YDD:
 
 
 class YDR:
+
+    file_extension = ".ydr.xml"
 
     @staticmethod
     def from_xml_file(filepath):

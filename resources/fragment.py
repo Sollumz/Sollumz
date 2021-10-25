@@ -7,6 +7,8 @@ from .bound import BoundsComposite
 
 class YFT:
 
+    file_extension = ".yft.xml"
+
     @staticmethod
     def from_xml_file(filepath):
         return Fragment.from_xml_file(filepath)

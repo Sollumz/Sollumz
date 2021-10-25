@@ -1,10 +1,13 @@
 from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
+import pathlib
 from enum import Enum
 
 
 class YBN:
+
+    file_extension = ".ybn.xml"
 
     @staticmethod
     def from_xml_file(filepath):
