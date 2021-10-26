@@ -200,6 +200,9 @@ class TextProperty(ElementProperty):
         return TextProperty(element.tag, element.text)  # .strip())
 
     def to_xml(self):
+        if not self.value or len(self.value) < 1:
+            return None
+
         result = ET.Element(self.tag_name)
         result.text = self.value
         return result

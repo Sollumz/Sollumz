@@ -217,7 +217,8 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                     kwargs['position'] = tuple(
                         obj.matrix_world @ mesh.vertices[vert_idx].co)
                 elif 'normal' == field:
-                    kwargs['normal'] = tuple(loop.normal)
+                    kwargs[field] = tuple(loop.normal)
+                    # kwargs[field] = (0, 0, 0)
                 elif 'blendweights' == field:
                     kwargs['blendweights'] = tuple(blend_weights[vert_idx])
                 elif 'blendindices' == field:
@@ -225,7 +226,8 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                 elif 'tangent' == field:
                     tangent = loop.tangent.to_4d()
                     tangent[3] = loop.bitangent_sign
-                    kwargs['tangent'] = tuple(tangent)
+                    kwargs[field] = tuple(tangent)
+                    # kwargs[field] = (0, 0, 0, 0)
                 elif 'texcoord' in field:
                     for i, layer in enumerate(mesh.uv_layers):
                         key = f'texcoord{i}'
@@ -234,6 +236,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                             data = layer.data
                             coord = flip_uv(data[loop_idx].uv)
                             kwargs[key] = tuple(coord)
+                            # kwargs[key] = (0, 0)
                         else:
                             print(
                                 f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} UV layer(s). Skipping layer {i}...")
@@ -246,11 +249,12 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                                 data = color.data
                                 kwargs[key] = tuple(
                                     round(val * 255) for val in data[loop_idx].color)
+                                # kwargs[key] = (0, 0, 0, 0)
                             else:
                                 print(
                                     f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} vertex color layer(s). Skipping layer {i}...")
                     else:
-                        kwargs['colour0'] = (255, 255, 255, 255)
+                        kwargs[field] = (255, 255, 255, 255)
 
             vertex = vertex_type(**kwargs)
 

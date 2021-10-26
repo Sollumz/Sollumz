@@ -247,6 +247,9 @@ class VertexDataProperty(ElementProperty):
         return new
 
     def to_xml(self):
+        if len(self.value) < 1:
+            return None
+
         element = ET.Element(self.tag_name)
         text = []
         for vertex in self.value:
