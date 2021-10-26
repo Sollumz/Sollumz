@@ -68,10 +68,10 @@ def get_shaders_from_blender(obj):
                     z = material.node_tree.nodes[node.name[:-1] + "z"]
                     w = material.node_tree.nodes[node.name[:-1] + "w"]
 
-                    param.quaternion_x = x.outputs[0].default_value
-                    param.quaternion_y = y.outputs[0].default_value
-                    param.quaternion_z = z.outputs[0].default_value
-                    param.quaternion_w = w.outputs[0].default_value
+                    param.x = x.outputs[0].default_value
+                    param.y = y.outputs[0].default_value
+                    param.z = z.outputs[0].default_value
+                    param.w = w.outputs[0].default_value
 
                     shader.parameters.append(param)
 
@@ -204,6 +204,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     vertices = {}
     indices = []
 
+    mesh_layer_idx = 0
     for tri in mesh.loop_triangles:
         for loop_idx in tri.loops:
             loop = mesh.loops[loop_idx]
@@ -211,50 +212,37 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
 
             kwargs = {}
 
-            # Set vertex values based on layout fields
-            for field in vertex_type._fields:
-                if 'position' == field:
-                    kwargs['position'] = tuple(
-                        obj.matrix_world @ mesh.vertices[vert_idx].co)
-                elif 'normal' == field:
-                    kwargs[field] = tuple(loop.normal)
-                    # kwargs[field] = (0, 0, 0)
-                elif 'blendweights' == field:
-                    kwargs['blendweights'] = tuple(blend_weights[vert_idx])
-                elif 'blendindices' == field:
-                    kwargs['blendindices'] = tuple(blend_indices[vert_idx])
-                elif 'tangent' == field:
-                    tangent = loop.tangent.to_4d()
-                    tangent[3] = loop.bitangent_sign
-                    kwargs[field] = tuple(tangent)
-                    # kwargs[field] = (0, 0, 0, 0)
-                elif 'texcoord' in field:
-                    for i, layer in enumerate(mesh.uv_layers):
-                        key = f'texcoord{i}'
-                        # Ensure layer # is supported
-                        if key in field:
-                            data = layer.data
-                            coord = flip_uv(data[loop_idx].uv)
-                            kwargs[key] = tuple(coord)
-                            # kwargs[key] = (0, 0)
-                        else:
-                            print(
-                                f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} UV layer(s). Skipping layer {i}...")
-                elif 'colour' in field:
-                    if len(mesh.vertex_colors) > 0:
-                        for i, color in enumerate(mesh.vertex_colors):
-                            key = f'colour{i}'
-                            # Ensure layer # is supported
-                            if key in field:
-                                data = color.data
-                                kwargs[key] = tuple(
-                                    round(val * 255) for val in data[loop_idx].color)
-                                # kwargs[key] = (0, 0, 0, 0)
-                            else:
-                                print(
-                                    f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} vertex color layer(s). Skipping layer {i}...")
+            if "position" in vertex_type._fields:
+                kwargs['position'] = tuple(
+                    obj.matrix_world @ mesh.vertices[vert_idx].co)
+            if "normal" in vertex_type._fields:
+                kwargs["normal"] = tuple(loop.normal)
+            if "blendweights" in vertex_type._fields:
+                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
+            if "blendindices" in vertex_type._fields:
+                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
+            if "tangent" in vertex_type._fields:
+                tangent = loop.tangent.to_4d()
+                tangent[3] = loop.bitangent_sign
+                kwargs["tangent"] = tuple(tangent)
+            for i in range(6):
+                if f"texcoord{i}" in vertex_type._fields:
+                    key = f'texcoord{i}'
+                    if mesh_layer_idx < len(mesh.uv_layers):
+                        data = mesh.uv_layers[mesh_layer_idx].data
+                        kwargs[key] = tuple(flip_uv(data[loop_idx].uv))
+                        mesh_layer_idx += 1
                     else:
-                        kwargs[field] = (255, 255, 255, 255)
+                        kwargs[key] = (0, 0)
+            for i in range(2):
+                if f"colour{i}" in vertex_type._fields:
+                    key = f'colour{i}'
+                    if i < len(mesh.vertex_colors):
+                        data = mesh.vertex_colors[i].data
+                        kwargs[key] = tuple(
+                            round(val * 255) for val in data[loop_idx].color)
+                    else:
+                        kwargs[key] = (255, 255, 255, 255)
 
             vertex = vertex_type(**kwargs)
 
