@@ -198,7 +198,7 @@ class VertexLayoutListProperty(ElementProperty):
     # Generate a namedtuple from a vertex layout
     @property
     def vertex_type(self):
-        return namedtuple('Layout', [name.lower() for name in self.value])
+        return namedtuple('Vertex', [name.lower() for name in self.value])
 
     def __init__(self, tag_name=None):
         super().__init__(self.tag_name, [])
