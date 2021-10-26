@@ -1,5 +1,5 @@
 import bpy
-from Sollumz.resources.shader import SHADERS
+from Sollumz.resources.shader import ShaderManager
 from Sollumz.sollumz_properties import MaterialType
 from collections import namedtuple
 import os
@@ -8,7 +8,7 @@ ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
 
 shadermats = []
 
-for shader in SHADERS.values():
+for shader in ShaderManager.shaders.values():
     shadermats.append(ShaderMaterial(
         shader.name.upper(), shader.name.upper().replace('_', ' '), shader.name))
 
@@ -144,10 +144,10 @@ def create_vector_nodes(node_tree, param):
 
 
 def create_shader(name):
-    if not name in SHADERS:
+    if not name in ShaderManager.shaders:
         raise AttributeError(f"Shader '{name}' does not exist!")
 
-    parameters = SHADERS[name].parameters
+    parameters = ShaderManager.shaders[name].parameters
 
     mat = bpy.data.materials.new(name)
     mat.sollum_type = MaterialType.SHADER

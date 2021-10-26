@@ -1,5 +1,4 @@
-from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
-from os import name
+from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
@@ -229,6 +228,9 @@ class VertexDataProperty(ElementProperty):
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
+        if not element.text:
+            return new
+
         text = element.text.strip().split('\n')
         if len(text) > 0:
             for line in text:
@@ -245,6 +247,9 @@ class VertexDataProperty(ElementProperty):
         return new
 
     def to_xml(self):
+        if len(self.value) < 1:
+            return None
+
         element = ET.Element(self.tag_name)
         text = []
         for vertex in self.value:

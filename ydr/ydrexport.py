@@ -1,9 +1,8 @@
 import os
-import sys
 import shutil
 import bpy
 from Sollumz.resources.drawable import *
-from Sollumz.resources.shader import SHADERS
+from Sollumz.resources.shader import ShaderManager
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import StringHelper
 from Sollumz.tools.blender_helper import BlenderHelper
@@ -87,7 +86,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
     has_td = False
 
     t_names = []
-    print("texture dictionary")
     for mat in materials:
         nodes = mat.node_tree.nodes
 
@@ -97,7 +95,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     has_td = True
                     texture_item = TextureItem()
                     texture_name = os.path.splitext(n.image.name)[0]
-                    print(texture_name)
                     if texture_name in t_names:
                         continue
                     else:
@@ -135,10 +132,6 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         shutil.copyfile(txtpath, dstpath)
                     # else:
                     #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
-
-    print()
-    for name in t_names:
-        print(name)
 
     if(has_td):
         return texture_dictionary
@@ -208,8 +201,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     blend_weights, blend_indices = get_blended_verts(
         mesh, obj.vertex_groups, bones)
 
-    hash_table = {}
-    vertices = []
+    vertices = {}
     indices = []
 
     for tri in mesh.loop_triangles:
@@ -225,7 +217,8 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                     kwargs['position'] = tuple(
                         obj.matrix_world @ mesh.vertices[vert_idx].co)
                 elif 'normal' == field:
-                    kwargs['normal'] = tuple(loop.normal)
+                    kwargs[field] = tuple(loop.normal)
+                    # kwargs[field] = (0, 0, 0)
                 elif 'blendweights' == field:
                     kwargs['blendweights'] = tuple(blend_weights[vert_idx])
                 elif 'blendindices' == field:
@@ -233,7 +226,8 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                 elif 'tangent' == field:
                     tangent = loop.tangent.to_4d()
                     tangent[3] = loop.bitangent_sign
-                    kwargs['tangent'] = tuple(tangent)
+                    kwargs[field] = tuple(tangent)
+                    # kwargs[field] = (0, 0, 0, 0)
                 elif 'texcoord' in field:
                     for i, layer in enumerate(mesh.uv_layers):
                         key = f'texcoord{i}'
@@ -242,6 +236,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                             data = layer.data
                             coord = flip_uv(data[loop_idx].uv)
                             kwargs[key] = tuple(coord)
+                            # kwargs[key] = (0, 0)
                         else:
                             print(
                                 f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} UV layer(s). Skipping layer {i}...")
@@ -252,26 +247,26 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                             # Ensure layer # is supported
                             if key in field:
                                 data = color.data
-                                kwargs[key] = (
+                                kwargs[key] = tuple(
                                     round(val * 255) for val in data[loop_idx].color)
+                                # kwargs[key] = (0, 0, 0, 0)
                             else:
                                 print(
                                     f"Shader '{obj.active_material.shader_properties.filename}' on {obj.name} does not support {i} vertex color layer(s). Skipping layer {i}...")
                     else:
-                        kwargs['colour0'] = (255, 255, 255, 255)
+                        kwargs[field] = (255, 255, 255, 255)
 
             vertex = vertex_type(**kwargs)
-            vert_hash = hash(vertex)
 
-            if vert_hash in hash_table.keys():
-                idx = hash_table[vert_hash]
+            if vertex in vertices:
+                idx = vertices[vertex]
             else:
-                idx = len(hash_table)
-                hash_table[vert_hash] = idx
-                vertices.append([*vertex])
+                idx = len(vertices)
+                vertices[vertex] = idx
 
             indices.append(idx)
-    return vertices, indices
+
+    return vertices.keys(), indices
 
 
 def geometry_from_object(obj, bones=None):
@@ -294,7 +289,7 @@ def geometry_from_object(obj, bones=None):
             geometry.shader_index = i
 
     shader_name = StringHelper.FixShaderName(obj_eval.active_material.name)
-    layout = SHADERS[shader_name].layouts[0]
+    layout = ShaderManager.shaders[shader_name].layouts[0]
     geometry.vertex_buffer.layout = layout.value
 
     vertex_buffer, index_buffer = get_mesh_buffers(
