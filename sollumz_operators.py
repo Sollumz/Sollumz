@@ -116,7 +116,6 @@ class SollumzExporter():
     @staticmethod
     def export_ydr(op, obj, filepath):
         try:
-            print(filepath)
             drawable_from_object(obj, filepath, None).write_xml(filepath)
             op.report({'INFO'}, 'YDR Successfully exported.')
         except:
