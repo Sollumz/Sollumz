@@ -28,22 +28,22 @@ def shadergroup_to_materials(shadergroup, filepath):
                     if param.name == n.name:
                         texture_path = os.path.join(
                             texture_folder, param.texture_name + ".dds")
+                        shared_folder = bpy.context.preferences.addons[
+                            "Sollumz"].preferences.shared_texture_folder
+                        shared_texture_path = os.path.join(
+                            shared_folder, param.texture_name + ".dds")
                         if(os.path.isfile(texture_path)):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
                             n.image = img
                         # check shared texture folder
+                        elif os.path.isfile(shared_texture_path):
+                            img = bpy.data.images.load(
+                                shared_texture_path, check_existing=True)
+                            n.image = img
                         else:
-                            shared_folder = bpy.context.preferences.addons[
-                                "Sollumz"].preferences.shared_texture_folder
-                            texture_path = os.path.join(
-                                shared_folder, param.texture_name + ".dds")
-                            if os.path.isfile(texture_path):
-                                img = bpy.data.images.load(
-                                    texture_path, check_existing=True)
-                                n.image = img
-
-                        n.image.name = param.texture_name + ".dds"
+                            n.image = bpy.data.images.new(
+                                name=param.texture_name + ".dds", width=512, height=512, color=[255/255, 192/255, 203/255, 1])
 
                         # Assign embedded texture dictionary properties
                         if shadergroup.texture_dictionary != None:
