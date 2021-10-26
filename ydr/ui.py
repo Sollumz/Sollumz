@@ -43,18 +43,18 @@ def draw_shader(layout, mat):
             selected_nodes.append(n)
 
     for n in selected_nodes:
-        if isinstance(n, bpy.types.ShaderNodeTexImage):
+        if(isinstance(n, bpy.types.ShaderNodeTexImage)):
             # if(n.name == "SpecSampler"):
             box = layout.box()
             row = box.row(align=True)
-            # row.label(text="Texture Type: " + n.name)
-            if n.image:
-                row.label(text="Texture Name: " + n.image.name)
-                row = box.row()
-                row.prop(n.image, "filepath", text="Texture Path")
-            row.prop(n.texture_properties, "embedded")
+            name = os.path.splitext(os.path.basename(n.image.filepath))[0]
+            row.label(text="Texture Type: " + n.name)
+            row.label(text="Texture Name: " + n.image.name)
+            row = box.row()
+            row.prop(n.image, "filepath", text="Texture Path")
             row = box.row(align=True)
-            if n.texture_properties.embedded == False:
+            row.prop(n.texture_properties, "embedded")
+            if(n.texture_properties.embedded == False):
                 break
             row.prop(n.texture_properties, "format")
             row.prop(n.texture_properties, "usage")

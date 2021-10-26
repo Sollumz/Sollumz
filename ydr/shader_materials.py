@@ -116,7 +116,7 @@ def create_image_node(node_tree, param, texture_path):
 
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     texture_name = param.texture_name + '.dds'
-    imgnode.name = texture_name
+    imgnode.name = param.name
     if texture_path:
         texture = bpy.data.images.load(texture_path, check_existing=True)
         imgnode.image = texture

@@ -34,10 +34,10 @@ def fragment_to_obj(fragment, filepath):
 
     for item in lod1.children:
         # if(item.drawable != None):
-        if(len(item.drawable.drawable_models_high) > 0):
-            child = drawable_to_obj(
-                item.drawable, "", item.drawable.name, None, fragment.drawable.shader_group)
-            child.parent = children_obj
+        # if(len(item.drawable.drawable_models_high) > 0):
+        child = drawable_to_obj(
+            item.drawable, "", item.drawable.name, None, fragment.drawable.shader_group)
+        child.parent = children_obj
 
     end = time()
     print(str(end - start) + " seconds to import children")

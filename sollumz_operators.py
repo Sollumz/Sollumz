@@ -351,6 +351,39 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
+class SOLLUMZ_OT_paint_vertices(bpy.types.Operator):
+    """Paint All Vertices Of Selected Object"""
+    bl_idname = "sollumz.paint_vertices"
+    bl_label = "Paint"
+
+    def paint_map(self, mesh, map, color):
+        i = 0
+        for poly in mesh.polygons:
+            for idx in poly.loop_indices:
+                map[i].color = color
+                i += 1
+
+    def paint_mesh(self, mesh, color):
+        if len(mesh.vertex_colors) == 0:
+            mesh.vertex_colors.new()
+        self.paint_map(mesh, mesh.vertex_colors.active.data, color)
+
+    def execute(self, context):
+        objs = context.selected_objects
+
+        if len(objs) > 0:
+            for obj in objs:
+                if(obj.sollum_type == DrawableType.GEOMETRY):
+                    self.paint_mesh(obj.data, context.scene.vert_paint_color)
+                else:
+                    self.report(
+                        {"INFO"}, f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} type.")
+        else:
+            self.report({"INFO"}, "No selected objects to paint.")
+
+        return {'FINISHED'}
+
+
 def sollumz_menu_func_import(self, context):
     self.layout.operator(SollumzImportHelper.bl_idname,
                          text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")

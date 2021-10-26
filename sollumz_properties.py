@@ -353,6 +353,12 @@ def register():
         name="Hide Low LODS", get=get_hide_low_lods, set=set_hide_low_lods)
     bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(
         name="Hide Very Low LODS", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
+    bpy.types.Scene.vert_paint_color = bpy.props.FloatVectorProperty(
+        name="Vertex Color",
+        subtype="COLOR",
+        default=(1.0, 1.0, 1.0, 1.0),
+        size=4
+    )
 
 
 def unregister():
@@ -363,3 +369,4 @@ def unregister():
     del bpy.types.Scene.hide_medium_lods
     del bpy.types.Scene.hide_low_lods
     del bpy.types.Scene.hide_very_low_lods
+    del bpy.types.Scene.vert_paint_color

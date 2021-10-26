@@ -41,6 +41,21 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         layout.prop(context.scene, "hide_very_low_lods")
 
 
+class SOLLUMZ_PT_VERTEX_TOOL_PANELL(bpy.types.Panel):
+    bl_label = "Vertex Painter"
+    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.prop(context.scene, "vert_paint_color")
+        row.operator("sollumz.paint_vertices")
+
+
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Ymap Tools"
     bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
@@ -68,6 +83,9 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
         layout = self.layout
         aobj = context.active_object
         if(aobj == None or aobj.sollum_type != DrawableType.DRAWABLE):
+            # have to put this outside of text = or it wont work?
+            layout.label(
+                text="Please select a valid object.")
             return
         layout.label(text="Entity Fields")
         #box.prop(aobj.ymap_properties, "archetype_name")
