@@ -1,7 +1,7 @@
 import bpy
 import os
 from mathutils import Matrix
-from Sollumz.ydr.shader_materials import create_shader
+from Sollumz.ydr.shader_materials import create_shader, create_vector_nodes, create_image_node
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
@@ -17,76 +17,71 @@ def shadergroup_to_materials(shadergroup, filepath):
         filepath) + "\\" + os.path.basename(filepath)[:-8]
     for shader in shadergroup.shaders:
 
-        material = create_shader(shader.name)
+        material = create_shader(shader)
 
         material.shader_properties.renderbucket = shader.render_bucket
         material.shader_properties.filename = shader.filename
 
         for param in shader.parameters:
-            for n in material.node_tree.nodes:
-                if isinstance(n, bpy.types.ShaderNodeTexImage):
-                    if param.name == n.name:
-                        texture_path = os.path.join(
-                            texture_folder, param.texture_name + ".dds")
-                        if(os.path.isfile(texture_path)):
-                            img = bpy.data.images.load(
-                                texture_path, check_existing=True)
-                            n.image = img
-                        # check shared texture folder
-                        else:
-                            shared_folder = bpy.context.preferences.addons[
-                                "Sollumz"].preferences.shared_texture_folder
-                            texture_path = os.path.join(
-                                shared_folder, param.texture_name + ".dds")
-                            if os.path.isfile(texture_path):
-                                img = bpy.data.images.load(
-                                    texture_path, check_existing=True)
-                                n.image = img
+            if param.type == 'Texture':
+                texture_path = os.path.join(
+                    texture_folder, param.texture_name + ".dds")
 
-                        n.image.name = param.texture_name + ".dds"
+                # Check shared texture folder
+                if not os.path.isfile(texture_path):
+                    shared_folder = bpy.context.preferences.addons[
+                        "Sollumz"].preferences.shared_texture_folder
+                    texture_path = os.path.join(
+                        shared_folder, param.texture_name + ".dds")
 
-                        # Assign embedded texture dictionary properties
-                        if shadergroup.texture_dictionary != None:
-                            for texture in shadergroup.texture_dictionary:
-                                if texture.name == param.texture_name:
-                                    n.texture_properties.embedded = True
-                                    try:
-                                        format = TextureFormat[texture.format.replace(
-                                            'D3DFMT_', '')]
-                                        n.texture_properties.format = format
-                                    except AttributeError:
-                                        print(
-                                            f"Failed to set texture format: format '{texture.format}' unknown.")
+                if not os.path.isfile(texture_path):
+                    # Texture is missing
+                    texture_path = None
 
-                                    try:
-                                        usage = TextureUsage[texture.usage]
-                                        n.texture_properties.usage = usage
-                                    except AttributeError:
-                                        print(
-                                            f"Failed to set texture usage: usage '{texture.usage}' unknown.")
+                node = create_image_node(
+                    material.node_tree, param, texture_path)
 
-                                    n.texture_properties.extra_flags = texture.extra_flags
+                # Assign embedded texture dictionary properties
+                if shadergroup.texture_dictionary != None:
+                    for texture in shadergroup.texture_dictionary:
+                        if texture.name == param.texture_name:
+                            node.texture_properties.embedded = True
+                            try:
+                                format = TextureFormat[texture.format.replace(
+                                    'D3DFMT_', '')]
+                                node.texture_properties.format = format
+                            except AttributeError:
+                                print(
+                                    f"Failed to set texture format: format '{texture.format}' unknown.")
 
-                                    for prop in dir(n.texture_flags):
-                                        for uf in texture.usage_flags:
-                                            if(uf.lower() == prop):
-                                                setattr(
-                                                    n.texture_flags, prop, True)
+                            try:
+                                usage = TextureUsage[texture.usage]
+                                node.texture_properties.usage = usage
+                            except AttributeError:
+                                print(
+                                    f"Failed to set texture usage: usage '{texture.usage}' unknown.")
 
-                        if param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings'):
-                            n.image.colorspace_settings.name = 'Non-Color'
+                            node.texture_properties.extra_flags = texture.extra_flags
 
-                elif isinstance(n, bpy.types.ShaderNodeValue):
-                    if param.name == n.name[:-2]:
-                        key = n.name[-1]
-                        if key == "x":
-                            n.outputs[0].default_value = param.x
-                        if key == "y":
-                            n.outputs[0].default_value = param.y
-                        if key == "z":
-                            n.outputs[0].default_value = param.z
-                        if key == "w":
-                            n.outputs[0].default_value = param.w
+                            for prop in dir(node.texture_flags):
+                                for uf in texture.usage_flags:
+                                    if(uf.lower() == prop):
+                                        setattr(
+                                            node.texture_flags, prop, True)
+
+                # if param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings'):
+                #     n.image.colorspace_settings.name = 'Non-Color'
+            if param.type == 'Vector':
+                create_vector_nodes(material.node_tree, param)
+            #     key = n.name[-1]
+            #     if key == "x":
+            #         n.outputs[0].default_value = param.x
+            #     if key == "y":
+            #         n.outputs[0].default_value = param.y
+            #     if key == "z":
+            #         n.outputs[0].default_value = param.z
+            #     if key == "w":
+            #         n.outputs[0].default_value = param.w
 
         materials.append(material)
 
