@@ -64,7 +64,7 @@ class SollumzImportHelper(bpy.types.Operator, ImportHelper):
     """Imports xml files exported by codewalker."""
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
-    # bl_options = {'UNDO'}
+    bl_options = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -146,8 +146,7 @@ class SollumzExportHelper(bpy.types.Operator):
     """Exports codewalker xml files."""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
-    # filename_ext = ".cw.xml"
-    # bl_options = {'UNDO'}
+    bl_options = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -185,20 +184,29 @@ class SollumzExportHelper(bpy.types.Operator):
         else:
             objects = context.selected_objects
 
+        found = False
+
         if len(objects) > 0:
             for obj in objects:
                 if obj.sollum_type == DrawableType.DRAWABLE:
+                    found = True
                     SollumzExporter.export_ydr(self,
                                                obj, self.get_filepath(obj.name + YDR.file_extension))
                 elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
+                    found = True
                     SollumzExporter.export_ydd(self,
                                                obj, self.get_filepath(obj.name + YDD.file_extension))
                 elif obj.sollum_type == DrawableType.FRAGMENT:
+                    found = True
                     SollumzExporter.export_yft(self,
                                                obj, self.get_filepath(obj.name + YFT.file_extension))
                 elif obj.sollum_type == BoundType.COMPOSITE:
+                    found = True
                     SollumzExporter.export_ybn(self,
                                                obj, self.get_filepath(obj.name + YBN.file_extension))
+
+        if not found:
+            self.report({'INFO'}, 'No Sollumz objects in scene for export.')
 
         return {'FINISHED'}
 
