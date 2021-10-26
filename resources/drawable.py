@@ -4,6 +4,7 @@ from .codewalker_xml import *
 from Sollumz.tools.utils import *
 from .bound import BoundsComposite
 from collections import namedtuple
+import numpy
 
 
 class YDD:
@@ -254,7 +255,7 @@ class VertexDataProperty(ElementProperty):
         text = []
         for vertex in self.value:
             for property in vertex:
-                text.append(' '.join([str(item)
+                text.append(' '.join([str(numpy.float32(item))
                                       for item in property]) + '   ')
             text.append('\n')
         element.text = ''.join(text)

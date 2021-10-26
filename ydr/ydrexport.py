@@ -204,11 +204,11 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     vertices = {}
     indices = []
 
-    mesh_layer_idx = 0
     for tri in mesh.loop_triangles:
         for loop_idx in tri.loops:
             loop = mesh.loops[loop_idx]
             vert_idx = loop.vertex_index
+            mesh_layer_idx = 0
 
             kwargs = {}
 
