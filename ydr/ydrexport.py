@@ -190,10 +190,6 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
 def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     mesh = obj.data
     # thanks dexy
-    if mesh.has_custom_normals:
-        mesh.calc_normals_split()
-    else:
-        mesh.calc_normals()
 
     mesh.calc_tangents()
     mesh.calc_loop_triangles()

@@ -338,4 +338,9 @@ class ValueProperty(ElementProperty):
         return ValueProperty(element.tag, get_str_type(element.get('value')))
 
     def to_xml(self):
-        return ET.Element(self.tag_name, attrib={'value': str(numpy.float32(self.value))})
+        value = self.value
+        if value is int:
+            value = int(self.value)
+        elif value is float:
+            value = numpy.float32(self.value)
+        return ET.Element(self.tag_name, attrib={'value': str(value)})

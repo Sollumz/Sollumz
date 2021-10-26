@@ -150,8 +150,8 @@ class ShaderGroupProperty(ElementTree):
     def __init__(self):
         super().__init__()
         self.unknown_30 = ValueProperty("Unknown30", 0)
-        self.texture_dictionary = TextureDictionaryListProperty()
         self.shaders = ShadersListProperty()
+        self.texture_dictionary = TextureDictionaryListProperty()
 
 
 class BoneItem(ElementTree):
@@ -255,7 +255,7 @@ class VertexDataProperty(ElementProperty):
         text = []
         for vertex in self.value:
             for property in vertex:
-                text.append(' '.join([str(numpy.float32(item))
+                text.append(' '.join([str(item)
                                       for item in property]) + '   ')
             text.append('\n')
         element.text = ''.join(text)
@@ -371,7 +371,7 @@ class Drawable(ElementTree, AbstractClass):
         self.name = TextProperty("Name", "")
         self.matrix = TextProperty("Matrix")  # yft field
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
-        self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius", 0)
+        self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
         self.lod_dist_high = ValueProperty('LodDistHigh', 0)  # 9998?

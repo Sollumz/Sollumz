@@ -119,6 +119,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
     texcoords = {}
     colors = {}
 
+    # gather data
     data = geometry.vertex_buffer.data
     for vertex in data:
         vertices.append(vertex.position)
@@ -139,21 +140,13 @@ def geometry_to_obj(geometry, bones=None, name=None):
     faces = [indices[i * 3:(i + 1) * 3]
              for i in range((len(indices) + 3 - 1) // 3)]
 
+    # create mesh
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY])
     mesh.from_pydata(vertices, [], faces)
-    mesh.create_normals_split()
-    mesh.validate(clean_customdata=False)
-    polygon_count = len(mesh.polygons)
-    mesh.polygons.foreach_set("use_smooth", [True] * polygon_count)
-    # maybe normals_split_custom_set_from_vertices(self.normals) is better?
-    if data[0].normal is not None:
-        normals_fixed = []
-        for l in mesh.loops:
-            vert = data[l.vertex_index]
-            normals_fixed.append(vert.normal)
 
-        mesh.normals_split_custom_set(normals_fixed)
-
+    # set normals
+    mesh.normals_split_custom_set_from_vertices(normals)
+    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
     mesh.use_auto_smooth = True
 
     # set uvs
@@ -170,7 +163,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
 
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 
-    # load weights
+    # set weights
     if hasattr(data[0], " blendweights"):
         if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
             num = max(256, len(bones))
