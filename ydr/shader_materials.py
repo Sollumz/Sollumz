@@ -4,9 +4,6 @@ from Sollumz.sollumz_properties import MaterialType
 from collections import namedtuple
 import os
 
-MISSING_TEXTURE_PATH = os.path.dirname(
-    __file__)[:-4] + "\\resources\\givemechecker.dds"
-
 ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
 
 shadermats = []
@@ -112,23 +109,14 @@ def organize_node_tree(node_tree):
                 singles_x += 300
 
 
-def create_image_node(node_tree, param, texture_path):
+def create_image_node(node_tree, param):
 
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
-    texture_name = param.texture_name + '.dds'
     imgnode.name = param.name
-    if texture_path:
-        texture = bpy.data.images.load(texture_path, check_existing=True)
-        imgnode.image = texture
-    else:
-        # Check for existing texture
-        existing_texture = None
-        for image in bpy.data.images:
-            if image.name == texture_name:
-                existing_texture = image
-        texture = bpy.data.images.new(
-            name=texture_name, width=1, height=1) if not existing_texture else existing_texture
-        imgnode.image = texture
+    # texture_path = os.path.dirname(
+    # __file__)[:-4] + "\\resources\\givemechecker.dds"
+    #gmc_texture = bpy.data.images.load(texture_path, check_existing=True)
+    #imgnode.image = gmc_texture
 
     # imgnode.img = param.DefaultValue
     bsdf = node_tree.nodes["Principled BSDF"]
@@ -144,54 +132,34 @@ def create_image_node(node_tree, param, texture_path):
     elif "Spec" in param.name:
         links.new(imgnode.outputs["Color"], bsdf.inputs["Specular"])
 
-    organize_node_tree(node_tree)
-
-    return imgnode
-
 
 def create_vector_nodes(node_tree, param):
 
-    node = node_tree.nodes.new("ShaderNodeValue")
     for attr in vars(param).values():
         if attr.name != 'name' and attr.name != 'type':
             node = node_tree.nodes.new("ShaderNodeValue")
             node.name = f"{param.name}_{attr.name}"
             node.outputs[0].default_value = float(attr.value)
 
-    organize_node_tree(node_tree)
 
-    return node
+def create_shader(name):
+    if not name in ShaderManager.shaders:
+        raise AttributeError(f"Shader '{name}' does not exist!")
 
+    parameters = ShaderManager.shaders[name].parameters
 
-# def get_shader_params(name):
-#     if not name in ShaderManager.shaders:
-#         raise AttributeError(f"Shader '{name}' does not exist!")
-
-#     parameters = ShaderManager.shaders[name].parameters
-
-#     mat = bpy.data.materials.new(name)
-#     mat.sollum_type = MaterialType.SHADER
-#     mat.use_nodes = True
-
-#     node_tree = mat.node_tree
-
-#     return parameters
-
-#     for param in parameters:
-#         if param.type == "Texture":
-#             create_image_node(node_tree, param)
-#         elif param.type == "Vector":
-#             create_vector_nodes(node_tree, param)
-
-#     organize_node_tree(node_tree)
-
-#     return mat
-
-def create_shader(shader):
-    mat = bpy.data.materials.new(shader.name)
+    mat = bpy.data.materials.new(name)
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
 
-    return mat
+    node_tree = mat.node_tree
+
+    for param in parameters:
+        if param.type == "Texture":
+            create_image_node(node_tree, param)
+        elif param.type == "Vector":
+            create_vector_nodes(node_tree, param)
+
+    organize_node_tree(node_tree)
 
     return mat
