@@ -359,6 +359,10 @@ def register():
         default=(1.0, 1.0, 1.0, 1.0),
         size=4
     )
+    bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
+        name='Seperate Objects', description='Create a object for each selected mesh.')
+    bpy.types.Scene.use_mesh_name = bpy.props.BoolProperty(
+        name='Use Name(s)', description='Use the names of the meshes for the created objects.', default=True)
 
 
 def unregister():
@@ -370,3 +374,5 @@ def unregister():
     del bpy.types.Scene.hide_low_lods
     del bpy.types.Scene.hide_very_low_lods
     del bpy.types.Scene.vert_paint_color
+    del bpy.types.Scene.create_seperate_objects
+    del bpy.types.Scene.use_mesh_name

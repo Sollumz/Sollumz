@@ -174,28 +174,11 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
+        row.prop(context.scene, "create_seperate_objects")
+        row.prop(context.scene, "use_mesh_name")
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable_model.bl_idname)
         row.operator(SOLLUMZ_OT_create_geometry.bl_idname)
-
-
-class SOLLUMZ_PT_DRAWABLE_CONVERSION_PANEL(bpy.types.Panel):
-    bl_label = "Conversion"
-    bl_idname = "SOLLUMZ_PT_DRAWABLE_CONVERSION_PANEL"
-    bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_convert_mesh_to_drawable.bl_idname)
-        row.prop(context.scene, 'multiple_ydrs')
-        row.prop(context.scene, 'convert_ydr_use_mesh_names')
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_convert_to_shader_material.bl_idname)
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):

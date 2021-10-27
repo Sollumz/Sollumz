@@ -4,67 +4,25 @@ from Sollumz.ydr.shader_materials import create_shader, shadermats
 from Sollumz.sollumz_properties import DrawableType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
 
 
-def create_empty(sollum_type):
-    empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
-    empty.empty_display_size = 0
-    empty.sollum_type = sollum_type
-    bpy.context.collection.objects.link(empty)
-    bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
+class DrawableHelper:
 
-    return empty
+    @staticmethod
+    def create_drawable(sollum_type=DrawableType.DRAWABLE):
+        empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
+        empty.empty_display_size = 0
+        empty.sollum_type = sollum_type
+        bpy.context.collection.objects.link(empty)
+        bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
+        return empty
 
-class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
-    """Create a sollumz drawable"""
-    bl_idname = "sollumz.createdrawable"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}"
-
-    def execute(self, context):
-
-        create_empty(DrawableType.DRAWABLE)
-
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_create_drawable_model(bpy.types.Operator):
-    """Create a sollumz drawable model"""
-    bl_idname = "sollumz.createdrawablemodel"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]}"
-
-    def execute(self, context):
-
-        create_empty(DrawableType.DRAWABLE_MODEL)
-
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_create_geometry(bpy.types.Operator):
-    """Create a sollumz geometry"""
-    bl_idname = "sollumz.creategeometry"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}"
-
-    def execute(self, context):
-
-        create_empty(DrawableType.GEOMETRY)
-
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
-    """Setup a gta drawable via a mesh object"""
-    bl_idname = "sollumz.convertmeshtodrawable"
-    bl_label = "Convert Mesh To Drawable"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        selected = context.selected_objects
-        if len(selected) < 1:
-            self.report({'INFO'}, 'No objects selected for conversion!')
-            return {'CANCELLED'}
+    @staticmethod
+    def convert_selected_to_drawable(objs, use_names=False, multiple=False):
+        selected = objs
 
         parent = None
-        if not bpy.context.scene.multiple_ydrs:
-            parent = create_empty(DrawableType.DRAWABLE)
+        if not multiple:
+            parent = DrawableHelper.create_drawable(DrawableType.DRAWABLE)
 
         for obj in selected:
             # create material
@@ -78,15 +36,15 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
                     obj.data.materials.append(mat)
 
             # set parents
-            dobj = parent or create_empty(DrawableType.DRAWABLE)
-            dmobj = create_empty(DrawableType.DRAWABLE_MODEL)
+            dobj = parent or DrawableHelper.create_drawable()
+            dmobj = DrawableHelper.create_drawable(DrawableType.DRAWABLE_MODEL)
             dmobj.parent = dobj
             obj.parent = dmobj
 
             name = obj.name
             obj.name = name + "_geom"
 
-            if bpy.context.scene.convert_ybn_use_mesh_names:
+            if use_names:
                 dobj.name = name
 
             # set properties
@@ -96,6 +54,44 @@ class SOLLUMZ_OT_convert_mesh_to_drawable(bpy.types.Operator):
             new_obj = obj.copy()
             bpy.data.objects.remove(obj, do_unlink=True)
             bpy.context.collection.objects.link(new_obj)
+
+
+class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
+    """Create a sollumz drawable"""
+    bl_idname = "sollumz.createdrawable"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}"
+
+    def execute(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            DrawableHelper.create_drawable()
+        else:
+            DrawableHelper.convert_selected_to_drawable(
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_create_drawable_model(bpy.types.Operator):
+    """Create a sollumz drawable model"""
+    bl_idname = "sollumz.createdrawablemodel"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]}"
+
+    def execute(self, context):
+
+        DrawableHelper.create_drawable(DrawableType.DRAWABLE_MODEL)
+
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_create_geometry(bpy.types.Operator):
+    """Create a sollumz geometry"""
+    bl_idname = "sollumz.creategeometry"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}"
+
+    def execute(self, context):
+
+        DrawableHelper.create_drawable(DrawableType.GEOMETRY)
 
         return {'FINISHED'}
 
