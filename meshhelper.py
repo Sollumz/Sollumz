@@ -44,15 +44,15 @@ def create_box_from_extents(mesh, bbmin, bbmax):
     return mesh
 
 
-def create_box(mesh, size=1):
+def create_box(mesh, size=2):
     bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=1)
+    bmesh.ops.create_cube(bm, size=size)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
 
 
-def create_sphere(mesh, radius=0.5):
+def create_sphere(mesh, radius=1):
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, diameter=radius)
@@ -61,7 +61,7 @@ def create_sphere(mesh, radius=0.5):
     return mesh
 
 
-def create_cylinder(mesh, radius=0.5, length=1, use_rot=True):
+def create_cylinder(mesh, radius=1, length=2, use_rot=True):
     bm = bmesh.new()
     rot_mat = Matrix.Rotation(radians(90.0), 4, "X") if use_rot else Matrix()
     bmesh.ops.create_cone(
@@ -79,7 +79,7 @@ def create_cylinder(mesh, radius=0.5, length=1, use_rot=True):
     return mesh
 
 
-def create_disc(mesh, radius=0.5, length=0.1):
+def create_disc(mesh, radius=1, length=0.1):
     bm = bmesh.new()
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
     bmesh.ops.create_cone(

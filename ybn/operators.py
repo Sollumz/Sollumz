@@ -16,44 +16,93 @@ def handle_load_flag_presets(self):
         self.report({'ERROR'}, traceback.format_exc())
 
 
-def create_empty(sollum_type):
-    empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
-    empty.empty_display_size = 0
-    empty.sollum_type = sollum_type
-    bpy.context.collection.objects.link(empty)
-    bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
+class BoundHelper:
 
-    return empty
+    @staticmethod
+    def create_bound(sollum_type=BoundType.COMPOSITE, with_mesh=False):
 
+        if with_mesh:
+            return BoundHelper.create_mesh(sollum_type)
 
-def create_mesh(sollum_type):
-    name = SOLLUMZ_UI_NAMES[sollum_type]
-    mesh = bpy.data.meshes.new(name)
-    obj = bpy.data.objects.new(name, mesh)
-    obj.sollum_type = sollum_type
-    obj.data.materials.append(create_collision_material_from_index(0))
-    bpy.context.collection.objects.link(obj)
+        empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
+        empty.empty_display_size = 0
+        empty.sollum_type = sollum_type
+        bpy.context.collection.objects.link(empty)
+        bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
-    return obj
+        return empty
 
+    @staticmethod
+    def create_mesh(sollum_type):
+        name = SOLLUMZ_UI_NAMES[sollum_type]
+        mesh = bpy.data.meshes.new(name)
+        obj = bpy.data.objects.new(name, mesh)
+        obj.sollum_type = sollum_type
+        obj.data.materials.append(create_collision_material_from_index(0))
+        bpy.context.collection.objects.link(obj)
 
-def aobj_is_composite(self, sollum_type):
-    aobj = bpy.context.active_object
-    if not (aobj and aobj.sollum_type == BoundType.COMPOSITE):
-        self.report(
-            {'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} to add a {SOLLUMZ_UI_NAMES[sollum_type]} to.")
-        return False
-    return True
+        return obj
+
+    @staticmethod
+    def convert_selected_to_bound(objs, use_name=False, multiple=False):
+        selected = objs
+
+        parent = None
+        if not multiple:
+            parent = BoundHelper.create_bound()
+
+        for obj in selected:
+            # set parents
+            dobj = parent or BoundHelper.create_bound(BoundType.COMPOSITE)
+            dmobj = BoundHelper.create_bound(BoundType.GEOMETRYBVH)
+            dmobj.parent = dobj
+            obj.parent = dmobj
+
+            name = obj.name
+            obj.name = name + "_mesh"
+
+            if use_name:
+                dobj.name = name
+
+            # set properties
+            obj.sollum_type = PolygonType.TRIANGLE
+
+            # add object to collection
+            new_obj = obj.copy()
+
+            # Remove materials
+            if new_obj.type == 'MESH':
+                new_obj.data.materials.clear()
+
+            bpy.data.objects.remove(obj, do_unlink=True)
+            bpy.context.collection.objects.link(new_obj)
+
+    # move to blender helper? or maybe make a sollumz heper? call it "is_sollum_type(sollum_type)"
+    # this is where a SollumOperator class would come in handy I could see checking this in a
+    # bunch of different operators so if we make one common one we could call this
+    @staticmethod
+    def aobj_is_composite(self, sollum_type):
+        aobj = bpy.context.active_object
+        if not (aobj and aobj.sollum_type == BoundType.COMPOSITE):
+            self.report(
+                {'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} to add a {SOLLUMZ_UI_NAMES[sollum_type]} to.")
+            return False
+        return True
 
 
 class SOLLUMZ_OT_create_bound_composite(bpy.types.Operator):
     """Create a sollumz bound composite"""
     bl_idname = "sollumz.createboundcomposite"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-
-        create_empty(BoundType.COMPOSITE)
+        selected = context.selected_objects
+        if len(selected) < 1:
+            BoundHelper.create_bound()
+        else:
+            BoundHelper.convert_selected_to_bound(
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
 
         return {'FINISHED'}
 
@@ -62,13 +111,14 @@ class SOLLUMZ_OT_create_geometry_bound(bpy.types.Operator):
     """Create a sollumz geometry bound"""
     bl_idname = "sollumz.creategeometrybound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.GEOMETRY):
+        if not BoundHelper.aobj_is_composite(self, BoundType.GEOMETRY):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_empty(BoundType.GEOMETRY)
+        gobj = BoundHelper.create_bound(BoundType.GEOMETRY)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
 
@@ -79,13 +129,14 @@ class SOLLUMZ_OT_create_geometrybvh_bound(bpy.types.Operator):
     """Create a sollumz geometry bound bvh"""
     bl_idname = "sollumz.creategeometryboundbvh"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.GEOMETRYBVH):
+        if not BoundHelper.aobj_is_composite(self, BoundType.GEOMETRYBVH):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_empty(BoundType.GEOMETRYBVH)
+        gobj = BoundHelper.create_bound(BoundType.GEOMETRYBVH)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
 
@@ -96,13 +147,14 @@ class SOLLUMZ_OT_create_box_bound(bpy.types.Operator):
     """Create a sollumz box bound"""
     bl_idname = "sollumz.createboxbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.BOX):
+        if not BoundHelper.aobj_is_composite(self, BoundType.BOX):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_mesh(BoundType.BOX)
+        gobj = BoundHelper.create_bound(BoundType.BOX, True)
         create_box(gobj.data)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
@@ -114,13 +166,14 @@ class SOLLUMZ_OT_create_sphere_bound(bpy.types.Operator):
     """Create a sollumz sphere bound"""
     bl_idname = "sollumz.createspherebound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.SPHERE):
+        if not BoundHelper.aobj_is_composite(self, BoundType.SPHERE):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_mesh(BoundType.SPHERE)
+        gobj = BoundHelper.create_bound(BoundType.SPHERE, True)
         create_sphere(gobj.data)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
@@ -132,13 +185,14 @@ class SOLLUMZ_OT_create_capsule_bound(bpy.types.Operator):
     """Create a sollumz capsule bound"""
     bl_idname = "sollumz.createcapsulebound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.CAPSULE):
+        if not BoundHelper.aobj_is_composite(self, BoundType.CAPSULE):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_mesh(BoundType.CAPSULE)
+        gobj = BoundHelper.create_bound(BoundType.CAPSULE, True)
         create_capsule(gobj)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
@@ -150,13 +204,14 @@ class SOLLUMZ_OT_create_cylinder_bound(bpy.types.Operator):
     """Create a sollumz cylinder bound"""
     bl_idname = "sollumz.createcylinderbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.CYLINDER):
+        if not BoundHelper.aobj_is_composite(self, BoundType.CYLINDER):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_mesh(BoundType.CYLINDER)
+        gobj = BoundHelper.create_bound(BoundType.CYLINDER, True)
         create_cylinder(gobj.data)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
@@ -168,13 +223,14 @@ class SOLLUMZ_OT_create_disc_bound(bpy.types.Operator):
     """Create a sollumz disc bound"""
     bl_idname = "sollumz.creatediscbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.DISC):
+        if not BoundHelper.aobj_is_composite(self, BoundType.DISC):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_mesh(BoundType.DISC)
+        gobj = BoundHelper.create_bound(BoundType.DISC, True)
         create_disc(gobj.data)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
@@ -186,13 +242,14 @@ class SOLLUMZ_OT_create_cloth_bound(bpy.types.Operator):
     """Create a sollumz cloth bound"""
     bl_idname = "sollumz.createclothbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
-        if not aobj_is_composite(self, BoundType.CLOTH):
+        if not BoundHelper.aobj_is_composite(self, BoundType.CLOTH):
             return {'CANCELLED'}
 
         aobj = bpy.context.active_object
-        gobj = create_empty(BoundType.CLOTH)
+        gobj = BoundHelper.create_bound(BoundType.CLOTH, True)
         gobj.parent = aobj
         bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
 
@@ -203,17 +260,15 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
     """Create a sollumz polygon bound"""
     bl_idname = "sollumz.createpolygonbound"
     bl_label = "Create Polygon Bound"
+    bl_options = {"UNDO"}
 
-    def execute(self, context):
-        aobj = bpy.context.active_object
-        type = context.scene.poly_bound_type
-
+    def create_poly(self, aobj, type):
         if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
             self.report(
                 {'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
             return {'CANCELLED'}
 
-        pobj = create_mesh(type)
+        pobj = BoundHelper.create_bound(type, True)
 
         if type == PolygonType.BOX:
             create_box(pobj.data)
@@ -226,6 +281,69 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
 
         pobj.parent = aobj
         # bpy.context.view_layer.objects.active = bpy.data.objects[cobj.name] if you enable this you wont be able to stay selecting the composite obj...
+
+    def create_poly_from_verts(self, aobj, type, parent):
+        if not parent:
+            self.report({'WARNING'}, 'Must specify a parent object!')
+            return {'CANCELLED'}
+        elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
+            self.report(
+                {'WARNING'}, f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
+            return {'CANCELLED'}
+
+        # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        selected_verts = [Vector((v.co.x, v.co.y, v.co.z))
+                          for v in aobj.data.vertices if v.select]
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        if len(selected_verts) < 1:
+            self.report({'INFO'}, 'No vertices selected.')
+            return {'CANCELLED'}
+
+        pobj = BoundHelper.create_bound(type, True)
+
+        np_array = np.array(selected_verts)
+        bbmin_local = Vector(np_array.min(axis=0))
+        bbmax_local = Vector(np_array.max(axis=0))
+        bbmin = aobj.matrix_world @ bbmin_local
+        bbmax = aobj.matrix_world @ bbmax_local
+
+        radius = ((aobj.matrix_local @ bbmax).x -
+                  (aobj.matrix_local @ bbmin).x) / 2
+        height = get_distance_of_vectors(bbmin, bbmax)
+        center = (bbmin + bbmax) / 2
+        pobj.location = center
+
+        if type == PolygonType.BOX:
+            scale = aobj.matrix_world.to_scale()
+            min = (bbmin_local) * scale
+            max = (bbmax_local) * scale
+            center = (min + max) / 2
+            create_box_from_extents(pobj.data, min - center, max - center)
+            # pobj.location = Vector()
+        elif type == PolygonType.SPHERE:
+            create_sphere(pobj.data, height / 2)
+        elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
+            if type == PolygonType.CAPSULE:
+                # height = height - (radius * 2)
+                create_capsule(pobj, radius, height)
+            elif type == PolygonType.CYLINDER:
+                create_cylinder(pobj.data, radius, height, False)
+
+        pobj.rotation_euler = aobj.rotation_euler
+
+        pobj.parent = parent
+
+    def execute(self, context):
+        aobj = context.active_object
+        type = context.scene.poly_bound_type
+        parent = context.scene.poly_parent
+
+        if aobj.mode == "EDIT":
+            self.create_poly_from_verts(aobj, type, parent)
+        else:
+            self.create_poly(aobj, type)
 
         return {'FINISHED'}
 
@@ -263,6 +381,7 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"
     bl_label = "Create Collision Material"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
 
@@ -290,6 +409,7 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
     """Delete a flag preset"""
     bl_idname = "sollumz.delete_flag_preset"
     bl_label = "Delete Flag Preset"
+    bl_options = {"UNDO"}
 
     preset_blacklist = ['Default']
 
@@ -325,6 +445,7 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
     """Save a flag preset"""
     bl_idname = "sollumz.save_flag_preset"
     bl_label = "Save Flag Preset"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
         obj = context.active_object
@@ -429,6 +550,7 @@ class SOLLUMZ_OT_clear_col_flags(bpy.types.Operator):
     """Load commonly used collision flags"""
     bl_idname = "sollumz.clear_col_flags"
     bl_label = "Clear Collision Flags"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
 
@@ -451,112 +573,5 @@ class SOLLUMZ_OT_mesh_to_polygon_bound(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        aobj = context.active_object
-        type = context.scene.convert_poly_bound_type
-        parent = context.scene.convert_poly_parent
-
-        if not aobj or (aobj and not aobj.type == 'MESH'):
-            self.report({'WARNING'}, 'No object with mesh data selected!')
-            return {'CANCELLED'}
-        elif aobj and not context.active_object.mode == 'EDIT':
-            self.report({'WARNING'}, 'Operator can only be ran in edit mode!')
-            return {'CANCELLED'}
-
-        if not parent:
-            self.report({'WARNING'}, 'Must specify a parent object!')
-            return {'CANCELLED'}
-        elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
-            self.report(
-                {'WARNING'}, f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
-            return {'CANCELLED'}
-
-        # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        selected_verts = [Vector((v.co.x, v.co.y, v.co.z))
-                          for v in aobj.data.vertices if v.select]
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        if len(selected_verts) < 1:
-            self.report({'INFO'}, 'No vertices selected.')
-            return {'CANCELLED'}
-
-        pobj = create_mesh(type)
-
-        np_array = np.array(selected_verts)
-        bbmin_local = Vector(np_array.min(axis=0))
-        bbmax_local = Vector(np_array.max(axis=0))
-        bbmin = aobj.matrix_world @ bbmin_local
-        bbmax = aobj.matrix_world @ bbmax_local
-
-        radius = ((aobj.matrix_local @ bbmax).x -
-                  (aobj.matrix_local @ bbmin).x) / 2
-        height = get_distance_of_vectors(bbmin, bbmax)
-        center = (bbmin + bbmax) / 2
-        pobj.location = center
-
-        if type == PolygonType.BOX:
-            scale = aobj.matrix_world.to_scale()
-            min = (bbmin_local) * scale
-            max = (bbmax_local) * scale
-            center = (min + max) / 2
-            create_box_from_extents(pobj.data, min - center, max - center)
-            # pobj.location = Vector()
-        elif type == PolygonType.SPHERE:
-            create_sphere(pobj.data, height / 2)
-        elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
-            if type == PolygonType.CAPSULE:
-                # height = height - (radius * 2)
-                create_capsule(pobj, radius, height)
-            elif type == PolygonType.CYLINDER:
-                create_cylinder(pobj.data, radius, height, False)
-
-        pobj.rotation_euler = aobj.rotation_euler
-
-        pobj.parent = parent
-
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_convert_mesh_to_collision(bpy.types.Operator):
-    """Setup a gta bound via a mesh object"""
-    bl_idname = "sollumz.quickconvertmeshtocollision"
-    bl_label = "Convert Mesh To Collision"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        selected = context.selected_objects
-        if len(selected) < 1:
-            self.report({'INFO'}, 'No objects selected for conversion!')
-            return {'CANCELLED'}
-
-        parent = None
-        if not bpy.context.scene.multiple_ybns:
-            parent = create_empty(BoundType.COMPOSITE)
-
-        for obj in selected:
-            # set parents
-            dobj = parent or create_empty(BoundType.COMPOSITE)
-            dmobj = create_empty(BoundType.GEOMETRYBVH)
-            dmobj.parent = dobj
-            obj.parent = dmobj
-
-            name = obj.name
-            obj.name = name + "_mesh"
-
-            if bpy.context.scene.convert_ybn_use_mesh_names:
-                dobj.name = name
-
-            # set properties
-            obj.sollum_type = PolygonType.TRIANGLE
-
-            # add object to collection
-            new_obj = obj.copy()
-
-            # Remove materials
-            if new_obj.type == 'MESH':
-                new_obj.data.materials.clear()
-
-            bpy.data.objects.remove(obj, do_unlink=True)
-            bpy.context.collection.objects.link(new_obj)
 
         return {'FINISHED'}

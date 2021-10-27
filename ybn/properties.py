@@ -186,24 +186,13 @@ def register():
         name="Type",
         default=PolygonType.BOX.value
     )
-    bpy.types.Scene.convert_poly_bound_type = bpy.props.EnumProperty(
-        # maybe remove PolygonType.TRIANGLE from list?
-        items=items_from_enums(PolygonType),
-        name="Type",
-        default=PolygonType.BOX.value
-    )
-    bpy.types.Scene.convert_poly_parent = bpy.props.PointerProperty(
+    bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
         type=bpy.types.Object, name='Parent', description='Parent object for the newly created polys')
-    bpy.types.Scene.multiple_ybns = bpy.props.BoolProperty(
-        name='Multiple Composites', description='Create a Composite for each selected mesh.')
-    bpy.types.Scene.convert_ybn_use_mesh_names = bpy.props.BoolProperty(
-        name='Use Mesh Names', description='Use the names of the meshes for the composites.', default=True)
 
 
 def unregister():
     del bpy.types.Scene.poly_bound_type
-    del bpy.types.Scene.convert_poly_bound_type
-    del bpy.types.Scene.convert_poly_parent
+    del bpy.types.Scene.poly_parent
     del bpy.types.Object.bound_properties
     del bpy.types.Object.composite_flags1
     del bpy.types.Object.composite_flags2

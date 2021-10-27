@@ -67,7 +67,7 @@ class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
             DrawableHelper.create_drawable()
         else:
             DrawableHelper.convert_selected_to_drawable(
-                selected, context.scene.use_mesh_name, context.scene.multiple_drawables)
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
 
         return {'FINISHED'}
 

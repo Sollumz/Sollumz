@@ -174,7 +174,7 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
-        row.prop(context.scene, "multiple_drawables")
+        row.prop(context.scene, "create_seperate_objects")
         row.prop(context.scene, "use_mesh_name")
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable_model.bl_idname)

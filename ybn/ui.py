@@ -149,6 +149,8 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
+        row.prop(context.scene, "use_mesh_name")
+        row.prop(context.scene, "create_seperate_objects")
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
         row.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname)
@@ -165,6 +167,8 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
         row.prop(context.scene, "poly_bound_type", text="")
+        if context.active_object and context.active_object.mode == 'EDIT':
+            row.prop(context.scene, "poly_parent", expand=True)
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
@@ -182,29 +186,6 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
             SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
         )
         layout.operator(SOLLUMZ_OT_create_collision_material.bl_idname)
-
-
-class SOLLUMZ_PT_BOUND_CONVERSION_PANEL(bpy.types.Panel):
-    bl_label = "Conversion"
-    bl_idname = 'SOLLUMZ_PT_BOUND_CONVERSION_PANEL'
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
-    bl_order = 2
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.alignment = 'LEFT'
-        row.operator(SOLLUMZ_OT_convert_mesh_to_collision.bl_idname)
-        row.prop(context.scene, 'multiple_ybns')
-        row.prop(context.scene, 'convert_ybn_use_mesh_names')
-        row = layout.row()
-        if context.active_object and context.active_object.mode == 'EDIT':
-            row.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname)
-            row.prop(context.scene, "convert_poly_bound_type", text="")
-            row.prop(context.scene, "convert_poly_parent", expand=True)
 
 
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
