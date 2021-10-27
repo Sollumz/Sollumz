@@ -55,7 +55,10 @@ def get_shaders_from_blender(obj):
                 param = TextureShaderParameter()
                 param.name = node.name
                 param.type = "Texture"
-                param.texture_name = os.path.splitext(node.image.name)[0]
+                if node.image == None:
+                    param.texture_name = "givemechecker"
+                else:
+                    param.texture_name = os.path.splitext(node.image.name)[0]
                 shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
@@ -94,7 +97,10 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                 if(n.texture_properties.embedded == True):
                     has_td = True
                     texture_item = TextureItem()
-                    texture_name = os.path.splitext(n.image.name)[0]
+                    if n.image == None:
+                        texture_name = "givemechecker"
+                    else:
+                        texture_name = os.path.splitext(n.image.name)[0]
                     if texture_name in t_names:
                         continue
                     else:
@@ -127,11 +133,13 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     dstpath = folderpath + "\\" + \
                         os.path.basename(n.image.filepath)
 
-                    # check if paths are the same because if they are no need to copy
-                    if txtpath != dstpath:
-                        shutil.copyfile(txtpath, dstpath)
-                    # else:
-                    #    print("Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
+                    if os.path.isfile(txtpath):
+                        # check if paths are the same because if they are no need to copy
+                        if txtpath != dstpath:
+                            shutil.copyfile(txtpath, dstpath)
+                    else:
+                        print(
+                            "Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
 
     if(has_td):
         return texture_dictionary
