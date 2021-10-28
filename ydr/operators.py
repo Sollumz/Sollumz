@@ -1,75 +1,42 @@
 import bpy
 import traceback
+from Sollumz.tools.drawablehelper import *
 from Sollumz.ydr.shader_materials import create_shader, shadermats
 from Sollumz.sollumz_properties import DrawableType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
+########################################### CANT IMPORT WTF ###########################################
+# from Sollumz.sollumz_operators import SOLLUMZ_OT_base
 
 
-class DrawableHelper:
-
-    @staticmethod
-    def create_drawable(sollum_type=DrawableType.DRAWABLE):
-        empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
-        empty.empty_display_size = 0
-        empty.sollum_type = sollum_type
-        bpy.context.collection.objects.link(empty)
-        bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
-
-        return empty
-
-    @staticmethod
-    def convert_selected_to_drawable(objs, use_names=False, multiple=False):
-        selected = objs
-
-        parent = None
-        if not multiple:
-            parent = DrawableHelper.create_drawable(DrawableType.DRAWABLE)
-
-        for obj in selected:
-            # create material
-            if(len(obj.data.materials) > 0):
-                mat = obj.data.materials[0]
-                if(mat.sollum_type != MaterialType.SHADER):
-                    # remove old materials
-                    for i in range(len(obj.material_slots)):
-                        bpy.ops.object.material_slot_remove({'object': obj})
-                    mat = create_shader("default")
-                    obj.data.materials.append(mat)
-
-            # set parents
-            dobj = parent or DrawableHelper.create_drawable()
-            dmobj = DrawableHelper.create_drawable(DrawableType.DRAWABLE_MODEL)
-            dmobj.parent = dobj
-            obj.parent = dmobj
-
-            name = obj.name
-            obj.name = name + "_geom"
-
-            if use_names:
-                dobj.name = name
-
-            # set properties
-            obj.sollum_type = DrawableType.GEOMETRY
-
-            # add object to collection
-            new_obj = obj.copy()
-            bpy.data.objects.remove(obj, do_unlink=True)
-            bpy.context.collection.objects.link(new_obj)
-
-
+# class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
     """Create a sollumz drawable"""
     bl_idname = "sollumz.createdrawable"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}"
+    messages = []
 
     def execute(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
-            DrawableHelper.create_drawable()
+            try:
+                create_drawable()
+                self.messages.append(
+                    f"Succesfully create a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
+            except:
+                self.messages.append(
+                    f"Failed to create a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]} \n {traceback.format_exc()}")
+                return False
         else:
-            DrawableHelper.convert_selected_to_drawable(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
-
-        return {'FINISHED'}
+            try:
+                convert_selected_to_drawable(
+                    selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+                self.messages.append(
+                    f"Succesfully converted {' '.join([obj.name for obj in selected])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
+            except:
+                self.messages.append(
+                    f"Failed to create a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]} \n {traceback.format_exc()}")
+                # return False
+        # return True
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_drawable_model(bpy.types.Operator):
@@ -79,7 +46,7 @@ class SOLLUMZ_OT_create_drawable_model(bpy.types.Operator):
 
     def execute(self, context):
 
-        DrawableHelper.create_drawable(DrawableType.DRAWABLE_MODEL)
+        create_drawable(DrawableType.DRAWABLE_MODEL)
 
         return {'FINISHED'}
 
@@ -91,7 +58,7 @@ class SOLLUMZ_OT_create_geometry(bpy.types.Operator):
 
     def execute(self, context):
 
-        DrawableHelper.create_drawable(DrawableType.GEOMETRY)
+        create_drawable(DrawableType.GEOMETRY)
 
         return {'FINISHED'}
 
@@ -152,7 +119,7 @@ class SOLLUMZ_OT_convert_to_shader_material(bpy.types.Operator):
                 shader_name = "spec"
 
             new_material = create_shader(shader_name)
-            #new_mat.name = mat.name
+            # new_mat.name = mat.name
 
             bsdf = new_material.node_tree.nodes["Principled BSDF"]
 
@@ -237,7 +204,7 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_delete_item"
     bl_label = "Deletes an item"
 
-    @classmethod
+    @ classmethod
     def poll(cls, context):
         return context.active_pose_bone.bone.bone_properties.flags
 

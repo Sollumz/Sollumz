@@ -111,7 +111,7 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     center = Vector()
     axis = Vector((0, 0, 1))
     if use_rot:
-        axis = Vector(0, 0, 1)
+        axis = Vector((0, 0, 1))
 
     # Get top and bottom halves of vertices
     top = []

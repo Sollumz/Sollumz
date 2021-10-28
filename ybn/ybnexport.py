@@ -269,6 +269,6 @@ def bounds_from_object(obj):
 def export_ybn(op, obj, filepath):
     try:
         bounds_from_object(obj).write_xml(filepath)
-        op.report({'INFO'}, 'YBN Successfully exported.')
+        return f"Succesfully exported : {filepath}"
     except:
-        op.report({'ERROR'}, traceback.format_exc())
+        return f"Error exporting : {filepath} \n {traceback.format_exc()}"

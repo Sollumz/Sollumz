@@ -57,10 +57,10 @@ def drawable_dict_to_obj(drawable_dict, filepath):
     return dict_obj
 
 
-def import_ydd(op, filepath):
+def import_ydd(filepath):
     try:
         ydd_xml = YDD.from_xml_file(filepath)
         drawable_dict_to_obj(ydd_xml, filepath)
-        op.report({'INFO'}, 'YDD Successfully imported.')
-    except Exception as e:
-        op.report({'ERROR'}, traceback.format_exc())
+        return f"Succesfully imported : {filepath}"
+    except:
+        return f"Error importing : {filepath} \n {traceback.format_exc()}"

@@ -1,3 +1,4 @@
+import traceback
 import bpy
 import os
 from mathutils import Matrix
@@ -336,11 +337,11 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
     return obj
 
 
-def import_ydr(op, filepath):
+def import_ydr(filepath):
     try:
         ydr_xml = YDR.from_xml_file(filepath)
         drawable_to_obj(ydr_xml, filepath, os.path.basename(
             filepath.replace(YDR.file_extension, '')))
-        op.report({'INFO'}, 'YDR Successfully imported.')
-    except Exception as e:
-        op.report({'ERROR'}, traceback.format_exc())
+        return f"Succesfully imported : {filepath}"
+    except:
+        return f"Error importing : {filepath} \n {traceback.format_exc()}"

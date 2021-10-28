@@ -1,7 +1,9 @@
-import bpy
+from abc import abstractmethod
 import traceback
 import os
 import pathlib
+import time
+import bpy
 from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
@@ -20,15 +22,72 @@ from Sollumz.tools.utils import VectorHelper
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 
-class SollumzImportHelper(bpy.types.Operator, ImportHelper):
+class SOLLUMZ_OT_base():
+    bl_options = {"UNDO"}
+    bl_action = "do"
+    bl_showtime = False
+
+    def __init__(self):
+        self.messages = []
+
+    @abstractmethod
+    def run(self, context):
+        pass
+
+    def execute(self, context):
+        start = time.time()
+        try:
+            result = self.run(context)
+        except:
+            result = False
+            self.error(
+                f"Error occured running operator : {self.bl_idname} \n {traceback.format_exc()}")
+        end = time.time()
+
+        if self.bl_showtime and result == True:
+            self.message(
+                f"{self.bl_label} took {round(end - start, 3)} seconds to {self.bl_action}.")
+
+        if len(self.messages) > 0:
+            self.message('\n'.join(self.messages))
+
+        if result:
+            return {"FINISHED"}
+        else:
+            return {"CANCELLED"}
+
+    def message(self, msg):
+        self.report({"INFO"}, msg)
+
+    def warning(self, msg):
+        self.report({"WARNING"}, msg)
+
+    def error(self, msg):
+        self.report({"ERROR"}, msg)
+
+    def is_sollum_object_in_objects(self, objs):
+        for obj in objs:
+            if obj.sollum_type != DrawableType.NONE:
+                return True
+        return False
+
+    def is_sollum_type(obj, sollum_type):
+        if obj.sollum_type == sollum_type:
+            return True
+        else:
+            return False
+
+
+class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     """Imports xml files exported by codewalker."""
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
-    bl_options = {'UNDO'}
+    bl_action = "import"
+    bl_showtime = True
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 
@@ -42,40 +101,38 @@ class SollumzImportHelper(bpy.types.Operator, ImportHelper):
 
     def import_file(self, filepath, ext):
         if ext == YDR.file_extension:
-            import_ydr(self, filepath)
+            result = import_ydr(filepath)
         elif ext == YDD.file_extension:
-            import_ydd(self, filepath)
+            result = import_ydd(filepath)
         elif ext == YFT.file_extension:
-            import_yft(self, filepath)
+            result = import_yft(filepath)
         elif ext == YBN.file_extension:
-            import_ybn(self, filepath)
+            result = import_ybn(filepath)
         else:
-            # should never happen
-            self.report({'INFO'}, f"Invalid filetype: {filepath}")
+            pass
+        return result
 
-    def execute(self, context):
-
-        filepaths = []
-
+    def run(self, context):
         if(self.import_directory):
             folderpath = os.path.dirname(self.filepath)
             for file in os.listdir(folderpath):
                 ext = ''.join(pathlib.Path(file).suffixes)
                 if ext in self.filename_exts:
                     filepath = os.path.join(folderpath, file)
-                    self.import_file(filepath, ext)
+                    self.messages.append(self.import_file(filepath, ext))
         else:
             ext = ''.join(pathlib.Path(self.filepath).suffixes)
-            self.import_file(self.filepath, ext)
+            self.messages.append(self.import_file(self.filepath, ext))
 
-        return {'FINISHED'}
+        return True
 
 
-class SollumzExportHelper(bpy.types.Operator):
+class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     """Exports codewalker xml files."""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
-    bl_options = {'UNDO'}
+    bl_showtime = True
+    bl_action = "export"
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -105,7 +162,23 @@ class SollumzExportHelper(bpy.types.Operator):
     def get_filepath(self, filename):
         return os.path.join(self.directory, filename)
 
-    def execute(self, context):
+    def export_object(self, obj):
+        result = False
+        if obj.sollum_type == DrawableType.DRAWABLE:
+            result = export_ydr(self,
+                                obj, self.get_filepath(obj.name + YDR.file_extension))
+        elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
+            result = export_ydd(self,
+                                obj, self.get_filepath(obj.name + YDD.file_extension))
+        elif obj.sollum_type == DrawableType.FRAGMENT:
+            result = export_yft(self,
+                                obj, self.get_filepath(obj.name + YFT.file_extension))
+        elif obj.sollum_type == BoundType.COMPOSITE:
+            result = export_ybn(self,
+                                obj, self.get_filepath(obj.name + YBN.file_extension))
+        return result
+
+    def run(self, context):
         objects = []
 
         if(self.export_type == "export_all"):
@@ -113,39 +186,25 @@ class SollumzExportHelper(bpy.types.Operator):
         else:
             objects = context.selected_objects
 
-        found = False
+        if not self.is_sollum_object_in_objects(objects):
+            self.messages.append(
+                f"No Sollumz object(s) to {self.bl_action}.")
+            return False
 
         if len(objects) > 0:
             for obj in objects:
-                if obj.sollum_type == DrawableType.DRAWABLE:
-                    found = True
-                    export_ydr(self,
-                               obj, self.get_filepath(obj.name + YDR.file_extension))
-                elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
-                    found = True
-                    export_ydd(self,
-                               obj, self.get_filepath(obj.name + YDD.file_extension))
-                elif obj.sollum_type == DrawableType.FRAGMENT:
-                    found = True
-                    export_yft(self,
-                               obj, self.get_filepath(obj.name + YFT.file_extension))
-                elif obj.sollum_type == BoundType.COMPOSITE:
-                    found = True
-                    export_ybn(self,
-                               obj, self.get_filepath(obj.name + YBN.file_extension))
+                self.messages.append(self.export_object(obj))
 
-        if not found:
-            self.report({'INFO'}, 'No Sollumz objects in scene for export.')
-
-        return {'FINISHED'}
+        return True
 
 
-class ImportYmapXml(bpy.types.Operator, ImportHelper):
+class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     """Imports .ymap.xml file exported from codewalker."""
     bl_idname = "sollumz.importymap"
     bl_label = "Import ymap.xml"
     filename_ext = ".ymap.xml"
-    bl_options = {'UNDO'}
+    bl_showtime = True
+    bl_action = "import"
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",
@@ -171,20 +230,24 @@ class ImportYmapXml(bpy.types.Operator, ImportHelper):
         obj.entity_properties.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
         obj.entity_properties.tint_value = entity.tint_value
 
-    def execute(self, context):
+    def run(self, context):
 
-        ymap = YMAP.from_xml_file(self.filepath)
+        try:
+            ymap = YMAP.from_xml_file(self.filepath)
+            for obj in context.collection.objects:
+                for entity in ymap.entities:
+                    if(entity.archetype_name == obj.name):
+                        obj.location = entity.position
+                        self.apply_entity_properties(obj, entity)
+            self.messages.append(f"Succesfully imported : {self.filepath}")
+        except:
+            self.messages.append(traceback.format_exc())
+            # return False # shouldnt do this because otherwise it wont print the correct error
 
-        for obj in bpy.context.collection.objects:
-            for entity in ymap.entities:
-                if(entity.archetype_name == obj.name):
-                    obj.location = entity.position
-                    self.apply_entity_properties(obj, entity)
-
-        return {'FINISHED'}
+        return True
 
 
-class ExportYmapXml(bpy.types.Operator, ExportHelper):
+class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
     """Exports .ymap.xml file exported from codewalker."""
     bl_idname = "sollumz.exportymap"
     bl_label = "Export ymap.xml"
@@ -248,7 +311,7 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
 
         return emin, emax, smin, smax
 
-    def execute(self, context):
+    def run(self, context):
 
         try:
             ymap = CMapData()
@@ -273,17 +336,21 @@ class ExportYmapXml(bpy.types.Operator, ExportHelper):
 
             ymap.write_xml(self.filepath)
 
-            self.report({'INFO'}, 'YMAP Successfully exported.')
+            self.messages.append(f"Succesfully exported : {self.filepath}")
         except:
-            self.report({'INFO'}, 'YMAP failed to export.')
+            self.messages.append(
+                f"Error exporting : {self.filepath} \n {traceback.format_exc()}")
+            # return False # shouldnt do this because otherwise it wont print the correct error
 
-        return {'FINISHED'}
+        return True
 
 
-class SOLLUMZ_OT_paint_vertices(bpy.types.Operator):
+class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint All Vertices Of Selected Object"""
     bl_idname = "sollumz.paint_vertices"
     bl_label = "Paint"
+    bl_showtime = False
+    bl_action = "paint vertices"
 
     def paint_map(self, mesh, map, color):
         i = 0
@@ -297,29 +364,32 @@ class SOLLUMZ_OT_paint_vertices(bpy.types.Operator):
             mesh.vertex_colors.new()
         self.paint_map(mesh, mesh.vertex_colors.active.data, color)
 
-    def execute(self, context):
+    def run(self, context):
         objs = context.selected_objects
 
         if len(objs) > 0:
             for obj in objs:
                 if(obj.sollum_type == DrawableType.GEOMETRY):
                     self.paint_mesh(obj.data, context.scene.vert_paint_color)
+                    self.messages.append(
+                        f"Object: {obj.name} was successfully painted.")
                 else:
-                    self.report(
-                        {"INFO"}, f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} type.")
+                    self.messages.append(
+                        f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} type.")
         else:
-            self.report({"INFO"}, "No selected objects to paint.")
+            self.messages.append("No objects selected to paint.")
+            return False
 
-        return {'FINISHED'}
+        return True
 
 
 def sollumz_menu_func_import(self, context):
-    self.layout.operator(SollumzImportHelper.bl_idname,
+    self.layout.operator(SOLLUMZ_OT_import.bl_idname,
                          text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")
 
 
 def sollumz_menu_func_export(self, context):
-    self.layout.operator(SollumzExportHelper.bl_idname,
+    self.layout.operator(SOLLUMZ_OT_export.bl_idname,
                          text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")
 
 
