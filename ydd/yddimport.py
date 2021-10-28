@@ -1,8 +1,10 @@
 import bpy
-import os, traceback
+import os
+import traceback
 from mathutils import Vector, Quaternion, Matrix
 from Sollumz.resources.drawable import *
 from Sollumz.ydr.ydrimport import drawable_to_obj
+
 
 def drawable_dict_to_obj(drawable_dict, filepath):
 
@@ -19,7 +21,8 @@ def drawable_dict_to_obj(drawable_dict, filepath):
             break
 
     for drawable in drawable_dict.value:
-        drawable_obj = drawable_to_obj(drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones)
+        drawable_obj = drawable_to_obj(
+            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones)
         if (armature_with_skel_obj is None and drawable_with_skel is not None and len(drawable.skeleton.bones) > 0):
             armature_with_skel_obj = drawable_obj
 
@@ -32,15 +35,15 @@ def drawable_dict_to_obj(drawable_dict, filepath):
                     continue
 
                 mod_objs.append(geo)
-            
+
         vmodels.append(drawable_obj)
-    
+
     dict_obj = bpy.data.objects.new(name, None)
     dict_obj.sollum_type = "sollumz_drawable_dictionary"
 
     for vmodel in vmodels:
         vmodel.parent = dict_obj
-    
+
     bpy.context.collection.objects.link(dict_obj)
 
     if armature_with_skel_obj is not None:
@@ -53,3 +56,11 @@ def drawable_dict_to_obj(drawable_dict, filepath):
 
     return dict_obj
 
+
+def import_ydd(op, filepath):
+    try:
+        ydd_xml = YDD.from_xml_file(filepath)
+        drawable_dict_to_obj(ydd_xml, filepath)
+        op.report({'INFO'}, 'YDD Successfully imported.')
+    except Exception as e:
+        op.report({'ERROR'}, traceback.format_exc())

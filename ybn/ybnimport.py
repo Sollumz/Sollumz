@@ -322,3 +322,13 @@ def composite_to_obj(bounds, name, from_drawable=False):
     bpy.context.collection.objects.link(obj)
 
     return obj
+
+
+def import_ybn(op, filepath):
+    try:
+        ybn_xml = YBN.from_xml_file(filepath)
+        composite_to_obj(ybn_xml, os.path.basename(
+            filepath.replace(YBN.file_extension, '')))
+        op.report({'INFO'}, 'YBN Successfully imported.')
+    except Exception as e:
+        op.report({'ERROR'}, traceback.format_exc())

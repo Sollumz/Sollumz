@@ -1,5 +1,6 @@
 import os
 import shutil
+import traceback
 import bpy
 from Sollumz.resources.drawable import *
 from Sollumz.resources.shader import ShaderManager
@@ -445,3 +446,11 @@ def drawable_from_object(obj, exportpath, bones=None):
     # drawable.unknown_9A = ?
 
     return drawable
+
+
+def export_ydr(op, obj, filepath):
+    try:
+        drawable_from_object(obj, filepath, None).write_xml(filepath)
+        op.report({'INFO'}, 'YDR Successfully exported.')
+    except:
+        op.report({'ERROR'}, traceback.format_exc())

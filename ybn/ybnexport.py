@@ -1,3 +1,4 @@
+import traceback
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.meshhelper import *
@@ -263,3 +264,11 @@ def bounds_from_object(obj):
     bounds.composite = composite
 
     return bounds
+
+
+def export_ybn(op, obj, filepath):
+    try:
+        bounds_from_object(obj).write_xml(filepath)
+        op.report({'INFO'}, 'YBN Successfully exported.')
+    except:
+        op.report({'ERROR'}, traceback.format_exc())
