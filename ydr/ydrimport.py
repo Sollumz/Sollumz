@@ -1,9 +1,9 @@
 import traceback
-import bpy
 import os
+import bpy
 from mathutils import Matrix
 from Sollumz.ydr.shader_materials import create_shader
-from Sollumz.ybn.ybnimport import composite_to_obj
+#from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
 from Sollumz.meshhelper import flip_uv
@@ -282,6 +282,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
         obj = bpy.data.objects.new(name, None)
 
     obj.sollum_type = DrawableType.DRAWABLE
+    obj.empty_display_size = 0
     obj.drawable_properties.lod_dist_high = drawable.lod_dist_high
     obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable.lod_dist_low

@@ -1,6 +1,7 @@
 from genericpath import exists
 import bpy
-from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
+from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.meshhelper import *
 from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
 from .properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
@@ -392,7 +393,7 @@ class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
 
         for obj in selected:
             correct_type = False
-            if is_sollum_type(obj, PolygonType) or is_sollum_type(obj, BoundType):
+            if SOLLUMZ_OT_base.is_sollum_type(obj, PolygonType) or SOLLUMZ_OT_base.is_sollum_type(obj, BoundType):
                 if obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH:
                     correct_type = True
                     mat = create_collision_material_from_index(
@@ -558,7 +559,7 @@ class SOLLUMZ_OT_clear_col_flags(bpy.types.Operator):
         if(aobj == None):
             return {'CANCELLED'}
 
-        if is_sollum_type(aobj, BoundType):
+        if SOLLUMZ_OT_base.is_sollum_type(aobj, BoundType):
             for flag_name in BoundFlags.__annotations__.keys():
                 aobj.composite_flags1[flag_name] = False
                 aobj.composite_flags2[flag_name] = False

@@ -1,9 +1,10 @@
-from abc import abstractmethod
 import traceback
 import os
 import pathlib
 import time
+from abc import abstractmethod
 import bpy
+from Sollumz.sollumz_helper import SOLLUMZ_OT_base
 from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
@@ -22,68 +23,11 @@ from Sollumz.tools.utils import VectorHelper
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 
-class SOLLUMZ_OT_base():
-    bl_options = {"UNDO"}
-    bl_action = "do"
-    bl_showtime = False
-
-    def __init__(self):
-        self.messages = []
-
-    @abstractmethod
-    def run(self, context):
-        pass
-
-    def execute(self, context):
-        start = time.time()
-        try:
-            result = self.run(context)
-        except:
-            result = False
-            self.error(
-                f"Error occured running operator : {self.bl_idname} \n {traceback.format_exc()}")
-        end = time.time()
-
-        if self.bl_showtime and result == True:
-            self.message(
-                f"{self.bl_label} took {round(end - start, 3)} seconds to {self.bl_action}.")
-
-        if len(self.messages) > 0:
-            self.message('\n'.join(self.messages))
-
-        if result:
-            return {"FINISHED"}
-        else:
-            return {"CANCELLED"}
-
-    def message(self, msg):
-        self.report({"INFO"}, msg)
-
-    def warning(self, msg):
-        self.report({"WARNING"}, msg)
-
-    def error(self, msg):
-        self.report({"ERROR"}, msg)
-
-    def is_sollum_object_in_objects(self, objs):
-        for obj in objs:
-            if obj.sollum_type != DrawableType.NONE:
-                return True
-        return False
-
-    def is_sollum_type(obj, sollum_type):
-        if obj.sollum_type == sollum_type:
-            return True
-        else:
-            return False
-
-
 class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     """Imports xml files exported by codewalker."""
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
     bl_action = "import"
-    bl_showtime = True
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -132,7 +76,6 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
     bl_showtime = True
-    bl_action = "export"
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -203,7 +146,6 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_idname = "sollumz.importymap"
     bl_label = "Import ymap.xml"
     filename_ext = ".ymap.xml"
-    bl_showtime = True
     bl_action = "import"
 
     filter_glob: bpy.props.StringProperty(
@@ -251,8 +193,9 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
     """Exports .ymap.xml file exported from codewalker."""
     bl_idname = "sollumz.exportymap"
     bl_label = "Export ymap.xml"
+    bl_action = "export"
+
     filename_ext = ".ymap.xml"
-    bl_options = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",

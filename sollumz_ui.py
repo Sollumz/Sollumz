@@ -1,5 +1,6 @@
 import bpy
-from Sollumz.sollumz_properties import BoundType, PolygonType, DrawableType, MaterialType, is_sollum_type
+from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_properties import BoundType, PolygonType, DrawableType, MaterialType
 from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
 from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
 
@@ -129,7 +130,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         mat = context.active_object.active_material
-        return mat and (is_sollum_type(mat, MaterialType) and mat.sollum_type != MaterialType.NONE)
+        return mat and (SOLLUMZ_OT_base.is_sollum_type(mat, MaterialType) and mat.sollum_type != MaterialType.NONE)
 
     def draw(self, context):
         layout = self.layout
@@ -146,7 +147,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if mat.sollum_type == MaterialType.SHADER:
             draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION and is_sollum_type(aobj, PolygonType):
+        elif mat.sollum_type == MaterialType.COLLISION and SOLLUMZ_OT_base.is_sollum_type(aobj, PolygonType):
             draw_collision_material_properties(layout, mat)
 
 
@@ -184,7 +185,7 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
             draw_geometry_properties(layout, obj)
         elif(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             self.draw_drawable_model_properties(context, layout, obj)
-        elif is_sollum_type(obj, BoundType):
+        elif SOLLUMZ_OT_base.is_sollum_type(obj, BoundType):
             draw_bound_properties(layout, obj)
 
 

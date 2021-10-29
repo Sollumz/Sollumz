@@ -198,10 +198,6 @@ SOLLUMZ_UI_NAMES = {
     EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
 }
 
-
-def is_sollum_type(obj, type):
-    return obj.sollum_type in type._value2member_map_
-
 # Generate items from provided enums
 
 

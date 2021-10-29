@@ -1,7 +1,7 @@
 import traceback
 import bpy
 from Sollumz.ydr.shader_materials import create_shader
-from Sollumz.sollumz_properties import DrawableType, is_sollum_type, SOLLUMZ_UI_NAMES, MaterialType
+from Sollumz.sollumz_properties import DrawableType, SOLLUMZ_UI_NAMES, MaterialType
 
 
 def create_drawable(sollum_type=DrawableType.DRAWABLE):
