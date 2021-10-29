@@ -75,7 +75,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     """Exports codewalker xml files."""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
-    bl_showtime = True
+    bl_action = "export"
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -106,7 +106,6 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         return os.path.join(self.directory, filename)
 
     def export_object(self, obj):
-        result = False
         if obj.sollum_type == DrawableType.DRAWABLE:
             result = export_ydr(self,
                                 obj, self.get_filepath(obj.name + YDR.file_extension))
@@ -119,6 +118,9 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         elif obj.sollum_type == BoundType.COMPOSITE:
             result = export_ybn(self,
                                 obj, self.get_filepath(obj.name + YBN.file_extension))
+        else:
+            result = False
+
         return result
 
     def run(self, context):
@@ -136,7 +138,9 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if len(objects) > 0:
             for obj in objects:
-                self.messages.append(self.export_object(obj))
+                msg = self.export_object(obj)
+                if msg != False:
+                    self.messages.append(msg)
 
         return True
 

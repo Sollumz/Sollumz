@@ -1,4 +1,5 @@
 from mathutils import Vector
+import numpy
 
 
 class StringHelper():
@@ -18,6 +19,13 @@ class ListHelper():
         for item in list:
             answer = item / d
             result.append(answer)
+        return result
+
+    @staticmethod
+    def float32_list(list):
+        result = []
+        for item in list:
+            result.append(numpy.float32(item))
         return result
 
 

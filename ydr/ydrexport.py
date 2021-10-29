@@ -5,8 +5,7 @@ import bpy
 from Sollumz.resources.drawable import *
 from Sollumz.resources.shader import ShaderManager
 from Sollumz.meshhelper import *
-from Sollumz.tools.utils import StringHelper
-from Sollumz.tools.blender_helper import BlenderHelper
+from Sollumz.tools.utils import StringHelper, ListHelper
 from Sollumz.tools.blender_helper import *
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel
 from Sollumz.ybn.ybnexport import composite_from_object
@@ -220,24 +219,29 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
             kwargs = {}
 
             if "position" in vertex_type._fields:
-                kwargs['position'] = tuple(
+                pos = ListHelper.float32_list(
                     obj.matrix_world @ mesh.vertices[vert_idx].co)
+                kwargs['position'] = tuple(pos)
             if "normal" in vertex_type._fields:
-                kwargs["normal"] = tuple(loop.normal)
+                normal = ListHelper.float32_list(loop.normal)
+                kwargs["normal"] = tuple(normal)
             if "blendweights" in vertex_type._fields:
-                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
+                bw = ListHelper.float32_list(blend_weights[vert_idx])
+                kwargs['blendweights'] = tuple(bw)
             if "blendindices" in vertex_type._fields:
-                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
+                kwargs['blendindices'] = tuple(int(blend_indices[vert_idx]))
             if "tangent" in vertex_type._fields:
-                tangent = loop.tangent.to_4d()
-                tangent[3] = loop.bitangent_sign
+                tangent = ListHelper.float32_list(loop.tangent.to_4d())
+                tangent[3] = loop.bitangent_sign  # convert to float 32 ?
                 kwargs["tangent"] = tuple(tangent)
             for i in range(6):
                 if f"texcoord{i}" in vertex_type._fields:
                     key = f'texcoord{i}'
                     if mesh_layer_idx < len(mesh.uv_layers):
                         data = mesh.uv_layers[mesh_layer_idx].data
-                        kwargs[key] = tuple(flip_uv(data[loop_idx].uv))
+                        uv = ListHelper.float32_list(
+                            flip_uv(data[loop_idx].uv))
+                        kwargs[key] = tuple(uv)
                         mesh_layer_idx += 1
                     else:
                         kwargs[key] = (0, 0)
@@ -247,7 +251,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                     if i < len(mesh.vertex_colors):
                         data = mesh.vertex_colors[i].data
                         kwargs[key] = tuple(
-                            round(val * 255) for val in data[loop_idx].color)
+                            int(val * 255) for val in data[loop_idx].color)
                     else:
                         kwargs[key] = (255, 255, 255, 255)
 
