@@ -7,7 +7,7 @@ from Sollumz.sollumz_properties import DrawableType
 class SOLLUMZ_OT_base():
     bl_options = {"UNDO"}
     bl_action = "do"
-    bl_showtime = True
+    bl_showtime = False
 
     def __init__(self):
         self.messages = []

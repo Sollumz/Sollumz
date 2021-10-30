@@ -28,6 +28,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
     bl_action = "import"
+    bl_showtime = True
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -76,6 +77,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
     bl_action = "export"
+    bl_showtime = True
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -149,6 +151,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_label = "Import ymap.xml"
     filename_ext = ".ymap.xml"
     bl_action = "Import a YMAP"
+    bl_showtime = True
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",
@@ -194,6 +197,7 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
     bl_idname = "sollumz.exportymap"
     bl_label = "Export ymap.xml"
     bl_action = "Export a YMAP"
+    bl_showtime = True
 
     filename_ext = ".ymap.xml"
 
@@ -288,7 +292,6 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint All Vertices Of Selected Object"""
     bl_idname = "sollumz.paint_vertices"
     bl_label = "Paint"
-    bl_showtime = False
     bl_action = "Paint Vertices"
 
     def paint_map(self, mesh, map, color):

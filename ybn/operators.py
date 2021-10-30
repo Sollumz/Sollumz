@@ -21,7 +21,6 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz bound composite"""
     bl_idname = "sollumz.createboundcomposite"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
 
     def run(self, context):
@@ -45,7 +44,6 @@ class SOLLUMZ_OT_create_geometry_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz geometry bound"""
     bl_idname = "sollumz.creategeometrybound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
 
     def run(self, context):
@@ -61,7 +59,6 @@ class SOLLUMZ_OT_create_geometrybvh_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz geometry bound bvh"""
     bl_idname = "sollumz.creategeometryboundbvh"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
 
     def run(self, context):
@@ -77,7 +74,6 @@ class SOLLUMZ_OT_create_box_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz box bound"""
     bl_idname = "sollumz.createboxbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
 
     def run(self, context):
@@ -93,7 +89,6 @@ class SOLLUMZ_OT_create_sphere_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz sphere bound"""
     bl_idname = "sollumz.createspherebound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
 
     def run(self, context):
@@ -109,7 +104,6 @@ class SOLLUMZ_OT_create_capsule_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz capsule bound"""
     bl_idname = "sollumz.createcapsulebound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
 
     def run(self, context):
@@ -125,7 +119,6 @@ class SOLLUMZ_OT_create_cylinder_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz cylinder bound"""
     bl_idname = "sollumz.createcylinderbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
 
     def run(self, context):
@@ -141,7 +134,6 @@ class SOLLUMZ_OT_create_disc_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz disc bound"""
     bl_idname = "sollumz.creatediscbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
 
     def run(self, context):
@@ -157,7 +149,6 @@ class SOLLUMZ_OT_create_cloth_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz cloth bound"""
     bl_idname = "sollumz.createclothbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
-    bl_showtime = False
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
 
     def run(self, context):
@@ -173,7 +164,6 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz polygon bound"""
     bl_idname = "sollumz.createpolygonbound"
     bl_label = "Create Polygon Bound"
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     def create_poly(self, aobj, type):
@@ -270,7 +260,6 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     """Center a bound composite with the rest of it's geometry. Note: Has no effect on export"""
     bl_idname = "sollumz.centercomposite"
     bl_label = "Center Composite"
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     def run(self, context):
@@ -296,7 +285,6 @@ class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"
     bl_label = "Create Collision Material"
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     def run(self, context):
@@ -322,7 +310,6 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete a flag preset"""
     bl_idname = "sollumz.delete_flag_preset"
     bl_label = "Delete Flag Preset"
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     preset_blacklist = ['Default']
@@ -355,7 +342,6 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Save a flag preset"""
     bl_idname = "sollumz.save_flag_preset"
     bl_label = "Save Flag Preset"
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     def run(self, context):
@@ -407,7 +393,6 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Apply Flags Preset"
     bl_context = 'object'
     bl_options = {'REGISTER', 'UNDO'}
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     def run(self, context):
@@ -453,7 +438,6 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
     """Load commonly used collision flags"""
     bl_idname = "sollumz.clear_col_flags"
     bl_label = "Clear Collision Flags"
-    bl_showtime = False
     bl_action = f"{bl_label}"
 
     def run(self, context):

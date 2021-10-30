@@ -10,7 +10,6 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz drawable"""
     bl_idname = "sollumz.createdrawable"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}"
-    bl_showtime = False
     bl_action = "Create a Drawable"
 
     def run(self, context):
@@ -30,7 +29,6 @@ class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz drawable model"""
     bl_idname = "sollumz.createdrawablemodel"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]}"
-    bl_showtime = False
     bl_action = "Create a Drawable Model"
 
     def run(self, context):
@@ -42,7 +40,6 @@ class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz geometry"""
     bl_idname = "sollumz.creategeometry"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}"
-    bl_showtime = False
     bl_action = "Create a Drawable Geometry"
 
     def run(self, context):
@@ -54,7 +51,6 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
     """Convert material to a sollumz shader material"""
     bl_idname = "sollumz.converttoshadermaterial"
     bl_label = "Convert Material To Shader Material"
-    bl_showtime = False
     bl_action = "Convert a Material To a Shader Material"
 
     def convert_material(self, material):
@@ -167,8 +163,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz shader material"""
     bl_idname = "sollumz.createshadermaterial"
     bl_label = "Create Shader Material"
-    bl_showtime = False
-    bl_action = "create a shader material"
+    bl_action = "Create a Shader Material"
 
     def run(self, context):
 
@@ -197,7 +192,6 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_new_item"
     bl_label = "Add a new item"
-    bl_showtime = False
     bl_action = "Add a Bone Flag"
 
     def run(self, context):
@@ -209,7 +203,6 @@ class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_delete_item"
     bl_label = "Deletes an item"
-    bl_showtime = False
     bl_action = "Delete a Bone Flag"
 
     @ classmethod
