@@ -3,7 +3,7 @@ import os
 import bpy
 from mathutils import Matrix
 from Sollumz.ydr.shader_materials import create_shader
-#from Sollumz.ybn.ybnimport import composite_to_obj
+from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
 from Sollumz.meshhelper import flip_uv
@@ -165,24 +165,23 @@ def geometry_to_obj(geometry, bones=None, name=None):
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 
     # set weights
-    if hasattr(data[0], " blendweights"):
-        if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
-            num = max(256, len(bones))
-            for i in range(num):
-                if (i < len(bones)):
-                    obj.vertex_groups.new(name=bones[i].name)
-                else:
-                    obj.vertex_groups.new(name="UNKNOWN_BONE." + str(i))
+    if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
+        num = max(256, len(bones))
+        for i in range(num):
+            if (i < len(bones)):
+                obj.vertex_groups.new(name=bones[i].name)
+            else:
+                obj.vertex_groups.new(name="UNKNOWN_BONE." + str(i))
 
-            for vertex_idx, vertex in enumerate(data):
-                for i in range(0, 4):
-                    weight = vertex.blendweights[i] / 255
-                    index = vertex.blendindices[i]
-                    if (weight > 0.0):
-                        obj.vertex_groups[index].add(
-                            [vertex_idx], weight, "ADD")
+        for vertex_idx, vertex in enumerate(data):
+            for i in range(0, 4):
+                weight = vertex.blendweights[i] / 255
+                index = vertex.blendindices[i]
+                if (weight > 0.0):
+                    obj.vertex_groups[index].add(
+                        [vertex_idx], weight, "ADD")
 
-            BlenderHelper.remove_unused_vertex_groups_of_mesh(obj)
+        BlenderHelper.remove_unused_vertex_groups_of_mesh(obj)
 
     return obj
 
@@ -191,6 +190,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None):
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL], None)
     dobj.sollum_type = DrawableType.DRAWABLE_MODEL
+    dobj.empty_display_size = 0
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
     dobj.drawable_model_properties.flags = model.flags
