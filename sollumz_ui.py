@@ -127,11 +127,6 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_context = 'material'
     bl_options = {'DEFAULT_CLOSED'}
 
-    @classmethod
-    def poll(cls, context):
-        mat = context.active_object.active_material
-        return mat and (SOLLUMZ_OT_base.is_sollum_type(mat, MaterialType) and mat.sollum_type != MaterialType.NONE)
-
     def draw(self, context):
         layout = self.layout
         # layout.use_property_split = True
@@ -139,7 +134,6 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         if(context.active_object == None):
             return
 
-        mat = None
         mat = context.active_object.active_material
 
         if(mat == None):

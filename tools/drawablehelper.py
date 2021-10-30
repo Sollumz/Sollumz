@@ -20,6 +20,11 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
         parent = create_drawable(DrawableType.DRAWABLE)
 
     for obj in objs:
+
+        if obj.type != "MESH":
+            raise Exception(
+                f"{obj.name} cannot be converted because it has no mesh data.")
+
         # create material
         if(len(obj.data.materials) > 0):
             mat = obj.data.materials[0]

@@ -68,7 +68,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
             ext = ''.join(pathlib.Path(self.filepath).suffixes)
             self.messages.append(self.import_file(self.filepath, ext))
 
-        return True
+        return self.success(None, False)
 
 
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -132,9 +132,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             objects = context.selected_objects
 
         if not self.is_sollum_object_in_objects(objects):
-            self.messages.append(
-                f"No Sollumz object(s) to {self.bl_action}.")
-            return False
+            return self.fail(f"No Sollumz object(s) to {self.bl_action}.")
 
         if len(objects) > 0:
             for obj in objects:
@@ -142,7 +140,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 if msg != False:
                     self.messages.append(msg)
 
-        return True
+        return self.success(None, False)
 
 
 class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
@@ -150,7 +148,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_idname = "sollumz.importymap"
     bl_label = "Import ymap.xml"
     filename_ext = ".ymap.xml"
-    bl_action = "import"
+    bl_action = "Import a YMAP"
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",
@@ -185,19 +183,17 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                     if(entity.archetype_name == obj.name):
                         obj.location = entity.position
                         self.apply_entity_properties(obj, entity)
-            self.messages.append(f"Succesfully imported : {self.filepath}")
+            return self.success(f"succesfully imported : {self.filepath}", True, False)
         except:
-            self.messages.append(traceback.format_exc())
+            return self.fail(traceback.format_exc())
             # return False # shouldnt do this because otherwise it wont print the correct error
-
-        return True
 
 
 class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
     """Exports .ymap.xml file exported from codewalker."""
     bl_idname = "sollumz.exportymap"
     bl_label = "Export ymap.xml"
-    bl_action = "export"
+    bl_action = "Export a YMAP"
 
     filename_ext = ".ymap.xml"
 
@@ -283,13 +279,9 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
 
             ymap.write_xml(self.filepath)
 
-            self.messages.append(f"Succesfully exported : {self.filepath}")
+            return self.success(f"succesfully exported: {self.filepath}", True, False)
         except:
-            self.messages.append(
-                f"Error exporting : {self.filepath} \n {traceback.format_exc()}")
-            # return False # shouldnt do this because otherwise it wont print the correct error
-
-        return True
+            return self.fail(traceback.format_exc())
 
 
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -297,7 +289,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.paint_vertices"
     bl_label = "Paint"
     bl_showtime = False
-    bl_action = "paint vertices"
+    bl_action = "Paint Vertices"
 
     def paint_map(self, mesh, map, color):
         i = 0
@@ -319,15 +311,14 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
                 if(obj.sollum_type == DrawableType.GEOMETRY):
                     self.paint_mesh(obj.data, context.scene.vert_paint_color)
                     self.messages.append(
-                        f"Object: {obj.name} was successfully painted.")
+                        f"{obj.name} was successfully painted.")
                 else:
                     self.messages.append(
-                        f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} type.")
+                        f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} type.")
         else:
-            self.messages.append("No objects selected to paint.")
-            return False
+            return self.fail("No objects selected to paint.")
 
-        return True
+        return self.success(None, False)
 
 
 def sollumz_menu_func_import(self, context):

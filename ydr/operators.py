@@ -11,31 +11,19 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createdrawable"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}"
     bl_showtime = False
-    bl_action = "create a drawable"
+    bl_action = "Create a Drawable"
 
     def run(self, context):
         selected = context.selected_objects
         if len(selected) == 0:
-            try:
-                create_drawable()
-                self.messages.append(
-                    f"Created a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
-                return True
-            except:
-                self.messages.append(
-                    f"Failed to create a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]} \n {traceback.format_exc()}")
-                return False
+            create_drawable()
+            return self.success()
         else:
-            try:
-                convert_selected_to_drawable(
-                    selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
-                self.messages.append(
-                    f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
-                return True
-            except:
-                self.messages.append(
-                    f"Failed to create a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]} \n {traceback.format_exc()}")
-                return False
+            convert_selected_to_drawable(
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+            # self.messages.append(
+            #    f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
+            return self.success(f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.", True, False)
 
 
 class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -43,19 +31,11 @@ class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createdrawablemodel"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]}"
     bl_showtime = False
-    bl_action = "create a drawable model"
+    bl_action = "Create a Drawable Model"
 
     def run(self, context):
-
-        try:
-            create_drawable(DrawableType.DRAWABLE_MODEL)
-            self.messages.append(
-                f"Created a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]}.")
-            return True
-        except:
-            self.messages.append(
-                f"Failed to create a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL]} \n {traceback.format_exc()}")
-            return False
+        create_drawable(DrawableType.DRAWABLE_MODEL)
+        return self.success()
 
 
 class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -63,18 +43,11 @@ class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.creategeometry"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}"
     bl_showtime = False
-    bl_action = "create a drawable geometry"
+    bl_action = "Create a Drawable Geometry"
 
     def run(self, context):
-        try:
-            create_drawable(DrawableType.GEOMETRY)
-            self.messages.append(
-                f"Created a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}.")
-            return True
-        except:
-            self.messages.append(
-                f"Failed to create a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} \n {traceback.format_exc()}")
-            return False
+        create_drawable(DrawableType.GEOMETRY)
+        return self.success()
 
 
 class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -82,15 +55,16 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
     bl_idname = "sollumz.converttoshadermaterial"
     bl_label = "Convert Material To Shader Material"
     bl_showtime = False
-    bl_action = "convert a material to a shader material"
+    bl_action = "Convert a Material To a Shader Material"
 
     def convert_material(self, material):
         try:
             bsdf = material.node_tree.nodes["Principled BSDF"]
 
             if(bsdf == None):
-                self.fail(material.name,
-                          "Material must have a Principled BSDF node.")
+                self.messages.append(
+                    f"{material.name} Material must have a Principled BSDF node.")
+                return None
 
             diffuse_node = None
             diffuse_input = bsdf.inputs["Base Color"]
@@ -98,7 +72,9 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
                 diffuse_node = diffuse_input.links[0].from_node
 
             if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-                self.fail(material.name, "Material has no diffuse image.")
+                self.messages.append(
+                    f"{material.name} Material has no diffuse image.")
+                return None
 
             specular_node = None
             specular_input = bsdf.inputs["Specular"]
@@ -161,13 +137,14 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
                 new_normal_node.image = normal_node.image
 
             self.messages.append(
-                f"Material: {material.name} was successfully converted to a sollumz material.")
+                f"{material.name} was successfully converted to a sollumz material.")
 
             return new_material
 
         except:
             self.messages.append(
                 f"{material.name} cannot be converted because : \n {traceback.format_exc()}")
+            return None
 
     def run(self, context):
 
@@ -176,7 +153,6 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
             if len(obj.data.materials) == 0:
                 self.messages.append(
                     f"{obj.name} has no materials to convert.")
-                return False
 
             for material in obj.data.materials:
                 new_material = self.convert_material(material)
@@ -184,7 +160,7 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
                     if(ms.material == material):
                         ms.material = new_material
 
-        return True
+        return self.success(None, False)
 
 
 class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -198,9 +174,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
         objs = bpy.context.selected_objects
         if(len(objs) == 0):
-            self.messages.append(
-                f"Please select a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
-            return False
+            return self.fail(f"Please select a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
 
         for obj in objs:
             if self.is_sollum_type(obj, DrawableType.GEOMETRY):
@@ -215,51 +189,38 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
                         f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
             else:
                 self.messages.append(
-                    f"Object: {obj.name} is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}, please select a valid {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
+                    f"{obj.name} is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}, please select a valid {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
 
-        return True
+        return self.success(None, False)
 
 
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_new_item"
     bl_label = "Add a new item"
     bl_showtime = False
-    bl_action = "add a bone flag"
+    bl_action = "Add a Bone Flag"
 
     def run(self, context):
         bone = context.active_pose_bone.bone
-        try:
-            bone.bone_properties.flags.add()
-            self.messages.append(f"Added a bone flag to {bone}.")
-            return True
-        except:
-            self.messages.append(
-                f"Failure adding a bone flag to {bone} because : \n {traceback.format_exc()}")
-            return False
+        bone.bone_properties.flags.add()
+        return self.success(f"Added a Bone Flag To {bone}.")
 
 
-class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(bpy.types.Operator):
+class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_delete_item"
     bl_label = "Deletes an item"
     bl_showtime = False
-    bl_action = "delete a bone flag"
+    bl_action = "Delete a Bone Flag"
 
     @ classmethod
     def poll(cls, context):
         return context.active_pose_bone.bone.bone_properties.flags
 
-    def execute(self, context):
+    def run(self, context):
         bone = context.active_pose_bone.bone
-        try:
-            list = bone.bone_properties.flags
-            index = bone.bone_properties.ul_index
-            list.remove(index)
-            bone.bone_properties.ul_index = min(
-                max(0, index - 1), len(list) - 1)
-            self.messages.append(
-                f"Deleted a bone flag from {bone}.")
-            return True
-        except:
-            self.messages.append(
-                f"Failure deleting a bone flag from {bone} because : \n {traceback.format_exc()}")
-            return False
+        list = bone.bone_properties.flags
+        index = bone.bone_properties.ul_index
+        list.remove(index)
+        bone.bone_properties.ul_index = min(
+            max(0, index - 1), len(list) - 1)
+        return self.success(f"Deleted a bone flag from {bone}.")

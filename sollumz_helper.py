@@ -47,6 +47,16 @@ class SOLLUMZ_OT_base():
     def error(self, msg):
         self.report({"ERROR"}, msg)
 
+    def success(self, msg=None, show_msg=True, show_completed=True):
+        if show_msg:
+            self.message(
+                f"{self.bl_action}{f' {msg} ' if msg else ' '}{'completed.' if show_completed else ''}")
+        return True
+
+    def fail(self, traceback):
+        self.error(f"Failure to {self.bl_action} because: \n {traceback}")
+        return False
+
     def is_sollum_object_in_objects(self, objs):
         for obj in objs:
             if obj.sollum_type != DrawableType.NONE:
@@ -55,3 +65,8 @@ class SOLLUMZ_OT_base():
 
     def is_sollum_type(self, obj, type):
         return obj.sollum_type in type._value2member_map_
+
+    def obj_is_sollumtype(self, obj, sollum_type):
+        if not (obj and obj.sollum_type == sollum_type):
+            return False
+        return True

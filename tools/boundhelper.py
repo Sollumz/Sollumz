@@ -60,16 +60,3 @@ def convert_selected_to_bound(objs, use_name=False, multiple=False):
 
         bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
-
-# move to blender helper? or maybe make a sollumz heper? call it "is_sollum_type(sollum_type)"
-# this is where a SollumOperator class would come in handy I could see checking this in a
-# bunch of different operators so if we make one common one we could call this
-
-
-def aobj_is_composite(self, sollum_type):
-    aobj = bpy.context.active_object
-    if not (aobj and aobj.sollum_type == BoundType.COMPOSITE):
-        self.report(
-            {'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} to add a {SOLLUMZ_UI_NAMES[sollum_type]} to.")
-        return False
-    return True
