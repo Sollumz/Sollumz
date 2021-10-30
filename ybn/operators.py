@@ -26,18 +26,12 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
-            try:
-                create_bound()
-                return self.success()
-            except:
-                return self.fail(traceback.format_exc())
+            create_bound()
+            return self.success()
         else:
-            try:
-                convert_selected_to_bound(
-                    selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
-                return self.success()
-            except:
-                return self.fail(traceback.format_exc())
+            convert_selected_to_bound(
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+            return self.success()
 
 
 class SOLLUMZ_OT_create_geometry_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -47,12 +41,9 @@ class SOLLUMZ_OT_create_geometry_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.GEOMETRY)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.GEOMETRY)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_geometrybvh_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -62,12 +53,9 @@ class SOLLUMZ_OT_create_geometrybvh_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.GEOMETRYBVH)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.GEOMETRYBVH)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_box_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -77,12 +65,9 @@ class SOLLUMZ_OT_create_box_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.BOX)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.BOX)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_sphere_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -92,12 +77,9 @@ class SOLLUMZ_OT_create_sphere_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.SPHERE)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.SPHERE)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_capsule_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -107,12 +89,9 @@ class SOLLUMZ_OT_create_capsule_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.CAPSULE)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.CAPSULE)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_cylinder_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -122,12 +101,9 @@ class SOLLUMZ_OT_create_cylinder_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.CYLINDER)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.CYLINDER)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_disc_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -137,12 +113,9 @@ class SOLLUMZ_OT_create_disc_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.DISC)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.DISC)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_cloth_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -152,12 +125,9 @@ class SOLLUMZ_OT_create_cloth_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
 
     def run(self, context):
-        try:
-            gobj = create_bound(BoundType.CLOTH)
-            context.view_layer.objects.active = bpy.data.objects[gobj.name]
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        gobj = create_bound(BoundType.CLOTH)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
 class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -241,19 +211,13 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         parent = context.scene.poly_parent
 
         if aobj.mode == "EDIT":
-            try:
-                self.create_poly_from_verts(aobj, type, parent)
-                return self.success(
-                    f"of type: {SOLLUMZ_UI_NAMES[type]}")
-            except:
-                return self.fail(traceback.format_exc())
+            self.create_poly_from_verts(aobj, type, parent)
+            return self.success(
+                f"of type: {SOLLUMZ_UI_NAMES[type]}")
         else:
-            try:
-                self.create_poly(aobj, type)
-                self.success(
-                    f"of type: {SOLLUMZ_UI_NAMES[type]}")
-            except:
-                return self.fail(traceback.format_exc())
+            self.create_poly(aobj, type)
+            self.success(
+                f"of type: {SOLLUMZ_UI_NAMES[type]}")
 
 
 class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -271,14 +235,11 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
         if context.mode != 'OBJECT':
             return self.fail(f"{self.bl_idname} can only be ran in Object mode.")
 
-        try:
-            center = get_bound_center(aobj)
-            aobj.location = center
-            for obj in aobj.children:
-                obj.delta_location = -center
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        center = get_bound_center(aobj)
+        aobj.location = center
+        for obj in aobj.children:
+            obj.delta_location = -center
+        return self.success()
 
 
 class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -377,14 +338,11 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             if preset.name == name:
                 return self.fail(f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
 
-        try:
-            flag_presets.presets.append(flag_preset)
-            flag_presets.write_xml(filepath)
-            handle_load_flag_presets(self)
+        flag_presets.presets.append(flag_preset)
+        flag_presets.write_xml(filepath)
+        handle_load_flag_presets(self)
 
-            return self.success()
-        except:
-            return self.fail(traceback.format_exc())
+        return self.success()
 
 
 class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
