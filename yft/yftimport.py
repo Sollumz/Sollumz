@@ -1,8 +1,10 @@
 import bpy
+from Sollumz.resources.fragment import YFT
 from Sollumz.ydr.ydrimport import drawable_to_obj
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, BoundType
 from time import time
+import traceback
 
 
 def fragment_to_obj(fragment, filepath):
@@ -43,3 +45,12 @@ def fragment_to_obj(fragment, filepath):
     print(str(end - start) + " seconds to import children")
 
     return
+
+
+def import_yft(filepath):
+    try:
+        yft_xml = YFT.from_xml_file(filepath)
+        fragment_to_obj(yft_xml, filepath)
+        return f"Succesfully imported : {filepath}"
+    except:
+        return f"Error importing : {filepath} \n {traceback.format_exc()}"

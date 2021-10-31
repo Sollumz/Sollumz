@@ -1,3 +1,4 @@
+import traceback
 from Sollumz.resources.drawable import *
 from Sollumz.meshhelper import *
 from Sollumz.tools.utils import *
@@ -27,3 +28,11 @@ def drawable_dict_from_object(obj):
     drawable_dict.value.sort(key=get_hash)
 
     return drawable_dict
+
+
+def export_ydd(op, obj, filepath):
+    try:
+        drawable_dict_from_object(obj).write_xml(filepath)
+        return f"Succesfully exported : {filepath}"
+    except:
+        return f"Error exporting : {filepath} \n {traceback.format_exc()}"

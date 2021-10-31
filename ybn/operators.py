@@ -1,18 +1,13 @@
 import numpy as np
-from bpy.props import BoolProperty, FloatProperty, IntProperty, EnumProperty
-from mathutils import Vector, Matrix
-import time
-import random
-import math
-import bmesh
-from genericpath import exists
+from mathutils import Vector
 import bpy
-from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
+from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.meshhelper import *
-from .collision_materials import create_collision_material_from_index, create_collision_material_from_type
-from .properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
+from Sollumz.tools.boundhelper import *
+from Sollumz.ybn.collision_materials import create_collision_material_from_index
+from Sollumz.ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from Sollumz.resources.flag_preset import FlagPreset
-import os
 import traceback
 from Sollumz.tools.obb import get_obb, get_obb_dimensions, get_obb_extents
 
@@ -24,259 +19,131 @@ def handle_load_flag_presets(self):
         self.report({'ERROR'}, traceback.format_exc())
 
 
-class BoundHelper:
-
-    @staticmethod
-    def create_bound(sollum_type=BoundType.COMPOSITE, with_mesh=False):
-
-        if with_mesh:
-            return BoundHelper.create_mesh(sollum_type)
-
-        empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
-        empty.empty_display_size = 0
-        empty.sollum_type = sollum_type
-        bpy.context.collection.objects.link(empty)
-        bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
-
-        return empty
-
-    @staticmethod
-    def create_mesh(sollum_type):
-        name = SOLLUMZ_UI_NAMES[sollum_type]
-        mesh = bpy.data.meshes.new(name)
-        obj = bpy.data.objects.new(name, mesh)
-        obj.sollum_type = sollum_type
-        obj.data.materials.append(create_collision_material_from_index(0))
-        bpy.context.collection.objects.link(obj)
-
-        return obj
-
-    @staticmethod
-    def convert_selected_to_bound(objs, use_name=False, multiple=False):
-        selected = objs
-
-        parent = None
-        if not multiple:
-            parent = BoundHelper.create_bound()
-
-        for obj in selected:
-            # set parents
-            dobj = parent or BoundHelper.create_bound(BoundType.COMPOSITE)
-            dmobj = BoundHelper.create_bound(BoundType.GEOMETRYBVH)
-            dmobj.parent = dobj
-            obj.parent = dmobj
-
-            name = obj.name
-            obj.name = name + "_mesh"
-
-            if use_name:
-                dobj.name = name
-
-            # set properties
-            obj.sollum_type = PolygonType.TRIANGLE
-
-            # add object to collection
-            new_obj = obj.copy()
-
-            # Remove materials
-            if new_obj.type == 'MESH':
-                new_obj.data.materials.clear()
-
-            bpy.data.objects.remove(obj, do_unlink=True)
-            bpy.context.collection.objects.link(new_obj)
-
-    # move to blender helper? or maybe make a sollumz heper? call it "is_sollum_type(sollum_type)"
-    # this is where a SollumOperator class would come in handy I could see checking this in a
-    # bunch of different operators so if we make one common one we could call this
-    @staticmethod
-    def aobj_is_composite(self, sollum_type):
-        aobj = bpy.context.active_object
-        if not (aobj and aobj.sollum_type == BoundType.COMPOSITE):
-            self.report(
-                {'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} to add a {SOLLUMZ_UI_NAMES[sollum_type]} to.")
-            return False
-        return True
-
-
-class SOLLUMZ_OT_create_bound_composite(bpy.types.Operator):
+class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz bound composite"""
     bl_idname = "sollumz.createboundcomposite"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
 
-    def execute(self, context):
+    def run(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
-            BoundHelper.create_bound()
+            create_bound()
+            return self.success()
         else:
-            BoundHelper.convert_selected_to_bound(
+            convert_selected_to_bound(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+            return self.success()
 
-        return {'FINISHED'}
 
-
-class SOLLUMZ_OT_create_geometry_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_geometry_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz geometry bound"""
     bl_idname = "sollumz.creategeometrybound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.GEOMETRY):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.GEOMETRY)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.GEOMETRY)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_geometrybvh_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_geometrybvh_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz geometry bound bvh"""
     bl_idname = "sollumz.creategeometryboundbvh"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.GEOMETRYBVH):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.GEOMETRYBVH)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.GEOMETRYBVH)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_box_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_box_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz box bound"""
     bl_idname = "sollumz.createboxbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.BOX):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.BOX, True)
-        create_box(gobj.data)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.BOX)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_sphere_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_sphere_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz sphere bound"""
     bl_idname = "sollumz.createspherebound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.SPHERE):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.SPHERE, True)
-        create_sphere(gobj.data)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.SPHERE)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_capsule_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_capsule_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz capsule bound"""
     bl_idname = "sollumz.createcapsulebound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.CAPSULE):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.CAPSULE, True)
-        create_capsule(gobj)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.CAPSULE)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_cylinder_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_cylinder_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz cylinder bound"""
     bl_idname = "sollumz.createcylinderbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.CYLINDER):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.CYLINDER, True)
-        create_cylinder(gobj.data)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.CYLINDER)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_disc_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_disc_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz disc bound"""
     bl_idname = "sollumz.creatediscbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.DISC):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.DISC, True)
-        create_disc(gobj.data)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.DISC)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_cloth_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_cloth_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz cloth bound"""
     bl_idname = "sollumz.createclothbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
-    bl_options = {"UNDO"}
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
 
-    def execute(self, context):
-        if not BoundHelper.aobj_is_composite(self, BoundType.CLOTH):
-            return {'CANCELLED'}
-
-        aobj = bpy.context.active_object
-        gobj = BoundHelper.create_bound(BoundType.CLOTH, True)
-        gobj.parent = aobj
-        bpy.context.view_layer.objects.active = bpy.data.objects[gobj.name]
-
-        return {'FINISHED'}
+    def run(self, context):
+        gobj = create_bound(BoundType.CLOTH)
+        context.view_layer.objects.active = bpy.data.objects[gobj.name]
+        return self.success()
 
 
-class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
+class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz polygon bound"""
     bl_idname = "sollumz.createpolygonbound"
     bl_label = "Create Polygon Bound"
-    bl_options = {"UNDO"}
+    bl_action = f"{bl_label}"
 
     def create_poly(self, aobj, type):
         if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
-            self.report(
-                {'INFO'}, f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
-            return {'CANCELLED'}
+            raise Exception(
+                f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
 
-        pobj = BoundHelper.create_bound(type, True)
+        pobj = create_bound(type, True)
 
         if type == PolygonType.BOX:
             create_box(pobj.data)
@@ -292,12 +159,10 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
 
     def create_poly_from_verts(self, context, type, parent):
         if not parent:
-            self.report({'WARNING'}, 'Must specify a parent object!')
-            return {'CANCELLED'}
+            raise Exception("Must specify a parent object!")
         elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
-            self.report(
-                {'WARNING'}, f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
-            return {'CANCELLED'}
+            raise Exception(
+                f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
 
         selected = context.selected_objects
         if len(selected) < 1:
@@ -310,7 +175,7 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
             verts.extend([obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
                           for v in obj.data.vertices if v.select])
             bpy.ops.object.mode_set(mode='EDIT')
-        pobj = BoundHelper.create_bound(type, True)
+        pobj = create_bound(type, True)
 
         if len(verts) < 1:
             self.report({'INFO'}, 'No vertices selected.')
@@ -344,93 +209,84 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
 
         pobj.parent = parent
 
-    def execute(self, context):
+    def run(self, context):
         aobj = context.active_object
         type = context.scene.poly_bound_type
         parent = context.scene.poly_parent
 
         if aobj.mode == "EDIT":
             self.create_poly_from_verts(context, type, parent)
+            return self.success(
+                f"of type: {SOLLUMZ_UI_NAMES[type]}")
         else:
             self.create_poly(aobj, type)
+            self.success(
+                f"of type: {SOLLUMZ_UI_NAMES[type]}")
 
-        return {'FINISHED'}
 
-
-class SOLLUMZ_OT_center_composite(bpy.types.Operator):
+class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     """Center a bound composite with the rest of it's geometry. Note: Has no effect on export"""
     bl_idname = "sollumz.centercomposite"
     bl_label = "Center Composite"
-    bl_options = {'UNDO'}
+    bl_action = f"{bl_label}"
 
-    def execute(self, context):
+    def run(self, context):
         aobj = context.active_object
         if not aobj:
-            self.report(
-                {'INFO'}, f'No {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} selected.')
-            return {'CANCELLED'}
-        elif aobj.sollum_type != BoundType.COMPOSITE:
-            self.report(
-                {'INFO'}, f'{aobj.name} must be a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}!')
-            return {'CANCELLED'}
-
+            return self.fail(f"No {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} selected.")
+        if aobj.sollum_type != BoundType.COMPOSITE:
+            return self.fail(f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}!")
         if context.mode != 'OBJECT':
-            self.report({'INFO'}, f'Operator can only be ran in Object mode.')
-            return {'CANCELLED'}
+            return self.fail(f"{self.bl_idname} can only be ran in Object mode.")
 
         center = get_bound_center(aobj)
         aobj.location = center
         for obj in aobj.children:
             obj.delta_location = -center
+        return self.success()
 
-        return {'FINISHED'}
 
-
-class SOLLUMZ_OT_create_collision_material(bpy.types.Operator):
+class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"
     bl_label = "Create Collision Material"
-    bl_options = {"UNDO"}
+    bl_action = f"{bl_label}"
 
-    def execute(self, context):
+    def run(self, context):
 
         selected = context.selected_objects
         if len(selected) < 1:
-            self.report({'INFO'}, 'No objects selected!')
-            return {'CANCELLED'}
+            return self.fail("No objects selected")
 
         for obj in selected:
-            correct_type = False
-            if is_sollum_type(obj, PolygonType) or is_sollum_type(obj, BoundType):
-                if obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH:
-                    correct_type = True
-                    mat = create_collision_material_from_index(
-                        context.scene.collision_material_index)
-                    obj.data.materials.append(mat)
-            if not correct_type:
-                self.report(
-                    {'INFO'}, f"{obj.name} must be a Poly Bound or Bound other than {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}, {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}, or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}. Object skipped.")
+            try:
+                mat = create_collision_material_from_index(
+                    context.scene.collision_material_index)
+                obj.data.materials.append(mat)
+                self.messages.append(
+                    f"Succesfully added {mat.name} material to {obj.name}")
+            except:
+                self.messages.append(f"Failure to add material to {obj.name}")
 
-        return {'FINISHED'}
+        return self.success(None, False)
 
 
-class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
+class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete a flag preset"""
     bl_idname = "sollumz.delete_flag_preset"
     bl_label = "Delete Flag Preset"
-    bl_options = {"UNDO"}
+    bl_action = f"{bl_label}"
 
     preset_blacklist = ['Default']
 
-    def execute(self, context):
+    def run(self, context):
         index = context.scene.flag_preset_index
         handle_load_flag_presets(self)
 
         try:
             preset = flag_presets.presets[index]
             if preset.name in self.preset_blacklist:
-                self.report({'INFO'}, f"Cannot delete a default preset!")
-                return {'CANCELLED'}
+                return self.fail(f"Cannot delete a default preset!")
 
             filepath = get_flag_presets_path()
             flag_presets.presets.remove(preset)
@@ -439,41 +295,33 @@ class SOLLUMZ_OT_delete_flag_preset(bpy.types.Operator):
                 flag_presets.write_xml(filepath)
                 handle_load_flag_presets(self)
 
-                return {'FINISHED'}
+                return self.success()
             except:
-                self.report({'ERROR'}, traceback.format_exc())
-                return {'CANCELLED'}
+                return self.fail(f"Cannot delete a default preset!")
 
         except IndexError:
-            self.report(
-                {'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-            return {'CANCELLED'}
+            return self.fail(f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
 
 
-class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
+class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Save a flag preset"""
     bl_idname = "sollumz.save_flag_preset"
     bl_label = "Save Flag Preset"
-    bl_options = {"UNDO"}
+    bl_action = f"{bl_label}"
 
-    def execute(self, context):
+    def run(self, context):
         obj = context.active_object
         handle_load_flag_presets(self)
 
         if not obj:
-            self.report({'INFO'}, 'No object selected!')
-            return {'CANCELLED'}
+            return self.fail("No object selected!")
 
         if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
-            self.report(
-                {'INFO'}, f'Selected object must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!')
-            return {'CANCELLED'}
+            return self.fail(f"Selected object must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
 
         name = context.scene.new_flag_preset_name
         if len(name) < 1:
-            self.report(
-                {'INFO'}, f'Please specify a name for the new flag preset.')
-            return {'CANCELLED'}
+            return self.fail(f'Please specify a name for the new flag preset.')
 
         flag_preset = FlagPreset()
         flag_preset.name = name
@@ -492,42 +340,35 @@ class SOLLUMZ_OT_save_flag_preset(bpy.types.Operator):
 
         for preset in flag_presets.presets:
             if preset.name == name:
-                self.report(
-                    {'INFO'}, f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
-                return {'CANCELLED'}
+                return self.fail(f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
 
-        try:
-            flag_presets.presets.append(flag_preset)
-            flag_presets.write_xml(filepath)
-            handle_load_flag_presets(self)
+        flag_presets.presets.append(flag_preset)
+        flag_presets.write_xml(filepath)
+        handle_load_flag_presets(self)
 
-            return {'FINISHED'}
-        except:
-            self.report({'ERROR'}, traceback.format_exc())
-            return {'CANCELLED'}
+        return self.success()
 
 
-class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
+class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Load a flag preset to the selected Geometry bounds"""
     bl_idname = "sollumz.load_flag_preset"
     bl_label = "Apply Flags Preset"
     bl_context = 'object'
     bl_options = {'REGISTER', 'UNDO'}
+    bl_action = f"{bl_label}"
 
-    def execute(self, context):
+    def run(self, context):
         index = context.scene.flag_preset_index
         selected = context.selected_objects
         if len(selected) < 1:
-            self.report({'INFO'}, 'No objects selected!')
-            return {'CANCELLED'}
+            return self.fail("No objects selected!")
 
         handle_load_flag_presets(self)
 
         for obj in selected:
             if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
-                self.report(
-                    {'INFO'}, f'Selected objects must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!')
-                return {'CANCELLED'}
+                self.messages.append(
+                    f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
 
             try:
                 preset = flag_presets.presets[index]
@@ -545,42 +386,31 @@ class SOLLUMZ_OT_load_flag_preset(bpy.types.Operator):
 
                 # Hacky way to force the UI to redraw. For some reason setting custom properties will not cause the object properties panel to redraw, so we have to do this.
                 obj.location = obj.location
-
+                self.messages.append(
+                    f"Succesfully Added Flag Preset To {obj.name}")
             except IndexError:
                 filepath = get_flag_presets_path()
-                self.report(
-                    {'ERROR'}, f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-                return {'CANCELLED'}
+                self.messages.append(
+                    f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
 
-        return {'FINISHED'}
+        return self.success(None, False)
 
 
-class SOLLUMZ_OT_clear_col_flags(bpy.types.Operator):
+class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
     """Load commonly used collision flags"""
     bl_idname = "sollumz.clear_col_flags"
     bl_label = "Clear Collision Flags"
-    bl_options = {"UNDO"}
+    bl_action = f"{bl_label}"
 
-    def execute(self, context):
+    def run(self, context):
 
-        aobj = bpy.context.active_object
+        aobj = context.active_object
         if(aobj == None):
-            return {'CANCELLED'}
+            return self.fail(f"Please select a object to {self.bl_action}")
 
-        if is_sollum_type(aobj, BoundType):
+        if SOLLUMZ_OT_base.is_sollum_type(aobj, BoundType):
             for flag_name in BoundFlags.__annotations__.keys():
                 aobj.composite_flags1[flag_name] = False
                 aobj.composite_flags2[flag_name] = False
 
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_mesh_to_polygon_bound(bpy.types.Operator):
-    """Convert selected objects to a poly bound"""
-    bl_idname = "sollumz.meshtopolygonbound"
-    bl_label = "Convert Object to Poly"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-
-        return {'FINISHED'}
+        return self.success()

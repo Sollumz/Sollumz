@@ -4,7 +4,6 @@ from .codewalker_xml import *
 from Sollumz.tools.utils import *
 from .bound import BoundsComposite
 from collections import namedtuple
-import numpy
 
 
 class YDD:

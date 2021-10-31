@@ -1,5 +1,6 @@
-import bpy
+import traceback
 import os
+import bpy
 from mathutils import Matrix
 from Sollumz.ydr.shader_materials import create_shader
 from Sollumz.ybn.ybnimport import composite_to_obj
@@ -164,7 +165,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
     obj = bpy.data.objects.new(name + "_mesh", mesh)
 
     # set weights
-    if hasattr(data[0], " blendweights"):
+    if hasattr(data[0], "blendweights"):
         if (bones != None and len(bones) > 0 and data[0].blendweights is not None and len(data) > 0):
             num = max(256, len(bones))
             for i in range(num):
@@ -190,6 +191,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None):
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL], None)
     dobj.sollum_type = DrawableType.DRAWABLE_MODEL
+    dobj.empty_display_size = 0
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
     dobj.drawable_model_properties.flags = model.flags
@@ -281,6 +283,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
         obj = bpy.data.objects.new(name, None)
 
     obj.sollum_type = DrawableType.DRAWABLE
+    obj.empty_display_size = 0
     obj.drawable_properties.lod_dist_high = drawable.lod_dist_high
     obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable.lod_dist_low
@@ -334,3 +337,13 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=
             mod.object = obj
 
     return obj
+
+
+def import_ydr(filepath):
+    try:
+        ydr_xml = YDR.from_xml_file(filepath)
+        drawable_to_obj(ydr_xml, filepath, os.path.basename(
+            filepath.replace(YDR.file_extension, '')))
+        return f"Succesfully imported : {filepath}"
+    except:
+        return f"Error importing : {filepath} \n {traceback.format_exc()}"
