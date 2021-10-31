@@ -2,7 +2,7 @@ from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
-from .bound import BoundsComposite
+from .bound import BoundsComposite, Drawable_Bounds
 from collections import namedtuple
 
 
@@ -386,7 +386,7 @@ class Drawable(ElementTree, AbstractClass):
         self.shader_group = ShaderGroupProperty()
         self.skeleton = SkeletonProperty()
         # is embedded collision always type of composite? have to check
-        self.bound = BoundsComposite()
+        self.bound = Drawable_Bounds()
         self.drawable_models_high = DrawableModelListProperty(
             "DrawableModelsHigh")
         self.drawable_models_med = DrawableModelListProperty(
