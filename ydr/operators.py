@@ -239,7 +239,8 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_pose_bone.bone.bone_properties.flags
+        if context.active_pose_bone:
+            return context.active_pose_bone.bone.bone_properties.flags
 
     def execute(self, context):
         bone = context.active_pose_bone.bone

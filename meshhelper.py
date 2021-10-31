@@ -61,9 +61,8 @@ def create_sphere(mesh, radius=1):
     return mesh
 
 
-def create_cylinder(mesh, radius=1, length=2, use_rot=True):
+def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
     bm = bmesh.new()
-    rot_mat = Matrix.Rotation(radians(90.0), 4, "X") if use_rot else Matrix()
     bmesh.ops.create_cone(
         bm,
         cap_ends=True,
@@ -72,7 +71,7 @@ def create_cylinder(mesh, radius=1, length=2, use_rot=True):
         diameter1=radius,
         diameter2=radius,
         depth=length,
-        matrix=rot_mat
+        matrix=rot_mat if rot_mat else Matrix()
     )
     bm.to_mesh(mesh)
     bm.free()
@@ -111,7 +110,7 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     center = Vector()
     axis = Vector((0, 0, 1))
     if use_rot:
-        axis = Vector(0, 0, 1)
+        axis = Vector((0, 0, 1))
 
     # Get top and bottom halves of vertices
     top = []
@@ -255,6 +254,23 @@ def get_max_vector(v, c):
     r.y = max(v.y, c.y)
     r.z = max(v.z, c.z)
     return r
+
+
+def get_local_verts(verts):
+    verts = np.array(verts)
+    local_verts = []
+    min = Vector(verts.min(axis=0))
+    max = Vector(verts.max(axis=0))
+    # scale = ((Vector(verts.min(axis=0)) + Vector(verts.max(axis=0))) / 2).magnitude
+    height = get_distance_of_vectors(min, max)
+    radius = get_distance_of_vectors(
+        Vector((max.x, max.y, 0)), Vector((min.x, min.y, 0))) / 2
+    center = ((min + max) / 2)
+    scale = 20
+    for vert in verts:
+        vert = Vector(vert)
+        local_verts.append(vert)
+    return np.array(local_verts)
 
 
 def flip_uv(uv):

@@ -1,3 +1,10 @@
+import numpy as np
+from bpy.props import BoolProperty, FloatProperty, IntProperty, EnumProperty
+from mathutils import Vector, Matrix
+import time
+import random
+import math
+import bmesh
 from genericpath import exists
 import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, is_sollum_type
@@ -7,6 +14,7 @@ from .properties import BoundFlags, load_flag_presets, flag_presets, get_flag_pr
 from Sollumz.resources.flag_preset import FlagPreset
 import os
 import traceback
+from Sollumz.tools.obb import get_obb, get_obb_dimensions, get_obb_extents
 
 
 def handle_load_flag_presets(self):
@@ -282,7 +290,7 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
         pobj.parent = aobj
         # bpy.context.view_layer.objects.active = bpy.data.objects[cobj.name] if you enable this you wont be able to stay selecting the composite obj...
 
-    def create_poly_from_verts(self, aobj, type, parent):
+    def create_poly_from_verts(self, context, type, parent):
         if not parent:
             self.report({'WARNING'}, 'Must specify a parent object!')
             return {'CANCELLED'}
@@ -291,47 +299,48 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
                 {'WARNING'}, f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
             return {'CANCELLED'}
 
-        # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        selected_verts = [Vector((v.co.x, v.co.y, v.co.z))
-                          for v in aobj.data.vertices if v.select]
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        if len(selected_verts) < 1:
-            self.report({'INFO'}, 'No vertices selected.')
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.report({'INFO'}, 'No objects selected!')
             return {'CANCELLED'}
-
+        verts = []
+        for obj in selected:
+            # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
+            bpy.ops.object.mode_set(mode='OBJECT')
+            verts.extend([obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
+                          for v in obj.data.vertices if v.select])
+            bpy.ops.object.mode_set(mode='EDIT')
         pobj = BoundHelper.create_bound(type, True)
 
-        np_array = np.array(selected_verts)
-        bbmin_local = Vector(np_array.min(axis=0))
-        bbmax_local = Vector(np_array.max(axis=0))
-        bbmin = aobj.matrix_world @ bbmin_local
-        bbmax = aobj.matrix_world @ bbmax_local
+        if len(verts) < 1:
+            self.report({'INFO'}, 'No vertices selected.')
+            return {'CANCELLED'}
+        print(len(verts))
+        obb, axis, world_matrix = get_obb(verts)
+        bbmin, bbmax = get_obb_extents(obb)
 
-        radius = ((aobj.matrix_local @ bbmax).x -
-                  (aobj.matrix_local @ bbmin).x) / 2
-        height = get_distance_of_vectors(bbmin, bbmax)
-        center = (bbmin + bbmax) / 2
-        pobj.location = center
+        center = world_matrix @ (bbmin + bbmax) / 2
+        local_center = (bbmin + bbmax) / 2
+
+        height, width = get_obb_dimensions(bbmin, bbmax)
+        radius = width / 2
 
         if type == PolygonType.BOX:
-            scale = aobj.matrix_world.to_scale()
-            min = (bbmin_local) * scale
-            max = (bbmax_local) * scale
-            center = (min + max) / 2
-            create_box_from_extents(pobj.data, min - center, max - center)
-            # pobj.location = Vector()
+            create_box_from_extents(
+                pobj.data, bbmin - local_center, bbmax - local_center)
         elif type == PolygonType.SPHERE:
             create_sphere(pobj.data, height / 2)
         elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
             if type == PolygonType.CAPSULE:
-                # height = height - (radius * 2)
                 create_capsule(pobj, radius, height)
             elif type == PolygonType.CYLINDER:
-                create_cylinder(pobj.data, radius, height, False)
-
-        pobj.rotation_euler = aobj.rotation_euler
+                # rot_mat = world_matrix.decompose()[1].to_matrix()
+                # rot_mat = Matrix.Rotation(radians(90), 4, axis)
+                create_cylinder(pobj.data, radius, height,
+                                None)
+        print(axis, world_matrix.decompose()[1])
+        pobj.matrix_world = world_matrix
+        pobj.location = center
 
         pobj.parent = parent
 
@@ -341,7 +350,7 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
         parent = context.scene.poly_parent
 
         if aobj.mode == "EDIT":
-            self.create_poly_from_verts(aobj, type, parent)
+            self.create_poly_from_verts(context, type, parent)
         else:
             self.create_poly(aobj, type)
 
