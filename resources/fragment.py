@@ -24,6 +24,18 @@ class BoneTransformItem(TextProperty):
     def __init__(self):
         super().__init__()
 
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        s_mtx = element.text.strip().replace("\n", "").split("   ")
+        new.value = []
+        for item in s_mtx:
+            lst = []
+            for value in item.split(" "):
+                lst.append(float(value))
+            new.value.append(lst)
+        return new
+
 
 class BoneTransformsListProperty(ListProperty):
     list_type = BoneTransformItem
