@@ -309,8 +309,7 @@ def composite_to_obj(bounds, name, from_drawable=False):
         composite = bounds
     else:
         composite = bounds.composite
-    
-    print(composite.type)
+
     obj = bpy.data.objects.new(name, None)
     obj.empty_display_size = 0
     obj.sollum_type = BoundType.COMPOSITE
