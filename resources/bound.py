@@ -52,7 +52,7 @@ class Bounds(ElementTree, AbstractClass):
 class BoundsComposite(Bounds):
     def __init__(self):
         super().__init__()
-        self.type = AttributeProperty('type', 'Composite')
+        self.type = AttributeProperty('type', '')
         self.children = BoundListProperty()
 
 

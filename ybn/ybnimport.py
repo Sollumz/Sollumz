@@ -239,18 +239,19 @@ def init_bound_obj(bound, sollum_type):
     obj.bound_properties.volume = bound.volume
 
     # assign obj composite flags
-    for prop in dir(obj.composite_flags1):
-        for f in bound.composite_flags1:
-            if f.lower() == prop:
-                setattr(obj.composite_flags1, prop, True)
+    if bound.composite_flags1:
+        for prop in dir(obj.composite_flags1):
+            for f in bound.composite_flags1:
+                if f.lower() == prop:
+                    setattr(obj.composite_flags1, prop, True)
 
-    for prop in dir(obj.composite_flags2):
-        for f in bound.composite_flags2:
-            if f.lower() == prop:
-                setattr(obj.composite_flags2, prop, True)
+        for prop in dir(obj.composite_flags2):
+            for f in bound.composite_flags2:
+                if f.lower() == prop:
+                    setattr(obj.composite_flags2, prop, True)
 
-    obj.location = bound.composite_position
-    obj.rotation_euler = bound.composite_rotation.to_euler()
+        obj.location = bound.composite_position
+        obj.rotation_euler = bound.composite_rotation.to_euler()
     obj.scale = Vector([1, 1, 1])
 
     bpy.context.collection.objects.link(obj)
