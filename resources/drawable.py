@@ -68,7 +68,6 @@ class ShaderParameter(ElementTree, AbstractClass):
         super().__init__()
         self.name = AttributeProperty("name")
         self.type = AttributeProperty("type", self.type)  # ENUM?
-        self.texturename = TextProperty("Name", "")
 
 
 class TextureShaderParameter(ShaderParameter):
