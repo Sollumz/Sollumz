@@ -17,11 +17,8 @@ def shadergroup_to_materials(shadergroup, filepath):
     texture_folder = os.path.dirname(
         filepath) + "\\" + os.path.basename(filepath)[:-8]
     for shader in shadergroup.shaders:
-        for param in shader.parameters:
-            if param.name == "DiffuseSampler":
-               txname = param.texturename
 
-        material = create_shader(shader.name, txname)
+        material = create_shader(shader.name)
 
         material.shader_properties.renderbucket = shader.render_bucket
         material.shader_properties.filename = shader.filename
