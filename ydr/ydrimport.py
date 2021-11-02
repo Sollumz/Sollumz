@@ -3,7 +3,7 @@ import os
 import bpy
 from mathutils import Matrix
 from Sollumz.ydr.shader_materials import create_shader
-from Sollumz.ybn.ybnimport import composite_to_obj
+from Sollumz.ybn.ybnimport import composite_to_obj, bound_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
 from Sollumz.meshhelper import flip_uv
