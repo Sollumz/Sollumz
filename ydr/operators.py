@@ -3,7 +3,7 @@ import traceback
 from Sollumz.tools.drawablehelper import *
 from Sollumz.ydr.shader_materials import create_shader, shadermats
 from Sollumz.sollumz_properties import DrawableType, MaterialType, SOLLUMZ_UI_NAMES
-from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
 
 
 class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -172,7 +172,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
             return self.fail(f"Please select a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
 
         for obj in objs:
-            if self.is_sollum_type(obj, DrawableType.GEOMETRY):
+            if is_sollum_type(obj, DrawableType.GEOMETRY):
                 try:
                     shader = shadermats[context.scene.shader_material_index].value
                     mat = create_shader(shader)

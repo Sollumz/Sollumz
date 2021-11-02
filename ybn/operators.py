@@ -1,16 +1,17 @@
-import numpy as np
-from mathutils import Vector
-import bpy
-from Sollumz.sollumz_helper import *
-from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
-from Sollumz.meshhelper import *
-from Sollumz.tools.boundhelper import *
-from Sollumz.ybn.collision_materials import create_collision_material_from_index
-from Sollumz.ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
-from Sollumz.resources.flag_preset import FlagPreset
-import traceback
-from Sollumz.tools.obb import get_obb, get_obb_dimensions, get_obb_extents
 from abc import abstractmethod
+from Sollumz.tools.obb import get_obb, get_obb_dimensions, get_obb_extents
+import traceback
+from Sollumz.resources.flag_preset import FlagPreset
+from Sollumz.ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
+from Sollumz.ybn.collision_materials import create_collision_material_from_index
+from Sollumz.tools.boundhelper import *
+from Sollumz.meshhelper import *
+from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, items_from_enums
+from Sollumz.sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
+from Sollumz.tools.blender_helper import get_selected_vertices
+from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_helper import *
+import bpy
 
 
 def handle_load_flag_presets(self):
@@ -186,6 +187,10 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Create Polygon Bound"
     bl_action = f"{bl_label}"
 
+    @classmethod
+    def poll(cls, context):
+        return context.active_object != None
+
     def create_poly_from_verts(self, context, type, parent):
         if not parent:
             raise Exception("Must specify a parent object!")
@@ -194,22 +199,20 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
                 f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
 
         selected = context.selected_objects
-        if len(selected) < 1:
-            self.report({'INFO'}, 'No objects selected!')
-            return {'CANCELLED'}
+
+        if len(selected) < 1 and context.active_object:
+            selected = [context.active_object]
+
         verts = []
         for obj in selected:
-            # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
-            bpy.ops.object.mode_set(mode='OBJECT')
-            verts.extend([obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
-                          for v in obj.data.vertices if v.select])
-            bpy.ops.object.mode_set(mode='EDIT')
-        pobj = create_bound(type, True)
+            verts.extend(get_selected_vertices(obj))
 
         if len(verts) < 1:
             self.report({'INFO'}, 'No vertices selected.')
-            return {'CANCELLED'}
-        print(len(verts))
+            return False
+
+        pobj = create_bound(type, True)
+
         obb, axis, world_matrix = get_obb(verts)
         bbmin, bbmax = get_obb_extents(obb)
 
@@ -229,14 +232,21 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
                 create_capsule(pobj, radius, height)
             elif type == PolygonType.CYLINDER:
                 # rot_mat = world_matrix.decompose()[1].to_matrix()
-                # rot_mat = Matrix.Rotation(radians(90), 4, axis)
+                rot_mat = Matrix.Rotation(radians(90), 4, axis)
+                # print(rot_mat)
+                # rot_mat = None
+                # print(rot_mat, rot_mat2)
                 create_cylinder(pobj.data, radius, height,
                                 None)
-        print(axis, world_matrix.decompose()[1])
         pobj.matrix_world = world_matrix
         pobj.location = center
 
         pobj.parent = parent
+
+        return True
+
+    def draw(self, context):
+        self.layout.prop(self, 'type')
 
     def run(self, context):
         aobj = context.active_object
@@ -244,17 +254,14 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         parent = context.scene.poly_parent
 
         if aobj.mode == "EDIT":
-            self.create_poly_from_verts(context, type, parent)
-            return self.success(
-                f"of type: {SOLLUMZ_UI_NAMES[type]}")
+            return self.create_poly_from_verts(context, type, parent)
         else:
             if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
                 self.message(
                     f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
                 return False
             create_poly(aobj, type)
-            self.success(
-                f"of type: {SOLLUMZ_UI_NAMES[type]}")
+            return True
 
 
 class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):

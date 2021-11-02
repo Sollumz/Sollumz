@@ -146,7 +146,10 @@ def get_obb(verts):
                 min_mx = rot_mx
     elapsed_time = time.time() - start
     bme.free()
-    fmx = tr_mx @ r_mx @ min_mx.inverted() @ sc_mx
+    fmx = tr_mx @ r_mx @ min_mx.inverted_safe() @ sc_mx
+    rot_mat = fmx.decompose()[1].to_matrix().to_4x4()
+    print(rot_mat.to_quaternion(), axis)
+
     box_verts = box_cords(min_box)
 
-    return box_verts, min_axis, fmx
+    return box_verts, axis, fmx

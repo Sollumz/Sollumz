@@ -60,7 +60,6 @@ def create_sphere(mesh, radius=1):
     bm.free()
     return mesh
 
-
 def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
     bm = bmesh.new()
     bmesh.ops.create_cone(

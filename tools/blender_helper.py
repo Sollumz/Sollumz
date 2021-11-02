@@ -1,7 +1,5 @@
-import re
-import time
 import bpy
-import bmesh
+from mathutils import Vector
 
 
 class BlenderHelper():
@@ -73,3 +71,14 @@ class BlenderHelper():
                 mesh.vertex_groups.remove(mesh.vertex_groups[i])
                 remove_count += 1
         return remove_count
+
+
+def get_selected_vertices(obj):
+    mode = obj.mode
+    if obj.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
+    verts = [obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
+             for v in obj.data.vertices if v.select]
+    bpy.ops.object.mode_set(mode=mode)
+    return verts
