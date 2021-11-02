@@ -4,8 +4,6 @@ from Sollumz.sollumz_properties import MaterialType
 from collections import namedtuple
 import os
 
-from Sollumz.resources.codewalker_xml import AttributeProperty
-
 ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
 
 shadermats = []
@@ -138,10 +136,10 @@ def create_image_node(node_tree, param):
 def create_vector_nodes(node_tree, param):
 
     for attr in vars(param).values():
-            if attr.name != 'name' and attr.name != 'type':
-                node = node_tree.nodes.new("ShaderNodeValue")
-                node.name = f"{param.name}_{attr.name}"
-                node.outputs[0].default_value = float(attr.value)
+        if attr.name != 'name' and attr.name != 'type':
+            node = node_tree.nodes.new("ShaderNodeValue")
+            node.name = f"{param.name}_{attr.name}"
+            node.outputs[0].default_value = float(attr.value)
 
 
 def create_shader(name):
