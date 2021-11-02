@@ -1,5 +1,5 @@
 import bpy
-from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_helper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, DrawableType, MaterialType
 from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
 from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
@@ -141,7 +141,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if mat.sollum_type == MaterialType.SHADER:
             draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION and SOLLUMZ_OT_base.is_sollum_type(aobj, PolygonType):
+        elif mat.sollum_type == MaterialType.COLLISION and is_sollum_type(aobj, PolygonType):
             draw_collision_material_properties(layout, mat)
 
 
@@ -179,7 +179,7 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
             draw_geometry_properties(layout, obj)
         elif(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             self.draw_drawable_model_properties(context, layout, obj)
-        elif SOLLUMZ_OT_base.is_sollum_type(obj, BoundType):
+        elif is_sollum_type(obj, BoundType):
             draw_bound_properties(layout, obj)
 
 
@@ -191,27 +191,14 @@ class SOLLUMZ_MT_sollumz(bpy.types.Menu):
         layout = self.layout
 
 
-def SollumzContextMenu(self, context):
-    self.layout.menu(SOLLUMZ_MT_sollumz.bl_idname)
-
-
-class SOLLUMZ_MT_create(bpy.types.Menu):
-    bl_label = "Create"
-    bl_idname = "SOLLUMZ_MT_create"
-
-    def draw(self, context):
-        layout = self.layout
-
-
-def SollumzCreateContextMenu(self, context):
-    self.layout.menu(SOLLUMZ_MT_create.bl_idname)
+def DrawSollumzMenu(self, context):
+    self.layout.separator()
+    self.layout.menu(SOLLUMZ_MT_sollumz.bl_idname, icon="BLENDER")
 
 
 def register():
-    bpy.types.VIEW3D_MT_mesh_add.append(SollumzContextMenu)
-    bpy.types.SOLLUMZ_MT_sollumz.append(SollumzCreateContextMenu)
+    bpy.types.VIEW3D_MT_add.append(DrawSollumzMenu)
 
 
 def unregister():
-    bpy.types.SOLLUMZ_MT_sollumz.remove(SollumzCreateContextMenu)
-    bpy.types.VIEW3D_MT_mesh_add.remove(SollumzContextMenu)
+    bpy.types.VIEW3D_MT_add.remove(DrawSollumzMenu)

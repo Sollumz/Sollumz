@@ -4,7 +4,7 @@ import pathlib
 import time
 from abc import abstractmethod
 import bpy
-from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_helper import *
 from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
@@ -133,7 +133,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         else:
             objects = context.selected_objects
 
-        if not self.is_sollum_object_in_objects(objects):
+        if not is_sollum_object_in_objects(objects):
             return self.fail(f"No Sollumz object(s) to {self.bl_action}.")
 
         if len(objects) > 0:

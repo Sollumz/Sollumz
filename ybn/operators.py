@@ -1,7 +1,7 @@
 import numpy as np
 from mathutils import Vector
 import bpy
-from Sollumz.sollumz_helper import SOLLUMZ_OT_base
+from Sollumz.sollumz_helper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.meshhelper import *
 from Sollumz.tools.boundhelper import *
@@ -10,6 +10,7 @@ from Sollumz.ybn.properties import BoundFlags, load_flag_presets, flag_presets, 
 from Sollumz.resources.flag_preset import FlagPreset
 import traceback
 from Sollumz.tools.obb import get_obb, get_obb_dimensions, get_obb_extents
+from abc import abstractmethod
 
 
 def handle_load_flag_presets(self):
@@ -17,6 +18,53 @@ def handle_load_flag_presets(self):
         load_flag_presets()
     except FileNotFoundError:
         self.report({'ERROR'}, traceback.format_exc())
+
+
+class CreatePolyHelper(SOLLUMZ_OT_base):
+    @property
+    @abstractmethod
+    def poly_type():
+        raise NotImplementedError
+
+    def run(self, context):
+        aobj = context.active_object
+        if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
+            self.message(
+                f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[self.poly_type]} to.")
+            return False
+        obj = create_poly(aobj, self.poly_type)
+        context.view_layer.objects.active = bpy.data.objects[obj.name]
+        return True
+
+
+class SOLLUMZ_OT_create_poly_box(CreatePolyHelper, bpy.types.Operator):
+    bl_label = SOLLUMZ_UI_NAMES[PolygonType.BOX]
+    bl_idname = "sollumz.createpolybox"
+    poly_type = PolygonType.BOX
+
+
+class SOLLUMZ_OT_create_poly_sphere(CreatePolyHelper, bpy.types.Operator):
+    bl_label = SOLLUMZ_UI_NAMES[PolygonType.SPHERE]
+    bl_idname = "sollumz.createpolysphere"
+    poly_type = PolygonType.SPHERE
+
+
+class SOLLUMZ_OT_create_poly_cylinder(CreatePolyHelper, bpy.types.Operator):
+    bl_label = SOLLUMZ_UI_NAMES[PolygonType.CYLINDER]
+    bl_idname = "sollumz.createpolycylinder"
+    poly_type = PolygonType.CYLINDER
+
+
+class SOLLUMZ_OT_create_poly_capsule(CreatePolyHelper, bpy.types.Operator):
+    bl_label = SOLLUMZ_UI_NAMES[PolygonType.CAPSULE]
+    bl_idname = "sollumz.createpolycapsule"
+    poly_type = PolygonType.CAPSULE
+
+
+class SOLLUMZ_OT_create_poly_mesh(CreatePolyHelper, bpy.types.Operator):
+    bl_label = SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]
+    bl_idname = "sollumz.createpolymesh"
+    poly_type = PolygonType.TRIANGLE
 
 
 class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -138,25 +186,6 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Create Polygon Bound"
     bl_action = f"{bl_label}"
 
-    def create_poly(self, aobj, type):
-        if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
-            raise Exception(
-                f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
-
-        pobj = create_bound(type, True)
-
-        if type == PolygonType.BOX:
-            create_box(pobj.data)
-        elif type == PolygonType.SPHERE:
-            create_sphere(pobj.data)
-        elif type == PolygonType.CAPSULE:
-            create_capsule(pobj)
-        elif type == PolygonType.CYLINDER:
-            create_cylinder(pobj.data)
-
-        pobj.parent = aobj
-        # bpy.context.view_layer.objects.active = bpy.data.objects[cobj.name] if you enable this you wont be able to stay selecting the composite obj...
-
     def create_poly_from_verts(self, context, type, parent):
         if not parent:
             raise Exception("Must specify a parent object!")
@@ -219,7 +248,11 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             return self.success(
                 f"of type: {SOLLUMZ_UI_NAMES[type]}")
         else:
-            self.create_poly(aobj, type)
+            if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
+                self.message(
+                    f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
+                return False
+            create_poly(aobj, type)
             self.success(
                 f"of type: {SOLLUMZ_UI_NAMES[type]}")
 
@@ -408,7 +441,7 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
         if(aobj == None):
             return self.fail(f"Please select a object to {self.bl_action}")
 
-        if SOLLUMZ_OT_base.is_sollum_type(aobj, BoundType):
+        if is_sollum_type(aobj, BoundType):
             for flag_name in BoundFlags.__annotations__.keys():
                 aobj.composite_flags1[flag_name] = False
                 aobj.composite_flags2[flag_name] = False
