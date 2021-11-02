@@ -9,7 +9,9 @@ Blender plugin to import codewalker converter xml files from GTA V
   * YBN
   
 **Supported Formats (Export)**
+  * YDD
   * YDR
+  * YBN
   
 **General Features**
   * Fast import
