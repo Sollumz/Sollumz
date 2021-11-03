@@ -4,7 +4,7 @@ from Sollumz.resources.bound import *
 from Sollumz.sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
-from Sollumz.meshhelper import *
+from Sollumz.tools.meshhelper import *
 import os
 import traceback
 from mathutils import Matrix

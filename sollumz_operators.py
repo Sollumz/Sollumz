@@ -18,7 +18,7 @@ from Sollumz.yft.yftexport import export_yft
 from Sollumz.ybn.ybnimport import import_ybn
 from Sollumz.ybn.ybnexport import export_ybn
 from Sollumz.resources.ymap import YMAP, EntityItem, CMapData
-from Sollumz.meshhelper import *
+from Sollumz.tools.meshhelper import *
 from Sollumz.tools.utils import VectorHelper
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 

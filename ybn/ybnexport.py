@@ -1,7 +1,7 @@
 import traceback
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
-from Sollumz.meshhelper import *
+from Sollumz.tools.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
 
 

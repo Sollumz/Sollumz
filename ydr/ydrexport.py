@@ -4,9 +4,9 @@ import traceback
 import bpy
 from Sollumz.resources.drawable import *
 from Sollumz.resources.shader import ShaderManager
-from Sollumz.meshhelper import *
+from Sollumz.tools.meshhelper import *
 from Sollumz.tools.utils import StringHelper, ListHelper
-from Sollumz.tools.blender_helper import *
+from Sollumz.tools.blenderhelper import *
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel
 from Sollumz.ybn.ybnexport import composite_from_object
 
