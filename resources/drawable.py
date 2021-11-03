@@ -307,7 +307,7 @@ class IndexDataProperty(ElementProperty):
             text.append(str(vert_index))
             if index < len(self.value) - 1:
                 text.append(' ')
-            if index % columns == 0 and index > 0:
+            if (index + 1) % columns == 0:
                 text.append('\n')
 
         element.text = ''.join(text)
