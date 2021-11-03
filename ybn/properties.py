@@ -1,6 +1,6 @@
 from collections import namedtuple
 import bpy
-from Sollumz.sollumz_properties import PolygonType, items_from_enums
+from Sollumz.sollumz_properties import PolygonType, items_from_enums, BoundType, SOLLUMZ_UI_NAMES
 from bpy.app.handlers import persistent
 from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.resources.flag_preset import FlagPresetsFile, Presets
@@ -187,7 +187,7 @@ def register():
         default=PolygonType.BOX.value
     )
     bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
-        type=bpy.types.Object, name='Parent', description='Parent object for the newly created polys')
+        type=bpy.types.Object, name='Parent', description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}.")
 
 
 def unregister():

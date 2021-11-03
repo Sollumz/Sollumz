@@ -213,56 +213,47 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
         row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)
 
 
-class SOLLUMZ_MT_bound_objects_create(bpy.types.Menu):
-    bl_label = "Bound Objects"
-    bl_idname = "SOLLUMZ_MT_bound_objects_create"
+class SOLLUMZ_MT_add_collision(bpy.types.Menu):
+
+    bl_label = "Collision"
+    bl_idname = "SOLLUMZ_MT_add_collision"
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_box_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_sphere_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_capsule_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_cylinder_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_disc_bound.bl_idname)
-        layout.operator(SOLLUMZ_OT_create_cloth_bound.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_bound_composite.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.COMPOSITE])
+        layout.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.GEOMETRY])
+        layout.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH])
+        layout.operator(SOLLUMZ_OT_create_box_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.BOX])
+        layout.operator(SOLLUMZ_OT_create_sphere_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.SPHERE])
+        layout.operator(SOLLUMZ_OT_create_capsule_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.CAPSULE])
+        layout.operator(SOLLUMZ_OT_create_cylinder_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.CYLINDER])
+        layout.operator(SOLLUMZ_OT_create_disc_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.DISC])
+        layout.operator(SOLLUMZ_OT_create_cloth_bound.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[BoundType.CLOTH])
+        # Poly operators
+        layout.separator()
+        layout.operator(SOLLUMZ_OT_create_poly_box.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_poly_sphere.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_poly_capsule.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_poly_cylinder.bl_idname)
+        layout.operator(SOLLUMZ_OT_create_poly_mesh.bl_idname)
 
 
-def SollumzBoundContextMenu(self, context):
-    self.layout.menu(SOLLUMZ_MT_bound_objects_create.bl_idname)
-
-
-class SOLLUMZ_MT_polygon_bound_create(bpy.types.Menu):
-    bl_label = "Polygon Bound Objects"
-    bl_idname = "SOLLUMZ_MT_polygon_bound_create"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(context.scene, "poly_bound_type")
-        layout.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
-
-
-class SOLLUMZ_MT_polygon_bound_convert(bpy.types.Menu):
-    bl_label = "Convert Polygon Bound Objects"
-    bl_idname = "SOLLUMZ_MT_polygon_bound_convert"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(context.scene, "convert_poly_bound_type")
-        layout.operator(SOLLUMZ_OT_mesh_to_polygon_bound.bl_idname)
-
-
-def SollumzPolygonBoundContextMenu(self, context):
-    self.layout.menu(SOLLUMZ_MT_polygon_bound_create.bl_idname)
+def DrawCollisionMenu(self, context):
+    self.layout.menu(SOLLUMZ_MT_add_collision.bl_idname)
 
 
 def register():
-    bpy.types.SOLLUMZ_MT_create.append(SollumzBoundContextMenu)
-    bpy.types.SOLLUMZ_MT_create.append(SollumzPolygonBoundContextMenu)
+    bpy.types.SOLLUMZ_MT_sollumz.append(DrawCollisionMenu)
 
 
 def unregister():
-    bpy.types.SOLLUMZ_MT_create.remove(SollumzBoundContextMenu)
-    bpy.types.SOLLUMZ_MT_create.remove(SollumzPolygonBoundContextMenu)
+    bpy.types.SOLLUMZ_MT_sollumz.remove(DrawCollisionMenu)

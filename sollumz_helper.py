@@ -4,7 +4,7 @@ from abc import abstractmethod
 from Sollumz.sollumz_properties import DrawableType
 
 
-class SOLLUMZ_OT_base():
+class SOLLUMZ_OT_base:
     bl_options = {"UNDO"}
     bl_action = "do"
     bl_showtime = False
@@ -57,16 +57,13 @@ class SOLLUMZ_OT_base():
         self.error(f"Failure to {self.bl_action} because: \n {traceback}")
         return False
 
-    def is_sollum_object_in_objects(self, objs):
-        for obj in objs:
-            if obj.sollum_type != DrawableType.NONE:
-                return True
-        return False
 
-    def is_sollum_type(self, obj, type):
-        return obj.sollum_type in type._value2member_map_
+def is_sollum_object_in_objects(objs):
+    for obj in objs:
+        if obj.sollum_type != DrawableType.NONE:
+            return True
+    return False
 
-    def obj_is_sollumtype(self, obj, sollum_type):
-        if not (obj and obj.sollum_type == sollum_type):
-            return False
-        return True
+
+def is_sollum_type(obj, type):
+    return obj.sollum_type in type._value2member_map_

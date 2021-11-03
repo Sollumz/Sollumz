@@ -217,3 +217,30 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator('sollumz.bone_flags_new_item', text='New')
         row.operator('sollumz.bone_flags_delete_item', text='Delete')
+
+
+class SOLLUMZ_MT_add_drawable(bpy.types.Menu):
+
+    bl_label = "Drawable"
+    bl_idname = "SOLLUMZ_MT_add_drawable"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_create_drawable.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE])
+        layout.operator(SOLLUMZ_OT_create_drawable_model.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL])
+        layout.operator(SOLLUMZ_OT_create_geometry.bl_idname,
+                        text=SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY])
+
+
+def DrawDrawableMenu(self, context):
+    self.layout.menu(SOLLUMZ_MT_add_drawable.bl_idname)
+
+
+def register():
+    bpy.types.SOLLUMZ_MT_sollumz.append(DrawDrawableMenu)
+
+
+def unregister():
+    bpy.types.SOLLUMZ_MT_sollumz.remove(DrawDrawableMenu)

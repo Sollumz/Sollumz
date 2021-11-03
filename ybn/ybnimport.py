@@ -116,7 +116,7 @@ def poly_to_obj(poly, materials, vertices):
         rot = get_direction_of_vectors(v1, v2)
 
         cylinder.data = create_cylinder(
-            cylinder.data, poly.radius, length, False)
+            cylinder.data, poly.radius, length, rot_mat=None)
 
         cylinder.location = (v1 + v2) / 2
         cylinder.rotation_euler = rot
