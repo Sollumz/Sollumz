@@ -1,6 +1,6 @@
 import bpy
 from Sollumz.resources.fragment import YFT
-from Sollumz.ydr.ydrimport import drawable_to_obj
+from Sollumz.ydr.ydrimport import drawable_to_obj, shadergroup_to_materials
 from Sollumz.ybn.ybnimport import composite_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, BoundType, FragmentType
 from time import time
@@ -131,8 +131,10 @@ def fragment_to_obj(fragment, filepath):
 
     materials = None
     if fragment.drawable:
-        dobj, materials = drawable_to_obj(
-            fragment.drawable, filepath, fragment.fixed_name(), None, None, True)
+        materials = shadergroup_to_materials(
+            fragment.drawable.shader_group, filepath)
+        dobj = drawable_to_obj(
+            fragment.drawable, filepath, fragment.fixed_name(), None, materials)
         dobj.parent = fobj
 
     if fragment.physics.lod1:

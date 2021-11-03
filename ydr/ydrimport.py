@@ -303,7 +303,7 @@ def rotation_limits_to_obj(rotation_limits, armature):
     return bones_with_constraint
 
 
-def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None, return_mats=False):
+def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None):
 
     if not materials:
         materials = shadergroup_to_materials(drawable.shader_group, filepath)
@@ -375,10 +375,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             mod = child.modifiers.new("Armature", 'ARMATURE')
             mod.object = obj
 
-    if return_mats:
-        return obj, materials
-    else:
-        return obj
+    return obj
 
 
 def import_ydr(filepath):
