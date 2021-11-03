@@ -198,13 +198,13 @@ class ListProperty(ElementProperty, AbstractClass):
     def list_type(self) -> Element:
         raise NotImplementedError
 
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name, value or [])
+    @property
+    @abstractmethod
+    def tag_name(self) -> Element:
+        raise NotImplementedError
 
-    # """ Allows for quick creation of a ListProperty class given a list type and tag name"""
-    # @staticmethod
-    # def basic(tag_name, list_type, value=None):
-    #     return type(f"{tag_name}ListProperty", tuple(ListProperty), {"list_type": list_type})(tag_name=tag_name, value=value)
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or type(self).tag_name, value or [])
 
     @classmethod
     def from_xml(cls, element: ET.Element):

@@ -29,9 +29,7 @@ class FileNameListProperty(ListProperty):
         tag_name = 'Item'
 
     list_type = Item
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'FileName', value=value or [])
+    tag_name = "FileName"
 
 
 class LayoutListProperty(ListProperty):
@@ -39,9 +37,7 @@ class LayoutListProperty(ListProperty):
         tag_name = 'Item'
 
     list_type = Layout
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or 'Layout', value=[])
+    tag_name = "Layout"
 
 
 class Shader(ElementTree):

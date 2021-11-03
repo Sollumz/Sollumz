@@ -14,7 +14,7 @@ class YCD:
         return clips_dict.write_xml(filepath)
 
 
-class ItemTypeListProperty(ListProperty):
+class ItemTypeListProperty(ListProperty, AbstractClass):
     class Item(ElementTree, AbstractClass):
         tag_name = 'Item'
 
@@ -24,9 +24,6 @@ class ItemTypeListProperty(ListProperty):
             raise NotImplementedError
 
     list_type = Item
-
-    # def __init__(self, tag_name, value=None):
-    #     super().__init__(tag_name=tag_name, value=value or [])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -109,9 +106,7 @@ class AttributesListProperty(ItemTypeListProperty):
             self.value = ValueProperty('Value', '')
 
     list_type = Attribute
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Attributes', value=value or [])
+    tag_name = "Attributes"
 
 
 class ValuesBuffer(ElementProperty):
@@ -225,9 +220,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         type = 'CachedQuaternion2'
 
     list_type = Channel
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or "Channels", value=value or [])
+    tag_name = "Channels"
 
 
 class Animation(ElementTree):
@@ -240,10 +233,9 @@ class Animation(ElementTree):
                 self.bone_id = ValueProperty('BoneId', 0)
                 self.track = ValueProperty('Track', 0)
                 self.unk0 = ValueProperty('Unk0', 0)
-        list_type = BoneId
 
-        def __init__(self, tag_name=None, value=None):
-            super().__init__(tag_name=tag_name or "BoneIds", value=value or [])
+        list_type = BoneId
+        tag_name = "BoneIds"
 
     class SequenceDataListProperty(ListProperty):
         class SequenceData(ElementTree):
@@ -252,10 +244,9 @@ class Animation(ElementTree):
             def __init__(self):
                 super().__init__()
                 self.channels = ChannelsListProperty()
-        list_type = SequenceData
 
-        def __init__(self, tag_name=None, value=None):
-            super().__init__(tag_name=tag_name or "SequenceData", value=value or [])
+        list_type = SequenceData
+        tag_name = "SequenceData"
 
     class SequenceListProperty(ListProperty):
 
@@ -268,10 +259,9 @@ class Animation(ElementTree):
                 self.hash = TextProperty('Hash', '')
                 self.frame_count = ValueProperty('FrameCount', 0)
                 self.sequence_data = Animation.SequenceDataListProperty()
-        list_type = Sequence
 
-        def __init__(self, tag_name=None, value=None):
-            super().__init__(tag_name=tag_name or "Sequences", value=value or [])
+        list_type = Sequence
+        tag_name = "Sequences"
 
     tag_name = 'Item'
 
@@ -308,15 +298,11 @@ class Clip(ItemTypeListProperty.Item, AbstractClass):
                 self.unknown44 = ValueProperty('Unknown44', 0.0)
 
         list_type = Tag
-
-        def __init__(self, tag_name=None, value=None):
-            super().__init__(tag_name=tag_name or "Tags", value=value or [])
+        tag_name = "Tags"
 
     class PropertyListProperty(ListProperty):
         list_type = Property
-
-        def __init__(self, tag_name=None, value=None):
-            super().__init__(tag_name=tag_name or "Properties", value=value or [])
+        tag_name = "Properties"
 
     def __init__(self):
         super().__init__()
@@ -348,17 +334,13 @@ class ClipsListProperty(ItemTypeListProperty):
             self.animations = ClipsDictionary.AnimationsListProperty()
 
     list_type = Clip
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or "Clips", value=value or [])
+    tag_name = "Clips"
 
 
 class ClipsDictionary(ElementTree):
     class AnimationsListProperty(ListProperty):
         list_type = Animation
-
-        def __init__(self, tag_name=None, value=None):
-            super().__init__(tag_name=tag_name or "Animations", value=value)
+        tag_name = "Animations"
 
     tag_name = 'ClipsDictionary'
 

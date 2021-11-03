@@ -21,6 +21,4 @@ class FlagPreset(ElementTree):
 
 class Presets(ListProperty):
     list_type = FlagPreset
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or 'Presets', value=value or [])
+    tag_name = "Presets"
