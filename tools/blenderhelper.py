@@ -82,3 +82,17 @@ def get_selected_vertices(obj):
              for v in obj.data.vertices if v.select]
     bpy.ops.object.mode_set(mode=mode)
     return verts
+
+
+def build_tag_bone_map(armature):
+    if (armature == None):
+        return None
+
+    if (armature.pose == None):
+        return None
+
+    tag_bone_map = {}
+    for pose_bone in armature.pose.bones:
+        tag_bone_map[pose_bone.bone.bone_properties.tag] = pose_bone.name
+
+    return tag_bone_map

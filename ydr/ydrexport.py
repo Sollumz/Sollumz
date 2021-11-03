@@ -226,10 +226,9 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                 normal = ListHelper.float32_list(loop.normal)
                 kwargs["normal"] = tuple(normal)
             if "blendweights" in vertex_type._fields:
-                bw = ListHelper.float32_list(blend_weights[vert_idx])
-                kwargs['blendweights'] = tuple(bw)
+                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
             if "blendindices" in vertex_type._fields:
-                kwargs['blendindices'] = tuple(int(blend_indices[vert_idx]))
+                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
             if "tangent" in vertex_type._fields:
                 tangent = ListHelper.float32_list(loop.tangent.to_4d())
                 tangent[3] = loop.bitangent_sign  # convert to float 32 ?
@@ -292,7 +291,7 @@ def geometry_from_object(obj, bones=None):
     geometry.vertex_buffer.layout = layout.value
 
     vertex_buffer, index_buffer = get_mesh_buffers(
-        mesh, obj, layout.vertex_type)
+        mesh, obj, layout.vertex_type, bones)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
@@ -369,10 +368,10 @@ def bone_from_object(obj):
 
 def skeleton_from_object(obj):
 
-    skeleton = SkeletonProperty()
     if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
         return None
 
+    skeleton = SkeletonProperty()
     bones = obj.pose.bones
 
     ind = 0
@@ -386,6 +385,31 @@ def skeleton_from_object(obj):
         skeleton.bones.append(bone)
 
     return skeleton
+
+
+def rotation_limit_from_object(obj):
+    for con in obj.constraints:
+        if con.type == 'LIMIT_ROTATION':
+            joint = RotationLimitItem()
+            joint.bone_id = obj.bone.bone_properties.tag
+            joint.min = Vector((con.min_x, con.min_y, con.min_z))
+            joint.max = Vector((con.max_x, con.max_y, con.max_z))
+            return joint
+
+    return None
+
+
+def joints_from_object(obj):
+    if obj.pose is None:
+        return None
+
+    joints = JointsProperty()
+    for bone in obj.pose.bones:
+        joint = rotation_limit_from_object(bone)
+        if joint is not None:
+            joints.rotation_limits.append(joint)
+
+    return joints
 
 
 def drawable_from_object(obj, exportpath, bones=None):
@@ -411,10 +435,18 @@ def drawable_from_object(obj, exportpath, bones=None):
         obj, get_used_materials(obj), os.path.dirname(exportpath))
 
     if bones is None:
-        if(obj.pose != None):
+        if obj.pose is not None:
             bones = obj.pose.bones
 
     drawable.skeleton = skeleton_from_object(obj)
+    drawable.joints = joints_from_object(obj)
+    if obj.pose is not None:
+        for bone in drawable.skeleton.bones:
+            pbone = obj.pose.bones[bone.index]
+            for con in pbone.constraints:
+                if con.type == 'LIMIT_ROTATION':
+                    bone.flags.append("LimitRotation")
+                    break
 
     highmodel_count = 0
     medmodel_count = 0

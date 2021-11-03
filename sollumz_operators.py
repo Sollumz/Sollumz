@@ -5,7 +5,7 @@ import time
 from abc import abstractmethod
 import bpy
 from Sollumz.sollumz_helper import *
-from Sollumz.sollumz_properties import DrawableType, BoundType, SOLLUMZ_UI_NAMES
+from Sollumz.sollumz_properties import FragmentType, DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from Sollumz.resources.drawable import YDR, YDD
 from Sollumz.resources.fragment import YFT
 from Sollumz.resources.bound import YBN
@@ -114,7 +114,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
             result = export_ydd(self,
                                 obj, self.get_filepath(obj.name + YDD.file_extension))
-        elif obj.sollum_type == DrawableType.FRAGMENT:
+        elif obj.sollum_type == FragmentType.FRAGMENT:
             result = export_yft(self,
                                 obj, self.get_filepath(obj.name + YFT.file_extension))
         elif obj.sollum_type == BoundType.COMPOSITE:

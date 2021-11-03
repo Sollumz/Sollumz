@@ -8,7 +8,7 @@ from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType
 from Sollumz.resources.drawable import *
 from Sollumz.tools.meshhelper import flip_uv
 from Sollumz.tools.utils import ListHelper
-from Sollumz.tools.blenderhelper import BlenderHelper
+from Sollumz.tools.blenderhelper import *
 
 
 def shadergroup_to_materials(shadergroup, filepath):
@@ -266,6 +266,43 @@ def skeleton_to_obj(skeleton, armature):
     return armature
 
 
+def set_rotation_limit(joint, bone):
+
+    if bone is None:
+        return None
+
+    constraint = bone.constraints.new('LIMIT_ROTATION')
+    constraint.owner_space = 'LOCAL'
+    constraint.use_limit_x = True
+    constraint.use_limit_y = True
+    constraint.use_limit_z = True
+    constraint.max_x = joint.max.x
+    constraint.max_y = joint.max.y
+    constraint.max_z = joint.max.z
+    constraint.min_x = joint.min.x
+    constraint.min_y = joint.min.y
+    constraint.min_z = joint.min.z
+
+    # joints don't have an unique name so return the bone name instead
+    return bone.name
+
+
+def rotation_limits_to_obj(rotation_limits, armature):
+
+    # there should be more joint types than RotationLimits
+    tag_bone_map = build_tag_bone_map(armature)
+    if tag_bone_map is None:
+        return None
+
+    bones_with_constraint = []
+    for joint in rotation_limits:
+        bone = armature.pose.bones.get(tag_bone_map[joint.bone_id])
+        bone_name = set_rotation_limit(joint, bone)
+        bones_with_constraint.append(bone_name)
+
+    return bones_with_constraint
+
+
 def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None, return_mats=False):
 
     if not materials:
@@ -294,6 +331,10 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     if len(drawable.skeleton.bones) > 0:
         bones = drawable.skeleton.bones
         skeleton_to_obj(drawable.skeleton, obj)
+
+    if len(drawable.joints.rotation_limits) > 0:
+        bones_with_rotation_limits = rotation_limits_to_obj(
+            drawable.joints.rotation_limits, obj)
 
     if bones_override is not None:
         bones = bones_override
