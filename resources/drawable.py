@@ -190,6 +190,33 @@ class SkeletonProperty(ElementTree):
         self.bones = BonesListProperty("Bones")
 
 
+class RotationLimitItem(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.bone_id = ValueProperty("BoneId", 0)
+        self.unk_a = ValueProperty("UnknownA", 0)
+        self.min = VectorProperty("Min")
+        self.max = VectorProperty("Max")
+
+
+class RotationLimitsListProperty(ListProperty):
+    list_type = RotationLimitItem
+
+    def __init__(self, tag_name: str = None, value=None):
+        super().__init__(tag_name=tag_name or "RotationLimits", value=value or [])
+
+
+class JointsProperty(ElementTree):
+    tag_name = "Joints"
+
+    def __init__(self):
+        super().__init__()
+        # there should be more joint types than RotationLimits
+        self.rotation_limits = RotationLimitsListProperty("RotationLimits")
+
+
 class VertexLayoutListProperty(ElementProperty):
     value_types = (list)
     tag_name = 'Layout'
@@ -385,6 +412,7 @@ class Drawable(ElementTree, AbstractClass):
 
         self.shader_group = ShaderGroupProperty()
         self.skeleton = SkeletonProperty()
+        self.joints = JointsProperty()
         # is embedded collision always type of composite? have to check
         self.bound = BoundsComposite()
         self.drawable_models_high = DrawableModelListProperty(
