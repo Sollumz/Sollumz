@@ -10,7 +10,7 @@ def get_hash(obj):
     return Jenkhash.Generate(obj.name.split(".")[0])
 
 
-def drawable_dict_from_object(obj):
+def drawable_dict_from_object(obj, filepath):
 
     drawable_dict = DrawableDictionary()
 
@@ -22,7 +22,7 @@ def drawable_dict_from_object(obj):
 
     for child in obj.children:
         if child.sollum_type == "sollumz_drawable":
-            drawable = drawable_from_object(child, bones)
+            drawable = drawable_from_object(child, filepath, bones)
             drawable_dict.value.append(drawable)
 
     drawable_dict.value.sort(key=get_hash)
@@ -32,7 +32,7 @@ def drawable_dict_from_object(obj):
 
 def export_ydd(op, obj, filepath):
     try:
-        drawable_dict_from_object(obj).write_xml(filepath)
+        drawable_dict_from_object(obj, filepath).write_xml(filepath)
         return f"Succesfully exported : {filepath}"
     except:
         return f"Error exporting : {filepath} \n {traceback.format_exc()}"
