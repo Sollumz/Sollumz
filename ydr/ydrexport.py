@@ -226,10 +226,9 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
                 normal = ListHelper.float32_list(loop.normal)
                 kwargs["normal"] = tuple(normal)
             if "blendweights" in vertex_type._fields:
-                bw = ListHelper.float32_list(blend_weights[vert_idx])
-                kwargs['blendweights'] = tuple(bw)
+                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
             if "blendindices" in vertex_type._fields:
-                kwargs['blendindices'] = tuple(int(blend_indices[vert_idx]))
+                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
             if "tangent" in vertex_type._fields:
                 tangent = ListHelper.float32_list(loop.tangent.to_4d())
                 tangent[3] = loop.bitangent_sign  # convert to float 32 ?
@@ -292,7 +291,7 @@ def geometry_from_object(obj, bones=None):
     geometry.vertex_buffer.layout = layout.value
 
     vertex_buffer, index_buffer = get_mesh_buffers(
-        mesh, obj, layout.vertex_type)
+        mesh, obj, layout.vertex_type, bones)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer

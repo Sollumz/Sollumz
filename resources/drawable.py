@@ -193,9 +193,7 @@ class RotationLimitItem(ElementTree):
 
 class RotationLimitsListProperty(ListProperty):
     list_type = RotationLimitItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "RotationLimits", value=value or [])
+    tag_name = "RotationLimits"
 
 
 class JointsProperty(ElementTree):
