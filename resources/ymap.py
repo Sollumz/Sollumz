@@ -43,9 +43,7 @@ class EntityItem(ElementTree):
 
 class EntityListProperty(ListProperty):
     list_type = EntityItem
-
-    def __init__(self, tag_name: str, value=None):
-        super().__init__(tag_name, value=value)
+    tag_name = "entities"
 
 
 class CMapData(ElementTree, AbstractClass):
@@ -61,4 +59,3 @@ class CMapData(ElementTree, AbstractClass):
         self.streaming_extents_max = VectorProperty("streamingExtentsMax")
         self.entities_extents_min = VectorProperty("entitiesExtentsMin")
         self.entities_extents_max = VectorProperty("entitiesExtentsMax")
-        self.entities = EntityListProperty("entities")

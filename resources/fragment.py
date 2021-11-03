@@ -1,4 +1,4 @@
-from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
+from abc import ABC as AbstractClass
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from .drawable import Drawable
@@ -39,9 +39,10 @@ class BoneTransformItem(TextProperty):
 
 class BoneTransformsListProperty(ListProperty):
     list_type = BoneTransformItem
+    tag_name = "BoneTransforms"
 
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "BoneTransforms", value=value or [])
+    def __init__(self, tag_name=None):
+        super().__init__(tag_name or BoneTransformsListProperty.tag_name)
         self.unk = AttributeProperty("unk", 0)
 
 
@@ -71,9 +72,10 @@ class TransformItem(TextProperty):
 
 class TransformsListProperty(ListProperty):
     list_type = TransformItem
+    tag_name = "Transforms"
 
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "Transforms", value=value or [])
+    def __init__(self, tag_name=None):
+        super().__init__(tag_name or TransformsListProperty.tag_name)
         self.unk = AttributeProperty("unk", 0)
 
 
@@ -95,9 +97,7 @@ class ChildrenItem(ElementTree):
 
 class ChildrenListProperty(ListProperty):
     list_type = ChildrenItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "Children", value=value or [])
+    tag_name = "Children"
 
 
 class GroupItem(ElementTree):
@@ -143,9 +143,7 @@ class GroupItem(ElementTree):
 
 class GroupsListProperty(ListProperty):
     list_type = GroupItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "Groups", value=value or [])
+    tag_name = "Groups"
 
 
 class LOD1Property(ElementTree):
@@ -209,9 +207,7 @@ class WindowItem(ElementTree):
 
 class VehicleGlassWindows(ListProperty):
     list_type = WindowItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "VehicleGlassWindows", value=value or [])
+    tag_name = "VehicleGlassWindows"
 
 
 class Fragment(ElementTree, AbstractClass):

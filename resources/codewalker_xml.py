@@ -2,7 +2,7 @@
 from mathutils import Vector, Quaternion
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 from xml.etree import ElementTree as ET
 import numpy
 
@@ -188,6 +188,54 @@ class ElementProperty(Element, AbstractClass):
         self.value = value
 
 
+class ListProperty(ElementProperty, AbstractClass):
+    """Holds a list value. List can only contain values of one type."""
+
+    value_types = (list)
+
+    @property
+    @abstractmethod
+    def list_type(self) -> Element:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def tag_name(self) -> Element:
+        raise NotImplementedError
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or type(self).tag_name, value or [])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls(element.tag)
+
+        children = element.findall(new.list_type.tag_name)
+
+        for child in children:
+            new.value.append(new.list_type.from_xml(child))
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+
+        for child in vars(self).values():
+            if isinstance(child, AttributeProperty):
+                element.set(child.name, str(child.value))
+
+        if self.value and len(self.value) > 0:
+            for item in self.value:
+                if isinstance(item, self.list_type):
+                    element.append(item.to_xml())
+                else:
+                    raise TypeError(
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+
+            return element
+
+        return None
+
+
 class TextProperty(ElementProperty):
     value_types = (str)
 
@@ -248,49 +296,6 @@ class QuaternionProperty(ElementProperty):
         z = str(numpy.float32(self.value.z))
         w = str(numpy.float32(self.value.w))
         return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z, 'w': w})
-
-
-class ListProperty(ElementProperty, AbstractClass):
-    """Holds a list value. List can only contain values of one type."""
-
-    value_types = (list)
-
-    @property
-    @abstractmethod
-    def list_type(self) -> Element:
-        raise NotImplementedError
-
-    def __init__(self, tag_name: str, value=None):
-        super().__init__(tag_name, value or [])
-
-    @classmethod
-    def from_xml(cls, element: ET.Element):
-        new = cls(element.tag)
-
-        children = element.findall(new.list_type.tag_name)
-
-        for child in children:
-            new.value.append(new.list_type.from_xml(child))
-        return new
-
-    def to_xml(self):
-        element = ET.Element(self.tag_name)
-
-        for child in vars(self).values():
-            if isinstance(child, AttributeProperty):
-                element.set(child.name, str(child.value))
-
-        if self.value and len(self.value) > 0:
-            for item in self.value:
-                if isinstance(item, self.list_type):
-                    element.append(item.to_xml())
-                else:
-                    raise TypeError(
-                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
-
-            return element
-
-        return None
 
 
 class FlagsProperty(ElementProperty):

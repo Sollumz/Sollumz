@@ -23,7 +23,7 @@ import time
 from mathutils import Vector, Matrix
 from bpy.props import BoolProperty, FloatProperty, IntProperty, EnumProperty
 import numpy as np
-from Sollumz.meshhelper import get_distance_of_vectors, create_box_from_extents
+from Sollumz.tools.meshhelper import get_distance_of_vectors, create_box_from_extents
 
 
 def bbox_orient(bme_verts, mx):

@@ -1,6 +1,6 @@
-from typing import Text
 from .codewalker_xml import *
 from xml.etree import ElementTree as ET
+from inspect import isclass
 
 
 class YCD:
@@ -14,160 +14,99 @@ class YCD:
         return clips_dict.write_xml(filepath)
 
 
-class Attribute(ElementTree, AbstractClass):
-    tag_name = 'Item'
+class ItemTypeListProperty(ListProperty, AbstractClass):
+    class Item(ElementTree, AbstractClass):
+        tag_name = 'Item'
 
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        raise NotImplementedError
+        @property
+        @abstractmethod
+        def type(self) -> str:
+            raise NotImplementedError
 
-    def __init__(self):
-        super().__init__()
-        self.name_hash = TextProperty('NameHash', '')
-
-
-class FloatAttribute(Attribute):
-    type = 'Float'
-
-    def __init__(self):
-        super().__init__()
-        self.value = ValueProperty('Value', 0.0)
-
-
-class IntAttribute(Attribute):
-    type = 'Int'
-
-    def __init__(self):
-        super().__init__()
-        self.value = ValueProperty('Value', 0)
-
-
-class BoolAttribute(Attribute):
-    type = 'Bool'
-
-    def __init__(self):
-        super().__init__()
-        # Check if this is correct
-        self.value = ValueProperty('Value', True)
-
-
-class Vector3Attribute(Attribute):
-    type = 'Vector3'
-
-    def __init__(self):
-        super().__init__()
-        self.value = VectorProperty('Value')
-
-
-class Vector4Attribute(Attribute):
-    type = 'Vector4'
-
-    def __init__(self):
-        super().__init__()
-        self.value = QuaternionProperty('Value')
-
-
-class StringAttribute(Attribute):
-    type = 'String'
-
-    def __init__(self):
-        super().__init__()
-        self.value = ValueProperty('Value', '')
-
-
-class HashStringAttribute(Attribute):
-    type = 'HashString'
-
-    def __init__(self):
-        super().__init__()
-        self.value = ValueProperty('Value', '')
-
-
-class AttributesListProperty(ListProperty):
-
-    list_type = Attribute
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Tags', value=value or [])
+    list_type = Item
 
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
-
+        type_map = {}
+        for key, item_class in vars(cls).items():
+            if isclass(item_class) and issubclass(item_class, ItemTypeListProperty.Item) and key == item_class.__name__:
+                type_map[item_class.type] = item_class
         for child in element:
-            type = child.get('type')
-            if type == FloatAttribute.type:
-                new.value.append(FloatAttribute.from_xml(child))
-            if type == IntAttribute.type:
-                new.value.append(IntAttribute.from_xml(child))
-            if type == BoolAttribute.type:
-                new.value.append(BoolAttribute.from_xml(child))
-            if type == StringAttribute.type:
-                new.value.append(StringAttribute.from_xml(child))
-            if type == Vector3Attribute.type:
-                new.value.append(Vector3Attribute.from_xml(child))
-            if type == Vector4Attribute.type:
-                new.value.append(Vector4Attribute.from_xml(child))
-            if type == HashStringAttribute.type:
-                new.value.append(HashStringAttribute.from_xml(child))
+            type_elem = child.find("Type")
+            if type_elem != None:
+                type = type_elem.get("value")
+                if type in type_map:
+                    new.value.append(type_map[type].from_xml(child))
+        return new
 
 
-class TagListProperty(ListProperty):
-    class Tag(ElementTree):
+class AttributesListProperty(ItemTypeListProperty):
+    class Attribute(ItemTypeListProperty.Item, AbstractClass):
         tag_name = 'Item'
+
+        @property
+        @abstractmethod
+        def type(self) -> str:
+            raise NotImplementedError
 
         def __init__(self):
             super().__init__()
             self.name_hash = TextProperty('NameHash', '')
-            self.unk_hash = TextProperty('UnkHash', '')
-            self.attributes = AttributesListProperty()
-            self.unknown40 = ValueProperty('Unknown40', 0.0)
-            self.unknown44 = ValueProperty('Unknown44', 0.0)
+            self.type = ValueProperty("Type", self.type)
 
-    list_type = Tag
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Tags', value=value or [])
-
-
-class PropertiesListProperty(ListProperty):
-    class Property(ElementTree):
-        tag_name = 'Item'
+    class FloatAttribute(Attribute):
+        type = 'Float'
 
         def __init__(self):
             super().__init__()
-            self.name_hash = TextProperty('NameHash', '')
-            self.unk_hash = TextProperty('UnkHash', '')
-            self.attributes = AttributesListProperty()
+            self.value = ValueProperty('Value', 0.0)
 
-    list_type = Property
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Properties', value=value or [])
-
-
-class ClipsListProperty(ListProperty):
-    class Clip(ElementTree):
-        tag_name = 'Item'
+    class IntAttribute(Attribute):
+        type = 'Int'
 
         def __init__(self):
             super().__init__()
-            self.hash = TextProperty('Hash', '')
-            self.name = TextProperty('Name', '')
-            self.type = ValueProperty('Type', 'Animation')
-            self.unknown30 = ValueProperty('Unknown30', 0)
-            self.tags = TagListProperty()
-            self.properties = PropertiesListProperty()
-            self.animation_hash = TextProperty('AnimationHash', '')
-            self.start_time = ValueProperty('StartTime', 0.0)
-            self.end_time = ValueProperty('EndTime', 0.0)
-            self.rate = ValueProperty('Rate', 0.0)
+            self.value = ValueProperty('Value', 0)
 
-    list_type = Clip
+    class BoolAttribute(Attribute):
+        type = 'Bool'
 
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Clips', value=value or [])
+        def __init__(self):
+            super().__init__()
+            self.value = ValueProperty('Value', True)
+
+    class Vector3Attribute(Attribute):
+        type = 'Vector3'
+
+        def __init__(self):
+            super().__init__()
+            self.value = VectorProperty('Value')
+            self.unknown2c = ValueProperty("Unknown2C", 1)
+
+    class Vector4Attribute(Attribute):
+        type = 'Vector4'
+
+        def __init__(self):
+            super().__init__()
+            self.value = QuaternionProperty('Value')
+
+    class StringAttribute(Attribute):
+        type = 'String'
+
+        def __init__(self):
+            super().__init__()
+            self.value = ValueProperty('Value', '')
+
+    class HashStringAttribute(Attribute):
+        type = 'HashString'
+
+        def __init__(self):
+            super().__init__()
+            self.value = ValueProperty('Value', '')
+
+    list_type = Attribute
+    tag_name = "Attributes"
 
 
 class ValuesBuffer(ElementProperty):
@@ -197,7 +136,7 @@ class ValuesBuffer(ElementProperty):
             text.append(str(value))
             if index < len(self.value) - 1:
                 text.append(' ')
-            if index % columns == 0 and index > 0:
+            if (index + 1) % columns == 0:
                 text.append('\n')
 
         element.text = ''.join(text)
@@ -205,161 +144,207 @@ class ValuesBuffer(ElementProperty):
         return element
 
 
-class Channel(ElementTree, AbstractClass):
+class ChannelsListProperty(ItemTypeListProperty):
+    class Channel(ItemTypeListProperty.Item, AbstractClass):
+        tag_name = 'Item'
+
+        @property
+        @abstractmethod
+        def type(self) -> str:
+            raise NotImplementedError
+
+        def __init__(self):
+            super().__init__()
+            self.type = ValueProperty('Type', '')
+
+    class StaticQuaternion(Channel):
+        type = 'StaticQuaternion'
+
+        def __init__(self):
+            super().__init__()
+            self.value = QuaternionProperty('Value')
+
+    class StaticVector3(Channel):
+        type = 'StaticVector3'
+
+        def __init__(self):
+            super().__init__()
+            self.value = VectorProperty('Value')
+
+    class StaticFloat(Channel):
+        type = 'StaticFloat'
+
+        def __init__(self):
+            super().__init__()
+            self.value = ValueProperty('Value', 0.0)
+
+    class RawFloat(Channel):
+        type = 'RawFloat'
+
+        def __init__(self):
+            super().__init__()
+            self.values = ValuesBuffer()
+
+    class QuantizeFloat(Channel):
+        type = 'QuantizeFloat'
+
+        def __init__(self):
+            super().__init__()
+            self.quantum = ValueProperty('Quantum', 0.0)
+            self.offset = ValueProperty('Offset', 0.0)
+            self.values = ValuesBuffer()
+
+    class IndirectQuantizeFloat(QuantizeFloat):
+        type = 'IndirectQuantizeFloat'
+
+        def __init__(self):
+            super().__init__()
+            self.frames = ValuesBuffer('Frames')
+
+    class LinearFloat(QuantizeFloat):
+        type = 'LinearFloat'
+
+        def __init__(self):
+            super().__init__()
+            self.numints = ValueProperty('NumInts', 0)
+            self.counts = ValueProperty('Counts', 0)
+
+    class CachedQuaternion1(Channel):
+        type = 'CachedQuaternion1'
+
+        def __init__(self):
+            super().__init__()
+            self.quat_index = ValueProperty('QuatIndex', 0)
+
+    class CachedQuaternion2(CachedQuaternion1):
+        type = 'CachedQuaternion2'
+
+    list_type = Channel
+    tag_name = "Channels"
+
+
+class Animation(ElementTree):
+    class BoneIdListProperty(ListProperty):
+        class BoneId(ElementTree):
+            tag_name = 'Item'
+
+            def __init__(self):
+                super().__init__()
+                self.bone_id = ValueProperty('BoneId', 0)
+                self.track = ValueProperty('Track', 0)
+                self.unk0 = ValueProperty('Unk0', 0)
+
+        list_type = BoneId
+        tag_name = "BoneIds"
+
+    class SequenceDataListProperty(ListProperty):
+        class SequenceData(ElementTree):
+            tag_name = 'Item'
+
+            def __init__(self):
+                super().__init__()
+                self.channels = ChannelsListProperty()
+
+        list_type = SequenceData
+        tag_name = "SequenceData"
+
+    class SequenceListProperty(ListProperty):
+
+        class Sequence(ElementTree):
+
+            tag_name = 'Item'
+
+            def __init__(self):
+                super().__init__()
+                self.hash = TextProperty('Hash', '')
+                self.frame_count = ValueProperty('FrameCount', 0)
+                self.sequence_data = Animation.SequenceDataListProperty()
+
+        list_type = Sequence
+        tag_name = "Sequences"
+
     tag_name = 'Item'
 
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        raise NotImplementedError
+    def __init__(self):
+        super().__init__()
+        self.hash = TextProperty('Hash', '')
+        self.unknown10 = ValueProperty('Unknown10', 0)
+        self.frame_count = ValueProperty('FrameCount', 0)
+        self.sequence_frame_limit = ValueProperty('SequenceFrameLimit', 0)
+        self.duration = ValueProperty('Duration', 0.0)
+        self.unknown1C = TextProperty('Unknown1C')
+        self.bone_ids = Animation.BoneIdListProperty()
+        self.sequences = Animation.SequenceListProperty()
+
+
+class Property(ElementTree):
+    tag_name = 'Item'
 
     def __init__(self):
         super().__init__()
-        self.type = ValueProperty('Type', '')
+        self.name_hash = TextProperty('NameHash', '')
+        self.unk_hash = TextProperty('UnkHash', '')
+        self.attributes = AttributesListProperty()
 
 
-class StaticQuaternion(Channel):
-    type = 'StaticQuaternion'
+class Clip(ItemTypeListProperty.Item, AbstractClass):
+    class TagListProperty(ListProperty):
+        class Tag(Property):
+            tag_name = 'Item'
 
-    def __init__(self):
-        super().__init__()
-        self.value = QuaternionProperty('Value')
+            def __init__(self):
+                super().__init__()
+                self.unknown40 = ValueProperty('Unknown40', 0.0)
+                self.unknown44 = ValueProperty('Unknown44', 0.0)
 
+        list_type = Tag
+        tag_name = "Tags"
 
-class StaticVector3(Channel):
-    type = 'StaticVector3'
-
-    def __init__(self):
-        super().__init__()
-        self.value = VectorProperty('Value')
-
-
-class StaticFloat(Channel):
-    type = 'StaticFloat'
-
-    def __init__(self):
-        super().__init__()
-        self.value = ValueProperty('Value', 0.0)
-
-
-class RawFloat(Channel):
-    type = 'RawFloat'
+    class PropertyListProperty(ListProperty):
+        list_type = Property
+        tag_name = "Properties"
 
     def __init__(self):
         super().__init__()
-        self.values = ValuesBuffer()
+        self.hash = TextProperty('Hash', '')
+        self.name = TextProperty('Name', '')
+        self.type = ValueProperty('Type', 'Animation')
+        self.unknown30 = ValueProperty('Unknown30', 0)
+        self.tags = Clip.TagListProperty()
+        self.properties = Clip.PropertyListProperty()
 
 
-class QuantizeFloat(Channel):
-    type = 'QuantizeFloat'
-
-    def __init__(self):
-        super().__init__()
-        self.quantum = ValueProperty('Quantum', 0.0)
-        self.offset = ValueProperty('Offset', 0.0)
-        self.values = ValuesBuffer()
-
-
-class IndirectQuantizeFloat(QuantizeFloat):
-    type = 'IndirectQuantizeFloat'
-
-    def __init__(self):
-        super().__init__()
-        self.frames = ValuesBuffer('Frames')
-
-
-class LinearFloat(QuantizeFloat):
-    type = 'LinearFloat'
-
-    def __init__(self):
-        super().__init__()
-        self.numints = ValueProperty('NumInts', 0)
-        self.counts = ValueProperty('Counts', 0)
-
-
-class CachedQuaternion1(Channel):
-    type = 'CachedQuaternion1'
-
-    def __init__(self):
-        super().__init__()
-        self.quat_index = ValueProperty('QuatIndex', 0)
-
-
-class CachedQuaternion2(CachedQuaternion1):
-    type = 'CachedQuaternion2'
-
-
-class ChannelsListProperty(ListProperty):
-    list_type = Channel
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Channels', value=value or [])
-
-
-class SequencesDataListProperty(ListProperty):
-    class SequenceData(ElementTree):
-        tag_name = 'Item'
+class ClipsListProperty(ItemTypeListProperty):
+    class ClipAnimation(Clip):
+        type = "Animation"
 
         def __init__(self):
             super().__init__()
-            self.channels = ChannelsListProperty()
+            self.animation_hash = TextProperty('AnimationHash', '')
+            self.start_time = ValueProperty('StartTime', 0.0)
+            self.end_time = ValueProperty('EndTime', 0.0)
+            self.rate = ValueProperty('Rate', 0.0)
 
-    list_type = SequenceData
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'SequenceData', value=value or [])
-
-
-class SequencesListProperty(ListProperty):
-    class Sequence(ElementTree):
-        tag_name = 'Item'
+    class ClipAnimationList(Clip):
+        type = "AnimationList"
 
         def __init__(self):
             super().__init__()
-            self.hash = TextProperty('Hash', '')
-            self.frame_count = ValueProperty('FrameCount', 0)
+            self.duration = ValueProperty("Duration", 0.0)
+            self.animations = ClipsDictionary.AnimationsListProperty()
 
-    list_type = Sequence
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'Sequences', value=value or [])
-
-
-class BoneIdsListProperty(ListProperty):
-    class BoneId(ElementTree):
-        tag_name = 'Item'
-
-        def __init__(self):
-            super().__init__()
-            self.bone_id = ValueProperty('BoneId', 0)
-            self.track = ValueProperty('Track', 0)
-            self.unk0 = ValueProperty('Unk0', 0)
-
-    list_type = BoneId
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'BoneIds', value=value or [])
-
-
-class AnimationsListProperty(ListProperty):
-    class Animation(ElementTree):
-
-        tag_name = 'Item'
-
-        def __init__(self):
-            super().__init__()
-            self.hash = TextProperty('Hash', '')
-            self.unknown10 = ValueProperty('Unknown10', 0)
-            self.frame_count = ValueProperty('FrameCount', 0)
-            self.sequence_frame_limit = ValueProperty('SequenceFrameLimit', 0)
-            self.duration = ValueProperty('Duration', 0.0)
-            self.unknown1C = TextProperty('Unknown1c')
-            self.bone_ids = BoneIdsListProperty()
+    list_type = Clip
+    tag_name = "Clips"
 
 
 class ClipsDictionary(ElementTree):
+    class AnimationsListProperty(ListProperty):
+        list_type = Animation
+        tag_name = "Animations"
+
     tag_name = 'ClipsDictionary'
 
     def __init__(self):
         super().__init__()
         self.clips = ClipsListProperty()
+        self.animations = ClipsDictionary.AnimationsListProperty()

@@ -5,10 +5,10 @@ from Sollumz.resources.flag_preset import FlagPreset
 from Sollumz.ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from Sollumz.ybn.collision_materials import create_collision_material_from_index
 from Sollumz.tools.boundhelper import *
-from Sollumz.meshhelper import *
+from Sollumz.tools.meshhelper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, items_from_enums
 from Sollumz.sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
-from Sollumz.tools.blender_helper import get_selected_vertices
+from Sollumz.tools.blenderhelper import get_selected_vertices
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.sollumz_helper import *
 import bpy
