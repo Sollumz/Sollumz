@@ -197,7 +197,7 @@ class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         bone = context.active_pose_bone.bone
         bone.bone_properties.flags.add()
-        return self.success(f"Added a Bone Flag To {bone}.")
+        return self.success(f"to {bone.name} bone")
 
 
 class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -217,4 +217,4 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
         list.remove(index)
         bone.bone_properties.ul_index = min(
             max(0, index - 1), len(list) - 1)
-        return self.success(f"Deleted a bone flag from {bone}.")
+        return self.success(f"from {bone.name} bone")

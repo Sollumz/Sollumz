@@ -2,9 +2,15 @@ import bpy
 from enum import Enum
 
 
+class FragmentType(str, Enum):
+    FRAGMENT = "sollumz_fragment"
+    LOD = "sollumz_lod"
+    ARCHETYPE = "sollumz_archetype"
+    CHILD = "sollumz_child"
+
+
 class DrawableType(str, Enum):
     NONE = 'sollumz_none'
-    FRAGMENT = "sollumz_fragment"
     DRAWABLE_DICTIONARY = 'sollumz_drawable_dictionary'
     DRAWABLE = 'sollumz_drawable'
     DRAWABLE_MODEL = 'sollumz_drawable_model'
@@ -176,8 +182,12 @@ SOLLUMZ_UI_NAMES = {
     LODLevel.LOW: 'Low',
     LODLevel.VERYLOW: 'Vlow',
 
+    FragmentType.FRAGMENT: "Sollumz Fragment",
+    FragmentType.LOD: "Sollumz Fragment LOD",
+    FragmentType.ARCHETYPE: "Sollumz Fragment Archetype",
+    FragmentType.CHILD: "Sollumz Fragment Child",
+
     DrawableType.NONE: 'Sollumz None',
-    DrawableType.FRAGMENT: 'Sollumz Fragment',
     DrawableType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
     DrawableType.DRAWABLE: 'Sollumz Drawable',
     DrawableType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
@@ -323,7 +333,8 @@ def set_hide_very_low_lods(self, value):
 
 def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
-        items=items_from_enums(BoundType, PolygonType, DrawableType),
+        items=items_from_enums(BoundType, PolygonType,
+                               DrawableType, FragmentType),
         name="Sollumz Type",
         default="sollumz_none",
         options={'HIDDEN'}

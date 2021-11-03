@@ -1,6 +1,6 @@
 import traceback
 from Sollumz.resources.drawable import *
-from Sollumz.meshhelper import *
+from Sollumz.tools.meshhelper import *
 from Sollumz.tools.utils import *
 from Sollumz.ydr.ydrexport import drawable_from_object
 import Sollumz.tools.jenkhash as Jenkhash

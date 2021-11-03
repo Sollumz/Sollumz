@@ -51,9 +51,7 @@ class TextureItem(ElementTree):
 
 class TextureDictionaryListProperty(ListProperty):
     list_type = TextureItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "TextureDictionary", value=value or [])
+    tag_name = "TextureDictionary"
 
 
 class ShaderParameter(ElementTree, AbstractClass):
@@ -96,16 +94,12 @@ class ArrayShaderParameterProperty(ListProperty, ShaderParameter):
         tag_name = 'Value'
 
     list_type = Value
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or 'Item', value=value or [])
+    tag_name = "Item"
 
 
 class ParametersListProperty(ListProperty):
     list_type = ShaderParameter
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
+    tag_name = "Parameters"
 
     @staticmethod
     def from_xml(element: ET.Element):
@@ -133,14 +127,12 @@ class ShaderItem(ElementTree):
         self.name = TextProperty("Name", "")
         self.filename = TextProperty("FileName", "")
         self.render_bucket = ValueProperty("RenderBucket", 0)
-        self.parameters = ParametersListProperty("Parameters")
+        self.parameters = ParametersListProperty()
 
 
 class ShadersListProperty(ListProperty):
     list_type = ShaderItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or 'Shaders', value=value or [])
+    tag_name = "Shaders"
 
 
 class ShaderGroupProperty(ElementTree):
@@ -173,9 +165,7 @@ class BoneItem(ElementTree):
 
 class BonesListProperty(ListProperty):
     list_type = BoneItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "Bones", value=value or [])
+    tag_name = "Bones"
 
 
 class SkeletonProperty(ElementTree):
@@ -334,7 +324,7 @@ class IndexDataProperty(ElementProperty):
             text.append(str(vert_index))
             if index < len(self.value) - 1:
                 text.append(' ')
-            if index % columns == 0 and index > 0:
+            if (index + 1) % columns == 0:
                 text.append('\n')
 
         element.text = ''.join(text)
@@ -364,9 +354,7 @@ class GeometryItem(ElementTree):
 
 class GeometriesListProperty(ListProperty):
     list_type = GeometryItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "Geometries", value=value or [])
+    tag_name = "Geometries"
 
 
 class DrawableModelItem(ElementTree):
@@ -384,9 +372,7 @@ class DrawableModelItem(ElementTree):
 
 class DrawableModelListProperty(ListProperty):
     list_type = DrawableModelItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or "DrawableModels", value=value or [])
+    tag_name = "DrawableModels"
 
 
 class Drawable(ElementTree, AbstractClass):
@@ -395,7 +381,6 @@ class Drawable(ElementTree, AbstractClass):
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name", "")
-        self.matrix = TextProperty("Matrix")  # yft field
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
         self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
@@ -427,9 +412,7 @@ class Drawable(ElementTree, AbstractClass):
 
 class DrawableDictionary(ListProperty):
     list_type = Drawable
-
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or "DrawableDictionary", value=value or [])
+    tag_name = "DrawableDictionary"
 
     @classmethod
     def from_xml(cls, element: ET.Element):

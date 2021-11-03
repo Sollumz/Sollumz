@@ -163,9 +163,7 @@ class BoundGeometry(BoundGeometryBVH):
 
 class BoundListProperty(ListProperty):
     list_type = BoundItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or 'Children', value=value or [])
+    tag_name = "Children"
 
     @staticmethod
     def from_xml(element: ET.Element):
@@ -210,9 +208,7 @@ class MaterialItem(ElementTree):
 
 class MaterialsListProperty(ListProperty):
     list_type = MaterialItem
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or 'Materials', value=value or [])
+    tag_name = "Materials"
 
 
 class VertexColorProperty(ElementProperty):
@@ -261,9 +257,7 @@ class Polygon(ElementTree, AbstractClass):
 
 class PolygonsProperty(ListProperty):
     list_type = Polygon
-
-    def __init__(self, tag_name: str = None, value=None):
-        super().__init__(tag_name=tag_name or 'Polygons', value=value or [])
+    tag_name = "Polygons"
 
     @staticmethod
     def from_xml(element: ET.Element):

@@ -6,6 +6,6 @@ tmp
 *.blend1
 .vscode
 .venv
-.dds
+*.dds
 load_submodules
 vsdevelopment.code-workspace
