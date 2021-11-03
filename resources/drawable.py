@@ -354,7 +354,6 @@ class Drawable(ElementTree, AbstractClass):
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name", "")
-        self.matrix = TextProperty("Matrix")  # yft field
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
         self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")
         self.bounding_box_min = VectorProperty("BoundingBoxMin")

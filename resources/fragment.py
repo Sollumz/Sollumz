@@ -92,7 +92,7 @@ class ChildrenItem(ElementTree):
         self.unk_vec = VectorProperty("UnkVec")
         self.inertia_tensor = QuaternionProperty("InertiaTensor")
         # self.event_set = None # ?????????? FIND
-        self.drawable = Drawable()
+        self.drawable = FragmentDrawable()
 
 
 class ChildrenListProperty(ListProperty):
@@ -210,8 +210,19 @@ class VehicleGlassWindows(ListProperty):
     tag_name = "VehicleGlassWindows"
 
 
+class FragmentDrawable(Drawable):
+
+    def __init__(self):
+        super().__init__()
+        self.matrix = TextProperty("Matrix")
+
+
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
+
+    def fixed_name(self):
+        if "pack" in self.name:
+            return self.name.replace("pack:/", "")
 
     def __init__(self):
         super().__init__()
@@ -226,6 +237,6 @@ class Fragment(ElementTree, AbstractClass):
         self.unknown_cc = ValueProperty("UnknownCC")
         self.unknown_d0 = ValueProperty("UnknownD0")
         self.unknown_d4 = ValueProperty("UnknownD4")
-        self.drawable = Drawable()
+        self.drawable = FragmentDrawable()
         self.bones_transforms = BoneTransformsListProperty()
         self.physics = PhysicsProperty()
