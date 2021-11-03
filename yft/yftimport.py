@@ -7,7 +7,7 @@ from time import time
 import traceback
 
 
-def create_lod_obj(name, lod, filepath, shader_group):
+def create_lod_obj(name, lod, filepath, materials):
     lobj = bpy.data.objects.new(name, None)
     lobj.empty_display_size = 0
     lobj.sollum_type = FragmentType.LOD
@@ -104,7 +104,7 @@ def create_lod_obj(name, lod, filepath, shader_group):
 
             if len(child.drawable.drawable_models_high) > 0:
                 dobj = drawable_to_obj(
-                    child.drawable, filepath, f"child {idx}", None, shader_group)
+                    child.drawable, filepath, f"child {idx}", None, materials)
                 dobj.parent = cobj
 
             cobj.parent = cwobj
@@ -129,14 +129,15 @@ def fragment_to_obj(fragment, filepath):
     fobj.fragment_properties.unk_d0 = fragment.unknown_d0
     fobj.fragment_properties.unk_d4 = fragment.unknown_d4
 
+    materials = None
     if fragment.drawable:
-        dobj = drawable_to_obj(
-            fragment.drawable, filepath, fragment.fixed_name())
+        dobj, materials = drawable_to_obj(
+            fragment.drawable, filepath, fragment.fixed_name(), None, None, True)
         dobj.parent = fobj
 
     if fragment.physics.lod1:
         l1obj = create_lod_obj("LOD1", fragment.physics.lod1,
-                               filepath, fragment.drawable.shader_group)
+                               filepath, materials)
         l1obj.parent = fobj
 
 
