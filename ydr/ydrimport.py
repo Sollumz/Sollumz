@@ -8,7 +8,7 @@ from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType
 from Sollumz.resources.drawable import *
 from Sollumz.tools.meshhelper import flip_uv
 from Sollumz.tools.utils import ListHelper
-from Sollumz.tools.blender_helper import *
+from Sollumz.tools.blenderhelper import *
 
 
 def shadergroup_to_materials(shadergroup, filepath):
@@ -294,13 +294,13 @@ def rotation_limits_to_obj(rotation_limits, armature):
     if tag_bone_map is None:
         return None
 
-    bones_with_modifier = []
+    bones_with_constraint = []
     for joint in rotation_limits:
         bone = armature.pose.bones.get(tag_bone_map[joint.bone_id])
         bone_name = set_rotation_limit(joint, bone)
-        bones_with_modifier.append(bone_name)
+        bones_with_constraint.append(bone_name)
 
-    return bones_with_modifier
+    return bones_with_constraint
 
 
 def drawable_to_obj(drawable, filepath, name, bones_override=None, shader_group=None):
