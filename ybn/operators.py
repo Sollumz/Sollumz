@@ -28,12 +28,7 @@ class CreatePolyHelper(SOLLUMZ_OT_base):
         raise NotImplementedError
 
     def run(self, context):
-        aobj = context.active_object
-        if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
-            self.message(
-                f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[self.poly_type]} to.")
-            return False
-        obj = create_poly(aobj, self.poly_type)
+        obj = create_bound_shape(self.poly_type)
         context.view_layer.objects.active = bpy.data.objects[obj.name]
         return True
 
@@ -77,7 +72,8 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
-            create_bound()
+            create_bound(BoundType.COMPOSITE)
+
             return self.success()
         else:
             convert_selected_to_bound(
@@ -85,100 +81,87 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
             return self.success()
 
 
-class SOLLUMZ_OT_create_geometry_bound(SOLLUMZ_OT_base, bpy.types.Operator):
+class CreateBoundHelper(SOLLUMZ_OT_base):
+    @property
+    @abstractmethod
+    def bound_type():
+        raise NotImplementedError
+
+    def run(self, context):
+        obj = None
+        if self.bound_type == BoundType.GEOMETRY or self.bound_type == BoundType.GEOMETRYBVH:
+            obj = create_bound(self.bound_type)
+        else:
+            obj = create_mesh(self.bound_type)
+        if obj:
+            context.view_layer.objects.active = bpy.data.objects[obj.name]
+        return True
+
+
+class CreateBoundShapeHelper(SOLLUMZ_OT_base):
+    @property
+    @abstractmethod
+    def bound_type():
+        raise NotImplementedError
+
+    def run(self, context):
+        obj = create_bound_shape(self.bound_type)
+        context.view_layer.objects.active = bpy.data.objects[obj.name]
+        return True
+
+
+class SOLLUMZ_OT_create_geometry_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz geometry bound"""
     bl_idname = "sollumz.creategeometrybound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
-
-    def run(self, context):
-        gobj = create_bound(BoundType.GEOMETRY)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
+    bound_type = BoundType.GEOMETRY
 
 
-class SOLLUMZ_OT_create_geometrybvh_bound(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_create_geometrybvh_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz geometry bound bvh"""
     bl_idname = "sollumz.creategeometryboundbvh"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
+    bound_type = BoundType.GEOMETRYBVH
 
-    def run(self, context):
-        gobj = create_bound(BoundType.GEOMETRYBVH)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
-
-
-class SOLLUMZ_OT_create_box_bound(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz box bound"""
-    bl_idname = "sollumz.createboxbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
-
-    def run(self, context):
-        gobj = create_bound(BoundType.BOX)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
-
-
-class SOLLUMZ_OT_create_sphere_bound(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz sphere bound"""
-    bl_idname = "sollumz.createspherebound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
-
-    def run(self, context):
-        gobj = create_bound(BoundType.SPHERE)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
-
-
-class SOLLUMZ_OT_create_capsule_bound(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz capsule bound"""
-    bl_idname = "sollumz.createcapsulebound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
-
-    def run(self, context):
-        gobj = create_bound(BoundType.CAPSULE)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
-
-
-class SOLLUMZ_OT_create_cylinder_bound(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz cylinder bound"""
-    bl_idname = "sollumz.createcylinderbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
-
-    def run(self, context):
-        gobj = create_bound(BoundType.CYLINDER)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
-
-
-class SOLLUMZ_OT_create_disc_bound(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz disc bound"""
-    bl_idname = "sollumz.creatediscbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
-
-    def run(self, context):
-        gobj = create_bound(BoundType.DISC)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
-
-
-class SOLLUMZ_OT_create_cloth_bound(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_create_cloth_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz cloth bound"""
     bl_idname = "sollumz.createclothbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
+    bound_type = BoundType.CLOTH
 
-    def run(self, context):
-        gobj = create_bound(BoundType.CLOTH)
-        context.view_layer.objects.active = bpy.data.objects[gobj.name]
-        return self.success()
+class SOLLUMZ_OT_create_box_bound(CreateBoundShapeHelper, bpy.types.Operator):
+    """Create a sollumz box bound"""
+    bl_idname = "sollumz.createboxbound"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
+    bound_type = BoundType.BOX
+
+
+class SOLLUMZ_OT_create_sphere_bound(CreateBoundShapeHelper, bpy.types.Operator):
+    """Create a sollumz sphere bound"""
+    bl_idname = "sollumz.createspherebound"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
+    bound_type = BoundType.SPHERE
+
+
+class SOLLUMZ_OT_create_capsule_bound(CreateBoundShapeHelper, bpy.types.Operator):
+    """Create a sollumz capsule bound"""
+    bl_idname = "sollumz.createcapsulebound"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
+    bound_type = BoundType.CAPSULE
+
+
+class SOLLUMZ_OT_create_cylinder_bound(CreateBoundShapeHelper, bpy.types.Operator):
+    """Create a sollumz cylinder bound"""
+    bl_idname = "sollumz.createcylinderbound"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
+    bound_type = BoundType.CYLINDER
+
+
+class SOLLUMZ_OT_create_disc_bound(CreateBoundShapeHelper, bpy.types.Operator):
+    """Create a sollumz disc bound"""
+    bl_idname = "sollumz.creatediscbound"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
+    bound_type = BoundType.DISC
 
 
 class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -187,15 +170,15 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Create Polygon Bound"
     bl_action = f"{bl_label}"
 
-    @classmethod
-    def poll(cls, context):
-        return context.active_object != None
+    # @classmethod
+    # def poll(cls, context):
+    #     return context.active_object != None
 
     def create_poly_from_verts(self, context, type, parent):
         if not parent:
-            raise Exception("Must specify a parent object!")
+            return self.fail("Must specify a parent object!")
         elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
-            raise Exception(
+            return self.fail(
                 f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
 
         selected = context.selected_objects
@@ -208,8 +191,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             verts.extend(get_selected_vertices(obj))
 
         if len(verts) < 1:
-            self.report({'INFO'}, 'No vertices selected.')
-            return False
+            return self.fail("No vertices selected.")
 
         pobj = create_bound(type, True)
 
@@ -253,14 +235,10 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         type = context.scene.poly_bound_type
         parent = context.scene.poly_parent
 
-        if aobj.mode == "EDIT":
+        if aobj and aobj.mode == "EDIT":
             return self.create_poly_from_verts(context, type, parent)
         else:
-            if not (aobj and (aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH)):
-                self.message(
-                    f"Please select a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} to add a {SOLLUMZ_UI_NAMES[type]} to.")
-                return False
-            create_poly(aobj, type)
+            create_bound_shape(type)
             return True
 
 
