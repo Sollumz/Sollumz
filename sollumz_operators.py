@@ -41,6 +41,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     import_directory: bpy.props.BoolProperty(
         name="Import Directory",
+        description="Import the entire directory.",
         default=False,
     )
 
@@ -92,9 +93,9 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     )
 
     export_type: bpy.props.EnumProperty(
-        items=[("export_all", "Export All", "This option lets you export all objects in the scene of your choosen export type to be exported."),
+        items=[("export_all", "Export All", "Export all objects in the scene."),
                ("export_selected", "Export Selected",
-                "This option lets you export the selected objects of your choosen export type to be exported.")],
+                "Export selected objects in the scene.")],
         description="The method in which you want to export your scene.",
         name="Export Type",
         default="export_all"

@@ -1,29 +1,27 @@
 import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.ybn.collision_materials import create_collision_material_from_index
-from Sollumz.tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
+from Sollumz.tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder, create_disc
 
 
-def create_poly(aobj, type):
-    pobj = create_bound(type, True)
+def create_bound_shape(type):
+    pobj = create_mesh(type)
 
-    if type == PolygonType.BOX:
+    if type == PolygonType.BOX or type == BoundType.BOX:
         create_box(pobj.data)
-    elif type == PolygonType.SPHERE:
+    elif type == PolygonType.SPHERE or type == BoundType.SPHERE:
         create_sphere(pobj.data)
-    elif type == PolygonType.CAPSULE:
+    elif type == PolygonType.CAPSULE or type == BoundType.CAPSULE:
         create_capsule(pobj)
-    elif type == PolygonType.CYLINDER:
+    elif type == PolygonType.CYLINDER or type == BoundType.CYLINDER:
         create_cylinder(pobj.data)
+    elif type == BoundType.DISC:
+        create_disc(pobj.data)
 
-    pobj.parent = aobj
     return pobj
 
 
-def create_bound(sollum_type=BoundType.COMPOSITE, with_mesh=False):
-
-    if with_mesh:
-        return create_mesh(sollum_type)
+def create_bound(sollum_type=BoundType.COMPOSITE):
 
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
@@ -54,7 +52,7 @@ def convert_selected_to_bound(objs, use_name=False, multiple=False):
 
     for obj in selected:
         # set parents
-        dobj = parent or create_bound(BoundType.COMPOSITE)
+        dobj = parent or create_bound()
         dmobj = create_bound(BoundType.GEOMETRYBVH)
         dmobj.parent = dobj
         obj.parent = dmobj
