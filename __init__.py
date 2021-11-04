@@ -13,7 +13,10 @@
 
 import bpy
 import os
+import traceback
 from . import auto_load
+
+
 bl_info = {
     "name": "Sollumz",
     "author": "Skylumz",
@@ -24,6 +27,12 @@ bl_info = {
     "warning": "",
     "category": "Import-Export"
 }
+
+try:
+    import Sollumz
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundError(
+        "Sollumz module not found! Ensure the Sollumz folder is named 'Sollumz' (case-sensitive)!")
 
 
 auto_load.init()

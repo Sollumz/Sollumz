@@ -47,11 +47,11 @@ def draw_shader(layout, mat):
             # if(n.name == "SpecSampler"):
             box = layout.box()
             row = box.row(align=True)
-            name = os.path.splitext(os.path.basename(n.image.filepath))[0]
             row.label(text="Texture Type: " + n.name)
-            row.label(text="Texture Name: " + n.image.name)
-            row = box.row()
-            row.prop(n.image, "filepath", text="Texture Path")
+            if n.image:
+                row.label(text="Texture Name: " + n.image.name)
+                row = box.row()
+                row.prop(n.image, "filepath", text="Texture Path")
             row = box.row(align=True)
             row.prop(n.texture_properties, "embedded")
             if(n.texture_properties.embedded == False):
@@ -179,6 +179,8 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable_model.bl_idname)
         row.operator(SOLLUMZ_OT_create_geometry.bl_idname)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_create_drawable_dictionary.bl_idname)
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):

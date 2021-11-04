@@ -45,6 +45,12 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         default=False,
     )
 
+    split_normals: bpy.props.BoolProperty(
+        name="Split YDR Normals",
+        description="Split the YDR vertex normals automatically on import.",
+        default=False,
+    )
+
     def import_file(self, filepath, ext):
         if ext == YDR.file_extension:
             result = import_ydr(filepath)
@@ -182,12 +188,15 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
         try:
             ymap = YMAP.from_xml_file(self.filepath)
-            for obj in context.collection.objects:
-                for entity in ymap.entities:
-                    if(entity.archetype_name == obj.name):
-                        obj.location = entity.position
-                        self.apply_entity_properties(obj, entity)
-            return self.success(f"succesfully imported : {self.filepath}", True, False)
+            if ymap.entities:
+                for obj in context.collection.objects:
+                    for entity in ymap.entities:
+                        if(entity.archetype_name == obj.name):
+                            obj.location = entity.position
+                            self.apply_entity_properties(obj, entity)
+                return self.success(f"succesfully imported : {self.filepath}", True, False)
+            else:
+                return self.fail(f"{self.filepath} contains no entities to import!")
         except:
             return self.fail(traceback.format_exc())
             # return False # shouldnt do this because otherwise it wont print the correct error

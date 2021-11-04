@@ -43,8 +43,16 @@ def shadergroup_to_materials(shadergroup, filepath):
                                 shared_texture_path, check_existing=True)
                             n.image = img
                         else:
-                            n.image = bpy.data.images.new(
-                                name=param.texture_name, width=512, height=512)
+                            # Check for existing texture
+                            existing_texture = None
+                            for image in bpy.data.images:
+                                if image.name == param.texture_name:
+                                    existing_texture = image
+                            texture = bpy.data.images.new(
+                                name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
+                            n.image = texture
+                            # n.image = bpy.data.images.new(
+                            #     name=param.texture_name, width=512, height=512)
 
                         # Assign embedded texture dictionary properties
                         if shadergroup.texture_dictionary != None:
@@ -146,8 +154,8 @@ def geometry_to_obj(geometry, bones=None, name=None):
     mesh.from_pydata(vertices, [], faces)
 
     # set normals
-    mesh.normals_split_custom_set_from_vertices(normals)
     mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+    mesh.normals_split_custom_set_from_vertices(normals)
     mesh.use_auto_smooth = True
 
     # set uvs

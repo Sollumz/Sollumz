@@ -1,7 +1,6 @@
 import bpy
 import os
 import traceback
-from mathutils import Vector, Quaternion, Matrix
 from Sollumz.resources.drawable import *
 from Sollumz.ydr.ydrimport import drawable_to_obj
 
@@ -15,14 +14,14 @@ def drawable_dict_to_obj(drawable_dict, filepath):
     armature_with_skel_obj = None
     mod_objs = []
     drawable_with_skel = None
-    for drawable in drawable_dict.value:
+    for drawable in drawable_dict.values():
         if len(drawable.skeleton.bones) > 0:
             drawable_with_skel = drawable
             break
 
-    for drawable in drawable_dict.value:
+    for drawable in drawable_dict.values():
         drawable_obj = drawable_to_obj(
-            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones)
+            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones if drawable_with_skel else None)
         if (armature_with_skel_obj is None and drawable_with_skel is not None and len(drawable.skeleton.bones) > 0):
             armature_with_skel_obj = drawable_obj
 
