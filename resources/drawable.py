@@ -142,8 +142,8 @@ class ShaderGroupProperty(ElementTree):
     def __init__(self):
         super().__init__()
         self.unknown_30 = ValueProperty("Unknown30", 0)
-        self.shaders = ShadersListProperty()
         self.texture_dictionary = TextureDictionaryListProperty()
+        self.shaders = ShadersListProperty()
 
 
 class BoneItem(ElementTree):
