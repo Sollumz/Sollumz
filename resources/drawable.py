@@ -2,7 +2,7 @@ from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
-from .bound import BoundsComposite
+from .bound import *
 from collections import namedtuple
 from collections.abc import Mapping
 
@@ -398,7 +398,7 @@ class Drawable(ElementTree, AbstractClass):
         self.skeleton = SkeletonProperty()
         self.joints = JointsProperty()
         # is embedded collision always type of composite? have to check
-        self.bound = BoundsComposite()
+        self.bound = None
         self.drawable_models_high = DrawableModelListProperty(
             "DrawableModelsHigh")
         self.drawable_models_med = DrawableModelListProperty(
@@ -407,6 +407,35 @@ class Drawable(ElementTree, AbstractClass):
             "DrawableModelsLow")
         self.drawable_models_vlow = DrawableModelListProperty(
             "DrawableModelsVeryLow")
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = super().from_xml(element)
+        for child in element.iter():
+            if 'type' in child.attrib:
+                bound_type = child.get('type')
+                child.tag = 'Item'
+                if bound_type == 'Box':
+                    new.bound = BoundBox.from_xml(child)
+                elif bound_type == 'Sphere':
+                    new.bound = BoundSphere.from_xml(child)
+                elif bound_type == 'Capsule':
+                    new.bound = BoundCapsule.from_xml(child)
+                elif bound_type == 'Cylinder':
+                    new.bound = BoundCylinder.from_xml(child)
+                elif bound_type == 'Disc':
+                    new.bound = BoundDisc.from_xml(child)
+                elif bound_type == 'Cloth':
+                    new.bound = BoundCloth.from_xml(child)
+                elif bound_type == 'Geometry':
+                    new.bound = BoundGeometry.from_xml(child)
+                elif bound_type == 'GeometryBVH':
+                    new.bound = BoundGeometryBVH.from_xml(child)
+
+                if new.bound:
+                    new.bound.tag_name = 'Bounds'
+
+        return new
 
 
 class DrawableDictionary(Mapping, Element):
