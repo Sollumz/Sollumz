@@ -154,8 +154,9 @@ class BoneItem(ElementTree):
         self.name = TextProperty("Name", "")
         self.tag = ValueProperty("Tag", 0)
         self.index = ValueProperty("Index", 0)
-        self.parent_index = ValueProperty("ParentIndex", 0)
-        self.sibling_index = ValueProperty("SiblingIndex", 0)
+        # by default if a bone don't have parent or sibling there should be -1 instead of 0
+        self.parent_index = ValueProperty("ParentIndex", -1)
+        self.sibling_index = ValueProperty("SiblingIndex", -1)
         self.flags = FlagsProperty("Flags")
         self.translation = VectorProperty("Translation")
         self.rotation = QuaternionProperty("Rotation")
