@@ -179,6 +179,8 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable_model.bl_idname)
         row.operator(SOLLUMZ_OT_create_geometry.bl_idname)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_create_drawable_dictionary.bl_idname)
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):

@@ -36,6 +36,17 @@ class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
+class SOLLUMZ_OT_create_drawable_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Create a sollumz drawable dictionary"""
+    bl_idname = "sollumz.createdrawabledictionary"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_DICTIONARY]}"
+    bl_action = "Create a Drawable Dictionary"
+
+    def run(self, context):
+        create_drawable(DrawableType.DRAWABLE_DICTIONARY)
+        return True
+
+
 class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz geometry"""
     bl_idname = "sollumz.creategeometry"
