@@ -154,8 +154,8 @@ def geometry_to_obj(geometry, bones=None, name=None):
     mesh.from_pydata(vertices, [], faces)
 
     # set normals
-    mesh.normals_split_custom_set_from_vertices(normals)
     mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+    mesh.normals_split_custom_set_from_vertices(normals)
     mesh.use_auto_smooth = True
 
     # set uvs
