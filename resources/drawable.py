@@ -4,6 +4,7 @@ from .codewalker_xml import *
 from Sollumz.tools.utils import *
 from .bound import BoundsComposite
 from collections import namedtuple
+from collections.abc import Mapping
 
 
 class YDD:
@@ -408,9 +409,32 @@ class Drawable(ElementTree, AbstractClass):
             "DrawableModelsVeryLow")
 
 
-class DrawableDictionary(ListProperty):
-    list_type = Drawable
+class DrawableDictionary(Mapping, Element):
     tag_name = "DrawableDictionary"
+
+    def __init__(self, value=None):
+        super().__init__()
+        self._value = value or {}
+        self._key = None
+
+    # Access drawables by indexing the name (i.e. DrawableDictionary[<drawable name>])
+    def __getitem__(self, name):
+        try:
+            return self._value[name]
+        except KeyError:
+            raise KeyError(f"Drawable with name '{name}' not found!")
+
+    def __setitem__(self, key, value):
+        self._value[key] = value
+
+    def __iter__(self):
+        return iter(self._value)
+
+    def __len__(self):
+        return len(self._value)
+
+    def sort(self, key):
+        self._value = dict(sorted(self._value.items(), key=key))
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -419,18 +443,19 @@ class DrawableDictionary(ListProperty):
         children = element.findall(new.tag_name)
 
         for child in children:
-            new.value.append(new.list_type.from_xml(child))
+            drawable = Drawable.from_xml(child)
+            new._value[drawable.name] = drawable
 
         return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        for item in self.value:
-            if isinstance(item, self.list_type):
-                item.tag_name = "Item"
-                element.append(item.to_xml())
+        for drawable in self._value.values():
+            if isinstance(drawable, Drawable):
+                drawable.tag_name = "Item"
+                element.append(drawable.to_xml())
             else:
                 raise TypeError(
-                    f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                    f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!")
 
         return element
