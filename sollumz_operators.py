@@ -45,12 +45,6 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         default=False,
     )
 
-    split_normals: bpy.props.BoolProperty(
-        name="Split YDR Normals",
-        description="Split the YDR vertex normals automatically on import.",
-        default=False,
-    )
-
     def import_file(self, filepath, ext):
         if ext == YDR.file_extension:
             result = import_ydr(filepath)
