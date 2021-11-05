@@ -367,7 +367,7 @@ def register():
         size=4
     )
     bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
-        name='Seperate Objects', description='Create a object for each selected mesh.')
+        name='Separate Objects', description='Create a object for each selected mesh.')
     bpy.types.Scene.use_mesh_name = bpy.props.BoolProperty(
         name='Use Name(s)', description='Use the names of the meshes for the created objects.', default=True)
 

@@ -3,7 +3,7 @@ import os
 import bpy
 from mathutils import Matrix
 from Sollumz.ydr.shader_materials import create_shader
-from Sollumz.ybn.ybnimport import composite_to_obj
+from Sollumz.ybn.ybnimport import composite_to_obj, bound_to_obj
 from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from Sollumz.resources.drawable import *
 from Sollumz.tools.meshhelper import flip_uv
@@ -347,10 +347,14 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     if bones_override is not None:
         bones = bones_override
 
-    if len(drawable.bound.children) > 0:
+    if drawable.bound and drawable.bound.type == BoundType.COMPOSITE:
         bobj = composite_to_obj(
             drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
         bobj.parent = obj
+    elif drawable.bound:
+        bobj = bound_to_obj(drawable.bound)
+        if bobj:
+            bobj.parent = obj
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(
