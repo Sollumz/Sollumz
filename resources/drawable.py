@@ -2,8 +2,9 @@ from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from Sollumz.tools.utils import *
-from .bound import BoundsComposite
+from .bound import *
 from collections import namedtuple
+from collections.abc import Mapping
 
 
 class YDD:
@@ -141,8 +142,8 @@ class ShaderGroupProperty(ElementTree):
     def __init__(self):
         super().__init__()
         self.unknown_30 = ValueProperty("Unknown30", 0)
-        self.shaders = ShadersListProperty()
         self.texture_dictionary = TextureDictionaryListProperty()
+        self.shaders = ShadersListProperty()
 
 
 class BoneItem(ElementTree):
@@ -154,8 +155,9 @@ class BoneItem(ElementTree):
         self.name = TextProperty("Name", "")
         self.tag = ValueProperty("Tag", 0)
         self.index = ValueProperty("Index", 0)
-        self.parent_index = ValueProperty("ParentIndex", 0)
-        self.sibling_index = ValueProperty("SiblingIndex", 0)
+        # by default if a bone don't have parent or sibling there should be -1 instead of 0
+        self.parent_index = ValueProperty("ParentIndex", -1)
+        self.sibling_index = ValueProperty("SiblingIndex", -1)
         self.flags = FlagsProperty("Flags")
         self.translation = VectorProperty("Translation")
         self.rotation = QuaternionProperty("Rotation")
@@ -397,7 +399,7 @@ class Drawable(ElementTree, AbstractClass):
         self.skeleton = SkeletonProperty()
         self.joints = JointsProperty()
         # is embedded collision always type of composite? have to check
-        self.bound = BoundsComposite()
+        self.bound = None
         self.drawable_models_high = DrawableModelListProperty(
             "DrawableModelsHigh")
         self.drawable_models_med = DrawableModelListProperty(
@@ -407,10 +409,62 @@ class Drawable(ElementTree, AbstractClass):
         self.drawable_models_vlow = DrawableModelListProperty(
             "DrawableModelsVeryLow")
 
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = super().from_xml(element)
+        for child in element.iter():
+            if 'type' in child.attrib:
+                bound_type = child.get('type')
+                child.tag = 'Item'
+                if bound_type == 'Box':
+                    new.bound = BoundBox.from_xml(child)
+                elif bound_type == 'Sphere':
+                    new.bound = BoundSphere.from_xml(child)
+                elif bound_type == 'Capsule':
+                    new.bound = BoundCapsule.from_xml(child)
+                elif bound_type == 'Cylinder':
+                    new.bound = BoundCylinder.from_xml(child)
+                elif bound_type == 'Disc':
+                    new.bound = BoundDisc.from_xml(child)
+                elif bound_type == 'Cloth':
+                    new.bound = BoundCloth.from_xml(child)
+                elif bound_type == 'Geometry':
+                    new.bound = BoundGeometry.from_xml(child)
+                elif bound_type == 'GeometryBVH':
+                    new.bound = BoundGeometryBVH.from_xml(child)
 
-class DrawableDictionary(ListProperty):
-    list_type = Drawable
+                if new.bound:
+                    new.bound.tag_name = 'Bounds'
+
+        return new
+
+
+class DrawableDictionary(Mapping, Element):
     tag_name = "DrawableDictionary"
+
+    def __init__(self, value=None):
+        super().__init__()
+        self._value = value or {}
+        self._key = None
+
+    # Access drawables by indexing the name (i.e. DrawableDictionary[<drawable name>])
+    def __getitem__(self, name):
+        try:
+            return self._value[name]
+        except KeyError:
+            raise KeyError(f"Drawable with name '{name}' not found!")
+
+    def __setitem__(self, key, value):
+        self._value[key] = value
+
+    def __iter__(self):
+        return iter(self._value)
+
+    def __len__(self):
+        return len(self._value)
+
+    def sort(self, key):
+        self._value = dict(sorted(self._value.items(), key=key))
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -419,18 +473,19 @@ class DrawableDictionary(ListProperty):
         children = element.findall(new.tag_name)
 
         for child in children:
-            new.value.append(new.list_type.from_xml(child))
+            drawable = Drawable.from_xml(child)
+            new._value[drawable.name] = drawable
 
         return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        for item in self.value:
-            if isinstance(item, self.list_type):
-                item.tag_name = "Item"
-                element.append(item.to_xml())
+        for drawable in self._value.values():
+            if isinstance(drawable, Drawable):
+                drawable.tag_name = "Item"
+                element.append(drawable.to_xml())
             else:
                 raise TypeError(
-                    f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                    f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!")
 
         return element

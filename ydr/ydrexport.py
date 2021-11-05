@@ -7,7 +7,7 @@ from Sollumz.resources.shader import ShaderManager
 from Sollumz.tools.meshhelper import *
 from Sollumz.tools.utils import StringHelper, ListHelper
 from Sollumz.tools.blenderhelper import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel
+from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel, FragmentType
 from Sollumz.ybn.ybnexport import composite_from_object
 
 
@@ -471,9 +471,6 @@ def drawable_from_object(obj, exportpath, bones=None):
         elif child.sollum_type == BoundType.COMPOSITE:
             drawable.bound = composite_from_object(child)
 
-    if not len(drawable.bound.children) > 0:
-        drawable.bound = None
-
     # flags = model count for each lod
     drawable.flags_high = highmodel_count
     drawable.flags_med = medmodel_count
@@ -486,6 +483,8 @@ def drawable_from_object(obj, exportpath, bones=None):
 
 def export_ydr(op, obj, filepath):
     try:
+        if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
+            return False
         drawable_from_object(obj, filepath, None).write_xml(filepath)
         return f"Succesfully exported : {filepath}"
     except:

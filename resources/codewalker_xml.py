@@ -267,7 +267,7 @@ class VectorProperty(ElementProperty):
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z']):
             return VectorProperty.read_value_error(element)
-    
+
         return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')), float(element.get('z')))))
 
     def to_xml(self):

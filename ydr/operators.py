@@ -16,7 +16,7 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
         selected = context.selected_objects
         if len(selected) == 0:
             create_drawable()
-            return self.success()
+            return True
         else:
             convert_selected_to_drawable(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
@@ -33,7 +33,18 @@ class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         create_drawable(DrawableType.DRAWABLE_MODEL)
-        return self.success()
+        return True
+
+
+class SOLLUMZ_OT_create_drawable_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Create a sollumz drawable dictionary"""
+    bl_idname = "sollumz.createdrawabledictionary"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_DICTIONARY]}"
+    bl_action = "Create a Drawable Dictionary"
+
+    def run(self, context):
+        create_drawable(DrawableType.DRAWABLE_DICTIONARY)
+        return True
 
 
 class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -43,8 +54,12 @@ class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Create a Drawable Geometry"
 
     def run(self, context):
-        create_drawable(DrawableType.GEOMETRY)
-        return self.success()
+        name = SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]
+        mesh = bpy.data.meshes.new(name)
+        obj = bpy.data.objects.new(name, mesh)
+        obj.sollum_type = DrawableType.GEOMETRY
+        bpy.context.collection.objects.link(obj)
+        return True
 
 
 class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):

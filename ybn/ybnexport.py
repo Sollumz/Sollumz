@@ -1,8 +1,9 @@
 import traceback
+
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.tools.meshhelper import *
-from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType
+from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType, DrawableType, FragmentType
 
 
 class NoGeometryError(Exception):
@@ -268,6 +269,8 @@ def bounds_from_object(obj):
 
 def export_ybn(op, obj, filepath):
     try:
+        if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE or obj.parent.sollum_type == FragmentType.FRAGMENT):
+            return False
         bounds_from_object(obj).write_xml(filepath)
         return f"Succesfully exported : {filepath}"
     except:

@@ -41,6 +41,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     import_directory: bpy.props.BoolProperty(
         name="Import Directory",
+        description="Import the entire directory.",
         default=False,
     )
 
@@ -92,9 +93,9 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     )
 
     export_type: bpy.props.EnumProperty(
-        items=[("export_all", "Export All", "This option lets you export all objects in the scene of your choosen export type to be exported."),
+        items=[("export_all", "Export All", "Export all objects in the scene."),
                ("export_selected", "Export Selected",
-                "This option lets you export the selected objects of your choosen export type to be exported.")],
+                "Export selected objects in the scene.")],
         description="The method in which you want to export your scene.",
         name="Export Type",
         default="export_all"
@@ -138,9 +139,15 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if len(objects) > 0:
             for obj in objects:
+                mode = obj.mode
+                # Switch to object mode during export
+                if mode != 'EDIT':
+                    bpy.ops.object.mode_set(mode='OBJECT')
                 msg = self.export_object(obj)
                 if msg != False:
                     self.messages.append(msg)
+                if obj.mode != mode:
+                    bpy.ops.object.mode_set(mode=mode)
 
         return self.success(None, False)
 
@@ -181,12 +188,15 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
         try:
             ymap = YMAP.from_xml_file(self.filepath)
-            for obj in context.collection.objects:
-                for entity in ymap.entities:
-                    if(entity.archetype_name == obj.name):
-                        obj.location = entity.position
-                        self.apply_entity_properties(obj, entity)
-            return self.success(f"succesfully imported : {self.filepath}", True, False)
+            if ymap.entities:
+                for obj in context.collection.objects:
+                    for entity in ymap.entities:
+                        if(entity.archetype_name == obj.name):
+                            obj.location = entity.position
+                            self.apply_entity_properties(obj, entity)
+                return self.success(f"succesfully imported : {self.filepath}", True, False)
+            else:
+                return self.fail(f"{self.filepath} contains no entities to import!")
         except:
             return self.fail(traceback.format_exc())
             # return False # shouldnt do this because otherwise it wont print the correct error
