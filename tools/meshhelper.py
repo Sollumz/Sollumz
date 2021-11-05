@@ -60,6 +60,7 @@ def create_sphere(mesh, radius=1):
     bm.free()
     return mesh
 
+
 def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
     bm = bmesh.new()
     bmesh.ops.create_cone(
@@ -255,6 +256,10 @@ def get_max_vector(v, c):
     return r
 
 
+def divide_vectors(a, b):
+    return Vector((a.x/b.x, a.y/b.y, a.z/b.z))
+
+
 def get_local_verts(verts):
     verts = np.array(verts)
     local_verts = []
@@ -279,31 +284,40 @@ def flip_uv(uv):
     return [u, v]
 
 
-# see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
-"""Multiply 3d coord list by matrix"""
-
-
-def np_matmul_coords(coords, matrix, space=None):
-    M = (space @ matrix @ space.inverted() if space else matrix).transposed()
-    ones = np.ones((coords.shape[0], 1))
-    coords4d = np.hstack((coords, ones))
-
-    return np.dot(coords4d, M)[:, :-1]
-
-
 """Get min and max bounds for an object and all of its children"""
 
 
-def get_bb_extents(obj):
-    bbs = get_total_bounds(obj, True)
+def vector_min(vecs):
+    x = []
+    y = []
+    z = []
+    for v in vecs:
+        x.append(v[0])
+        y.append(v[1])
+        z.append(v[2])
+    return Vector((min(x), min(y), min(z)))
 
-    return Vector(bbs.min(axis=0) - obj.location), Vector(bbs.max(axis=0) - obj.location)
+
+def vector_max(vecs):
+    x = []
+    y = []
+    z = []
+    for v in vecs:
+        x.append(v[0])
+        y.append(v[1])
+        z.append(v[2])
+    return Vector((max(x), max(y), max(z)))
 
 
-"""Get the bounding box of an object and all of it's children"""
+def get_bound_extents(obj, world=True):
+    # bbs = np.array(get_total_bounds(obj))
+
+    # return Vector(bbs.min(axis=0) - obj.location), Vector(bbs.max(axis=0) - obj.location)
+    corners = get_total_bounds(obj, world)
+    return vector_min(corners), vector_max(corners)
 
 
-def get_total_bounds(obj, np_array=False):
+def get_total_bounds(obj, world=True):
     objects = []
 
     # Ensure all objects are meshes
@@ -315,27 +329,17 @@ def get_total_bounds(obj, np_array=False):
         raise ValueError(
             'Failed to get bounds: Object has no geometry data or children with geometry data.')
 
-    # get the global coordinates of all object bounding box corners
-    np_bounds = np.vstack(
-        tuple(
-            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
-            for o in objects
-            if o.type == "MESH"
-        )
-    )
+    corners = []
+    for obj in objects:
+        for pos in obj.bound_box:
+            corners.append(obj.matrix_world @ Vector(pos)
+                           if world else Vector(pos))
 
-    if np_array:
-        return np_bounds
-
-    bounds = []
-    for vert in np_bounds:
-        bounds.append(Vector(vert))
-
-    return bounds
+    return corners
 
 
-def get_bound_center(obj):
-    bbmin, bbmax = get_bb_extents(obj)
+def get_bound_center(obj, world=True):
+    bbmin, bbmax = get_bound_extents(obj, world)
     center = (bbmin + bbmax) / 2
 
     return center
@@ -359,7 +363,7 @@ def get_children_recursive(obj):
 
 
 def get_obj_radius(obj):
-    bb_min, bb_max = get_bb_extents(obj)
+    bb_min, bb_max = get_bound_extents(obj)
 
     p1 = Vector((bb_min.x, bb_min.y, 0))
     p2 = Vector((bb_max.x, bb_max.y, 0))

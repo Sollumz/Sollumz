@@ -83,7 +83,8 @@ def get_obb_dimensions(bbmin, bbmax):
 
 
 def get_obb_extents(obb):
-    np_obb = np.array(obb)
+    np_obb = np.array(obb, dtype=Vector)
+    print(np_obb.min(axis=0))
     return Vector(np_obb.min(axis=0)), Vector(np_obb.max(axis=0))
 
 

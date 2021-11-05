@@ -249,9 +249,17 @@ def init_bound_obj(bound, sollum_type):
             if f.lower() == prop:
                 setattr(obj.composite_flags2, prop, True)
 
-    obj.location = bound.composite_position
-    obj.rotation_euler = bound.composite_rotation.to_euler()
-    obj.scale = Vector([1, 1, 1])
+    mat = bound.composite_rotation.to_matrix().to_4x4()
+    # Set scale
+    mat[0][0] = bound.composite_scale.x
+    mat[1][1] = bound.composite_scale.y
+    mat[2][2] = bound.composite_scale.z
+    # Set position
+    mat[0][3] = bound.composite_position.x
+    mat[1][3] = bound.composite_position.y
+    mat[2][3] = bound.composite_position.z
+
+    obj.matrix_world = mat
 
     bpy.context.collection.objects.link(obj)
 
@@ -281,7 +289,7 @@ def bound_to_obj(bound):
         extent = bbmax - bbmin
         length = extent.y
         radius = extent.x * 0.5
-        cylinder.scale = Vector([1, 1, 1])
+        # cylinder.scale = Vector([1, 1, 1])
         create_cylinder(cylinder.data, radius, length)
 
         return cylinder

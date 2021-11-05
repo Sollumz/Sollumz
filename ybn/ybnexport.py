@@ -3,6 +3,7 @@ import traceback
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.tools.meshhelper import *
+from Sollumz.tools.obb import get_obb, get_obb_extents
 from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType, DrawableType, FragmentType
 
 
@@ -200,9 +201,12 @@ def init_bound_item(bound_item, obj):
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
 
-    bound_item.composite_position = obj.location
-    bound_item.composite_rotation = obj.rotation_euler.to_quaternion().normalized()
-    bound_item.composite_scale = Vector([1, 1, 1])
+    position, rotation, scale = obj.matrix_world.decompose()
+    bound_item.composite_position = position
+    bound_item.composite_rotation = rotation.normalized()
+    # Get scale directly from matrix (decompose gives incorrect scale)
+    bound_item.composite_scale = Vector(
+        (obj.matrix_world[0][0], obj.matrix_world[1][1], obj.matrix_world[2][2]))
     if obj.active_material and obj.active_material.sollum_type == MaterialType.COLLISION:
         bound_item.material_index = obj.active_material.collision_properties.collision_index
 
@@ -210,10 +214,10 @@ def init_bound_item(bound_item, obj):
 
 
 def init_bound(bound, obj):
-    bbmin, bbmax = get_bb_extents(obj)
+    bbmin, bbmax = get_bound_extents(obj, world=False)
     bound.box_min = bbmin
     bound.box_max = bbmax
-    center = get_bound_center(obj)
+    center = get_bound_center(obj, world=False)
     bound.box_center = center
     bound.sphere_center = center
     bound.sphere_radius = get_obj_radius(obj)
