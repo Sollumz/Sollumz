@@ -481,11 +481,7 @@ def drawable_from_object(obj, exportpath, bones=None):
     return drawable
 
 
-def export_ydr(op, obj, filepath):
-    try:
-        if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
-            return False
-        drawable_from_object(obj, filepath, None).write_xml(filepath)
-        return f"Succesfully exported : {filepath}"
-    except:
-        return f"Error exporting : {filepath} \n {traceback.format_exc()}"
+def export_ydr(obj, filepath):
+    if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
+        return False
+    drawable_from_object(obj, filepath, None).write_xml(filepath)

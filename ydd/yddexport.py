@@ -31,9 +31,5 @@ def drawable_dict_from_object(obj, filepath):
     return drawable_dict
 
 
-def export_ydd(op, obj, filepath):
-    try:
-        drawable_dict_from_object(obj, filepath).write_xml(filepath)
-        return f"Succesfully exported : {filepath}"
-    except:
-        return f"Error exporting : {filepath} \n {traceback.format_exc()}"
+def export_ydd(obj, filepath):
+    drawable_dict_from_object(obj, filepath).write_xml(filepath)

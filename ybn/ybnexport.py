@@ -274,11 +274,7 @@ def bounds_from_object(obj):
     return bounds
 
 
-def export_ybn(op, obj, filepath):
-    try:
-        if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE or obj.parent.sollum_type == FragmentType.FRAGMENT):
-            return False
-        bounds_from_object(obj).write_xml(filepath)
-        return f"Succesfully exported : {filepath}"
-    except:
-        return f"Error exporting : {filepath} \n {traceback.format_exc()}"
+def export_ybn(obj, filepath):
+    if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE or obj.parent.sollum_type == FragmentType.FRAGMENT):
+        return False
+    bounds_from_object(obj).write_xml(filepath)
