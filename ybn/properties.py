@@ -154,8 +154,6 @@ def register():
 
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(
         type=BoundProperties)
-    bpy.types.Object.bound_scale = bpy.props.FloatVectorProperty(
-        name="Bound Scale", description="The scale of the bound.")
 
     #nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(

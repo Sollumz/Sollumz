@@ -74,7 +74,8 @@ def polygon_from_object(obj, geometry):
         sphere.v = len(vertices) - 1
         bound_box = get_total_bounds(obj)
 
-        radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
+        radius = VectorHelper.get_distance_of_vectors(
+            bound_box[1], bound_box[2]) / 2
 
         sphere.radius = radius
 
@@ -89,8 +90,10 @@ def polygon_from_object(obj, geometry):
         bound_box = get_total_bounds(obj)
 
         # Get bound height
-        height = get_distance_of_vectors(bound_box[0], bound_box[1])
-        radius = get_distance_of_vectors(bound_box[1], bound_box[2]) / 2
+        height = VectorHelper.get_distance_of_vectors(
+            bound_box[0], bound_box[1])
+        radius = VectorHelper.get_distance_of_vectors(
+            bound_box[1], bound_box[2]) / 2
 
         if obj.sollum_type == PolygonType.CAPSULE:
             height = height - (radius * 2)

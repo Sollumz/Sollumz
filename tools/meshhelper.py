@@ -1,9 +1,9 @@
-import bpy
 import bmesh
 import numpy as np
-from mathutils import Vector, Matrix, Quaternion, Euler
+from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
-from math import cos, inf, sin, degrees, radians, sqrt, atan2
+from math import radians
+from Sollumz.tools.utils import VectorHelper
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):
@@ -157,126 +157,6 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def get_closest_axis_point(axis: Vector, center: Vector, points: list) -> Vector:
-
-    closest = None
-    closestDist = inf
-
-    for p in points:
-
-        rel = (p - center).normalized()
-        dist = (rel - axis).length
-
-        if dist < closestDist:
-            closest = p
-            closestDist = dist
-
-    return closest
-
-
-def get_distance_of_vectors(a: Vector, b: Vector) -> float:
-    locx = b.x - a.x
-    locy = b.y - a.y
-    locz = b.z - a.z
-
-    distance = sqrt((locx) ** 2 + (locy) ** 2 + (locz) ** 2)
-    return distance
-
-
-def get_direction_of_vectors(a: Vector, b: Vector) -> Euler:
-    direction = (a - b).normalized()
-    axis_align = Vector((0.0, 0.0, 1.0))
-
-    angle = axis_align.angle(direction)
-    axis = axis_align.cross(direction)
-
-    q = Quaternion(axis, angle)
-
-    return q.to_euler("XYZ")
-
-
-def add_vector_list(list1, list2):
-    x = list1[0] + list2[0]
-    y = list1[1] + list2[1]
-    z = list1[2] + list2[2]
-    return [x, y, z]
-
-
-def subtract_vector_list(list1, list2):
-    x = list1[0] - list2[0]
-    y = list1[1] - list2[1]
-    z = list1[2] - list2[2]
-    return [x, y, z]
-
-
-def multiple_vector_list(list, num):
-    x = list[0] * num
-    y = list[1] * num
-    z = list[2] * num
-    return [x, y, z]
-
-
-def get_vector_list_length(list):
-    sx = list[0] ** 2
-    sy = list[1] ** 2
-    sz = list[2] ** 2
-    length = (sx + sy + sz) ** 0.5
-    return length
-
-
-def subtract_from_vector(v, f):
-    r = Vector((0, 0, 0))
-    r.x = v.x - f
-    r.y = v.y - f
-    r.z = v.z - f
-    return r
-
-
-def add_to_vector(v, f):
-    r = Vector((0, 0, 0))
-    r.x = v.x + f
-    r.y = v.y + f
-    r.z = v.z + f
-    return r
-
-
-def get_min_vector(v, c):
-    r = Vector((0, 0, 0))
-    r.x = min(v.x, c.x)
-    r.y = min(v.y, c.y)
-    r.z = min(v.z, c.z)
-    return r
-
-
-def get_max_vector(v, c):
-    r = Vector((0, 0, 0))
-    r.x = max(v.x, c.x)
-    r.y = max(v.y, c.y)
-    r.z = max(v.z, c.z)
-    return r
-
-
-def divide_vectors(a, b):
-    return Vector((a.x/b.x, a.y/b.y, a.z/b.z))
-
-
-def get_local_verts(verts):
-    verts = np.array(verts)
-    local_verts = []
-    min = Vector(verts.min(axis=0))
-    max = Vector(verts.max(axis=0))
-    # scale = ((Vector(verts.min(axis=0)) + Vector(verts.max(axis=0))) / 2).magnitude
-    height = get_distance_of_vectors(min, max)
-    radius = get_distance_of_vectors(
-        Vector((max.x, max.y, 0)), Vector((min.x, min.y, 0))) / 2
-    center = ((min + max) / 2)
-    scale = 20
-    for vert in verts:
-        vert = Vector(vert)
-        local_verts.append(vert)
-    return np.array(local_verts)
-
-
 def flip_uv(uv):
     u = uv[0]
     v = (uv[1] - 1.0) * -1
@@ -287,34 +167,9 @@ def flip_uv(uv):
 """Get min and max bounds for an object and all of its children"""
 
 
-def vector_min(vecs):
-    x = []
-    y = []
-    z = []
-    for v in vecs:
-        x.append(v[0])
-        y.append(v[1])
-        z.append(v[2])
-    return Vector((min(x), min(y), min(z)))
-
-
-def vector_max(vecs):
-    x = []
-    y = []
-    z = []
-    for v in vecs:
-        x.append(v[0])
-        y.append(v[1])
-        z.append(v[2])
-    return Vector((max(x), max(y), max(z)))
-
-
 def get_bound_extents(obj, world=True):
-    # bbs = np.array(get_total_bounds(obj))
-
-    # return Vector(bbs.min(axis=0) - obj.location), Vector(bbs.max(axis=0) - obj.location)
     corners = get_total_bounds(obj, world)
-    return vector_min(corners), vector_max(corners)
+    return VectorHelper.get_min_vector_list(corners), VectorHelper.get_max_vector_list(corners)
 
 
 def get_total_bounds(obj, world=True):
@@ -369,7 +224,7 @@ def get_obj_radius(obj):
     p2 = Vector((bb_max.x, bb_max.y, 0))
 
     # Distance between bb_min and bb_max x,y values
-    distance = get_distance_of_vectors(p1, p2)
+    distance = VectorHelper.get_distance_of_vectors(p1, p2)
     return distance / 2
 
 
