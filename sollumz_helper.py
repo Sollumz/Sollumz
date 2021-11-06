@@ -54,7 +54,7 @@ class SOLLUMZ_OT_base:
         return True
 
     def fail(self, traceback):
-        self.error(f"Failure to {self.bl_action} because: \n {traceback}")
+        self.error(f"Failure to {self.bl_action}: \n {traceback}")
         return False
 
 

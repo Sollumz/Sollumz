@@ -1,9 +1,9 @@
-import bpy
 import bmesh
 import numpy as np
-from mathutils import Vector, Matrix, Quaternion, Euler
+from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
-from math import cos, inf, sin, degrees, radians, sqrt, atan2
+from math import radians
+from Sollumz.tools.utils import VectorHelper
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):
@@ -59,6 +59,7 @@ def create_sphere(mesh, radius=1):
     bm.to_mesh(mesh)
     bm.free()
     return mesh
+
 
 def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
     bm = bmesh.new()
@@ -156,122 +157,6 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def get_closest_axis_point(axis: Vector, center: Vector, points: list) -> Vector:
-
-    closest = None
-    closestDist = inf
-
-    for p in points:
-
-        rel = (p - center).normalized()
-        dist = (rel - axis).length
-
-        if dist < closestDist:
-            closest = p
-            closestDist = dist
-
-    return closest
-
-
-def get_distance_of_vectors(a: Vector, b: Vector) -> float:
-    locx = b.x - a.x
-    locy = b.y - a.y
-    locz = b.z - a.z
-
-    distance = sqrt((locx) ** 2 + (locy) ** 2 + (locz) ** 2)
-    return distance
-
-
-def get_direction_of_vectors(a: Vector, b: Vector) -> Euler:
-    direction = (a - b).normalized()
-    axis_align = Vector((0.0, 0.0, 1.0))
-
-    angle = axis_align.angle(direction)
-    axis = axis_align.cross(direction)
-
-    q = Quaternion(axis, angle)
-
-    return q.to_euler("XYZ")
-
-
-def add_vector_list(list1, list2):
-    x = list1[0] + list2[0]
-    y = list1[1] + list2[1]
-    z = list1[2] + list2[2]
-    return [x, y, z]
-
-
-def subtract_vector_list(list1, list2):
-    x = list1[0] - list2[0]
-    y = list1[1] - list2[1]
-    z = list1[2] - list2[2]
-    return [x, y, z]
-
-
-def multiple_vector_list(list, num):
-    x = list[0] * num
-    y = list[1] * num
-    z = list[2] * num
-    return [x, y, z]
-
-
-def get_vector_list_length(list):
-    sx = list[0] ** 2
-    sy = list[1] ** 2
-    sz = list[2] ** 2
-    length = (sx + sy + sz) ** 0.5
-    return length
-
-
-def subtract_from_vector(v, f):
-    r = Vector((0, 0, 0))
-    r.x = v.x - f
-    r.y = v.y - f
-    r.z = v.z - f
-    return r
-
-
-def add_to_vector(v, f):
-    r = Vector((0, 0, 0))
-    r.x = v.x + f
-    r.y = v.y + f
-    r.z = v.z + f
-    return r
-
-
-def get_min_vector(v, c):
-    r = Vector((0, 0, 0))
-    r.x = min(v.x, c.x)
-    r.y = min(v.y, c.y)
-    r.z = min(v.z, c.z)
-    return r
-
-
-def get_max_vector(v, c):
-    r = Vector((0, 0, 0))
-    r.x = max(v.x, c.x)
-    r.y = max(v.y, c.y)
-    r.z = max(v.z, c.z)
-    return r
-
-
-def get_local_verts(verts):
-    verts = np.array(verts)
-    local_verts = []
-    min = Vector(verts.min(axis=0))
-    max = Vector(verts.max(axis=0))
-    # scale = ((Vector(verts.min(axis=0)) + Vector(verts.max(axis=0))) / 2).magnitude
-    height = get_distance_of_vectors(min, max)
-    radius = get_distance_of_vectors(
-        Vector((max.x, max.y, 0)), Vector((min.x, min.y, 0))) / 2
-    center = ((min + max) / 2)
-    scale = 20
-    for vert in verts:
-        vert = Vector(vert)
-        local_verts.append(vert)
-    return np.array(local_verts)
-
-
 def flip_uv(uv):
     u = uv[0]
     v = (uv[1] - 1.0) * -1
@@ -279,31 +164,15 @@ def flip_uv(uv):
     return [u, v]
 
 
-# see https://blender.stackexchange.com/questions/223858/how-do-i-get-the-bounding-box-of-all-objects-in-a-scene
-"""Multiply 3d coord list by matrix"""
-
-
-def np_matmul_coords(coords, matrix, space=None):
-    M = (space @ matrix @ space.inverted() if space else matrix).transposed()
-    ones = np.ones((coords.shape[0], 1))
-    coords4d = np.hstack((coords, ones))
-
-    return np.dot(coords4d, M)[:, :-1]
-
-
 """Get min and max bounds for an object and all of its children"""
 
 
-def get_bb_extents(obj):
-    bbs = get_total_bounds(obj, True)
-
-    return Vector(bbs.min(axis=0) - obj.location), Vector(bbs.max(axis=0) - obj.location)
-
-
-"""Get the bounding box of an object and all of it's children"""
+def get_bound_extents(obj, world=True):
+    corners = get_total_bounds(obj, world)
+    return VectorHelper.get_min_vector_list(corners), VectorHelper.get_max_vector_list(corners)
 
 
-def get_total_bounds(obj, np_array=False):
+def get_total_bounds(obj, world=True):
     objects = []
 
     # Ensure all objects are meshes
@@ -315,27 +184,17 @@ def get_total_bounds(obj, np_array=False):
         raise ValueError(
             'Failed to get bounds: Object has no geometry data or children with geometry data.')
 
-    # get the global coordinates of all object bounding box corners
-    np_bounds = np.vstack(
-        tuple(
-            np_matmul_coords(np.array(o.bound_box), o.matrix_world.copy())
-            for o in objects
-            if o.type == "MESH"
-        )
-    )
+    corners = []
+    for obj in objects:
+        for pos in obj.bound_box:
+            corners.append(obj.matrix_world @ Vector(pos)
+                           if world else Vector(pos))
 
-    if np_array:
-        return np_bounds
-
-    bounds = []
-    for vert in np_bounds:
-        bounds.append(Vector(vert))
-
-    return bounds
+    return corners
 
 
-def get_bound_center(obj):
-    bbmin, bbmax = get_bb_extents(obj)
+def get_bound_center(obj, world=True):
+    bbmin, bbmax = get_bound_extents(obj, world)
     center = (bbmin + bbmax) / 2
 
     return center
@@ -359,13 +218,13 @@ def get_children_recursive(obj):
 
 
 def get_obj_radius(obj):
-    bb_min, bb_max = get_bb_extents(obj)
+    bb_min, bb_max = get_bound_extents(obj)
 
     p1 = Vector((bb_min.x, bb_min.y, 0))
     p2 = Vector((bb_max.x, bb_max.y, 0))
 
     # Distance between bb_min and bb_max x,y values
-    distance = get_distance_of_vectors(p1, p2)
+    distance = VectorHelper.get_distance_of_vectors(p1, p2)
     return distance / 2
 
 

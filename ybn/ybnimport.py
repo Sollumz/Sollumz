@@ -5,6 +5,7 @@ from Sollumz.sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
 from Sollumz.tools.meshhelper import *
+from Sollumz.tools.utils import VectorHelper
 import os
 import traceback
 from mathutils import Matrix
@@ -40,10 +41,10 @@ def poly_to_obj(poly, materials, vertices):
         # caclulate obj center
         center = (cf3 + cf4) / 2
 
-        rightest = get_closest_axis_point(Vector((1, 0, 0)), center, [
-                                          cf1, cf2, cf3, cf4, cf5, cf6])
-        upest = get_closest_axis_point(Vector((0, 0, 1)), center, [
-                                       cf1, cf2, cf3, cf4, cf5, cf6])
+        rightest = VectorHelper.get_closest_axis_point(Vector((1, 0, 0)), center, [
+            cf1, cf2, cf3, cf4, cf5, cf6])
+        upest = VectorHelper.get_closest_axis_point(Vector((0, 0, 1)), center, [
+            cf1, cf2, cf3, cf4, cf5, cf6])
         right = (rightest - center).normalized()
         up = (upest - center).normalized()
         forward = Vector.cross(right, up).normalized()
@@ -62,12 +63,12 @@ def poly_to_obj(poly, materials, vertices):
         # calculate scale
         seq = [cf1, cf2, cf3, cf4, cf5, cf6]
 
-        _cf1 = get_closest_axis_point(right,    center, seq)
-        _cf2 = get_closest_axis_point(-right,   center, seq)
-        _cf3 = get_closest_axis_point(-up,      center, seq)
-        _cf4 = get_closest_axis_point(up,       center, seq)
-        _cf5 = get_closest_axis_point(-forward, center, seq)
-        _cf6 = get_closest_axis_point(forward,  center, seq)
+        _cf1 = VectorHelper.get_closest_axis_point(right,    center, seq)
+        _cf2 = VectorHelper.get_closest_axis_point(-right,   center, seq)
+        _cf3 = VectorHelper.get_closest_axis_point(-up,      center, seq)
+        _cf4 = VectorHelper.get_closest_axis_point(up,       center, seq)
+        _cf5 = VectorHelper.get_closest_axis_point(-forward, center, seq)
+        _cf6 = VectorHelper.get_closest_axis_point(forward,  center, seq)
 
         W = (_cf2 - _cf1).length
         L = (_cf3 - _cf4).length
@@ -98,8 +99,9 @@ def poly_to_obj(poly, materials, vertices):
         capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = get_distance_of_vectors(v1, v2) + (poly.radius * 2)
-        rot = get_direction_of_vectors(v1, v2)
+        length = VectorHelper.get_distance_of_vectors(
+            v1, v2) + (poly.radius * 2)
+        rot = VectorHelper.get_direction_of_vectors(v1, v2)
 
         create_capsule(capsule, poly.radius, length)
 
@@ -112,8 +114,8 @@ def poly_to_obj(poly, materials, vertices):
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
 
-        length = get_distance_of_vectors(v1, v2)
-        rot = get_direction_of_vectors(v1, v2)
+        length = VectorHelper.get_distance_of_vectors(v1, v2)
+        rot = VectorHelper.get_direction_of_vectors(v1, v2)
 
         cylinder.data = create_cylinder(
             cylinder.data, poly.radius, length, rot_mat=None)
@@ -249,9 +251,17 @@ def init_bound_obj(bound, sollum_type):
             if f.lower() == prop:
                 setattr(obj.composite_flags2, prop, True)
 
-    obj.location = bound.composite_position
-    obj.rotation_euler = bound.composite_rotation.to_euler()
-    obj.scale = Vector([1, 1, 1])
+    mat = bound.composite_rotation.to_matrix().to_4x4()
+    # Set scale
+    mat[0][0] = bound.composite_scale.x
+    mat[1][1] = bound.composite_scale.y
+    mat[2][2] = bound.composite_scale.z
+    # Set position
+    mat[0][3] = bound.composite_position.x
+    mat[1][3] = bound.composite_position.y
+    mat[2][3] = bound.composite_position.z
+
+    obj.matrix_world = mat
 
     bpy.context.collection.objects.link(obj)
 
@@ -281,7 +291,7 @@ def bound_to_obj(bound):
         extent = bbmax - bbmin
         length = extent.y
         radius = extent.x * 0.5
-        cylinder.scale = Vector([1, 1, 1])
+        # cylinder.scale = Vector([1, 1, 1])
         create_cylinder(cylinder.data, radius, length)
 
         return cylinder
@@ -325,10 +335,6 @@ def composite_to_obj(bounds, name, from_drawable=False):
 
 
 def import_ybn(filepath):
-    try:
-        ybn_xml = YBN.from_xml_file(filepath)
-        composite_to_obj(ybn_xml, os.path.basename(
-            filepath.replace(YBN.file_extension, '')))
-        return f"Succesfully imported : {filepath}"
-    except:
-        return f"Error importing : {filepath} \n {traceback.format_exc()}"
+    ybn_xml = YBN.from_xml_file(filepath)
+    composite_to_obj(ybn_xml, os.path.basename(
+        filepath.replace(YBN.file_extension, '')))

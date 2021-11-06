@@ -23,7 +23,8 @@ import time
 from mathutils import Vector, Matrix
 from bpy.props import BoolProperty, FloatProperty, IntProperty, EnumProperty
 import numpy as np
-from Sollumz.tools.meshhelper import get_distance_of_vectors, create_box_from_extents
+from Sollumz.tools.meshhelper import create_box_from_extents
+from Sollumz.tools.utils import VectorHelper
 
 
 def bbox_orient(bme_verts, mx):
@@ -49,22 +50,22 @@ def bbox_vol(box):
     return V
 
 
-def box_cords(box):
+def box_coords(box):
     '''
     returns vertices in same configuration as default cube in blender
     easy to asign v.co of a cube primitive
     '''
-    cords = [Vector((box[0], box[2], box[4])),
-             Vector((box[0], box[2], box[5])),
-             Vector((box[0], box[3], box[4])),
-             Vector((box[0], box[3], box[5])),
-             Vector((box[1], box[2], box[4])),
-             Vector((box[1], box[2], box[5])),
-             Vector((box[1], box[3], box[4])),
-             Vector((box[1], box[3], box[5])),
-             ]
+    coords = [Vector((box[0], box[2], box[4])),
+              Vector((box[0], box[2], box[5])),
+              Vector((box[0], box[3], box[4])),
+              Vector((box[0], box[3], box[5])),
+              Vector((box[1], box[2], box[4])),
+              Vector((box[1], box[2], box[5])),
+              Vector((box[1], box[3], box[4])),
+              Vector((box[1], box[3], box[5])),
+              ]
 
-    return cords
+    return coords
 
 
 def get_obb_dimensions(bbmin, bbmax):
@@ -75,7 +76,7 @@ def get_obb_dimensions(bbmin, bbmax):
     for edge in bbox.edges:
         v1 = bbox.vertices[edge.vertices[0]].co
         v2 = bbox.vertices[edge.vertices[1]].co
-        edge_lengths.append(get_distance_of_vectors(v1, v2))
+        edge_lengths.append(VectorHelper.get_distance_of_vectors(v1, v2))
     edge_lengths = np.array(edge_lengths)
     height = edge_lengths.max(axis=0)
     width = edge_lengths.min(axis=0)
@@ -83,7 +84,8 @@ def get_obb_dimensions(bbmin, bbmax):
 
 
 def get_obb_extents(obb):
-    np_obb = np.array(obb)
+    np_obb = np.array(obb, dtype=Vector)
+    print(np_obb.min(axis=0))
     return Vector(np_obb.min(axis=0)), Vector(np_obb.max(axis=0))
 
 
@@ -150,6 +152,6 @@ def get_obb(verts):
     rot_mat = fmx.decompose()[1].to_matrix().to_4x4()
     print(rot_mat.to_quaternion(), axis)
 
-    box_verts = box_cords(min_box)
+    box_verts = box_coords(min_box)
 
     return box_verts, axis, fmx

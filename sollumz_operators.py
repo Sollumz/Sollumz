@@ -46,31 +46,47 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     )
 
     def import_file(self, filepath, ext):
-        if ext == YDR.file_extension:
-            result = import_ydr(filepath)
-        elif ext == YDD.file_extension:
-            result = import_ydd(filepath)
-        elif ext == YFT.file_extension:
-            result = import_yft(filepath)
-        elif ext == YBN.file_extension:
-            result = import_ybn(filepath)
-        else:
-            pass
-        return result
+        try:
+            valid_type = False
+            if ext == YDR.file_extension:
+                import_ydr(filepath)
+                valid_type = True
+            elif ext == YDD.file_extension:
+                import_ydd(filepath)
+                valid_type = True
+            elif ext == YFT.file_extension:
+                import_yft(filepath)
+                valid_type = True
+            elif ext == YBN.file_extension:
+                import_ybn(filepath)
+                valid_type = True
+
+            if valid_type:
+                self.message(f"Succesfully imported: {filepath}")
+        except:
+            self.error(
+                f"Error importing: {filepath} \n {traceback.format_exc()}")
+            return False
+
+        return True
 
     def run(self, context):
-        if(self.import_directory):
+        result = False
+        if self.import_directory:
             folderpath = os.path.dirname(self.filepath)
             for file in os.listdir(folderpath):
                 ext = ''.join(pathlib.Path(file).suffixes)
                 if ext in self.filename_exts:
                     filepath = os.path.join(folderpath, file)
-                    self.messages.append(self.import_file(filepath, ext))
+                    result = self.import_file(filepath, ext)
         else:
             ext = ''.join(pathlib.Path(self.filepath).suffixes)
-            self.messages.append(self.import_file(self.filepath, ext))
+            result = self.import_file(self.filepath, ext)
 
-        return self.success(None, False)
+        if not result:
+            self.bl_showtime = False
+
+        return True
 
 
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -109,22 +125,36 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         return os.path.join(self.directory, filename)
 
     def export_object(self, obj):
-        if obj.sollum_type == DrawableType.DRAWABLE:
-            result = export_ydr(self,
-                                obj, self.get_filepath(obj.name + YDR.file_extension))
-        elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
-            result = export_ydd(self,
-                                obj, self.get_filepath(obj.name + YDD.file_extension))
-        elif obj.sollum_type == FragmentType.FRAGMENT:
-            result = export_yft(self,
-                                obj, self.get_filepath(obj.name + YFT.file_extension))
-        elif obj.sollum_type == BoundType.COMPOSITE:
-            result = export_ybn(self,
-                                obj, self.get_filepath(obj.name + YBN.file_extension))
-        else:
-            result = False
-
-        return result
+        try:
+            valid_type = False
+            filepath = None
+            if obj.sollum_type == DrawableType.DRAWABLE:
+                filepath = self.get_filepath(obj.name + YDR.file_extension)
+                export_ydr(
+                    obj, filepath)
+                valid_type = True
+            elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
+                filepath = self.get_filepath(obj.name + YDD.file_extension)
+                export_ydd(
+                    obj, filepath)
+                valid_type = True
+            elif obj.sollum_type == FragmentType.FRAGMENT:
+                filepath = self.get_filepath(obj.name + YFT.file_extension)
+                export_yft(
+                    obj, filepath)
+                valid_type = True
+            elif obj.sollum_type == BoundType.COMPOSITE:
+                filepath = self.get_filepath(obj.name + YBN.file_extension)
+                export_ybn(
+                    obj, filepath)
+                valid_type = True
+            if valid_type:
+                self.message(f"Succesfully exported: {filepath}")
+        except:
+            self.error(
+                f"Error exporting: {filepath} \n {traceback.format_exc()}")
+            return False
+        return True
 
     def run(self, context):
         objects = []
@@ -141,15 +171,16 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             for obj in objects:
                 mode = obj.mode
                 # Switch to object mode during export
-                if mode != 'EDIT':
+                if mode != 'OBJECT':
                     bpy.ops.object.mode_set(mode='OBJECT')
-                msg = self.export_object(obj)
-                if msg != False:
-                    self.messages.append(msg)
+                result = self.export_object(obj)
                 if obj.mode != mode:
                     bpy.ops.object.mode_set(mode=mode)
+                # Dont show time on failure
+                if not result:
+                    self.bl_showtime = False
 
-        return self.success(None, False)
+        return True
 
 
 class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):

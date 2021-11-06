@@ -277,7 +277,7 @@ def geometry_from_object(obj, bones=None):
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
 
-    bbmin, bbmax = get_bb_extents(obj_eval)
+    bbmin, bbmax = get_bound_extents(obj_eval)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
@@ -418,7 +418,7 @@ def drawable_from_object(obj, exportpath, bones=None):
     drawable.name = obj.name
     drawable.bounding_sphere_center = get_bound_center(obj)
     drawable.bounding_sphere_radius = get_obj_radius(obj)
-    bbmin, bbmax = get_bb_extents(obj)
+    bbmin, bbmax = get_bound_extents(obj)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
 
@@ -481,11 +481,7 @@ def drawable_from_object(obj, exportpath, bones=None):
     return drawable
 
 
-def export_ydr(op, obj, filepath):
-    try:
-        if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
-            return False
-        drawable_from_object(obj, filepath, None).write_xml(filepath)
-        return f"Succesfully exported : {filepath}"
-    except:
-        return f"Error exporting : {filepath} \n {traceback.format_exc()}"
+def export_ydr(obj, filepath):
+    if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
+        return False
+    drawable_from_object(obj, filepath, None).write_xml(filepath)
