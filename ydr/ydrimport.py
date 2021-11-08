@@ -129,7 +129,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
     colors = {}
 
     # gather data
-    data = geometry.vertex_buffer.data
+    data = geometry.vertex_buffer.get_data()
     for vertex in data:
         vertices.append(vertex.position)
         normals.append(vertex.normal)

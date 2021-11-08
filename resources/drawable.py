@@ -289,6 +289,12 @@ class VertexBuffer(ElementTree):
         self.data = VertexDataProperty()
         self.data2 = VertexDataProperty('Data2')
 
+    def get_data(self):
+        if len(self.data) > 0:
+            return self.data
+        else:
+            return self.data2
+
     def get_vertex_type(self):
         return self.get_element('layout').vertex_type
 
@@ -298,6 +304,7 @@ class VertexBuffer(ElementTree):
         # Convert data to namedtuple matching the layout
         vert_type = new.get_vertex_type()
         new.data = list(map(lambda vert: vert_type(*vert), new.data))
+        new.data2 = list(map(lambda vert: vert_type(*vert), new.data2))
         return new
 
 
