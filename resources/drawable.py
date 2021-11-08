@@ -155,8 +155,9 @@ class BoneItem(ElementTree):
         self.name = TextProperty("Name", "")
         self.tag = ValueProperty("Tag", 0)
         self.index = ValueProperty("Index", 0)
-        self.parent_index = ValueProperty("ParentIndex", 0)
-        self.sibling_index = ValueProperty("SiblingIndex", 0)
+        # by default if a bone don't have parent or sibling there should be -1 instead of 0
+        self.parent_index = ValueProperty("ParentIndex", -1)
+        self.sibling_index = ValueProperty("SiblingIndex", -1)
         self.flags = FlagsProperty("Flags")
         self.translation = VectorProperty("Translation")
         self.rotation = QuaternionProperty("Rotation")
@@ -288,6 +289,12 @@ class VertexBuffer(ElementTree):
         self.data = VertexDataProperty()
         self.data2 = VertexDataProperty('Data2')
 
+    def get_data(self):
+        if len(self.data) > 0:
+            return self.data
+        else:
+            return self.data2
+
     def get_vertex_type(self):
         return self.get_element('layout').vertex_type
 
@@ -297,6 +304,7 @@ class VertexBuffer(ElementTree):
         # Convert data to namedtuple matching the layout
         vert_type = new.get_vertex_type()
         new.data = list(map(lambda vert: vert_type(*vert), new.data))
+        new.data2 = list(map(lambda vert: vert_type(*vert), new.data2))
         return new
 
 
