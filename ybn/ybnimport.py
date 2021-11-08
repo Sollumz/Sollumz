@@ -99,11 +99,10 @@ def poly_to_obj(poly, materials, vertices):
         capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = VectorHelper.get_distance_of_vectors(
-            v1, v2) + (poly.radius * 2)
+        length = (v1 - v2).length + (poly.radius * 2)
         rot = VectorHelper.get_direction_of_vectors(v1, v2)
 
-        create_capsule(capsule, poly.radius, length)
+        create_capsule(capsule.data, poly.radius, length / 2)
 
         capsule.location = (v1 + v2) / 2
         capsule.rotation_euler = rot
@@ -237,7 +236,7 @@ def init_bound_obj(bound, sollum_type):
     obj.bound_properties.ped_density = bound.ped_density
     obj.bound_properties.poly_flags = bound.poly_flags
     obj.bound_properties.inertia = bound.inertia
-    obj.bound_properties.margin = bound.margin
+    obj.margin = bound.margin
     obj.bound_properties.volume = bound.volume
 
     # assign obj composite flags
@@ -271,36 +270,39 @@ def init_bound_obj(bound, sollum_type):
 def bound_to_obj(bound):
     if bound.type == 'Box':
         box = init_bound_obj(bound, BoundType.BOX)
-        create_box_from_extents(box.data, bound.box_min, bound.box_max)
+        box.bound_dimensions = bound.box_max
 
         return box
     elif bound.type == 'Sphere':
         sphere = init_bound_obj(bound, BoundType.SPHERE)
-        create_sphere(sphere.data, bound.sphere_radius)
+        sphere.bound_radius = bound.sphere_radius
+        # create_sphere(sphere.data, bound.sphere_radius)
 
         return sphere
     elif bound.type == 'Capsule':
         capsule = init_bound_obj(bound, BoundType.CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
-        create_capsule(capsule, bound.sphere_radius, bbmax.z - bbmin.z, True)
+        capsule.bound_length = bbmax.z - bbmin.z
+        capsule.bound_radius = bound.sphere_radius
+        # create_capsule(capsule, bound.sphere_radius, bbmax.z - bbmin.z, True)
 
         return capsule
     elif bound.type == 'Cylinder':
         cylinder = init_bound_obj(bound, BoundType.CYLINDER)
         bbmin, bbmax = bound.box_min, bound.box_max
         extent = bbmax - bbmin
-        length = extent.y
-        radius = extent.x * 0.5
-        # cylinder.scale = Vector([1, 1, 1])
-        create_cylinder(cylinder.data, radius, length)
+        cylinder.bound_length = extent.y
+        cylinder.bound_radius = extent.x * 0.5
+        # create_cylinder(cylinder.data, radius, length)
 
         return cylinder
     elif bound.type == 'Disc':
         disc = init_bound_obj(bound, BoundType.DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
-        length = bound.margin * 2
-        radius = bound.sphere_radius
-        create_disc(disc.data, bound.sphere_radius, length)
+        disc.bound_radius = bound.sphere_radius
+        # create_disc(disc.data, bound.sphere_radius)
+        # Cant assign to dimensions directly according to docs
+        # disc.dimensions = length, disc.dimensions.y, disc.dimensions.z
 
         return disc
     elif bound.type == 'Cloth':

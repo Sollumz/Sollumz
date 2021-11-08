@@ -123,11 +123,13 @@ class SOLLUMZ_OT_create_geometrybvh_bound(CreateBoundHelper, bpy.types.Operator)
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
     bound_type = BoundType.GEOMETRYBVH
 
+
 class SOLLUMZ_OT_create_cloth_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz cloth bound"""
     bl_idname = "sollumz.createclothbound"
     bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
     bound_type = BoundType.CLOTH
+
 
 class SOLLUMZ_OT_create_box_bound(CreateBoundShapeHelper, bpy.types.Operator):
     """Create a sollumz box bound"""
@@ -261,7 +263,7 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
         aobj.location = center
         for obj in aobj.children:
             obj.delta_location = -center
-        return self.success()
+        return True
 
 
 class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):

@@ -44,9 +44,9 @@ def create_box_from_extents(mesh, bbmin, bbmax):
     return mesh
 
 
-def create_box(mesh, size=2):
+def create_box(mesh, size=2, matrix=None):
     bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=size)
+    bmesh.ops.create_cube(bm, size=size, matrix=matrix or Matrix())
     bm.to_mesh(mesh)
     bm.free()
     return mesh
@@ -78,8 +78,10 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
     return mesh
 
 
-def create_disc(mesh, radius=1, length=0.1):
+def create_disc(mesh, radius=1, length=0.08):
     bm = bmesh.new()
+    # rot_mat = Matrix.Rotation(radians(90.0), 4, "Y") @ VectorHelper.lookatlh(
+    #     Vector((0, 0, 0)), Vector((1, 0, 0)), Vector((0, 0, 1)))
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
     bmesh.ops.create_cone(
         bm,
@@ -96,12 +98,11 @@ def create_disc(mesh, radius=1, length=0.1):
     return mesh
 
 
-def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
+def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     length = length if length > diameter * 2 else diameter * 2
     if diameter < 0:
         raise ValueError('Cannot create capsule with a diameter less than 0!')
 
-    mesh = obj.data
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, diameter=diameter)
@@ -109,8 +110,6 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
 
     center = Vector()
     axis = Vector((0, 0, 1))
-    if use_rot:
-        axis = Vector((0, 0, 1))
 
     # Get top and bottom halves of vertices
     top = []
@@ -118,8 +117,9 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
     bottom = []
     bottom_faces = []
 
-    amount = length - (diameter * 2)
-    vec = Vector((0, 0, amount)) if not use_rot else Vector((amount, 0, 0))
+    # amount = length - (diameter * 2)
+    amount = (length - diameter) * 2
+    vec = Vector((0, 0, amount))
 
     for v in bm.verts:
         if distance_point_to_plane(v.co, center, axis) >= 0:
@@ -153,6 +153,9 @@ def create_capsule(obj, diameter=0.5, length=2, use_rot=False):
 
     bm.to_mesh(mesh)
     bm.free()
+
+    if use_rot:
+        mesh.transform(Matrix.Rotation(radians(90.0), 4, 'X'))
 
     return mesh
 
@@ -217,8 +220,8 @@ def get_children_recursive(obj):
 """Get the radius of an object's bounding box"""
 
 
-def get_obj_radius(obj):
-    bb_min, bb_max = get_bound_extents(obj)
+def get_obj_radius(obj, world=True):
+    bb_min, bb_max = get_bound_extents(obj, world)
 
     p1 = Vector((bb_min.x, bb_min.y, 0))
     p2 = Vector((bb_max.x, bb_max.y, 0))

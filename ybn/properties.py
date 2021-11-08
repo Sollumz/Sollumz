@@ -1,9 +1,11 @@
-from collections import namedtuple
 import bpy
 from Sollumz.sollumz_properties import PolygonType, items_from_enums, BoundType, SOLLUMZ_UI_NAMES
 from bpy.app.handlers import persistent
-from .collision_materials import create_collision_material_from_index, collisionmats
-from Sollumz.resources.flag_preset import FlagPresetsFile, Presets
+
+from .collision_materials import collisionmats
+from Sollumz.resources.flag_preset import FlagPresetsFile
+from Sollumz.tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
+from mathutils import Vector, Matrix
 import os
 
 
@@ -87,7 +89,6 @@ class BoundProperties(bpy.types.PropertyGroup):
     ped_density: bpy.props.IntProperty(name="Ped Density", default=0)
     poly_flags: bpy.props.IntProperty(name="Poly Flags", default=0)
     inertia: bpy.props.FloatVectorProperty(name="Inertia")
-    margin: bpy.props.FloatProperty(name="Margin", precision=3)
     volume: bpy.props.FloatProperty(name="Volume", precision=3)
 
 
@@ -145,6 +146,26 @@ def on_file_loaded(_):
     load_flag_presets()
 
 
+def update_bounds(self, context):
+    if self.sollum_type == BoundType.BOX:
+        create_box(self.data, 2, Matrix.Diagonal(
+            Vector(self.bound_dimensions)))
+    if self.sollum_type == BoundType.SPHERE:
+        create_sphere(mesh=self.data, radius=self.bound_radius)
+
+    if self.sollum_type == BoundType.CYLINDER:
+        create_cylinder(mesh=self.data, radius=self.bound_radius,
+                        length=self.bound_length)
+
+    if self.sollum_type == BoundType.DISC:
+        create_disc(mesh=self.data, radius=self.bound_radius,
+                    length=self.margin * 2)
+
+    if self.sollum_type == BoundType.CAPSULE:
+        create_capsule(mesh=self.data, diameter=self.margin,
+                       length=self.bound_radius, use_rot=True)
+
+
 def register():
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
         items=items_from_enums(PolygonType),
@@ -154,6 +175,14 @@ def register():
 
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(
         type=BoundProperties)
+    bpy.types.Object.margin = bpy.props.FloatProperty(
+        name="Margin", precision=3, update=update_bounds, min=0)
+    bpy.types.Object.bound_radius = bpy.props.FloatProperty(
+        name="SphereRadius", precision=3, update=update_bounds, min=0)
+    bpy.types.Object.bound_length = bpy.props.FloatProperty(
+        name="Length", precision=3, update=update_bounds, min=0)
+    bpy.types.Object.bound_dimensions = bpy.props.FloatVectorProperty(
+        name="Dimensions", precision=3, min=0, update=update_bounds, subtype='XYZ')
 
     #nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(
