@@ -1,6 +1,9 @@
 # Sollumz
 Blender plugin to import codewalker converter xml files from GTA V
 
+## Using the plugin
+See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sure to read the wiki before posting an issue or asking questions!
+
 ## Features ##
 
 **Supported Formats (Import)**
