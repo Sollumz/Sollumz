@@ -2,7 +2,7 @@ import bpy
 from Sollumz.sollumz_helper import *
 from Sollumz.sollumz_properties import BoundType, PolygonType, DrawableType, FragmentType, MaterialType
 from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
-from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
+from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_light_properties
 from Sollumz.yft.ui import draw_fragment_properties, draw_archetype_properties, draw_lod_properties, draw_child_properties
 
 SOLLUMZ_UI_NAMES = {
@@ -188,6 +188,8 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
             draw_archetype_properties(layout, obj)
         elif(obj.sollum_type == FragmentType.CHILD):
             draw_child_properties(layout, obj)
+        elif(obj.sollum_type == DrawableType.LIGHT):
+            draw_light_properties(layout, obj)
         elif is_sollum_type(obj, BoundType):
             draw_bound_properties(layout, obj)
 

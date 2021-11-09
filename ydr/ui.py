@@ -23,6 +23,37 @@ def draw_material_properties(layout, mat):
     row.prop(mat.shader_properties, "filename")
 
 
+def draw_light_properties(layout, light):
+    layout.prop(light.light_properties, "flags")
+    layout.prop(light.light_properties, "bone_id")
+    layout.prop(light.light_properties, "group_id")
+    layout.prop(light.light_properties, "time_flags")
+    layout.prop(light.light_properties, "falloff")
+    layout.prop(light.light_properties, "falloff_exponent")
+    layout.prop(light.light_properties, "culling_plane_normal")
+    layout.prop(light.light_properties, "culling_plane_offset")
+    layout.prop(light.light_properties, "unknown_45")
+    layout.prop(light.light_properties, "unknown_46")
+    layout.prop(light.light_properties, "volume_intensity")
+    layout.prop(light.light_properties, "volume_size_scale")
+    layout.prop(light.light_properties, "volume_outer_color")
+    layout.prop(light.light_properties, "light_hash")
+    layout.prop(light.light_properties, "volume_outer_intensity")
+    layout.prop(light.light_properties, "corona_size")
+    layout.prop(light.light_properties, "volume_outer_exponent")
+    layout.prop(light.light_properties, "light_fade_distance")
+    layout.prop(light.light_properties, "shadow_fade_distance")
+    layout.prop(light.light_properties, "specular_fade_distance")
+    layout.prop(light.light_properties, "volumetric_fade_distance")
+    layout.prop(light.light_properties, "shadow_near_clip")
+    layout.prop(light.light_properties, "corona_intensity")
+    layout.prop(light.light_properties, "corona_z_bias")
+    layout.prop(light.light_properties, "tangent")
+    layout.prop(light.light_properties, "cone_inner_angle")
+    layout.prop(light.light_properties, "cone_outer_angle")
+    layout.prop(light.light_properties, "extent")
+
+
 def draw_shader(layout, mat):
     layout.label(text="Material Properties")
     box = layout.box()

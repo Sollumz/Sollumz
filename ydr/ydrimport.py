@@ -311,6 +311,56 @@ def rotation_limits_to_obj(rotation_limits, armature):
     return bones_with_constraint
 
 
+def light_to_obj(light, idx):
+    light_data = bpy.data.lights.new(
+        name=f"light{idx}", type=light.type.upper())
+
+    light_data.color = light.color
+    light_data.energy = light.intensity
+    # divide by 100 because blender specular is clamped 0 - 1 ????
+    light_data.specular_factor = light.flashiness / 100
+    #light_data.spot_size = light.cone_outer_angle
+    #light_data.spot_blend = light.cone_inner_angle
+
+    lobj = bpy.data.objects.new(name=f"light{idx}", object_data=light_data)
+    bpy.context.collection.objects.link(lobj)
+    lobj.sollum_type = DrawableType.LIGHT
+    lobj.location = light.position
+    #lobj.rotation_euler = light.direction
+
+    lobj.light_properties.flags = light.flags
+    lobj.light_properties.bone_id = light.bone_id
+    lobj.light_properties.group_id = light.group_id
+    lobj.light_properties.time_flags = light.time_flags
+    lobj.light_properties.falloff = light.falloff
+    lobj.light_properties.falloff_exponent = light.falloff_exponent
+    lobj.light_properties.culling_plane_normal = light.culling_plane_normal
+    lobj.light_properties.culling_plane_offset = light.culling_plane_offset
+    lobj.light_properties.unknown_45 = light.unknown_45
+    lobj.light_properties.unknown_46 = light.unknown_46
+    lobj.light_properties.volume_intensity = light.volume_intensity
+    lobj.light_properties.volume_size_scale = light.volume_size_scale
+    lobj.light_properties.volume_outer_color = light.volume_outer_color
+    lobj.light_properties.light_hash = light.light_hash
+    lobj.light_properties.volume_outer_intensity = light.volume_outer_intensity
+    lobj.light_properties.corona_size = light.corona_size
+    lobj.light_properties.volume_outer_exponent = light.volume_outer_exponent
+    lobj.light_properties.light_fade_distance = light.light_fade_distance
+    lobj.light_properties.shadow_fade_distance = light.shadow_fade_distance
+    lobj.light_properties.specular_fade_distance = light.specular_fade_distance
+    lobj.light_properties.volumetric_fade_distance = light.volumetric_fade_distance
+    lobj.light_properties.shadow_near_clip = light.shadow_near_clip
+    lobj.light_properties.corona_intensity = light.corona_intensity
+    lobj.light_properties.corona_z_bias = light.corona_z_bias
+    lobj.light_properties.tangent = light.tangent
+    lobj.light_properties.cone_inner_angle = light.cone_inner_angle
+    lobj.light_properties.cone_outer_angle = light.cone_outer_angle
+    lobj.light_properties.extent = light.extent
+    lobj.light_properties.projected_texture_hash = light.projected_texture_hash
+
+    return lobj
+
+
 def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None):
 
     if not materials:
@@ -386,6 +436,10 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
 
             mod = child.modifiers.new("Armature", 'ARMATURE')
             mod.object = obj
+
+    for idx, light in enumerate(drawable.lights):
+        lobj = light_to_obj(light, idx)
+        lobj.parent = obj
 
     return obj
 

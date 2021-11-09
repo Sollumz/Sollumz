@@ -16,6 +16,7 @@ class DrawableType(str, Enum):
     DRAWABLE_MODEL = 'sollumz_drawable_model'
     GEOMETRY = 'sollumz_geometry'
     SKELETON = 'sollumz_skeleton'
+    LIGHT = "sollumz_light"
 
 
 class BoundType(str, Enum):
@@ -193,6 +194,7 @@ SOLLUMZ_UI_NAMES = {
     DrawableType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
     DrawableType.GEOMETRY: 'Sollumz Geometry',
     DrawableType.SKELETON: 'Sollumz Skeleton',
+    DrawableType.LIGHT: "Sollumz Light",
 
     EntityLodLevel.LODTYPES_DEPTH_HD: "DEPTH HD",
     EntityLodLevel.LODTYPES_DEPTH_LOD: "DEPTH LOD",

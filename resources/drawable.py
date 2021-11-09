@@ -207,6 +207,53 @@ class JointsProperty(ElementTree):
         self.rotation_limits = RotationLimitsListProperty("RotationLimits")
 
 
+class LightItem(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.position = VectorProperty("Position")
+        self.color = ColorProperty("Colour")
+        self.flashiness = ValueProperty("Flashiness")
+        self.intensity = ValueProperty("Intensity")
+        self.flags = ValueProperty("Flags")
+        self.bone_id = ValueProperty("BoneId")
+        self.type = TextProperty("Type")
+        self.group_id = ValueProperty("GroupId")
+        self.time_flags = ValueProperty("TimeFlags")
+        self.falloff = ValueProperty("Falloff")
+        self.falloff_exponent = ValueProperty("FalloffExponent")
+        self.culling_plane_normal = VectorProperty("CullingPlaneNormal")
+        self.culling_plane_offset = ValueProperty("CullingPlaneOffset")
+        self.unknown_45 = ValueProperty("Unknown45")
+        self.unknown_46 = ValueProperty("Unknown46")
+        self.volume_intensity = ValueProperty("VolumeIntensity")
+        self.volume_size_scale = ValueProperty("VolumeSizeScale")
+        self.volume_outer_color = ColorProperty("VolumeOuterColour")
+        self.light_hash = ValueProperty("LightHash")
+        self.volume_outer_intensity = ValueProperty("VolumeOuterIntensity")
+        self.corona_size = ValueProperty("CoronaSize")
+        self.volume_outer_exponent = ValueProperty("VolumeOuterExponent")
+        self.light_fade_distance = ValueProperty("LightFadeDistance")
+        self.shadow_fade_distance = ValueProperty("ShadowFadeDistance")
+        self.specular_fade_distance = ValueProperty("SpecularFadeDistance")
+        self.volumetric_fade_distance = ValueProperty("VolumetricFadeDistance")
+        self.shadow_near_clip = ValueProperty("ShadowNearClip")
+        self.corona_intensity = ValueProperty("CoronaIntensity")
+        self.corona_z_bias = ValueProperty("CoronaZBias")
+        self.direction = VectorProperty("Direction")
+        self.tangent = VectorProperty("Tangent")
+        self.cone_inner_angle = ValueProperty("ConeInnerAngle")
+        self.cone_outer_angle = ValueProperty("ConeOuterAngle")
+        self.extent = VectorProperty("Extent")
+        self.projected_texture_hash = TextProperty("ProjectedTextureHash")
+
+
+class LightsProperty(ListProperty):
+    list_type = LightItem
+    tag_name = "Lights"
+
+
 class VertexLayoutListProperty(ElementProperty):
     value_types = (list)
     tag_name = 'Layout'
@@ -415,6 +462,7 @@ class Drawable(ElementTree, AbstractClass):
             "DrawableModelsLow")
         self.drawable_models_vlow = DrawableModelListProperty(
             "DrawableModelsVeryLow")
+        self.lights = LightsProperty()
 
     @classmethod
     def from_xml(cls, element: ET.Element):

@@ -257,13 +257,33 @@ class TextProperty(ElementProperty):
         return result
 
 
+class ColorProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or [0, 0, 0])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        if not all(x in element.attrib.keys() for x in ['r', 'g', 'b']):
+            return ColorProperty.read_value_error(element)
+
+        return ColorProperty(element.tag, [float(element.get('r')), float(element.get('g')), float(element.get('b'))])
+
+    def to_xml(self):
+        r = str(numpy.float32(self.value.r))
+        g = str(numpy.float32(self.value.g))
+        b = str(numpy.float32(self.value.b))
+        return ET.Element(self.tag_name, attrib={'r': r, 'g': g, 'b': b})
+
+
 class VectorProperty(ElementProperty):
     value_types = (Vector)
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0, 0)))
 
-    @staticmethod
+    @ staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z']):
             return VectorProperty.read_value_error(element)
@@ -283,7 +303,7 @@ class QuaternionProperty(ElementProperty):
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Quaternion())
 
-    @staticmethod
+    @ staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ['x', 'y', 'z', 'w']):
             QuaternionProperty.read_value_error(element)
@@ -304,7 +324,7 @@ class FlagsProperty(ElementProperty):
     def __init__(self, tag_name: str = 'Flags', value=None):
         super().__init__(tag_name, value or [])
 
-    @staticmethod
+    @ staticmethod
     def from_xml(element: ET.Element):
         new = FlagsProperty(element.tag, [])
         if element.text and len(element.text.strip()) > 0:
@@ -335,7 +355,7 @@ class ValueProperty(ElementProperty):
     def __init__(self, tag_name: str, value=0):
         super().__init__(tag_name, value)
 
-    @staticmethod
+    @ staticmethod
     def from_xml(element: ET.Element):
         if not 'value' in element.attrib:
             ValueError.read_value_error(element)
