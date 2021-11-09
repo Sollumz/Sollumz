@@ -95,35 +95,40 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
 
 class LightProperties(bpy.types.PropertyGroup):
-    flags: bpy.props.FloatProperty("Flags")
-    bone_id: bpy.props.IntProperty("Bone ID")
-    group_id: bpy.props.IntProperty("Group ID")
-    time_flags: bpy.props.FloatProperty("Time Flags")
-    falloff: bpy.props.FloatProperty("Falloff")
-    falloff_exponent: bpy.props.FloatProperty("Falloff Exponent")
-    culling_plane_normal: bpy.props.FloatVectorProperty("Culling Plane Normal")
-    culling_plane_offset: bpy.props.FloatProperty("Culling Plane Offset")
-    unknown_45: bpy.props.FloatProperty("Unknown 45")
-    unknown_46: bpy.props.FloatProperty("Unknown 46")
-    volume_intensity: bpy.props.FloatProperty("Volume Intensity")
-    volume_size_scale: bpy.props.FloatProperty("Volume Size Scale")
-    volume_outer_color: bpy.props.FloatVectorProperty("Volume Outer Color")
-    light_hash: bpy.props.FloatProperty("Light Hash")
-    volume_outer_intensity: bpy.props.FloatProperty("Volume Outer Intensity")
-    corona_size: bpy.props.FloatProperty("Corona Size")
-    volume_outer_exponent: bpy.props.FloatProperty("Volume Outer Exponent")
-    light_fade_distance: bpy.props.FloatProperty("Light Fade Distance")
-    shadow_fade_distance: bpy.props.FloatProperty("Shadow Fade Distance")
-    specular_fade_distance: bpy.props.FloatProperty("Specular Fade Distance")
+    flags: bpy.props.FloatProperty(name="Flags")
+    bone_id: bpy.props.IntProperty(name="Bone ID")
+    group_id: bpy.props.IntProperty(name="Group ID")
+    time_flags: bpy.props.FloatProperty(name="Time Flags")
+    falloff: bpy.props.FloatProperty(name="Falloff")
+    falloff_exponent: bpy.props.FloatProperty(name="Falloff Exponent")
+    culling_plane_normal: bpy.props.FloatVectorProperty(
+        name="Culling Plane Normal")
+    culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
+    unknown_45: bpy.props.FloatProperty(name="Unknown 45")
+    unknown_46: bpy.props.FloatProperty(name="Unknown 46")
+    volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
+    volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
+    volume_outer_color: bpy.props.FloatVectorProperty(
+        name="Volume Outer Color")
+    light_hash: bpy.props.FloatProperty(name="Light Hash")
+    volume_outer_intensity: bpy.props.FloatProperty(
+        name="Volume Outer Intensity")
+    corona_size: bpy.props.FloatProperty(name="Corona Size")
+    volume_outer_exponent: bpy.props.FloatProperty(
+        name="Volume Outer Exponent")
+    light_fade_distance: bpy.props.FloatProperty(name="Light Fade Distance")
+    shadow_fade_distance: bpy.props.FloatProperty(name="Shadow Fade Distance")
+    specular_fade_distance: bpy.props.FloatProperty(
+        name="Specular Fade Distance")
     volumetric_fade_distance: bpy.props.FloatProperty(
-        "Volumetric Fade Distance")
-    shadow_near_clip: bpy.props.FloatProperty("Shadow Near Clip")
-    corona_intensity: bpy.props.FloatProperty("Corona Intensity")
-    corona_z_bias: bpy.props.FloatProperty("Corona Z Bias")
-    tangent: bpy.props.FloatVectorProperty("Tangent")
-    cone_inner_angle: bpy.props.FloatProperty("Cone Inner Angle")
-    cone_outer_angle: bpy.props.FloatProperty("Cone Outer Angle")
-    extent: bpy.props.FloatVectorProperty("Extent")
+        name="Volumetric Fade Distance")
+    shadow_near_clip: bpy.props.FloatProperty(name="Shadow Near Clip")
+    corona_intensity: bpy.props.FloatProperty(name="Corona Intensity")
+    corona_z_bias: bpy.props.FloatProperty(name="Corona Z Bias")
+    tangent: bpy.props.FloatVectorProperty(name="Tangent")
+    cone_inner_angle: bpy.props.FloatProperty(name="Cone Inner Angle")
+    cone_outer_angle: bpy.props.FloatProperty(name="Cone Outer Angle")
+    extent: bpy.props.FloatVectorProperty(name="Extent")
 
 
 # Handler sets the default value of the ShaderMaterials collection on blend file load
