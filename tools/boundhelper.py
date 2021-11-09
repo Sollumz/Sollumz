@@ -1,22 +1,34 @@
 import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.ybn.collision_materials import create_collision_material_from_index
-from Sollumz.tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder, create_disc
+from Sollumz.tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
+from mathutils import Vector
 
 
 def create_bound_shape(type):
     pobj = create_mesh(type)
 
-    if type == PolygonType.BOX or type == BoundType.BOX:
+    if type == PolygonType.BOX:
         create_box(pobj.data)
-    elif type == PolygonType.SPHERE or type == BoundType.SPHERE:
+    elif type == BoundType.BOX:
+        pobj.bound_dimensions = Vector((1, 1, 1))
+    elif type == PolygonType.SPHERE:
         create_sphere(pobj.data)
-    elif type == PolygonType.CAPSULE or type == BoundType.CAPSULE:
-        create_capsule(pobj)
-    elif type == PolygonType.CYLINDER or type == BoundType.CYLINDER:
+    elif type == BoundType.SPHERE:
+        pobj.bound_radius = 1
+    elif type == PolygonType.CAPSULE:
+        create_capsule(pobj.data)
+    elif type == BoundType.CAPSULE:
+        pobj.bound_radius = 0.25
+        pobj.margin = 0.5
+    elif type == PolygonType.CYLINDER:
         create_cylinder(pobj.data)
+    elif type == BoundType.CYLINDER:
+        pobj.bound_length = 2
+        pobj.bound_radius = 1
     elif type == BoundType.DISC:
-        create_disc(pobj.data)
+        pobj.margin = 0.04
+        pobj.bound_radius = 1
 
     return pobj
 

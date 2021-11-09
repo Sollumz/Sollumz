@@ -1,7 +1,7 @@
 from mathutils import Vector
 import numpy
 from math import inf, sqrt
-from mathutils import Vector, Quaternion
+from mathutils import Vector, Quaternion, Matrix
 
 
 class StringHelper():
@@ -157,3 +157,20 @@ class VectorHelper():
         q = Quaternion(axis, angle)
 
         return q.to_euler("XYZ")
+
+    @staticmethod
+    def lookatlh(eye, target, up):
+        mz = Vector((eye[0]-target[0], eye[1]-target[1], eye[2] -
+                    target[2])).normalized()  # inverse line of sight
+        mx = Vector(up.cross(mz)).normalized()
+        my = Vector(mz.cross(mx)).normalized()
+        tx = mx.dot(eye)
+        ty = my.dot(eye)
+        tz = mz.dot(eye) * -1
+        mat = Matrix()
+        mat[0] = mx[0], mz[0], my[0], 0
+        mat[1] = mx[2], mz[2], my[2], 0
+        mat[2] = mx[1], mz[1], my[1], 0
+        mat[3] = tx, tz, ty, 1
+
+        return mat

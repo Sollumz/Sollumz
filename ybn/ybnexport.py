@@ -223,29 +223,43 @@ def init_bound(bound, obj):
     center = get_bound_center(obj, world=False)
     bound.box_center = center
     bound.sphere_center = center
-    bound.sphere_radius = get_obj_radius(obj)
+    bound.sphere_radius = get_obj_radius(obj, world=False)
     bound.procedural_id = obj.bound_properties.procedural_id
     bound.room_id = obj.bound_properties.room_id
     bound.ped_density = obj.bound_properties.ped_density
     bound.poly_flags = obj.bound_properties.poly_flags
     bound.inertia = Vector(obj.bound_properties.inertia)
     bound.volume = obj.bound_properties.volume
-    bound.margin = obj.bound_properties.margin
+    bound.margin = obj.margin
 
     return bound
 
 
 def bound_from_object(obj):
     if obj.sollum_type == BoundType.BOX:
-        return init_bound_item(BoundBox(), obj)
+        bound = init_bound_item(BoundBox(), obj)
+        bound.box_max = obj.bound_dimensions
+        bound.box_min = obj.bound_dimensions * -1
+        return bound
     elif obj.sollum_type == BoundType.SPHERE:
-        return init_bound_item(BoundSphere(), obj)
+        bound = init_bound_item(BoundSphere(), obj)
+        bound.sphere_radius = obj.bound_radius
+        return bound
     elif obj.sollum_type == BoundType.CYLINDER:
-        return init_bound_item(BoundCylinder(), obj)
+        bound = init_bound_item(BoundCylinder(), obj)
+        bound.sphere_radius = obj.bound_radius
+        return bound
     elif obj.sollum_type == BoundType.CAPSULE:
-        return init_bound_item(BoundCapsule(), obj)
+        bound = init_bound_item(BoundCapsule(), obj)
+        bound.sphere_radius = obj.bound_radius
+        return bound
     elif obj.sollum_type == BoundType.DISC:
-        return init_bound_item(BoundDisc(), obj)
+        bound = init_bound_item(BoundDisc(), obj)
+        bound.sphere_radius = obj.bound_radius
+        # bound.composite_scale = obj.scale
+        # bound.composite_rotation = obj.rotation_euler.to_quaternion()
+        bound.margin = obj.margin
+        return bound
     elif obj.sollum_type == BoundType.CLOTH:
         return init_bound_item(BoundCloth(), obj)
     elif obj.sollum_type == BoundType.GEOMETRY:

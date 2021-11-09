@@ -1,6 +1,6 @@
 import bpy
 from .properties import BoundFlags, CollisionProperties, CollisionMatFlags, BoundProperties
-from Sollumz.sollumz_properties import MaterialType
+from Sollumz.sollumz_properties import MaterialType, BoundType
 from .collision_materials import collisionmats
 from .operators import *
 
@@ -20,21 +20,36 @@ def generate_flags(layout, prop):
 
 
 def draw_bound_properties(layout, obj):
-    row = layout.row()
-    # grid = layout.grid_flow(columns=2, even_columns=True, even_rows=True)
     grid = layout.grid_flow(columns=2, row_major=True)
     for prop in BoundProperties.__annotations__:
         grid.prop(obj.bound_properties, prop)
-    # row.prop(obj.bound_properties, "procedural_id")
-    # row.prop(obj.bound_properties, "room_id")
-    # row = layout.row()
-    # row.prop(obj.bound_properties, "ped_density")
-    # row.prop(obj.bound_properties, "poly_flags")
-    # row = layout.row()
-    # row.prop(obj.bound_properties, "inertia")
-    # row = layout.row()
-    # row.prop(obj.bound_properties, "margin")
-    # row.prop(obj.bound_properties, "volume")
+
+
+class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
+    bl_label = 'Shape'
+    bl_idname = "SOLLUMZ_PT_BOUND_SHAPE_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
+
+    @classmethod
+    def poll(self, context):
+        obj = context.active_object
+        return obj and (is_sollum_type(obj, BoundType) and obj.sollum_type != BoundType.COMPOSITE)
+
+    def draw(self, context):
+        obj = context.active_object
+        self.layout.use_property_split = True
+        grid = self.layout.grid_flow(columns=2, row_major=True)
+        if obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH and obj.sollum_type != BoundType.BOX:
+            grid.prop(obj, 'bound_radius')
+        if obj.sollum_type == BoundType.CYLINDER:
+            grid.prop(obj, 'bound_length')
+        if obj.sollum_type == BoundType.BOX:
+            grid.prop(obj, 'bound_dimensions')
+        grid.prop(obj, 'margin')
 
 
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
