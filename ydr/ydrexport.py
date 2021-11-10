@@ -139,9 +139,9 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                         # check if paths are the same because if they are no need to copy
                         if txtpath != dstpath:
                             shutil.copyfile(txtpath, dstpath)
-                    else:
-                        print(
-                            "Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
+                    # else:
+                        # print(
+                            # "Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
 
     if(has_td):
         return texture_dictionary
@@ -267,6 +267,46 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     return vertices.keys(), indices
 
 
+def get_semantic_from_object(shader, mesh):
+
+    sematic = []
+
+    # always has a position
+    sematic.append(VertexSemantic.position)
+    # add blend weights and blend indicies
+    # maybe pass is_skinned param in this function and check there ?
+    is_skinned = False
+    for v in mesh.vertices:
+        if len(v.groups) > 0:
+            is_skinned = True
+            break
+    if is_skinned:
+        sematic.append(VertexSemantic.blend_weight)
+        sematic.append(VertexSemantic.blend_index)
+    # add normal
+    # dont know what to check so always add for now??
+    sematic.append(VertexSemantic.normal)
+    # add colors
+    vcs = len(mesh.vertex_colors)
+    if vcs > 0:
+        if vcs > 2:
+            raise Exception(f"To many color layers on mesh: {mesh.name}")
+        for i in range(vcs):
+            sematic.append(VertexSemantic.color)
+    # add texcoords
+    tcs = len(mesh.uv_layers)
+    if tcs > 0:
+        if tcs > 8:  # or tcs == 0: add this restriction?? although some vertexs buffers may not have uv data???
+            raise Exception(f"To many uv layers or none on mesh: {mesh.name}")
+        for i in range(tcs):
+            sematic.append(VertexSemantic.texcoord)
+    # add tangents
+    if shader.required_tangent:
+        sematic.append(VertexSemantic.tangent)
+
+    return "".join(sematic)
+
+
 def geometry_from_object(obj, bones=None):
     geometry = GeometryItem()
 
@@ -287,9 +327,12 @@ def geometry_from_object(obj, bones=None):
             geometry.shader_index = i
 
     shader_name = StringHelper.FixShaderName(obj_eval.active_material.name)
-    layout = ShaderManager.shaders[shader_name].layouts[0]
-    geometry.vertex_buffer.layout = layout.value
+    shader = ShaderManager.shaders[shader_name]
 
+    layout = shader.get_layout_from_semantic(
+        get_semantic_from_object(shader, mesh))
+
+    geometry.vertex_buffer.layout = layout.value
     vertex_buffer, index_buffer = get_mesh_buffers(
         mesh, obj, layout.vertex_type, bones)
 

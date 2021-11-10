@@ -9,24 +9,24 @@ class RenderBucketProperty(ElementProperty):
     value_types = (list)
 
     def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name or 'RenderBucket', value or [])
+        super().__init__(tag_name or "RenderBucket", value or [])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
-        items = element.text.strip().split(' ')
+        items = element.text.strip().split(" ")
         for item in items:
             new.value.append(int(item))
         return items
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.text = ' '.join(self.value)
+        element.text = " ".join(self.value)
 
 
 class FileNameListProperty(ListProperty):
     class Item(TextProperty):
-        tag_name = 'Item'
+        tag_name = "Item"
 
     list_type = Item
     tag_name = "FileName"
@@ -34,14 +34,14 @@ class FileNameListProperty(ListProperty):
 
 class LayoutListProperty(ListProperty):
     class Layout(VertexLayoutListProperty):
-        tag_name = 'Item'
+        tag_name = "Item"
 
     list_type = Layout
     tag_name = "Layout"
 
 
 class Shader(ElementTree):
-    tag_name = 'Item'
+    tag_name = "Item"
 
     def __init__(self):
         super().__init__()
@@ -51,9 +51,24 @@ class Shader(ElementTree):
         self.layouts = LayoutListProperty()
         self.parameters = ParametersListProperty("Parameters")
 
+    @property
+    def required_tangent(self):
+        for layout in self.layouts:
+            if "Tangent" in layout.value:
+                return True
+        return False
+
+    def get_layout_from_semantic(self, vertex_semantic):
+        for layout in self.layouts:
+            if layout.vertex_semantic == vertex_semantic:
+                return layout
+
+        raise Exception(
+            f"{vertex_semantic} layout is not found in the shader '{self.name}'")
+
 
 class ShaderManager:
-    shaderxml = os.path.join(os.path.dirname(__file__), 'Shaders.xml')
+    shaderxml = os.path.join(os.path.dirname(__file__), "shaders.xml")
     shaders = {}
 
     @staticmethod
@@ -63,9 +78,10 @@ class ShaderManager:
             shader = Shader.from_xml(node)
             ShaderManager.shaders[shader.name] = shader
 
-    def print_shader_collection(self):
+    @staticmethod
+    def print_shader_collection():
         string = ""
-        for shader in self.shaders.values():
+        for shader in ShaderManager.shaders.values():
             name = shader.name.upper()
             ui_name = shader.name.replace("_", " ").upper()
             value = shader.name.lower()
@@ -73,6 +89,57 @@ class ShaderManager:
                 ui_name + "\", \"" + value + "\"),\n"
 
         print(string)
+
+    @staticmethod
+    def print_all_vertex_semantics():
+        sems = []
+        for shader in ShaderManager.shaders.values():
+            for layout in shader.layouts:
+                if layout.vertex_semantic in sems:
+                    continue
+                else:
+                    sems.append(layout.vertex_semantic)
+
+        for s in sems:
+            print(s)
+
+    @staticmethod
+    def check_bumpmap_to_tangents():
+        result = True
+
+        for shader in ShaderManager.shaders.values():
+            bumpsamp = False
+            tangent = False
+            for layout in shader.layouts:
+                if "Tangent" in layout.value:
+                    tangent = True
+            for param in shader.parameters:
+                if "BumpSampler" in param.name:
+                    bumpsamp = True
+
+            if bumpsamp != tangent:
+                result = False
+                print(
+                    f"shader: {shader.name} bumpsamp: {str(bumpsamp)} tangent: {str(tangent)}")
+
+        if result:
+            print(f"{result} dexy is correct")
+        else:
+            print(f"{result} :(")
+
+    @staticmethod
+    def check_if_all_layouts_have_tangents():
+
+        for shader in ShaderManager.shaders.values():
+            result = True
+            tangent = False
+            if "Tangent" in shader.layouts[0].value:
+                tangent = True
+            for layout in shader.layouts:
+                if "Tangent" in layout.value and tangent != True:
+                    result = False
+                    print(shader.name)
+                    break
 
 
 ShaderManager.load_shaders()

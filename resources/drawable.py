@@ -5,6 +5,7 @@ from Sollumz.tools.utils import *
 from .bound import *
 from collections import namedtuple
 from collections.abc import Mapping
+from enum import Enum
 
 
 class YDD:
@@ -254,6 +255,16 @@ class LightsProperty(ListProperty):
     tag_name = "Lights"
 
 
+class VertexSemantic(str, Enum):
+    position = "P"
+    blend_weight = "B"
+    blend_index = "B"
+    normal = "N"
+    color = "C"
+    texcoord = "T"
+    tangent = "T"
+
+
 class VertexLayoutListProperty(ElementProperty):
     value_types = (list)
     tag_name = 'Layout'
@@ -262,6 +273,10 @@ class VertexLayoutListProperty(ElementProperty):
     @property
     def vertex_type(self):
         return namedtuple('Vertex', [name.lower() for name in self.value])
+
+    @property
+    def vertex_semantic(self):
+        return "".join([item[0] for item in self.value])
 
     def __init__(self, tag_name=None):
         super().__init__(self.tag_name, [])
