@@ -1,5 +1,5 @@
 import bpy
-from Sollumz.sollumz_properties import MaterialType
+from ..sollumz_properties import MaterialType
 from collections import namedtuple
 
 CollisionMaterial = namedtuple("CollisionMaterial", "name, ui_name, color")

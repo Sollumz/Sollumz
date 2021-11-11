@@ -1,7 +1,7 @@
 import bpy
-from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
-from Sollumz.ybn.collision_materials import create_collision_material_from_index
-from Sollumz.tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
+from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
+from ..ybn.collision_materials import create_collision_material_from_index
+from ..tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
 from mathutils import Vector
 
 

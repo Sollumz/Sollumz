@@ -1,14 +1,13 @@
-import traceback
-from Sollumz.resources.drawable import *
-from Sollumz.tools.meshhelper import *
-from Sollumz.tools.utils import *
-from Sollumz.ydr.ydrexport import drawable_from_object
-import Sollumz.tools.jenkhash as Jenkhash
-from Sollumz.sollumz_properties import DrawableType
+from ..resources.drawable import *
+from ..tools.meshhelper import *
+from ..tools.utils import *
+from ..ydr.ydrexport import drawable_from_object
+from ..tools import jenkhash
+from ..sollumz_properties import DrawableType
 
 
 def get_hash(item):
-    return Jenkhash.Generate(item[1].name.split(".")[0])
+    return jenkhash.Generate(item[1].name.split(".")[0])
 
 
 def drawable_dict_from_object(obj, filepath):

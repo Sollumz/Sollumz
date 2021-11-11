@@ -1,16 +1,16 @@
 from abc import abstractmethod
-from Sollumz.tools.obb import get_obb, get_obb_dimensions, get_obb_extents
+from ..tools.obb import get_obb, get_obb_dimensions, get_obb_extents
 import traceback
-from Sollumz.resources.flag_preset import FlagPreset
-from Sollumz.ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
-from Sollumz.ybn.collision_materials import create_collision_material_from_index
-from Sollumz.tools.boundhelper import *
-from Sollumz.tools.meshhelper import *
-from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES, items_from_enums
-from Sollumz.sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
-from Sollumz.tools.blenderhelper import get_selected_vertices
-from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
-from Sollumz.sollumz_helper import *
+from ..resources.flag_preset import FlagPreset
+from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
+from ..ybn.collision_materials import create_collision_material_from_index
+from ..tools.boundhelper import *
+from ..tools.meshhelper import *
+from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
+from ..sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
+from ..tools.blenderhelper import get_selected_vertices
+from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
+from ..sollumz_helper import *
 import bpy
 
 

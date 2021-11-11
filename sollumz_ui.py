@@ -1,9 +1,9 @@
 import bpy
-from Sollumz.sollumz_helper import *
-from Sollumz.sollumz_properties import BoundType, PolygonType, DrawableType, FragmentType, MaterialType
-from Sollumz.ybn.ui import draw_bound_properties, draw_collision_material_properties
-from Sollumz.ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_light_properties
-from Sollumz.yft.ui import draw_fragment_properties, draw_archetype_properties, draw_lod_properties, draw_child_properties
+from .sollumz_helper import *
+from .sollumz_properties import BoundType, PolygonType, DrawableType, FragmentType, MaterialType
+from .ybn.ui import draw_bound_properties, draw_collision_material_properties
+from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_light_properties
+from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_lod_properties, draw_child_properties
 
 SOLLUMZ_UI_NAMES = {
     BoundType.BOX: 'Bound Box',

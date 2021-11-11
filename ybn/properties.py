@@ -1,10 +1,10 @@
 import bpy
-from Sollumz.sollumz_properties import PolygonType, items_from_enums, BoundType, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import PolygonType, items_from_enums, BoundType, SOLLUMZ_UI_NAMES
 from bpy.app.handlers import persistent
 
 from .collision_materials import collisionmats
-from Sollumz.resources.flag_preset import FlagPresetsFile
-from Sollumz.tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
+from ..resources.flag_preset import FlagPresetsFile
+from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
 from mathutils import Vector, Matrix
 import os
 

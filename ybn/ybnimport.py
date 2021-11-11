@@ -1,13 +1,12 @@
 import bpy
 from .properties import CollisionMatFlags
-from Sollumz.resources.bound import *
-from Sollumz.sollumz_properties import *
+from ..resources.bound import *
+from ..sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
-from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
-from Sollumz.tools.meshhelper import *
-from Sollumz.tools.utils import VectorHelper
+from ..sollumz_ui import SOLLUMZ_UI_NAMES
+from ..tools.meshhelper import *
+from ..tools.utils import VectorHelper
 import os
-import traceback
 from mathutils import Matrix
 
 

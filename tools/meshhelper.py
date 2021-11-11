@@ -1,9 +1,8 @@
 import bmesh
-import numpy as np
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
-from Sollumz.tools.utils import VectorHelper
+from .utils import VectorHelper
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):

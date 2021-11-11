@@ -1,7 +1,6 @@
 import bpy
-from Sollumz.ydr.shader_materials import *
+from .shader_materials import *
 from .operators import *
-import os
 
 
 def draw_drawable_properties(layout, obj):

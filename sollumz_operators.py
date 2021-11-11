@@ -1,25 +1,24 @@
 import traceback
 import os
 import pathlib
-import time
 from abc import abstractmethod
 import bpy
-from Sollumz.sollumz_helper import *
-from Sollumz.sollumz_properties import FragmentType, DrawableType, BoundType, SOLLUMZ_UI_NAMES
-from Sollumz.resources.drawable import YDR, YDD
-from Sollumz.resources.fragment import YFT
-from Sollumz.resources.bound import YBN
-from Sollumz.ydr.ydrimport import import_ydr
-from Sollumz.ydr.ydrexport import export_ydr
-from Sollumz.ydd.yddimport import import_ydd
-from Sollumz.ydd.yddexport import export_ydd
-from Sollumz.yft.yftimport import import_yft
-from Sollumz.yft.yftexport import export_yft
-from Sollumz.ybn.ybnimport import import_ybn
-from Sollumz.ybn.ybnexport import export_ybn
-from Sollumz.resources.ymap import YMAP, EntityItem, CMapData
-from Sollumz.tools.meshhelper import *
-from Sollumz.tools.utils import VectorHelper
+from .sollumz_helper import *
+from .sollumz_properties import FragmentType, DrawableType, BoundType, SOLLUMZ_UI_NAMES
+from .resources.drawable import YDR, YDD
+from .resources.fragment import YFT
+from .resources.bound import YBN
+from .ydr.ydrimport import import_ydr
+from .ydr.ydrexport import export_ydr
+from .ydd.yddimport import import_ydd
+from .ydd.yddexport import export_ydd
+from .yft.yftimport import import_yft
+from .yft.yftexport import export_yft
+from .ybn.ybnimport import import_ybn
+from .ybn.ybnexport import export_ybn
+from .resources.ymap import YMAP, EntityItem, CMapData
+from .tools.meshhelper import *
+from .tools.utils import VectorHelper
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 

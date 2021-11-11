@@ -1,6 +1,6 @@
 import bpy
-from Sollumz.sollumz_properties import items_from_enums, TextureUsage, TextureFormat, LODLevel
-from Sollumz.ydr.shader_materials import shadermats, ShaderMaterial
+from ..sollumz_properties import items_from_enums, TextureUsage, TextureFormat, LODLevel
+from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
 
 
