@@ -1,10 +1,7 @@
-import traceback
-
 from .properties import CollisionMatFlags
-from Sollumz.resources.bound import *
-from Sollumz.tools.meshhelper import *
-from Sollumz.tools.obb import get_obb, get_obb_extents
-from Sollumz.sollumz_properties import BoundType, PolygonType, MaterialType, DrawableType, FragmentType
+from ..resources.bound import *
+from ..tools.meshhelper import *
+from ..sollumz_properties import BoundType, PolygonType, MaterialType, DrawableType, FragmentType
 
 
 class NoGeometryError(Exception):

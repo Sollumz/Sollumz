@@ -1,9 +1,8 @@
 import bpy
-from Sollumz.resources.fragment import YFT
-from Sollumz.ydr.ydrimport import drawable_to_obj, shadergroup_to_materials
-from Sollumz.ybn.ybnimport import composite_to_obj
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, BoundType, FragmentType
-from time import time
+from ..resources.fragment import YFT
+from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials
+from ..ybn.ybnimport import composite_to_obj
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, FragmentType
 import traceback
 
 

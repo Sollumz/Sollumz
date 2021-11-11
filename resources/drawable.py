@@ -1,7 +1,7 @@
 from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
-from Sollumz.tools.utils import *
+from ..tools.utils import *
 from .bound import *
 from collections import namedtuple
 from collections.abc import Mapping

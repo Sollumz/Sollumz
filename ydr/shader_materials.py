@@ -1,8 +1,7 @@
 import bpy
-from Sollumz.resources.shader import ShaderManager
-from Sollumz.sollumz_properties import MaterialType
+from ..resources.shader import ShaderManager
+from ..sollumz_properties import MaterialType
 from collections import namedtuple
-import os
 
 ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
 

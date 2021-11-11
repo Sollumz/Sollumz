@@ -1,8 +1,8 @@
 """Manages reading/writing Codewalker XML files"""
 from mathutils import Vector, Quaternion
-from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod, abstractstaticmethod
+from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 from xml.etree import ElementTree as ET
 import numpy
 

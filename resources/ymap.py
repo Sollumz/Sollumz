@@ -1,5 +1,3 @@
-from abc import ABC as AbstractClass, abstractclassmethod, abstractmethod, abstractstaticmethod
-from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 
 

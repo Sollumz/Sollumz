@@ -1,6 +1,6 @@
 import bpy
 from .properties import BoundFlags, CollisionProperties, CollisionMatFlags, BoundProperties
-from Sollumz.sollumz_properties import MaterialType, BoundType
+from ..sollumz_properties import MaterialType, BoundType
 from .collision_materials import collisionmats
 from .operators import *
 

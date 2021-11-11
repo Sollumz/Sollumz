@@ -1,14 +1,13 @@
 import os
 import shutil
-import traceback
 import bpy
-from Sollumz.resources.drawable import *
-from Sollumz.resources.shader import ShaderManager
-from Sollumz.tools.meshhelper import *
-from Sollumz.tools.utils import StringHelper, ListHelper
-from Sollumz.tools.blenderhelper import *
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel, FragmentType
-from Sollumz.ybn.ybnexport import composite_from_object
+from ..resources.drawable import *
+from ..resources.shader import ShaderManager
+from ..tools.meshhelper import *
+from ..tools.utils import StringHelper, ListHelper
+from ..tools.blenderhelper import *
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel, FragmentType
+from ..ybn.ybnexport import composite_from_object
 
 
 def get_used_materials(obj):

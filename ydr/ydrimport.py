@@ -1,14 +1,13 @@
-import traceback
 import os
 import bpy
 from mathutils import Matrix
-from Sollumz.ydr.shader_materials import create_shader
-from Sollumz.ybn.ybnimport import composite_to_obj, bound_to_obj
-from Sollumz.sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
-from Sollumz.resources.drawable import *
-from Sollumz.tools.meshhelper import flip_uv
-from Sollumz.tools.utils import ListHelper
-from Sollumz.tools.blenderhelper import *
+from .shader_materials import create_shader
+from ..ybn.ybnimport import composite_to_obj, bound_to_obj
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
+from ..resources.drawable import *
+from ..tools.meshhelper import flip_uv
+from ..tools.utils import ListHelper
+from ..tools.blenderhelper import *
 
 
 def shadergroup_to_materials(shadergroup, filepath):

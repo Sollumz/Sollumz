@@ -1,8 +1,7 @@
 import bpy
 import os
-import traceback
-from Sollumz.resources.drawable import *
-from Sollumz.ydr.ydrimport import drawable_to_obj
+from ..resources.drawable import *
+from ..ydr.ydrimport import drawable_to_obj
 
 
 def drawable_dict_to_obj(drawable_dict, filepath):

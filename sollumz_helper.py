@@ -1,7 +1,7 @@
 import traceback
 import time
 from abc import abstractmethod
-from Sollumz.sollumz_properties import DrawableType
+from .sollumz_properties import DrawableType
 
 
 class SOLLUMZ_OT_base:

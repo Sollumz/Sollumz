@@ -1,9 +1,9 @@
 import bpy
 import traceback
-from Sollumz.tools.drawablehelper import *
-from Sollumz.ydr.shader_materials import create_shader, shadermats
-from Sollumz.sollumz_properties import DrawableType, MaterialType, SOLLUMZ_UI_NAMES
-from Sollumz.sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
+from ..tools.drawablehelper import *
+from ..ydr.shader_materials import create_shader, shadermats
+from ..sollumz_properties import DrawableType, SOLLUMZ_UI_NAMES
+from ..sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
 
 
 class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
