@@ -2,12 +2,11 @@ import bpy
 from .properties import CollisionMatFlags
 from Sollumz.resources.bound import *
 from Sollumz.sollumz_properties import *
-from .collision_materials import create_collision_material_from_index, collisionmats
+from .collision_materials import create_collision_material_from_index
 from Sollumz.sollumz_ui import SOLLUMZ_UI_NAMES
 from Sollumz.tools.meshhelper import *
 from Sollumz.tools.utils import VectorHelper
 import os
-import traceback
 from mathutils import Matrix
 
 
@@ -60,21 +59,27 @@ def poly_to_obj(poly, materials, vertices):
         edge2 = (v3 - v1)
         edge3 = (v4 - v1)
 
-        # Order edge lengths
+        # Order edges
+        s1 = False
+        s2 = False
+        s3 = False
         if edge2.length > edge1.length:
             t1 = edge1
             edge1 = edge2
             edge2 = t1
+            s1 = True
         if edge3.length > edge1.length:
             t1 = edge1
             edge1 = edge3
             edge3 = t1
+            s2 = True
         if edge3.length > edge2.length:
             t1 = edge2
             edge2 = edge3
             edge3 = t1
+            s3 = True
 
-        # Ensure edge vectors are perpendicular to each other
+        # Ensure all edge vectors are perpendicular to each other
         b1 = edge1.normalized()
         b2 = edge2.normalized()
         b3 = b1.cross(b2).normalized()
@@ -82,7 +87,20 @@ def poly_to_obj(poly, materials, vertices):
         edge2 = b2 * edge2.dot(b2)
         edge3 = b3 * edge3.dot(b3)
 
-        # Construct transform matrix using the edges
+        # Unswap edges
+        if s3 == True:
+            t1 = edge2
+            edge2 = edge3
+            edge3 = t1
+        if s2 == True:
+            t1 = edge1
+            edge1 = edge3
+            edge3 = t1
+        if s1 == True:
+            t1 = edge1
+            edge1 = edge2
+            edge2 = t1
+
         mat = Matrix()
         mat[0] = edge1.x, edge2.x, edge3.x, center.x
         mat[1] = edge1.y, edge2.y, edge3.y, center.y
