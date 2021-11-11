@@ -55,7 +55,7 @@ def create_mesh(sollum_type):
     return obj
 
 
-def convert_selected_to_bound(objs, use_name=False, multiple=False):
+def convert_selected_to_bound(objs, use_name, multiple, bvhs):
     selected = objs
 
     parent = None
@@ -65,7 +65,8 @@ def convert_selected_to_bound(objs, use_name=False, multiple=False):
     for obj in selected:
         # set parents
         dobj = parent or create_bound()
-        dmobj = create_bound(BoundType.GEOMETRYBVH)
+        dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
+            BoundType.GEOMETRY)
         dmobj.parent = dobj
         obj.parent = dmobj
 

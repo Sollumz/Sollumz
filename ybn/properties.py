@@ -218,6 +218,9 @@ def register():
     bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
         type=bpy.types.Object, name='Parent', description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}.")
 
+    bpy.types.Scene.composite_create_bvh = bpy.props.BoolProperty(
+        name='BVH', description='If true, the operator will create GeometryBVH objects, otherwise it will create Geometry objects.', default=True)
+
 
 def unregister():
     del bpy.types.Scene.poly_bound_type

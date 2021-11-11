@@ -74,10 +74,10 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
         if len(selected) < 1:
             create_bound(BoundType.COMPOSITE)
 
-            return self.success()
+            return True
         else:
             convert_selected_to_bound(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh)
             return self.success()
 
 
