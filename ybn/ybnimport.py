@@ -49,19 +49,9 @@ def poly_to_obj(poly, materials, vertices):
         mat[2] = edge1.z, edge2.z, edge3.z, center.z
 
         create_box(obj.data, size=1)
-        if mat.is_orthogonal:
-            obj.matrix_world = mat
-        else:
-            obj.data.transform(mat)
-            obj.data.transform(Matrix.Translation(-center))
-            obj.location += center
-        # obj.rotation_euler = rot.to_euler()
-        # obj.location = center
-        # obj.scale = Vector((edge1.length, edge2.length, edge3.length))
-        # if obj.name == 'Bound Poly Box.1858':
-        #     print(mat)
-        #     print(mat.to_euler().to_quaternion())
-        #     print(obj.rotation_euler.to_quaternion())
+        obj.data.transform(mat)
+        obj.data.transform(Matrix.Translation(-center))
+        obj.location += center
 
         return obj
     elif type(poly) == Sphere:
