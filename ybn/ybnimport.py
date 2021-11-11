@@ -31,60 +31,37 @@ def poly_to_obj(poly, materials, vertices):
         v3 = vertices[poly.v3]
         v4 = vertices[poly.v4]
 
-        cf1 = (v1 + v2) / 2
-        cf2 = (v3 + v4) / 2
-        cf3 = (v1 + v4) / 2
-        cf4 = (v2 + v3) / 2
-        cf5 = (v1 + v3) / 2
-        cf6 = (v2 + v4) / 2
+        center = (v1 + v2 + v3 + v4) * 0.25
 
-        # caclulate obj center
-        center = (cf3 + cf4) / 2
+        # Get edges from the 4 opposing corners of the box
+        a1 = ((v3 + v4) - (v1 + v2)) * 0.5
+        v2 = v1 + a1
+        v3 = v3 - a1
+        v4 = v4 - a1
+        edge1 = (v2 - v1)
+        edge2 = (v3 - v1)
+        edge3 = (v4 - v1)
 
-        rightest = VectorHelper.get_closest_axis_point(Vector((1, 0, 0)), center, [
-            cf1, cf2, cf3, cf4, cf5, cf6])
-        upest = VectorHelper.get_closest_axis_point(Vector((0, 0, 1)), center, [
-            cf1, cf2, cf3, cf4, cf5, cf6])
-        right = (rightest - center).normalized()
-        up = (upest - center).normalized()
-        forward = Vector.cross(right, up).normalized()
+        # Construct world matrix from edges
+        mat = Matrix()
+        mat[0] = edge1.x, edge2.x, edge3.x, center.x
+        mat[1] = edge1.y, edge2.y, edge3.y, center.y
+        mat[2] = edge1.z, edge2.z, edge3.z, center.z
 
-        mat = Matrix.Identity(4)
-
-        mat[0] = (right.x,   right.y,   right.z,   0)
-        mat[1] = (up.x,      up.y,      up.z,      0)
-        mat[2] = (forward.x, forward.y, forward.z, 0)
-        mat[3] = (0,         0,         0,         1)
-
-        mat.normalize()
-
-        rotation = mat.to_quaternion().inverted().normalized().to_euler('XYZ')
-
-        # calculate scale
-        seq = [cf1, cf2, cf3, cf4, cf5, cf6]
-
-        _cf1 = VectorHelper.get_closest_axis_point(right,    center, seq)
-        _cf2 = VectorHelper.get_closest_axis_point(-right,   center, seq)
-        _cf3 = VectorHelper.get_closest_axis_point(-up,      center, seq)
-        _cf4 = VectorHelper.get_closest_axis_point(up,       center, seq)
-        _cf5 = VectorHelper.get_closest_axis_point(-forward, center, seq)
-        _cf6 = VectorHelper.get_closest_axis_point(forward,  center, seq)
-
-        W = (_cf2 - _cf1).length
-        L = (_cf3 - _cf4).length
-        H = (_cf5 - _cf6).length
-
-        scale = Vector((W, L, H))
-
-        mesh = obj.data
-        bm = bmesh.new()
-        bmesh.ops.create_cube(bm, size=1)
-        bm.to_mesh(mesh)
-        bm.free()
-
-        obj.location = center
-        obj.rotation_euler = rotation
-        obj.scale = scale
+        create_box(obj.data, size=1)
+        if mat.is_orthogonal:
+            obj.matrix_world = mat
+        else:
+            obj.data.transform(mat)
+            obj.data.transform(Matrix.Translation(-center))
+            obj.location += center
+        # obj.rotation_euler = rot.to_euler()
+        # obj.location = center
+        # obj.scale = Vector((edge1.length, edge2.length, edge3.length))
+        # if obj.name == 'Bound Poly Box.1858':
+        #     print(mat)
+        #     print(mat.to_euler().to_quaternion())
+        #     print(obj.rotation_euler.to_quaternion())
 
         return obj
     elif type(poly) == Sphere:

@@ -195,7 +195,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         if len(verts) < 1:
             return self.fail("No vertices selected.")
 
-        pobj = create_bound(type, True)
+        pobj = create_bound(type)
 
         obb, axis, world_matrix = get_obb(verts)
         bbmin, bbmax = get_obb_extents(obb)

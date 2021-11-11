@@ -2,7 +2,7 @@ import bpy
 from Sollumz.sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from Sollumz.ybn.collision_materials import create_collision_material_from_index
 from Sollumz.tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 
 def create_bound_shape(type):
@@ -22,7 +22,7 @@ def create_bound_shape(type):
         pobj.bound_radius = 0.25
         pobj.margin = 0.5
     elif type == PolygonType.CYLINDER:
-        create_cylinder(pobj.data)
+        create_cylinder(pobj.data, rot_mat=Matrix())
     elif type == BoundType.CYLINDER:
         pobj.bound_length = 2
         pobj.bound_radius = 1
