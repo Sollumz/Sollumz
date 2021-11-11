@@ -1,5 +1,6 @@
 import os
 import shutil
+import collections
 import bpy
 from ..resources.drawable import *
 from ..resources.shader import ShaderManager
@@ -454,6 +455,54 @@ def joints_from_object(obj):
     return joints
 
 
+def light_from_object(obj):
+    light = LightItem()
+    light.position = obj.location
+    light.direction = obj.rotation_euler
+    light.color = obj.data.color
+    light.flashiness = obj.data.specular_factor * 100
+    light.intensity = obj.data.energy
+    light.type = obj.light_properties.type
+    light.flags = obj.light_properties.flags
+    light.bone_id = obj.light_properties.bone_id
+    light.type = obj.light_properties.type
+    light.group_id = obj.light_properties.group_id
+    light.time_flags = obj.light_properties.time_flags
+    light.falloff = obj.light_properties.falloff
+    light.falloff_exponent = obj.light_properties.falloff_exponent
+    cpn = obj.light_properties.culling_plane_normal
+    light.culling_plane_normal = Vector((cpn[0], cpn[1], cpn[2]))
+    light.culling_plane_offset = obj.light_properties.culling_plane_offset
+    light.unknown_45 = obj.light_properties.unknown_45
+    light.unknown_46 = obj.light_properties.unknown_46
+    light.volume_intensity = obj.light_properties.volume_intensity
+    light.volume_size_scale = obj.light_properties.volume_size_scale
+    voc = obj.light_properties.volume_outer_color
+    # relocate but works for now..
+    color = collections.namedtuple("Color", ["r", "g", "b"])
+    light.volume_outer_color = color(voc[0], voc[1], voc[2])
+    light.light_hash = obj.light_properties.light_hash
+    light.volume_outer_intensity = obj.light_properties.volume_outer_intensity
+    light.corona_size = obj.light_properties.corona_size
+    light.volume_outer_exponent = obj.light_properties.volume_outer_exponent
+    light.light_fade_distance = obj.light_properties.light_fade_distance
+    light.shadow_fade_distance = obj.light_properties.shadow_fade_distance
+    light.specular_fade_distance = obj.light_properties.specular_fade_distance
+    light.volumetric_fade_distance = obj.light_properties.volumetric_fade_distance
+    light.shadow_near_clip = obj.light_properties.shadow_near_clip
+    light.corona_intensity = obj.light_properties.corona_intensity
+    light.corona_z_bias = obj.light_properties.corona_z_bias
+    tnt = obj.light_properties.tangent
+    light.tangent = Vector((tnt[0], tnt[1], tnt[2]))
+    light.cone_inner_angle = obj.light_properties.cone_inner_angle
+    light.cone_outer_angle = obj.light_properties.cone_outer_angle
+    ext = obj.light_properties.extent
+    light.extent = Vector((ext[0], ext[1], ext[2]))
+    light.projected_texture_hash = obj.light_properties.projected_texture_hash
+
+    return light
+
+
 def drawable_from_object(obj, exportpath, bones=None):
     drawable = Drawable()
 
@@ -512,6 +561,8 @@ def drawable_from_object(obj, exportpath, bones=None):
                 drawable.drawable_models_vlow.append(drawable_model)
         elif child.sollum_type == BoundType.COMPOSITE:
             drawable.bound = composite_from_object(child)
+        elif child.sollum_type == DrawableType.LIGHT:
+            drawable.lights.append(light_from_object(child))
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count

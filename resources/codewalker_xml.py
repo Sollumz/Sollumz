@@ -271,9 +271,9 @@ class ColorProperty(ElementProperty):
         return ColorProperty(element.tag, [float(element.get('r')), float(element.get('g')), float(element.get('b'))])
 
     def to_xml(self):
-        r = str(numpy.float32(self.value.r))
-        g = str(numpy.float32(self.value.g))
-        b = str(numpy.float32(self.value.b))
+        r = str(int(self.value.r))
+        g = str(int(self.value.g))
+        b = str(int(self.value.b))
         return ET.Element(self.tag_name, attrib={'r': r, 'g': g, 'b': b})
 
 
