@@ -52,8 +52,7 @@ def polygon_from_object(obj, geometry):
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
-        bound_box = get_total_bounds(obj)
-        # corners = [bound_box[0], bound_box[6], bound_box[4], bound_box[2]]
+        bound_box = [obj.matrix_world @ Vector(pos) for pos in obj.bound_box]
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
             vertices.append(vert - geom_center)

@@ -98,7 +98,7 @@ def create_disc(mesh, radius=1, length=0.08):
 
 
 def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
-    length = length if length > diameter * 2 else diameter * 2
+    length = length if diameter < length else diameter
     if diameter < 0:
         raise ValueError('Cannot create capsule with a diameter less than 0!')
 

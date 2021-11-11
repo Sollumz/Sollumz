@@ -22,68 +22,92 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
+def make_matrix(v1, v2, v3):
+    a = v2-v1
+    b = v3-v1
+
+    c = a.cross(b)
+    if c.magnitude > 0:
+        c = c.normalized()
+    else:
+        raise BaseException("A B C are colinear")
+
+    b2 = c.cross(a).normalized()
+    a2 = a.normalized()
+    m = Matrix([a2, b2, c]).transposed()
+    m = Matrix.Translation(v1) @ m.to_4x4()
+
+    return m
+
+
 def poly_to_obj(poly, materials, vertices):
     if type(poly) == Box:
         obj = init_poly_obj(poly, PolygonType.BOX, materials)
+
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
         v3 = vertices[poly.v3]
         v4 = vertices[poly.v4]
+        center = (v1 + v2 + v3 + v4) * 0.25
 
-        cf1 = (v1 + v2) / 2
-        cf2 = (v3 + v4) / 2
-        cf3 = (v1 + v4) / 2
-        cf4 = (v2 + v3) / 2
-        cf5 = (v1 + v3) / 2
-        cf6 = (v2 + v4) / 2
+        # Get edges from the 4 opposing corners of the box
+        a1 = ((v3 + v4) - (v1 + v2)) * 0.5
+        v2 = v1 + a1
+        v3 = v3 - a1
+        v4 = v4 - a1
+        edge1 = (v2 - v1)
+        edge2 = (v3 - v1)
+        edge3 = (v4 - v1)
 
-        # caclulate obj center
-        center = (cf3 + cf4) / 2
+        # Order edges
+        s1 = False
+        s2 = False
+        s3 = False
+        if edge2.length > edge1.length:
+            t1 = edge1
+            edge1 = edge2
+            edge2 = t1
+            s1 = True
+        if edge3.length > edge1.length:
+            t1 = edge1
+            edge1 = edge3
+            edge3 = t1
+            s2 = True
+        if edge3.length > edge2.length:
+            t1 = edge2
+            edge2 = edge3
+            edge3 = t1
+            s3 = True
 
-        rightest = VectorHelper.get_closest_axis_point(Vector((1, 0, 0)), center, [
-            cf1, cf2, cf3, cf4, cf5, cf6])
-        upest = VectorHelper.get_closest_axis_point(Vector((0, 0, 1)), center, [
-            cf1, cf2, cf3, cf4, cf5, cf6])
-        right = (rightest - center).normalized()
-        up = (upest - center).normalized()
-        forward = Vector.cross(right, up).normalized()
+        # Ensure all edge vectors are perpendicular to each other
+        b1 = edge1.normalized()
+        b2 = edge2.normalized()
+        b3 = b1.cross(b2).normalized()
+        b2 = b1.cross(b3).normalized()
+        edge2 = b2 * edge2.dot(b2)
+        edge3 = b3 * edge3.dot(b3)
 
-        mat = Matrix.Identity(4)
+        # Unswap edges
+        if s3 == True:
+            t1 = edge2
+            edge2 = edge3
+            edge3 = t1
+        if s2 == True:
+            t1 = edge1
+            edge1 = edge3
+            edge3 = t1
+        if s1 == True:
+            t1 = edge1
+            edge1 = edge2
+            edge2 = t1
 
-        mat[0] = (right.x,   right.y,   right.z,   0)
-        mat[1] = (up.x,      up.y,      up.z,      0)
-        mat[2] = (forward.x, forward.y, forward.z, 0)
-        mat[3] = (0,         0,         0,         1)
+        mat = Matrix()
+        mat[0] = edge1.x, edge2.x, edge3.x, center.x
+        mat[1] = edge1.y, edge2.y, edge3.y, center.y
+        mat[2] = edge1.z, edge2.z, edge3.z, center.z
 
-        mat.normalize()
-
-        rotation = mat.to_quaternion().inverted().normalized().to_euler('XYZ')
-
-        # calculate scale
-        seq = [cf1, cf2, cf3, cf4, cf5, cf6]
-
-        _cf1 = VectorHelper.get_closest_axis_point(right,    center, seq)
-        _cf2 = VectorHelper.get_closest_axis_point(-right,   center, seq)
-        _cf3 = VectorHelper.get_closest_axis_point(-up,      center, seq)
-        _cf4 = VectorHelper.get_closest_axis_point(up,       center, seq)
-        _cf5 = VectorHelper.get_closest_axis_point(-forward, center, seq)
-        _cf6 = VectorHelper.get_closest_axis_point(forward,  center, seq)
-
-        W = (_cf2 - _cf1).length
-        L = (_cf3 - _cf4).length
-        H = (_cf5 - _cf6).length
-
-        scale = Vector((W, L, H))
-
-        mesh = obj.data
-        bm = bmesh.new()
-        bmesh.ops.create_cube(bm, size=1)
-        bm.to_mesh(mesh)
-        bm.free()
-
-        obj.location = center
-        obj.rotation_euler = rotation
-        obj.scale = scale
+        create_box(obj.data, size=1)
+        obj.matrix_basis = mat
 
         return obj
     elif type(poly) == Sphere:
