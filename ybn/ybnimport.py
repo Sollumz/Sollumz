@@ -23,14 +23,32 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
+def make_matrix(v1, v2, v3):
+    a = v2-v1
+    b = v3-v1
+
+    c = a.cross(b)
+    if c.magnitude > 0:
+        c = c.normalized()
+    else:
+        raise BaseException("A B C are colinear")
+
+    b2 = c.cross(a).normalized()
+    a2 = a.normalized()
+    m = Matrix([a2, b2, c]).transposed()
+    m = Matrix.Translation(v1) @ m.to_4x4()
+
+    return m
+
+
 def poly_to_obj(poly, materials, vertices):
     if type(poly) == Box:
         obj = init_poly_obj(poly, PolygonType.BOX, materials)
+
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
         v3 = vertices[poly.v3]
         v4 = vertices[poly.v4]
-
         center = (v1 + v2 + v3 + v4) * 0.25
 
         # Get edges from the 4 opposing corners of the box
@@ -42,16 +60,36 @@ def poly_to_obj(poly, materials, vertices):
         edge2 = (v3 - v1)
         edge3 = (v4 - v1)
 
-        # Construct world matrix from edges
+        # Order edge lengths
+        if edge2.length > edge1.length:
+            t1 = edge1
+            edge1 = edge2
+            edge2 = t1
+        if edge3.length > edge1.length:
+            t1 = edge1
+            edge1 = edge3
+            edge3 = t1
+        if edge3.length > edge2.length:
+            t1 = edge2
+            edge2 = edge3
+            edge3 = t1
+
+        # Ensure edge vectors are perpendicular to each other
+        b1 = edge1.normalized()
+        b2 = edge2.normalized()
+        b3 = b1.cross(b2).normalized()
+        b2 = b1.cross(b3).normalized()
+        edge2 = b2 * edge2.dot(b2)
+        edge3 = b3 * edge3.dot(b3)
+
+        # Construct transform matrix using the edges
         mat = Matrix()
         mat[0] = edge1.x, edge2.x, edge3.x, center.x
         mat[1] = edge1.y, edge2.y, edge3.y, center.y
         mat[2] = edge1.z, edge2.z, edge3.z, center.z
 
         create_box(obj.data, size=1)
-        obj.data.transform(mat)
-        obj.data.transform(Matrix.Translation(-center))
-        obj.location += center
+        obj.matrix_basis = mat
 
         return obj
     elif type(poly) == Sphere:
