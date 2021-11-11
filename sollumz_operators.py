@@ -201,10 +201,6 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         obj.entity_properties.archetype_name = entity.archetype_name
         obj.entity_properties.flags = entity.flags
         obj.entity_properties.guid = entity.guid
-        obj.entity_properties.position = entity.position
-        obj.entity_properties.rotation = entity.rotation
-        obj.entity_properties.scale_xy = entity.scale_xy
-        obj.entity_properties.scale_z = entity.scale_z
         obj.entity_properties.parent_index = entity.parent_index
         obj.entity_properties.lod_dist = entity.lod_dist
         obj.entity_properties.child_lod_dist = entity.child_lod_dist
@@ -215,6 +211,14 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         obj.entity_properties.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
         obj.entity_properties.tint_value = entity.tint_value
 
+        if entity.type != 'CMloInstanceDef':
+            # Entities in YMAPs need rotation inverted
+            entity.rotation.invert()
+        obj.matrix_world = entity.rotation.to_matrix().to_4x4()
+        obj.location = entity.position
+        obj.scale = Vector(
+            (entity.scale_xy, entity.scale_xy, entity.scale_z))
+
     def run(self, context):
 
         try:
@@ -223,7 +227,6 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 for obj in context.collection.objects:
                     for entity in ymap.entities:
                         if(entity.archetype_name == obj.name):
-                            obj.location = entity.position
                             self.apply_entity_properties(obj, entity)
                 return self.success(f"succesfully imported : {self.filepath}", True, False)
             else:
@@ -255,14 +258,10 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
         entity.archetype_name = obj.name
         entity.flags = int(obj.entity_properties.flags)
         entity.guid = int(obj.entity_properties.guid)
-        # entity.position = obj.entity_properties.position
         entity.position = obj.location
-        # entity.rotation = obj.entity_properties.rotation
-        entity.rotation = obj.rotation_quaternion
-        # entity.scale_xy = obj.entity_properties.scale_xy
-        entity.scale_xy = 1
-        # entity.scale_z = obj.entity_properties.scale_z
-        entity.scale_z = 1
+        entity.rotation = obj.rotation_euler.to_quaternion()
+        entity.scale_xy = obj.scale.x
+        entity.scale_z = obj.scale.z
         entity.parent_index = int(obj.entity_properties.parent_index)
         entity.lod_dist = obj.entity_properties.lod_dist
         entity.child_lod_dist = obj.entity_properties.child_lod_dist
