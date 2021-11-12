@@ -22,7 +22,9 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
             # self.messages.append(
             #    f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
-            return self.success(f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.", True, False)
+            self.message(
+                f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
+            return True
 
 
 class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -171,7 +173,7 @@ class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator)
                     if(ms.material == material):
                         ms.material = new_material
 
-        return self.success(None, False)
+        return True
 
 
 class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -184,7 +186,9 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
         objs = bpy.context.selected_objects
         if(len(objs) == 0):
-            return self.fail(f"Please select a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
+            self.message(
+                f"Please select a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
+            return False
 
         for obj in objs:
             if is_sollum_type(obj, DrawableType.GEOMETRY):
@@ -201,7 +205,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
                 self.messages.append(
                     f"{obj.name} is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}, please select a valid {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
 
-        return self.success(None, False)
+        return True
 
 
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -212,7 +216,8 @@ class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         bone = context.active_pose_bone.bone
         bone.bone_properties.flags.add()
-        return self.success(f"to {bone.name} bone")
+        self.message(f"Added bone flag to bone: {bone.name}")
+        return True
 
 
 class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -232,4 +237,5 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
         list.remove(index)
         bone.bone_properties.ul_index = min(
             max(0, index - 1), len(list) - 1)
-        return self.success(f"from {bone.name} bone")
+        self.message(f"Deleted bone flag from: {bone.name}")
+        return True

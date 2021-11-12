@@ -164,7 +164,8 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             objects = context.selected_objects
 
         if not is_sollum_object_in_objects(objects):
-            return self.fail(f"No Sollumz object(s) to {self.bl_action}.")
+            self.message(f"No Sollumz object(s) to {self.bl_action}.")
+            return False
 
         if len(objects) > 0:
             for obj in objects:
@@ -227,12 +228,14 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                     for entity in ymap.entities:
                         if(entity.archetype_name == obj.name):
                             self.apply_entity_properties(obj, entity)
-                return self.success(f"succesfully imported : {self.filepath}", True, False)
+                self.message(f"Succesfully imported: {self.filepath}")
+                return True
             else:
-                return self.fail(f"{self.filepath} contains no entities to import!")
+                self.error(f"{self.filepath} contains no entities to import!")
+                return False
         except:
-            return self.fail(traceback.format_exc())
-            # return False # shouldnt do this because otherwise it wont print the correct error
+            self.error(f"Error during import: {traceback.format_exc()}")
+            return False
 
 
 class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
@@ -322,9 +325,11 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
 
             ymap.write_xml(self.filepath)
 
-            return self.success(f"succesfully exported: {self.filepath}", True, False)
+            self.message(f"Succesfully exported: {self.filepath}")
+            return True
         except:
-            return self.fail(traceback.format_exc())
+            self.message(f"Error during export: {traceback.format_exc()}")
+            return False
 
 
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -358,9 +363,10 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
                     self.messages.append(
                         f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} type.")
         else:
-            return self.fail("No objects selected to paint.")
+            self.message("No objects selected to paint.")
+            return False
 
-        return self.success(None, False)
+        return True
 
 
 def sollumz_menu_func_import(self, context):

@@ -78,7 +78,7 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
         else:
             convert_selected_to_bound(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh)
-            return self.success()
+            return True
 
 
 class CreateBoundHelper(SOLLUMZ_OT_base):
@@ -178,10 +178,12 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def create_poly_from_verts(self, context, type, parent):
         if not parent:
-            return self.fail("Must specify a parent object!")
+            self.message("Must specify a parent object!")
+            return False
         elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
-            return self.fail(
+            self.message(
                 f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
+            return False
 
         selected = context.selected_objects
 
@@ -193,7 +195,8 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             verts.extend(get_selected_vertices(obj))
 
         if len(verts) < 1:
-            return self.fail("No vertices selected.")
+            self.message("No vertices selected.")
+            return False
 
         pobj = create_bound(type)
 
@@ -253,11 +256,16 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         aobj = context.active_object
         if not aobj:
-            return self.fail(f"No {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} selected.")
+            self.message(
+                f"No {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} selected.")
+            return False
         if aobj.sollum_type != BoundType.COMPOSITE:
-            return self.fail(f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}!")
+            self.message(
+                f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}!")
+            return False
         if context.mode != 'OBJECT':
-            return self.fail(f"{self.bl_idname} can only be ran in Object mode.")
+            self.message(f"{self.bl_idname} can only be ran in Object mode.")
+            return False
 
         center = get_bound_center(aobj)
         aobj.location = center
@@ -276,7 +284,8 @@ class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
         selected = context.selected_objects
         if len(selected) < 1:
-            return self.fail("No objects selected")
+            self.message("No objects selected")
+            return False
 
         for obj in selected:
             try:
@@ -288,7 +297,7 @@ class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
             except:
                 self.messages.append(f"Failure to add material to {obj.name}")
 
-        return self.success(None, False)
+        return True
 
 
 class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -306,7 +315,8 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         try:
             preset = flag_presets.presets[index]
             if preset.name in self.preset_blacklist:
-                return self.fail(f"Cannot delete a default preset!")
+                self.message("Cannot delete a default preset!")
+                return False
 
             filepath = get_flag_presets_path()
             flag_presets.presets.remove(preset)
@@ -315,12 +325,16 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
                 flag_presets.write_xml(filepath)
                 handle_load_flag_presets(self)
 
-                return self.success()
+                return True
             except:
-                return self.fail(f"Cannot delete a default preset!")
+                self.error(
+                    f"Error during deletion of flag preset: {traceback.format_exc()}")
+                return False
 
         except IndexError:
-            return self.fail(f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
+            self.message(
+                f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
+            return False
 
 
 class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -334,14 +348,18 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         handle_load_flag_presets(self)
 
         if not obj:
-            return self.fail("No object selected!")
+            self.message("No object selected!")
+            return False
 
         if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
-            return self.fail(f"Selected object must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
+            self.message(
+                f"Selected object must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
+            return False
 
         name = context.scene.new_flag_preset_name
         if len(name) < 1:
-            return self.fail(f'Please specify a name for the new flag preset.')
+            self.message("Please specify a name for the new flag preset.")
+            return False
 
         flag_preset = FlagPreset()
         flag_preset.name = name
@@ -360,13 +378,15 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
 
         for preset in flag_presets.presets:
             if preset.name == name:
-                return self.fail(f'A preset with that name already exists! If you wish to overwrite this preset, delete the original.')
+                self.message(
+                    "A preset with that name already exists! If you wish to overwrite this preset, delete the original.")
+                return False
 
         flag_presets.presets.append(flag_preset)
         flag_presets.write_xml(filepath)
         handle_load_flag_presets(self)
 
-        return self.success()
+        return True
 
 
 class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -381,13 +401,14 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         index = context.scene.flag_preset_index
         selected = context.selected_objects
         if len(selected) < 1:
-            return self.fail("No objects selected!")
+            self.message("No objects selected!")
+            return False
 
         handle_load_flag_presets(self)
 
         for obj in selected:
             if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
-                self.messages.append(
+                self.message(
                     f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
 
             try:
@@ -406,14 +427,15 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
 
                 # Hacky way to force the UI to redraw. For some reason setting custom properties will not cause the object properties panel to redraw, so we have to do this.
                 obj.location = obj.location
-                self.messages.append(
-                    f"Succesfully Added Flag Preset To {obj.name}")
+                self.message(
+                    f"Applied preset '{preset.name}' to: {obj.name}")
             except IndexError:
                 filepath = get_flag_presets_path()
-                self.messages.append(
+                self.error(
                     f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
+                return False
 
-        return self.success(None, False)
+        return True
 
 
 class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -426,11 +448,12 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
 
         aobj = context.active_object
         if(aobj == None):
-            return self.fail(f"Please select a object to {self.bl_action}")
+            self.message("Please select an object.")
+            return False
 
         if is_sollum_type(aobj, BoundType):
             for flag_name in BoundFlags.__annotations__.keys():
                 aobj.composite_flags1[flag_name] = False
                 aobj.composite_flags2[flag_name] = False
 
-        return self.success()
+        return True
