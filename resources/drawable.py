@@ -176,10 +176,18 @@ class SkeletonProperty(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.unknown_1c = ValueProperty("Unknown1C", 0)
-        self.unknown_50 = ValueProperty("Unknown50", 0)
-        self.unknown_54 = ValueProperty("Unknown54", 0)
-        self.unknown_58 = ValueProperty("Unknown58", 0)
+        # copied from player_zero.yft
+        # what do the following 4 unks mean and what are they for still remain unknown
+        # before we've been using 0 for default value
+        # but it turns out that if unk50 and unk54 are 0 it would just crash the game in some cases, e.g. modifying the yft of a streamedped, player_zero.yft for example
+        # as we don't know how to calc all those unks we should use a hacky default value working in most if not all cases, so I replace 0 with the stuff from player_zero.yft
+        # unknown_1c is either 0 or 16777216, the latter in most cases
+        # oiv seems to get unknown_50 and unknown_54 correct somehow
+        # unknown_58 is DataCRC in gims, oiv doesn't seem to calc it correctly so they leave it for user to edit this
+        self.unknown_1c = ValueProperty("Unknown1C", 16777216)
+        self.unknown_50 = ValueProperty("Unknown50", 567032952)
+        self.unknown_54 = ValueProperty("Unknown54", 2134582703)
+        self.unknown_58 = ValueProperty("Unknown58", 2503907467)
         self.bones = BonesListProperty("Bones")
 
 
