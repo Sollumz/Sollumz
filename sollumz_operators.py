@@ -133,18 +133,15 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 valid_type = True
             elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
                 filepath = self.get_filepath(obj.name + YDD.file_extension)
-                export_ydd(
-                    obj, filepath)
+                export_ydd(self, obj, filepath)
                 valid_type = True
             elif obj.sollum_type == FragmentType.FRAGMENT:
                 filepath = self.get_filepath(obj.name + YFT.file_extension)
-                export_yft(
-                    obj, filepath)
+                export_yft(obj, filepath)
                 valid_type = True
             elif obj.sollum_type == BoundType.COMPOSITE:
                 filepath = self.get_filepath(obj.name + YBN.file_extension)
-                export_ybn(
-                    obj, filepath)
+                export_ybn(obj, filepath)
                 valid_type = True
             if valid_type:
                 self.message(f"Succesfully exported: {filepath}")
@@ -154,16 +151,24 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
         return True
 
+    def get_only_parent_objs(self, objs):
+        pobjs = []
+        for obj in objs:
+            if obj.parent == None:
+                pobjs.append(obj)
+                print(obj.name)
+        return pobjs
+
     def run(self, context):
         objects = []
 
         if(self.export_type == "export_all"):
-            objects = context.collection.objects
+            objects = self.get_only_parent_objs(context.collection.objects)
         else:
             objects = context.selected_objects
 
         if not is_sollum_object_in_objects(objects):
-            self.message(f"No Sollumz object(s) to {self.bl_action}.")
+            self.warning("No sollum objects selected or in scene to export.")
             return False
 
         if len(objects) > 0:

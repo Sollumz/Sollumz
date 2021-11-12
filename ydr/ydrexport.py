@@ -343,9 +343,10 @@ def drawable_model_from_object(obj, bones=None):
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
-    # drawable_model.hasskin = 0
+
     # rawable_model.bone_index = 0
     if bones is not None:
+        drawable_model.has_skin = 1
         drawable_model.unknown_1 = len(bones)
 
     for child in obj.children:
@@ -401,6 +402,9 @@ def bone_from_object(obj):
     bone.translation = mat_decomposed[0]
     bone.rotation = mat_decomposed[1]
     bone.scale = mat_decomposed[2]
+    # transform_unk doesn't appear in openformats so oiv calcs it right
+    # what does it do? the bone length?
+    bone.transform_unk = Quaternion((0, 0, 4, 3))
 
     return bone
 
@@ -574,6 +578,4 @@ def drawable_from_object(exportop, obj, exportpath, bones=None):
 
 
 def export_ydr(exportop, obj, filepath):
-    if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
-        return False
     drawable_from_object(exportop, obj, filepath, None).write_xml(filepath)
