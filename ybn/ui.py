@@ -185,8 +185,6 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         layout.separator()
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
-        row = layout.row()
-        # grid = layout.grid_flow(columns=2)
         row.prop(context.scene, "poly_bound_type")
         if context.active_object and context.active_object.mode == 'EDIT':
             row.prop(context.scene, "poly_parent", expand=True)
