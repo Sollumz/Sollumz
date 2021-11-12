@@ -20,6 +20,7 @@ class SOLLUMZ_OT_base:
         start = time.time()
         try:
             result = self.run(context)
+            reset_sollumz_view(context.scene)
         except:
             result = False
             self.error(
@@ -56,6 +57,20 @@ class SOLLUMZ_OT_base:
     def fail(self, traceback):
         self.error(f"Failure to {self.bl_action}: \n {traceback}")
         return False
+
+
+def reset_sollumz_view(scene):
+    scene.hide_collision = not scene.hide_collision
+    scene.hide_high_lods = not scene.hide_high_lods
+    scene.hide_medium_lods = not scene.hide_medium_lods
+    scene.hide_low_lods = not scene.hide_low_lods
+    scene.hide_very_low_lods = not scene.hide_very_low_lods
+
+    scene.hide_collision = not scene.hide_collision
+    scene.hide_high_lods = not scene.hide_high_lods
+    scene.hide_medium_lods = not scene.hide_medium_lods
+    scene.hide_low_lods = not scene.hide_low_lods
+    scene.hide_very_low_lods = not scene.hide_very_low_lods
 
 
 def is_sollum_object_in_objects(objs):
