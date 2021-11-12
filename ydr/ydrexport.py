@@ -85,6 +85,7 @@ def get_shaders_from_blender(obj):
 
 def texture_dictionary_from_materials(obj, materials, exportpath):
     texture_dictionary = []
+    messages = []
 
     has_td = False
 
@@ -127,24 +128,21 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     # if(n.image != None):
                     foldername = obj.name
                     folderpath = os.path.join(exportpath, foldername)
-
-                    if(os.path.isdir(folderpath) == False):
-                        os.mkdir(folderpath)
-
                     txtpath = n.image.filepath
-                    dstpath = folderpath + "\\" + \
-                        os.path.basename(n.image.filepath)
-
                     if os.path.isfile(txtpath):
+                        if(os.path.isdir(folderpath) == False):
+                            os.mkdir(folderpath)
+                        dstpath = folderpath + "\\" + \
+                            os.path.basename(n.image.filepath)
                         # check if paths are the same because if they are no need to copy
                         if txtpath != dstpath:
                             shutil.copyfile(txtpath, dstpath)
-                    # else:
-                        # print(
-                            # "Missing Embedded Texture, please supply texture! The texture will not be copied to the texture folder until entered!")
+                    else:
+                        messages.append(
+                            f"Missing Embedded Texture: {texture_name} please supply texture! The texture will not be copied to the texture folder until entered!")
 
     if(has_td):
-        return texture_dictionary
+        return texture_dictionary, messages
     else:
         return None
 
@@ -503,7 +501,8 @@ def light_from_object(obj):
     return light
 
 
-def drawable_from_object(obj, exportpath, bones=None):
+# REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
+def drawable_from_object(exportop, obj, exportpath, bones=None):
     drawable = Drawable()
 
     drawable.name = obj.name
@@ -522,8 +521,10 @@ def drawable_from_object(obj, exportpath, bones=None):
     for shader in shaders:
         drawable.shader_group.shaders.append(shader)
 
-    drawable.shader_group.texture_dictionary = texture_dictionary_from_materials(
+    td, messages = texture_dictionary_from_materials(
         obj, get_used_materials(obj), os.path.dirname(exportpath))
+    drawable.shader_group.texture_dictionary = td
+    exportop.messages += messages
 
     if bones is None:
         if obj.pose is not None:
@@ -574,7 +575,7 @@ def drawable_from_object(obj, exportpath, bones=None):
     return drawable
 
 
-def export_ydr(obj, filepath):
+def export_ydr(exportop, obj, filepath):
     if obj.parent and (obj.parent.sollum_type == DrawableType.DRAWABLE_DICTIONARY or obj.parent.sollum_type == FragmentType.FRAGMENT):
         return False
-    drawable_from_object(obj, filepath, None).write_xml(filepath)
+    drawable_from_object(exportop, obj, filepath, None).write_xml(filepath)
