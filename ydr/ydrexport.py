@@ -58,7 +58,7 @@ def get_shaders_from_blender(obj):
                 if node.image == None:
                     param.texture_name = "givemechecker"
                 else:
-                    param.texture_name = os.path.splitext(node.image.name)[0]
+                    param.texture_name = node.image.name.split('.')[0]
                 shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
@@ -101,7 +101,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     if n.image == None:
                         texture_name = "givemechecker"
                     else:
-                        texture_name = os.path.splitext(n.image.name)[0]
+                        texture_name = n.image.name.split('.')[0]
                     if texture_name in t_names:
                         continue
                     else:

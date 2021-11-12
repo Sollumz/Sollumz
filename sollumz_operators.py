@@ -156,7 +156,6 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         for obj in objs:
             if obj.parent == None:
                 pobjs.append(obj)
-                print(obj.name)
         return pobjs
 
     def run(self, context):
