@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod
 from dataclasses import dataclass
 from typing import Any
 from xml.etree import ElementTree as ET
-import numpy
+from numpy import float32
 
 """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
 
@@ -291,9 +291,9 @@ class VectorProperty(ElementProperty):
         return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')), float(element.get('z')))))
 
     def to_xml(self):
-        x = str(numpy.float32(self.value.x))
-        y = str(numpy.float32(self.value.y))
-        z = str(numpy.float32(self.value.z))
+        x = str(float32(self.value.x))
+        y = str(float32(self.value.y))
+        z = str(float32(self.value.z))
         return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z})
 
 
@@ -311,10 +311,10 @@ class QuaternionProperty(ElementProperty):
         return QuaternionProperty(element.tag, Quaternion((float(element.get('w')), float(element.get('x')), float(element.get('y')), float(element.get('z')))))
 
     def to_xml(self):
-        x = str(numpy.float32(self.value.x))
-        y = str(numpy.float32(self.value.y))
-        z = str(numpy.float32(self.value.z))
-        w = str(numpy.float32(self.value.w))
+        x = str(float32(self.value.x))
+        y = str(float32(self.value.y))
+        z = str(float32(self.value.z))
+        w = str(float32(self.value.w))
         return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z, 'w': w})
 
 
@@ -364,8 +364,9 @@ class ValueProperty(ElementProperty):
 
     def to_xml(self):
         value = self.value
-        if value is int:
+        if type(value) is int:
             value = int(self.value)
-        elif value is float:
-            value = numpy.float32(self.value)
+        elif type(value) is float:
+            value = int(self.value) if self.value.is_integer(
+            ) else float32(self.value)
         return ET.Element(self.tag_name, attrib={'value': str(value)})
