@@ -210,11 +210,11 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_label = "Flag Presets"
     bl_idname = 'SOLLUMZ_PT_FLAG_PRESETS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
-    # bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_BOUND_FLAGS_PANEL.bl_idname
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
 
     def draw(self, context):
         layout = self.layout
