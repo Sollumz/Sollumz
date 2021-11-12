@@ -311,8 +311,13 @@ def rotation_limits_to_obj(rotation_limits, armature):
 
 
 def light_to_obj(light, idx):
-    light_data = bpy.data.lights.new(
-        name=f"light{idx}", type=light.type.upper())
+    # WORK AROUND FOR INVALID LIGHT TYPES
+    try:
+        light_data = bpy.data.lights.new(
+            name=f"light{idx}", type=light.type.upper())
+    except:
+        light_data = bpy.data.lights.new(
+            name=f"light{idx}", type="SPOT")
 
     light_data.color = light.color
     light_data.energy = light.intensity
@@ -325,8 +330,9 @@ def light_to_obj(light, idx):
     bpy.context.collection.objects.link(lobj)
     lobj.sollum_type = DrawableType.LIGHT
     lobj.location = light.position
-    #lobj.rotation_euler = light.direction
+    lobj.rotation_euler = light.direction
 
+    lobj.light_properties.type = light.type
     lobj.light_properties.flags = light.flags
     lobj.light_properties.bone_id = light.bone_id
     lobj.light_properties.group_id = light.group_id

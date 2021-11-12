@@ -23,6 +23,9 @@ def draw_material_properties(layout, mat):
 
 
 def draw_light_properties(layout, light):
+    row = layout.row()
+    row.enabled = False
+    row.prop(light.light_properties, "type")  # MAKE THIS AN ENUM?
     layout.prop(light.light_properties, "flags")
     layout.prop(light.light_properties, "bone_id")
     layout.prop(light.light_properties, "group_id")
@@ -51,6 +54,7 @@ def draw_light_properties(layout, light):
     layout.prop(light.light_properties, "cone_inner_angle")
     layout.prop(light.light_properties, "cone_outer_angle")
     layout.prop(light.light_properties, "extent")
+    layout.prop(light.light_properties, "projected_texture_hash")
 
 
 def draw_shader(layout, mat):
