@@ -28,8 +28,9 @@ def shadergroup_to_materials(shadergroup, filepath):
                     if param.name == n.name:
                         texture_path = os.path.join(
                             texture_folder, param.texture_name + ".dds")
+                        addon_key = __name__.split('.')[0]
                         shared_folder = bpy.context.preferences.addons[
-                            "Sollumz"].preferences.shared_texture_folder
+                            addon_key].preferences.shared_texture_folder
                         shared_texture_path = os.path.join(
                             shared_folder, param.texture_name + ".dds")
                         if(os.path.isfile(texture_path)):
