@@ -48,16 +48,6 @@ class SOLLUMZ_OT_base:
     def error(self, msg):
         self.report({"ERROR"}, msg)
 
-    def success(self, msg=None, show_msg=True, show_completed=True):
-        if show_msg:
-            self.message(
-                f"{self.bl_action}{f' {msg} ' if msg else ' '}{'completed.' if show_completed else ''}")
-        return True
-
-    def fail(self, traceback):
-        self.error(f"Failure to {self.bl_action}: \n {traceback}")
-        return False
-
 
 def reset_sollumz_view(scene):
     scene.hide_collision = not scene.hide_collision

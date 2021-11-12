@@ -37,19 +37,22 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and (is_sollum_type(obj, BoundType) and obj.sollum_type != BoundType.COMPOSITE)
+        return obj and ((is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType)) and obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != PolygonType.BOX)
 
     def draw(self, context):
         obj = context.active_object
         self.layout.use_property_split = True
         grid = self.layout.grid_flow(columns=2, row_major=True)
-        if obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH and obj.sollum_type != BoundType.BOX:
-            grid.prop(obj, 'bound_radius')
-        if obj.sollum_type == BoundType.CYLINDER:
+        # if obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH and obj.sollum_type != BoundType.BOX:
+        if not obj.sollum_type in [BoundType.GEOMETRY, BoundType.GEOMETRYBVH, BoundType.BOX, PolygonType.BOX, PolygonType.TRIANGLE]:
+            grid.prop(obj, 'bound_radius', text='SphereRadius' if is_sollum_type(
+                obj, BoundType) else 'Radius')
+        if obj.sollum_type == BoundType.CYLINDER or obj.sollum_type == PolygonType.CYLINDER or obj.sollum_type == PolygonType.CAPSULE:
             grid.prop(obj, 'bound_length')
         if obj.sollum_type == BoundType.BOX:
             grid.prop(obj, 'bound_dimensions')
-        grid.prop(obj, 'margin')
+        if is_sollum_type(obj, BoundType):
+            grid.prop(obj, 'margin')
 
 
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
@@ -165,6 +168,7 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
         row.prop(context.scene, "use_mesh_name")
+        row.prop(context.scene, "composite_create_bvh")
         row.prop(context.scene, "create_seperate_objects")
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
@@ -206,11 +210,11 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_label = "Flag Presets"
     bl_idname = 'SOLLUMZ_PT_FLAG_PRESETS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
-    # bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_BOUND_FLAGS_PANEL.bl_idname
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
 
     def draw(self, context):
         layout = self.layout
