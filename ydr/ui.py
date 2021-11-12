@@ -193,6 +193,7 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
         layout.operator(SOLLUMZ_OT_create_shader_material.bl_idname)
+        layout.operator(SOLLUMZ_OT_convert_to_shader_material.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
