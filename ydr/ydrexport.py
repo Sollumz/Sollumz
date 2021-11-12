@@ -144,7 +144,7 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
     if(has_td):
         return texture_dictionary, messages
     else:
-        return None
+        return None, messages
 
 
 def get_blended_verts(mesh, vertex_groups, bones=None):

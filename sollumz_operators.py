@@ -134,7 +134,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
                 filepath = self.get_filepath(obj.name + YDD.file_extension)
                 export_ydd(
-                    obj, filepath)
+                    self, obj, filepath)
                 valid_type = True
             elif obj.sollum_type == FragmentType.FRAGMENT:
                 filepath = self.get_filepath(obj.name + YFT.file_extension)
