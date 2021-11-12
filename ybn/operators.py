@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from ..tools.obb import get_obb, get_obb_dimensions, get_obb_extents
+from math import degrees
+from ..tools.obb import get_obb, get_obb_extents
 import traceback
 from ..resources.flag_preset import FlagPreset
 from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
@@ -194,46 +195,71 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         for obj in selected:
             verts.extend(get_selected_vertices(obj))
 
-        if len(verts) < 1:
-            self.message("No vertices selected.")
+        if len(verts) < 3:
+            self.message("Please select at least three vertices.")
             return False
 
-        pobj = create_bound(type)
+        if type != PolygonType.TRIANGLE:
+            pobj = create_bound_shape(
+                type) if type != PolygonType.BOX else create_mesh(type)
 
-        obb, axis, world_matrix = get_obb(verts)
-        bbmin, bbmax = get_obb_extents(obb)
+            obb, world_matrix = get_obb(verts)
+            bbmin, bbmax = get_obb_extents(obb)
 
-        center = world_matrix @ (bbmin + bbmax) / 2
-        local_center = (bbmin + bbmax) / 2
+            center = world_matrix @ (bbmin + bbmax) / 2
+            local_center = (bbmin + bbmax) / 2
 
-        height, width = get_obb_dimensions(bbmin, bbmax)
-        radius = width / 2
+            # long, short = get_short_long_edge(bbmin, bbmax)
 
-        if type == PolygonType.BOX:
-            create_box_from_extents(
-                pobj.data, bbmin - local_center, bbmax - local_center)
-        elif type == PolygonType.SPHERE:
-            create_sphere(pobj.data, height / 2)
-        elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
-            if type == PolygonType.CAPSULE:
-                create_capsule(pobj, radius, height)
-            elif type == PolygonType.CYLINDER:
-                # rot_mat = world_matrix.decompose()[1].to_matrix()
-                rot_mat = Matrix.Rotation(radians(90), 4, axis)
-                # print(rot_mat)
-                # rot_mat = None
-                # print(rot_mat, rot_mat2)
-                create_cylinder(pobj.data, radius, height,
-                                None)
-        pobj.matrix_world = world_matrix
-        pobj.location = center
+            # if context.scene.poly_edge == 'short':
+            #     t1 = long
+            #     long = short
+            #     short = t1
+            #     world_matrix = Matrix.Rotation(
+            #         degrees(90), 4, 'Z') @ world_matrix
+
+            if type == PolygonType.BOX:
+                create_box_from_extents(
+                    pobj.data, bbmin - local_center, bbmax - local_center)
+            # elif type == PolygonType.SPHERE:
+            #     pobj.bound_radius = (bbmax - bbmin).magnitude / 2
+            # elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
+            #     pobj.bound_radius = short / 2
+            #     pobj.bound_length = long
+            pobj.matrix_world = world_matrix
+            pobj.location = center
+        else:
+            if obj.mode == 'EDIT':
+                bm = bmesh.from_edit_mesh(obj.data)
+            else:
+                bm = bmesh.new()
+                bm.from_mesh(obj.data)
+            new_mesh = bmesh.new()
+
+            onm = {}  # old index to new vert map
+            selected_verts = [v for v in bm.verts if v.select]
+
+            if len(selected_verts) < 3:
+                self.message("Please select at least three vertices.")
+                return False
+
+            for v in selected_verts:
+                nv = new_mesh.verts.new(v.co)
+                onm[v.index] = nv
+
+            for f in [f for f in bm.faces if f.select]:
+                nfverts = [onm[v.index] for v in f.verts]
+                new_mesh.faces.new(nfverts)
+
+            pobj = create_mesh(type)
+            pobj.location = obj.location
+            new_mesh.to_mesh(pobj.data)
+            bm.free()
+            new_mesh.free()
 
         pobj.parent = parent
 
         return True
-
-    def draw(self, context):
-        self.layout.prop(self, 'type')
 
     def run(self, context):
         aobj = context.active_object

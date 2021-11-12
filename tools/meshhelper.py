@@ -1,3 +1,4 @@
+import bpy
 import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
@@ -28,6 +29,7 @@ def create_box_from_extents(mesh, bbmin, bbmax):
         [7, 2, 3, 6],
         [7, 4, 1, 2]
     ]
+
     mesh.from_pydata(vertices, [], faces)
 
     # Recalculate normals
@@ -164,6 +166,22 @@ def flip_uv(uv):
     v = (uv[1] - 1.0) * -1
 
     return [u, v]
+
+
+def get_short_long_edge(bbmin, bbmax):
+    bbox = bpy.data.meshes.new('bbox')
+    create_box_from_extents(
+        bbox, bbmin, bbmax)
+    edge_lengths = []
+    for edge in bbox.edges:
+        v1 = bbox.vertices[edge.vertices[0]].co
+        v2 = bbox.vertices[edge.vertices[1]].co
+        edge_lengths.append(VectorHelper.get_distance_of_vectors(v1, v2))
+    # edge_lengths = np.array(edge_lengths)
+    # height = edge_lengths.max(axis=0)
+    # width = edge_lengths.min(axis=0)
+    # return height, width
+    return max(edge_lengths), min(edge_lengths)
 
 
 """Get min and max bounds for an object and all of its children"""
