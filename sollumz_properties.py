@@ -272,7 +272,7 @@ def get_hide_collisions(self):
 def set_hide_collisions(self, value):
     self["hide_collision"] = value
 
-    for obj in bpy.context.collection.objects:
+    for obj in bpy.context.collection.all_objects:
         if(obj.sollum_type in BoundType._value2member_map_ or obj.sollum_type in PolygonType._value2member_map_):
             obj.hide_set(value)
 
@@ -284,7 +284,7 @@ def get_hide_high_lods(self):
 def set_hide_high_lods(self, value):
     self["hide_high_lods"] = value
 
-    for obj in bpy.context.collection.objects:
+    for obj in bpy.context.collection.all_objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             if(obj.drawable_model_properties.sollum_lod == LODLevel.HIGH):
                 hide_obj_and_children(obj, value)
@@ -297,7 +297,7 @@ def get_hide_medium_lods(self):
 def set_hide_medium_lods(self, value):
     self["hide_medium_lods"] = value
 
-    for obj in bpy.context.collection.objects:
+    for obj in bpy.context.collection.all_objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             if(obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM):
                 hide_obj_and_children(obj, value)
@@ -310,7 +310,7 @@ def get_hide_low_lods(self):
 def set_hide_low_lods(self, value):
     self["hide_low_lods"] = value
 
-    for obj in bpy.context.collection.objects:
+    for obj in bpy.context.collection.all_objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             if(obj.drawable_model_properties.sollum_lod == LODLevel.LOW):
                 hide_obj_and_children(obj, value)
@@ -323,7 +323,7 @@ def get_hide_very_low_lods(self):
 def set_hide_very_low_lods(self, value):
     self["hide_very_low_lods"] = value
 
-    for obj in bpy.context.collection.objects:
+    for obj in bpy.context.collection.all_objects:
         if(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
             if(obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW):
                 hide_obj_and_children(obj, value)
