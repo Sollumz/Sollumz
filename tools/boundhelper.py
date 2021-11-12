@@ -11,7 +11,7 @@ def create_bound_shape(type):
     pobj = create_mesh(type)
 
     # Constrain scale for bound polys
-    if is_sollum_type(pobj, PolygonType) and type != PolygonType.BOX:
+    if is_sollum_type(pobj, PolygonType) and type != PolygonType.BOX and type != PolygonType.TRIANGLE:
         constraint = pobj.constraints.new(type='LIMIT_SCALE')
         constraint.use_transform_limit = True
         # Why blender? So ugly

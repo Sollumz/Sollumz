@@ -68,24 +68,8 @@ def box_coords(box):
     return coords
 
 
-def get_obb_dimensions(bbmin, bbmax):
-    bbox = bpy.data.meshes.new('bbox')
-    create_box_from_extents(
-        bbox, bbmin, bbmax)
-    edge_lengths = []
-    for edge in bbox.edges:
-        v1 = bbox.vertices[edge.vertices[0]].co
-        v2 = bbox.vertices[edge.vertices[1]].co
-        edge_lengths.append(VectorHelper.get_distance_of_vectors(v1, v2))
-    edge_lengths = np.array(edge_lengths)
-    height = edge_lengths.max(axis=0)
-    width = edge_lengths.min(axis=0)
-    return height, width
-
-
 def get_obb_extents(obb):
     np_obb = np.array(obb, dtype=Vector)
-    print(np_obb.min(axis=0))
     return Vector(np_obb.min(axis=0)), Vector(np_obb.max(axis=0))
 
 
@@ -149,9 +133,7 @@ def get_obb(verts):
     elapsed_time = time.time() - start
     bme.free()
     fmx = tr_mx @ r_mx @ min_mx.inverted_safe() @ sc_mx
-    rot_mat = fmx.decompose()[1].to_matrix().to_4x4()
-    print(rot_mat.to_quaternion(), axis)
 
     box_verts = box_coords(min_box)
 
-    return box_verts, axis, fmx
+    return box_verts, fmx

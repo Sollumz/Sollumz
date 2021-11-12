@@ -215,11 +215,13 @@ def register():
 
     # COLLISION TOOLS UI PROPERTIES
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
-        # maybe remove PolygonType.TRIANGLE from list?
-        items=items_from_enums(PolygonType),
+        items=[(PolygonType.BOX.value, SOLLUMZ_UI_NAMES[PolygonType.BOX], SOLLUMZ_UI_NAMES[PolygonType.BOX]),
+               (PolygonType.TRIANGLE.value, SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])],
         name="Type",
-        default=PolygonType.BOX.value
+        default=PolygonType.TRIANGLE.value
     )
+    bpy.types.Scene.poly_edge = bpy.props.EnumProperty(name="Edge", items=[("long", "Long Edge", "Create along the long edge"),
+                                                                           ("short", "Short Edge", "Create along the short edge")])
     bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
         type=bpy.types.Object, name='Parent', description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}.")
 
