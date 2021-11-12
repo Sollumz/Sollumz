@@ -1,4 +1,6 @@
 import bpy
+
+from ..sollumz_helper import is_sollum_type
 from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
@@ -8,22 +10,37 @@ from mathutils import Vector, Matrix
 def create_bound_shape(type):
     pobj = create_mesh(type)
 
+    # Constrain scale for bound polys
+    if is_sollum_type(pobj, PolygonType) and type != PolygonType.BOX:
+        constraint = pobj.constraints.new(type='LIMIT_SCALE')
+        constraint.use_transform_limit = True
+        # Why blender? So ugly
+        constraint.use_min_x = True
+        constraint.use_min_y = True
+        constraint.use_min_z = True
+        constraint.use_max_x = True
+        constraint.use_max_y = True
+        constraint.use_max_z = True
+        constraint.min_x = 1
+        constraint.min_y = 1
+        constraint.min_z = 1
+        constraint.max_x = 1
+        constraint.max_y = 1
+        constraint.max_z = 1
+
     if type == PolygonType.BOX:
         create_box(pobj.data)
     elif type == BoundType.BOX:
         pobj.bound_dimensions = Vector((1, 1, 1))
-    elif type == PolygonType.SPHERE:
-        create_sphere(pobj.data)
-    elif type == BoundType.SPHERE:
+    elif type == BoundType.SPHERE or type == PolygonType.SPHERE:
         pobj.bound_radius = 1
     elif type == PolygonType.CAPSULE:
-        create_capsule(pobj.data)
+        pobj.bound_radius = 1
+        pobj.bound_length = 1
     elif type == BoundType.CAPSULE:
-        pobj.bound_radius = 0.25
+        pobj.bound_radius = 1
         pobj.margin = 0.5
-    elif type == PolygonType.CYLINDER:
-        create_cylinder(pobj.data, rot_mat=Matrix())
-    elif type == BoundType.CYLINDER:
+    elif type == BoundType.CYLINDER or type == PolygonType.CYLINDER:
         pobj.bound_length = 2
         pobj.bound_radius = 1
     elif type == BoundType.DISC:
