@@ -126,18 +126,20 @@ def texture_dictionary_from_materials(obj, materials, exportpath):
                     # if(n.image != None):
                     foldername = obj.name
                     folderpath = os.path.join(exportpath, foldername)
-                    txtpath = n.image.filepath
-                    if os.path.isfile(txtpath):
-                        if(os.path.isdir(folderpath) == False):
-                            os.mkdir(folderpath)
-                        dstpath = folderpath + "\\" + \
-                            os.path.basename(n.image.filepath)
-                        # check if paths are the same because if they are no need to copy
-                        if txtpath != dstpath:
-                            shutil.copyfile(txtpath, dstpath)
-                    else:
-                        messages.append(
-                            f"Missing Embedded Texture: {texture_name} please supply texture! The texture will not be copied to the texture folder until entered!")
+                    txtpath = bpy.path.abspath(n.image.filepath)
+                    # if os.path.isfile(txtpath):
+                    #     if(os.path.isdir(folderpath) == False):
+                    #         os.mkdir(folderpath)
+                    #     dstpath = folderpath + "\\" + \
+                    #         os.path.basename(n.image.filepath)
+                    #     # check if paths are the same because if they are no need to copy
+                    #     print(txtpath, dstpath)
+                    #     print(os.path.basename(n.image.filepath))
+                    #     if txtpath != dstpath:
+                    #         shutil.copyfile(txtpath, dstpath)
+                    # else:
+                    #     messages.append(
+                    #         f"Missing Embedded Texture: {txtpath} please supply texture! The texture will not be copied to the texture folder until entered!")
 
     if(has_td):
         return texture_dictionary, messages
@@ -204,7 +206,6 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     tempmesh.free()
 
     mesh.calc_tangents()
-    mesh.calc_loop_triangles()
 
     blend_weights, blend_indices = get_blended_verts(
         mesh, obj.vertex_groups, bones)
@@ -212,59 +213,57 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     vertices = {}
     indices = []
 
-    for tri in mesh.loop_triangles:
-        for loop_idx in tri.loops:
-            loop = mesh.loops[loop_idx]
-            vert_idx = loop.vertex_index
-            mesh_layer_idx = 0
+    for loop in mesh.loops:
+        vert_idx = loop.vertex_index
+        mesh_layer_idx = 0
 
-            kwargs = {}
+        kwargs = {}
 
-            if "position" in vertex_type._fields:
-                pos = ListHelper.float32_list(
-                    obj.matrix_world @ mesh.vertices[vert_idx].co)
-                kwargs['position'] = tuple(pos)
-            if "normal" in vertex_type._fields:
-                normal = ListHelper.float32_list(loop.normal)
-                kwargs["normal"] = tuple(normal)
-            if "blendweights" in vertex_type._fields:
-                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
-            if "blendindices" in vertex_type._fields:
-                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
-            if "tangent" in vertex_type._fields:
-                tangent = ListHelper.float32_list(loop.tangent.to_4d())
-                tangent[3] = loop.bitangent_sign  # convert to float 32 ?
-                kwargs["tangent"] = tuple(tangent)
-            for i in range(6):
-                if f"texcoord{i}" in vertex_type._fields:
-                    key = f'texcoord{i}'
-                    if mesh_layer_idx < len(mesh.uv_layers):
-                        data = mesh.uv_layers[mesh_layer_idx].data
-                        uv = ListHelper.float32_list(
-                            flip_uv(data[loop_idx].uv))
-                        kwargs[key] = tuple(uv)
-                        mesh_layer_idx += 1
-                    else:
-                        kwargs[key] = (0, 0)
-            for i in range(2):
-                if f"colour{i}" in vertex_type._fields:
-                    key = f'colour{i}'
-                    if i < len(mesh.vertex_colors):
-                        data = mesh.vertex_colors[i].data
-                        kwargs[key] = tuple(
-                            int(val * 255) for val in data[loop_idx].color)
-                    else:
-                        kwargs[key] = (255, 255, 255, 255)
+        if "position" in vertex_type._fields:
+            pos = ListHelper.float32_list(
+                obj.matrix_world @ mesh.vertices[vert_idx].co)
+            kwargs['position'] = tuple(pos)
+        if "normal" in vertex_type._fields:
+            normal = ListHelper.float32_list(loop.normal)
+            kwargs["normal"] = tuple(normal)
+        if "blendweights" in vertex_type._fields:
+            kwargs['blendweights'] = tuple(blend_weights[vert_idx])
+        if "blendindices" in vertex_type._fields:
+            kwargs['blendindices'] = tuple(blend_indices[vert_idx])
+        if "tangent" in vertex_type._fields:
+            tangent = ListHelper.float32_list(loop.tangent.to_4d())
+            tangent[3] = loop.bitangent_sign  # convert to float 32 ?
+            kwargs["tangent"] = tuple(tangent)
+        for i in range(6):
+            if f"texcoord{i}" in vertex_type._fields:
+                key = f'texcoord{i}'
+                if mesh_layer_idx < len(mesh.uv_layers):
+                    data = mesh.uv_layers[mesh_layer_idx].data
+                    uv = ListHelper.float32_list(
+                        flip_uv(data[loop.index].uv))
+                    kwargs[key] = tuple(uv)
+                    mesh_layer_idx += 1
+                else:
+                    kwargs[key] = (0, 0)
+        for i in range(2):
+            if f"colour{i}" in vertex_type._fields:
+                key = f'colour{i}'
+                if i < len(mesh.vertex_colors):
+                    data = mesh.vertex_colors[i].data
+                    kwargs[key] = tuple(
+                        int(val * 255) for val in data[loop.index].color)
+                else:
+                    kwargs[key] = (255, 255, 255, 255)
 
-            vertex = vertex_type(**kwargs)
+        vertex = vertex_type(**kwargs)
 
-            if vertex in vertices:
-                idx = vertices[vertex]
-            else:
-                idx = len(vertices)
-                vertices[vertex] = idx
+        if vertex in vertices:
+            idx = vertices[vertex]
+        else:
+            idx = len(vertices)
+            vertices[vertex] = idx
 
-            indices.append(idx)
+        indices.append(idx)
 
     return vertices.keys(), indices
 
