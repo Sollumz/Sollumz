@@ -196,6 +196,13 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
 def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
     # thanks dexy
 
+    # Triangulate
+    tempmesh = bmesh.new()
+    tempmesh.from_mesh(mesh)
+    bmesh.ops.triangulate(tempmesh, faces=tempmesh.faces)
+    tempmesh.to_mesh(mesh)
+    tempmesh.free()
+
     mesh.calc_tangents()
     mesh.calc_loop_triangles()
 

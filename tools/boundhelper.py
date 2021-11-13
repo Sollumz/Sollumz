@@ -101,12 +101,16 @@ def create_composite_from_selection(objs, use_name, multiple, bvhs):
         obj.sollum_type = PolygonType.TRIANGLE
 
         # add object to collection
-        new_obj = bpy.data.objects.new(
-            SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], obj.data.copy())
+        # new_obj = bpy.data.objects.new(
+        #     SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], obj.data.copy())
+        new_obj = create_mesh(PolygonType.TRIANGLE)
+        new_obj.data = obj.data.copy()
 
         # Remove materials
         if new_obj.type == 'MESH':
             new_obj.data.materials.clear()
 
-        bpy.context.collection.objects.link(new_obj)
+        # Add default collision materials
+        new_obj.data.materials.append(create_collision_material_from_index(0))
+
         new_obj.parent = dmobj
