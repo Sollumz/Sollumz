@@ -194,7 +194,6 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
 
 
 def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
-    mesh = obj.data
     # thanks dexy
 
     mesh.calc_tangents()
