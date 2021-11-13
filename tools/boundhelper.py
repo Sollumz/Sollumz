@@ -111,5 +111,8 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs):
         if new_obj.type == 'MESH':
             new_obj.data.materials.clear()
 
+        # add default collision mat
+        new_obj.data.materials.append(create_collision_material_from_index(0))
+
         bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
