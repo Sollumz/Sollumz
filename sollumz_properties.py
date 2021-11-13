@@ -275,7 +275,8 @@ def set_hide_collisions(self, value):
 
     for obj in bpy.context.collection.all_objects:
         if(obj.sollum_type in BoundType._value2member_map_ or obj.sollum_type in PolygonType._value2member_map_):
-            obj.hide_set(value)
+            if obj.name in bpy.context.view_layer.objects:
+                obj.hide_set(value)
 
 
 def get_hide_high_lods(self):
