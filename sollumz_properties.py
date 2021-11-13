@@ -253,7 +253,8 @@ class EntityProperties(bpy.types.PropertyGroup):
 
 
 def hide_obj_and_children(obj, value):
-    obj.hide_set(value)
+    if obj.name in bpy.context.view_layer.objects:
+        obj.hide_set(value)
     for child in obj.children:
         hide_obj_and_children(child, value)
 

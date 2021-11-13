@@ -82,6 +82,25 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
             return True
 
 
+class SOLLUMZ_OT_convert_to_poly_mesh(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Convert object to a poly mesh"""
+    bl_idname = "sollumz.converttopolymesh"
+    bl_label = f"Convert to {SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]}"
+    bl_action = bl_label
+
+    def run(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.message("No objects selected.")
+            return False
+
+        for obj in selected:
+            obj.sollum_type = PolygonType.TRIANGLE
+            self.message(
+                f"Converted '{obj.name}' to a {SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]}.")
+            return True
+
+
 class CreateBoundHelper(SOLLUMZ_OT_base):
     @property
     @abstractmethod
