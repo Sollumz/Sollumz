@@ -7,7 +7,7 @@ from ..tools.meshhelper import create_box, create_sphere, create_capsule, create
 from mathutils import Vector, Matrix
 
 
-def create_bound_shape(type):
+def create_bound_shape(type, aobj):
     pobj = create_mesh(type)
 
     # Constrain scale for bound polys
@@ -47,16 +47,24 @@ def create_bound_shape(type):
         pobj.margin = 0.04
         pobj.bound_radius = 1
 
+    if aobj:
+        if aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH or aobj.sollum_type == BoundType.COMPOSITE:
+            pobj.parent = aobj
+
     return pobj
 
 
-def create_bound(sollum_type=BoundType.COMPOSITE):
+def create_bound(sollum_type=BoundType.COMPOSITE, aobj=None):
 
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
     bpy.context.collection.objects.link(empty)
     bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
+
+    if aobj:
+        if aobj.sollum_type == BoundType.COMPOSITE:
+            empty.parent = aobj
 
     return empty
 

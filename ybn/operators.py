@@ -29,7 +29,8 @@ class CreatePolyHelper(SOLLUMZ_OT_base):
         raise NotImplementedError
 
     def run(self, context):
-        obj = create_bound_shape(self.poly_type)
+        aobj = context.active_object
+        obj = create_bound_shape(self.poly_type, aobj)
         context.view_layer.objects.active = bpy.data.objects[obj.name]
         return True
 
@@ -64,6 +65,20 @@ class SOLLUMZ_OT_create_poly_mesh(CreatePolyHelper, bpy.types.Operator):
     poly_type = PolygonType.TRIANGLE
 
 
+class SOLLUMZ_OT_convert_to_poly_mesh(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_label = f"Convert to {SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]}"
+    bl_idname = "sollumz.convertpolymesh"
+    bl_action = f"Convert to a {SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]}"
+    poly_type = PolygonType.TRIANGLE
+
+    def run(self, context):
+        objs = context.selected_objects
+        for obj in objs:
+            if obj.type == "MESH":
+                obj.name = "Bound Poly Mesh"
+                obj.sollum_type = self.poly_type
+
+
 class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz bound composite"""
     bl_idname = "sollumz.createboundcomposite"
@@ -73,7 +88,7 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
-            create_bound(BoundType.COMPOSITE)
+            create_bound(BoundType.COMPOSITE, None)
 
             return True
         else:
@@ -89,9 +104,10 @@ class CreateBoundHelper(SOLLUMZ_OT_base):
         raise NotImplementedError
 
     def run(self, context):
+        aobj = context.active_object
         obj = None
         if self.bound_type == BoundType.GEOMETRY or self.bound_type == BoundType.GEOMETRYBVH:
-            obj = create_bound(self.bound_type)
+            obj = create_bound(self.bound_type, aobj)
         else:
             obj = create_mesh(self.bound_type)
         if obj:
@@ -106,7 +122,8 @@ class CreateBoundShapeHelper(SOLLUMZ_OT_base):
         raise NotImplementedError
 
     def run(self, context):
-        obj = create_bound_shape(self.bound_type)
+        aobj = context.active_object
+        obj = create_bound_shape(self.bound_type, aobj)
         context.view_layer.objects.active = bpy.data.objects[obj.name]
         return True
 
@@ -269,7 +286,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         if aobj and aobj.mode == "EDIT":
             return self.create_poly_from_verts(context, type, parent)
         else:
-            create_bound_shape(type)
+            create_bound_shape(type, aobj)
             return True
 
 

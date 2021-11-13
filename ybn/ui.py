@@ -190,6 +190,8 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         row.prop(context.scene, "poly_bound_type")
         if context.active_object and context.active_object.mode == 'EDIT':
             row.prop(context.scene, "poly_parent", expand=True)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_convert_to_poly_mesh.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
