@@ -221,7 +221,7 @@ def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
 
         if "position" in vertex_type._fields:
             pos = ListHelper.float32_list(
-                obj.matrix_world @ mesh.vertices[vert_idx].co)
+                mesh.vertices[vert_idx].co)
             kwargs['position'] = tuple(pos)
         if "normal" in vertex_type._fields:
             normal = ListHelper.float32_list(loop.normal)
@@ -513,9 +513,9 @@ def drawable_from_object(exportop, obj, exportpath, bones=None):
     drawable = Drawable()
 
     drawable.name = obj.name
-    drawable.bounding_sphere_center = get_bound_center(obj)
-    drawable.bounding_sphere_radius = get_obj_radius(obj)
-    bbmin, bbmax = get_bound_extents(obj)
+    drawable.bounding_sphere_center = get_bound_center(obj, world=False)
+    drawable.bounding_sphere_radius = get_obj_radius(obj, world=False)
+    bbmin, bbmax = get_bound_extents(obj, world=False)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
 
