@@ -72,7 +72,7 @@ def create_mesh(sollum_type):
     return obj
 
 
-def convert_selected_to_bound(objs, use_name, multiple, bvhs):
+def create_composite_from_selection(objs, use_name, multiple, bvhs):
     selected = objs
 
     parent = None
@@ -85,23 +85,20 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs):
         dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
             BoundType.GEOMETRY)
         dmobj.parent = dobj
-        obj.parent = dmobj
-
-        name = obj.name
-        obj.name = name + "_mesh"
 
         if use_name:
-            dobj.name = name
+            dobj.name = obj.name
 
         # set properties
         obj.sollum_type = PolygonType.TRIANGLE
 
         # add object to collection
-        new_obj = obj.copy()
+        new_obj = bpy.data.objects.new(
+            SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], obj.data.copy())
 
         # Remove materials
         if new_obj.type == 'MESH':
             new_obj.data.materials.clear()
 
-        bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
+        new_obj.parent = dmobj
