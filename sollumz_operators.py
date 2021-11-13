@@ -162,7 +162,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         objects = []
 
         if(self.export_type == "export_all"):
-            objects = self.get_only_parent_objs(context.collection.objects)
+            objects = self.get_only_parent_objs(context.collection.all_objects)
         else:
             objects = context.selected_objects
 
@@ -172,16 +172,17 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if len(objects) > 0:
             for obj in objects:
-                mode = obj.mode
-                # Switch to object mode during export
-                if mode != 'OBJECT':
-                    bpy.ops.object.mode_set(mode='OBJECT')
-                result = self.export_object(obj)
-                if obj.mode != mode:
-                    bpy.ops.object.mode_set(mode=mode)
-                # Dont show time on failure
-                if not result:
-                    self.bl_showtime = False
+                if obj.name in bpy.context.view_layer.objects:
+                    mode = obj.mode
+                    # Switch to object mode during export
+                    if mode != 'OBJECT':
+                        bpy.ops.object.mode_set(mode='OBJECT')
+                    result = self.export_object(obj)
+                    if obj.mode != mode:
+                        bpy.ops.object.mode_set(mode=mode)
+                    # Dont show time on failure
+                    if not result:
+                        self.bl_showtime = False
 
         return True
 
