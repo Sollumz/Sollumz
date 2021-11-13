@@ -41,6 +41,8 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         layout.prop(context.scene, "hide_medium_lods")
         layout.prop(context.scene, "hide_low_lods")
         layout.prop(context.scene, "hide_very_low_lods")
+        layout.prop(context.space_data.overlay,
+                    "show_bones", text="Show Skeleton")
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANELL(bpy.types.Panel):

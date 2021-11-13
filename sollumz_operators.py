@@ -305,6 +305,15 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
 
     def run(self, context):
 
+        objs = []
+        for obj in context.collection.objects:
+            if(obj.sollum_type == DrawableType.DRAWABLE):
+                objs.append(obj)
+
+        if len(objs) == 0:
+            self.warning("No entities in scene to export.")
+            return False
+
         try:
             ymap = CMapData()
             ymap.name = os.path.splitext(
@@ -313,12 +322,9 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
             ymap.flags = 0
             ymap.content_flags = 0
 
-            objs = []
-            for obj in context.collection.objects:
-                if(obj.sollum_type == DrawableType.DRAWABLE):
-                    ent = self.entity_from_obj(obj)
-                    ymap.entities.append(ent)
-                    objs.append(obj)
+            for obj in objs:
+                ent = self.entity_from_obj(obj)
+                ymap.entities.append(ent)
 
             emin, emax, smin, smax = self.calculate_extents(objs)
             ymap.streaming_extents_min = emin
