@@ -244,9 +244,8 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             # this is how you can create the folder names if the user clicks "use_batch_own_dir"
             for data, name, data_obj_paramname in data_block:
                 objects = getattr(
-                    data, data_obj_paramname)
+                    data, data_obj_paramname).values()
 
-        objects = objects.values()  # make it a list from bpy_prop_collection
         result = []
 
         types = self.export_settings.sollum_types
