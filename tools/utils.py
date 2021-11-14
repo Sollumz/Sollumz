@@ -4,15 +4,6 @@ from math import inf, sqrt
 from mathutils import Vector, Quaternion, Matrix
 
 
-class StringHelper():
-
-    @staticmethod
-    def FixShaderName(name):
-        if("." in name):
-            name = name[:-4]
-        return name
-
-
 class ListHelper():
 
     @staticmethod

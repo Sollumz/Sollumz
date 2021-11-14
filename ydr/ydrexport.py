@@ -6,7 +6,7 @@ import bpy
 from ..resources.drawable import *
 from ..resources.shader import ShaderManager
 from ..tools.meshhelper import *
-from ..tools.utils import StringHelper, ListHelper
+from ..tools.utils import ListHelper
 from ..tools.blenderhelper import *
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel, FragmentType
 from ..ybn.ybnexport import composite_from_object
@@ -20,24 +20,11 @@ def get_used_materials(obj):
         for grandchild in child.children:
             if(grandchild.sollum_type == DrawableType.GEOMETRY):
                 mats = grandchild.data.materials
-                if(len(mats) < 0):
-                    print(
-                        f"Object: {grandchild.name} has no materials to export.")
                 for mat in mats:
-                    if(mat.sollum_type != MaterialType.SHADER):
-                        print(
-                            f"Object: {grandchild.name} has a material: {mat.name} that is not going to be exported because it is not a sollum material.")
-                    materials.append(mat)
+                    if(mat.sollum_type == MaterialType.SHADER):
+                        materials.append(mat)
 
     return materials
-
-
-def get_shader_index(obj, mat):
-    mats = get_used_materials(obj.parent.parent)
-
-    for i in range(len(mats)):
-        if mats[i] == mat:
-            return i
 
 
 def get_shaders_from_blender(obj):
@@ -47,7 +34,7 @@ def get_shaders_from_blender(obj):
     for material in materials:
         shader = ShaderItem()
         # Maybe make this a property?
-        shader.name = StringHelper.FixShaderName(material.name)
+        shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
 
@@ -315,23 +302,20 @@ def apply_and_triangulate_object(obj):
     return obj_eval, mesh
 
 
-def geometry_from_object(obj, bones=None):
+def geometry_from_object(obj, shaders, bones=None):
     geometry = GeometryItem()
 
     obj, mesh = apply_and_triangulate_object(obj)
-
-    geometry.shader_index = get_shader_index(obj, obj.active_material)
 
     bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
-    materials = get_used_materials(obj.parent.parent)
-    for i in range(len(materials)):
-        if(materials[i] == obj.active_material):
+    for i in range(len(shaders)):
+        if(shaders[i].name == obj.active_material.shader_properties.name):
             geometry.shader_index = i
 
-    shader_name = StringHelper.FixShaderName(obj.active_material.name)
+    shader_name = obj.active_material.shader_properties.name
     shader = ShaderManager.shaders[shader_name]
 
     layout = shader.get_layout_from_semantic(
@@ -347,7 +331,7 @@ def geometry_from_object(obj, bones=None):
     return geometry
 
 
-def drawable_model_from_object(obj, bones=None):
+def drawable_model_from_object(obj, shaders, bones=None):
     drawable_model = DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
@@ -364,11 +348,11 @@ def drawable_model_from_object(obj, bones=None):
                 objs = BlenderHelper.split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
-                        obj, bones)  # MAYBE WRONG ASK LOYALIST
+                        obj, shaders, bones)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 BlenderHelper.join_objects(objs)
             else:
-                geometry = geometry_from_object(child, bones)
+                geometry = geometry_from_object(child, shaders, bones)
                 drawable_model.geometries.append(geometry)
 
     return drawable_model
@@ -558,7 +542,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None):
 
     for child in obj.children:
         if child.sollum_type == DrawableType.DRAWABLE_MODEL:
-            drawable_model = drawable_model_from_object(child, bones)
+            drawable_model = drawable_model_from_object(child, shaders, bones)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)

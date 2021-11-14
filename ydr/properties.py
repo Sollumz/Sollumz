@@ -27,7 +27,9 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
 
 class ShaderProperties(bpy.types.PropertyGroup):
     renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0)
-    filename: bpy.props.StringProperty(name="FileName", default="default")
+    filename: bpy.props.StringProperty(
+        name="Shader Filename", default="default.sps")
+    name = bpy.props.StringProperty(name="Shader Name", default="default")
 
 
 class TextureFlags(bpy.types.PropertyGroup):

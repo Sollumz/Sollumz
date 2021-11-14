@@ -25,10 +25,10 @@ class RenderBucketProperty(ElementProperty):
 
 
 class FileNameListProperty(ListProperty):
-    class Item(TextProperty):
+    class FileNameItem(TextProperty):
         tag_name = "Item"
 
-    list_type = Item
+    list_type = FileNameItem
     tag_name = "FileName"
 
 
@@ -46,7 +46,7 @@ class Shader(ElementTree):
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name", "")
-        self.filename = FileNameListProperty
+        self.filenames = FileNameListProperty()
         self.render_bucket = RenderBucketProperty()
         self.layouts = LayoutListProperty()
         self.parameters = ParametersListProperty("Parameters")
@@ -140,6 +140,17 @@ class ShaderManager:
                     result = False
                     print(shader.name)
                     break
+
+    @staticmethod
+    def print_filename_enum():
+        result = []
+        for shader in ShaderManager.shaders.values():
+            i = 0
+            for fn in shader.filenames:
+                if fn.value not in result:
+                    result.append(f"{shader.name.upper()}{i} = \"{fn.value}\"")
+                    i += 1
+        print("\t\n".join(result))
 
 
 ShaderManager.load_shaders()

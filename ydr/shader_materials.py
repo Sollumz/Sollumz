@@ -145,12 +145,14 @@ def create_shader(name):
     if not name in ShaderManager.shaders:
         raise AttributeError(f"Shader '{name}' does not exist!")
 
-    parameters = ShaderManager.shaders[name].parameters
+    shader = ShaderManager.shaders[name]
+    parameters = shader.parameters
 
     mat = bpy.data.materials.new(name)
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
-
+    mat.shader_properties.name = shader.name
+    mat.shader_properties.filename = shader.filenames[0].value
     node_tree = mat.node_tree
 
     for param in parameters:
