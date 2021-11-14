@@ -1,6 +1,7 @@
 import os
 import shutil
 import collections
+import bmesh
 import bpy
 from ..resources.drawable import *
 from ..resources.shader import ShaderManager
@@ -193,12 +194,8 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
     return blend_weights, blend_indices
 
 
-def get_mesh_buffers(mesh, obj, vertex_type, bones=None):
-    mesh = obj.data
+def get_mesh_buffers(obj, mesh, vertex_type, bones=None):
     # thanks dexy
-
-    mesh.calc_tangents()
-    mesh.calc_loop_triangles()
 
     blend_weights, blend_indices = get_blended_verts(
         mesh, obj.vertex_groups, bones)
@@ -303,26 +300,38 @@ def get_semantic_from_object(shader, mesh):
     return "".join(sematic)
 
 
-def geometry_from_object(obj, bones=None):
-    geometry = GeometryItem()
-
+def apply_and_triangulate_object(obj):
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(
         obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
+    tempmesh = bmesh.new()
+    tempmesh.from_mesh(mesh)
+    bmesh.ops.triangulate(tempmesh, faces=tempmesh.faces)
+    tempmesh.to_mesh(mesh)
+    tempmesh.free()
+    mesh.calc_tangents()
+    mesh.calc_loop_triangles()
+    return obj_eval, mesh
+
+
+def geometry_from_object(obj, bones=None):
+    geometry = GeometryItem()
+
+    obj, mesh = apply_and_triangulate_object(obj)
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
 
-    bbmin, bbmax = get_bound_extents(obj_eval)
+    bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
     materials = get_used_materials(obj.parent.parent)
     for i in range(len(materials)):
-        if(materials[i] == obj_eval.active_material):
+        if(materials[i] == obj.active_material):
             geometry.shader_index = i
 
-    shader_name = StringHelper.FixShaderName(obj_eval.active_material.name)
+    shader_name = StringHelper.FixShaderName(obj.active_material.name)
     shader = ShaderManager.shaders[shader_name]
 
     layout = shader.get_layout_from_semantic(
@@ -330,7 +339,7 @@ def geometry_from_object(obj, bones=None):
 
     geometry.vertex_buffer.layout = layout.value
     vertex_buffer, index_buffer = get_mesh_buffers(
-        mesh, obj, layout.vertex_type, bones)
+        obj, mesh, layout.vertex_type, bones)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
