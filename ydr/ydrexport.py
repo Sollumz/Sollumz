@@ -31,6 +31,7 @@ def get_shaders_from_blender(obj):
     shaders = []
 
     materials = get_used_materials(obj)
+
     for material in materials:
         shader = ShaderItem()
         # Maybe make this a property?
@@ -71,14 +72,14 @@ def get_shaders_from_blender(obj):
     return shaders
 
 
-def texture_dictionary_from_materials(obj, materials, exportpath):
+def texture_dictionary_from_materials(obj, exportpath):
     texture_dictionary = []
     messages = []
 
     has_td = False
 
     t_names = []
-    for mat in materials:
+    for mat in get_used_materials(obj):
         nodes = mat.node_tree.nodes
 
         for n in nodes:
@@ -513,11 +514,16 @@ def drawable_from_object(exportop, obj, exportpath, bones=None):
     drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_high
 
     shaders = get_shaders_from_blender(obj)
+
+    if len(shaders) == 0:
+        raise Exception(
+            f"No materials on object: {obj.name}, will be skipped.")
+
     for shader in shaders:
         drawable.shader_group.shaders.append(shader)
 
     td, messages = texture_dictionary_from_materials(
-        obj, get_used_materials(obj), os.path.dirname(exportpath))
+        obj, os.path.dirname(exportpath))
     drawable.shader_group.texture_dictionary = td
     exportop.messages += messages
 

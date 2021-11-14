@@ -1,27 +1,66 @@
 import bpy
 from .sollumz_helper import *
-from .sollumz_properties import BoundType, PolygonType, DrawableType, FragmentType, MaterialType
+from .sollumz_properties import *
 from .ybn.ui import draw_bound_properties, draw_collision_material_properties
 from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_light_properties
 from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_lod_properties, draw_child_properties
 
-SOLLUMZ_UI_NAMES = {
-    BoundType.BOX: 'Bound Box',
-    BoundType.SPHERE: 'Bound Sphere',
-    BoundType.CAPSULE: 'Bound Capsule',
-    BoundType.CYLINDER: 'Bound Cylinder',
-    BoundType.DISC: 'Bound Disc',
-    BoundType.CLOTH: 'Bound Cloth',
-    BoundType.GEOMETRY: 'Bound Geometry',
-    BoundType.GEOMETRYBVH: 'GeometryBVH',
-    BoundType.COMPOSITE: 'Composite',
 
-    PolygonType.BOX: 'Bound Poly Box',
-    PolygonType.SPHERE: 'Bound Poly Sphere',
-    PolygonType.CAPSULE: 'Bound Poly Capsule',
-    PolygonType.CYLINDER: 'Bound Poly Cylinder',
-    PolygonType.TRIANGLE: 'Bound Poly Mesh',
-}
+class SOLLUMZ_PT_export_main(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = ""
+    bl_parent_id = "FILE_PT_operator"
+    bl_options = {'HIDE_HEADER'}
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        row = layout.row(align=True)
+        row.prop(operator.export_settings, "batch_mode")
+        sub = row.row(align=True)
+        sub.prop(operator.export_settings, "use_batch_own_dir",
+                 text="", icon='NEWFOLDER')
+
+
+class SOLLUMZ_PT_export_include(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Include"
+    bl_parent_id = "FILE_PT_operator"
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        sublayout = layout.column(heading="Limit to")
+        sublayout.enabled = (operator.export_settings.batch_mode == "OFF")
+        sublayout.prop(operator.export_settings, "use_selection")
+        sublayout.prop(operator.export_settings, "use_active_collection")
+
+        col = layout.column()
+        col.prop(operator.export_settings, "sollum_types")
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):

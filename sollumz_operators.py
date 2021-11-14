@@ -3,6 +3,7 @@ import os
 import pathlib
 from abc import abstractmethod
 import bpy
+from enum import Enum
 from .sollumz_helper import *
 from .sollumz_properties import FragmentType, DrawableType, BoundType, SOLLUMZ_UI_NAMES
 from .resources.drawable import YDR, YDD
@@ -88,12 +89,59 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         return True
 
 
+class ExportSettings(bpy.types.PropertyGroup):
+    local: bpy.props.BoolProperty(
+        name="Export drawables local to position")
+    batch_mode: bpy.props.EnumProperty(
+        name="Batch Mode",
+        items=(('OFF', "Off", "Active scene"),
+               ('SCENE', "Scene", "Every scene"),
+               ('COLLECTION', "Collection",
+                "Each collection (data-block ones), does not include content of children collections"),
+               ('SCENE_COLLECTION', "Scene Collections",
+                "Each collection (including master, non-data-block ones) of each scene, "
+                "including content from children collections"),
+               ('ACTIVE_SCENE_COLLECTION', "Active Scene Collections",
+                "Each collection (including master, non-data-block one) of the active scene, "
+                "including content from children collections"),
+               ),
+    )
+    use_batch_own_dir: bpy.props.BoolProperty(
+        name="Batch Own Dir",
+        description="Create a new directory for each exported file",
+        default=False,
+    )
+    sollum_types: bpy.props.EnumProperty(
+        name="Sollum Types",
+        options={'ENUM_FLAG'},
+        items=((DrawableType.DRAWABLE.value, "Drawables", ""),
+               (DrawableType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
+               (BoundType.BASE, "Bounds", "")),
+        description="Which kind of sollumz objects to export",
+        default={DrawableType.DRAWABLE.value,
+                 DrawableType.DRAWABLE_DICTIONARY.value,
+                 BoundType.BASE},
+    )
+    use_selection: bpy.props.BoolProperty(
+        name="Selected Objects",
+        description="Export selected and visible objects only",
+        default=False,
+    )
+    use_active_collection: bpy.props.BoolProperty(
+        name="Active Collection",
+        description="Export only objects from the active collection (and its children)",
+        default=False,
+    )
+
+
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     """Exports codewalker xml files."""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
     bl_action = "export"
     bl_showtime = True
+
+    export_settings: bpy.props.PointerProperty(type=ExportSettings)
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
@@ -107,40 +155,130 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         subtype="DIR_PATH",
     )
 
-    export_type: bpy.props.EnumProperty(
-        items=[("export_all", "Export All", "Export all objects in the scene."),
-               ("export_selected", "Export Selected",
-                "Export selected objects in the scene.")],
-        description="The method in which you want to export your scene.",
-        name="Export Type",
-        default="export_all"
-    )
-
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
 
-    def get_filepath(self, filename):
-        return os.path.join(self.directory, filename)
+    def draw(self, context):
+        pass
+
+    def get_data_name(self, obj_name):
+        mode = self.export_settings.batch_mode
+        if mode == "COLLECTION":
+            for col in bpy.data.collections:
+                for obj in col.objects:
+                    if obj.name == obj_name:
+                        return col.name
+        elif mode in {"SCENE_COLLECTION", "ACTIVE_SCENE_COLLECTION"}:
+            scenes = [
+                bpy.context.scene] if mode == 'ACTIVE_SCENE_COLLECTION' else bpy.data.scenes
+            for scene in scenes:
+                if not scene.objects:
+                    self.error(f"No objects in scene {scene.name} to export.")
+                for obj in scene.collection.objects:
+                    if obj.name == obj_name:
+                        return f"{scene.name}_{scene.collection.name}"
+        else:
+            for scene in bpy.data.scenes:
+                if not scene.objects:
+                    self.error(f"No objects in scene {scene.name} to export.")
+                for obj in scene.objects:
+                    if obj.name == obj_name:
+                        return scene.name
+        return ""
+
+    def make_directory(self, name):
+        dir = os.path.join(self.directory, self.get_data_name(
+            name) if self.export_settings.batch_mode != "OFF" else name)
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        return dir
+
+    def get_filepath(self, name, ext):
+        return os.path.join(self.make_directory(name), name + ext) if self.export_settings.use_batch_own_dir else os.path.join(self.directory, name + ext)
+
+    def get_only_parent_objs(self, objs):
+        pobjs = []
+        for obj in objs:
+            if obj.parent == None:
+                pobjs.append(obj)
+        return pobjs
+
+    def collect_objects(self, context):
+        mode = self.export_settings.batch_mode
+        objects = []
+        if mode == "OFF":
+            if self.export_settings.use_active_collection:
+                if self.export_settings.use_selection:
+                    objects = [
+                        obj for obj in context.view_layer.active_layer_collection.collection.all_objects if obj.select_get()]
+                else:
+                    objects = context.view_layer.active_layer_collection.collection.all_objects
+            else:
+                if self.export_settings.use_selection:
+                    objects = context.selected_objects
+                else:
+                    objects = context.view_layer.objects
+        else:
+            if mode == "COLLECTION":
+                data_block = tuple(
+                    (coll, coll.name, 'objects') for coll in bpy.data.collections if coll.objects)
+            elif mode in {"SCENE_COLLECTION", "ACTIVE_SCENE_COLLECTION"}:
+                scenes = [
+                    context.scene] if mode == 'ACTIVE_SCENE_COLLECTION' else bpy.data.scenes
+                data_block = []
+                for scene in scenes:
+                    if not scene.objects:
+                        continue
+                    todo_collections = [(scene.collection, "_".join(
+                        (scene.name, scene.collection.name)))]
+                    while todo_collections:
+                        coll, coll_name = todo_collections.pop()
+                        todo_collections.extend(
+                            ((c, c.name) for c in coll.children if c.all_objects))
+                        data_block.append((coll, coll_name, 'all_objects'))
+            else:
+                data_block = tuple((scene, scene.name, 'objects')
+                                   for scene in bpy.data.scenes if scene.objects)
+
+            # this is how you can create the folder names if the user clicks "use_batch_own_dir"
+            for data, name, data_obj_paramname in data_block:
+                objects = getattr(
+                    data, data_obj_paramname)
+
+        objects = objects.values()  # make it a list from bpy_prop_collection
+        result = []
+
+        types = self.export_settings.sollum_types
+        for obj in objects:
+            # this is to make sure we get all bound objects without having to specify its specific type
+            if BoundType.BASE in obj.sollum_type:
+                if BoundType.BASE in types:
+                    result.append(obj)
+            else:
+                if obj.sollum_type in types:
+                    result.append(obj)
+
+        return result
 
     def export_object(self, obj):
         try:
             valid_type = False
             filepath = None
             if obj.sollum_type == DrawableType.DRAWABLE:
-                filepath = self.get_filepath(obj.name + YDR.file_extension)
+                filepath = self.get_filepath(obj.name, YDR.file_extension)
                 export_ydr(self, obj, filepath)
                 valid_type = True
             elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
-                filepath = self.get_filepath(obj.name + YDD.file_extension)
+                filepath = self.get_filepath(obj.name, YDD.file_extension)
                 export_ydd(self, obj, filepath)
                 valid_type = True
             elif obj.sollum_type == FragmentType.FRAGMENT:
-                filepath = self.get_filepath(obj.name + YFT.file_extension)
+                filepath = self.get_filepath(obj.name, YFT.file_extension)
                 export_yft(obj, filepath)
                 valid_type = True
             elif obj.sollum_type == BoundType.COMPOSITE:
-                filepath = self.get_filepath(obj.name + YBN.file_extension)
+                filepath = self.get_filepath(obj.name, YBN.file_extension)
                 export_ybn(obj, filepath)
                 valid_type = True
             if valid_type:
@@ -151,23 +289,12 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
         return True
 
-    def get_only_parent_objs(self, objs):
-        pobjs = []
-        for obj in objs:
-            if obj.parent == None:
-                pobjs.append(obj)
-        return pobjs
-
     def run(self, context):
-        objects = []
+        objects = self.get_only_parent_objs(self.collect_objects(context))
 
-        if(self.export_type == "export_all"):
-            objects = self.get_only_parent_objs(context.collection.objects)
-        else:
-            objects = context.selected_objects
-
-        if not is_sollum_object_in_objects(objects):
-            self.warning("No sollum objects selected or in scene to export.")
+        if len(objects) == 0:
+            self.warning(
+                f"No objects of type: {' or '.join([SOLLUMZ_UI_NAMES[t].lower() for t in self.export_settings.sollum_types])} to export.")
             return False
 
         if len(objects) > 0:

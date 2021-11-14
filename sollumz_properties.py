@@ -20,15 +20,16 @@ class DrawableType(str, Enum):
 
 
 class BoundType(str, Enum):
-    BOX = 'sollumz_bound_box'
-    SPHERE = 'sollumz_bound_sphere'
-    CAPSULE = 'sollumz_bound_capsule'
-    CYLINDER = 'sollumz_bound_cylinder'
-    DISC = 'sollumz_bound_disc'
-    CLOTH = 'sollumz_bound_cloth'
-    GEOMETRY = 'sollumz_bound_geometry'
-    GEOMETRYBVH = 'sollumz_bound_geometrybvh'
-    COMPOSITE = 'sollumz_bound_composite'
+    BASE = "sollumz_bound"
+    BOX = BASE + "_box"
+    SPHERE = BASE + "_sphere"
+    CAPSULE = BASE + "_capsule"
+    CYLINDER = BASE + "_cylinder"
+    DISC = BASE + "_disc"
+    CLOTH = BASE + "_cloth"
+    GEOMETRY = BASE + "_geometry"
+    GEOMETRYBVH = BASE + "_geometrybvh"
+    COMPOSITE = BASE + "_composite"
 
 
 class PolygonType(str, Enum):
@@ -116,6 +117,7 @@ class EntityPriorityLevel(str, Enum):
 
 
 SOLLUMZ_UI_NAMES = {
+    BoundType.BASE: "Bound",
     BoundType.BOX: 'Bound Box',
     BoundType.SPHERE: 'Bound Sphere',
     BoundType.CAPSULE: 'Bound Capsule',
@@ -183,18 +185,18 @@ SOLLUMZ_UI_NAMES = {
     LODLevel.LOW: 'Low',
     LODLevel.VERYLOW: 'Vlow',
 
-    FragmentType.FRAGMENT: "Sollumz Fragment",
-    FragmentType.LOD: "Sollumz Fragment LOD",
-    FragmentType.ARCHETYPE: "Sollumz Fragment Archetype",
-    FragmentType.CHILD: "Sollumz Fragment Child",
+    FragmentType.FRAGMENT: "Fragment",
+    FragmentType.LOD: "Fragment LOD",
+    FragmentType.ARCHETYPE: "Fragment Archetype",
+    FragmentType.CHILD: "Fragment Child",
 
-    DrawableType.NONE: 'Sollumz None',
-    DrawableType.DRAWABLE_DICTIONARY: 'Sollumz Drawable Dictionary',
-    DrawableType.DRAWABLE: 'Sollumz Drawable',
-    DrawableType.DRAWABLE_MODEL: 'Sollumz Drawable Model',
-    DrawableType.GEOMETRY: 'Sollumz Geometry',
-    DrawableType.SKELETON: 'Sollumz Skeleton',
-    DrawableType.LIGHT: "Sollumz Light",
+    DrawableType.NONE: 'None',
+    DrawableType.DRAWABLE_DICTIONARY: 'Drawable Dictionary',
+    DrawableType.DRAWABLE: 'Drawable',
+    DrawableType.DRAWABLE_MODEL: 'Drawable Model',
+    DrawableType.GEOMETRY: 'Geometry',
+    DrawableType.SKELETON: 'Skeleton',
+    DrawableType.LIGHT: "Light",
 
     EntityLodLevel.LODTYPES_DEPTH_HD: "DEPTH HD",
     EntityLodLevel.LODTYPES_DEPTH_LOD: "DEPTH LOD",
