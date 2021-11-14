@@ -12,6 +12,7 @@ class SOLLUMZ_PT_export_main(bpy.types.Panel):
     bl_label = ""
     bl_parent_id = "FILE_PT_operator"
     bl_options = {'HIDE_HEADER'}
+    bl_order = 0
 
     @ classmethod
     def poll(cls, context):
@@ -39,6 +40,7 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel):
     bl_region_type = 'TOOL_PROPS'
     bl_label = "Include"
     bl_parent_id = "FILE_PT_operator"
+    bl_order = 1
 
     @classmethod
     def poll(cls, context):
@@ -61,6 +63,30 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel):
 
         col = layout.column()
         col.prop(operator.export_settings, "sollum_types")
+
+
+class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Geometry"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 2
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.export_settings, "use_transforms")
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):

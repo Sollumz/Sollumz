@@ -181,7 +181,7 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
     return blend_weights, blend_indices
 
 
-def get_mesh_buffers(obj, mesh, vertex_type, bones=None):
+def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
     # thanks dexy
 
     blend_weights, blend_indices = get_blended_verts(
@@ -199,8 +199,11 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None):
             kwargs = {}
 
             if "position" in vertex_type._fields:
-                pos = ListHelper.float32_list(
-                    obj.matrix_world @ mesh.vertices[vert_idx].co)
+                if export_settings.use_transforms:
+                    pos = ListHelper.float32_list(
+                        obj.matrix_world @ mesh.vertices[vert_idx].co)
+                else:
+                    pos = ListHelper.float32_list(mesh.vertices[vert_idx].co)
                 kwargs['position'] = tuple(pos)
             if "normal" in vertex_type._fields:
                 normal = ListHelper.float32_list(loop.normal)
@@ -310,7 +313,7 @@ def get_shader_index(obj, mat):
             return i
 
 
-def geometry_from_object(obj, shaders, bones=None):
+def geometry_from_object(obj, shaders, bones=None, export_settings=None):
     geometry = GeometryItem()
 
     geometry.shader_index = get_shader_index(obj, obj.active_material)
@@ -329,7 +332,7 @@ def geometry_from_object(obj, shaders, bones=None):
 
     geometry.vertex_buffer.layout = layout.value
     vertex_buffer, index_buffer = get_mesh_buffers(
-        obj, mesh, layout.vertex_type, bones)
+        obj, mesh, layout.vertex_type, bones, export_settings)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
@@ -337,7 +340,7 @@ def geometry_from_object(obj, shaders, bones=None):
     return geometry
 
 
-def drawable_model_from_object(obj, shaders, bones=None):
+def drawable_model_from_object(obj, shaders, bones=None, export_settings=None):
     drawable_model = DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
@@ -354,11 +357,12 @@ def drawable_model_from_object(obj, shaders, bones=None):
                 objs = BlenderHelper.split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
-                        obj, shaders, bones)  # MAYBE WRONG ASK LOYALIST
+                        obj, shaders, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 BlenderHelper.join_objects(objs)
             else:
-                geometry = geometry_from_object(child, shaders, bones)
+                geometry = geometry_from_object(
+                    child, shaders, bones, export_settings)
                 drawable_model.geometries.append(geometry)
 
     return drawable_model
@@ -503,7 +507,7 @@ def light_from_object(obj):
 
 
 # REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
-def drawable_from_object(exportop, obj, exportpath, bones=None):
+def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=None):
     drawable = Drawable()
 
     drawable.name = obj.name
@@ -553,7 +557,8 @@ def drawable_from_object(exportop, obj, exportpath, bones=None):
 
     for child in obj.children:
         if child.sollum_type == DrawableType.DRAWABLE_MODEL:
-            drawable_model = drawable_model_from_object(child, shaders, bones)
+            drawable_model = drawable_model_from_object(
+                child, shaders, bones, export_settings)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)
@@ -581,5 +586,6 @@ def drawable_from_object(exportop, obj, exportpath, bones=None):
     return drawable
 
 
-def export_ydr(exportop, obj, filepath):
-    drawable_from_object(exportop, obj, filepath, None).write_xml(filepath)
+def export_ydr(exportop, obj, filepath, export_settings):
+    drawable_from_object(exportop, obj, filepath, None,
+                         export_settings).write_xml(filepath)

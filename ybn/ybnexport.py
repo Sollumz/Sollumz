@@ -43,7 +43,7 @@ def add_material(material, materials):
         materials.append(mat_item)
 
 
-def polygon_from_object(obj, geometry):
+def polygon_from_object(obj, geometry, export_settings):
     vertices = geometry.vertices
     materials = geometry.materials
     geom_center = geometry.geometry_center
@@ -122,7 +122,7 @@ def triangle_from_face(face):
     return triangle
 
 
-def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
+def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings=None):
     geometry = None
 
     if sollum_type == BoundType.GEOMETRYBVH:
@@ -153,8 +153,9 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
 
             # verts
             for vertex in mesh.vertices:
+                vert = child.matrix_world @ vertex.co if export_settings.use_transforms else vertex.co
                 geometry.vertices.append(
-                    (child.matrix_world @ vertex.co) - geometry.geometry_center)
+                    (vert) - geometry.geometry_center)
 
             # vert colors
             for poly in mesh.polygons:
@@ -171,7 +172,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                 geometry.polygons.append(triangle_from_face(face))
 
     for child in get_children_recursive(obj):
-        poly = polygon_from_object(child, geometry)
+        poly = polygon_from_object(child, geometry, export_settings)
         if poly:
             found = True
             geometry.polygons.append(poly)
@@ -231,7 +232,7 @@ def init_bound(bound, obj):
     return bound
 
 
-def bound_from_object(obj):
+def bound_from_object(obj, export_settings):
     if obj.sollum_type == BoundType.BOX:
         bound = init_bound_item(BoundBox(), obj)
         bound.box_max = obj.bound_dimensions
@@ -259,30 +260,30 @@ def bound_from_object(obj):
     elif obj.sollum_type == BoundType.CLOTH:
         return init_bound_item(BoundCloth(), obj)
     elif obj.sollum_type == BoundType.GEOMETRY:
-        return geometry_from_object(obj, BoundType.GEOMETRY)
+        return geometry_from_object(obj, BoundType.GEOMETRY, export_settings)
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
-        return geometry_from_object(obj)
+        return geometry_from_object(obj, BoundType.GEOMETRYBVH, export_settings)
 
 
-def composite_from_object(obj):
+def composite_from_object(obj, export_settings):
     composite = init_bound(BoundsComposite(), obj)
 
     for child in get_children_recursive(obj):
-        bound = bound_from_object(child)
+        bound = bound_from_object(child, export_settings)
         if bound:
             composite.children.append(bound)
 
     return composite
 
 
-def bounds_from_object(obj):
+def bounds_from_object(obj, export_settings):
     bounds = BoundFile()
 
-    composite = composite_from_object(obj)
+    composite = composite_from_object(obj, export_settings)
     bounds.composite = composite
 
     return bounds
 
 
-def export_ybn(obj, filepath):
-    bounds_from_object(obj).write_xml(filepath)
+def export_ybn(obj, filepath, export_settings):
+    bounds_from_object(obj, export_settings).write_xml(filepath)
