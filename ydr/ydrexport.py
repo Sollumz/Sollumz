@@ -112,21 +112,20 @@ def texture_dictionary_from_materials(obj, exportpath):
 
                     texture_dictionary.append(texture_item)
 
-                    # if(n.image != None):
                     foldername = obj.name
                     folderpath = os.path.join(exportpath, foldername)
-                    txtpath = n.image.filepath
+                    txtpath = bpy.path.abspath(n.image.filepath)
                     if os.path.isfile(txtpath):
                         if(os.path.isdir(folderpath) == False):
                             os.mkdir(folderpath)
                         dstpath = folderpath + "\\" + \
-                            os.path.basename(n.image.filepath)
+                            os.path.basename(txtpath)
                         # check if paths are the same because if they are no need to copy
                         if txtpath != dstpath:
                             shutil.copyfile(txtpath, dstpath)
                     else:
                         messages.append(
-                            f"Missing Embedded Texture: {texture_name} please supply texture! The texture will not be copied to the texture folder until entered!")
+                            f"Missing Embedded Texture: {txtpath} please supply texture! The texture will not be copied to the texture folder until entered!")
 
     if(has_td):
         return texture_dictionary, messages
