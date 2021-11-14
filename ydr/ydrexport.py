@@ -302,18 +302,24 @@ def apply_and_triangulate_object(obj):
     return obj_eval, mesh
 
 
+def get_shader_index(obj, mat):
+    mats = get_used_materials(
+        obj.parent.parent)
+    for i in range(len(mats)):
+        if mats[i] == mat:
+            return i
+
+
 def geometry_from_object(obj, shaders, bones=None):
     geometry = GeometryItem()
+
+    geometry.shader_index = get_shader_index(obj, obj.active_material)
 
     obj, mesh = apply_and_triangulate_object(obj)
 
     bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
-
-    for i in range(len(shaders)):
-        if(shaders[i].name == obj.active_material.shader_properties.name):
-            geometry.shader_index = i
 
     shader_name = obj.active_material.shader_properties.name
     shader = ShaderManager.shaders[shader_name]
