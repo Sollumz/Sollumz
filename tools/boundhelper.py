@@ -87,12 +87,12 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs):
     if not multiple:
         parent = create_bound()
 
+    dobj = parent or create_bound()
+    dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
+        BoundType.GEOMETRY)
+    dmobj.parent = dobj
+
     for obj in selected:
-        # set parents
-        dobj = parent or create_bound()
-        dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
-            BoundType.GEOMETRY)
-        dmobj.parent = dobj
         obj.parent = dmobj
 
         name = obj.name
