@@ -47,15 +47,18 @@ def polygon_from_object(obj, geometry, export_settings):
     vertices = geometry.vertices
     materials = geometry.materials
     geom_center = geometry.geometry_center
-    world_pos = obj.matrix_world.to_translation()
+    pos = obj.matrix_world.to_translation(
+    ) - geom_center if export_settings.use_transforms else obj.location
 
     if obj.sollum_type == PolygonType.BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
-        bound_box = [obj.matrix_world @ Vector(pos) for pos in obj.bound_box]
+        bound_box = [Vector(pos) for pos in obj.bound_box]
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
-            vertices.append(vert - geom_center)
+            world_vert = (obj.matrix_world @ vert) - geom_center
+            vertices.append(
+                world_vert if export_settings.use_transforms else obj.matrix_basis @ vert)
             indices.append(len(vertices) - 1)
 
         box.v1 = indices[0]
@@ -66,7 +69,7 @@ def polygon_from_object(obj, geometry, export_settings):
         return box
     elif obj.sollum_type == PolygonType.SPHERE:
         sphere = init_poly_bound(Sphere(), obj, materials)
-        vertices.append(world_pos - geom_center)
+        vertices.append(pos)
         sphere.v = len(vertices) - 1
         bound_box = get_total_bounds(obj)
 
@@ -95,13 +98,14 @@ def polygon_from_object(obj, geometry, export_settings):
             height = height - (radius * 2)
 
         vertical = Vector((0, 0, height / 2))
-        vertical.rotate(obj.matrix_world.to_euler('XYZ'))
+        mat = obj.matrix_world if export_settings.use_transforms else obj.matrix_basis
+        vertical.rotate(mat.to_euler('XYZ'))
 
-        v1 = world_pos - vertical
-        v2 = world_pos + vertical
+        v1 = pos - vertical
+        v2 = pos + vertical
 
-        vertices.append(v1 - geom_center)
-        vertices.append(v2 - geom_center)
+        vertices.append(v1)
+        vertices.append(v2)
 
         bound.v1 = len(vertices) - 2
         bound.v2 = len(vertices) - 1
@@ -132,7 +136,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings
     else:
         return ValueError('Invalid argument for geometry sollum_type!')
 
-    geometry = init_bound_item(geometry, obj)
+    geometry = init_bound_item(geometry, obj, export_settings)
     geometry.geometry_center = obj.location
     geometry.composite_position = Vector()
 
@@ -169,8 +173,14 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings
                 vert_indices = []
                 for loop_idx in tri.loops:
                     loop = mesh.loops[loop_idx]
-                    vertex = tuple((
-                        child.matrix_world @ mesh.vertices[loop.vertex_index].co) - geometry.geometry_center)
+
+                    vertex = mesh.vertices[loop.vertex_index].co
+                    if export_settings.use_transforms:
+                        vertex = (obj.matrix_world @ vertex) - \
+                            geometry.geometry_center
+
+                    # Must be tuple for dedupe to work
+                    vertex = tuple(vertex)
 
                     if vertex in vertices:
                         idx = vertices[vertex]
@@ -194,7 +204,6 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings
     if not found:
         raise NoGeometryError()
 
-    print(len(geometry.vertices))
     # Check vert count
     if len(geometry.vertices) > 32767:
         raise VerticesLimitError(
@@ -203,8 +212,8 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings
     return geometry
 
 
-def init_bound_item(bound_item, obj):
-    init_bound(bound_item, obj)
+def init_bound_item(bound_item, obj, export_settings):
+    init_bound(bound_item, obj, export_settings)
     # Get flags from object
     for prop in dir(obj.composite_flags1):
         value = getattr(obj.composite_flags1, prop)
@@ -216,26 +225,31 @@ def init_bound_item(bound_item, obj):
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
 
-    position, rotation, scale = obj.matrix_world.decompose()
+    mat = obj.matrix_world if export_settings.use_transforms else obj.matrix_basis
+    position, rotation, scale = mat.decompose()
     bound_item.composite_position = position
     bound_item.composite_rotation = rotation.normalized()
     # Get scale directly from matrix (decompose gives incorrect scale)
     bound_item.composite_scale = Vector(
-        (obj.matrix_world[0][0], obj.matrix_world[1][1], obj.matrix_world[2][2]))
+        (mat[0][0], mat[1][1], mat[2][2]))
     if obj.active_material and obj.active_material.sollum_type == MaterialType.COLLISION:
         bound_item.material_index = obj.active_material.collision_properties.collision_index
 
     return bound_item
 
 
-def init_bound(bound, obj):
-    bbmin, bbmax = get_bound_extents(obj, world=False)
+def init_bound(bound, obj, export_settings):
+    use_world = export_settings.use_transforms and (
+        obj.sollum_type == BoundType.GEOMETRYBVH or obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.COMPOSITE)
+
+    bbmin, bbmax = get_bound_extents(obj, world=use_world)
     bound.box_min = bbmin
     bound.box_max = bbmax
-    center = get_bound_center(obj, world=False)
+    center = get_bound_center(obj, world=use_world)
     bound.box_center = center
     bound.sphere_center = center
-    bound.sphere_radius = get_obj_radius(obj, world=False)
+    bound.sphere_radius = get_obj_radius(
+        obj, world=use_world)
     bound.procedural_id = obj.bound_properties.procedural_id
     bound.room_id = obj.bound_properties.room_id
     bound.ped_density = obj.bound_properties.ped_density
@@ -249,31 +263,31 @@ def init_bound(bound, obj):
 
 def bound_from_object(obj, export_settings):
     if obj.sollum_type == BoundType.BOX:
-        bound = init_bound_item(BoundBox(), obj)
+        bound = init_bound_item(BoundBox(), obj, export_settings)
         bound.box_max = obj.bound_dimensions
         bound.box_min = obj.bound_dimensions * -1
         return bound
     elif obj.sollum_type == BoundType.SPHERE:
-        bound = init_bound_item(BoundSphere(), obj)
+        bound = init_bound_item(BoundSphere(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == BoundType.CYLINDER:
-        bound = init_bound_item(BoundCylinder(), obj)
+        bound = init_bound_item(BoundCylinder(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == BoundType.CAPSULE:
-        bound = init_bound_item(BoundCapsule(), obj)
+        bound = init_bound_item(BoundCapsule(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == BoundType.DISC:
-        bound = init_bound_item(BoundDisc(), obj)
+        bound = init_bound_item(BoundDisc(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         # bound.composite_scale = obj.scale
         # bound.composite_rotation = obj.rotation_euler.to_quaternion()
         bound.margin = obj.margin
         return bound
     elif obj.sollum_type == BoundType.CLOTH:
-        return init_bound_item(BoundCloth(), obj)
+        return init_bound_item(BoundCloth(), obj, export_settings)
     elif obj.sollum_type == BoundType.GEOMETRY:
         return geometry_from_object(obj, BoundType.GEOMETRY, export_settings)
     elif obj.sollum_type == BoundType.GEOMETRYBVH:
@@ -281,7 +295,7 @@ def bound_from_object(obj, export_settings):
 
 
 def composite_from_object(obj, export_settings):
-    composite = init_bound(BoundsComposite(), obj)
+    composite = init_bound(BoundsComposite(), obj, export_settings)
 
     for child in get_children_recursive(obj):
         bound = bound_from_object(child, export_settings)
