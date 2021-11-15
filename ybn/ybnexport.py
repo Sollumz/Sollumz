@@ -138,6 +138,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
 
     # Ensure object has geometry
     found = False
+    vertices = {}
     # Get child poly bounds
     for child in get_children_recursive(obj):
         if child.sollum_type == PolygonType.TRIANGLE:
@@ -151,11 +152,6 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
             for material in mesh.materials:
                 add_material(material, geometry.materials)
 
-            # verts
-            for vertex in mesh.vertices:
-                geometry.vertices.append(
-                    (child.matrix_world @ vertex.co) - geometry.geometry_center)
-
             # vert colors
             for poly in mesh.polygons:
                 for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
@@ -166,19 +162,39 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH):
                             mesh.vertex_colors[0].data[loop_index].color)
                     # geometry.polygons.append(tiangle_from_mesh_loop(mesh.loops[loop_index]))
 
-            # indicies
-            for face in mesh.loop_triangles:
-                geometry.polygons.append(triangle_from_face(face))
+            for tri in mesh.loop_triangles:
+                triangle = Triangle()
+                triangle.material_index = tri.material_index
+
+                vert_indices = []
+                for loop_idx in tri.loops:
+                    loop = mesh.loops[loop_idx]
+                    vertex = tuple((
+                        child.matrix_world @ mesh.vertices[loop.vertex_index].co) - geometry.geometry_center)
+
+                    if vertex in vertices:
+                        idx = vertices[vertex]
+                    else:
+                        idx = len(vertices)
+                        vertices[vertex] = len(vertices)
+                        geometry.vertices.append(Vector(vertex))
+
+                    vert_indices.append(idx)
+
+                triangle.v1 = vert_indices[0]
+                triangle.v2 = vert_indices[1]
+                triangle.v3 = vert_indices[2]
+                geometry.polygons.append(triangle)
 
     for child in get_children_recursive(obj):
         poly = polygon_from_object(child, geometry)
         if poly:
             found = True
             geometry.polygons.append(poly)
-
     if not found:
         raise NoGeometryError()
 
+    print(len(geometry.vertices))
     # Check vert count
     if len(geometry.vertices) > 32767:
         raise VerticesLimitError(
