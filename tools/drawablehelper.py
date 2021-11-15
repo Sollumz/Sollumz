@@ -15,14 +15,22 @@ def create_drawable(sollum_type=DrawableType.DRAWABLE):
 
 def convert_selected_to_drawable(objs, use_names=False, multiple=False):
     parent = None
+
     if not multiple:
-        parent = create_drawable(DrawableType.DRAWABLE)
+        dobj = create_drawable()
+        dmobj = create_drawable(DrawableType.DRAWABLE_MODEL)
+        dmobj.parent = dobj
 
     for obj in objs:
 
         if obj.type != "MESH":
             raise Exception(
                 f"{obj.name} cannot be converted because it has no mesh data.")
+
+        if multiple:
+            dobj = parent or create_drawable()
+            dmobj = create_drawable(DrawableType.DRAWABLE_MODEL)
+            dmobj.parent = dobj
 
         # create material
         i = 0
@@ -41,10 +49,6 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
                     obj.material_slots[i].material = new_mat
             i += 1
 
-        # set parents
-        dobj = parent or create_drawable()
-        dmobj = create_drawable(DrawableType.DRAWABLE_MODEL)
-        dmobj.parent = dobj
         obj.parent = dmobj
 
         name = obj.name

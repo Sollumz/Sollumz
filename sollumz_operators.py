@@ -132,6 +132,11 @@ class ExportSettings(bpy.types.PropertyGroup):
         description="Export only objects from the active collection (and its children)",
         default=False,
     )
+    use_transforms: bpy.props.BoolProperty(
+        name="Use Transforms",
+        description="Exports objects with the transforms applied to the vertices",
+        default=True
+    )
 
 
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -244,9 +249,8 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             # this is how you can create the folder names if the user clicks "use_batch_own_dir"
             for data, name, data_obj_paramname in data_block:
                 objects = getattr(
-                    data, data_obj_paramname)
+                    data, data_obj_paramname).values()
 
-        objects = objects.values()  # make it a list from bpy_prop_collection
         result = []
 
         types = self.export_settings.sollum_types
@@ -267,7 +271,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             filepath = None
             if obj.sollum_type == DrawableType.DRAWABLE:
                 filepath = self.get_filepath(obj.name, YDR.file_extension)
-                export_ydr(self, obj, filepath)
+                export_ydr(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == DrawableType.DRAWABLE_DICTIONARY:
                 filepath = self.get_filepath(obj.name, YDD.file_extension)
@@ -279,7 +283,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 valid_type = True
             elif obj.sollum_type == BoundType.COMPOSITE:
                 filepath = self.get_filepath(obj.name, YBN.file_extension)
-                export_ybn(obj, filepath)
+                export_ybn(obj, filepath, self.export_settings)
                 valid_type = True
             if valid_type:
                 self.message(f"Succesfully exported: {filepath}")
