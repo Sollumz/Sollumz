@@ -133,7 +133,7 @@ class LightProperties(bpy.types.PropertyGroup):
     cone_outer_angle: bpy.props.FloatProperty(name="Cone Outer Angle")
     extent: bpy.props.FloatVectorProperty(name="Extent")
     projected_texture_hash: bpy.props.StringProperty(
-        name="Project Texture Hash")
+        name="Projected Texture Hash")
 
 # Handler sets the default value of the ShaderMaterials collection on blend file load
 
