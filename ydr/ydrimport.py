@@ -6,7 +6,7 @@ from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
 from ..resources.drawable import *
 from ..tools.meshhelper import flip_uv
-from ..tools.utils import ListHelper
+from ..tools.utils import *
 from ..tools.blenderhelper import *
 
 
@@ -117,7 +117,7 @@ def create_vertexcolor_layer(mesh, num, name, colors):
     color_layer.name = name
     for i in range(len(color_layer.data)):
         rgba = colors[mesh.loops[i].vertex_index]
-        color_layer.data[i].color = ListHelper.divide_list(rgba, 255)
+        color_layer.data[i].color = divide_list(rgba, 255)
 
 
 def geometry_to_obj(geometry, bones=None, name=None):
@@ -190,7 +190,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
                         obj.vertex_groups[index].add(
                             [vertex_idx], weight, "ADD")
 
-            BlenderHelper.remove_unused_vertex_groups_of_mesh(obj)
+            remove_unused_vertex_groups_of_mesh(obj)
 
     return obj
 

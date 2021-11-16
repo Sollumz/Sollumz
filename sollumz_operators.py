@@ -19,7 +19,7 @@ from .ybn.ybnimport import import_ybn
 from .ybn.ybnexport import export_ybn
 from .resources.ymap import YMAP, EntityItem, CMapData
 from .tools.meshhelper import *
-from .tools.utils import VectorHelper
+from .tools.utils import *
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 
@@ -429,15 +429,15 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
             loddist = obj.entity_properties.lod_dist
             radius = get_obj_radius(obj)
 
-            bbmin = VectorHelper.subtract_from_vector(obj.location, radius)
-            bbmax = VectorHelper.add_to_vector(obj.location, radius)
-            sbmin = VectorHelper.subtract_from_vector(bbmin, loddist)
-            sbmax = VectorHelper.add_to_vector(bbmax, loddist)
+            bbmin = subtract_from_vector(obj.location, radius)
+            bbmax = add_to_vector(obj.location, radius)
+            sbmin = subtract_from_vector(bbmin, loddist)
+            sbmax = add_to_vector(bbmax, loddist)
 
-            emin = VectorHelper.get_min_vector(emin, bbmin)
-            emax = VectorHelper.get_max_vector(emax, bbmax)
-            smin = VectorHelper.get_min_vector(smin, sbmin)
-            smax = VectorHelper.get_max_vector(smax, sbmax)
+            emin = get_min_vector(emin, bbmin)
+            emax = get_max_vector(emax, bbmax)
+            smin = get_min_vector(smin, sbmin)
+            smax = get_max_vector(smax, sbmax)
 
         return emin, emax, smin, smax
 

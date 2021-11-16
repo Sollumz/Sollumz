@@ -2,6 +2,7 @@ from .properties import CollisionMatFlags
 from ..resources.bound import *
 from ..tools.meshhelper import *
 from ..sollumz_properties import BoundType, PolygonType, MaterialType, DrawableType, FragmentType
+from ..tools.utils import *
 
 
 class NoGeometryError(Exception):
@@ -73,7 +74,7 @@ def polygon_from_object(obj, geometry, export_settings):
         sphere.v = len(vertices) - 1
         bound_box = get_total_bounds(obj)
 
-        radius = VectorHelper.get_distance_of_vectors(
+        radius = get_distance_of_vectors(
             bound_box[1], bound_box[2]) / 2
 
         sphere.radius = radius
@@ -89,9 +90,9 @@ def polygon_from_object(obj, geometry, export_settings):
         bound_box = get_total_bounds(obj)
 
         # Get bound height
-        height = VectorHelper.get_distance_of_vectors(
+        height = get_distance_of_vectors(
             bound_box[0], bound_box[1])
-        radius = VectorHelper.get_distance_of_vectors(
+        radius = get_distance_of_vectors(
             bound_box[1], bound_box[2]) / 2
 
         if obj.sollum_type == PolygonType.CAPSULE:
