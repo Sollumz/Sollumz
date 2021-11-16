@@ -72,12 +72,12 @@ def draw_shader(layout, mat):
     # where if you select one of the image nodes it swaps around the order that you edit them in...
     # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
     # annoyying as hell
-    selected_nodes = []
-    for n in nodes:
-        if(n.select == True):
-            selected_nodes.append(n)
+    #selected_nodes = []
+    # for n in nodes:
+    # if(n.select == True):
+    # selected_nodes.append(n)
 
-    for n in selected_nodes:
+    for n in nodes:
         if(isinstance(n, bpy.types.ShaderNodeTexImage)):
             # if(n.name == "SpecSampler"):
             box = layout.box()
@@ -90,7 +90,7 @@ def draw_shader(layout, mat):
             row = box.row(align=True)
             row.prop(n.texture_properties, "embedded")
             if(n.texture_properties.embedded == False):
-                break
+                continue
             row.prop(n.texture_properties, "format")
             row.prop(n.texture_properties, "usage")
             #box = box.box()
