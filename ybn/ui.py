@@ -37,7 +37,7 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and ((is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType)) and obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != PolygonType.BOX)
+        return obj and ((is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType)) and obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != PolygonType.BOX and obj.sollum_type != PolygonType.TRIANGLE)
 
     def draw(self, context):
         obj = context.active_object
