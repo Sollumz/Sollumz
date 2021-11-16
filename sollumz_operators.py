@@ -357,13 +357,20 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
         try:
             ymap = YMAP.from_xml_file(self.filepath)
+            found = False
             if ymap.entities:
                 for obj in context.collection.all_objects:
                     for entity in ymap.entities:
                         if(entity.archetype_name == obj.name and obj.name in context.view_layer.objects):
+                            found = True
                             self.apply_entity_properties(obj, entity)
-                self.message(f"Succesfully imported: {self.filepath}")
-                return True
+                if found:
+                    self.message(f"Succesfully imported: {self.filepath}")
+                    return True
+                else:
+                    self.message(
+                        f"No entities from '{self.filepath}' exist in the view layer!")
+                    return False
             else:
                 self.error(f"{self.filepath} contains no entities to import!")
                 return False
