@@ -96,23 +96,23 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
                 BoundType.GEOMETRY)
             dmobj.parent = dobj
 
-        poly_mesh = obj if replace_original else create_mesh(
-            PolygonType.TRIANGLE)
+        if obj.type == 'MESH':
+            poly_mesh = obj if replace_original else create_mesh(
+                PolygonType.TRIANGLE)
 
-        if use_name:
-            dobj.name = poly_mesh.name
+            if use_name:
+                dobj.name = poly_mesh.name
 
-        poly_mesh.parent = dmobj
+            poly_mesh.parent = dmobj
 
-        if replace_original:
-            poly_mesh.name = SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]
-            # set properties
-            poly_mesh.sollum_type = PolygonType.TRIANGLE
-        else:
-            poly_mesh.data = obj.data.copy()
+            if replace_original:
+                poly_mesh.name = SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]
+                # set properties
+                poly_mesh.sollum_type = PolygonType.TRIANGLE
+            else:
+                poly_mesh.data = obj.data.copy()
 
-        # Remove materials
-        if poly_mesh.type == 'MESH':
+            # Remove materials
             poly_mesh.data.materials.clear()
             # add default collision mat
             poly_mesh.data.materials.append(
