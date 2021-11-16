@@ -358,9 +358,9 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         try:
             ymap = YMAP.from_xml_file(self.filepath)
             if ymap.entities:
-                for obj in context.collection.objects:
+                for obj in context.collection.all_objects:
                     for entity in ymap.entities:
-                        if(entity.archetype_name == obj.name):
+                        if(entity.archetype_name == obj.name and obj.name in context.view_layer.objects):
                             self.apply_entity_properties(obj, entity)
                 self.message(f"Succesfully imported: {self.filepath}")
                 return True
