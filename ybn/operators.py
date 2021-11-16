@@ -280,7 +280,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         aobj = context.active_object
-        type = context.scene.poly_bound_type
+        type = context.scene.poly_bound_type_verts
         parent = context.scene.poly_parent
 
         if aobj and aobj.mode == "EDIT":
