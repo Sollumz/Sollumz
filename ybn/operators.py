@@ -93,7 +93,7 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
             return True
         else:
             convert_selected_to_bound(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh)
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh, context.scene.composite_replace_original)
             return True
 
 

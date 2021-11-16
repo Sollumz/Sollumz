@@ -167,9 +167,12 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
+        row = layout.row()
         row.prop(context.scene, "use_mesh_name")
-        row.prop(context.scene, "composite_create_bvh")
         row.prop(context.scene, "create_seperate_objects")
+        row.prop(context.scene, "composite_replace_original")
+        row.prop(context.scene, "composite_create_bvh")
+        layout.separator()
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
         row.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname)

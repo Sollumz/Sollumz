@@ -80,10 +80,9 @@ def create_mesh(sollum_type):
     return obj
 
 
-def convert_selected_to_bound(objs, use_name, multiple, bvhs):
+def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
     selected = objs
 
-    parent = None
     if not multiple:
         dobj = create_bound()
         dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
@@ -97,26 +96,24 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs):
                 BoundType.GEOMETRY)
             dmobj.parent = dobj
 
-        obj.parent = dmobj
-
-        name = obj.name
-        obj.name = name + "_mesh"
+        poly_mesh = obj if replace_original else create_mesh(
+            PolygonType.TRIANGLE)
 
         if use_name:
-            dobj.name = name
+            dobj.name = poly_mesh.name
 
-        # set properties
-        obj.sollum_type = PolygonType.TRIANGLE
+        poly_mesh.parent = dmobj
 
-        # add object to collection
-        new_obj = obj.copy()
+        if replace_original:
+            poly_mesh.name = SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]
+            # set properties
+            poly_mesh.sollum_type = PolygonType.TRIANGLE
+        else:
+            poly_mesh.data = obj.data.copy()
 
         # Remove materials
-        if new_obj.type == 'MESH':
-            new_obj.data.materials.clear()
+        if poly_mesh.type == 'MESH':
+            poly_mesh.data.materials.clear()
             # add default collision mat
-            new_obj.data.materials.append(
+            poly_mesh.data.materials.append(
                 create_collision_material_from_index(0))
-
-        bpy.data.objects.remove(obj, do_unlink=True)
-        bpy.context.collection.objects.link(new_obj)
