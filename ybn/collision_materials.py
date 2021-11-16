@@ -257,10 +257,6 @@ def create_collision_material_from_index(collisionindex: int):
 
     matinfo = collisionmats[collisionindex]
 
-    # Check for existing material
-    if matinfo.name in bpy.data.materials:
-        return bpy.data.materials[matinfo.name]
-
     mat = bpy.data.materials.new(matinfo.name)
     mat.sollum_type = MaterialType.COLLISION
     mat.collision_properties.collision_index = collisionindex
