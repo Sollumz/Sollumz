@@ -37,7 +37,7 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and ((is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType)) and obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != PolygonType.BOX)
+        return obj and ((is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType)) and obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != PolygonType.BOX and obj.sollum_type != PolygonType.TRIANGLE)
 
     def draw(self, context):
         obj = context.active_object
@@ -167,9 +167,12 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_bound_composite.bl_idname)
+        row = layout.row()
         row.prop(context.scene, "use_mesh_name")
-        row.prop(context.scene, "composite_create_bvh")
         row.prop(context.scene, "create_seperate_objects")
+        row.prop(context.scene, "composite_replace_original")
+        row.prop(context.scene, "composite_create_bvh")
+        layout.separator()
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname)
         row.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname)
@@ -185,9 +188,11 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         layout.separator()
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
-        row.prop(context.scene, "poly_bound_type")
         if context.active_object and context.active_object.mode == 'EDIT':
+            row.prop(context.scene, "poly_bound_type_verts")
             row.prop(context.scene, "poly_parent", expand=True)
+        else:
+            row.prop(context.scene, "poly_bound_type")
         row = layout.row()
         row.operator(SOLLUMZ_OT_convert_to_poly_mesh.bl_idname)
 

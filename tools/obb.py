@@ -18,13 +18,9 @@
 import bpy
 import bmesh
 import math
-import random
 import time
 from mathutils import Vector, Matrix
-from bpy.props import BoolProperty, FloatProperty, IntProperty, EnumProperty
 import numpy as np
-from ..tools.meshhelper import create_box_from_extents
-from ..tools.utils import VectorHelper
 
 
 def bbox_orient(bme_verts, mx):

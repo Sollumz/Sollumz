@@ -5,7 +5,7 @@ from ..sollumz_properties import *
 from .collision_materials import create_collision_material_from_index, collisionmats
 from ..sollumz_ui import SOLLUMZ_UI_NAMES
 from ..tools.meshhelper import *
-from ..tools.utils import VectorHelper
+from ..tools.utils import *
 import os
 from mathutils import Matrix
 
@@ -123,7 +123,7 @@ def poly_to_obj(poly, materials, vertices):
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
         length = (v1 - v2).length + (poly.radius * 2)
-        rot = VectorHelper.get_direction_of_vectors(v1, v2)
+        rot = get_direction_of_vectors(v1, v2)
 
         create_capsule(capsule.data, poly.radius, length / 2)
 
@@ -136,8 +136,8 @@ def poly_to_obj(poly, materials, vertices):
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
 
-        length = VectorHelper.get_distance_of_vectors(v1, v2)
-        rot = VectorHelper.get_direction_of_vectors(v1, v2)
+        length = get_distance_of_vectors(v1, v2)
+        rot = get_direction_of_vectors(v1, v2)
 
         cylinder.data = create_cylinder(
             cylinder.data, poly.radius, length, rot_mat=None)

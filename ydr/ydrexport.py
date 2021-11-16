@@ -6,7 +6,7 @@ import bpy
 from ..resources.drawable import *
 from ..resources.shader import ShaderManager
 from ..tools.meshhelper import *
-from ..tools.utils import ListHelper
+from ..tools.utils import *
 from ..tools.blenderhelper import *
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel, FragmentType
 from ..ybn.ybnexport import composite_from_object
@@ -200,20 +200,20 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
 
             if "position" in vertex_type._fields:
                 if export_settings.use_transforms:
-                    pos = ListHelper.float32_list(
+                    pos = float32_list(
                         obj.matrix_world @ mesh.vertices[vert_idx].co)
                 else:
-                    pos = ListHelper.float32_list(mesh.vertices[vert_idx].co)
+                    pos = float32_list(mesh.vertices[vert_idx].co)
                 kwargs['position'] = tuple(pos)
             if "normal" in vertex_type._fields:
-                normal = ListHelper.float32_list(loop.normal)
+                normal = float32_list(loop.normal)
                 kwargs["normal"] = tuple(normal)
             if "blendweights" in vertex_type._fields:
                 kwargs['blendweights'] = tuple(blend_weights[vert_idx])
             if "blendindices" in vertex_type._fields:
                 kwargs['blendindices'] = tuple(blend_indices[vert_idx])
             if "tangent" in vertex_type._fields:
-                tangent = ListHelper.float32_list(loop.tangent.to_4d())
+                tangent = float32_list(loop.tangent.to_4d())
                 tangent[3] = loop.bitangent_sign  # convert to float 32 ?
                 kwargs["tangent"] = tuple(tangent)
             for i in range(6):
@@ -221,7 +221,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     key = f'texcoord{i}'
                     if mesh_layer_idx < len(mesh.uv_layers):
                         data = mesh.uv_layers[mesh_layer_idx].data
-                        uv = ListHelper.float32_list(
+                        uv = float32_list(
                             flip_uv(data[loop_idx].uv))
                         kwargs[key] = tuple(uv)
                         mesh_layer_idx += 1
@@ -354,12 +354,12 @@ def drawable_model_from_object(obj, shaders, bones=None, export_settings=None):
     for child in obj.children:
         if child.sollum_type == DrawableType.GEOMETRY:
             if len(child.data.materials) > 1:
-                objs = BlenderHelper.split_object(child, obj)
+                objs = split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
                         obj, shaders, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
-                BlenderHelper.join_objects(objs)
+                join_objects(objs)
             else:
                 geometry = geometry_from_object(
                     child, shaders, bones, export_settings)

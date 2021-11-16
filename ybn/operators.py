@@ -93,7 +93,7 @@ class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
             return True
         else:
             convert_selected_to_bound(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh)
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh, context.scene.composite_replace_original)
             return True
 
 
@@ -280,7 +280,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         aobj = context.active_object
-        type = context.scene.poly_bound_type
+        type = context.scene.poly_bound_type_verts
         parent = context.scene.poly_parent
 
         if aobj and aobj.mode == "EDIT":

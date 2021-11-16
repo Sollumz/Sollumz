@@ -215,11 +215,18 @@ def register():
 
     # COLLISION TOOLS UI PROPERTIES
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
+        items=items_from_enums(PolygonType),
+        name="Type",
+        default=PolygonType.TRIANGLE.value
+    )
+
+    bpy.types.Scene.poly_bound_type_verts = bpy.props.EnumProperty(
         items=[(PolygonType.BOX.value, SOLLUMZ_UI_NAMES[PolygonType.BOX], SOLLUMZ_UI_NAMES[PolygonType.BOX]),
                (PolygonType.TRIANGLE.value, SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])],
         name="Type",
         default=PolygonType.TRIANGLE.value
     )
+
     bpy.types.Scene.poly_edge = bpy.props.EnumProperty(name="Edge", items=[("long", "Long Edge", "Create along the long edge"),
                                                                            ("short", "Short Edge", "Create along the short edge")])
     bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
@@ -227,6 +234,9 @@ def register():
 
     bpy.types.Scene.composite_create_bvh = bpy.props.BoolProperty(
         name='BVH', description='If true, the operator will create GeometryBVH objects, otherwise it will create Geometry objects.', default=True)
+
+    bpy.types.Scene.composite_replace_original = bpy.props.BoolProperty(
+        name='Replace Original', description=f'If true, the operator will replace the selected objects with the {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}.', default=False)
 
 
 def unregister():

@@ -3,7 +3,7 @@ import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
-from .utils import VectorHelper
+from .utils import *
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):
@@ -81,7 +81,7 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
 
 def create_disc(mesh, radius=1, length=0.08):
     bm = bmesh.new()
-    # rot_mat = Matrix.Rotation(radians(90.0), 4, "Y") @ VectorHelper.lookatlh(
+    # rot_mat = Matrix.Rotation(radians(90.0), 4, "Y") @ lookatlh(
     #     Vector((0, 0, 0)), Vector((1, 0, 0)), Vector((0, 0, 1)))
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
     bmesh.ops.create_cone(
@@ -176,7 +176,7 @@ def get_short_long_edge(bbmin, bbmax):
     for edge in bbox.edges:
         v1 = bbox.vertices[edge.vertices[0]].co
         v2 = bbox.vertices[edge.vertices[1]].co
-        edge_lengths.append(VectorHelper.get_distance_of_vectors(v1, v2))
+        edge_lengths.append(get_distance_of_vectors(v1, v2))
     # edge_lengths = np.array(edge_lengths)
     # height = edge_lengths.max(axis=0)
     # width = edge_lengths.min(axis=0)
@@ -189,7 +189,7 @@ def get_short_long_edge(bbmin, bbmax):
 
 def get_bound_extents(obj, world=True):
     corners = get_total_bounds(obj, world)
-    return VectorHelper.get_min_vector_list(corners), VectorHelper.get_max_vector_list(corners)
+    return get_min_vector_list(corners), get_max_vector_list(corners)
 
 
 def get_total_bounds(obj, world=True):
@@ -244,7 +244,7 @@ def get_obj_radius(obj, world=True):
     p2 = Vector((bb_max.x, bb_max.y, 0))
 
     # Distance between bb_min and bb_max x,y values
-    distance = VectorHelper.get_distance_of_vectors(p1, p2)
+    distance = get_distance_of_vectors(p1, p2)
     return distance / 2
 
 
