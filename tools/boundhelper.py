@@ -97,11 +97,11 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
             dmobj.parent = dobj
 
         if obj.type == 'MESH':
+            if use_name:
+                dobj.name = obj.name
+
             poly_mesh = obj if replace_original else create_mesh(
                 PolygonType.TRIANGLE)
-
-            if use_name:
-                dobj.name = poly_mesh.name
 
             poly_mesh.parent = dmobj
 
