@@ -152,5 +152,17 @@ class ShaderManager:
                     i += 1
         print("\t\n".join(result))
 
+    @staticmethod
+    def print_all_params():
+        result = []
+        for shader in ShaderManager.shaders.values():
+            for p in shader.parameters:
+                if p.name not in result:
+                    if p.name:
+                        if "sampler" not in p.name.lower():
+                            result.append(p.name)
+        print(result)
+        # print("\t\n".join(result))
+
 
 ShaderManager.load_shaders()
