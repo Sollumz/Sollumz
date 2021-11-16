@@ -320,7 +320,7 @@ def geometry_from_object(obj, shaders, bones=None, export_settings=None):
 
     obj, mesh = apply_and_triangulate_object(obj)
 
-    bbmin, bbmax = get_bound_extents(obj)
+    bbmin, bbmax = get_bound_extents(obj, world=export_settings.use_transforms)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
@@ -511,9 +511,11 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
     drawable = Drawable()
 
     drawable.name = obj.name
-    drawable.bounding_sphere_center = get_bound_center(obj)
-    drawable.bounding_sphere_radius = get_obj_radius(obj)
-    bbmin, bbmax = get_bound_extents(obj)
+    drawable.bounding_sphere_center = get_bound_center(
+        obj, world=export_settings.use_transforms)
+    drawable.bounding_sphere_radius = get_obj_radius(
+        obj, world=export_settings.use_transforms)
+    bbmin, bbmax = get_bound_extents(obj, world=export_settings.use_transforms)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
 
