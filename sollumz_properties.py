@@ -377,6 +377,7 @@ def register():
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
+    del bpy.types.Object.entity_properties
     del bpy.types.Scene.hide_collision
     del bpy.types.Scene.hide_high_lods
     del bpy.types.Scene.hide_medium_lods

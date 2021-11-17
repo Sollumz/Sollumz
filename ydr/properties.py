@@ -176,6 +176,8 @@ def unregister():
     del bpy.types.Object.drawable_model_properties
     del bpy.types.Material.shader_properties
     del bpy.types.ShaderNodeTexImage.texture_properties
+    del bpy.types.ShaderNodeTexImage.texture_flags
     del bpy.types.Bone.bone_properties
+    del bpy.types.Object.light_properties
 
     bpy.app.handlers.load_post.remove(on_file_loaded)
