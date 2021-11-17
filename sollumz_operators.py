@@ -133,8 +133,8 @@ class ExportSettings(bpy.types.PropertyGroup):
         default=False,
     )
     use_transforms: bpy.props.BoolProperty(
-        name="Use Transforms",
-        description="Exports objects with the transforms applied to the vertices",
+        name="Use Parent Transforms",
+        description="Exports objects with the parent empty object's transforms applied to the vertices",
         default=True
     )
 
