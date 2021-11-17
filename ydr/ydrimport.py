@@ -3,7 +3,7 @@ import bpy
 from mathutils import Matrix
 from .shader_materials import create_shader
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, DrawableType, LODLevel, TextureFormat, TextureUsage
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType
 from ..resources.drawable import *
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import *
@@ -150,7 +150,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
              for i in range((len(indices) + 3 - 1) // 3)]
 
     # create mesh
-    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY])
+    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY])
     mesh.from_pydata(vertices, [], faces)
 
     # set normals
@@ -197,8 +197,8 @@ def geometry_to_obj(geometry, bones=None, name=None):
 
 def drawable_model_to_obj(model, materials, name, lod, bones=None):
     dobj = bpy.data.objects.new(
-        SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL], None)
-    dobj.sollum_type = DrawableType.DRAWABLE_MODEL
+        SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], None)
+    dobj.sollum_type = SollumType.DRAWABLE_MODEL
     dobj.empty_display_size = 0
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
@@ -206,7 +206,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None):
 
     for child in model.geometries:
         child_obj = geometry_to_obj(child, bones=bones, name=name)
-        child_obj.sollum_type = DrawableType.GEOMETRY
+        child_obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
         child_obj.data.materials.append(materials[child.shader_index])
         child_obj.parent = dobj
         bpy.context.collection.objects.link(child_obj)
@@ -329,7 +329,7 @@ def light_to_obj(light, idx):
 
     lobj = bpy.data.objects.new(name=f"light{idx}", object_data=light_data)
     bpy.context.collection.objects.link(lobj)
-    lobj.sollum_type = DrawableType.LIGHT
+    lobj.sollum_type = SollumType.LIGHT
     lobj.location = light.position
     lobj.rotation_euler = light.direction
 
@@ -381,7 +381,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     else:
         obj = bpy.data.objects.new(name, None)
 
-    obj.sollum_type = DrawableType.DRAWABLE
+    obj.sollum_type = SollumType.DRAWABLE
     obj.empty_display_size = 0
     obj.drawable_properties.lod_dist_high = drawable.lod_dist_high
     obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
@@ -403,9 +403,9 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     if bones_override is not None:
         bones = bones_override
 
-    if drawable.bound and drawable.bound.type == BoundType.COMPOSITE:
+    if drawable.bound and drawable.bound.type == SollumType.BOUND_COMPOSITE:
         bobj = composite_to_obj(
-            drawable.bound, SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
+            drawable.bound, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], True)
         bobj.parent = obj
     elif drawable.bound:
         bobj = bound_to_obj(drawable.bound)
@@ -433,11 +433,11 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
         dobj.parent = obj
 
     for model in obj.children:
-        if model.sollum_type != DrawableType.DRAWABLE_MODEL:
+        if model.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
         for child in model.children:
-            if child.sollum_type != DrawableType.GEOMETRY:
+            if child.sollum_type != SollumType.DRAWABLE_GEOMETRY:
                 continue
 
             mod = child.modifiers.new("Armature", 'ARMATURE')

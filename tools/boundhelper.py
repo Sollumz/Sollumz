@@ -1,7 +1,6 @@
 import bpy
 
-from ..sollumz_helper import is_sollum_type
-from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_POLYGON_TYPES
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
 from mathutils import Vector, Matrix
@@ -11,7 +10,7 @@ def create_bound_shape(type, aobj):
     pobj = create_mesh(type)
 
     # Constrain scale for bound polys
-    if is_sollum_type(pobj, PolygonType) and type != PolygonType.BOX and type != PolygonType.TRIANGLE:
+    if pobj.sollum_type in BOUND_POLYGON_TYPES and type != SollumType.BOUND_POLY_BOX and type != SollumType.BOUND_POLY_TRIANGLE:
         constraint = pobj.constraints.new(type='LIMIT_SCALE')
         constraint.use_transform_limit = True
         # Why blender? So ugly
@@ -28,33 +27,33 @@ def create_bound_shape(type, aobj):
         constraint.max_y = 1
         constraint.max_z = 1
 
-    if type == PolygonType.BOX:
+    if type == SollumType.BOUND_POLY_BOX:
         create_box(pobj.data)
-    elif type == BoundType.BOX:
+    elif type == SollumType.BOUND_BOX:
         pobj.bound_dimensions = Vector((1, 1, 1))
-    elif type == BoundType.SPHERE or type == PolygonType.SPHERE:
+    elif type == SollumType.BOUND_SPHERE or type == SollumType.BOUND_POLY_SPHERE:
         pobj.bound_radius = 1
-    elif type == PolygonType.CAPSULE:
+    elif type == SollumType.BOUND_POLY_CAPSULE:
         pobj.bound_radius = 1
         pobj.bound_length = 1
-    elif type == BoundType.CAPSULE:
+    elif type == SollumType.BOUND_CAPSULE:
         pobj.bound_radius = 1
         pobj.margin = 0.5
-    elif type == BoundType.CYLINDER or type == PolygonType.CYLINDER:
+    elif type == SollumType.BOUND_CYLINDER or type == SollumType.BOUND_POLY_CYLINDER:
         pobj.bound_length = 2
         pobj.bound_radius = 1
-    elif type == BoundType.DISC:
+    elif type == SollumType.BOUND_DISC:
         pobj.margin = 0.04
         pobj.bound_radius = 1
 
     if aobj:
-        if aobj.sollum_type == BoundType.GEOMETRY or aobj.sollum_type == BoundType.GEOMETRYBVH or aobj.sollum_type == BoundType.COMPOSITE:
+        if aobj.sollum_type == SollumType.BOUND_GEOMETRY or aobj.sollum_type == SollumType.BOUND_GEOMETRYBVH or aobj.sollum_type == SollumType.BOUND_COMPOSITE:
             pobj.parent = aobj
 
     return pobj
 
 
-def create_bound(sollum_type=BoundType.COMPOSITE, aobj=None):
+def create_bound(sollum_type=SollumType.BOUND_COMPOSITE, aobj=None):
 
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
@@ -63,7 +62,7 @@ def create_bound(sollum_type=BoundType.COMPOSITE, aobj=None):
     bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
     if aobj:
-        if aobj.sollum_type == BoundType.COMPOSITE:
+        if aobj.sollum_type == SollumType.BOUND_COMPOSITE:
             empty.parent = aobj
 
     return empty
@@ -85,15 +84,15 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
 
     if not multiple:
         dobj = create_bound()
-        dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
-            BoundType.GEOMETRY)
+        dmobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
+            SollumType.BOUND_GEOMETRY)
         dmobj.parent = dobj
 
     for obj in selected:
         if multiple:
             dobj = create_bound()
-            dmobj = create_bound(BoundType.GEOMETRYBVH) if bvhs else create_bound(
-                BoundType.GEOMETRY)
+            dmobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
+                SollumType.BOUND_GEOMETRY)
             dmobj.parent = dobj
 
         if obj.type == 'MESH':
@@ -101,14 +100,14 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
                 dobj.name = obj.name
 
             poly_mesh = obj if replace_original else create_mesh(
-                PolygonType.TRIANGLE)
+                SollumType.BOUND_POLY_TRIANGLE)
 
             poly_mesh.parent = dmobj
 
             if replace_original:
-                poly_mesh.name = SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]
+                poly_mesh.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]
                 # set properties
-                poly_mesh.sollum_type = PolygonType.TRIANGLE
+                poly_mesh.sollum_type = SollumType.BOUND_POLY_TRIANGLE
             else:
                 poly_mesh.data = obj.data.copy()
 

@@ -151,7 +151,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         aobj = context.active_object
-        if(aobj == None or aobj.sollum_type != DrawableType.DRAWABLE):
+        if(aobj == None or aobj.sollum_type != SollumType.DRAWABLE):
             # have to put this outside of text = or it wont work?
             layout.label(
                 text="Please select a valid object.")
@@ -209,7 +209,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if mat.sollum_type == MaterialType.SHADER:
             draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION and is_sollum_type(aobj, PolygonType):
+        elif mat.sollum_type == MaterialType.COLLISION and aobj.sollum_type in BOUND_POLYGON_TYPES:
             draw_collision_material_properties(layout, mat)
 
 
@@ -224,7 +224,7 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and obj.sollum_type != DrawableType.NONE
+        return obj and obj.sollum_type != SollumType.NONE
 
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")
@@ -241,23 +241,23 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         row.enabled = False
         row.prop(obj, "sollum_type")
 
-        if obj.sollum_type == DrawableType.DRAWABLE:
+        if obj.sollum_type == SollumType.DRAWABLE:
             draw_drawable_properties(layout, obj)
-        elif obj.sollum_type == DrawableType.GEOMETRY:
+        elif obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             draw_geometry_properties(layout, obj)
-        elif(obj.sollum_type == DrawableType.DRAWABLE_MODEL):
+        elif(obj.sollum_type == SollumType.DRAWABLE_MODEL):
             self.draw_drawable_model_properties(context, layout, obj)
-        elif(obj.sollum_type == FragmentType.FRAGMENT):
+        elif(obj.sollum_type == SollumType.FRAGMENT):
             draw_fragment_properties(layout, obj)
-        elif(obj.sollum_type == FragmentType.LOD):
+        elif(obj.sollum_type == SollumType.LOD):
             draw_lod_properties(layout, obj)
-        elif(obj.sollum_type == FragmentType.ARCHETYPE):
+        elif(obj.sollum_type == SollumType.ARCHETYPE):
             draw_archetype_properties(layout, obj)
-        elif(obj.sollum_type == FragmentType.CHILD):
+        elif(obj.sollum_type == SollumType.CHILD):
             draw_child_properties(layout, obj)
-        elif(obj.sollum_type == DrawableType.LIGHT):
+        elif(obj.sollum_type == SollumType.LIGHT):
             draw_light_properties(layout, obj)
-        elif is_sollum_type(obj, BoundType):
+        elif obj.sollum_type in BOUND_TYPES:
             draw_bound_properties(layout, obj)
 
 

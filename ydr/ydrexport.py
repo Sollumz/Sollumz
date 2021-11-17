@@ -8,7 +8,7 @@ from ..resources.shader import ShaderManager
 from ..tools.meshhelper import *
 from ..tools.utils import *
 from ..tools.blenderhelper import *
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, DrawableType, MaterialType, BoundType, LODLevel, FragmentType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, MaterialType, LODLevel, SollumType
 from ..ybn.ybnexport import composite_from_object
 
 
@@ -18,7 +18,7 @@ def get_used_materials(obj):
 
     for child in obj.children:
         for grandchild in child.children:
-            if(grandchild.sollum_type == DrawableType.GEOMETRY):
+            if(grandchild.sollum_type == SollumType.DRAWABLE_GEOMETRY):
                 mats = grandchild.data.materials
                 for mat in mats:
                     if(mat.sollum_type == MaterialType.SHADER):
@@ -353,7 +353,7 @@ def drawable_model_from_object(obj, shaders, bones=None, export_settings=None):
         drawable_model.unknown_1 = len(bones)
 
     for child in obj.children:
-        if child.sollum_type == DrawableType.GEOMETRY:
+        if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             if len(child.data.materials) > 1:
                 objs = split_object(child, obj)
                 for obj in objs:
@@ -559,7 +559,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
     vlowmodel_count = 0
 
     for child in obj.children:
-        if child.sollum_type == DrawableType.DRAWABLE_MODEL:
+        if child.sollum_type == SollumType.DRAWABLE_MODEL:
             drawable_model = drawable_model_from_object(
                 child, shaders, bones, export_settings)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
@@ -574,9 +574,9 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
             elif child.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
                 vlowmodel_count += 1
                 drawable.drawable_models_vlow.append(drawable_model)
-        elif child.sollum_type == BoundType.COMPOSITE:
+        elif child.sollum_type == SollumType.BOUND_COMPOSITE:
             drawable.bound = composite_from_object(child)
-        elif child.sollum_type == DrawableType.LIGHT:
+        elif child.sollum_type == SollumType.LIGHT:
             drawable.lights.append(light_from_object(child))
 
     # flags = model count for each lod

@@ -1,6 +1,6 @@
 import bpy
 from .properties import BoundFlags, CollisionProperties, CollisionMatFlags, BoundProperties
-from ..sollumz_properties import MaterialType, BoundType
+from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
 from .operators import *
 
@@ -37,21 +37,21 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and ((is_sollum_type(obj, BoundType) or is_sollum_type(obj, PolygonType)) and obj.sollum_type != BoundType.COMPOSITE and obj.sollum_type != PolygonType.BOX and obj.sollum_type != PolygonType.TRIANGLE)
+        return obj and ((obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES) and obj.sollum_type != SollumType.BOUND_COMPOSITE and obj.sollum_type != SollumType.BOUND_POLY_BOX and obj.sollum_type != SollumType.BOUND_POLY_TRIANGLE)
 
     def draw(self, context):
         obj = context.active_object
         self.layout.use_property_split = True
         grid = self.layout.grid_flow(columns=2, row_major=True)
-        # if obj.sollum_type != BoundType.GEOMETRY and obj.sollum_type != BoundType.GEOMETRYBVH and obj.sollum_type != BoundType.BOX:
-        if not obj.sollum_type in [BoundType.GEOMETRY, BoundType.GEOMETRYBVH, BoundType.BOX, PolygonType.BOX, PolygonType.TRIANGLE]:
-            grid.prop(obj, 'bound_radius', text='SphereRadius' if is_sollum_type(
-                obj, BoundType) else 'Radius')
-        if obj.sollum_type == BoundType.CYLINDER or obj.sollum_type == PolygonType.CYLINDER or obj.sollum_type == PolygonType.CAPSULE:
+        # if obj.sollum_type != SollumType.BOUND_GEOMETRY and obj.sollum_type != SollumType.BOUND_GEOMETRYBVH and obj.sollum_type != SollumType.BOUND_BOX:
+        if not obj.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH, SollumType.BOUND_BOX, SollumType.BOUND_POLY_BOX, SollumType.BOUND_POLY_TRIANGLE]:
+            grid.prop(obj, 'bound_radius',
+                      text='SphereRadius' if obj.sollum_type in BOUND_TYPES else 'Radius')
+        if obj.sollum_type == SollumType.BOUND_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
             grid.prop(obj, 'bound_length')
-        if obj.sollum_type == BoundType.BOX:
+        if obj.sollum_type == SollumType.BOUND_BOX:
             grid.prop(obj, 'bound_dimensions')
-        if is_sollum_type(obj, BoundType):
+        if obj.sollum_type in BOUND_TYPES:
             grid.prop(obj, 'margin')
 
 
@@ -67,7 +67,7 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH)
+        return obj and (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH)
 
     def draw(self, context):
         obj = context.active_object
@@ -150,7 +150,7 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        if context.active_object and context.active_object.sollum_type == BoundType.COMPOSITE:
+        if context.active_object and context.active_object.sollum_type == SollumType.BOUND_COMPOSITE:
             row.operator(SOLLUMZ_OT_center_composite.bl_idname)
 
 
@@ -247,23 +247,23 @@ class SOLLUMZ_MT_add_collision(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator(SOLLUMZ_OT_create_bound_composite.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.COMPOSITE])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE])
         layout.operator(SOLLUMZ_OT_create_geometry_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.GEOMETRY])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
         layout.operator(SOLLUMZ_OT_create_geometrybvh_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH])
         layout.operator(SOLLUMZ_OT_create_box_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.BOX])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_BOX])
         layout.operator(SOLLUMZ_OT_create_sphere_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.SPHERE])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_SPHERE])
         layout.operator(SOLLUMZ_OT_create_capsule_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.CAPSULE])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE])
         layout.operator(SOLLUMZ_OT_create_cylinder_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.CYLINDER])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_CYLINDER])
         layout.operator(SOLLUMZ_OT_create_disc_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.DISC])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_DISC])
         layout.operator(SOLLUMZ_OT_create_cloth_bound.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[BoundType.CLOTH])
+                        text=SOLLUMZ_UI_NAMES[SollumType.BOUND_CLOTH])
         # Poly operators
         layout.separator()
         layout.operator(SOLLUMZ_OT_create_poly_box.bl_idname)

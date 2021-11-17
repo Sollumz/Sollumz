@@ -265,11 +265,11 @@ class SOLLUMZ_MT_add_drawable(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator(SOLLUMZ_OT_create_drawable.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE])
+                        text=SOLLUMZ_UI_NAMES[SollumType.DRAWABLE])
         layout.operator(SOLLUMZ_OT_create_drawable_model.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE_MODEL])
+                        text=SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL])
         layout.operator(SOLLUMZ_OT_create_geometry.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY])
+                        text=SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY])
 
 
 def DrawDrawableMenu(self, context):

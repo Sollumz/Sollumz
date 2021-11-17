@@ -1,9 +1,9 @@
 import bpy
 from ..ydr.shader_materials import create_shader
-from ..sollumz_properties import DrawableType, SOLLUMZ_UI_NAMES, MaterialType
+from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
 
 
-def create_drawable(sollum_type=DrawableType.DRAWABLE):
+def create_drawable(sollum_type=SollumType.DRAWABLE):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
@@ -18,7 +18,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
 
     if not multiple:
         dobj = create_drawable()
-        dmobj = create_drawable(DrawableType.DRAWABLE_MODEL)
+        dmobj = create_drawable(SollumType.DRAWABLE_MODEL)
         dmobj.parent = dobj
 
     for obj in objs:
@@ -29,7 +29,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
 
         if multiple:
             dobj = parent or create_drawable()
-            dmobj = create_drawable(DrawableType.DRAWABLE_MODEL)
+            dmobj = create_drawable(SollumType.DRAWABLE_MODEL)
             dmobj.parent = dobj
 
         # create material
@@ -58,7 +58,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
             dobj.name = name
 
         # set properties
-        obj.sollum_type = DrawableType.GEOMETRY
+        obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
 
         new_obj = obj.copy()
         # add color layer
