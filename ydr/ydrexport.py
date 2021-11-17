@@ -203,7 +203,8 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     pos = float32_list(
                         obj.matrix_world @ mesh.vertices[vert_idx].co)
                 else:
-                    pos = float32_list(mesh.vertices[vert_idx].co)
+                    pos = float32_list(
+                        obj.matrix_basis @ mesh.vertices[vert_idx].co)
                 kwargs['position'] = tuple(pos)
             if "normal" in vertex_type._fields:
                 normal = float32_list(loop.normal)

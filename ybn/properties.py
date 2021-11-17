@@ -172,12 +172,6 @@ def update_bounds(self, context):
 
 
 def register():
-    bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
-        items=items_from_enums(PolygonType),
-        name="Poly Type",
-        default=PolygonType.TRIANGLE.value
-    )
-
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(
         type=BoundProperties)
     bpy.types.Object.margin = bpy.props.FloatProperty(
@@ -240,16 +234,23 @@ def register():
 
 
 def unregister():
-    del bpy.types.Scene.poly_bound_type
-    del bpy.types.Scene.poly_parent
     del bpy.types.Object.bound_properties
+    del bpy.types.Object.margin
+    del bpy.types.Object.bound_radius
+    del bpy.types.Object.bound_length
+    del bpy.types.Object.bound_dimensions
     del bpy.types.Object.composite_flags1
     del bpy.types.Object.composite_flags2
     del bpy.types.Scene.collision_material_index
     del bpy.types.Scene.collision_materials
     del bpy.types.Material.collision_properties
+    del bpy.types.Material.collision_flags
+    del bpy.types.Scene.new_flag_preset_name
     del bpy.types.Scene.flag_presets
     del bpy.types.Scene.flag_preset_index
-    del bpy.types.Scene.new_flag_preset_name
+    del bpy.types.Scene.poly_bound_type
+    del bpy.types.Scene.poly_parent
+    del bpy.types.Scene.composite_create_bvh
+    del bpy.types.Scene.composite_replace_original
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

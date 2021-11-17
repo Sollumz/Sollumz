@@ -177,8 +177,10 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings
 
                     vertex = mesh.vertices[loop.vertex_index].co
                     if export_settings.use_transforms:
-                        vertex = (obj.matrix_world @ vertex) - \
+                        vertex = (child.matrix_world @ vertex) - \
                             geometry.geometry_center
+                    else:
+                        vertex = child.matrix_basis @ vertex
 
                     # Must be tuple for dedupe to work
                     vertex = tuple(vertex)

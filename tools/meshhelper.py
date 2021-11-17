@@ -208,7 +208,7 @@ def get_total_bounds(obj, world=True):
     for obj in objects:
         for pos in obj.bound_box:
             corners.append(obj.matrix_world @ Vector(pos)
-                           if world else Vector(pos))
+                           if world else obj.matrix_basis @ Vector(pos))
 
     return corners
 
