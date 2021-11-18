@@ -521,6 +521,66 @@ def sollumz_menu_func_export(self, context):
                          text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")
 
 
+class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Debug: Fix incorrect Sollum Type after update. Must set correct type for top-level object first."""
+    bl_idname = "sollumz.debug_hierarchy"
+    bl_label = "Fix Hierarchy"
+    bl_action = bl_label
+    bl_order = 100
+
+    def run(self, context):
+        sollum_type = context.scene.debug_sollum_type
+        for obj in context.selected_objects:
+            if len(obj.children) < 1:
+                self.message(f"{obj.name} has no children! Skipping...")
+                continue
+
+            obj.sollum_type = sollum_type
+            if sollum_type == SollumType.DRAWABLE:
+                for model in obj.children:
+                    if model.type == "EMPTY":
+                        model.sollum_type = SollumType.DRAWABLE_MODEL
+                        for geom in model.children:
+                            if geom.type == "MESH":
+                                geom.sollum_type = SollumType.DRAWABLE_GEOMETRY
+            if sollum_type == SollumType.BOUND_COMPOSITE:
+                for bound in obj.children:
+                    if bound.type == "EMPTY":
+                        if "CLOTH" in bound.name:
+                            bound.sollum_type = SollumType.BOUND_CLOTH
+                            continue
+
+                        if "BVH" in bound.name:
+                            bound.sollum_type = SollumType.BOUND_GEOMETRYBVH
+                        else:
+                            bound.sollum_type = SollumType.BOUND_GEOMETRY
+                        for geom in bound.children:
+                            if geom.type == "MESH":
+                                if "Box" in geom.name:
+                                    geom.sollum_type = SollumType.BOUND_POLY_BOX
+                                elif "Sphere" in geom.name:
+                                    geom.sollum_type = SollumType.BOUND_POLY_SPHERE
+                                elif "Capsule" in geom.name:
+                                    geom.sollum_type = SollumType.BOUND_POLY_CAPSULE
+                                elif "Cylinder" in geom.name:
+                                    geom.sollum_type = SollumType.BOUND_POLY_CYLINDER
+                                else:
+                                    geom.sollum_type = SollumType.BOUND_POLY_TRIANGLE
+                    if bound.type == "MESH":
+                        if "Box" in bound.name:
+                            bound.sollum_type = SollumType.BOUND_POLY_BOX
+                        elif "Sphere" in bound.name:
+                            bound.sollum_type = SollumType.BOUND_POLY_SPHERE
+                        elif "Capsule" in bound.name:
+                            bound.sollum_type = SollumType.BOUND_POLY_CAPSULE
+                        elif "Cylinder" in bound.name:
+                            bound.sollum_type = SollumType.BOUND_POLY_CYLINDER
+                        else:
+                            bound.sollum_type = SollumType.BOUND_POLY_TRIANGLE
+        self.message("Hierarchy successfuly set.")
+        return True
+
+
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(sollumz_menu_func_export)

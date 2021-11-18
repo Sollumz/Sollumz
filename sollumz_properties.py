@@ -367,7 +367,7 @@ def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(SollumType),
         name="Sollumz Type",
-        default="sollumz_none",
+        default=SollumType.NONE,
         options={"HIDDEN"}
     )
 
@@ -402,6 +402,14 @@ def register():
     bpy.types.Scene.use_mesh_name = bpy.props.BoolProperty(
         name="Use Name(s)", description="Use the names of the meshes for the created objects.", default=True)
 
+    bpy.types.Scene.debug_sollum_type = bpy.props.EnumProperty(
+        items=[(SollumType.DRAWABLE.value, SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]),
+               (SollumType.BOUND_COMPOSITE.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE])],
+        name="Hierarchy Type",
+        default=SollumType.DRAWABLE,
+        options={"HIDDEN"}
+    )
+
 
 def unregister():
     del bpy.types.Object.sollum_type
@@ -415,3 +423,4 @@ def unregister():
     del bpy.types.Scene.vert_paint_color
     del bpy.types.Scene.create_seperate_objects
     del bpy.types.Scene.use_mesh_name
+    del bpy.types.Scene.debug_sollum_type

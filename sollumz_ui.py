@@ -110,6 +110,22 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
                     "show_bones", text="Show Skeleton")
 
 
+class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
+    bl_label = "Debug"
+    bl_idname = "SOLLUMZ_PT_DEBUG_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("sollumz.debug_hierarchy")
+        row.prop(context.scene, "debug_sollum_type")
+
+
 class SOLLUMZ_PT_VERTEX_TOOL_PANELL(bpy.types.Panel):
     bl_label = "Vertex Painter"
     bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
