@@ -2,7 +2,7 @@ import bpy
 import traceback
 from ..tools.drawablehelper import *
 from ..ydr.shader_materials import create_shader, shadermats
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
 from ..sollumz_helper import SOLLUMZ_OT_base
 
 
@@ -62,6 +62,26 @@ class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
         obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
         bpy.context.collection.objects.link(obj)
         return True
+
+
+class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.create_light"
+    bl_label = "Create Light"
+    bl_action = bl_label
+
+    def run(self, context):
+        light_type = context.scene.create_light_type
+        blender_light_type = 'POINT'
+        if light_type == LightType.SPOT:
+            blender_light_type = 'SPOT'
+
+        light_data = bpy.data.lights.new(
+            name=SOLLUMZ_UI_NAMES[light_type], type=blender_light_type)
+        light_data.light_properties.type = light_type
+        obj = bpy.data.objects.new(
+            name=SOLLUMZ_UI_NAMES[light_type], object_data=light_data)
+        obj.sollum_type = SollumType.LIGHT
+        bpy.context.collection.objects.link(obj)
 
 
 class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):

@@ -246,6 +246,7 @@ SOLLUMZ_UI_NAMES = {
     EntityPriorityLevel.PRI_OPTIONAL_MEDIUM: "OPTIONAL MEDIUM",
     EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
 
+    LightType.NONE: 'None',
     LightType.POINT: 'Point',
     LightType.SPOT: 'Spot',
     LightType.CAPSULE: 'Capsule',
