@@ -34,6 +34,13 @@ class SollumType(str, Enum):
     BOUND_POLY_TRIANGLE = "sollumz_bound_poly_triangle"
 
 
+class LightType(str, Enum):
+    NONE = 'sollumz_light_none'
+    POINT = 'sollumz_light_point'
+    SPOT = 'sollumz_light_spot'
+    CAPSULE = 'sollumz_light_capsule'
+
+
 class MaterialType(str, Enum):
     NONE = "sollumz_material_none",
     SHADER = "sollumz_material_shader",
@@ -143,7 +150,6 @@ DRAWABLE_TYPES = [
     SollumType.DRAWABLE_MODEL,
     SollumType.DRAWABLE_GEOMETRY,
     SollumType.SKELETON,
-    SollumType.LIGHT
 ]
 
 SOLLUMZ_UI_NAMES = {
@@ -239,6 +245,10 @@ SOLLUMZ_UI_NAMES = {
     EntityPriorityLevel.PRI_OPTIONAL_HIGH: "OPTIONAL HIGH",
     EntityPriorityLevel.PRI_OPTIONAL_MEDIUM: "OPTIONAL MEDIUM",
     EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
+
+    LightType.POINT: 'Point',
+    LightType.SPOT: 'Spot',
+    LightType.CAPSULE: 'Capsule',
 }
 
 # Generate items from provided enums

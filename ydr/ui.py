@@ -22,41 +22,6 @@ def draw_material_properties(layout, mat):
     row.prop(mat.shader_properties, "filename")
 
 
-def draw_light_properties(layout, light):
-    row = layout.row()
-    row.enabled = False
-    row.prop(light.light_properties, "type")  # MAKE THIS AN ENUM?
-    layout.prop(light.light_properties, "flags")
-    layout.prop(light.light_properties, "bone_id")
-    layout.prop(light.light_properties, "group_id")
-    layout.prop(light.light_properties, "time_flags")
-    layout.prop(light.light_properties, "falloff")
-    layout.prop(light.light_properties, "falloff_exponent")
-    layout.prop(light.light_properties, "culling_plane_normal")
-    layout.prop(light.light_properties, "culling_plane_offset")
-    layout.prop(light.light_properties, "unknown_45")
-    layout.prop(light.light_properties, "unknown_46")
-    layout.prop(light.light_properties, "volume_intensity")
-    layout.prop(light.light_properties, "volume_size_scale")
-    layout.prop(light.light_properties, "volume_outer_color")
-    layout.prop(light.light_properties, "light_hash")
-    layout.prop(light.light_properties, "volume_outer_intensity")
-    layout.prop(light.light_properties, "corona_size")
-    layout.prop(light.light_properties, "volume_outer_exponent")
-    layout.prop(light.light_properties, "light_fade_distance")
-    layout.prop(light.light_properties, "shadow_fade_distance")
-    layout.prop(light.light_properties, "specular_fade_distance")
-    layout.prop(light.light_properties, "volumetric_fade_distance")
-    layout.prop(light.light_properties, "shadow_near_clip")
-    layout.prop(light.light_properties, "corona_intensity")
-    layout.prop(light.light_properties, "corona_z_bias")
-    layout.prop(light.light_properties, "tangent")
-    layout.prop(light.light_properties, "cone_inner_angle")
-    layout.prop(light.light_properties, "cone_outer_angle")
-    layout.prop(light.light_properties, "extent")
-    layout.prop(light.light_properties, "projected_texture_hash")
-
-
 def draw_shader(layout, mat):
     layout.label(text="Material Properties")
     box = layout.box()
@@ -164,6 +129,54 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
             layout.alignment = "CENTER"
             layout.prop(item, "name",
                         text=name, emboss=False, icon='MATERIAL')
+
+
+class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
+    bl_label = "Sollumz"
+    bl_idname = "SOLLUMZ_PT_LIGHT_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
+
+    @classmethod
+    def poll(cls, context):
+        return context.light and context.active_object.sollum_type != SollumType.NONE
+
+    def draw(self, context):
+        layout = self.layout
+        light = context.light
+        row = layout.row()
+        row.enabled = False
+        row.prop(light.light_properties, "type")  # MAKE THIS AN ENUM?
+        layout.prop(light.light_properties, "flags")
+        layout.prop(light.light_properties, "bone_id")
+        layout.prop(light.light_properties, "group_id")
+        layout.prop(light.light_properties, "time_flags")
+        layout.prop(light.light_properties, "falloff")
+        layout.prop(light.light_properties, "falloff_exponent")
+        layout.prop(light.light_properties, "culling_plane_normal")
+        layout.prop(light.light_properties, "culling_plane_offset")
+        layout.prop(light.light_properties, "unknown_45")
+        layout.prop(light.light_properties, "unknown_46")
+        layout.prop(light.light_properties, "volume_intensity")
+        layout.prop(light.light_properties, "volume_size_scale")
+        layout.prop(light.light_properties, "volume_outer_color")
+        layout.prop(light.light_properties, "light_hash")
+        layout.prop(light.light_properties, "volume_outer_intensity")
+        layout.prop(light.light_properties, "corona_size")
+        layout.prop(light.light_properties, "volume_outer_exponent")
+        layout.prop(light.light_properties, "light_fade_distance")
+        layout.prop(light.light_properties, "shadow_fade_distance")
+        layout.prop(light.light_properties, "specular_fade_distance")
+        layout.prop(light.light_properties, "volumetric_fade_distance")
+        layout.prop(light.light_properties, "shadow_near_clip")
+        layout.prop(light.light_properties, "corona_intensity")
+        layout.prop(light.light_properties, "corona_z_bias")
+        layout.prop(light.light_properties, "tangent")
+        layout.prop(light.light_properties, "cone_inner_angle")
+        layout.prop(light.light_properties, "cone_outer_angle")
+        layout.prop(light.light_properties, "extent")
+        layout.prop(light.light_properties, "projected_texture_hash")
 
 
 class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):

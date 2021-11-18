@@ -3,7 +3,7 @@ import bpy
 from mathutils import Matrix
 from .shader_materials import create_shader
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
 from ..resources.drawable import *
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import *
@@ -333,36 +333,43 @@ def light_to_obj(light, idx):
     lobj.location = light.position
     lobj.rotation_euler = light.direction
 
-    lobj.light_properties.type = light.type
-    lobj.light_properties.flags = light.flags
-    lobj.light_properties.bone_id = light.bone_id
-    lobj.light_properties.group_id = light.group_id
-    lobj.light_properties.time_flags = light.time_flags
-    lobj.light_properties.falloff = light.falloff
-    lobj.light_properties.falloff_exponent = light.falloff_exponent
-    lobj.light_properties.culling_plane_normal = light.culling_plane_normal
-    lobj.light_properties.culling_plane_offset = light.culling_plane_offset
-    lobj.light_properties.unknown_45 = light.unknown_45
-    lobj.light_properties.unknown_46 = light.unknown_46
-    lobj.light_properties.volume_intensity = light.volume_intensity
-    lobj.light_properties.volume_size_scale = light.volume_size_scale
-    lobj.light_properties.volume_outer_color = light.volume_outer_color
-    lobj.light_properties.light_hash = light.light_hash
-    lobj.light_properties.volume_outer_intensity = light.volume_outer_intensity
-    lobj.light_properties.corona_size = light.corona_size
-    lobj.light_properties.volume_outer_exponent = light.volume_outer_exponent
-    lobj.light_properties.light_fade_distance = light.light_fade_distance
-    lobj.light_properties.shadow_fade_distance = light.shadow_fade_distance
-    lobj.light_properties.specular_fade_distance = light.specular_fade_distance
-    lobj.light_properties.volumetric_fade_distance = light.volumetric_fade_distance
-    lobj.light_properties.shadow_near_clip = light.shadow_near_clip
-    lobj.light_properties.corona_intensity = light.corona_intensity
-    lobj.light_properties.corona_z_bias = light.corona_z_bias
-    lobj.light_properties.tangent = light.tangent
-    lobj.light_properties.cone_inner_angle = light.cone_inner_angle
-    lobj.light_properties.cone_outer_angle = light.cone_outer_angle
-    lobj.light_properties.extent = light.extent
-    lobj.light_properties.projected_texture_hash = light.projected_texture_hash
+    if light.type == 'Point':
+        lobj.data.light_properties.type = LightType.POINT
+    elif light.type == 'Spot':
+        lobj.data.light_properties.type = LightType.SPOT
+    elif light.type == 'Capsule':
+        lobj.data.light_properties.type = LightType.CAPSULE
+
+    lobj.name = SOLLUMZ_UI_NAMES[lobj.data.light_properties.type]
+    lobj.data.light_properties.flags = light.flags
+    lobj.data.light_properties.bone_id = light.bone_id
+    lobj.data.light_properties.group_id = light.group_id
+    lobj.data.light_properties.time_flags = light.time_flags
+    lobj.data.light_properties.falloff = light.falloff
+    lobj.data.light_properties.falloff_exponent = light.falloff_exponent
+    lobj.data.light_properties.culling_plane_normal = light.culling_plane_normal
+    lobj.data.light_properties.culling_plane_offset = light.culling_plane_offset
+    lobj.data.light_properties.unknown_45 = light.unknown_45
+    lobj.data.light_properties.unknown_46 = light.unknown_46
+    lobj.data.light_properties.volume_intensity = light.volume_intensity
+    lobj.data.light_properties.volume_size_scale = light.volume_size_scale
+    lobj.data.light_properties.volume_outer_color = light.volume_outer_color
+    lobj.data.light_properties.light_hash = light.light_hash
+    lobj.data.light_properties.volume_outer_intensity = light.volume_outer_intensity
+    lobj.data.light_properties.corona_size = light.corona_size
+    lobj.data.light_properties.volume_outer_exponent = light.volume_outer_exponent
+    lobj.data.light_properties.light_fade_distance = light.light_fade_distance
+    lobj.data.light_properties.shadow_fade_distance = light.shadow_fade_distance
+    lobj.data.light_properties.specular_fade_distance = light.specular_fade_distance
+    lobj.data.light_properties.volumetric_fade_distance = light.volumetric_fade_distance
+    lobj.data.light_properties.shadow_near_clip = light.shadow_near_clip
+    lobj.data.light_properties.corona_intensity = light.corona_intensity
+    lobj.data.light_properties.corona_z_bias = light.corona_z_bias
+    lobj.data.light_properties.tangent = light.tangent
+    lobj.data.light_properties.cone_inner_angle = light.cone_inner_angle
+    lobj.data.light_properties.cone_outer_angle = light.cone_outer_angle
+    lobj.data.light_properties.extent = light.extent
+    lobj.data.light_properties.projected_texture_hash = light.projected_texture_hash
 
     return lobj
 
