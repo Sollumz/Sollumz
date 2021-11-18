@@ -1,7 +1,7 @@
 from .properties import CollisionMatFlags
 from ..resources.bound import *
 from ..tools.meshhelper import *
-from ..sollumz_properties import BoundType, PolygonType, MaterialType, DrawableType, FragmentType
+from ..sollumz_properties import MaterialType, SollumType
 from ..tools.utils import *
 
 
@@ -51,7 +51,7 @@ def polygon_from_object(obj, geometry, export_settings):
     pos = obj.matrix_world.to_translation(
     ) - geom_center if export_settings.use_transforms else obj.location
 
-    if obj.sollum_type == PolygonType.BOX:
+    if obj.sollum_type == SollumType.BOUND_POLY_BOX:
         box = init_poly_bound(Box(), obj, materials)
         indices = []
         bound_box = [Vector(pos) for pos in obj.bound_box]
@@ -68,7 +68,7 @@ def polygon_from_object(obj, geometry, export_settings):
         box.v4 = indices[3]
 
         return box
-    elif obj.sollum_type == PolygonType.SPHERE:
+    elif obj.sollum_type == SollumType.BOUND_POLY_SPHERE:
         sphere = init_poly_bound(Sphere(), obj, materials)
         vertices.append(pos)
         sphere.v = len(vertices) - 1
@@ -80,11 +80,11 @@ def polygon_from_object(obj, geometry, export_settings):
         sphere.radius = radius
 
         return sphere
-    elif obj.sollum_type == PolygonType.CYLINDER or obj.sollum_type == PolygonType.CAPSULE:
+    elif obj.sollum_type == SollumType.BOUND_POLY_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
         bound = None
-        if obj.sollum_type == PolygonType.CYLINDER:
+        if obj.sollum_type == SollumType.BOUND_POLY_CYLINDER:
             bound = init_poly_bound(Cylinder(), obj, materials)
-        elif obj.sollum_type == PolygonType.CAPSULE:
+        elif obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
             bound = init_poly_bound(Capsule(), obj, materials)
 
         bound_box = get_total_bounds(obj)
@@ -95,7 +95,7 @@ def polygon_from_object(obj, geometry, export_settings):
         radius = get_distance_of_vectors(
             bound_box[1], bound_box[2]) / 2
 
-        if obj.sollum_type == PolygonType.CAPSULE:
+        if obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
             height = height - (radius * 2)
 
         vertical = Vector((0, 0, height / 2))
@@ -127,12 +127,12 @@ def triangle_from_face(face):
     return triangle
 
 
-def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings=None):
+def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_settings=None):
     geometry = None
 
-    if sollum_type == BoundType.GEOMETRYBVH:
+    if sollum_type == SollumType.BOUND_GEOMETRYBVH:
         geometry = BoundGeometryBVH()
-    elif sollum_type == BoundType.GEOMETRY:
+    elif sollum_type == SollumType.BOUND_GEOMETRY:
         geometry = BoundGeometry()
     else:
         return ValueError('Invalid argument for geometry sollum_type!')
@@ -146,7 +146,7 @@ def geometry_from_object(obj, sollum_type=BoundType.GEOMETRYBVH, export_settings
     vertices = {}
     # Get child poly bounds
     for child in get_children_recursive(obj):
-        if child.sollum_type == PolygonType.TRIANGLE:
+        if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
 
             found = True
             mesh = child.to_mesh()
@@ -243,7 +243,7 @@ def init_bound_item(bound_item, obj, export_settings):
 
 def init_bound(bound, obj, export_settings):
     use_world = export_settings.use_transforms and (
-        obj.sollum_type == BoundType.GEOMETRYBVH or obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.COMPOSITE)
+        obj.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_COMPOSITE)
 
     bbmin, bbmax = get_bound_extents(obj, world=use_world)
     bound.box_min = bbmin
@@ -265,36 +265,36 @@ def init_bound(bound, obj, export_settings):
 
 
 def bound_from_object(obj, export_settings):
-    if obj.sollum_type == BoundType.BOX:
+    if obj.sollum_type == SollumType.BOUND_BOX:
         bound = init_bound_item(BoundBox(), obj, export_settings)
         bound.box_max = obj.bound_dimensions
         bound.box_min = obj.bound_dimensions * -1
         return bound
-    elif obj.sollum_type == BoundType.SPHERE:
+    elif obj.sollum_type == SollumType.BOUND_SPHERE:
         bound = init_bound_item(BoundSphere(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
-    elif obj.sollum_type == BoundType.CYLINDER:
+    elif obj.sollum_type == SollumType.BOUND_CYLINDER:
         bound = init_bound_item(BoundCylinder(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
-    elif obj.sollum_type == BoundType.CAPSULE:
+    elif obj.sollum_type == SollumType.BOUND_CAPSULE:
         bound = init_bound_item(BoundCapsule(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
-    elif obj.sollum_type == BoundType.DISC:
+    elif obj.sollum_type == SollumType.BOUND_DISC:
         bound = init_bound_item(BoundDisc(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
         # bound.composite_scale = obj.scale
         # bound.composite_rotation = obj.rotation_euler.to_quaternion()
         bound.margin = obj.margin
         return bound
-    elif obj.sollum_type == BoundType.CLOTH:
+    elif obj.sollum_type == SollumType.BOUND_CLOTH:
         return init_bound_item(BoundCloth(), obj, export_settings)
-    elif obj.sollum_type == BoundType.GEOMETRY:
-        return geometry_from_object(obj, BoundType.GEOMETRY, export_settings)
-    elif obj.sollum_type == BoundType.GEOMETRYBVH:
-        return geometry_from_object(obj, BoundType.GEOMETRYBVH, export_settings)
+    elif obj.sollum_type == SollumType.BOUND_GEOMETRY:
+        return geometry_from_object(obj, SollumType.BOUND_GEOMETRY, export_settings)
+    elif obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
+        return geometry_from_object(obj, SollumType.BOUND_GEOMETRYBVH, export_settings)
 
 
 def composite_from_object(obj, export_settings):
@@ -308,7 +308,7 @@ def composite_from_object(obj, export_settings):
     return composite
 
 
-def bounds_from_object(obj, export_settings):
+def boundfile_from_object(obj, export_settings):
     bounds = BoundFile()
 
     composite = composite_from_object(obj, export_settings)
@@ -318,4 +318,4 @@ def bounds_from_object(obj, export_settings):
 
 
 def export_ybn(obj, filepath, export_settings):
-    bounds_from_object(obj, export_settings).write_xml(filepath)
+    boundfile_from_object(obj, export_settings).write_xml(filepath)

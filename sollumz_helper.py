@@ -1,7 +1,7 @@
 import traceback
 import time
 from abc import abstractmethod
-from .sollumz_properties import DrawableType
+from .sollumz_properties import SollumType
 
 
 class SOLLUMZ_OT_base:
@@ -65,10 +65,6 @@ def reset_sollumz_view(scene):
 
 def is_sollum_object_in_objects(objs):
     for obj in objs:
-        if obj.sollum_type != DrawableType.NONE:
+        if obj.sollum_type != SollumType.NONE:
             return True
     return False
-
-
-def is_sollum_type(obj, type):
-    return obj.sollum_type in type._value2member_map_

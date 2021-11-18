@@ -3,7 +3,7 @@ from ..tools.meshhelper import *
 from ..tools.utils import *
 from ..ydr.ydrexport import drawable_from_object
 from ..tools import jenkhash
-from ..sollumz_properties import DrawableType
+from ..sollumz_properties import SollumType
 
 
 def get_hash(item):
@@ -16,12 +16,12 @@ def drawable_dict_from_object(exportop, obj, filepath, export_settings):
 
     bones = None
     for child in obj.children:
-        if child.sollum_type == DrawableType.DRAWABLE and child.type == 'ARMATURE' and len(child.pose.bones) > 0:
+        if child.sollum_type == SollumType.DRAWABLE and child.type == 'ARMATURE' and len(child.pose.bones) > 0:
             bones = child.pose.bones
             break
 
     for child in obj.children:
-        if child.sollum_type == DrawableType.DRAWABLE:
+        if child.sollum_type == SollumType.DRAWABLE:
             drawable = drawable_from_object(
                 exportop, child, filepath, bones, export_settings)
             drawable_dict[drawable.name] = drawable

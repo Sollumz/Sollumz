@@ -2,14 +2,14 @@ import bpy
 from ..resources.fragment import YFT
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials
 from ..ybn.ybnimport import composite_to_obj
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, BoundType, FragmentType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 import traceback
 
 
 def create_lod_obj(name, lod, filepath, materials):
     lobj = bpy.data.objects.new(name, None)
     lobj.empty_display_size = 0
-    lobj.sollum_type = FragmentType.LOD
+    lobj.sollum_type = SollumType.LOD
     bpy.context.collection.objects.link(lobj)
 
     lobj.lod_properties.unk_14 = lod.unknown_14
@@ -64,7 +64,7 @@ def create_lod_obj(name, lod, filepath, materials):
 
     aobj = bpy.data.objects.new("Archetype", None)
     aobj.empty_display_size = 0
-    aobj.sollum_type = FragmentType.ARCHETYPE
+    aobj.sollum_type = SollumType.ARCHETYPE
     bpy.context.collection.objects.link(aobj)
     aobj.parent = lobj
 
@@ -80,7 +80,7 @@ def create_lod_obj(name, lod, filepath, materials):
 
     if lod.archetype.bounds:
         bobj = composite_to_obj(lod.archetype.bounds,
-                                SOLLUMZ_UI_NAMES[BoundType.COMPOSITE], True)
+                                SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], True)
         bobj.parent = aobj
 
     if lod.children:
@@ -91,7 +91,7 @@ def create_lod_obj(name, lod, filepath, materials):
         for idx, child in enumerate(lod.children):
             cobj = bpy.data.objects.new(f"Child{idx}", None)
             cobj.empty_display_size = 0
-            cobj.sollum_type = FragmentType.CHILD
+            cobj.sollum_type = SollumType.CHILD
             bpy.context.collection.objects.link(cobj)
 
             cobj.child_properties.group_index = child.group_index
@@ -116,7 +116,7 @@ def create_lod_obj(name, lod, filepath, materials):
 def fragment_to_obj(fragment, filepath):
     fobj = bpy.data.objects.new(fragment.name, None)
     fobj.empty_display_size = 0
-    fobj.sollum_type = FragmentType.FRAGMENT
+    fobj.sollum_type = SollumType.FRAGMENT
     bpy.context.collection.objects.link(fobj)
 
     fobj.fragment_properties.unk_b0 = fragment.unknown_b0

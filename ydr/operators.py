@@ -2,8 +2,8 @@ import bpy
 import traceback
 from ..tools.drawablehelper import *
 from ..ydr.shader_materials import create_shader, shadermats
-from ..sollumz_properties import DrawableType, SOLLUMZ_UI_NAMES
-from ..sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..sollumz_helper import SOLLUMZ_OT_base
 
 
 class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -21,9 +21,9 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
             convert_selected_to_drawable(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
             # self.messages.append(
-            #    f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
+            #    f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             self.message(
-                f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[DrawableType.DRAWABLE]}.")
+                f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             return True
 
 
@@ -34,7 +34,7 @@ class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Create a Drawable Model"
 
     def run(self, context):
-        create_drawable(DrawableType.DRAWABLE_MODEL)
+        create_drawable(SollumType.DRAWABLE_MODEL)
         return True
 
 
@@ -45,7 +45,7 @@ class SOLLUMZ_OT_create_drawable_dictionary(SOLLUMZ_OT_base, bpy.types.Operator)
     bl_action = "Create a Drawable Dictionary"
 
     def run(self, context):
-        create_drawable(DrawableType.DRAWABLE_DICTIONARY)
+        create_drawable(SollumType.DRAWABLE_DICTIONARY)
         return True
 
 
@@ -56,10 +56,10 @@ class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Create a Drawable Geometry"
 
     def run(self, context):
-        name = SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]
+        name = SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]
         mesh = bpy.data.meshes.new(name)
         obj = bpy.data.objects.new(name, mesh)
-        obj.sollum_type = DrawableType.GEOMETRY
+        obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
         bpy.context.collection.objects.link(obj)
         return True
 
@@ -99,11 +99,11 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
         objs = bpy.context.selected_objects
         if(len(objs) == 0):
             self.message(
-                f"Please select a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
+                f"Please select a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]} to add a shader material to.")
             return False
 
         for obj in objs:
-            if is_sollum_type(obj, DrawableType.GEOMETRY):
+            if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
                 try:
                     shader = shadermats[context.scene.shader_material_index].value
                     mat = create_shader(shader)
@@ -115,7 +115,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
                         f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
             else:
                 self.messages.append(
-                    f"{obj.name} is not a {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]}, please select a valid {SOLLUMZ_UI_NAMES[DrawableType.GEOMETRY]} to add a shader material to.")
+                    f"{obj.name} is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]}, please select a valid {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]} to add a shader material to.")
 
         return True
 

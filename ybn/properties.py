@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_properties import PolygonType, items_from_enums, BoundType, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import items_from_enums, SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
 from ..resources.flag_preset import FlagPresetsFile
@@ -146,27 +146,27 @@ def on_file_loaded(_):
 
 
 def update_bounds(self, context):
-    if self.sollum_type == BoundType.BOX:
+    if self.sollum_type == SollumType.BOUND_BOX:
         create_box(self.data, 2, Matrix.Diagonal(
             Vector(self.bound_dimensions)))
-    elif self.sollum_type == BoundType.SPHERE or self.sollum_type == PolygonType.SPHERE:
+    elif self.sollum_type == SollumType.BOUND_SPHERE or self.sollum_type == SollumType.BOUND_POLY_SPHERE:
         create_sphere(mesh=self.data, radius=self.bound_radius)
 
-    elif self.sollum_type == BoundType.CYLINDER:
+    elif self.sollum_type == SollumType.BOUND_CYLINDER:
         create_cylinder(mesh=self.data, radius=self.bound_radius,
                         length=self.bound_length)
-    elif self.sollum_type == PolygonType.CYLINDER:
+    elif self.sollum_type == SollumType.BOUND_POLY_CYLINDER:
         create_cylinder(mesh=self.data, radius=self.bound_radius,
                         length=self.bound_length, rot_mat=Matrix())
 
-    elif self.sollum_type == BoundType.DISC:
+    elif self.sollum_type == SollumType.BOUND_DISC:
         create_disc(mesh=self.data, radius=self.bound_radius,
                     length=self.margin * 2)
 
-    elif self.sollum_type == BoundType.CAPSULE:
+    elif self.sollum_type == SollumType.BOUND_CAPSULE:
         create_capsule(mesh=self.data, diameter=self.margin,
                        length=self.bound_radius, use_rot=True)
-    elif self.sollum_type == PolygonType.CAPSULE:
+    elif self.sollum_type == SollumType.BOUND_POLY_CAPSULE:
         create_capsule(mesh=self.data, diameter=self.bound_radius / 2,
                        length=self.bound_length)
 
@@ -209,28 +209,39 @@ def register():
 
     # COLLISION TOOLS UI PROPERTIES
     bpy.types.Scene.poly_bound_type = bpy.props.EnumProperty(
-        items=items_from_enums(PolygonType),
+        items=[
+            (SollumType.BOUND_POLY_BOX.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_BOX], ''),
+            (SollumType.BOUND_POLY_SPHERE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_SPHERE], ''),
+            (SollumType.BOUND_POLY_CAPSULE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_CAPSULE], ''),
+            (SollumType.BOUND_POLY_CYLINDER.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_CYLINDER], ''),
+            (SollumType.BOUND_POLY_TRIANGLE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE], '')
+        ],
         name="Type",
-        default=PolygonType.TRIANGLE.value
+        default=SollumType.BOUND_POLY_TRIANGLE.value
     )
 
     bpy.types.Scene.poly_bound_type_verts = bpy.props.EnumProperty(
-        items=[(PolygonType.BOX.value, SOLLUMZ_UI_NAMES[PolygonType.BOX], SOLLUMZ_UI_NAMES[PolygonType.BOX]),
-               (PolygonType.TRIANGLE.value, SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])],
+        items=[(SollumType.BOUND_POLY_BOX.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_BOX], SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_BOX]),
+               (SollumType.BOUND_POLY_TRIANGLE.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE], SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE])],
         name="Type",
-        default=PolygonType.TRIANGLE.value
+        default=SollumType.BOUND_POLY_TRIANGLE.value
     )
 
     bpy.types.Scene.poly_edge = bpy.props.EnumProperty(name="Edge", items=[("long", "Long Edge", "Create along the long edge"),
                                                                            ("short", "Short Edge", "Create along the short edge")])
     bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
-        type=bpy.types.Object, name='Parent', description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}.")
+        type=bpy.types.Object, name='Parent', description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}.")
 
     bpy.types.Scene.composite_create_bvh = bpy.props.BoolProperty(
         name='BVH', description='If true, the operator will create GeometryBVH objects, otherwise it will create Geometry objects.', default=True)
 
     bpy.types.Scene.composite_replace_original = bpy.props.BoolProperty(
-        name='Replace Original', description=f'If true, the operator will replace the selected objects with the {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}.', default=False)
+        name='Replace Original', description=f'If true, the operator will replace the selected objects with the {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}.', default=False)
 
 
 def unregister():

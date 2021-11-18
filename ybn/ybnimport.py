@@ -42,7 +42,7 @@ def make_matrix(v1, v2, v3):
 
 def poly_to_obj(poly, materials, vertices):
     if type(poly) == Box:
-        obj = init_poly_obj(poly, PolygonType.BOX, materials)
+        obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
 
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
@@ -111,7 +111,7 @@ def poly_to_obj(poly, materials, vertices):
 
         return obj
     elif type(poly) == Sphere:
-        sphere = init_poly_obj(poly, PolygonType.SPHERE, materials)
+        sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
         mesh = sphere.data
         create_sphere(mesh, poly.radius)
 
@@ -119,7 +119,7 @@ def poly_to_obj(poly, materials, vertices):
 
         return sphere
     elif type(poly) == Capsule:
-        capsule = init_poly_obj(poly, PolygonType.CAPSULE, materials)
+        capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
         length = (v1 - v2).length + (poly.radius * 2)
@@ -132,7 +132,8 @@ def poly_to_obj(poly, materials, vertices):
 
         return capsule
     elif type(poly) == Cylinder:
-        cylinder = init_poly_obj(poly, PolygonType.CYLINDER, materials)
+        cylinder = init_poly_obj(
+            poly, SollumType.BOUND_POLY_CYLINDER, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
 
@@ -166,10 +167,11 @@ def mat_to_obj(gmat):
 
 def geometry_to_obj(geometry, sollum_type):
     obj = init_bound_obj(geometry, sollum_type)
-    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE])
+    mesh = bpy.data.meshes.new(
+        SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE])
     triangle_obj = bpy.data.objects.new(
-        SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE], mesh)
-    triangle_obj.sollum_type = PolygonType.TRIANGLE
+        SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE], mesh)
+    triangle_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE
 
     for gmat in geometry.materials:
         triangle_obj.data.materials.append(mat_to_obj(gmat))
@@ -238,7 +240,7 @@ def geometry_to_obj(geometry, sollum_type):
 def init_bound_obj(bound, sollum_type):
     obj = None
     name = SOLLUMZ_UI_NAMES[sollum_type]
-    if not (sollum_type == BoundType.COMPOSITE or sollum_type == BoundType.GEOMETRYBVH or sollum_type == BoundType.GEOMETRY):
+    if not (sollum_type == SollumType.BOUND_COMPOSITE or sollum_type == SollumType.BOUND_GEOMETRYBVH or sollum_type == SollumType.BOUND_GEOMETRY):
         mesh = bpy.data.meshes.new(name)
         obj = bpy.data.objects.new(name, mesh)
         mat_index = bound.material_index
@@ -292,18 +294,18 @@ def init_bound_obj(bound, sollum_type):
 
 def bound_to_obj(bound):
     if bound.type == 'Box':
-        box = init_bound_obj(bound, BoundType.BOX)
+        box = init_bound_obj(bound, SollumType.BOUND_BOX)
         box.bound_dimensions = bound.box_max
 
         return box
     elif bound.type == 'Sphere':
-        sphere = init_bound_obj(bound, BoundType.SPHERE)
+        sphere = init_bound_obj(bound, SollumType.BOUND_SPHERE)
         sphere.bound_radius = bound.sphere_radius
         # create_sphere(sphere.data, bound.sphere_radius)
 
         return sphere
     elif bound.type == 'Capsule':
-        capsule = init_bound_obj(bound, BoundType.CAPSULE)
+        capsule = init_bound_obj(bound, SollumType.BOUND_CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
         capsule.bound_length = bbmax.z - bbmin.z
         capsule.bound_radius = bound.sphere_radius
@@ -311,7 +313,7 @@ def bound_to_obj(bound):
 
         return capsule
     elif bound.type == 'Cylinder':
-        cylinder = init_bound_obj(bound, BoundType.CYLINDER)
+        cylinder = init_bound_obj(bound, SollumType.BOUND_CYLINDER)
         bbmin, bbmax = bound.box_min, bound.box_max
         extent = bbmax - bbmin
         cylinder.bound_length = extent.y
@@ -320,7 +322,7 @@ def bound_to_obj(bound):
 
         return cylinder
     elif bound.type == 'Disc':
-        disc = init_bound_obj(bound, BoundType.DISC)
+        disc = init_bound_obj(bound, SollumType.BOUND_DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
         disc.bound_radius = bound.sphere_radius
         # create_disc(disc.data, bound.sphere_radius)
@@ -329,13 +331,13 @@ def bound_to_obj(bound):
 
         return disc
     elif bound.type == 'Cloth':
-        cloth = init_bound_obj(bound, BoundType.CLOTH)
+        cloth = init_bound_obj(bound, SollumType.BOUND_CLOTH)
         return cloth
     elif bound.type == 'Geometry':
-        geometry = geometry_to_obj(bound, BoundType.GEOMETRY)
+        geometry = geometry_to_obj(bound, SollumType.BOUND_GEOMETRY)
         return geometry
     elif bound.type == 'GeometryBVH':
-        bvh = geometry_to_obj(bound, BoundType.GEOMETRYBVH)
+        bvh = geometry_to_obj(bound, SollumType.BOUND_GEOMETRYBVH)
         return bvh
 
 
@@ -347,7 +349,7 @@ def composite_to_obj(bounds, name, from_drawable=False):
 
     obj = bpy.data.objects.new(name, None)
     obj.empty_display_size = 0
-    obj.sollum_type = BoundType.COMPOSITE
+    obj.sollum_type = SollumType.BOUND_COMPOSITE
 
     for child in composite.children:
         child_obj = bound_to_obj(child)

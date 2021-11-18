@@ -7,10 +7,9 @@ from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_fl
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..tools.boundhelper import *
 from ..tools.meshhelper import *
-from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
-from ..sollumz_helper import SOLLUMZ_OT_base, is_sollum_type
+from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
+from ..sollumz_helper import SOLLUMZ_OT_base
 from ..tools.blenderhelper import get_selected_vertices
-from ..sollumz_properties import BoundType, PolygonType, SOLLUMZ_UI_NAMES
 from ..sollumz_helper import *
 import bpy
 
@@ -36,59 +35,58 @@ class CreatePolyHelper(SOLLUMZ_OT_base):
 
 
 class SOLLUMZ_OT_create_poly_box(CreatePolyHelper, bpy.types.Operator):
-    bl_label = SOLLUMZ_UI_NAMES[PolygonType.BOX]
+    bl_label = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_BOX]
     bl_idname = "sollumz.createpolybox"
-    poly_type = PolygonType.BOX
+    poly_type = SollumType.BOUND_POLY_BOX
 
 
 class SOLLUMZ_OT_create_poly_sphere(CreatePolyHelper, bpy.types.Operator):
-    bl_label = SOLLUMZ_UI_NAMES[PolygonType.SPHERE]
+    bl_label = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_SPHERE]
     bl_idname = "sollumz.createpolysphere"
-    poly_type = PolygonType.SPHERE
+    poly_type = SollumType.BOUND_POLY_SPHERE
 
 
 class SOLLUMZ_OT_create_poly_cylinder(CreatePolyHelper, bpy.types.Operator):
-    bl_label = SOLLUMZ_UI_NAMES[PolygonType.CYLINDER]
+    bl_label = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_CYLINDER]
     bl_idname = "sollumz.createpolycylinder"
-    poly_type = PolygonType.CYLINDER
+    poly_type = SollumType.BOUND_POLY_CYLINDER
 
 
 class SOLLUMZ_OT_create_poly_capsule(CreatePolyHelper, bpy.types.Operator):
-    bl_label = SOLLUMZ_UI_NAMES[PolygonType.CAPSULE]
+    bl_label = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_CAPSULE]
     bl_idname = "sollumz.createpolycapsule"
-    poly_type = PolygonType.CAPSULE
+    poly_type = SollumType.BOUND_POLY_CAPSULE
 
 
 class SOLLUMZ_OT_create_poly_mesh(CreatePolyHelper, bpy.types.Operator):
-    bl_label = SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]
+    bl_label = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]
     bl_idname = "sollumz.createpolymesh"
-    poly_type = PolygonType.TRIANGLE
+    poly_type = SollumType.BOUND_POLY_TRIANGLE
 
 
 class SOLLUMZ_OT_convert_to_poly_mesh(SOLLUMZ_OT_base, bpy.types.Operator):
-    bl_label = f"Convert to {SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]}"
+    bl_label = f"Convert to {SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]}"
     bl_idname = "sollumz.convertpolymesh"
-    bl_action = f"Convert to a {SOLLUMZ_UI_NAMES[PolygonType.TRIANGLE]}"
-    poly_type = PolygonType.TRIANGLE
+    bl_action = f"Convert to a {SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]}"
 
     def run(self, context):
         objs = context.selected_objects
         for obj in objs:
             if obj.type == "MESH":
                 obj.name = "Bound Poly Mesh"
-                obj.sollum_type = self.poly_type
+                obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE
 
 
 class SOLLUMZ_OT_create_bound_composite(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz bound composite"""
     bl_idname = "sollumz.createboundcomposite"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
-    bl_action = f"Create a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}"
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}"
+    bl_action = f"Create a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}"
 
     def run(self, context):
         selected = context.selected_objects
         if len(selected) < 1:
-            create_bound(BoundType.COMPOSITE, None)
+            create_bound(SollumType.BOUND_COMPOSITE, None)
 
             return True
         else:
@@ -106,7 +104,7 @@ class CreateBoundHelper(SOLLUMZ_OT_base):
     def run(self, context):
         aobj = context.active_object
         obj = None
-        if self.bound_type == BoundType.GEOMETRY or self.bound_type == BoundType.GEOMETRYBVH:
+        if self.bound_type == SollumType.BOUND_GEOMETRY or self.bound_type == SollumType.BOUND_GEOMETRYBVH:
             obj = create_bound(self.bound_type, aobj)
         else:
             obj = create_mesh(self.bound_type)
@@ -131,57 +129,57 @@ class CreateBoundShapeHelper(SOLLUMZ_OT_base):
 class SOLLUMZ_OT_create_geometry_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz geometry bound"""
     bl_idname = "sollumz.creategeometrybound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}"
-    bound_type = BoundType.GEOMETRY
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}"
+    bound_type = SollumType.BOUND_GEOMETRY
 
 
 class SOLLUMZ_OT_create_geometrybvh_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz geometry bound bvh"""
     bl_idname = "sollumz.creategeometryboundbvh"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}"
-    bound_type = BoundType.GEOMETRYBVH
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}"
+    bound_type = SollumType.BOUND_GEOMETRYBVH
 
 
 class SOLLUMZ_OT_create_cloth_bound(CreateBoundHelper, bpy.types.Operator):
     """Create a sollumz cloth bound"""
     bl_idname = "sollumz.createclothbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CLOTH]}"
-    bound_type = BoundType.CLOTH
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_CLOTH]}"
+    bound_type = SollumType.BOUND_CLOTH
 
 
 class SOLLUMZ_OT_create_box_bound(CreateBoundShapeHelper, bpy.types.Operator):
     """Create a sollumz box bound"""
     bl_idname = "sollumz.createboxbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.BOX]}"
-    bound_type = BoundType.BOX
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_BOX]}"
+    bound_type = SollumType.BOUND_BOX
 
 
 class SOLLUMZ_OT_create_sphere_bound(CreateBoundShapeHelper, bpy.types.Operator):
     """Create a sollumz sphere bound"""
     bl_idname = "sollumz.createspherebound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.SPHERE]}"
-    bound_type = BoundType.SPHERE
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_SPHERE]}"
+    bound_type = SollumType.BOUND_SPHERE
 
 
 class SOLLUMZ_OT_create_capsule_bound(CreateBoundShapeHelper, bpy.types.Operator):
     """Create a sollumz capsule bound"""
     bl_idname = "sollumz.createcapsulebound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CAPSULE]}"
-    bound_type = BoundType.CAPSULE
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE]}"
+    bound_type = SollumType.BOUND_CAPSULE
 
 
 class SOLLUMZ_OT_create_cylinder_bound(CreateBoundShapeHelper, bpy.types.Operator):
     """Create a sollumz cylinder bound"""
     bl_idname = "sollumz.createcylinderbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.CYLINDER]}"
-    bound_type = BoundType.CYLINDER
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_CYLINDER]}"
+    bound_type = SollumType.BOUND_CYLINDER
 
 
 class SOLLUMZ_OT_create_disc_bound(CreateBoundShapeHelper, bpy.types.Operator):
     """Create a sollumz disc bound"""
     bl_idname = "sollumz.creatediscbound"
-    bl_label = f"Create {SOLLUMZ_UI_NAMES[BoundType.DISC]}"
-    bound_type = BoundType.DISC
+    bl_label = f"Create {SOLLUMZ_UI_NAMES[SollumType.BOUND_DISC]}"
+    bound_type = SollumType.BOUND_DISC
 
 
 class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -198,9 +196,9 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         if not parent:
             self.message("Must specify a parent object!")
             return False
-        elif parent.sollum_type != BoundType.GEOMETRYBVH and parent.sollum_type != BoundType.GEOMETRY:
+        elif parent.sollum_type != SollumType.BOUND_GEOMETRYBVH and parent.sollum_type != SollumType.BOUND_GEOMETRY:
             self.message(
-                f'Parent must be a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]}!')
+                f'Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}!')
             return False
 
         selected = context.selected_objects
@@ -216,9 +214,9 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message("Please select at least three vertices.")
             return False
 
-        if type != PolygonType.TRIANGLE:
+        if type != SollumType.BOUND_POLY_TRIANGLE:
             pobj = create_bound_shape(
-                type) if type != PolygonType.BOX else create_mesh(type)
+                type) if type != SollumType.BOUND_POLY_BOX else create_mesh(type)
 
             obb, world_matrix = get_obb(verts)
             bbmin, bbmax = get_obb_extents(obb)
@@ -235,12 +233,12 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             #     world_matrix = Matrix.Rotation(
             #         degrees(90), 4, 'Z') @ world_matrix
 
-            if type == PolygonType.BOX:
+            if type == SollumType.BOUND_POLY_BOX:
                 create_box_from_extents(
                     pobj.data, bbmin - local_center, bbmax - local_center)
-            # elif type == PolygonType.SPHERE:
+            # elif type == SollumType.BOUND_POLY_SPHERE:
             #     pobj.bound_radius = (bbmax - bbmin).magnitude / 2
-            # elif type == PolygonType.CAPSULE or type == PolygonType.CYLINDER:
+            # elif type == SollumType.BOUND_POLY_CAPSULE or type == SollumType.BOUND_POLY_CYLINDER:
             #     pobj.bound_radius = short / 2
             #     pobj.bound_length = long
             pobj.matrix_world = world_matrix
@@ -280,13 +278,12 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         aobj = context.active_object
-        type = context.scene.poly_bound_type_verts
         parent = context.scene.poly_parent
 
         if aobj and aobj.mode == "EDIT":
-            return self.create_poly_from_verts(context, type, parent)
+            return self.create_poly_from_verts(context, context.scene.poly_bound_type_verts, parent)
         else:
-            create_bound_shape(type, aobj)
+            create_bound_shape(context.scene.poly_bound_type, aobj)
             return True
 
 
@@ -300,11 +297,11 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
         aobj = context.active_object
         if not aobj:
             self.message(
-                f"No {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]} selected.")
+                f"No {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]} selected.")
             return False
-        if aobj.sollum_type != BoundType.COMPOSITE:
+        if aobj.sollum_type != SollumType.BOUND_COMPOSITE:
             self.message(
-                f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[BoundType.COMPOSITE]}!")
+                f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
             return False
         if context.mode != 'OBJECT':
             self.message(f"{self.bl_idname} can only be ran in Object mode.")
@@ -394,9 +391,9 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message("No object selected!")
             return False
 
-        if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
+        if obj.sollum_type and not (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH):
             self.message(
-                f"Selected object must be either a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
+                f"Selected object must be either a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}!")
             return False
 
         name = context.scene.new_flag_preset_name
@@ -450,9 +447,9 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         handle_load_flag_presets(self)
 
         for obj in selected:
-            if obj.sollum_type and not (obj.sollum_type == BoundType.GEOMETRY or obj.sollum_type == BoundType.GEOMETRYBVH):
+            if obj.sollum_type and not (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH):
                 self.message(
-                    f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[BoundType.GEOMETRY]} or {SOLLUMZ_UI_NAMES[BoundType.GEOMETRYBVH]}!")
+                    f"Object: {obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}!")
 
             try:
                 preset = flag_presets.presets[index]
@@ -494,7 +491,7 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message("Please select an object.")
             return False
 
-        if is_sollum_type(aobj, BoundType):
+        if aobj.sollum_type in BOUND_TYPES:
             for flag_name in BoundFlags.__annotations__.keys():
                 aobj.composite_flags1[flag_name] = False
                 aobj.composite_flags2[flag_name] = False
