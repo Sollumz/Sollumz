@@ -98,14 +98,7 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
 class LightProperties(bpy.types.PropertyGroup):
     type: bpy.props.EnumProperty(
-        items=[
-            (LightType.POINT.value,
-             SOLLUMZ_UI_NAMES[LightType.POINT], SOLLUMZ_UI_NAMES[LightType.POINT]),
-            (LightType.SPOT.value,
-             SOLLUMZ_UI_NAMES[LightType.SPOT], SOLLUMZ_UI_NAMES[LightType.SPOT]),
-            (LightType.CAPSULE.value,
-             SOLLUMZ_UI_NAMES[LightType.CAPSULE], SOLLUMZ_UI_NAMES[LightType.CAPSULE]),
-        ],
+        items=items_from_enums(LightType),
         name="Light Type",
         default=LightType.POINT,
         options={"HIDDEN"}
@@ -179,6 +172,19 @@ def register():
         type=BoneProperties)
     bpy.types.Light.light_properties = bpy.props.PointerProperty(
         type=LightProperties)
+    bpy.types.Scene.create_light_type = bpy.props.EnumProperty(
+        items=[
+            (LightType.POINT.value,
+             SOLLUMZ_UI_NAMES[LightType.POINT], SOLLUMZ_UI_NAMES[LightType.POINT]),
+            (LightType.SPOT.value,
+             SOLLUMZ_UI_NAMES[LightType.SPOT], SOLLUMZ_UI_NAMES[LightType.SPOT]),
+            (LightType.CAPSULE.value,
+             SOLLUMZ_UI_NAMES[LightType.CAPSULE], SOLLUMZ_UI_NAMES[LightType.CAPSULE]),
+        ],
+        name="Light Type",
+        default=LightType.POINT,
+        options={"HIDDEN"}
+    )
 
 
 def unregister():
@@ -191,5 +197,6 @@ def unregister():
     del bpy.types.ShaderNodeTexImage.texture_flags
     del bpy.types.Bone.bone_properties
     del bpy.types.Light.light_properties
+    del bpy.types.Scene.create_light_type
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

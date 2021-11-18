@@ -230,6 +230,10 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         row.operator(SOLLUMZ_OT_create_geometry.bl_idname)
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable_dictionary.bl_idname)
+        layout.separator()
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_create_light.bl_idname)
+        row.prop(context.scene, 'create_light_type', text='')
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
