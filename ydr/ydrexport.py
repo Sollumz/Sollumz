@@ -306,18 +306,16 @@ def apply_and_triangulate_object(obj):
     return obj_eval, mesh
 
 
-def get_shader_index(obj, mat):
-    mats = get_used_materials(
-        obj.parent.parent)
+def get_shader_index(mats, mat):
     for i in range(len(mats)):
         if mats[i] == mat:
             return i
 
 
-def geometry_from_object(obj, shaders, bones=None, export_settings=None):
+def geometry_from_object(obj, mats, bones=None, export_settings=None):
     geometry = GeometryItem()
 
-    geometry.shader_index = get_shader_index(obj, obj.active_material)
+    geometry.shader_index = get_shader_index(mats, obj.active_material)
 
     obj, mesh = apply_and_triangulate_object(obj)
 
@@ -341,7 +339,7 @@ def geometry_from_object(obj, shaders, bones=None, export_settings=None):
     return geometry
 
 
-def drawable_model_from_object(obj, shaders, bones=None, export_settings=None):
+def drawable_model_from_object(obj, bones=None, export_settings=None):
     drawable_model = DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
@@ -355,15 +353,17 @@ def drawable_model_from_object(obj, shaders, bones=None, export_settings=None):
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             if len(child.data.materials) > 1:
+                # Preserve original order of materials
+                mats = child.data.copy().materials
                 objs = split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
-                        obj, shaders, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
+                        obj, mats, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 join_objects(objs)
             else:
                 geometry = geometry_from_object(
-                    child, shaders, bones, export_settings)
+                    child, get_used_materials(obj.parent), bones, export_settings)
                 drawable_model.geometries.append(geometry)
 
     return drawable_model
@@ -561,7 +561,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             drawable_model = drawable_model_from_object(
-                child, shaders, bones, export_settings)
+                child, bones, export_settings)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)
