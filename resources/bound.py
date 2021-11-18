@@ -39,7 +39,7 @@ class Bounds(ElementTree, AbstractClass):
         self.inertia = VectorProperty('Inertia')
         self.material_index = ValueProperty('MaterialIndex', 0)
         self.material_color_index = ValueProperty('MaterialColourIndex', 0)
-        self.procedural_id = ValueProperty('ProceduralId', 0)
+        self.procedural_id = ValueProperty('ProceduralID', 0)
         self.room_id = ValueProperty('RoomID', 0)
         self.ped_density = ValueProperty('PedDensity', 0)
         self.unk_flags = ValueProperty('UnkFlags', 0)
@@ -196,7 +196,7 @@ class MaterialItem(ElementTree):
     def __init__(self):
         super().__init__()
         self.type = ValueProperty('Type', 0)
-        self.procedural_id = ValueProperty('ProceduralId', 0)
+        self.procedural_id = ValueProperty('ProceduralID', 0)
         self.room_id = ValueProperty('RoomID', 0)
         self.ped_density = ValueProperty('PedDensity', 0)
         self.flags = FlagsProperty()
