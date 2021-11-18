@@ -338,6 +338,9 @@ class FlagsProperty(ElementProperty):
         return new
 
     def to_xml(self):
+        if len(self.value) < 1:
+            return None
+
         element = ET.Element(self.tag_name)
         for item in self.value:
             # Should be a list of strings

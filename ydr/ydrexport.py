@@ -8,8 +8,8 @@ from ..resources.shader import ShaderManager
 from ..tools.meshhelper import *
 from ..tools.utils import *
 from ..tools.blenderhelper import *
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, MaterialType, LODLevel, SollumType
-from ..ybn.ybnexport import composite_from_object
+from ..sollumz_properties import BOUND_TYPES, SOLLUMZ_UI_NAMES, MaterialType, LODLevel, SollumType
+from ..ybn.ybnexport import bound_from_object, composite_from_object
 
 
 def get_used_materials(obj):
@@ -574,8 +574,11 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
             elif child.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
                 vlowmodel_count += 1
                 drawable.drawable_models_vlow.append(drawable_model)
-        elif child.sollum_type == SollumType.BOUND_COMPOSITE:
-            drawable.bound = composite_from_object(child)
+        if child.sollum_type in BOUND_TYPES:
+            if child.sollum_type == SollumType.BOUND_COMPOSITE:
+                drawable.bound = composite_from_object(child, export_settings)
+            else:
+                drawable.bound = bound_from_object(child, export_settings)
         elif child.sollum_type == SollumType.LIGHT:
             drawable.lights.append(light_from_object(child))
 

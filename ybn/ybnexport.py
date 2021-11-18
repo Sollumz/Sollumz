@@ -308,7 +308,7 @@ def composite_from_object(obj, export_settings):
     return composite
 
 
-def bounds_from_object(obj, export_settings):
+def boundfile_from_object(obj, export_settings):
     bounds = BoundFile()
 
     composite = composite_from_object(obj, export_settings)
@@ -318,4 +318,4 @@ def bounds_from_object(obj, export_settings):
 
 
 def export_ybn(obj, filepath, export_settings):
-    bounds_from_object(obj, export_settings).write_xml(filepath)
+    boundfile_from_object(obj, export_settings).write_xml(filepath)

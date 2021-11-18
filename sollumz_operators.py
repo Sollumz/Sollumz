@@ -255,8 +255,13 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
 
         types = self.export_settings.sollum_types
         for obj in objects:
-            if obj.sollum_type in types:
-                result.append(obj)
+            if obj.sollum_type in BOUND_TYPES:
+                # this is to make sure we get all bound objects without having to specify its specific type
+                if any(bound_type.value in types for bound_type in BOUND_TYPES):
+                    result.append(obj)
+            else:
+                if obj.sollum_type in types:
+                    result.append(obj)
 
         return result
 
@@ -276,7 +281,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 filepath = self.get_filepath(obj.name, YFT.file_extension)
                 export_yft(obj, filepath)
                 valid_type = True
-            elif obj.sollum_type == SollumType.BOUND_COMPOSITE:
+            elif obj.sollum_type in BOUND_TYPES:
                 filepath = self.get_filepath(obj.name, YBN.file_extension)
                 export_ybn(obj, filepath, self.export_settings)
                 valid_type = True
