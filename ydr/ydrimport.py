@@ -128,11 +128,15 @@ def geometry_to_obj(geometry, bones=None, name=None):
     texcoords = {}
     colors = {}
 
+    has_normals = False 
+
     # gather data
     data = geometry.vertex_buffer.get_data()
     for vertex in data:
         vertices.append(vertex.position)
-        normals.append(vertex.normal)
+        if hasattr(vertex, "normal"):
+            has_normals = True
+            normals.append(vertex.normal)
 
         for key, value in vertex._asdict().items():
             if 'texcoord' in key:
@@ -154,9 +158,10 @@ def geometry_to_obj(geometry, bones=None, name=None):
     mesh.from_pydata(vertices, [], faces)
 
     # set normals
-    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
-    mesh.normals_split_custom_set_from_vertices(normals)
-    mesh.use_auto_smooth = True
+    if has_normals:
+        mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+        mesh.normals_split_custom_set_from_vertices(normals)
+        mesh.use_auto_smooth = True
 
     # set uvs
     i = 0
