@@ -408,7 +408,8 @@ def bone_from_object(obj):
     bone.scale = mat_decomposed[2]
     # transform_unk doesn't appear in openformats so oiv calcs it right
     # what does it do? the bone length?
-    bone.transform_unk = Quaternion((0, 0, 4, 3))
+    # default value for this seems to be <TransformUnk x="0" y="4" z="-3" w="0" />
+    bone.transform_unk = Quaternion((0, 0, 4, -3))
 
     return bone
 
