@@ -72,6 +72,31 @@ def get_shaders_from_blender(obj):
     return shaders
 
 
+def texture_item_from_node(n):
+    texture_item = TextureItem()
+    if n.image:
+        texture_item.name = n.image.name.split('.')[0]
+        texture_item.width = n.image.size[0]
+        texture_item.height = n.image.size[1]
+    else:
+        texture_item.name = "none"
+        texture_item.width = 0
+        texture_item.height = 0
+
+    texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
+    texture_item.extra_flags = n.texture_properties.extra_flags
+    texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
+    texture_item.miplevels = 0
+    texture_item.filename = texture_item.name + ".dds"
+    # texture_item.unk32 = 0
+    for prop in dir(n.texture_flags):
+        value = getattr(n.texture_flags, prop)
+        if value == True:
+            texture_item.usage_flags.append(prop.upper())
+
+    return texture_item
+
+
 def texture_dictionary_from_materials(obj, exportpath):
     texture_dictionary = []
     messages = []
@@ -81,51 +106,35 @@ def texture_dictionary_from_materials(obj, exportpath):
     t_names = []
     for mat in get_used_materials(obj):
         nodes = mat.node_tree.nodes
-
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
                 if(n.texture_properties.embedded == True):
                     has_td = True
-                    texture_item = TextureItem()
-                    if n.image == None:
-                        texture_name = "givemechecker"
-                    else:
-                        texture_name = n.image.name.split('.')[0]
-                    if texture_name in t_names:
+                    texture_item = texture_item_from_node(n)
+                    if texture_item.name in t_names:
                         continue
                     else:
-                        t_names.append(texture_name)
-                    texture_item.name = texture_name
-                    # texture_item.unk32 = 0
-                    texture_item.usage = SOLLUMZ_UI_NAMES[n.texture_properties.usage]
-                    for prop in dir(n.texture_flags):
-                        value = getattr(n.texture_flags, prop)
-                        if value == True:
-                            texture_item.usage_flags.append(prop.upper())
-                    texture_item.extra_flags = n.texture_properties.extra_flags
-                    texture_item.width = n.image.size[0]
-                    texture_item.height = n.image.size[1]
-                    # ?????????????????????????????????????????????????????????????????????????????????????????????
-                    texture_item.miplevels = 8
-                    texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
-                    texture_item.filename = texture_name + ".dds"
-
+                        t_names.append(texture_item.name)
                     texture_dictionary.append(texture_item)
 
-                    foldername = obj.name
-                    folderpath = os.path.join(exportpath, foldername)
-                    txtpath = bpy.path.abspath(n.image.filepath)
-                    if os.path.isfile(txtpath):
-                        if(os.path.isdir(folderpath) == False):
-                            os.mkdir(folderpath)
-                        dstpath = folderpath + "\\" + \
-                            os.path.basename(txtpath)
-                        # check if paths are the same because if they are no need to copy
-                        if txtpath != dstpath:
-                            shutil.copyfile(txtpath, dstpath)
+                    if n.image:
+                        foldername = obj.name
+                        folderpath = os.path.join(exportpath, foldername)
+                        txtpath = bpy.path.abspath(n.image.filepath)
+                        if os.path.isfile(txtpath):
+                            if(os.path.isdir(folderpath) == False):
+                                os.mkdir(folderpath)
+                            dstpath = folderpath + "\\" + \
+                                os.path.basename(txtpath)
+                            # check if paths are the same because if they are no need to copy
+                            if txtpath != dstpath:
+                                shutil.copyfile(txtpath, dstpath)
+                        else:
+                            messages.append(
+                                f"Missing Embedded Texture: {txtpath} please supply texture! The texture will not be copied to the texture folder until entered!")
                     else:
                         messages.append(
-                            f"Missing Embedded Texture: {txtpath} please supply texture! The texture will not be copied to the texture folder until entered!")
+                            f"Material: {mat.name} is missing the {n.name} texture and will not be exported.")
 
     if(has_td):
         return texture_dictionary, messages
