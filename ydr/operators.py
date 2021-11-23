@@ -115,30 +115,38 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Create Shader Material"
     bl_action = "Create a Shader Material"
 
+    def create_material(self, context, obj, shader):
+        mat = create_shader(shader)
+        obj.data.materials.append(mat)
+        if mat.shader_properties.filename in ShaderManager.tinted_shaders():
+            create_tinted_shader_graph(obj)
+
+        for n in mat.node_tree.nodes:
+            if isinstance(n, bpy.types.ShaderNodeTexImage):
+                try:
+                    existing_texture = bpy.data.images["Texture"]
+                except:
+                    existing_texture = None
+                texture = bpy.data.images.new(
+                    name="Texture", width=512, height=512) if not existing_texture else existing_texture
+                n.image = texture
+
     def run(self, context):
 
         objs = bpy.context.selected_objects
         if(len(objs) == 0):
-            self.message(
-                f"Please select a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]} to add a shader material to.")
+            self.warning(
+                f"Please select a object to add a shader material to.")
             return False
 
         for obj in objs:
-            if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-                try:
-                    shader = shadermats[context.scene.shader_material_index].value
-                    mat = create_shader(shader)
-                    obj.data.materials.append(mat)
-                    if mat.shader_properties.filename in ShaderManager.tinted_shaders():
-                        create_tinted_shader_graph(obj)
-                    self.messages.append(
-                        f"Added a {shader} shader to {obj.name}.")
-                except:
-                    self.messages.append(
-                        f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
-            else:
-                self.messages.append(
-                    f"{obj.name} is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]}, please select a valid {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]} to add a shader material to.")
+            shader = shadermats[context.scene.shader_material_index].value
+            try:
+                self.create_material(context, obj, shader)
+                self.message(f"Added a {shader} shader to {obj.name}.")
+            except:
+                self.message(
+                    f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
 
         return True
 
