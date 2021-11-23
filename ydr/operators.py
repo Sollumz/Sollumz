@@ -35,8 +35,19 @@ class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Create a Drawable Model"
 
     def run(self, context):
-        create_drawable(SollumType.DRAWABLE_MODEL)
-        return True
+        obj = context.active_object
+        if obj:
+            if obj.type == "MESH":
+                dobj = create_drawable(SollumType.DRAWABLE_MODEL)
+                obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
+                obj.parent = dobj
+                return True
+            else:
+                dobj = create_drawable(SollumType.DRAWABLE_MODEL)
+                return True
+        else:
+            dobj = create_drawable(SollumType.DRAWABLE_MODEL)
+            return True
 
 
 class SOLLUMZ_OT_create_drawable_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -57,12 +68,18 @@ class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Create a Drawable Geometry"
 
     def run(self, context):
-        name = SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]
-        mesh = bpy.data.meshes.new(name)
-        obj = bpy.data.objects.new(name, mesh)
-        obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
-        bpy.context.collection.objects.link(obj)
-        return True
+        obj = context.active_object
+
+        if obj:
+            if obj.type == "MESH":
+                obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
+                return True
+            else:
+                obj = create_drawable(SollumType.DRAWABLE_GEOMETRY)
+                return True
+        else:
+            obj = create_drawable(SollumType.DRAWABLE_GEOMETRY)
+            return True
 
 
 class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
