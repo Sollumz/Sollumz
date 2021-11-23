@@ -571,6 +571,8 @@ def create_basic_shader_nodes(mat, shader, filename):
             link_normal(node_tree, bumptex)
     if use_spec:
         link_specular(node_tree, spectex)
+    else:
+        node_tree.nodes["Principled BSDF"].inputs["Specular"].default_value = 0
     if use_tint:
         create_tint_nodes(node_tree, tintpal, texture, tintflag)
 
@@ -637,17 +639,19 @@ def create_terrain_shader(mat, shader, filename):
     # links.new(attr_t0.outputs[1], ts3.inputs[0])
     # links.new(attr_t0.outputs[1], ts4.inputs[0])
 
-    attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
-    attr_c1.attribute_name = "colour1"
-    links.new(attr_c1.outputs[0], mixns[0].inputs[1])
-    links.new(attr_c1.outputs[0], mixns[0].inputs[2])
-
-    attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
-    attr_c0.attribute_name = "colour0"
-    links.new(attr_c0.outputs[3], mixns[0].inputs[0])
-
     seprgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
-    links.new(mixns[0].outputs[0], seprgb.inputs[0])
+    if filename in ShaderManager.mask_only_terrains:
+        links.new(tm.outputs[0], seprgb.inputs[0])
+    else:
+        attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
+        attr_c1.attribute_name = "colour1"
+        links.new(attr_c1.outputs[0], mixns[0].inputs[1])
+        links.new(attr_c1.outputs[0], mixns[0].inputs[2])
+
+        attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
+        attr_c0.attribute_name = "colour0"
+        links.new(attr_c0.outputs[3], mixns[0].inputs[0])
+        links.new(mixns[0].outputs[0], seprgb.inputs[0])
 
     # t1 / t2
     links.new(seprgb.outputs[2], mixns[1].inputs[0])
