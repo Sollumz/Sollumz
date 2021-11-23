@@ -62,11 +62,12 @@ class Shader(ElementTree):
         for layout in self.layouts:
             if layout.vertex_semantic == vertex_semantic:
                 return layout
-        error = f"{vertex_semantic} layout is not found in the shader '{self.name}'"
-        error += "\nThe possible layouts you can have are"
-        for l in self.layouts:
-            error += f", {l.vertex_semantic}"
-        raise Exception(error)
+        #error = f"{vertex_semantic} layout is not found in the shader '{self.name}'"
+        #error += "\nThe possible layouts you can have are"
+        # for l in self.layouts:
+        #    error += f", {l.vertex_semantic}"
+        #raise Exception(error)
+        return self.layouts[0]
 
 
 class ShaderManager:
@@ -199,6 +200,37 @@ class ShaderManager:
                             result.append(p.name)
         print(result)
         # print("\t\n".join(result))
+
+    @staticmethod
+    def shader_name_fixed(sn):
+        result = []
+        words = sn.split("_")
+        for w in words:
+            result.append(w.capitalize())
+        return " ".join(result)
+
+    @staticmethod
+    def print_layout_github_page():
+        result = []
+
+        for shader in ShaderManager.shaders.values():
+            res = f"## {ShaderManager.shader_name_fixed(shader.name)} Shader"
+            res += "\n"
+            res += "### Filenames"
+            for f in shader.filenames:
+                if f.value != "":
+                    res += "\n* " + f.value
+            res += "\n"
+            res += "### Parameters"
+            for p in shader.parameters:
+                res += f"\n* {p.type} - {p.name}"
+            res += "\n"
+            res += "### Vertex Layouts"
+            for l in shader.layouts:
+                res += f"\n* {l.vertex_semantic} - {l.pretty_vertex_semantic}"
+            result.append(res)
+
+        print("\n".join(result))
 
 
 ShaderManager.load_shaders()

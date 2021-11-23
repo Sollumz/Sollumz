@@ -283,6 +283,33 @@ class VertexLayoutListProperty(ElementProperty):
         return namedtuple('Vertex', [name.lower() for name in self.value])
 
     @property
+    def pretty_vertex_semantic(self):
+        result = []
+        vgs = False
+        cidx = 0
+        tidx = 0
+        for item in self.value:
+            semantic = item
+            if "colour" in item.lower():
+                cidx += 1
+                continue
+            elif "texcoord" in item.lower():
+                tidx += 1
+                continue
+            elif "blend" in item.lower():
+                if not vgs:
+                    semantic = "Vertex Group"
+                    vgs = True
+                else:
+                    continue
+            result.append(semantic)
+        if cidx != 0:
+            result.append(f"{cidx} Color Layer{'s' if cidx > 1 else ''}")
+        if tidx != 0:
+            result.append(f"{tidx} UV Layer{'s' if tidx > 1 else ''}")
+        return ", ".join(result)
+
+    @property
     def vertex_semantic(self):
         return "".join([item[0] for item in self.value])
 

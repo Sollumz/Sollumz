@@ -175,7 +175,7 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
             blend_weights.append(bw)
             blend_indices.append(bi)
         else:
-            blend_weights.append([0, 0, 255, 0])
+            blend_weights.append([0, 0, 0, 0])
             blend_indices.append([0, 0, 0, 0])
 
     return blend_weights, blend_indices
@@ -199,24 +199,33 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
             kwargs = {}
 
             if "position" in vertex_type._fields:
-                if export_settings.use_transforms:
-                    pos = float32_list(
-                        obj.matrix_world @ mesh.vertices[vert_idx].co)
+                if mesh.vertices[vert_idx]:
+                    if export_settings.use_transforms:
+                        pos = float32_list(
+                            obj.matrix_world @ mesh.vertices[vert_idx].co)
+                    else:
+                        pos = float32_list(
+                            obj.matrix_basis @ mesh.vertices[vert_idx].co)
+                    kwargs['position'] = tuple(pos)
                 else:
-                    pos = float32_list(
-                        obj.matrix_basis @ mesh.vertices[vert_idx].co)
-                kwargs['position'] = tuple(pos)
+                    kwargs["position"] = tuple([0, 0, 0])
             if "normal" in vertex_type._fields:
-                normal = float32_list(loop.normal)
-                kwargs["normal"] = tuple(normal)
+                if loop.normal:
+                    normal = float32_list(loop.normal)
+                    kwargs["normal"] = tuple(normal)
+                else:
+                    kwargs["normal"] = tuple([0, 0, 0])
             if "blendweights" in vertex_type._fields:
                 kwargs['blendweights'] = tuple(blend_weights[vert_idx])
             if "blendindices" in vertex_type._fields:
                 kwargs['blendindices'] = tuple(blend_indices[vert_idx])
             if "tangent" in vertex_type._fields:
-                tangent = float32_list(loop.tangent.to_4d())
-                tangent[3] = loop.bitangent_sign  # convert to float 32 ?
-                kwargs["tangent"] = tuple(tangent)
+                if loop.tangent:
+                    tangent = float32_list(loop.tangent.to_4d())
+                    tangent[3] = loop.bitangent_sign  # convert to float 32 ?
+                    kwargs["tangent"] = tuple(tangent)
+                else:
+                    kwargs["tangent"] = tuple([0, 0, 0, 0])
             for i in range(6):
                 if f"texcoord{i}" in vertex_type._fields:
                     key = f'texcoord{i}'
@@ -236,7 +245,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                         kwargs[key] = tuple(
                             int(val * 255) for val in data[loop_idx].color)
                     else:
-                        kwargs[key] = (255, 255, 255, 255)
+                        kwargs[key] = (0, 0, 0, 0)
 
             vertex = vertex_type(**kwargs)
 
