@@ -340,7 +340,8 @@ def link_detailed_normal(node_tree, bumptex, dtltex, spectex):
     links.new(dsy.outputs[0], mathns[5].inputs[1])
 
     mathns[6].operation = "MULTIPLY"
-    links.new(spectex.outputs[1], mathns[6].inputs[0])
+    if spectex:
+        links.new(spectex.outputs[1], mathns[6].inputs[0])
     links.new(mathns[5].outputs[0], mathns[6].inputs[1])
 
     mathns[7].operation = "MULTIPLY"
