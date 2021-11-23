@@ -687,8 +687,6 @@ def create_terrain_shader(mat, shader, filename):
         links.new(mixns[6].outputs[0], nrm.inputs[1])
         links.new(nrm.outputs[0], bsdf.inputs["Normal"])
 
-    print(tm)
-
     # assign lookup sampler last so that it overwrites any socket connections
     if tm:
         attr_t1 = node_tree.nodes.new("ShaderNodeAttribute")

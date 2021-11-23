@@ -32,17 +32,21 @@ def shadergroup_to_materials(shadergroup, filepath):
                         addon_key = __name__.split('.')[0]
                         shared_folder = bpy.context.preferences.addons[
                             addon_key].preferences.shared_texture_folder
-                        shared_texture_path = os.path.join(
-                            shared_folder, param.texture_name + ".dds")
+                        shared_folder_dirs = [x[0]
+                                              for x in os.walk(shared_folder)]
                         if(os.path.isfile(texture_path)):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
                             n.image = img
                         # check shared texture folder
-                        elif os.path.isfile(shared_texture_path):
-                            img = bpy.data.images.load(
-                                shared_texture_path, check_existing=True)
-                            n.image = img
+                        elif os.path.isdir(shared_folder):
+                            for d in shared_folder_dirs:
+                                t_path = os.path.join(
+                                    d, param.texture_name + ".dds")
+                                if(os.path.isfile(t_path)):
+                                    img = bpy.data.images.load(
+                                        t_path, check_existing=True)
+                                    n.image = img
                         else:
                             # Check for existing texture
                             existing_texture = None
