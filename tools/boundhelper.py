@@ -110,9 +110,3 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
                 poly_mesh.sollum_type = SollumType.BOUND_POLY_TRIANGLE
             else:
                 poly_mesh.data = obj.data.copy()
-
-            # Remove materials
-            poly_mesh.data.materials.clear()
-            # add default collision mat
-            poly_mesh.data.materials.append(
-                create_collision_material_from_index(0))
