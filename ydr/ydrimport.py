@@ -1,13 +1,15 @@
 import os
+from Sollumz.resources.shader import Shader
 import bpy
 from mathutils import Matrix
-from .shader_materials import create_shader
+from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
 from ..resources.drawable import *
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import *
 from ..tools.blenderhelper import *
+from ..resources.shader import ShaderManager
 
 
 def shadergroup_to_materials(shadergroup, filepath):
@@ -17,7 +19,7 @@ def shadergroup_to_materials(shadergroup, filepath):
         filepath) + "\\" + os.path.basename(filepath)[:-8]
     for shader in shadergroup.shaders:
 
-        material = create_shader(shader.name)
+        material = create_shader(shader.name, shader.filename)
 
         material.shader_properties.renderbucket = shader.render_bucket
         material.shader_properties.filename = shader.filename
@@ -53,6 +55,10 @@ def shadergroup_to_materials(shadergroup, filepath):
                             n.image = texture
                             # n.image = bpy.data.images.new(
                             #     name=param.texture_name, width=512, height=512)
+
+                        # assign non color to normal maps
+                        if "Bump" in param.name:
+                            n.image.colorspace_settings.name = "Non-Color"
 
                         # Assign embedded texture dictionary properties
                         if shadergroup.texture_dictionary != None:
@@ -97,6 +103,12 @@ def shadergroup_to_materials(shadergroup, filepath):
                         if key == "w":
                             n.outputs[0].default_value = param.w
 
+        # assign extra detail node image for viewing
+        dtl_ext = get_detail_extra_sampler(material)
+        if dtl_ext:
+            dtl = material.node_tree.nodes["DetailSampler"]
+            dtl_ext.image = dtl.image
+
         materials.append(material)
 
     return materials
@@ -128,7 +140,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
     texcoords = {}
     colors = {}
 
-    has_normals = False 
+    has_normals = False
 
     # gather data
     data = geometry.vertex_buffer.get_data()
@@ -215,6 +227,9 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None):
         child_obj.data.materials.append(materials[child.shader_index])
         child_obj.parent = dobj
         bpy.context.collection.objects.link(child_obj)
+        # do this after because object has to be linked, will do nothing if a tint parameter is not found... kinda stupid way to do it but its how
+        # we check if its a tint shader in the first place so ig it makes sense...
+        create_tinted_shader_graph(child_obj)
 
     bpy.context.collection.objects.link(dobj)
 
