@@ -408,6 +408,8 @@ def register():
         default=(1.0, 1.0, 1.0, 1.0),
         size=4
     )
+    bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
+        name="Alpha", min=-1, max=1)
     bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
         name="Separate Objects", description="Create a object for each selected mesh.")
     bpy.types.Scene.use_mesh_name = bpy.props.BoolProperty(
@@ -432,6 +434,7 @@ def unregister():
     del bpy.types.Scene.hide_low_lods
     del bpy.types.Scene.hide_very_low_lods
     del bpy.types.Scene.vert_paint_color
+    del bpy.types.Scene.vert_paint_alpha
     del bpy.types.Scene.create_seperate_objects
     del bpy.types.Scene.use_mesh_name
     del bpy.types.Scene.debug_sollum_type

@@ -39,7 +39,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                                 texture_path, check_existing=True)
                             n.image = img
                         # check shared texture folder
-                        elif os.path.isdir(shared_folder):
+                        else:
                             for d in shared_folder_dirs:
                                 t_path = os.path.join(
                                     d, param.texture_name + ".dds")
@@ -47,7 +47,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                                     img = bpy.data.images.load(
                                         t_path, check_existing=True)
                                     n.image = img
-                        else:
+                        if not n.image:
                             # Check for existing texture
                             existing_texture = None
                             for image in bpy.data.images:

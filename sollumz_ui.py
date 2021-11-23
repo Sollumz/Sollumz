@@ -126,7 +126,7 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.prop(context.scene, "debug_sollum_type")
 
 
-class SOLLUMZ_PT_VERTEX_TOOL_PANELL(bpy.types.Panel):
+class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Vertex Painter"
     bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
     bl_space_type = 'VIEW_3D'
@@ -139,6 +139,27 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANELL(bpy.types.Panel):
         row = layout.row()
         row.prop(context.scene, "vert_paint_color")
         row.operator("sollumz.paint_vertices")
+
+
+class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
+    bl_label = "Terrain Painter"
+    bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("sollumz.paint_tex1")
+        row.operator("sollumz.paint_tex2")
+        row = layout.row()
+        row.operator("sollumz.paint_tex3")
+        row.operator("sollumz.paint_tex4")
+        row = layout.row()
+        row.operator("sollumz.paint_a")
+        row.prop(context.scene, "vert_paint_alpha")
 
 
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):

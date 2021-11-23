@@ -2,6 +2,46 @@ import bpy
 from mathutils import Vector
 
 
+def create_brush(name):
+    bpy.data.brushes.new(name=name, mode="VERTEX_PAINT")
+    return bpy.data.brushes[name]
+
+
+def apply_brush_settings(brush, idx):
+    if idx < 5:
+        brush.blend = "MIX"
+    if idx == 1:
+        brush.color = (0, 0, 0)
+    elif idx == 2:
+        brush.color = (0, 0, 1)
+    elif idx == 3:
+        brush.color = (0, 1, 0)
+    elif idx == 4:
+        brush.color = (0, 1, 1)
+    elif idx == 5:
+        alpha = bpy.context.scene.vert_paint_alpha
+        if alpha > 0:
+            brush.color = (1, 1, 1)
+            brush.blend = "ADD_ALPHA"
+            brush.strength = alpha
+        else:
+            brush.color = (0, 0, 0)
+            brush.blend = "ERASE_ALPHA"
+            brush.strength = alpha * -1
+    return brush
+
+
+def get_terrain_texture_brush(idx):
+    name = "TerrainBrush"
+
+    try:
+        brush = bpy.data.brushes[name]
+    except:
+        brush = create_brush(name)
+    apply_brush_settings(brush, idx)
+    return brush
+
+
 def split_object(obj, parent):
     objs = []
     bpy.ops.object.select_all(action='DESELECT')

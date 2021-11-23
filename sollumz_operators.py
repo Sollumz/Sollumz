@@ -20,6 +20,7 @@ from .ybn.ybnexport import export_ybn
 from .resources.ymap import YMAP, EntityItem, CMapData
 from .tools.meshhelper import *
 from .tools.utils import *
+from .tools.blenderhelper import get_terrain_texture_brush
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 
@@ -513,6 +514,56 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message("No objects selected to paint.")
             return False
 
+        return True
+
+
+class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Paint Texture 1 On Selected Object"""
+    bl_idname = "sollumz.paint_tex1"
+    bl_label = "Paint Texture 1"
+
+    def run(self, context):
+        brush = get_terrain_texture_brush(1)
+        return True
+
+
+class SOLLUMZ_OT_paint_terrain_tex2(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Paint Texture 2 On Selected Object"""
+    bl_idname = "sollumz.paint_tex2"
+    bl_label = "Paint Texture 2"
+
+    def run(self, context):
+        brush = get_terrain_texture_brush(2)
+        return True
+
+
+class SOLLUMZ_OT_paint_terrain_tex3(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Paint Texture 3 On Selected Object"""
+    bl_idname = "sollumz.paint_tex3"
+    bl_label = "Paint Texture 3"
+
+    def run(self, context):
+        brush = get_terrain_texture_brush(3)
+        return True
+
+
+class SOLLUMZ_OT_paint_terrain_tex4(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Paint Texture 4 On Selected Object"""
+    bl_idname = "sollumz.paint_tex4"
+    bl_label = "Paint Texture 4"
+
+    def run(self, context):
+        brush = get_terrain_texture_brush(4)
+        return True
+
+
+class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Paint Lookup Sampler Alpha On Selected Object"""
+    bl_idname = "sollumz.paint_a"
+    bl_label = "Paint Alpha"
+
+    def run(self, context):
+        brush = get_terrain_texture_brush(5)
         return True
 
 
