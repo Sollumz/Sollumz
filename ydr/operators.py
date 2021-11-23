@@ -1,7 +1,8 @@
+from Sollumz.resources.shader import Shader, ShaderManager
 import bpy
 import traceback
 from ..tools.drawablehelper import *
-from ..ydr.shader_materials import create_shader, shadermats
+from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
 from ..sollumz_helper import SOLLUMZ_OT_base
 
@@ -128,6 +129,8 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
                     shader = shadermats[context.scene.shader_material_index].value
                     mat = create_shader(shader)
                     obj.data.materials.append(mat)
+                    if mat.shader_properties.filename in ShaderManager.tinted_shaders():
+                        create_tinted_shader_graph(obj)
                     self.messages.append(
                         f"Added a {shader} shader to {obj.name}.")
                 except:

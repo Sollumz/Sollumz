@@ -273,10 +273,9 @@ def get_semantic_from_object(shader, mesh):
     # add colors
     vcs = len(mesh.vertex_colors)
     if vcs > 0:
-        if vcs > 2:
-            raise Exception(f"To many color layers on mesh: {mesh.name}")
-        for i in range(vcs):
-            sematic.append(VertexSemantic.color)
+        for vc in mesh.vertex_colors:
+            if vc.name != "TintColor":
+                sematic.append(VertexSemantic.color)
     # add texcoords
     tcs = len(mesh.uv_layers)
     if tcs > 0:
