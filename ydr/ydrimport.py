@@ -1,5 +1,4 @@
 import os
-from Sollumz.resources.shader import Shader
 import bpy
 from mathutils import Matrix
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
