@@ -167,16 +167,16 @@ def fragment_to_obj(fragment, filepath):
             fragment.drawable, filepath, fragment.fixed_name(), None, materials)
         dobj.parent = fobj
 
-    if fragment.physics.lod1:
+    if len(fragment.physics.lod1.groups) > 0:
         lobj = create_lod_obj("LOD1", fragment.physics.lod1,
                               filepath, materials)
         lobj.parent = fobj
-    if fragment.physics.lod2:
-        lobj = create_lod_obj("LOD2", fragment.physics.lod1,
+    if len(fragment.physics.lod2.groups) > 0:
+        lobj = create_lod_obj("LOD2", fragment.physics.lod2,
                               filepath, materials)
         lobj.parent = fobj
-    if fragment.physics.lod3:
-        lobj = create_lod_obj("LOD3", fragment.physics.lod1,
+    if len(fragment.physics.lod3.groups) > 0:
+        lobj = create_lod_obj("LOD3", fragment.physics.lod3,
                               filepath, materials)
         lobj.parent = fobj
 
@@ -186,20 +186,18 @@ def fragment_to_obj(fragment, filepath):
     allfmodels = fragment.drawable.all_models
 
     pose = fragment.bones_transforms
-    usepose = False
     if pose:
         modeltransforms = []
         pbc = len(pose)
         for i in range(pbc):
             modeltransforms.append(pose[i].value)
-        usepose = True
 
     for i in range(len(allfmodels)):
         model = allfmodels[i]
         bmodel = allbmodels[i]
 
         boneidx = model.bone_index
-        m = modeltransforms[i] if boneidx < len(
+        m = modeltransforms[boneidx] if boneidx < len(
             modeltransforms) else Matrix()
 
         if not model.has_skin:
