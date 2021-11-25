@@ -1,8 +1,8 @@
 """Manages reading/writing Codewalker XML files"""
-from mathutils import Vector, Quaternion
+from mathutils import Vector, Quaternion, Matrix
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Text
 from xml.etree import ElementTree as ET
 from numpy import float32
 
@@ -316,6 +316,36 @@ class QuaternionProperty(ElementProperty):
         z = str(float32(self.value.z))
         w = str(float32(self.value.w))
         return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z, 'w': w})
+
+
+class MatrixProperty(ElementProperty):
+    value_types = (Matrix)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Matrix())
+
+    @ staticmethod
+    def from_xml(element: ET.Element):
+        s_mtx = element.text.strip().replace("\n", "").split("   ")
+        m = Matrix()
+        r_idx = 0
+        for item in s_mtx:
+            v_idx = 0
+            for value in item.strip().split(" "):
+                m[r_idx][v_idx] = float(value)
+                v_idx += 1
+            r_idx += 1
+        return MatrixProperty(element.tag, m)
+
+    def to_xml(self):
+        txt = "\n"
+        for i in range(4):
+            txt += f"{str(self.value[i][0])} "
+            txt += f"{str(self.value[i][1])} "
+            txt += f"{str(self.value[i][2])} "
+            txt += f"{str(self.value[i][3])}"
+            txt += "\n"
+        return ET.Element(self.tag_name, Text=txt)
 
 
 class FlagsProperty(ElementProperty):

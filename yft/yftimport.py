@@ -1,9 +1,10 @@
 import bpy
+from mathutils import Matrix, Vector
 from ..resources.fragment import YFT
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-import traceback
+from ..tools.blenderhelper import copy_object
 
 
 def create_lod_obj(name, lod, filepath, materials):
@@ -83,6 +84,9 @@ def create_lod_obj(name, lod, filepath, materials):
                                 SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], True)
         bobj.parent = aobj
 
+    wheel_drawable = None
+    cobjs = []
+
     if lod.children:
         cwobj = bpy.data.objects.new("Children", None)
         cwobj.empty_display_size = 0
@@ -106,9 +110,36 @@ def create_lod_obj(name, lod, filepath, materials):
                     child.drawable, filepath, f"child {idx}", None, materials)
                 dobj.parent = cobj
 
+                # set wheel drawable to instantiate
+                group = lod.groups[child.group_index]
+                if group.name == "wheel_lf":
+                    wheel_drawable = dobj
+
+            transform = lod.transforms[idx].value
+            a = transform[3][0] + lod.unknown_30.x
+            b = transform[3][1] + lod.unknown_30.y
+            c = transform[3][2] + lod.unknown_30.z
+            transform[3][0] = a
+            transform[3][1] = b
+            transform[3][2] = c
+            cobj.matrix_basis = transform.transposed()
+
+            cobjs.append(cobj)
             cobj.parent = cwobj
 
         cwobj.parent = lobj
+
+        # instantiate wheels
+        for idx, child in enumerate(lod.children):
+            group = lod.groups[child.group_index]
+            if group.name in ("wheel_rf", "wheel_rr"):
+                wheel = copy_object(wheel_drawable, True)
+                # rotate 90 degrees for right wheels
+                wheel.rotation_euler[2] = 3.14159
+                wheel.parent = cobjs[idx]
+            elif group.name == "wheel_lr":
+                wheel = copy_object(wheel_drawable, True)
+                wheel.parent = cobjs[idx]
 
     return lobj
 
@@ -137,15 +168,44 @@ def fragment_to_obj(fragment, filepath):
         dobj.parent = fobj
 
     if fragment.physics.lod1:
-        l1obj = create_lod_obj("LOD1", fragment.physics.lod1,
-                               filepath, materials)
-        l1obj.parent = fobj
+        lobj = create_lod_obj("LOD1", fragment.physics.lod1,
+                              filepath, materials)
+        lobj.parent = fobj
+    if fragment.physics.lod2:
+        lobj = create_lod_obj("LOD2", fragment.physics.lod1,
+                              filepath, materials)
+        lobj.parent = fobj
+    if fragment.physics.lod3:
+        lobj = create_lod_obj("LOD3", fragment.physics.lod1,
+                              filepath, materials)
+        lobj.parent = fobj
+
+    allbmodels = []
+    for child in dobj.children:
+        allbmodels.append(child)
+    allfmodels = fragment.drawable.all_models
+
+    pose = fragment.bones_transforms
+    usepose = False
+    if pose:
+        modeltransforms = []
+        pbc = len(pose)
+        for i in range(pbc):
+            modeltransforms.append(pose[i].value)
+        usepose = True
+
+    for i in range(len(allfmodels)):
+        model = allfmodels[i]
+        bmodel = allbmodels[i]
+
+        boneidx = model.bone_index
+        m = modeltransforms[i] if boneidx < len(
+            modeltransforms) else Matrix()
+
+        if not model.has_skin:
+            bmodel.matrix_basis = m
 
 
 def import_yft(filepath):
-    try:
-        yft_xml = YFT.from_xml_file(filepath)
-        fragment_to_obj(yft_xml, filepath)
-        return f"Succesfully imported : {filepath}"
-    except:
-        return f"Error importing : {filepath} \n {traceback.format_exc()}"
+    yft_xml = YFT.from_xml_file(filepath)
+    fragment_to_obj(yft_xml, filepath)

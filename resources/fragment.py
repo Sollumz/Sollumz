@@ -18,23 +18,11 @@ class YFT:
         return fragment.write_xml(filepath)
 
 
-class BoneTransformItem(TextProperty):
+class BoneTransformItem(MatrixProperty):
     tag_name = "Item"
 
     def __init__(self):
         super().__init__()
-
-    @classmethod
-    def from_xml(cls, element: ET.Element):
-        new = cls()
-        s_mtx = element.text.strip().replace("\n", "").split("   ")
-        new.value = []
-        for item in s_mtx:
-            lst = []
-            for value in item.split(" "):
-                lst.append(float(value))
-            new.value.append(lst)
-        return new
 
 
 class BoneTransformsListProperty(ListProperty):
@@ -63,7 +51,7 @@ class ArchetypeProperty(ElementTree):
         self.bounds = BoundsComposite()
 
 
-class TransformItem(TextProperty):
+class TransformItem(MatrixProperty):
     tag_name = "Item"
 
     def __init__(self):
@@ -146,11 +134,12 @@ class GroupsListProperty(ListProperty):
     tag_name = "Groups"
 
 
-class LOD1Property(ElementTree):
-    tag_name = "LOD1"
+class LODProperty(ElementTree):
+    tag_name = "LOD"
 
-    def __init__(self):
+    def __init__(self, tag_name="LOD"):
         super().__init__()
+        self.tag_name = tag_name
         self.unknown_14 = ValueProperty("Unknown14")
         self.unknown_18 = ValueProperty("Unknown18")
         self.unknown_1c = ValueProperty("Unknown1C")
@@ -174,7 +163,9 @@ class PhysicsProperty(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.lod1 = LOD1Property()
+        self.lod1 = LODProperty("LOD1")
+        self.lod2 = LODProperty("LOD2")
+        self.lod3 = LODProperty("LOD3")
 
 
 class WindowItem(ElementTree):

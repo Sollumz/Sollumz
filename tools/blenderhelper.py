@@ -42,6 +42,25 @@ def get_terrain_texture_brush(idx):
     return brush
 
 
+def copy_children(res, children):
+    for child in children:
+        resc = child.copy()
+        bpy.context.collection.objects.link(resc)
+        resc.parent = res
+        if len(child.children) > 0:
+            copy_children(res, child.children)
+
+
+def copy_object(obj, children=False):
+    if children:
+        res = obj.copy()
+        bpy.context.collection.objects.link(res)
+        copy_children(res, obj.children)
+        return res
+    else:
+        return obj.copy()
+
+
 def split_object(obj, parent):
     objs = []
     bpy.ops.object.select_all(action='DESELECT')

@@ -482,6 +482,10 @@ class DrawableModelListProperty(ListProperty):
 class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
 
+    @property
+    def all_models(self):
+        return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
+
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name", "")
