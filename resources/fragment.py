@@ -231,3 +231,4 @@ class Fragment(ElementTree, AbstractClass):
         self.drawable = FragmentDrawable()
         self.bones_transforms = BoneTransformsListProperty()
         self.physics = PhysicsProperty()
+        self.vehicle_glass_windows = VehicleGlassWindows()

@@ -12,6 +12,85 @@ for shader in ShaderManager.shaders.values():
         shader.name.upper(), shader.name.upper().replace('_', ' '), shader.name))
 
 
+def try_get_node(node_tree, name):
+    try:
+        return node_tree.nodes[name]
+    except:
+        return None
+
+
+def get_child_nodes(node):
+    child_nodes = []
+    for input in node.inputs:
+        for link in input.links:
+            child = link.from_node
+            if child in child_nodes:
+                continue
+            else:
+                child_nodes.append(child)
+    return child_nodes
+
+
+def get_loose_nodes(node_tree):
+    loose_nodes = []
+    for node in node_tree.nodes:
+        no = False
+        ni = False
+        for output in node.outputs:
+            for link in output.links:
+                if link.to_node != None and link.from_node != None:
+                    no = True
+                    break
+        for input in node.inputs:
+            for link in input.links:
+                if link.to_node != None and link.from_node != None:
+                    ni = True
+                    break
+        if no == False and ni == False:
+            loose_nodes.append(node)
+    return loose_nodes
+
+
+def organize_node_tree(node_tree):
+    mo = try_get_node(node_tree, "Material Output")
+    mo.location.x = 0
+    mo.location.y = 0
+    organize_node(mo)
+    organize_loose_nodes(node_tree, 1000, 0)
+
+
+def organize_node(node):
+    child_nodes = get_child_nodes(node)
+    if len(child_nodes) < 0:
+        return
+
+    level = node.location.y
+    for child in child_nodes:
+        child.location.x = node.location.x - 300  # (child.width + 25)
+        child.location.y = level
+        level -= 300  # child.height * 2 + 25
+        organize_node(child)
+
+
+def organize_loose_nodes(node_tree, start_x, start_y):
+    loose_nodes = get_loose_nodes(node_tree)
+    if len(loose_nodes) == 0:
+        return
+
+    grid_x = start_x
+    grid_y = start_y
+
+    for i, node in enumerate(loose_nodes):
+        if i % 4 == 0:
+            grid_x = start_x
+            grid_y -= 150
+
+        node.location.x = grid_x
+        node.location.y = grid_y
+
+        grid_x -= node.width + 25
+
+
 def get_tinted_sampler(mat):  # move to blenderhelper.py?
     nodes = mat.node_tree.nodes
     for node in nodes:
@@ -159,102 +238,6 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     tsample.inputs[2].default_value = "TintColor"
 
     return gnt
-
-
-def get_child_node(node):
-
-    if node == None:
-        return None
-
-    for output in node.outputs:
-        if len(output.links) == 1:
-            return output.links[0].to_node
-
-
-def get_list_of_child_nodes(node):
-
-    all_nodes = []
-    all_nodes.append(node)
-
-    searching = True
-    child = get_child_node(node)
-
-    while searching:
-
-        if isinstance(child, bpy.types.ShaderNodeBsdfPrincipled):
-            pass
-        elif isinstance(child, bpy.types.ShaderNodeOutputMaterial):
-            pass
-        else:
-            all_nodes.append(child)
-
-        child = get_child_node(child)
-
-        if child == None:
-            searching = False
-
-    return all_nodes
-
-
-def check_if_node_has_child(node):
-
-    haschild = False
-    for output in node.outputs:
-        if len(output.links) > 0:
-            haschild = True
-    return haschild
-
-
-def organize_node_tree(node_tree):
-
-    level = 0
-    singles_x = 0
-
-    grid_x = 600
-    grid_y = -300
-    row_count = 0
-
-    for n in node_tree.nodes:
-
-        if isinstance(n, bpy.types.ShaderNodeValue):
-            n.location.x = grid_x
-            n.location.y = grid_y
-            grid_x += 150
-            row_count += 1
-            if row_count == 4:
-                grid_y -= 100
-                row_count = 0
-                grid_x = 600
-
-        if isinstance(n, bpy.types.ShaderNodeBsdfPrincipled):
-            n.location.x = 0
-            n.location.y = -300
-        if isinstance(n, bpy.types.ShaderNodeOutputMaterial):
-            n.location.y = -300
-            n.location.x = 300
-
-        if isinstance(n, bpy.types.ShaderNodeTexImage):
-
-            haschild = check_if_node_has_child(n)
-            if haschild:
-                level -= 250
-                all_nodes = get_list_of_child_nodes(n)
-
-                idx = 0
-                for n in all_nodes:
-                    try:
-                        x = -300 * (len(all_nodes) - idx)
-
-                        n.location.x = x
-                        n.location.y = level
-
-                        idx += 1
-                    except:
-                        print("error")
-            else:
-                n.location.x = singles_x
-                n.location.y = 100
-                singles_x += 300
 
 
 def create_image_node(node_tree, param):
@@ -459,16 +442,66 @@ def create_decal_nodes(node_tree, texture, decalflag):
     links.new(mix.outputs["Shader"], output.inputs["Surface"])
 
 
+def create_emissive_nodes(node_tree):
+    links = node_tree.links
+    output = node_tree.nodes["Material Output"]
+    tmpn = output.inputs[0].links[0].from_node
+    if tmpn.name == "Principled BSDF":
+        em = node_tree.nodes.new("ShaderNodeEmission")
+        diff = node_tree.nodes["DiffuseSampler"]
+        links.new(diff.outputs[0], em.inputs[0])
+        links.new(em.outputs[0], output.inputs[0])
+
+
 def link_value_shader_parameters(shader, node_tree):
     links = node_tree.links
 
     bmp = None
+    spec_im = None
+    spec_fm = None
+    em_m = None
+
     for param in shader.parameters:
         if param.name == "bumpiness":
             bmp = node_tree.nodes["bumpiness_x"]
+        elif param.name == "specularIntensityMult":
+            spec_im = node_tree.nodes["specularIntensityMult_x"]
+        elif param.name == "specularFalloffMult":
+            spec_fm = node_tree.nodes["specularFalloffMult_x"]
+        elif param.name == "emissiveMultiplier":
+            em_m = node_tree.nodes["emissiveMultiplier_x"]
 
     if bmp:
-        links.new(bmp.outputs[0], node_tree.nodes["Normal Map"].inputs[0])
+        nm = try_get_node(node_tree, "Normal Map")
+        if nm:
+            links.new(bmp.outputs[0], nm.inputs[0])
+    if spec_im:
+        spec = try_get_node(node_tree, "SpecSampler")
+        bsdf = try_get_node(node_tree, "Principled BSDF")
+        if spec and bsdf:
+            map = node_tree.nodes.new("ShaderNodeMapRange")
+            map.inputs[2].default_value = 1
+            map.inputs[4].default_value = 1
+            map.clamp = True
+            mult = node_tree.nodes.new("ShaderNodeMath")
+            mult.operation = "MULTIPLY"
+            links.new(spec.outputs[0], mult.inputs[0])
+            links.new(map.outputs[0], mult.inputs[1])
+            links.new(spec_im.outputs[0], map.inputs[0])
+            links.new(mult.outputs[0], bsdf.inputs[0])
+    if spec_fm:
+        bsdf = try_get_node(node_tree, "Principled BSDF")
+        if bsdf:
+            map = node_tree.nodes.new("ShaderNodeMapRange")
+            map.inputs[2].default_value = 512
+            map.inputs[3].default_value = 1
+            map.clamp = True
+            links.new(spec_fm.outputs[0], map.inputs[0])
+            links.new(map.outputs[0], bsdf.inputs["Roughness"])
+    if em_m:
+        em = try_get_node(node_tree, "Emission")
+        if em:
+            links.new(em_m.outputs[0], em.inputs[1])
 
 
 def create_basic_shader_nodes(mat, shader, filename):
@@ -554,6 +587,8 @@ def create_basic_shader_nodes(mat, shader, filename):
         elif filename in [ShaderManager.decals[3], ShaderManager.decals[17]]:
             decalflag = 4
 
+    is_emissive = True if filename in ShaderManager.em_shaders else False
+
     if not use_decal:
         if use_diff:
             if use_diff2:
@@ -575,6 +610,9 @@ def create_basic_shader_nodes(mat, shader, filename):
         node_tree.nodes["Principled BSDF"].inputs["Specular"].default_value = 0
     if use_tint:
         create_tint_nodes(node_tree, tintpal, texture, tintflag)
+
+    if is_emissive:
+        create_emissive_nodes(node_tree)
 
     # link value parameters
     link_value_shader_parameters(shader, node_tree)

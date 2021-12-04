@@ -103,6 +103,10 @@ class ShaderManager:
                    "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
     tint_flag_2 = ["weapon_normal_spec_detail_tnt.sps", "weapon_normal_spec_cutout_palette.sps",
                    "weapon_normal_spec_detail_palette.sps", "weapon_normal_spec_palette.sps"]
+    em_shaders = ["normal_spec_emissive.sps", "normal_spec_reflect_emissivenight.sps", "emissive.sps", "emissive_clip.sps", "emissive_speclum.sps", "emissive_tnt.sps", "emissivenight.sps",
+                  "emissivenight_geomnightonly.sps", "emissivestrong_alpha.sps", "emissivestrong.sps", "normal_spec_reflect_emissivenight_alpha.sps", "emissive_alpha.sps",
+                  "emissive_alpha_tnt.sps", "emissive_additive_alpha.sps", "emissivenight_alpha.sps", "glass_emissive.sps", "glass_emissivenight.sps", "glass_emissivenight_alpha.sps",
+                  "glass_emissive_alpha.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps"]
 
     def tinted_shaders():
         return ShaderManager.cutouts + ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_cutouts + ShaderManager.veh_glasses + ShaderManager.veh_decals + ShaderManager.shadow_proxies
