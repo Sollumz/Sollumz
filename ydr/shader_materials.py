@@ -488,7 +488,7 @@ def link_value_shader_parameters(shader, node_tree):
             links.new(spec.outputs[0], mult.inputs[0])
             links.new(map.outputs[0], mult.inputs[1])
             links.new(spec_im.outputs[0], map.inputs[0])
-            links.new(mult.outputs[0], bsdf.inputs[0])
+            links.new(mult.outputs[0], bsdf.inputs["Specular"])
     if spec_fm:
         bsdf = try_get_node(node_tree, "Principled BSDF")
         if bsdf:
