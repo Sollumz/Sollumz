@@ -55,9 +55,11 @@ def poly_to_obj(poly, materials, vertices):
         v2 = v1 + a1
         v3 = v3 - a1
         v4 = v4 - a1
-        edge1 = (v2 - v1)
-        edge2 = (v3 - v1)
-        edge3 = (v4 - v1)
+
+        minedge = Vector((0.0001, 0.0001, 0.0001))
+        edge1 = max(v2 - v1, minedge)
+        edge2 = max(v3 - v1, minedge)
+        edge3 = max((v4 - v1), minedge)
 
         # Order edges
         s1 = False

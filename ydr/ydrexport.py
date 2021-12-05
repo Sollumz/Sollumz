@@ -325,7 +325,7 @@ def apply_and_triangulate_object(obj):
 
 def get_shader_index(mats, mat):
     for i in range(len(mats)):
-        if mats[i] == mat:
+        if mats[i].as_pointer() == mat.as_pointer():
             return i
 
 
