@@ -139,13 +139,17 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Static Collision Tools"
+    bl_label = "Collision Tools"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 2
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="MESH_CYLINDER")
 
     def draw(self, context):
         layout = self.layout
@@ -162,6 +166,10 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 0
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="MOD_WIREFRAME")
 
     def draw(self, context):
         layout = self.layout
@@ -198,13 +206,17 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
-    bl_label = "Create Material"
+    bl_label = "Create Collision Material"
     bl_idname = "SOLLUMZ_PT_CREATE_MATERIAL_PANEL"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 1
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="NODE_MATERIAL")
 
     def draw(self, context):
         layout = self.layout
@@ -222,6 +234,10 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="ALIGN_TOP")
 
     def draw(self, context):
         layout = self.layout

@@ -2,7 +2,7 @@ import bpy
 from .sollumz_helper import *
 from .sollumz_properties import *
 from .ybn.ui import draw_bound_properties, draw_collision_material_properties
-from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader
+from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_shader_texture_params, draw_shader_value_params
 from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_lod_properties, draw_child_properties
 
 
@@ -98,6 +98,10 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 0
 
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="MODIFIER_DATA")
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="View")
@@ -119,6 +123,10 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="PREFERENCES")
+
     def draw(self, context):
         layout = self.layout
         row = layout.row()
@@ -134,6 +142,10 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="BRUSH_DATA")
+
     def draw(self, context):
         layout = self.layout
         row = layout.row()
@@ -148,6 +160,10 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="IMAGE")
 
     def draw(self, context):
         layout = self.layout
@@ -169,6 +185,10 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="FILE")
 
     def draw(self, context):
         layout = self.layout
@@ -234,20 +254,86 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        # layout.use_property_split = True
+
         aobj = context.active_object
         if(context.active_object == None):
             return
 
-        mat = context.active_object.active_material
-
+        mat = aobj.active_material
         if(mat == None):
+            layout.label(text="No sollumz material active.", icon="ERROR")
             return
 
         if mat.sollum_type == MaterialType.SHADER:
             draw_shader(layout, mat)
         elif mat.sollum_type == MaterialType.COLLISION and aobj.sollum_type in BOUND_POLYGON_TYPES:
             draw_collision_material_properties(layout, mat)
+        else:
+            layout.label(text="No sollumz material active.", icon="ERROR")
+
+
+class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
+    bl_label = "Texture Parameters"
+    bl_idname = 'SOLLUMZ_PT_TXTPARAMS_PANEL'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_order = 0
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj:
+            mat = obj.active_material
+            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
+        else:
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+
+        aobj = context.active_object
+        if(context.active_object == None):
+            return
+
+        mat = aobj.active_material
+        if(mat == None):
+            return
+
+        draw_shader_texture_params(layout, mat)
+
+
+class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
+    bl_label = "Value Parameters"
+    bl_idname = 'SOLLUMZ_PT_VALUEPARAMS_PANEL'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj:
+            mat = obj.active_material
+            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
+        else:
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+
+        aobj = context.active_object
+        if(context.active_object == None):
+            return
+
+        mat = aobj.active_material
+        if(mat == None):
+            return
+
+        draw_shader_value_params(layout, mat)
 
 
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
@@ -258,15 +344,15 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_context = 'object'
     bl_options = {'DEFAULT_CLOSED'}
 
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        return obj and obj.sollum_type != SollumType.NONE
-
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
+
+    def draw_sollum_type(self, layout, obj):
+        row = layout.row()
+        row.enabled = False
+        row.prop(obj, "sollum_type")
 
     def draw(self, context):
         layout = self.layout
@@ -274,26 +360,34 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
 
         obj = context.active_object
 
-        row = layout.row()
-        row.enabled = False
-        row.prop(obj, "sollum_type")
-
         if obj.sollum_type == SollumType.DRAWABLE:
+            self.draw_sollum_type(layout, obj)
             draw_drawable_properties(layout, obj)
         elif obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
+            self.draw_sollum_type(layout, obj)
             draw_geometry_properties(layout, obj)
         elif(obj.sollum_type == SollumType.DRAWABLE_MODEL):
+            self.draw_sollum_type(layout, obj)
             self.draw_drawable_model_properties(context, layout, obj)
+            self.draw_sollum_type(layout, obj)
         elif(obj.sollum_type == SollumType.FRAGMENT):
+            self.draw_sollum_type(layout, obj)
             draw_fragment_properties(layout, obj)
         elif(obj.sollum_type == SollumType.LOD):
+            self.draw_sollum_type(layout, obj)
             draw_lod_properties(layout, obj)
         elif(obj.sollum_type == SollumType.ARCHETYPE):
+            self.draw_sollum_type(layout, obj)
             draw_archetype_properties(layout, obj)
         elif(obj.sollum_type == SollumType.CHILD):
+            self.draw_sollum_type(layout, obj)
             draw_child_properties(layout, obj)
         elif obj.sollum_type in BOUND_TYPES:
+            self.draw_sollum_type(layout, obj)
             draw_bound_properties(layout, obj)
+        else:
+            layout.label(
+                text="No sollumz objects in scene selected.", icon="ERROR")
 
 
 class SOLLUMZ_MT_sollumz(bpy.types.Menu):

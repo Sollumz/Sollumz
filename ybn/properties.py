@@ -103,7 +103,7 @@ class FlagPresetProp(bpy.types.PropertyGroup):
 
 def get_flag_presets_path():
     name = 'flag_presets.xml'
-    dir = bpy.utils.user_resource('SCRIPTS', "addons") + '\Sollumz'
+    dir = bpy.utils.user_resource('SCRIPTS', path="addons") + '\Sollumz'
     found = False
     for root, dirs, files in os.walk(dir):
         if name in files:

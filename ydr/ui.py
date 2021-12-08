@@ -22,17 +22,7 @@ def draw_material_properties(layout, mat):
     row.prop(mat.shader_properties, "filename")
 
 
-def draw_shader(layout, mat):
-    layout.label(text="Material Properties")
-    box = layout.box()
-    row = box.row()
-    row.prop(mat.shader_properties, "renderbucket")
-    row.prop(mat.shader_properties, "filename")
-    row.prop(mat.shader_properties, "name")
-
-    layout.label(text="Texture Parameters")
-    nodes = mat.node_tree.nodes
-
+def draw_shader_texture_params(layout, mat):
     # only using selected nodes because if you use the node tree weird bug
     # where if you select one of the image nodes it swaps around the order that you edit them in...
     # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
@@ -41,7 +31,7 @@ def draw_shader(layout, mat):
     # for n in nodes:
     # if(n.select == True):
     # selected_nodes.append(n)
-
+    nodes = mat.node_tree.nodes
     for n in nodes:
         if(isinstance(n, bpy.types.ShaderNodeTexImage)):
             # if(n.name == "SpecSampler"):
@@ -94,9 +84,18 @@ def draw_shader(layout, mat):
             row.prop(n.texture_flags, "unk24")
             row.prop(n.texture_properties, "extra_flags")
 
-    layout.label(text="Shader Parameters")
-    value_param_box = layout.box()
 
+def draw_shader_value_params(layout, mat):
+    value_param_box = layout.box()
+    # only using selected nodes because if you use the node tree weird bug
+    # where if you select one of the image nodes it swaps around the order that you edit them in...
+    # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
+    # annoyying as hell
+    #selected_nodes = []
+    # for n in nodes:
+    # if(n.select == True):
+    # selected_nodes.append(n)
+    nodes = mat.node_tree.nodes
     for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
         if(isinstance(n, bpy.types.ShaderNodeValue)):
             if(n.name[-1] == "x"):
@@ -114,6 +113,15 @@ def draw_shader(layout, mat):
                 row.prop(w.outputs[0], "default_value", text="W:")
 
 
+def draw_shader(layout, mat):
+    layout.label(text="Material Properties")
+    box = layout.box()
+    row = box.row()
+    row.prop(mat.shader_properties, "renderbucket")
+    row.prop(mat.shader_properties, "filename")
+    row.prop(mat.shader_properties, "name")
+
+
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_SHADER_MATERIALS_LIST"
 
@@ -124,11 +132,11 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
         # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=name, icon='MATERIAL')
+            row.label(text=name, icon='SHADING_TEXTURE')
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=name, emboss=False, icon='MATERIAL')
+                        text=name, emboss=False, icon='SHADING_TEXTURE')
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
@@ -188,6 +196,10 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 1
 
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="MESH_CUBE")
+
     def draw(self, context):
         pass
 
@@ -200,6 +212,9 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="SHADING_RENDERED")
 
     def draw(self, context):
         layout = self.layout
@@ -219,8 +234,12 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
+    def draw_header(self, context):
+        self.layout.label(text="", icon="CUBE")
+
     def draw(self, context):
         layout = self.layout
+
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
         row.prop(context.scene, "use_mesh_name")
