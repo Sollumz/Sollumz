@@ -266,7 +266,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if mat.sollum_type == MaterialType.SHADER:
             draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION and aobj.sollum_type in BOUND_POLYGON_TYPES:
+        elif mat.sollum_type == MaterialType.COLLISION:
             draw_collision_material_properties(layout, mat)
         else:
             layout.label(text="No sollumz material active.", icon="ERROR")
