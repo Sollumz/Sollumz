@@ -33,7 +33,7 @@ def draw_shader_texture_params(layout, mat):
     # selected_nodes.append(n)
     nodes = mat.node_tree.nodes
     for n in nodes:
-        if(isinstance(n, bpy.types.ShaderNodeTexImage)):
+        if(isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz):
             # if(n.name == "SpecSampler"):
             box = layout.box()
             row = box.row(align=True)
@@ -97,7 +97,7 @@ def draw_shader_value_params(layout, mat):
     # selected_nodes.append(n)
     nodes = mat.node_tree.nodes
     for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-        if(isinstance(n, bpy.types.ShaderNodeValue)):
+        if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):
             if(n.name[-1] == "x"):
                 row = value_param_box.row()
                 row.label(text=n.name[:-2])

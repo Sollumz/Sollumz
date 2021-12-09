@@ -140,12 +140,8 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
         for n in mat.node_tree.nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage):
-                try:
-                    existing_texture = bpy.data.images["Texture"]
-                except:
-                    existing_texture = None
                 texture = bpy.data.images.new(
-                    name="Texture", width=512, height=512) if not existing_texture else existing_texture
+                    name="Texture", width=512, height=512)
                 n.image = texture
 
     def run(self, context):

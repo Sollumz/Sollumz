@@ -244,6 +244,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 def create_image_node(node_tree, param):
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     imgnode.name = param.name
+    imgnode.is_sollumz = True
     return imgnode
 
 
@@ -252,6 +253,7 @@ def create_vector_nodes(node_tree, param):
         if attr.name != 'name' and attr.name != 'type':
             node = node_tree.nodes.new("ShaderNodeValue")
             node.name = f"{param.name}_{attr.name}"
+            node.is_sollumz = True
             node.outputs[0].default_value = float(attr.value)
 
 

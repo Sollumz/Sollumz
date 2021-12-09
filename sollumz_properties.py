@@ -389,6 +389,8 @@ def register():
         options={"HIDDEN"}
     )
 
+    bpy.types.ShaderNode.is_sollumz = bpy.props.BoolProperty(default=False)
+
     bpy.types.Object.entity_properties = bpy.props.PointerProperty(
         type=EntityProperties)
 
