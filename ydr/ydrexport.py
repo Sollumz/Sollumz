@@ -147,6 +147,9 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
     if(bones != None):
         for i in range(len(bones)):
             bone_index_map[bones[i].name] = i
+    else:
+        for i in range(256):
+            bone_index_map[f"UNKNOWN_BONE.{i}"] = i
 
     blend_weights = []
     blend_indices = []
@@ -180,6 +183,14 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
             if valid_weights > 0 and max_weights_index != -1:
                 bw[max_weights_index] = bw[max_weights_index] + \
                     (255 - total_weights)
+
+            f = ((x, y) for x, y in zip(bw, bi))
+            sorted_f = sorted(f, key=lambda x: x[0])
+            bi = [i[1] for i in sorted_f]
+            bw.sort()
+
+            bw.append(bw.pop(0))
+            bi.append(bi.pop(0))
 
             blend_weights.append(bw)
             blend_indices.append(bi)
@@ -329,6 +340,21 @@ def get_shader_index(mats, mat):
             return i
 
 
+def get_used_indices(mesh):
+    return 128
+
+
+def get_bone_ids(mesh, bones=None):
+    bone_count = 0
+
+    if bones:
+        bone_count = len(bones)
+    else:
+        bone_count = get_used_indices(mesh)
+
+    return [id for id in range(bone_count)]
+
+
 def geometry_from_object(obj, mats, bones=None, export_settings=None):
     geometry = GeometryItem()
 
@@ -339,6 +365,8 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     bbmin, bbmax = get_bound_extents(obj, world=export_settings.use_transforms)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
+
+    geometry.bone_ids = get_bone_ids(mesh, bones)
 
     shader_name = obj.active_material.shader_properties.name
     shader = ShaderManager.shaders[shader_name]
