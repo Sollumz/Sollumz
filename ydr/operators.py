@@ -1,10 +1,10 @@
-from Sollumz.resources.shader import Shader, ShaderManager
-import bpy
-import traceback
-from ..tools.drawablehelper import *
-from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
 from ..sollumz_helper import SOLLUMZ_OT_base
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
+from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
+from ..tools.drawablehelper import *
+from ..resources.shader import ShaderManager
+import traceback
+import bpy
 
 
 class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):

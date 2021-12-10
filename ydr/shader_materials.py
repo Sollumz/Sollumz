@@ -1,5 +1,5 @@
 import bpy
-from ..resources.shader import Shader, ShaderManager
+from ..resources.shader import ShaderManager
 from ..sollumz_properties import MaterialType
 from collections import namedtuple
 

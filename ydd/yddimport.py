@@ -1,5 +1,6 @@
 import bpy
 import os
+from ..tools.drawablehelper import join_drawable_geometries
 from ..resources.drawable import *
 from ..ydr.ydrimport import drawable_to_obj
 
@@ -55,6 +56,8 @@ def drawable_dict_to_obj(drawable_dict, filepath):
     return dict_obj
 
 
-def import_ydd(filepath):
+def import_ydd(filepath, join_geometries):
     ydd_xml = YDD.from_xml_file(filepath)
-    drawable_dict_to_obj(ydd_xml, filepath)
+    drawable_dict = drawable_dict_to_obj(ydd_xml, filepath)
+    if join_geometries:
+        join_drawable_geometries(drawable_dict)

@@ -46,14 +46,20 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         default=False,
     )
 
+    join_geometries: bpy.props.BoolProperty(
+        name="Join Geometries",
+        description="Joins the drawables geometries into a single mesh.",
+        default=True,
+    )
+
     def import_file(self, filepath, ext):
         try:
             valid_type = False
             if ext == YDR.file_extension:
-                import_ydr(filepath)
+                import_ydr(filepath, self.join_geometries)
                 valid_type = True
             elif ext == YDD.file_extension:
-                import_ydd(filepath)
+                import_ydd(filepath, self.join_geometries)
                 valid_type = True
             elif ext == YFT.file_extension:
                 import_yft(filepath)

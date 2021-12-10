@@ -1,6 +1,8 @@
 import bpy
 from ..ydr.shader_materials import create_shader
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
+from ..tools.meshhelper import get_children_recursive
+from ..tools.blenderhelper import join_objects
 
 
 def create_drawable(sollum_type=SollumType.DRAWABLE):
@@ -67,6 +69,15 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
         # add object to collection
         bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
+
+
+def join_drawable_geometries(drawable):
+    cobjs = []
+    children = get_children_recursive(drawable)
+    for obj in children:
+        if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
+            cobjs.append(obj)
+    join_objects(cobjs)
 
 
 def convert_material(material):

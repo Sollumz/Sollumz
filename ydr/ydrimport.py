@@ -8,6 +8,7 @@ from ..resources.drawable import *
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import *
 from ..tools.blenderhelper import *
+from ..tools.drawablehelper import join_drawable_geometries
 from ..resources.shader import ShaderManager
 
 
@@ -480,7 +481,9 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     return obj
 
 
-def import_ydr(filepath):
+def import_ydr(filepath, join_geometries):
     ydr_xml = YDR.from_xml_file(filepath)
-    drawable_to_obj(ydr_xml, filepath, os.path.basename(
+    drawable = drawable_to_obj(ydr_xml, filepath, os.path.basename(
         filepath.replace(YDR.file_extension, '')))
+    if join_geometries:
+        join_drawable_geometries(drawable)
