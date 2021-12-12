@@ -56,7 +56,7 @@ def create_box(mesh, size=2, matrix=None):
 def create_sphere(mesh, radius=1):
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, diameter=radius)
+        bm, u_segments=32, v_segments=16, radius=radius)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
@@ -69,8 +69,8 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
         cap_ends=True,
         cap_tris=True,
         segments=32,
-        diameter1=radius,
-        diameter2=radius,
+        radius1=radius,
+        radius2=radius,
         depth=length,
         matrix=rot_mat if rot_mat else Matrix()
     )
@@ -89,8 +89,8 @@ def create_disc(mesh, radius=1, length=0.08):
         cap_ends=True,
         cap_tris=True,
         segments=32,
-        diameter1=radius,
-        diameter2=radius,
+        radius1=radius,
+        radius2=radius,
         depth=length,
         matrix=rot_mat,
     )
@@ -106,7 +106,7 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
 
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, diameter=diameter)
+        bm, u_segments=32, v_segments=16, radius=diameter)
     bm.to_mesh(mesh)
 
     center = Vector()
