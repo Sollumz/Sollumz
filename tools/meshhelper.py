@@ -5,6 +5,8 @@ from mathutils.geometry import distance_point_to_plane
 from math import radians
 from .utils import *
 
+USE_DIAMETER = bpy.app.version[0] == 2
+
 
 def create_box_from_extents(mesh, bbmin, bbmax):
     # Create box from bbmin and bbmax
@@ -55,8 +57,15 @@ def create_box(mesh, size=2, matrix=None):
 
 def create_sphere(mesh, radius=1):
     bm = bmesh.new()
+
+    kwargs = {}
+    if USE_DIAMETER:
+        kwargs['diameter'] = radius
+    else:
+        kwargs['radius'] = radius
+
     bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, diameter=radius)
+        bm, u_segments=32, v_segments=16, **kwargs)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
@@ -64,15 +73,23 @@ def create_sphere(mesh, radius=1):
 
 def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
     bm = bmesh.new()
+
+    kwargs = {}
+    if USE_DIAMETER:
+        kwargs['diameter1'] = radius
+        kwargs['diameter2'] = radius
+    else:
+        kwargs['radius1'] = radius
+        kwargs['radius2'] = radius
+
     bmesh.ops.create_cone(
         bm,
         cap_ends=True,
         cap_tris=True,
         segments=32,
-        diameter1=radius,
-        diameter2=radius,
         depth=length,
-        matrix=rot_mat if rot_mat else Matrix()
+        matrix=rot_mat if rot_mat else Matrix(),
+        **kwargs
     )
     bm.to_mesh(mesh)
     bm.free()
@@ -84,15 +101,23 @@ def create_disc(mesh, radius=1, length=0.08):
     # rot_mat = Matrix.Rotation(radians(90.0), 4, "Y") @ lookatlh(
     #     Vector((0, 0, 0)), Vector((1, 0, 0)), Vector((0, 0, 1)))
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
+
+    kwargs = {}
+    if USE_DIAMETER:
+        kwargs['diameter1'] = radius
+        kwargs['diameter2'] = radius
+    else:
+        kwargs['radius1'] = radius
+        kwargs['radius2'] = radius
+
     bmesh.ops.create_cone(
         bm,
         cap_ends=True,
         cap_tris=True,
         segments=32,
-        diameter1=radius,
-        diameter2=radius,
         depth=length,
         matrix=rot_mat,
+        **kwargs
     )
     bm.to_mesh(mesh)
     bm.free()
@@ -104,9 +129,15 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     if diameter < 0:
         raise ValueError('Cannot create capsule with a diameter less than 0!')
 
+    kwargs = {}
+    if USE_DIAMETER:
+        kwargs['diameter'] = diameter
+    else:
+        kwargs['radius'] = diameter
+
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, diameter=diameter)
+        bm, u_segments=32, v_segments=16, **kwargs)
     bm.to_mesh(mesh)
 
     center = Vector()
