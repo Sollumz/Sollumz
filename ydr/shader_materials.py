@@ -255,8 +255,8 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     comxyz.inputs[1].default_value = "r3"
     comxyz.inputs[7].default_value = "TintUV"
 
-    tsample.inputs[2].default_value = "TintUV"
-    tsample.inputs[3].default_value = "TintColor"
+    tsample.inputs[1].default_value = "TintUV"
+    tsample.inputs[2].default_value = "TintColor"
 
     return gnt
 
