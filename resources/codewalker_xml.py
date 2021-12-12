@@ -320,11 +320,9 @@ class QuaternionProperty(ElementProperty):
 
 class MatrixProperty(ElementProperty):
     value_types = (Matrix)
-    size = 4
 
-    def __init__(self, tag_name: str, value=None, size=3):
+    def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Matrix())
-        self.size = size
 
     @ staticmethod
     def from_xml(element: ET.Element):
@@ -346,8 +344,7 @@ class MatrixProperty(ElementProperty):
             txt += f"{str(self.value[i][0])} "
             txt += f"{str(self.value[i][1])} "
             txt += f"{str(self.value[i][2])} "
-            if self.size == 4:
-                txt += f"{str(self.value[i][3])}"
+            txt += f"{str(self.value[i][3])}"
             txt += "\n"
         element = ET.Element(self.tag_name)
         element.text = txt

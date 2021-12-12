@@ -27,28 +27,26 @@ def create_lod_obj(lod, filepath, materials):
     bpy.context.collection.objects.link(lobj)
 
     lobj.sollum_type = SollumType.FRAGLOD
-    lobj.lod_properties.unk_14 = lod.unknown_14
-    lobj.lod_properties.unk_18 = lod.unknown_18
-    lobj.lod_properties.unk_1c = lod.unknown_1c
-    lobj.lod_properties.unk_30 = lod.unknown_30
-    lobj.lod_properties.unk_40 = lod.unknown_40
-    lobj.lod_properties.unk_50 = lod.unknown_50
-    lobj.lod_properties.unk_60 = lod.unknown_60
-    lobj.lod_properties.unk_70 = lod.unknown_70
-    lobj.lod_properties.unk_80 = lod.unknown_80
-    lobj.lod_properties.unk_90 = lod.unknown_90
-    lobj.lod_properties.unk_a0 = lod.unknown_a0
-    lobj.lod_properties.unk_b0 = lod.unknown_b0
+    lobj.lod_properties.unknown_14 = lod.unknown_14
+    lobj.lod_properties.unknown_18 = lod.unknown_18
+    lobj.lod_properties.unknown_1c = lod.unknown_1c
+    lobj.lod_properties.position_offset = lod.position_offset
+    lobj.lod_properties.unknown_40 = lod.unknown_40
+    lobj.lod_properties.unknown_40 = lod.unknown_50
+    lobj.lod_properties.damping_linear_c = lod.damping_linear_c
+    lobj.lod_properties.damping_linear_v = lod.damping_linear_v
+    lobj.lod_properties.damping_linear_v2 = lod.damping_linear_v2
+    lobj.lod_properties.damping_angular_c = lod.damping_angular_c
+    lobj.lod_properties.damping_angular_v = lod.damping_angular_v
+    lobj.lod_properties.damping_angular_v2 = lod.damping_angular_v2
     # archetype properties
-    lobj.lod_properties.name = lod.archetype.name
-    lobj.lod_properties.mass = lod.archetype.mass
-    lobj.lod_properties.mass_inv = lod.archetype.mass_inv
-    lobj.lod_properties.unknown_48 = lod.archetype.unknown_48
-    lobj.lod_properties.unknown_4c = lod.archetype.unknown_4c
-    lobj.lod_properties.unknown_50 = lod.archetype.unknown_50
-    lobj.lod_properties.unknown_54 = lod.archetype.unknown_54
-    lobj.lod_properties.inertia_tensor = lod.archetype.inertia_tensor
-    lobj.lod_properties.intertia_tensor_inv = lod.archetype.intertia_tensor_inv
+    lobj.lod_properties.archetype_name = lod.archetype.name
+    lobj.lod_properties.archetype_mass = lod.archetype.mass
+    lobj.lod_properties.archetype_unknown_48 = lod.archetype.unknown_48
+    lobj.lod_properties.archetype_unknown_4c = lod.archetype.unknown_4c
+    lobj.lod_properties.archetype_unknown_50 = lod.archetype.unknown_50
+    lobj.lod_properties.archetype_unknown_54 = lod.archetype.unknown_54
+    lobj.lod_properties.archetype_inertia_tensor = lod.archetype.inertia_tensor
 
     gobjs = []
     for idx, group in enumerate(lod.groups):
@@ -58,28 +56,23 @@ def create_lod_obj(lod, filepath, materials):
         bpy.context.collection.objects.link(gobj)
 
         gobj.group_properties.name = group.name
-        gobj.group_properties.unk_byte_4c = group.unk_byte_4c
-        gobj.group_properties.unk_byte_4f = group.unk_byte_4f
-        gobj.group_properties.unk_byte_50 = group.unk_byte_50
-        gobj.group_properties.unk_byte_51 = group.unk_byte_51
-        gobj.group_properties.unk_byte_52 = group.unk_byte_52
-        gobj.group_properties.unk_byte_53 = group.unk_byte_53
-        gobj.group_properties.unk_float_10 = group.unk_float_10
-        gobj.group_properties.unk_float_14 = group.unk_float_14
-        gobj.group_properties.unk_float_18 = group.unk_float_18
-        gobj.group_properties.unk_float_1c = group.unk_float_1c
-        gobj.group_properties.unk_float_20 = group.unk_float_20
-        gobj.group_properties.unk_float_24 = group.unk_float_24
-        gobj.group_properties.unk_float_28 = group.unk_float_28
-        gobj.group_properties.unk_float_2c = group.unk_float_2c
-        gobj.group_properties.unk_float_30 = group.unk_float_30
-        gobj.group_properties.unk_float_34 = group.unk_float_34
-        gobj.group_properties.unk_float_38 = group.unk_float_38
-        gobj.group_properties.unk_float_3c = group.unk_float_3c
-        gobj.group_properties.unk_float_40 = group.unk_float_40
+        gobj.group_properties.glass_window_index = group.glass_window_index
+        gobj.group_properties.glass_flags = group.glass_flags
+        gobj.group_properties.strength = group.strength
+        gobj.group_properties.force_transmission_scale_up = group.force_transmission_scale_up
+        gobj.group_properties.force_transmission_scale_down = group.force_transmission_scale_down
+        gobj.group_properties.joint_stiffness = group.joint_stiffness
+        gobj.group_properties.min_soft_angle_1 = group.min_soft_angle_1
+        gobj.group_properties.max_soft_angle_1 = group.max_soft_angle_1
+        gobj.group_properties.max_soft_angle_2 = group.max_soft_angle_2
+        gobj.group_properties.max_soft_angle_3 = group.max_soft_angle_3
+        gobj.group_properties.rotation_speed = group.rotation_speed
+        gobj.group_properties.rotation_strength = group.rotation_strength
+        gobj.group_properties.restoring_max_torque = group.restoring_max_torque
+        gobj.group_properties.latch_strength = group.latch_strength
         gobj.group_properties.mass = group.mass
-        gobj.group_properties.unk_float_54 = group.unk_float_54
-        gobj.group_properties.unk_float_58 = group.unk_float_58
+        gobj.group_properties.min_damage_force = group.min_damage_force
+        gobj.group_properties.damage_health = group.damage_health
         gobj.group_properties.unk_float_5c = group.unk_float_5c
         gobj.group_properties.unk_float_60 = group.unk_float_60
         gobj.group_properties.unk_float_64 = group.unk_float_64
@@ -111,8 +104,8 @@ def create_lod_obj(lod, filepath, materials):
         cobj.name = gobj.name.replace("_group", "_child")
         cobj.child_properties.group = gobj
         cobj.child_properties.bone_tag = child.bone_tag
-        cobj.child_properties.mass_1 = child.mass_1
-        cobj.child_properties.mass_2 = child.mass_2
+        cobj.child_properties.pristine_mass = child.pristine_mass
+        cobj.child_properties.damaged_mass = child.damaged_mass
         cobj.child_properties.unk_vec = child.unk_vec
         cobj.child_properties.inertia_tensor = child.inertia_tensor
 
@@ -127,9 +120,9 @@ def create_lod_obj(lod, filepath, materials):
             a.parent = cobj
 
         transform = lod.transforms[idx].value
-        a = transform[3][0] + lod.unknown_30.x
-        b = transform[3][1] + lod.unknown_30.y
-        c = transform[3][2] + lod.unknown_30.z
+        a = transform[3][0] + lod.position_offset.x
+        b = transform[3][1] + lod.position_offset.y
+        c = transform[3][2] + lod.position_offset.z
         transform[3][0] = a
         transform[3][1] = b
         transform[3][2] = c
@@ -153,8 +146,8 @@ def fragment_to_obj(fragment, filepath):
     fobj.fragment_properties.unk_c0 = fragment.unknown_c0
     fobj.fragment_properties.unk_c4 = fragment.unknown_c4
     fobj.fragment_properties.unk_cc = fragment.unknown_cc
-    fobj.fragment_properties.unk_d0 = fragment.unknown_d0
-    fobj.fragment_properties.unk_d4 = fragment.unknown_d4
+    fobj.fragment_properties.gravity_factor = fragment.gravity_factor
+    fobj.fragment_properties.buoyancy_factor = fragment.buoyancy_factor
 
     materials = None
     if fragment.drawable:
@@ -219,7 +212,8 @@ def import_yft(filepath, split_by_bone=False):
         if not dobj:
             raise Exception("No fragment drawable found to split by bone!")
 
-        join_drawable_geometries(dobj)
-        geo = get_drawable_geometries(dobj)[0]
-
-        split_object_by_vertex_groups(geo)
+        for child in dobj.children:
+            if child.sollum_type == SollumType.DRAWABLE_MODEL:
+                join_drawable_geometries(child)
+                geo = get_drawable_geometries(child)[0]
+                split_object_by_vertex_groups(geo)

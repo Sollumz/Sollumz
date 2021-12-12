@@ -152,6 +152,11 @@ class ExportSettings(bpy.types.PropertyGroup):
         description="Exports objects with the parent empty object's transforms applied to the vertices",
         default=True
     )
+    export_with_hi: bpy.props.BoolProperty(
+        name="Export With _hi",
+        description="Exports fragment with _hi file.",
+        default=True
+    )
 
 
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -293,7 +298,10 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.FRAGMENT:
-                filepath = self.get_filepath(obj.name, YFT.file_extension)
+                self.export_settings.use_transforms = False
+                name = obj.name if "/" not in obj.name else obj.name.replace(
+                    "pack:/", "")
+                filepath = self.get_filepath(name, YFT.file_extension)
                 export_yft(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type in BOUND_TYPES:

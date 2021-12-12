@@ -19,6 +19,14 @@ def float32_list(list):
     return result
 
 
+def divide_vector_inv(v):
+    r = Vector((0, 0, 0))
+    r.x = 1 / v.x
+    r.y = 1 / v.y
+    r.z = 1 / v.z
+    return r
+
+
 def subtract_from_vector(v, f):
     r = Vector((0, 0, 0))
     r.x = v.x - f
