@@ -1,3 +1,4 @@
+import os
 import traceback
 from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
@@ -237,5 +238,13 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
 
 
 def export_yft(exportop, obj, filepath, export_settings):
-    fragment_from_object(exportop, obj, filepath,
-                         export_settings).write_xml(filepath)
+    fragment = fragment_from_object(exportop, obj, filepath, export_settings)
+    fragment.write_xml(filepath)
+
+    if export_settings.export_with_hi:
+        fragment.drawable.drawable_models_med = None
+        fragment.drawable.drawable_models_low = None
+        fragment.drawable.drawable_models_vlow = None
+        filepath = os.path.join(os.path.dirname(filepath),
+                                os.path.basename(filepath).replace(".yft.xml", "_hi.yft.xml"))
+        fragment.write_xml(filepath)
