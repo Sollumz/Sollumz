@@ -6,9 +6,9 @@ class SollumType(str, Enum):
     NONE = "sollumz_none"
 
     FRAGMENT = "sollumz_fragment"
-    LOD = "sollumz_lod"
-    ARCHETYPE = "sollumz_archetype"
-    CHILD = "sollumz_child"
+    FRAGGROUP = "sollumz_fraggroup"
+    FRAGCHILD = "sollumz_fragchild"
+    FRAGLOD = "sollumz_lod"
 
     DRAWABLE_DICTIONARY = "sollumz_drawable_dictionary"
     DRAWABLE = "sollumz_drawable"
@@ -119,9 +119,7 @@ class EntityPriorityLevel(str, Enum):
 
 FRAGMENT_TYPES = [
     SollumType.FRAGMENT,
-    SollumType.LOD,
-    SollumType.CHILD,
-    SollumType.ARCHETYPE,
+    SollumType.FRAGGROUP,
 ]
 
 BOUND_TYPES = [
@@ -170,9 +168,9 @@ SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_POLY_TRIANGLE: "Bound Poly Mesh",
 
     SollumType.FRAGMENT: "Fragment",
-    SollumType.LOD: "Fragment LOD",
-    SollumType.ARCHETYPE: "Fragment Archetype",
-    SollumType.CHILD: "Fragment Child",
+    SollumType.FRAGGROUP: "Fragment Group",
+    SollumType.FRAGCHILD: "Fragment Child",
+    SollumType.FRAGLOD: "Fragment LOD",
 
     SollumType.NONE: "None",
     SollumType.DRAWABLE_DICTIONARY: "Drawable Dictionary",

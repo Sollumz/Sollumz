@@ -1,7 +1,8 @@
 from .properties import CollisionMatFlags
 from ..resources.bound import *
-from ..tools.meshhelper import *
 from ..sollumz_properties import MaterialType, SollumType
+from ..tools.meshhelper import *
+from ..tools.blenderhelper import delete_object
 from ..tools.utils import *
 
 
@@ -295,6 +296,27 @@ def bound_from_object(obj, export_settings):
         return geometry_from_object(obj, SollumType.BOUND_GEOMETRY, export_settings)
     elif obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
         return geometry_from_object(obj, SollumType.BOUND_GEOMETRYBVH, export_settings)
+
+
+def composite_from_objects(objs, export_settings):
+    tobj = bpy.data.objects.new("temp", None)
+    old_parents = []
+    for obj in objs:
+        old_parents.append(obj.parent)
+        obj.parent = tobj
+
+    composite = init_bound(BoundsComposite(), tobj, export_settings)
+
+    for child in objs:
+        bound = bound_from_object(child, export_settings)
+        if bound:
+            composite.children.append(bound)
+
+    for obj in objs:
+        obj.parent = old_parents[0]
+        old_parents.pop(0)
+
+    return composite
 
 
 def composite_from_object(obj, export_settings):

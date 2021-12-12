@@ -52,6 +52,12 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         default=True,
     )
 
+    split_by_bone: bpy.props.BoolProperty(
+        name="Split by Bone",
+        description="Splits the geometries by bone.",
+        default=True,
+    )
+
     def import_file(self, filepath, ext):
         try:
             valid_type = False
@@ -62,7 +68,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 import_ydd(filepath, self.join_geometries)
                 valid_type = True
             elif ext == YFT.file_extension:
-                import_yft(filepath)
+                import_yft(filepath, self.split_by_bone)
                 valid_type = True
             elif ext == YBN.file_extension:
                 import_ybn(filepath)
@@ -123,11 +129,13 @@ class ExportSettings(bpy.types.PropertyGroup):
         options={'ENUM_FLAG'},
         items=((SollumType.DRAWABLE.value, "Drawables", ""),
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
-               (SollumType.BOUND_COMPOSITE.value, "Bounds", "")),
+               (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
+               (SollumType.FRAGMENT.value, "Fragments", "")),
         description="Which kind of sollumz objects to export",
         default={SollumType.DRAWABLE.value,
                  SollumType.DRAWABLE_DICTIONARY.value,
-                 SollumType.BOUND_COMPOSITE.value},
+                 SollumType.BOUND_COMPOSITE.value,
+                 SollumType.FRAGMENT.value},
     )
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",
@@ -142,6 +150,11 @@ class ExportSettings(bpy.types.PropertyGroup):
     use_transforms: bpy.props.BoolProperty(
         name="Use Parent Transforms",
         description="Exports objects with the parent empty object's transforms applied to the vertices",
+        default=True
+    )
+    export_with_hi: bpy.props.BoolProperty(
+        name="Export With _hi",
+        description="Exports fragment with _hi file.",
         default=True
     )
 
@@ -285,8 +298,11 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.FRAGMENT:
-                filepath = self.get_filepath(obj.name, YFT.file_extension)
-                export_yft(obj, filepath)
+                self.export_settings.use_transforms = False
+                name = obj.name if "/" not in obj.name else obj.name.replace(
+                    "pack:/", "")
+                filepath = self.get_filepath(name, YFT.file_extension)
+                export_yft(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type in BOUND_TYPES:
                 filepath = self.get_filepath(obj.name, YBN.file_extension)

@@ -327,6 +327,7 @@ class MatrixProperty(ElementProperty):
     @ staticmethod
     def from_xml(element: ET.Element):
         s_mtx = element.text.strip().replace("\n", "").split("   ")
+        s_mtx = [s for s in s_mtx if s]  # removes empty strings
         m = Matrix()
         r_idx = 0
         for item in s_mtx:
@@ -345,7 +346,9 @@ class MatrixProperty(ElementProperty):
             txt += f"{str(self.value[i][2])} "
             txt += f"{str(self.value[i][3])}"
             txt += "\n"
-        return ET.Element(self.tag_name, Text=txt)
+        element = ET.Element(self.tag_name)
+        element.text = txt
+        return element
 
 
 class FlagsProperty(ElementProperty):

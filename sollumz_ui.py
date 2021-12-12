@@ -3,7 +3,7 @@ from .sollumz_helper import *
 from .sollumz_properties import *
 from .ybn.ui import draw_bound_properties, draw_collision_material_properties
 from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_shader_texture_params, draw_shader_value_params
-from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_lod_properties, draw_child_properties
+from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_group_properties, draw_lod_properties, draw_child_properties
 
 
 class SOLLUMZ_PT_export_main(bpy.types.Panel):
@@ -65,6 +65,30 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel):
         col.prop(operator.export_settings, "sollum_types")
 
 
+class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Fragment"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 3
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.export_settings, "export_with_hi")
+
+
 class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
     bl_region_type = 'TOOL_PROPS'
@@ -86,7 +110,7 @@ class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        layout.prop(operator.export_settings, "use_transforms")
+        layout.prop(operator.export_settings, "export_with_hi")
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
@@ -214,16 +238,16 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
                 text="Please select a valid object.")
             return
         layout.label(text="Entity Fields")
-        #box.prop(aobj.ymap_properties, "archetype_name")
+        # box.prop(aobj.ymap_properties, "archetype_name")
         layout.prop(aobj, "name", text="Archetype Name")
-        #box.prop(aobj.ymap_properties, "position")
+        # box.prop(aobj.ymap_properties, "position")
         row = layout.row()
         row.prop(aobj, "location", text="Position")
-        #box.prop(aobj.ymap_properties, "rotation")
+        # box.prop(aobj.ymap_properties, "rotation")
         row = layout.row()
         row.prop(aobj, "rotation_euler", text="Rotation")
-        #box.prop(aobj.ymap_properties, "scale_xy")
-        #box.prop(aobj.ymap_properties, "scale_z")
+        # box.prop(aobj.ymap_properties, "scale_xy")
+        # box.prop(aobj.ymap_properties, "scale_z")
         row = layout.row()
         row.prop(aobj, "scale", text="ScaleXYZ")
         row = layout.row()
@@ -373,15 +397,15 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         elif(obj.sollum_type == SollumType.FRAGMENT):
             self.draw_sollum_type(layout, obj)
             draw_fragment_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.LOD):
+        elif(obj.sollum_type == SollumType.FRAGGROUP):
             self.draw_sollum_type(layout, obj)
-            draw_lod_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.ARCHETYPE):
-            self.draw_sollum_type(layout, obj)
-            draw_archetype_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.CHILD):
+            draw_group_properties(layout, obj)
+        elif(obj.sollum_type == SollumType.FRAGCHILD):
             self.draw_sollum_type(layout, obj)
             draw_child_properties(layout, obj)
+        elif(obj.sollum_type == SollumType.FRAGLOD):
+            self.draw_sollum_type(layout, obj)
+            draw_lod_properties(layout, obj)
         elif obj.sollum_type in BOUND_TYPES:
             self.draw_sollum_type(layout, obj)
             draw_bound_properties(layout, obj)

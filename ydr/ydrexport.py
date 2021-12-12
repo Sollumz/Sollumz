@@ -3,6 +3,7 @@ import shutil
 import collections
 import bmesh
 import bpy
+from ..resources.fragment import FragmentDrawable
 from ..resources.drawable import *
 from ..resources.shader import ShaderManager
 from ..tools.meshhelper import *
@@ -554,10 +555,16 @@ def light_from_object(obj):
 
 
 # REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
-def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=None):
-    drawable = Drawable()
+def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=None, is_frag=False, write_shaders=True):
+    drawable = None
+    if is_frag:
+        drawable = FragmentDrawable()
+    else:
+        drawable = Drawable()
 
-    drawable.name = obj.name
+    drawable.name = obj.name if "." not in obj.name else obj.name.split(".")[0]
+    if is_frag:
+        drawable.matrix = obj.matrix_basis
     drawable.bounding_sphere_center = get_bound_center(
         obj, world=export_settings.use_transforms)
     drawable.bounding_sphere_radius = get_obj_radius(
@@ -577,13 +584,16 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
         raise Exception(
             f"No materials on object: {obj.name}, will be skipped.")
 
-    for shader in shaders:
-        drawable.shader_group.shaders.append(shader)
+    if write_shaders:
+        for shader in shaders:
+            drawable.shader_group.shaders.append(shader)
 
-    td, messages = texture_dictionary_from_materials(
-        obj, os.path.dirname(exportpath))
-    drawable.shader_group.texture_dictionary = td
-    exportop.messages += messages
+            td, messages = texture_dictionary_from_materials(
+                obj, os.path.dirname(exportpath))
+            drawable.shader_group.texture_dictionary = td
+            exportop.messages += messages
+    else:
+        drawable.shader_group = None
 
     if bones is None:
         if obj.pose is not None:

@@ -21,8 +21,8 @@ class YFT:
 class BoneTransformItem(MatrixProperty):
     tag_name = "Item"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Matrix())
 
 
 class BoneTransformsListProperty(ListProperty):
@@ -31,7 +31,7 @@ class BoneTransformsListProperty(ListProperty):
 
     def __init__(self, tag_name=None):
         super().__init__(tag_name or BoneTransformsListProperty.tag_name)
-        self.unk = AttributeProperty("unk", 0)
+        self.unk = AttributeProperty("unk", 1)
 
 
 class ArchetypeProperty(ElementTree):
@@ -54,8 +54,8 @@ class ArchetypeProperty(ElementTree):
 class TransformItem(MatrixProperty):
     tag_name = "Item"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Matrix())
 
 
 class TransformsListProperty(ListProperty):
@@ -64,7 +64,6 @@ class TransformsListProperty(ListProperty):
 
     def __init__(self, tag_name=None):
         super().__init__(tag_name or TransformsListProperty.tag_name)
-        self.unk = AttributeProperty("unk", 0)
 
 
 class ChildrenItem(ElementTree):
@@ -74,8 +73,8 @@ class ChildrenItem(ElementTree):
         super().__init__()
         self.group_index = ValueProperty("GroupIndex")
         self.bone_tag = ValueProperty("BoneTag")
-        self.mass_1 = ValueProperty("Mass1")
-        self.mass_2 = ValueProperty("Mass2")
+        self.pristine_mass = ValueProperty("PristineMass")
+        self.damaged_mass = ValueProperty("DamagedMass")
         self.unk_float = ValueProperty("UnkFloat")
         self.unk_vec = VectorProperty("UnkVec")
         self.inertia_tensor = QuaternionProperty("InertiaTensor")
@@ -94,30 +93,27 @@ class GroupItem(ElementTree):
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name")
-        self.index = ValueProperty("Index")
         self.parent_index = ValueProperty("ParentIndex")
-        self.unk_byte_4c = ValueProperty("UnkByte4C")
-        self.unk_byte_4f = ValueProperty("UnkByte4F")
-        self.unk_byte_50 = ValueProperty("UnkByte50")
-        self.unk_byte_51 = ValueProperty("UnkByte51")  # always 255
-        self.unk_byte_52 = ValueProperty("UnkByte52")
-        self.unk_byte_53 = ValueProperty("UnkByte53")
-        self.unk_float_10 = ValueProperty("UnkFloat10")
-        self.unk_float_14 = ValueProperty("UnkFloat14")
-        self.unk_float_18 = ValueProperty("UnkFloat18")
-        self.unk_float_1c = ValueProperty("UnkFloat1C")
-        self.unk_float_20 = ValueProperty("UnkFloat20")
-        self.unk_float_24 = ValueProperty("UnkFloat24")
-        self.unk_float_28 = ValueProperty("UnkFloat28")
-        self.unk_float_2c = ValueProperty("UnkFloat2C")
-        self.unk_float_30 = ValueProperty("UnkFloat30")
-        self.unk_float_34 = ValueProperty("UnkFloat34")
-        self.unk_float_38 = ValueProperty("UnkFloat38")
-        self.unk_float_3c = ValueProperty("UnkFloat3C")
-        self.unk_float_40 = ValueProperty("UnkFloat40")
+        self.glass_window_index = ValueProperty("GlassWindowIndex")
+        self.glass_flags = ValueProperty("GlassFlags")
+        self.strength = ValueProperty("Strength")
+        self.force_transmission_scale_up = ValueProperty(
+            "ForceTransmissionScaleUp")
+        self.force_transmission_scale_down = ValueProperty(
+            "ForceTransmissionScaleDown")
+        self.joint_stiffness = ValueProperty("JointStiffness")
+        self.min_soft_angle_1 = ValueProperty("MinSoftAngle1")
+        self.max_soft_angle_1 = ValueProperty("MaxSoftAngle1")
+        self.max_soft_angle_2 = ValueProperty("MaxSoftAngle2")
+        self.max_soft_angle_3 = ValueProperty("MaxSoftAngle3")
+        self.rotation_speed = ValueProperty("RotationSpeed")
+        self.rotation_strength = ValueProperty("RotationStrength")
+        self.restoring_strength = ValueProperty("RestoringStrength")
+        self.restoring_max_torque = ValueProperty("RestoringMaxTorque")
+        self.latch_strength = ValueProperty("LatchStrength")
         self.mass = ValueProperty("Mass")
-        self.unk_float_54 = ValueProperty("UnkFloat54")
-        self.unk_float_58 = ValueProperty("UnkFloat58")
+        self.min_damage_force = ValueProperty("MinDamageForce")
+        self.damage_health = ValueProperty("DamageHealth")
         self.unk_float_5c = ValueProperty("UnkFloat5C")
         self.unk_float_60 = ValueProperty("UnkFloat60")
         self.unk_float_64 = ValueProperty("UnkFloat64")
@@ -143,15 +139,15 @@ class LODProperty(ElementTree):
         self.unknown_14 = ValueProperty("Unknown14")
         self.unknown_18 = ValueProperty("Unknown18")
         self.unknown_1c = ValueProperty("Unknown1C")
-        self.unknown_30 = VectorProperty("Unknown30")
+        self.position_offset = VectorProperty("PositionOffset")
         self.unknown_40 = VectorProperty("Unknown40")
         self.unknown_50 = VectorProperty("Unknown50")
-        self.unknown_60 = VectorProperty("Unknown60")
-        self.unknown_70 = VectorProperty("Unknown70")
-        self.unknown_80 = VectorProperty("Unknown80")
-        self.unknown_90 = VectorProperty("Unknown90")
-        self.unknown_a0 = VectorProperty("UnknownA0")
-        self.unknown_b0 = VectorProperty("UnknownB0")
+        self.damping_linear_c = VectorProperty("DampingLinearC")
+        self.damping_linear_v = VectorProperty("DampingLinearV")
+        self.damping_linear_v2 = VectorProperty("DampingLinearV2")
+        self.damping_angular_c = VectorProperty("DampingAngularC")
+        self.damping_angular_v = VectorProperty("DampingAngularV")
+        self.damping_angular_v2 = VectorProperty("DampingAngularV2")
         self.archetype = ArchetypeProperty()
         self.transforms = TransformsListProperty()
         self.groups = GroupsListProperty()
@@ -205,15 +201,11 @@ class FragmentDrawable(Drawable):
 
     def __init__(self):
         super().__init__()
-        self.matrix = TextProperty("Matrix")
+        self.matrix = MatrixProperty("Matrix")
 
 
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
-
-    def fixed_name(self):
-        if "pack" in self.name:
-            return self.name.replace("pack:/", "")
 
     def __init__(self):
         super().__init__()
@@ -226,8 +218,8 @@ class Fragment(ElementTree, AbstractClass):
         self.unknown_c0 = ValueProperty("UnknownC0")
         self.unknown_c4 = ValueProperty("UnknownC4")
         self.unknown_cc = ValueProperty("UnknownCC")
-        self.unknown_d0 = ValueProperty("UnknownD0")
-        self.unknown_d4 = ValueProperty("UnknownD4")
+        self.gravity_factor = ValueProperty("GravityFactor")
+        self.buoyancy_factor = ValueProperty("BuoyancyFactor")
         self.drawable = FragmentDrawable()
         self.bones_transforms = BoneTransformsListProperty()
         self.physics = PhysicsProperty()
