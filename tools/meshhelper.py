@@ -250,3 +250,9 @@ def get_obj_radius(obj, world=True):
 
 def get_local_pos(obj):
     return Vector(obj.parent.matrix_world.inverted() @ obj.matrix_world.translation)
+
+
+def prop_array_to_vector(prop, size=3):
+    if size == 4:
+        return Quaternion((prop[0], prop[1], prop[2], prop[3]))
+    return Vector((prop[0], prop[1], prop[2]))

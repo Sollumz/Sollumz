@@ -12,7 +12,22 @@ class FragmentProperties(bpy.types.PropertyGroup):
     unk_d4: bpy.props.FloatProperty(name="UnknownD4")
 
 
+# blender doesn't support pointer properties to custom property groups?
+'''class ArchetypeProperties(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name")
+    mass: bpy.props.FloatProperty(name="Mass")
+    mass_inv: bpy.props.FloatProperty(name="MassInv")
+    unknown_48: bpy.props.FloatProperty(name="Unknown48")
+    unknown_4c: bpy.props.FloatProperty(name="Unknown4c")
+    unknown_50: bpy.props.FloatProperty(name="Unknown50")
+    unknown_54: bpy.props.FloatProperty(name="Unknown54")
+    inertia_tensor: bpy.props.FloatVectorProperty(name="InertiaTensor")
+    inertia_tensor_inv: bpy.props.FloatVectorProperty(name="InertiaTensorInv")
+    bound: bpy.props.PointerProperty(type=bpy.types.Object)'''
+
+
 class LODProperties(bpy.types.PropertyGroup):
+    type: bpy.props.IntProperty(name="Type", default=0)
     unk_14: bpy.props.FloatProperty(name="Unknown14")
     unk_18: bpy.props.FloatProperty(name="Unknown18")
     unk_1c: bpy.props.FloatProperty(name="Unknown1C")
@@ -25,9 +40,6 @@ class LODProperties(bpy.types.PropertyGroup):
     unk_90: bpy.props.FloatVectorProperty(name="Unknown90")
     unk_a0: bpy.props.FloatVectorProperty(name="UnknownA0")
     unk_b0: bpy.props.FloatVectorProperty(name="UnknownB0")
-
-
-class ArchetypeProperties(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name")
     mass: bpy.props.FloatProperty(name="Mass")
     mass_inv: bpy.props.FloatProperty(name="MassInv")
@@ -37,12 +49,12 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
     unknown_54: bpy.props.FloatProperty(name="Unknown54")
     inertia_tensor: bpy.props.FloatVectorProperty(name="InertiaTensor")
     inertia_tensor_inv: bpy.props.FloatVectorProperty(name="InertiaTensorInv")
+    # archetype_properties = bpy.props.PointerProperty(type=ArchetypeProperties)
 
 
 class GroupProperties(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name")
-    index: bpy.props.IntProperty(name="Index")
-    parent_index: bpy.props.IntProperty(name="Parent Index")
+    parent_index: bpy.props.IntProperty(default=0)
     unk_byte_4c: bpy.props.IntProperty(name="UnkByte4C")
     unk_byte_4f: bpy.props.IntProperty(name="UnkByte4F")
     unk_byte_50: bpy.props.IntProperty(name="UnkByte50")
@@ -77,12 +89,12 @@ class GroupProperties(bpy.types.PropertyGroup):
 
 
 class ChildProperties(bpy.types.PropertyGroup):
-    group_index: bpy.props.IntProperty(name="GroupIndex")
     bone_tag: bpy.props.IntProperty(name="BoneTag")
     mass_1: bpy.props.FloatProperty(name="Mass1")
     mass_2: bpy.props.FloatProperty(name="Mass2")
     unk_vec: bpy.props.FloatVectorProperty(name="UnkVec")
     inertia_tensor: bpy.props.FloatVectorProperty(name="InertiaTensor", size=4)
+    #bone: bpy.props.PointerProperty(type=bpy.types.Bone)
     # group_index: bpy.props.IntProperty(name="EventSet") ???
 
 
@@ -91,10 +103,9 @@ def register():
         type=FragmentProperties)
     bpy.types.Object.lod_properties = bpy.props.PointerProperty(
         type=LODProperties)
-    bpy.types.Object.archetype_properties = bpy.props.PointerProperty(
-        type=ArchetypeProperties)
-    bpy.types.Object.frag_group_properties = bpy.props.CollectionProperty(
-        type=GroupProperties)
+    bpy.types.Object.group_properties = bpy.props.PointerProperty(
+        type=GroupProperties
+    )
     bpy.types.Object.child_properties = bpy.props.PointerProperty(
         type=ChildProperties)
 
@@ -102,6 +113,5 @@ def register():
 def unregister():
     bpy.types.Object.fragment_properties
     bpy.types.Object.lod_properties
-    bpy.types.Object.archetype_properties
-    bpy.types.Object.frag_group_properties
+    bpy.types.Object.group_properties
     bpy.types.Object.child_properties

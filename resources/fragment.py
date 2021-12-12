@@ -21,8 +21,8 @@ class YFT:
 class BoneTransformItem(MatrixProperty):
     tag_name = "Item"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Matrix())
 
 
 class BoneTransformsListProperty(ListProperty):
@@ -31,7 +31,7 @@ class BoneTransformsListProperty(ListProperty):
 
     def __init__(self, tag_name=None):
         super().__init__(tag_name or BoneTransformsListProperty.tag_name)
-        self.unk = AttributeProperty("unk", 0)
+        self.unk = AttributeProperty("unk", 1)
 
 
 class ArchetypeProperty(ElementTree):
@@ -54,8 +54,8 @@ class ArchetypeProperty(ElementTree):
 class TransformItem(MatrixProperty):
     tag_name = "Item"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Matrix())
 
 
 class TransformsListProperty(ListProperty):
@@ -64,7 +64,6 @@ class TransformsListProperty(ListProperty):
 
     def __init__(self, tag_name=None):
         super().__init__(tag_name or TransformsListProperty.tag_name)
-        self.unk = AttributeProperty("unk", 0)
 
 
 class ChildrenItem(ElementTree):
@@ -205,15 +204,11 @@ class FragmentDrawable(Drawable):
 
     def __init__(self):
         super().__init__()
-        self.matrix = TextProperty("Matrix")
+        self.matrix = MatrixProperty("Matrix")
 
 
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
-
-    def fixed_name(self):
-        if "pack" in self.name:
-            return self.name.replace("pack:/", "")
 
     def __init__(self):
         super().__init__()

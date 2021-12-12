@@ -72,12 +72,16 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
 
 
 def join_drawable_geometries(drawable):
+    join_objects(get_drawable_geometries(drawable))
+
+
+def get_drawable_geometries(drawable):
     cobjs = []
     children = get_children_recursive(drawable)
     for obj in children:
         if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             cobjs.append(obj)
-    join_objects(cobjs)
+    return cobjs
 
 
 def convert_material(material):

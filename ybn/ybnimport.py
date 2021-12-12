@@ -353,8 +353,9 @@ def composite_to_obj(bounds, name, from_drawable=False):
     obj.empty_display_size = 0
     obj.sollum_type = SollumType.BOUND_COMPOSITE
 
-    for child in composite.children:
+    for idx, child in enumerate(composite.children):
         child_obj = bound_to_obj(child)
+        child_obj.creation_index = idx
         if child_obj:
             child_obj.parent = obj
 

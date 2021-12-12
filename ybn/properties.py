@@ -189,6 +189,9 @@ def register():
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(
         type=BoundFlags)
 
+    # TO KEEP TRACK OF THE INDEX IT WAS AT IN THE FILE, SLOPPY BUT EASIER THAN COMPARING VALUES WHEN IMPORTING FRAGMENTS
+    bpy.types.Object.creation_index = bpy.props.IntProperty(default=0)
+
     bpy.types.Scene.collision_material_index = bpy.props.IntProperty(
         name="Material Index")
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(
@@ -252,6 +255,7 @@ def unregister():
     del bpy.types.Object.bound_dimensions
     del bpy.types.Object.composite_flags1
     del bpy.types.Object.composite_flags2
+    del bpy.types.Object.creation_index
     del bpy.types.Scene.collision_material_index
     del bpy.types.Scene.collision_materials
     del bpy.types.Material.collision_properties
