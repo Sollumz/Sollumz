@@ -139,7 +139,12 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     geom.node_group = tnt_ng
     txt = create_tinted_texture_from_image(tint_img)
     txt_node = geom.node_group.nodes["Attribute Sample Texture"]
-    txt_node.inputs[1].default_value = txt
+
+    if USE_LEGACY:
+        txt_node.texture = txt
+    else:
+        txt_node.inputs[1].default_value = txt
+
     obj.data.vertex_colors.new(name="TintColor")
 
 
