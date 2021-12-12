@@ -147,6 +147,27 @@ class ShaderGroupProperty(ElementTree):
         self.shaders = ShadersListProperty()
 
 
+class BoneIDProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str = "BoneIDs", value=None):
+        super().__init__(tag_name, value or [])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        txt = element.text.split(", ")
+        new.value = []
+        for id in txt:
+            new.value.append(int(id))
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.text = ", ".join([str(id) for id in self.value])
+        return element
+
+
 class BoneItem(ElementTree):
     tag_name = "Item"
 
@@ -278,11 +299,11 @@ class VertexLayoutListProperty(ElementProperty):
     tag_name = 'Layout'
 
     # Generate a namedtuple from a vertex layout
-    @property
+    @ property
     def vertex_type(self):
         return namedtuple('Vertex', [name.lower() for name in self.value])
 
-    @property
+    @ property
     def pretty_vertex_semantic(self):
         result = []
         vgs = False
@@ -309,7 +330,7 @@ class VertexLayoutListProperty(ElementProperty):
             result.append(f"{tidx} UV Layer{'s' if tidx > 1 else ''}")
         return ", ".join(result)
 
-    @property
+    @ property
     def vertex_semantic(self):
         return "".join([item[0] for item in self.value])
 
@@ -317,7 +338,7 @@ class VertexLayoutListProperty(ElementProperty):
         super().__init__(self.tag_name, [])
         self.type = 'GTAV1'
 
-    @classmethod
+    @ classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         new.type = element.get('type')
@@ -339,7 +360,7 @@ class VertexDataProperty(ElementProperty):
     def __init__(self, tag_name=None):
         super().__init__(tag_name=tag_name or 'Data', value=[])
 
-    @classmethod
+    @ classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         if not element.text:
@@ -395,7 +416,7 @@ class VertexBuffer(ElementTree):
     def get_vertex_type(self):
         return self.get_element('layout').vertex_type
 
-    @classmethod
+    @ classmethod
     def from_xml(cls: Element, element: ET.Element):
         new = super().from_xml(element)
         # Convert data to namedtuple matching the layout
@@ -411,7 +432,7 @@ class IndexDataProperty(ElementProperty):
     def __init__(self):
         super().__init__(tag_name='Data', value=[])
 
-    @classmethod
+    @ classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         indices = element.text.strip().replace("\n", "").split()
@@ -452,6 +473,7 @@ class GeometryItem(ElementTree):
         self.shader_index = ValueProperty("ShaderIndex", 0)
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
+        self.bone_ids = BoneIDProperty()
         self.vertex_buffer = VertexBuffer()
         self.index_buffer = IndexBuffer()
 
@@ -482,7 +504,7 @@ class DrawableModelListProperty(ListProperty):
 class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
 
-    @property
+    @ property
     def all_models(self):
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
@@ -518,7 +540,7 @@ class Drawable(ElementTree, AbstractClass):
         self.bound = None
         self.lights = LightsProperty()
 
-    @classmethod
+    @ classmethod
     def from_xml(cls, element: ET.Element):
         new = super().from_xml(element)
         for child in element.iter():
@@ -580,7 +602,7 @@ class DrawableDictionary(Mapping, Element):
     def sort(self, key):
         self._value = dict(sorted(self._value.items(), key=key))
 
-    @classmethod
+    @ classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         new.tag_name = "Item"
