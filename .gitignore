@@ -9,3 +9,4 @@ tmp
 *.dds
 load_submodules
 vsdevelopment.code-workspace
+.idea

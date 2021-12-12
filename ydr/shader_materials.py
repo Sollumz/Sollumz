@@ -1,4 +1,6 @@
 import bpy
+
+from ..tools.version import USE_LEGACY
 from ..resources.shader import ShaderManager
 from ..sollumz_properties import MaterialType
 from collections import namedtuple
@@ -113,7 +115,7 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
 def create_tinted_texture_from_image(img):  # move to blenderhelper.py?
     bpy.ops.texture.new()
     txt = bpy.data.textures[len(bpy.data.textures) - 1]
-    if img != None:
+    if img is not None:
         txt.image = img
     txt.use_interpolation = False
     txt.use_mipmap = False
@@ -137,7 +139,12 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     geom.node_group = tnt_ng
     txt = create_tinted_texture_from_image(tint_img)
     txt_node = geom.node_group.nodes["Attribute Sample Texture"]
-    txt_node.inputs[1].default_value = txt
+
+    if USE_LEGACY:
+        txt_node.texture = txt
+    else:
+        txt_node.inputs[1].default_value = txt
+
     obj.data.vertex_colors.new(name="TintColor")
 
 
@@ -152,11 +159,20 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     input.location.x = -150
     output = gnt.nodes.new("NodeGroupOutput")
     locx = 150
-    sepxyz = gnt.nodes.new("GeometryNodeLegacyAttributeSeparateXYZ")
+
+    if USE_LEGACY:
+        sepxyz = gnt.nodes.new("GeometryNodeAttributeSeparateXYZ")
+    else:
+        sepxyz = gnt.nodes.new("GeometryNodeLegacyAttributeSeparateXYZ")
     gnt.links.new(input.outputs[0], sepxyz.inputs[0])
+
     mathns = []
     for i in range(9):
-        math = gnt.nodes.new("GeometryNodeLegacyAttributeMath")
+        if USE_LEGACY:
+            math = gnt.nodes.new("GeometryNodeAttributeMath")
+        else:
+            math = gnt.nodes.new("GeometryNodeLegacyAttributeMath")
+
         math.location.x = locx
         if len(mathns) > 0:
             link_geos(gnt.links, math, mathns[i - 1])
@@ -164,12 +180,21 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
             link_geos(gnt.links, math, sepxyz)
         mathns.append(math)
         locx += 150
-    comxyz = gnt.nodes.new("GeometryNodeLegacyAttributeCombineXYZ")
+
+    if USE_LEGACY:
+        comxyz = gnt.nodes.new("GeometryNodeAttributeCombineXYZ")
+    else:
+        comxyz = gnt.nodes.new("GeometryNodeLegacyAttributeCombineXYZ")
+
     comxyz.location.x = locx
     locx += 150
     gnt.links.new(mathns[len(mathns) - 1].outputs["Geometry"],
                   comxyz.inputs["Geometry"])
-    tsample = gnt.nodes.new("GeometryNodeLegacyAttributeSampleTexture")
+    if USE_LEGACY:
+        tsample = gnt.nodes.new("GeometryNodeAttributeSampleTexture")
+    else:
+        tsample = gnt.nodes.new("GeometryNodeLegacyAttributeSampleTexture")
+
     tsample.location.x = locx
     locx += 250
     gnt.links.new(comxyz.outputs["Geometry"], tsample.inputs["Geometry"])
@@ -235,8 +260,12 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     comxyz.inputs[1].default_value = "r3"
     comxyz.inputs[7].default_value = "TintUV"
 
-    tsample.inputs[2].default_value = "TintUV"
-    tsample.inputs[3].default_value = "TintColor"
+    if USE_LEGACY:
+        tsample.inputs[1].default_value = "TintUV"
+        tsample.inputs[2].default_value = "TintColor"
+    else:
+        tsample.inputs[2].default_value = "TintUV"
+        tsample.inputs[3].default_value = "TintColor"
 
     return gnt
 
