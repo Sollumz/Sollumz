@@ -1,5 +1,6 @@
 import bpy
 import os
+from ..sollumz_properties import SollumType
 from ..tools.drawablehelper import join_drawable_geometries
 from ..resources.drawable import *
 from ..ydr.ydrimport import drawable_to_obj
@@ -60,4 +61,8 @@ def import_ydd(filepath, join_geometries):
     ydd_xml = YDD.from_xml_file(filepath)
     drawable_dict = drawable_dict_to_obj(ydd_xml, filepath)
     if join_geometries:
-        join_drawable_geometries(drawable_dict)
+        for child in drawable_dict.children:
+            if child.sollum_type == SollumType.DRAWABLE:
+                for grandchild in child.children:
+                    if grandchild.sollum_type == SollumType.DRAWABLE_MODEL:
+                        join_drawable_geometries(grandchild)
