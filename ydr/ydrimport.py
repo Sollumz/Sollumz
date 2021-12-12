@@ -200,7 +200,7 @@ def geometry_to_obj(geometry, bones=None, name=None):
             num = max(256, bone_count)
             for i in range(num):
                 bone_name = bones[i].name if bones and i < bone_count \
-                    else "UNKNOWN_BONE." + str(i)
+                    else f"UNKNOWN_BONE.{str(i)}.{geometry.bone_ids[len(geometry.bone_ids) - 1]}"
                 obj.vertex_groups.new(name=bone_name)
 
             for vertex_idx, vertex in enumerate(data):

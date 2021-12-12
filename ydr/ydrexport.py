@@ -341,17 +341,15 @@ def get_shader_index(mats, mat):
             return i
 
 
-def get_used_indices(mesh):
-    return 128
-
-
-def get_bone_ids(mesh, bones=None):
+def get_bone_ids(obj, bones=None):
     bone_count = 0
 
     if bones:
         bone_count = len(bones)
+    elif obj.vertex_groups:
+        bone_count = int(obj.vertex_groups[0].name.split(".")[2]) + 1
     else:
-        bone_count = get_used_indices(mesh)
+        return []
 
     return [id for id in range(bone_count)]
 
@@ -367,7 +365,7 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
-    geometry.bone_ids = get_bone_ids(mesh, bones)
+    geometry.bone_ids = get_bone_ids(obj, bones)
 
     shader_name = obj.active_material.shader_properties.name
     shader = ShaderManager.shaders[shader_name]
