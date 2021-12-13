@@ -58,7 +58,7 @@ class Shader(ElementTree):
                 return True
         return False
 
-    def get_layout_from_semantic(self, vertex_semantic):
+    def get_layout_from_semantic(self, vertex_semantic, is_skinned=False):
         for layout in self.layouts:
             if layout.vertex_semantic == vertex_semantic:
                 return layout
@@ -67,6 +67,11 @@ class Shader(ElementTree):
         # for l in self.layouts:
         #    error += f", {l.vertex_semantic}"
         #raise Exception(error)
+        if is_skinned:
+            for layout in self.layouts:
+                if "BlendWeights" in layout.value:
+                    return layout
+
         return self.layouts[0]
 
 
