@@ -110,7 +110,7 @@ class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        layout.prop(operator.export_settings, "export_with_hi")
+        layout.prop(operator.export_settings, "use_transforms")
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
