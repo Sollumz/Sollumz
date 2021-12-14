@@ -75,9 +75,11 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter'] = radius
+        kwargs['diameter1'] = radius
+        kwargs['diameter2'] = radius
     else:
-        kwargs['radius'] = radius
+        kwargs['radius1'] = radius
+        kwargs['radius2'] = radius
 
     bmesh.ops.create_cone(
         bm,
