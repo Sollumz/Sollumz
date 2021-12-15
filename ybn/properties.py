@@ -89,6 +89,8 @@ class BoundProperties(bpy.types.PropertyGroup):
     poly_flags: bpy.props.IntProperty(name="Poly Flags", default=0)
     inertia: bpy.props.FloatVectorProperty(name="Inertia")
     volume: bpy.props.FloatProperty(name="Volume", precision=3)
+    unk_flags: bpy.props.FloatProperty(name="UnkFlags")
+    unk_type: bpy.props.FloatProperty(name="UnkType")
 
 
 class CollisionMaterial(bpy.types.PropertyGroup):

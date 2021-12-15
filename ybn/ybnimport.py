@@ -263,6 +263,8 @@ def init_bound_obj(bound, sollum_type):
     obj.bound_properties.ped_density = bound.ped_density
     obj.bound_properties.poly_flags = bound.poly_flags
     obj.bound_properties.inertia = bound.inertia
+    obj.bound_properties.unk_flags = bound.unk_flags
+    obj.bound_properties.unk_type = bound.unk_type
     obj.margin = bound.margin
     obj.bound_properties.volume = bound.volume
 
