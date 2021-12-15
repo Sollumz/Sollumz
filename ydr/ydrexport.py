@@ -46,7 +46,7 @@ def get_shaders_from_blender(obj):
                 param.name = node.name
                 param.type = "Texture"
                 if node.image == None:
-                    param.texture_name = "givemechecker"
+                    param.texture_name = ""
                 else:
                     param.texture_name = node.image.name.split('.')[0]
                 shader.parameters.append(param)

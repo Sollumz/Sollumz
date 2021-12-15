@@ -49,6 +49,9 @@ def shadergroup_to_materials(shadergroup, filepath):
                                         t_path, check_existing=True)
                                     n.image = img
                         if not n.image:
+                            # for texture shader parameters with no name
+                            if not param.texture_name:
+                                continue
                             # Check for existing texture
                             existing_texture = None
                             for image in bpy.data.images:
