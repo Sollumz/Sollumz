@@ -11,6 +11,8 @@ from ..tools.utils import *
 from ..tools.blenderhelper import *
 from ..sollumz_properties import BOUND_TYPES, SOLLUMZ_UI_NAMES, LightType, MaterialType, LODLevel, SollumType
 from ..ybn.ybnexport import bound_from_object, composite_from_object
+from math import degrees, pi
+from .properties import LightFlags, LightTimeFlags
 
 
 def get_used_materials(obj):
@@ -374,7 +376,7 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     is_skinned = False
     if len(obj.vertex_groups) > 0:
         is_skinned = True
-        
+
     layout = shader.get_layout_from_semantic(
         get_semantic_from_object(shader, mesh), is_skinned=is_skinned)
 
@@ -509,27 +511,40 @@ def joints_from_object(obj):
     return joints
 
 
-def light_from_object(obj):
+def light_from_object(obj, export_settings):
     light = LightItem()
-    light.position = obj.location
-    light.direction = obj.rotation_euler
+    light.position = obj.location if not export_settings.use_transforms else obj.location + \
+        obj.parent.location
+    mat = obj.matrix_basis if not export_settings.use_transforms else obj.matrix_world
+    light.direction = Vector(
+        (mat[0][2], mat[1][2], mat[2][2])).normalized()
+    light.direction.negate()
+    light.tangent = Vector(
+        (mat[0][0], mat[1][0], mat[2][0])).normalized()
+
+    time_flags = flag_prop_to_list(LightTimeFlags, obj.data.time_flags)
+    light.time_flags = flag_list_to_int(time_flags)
+
+    light_flags = flag_prop_to_list(LightFlags, obj.data.light_flags)
+    light.flags = flag_list_to_int(light_flags)
+
     light.color = obj.data.color
-    light.flashiness = obj.data.specular_factor * 100
+    light.flashiness = obj.data.light_properties.flashiness
     light.intensity = obj.data.energy
-    light.type = SOLLUMZ_UI_NAMES[obj.data.light_properties.type]
-    light.flags = obj.data.light_properties.flags
-    light.bone_id = obj.data.light_properties.bone_id
-    light.type = obj.data.light_properties.type
+    light.type = SOLLUMZ_UI_NAMES[obj.data.sollum_type]
+    # light.flags = obj.data.light_properties.flags
+    if obj.parent_bone:
+        armature = obj.parent.data
+        light.bone_id = armature.bones[obj.parent_bone].bone_properties.tag
     light.group_id = obj.data.light_properties.group_id
-    light.time_flags = obj.data.light_properties.time_flags
-    light.falloff = obj.data.light_properties.falloff
-    light.falloff_exponent = obj.data.light_properties.falloff_exponent
-    cpn = obj.data.light_properties.culling_plane_normal
-    light.culling_plane_normal = Vector((cpn[0], cpn[1], cpn[2]))
+    light.falloff = obj.data.cutoff_distance
+    light.falloff_exponent = obj.data.shadow_soft_size * 5
+    light.culling_plane_normal = Vector(
+        obj.data.light_properties.culling_plane_normal)
     light.culling_plane_offset = obj.data.light_properties.culling_plane_offset
     light.unknown_45 = obj.data.light_properties.unknown_45
     light.unknown_46 = obj.data.light_properties.unknown_46
-    light.volume_intensity = obj.data.light_properties.volume_intensity
+    light.volume_intensity = obj.data.volume_factor
     light.volume_size_scale = obj.data.light_properties.volume_size_scale
     voc = obj.data.light_properties.volume_outer_color
     # relocate but works for now..
@@ -543,15 +558,14 @@ def light_from_object(obj):
     light.shadow_fade_distance = obj.data.light_properties.shadow_fade_distance
     light.specular_fade_distance = obj.data.light_properties.specular_fade_distance
     light.volumetric_fade_distance = obj.data.light_properties.volumetric_fade_distance
-    light.shadow_near_clip = obj.data.light_properties.shadow_near_clip
+    light.shadow_near_clip = obj.data.shadow_buffer_clip_start
     light.corona_intensity = obj.data.light_properties.corona_intensity
     light.corona_z_bias = obj.data.light_properties.corona_z_bias
-    tnt = obj.data.light_properties.tangent
-    light.tangent = Vector((tnt[0], tnt[1], tnt[2]))
-    light.cone_inner_angle = obj.data.light_properties.cone_inner_angle
-    light.cone_outer_angle = obj.data.light_properties.cone_outer_angle
-    ext = obj.data.light_properties.extent
-    light.extent = Vector((ext[0], ext[1], ext[2]))
+    if obj.data.sollum_type == LightType.SPOT:
+        light.cone_inner_angle = degrees(
+            abs((obj.data.spot_blend * pi) - pi)) / 2
+        light.cone_outer_angle = degrees(obj.data.spot_size) / 2
+    light.extent = Vector(obj.data.light_properties.extent)
     light.projected_texture_hash = obj.data.light_properties.projected_texture_hash
 
     return light
@@ -640,8 +654,8 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
             else:
                 drawable.bounds.append(
                     bound_from_object(child, export_settings))
-        elif child.type == 'LIGHT' and child.data.light_properties.type != LightType.NONE:
-            drawable.lights.append(light_from_object(child))
+        elif child.type == 'LIGHT' and child.data.sollum_type != LightType.NONE:
+            drawable.lights.append(light_from_object(child, export_settings))
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count

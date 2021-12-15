@@ -1,4 +1,5 @@
 from ..sollumz_helper import SOLLUMZ_OT_base
+from .properties import LightTimeFlags
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import *
@@ -195,3 +196,47 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
             max(0, index - 1), len(list) - 1)
         self.message(f"Deleted bone flag from: {bone.name}")
         return True
+
+
+class SOLLUMZ_OT_TIME_FLAGS_select_range(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Select a range of time flags"""
+    bl_idname = "sollumz.time_flags_select_range"
+    bl_label = "Select"
+    bl_action = "Select a range of time flags"
+
+    @classmethod
+    def poll(cls, context):
+        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+
+    def run(self, context):
+        light = context.light
+        start = int(light.time_flags_start)
+        end = int(light.time_flags_end)
+        index = 0
+        print(start, end)
+        for prop in LightTimeFlags.__annotations__:
+            if start < end:
+                print(index)
+                if index >= start and index < end:
+                    context.light.time_flags[prop] = True
+            elif start > end:
+                if index <= end or index >= start:
+                    context.light.time_flags[prop] = True
+            elif start == 0 and end == 0:
+                context.light.time_flags[prop] = True
+            index += 1
+
+
+class SOLLUMZ_OT_TIME_FLAGS_clear(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Clear all time flags"""
+    bl_idname = "sollumz.time_flags_clear"
+    bl_label = "Clear Selection"
+    bl_action = "Unselect all time flags"
+
+    @classmethod
+    def poll(cls, context):
+        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+
+    def run(self, context):
+        for prop in LightTimeFlags.__annotations__:
+            context.light.time_flags[prop] = False

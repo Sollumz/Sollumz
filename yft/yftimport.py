@@ -2,7 +2,7 @@ import bpy
 from mathutils import Matrix, Vector
 from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
 from ..resources.fragment import YFT
-from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials
+from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, light_to_obj
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import split_object_by_vertex_groups
@@ -156,6 +156,7 @@ def fragment_to_obj(fragment, filepath):
     if fragment.drawable:
         materials = shadergroup_to_materials(
             fragment.drawable.shader_group, filepath)
+        fragment.drawable.lights = fragment.lights
         dobj = drawable_to_obj(
             fragment.drawable, filepath, fragment.drawable.name, None, materials)
         dobj.parent = fobj

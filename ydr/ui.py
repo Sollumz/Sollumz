@@ -1,6 +1,7 @@
 import bpy
 from .shader_materials import *
 from .operators import *
+from .properties import LightTimeFlags, LightFlags
 
 
 def draw_drawable_properties(layout, obj):
@@ -148,43 +149,82 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.light and context.active_object.sollum_type != SollumType.NONE
+        return context.light and context.active_object.sollum_type == SollumType.LIGHT
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
         light = context.light
         row = layout.row()
-        row.enabled = False
-        row.prop(light.light_properties, "type")  # MAKE THIS AN ENUM?
-        layout.prop(light.light_properties, "flags")
-        layout.prop(light.light_properties, "bone_id")
+        row.enabled = light.sollum_type != LightType.NONE
+        row.prop(light, "sollum_type")
+        if light.sollum_type == LightType.NONE:
+            return
+        layout.separator()
+        layout.prop(light.light_properties, "light_hash")
         layout.prop(light.light_properties, "group_id")
-        layout.prop(light.light_properties, "time_flags")
-        layout.prop(light.light_properties, "falloff")
-        layout.prop(light.light_properties, "falloff_exponent")
-        layout.prop(light.light_properties, "culling_plane_normal")
-        layout.prop(light.light_properties, "culling_plane_offset")
-        layout.prop(light.light_properties, "unknown_45")
-        layout.prop(light.light_properties, "unknown_46")
-        layout.prop(light.light_properties, "volume_intensity")
+        layout.prop(light.light_properties, "projected_texture_hash")
+        layout.separator()
+        layout.prop(light.light_properties, "flashiness")
+        if light.sollum_type == LightType.CAPSULE:
+            layout.separator()
+            layout.prop(light.light_properties, "extent")
+        layout.separator()
         layout.prop(light.light_properties, "volume_size_scale")
         layout.prop(light.light_properties, "volume_outer_color")
-        layout.prop(light.light_properties, "light_hash")
         layout.prop(light.light_properties, "volume_outer_intensity")
-        layout.prop(light.light_properties, "corona_size")
         layout.prop(light.light_properties, "volume_outer_exponent")
+        layout.separator()
         layout.prop(light.light_properties, "light_fade_distance")
         layout.prop(light.light_properties, "shadow_fade_distance")
         layout.prop(light.light_properties, "specular_fade_distance")
         layout.prop(light.light_properties, "volumetric_fade_distance")
-        layout.prop(light.light_properties, "shadow_near_clip")
+        layout.separator()
+        layout.prop(light.light_properties, "culling_plane_normal")
+        layout.prop(light.light_properties, "culling_plane_offset")
+        layout.separator()
+        layout.prop(light.light_properties, "corona_size")
         layout.prop(light.light_properties, "corona_intensity")
         layout.prop(light.light_properties, "corona_z_bias")
-        layout.prop(light.light_properties, "tangent")
-        layout.prop(light.light_properties, "cone_inner_angle")
-        layout.prop(light.light_properties, "cone_outer_angle")
-        layout.prop(light.light_properties, "extent")
-        layout.prop(light.light_properties, "projected_texture_hash")
+        layout.separator()
+        layout.prop(light.light_properties, "unknown_45")
+        layout.prop(light.light_properties, "unknown_46")
+
+
+class SOLLUMZ_PT_TIME_FLAGS_PANEL(bpy.types.Panel):
+    bl_label = "Time Flags"
+    bl_idname = "SOLLUMZ_PT_TIME_FLAGS_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
+    bl_parent_id = "SOLLUMZ_PT_LIGHT_PANEL"
+
+    def draw(self, context):
+        light = context.light
+        grid = self.layout.grid_flow(columns=4)
+        for prop in LightTimeFlags.__annotations__:
+            grid.prop(light.time_flags, prop)
+        row = self.layout.row()
+        row.operator("sollumz.time_flags_select_range")
+        row.prop(light, "time_flags_start", text="from")
+        row.prop(light, "time_flags_end", text="to")
+        row = self.layout.row()
+        row.operator("sollumz.time_flags_clear")
+
+
+class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(bpy.types.Panel):
+    bl_label = "Flags"
+    bl_idname = "SOLLUMZ_PT_LIGHT_FLAGS_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
+    bl_parent_id = "SOLLUMZ_PT_LIGHT_PANEL"
+
+    def draw(self, context):
+        light = context.light
+        grid = self.layout.grid_flow(columns=3)
+        for prop in LightFlags.__annotations__:
+            grid.prop(light.light_flags, prop)
 
 
 class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):

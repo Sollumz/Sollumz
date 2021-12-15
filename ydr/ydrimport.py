@@ -1,3 +1,5 @@
+from math import pi, radians
+from ..resources.shader import ShaderManager
 import os
 import bpy
 from mathutils import Matrix
@@ -8,6 +10,7 @@ from ..resources.drawable import *
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import *
 from ..tools.blenderhelper import *
+from .properties import LightFlags
 from ..tools.drawablehelper import join_drawable_geometries
 from ..resources.shader import ShaderManager
 
@@ -338,47 +341,84 @@ def rotation_limits_to_obj(rotation_limits, armature):
     return bones_with_constraint
 
 
-def light_to_obj(light, idx):
+def light_to_obj(light, obj):
+    light_type = None
+
+    if light.type == 'Point':
+        light_type = LightType.POINT
+    elif light.type == 'Spot':
+        light_type = LightType.SPOT
+    elif light.type == 'Capsule':
+        light_type = LightType.CAPSULE
+    else:
+        raise TypeError('Invalid light type')
+
+    name = SOLLUMZ_UI_NAMES[light_type]
+
     # WORK AROUND FOR INVALID LIGHT TYPES
     try:
         light_data = bpy.data.lights.new(
-            name=f"light{idx}", type=light.type.upper())
+            name=name, type=light.type.upper())
     except:
         light_data = bpy.data.lights.new(
-            name=f"light{idx}", type="SPOT")
+            name=name, type="SPOT")
 
-    light_data.color = light.color
-    light_data.energy = light.intensity
-    # divide by 100 because blender specular is clamped 0 - 1 ????
-    light_data.specular_factor = light.flashiness / 100
-    # light_data.spot_size = light.cone_outer_angle
-    # light_data.spot_blend = light.cone_inner_angle
-
-    lobj = bpy.data.objects.new(name=f"light{idx}", object_data=light_data)
+    lobj = bpy.data.objects.new(name=name, object_data=light_data)
     bpy.context.collection.objects.link(lobj)
+    lobj.parent = obj
     lobj.sollum_type = SollumType.LIGHT
+
+    if obj.type == 'ARMATURE':
+        armature = obj.data
+        bone_map = {
+            bone.bone_properties.tag: bone for bone in armature.bones}
+        # Apply bone id
+        if light.bone_id in bone_map.keys():
+            lobj.parent_type = 'BONE'
+            lobj.parent_bone = bone_map[light.bone_id].name
+
+    # Calculate orientation
+    light.direction.negate()
+    bitangent = light.direction.cross(light.tangent).normalized()
+    mat = Matrix().to_3x3()
+    mat.col[0] = light.tangent
+    mat.col[1] = bitangent
+    mat.col[2] = light.direction
+    lobj.matrix_basis = mat.to_4x4()
+
+    # Apply flags
+    for i in range(32):
+        enabled = ((light.time_flags >> i) & 1) == 1
+        if enabled:
+            if i <= 23:
+                lobj.data.time_flags[f"hour{i + 1}"] = True
+            else:
+                lobj.data.time_flags[f"unk{i - 23}"] = True
+
+    light_flag_keys = list(LightFlags.__annotations__.keys())
+    for i in range(32):
+        enabled = ((light.flags >> i) & 1) == 1
+        if enabled:
+            lobj.data.light_flags[light_flag_keys[i]] = True
+
     lobj.location = light.position
-    lobj.rotation_euler = light.direction
-
-    if light.type == 'Point':
-        lobj.data.light_properties.type = LightType.POINT
-    elif light.type == 'Spot':
-        lobj.data.light_properties.type = LightType.SPOT
-    elif light.type == 'Capsule':
-        lobj.data.light_properties.type = LightType.CAPSULE
-
-    lobj.name = SOLLUMZ_UI_NAMES[lobj.data.light_properties.type]
+    lobj.data.sollum_type = light_type
+    lobj.name = name
+    lobj.data.name = lobj.name
+    lobj.data.color = light.color
+    lobj.data.energy = light.intensity
+    lobj.data.light_properties.flashiness = light.flashiness
     lobj.data.light_properties.flags = light.flags
-    lobj.data.light_properties.bone_id = light.bone_id
     lobj.data.light_properties.group_id = light.group_id
     lobj.data.light_properties.time_flags = light.time_flags
-    lobj.data.light_properties.falloff = light.falloff
-    lobj.data.light_properties.falloff_exponent = light.falloff_exponent
+    lobj.data.use_custom_distance = True
+    lobj.data.cutoff_distance = light.falloff
+    lobj.data.shadow_soft_size = light.falloff_exponent / 5
     lobj.data.light_properties.culling_plane_normal = light.culling_plane_normal
     lobj.data.light_properties.culling_plane_offset = light.culling_plane_offset
     lobj.data.light_properties.unknown_45 = light.unknown_45
     lobj.data.light_properties.unknown_46 = light.unknown_46
-    lobj.data.light_properties.volume_intensity = light.volume_intensity
+    lobj.data.volume_factor = light.volume_intensity
     lobj.data.light_properties.volume_size_scale = light.volume_size_scale
     lobj.data.light_properties.volume_outer_color = light.volume_outer_color
     lobj.data.light_properties.light_hash = light.light_hash
@@ -389,12 +429,13 @@ def light_to_obj(light, idx):
     lobj.data.light_properties.shadow_fade_distance = light.shadow_fade_distance
     lobj.data.light_properties.specular_fade_distance = light.specular_fade_distance
     lobj.data.light_properties.volumetric_fade_distance = light.volumetric_fade_distance
-    lobj.data.light_properties.shadow_near_clip = light.shadow_near_clip
+    lobj.data.shadow_buffer_clip_start = light.shadow_near_clip
     lobj.data.light_properties.corona_intensity = light.corona_intensity
     lobj.data.light_properties.corona_z_bias = light.corona_z_bias
-    lobj.data.light_properties.tangent = light.tangent
-    lobj.data.light_properties.cone_inner_angle = light.cone_inner_angle
-    lobj.data.light_properties.cone_outer_angle = light.cone_outer_angle
+    if light_type == LightType.SPOT:
+        lobj.data.spot_blend = abs(
+            (radians(light.cone_inner_angle) / pi) - 1) * 2
+        lobj.data.spot_size = radians(light.cone_outer_angle) * 2
     lobj.data.light_properties.extent = light.extent
     lobj.data.light_properties.projected_texture_hash = light.projected_texture_hash
 
@@ -480,9 +521,8 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             mod = child.modifiers.new("Armature", 'ARMATURE')
             mod.object = obj
 
-    for idx, light in enumerate(drawable.lights):
-        lobj = light_to_obj(light, idx)
-        lobj.parent = obj
+    for light in drawable.lights:
+        light_to_obj(light, obj)
 
     return obj
 
