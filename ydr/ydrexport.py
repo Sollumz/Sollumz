@@ -168,7 +168,8 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
                     continue
 
                 vertex_group = vertex_groups[element.group]
-                bone_index = bone_index_map.get(vertex_group.name, -1)
+                vg_name = vertex_group.name if bones else vertex_group.name[:-4]
+                bone_index = bone_index_map.get(vg_name, -1)
                 # 1/255 = 0.0039 the minimal weight for one vertex group
                 weight = round(element.weight * 255)
                 if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
