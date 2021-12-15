@@ -1,3 +1,4 @@
+import os
 import traceback
 from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
@@ -80,9 +81,9 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
         raise Exception("NO DRAWABLE TO EXPORT.")
 
     # join geos cause split by bone
-    for child in dobj.children:
-        if child.sollum_type == SollumType.DRAWABLE_MODEL:
-            join_drawable_geometries(child)
+    # for child in dobj.children:
+        # if child.sollum_type == SollumType.DRAWABLE_MODEL:
+        # join_drawable_geometries(child)
     fragment.drawable = drawable_from_object(
         exportop, dobj, exportpath, None, export_settings, True)
 
@@ -90,13 +91,8 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
     geos = split_object(geo, geo.parent)
     # for idx, bone in enumerate(fragment.drawable.skeleton.bones):
     for idx, bone in enumerate(dobj.data.bones):
-        if idx < len(geos):
-            if bone.name == geos[idx].name:
-                fragment.bones_transforms.append(
-                    BoneTransformItem("Item", geo.matrix_basis.transposed()))
-        else:
-            fragment.bones_transforms.append(
-                BoneTransformItem("Item", Matrix().transposed()))
+        fragment.bones_transforms.append(
+            BoneTransformItem("Item", Matrix().transposed()))
 
     lods = []
     for child in fobj.children:
@@ -111,8 +107,6 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
         gobjs = get_group_objects(lod)
         bobjs = get_bound_objects_from_groups(gobjs)
         cobjs = get_child_objects_from_groups(gobjs)
-
-        print(bobjs)
 
         flod = LODProperty()
         flod.tag_name = f"LOD{idx+1}"
@@ -237,5 +231,13 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
 
 
 def export_yft(exportop, obj, filepath, export_settings):
-    fragment_from_object(exportop, obj, filepath,
-                         export_settings).write_xml(filepath)
+    fragment = fragment_from_object(exportop, obj, filepath, export_settings)
+    fragment.write_xml(filepath)
+
+    if export_settings.export_with_hi:
+        fragment.drawable.drawable_models_med = None
+        fragment.drawable.drawable_models_low = None
+        fragment.drawable.drawable_models_vlow = None
+        filepath = os.path.join(os.path.dirname(filepath),
+                                os.path.basename(filepath).replace(".yft.xml", "_hi.yft.xml"))
+        fragment.write_xml(filepath)
