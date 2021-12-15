@@ -371,8 +371,12 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     shader_name = obj.active_material.shader_properties.name
     shader = ShaderManager.shaders[shader_name]
 
+    is_skinned = False
+    if len(obj.vertex_groups) > 0:
+        is_skinned = True
+        
     layout = shader.get_layout_from_semantic(
-        get_semantic_from_object(shader, mesh))
+        get_semantic_from_object(shader, mesh), is_skinned=is_skinned)
 
     geometry.vertex_buffer.layout = layout.value
     vertex_buffer, index_buffer = get_mesh_buffers(
