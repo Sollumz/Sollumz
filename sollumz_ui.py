@@ -5,6 +5,16 @@ from .ybn.ui import draw_bound_properties, draw_collision_material_properties
 from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_shader_texture_params, draw_shader_value_params
 from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_group_properties, draw_lod_properties, draw_child_properties
 
+class OrderListHelper:
+    orderkey = "name"
+
+    def filter_items(self, context, data, propname):
+        helper = bpy.types.UI_UL_list
+        items = getattr(data, propname)
+        ordered = helper.sort_items_by_name(items, self.orderkey)
+        filtered = helper.filter_items_by_name(
+            self.filter_name, self.bitflag_filter_item, items, propname=self.orderkey, flags=None, reverse=False)
+        return filtered, ordered
 
 class SOLLUMZ_PT_import_main(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
@@ -342,51 +352,90 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
         row.operator("sollumz.exportymap")
 
 
-class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
-    bl_label = "Entity"
-    bl_idname = 'SOLLUMZ_PT_ENTITY_PANEL'
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
+    bl_label = "Sollumz"
+    bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_YMAP_TOOL_PANEL.bl_idname
+
+    def draw_drawable_model_properties(self, context, layout, obj):
+        layout.prop(obj.drawable_model_properties, "render_mask")
+        layout.prop(obj.drawable_model_properties, "flags")
+        layout.prop(obj.drawable_model_properties, "sollum_lod")
+
+    def draw_sollum_type(self, layout, obj):
+        row = layout.row()
+        row.enabled = False
+        row.prop(obj, "sollum_type")
 
     def draw(self, context):
         layout = self.layout
-        aobj = context.active_object
-        if(aobj == None or aobj.sollum_type != SollumType.DRAWABLE):
-            # have to put this outside of text = or it wont work?
+        layout.use_property_split = True
+
+        obj = context.active_object
+
+        if obj.sollum_type == SollumType.DRAWABLE:
+            self.draw_sollum_type(layout, obj)
+            draw_drawable_properties(layout, obj)
+        elif obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
+            self.draw_sollum_type(layout, obj)
+            draw_geometry_properties(layout, obj)
+        elif(obj.sollum_type == SollumType.DRAWABLE_MODEL):
+            self.draw_sollum_type(layout, obj)
+            self.draw_drawable_model_properties(context, layout, obj)
+            self.draw_sollum_type(layout, obj)
+        elif(obj.sollum_type == SollumType.FRAGMENT):
+            self.draw_sollum_type(layout, obj)
+            draw_fragment_properties(layout, obj)
+        elif(obj.sollum_type == SollumType.FRAGGROUP):
+            self.draw_sollum_type(layout, obj)
+            draw_group_properties(layout, obj)
+        elif(obj.sollum_type == SollumType.FRAGCHILD):
+            self.draw_sollum_type(layout, obj)
+            draw_child_properties(layout, obj)
+        elif(obj.sollum_type == SollumType.FRAGLOD):
+            self.draw_sollum_type(layout, obj)
+            draw_lod_properties(layout, obj)
+        elif obj.sollum_type in BOUND_TYPES:
+            self.draw_sollum_type(layout, obj)
+            draw_bound_properties(layout, obj)
+        else:
             layout.label(
-                text="Please select a valid object.")
-            return
-        layout.label(text="Entity Fields")
-        # box.prop(aobj.ymap_properties, "archetype_name")
-        layout.prop(aobj, "name", text="Archetype Name")
-        # box.prop(aobj.ymap_properties, "position")
-        row = layout.row()
-        row.prop(aobj, "location", text="Position")
-        # box.prop(aobj.ymap_properties, "rotation")
-        row = layout.row()
-        row.prop(aobj, "rotation_euler", text="Rotation")
-        # box.prop(aobj.ymap_properties, "scale_xy")
-        # box.prop(aobj.ymap_properties, "scale_z")
-        row = layout.row()
-        row.prop(aobj, "scale", text="ScaleXYZ")
-        row = layout.row()
-        row.prop(aobj.entity_properties, "flags")
-        row.prop(aobj.entity_properties, "guid")
-        row = layout.row()
-        row.prop(aobj.entity_properties, "parent_index")
-        row = layout.row()
-        row.prop(aobj.entity_properties, "lod_dist")
-        row.prop(aobj.entity_properties, "child_lod_dist")
-        row.prop(aobj.entity_properties, "num_children")
-        row = layout.row()
-        row.prop(aobj.entity_properties, "ambient_occlusion_multiplier")
-        row.prop(aobj.entity_properties, "artificial_ambient_occlusion")
-        row.prop(aobj.entity_properties, "tint_value")
-        row = layout.row()
-        row.prop(aobj.entity_properties, "lod_level")
-        row.prop(aobj.entity_properties, "priority_level")
+                text="No sollumz objects in scene selected.", icon="ERROR")
+
+
+class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
+    bl_label = "Entity Definition"
+    bl_idname = 'SOLLUMZ_PT_ENTITY_PANEL'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        return aobj != None and aobj.sollum_type == SollumType.DRAWABLE
+
+    def draw(self, context):
+        layout = self.layout
+        grid = layout.grid_flow(columns=2, even_columns=True, even_rows=True)
+        grid.use_property_split = True
+        aobj = context.active_object
+        grid.prop(aobj.entity_properties, "flags")
+        grid.prop(aobj.entity_properties, "guid")
+        grid.prop(aobj.entity_properties, "parent_index")
+        grid.prop(aobj.entity_properties, "lod_dist")
+        grid.prop(aobj.entity_properties, "child_lod_dist")
+        grid.prop(aobj.entity_properties, "num_children")
+        grid.prop(aobj.entity_properties, "ambient_occlusion_multiplier")
+        grid.prop(aobj.entity_properties, "artificial_ambient_occlusion")
+        grid.prop(aobj.entity_properties, "tint_value")
+        grid.prop(aobj.entity_properties, "lod_level")
+        grid.prop(aobj.entity_properties, "priority_level")
 
 
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
@@ -481,58 +530,23 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         draw_shader_value_params(layout, mat)
 
 
-class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
-    bl_label = "Sollumz"
-    bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
+class FlagsPanel:
+    bl_label = "Flags"
     bl_options = {'DEFAULT_CLOSED'}
 
-    def draw_drawable_model_properties(self, context, layout, obj):
-        layout.prop(obj.drawable_model_properties, "render_mask")
-        layout.prop(obj.drawable_model_properties, "flags")
-        layout.prop(obj.drawable_model_properties, "sollum_lod")
-
-    def draw_sollum_type(self, layout, obj):
-        row = layout.row()
-        row.enabled = False
-        row.prop(obj, "sollum_type")
+    def get_flags(self, context):
+        raise NotImplementedError(
+            f"Failed to display flags. '{self.__class__.__name__}.get_flags()' method not defined.")
 
     def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-
-        obj = context.active_object
-
-        if obj.sollum_type == SollumType.DRAWABLE:
-            self.draw_sollum_type(layout, obj)
-            draw_drawable_properties(layout, obj)
-        elif obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-            self.draw_sollum_type(layout, obj)
-            draw_geometry_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.DRAWABLE_MODEL):
-            self.draw_sollum_type(layout, obj)
-            self.draw_drawable_model_properties(context, layout, obj)
-            self.draw_sollum_type(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGMENT):
-            self.draw_sollum_type(layout, obj)
-            draw_fragment_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGGROUP):
-            self.draw_sollum_type(layout, obj)
-            draw_group_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGCHILD):
-            self.draw_sollum_type(layout, obj)
-            draw_child_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGLOD):
-            self.draw_sollum_type(layout, obj)
-            draw_lod_properties(layout, obj)
-        elif obj.sollum_type in BOUND_TYPES:
-            self.draw_sollum_type(layout, obj)
-            draw_bound_properties(layout, obj)
-        else:
-            layout.label(
-                text="No sollumz objects in scene selected.", icon="ERROR")
+        data_block = self.get_flags(context)
+        self.layout.prop(data_block, "total")
+        self.layout.separator()
+        grid = self.layout.grid_flow(columns=2)
+        for prop_name in data_block.__annotations__:
+            if prop_name == "total":
+                continue
+            grid.prop(data_block, prop_name)
 
 
 class SOLLUMZ_MT_sollumz(bpy.types.Menu):
