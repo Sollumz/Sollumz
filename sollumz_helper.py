@@ -1,4 +1,5 @@
 import traceback
+import os
 import time
 from abc import abstractmethod
 from .sollumz_properties import SollumType
@@ -68,3 +69,11 @@ def is_sollum_object_in_objects(objs):
         if obj.sollum_type != SollumType.NONE:
             return True
     return False
+
+
+def find_fragment_file(filepath):
+    directory = os.path.dirname(filepath)
+    for file in os.listdir(directory):
+        if file.endswith(".yft.xml"):
+            return os.path.join(directory, file)
+    return None

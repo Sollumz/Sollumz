@@ -24,6 +24,8 @@ def drawable_dict_from_object(exportop, obj, filepath, export_settings):
         if child.sollum_type == SollumType.DRAWABLE:
             drawable = drawable_from_object(
                 exportop, child, filepath, bones, export_settings)
+            if export_settings.exclude_skeleton:
+                drawable.skeleton = None
             drawable_dict[drawable.name] = drawable
 
     drawable_dict.sort(key=get_hash)

@@ -312,6 +312,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=True,
     )
 
+    import_ext_skeleton: bpy.props.BoolProperty(
+        name="Import External Skeleton",
+        description="Imports the first found yft skeleton in the same folder as the selected file.",
+        default=False,
+    )
+
 
 class SollumzExportSettings(bpy.types.PropertyGroup):
     local: bpy.props.BoolProperty(
@@ -367,6 +373,11 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         name="Export With _hi",
         description="Exports fragment with _hi file.",
         default=True
+    )
+    exclude_skeleton: bpy.props.BoolProperty(
+        name="Skeleton",
+        description="Exclude skeleton from export. Usually done with mp ped components.",
+        default=False
     )
 
 

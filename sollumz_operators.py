@@ -52,7 +52,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 import_ydr(filepath, self.import_settings)
                 valid_type = True
             elif ext == YDD.file_extension:
-                import_ydd(filepath, self.import_settings)
+                import_ydd(self, filepath, self.import_settings)
                 valid_type = True
             elif ext == YFT.file_extension:
                 import_yft(filepath, self.import_settings)
