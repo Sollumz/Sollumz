@@ -1,5 +1,5 @@
 import bpy
-from ..ydr.shader_materials import create_shader
+from ..ydr.shader_materials import create_shader, try_get_node
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
 from ..tools.meshhelper import get_children_recursive
 from ..tools.blenderhelper import join_objects
@@ -85,6 +85,10 @@ def get_drawable_geometries(drawable):
 
 
 def convert_material(material):
+
+    if material.sollum_type != MaterialType.NONE:
+        raise Exception("Error can not convert a sollumz material.")
+
     bsdf = material.node_tree.nodes["Principled BSDF"]
 
     # if(bsdf == None):
@@ -97,18 +101,13 @@ def convert_material(material):
     if diffuse_input.is_linked:
         diffuse_node = diffuse_input.links[0].from_node
 
-    # if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-        # self.messages.append(
-        # f"{material.name} Material has no diffuse image.")
-        # return None
+    if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
+        raise Exception("Error linked base color node is not a image node.")
 
     specular_node = None
     specular_input = bsdf.inputs["Specular"]
     if specular_input.is_linked:
         specular_node = specular_input.links[0].from_node
-
-    if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-        specular_node = None
 
     normal_node = None
     normal_input = bsdf.inputs["Normal"]
@@ -118,14 +117,10 @@ def convert_material(material):
         if len(normal_map_input.links) > 0:
             normal_node = normal_map_input.links[0].from_node
 
-    if not isinstance(normal_node, bpy.types.ShaderNodeTexImage):
-        normal_node = None
-
     shader_name = "default"
-
     if normal_node != None and specular_node != None:
         shader_name = "normal_spec"
-    elif normal_node != None and specular_node == None:
+    elif normal_node != None:
         shader_name = "normal"
     elif normal_node == None and specular_node != None:
         shader_name = "spec"
@@ -135,34 +130,16 @@ def convert_material(material):
 
     bsdf = new_material.node_tree.nodes["Principled BSDF"]
 
-    new_diffuse_node = None
-    diffuse_input = bsdf.inputs["Base Color"]
-    if diffuse_input.is_linked:
-        new_diffuse_node = diffuse_input.links[0].from_node
-
-    if(diffuse_node != None):
+    new_diffuse_node = try_get_node(new_material.node_tree, "DiffuseSampler")
+    if diffuse_node and new_diffuse_node:
         new_diffuse_node.image = diffuse_node.image
 
-    new_specular_node = None
-    specular_input = bsdf.inputs["Specular"]
-    if specular_input.is_linked:
-        new_specular_node = specular_input.links[0].from_node
-
-    if(specular_node != None):
+    new_specular_node = try_get_node(new_material.node_tree, "SpecSampler")
+    if specular_node and new_specular_node:
         new_specular_node.image = specular_node.image
 
-    new_normal_node = None
-    normal_input = bsdf.inputs["Normal"]
-    if len(normal_input.links) > 0:
-        normal_map_node = normal_input.links[0].from_node
-        normal_map_input = normal_map_node.inputs["Color"]
-        if len(normal_map_input.links) > 0:
-            new_normal_node = normal_map_input.links[0].from_node
-
-    if(normal_node != None):
+    new_normal_node = try_get_node(new_material.node_tree, "BumpSampler")
+    if normal_node and new_normal_node:
         new_normal_node.image = normal_node.image
-
-    # self.messages.append(
-        # f"{material.name} was successfully converted to a sollumz material.")
 
     return new_material
