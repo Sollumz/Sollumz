@@ -202,11 +202,11 @@ def get_fragment_drawable(fragment):
             return child
 
 
-def import_yft(filepath, split_by_bone=False):
+def import_yft(filepath, import_settings):
     yft_xml = YFT.from_xml_file(filepath)
     fobj = fragment_to_obj(yft_xml, filepath)
 
-    if split_by_bone:
+    if import_settings.split_by_bone:
         dobj = get_fragment_drawable(fobj)
 
         if not dobj:

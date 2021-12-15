@@ -57,10 +57,10 @@ def drawable_dict_to_obj(drawable_dict, filepath):
     return dict_obj
 
 
-def import_ydd(filepath, join_geometries):
+def import_ydd(filepath, import_settings):
     ydd_xml = YDD.from_xml_file(filepath)
     drawable_dict = drawable_dict_to_obj(ydd_xml, filepath)
-    if join_geometries:
+    if import_settings.join_geometries:
         for child in drawable_dict.children:
             if child.sollum_type == SollumType.DRAWABLE:
                 for grandchild in child.children:

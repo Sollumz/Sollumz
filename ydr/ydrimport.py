@@ -484,11 +484,11 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     return obj
 
 
-def import_ydr(filepath, join_geometries):
+def import_ydr(filepath, import_settings):
     ydr_xml = YDR.from_xml_file(filepath)
     drawable = drawable_to_obj(ydr_xml, filepath, os.path.basename(
         filepath.replace(YDR.file_extension, '')))
-    if join_geometries:
+    if import_settings.join_geometries:
         for child in drawable.children:
             if child.sollum_type == SollumType.DRAWABLE_MODEL:
                 join_drawable_geometries(child)

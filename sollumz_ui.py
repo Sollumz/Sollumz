@@ -6,6 +6,79 @@ from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_sha
 from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_group_properties, draw_lod_properties, draw_child_properties
 
 
+class SOLLUMZ_PT_import_main(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = ""
+    bl_parent_id = "FILE_PT_operator"
+    bl_options = {'HIDE_HEADER'}
+    bl_order = 1
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_import"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.import_settings, "batch_mode")
+
+
+class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Geometry"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 1
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_import"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.import_settings, "join_geometries")
+
+
+class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Fragment"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 2
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_import"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.import_settings, "split_by_bone")
+
+
 class SOLLUMZ_PT_export_main(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
     bl_region_type = 'TOOL_PROPS'
@@ -65,30 +138,6 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel):
         col.prop(operator.export_settings, "sollum_types")
 
 
-class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
-    bl_label = "Fragment"
-    bl_parent_id = "FILE_PT_operator"
-    bl_order = 3
-
-    @classmethod
-    def poll(cls, context):
-        sfile = context.space_data
-        operator = sfile.active_operator
-        return operator.bl_idname == "SOLLUMZ_OT_export"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        sfile = context.space_data
-        operator = sfile.active_operator
-
-        layout.prop(operator.export_settings, "export_with_hi")
-
-
 class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
     bl_region_type = 'TOOL_PROPS'
@@ -111,6 +160,30 @@ class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.export_settings, "use_transforms")
+
+
+class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Fragment"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 3
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.export_settings, "export_with_hi")
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):

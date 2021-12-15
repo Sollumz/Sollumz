@@ -3,9 +3,10 @@ import os
 import pathlib
 from abc import abstractmethod
 import bpy
+from bpy_extras.io_utils import ImportHelper, ExportHelper
 from enum import Enum
 from .sollumz_helper import *
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings
 from .resources.drawable import YDR, YDD
 from .resources.fragment import YFT
 from .resources.bound import YBN
@@ -21,7 +22,6 @@ from .resources.ymap import YMAP, EntityItem, CMapData
 from .tools.meshhelper import *
 from .tools.utils import *
 from .tools.blenderhelper import get_terrain_texture_brush
-from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 
 class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
@@ -37,38 +37,25 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         maxlen=255,
     )
 
+    import_settings: bpy.props.PointerProperty(type=SollumzImportSettings)
+
     filename_exts = [YDR.file_extension, YDD.file_extension,
                      YFT.file_extension, YBN.file_extension]
 
-    import_directory: bpy.props.BoolProperty(
-        name="Import Directory",
-        description="Import the entire directory.",
-        default=False,
-    )
-
-    join_geometries: bpy.props.BoolProperty(
-        name="Join Geometries",
-        description="Joins the drawables geometries into a single mesh.",
-        default=True,
-    )
-
-    split_by_bone: bpy.props.BoolProperty(
-        name="Split by Bone",
-        description="Splits the geometries by bone.",
-        default=True,
-    )
+    def draw(self, context):
+        pass
 
     def import_file(self, filepath, ext):
         try:
             valid_type = False
             if ext == YDR.file_extension:
-                import_ydr(filepath, self.join_geometries)
+                import_ydr(filepath, self.import_settings)
                 valid_type = True
             elif ext == YDD.file_extension:
-                import_ydd(filepath, self.join_geometries)
+                import_ydd(filepath, self.import_settings)
                 valid_type = True
             elif ext == YFT.file_extension:
-                import_yft(filepath, self.split_by_bone)
+                import_yft(filepath, self.import_settings)
                 valid_type = True
             elif ext == YBN.file_extension:
                 import_ybn(filepath)
@@ -85,7 +72,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     def run(self, context):
         result = False
-        if self.import_directory:
+        if self.import_settings.batch_mode == "DIRECTORY":
             folderpath = os.path.dirname(self.filepath)
             for file in os.listdir(folderpath):
                 ext = ''.join(pathlib.Path(file).suffixes)
@@ -102,63 +89,6 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         return True
 
 
-class ExportSettings(bpy.types.PropertyGroup):
-    local: bpy.props.BoolProperty(
-        name="Export drawables local to position")
-    batch_mode: bpy.props.EnumProperty(
-        name="Batch Mode",
-        items=(('OFF', "Off", "Active scene"),
-               ('SCENE', "Scene", "Every scene"),
-               ('COLLECTION', "Collection",
-                "Each collection (data-block ones), does not include content of children collections"),
-               ('SCENE_COLLECTION', "Scene Collections",
-                "Each collection (including master, non-data-block ones) of each scene, "
-                "including content from children collections"),
-               ('ACTIVE_SCENE_COLLECTION', "Active Scene Collections",
-                "Each collection (including master, non-data-block one) of the active scene, "
-                "including content from children collections"),
-               ),
-    )
-    use_batch_own_dir: bpy.props.BoolProperty(
-        name="Batch Own Dir",
-        description="Create a new directory for each exported file",
-        default=False,
-    )
-    sollum_types: bpy.props.EnumProperty(
-        name="Sollum Types",
-        options={'ENUM_FLAG'},
-        items=((SollumType.DRAWABLE.value, "Drawables", ""),
-               (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
-               (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
-               (SollumType.FRAGMENT.value, "Fragments", "")),
-        description="Which kind of sollumz objects to export",
-        default={SollumType.DRAWABLE.value,
-                 SollumType.DRAWABLE_DICTIONARY.value,
-                 SollumType.BOUND_COMPOSITE.value,
-                 SollumType.FRAGMENT.value},
-    )
-    use_selection: bpy.props.BoolProperty(
-        name="Selected Objects",
-        description="Export selected and visible objects only",
-        default=False,
-    )
-    use_active_collection: bpy.props.BoolProperty(
-        name="Active Collection",
-        description="Export only objects from the active collection (and its children)",
-        default=False,
-    )
-    use_transforms: bpy.props.BoolProperty(
-        name="Use Parent Transforms",
-        description="Exports objects with the parent empty object's transforms applied to the vertices",
-        default=True
-    )
-    export_with_hi: bpy.props.BoolProperty(
-        name="Export With _hi",
-        description="Exports fragment with _hi file.",
-        default=True
-    )
-
-
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     """Exports codewalker xml files."""
     bl_idname = "sollumz.export"
@@ -166,7 +96,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "export"
     bl_showtime = True
 
-    export_settings: bpy.props.PointerProperty(type=ExportSettings)
+    export_settings: bpy.props.PointerProperty(type=SollumzExportSettings)
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",

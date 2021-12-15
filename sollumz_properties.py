@@ -293,6 +293,83 @@ class EntityProperties(bpy.types.PropertyGroup):
     tint_value: bpy.props.FloatProperty(name="Tint Value")
 
 
+class SollumzImportSettings(bpy.types.PropertyGroup):
+    batch_mode: bpy.props.EnumProperty(
+        name="Batch Mode",
+        items=(('SELECTED_FILE', "Selected File", "Import selected file."),
+               ('DIRECTORY', "Directory", "Import every file from active directory the file browser is in."))
+    )
+
+    join_geometries: bpy.props.BoolProperty(
+        name="Join Geometries",
+        description="Joins the drawables geometries into a single mesh.",
+        default=True,
+    )
+
+    split_by_bone: bpy.props.BoolProperty(
+        name="Split by Bone",
+        description="Splits the geometries by bone.",
+        default=True,
+    )
+
+
+class SollumzExportSettings(bpy.types.PropertyGroup):
+    local: bpy.props.BoolProperty(
+        name="Export drawables local to position")
+    batch_mode: bpy.props.EnumProperty(
+        name="Batch Mode",
+        items=(('OFF', "Off", "Active scene"),
+               ('SCENE', "Scene", "Every scene"),
+               ('COLLECTION', "Collection",
+                "Each collection (data-block ones), does not include content of children collections"),
+               ('SCENE_COLLECTION', "Scene Collections",
+                "Each collection (including master, non-data-block ones) of each scene, "
+                "including content from children collections"),
+               ('ACTIVE_SCENE_COLLECTION', "Active Scene Collections",
+                "Each collection (including master, non-data-block one) of the active scene, "
+                "including content from children collections"),
+               ),
+    )
+    use_batch_own_dir: bpy.props.BoolProperty(
+        name="Batch Own Dir",
+        description="Create a new directory for each exported file",
+        default=False,
+    )
+    sollum_types: bpy.props.EnumProperty(
+        name="Sollum Types",
+        options={'ENUM_FLAG'},
+        items=((SollumType.DRAWABLE.value, "Drawables", ""),
+               (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
+               (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
+               (SollumType.FRAGMENT.value, "Fragments", "")),
+        description="Which kind of sollumz objects to export",
+        default={SollumType.DRAWABLE.value,
+                 SollumType.DRAWABLE_DICTIONARY.value,
+                 SollumType.BOUND_COMPOSITE.value,
+                 SollumType.FRAGMENT.value},
+    )
+    use_selection: bpy.props.BoolProperty(
+        name="Selected Objects",
+        description="Export selected and visible objects only",
+        default=False,
+    )
+    use_active_collection: bpy.props.BoolProperty(
+        name="Active Collection",
+        description="Export only objects from the active collection (and its children)",
+        default=False,
+    )
+    use_transforms: bpy.props.BoolProperty(
+        name="Use Parent Transforms",
+        description="Exports objects with the parent empty object's transforms applied to the vertices",
+        default=True
+    )
+    export_with_hi: bpy.props.BoolProperty(
+        name="Export With _hi",
+        description="Exports fragment with _hi file.",
+        default=True
+    )
+
+
 def hide_obj_and_children(obj, value):
     if obj.name in bpy.context.view_layer.objects:
         obj.hide_set(value)
