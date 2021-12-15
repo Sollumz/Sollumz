@@ -84,7 +84,10 @@ def create_lod_obj(lod, filepath, materials):
         gobj.group_properties.unk_float_a8 = group.unk_float_a8
 
         try:
-            gparent = gobjs[group.parent_index]
+            if group.parent_index == 255:
+                gparent = lobj
+            else:
+                gparent = gobjs[group.parent_index]
             gobj.parent = gparent
         except:
             pass
@@ -119,16 +122,16 @@ def create_lod_obj(lod, filepath, materials):
                 child.drawable, filepath, f"Drawable{idx}", None, materials)
             a.parent = cobj
 
-        transform = lod.transforms[idx].value
-        a = transform[3][0] + lod.position_offset.x
-        b = transform[3][1] + lod.position_offset.y
-        c = transform[3][2] + lod.position_offset.z
-        transform[3][0] = a
-        transform[3][1] = b
-        transform[3][2] = c
-        cobj.matrix_basis = transform.transposed()
+        if lod.transforms:
+            transform = lod.transforms[idx].value
+            a = transform[3][0] + lod.position_offset.x
+            b = transform[3][1] + lod.position_offset.y
+            c = transform[3][2] + lod.position_offset.z
+            transform[3][0] = a
+            transform[3][1] = b
+            transform[3][2] = c
+            cobj.matrix_basis = transform.transposed()
 
-    gobjs[0].parent = lobj
     bpy.data.objects.remove(bobj, do_unlink=True)
 
     return lobj
@@ -182,16 +185,16 @@ def fragment_to_obj(fragment, filepath):
         for i in range(pbc):
             modeltransforms.append(pose[i].value)
 
-    for i in range(len(allfmodels)):
-        model = allfmodels[i]
-        bmodel = allbmodels[i]
+        for i in range(len(allfmodels)):
+            model = allfmodels[i]
+            bmodel = allbmodels[i]
 
-        boneidx = model.bone_index
-        m = modeltransforms[boneidx] if boneidx < len(
-            modeltransforms) else Matrix()
+            boneidx = model.bone_index
+            m = modeltransforms[boneidx] if boneidx < len(
+                modeltransforms) else Matrix()
 
-        if not model.has_skin:
-            bmodel.matrix_basis = m
+            if not model.has_skin:
+                bmodel.matrix_basis = m
 
     return fobj
 
