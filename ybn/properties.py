@@ -104,17 +104,13 @@ class FlagPresetProp(bpy.types.PropertyGroup):
 
 
 def get_flag_presets_path():
-    name = 'flag_presets.xml'
-    dir = bpy.utils.user_resource('SCRIPTS', path="addons") + '\Sollumz'
-    found = False
-    for root, dirs, files in os.walk(dir):
-        if name in files:
-            found = True
-            return os.path.join(root, name)
-
-    if not found:
+    package_name = __name__.split('.')[0]
+    presets_path = f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ybn\\flag_presets.xml"
+    if os.path.exists(presets_path):
+        return presets_path
+    else:
         raise FileNotFoundError(
-            f"flag_presets.xml file not found! Please redownload this file from the github and place it in '{dir}\ybn'")
+            f"flag_presets.xml file not found! Please redownload this file from the github and place it in '{os.path.dirname(presets_path)}'")
 
 
 flag_presets = FlagPresetsFile()
@@ -128,7 +124,7 @@ def load_flag_presets():
         flag_presets.presets = file.presets
         for index, preset in enumerate(flag_presets.presets):
             item = bpy.context.scene.flag_presets.add()
-            item.name = preset.name
+            item.name = str(preset.name)
             item.index = index
 
 
