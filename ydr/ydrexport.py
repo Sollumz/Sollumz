@@ -631,9 +631,11 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
                 drawable.drawable_models_vlow.append(drawable_model)
         if child.sollum_type in BOUND_TYPES:
             if child.sollum_type == SollumType.BOUND_COMPOSITE:
-                drawable.bound = composite_from_object(child, export_settings)
+                drawable.bounds.append(
+                    composite_from_object(child, export_settings))
             else:
-                drawable.bound = bound_from_object(child, export_settings)
+                drawable.bounds.append(
+                    bound_from_object(child, export_settings))
         elif child.type == 'LIGHT' and child.data.light_properties.type != LightType.NONE:
             drawable.lights.append(light_from_object(child))
 
