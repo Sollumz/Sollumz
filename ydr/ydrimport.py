@@ -437,14 +437,17 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     if bones_override is not None:
         bones = bones_override
 
-    if drawable.bound and drawable.bound.type == SollumType.BOUND_COMPOSITE:
-        bobj = composite_to_obj(
-            drawable.bound, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], True)
-        bobj.parent = obj
-    elif drawable.bound:
-        bobj = bound_to_obj(drawable.bound)
-        if bobj:
-            bobj.parent = obj
+    if drawable.bounds:
+        for bound in drawable.bounds:
+            bobj = None
+            if bound.type == "Composite":
+                bobj = composite_to_obj(
+                    bound, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], True)
+                bobj.parent = obj
+            else:
+                bobj = bound_to_obj(bound)
+                if bobj:
+                    bobj.parent = obj
 
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(

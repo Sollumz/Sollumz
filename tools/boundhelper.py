@@ -110,3 +110,4 @@ def convert_selected_to_bound(objs, use_name, multiple, bvhs, replace_original):
                 poly_mesh.sollum_type = SollumType.BOUND_POLY_TRIANGLE
             else:
                 poly_mesh.data = obj.data.copy()
+                poly_mesh.matrix_world = obj.matrix_world

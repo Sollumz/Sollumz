@@ -537,42 +537,47 @@ class Drawable(ElementTree, AbstractClass):
             "DrawableModelsLow")
         self.drawable_models_vlow = DrawableModelListProperty(
             "DrawableModelsVeryLow")
-        self.bound = None
         self.lights = LightsProperty()
+        self.bounds = []
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = super().from_xml(element)
-        for child in element.iter():
-            if 'type' in child.attrib:
-                bound_type = child.get('type')
-                child.tag = 'Item'
-                if bound_type == 'Box':
-                    new.bound = BoundBox.from_xml(child)
-                elif bound_type == 'Sphere':
-                    new.bound = BoundSphere.from_xml(child)
-                elif bound_type == 'Capsule':
-                    new.bound = BoundCapsule.from_xml(child)
-                elif bound_type == 'Cylinder':
-                    new.bound = BoundCylinder.from_xml(child)
-                elif bound_type == 'Disc':
-                    new.bound = BoundDisc.from_xml(child)
-                elif bound_type == 'Cloth':
-                    new.bound = BoundCloth.from_xml(child)
-                elif bound_type == 'Geometry':
-                    new.bound = BoundGeometry.from_xml(child)
-                elif bound_type == 'GeometryBVH':
-                    new.bound = BoundGeometryBVH.from_xml(child)
+        bounds = element.findall("Bounds")
+        for child in bounds:
+            bound_type = child.get("type")
+            bound = None
+            if bound_type == "Composite":
+                bound = BoundsComposite.from_xml(child)
+            elif bound_type == "Box":
+                bound = BoundBox.from_xml(child)
+            elif bound_type == "Sphere":
+                bound = BoundSphere.from_xml(child)
+            elif bound_type == "Capsule":
+                bound = BoundCapsule.from_xml(child)
+            elif bound_type == "Cylinder":
+                bound = BoundCylinder.from_xml(child)
+            elif bound_type == "Disc":
+                bound = BoundDisc.from_xml(child)
+            elif bound_type == "Cloth":
+                bound = BoundCloth.from_xml(child)
+            elif bound_type == "Geometry":
+                bound = BoundGeometry.from_xml(child)
+            elif bound_type == "GeometryBVH":
+                bound = BoundGeometryBVH.from_xml(child)
 
-                if new.bound:
-                    new.bound.tag_name = 'Bounds'
+            if bound:
+                bound.tag_name = "Bounds"
+                new.bounds.append(bound)
 
         return new
 
     def to_xml(self):
-        if self.bound:
-            self.bound.tag_name = 'Bounds'
-        return super().to_xml()
+        element = super().to_xml()
+        for bound in self.bounds:
+            bound.tag_name = "Bounds"
+            element.append(bound.to_xml())
+        return element
 
 
 class DrawableDictionary(Mapping, Element):
