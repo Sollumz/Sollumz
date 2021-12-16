@@ -449,10 +449,29 @@ class FlagsPanel:
         self.layout.prop(data_block, "total")
         self.layout.separator()
         grid = self.layout.grid_flow(columns=2)
-        for prop_name in data_block.__annotations__:
-            if prop_name == "total":
-                continue
+        for index, prop_name in enumerate(data_block.__annotations__):
+            if index > data_block.size - 1:
+                break
             grid.prop(data_block, prop_name)
+
+
+class TimeFlagsPanel(FlagsPanel):
+    bl_label = "Time Flags"
+    select_operator = None
+    clear_operator = None
+
+    def draw(self, context):
+        super().draw(context)
+        if self.select_operator is None or self.clear_operator is None:
+            raise NotImplementedError(
+                f"'select_operator' and 'clear_operator' bl_idnames must be defined for {self.__class__.__name__}!")
+        flags = self.get_flags(context)
+        row = self.layout.row()
+        row.operator(self.select_operator)
+        row.prop(flags, "time_flags_start", text="from")
+        row.prop(flags, "time_flags_end", text="to")
+        row = self.layout.row()
+        row.operator(self.clear_operator)
 
 
 class SOLLUMZ_MT_sollumz(bpy.types.Menu):
