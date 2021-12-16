@@ -14,24 +14,19 @@ from ..ybn.ybnexport import bound_from_object, composite_from_object
 
 
 def get_used_materials(obj):
-
     materials = []
-
-    for child in obj.children:
-        for grandchild in child.children:
-            if(grandchild.sollum_type == SollumType.DRAWABLE_GEOMETRY):
-                mats = grandchild.data.materials
-                for mat in mats:
-                    if(mat.sollum_type == MaterialType.SHADER):
+    for child in get_children_recursive(obj):
+        if(child.sollum_type == SollumType.DRAWABLE_GEOMETRY):
+            mats = child.data.materials
+            for mat in mats:
+                if(mat.sollum_type == MaterialType.SHADER):
+                    if mat not in materials:
                         materials.append(mat)
-
     return materials
 
 
-def get_shaders_from_blender(obj):
+def get_shaders_from_blender(materials):
     shaders = []
-
-    materials = get_used_materials(obj)
 
     for material in materials:
         shader = ShaderItem()
@@ -374,7 +369,7 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     is_skinned = False
     if len(obj.vertex_groups) > 0:
         is_skinned = True
-        
+
     layout = shader.get_layout_from_semantic(
         get_semantic_from_object(shader, mesh), is_skinned=is_skinned)
 
@@ -388,7 +383,7 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     return geometry
 
 
-def drawable_model_from_object(obj, bones=None, export_settings=None):
+def drawable_model_from_object(obj, bones=None, materials=None, export_settings=None):
     drawable_model = DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
@@ -403,16 +398,15 @@ def drawable_model_from_object(obj, bones=None, export_settings=None):
         if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             if len(child.data.materials) > 1:
                 # Preserve original order of materials
-                mats = child.data.copy().materials
                 objs = split_object(child, obj)
                 for obj in objs:
                     geometry = geometry_from_object(
-                        obj, mats, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
+                        obj, materials, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
                     drawable_model.geometries.append(geometry)
                 join_objects(objs)
             else:
                 geometry = geometry_from_object(
-                    child, get_used_materials(obj.parent), bones, export_settings)
+                    child, materials, bones, export_settings)
                 drawable_model.geometries.append(geometry)
 
     return drawable_model
@@ -558,7 +552,7 @@ def light_from_object(obj):
 
 
 # REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
-def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=None, is_frag=False, write_shaders=True):
+def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, export_settings=None, is_frag=False, write_shaders=True):
     drawable = None
     if is_frag:
         drawable = FragmentDrawable()
@@ -577,11 +571,13 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
     drawable.bounding_box_max = bbmax
 
     drawable.lod_dist_high = obj.drawable_properties.lod_dist_high
-    drawable.lod_dist_med = obj.drawable_properties.lod_dist_high
-    drawable.lod_dist_low = obj.drawable_properties.lod_dist_high
-    drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_high
+    drawable.lod_dist_med = obj.drawable_properties.lod_dist_med
+    drawable.lod_dist_low = obj.drawable_properties.lod_dist_low
+    drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_vlow
 
-    shaders = get_shaders_from_blender(obj)
+    if not materials:
+        materials = get_used_materials(obj)
+    shaders = get_shaders_from_blender(materials)
 
     if len(shaders) == 0:
         raise Exception(
@@ -620,7 +616,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             drawable_model = drawable_model_from_object(
-                child, bones, export_settings)
+                child, bones, materials, export_settings)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)
@@ -654,5 +650,5 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, export_settings=
 
 
 def export_ydr(exportop, obj, filepath, export_settings):
-    drawable_from_object(exportop, obj, filepath, None,
+    drawable_from_object(exportop, obj, filepath, None, None,
                          export_settings).write_xml(filepath)

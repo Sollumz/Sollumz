@@ -329,7 +329,7 @@ def bound_to_obj(bound):
         disc = init_bound_obj(bound, SollumType.BOUND_DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
         disc.bound_radius = bound.sphere_radius
-        # create_disc(disc.data, bound.sphere_radius)
+        create_disc(disc.data, bound.sphere_radius)
         # Cant assign to dimensions directly according to docs
         # disc.dimensions = length, disc.dimensions.y, disc.dimensions.z
 

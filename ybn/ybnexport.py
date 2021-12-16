@@ -260,6 +260,8 @@ def init_bound(bound, obj, export_settings):
     bound.poly_flags = obj.bound_properties.poly_flags
     bound.inertia = Vector(obj.bound_properties.inertia)
     bound.volume = obj.bound_properties.volume
+    bound.unk_flags = obj.bound_properties.unk_flags
+    bound.unk_type = obj.bound_properties.unk_type
     bound.margin = obj.margin
 
     return bound

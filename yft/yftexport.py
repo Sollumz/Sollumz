@@ -2,7 +2,7 @@ import os
 import traceback
 from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
-from ..ydr.ydrexport import drawable_from_object
+from ..ydr.ydrexport import drawable_from_object, get_used_materials
 from ..ybn.ybnexport import composite_from_object, composite_from_objects
 from ..resources.fragment import BoneTransformItem, BoneTransformsListProperty, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem
 from ..tools.meshhelper import *
@@ -80,15 +80,18 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
     if dobj == None:
         raise Exception("NO DRAWABLE TO EXPORT.")
 
-    # join geos cause split by bone
-    # for child in dobj.children:
-        # if child.sollum_type == SollumType.DRAWABLE_MODEL:
-        # join_drawable_geometries(child)
-    fragment.drawable = drawable_from_object(
-        exportop, dobj, exportpath, None, export_settings, True)
+    materials = None
+    materials = get_used_materials(fobj)
 
-    geo = get_drawable_geometries(dobj)[0]
-    geos = split_object(geo, geo.parent)
+    # join geos cause split by bone
+    for child in dobj.children:
+        if child.sollum_type == SollumType.DRAWABLE_MODEL:
+            join_drawable_geometries(child)
+    fragment.drawable = drawable_from_object(
+        exportop, dobj, exportpath, None, materials, export_settings, True)
+
+    #geo = get_drawable_geometries(dobj)[0]
+    #geos = split_object(geo, geo.parent)
     # for idx, bone in enumerate(fragment.drawable.skeleton.bones):
     for idx, bone in enumerate(dobj.data.bones):
         fragment.bones_transforms.append(
@@ -195,7 +198,7 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
 
             if dobj:
                 child.drawable = drawable_from_object(
-                    exportop, dobj, exportpath, None, export_settings, True, False)
+                    exportop, dobj, exportpath, None, materials, export_settings, True, False)
             else:
                 child.drawable.matrix = Matrix()
                 child.drawable.shader_group = None
