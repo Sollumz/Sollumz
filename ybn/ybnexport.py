@@ -272,6 +272,9 @@ def bound_from_object(obj, export_settings):
         bound = init_bound_item(BoundBox(), obj, export_settings)
         bound.box_max = obj.bound_dimensions
         bound.box_min = obj.bound_dimensions * -1
+        if bound.unk_type == 2:
+            bound.sphere_center = Vector()
+            bound.box_center = Vector()
         return bound
     elif obj.sollum_type == SollumType.BOUND_SPHERE:
         bound = init_bound_item(BoundSphere(), obj, export_settings)
@@ -288,6 +291,9 @@ def bound_from_object(obj, export_settings):
     elif obj.sollum_type == SollumType.BOUND_DISC:
         bound = init_bound_item(BoundDisc(), obj, export_settings)
         bound.sphere_radius = obj.bound_radius
+        if bound.unk_type == 2:
+            bound.sphere_center = Vector()
+            bound.box_center = Vector()
         # bound.composite_scale = obj.scale
         # bound.composite_rotation = obj.rotation_euler.to_quaternion()
         bound.margin = obj.margin

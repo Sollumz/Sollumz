@@ -91,9 +91,7 @@ def split_object_by_vertex_groups(obj):
 
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.vertex_group_select()
-
         # vgVerts = [v for v in geo.data.vertices if v.select]
-
         bpy.ops.mesh.separate(type='SELECTED')
 
         new_objects = bpy.data.objects.values()
