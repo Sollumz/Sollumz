@@ -1,125 +1,31 @@
 import bpy
 from .shader_materials import *
 from .operators import *
+from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
+from ..sollumz_properties import SollumType
 
 
-def draw_drawable_properties(layout, obj):
-    layout.prop(obj.drawable_properties, "lod_dist_high")
-    layout.prop(obj.drawable_properties, "lod_dist_med")
-    layout.prop(obj.drawable_properties, "lod_dist_low")
-    layout.prop(obj.drawable_properties, "lod_dist_vlow")
+def draw_drawable_properties(self, context):
+    obj = context.active_object
+    if obj and obj.sollum_type == SollumType.DRAWABLE:
+        layout = self.layout
+        layout.prop(obj.drawable_properties, "lod_dist_high")
+        layout.prop(obj.drawable_properties, "lod_dist_med")
+        layout.prop(obj.drawable_properties, "lod_dist_low")
+        layout.prop(obj.drawable_properties, "lod_dist_vlow")
 
 
-def draw_geometry_properties(layout, obj):
-    return
-    #layout.label(text = "")
-
-
-def draw_material_properties(layout, mat):
-    box = layout.box()
-    row = box.row()
-    row.prop(mat.shader_properties, "renderbucket")
-    row.prop(mat.shader_properties, "filename")
-
-
-def draw_shader_texture_params(layout, mat):
-    # only using selected nodes because if you use the node tree weird bug
-    # where if you select one of the image nodes it swaps around the order that you edit them in...
-    # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
-    # annoyying as hell
-    #selected_nodes = []
-    # for n in nodes:
-    # if(n.select == True):
-    # selected_nodes.append(n)
-    nodes = mat.node_tree.nodes
-    for n in nodes:
-        if(isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz):
-            # if(n.name == "SpecSampler"):
-            box = layout.box()
-            row = box.row(align=True)
-            row.label(text="Texture Type: " + n.name)
-            if n.image:
-                row.label(text="Texture Name: " + n.image.name)
-                row = box.row()
-                row.prop(n.image, "filepath", text="Texture Path")
-            row = box.row(align=True)
-            row.prop(n.texture_properties, "embedded")
-            if(n.texture_properties.embedded == False):
-                continue
-            row.prop(n.texture_properties, "format")
-            row.prop(n.texture_properties, "usage")
-            #box = box.box()
-            box.label(text="Flags")
-            row = box.row()
-            row.prop(n.texture_flags, "not_half")
-            row.prop(n.texture_flags, "hd_split")
-            row.prop(n.texture_flags, "flag_full")
-            row.prop(n.texture_flags, "maps_half")
-            row = box.row()
-            row.prop(n.texture_flags, "x2")
-            row.prop(n.texture_flags, "x4")
-            row.prop(n.texture_flags, "y4")
-            row.prop(n.texture_flags, "x8")
-            row = box.row()
-            row.prop(n.texture_flags, "x16")
-            row.prop(n.texture_flags, "x32")
-            row.prop(n.texture_flags, "x64")
-            row.prop(n.texture_flags, "y64")
-            row = box.row()
-            row.prop(n.texture_flags, "x128")
-            row.prop(n.texture_flags, "x256")
-            row.prop(n.texture_flags, "x512")
-            row.prop(n.texture_flags, "y512")
-            row = box.row()
-            row.prop(n.texture_flags, "x1024")
-            row.prop(n.texture_flags, "y1024")
-            row.prop(n.texture_flags, "x2048")
-            row.prop(n.texture_flags, "y2048")
-            row = box.row()
-            row.prop(n.texture_flags, "embeddedscriptrt")
-            row.prop(n.texture_flags, "unk19")
-            row.prop(n.texture_flags, "unk20")
-            row.prop(n.texture_flags, "unk21")
-            row = box.row()
-            row.prop(n.texture_flags, "unk24")
-            row.prop(n.texture_properties, "extra_flags")
-
-
-def draw_shader_value_params(layout, mat):
-    value_param_box = layout.box()
-    # only using selected nodes because if you use the node tree weird bug
-    # where if you select one of the image nodes it swaps around the order that you edit them in...
-    # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
-    # annoyying as hell
-    #selected_nodes = []
-    # for n in nodes:
-    # if(n.select == True):
-    # selected_nodes.append(n)
-    nodes = mat.node_tree.nodes
-    for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-        if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):
-            if(n.name[-1] == "x"):
-                row = value_param_box.row()
-                row.label(text=n.name[:-2])
-
-                x = n
-                y = mat.node_tree.nodes[n.name[:-1] + "y"]
-                z = mat.node_tree.nodes[n.name[:-1] + "z"]
-                w = mat.node_tree.nodes[n.name[:-1] + "w"]
-
-                row.prop(x.outputs[0], "default_value", text="X:")
-                row.prop(y.outputs[0], "default_value", text="Y:")
-                row.prop(z.outputs[0], "default_value", text="Z:")
-                row.prop(w.outputs[0], "default_value", text="W:")
-
-
-def draw_shader(layout, mat):
-    layout.label(text="Material Properties")
-    box = layout.box()
-    row = box.row()
-    row.prop(mat.shader_properties, "renderbucket")
-    row.prop(mat.shader_properties, "filename")
-    row.prop(mat.shader_properties, "name")
+def draw_shader(self, context):
+    obj = context.active_object
+    if not obj:
+        return
+    mat = obj.active_material
+    if mat and mat.sollum_type == MaterialType.SHADER:
+        self.layout.label(text="Material Properties")
+        row = self.layout.row()
+        row.prop(mat.shader_properties, "renderbucket")
+        row.prop(mat.shader_properties, "filename")
+        row.prop(mat.shader_properties, "name")
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
@@ -293,6 +199,153 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
         row.operator('sollumz.bone_flags_delete_item', text='Delete')
 
 
+class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
+    bl_label = "Texture Parameters"
+    bl_idname = 'SOLLUMZ_PT_TXTPARAMS_PANEL'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_order = 0
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj:
+            mat = obj.active_material
+            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
+        else:
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+
+        aobj = context.active_object
+        if(context.active_object == None):
+            return
+
+        mat = aobj.active_material
+        if(mat == None):
+            return
+
+        # only using selected nodes because if you use the node tree weird bug
+        # where if you select one of the image nodes it swaps around the order that you edit them in...
+        # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
+        # annoyying as hell
+        #selected_nodes = []
+        # for n in nodes:
+        # if(n.select == True):
+        # selected_nodes.append(n)
+        nodes = mat.node_tree.nodes
+        for n in nodes:
+            if(isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz):
+                # if(n.name == "SpecSampler"):
+                box = layout.box()
+                row = box.row(align=True)
+                row.label(text="Texture Type: " + n.name)
+                if n.image:
+                    row.label(text="Texture Name: " + n.image.name)
+                    row = box.row()
+                    row.prop(n.image, "filepath", text="Texture Path")
+                row = box.row(align=True)
+                row.prop(n.texture_properties, "embedded")
+                if(n.texture_properties.embedded == False):
+                    continue
+                row.prop(n.texture_properties, "format")
+                row.prop(n.texture_properties, "usage")
+                #box = box.box()
+                box.label(text="Flags")
+                row = box.row()
+                row.prop(n.texture_flags, "not_half")
+                row.prop(n.texture_flags, "hd_split")
+                row.prop(n.texture_flags, "flag_full")
+                row.prop(n.texture_flags, "maps_half")
+                row = box.row()
+                row.prop(n.texture_flags, "x2")
+                row.prop(n.texture_flags, "x4")
+                row.prop(n.texture_flags, "y4")
+                row.prop(n.texture_flags, "x8")
+                row = box.row()
+                row.prop(n.texture_flags, "x16")
+                row.prop(n.texture_flags, "x32")
+                row.prop(n.texture_flags, "x64")
+                row.prop(n.texture_flags, "y64")
+                row = box.row()
+                row.prop(n.texture_flags, "x128")
+                row.prop(n.texture_flags, "x256")
+                row.prop(n.texture_flags, "x512")
+                row.prop(n.texture_flags, "y512")
+                row = box.row()
+                row.prop(n.texture_flags, "x1024")
+                row.prop(n.texture_flags, "y1024")
+                row.prop(n.texture_flags, "x2048")
+                row.prop(n.texture_flags, "y2048")
+                row = box.row()
+                row.prop(n.texture_flags, "embeddedscriptrt")
+                row.prop(n.texture_flags, "unk19")
+                row.prop(n.texture_flags, "unk20")
+                row.prop(n.texture_flags, "unk21")
+                row = box.row()
+                row.prop(n.texture_flags, "unk24")
+                row.prop(n.texture_properties, "extra_flags")
+
+
+class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
+    bl_label = "Value Parameters"
+    bl_idname = 'SOLLUMZ_PT_VALUEPARAMS_PANEL'
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj:
+            mat = obj.active_material
+            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
+        else:
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+
+        aobj = context.active_object
+        if(context.active_object == None):
+            return
+
+        mat = aobj.active_material
+        if(mat == None):
+            return
+
+        value_param_box = layout.box()
+        # only using selected nodes because if you use the node tree weird bug
+        # where if you select one of the image nodes it swaps around the order that you edit them in...
+        # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
+        # annoyying as hell
+        #selected_nodes = []
+        # for n in nodes:
+        # if(n.select == True):
+        # selected_nodes.append(n)
+        nodes = mat.node_tree.nodes
+        for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
+            if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):
+                if(n.name[-1] == "x"):
+                    row = value_param_box.row()
+                    row.label(text=n.name[:-2])
+
+                    x = n
+                    y = mat.node_tree.nodes[n.name[:-1] + "y"]
+                    z = mat.node_tree.nodes[n.name[:-1] + "z"]
+                    w = mat.node_tree.nodes[n.name[:-1] + "w"]
+
+                    row.prop(x.outputs[0], "default_value", text="X:")
+                    row.prop(y.outputs[0], "default_value", text="Y:")
+                    row.prop(z.outputs[0], "default_value", text="Z:")
+                    row.prop(w.outputs[0], "default_value", text="W:")
+
+
 class SOLLUMZ_MT_add_drawable(bpy.types.Menu):
 
     bl_label = "Drawable"
@@ -314,7 +367,11 @@ def DrawDrawableMenu(self, context):
 
 def register():
     bpy.types.SOLLUMZ_MT_sollumz.append(DrawDrawableMenu)
+    SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_properties)
+    SOLLUMZ_PT_MAT_PANEL.append(draw_shader)
 
 
 def unregister():
     bpy.types.SOLLUMZ_MT_sollumz.remove(DrawDrawableMenu)
+    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_properties)
+    SOLLUMZ_PT_MAT_PANEL.remove(draw_shader)

@@ -1,9 +1,7 @@
 import bpy
 from .sollumz_helper import *
 from .sollumz_properties import *
-from .ybn.ui import draw_bound_properties, draw_collision_material_properties
-from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_shader_texture_params, draw_shader_value_params
-from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_group_properties, draw_lod_properties, draw_child_properties
+
 
 
 class OrderListHelper:
@@ -369,43 +367,18 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
 
-    def draw_sollum_type(self, layout, obj):
-        row = layout.row()
-        row.enabled = False
-        row.prop(obj, "sollum_type")
-
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
 
         obj = context.active_object
+        row = layout.row()
+        row.enabled = False
+        row.prop(obj, "sollum_type")
 
-        if obj.sollum_type == SollumType.DRAWABLE:
-            self.draw_sollum_type(layout, obj)
-            draw_drawable_properties(layout, obj)
-        elif obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-            self.draw_sollum_type(layout, obj)
-            draw_geometry_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.DRAWABLE_MODEL):
-            self.draw_sollum_type(layout, obj)
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
             self.draw_drawable_model_properties(context, layout, obj)
-            self.draw_sollum_type(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGMENT):
-            self.draw_sollum_type(layout, obj)
-            draw_fragment_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGGROUP):
-            self.draw_sollum_type(layout, obj)
-            draw_group_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGCHILD):
-            self.draw_sollum_type(layout, obj)
-            draw_child_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGLOD):
-            self.draw_sollum_type(layout, obj)
-            draw_lod_properties(layout, obj)
-        elif obj.sollum_type in BOUND_TYPES:
-            self.draw_sollum_type(layout, obj)
-            draw_bound_properties(layout, obj)
-        else:
+        if not obj or obj.sollum_type == SollumType.NONE:
             layout.label(
                 text="No sollumz objects in scene selected.", icon="ERROR")
 
@@ -454,84 +427,13 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object == None):
+        if context.active_object == None:
             return
 
         mat = aobj.active_material
-        if(mat == None):
+
+        if not mat or mat.sollum_type == MaterialType.NONE:
             layout.label(text="No sollumz material active.", icon="ERROR")
-            return
-
-        if mat.sollum_type == MaterialType.SHADER:
-            draw_shader(layout, mat)
-        elif mat.sollum_type == MaterialType.COLLISION:
-            draw_collision_material_properties(layout, mat)
-        else:
-            layout.label(text="No sollumz material active.", icon="ERROR")
-
-
-class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
-    bl_label = "Texture Parameters"
-    bl_idname = 'SOLLUMZ_PT_TXTPARAMS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
-    bl_order = 0
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        if obj:
-            mat = obj.active_material
-            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
-        else:
-            return False
-
-    def draw(self, context):
-        layout = self.layout
-
-        aobj = context.active_object
-        if(context.active_object == None):
-            return
-
-        mat = aobj.active_material
-        if(mat == None):
-            return
-
-        draw_shader_texture_params(layout, mat)
-
-
-class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
-    bl_label = "Value Parameters"
-    bl_idname = 'SOLLUMZ_PT_VALUEPARAMS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
-    bl_order = 1
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        if obj:
-            mat = obj.active_material
-            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
-        else:
-            return False
-
-    def draw(self, context):
-        layout = self.layout
-
-        aobj = context.active_object
-        if(context.active_object == None):
-            return
-
-        mat = aobj.active_material
-        if(mat == None):
-            return
-
-        draw_shader_value_params(layout, mat)
 
 
 class FlagsPanel:
