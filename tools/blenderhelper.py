@@ -200,6 +200,15 @@ def get_selected_vertices(obj):
     return verts
 
 
+def find_parent(obj, parent_name):
+    if obj.parent:
+        if obj.parent.name == parent_name:
+            return obj
+        return find_parent(obj.parent, parent_name)
+    else:
+        return None
+
+
 def build_tag_bone_map(armature):
     if (armature == None):
         return None
