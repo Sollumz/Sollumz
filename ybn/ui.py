@@ -3,14 +3,21 @@ from .properties import BoundFlags, CollisionProperties, CollisionMatFlags, Boun
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
 from .operators import *
+from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 
 
-def draw_collision_material_properties(layout, mat):
-    grid = layout.grid_flow(columns=2, even_columns=True, even_rows=True)
-    for prop in CollisionProperties.__annotations__:
-        if prop == 'collision_index':
-            continue
-        grid.prop(mat.collision_properties, prop)
+def draw_collision_material_properties(self, context):
+    obj = context.active_object
+    if not obj:
+        return
+    mat = obj.active_material
+    if mat and mat.sollum_type == MaterialType.COLLISION:
+        grid = self.layout.grid_flow(
+            columns=2, even_columns=True, even_rows=True)
+        for prop in CollisionProperties.__annotations__:
+            if prop == 'collision_index':
+                continue
+            grid.prop(mat.collision_properties, prop)
 
 
 def generate_flags(layout, prop):
@@ -19,14 +26,15 @@ def generate_flags(layout, prop):
         grid.prop(prop, prop_name)
 
 
-def draw_bound_properties(layout, obj):
-    grid = layout.grid_flow(columns=2, row_major=True)
-    for prop in BoundProperties.__annotations__:
-        if "unk_float" not in prop:
+def draw_bound_properties(self, context):
+    obj = context.active_object
+    if obj and obj.sollum_type in BOUND_TYPES:
+        grid = self.layout.grid_flow(columns=2, row_major=True)
+        for prop in BoundProperties.__annotations__:
             grid.prop(obj.bound_properties, prop)
-    if obj.sollum_type == SollumType.BOUND_GEOMETRY:
-        grid.prop(obj.bound_properties, "unk_float_1")
-        grid.prop(obj.bound_properties, "unk_float_2")
+        if obj.sollum_type == SollumType.BOUND_GEOMETRY:
+            grid.prop(obj.bound_properties, "unk_float_1")
+            grid.prop(obj.bound_properties, "unk_float_2")
 
 
 class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
@@ -299,7 +307,11 @@ def DrawCollisionMenu(self, context):
 
 def register():
     bpy.types.SOLLUMZ_MT_sollumz.append(DrawCollisionMenu)
+    SOLLUMZ_PT_OBJECT_PANEL.append(draw_bound_properties)
+    SOLLUMZ_PT_MAT_PANEL.append(draw_collision_material_properties)
 
 
 def unregister():
     bpy.types.SOLLUMZ_MT_sollumz.remove(DrawCollisionMenu)
+    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_bound_properties)
+    SOLLUMZ_PT_MAT_PANEL.remove(draw_collision_material_properties)

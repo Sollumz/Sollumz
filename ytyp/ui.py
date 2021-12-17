@@ -2,7 +2,7 @@ import bpy
 
 from ..sollumz_properties import ArchetypeType, EntityProperties
 from .properties import *
-from ..sollumz_ui import FlagsPanel, OrderListHelper
+from ..sollumz_ui import FlagsPanel, OrderListHelper, TimeFlagsPanel
 
 
 class SOLLUMZ_UL_YTYP_LIST(bpy.types.UIList):
@@ -196,21 +196,21 @@ class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
         return selected_archetype.mlo_flags
 
 
-class SOLLUMZ_PT_TIME_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
-    bl_idname = "SOLLUMZ_PT_TIME_FLAGS_PANEL"
+class SOLLUMZ_PT_YTYP_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
+    bl_idname = "SOLLUMZ_PT_YTYP_TIME_FLAGS_PANEL"
     bl_label = "Time Flags"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
+    select_operator = "sollumz.ytyp_time_flags_select_range"
+    clear_operator = "sollumz.ytyp_time_flags_clear"
 
     @classmethod
-    def poll(self, context):
-        selected_archetype = get_selected_archetype(context)
-        return selected_archetype.type == ArchetypeType.TIME
+    def poll(cls, context):
+        return get_selected_archetype(context) is not None
 
     def get_flags(self, context):
-        selected_archetype = get_selected_archetype(context)
-        return selected_archetype.time_flags
+        return get_selected_archetype(context).time_flags
 
 
 class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):

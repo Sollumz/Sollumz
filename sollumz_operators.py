@@ -6,7 +6,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from enum import Enum
 from .sollumz_helper import *
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
 from .resources.drawable import YDR, YDD
 from .resources.fragment import YFT
 from .resources.bound import YBN
@@ -516,6 +516,52 @@ class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         brush = get_terrain_texture_brush(5)
+        return True
+
+
+class SelectTimeFlagsRange(SOLLUMZ_OT_base):
+    """Select range of time flags"""
+    bl_label = "Select"
+
+    def get_flags(self, context):
+        return None
+
+    def run(self, context):
+        flags = self.get_flags(context)
+        if not flags:
+            return False
+        start = int(flags.time_flags_start)
+        end = int(flags.time_flags_end)
+        index = 0
+        for prop in TimeFlags.__annotations__:
+            if index < 24:
+                if start < end:
+                    if index >= start and index < end:
+                        flags[prop] = True
+                elif start > end:
+                    if index < end or index >= start:
+                        flags[prop] = True
+                elif start == 0 and end == 0:
+                    flags[prop] = True
+            index += 1
+        flags.update_flag(context)
+        return True
+
+
+class ClearTimeFlags(SOLLUMZ_OT_base):
+    """Clear all time flags"""
+    bl_label = "Clear Selection"
+
+    def get_flags(self, context):
+        return None
+
+    def run(self, context):
+        flags = self.get_flags(context)
+        if not flags:
+            return False
+        for prop in TimeFlags.__annotations__:
+            flags[prop] = False
+        flags.update_flag(context)
         return True
 
 

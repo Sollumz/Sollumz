@@ -1,6 +1,7 @@
 import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType, EntityPriorityLevel, EntityLodLevel
+from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..tools.blenderhelper import get_selected_vertices
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_obj_radius
 from ..tools.utils import get_min_vector_list, get_max_vector_list
@@ -468,6 +469,28 @@ class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
             selected_archetype.tcm_index)
         selected_archetype.tcm_index = max(selected_archetype.tcm_index - 1, 0)
         return True
+
+
+class SOLLUMZ_OT_YTYP_TIME_FLAGS_select_range(SelectTimeFlagsRange, bpy.types.Operator):
+    bl_idname = "sollumz.ytyp_time_flags_select_range"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_archetype(context) is not None
+
+    def get_flags(self, context):
+        return get_selected_archetype(context).time_flags
+
+
+class SOLLUMZ_OT_YTYP_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
+    bl_idname = "sollumz.ytyp_time_flags_clear"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_archetype(context) is not None
+
+    def get_flags(self, context):
+        return get_selected_archetype(context).time_flags
 
 
 class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):

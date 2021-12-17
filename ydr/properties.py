@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
 
@@ -99,16 +99,8 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
 
 class LightProperties(bpy.types.PropertyGroup):
-    type: bpy.props.EnumProperty(
-        items=items_from_enums(LightType),
-        name="Light Type",
-        default=LightType.POINT,
-        options={"HIDDEN"}
-    )
-    flags: bpy.props.FloatProperty(name="Flags")
-    bone_id: bpy.props.IntProperty(name="Bone ID")
+    flashiness: bpy.props.IntProperty(name="Flashiness")
     group_id: bpy.props.IntProperty(name="Group ID")
-    time_flags: bpy.props.FloatProperty(name="Time Flags")
     falloff: bpy.props.FloatProperty(name="Falloff")
     falloff_exponent: bpy.props.FloatProperty(name="Falloff Exponent")
     culling_plane_normal: bpy.props.FloatVectorProperty(
@@ -119,8 +111,8 @@ class LightProperties(bpy.types.PropertyGroup):
     volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color")
-    light_hash: bpy.props.FloatProperty(name="Light Hash")
+        name="Volume Outer Color", subtype='COLOR')
+    light_hash: bpy.props.IntProperty(name="Light Hash")
     volume_outer_intensity: bpy.props.FloatProperty(
         name="Volume Outer Intensity")
     corona_size: bpy.props.FloatProperty(name="Corona Size")
@@ -138,9 +130,77 @@ class LightProperties(bpy.types.PropertyGroup):
     tangent: bpy.props.FloatVectorProperty(name="Tangent")
     cone_inner_angle: bpy.props.FloatProperty(name="Cone Inner Angle")
     cone_outer_angle: bpy.props.FloatProperty(name="Cone Outer Angle")
-    extent: bpy.props.FloatVectorProperty(name="Extent")
+    extent: bpy.props.FloatVectorProperty(
+        name="Extent", default=(1, 1, 1), subtype="XYZ")
     projected_texture_hash: bpy.props.StringProperty(
         name="Projected Texture Hash")
+
+
+class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    unk1: bpy.props.BoolProperty(
+        name="Unk1", update=FlagPropertyGroup.update_flag)
+    unk2: bpy.props.BoolProperty(
+        name="Unk2", update=FlagPropertyGroup.update_flag)
+    unk3: bpy.props.BoolProperty(
+        name="Unk3", update=FlagPropertyGroup.update_flag)
+    unk4: bpy.props.BoolProperty(
+        name="Unk4", update=FlagPropertyGroup.update_flag)
+    unk5: bpy.props.BoolProperty(
+        name="Unk5", update=FlagPropertyGroup.update_flag)
+    unk6: bpy.props.BoolProperty(
+        name="Unk6", update=FlagPropertyGroup.update_flag)
+    unk7: bpy.props.BoolProperty(
+        name="Unk7", update=FlagPropertyGroup.update_flag)
+    shadows: bpy.props.BoolProperty(
+        name="ShadowS", update=FlagPropertyGroup.update_flag)
+    shadowd: bpy.props.BoolProperty(
+        name="ShadowD", update=FlagPropertyGroup.update_flag)
+    sunlight: bpy.props.BoolProperty(
+        name="Sunlight", update=FlagPropertyGroup.update_flag)
+    unk11: bpy.props.BoolProperty(
+        name="Unk11", update=FlagPropertyGroup.update_flag)
+    electric: bpy.props.BoolProperty(
+        name="Electric", update=FlagPropertyGroup.update_flag)
+    volume: bpy.props.BoolProperty(
+        name="Volume", update=FlagPropertyGroup.update_flag)
+    specoff: bpy.props.BoolProperty(
+        name="SpecOff", update=FlagPropertyGroup.update_flag)
+    unk15: bpy.props.BoolProperty(
+        name="Unk15", update=FlagPropertyGroup.update_flag)
+    lightoff: bpy.props.BoolProperty(
+        name="LightOff", update=FlagPropertyGroup.update_flag)
+    prxoff: bpy.props.BoolProperty(
+        name="PrxOff", update=FlagPropertyGroup.update_flag)
+    unk18: bpy.props.BoolProperty(
+        name="Unk18", update=FlagPropertyGroup.update_flag)
+    culling: bpy.props.BoolProperty(
+        name="Culling", update=FlagPropertyGroup.update_flag)
+    unk20: bpy.props.BoolProperty(
+        name="Unk20", update=FlagPropertyGroup.update_flag)
+    unk21: bpy.props.BoolProperty(
+        name="Unk21", update=FlagPropertyGroup.update_flag)
+    unk22: bpy.props.BoolProperty(
+        name="Unk22", update=FlagPropertyGroup.update_flag)
+    unk23: bpy.props.BoolProperty(
+        name="Unk23", update=FlagPropertyGroup.update_flag)
+    glassoff: bpy.props.BoolProperty(
+        name="GlassOff", update=FlagPropertyGroup.update_flag)
+    unk25: bpy.props.BoolProperty(
+        name="Unk25", update=FlagPropertyGroup.update_flag)
+    unk26: bpy.props.BoolProperty(
+        name="Unk26", update=FlagPropertyGroup.update_flag)
+    unk27: bpy.props.BoolProperty(
+        name="Unk27", update=FlagPropertyGroup.update_flag)
+    unk28: bpy.props.BoolProperty(
+        name="Unk28", update=FlagPropertyGroup.update_flag)
+    unk29: bpy.props.BoolProperty(
+        name="Unk29", update=FlagPropertyGroup.update_flag)
+    unk30: bpy.props.BoolProperty(
+        name="Unk30", update=FlagPropertyGroup.update_flag)
+    unk31: bpy.props.BoolProperty(
+        name="Unk31", update=FlagPropertyGroup.update_flag)
+    unk32: bpy.props.BoolProperty(
+        name="Unk32", update=FlagPropertyGroup.update_flag)
 
 # Handler sets the default value of the ShaderMaterials collection on blend file load
 
@@ -152,6 +212,27 @@ def on_file_loaded(_):
         item = bpy.context.scene.shader_materials.add()
         item.index = index
         item.name = mat.name
+
+
+def get_light_type(self):
+    if self.type == 'POINT':
+        return 1 if not self.is_capsule else 3
+    elif self.type == 'SPOT':
+        return 2
+    else:
+        return 0
+
+
+def set_light_type(self, value):
+    if value == 1:
+        self.type = 'POINT'
+        self.is_capsule = False
+    elif value == 3:
+        self.type = 'POINT'
+        self.is_capsule = True
+    elif value == 2:
+        self.type = 'SPOT'
+        self.is_capsule = False
 
 
 def register():
@@ -172,6 +253,15 @@ def register():
         type=TextureFlags)
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(
         type=BoneProperties)
+    bpy.types.Light.sollum_type = bpy.props.EnumProperty(
+        items=items_from_enums(LightType),
+        name="Light Type",
+        default=LightType.POINT,
+        options={"HIDDEN"},
+        get=get_light_type,
+        set=set_light_type
+    )
+    bpy.types.Light.is_capsule = bpy.props.BoolProperty()
     bpy.types.Light.light_properties = bpy.props.PointerProperty(
         type=LightProperties)
     bpy.types.Scene.create_light_type = bpy.props.EnumProperty(
@@ -187,6 +277,8 @@ def register():
         default=LightType.POINT,
         options={"HIDDEN"}
     )
+    bpy.types.Light.time_flags = bpy.props.PointerProperty(type=TimeFlags)
+    bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
 
 def unregister():
@@ -200,5 +292,8 @@ def unregister():
     del bpy.types.Bone.bone_properties
     del bpy.types.Light.light_properties
     del bpy.types.Scene.create_light_type
+    del bpy.types.Light.time_flags
+    del bpy.types.Light.light_flags
+    del bpy.types.Light.is_capsule
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

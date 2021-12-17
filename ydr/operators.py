@@ -1,5 +1,6 @@
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, TimeFlags
+from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import *
 from ..resources.shader import ShaderManager
@@ -195,3 +196,27 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
             max(0, index - 1), len(list) - 1)
         self.message(f"Deleted bone flag from: {bone.name}")
         return True
+
+
+class SOLLUMZ_OT_LIGHT_TIME_FLAGS_select_range(SelectTimeFlagsRange, bpy.types.Operator):
+    bl_idname = "sollumz.light_time_flags_select_range"
+
+    @classmethod
+    def poll(cls, context):
+        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+
+    def get_flags(self, context):
+        light = context.light
+        return light.time_flags
+
+
+class SOLLUMZ_OT_LIGHT_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
+    bl_idname = "sollumz.light_time_flags_clear"
+
+    @classmethod
+    def poll(cls, context):
+        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+
+    def get_flags(self, context):
+        light = context.light
+        return light.time_flags
