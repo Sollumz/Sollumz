@@ -156,10 +156,11 @@ class BoneIDProperty(ElementProperty):
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
-        txt = element.text.split(", ")
-        new.value = []
-        for id in txt:
-            new.value.append(int(id))
+        if element.text:
+            txt = element.text.split(", ")
+            new.value = []
+            for id in txt:
+                new.value.append(int(id))
         return new
 
     def to_xml(self):
