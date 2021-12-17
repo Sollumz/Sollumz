@@ -18,19 +18,20 @@ def draw_group_properties(self, context):
             layout.prop(obj.group_properties, prop)
 
 
-def draw_archetype_properties(layout, obj):
-    layout.label(text="Archetype Properties")
-    for prop in obj.lod_properties.__annotations__:
-        layout.prop(obj.lod_properties, prop)
-
-
 def draw_lod_properties(self, context):
     obj = context.active_object
     if obj.sollum_type == SollumType.FRAGLOD:
         layout = self.layout
         for prop in obj.lod_properties.__annotations__:
+            if "archetype" in prop:
+                break
             layout.prop(obj.lod_properties, prop)
-        draw_archetype_properties(layout, obj)
+        layout.separator()
+        layout.label(text="Archetype Properties")
+        for prop in obj.lod_properties.__annotations__:
+            if not "archetype" in prop:
+                continue
+            layout.prop(obj.lod_properties, prop)
 
 
 def draw_fragment_properties(self, context):

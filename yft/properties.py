@@ -12,20 +12,6 @@ class FragmentProperties(bpy.types.PropertyGroup):
     buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor")
 
 
-# blender doesn't support pointer properties to custom property groups?
-'''class ArchetypeProperties(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name")
-    mass: bpy.props.FloatProperty(name="Mass")
-    mass_inv: bpy.props.FloatProperty(name="MassInv")
-    unknown_48: bpy.props.FloatProperty(name="Unknown48")
-    unknown_4c: bpy.props.FloatProperty(name="Unknown4c")
-    unknown_50: bpy.props.FloatProperty(name="Unknown50")
-    unknown_54: bpy.props.FloatProperty(name="Unknown54")
-    inertia_tensor: bpy.props.FloatVectorProperty(name="InertiaTensor")
-    inertia_tensor_inv: bpy.props.FloatVectorProperty(name="InertiaTensorInv")
-    bound: bpy.props.PointerProperty(type=bpy.types.Object)'''
-
-
 class LODProperties(bpy.types.PropertyGroup):
     type: bpy.props.IntProperty(name="Type", default=0)
     unknown_14: bpy.props.FloatProperty(name="Unknown14")
@@ -50,7 +36,6 @@ class LODProperties(bpy.types.PropertyGroup):
     archetype_unknown_54: bpy.props.FloatProperty(name="Unknown54")
     archetype_inertia_tensor: bpy.props.FloatVectorProperty(
         name="Inertia Tensor")
-    # archetype_properties = bpy.props.PointerProperty(type=ArchetypeProperties)
 
 
 class GroupProperties(bpy.types.PropertyGroup):
