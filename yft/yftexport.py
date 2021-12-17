@@ -145,7 +145,8 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
             lod.lod_properties.archetype_inertia_tensor)
         flod.archetype.inertia_tensor = arch_it
         flod.archetype.inertia_tensor_inv = divide_vector_inv(arch_it)
-        flod.archetype.bounds = composite_from_objects(bobjs, export_settings)
+        flod.archetype.bounds = composite_from_objects(
+            bobjs, export_settings, True)
 
         gidx = 0
         for gobj in gobjs:

@@ -155,6 +155,8 @@ class BoundGeometry(BoundGeometryBVH):
 
     def __init__(self):
         super().__init__()
+        self.unk_float_1 = ValueProperty("UnkFloat1")
+        self.unk_float_2 = ValueProperty("UnkFloat2")
         # Placeholder: Currently not implemented by CodeWalker
         self.octants = PolygonsProperty('Octants')
 

@@ -218,9 +218,11 @@ def get_short_long_edge(bbmin, bbmax):
 """Get min and max bounds for an object and all of its children"""
 
 
-def get_bound_extents(obj, world=True):
+def get_bound_extents(obj, world=True, margin=0):
     corners = get_total_bounds(obj, world)
-    return get_min_vector_list(corners), get_max_vector_list(corners)
+    min = subtract_from_vector(get_min_vector_list(corners), margin)
+    max = add_to_vector(get_max_vector_list(corners), margin)
+    return min, max
 
 
 def get_total_bounds(obj, world=True):
@@ -249,6 +251,10 @@ def get_bound_center(obj, world=True):
     center = (bbmin + bbmax) / 2
 
     return center
+
+
+def get_bound_center_from_bounds(bbmin, bbmax):
+    return (bbmin + bbmax) * 0.5
 
 
 def get_children_recursive(obj):

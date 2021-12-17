@@ -22,7 +22,11 @@ def generate_flags(layout, prop):
 def draw_bound_properties(layout, obj):
     grid = layout.grid_flow(columns=2, row_major=True)
     for prop in BoundProperties.__annotations__:
-        grid.prop(obj.bound_properties, prop)
+        if "unk_float" not in prop:
+            grid.prop(obj.bound_properties, prop)
+    if obj.sollum_type == SollumType.BOUND_GEOMETRY:
+        grid.prop(obj.bound_properties, "unk_float_1")
+        grid.prop(obj.bound_properties, "unk_float_2")
 
 
 class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):

@@ -214,6 +214,8 @@ def geometry_to_obj(geometry, sollum_type):
 
     triangle_obj.data.from_pydata(vertices, [], faces)
     bpy.context.collection.objects.link(triangle_obj)
+    if geometry.unk_type == 2:
+        triangle_obj.location = geometry.geometry_center
     triangle_obj.parent = obj
 
     # Apply vertex colors
@@ -234,7 +236,8 @@ def geometry_to_obj(geometry, sollum_type):
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
 
-    obj.location += geometry.geometry_center
+    if geometry.unk_type != 2:
+        obj.location += geometry.geometry_center
 
     return obj
 
@@ -264,9 +267,12 @@ def init_bound_obj(bound, sollum_type):
     obj.bound_properties.poly_flags = bound.poly_flags
     obj.bound_properties.inertia = bound.inertia
     obj.bound_properties.unk_flags = bound.unk_flags
-    obj.bound_properties.unk_type = bound.unk_type
     obj.margin = bound.margin
     obj.bound_properties.volume = bound.volume
+
+    if sollum_type == SollumType.BOUND_GEOMETRY:
+        obj.bound_properties.unk_float_1 = bound.unk_float_1
+        obj.bound_properties.unk_float_2 = bound.unk_float_2
 
     # assign obj composite flags
     for prop in dir(obj.composite_flags1):
