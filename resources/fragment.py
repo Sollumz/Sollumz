@@ -21,8 +21,8 @@ class YFT:
 class BoneTransformItem(MatrixProperty):
     tag_name = "Item"
 
-    def __init__(self, tag_name: str, value=None):
-        super().__init__(tag_name, value or Matrix())
+    def __init__(self, tag_name: str, value=None, size=3):
+        super().__init__(tag_name, value or Matrix(), size)
 
 
 class BoneTransformsListProperty(ListProperty):

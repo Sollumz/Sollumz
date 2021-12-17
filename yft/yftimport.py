@@ -173,28 +173,19 @@ def fragment_to_obj(fragment, filepath):
         lobj.lod_properties.type = 3
         lobj.parent = fobj
 
-    allbmodels = []
-    for child in dobj.children:
-        allbmodels.append(child)
-    allfmodels = fragment.drawable.all_models
-
-    pose = fragment.bones_transforms
-    if pose:
+    transforms = fragment.bones_transforms
+    if transforms:
         modeltransforms = []
-        pbc = len(pose)
-        for i in range(pbc):
-            modeltransforms.append(pose[i].value)
+        for i in range(len(transforms)):
+            modeltransforms.append(transforms[i].value)
 
-        for i in range(len(allfmodels)):
-            model = allfmodels[i]
-            bmodel = allbmodels[i]
+        for child in dobj.children:
+            boneidx = child.drawable_model_properties.bone_index
 
-            boneidx = model.bone_index
             m = modeltransforms[boneidx] if boneidx < len(
                 modeltransforms) else Matrix()
 
-            if not model.has_skin:
-                bmodel.matrix_basis = m
+            child.matrix_basis = m
 
     return fobj
 

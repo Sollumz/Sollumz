@@ -90,12 +90,13 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
     fragment.drawable = drawable_from_object(
         exportop, dobj, exportpath, None, materials, export_settings, True)
 
-    #geo = get_drawable_geometries(dobj)[0]
-    #geos = split_object(geo, geo.parent)
-    # for idx, bone in enumerate(fragment.drawable.skeleton.bones):
-    for idx, bone in enumerate(dobj.data.bones):
+    for idx in range(len(dobj.data.bones)):
+        m = Matrix()
+        for model in dobj.children:
+            if model.drawable_model_properties.bone_index == idx:
+                m = model.matrix_basis
         fragment.bones_transforms.append(
-            BoneTransformItem("Item", Matrix().transposed()))
+            BoneTransformItem("Item", m))
 
     lods = []
     for child in fobj.children:

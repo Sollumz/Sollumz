@@ -93,14 +93,14 @@ def texture_item_from_node(n):
     return texture_item
 
 
-def texture_dictionary_from_materials(obj, exportpath):
+def texture_dictionary_from_materials(foldername, materials, exportpath):
     texture_dictionary = []
     messages = []
 
     has_td = False
 
     t_names = []
-    for mat in get_used_materials(obj):
+    for mat in materials:
         nodes = mat.node_tree.nodes
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage)):
@@ -114,7 +114,6 @@ def texture_dictionary_from_materials(obj, exportpath):
                     texture_dictionary.append(texture_item)
 
                     if n.image:
-                        foldername = obj.name
                         folderpath = os.path.join(exportpath, foldername)
                         txtpath = bpy.path.abspath(n.image.filepath)
                         if os.path.isfile(txtpath):
@@ -391,7 +390,7 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
     drawable_model.bone_index = obj.drawable_model_properties.bone_index
     drawable_model.unknown_1 = obj.drawable_model_properties.unknown_1
 
-    if bones is not None:
+    if obj.children[0].vertex_groups:
         drawable_model.has_skin = 1
 
     for child in obj.children:
@@ -587,8 +586,12 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         for shader in shaders:
             drawable.shader_group.shaders.append(shader)
 
+            foldername = obj.name
+            if is_frag:
+                foldername = obj.parent.name[:-3]  # trim blenders .001 suffix
+
             td, messages = texture_dictionary_from_materials(
-                obj, os.path.dirname(exportpath))
+                foldername, materials, os.path.dirname(exportpath))
             drawable.shader_group.texture_dictionary = td
             exportop.messages += messages
     else:
