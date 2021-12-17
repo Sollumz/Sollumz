@@ -120,7 +120,7 @@ def create_lod_obj(lod, filepath, materials):
         if len(child.drawable.drawable_models_high) > 0:
             cdobj = drawable_to_obj(
                 child.drawable, filepath, f"Drawable{idx}", None, materials)
-            cdobj.basis_matrix = child.drawable.matrix
+            cdobj.matrix_basis = child.drawable.matrix
             cdobj.parent = cobj
 
         if lod.transforms:
