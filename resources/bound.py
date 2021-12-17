@@ -138,6 +138,32 @@ class VerticesProperty(ElementProperty):
         return element
 
 
+class OctantsProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str = 'Octants', value=None):
+        super().__init__(tag_name, value or [])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = OctantsProperty(element.tag, [])
+        allinds = []
+        ind_s = element.text.strip().replace(" ", "").replace("\n", ",").split(",")
+        ind = []
+        for idx, i in enumerate(ind_s):
+            if idx % 3 == 0 and idx != 0:
+                allinds.append(ind)
+                ind = []
+            ind.append(int(i))
+
+        new.value = allinds
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        return element
+
+
 class BoundGeometryBVH(BoundItem):
     type = 'GeometryBVH'
 
@@ -158,7 +184,8 @@ class BoundGeometry(BoundGeometryBVH):
         self.unk_float_1 = ValueProperty("UnkFloat1")
         self.unk_float_2 = ValueProperty("UnkFloat2")
         # Placeholder: Currently not implemented by CodeWalker
-        self.octants = PolygonsProperty('Octants')
+        self.vertices_2 = VerticesProperty("Vertices2")
+        self.octants = OctantsProperty('Octants')
 
 
 class BoundListProperty(ListProperty):

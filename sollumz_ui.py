@@ -386,25 +386,27 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         elif obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             self.draw_sollum_type(layout, obj)
             draw_geometry_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.DRAWABLE_MODEL):
+        elif obj.sollum_type == SollumType.DRAWABLE_MODEL:
             self.draw_sollum_type(layout, obj)
             self.draw_drawable_model_properties(context, layout, obj)
             self.draw_sollum_type(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGMENT):
+        elif obj.sollum_type == SollumType.FRAGMENT:
             self.draw_sollum_type(layout, obj)
             draw_fragment_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGGROUP):
+        elif obj.sollum_type == SollumType.FRAGGROUP:
             self.draw_sollum_type(layout, obj)
             draw_group_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGCHILD):
+        elif obj.sollum_type == SollumType.FRAGCHILD:
             self.draw_sollum_type(layout, obj)
             draw_child_properties(layout, obj)
-        elif(obj.sollum_type == SollumType.FRAGLOD):
+        elif obj.sollum_type == SollumType.FRAGLOD:
             self.draw_sollum_type(layout, obj)
             draw_lod_properties(layout, obj)
         elif obj.sollum_type in BOUND_TYPES:
             self.draw_sollum_type(layout, obj)
             draw_bound_properties(layout, obj)
+        elif obj.sollum_type in BOUND_POLYGON_TYPES:
+            self.draw_sollum_type(layout, obj)
         else:
             layout.label(
                 text="No sollumz objects in scene selected.", icon="ERROR")
@@ -419,7 +421,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
 
-    @classmethod
+    @ classmethod
     def poll(cls, context):
         aobj = context.active_object
         return aobj != None and aobj.sollum_type == SollumType.DRAWABLE
@@ -479,7 +481,7 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 0
 
-    @classmethod
+    @ classmethod
     def poll(cls, context):
         obj = context.active_object
         if obj:
@@ -511,7 +513,7 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 1
 
-    @classmethod
+    @ classmethod
     def poll(cls, context):
         obj = context.active_object
         if obj:

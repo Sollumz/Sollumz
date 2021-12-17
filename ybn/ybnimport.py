@@ -167,77 +167,101 @@ def mat_to_obj(gmat):
     return mat
 
 
-def geometry_to_obj(geometry, sollum_type):
-    obj = init_bound_obj(geometry, sollum_type)
+def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
+    if len(vertices) == 0:
+        return None
+
     mesh = bpy.data.meshes.new(
         SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE])
-    triangle_obj = bpy.data.objects.new(
+    obj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE], mesh)
-    triangle_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE
+    obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE
 
-    for gmat in geometry.materials:
-        triangle_obj.data.materials.append(mat_to_obj(gmat))
-
-    vertices = []
+    verts = []
     faces = []
     tri_materials = []
 
-    for poly in geometry.polygons:
-        if type(poly) == Triangle:
-            tri_materials.append(poly.material_index)
-            face = []
-            v1 = geometry.vertices[poly.v1]
-            v2 = geometry.vertices[poly.v2]
-            v3 = geometry.vertices[poly.v3]
-            if not v1 in vertices:
-                vertices.append(v1)
-                face.append(len(vertices) - 1)
-            else:
-                face.append(vertices.index(v1))
-            if not v2 in vertices:
-                vertices.append(v2)
-                face.append(len(vertices) - 1)
-            else:
-                face.append(vertices.index(v2))
-            if not v3 in vertices:
-                vertices.append(v3)
-                face.append(len(vertices) - 1)
-            else:
-                face.append(vertices.index(v3))
-            faces.append(face)
+    for poly in polys:
+        face = []
+        v1 = vertices[poly.v1]
+        v2 = vertices[poly.v2]
+        v3 = vertices[poly.v3]
+        if not v1 in verts:
+            verts.append(v1)
+            face.append(len(verts) - 1)
         else:
-            poly_obj = poly_to_obj(
-                poly, triangle_obj.data.materials, geometry.vertices)
-            if poly_obj:
-                bpy.context.collection.objects.link(poly_obj)
-                poly_obj.parent = obj
+            face.append(verts.index(v1))
+        if not v2 in verts:
+            verts.append(v2)
+            face.append(len(verts) - 1)
+        else:
+            face.append(verts.index(v2))
+        if not v3 in verts:
+            verts.append(v3)
+            face.append(len(verts) - 1)
+        else:
+            face.append(verts.index(v3))
+        faces.append(face)
+        tri_materials.append(poly.material_index)
 
-    triangle_obj.data.from_pydata(vertices, [], faces)
-    bpy.context.collection.objects.link(triangle_obj)
-    if geometry.unk_type == 2:
-        triangle_obj.location = geometry.geometry_center
-    triangle_obj.parent = obj
+    obj.data.from_pydata(verts, [], faces)
+    bpy.context.collection.objects.link(obj)
+    obj.parent = parent
 
-    # Apply vertex colors
-    mesh = triangle_obj.data
-    if(len(geometry.vertex_colors) > 0):
+    # apply vertex colors
+    if len(vertex_colors) != 0:
+        mesh = obj.data
         mesh.vertex_colors.new(name="Vertex Colors")
         color_layer = mesh.vertex_colors[0]
         for i in range(len(color_layer.data)):
-            rgba = geometry.vertex_colors[mesh.loops[i].vertex_index]
+            rgba = vertex_colors[mesh.loops[i].vertex_index]
             r = rgba[0] / 255
             g = rgba[1] / 255
             b = rgba[2] / 255
             a = rgba[3] / 255
             color_layer.data[i].color = [r, g, b, a]
 
-    # Apply triangle materials
-    for index, poly in triangle_obj.data.polygons.items():
+    # apply materials
+    for mat in materials:
+        obj.data.materials.append(mat)
+
+    for index, poly in obj.data.polygons.items():
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
 
+    return obj
+
+
+def geometry_to_obj(geometry, sollum_type):
+    obj = init_bound_obj(geometry, sollum_type)
+
+    materials = []
+    for gmat in geometry.materials:
+        materials.append(mat_to_obj(gmat))
+
+    triangle_polys = [
+        poly for poly in geometry.polygons if type(poly) == Triangle]
+    triangle_obj = verts_to_obj(geometry.vertices, triangle_polys, materials,
+                                obj, geometry.vertex_colors)
+    vert2_obj = verts_to_obj(
+        geometry.vertices_2, triangle_polys, materials, obj, geometry.vertex_colors)
+
+    for poly in geometry.polygons:
+        if type(poly) is not Triangle:
+            poly_obj = poly_to_obj(
+                poly, triangle_obj.data.materials, geometry.vertices)
+            if poly_obj:
+                bpy.context.collection.objects.link(poly_obj)
+                poly_obj.parent = obj
+
     if geometry.unk_type != 2:
         obj.location += geometry.geometry_center
+    else:
+        triangle_obj.location = geometry.geometry_center
+        if vert2_obj:
+            vert2_obj.location = geometry.geometry_center
+            vert2_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE2
+            vert2_obj.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE2]
 
     return obj
 
