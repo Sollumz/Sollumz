@@ -154,12 +154,11 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     vertices = {}
     # Get child poly bounds
     for child in get_children_recursive(obj):
+        mesh = child.to_mesh()
+        mesh.calc_normals_split()
+        mesh.calc_loop_triangles()
         if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
             found = True
-            mesh = child.to_mesh()
-            mesh.calc_normals_split()
-            mesh.calc_loop_triangles()
-
             # mats
             for material in mesh.materials:
                 add_material(material, geometry.materials)
@@ -206,6 +205,27 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
                 triangle.v2 = vert_indices[1]
                 triangle.v3 = vert_indices[2]
                 geometry.polygons.append(triangle)
+        elif child.sollum_type == SollumType.BOUND_POLY_TRIANGLE2:
+            vertices2 = {}
+            for tri in mesh.loop_triangles:
+                for loop_idx in tri.loops:
+                    loop = mesh.loops[loop_idx]
+                    vertex = mesh.vertices[loop.vertex_index].co
+                    if export_settings.use_transforms:
+                        vertex = (child.matrix_world @ vertex) - \
+                            geometry.geometry_center
+                    else:
+                        if geometry.unk_type != 2:
+                            vertex = child.matrix_basis @ vertex
+
+                    # Must be tuple for dedupe to work
+                    vertex = tuple(vertex)
+
+                    if vertex in vertices2:
+                        idx = vertices2[vertex]
+                    else:
+                        vertices2[vertex] = len(vertices2)
+                        geometry.vertices_2.append(Vector(vertex))
         else:
             poly = polygon_from_object(child, geometry, export_settings)
             if poly:
@@ -219,6 +239,10 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     if len(geometry.vertices) > 32767:
         raise VerticesLimitError(
             f"{obj.name} can only have at most 32767 vertices!")
+
+    if type(geometry) is BoundGeometry:
+        if len(geometry.vertices_2) == 0:
+            geometry.vertices_2 = geometry.vertices
 
     return geometry
 

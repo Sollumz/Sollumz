@@ -33,6 +33,7 @@ class SollumType(str, Enum):
     BOUND_POLY_CAPSULE = "sollumz_bound_poly_capsule"
     BOUND_POLY_CYLINDER = "sollumz_bound_poly_cylinder"
     BOUND_POLY_TRIANGLE = "sollumz_bound_poly_triangle"
+    BOUND_POLY_TRIANGLE2 = "sollumz_bound_poly_triangle2"
 
 
 class LightType(str, Enum):
@@ -146,7 +147,6 @@ BOUND_TYPES = [
     SollumType.BOUND_DISC,
     SollumType.BOUND_GEOMETRY,
     SollumType.BOUND_GEOMETRYBVH,
-    SollumType.BOUND_GEOMETRYBVH,
 ]
 
 BOUND_POLYGON_TYPES = [
@@ -155,6 +155,7 @@ BOUND_POLYGON_TYPES = [
     SollumType.BOUND_POLY_CAPSULE,
     SollumType.BOUND_POLY_CYLINDER,
     SollumType.BOUND_POLY_TRIANGLE,
+    SollumType.BOUND_POLY_TRIANGLE2,
 ]
 
 DRAWABLE_TYPES = [
@@ -181,6 +182,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_POLY_CAPSULE: "Bound Poly Capsule",
     SollumType.BOUND_POLY_CYLINDER: "Bound Poly Cylinder",
     SollumType.BOUND_POLY_TRIANGLE: "Bound Poly Mesh",
+    SollumType.BOUND_POLY_TRIANGLE2: "Bound Poly Mesh Damaged",
 
     SollumType.FRAGMENT: "Fragment",
     SollumType.FRAGGROUP: "Fragment Group",

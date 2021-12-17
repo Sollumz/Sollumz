@@ -392,7 +392,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
 
-    @classmethod
+    @ classmethod
     def poll(cls, context):
         aobj = context.active_object
         return aobj != None and aobj.sollum_type == SollumType.DRAWABLE
@@ -435,7 +435,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         if not mat or mat.sollum_type == MaterialType.NONE:
             layout.label(text="No sollumz material active.", icon="ERROR")
 
-
+            
 class FlagsPanel:
     bl_label = "Flags"
     bl_options = {'DEFAULT_CLOSED'}
