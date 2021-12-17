@@ -118,9 +118,10 @@ def create_lod_obj(lod, filepath, materials):
             bound.name = gobj.name.replace("_group", "_col")
 
         if len(child.drawable.drawable_models_high) > 0:
-            a = drawable_to_obj(
+            cdobj = drawable_to_obj(
                 child.drawable, filepath, f"Drawable{idx}", None, materials)
-            a.parent = cobj
+            cdobj.basis_matrix = child.drawable.matrix
+            cdobj.parent = cobj
 
         if lod.transforms:
             transform = lod.transforms[idx].value
@@ -159,6 +160,7 @@ def fragment_to_obj(fragment, filepath):
         fragment.drawable.lights = fragment.lights
         dobj = drawable_to_obj(
             fragment.drawable, filepath, fragment.drawable.name, None, materials)
+        dobj.matrix_basis = fragment.drawable.matrix
         dobj.parent = fobj
 
     if len(fragment.physics.lod1.groups) > 0:
@@ -209,7 +211,7 @@ def import_yft(filepath, import_settings):
 
         for child in dobj.children:
             if child.sollum_type == SollumType.DRAWABLE_MODEL:
-                if child.vertex_groups:
+                if child.children[0].vertex_groups:
                     join_drawable_geometries(child)
                     geo = get_drawable_geometries(child)[0]
                     split_object_by_vertex_groups(geo)
