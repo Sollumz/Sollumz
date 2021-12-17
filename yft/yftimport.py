@@ -217,6 +217,12 @@ def import_yft(filepath, import_settings):
 
         for child in dobj.children:
             if child.sollum_type == SollumType.DRAWABLE_MODEL:
-                join_drawable_geometries(child)
-                geo = get_drawable_geometries(child)[0]
-                split_object_by_vertex_groups(geo)
+                if child.vertex_groups:
+                    join_drawable_geometries(child)
+                    geo = get_drawable_geometries(child)[0]
+                    split_object_by_vertex_groups(geo)
+                else:
+                    # drawable is still linked to its bone index
+                    bone = dobj.data.bones[child.drawable_model_properties.bone_index]
+                    for geo in get_drawable_geometries(child):
+                        geo.name = bone.name

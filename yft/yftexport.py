@@ -181,10 +181,9 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
             flod.groups.append(group)
             gidx += 1
 
-        bidx = 0
         for cobj in cobjs:
             child = ChildrenItem()
-            gobj = gobjs[bidx]
+            gobj = cobj.parent
             child.group_index = gobjs.index(gobj)
             child.bone_tag = cobj.child_properties.bone_tag
             child.pristine_mass = cobj.child_properties.pristine_mass
@@ -205,7 +204,6 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
                 child.drawable.skeleton = None
                 child.drawable.joints = None
 
-            bidx += 1
             transform = cobj.matrix_basis.transposed()
             a = transform[3][0] - pos_offset.x
             b = transform[3][1] - pos_offset.y

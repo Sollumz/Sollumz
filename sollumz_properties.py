@@ -424,7 +424,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     export_with_hi: bpy.props.BoolProperty(
         name="Export With _hi",
         description="Exports fragment with _hi file.",
-        default=True
+        default=False
     )
     exclude_skeleton: bpy.props.BoolProperty(
         name="Skeleton",

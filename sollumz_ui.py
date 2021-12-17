@@ -5,6 +5,7 @@ from .ybn.ui import draw_bound_properties, draw_collision_material_properties
 from .ydr.ui import draw_drawable_properties, draw_geometry_properties, draw_shader, draw_shader_texture_params, draw_shader_value_params
 from .yft.ui import draw_fragment_properties, draw_archetype_properties, draw_group_properties, draw_lod_properties, draw_child_properties
 
+
 class OrderListHelper:
     orderkey = "name"
 
@@ -15,6 +16,7 @@ class OrderListHelper:
         filtered = helper.filter_items_by_name(
             self.filter_name, self.bitflag_filter_item, items, propname=self.orderkey, flags=None, reverse=False)
         return filtered, ordered
+
 
 class SOLLUMZ_PT_import_main(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
@@ -362,6 +364,8 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
 
     def draw_drawable_model_properties(self, context, layout, obj):
         layout.prop(obj.drawable_model_properties, "render_mask")
+        layout.prop(obj.drawable_model_properties, "bone_index")
+        layout.prop(obj.drawable_model_properties, "unknown_1")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
 

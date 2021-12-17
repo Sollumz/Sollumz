@@ -226,6 +226,8 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None):
     dobj.empty_display_size = 0
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
+    dobj.drawable_model_properties.bone_index = model.bone_index
+    dobj.drawable_model_properties.unknown_1 = model.unknown_1
     dobj.drawable_model_properties.flags = model.flags
 
     for child in model.geometries:

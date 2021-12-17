@@ -388,11 +388,11 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
+    drawable_model.bone_index = obj.drawable_model_properties.bone_index
+    drawable_model.unknown_1 = obj.drawable_model_properties.unknown_1
 
-    # rawable_model.bone_index = 0
     if bones is not None:
         drawable_model.has_skin = 1
-        drawable_model.unknown_1 = len(bones)
 
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
