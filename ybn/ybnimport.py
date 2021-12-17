@@ -168,7 +168,10 @@ def mat_to_obj(gmat):
 
 
 def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
-    if len(vertices) == 0:
+    if vertices:
+        if len(vertices) == 0:
+            return None
+    else:
         return None
 
     mesh = bpy.data.meshes.new(
