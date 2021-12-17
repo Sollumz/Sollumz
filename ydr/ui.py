@@ -17,6 +17,17 @@ def draw_drawable_properties(self, context):
         layout.prop(obj.drawable_properties, "lod_dist_vlow")
 
 
+def draw_drawable_model_properties(self, context):
+    obj = context.active_object
+    if obj and obj.sollum_type == SollumType.DRAWABLE_MODEL:
+        layout = self.layout
+        layout.prop(obj.drawable_model_properties, "render_mask")
+        layout.prop(obj.drawable_model_properties, "bone_index")
+        layout.prop(obj.drawable_model_properties, "unknown_1")
+        layout.prop(obj.drawable_model_properties, "flags")
+        layout.prop(obj.drawable_model_properties, "sollum_lod")
+
+
 def draw_shader(self, context):
     obj = context.active_object
     if not obj:
@@ -408,10 +419,12 @@ def DrawDrawableMenu(self, context):
 def register():
     bpy.types.SOLLUMZ_MT_sollumz.append(DrawDrawableMenu)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_properties)
+    SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_model_properties)
     SOLLUMZ_PT_MAT_PANEL.append(draw_shader)
 
 
 def unregister():
     bpy.types.SOLLUMZ_MT_sollumz.remove(DrawDrawableMenu)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_properties)
+    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_model_properties)
     SOLLUMZ_PT_MAT_PANEL.remove(draw_shader)

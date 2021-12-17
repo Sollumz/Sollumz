@@ -3,7 +3,6 @@ from .sollumz_helper import *
 from .sollumz_properties import *
 
 
-
 class OrderListHelper:
     orderkey = "name"
 
@@ -360,13 +359,6 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_context = 'object'
     bl_options = {'DEFAULT_CLOSED'}
 
-    def draw_drawable_model_properties(self, context, layout, obj):
-        layout.prop(obj.drawable_model_properties, "render_mask")
-        layout.prop(obj.drawable_model_properties, "bone_index")
-        layout.prop(obj.drawable_model_properties, "unknown_1")
-        layout.prop(obj.drawable_model_properties, "flags")
-        layout.prop(obj.drawable_model_properties, "sollum_lod")
-
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -376,8 +368,6 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         row.enabled = False
         row.prop(obj, "sollum_type")
 
-        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-            self.draw_drawable_model_properties(context, layout, obj)
         if not obj or obj.sollum_type == SollumType.NONE:
             layout.label(
                 text="No sollumz objects in scene selected.", icon="ERROR")
@@ -435,7 +425,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         if not mat or mat.sollum_type == MaterialType.NONE:
             layout.label(text="No sollumz material active.", icon="ERROR")
 
-            
+
 class FlagsPanel:
     bl_label = "Flags"
     bl_options = {'DEFAULT_CLOSED'}
