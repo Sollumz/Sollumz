@@ -164,6 +164,29 @@ class PhysicsProperty(ElementTree):
         self.lod3 = LODProperty("LOD3")
 
 
+class ShatterMapProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str = "ShatterMap", value=None):
+        super().__init__(tag_name, value or "")
+
+    @ classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        rows = []
+        if element.text:
+            txt = element.text.strip().split("\n")
+            for row in txt:
+                rows.append(row)
+        new.value = rows
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.text = ", ".join([str(id) for id in self.value])
+        return element
+
+
 class WindowItem(ElementTree):
     tag_name = "Window"
 
@@ -173,23 +196,11 @@ class WindowItem(ElementTree):
         self.unk_ushort_1 = ValueProperty("UnkUshort1")
         self.unk_ushort_4 = ValueProperty("UnkUshort4")
         self.unk_ushort_5 = ValueProperty("UnkUshort5")
-        self.unk_float_1 = ValueProperty("UnkFloat1")
-        self.unk_float_2 = ValueProperty("UnkFloat2")
-        self.unk_float_3 = ValueProperty("UnkFloat3")
-        self.unk_float_5 = ValueProperty("UnkFloat5")
-        self.unk_float_6 = ValueProperty("UnkFloat6")
-        self.unk_float_7 = ValueProperty("UnkFloat7")
-        self.unk_float_9 = ValueProperty("UnkFloat9")
-        self.unk_float_10 = ValueProperty("UnkFloat10")
-        self.unk_float_11 = ValueProperty("UnkFloat11")
-        self.unk_float_13 = ValueProperty("UnkFloat13")
-        self.unk_float_14 = ValueProperty("UnkFloat14")
-        self.unk_float_15 = ValueProperty("UnkFloat15")
-        self.unk_float_16 = ValueProperty("UnkFloat16")
+        self.projection_matrix = MatrixProperty("Projection")
         self.unk_float_17 = ValueProperty("UnkFloat17")
         self.unk_float_18 = ValueProperty("UnkFloat18")
         self.cracks_texture_tiling = ValueProperty("CracksTextureTiling")
-        self.shattermap = TextProperty("ShatterMap")
+        self.shattermap = ShatterMapProperty("ShatterMap")
 
 
 class VehicleGlassWindows(ListProperty):
