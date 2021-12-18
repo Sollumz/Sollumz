@@ -145,7 +145,7 @@ class Room(ElementTree):
         self.portal_count = ValueProperty("portalCount")
         self.floor_id = ValueProperty("floorId")
         self.exterior_visibility_depth = ValueProperty(
-            "exteriorVisibilityDepth", -1)
+            "exteriorVisibiltyDepth", -1)
         self.attached_objects = AttachedObjectsBuffer()
 
 
