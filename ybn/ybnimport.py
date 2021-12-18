@@ -312,15 +312,18 @@ def init_bound_obj(bound, sollum_type):
             if f.lower() == prop:
                 setattr(obj.composite_flags2, prop, True)
 
+    translation = bound.composite_position if bound.unk_type == 2 or sollum_type in [
+        SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH] else bound.box_center
+
     mat = bound.composite_rotation.to_matrix().to_4x4()
     # Set scale
     mat[0][0] = bound.composite_scale.x
     mat[1][1] = bound.composite_scale.y
     mat[2][2] = bound.composite_scale.z
     # Set position
-    mat[0][3] = bound.composite_position.x
-    mat[1][3] = bound.composite_position.y
-    mat[2][3] = bound.composite_position.z
+    mat[0][3] = translation.x
+    mat[1][3] = translation.y
+    mat[2][3] = translation.z
 
     obj.matrix_world = mat
 
@@ -332,13 +335,12 @@ def init_bound_obj(bound, sollum_type):
 def bound_to_obj(bound):
     if bound.type == 'Box':
         box = init_bound_obj(bound, SollumType.BOUND_BOX)
-        box.bound_dimensions = bound.box_max
+        box.bound_dimensions = abs_vector(bound.box_max - bound.box_min)
 
         return box
     elif bound.type == 'Sphere':
         sphere = init_bound_obj(bound, SollumType.BOUND_SPHERE)
         sphere.bound_radius = bound.sphere_radius
-        # create_sphere(sphere.data, bound.sphere_radius)
 
         return sphere
     elif bound.type == 'Capsule':
@@ -346,7 +348,6 @@ def bound_to_obj(bound):
         bbmin, bbmax = bound.box_min, bound.box_max
         capsule.bound_length = bbmax.z - bbmin.z
         capsule.bound_radius = bound.sphere_radius
-        # create_capsule(capsule, bound.sphere_radius, bbmax.z - bbmin.z, True)
 
         return capsule
     elif bound.type == 'Cylinder':
@@ -355,7 +356,6 @@ def bound_to_obj(bound):
         extent = bbmax - bbmin
         cylinder.bound_length = extent.y
         cylinder.bound_radius = extent.x * 0.5
-        # create_cylinder(cylinder.data, radius, length)
 
         return cylinder
     elif bound.type == 'Disc':
@@ -363,8 +363,6 @@ def bound_to_obj(bound):
         bbmin, bbmax = bound.box_min, bound.box_max
         disc.bound_radius = bound.sphere_radius
         create_disc(disc.data, bound.sphere_radius, bound.margin * 2)
-        # Cant assign to dimensions directly according to docs
-        # disc.dimensions = length, disc.dimensions.y, disc.dimensions.z
 
         return disc
     elif bound.type == 'Cloth':
