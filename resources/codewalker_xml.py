@@ -277,6 +277,25 @@ class ColorProperty(ElementProperty):
         return ET.Element(self.tag_name, attrib={'r': r, 'g': g, 'b': b})
 
 
+class Vector2Property(ElementProperty):
+    value_types = (Vector)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Vector((0, 0)))
+
+    @ staticmethod
+    def from_xml(element: ET.Element):
+        if not all(x in element.attrib.keys() for x in ['x', 'y']):
+            return VectorProperty.read_value_error(element)
+
+        return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')))))
+
+    def to_xml(self):
+        x = str(float32(self.value.x))
+        y = str(float32(self.value.y))
+        return ET.Element(self.tag_name, attrib={'x': x, 'y': y})
+
+
 class VectorProperty(ElementProperty):
     value_types = (Vector)
 
@@ -417,7 +436,7 @@ class TextListProperty(ElementProperty):
     def __init__(self, tag_name, value=None):
         super().__init__(tag_name, value or [])
 
-    @staticmethod
+    @ staticmethod
     def from_xml(element):
         return TextListProperty(element.tag, value=element.text.split(" "))
 
