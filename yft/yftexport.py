@@ -241,6 +241,10 @@ def export_yft(exportop, obj, filepath, export_settings):
         fragment.drawable.drawable_models_med = None
         fragment.drawable.drawable_models_low = None
         fragment.drawable.drawable_models_vlow = None
+        for child in fragment.physics.lod1.children:
+            child.drawable.drawable_models_med = None
+            child.drawable.drawable_models_low = None
+            child.drawable.drawable_models_vlow = None
         filepath = os.path.join(os.path.dirname(filepath),
                                 os.path.basename(filepath).replace(".yft.xml", "_hi.yft.xml"))
         fragment.write_xml(filepath)
