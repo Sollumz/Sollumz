@@ -5,7 +5,6 @@ from ..resources.fragment import YFT
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, light_to_obj
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-from ..tools.blenderhelper import split_object_by_vertex_groups
 
 
 def get_bound_object_from_child_index(bobj, index):
@@ -14,7 +13,7 @@ def get_bound_object_from_child_index(bobj, index):
             return bound
 
 
-def create_lod_obj(lod, filepath, materials):
+def create_lod_obj(lod, filepath, materials, import_settings):
     has_bounds = True if lod.archetype.bounds else False
 
     if not has_bounds:
@@ -119,7 +118,7 @@ def create_lod_obj(lod, filepath, materials):
 
         if len(child.drawable.drawable_models_high) > 0:
             cdobj = drawable_to_obj(
-                child.drawable, filepath, f"Drawable{idx}", None, materials)
+                child.drawable, filepath, f"Drawable{idx}", None, materials, import_settings)
             cdobj.matrix_basis = child.drawable.matrix
             cdobj.parent = cobj
 
@@ -138,7 +137,7 @@ def create_lod_obj(lod, filepath, materials):
     return lobj
 
 
-def fragment_to_obj(fragment, filepath):
+def fragment_to_obj(fragment, filepath, import_settings=None):
     fobj = bpy.data.objects.new(fragment.name, None)
     fobj.empty_display_size = 0
     fobj.sollum_type = SollumType.FRAGMENT
@@ -159,20 +158,23 @@ def fragment_to_obj(fragment, filepath):
             fragment.drawable.shader_group, filepath)
         fragment.drawable.lights = fragment.lights
         dobj = drawable_to_obj(
-            fragment.drawable, filepath, fragment.drawable.name, None, materials)
+            fragment.drawable, filepath, fragment.drawable.name, None, materials, import_settings)
         dobj.matrix_basis = fragment.drawable.matrix
         dobj.parent = fobj
 
     if len(fragment.physics.lod1.groups) > 0:
-        lobj = create_lod_obj(fragment.physics.lod1, filepath, materials)
+        lobj = create_lod_obj(fragment.physics.lod1,
+                              filepath, materials, import_settings)
         lobj.lod_properties.type = 1
         lobj.parent = fobj
     if len(fragment.physics.lod2.groups) > 0:
-        lobj = create_lod_obj(fragment.physics.lod2, filepath, materials)
+        lobj = create_lod_obj(fragment.physics.lod2,
+                              filepath, materials, import_settings)
         lobj.lod_properties.type = 2
         lobj.parent = fobj
     if len(fragment.physics.lod3.groups) > 0:
-        lobj = create_lod_obj(fragment.physics.lod3, filepath, materials)
+        lobj = create_lod_obj(fragment.physics.lod3,
+                              filepath, materials, import_settings)
         lobj.lod_properties.type = 3
         lobj.parent = fobj
 
@@ -201,22 +203,4 @@ def get_fragment_drawable(fragment):
 
 def import_yft(filepath, import_settings):
     yft_xml = YFT.from_xml_file(filepath)
-    fobj = fragment_to_obj(yft_xml, filepath)
-
-    if import_settings.split_by_bone:
-        dobj = get_fragment_drawable(fobj)
-
-        if not dobj:
-            raise Exception("No fragment drawable found to split by bone!")
-
-        for child in dobj.children:
-            if child.sollum_type == SollumType.DRAWABLE_MODEL:
-                if child.children[0].vertex_groups:
-                    join_drawable_geometries(child)
-                    geo = get_drawable_geometries(child)[0]
-                    split_object_by_vertex_groups(geo)
-                else:
-                    # drawable is still linked to its bone index
-                    bone = dobj.data.bones[child.drawable_model_properties.bone_index]
-                    for geo in get_drawable_geometries(child):
-                        geo.name = bone.name
+    fragment_to_obj(yft_xml, filepath, import_settings)

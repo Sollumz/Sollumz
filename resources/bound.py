@@ -154,7 +154,8 @@ class OctantsProperty(ElementProperty):
             if idx % 3 == 0 and idx != 0:
                 allinds.append(ind)
                 ind = []
-            ind.append(int(i))
+            if i:
+                ind.append(int(i))
 
         new.value = allinds
         return new

@@ -192,6 +192,24 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
+def create_uv_layer(mesh, num, name, texcoords):
+    mesh.uv_layers.new()
+    uv_layer = mesh.uv_layers[num]
+    uv_layer.name = name
+    for i in range(len(uv_layer.data)):
+        uv = flip_uv(texcoords[mesh.loops[i].vertex_index])
+        uv_layer.data[i].uv = uv
+
+
+def create_vertexcolor_layer(mesh, num, name, colors):
+    mesh.vertex_colors.new(name="Vertex Colors " + str(num))
+    color_layer = mesh.vertex_colors[num]
+    color_layer.name = name
+    for i in range(len(color_layer.data)):
+        rgba = colors[mesh.loops[i].vertex_index]
+        color_layer.data[i].color = divide_list(rgba, 255)
+
+
 def flip_uv(uv):
     u = uv[0]
     v = (uv[1] - 1.0) * -1

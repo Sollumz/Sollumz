@@ -78,47 +78,6 @@ def delete_object(obj, children=False):
         bpy.ops.object.delete(use_global=False)
 
 
-def split_object_by_vertex_groups(obj):
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-
-    bpy.ops.object.mode_set(mode='EDIT')
-    old_objects = bpy.data.objects.values()
-    parts = []
-
-    for vg in obj.vertex_groups:
-        obj.vertex_groups.active = obj.vertex_groups[vg.index]
-
-        bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.object.vertex_group_select()
-        # vgVerts = [v for v in geo.data.vertices if v.select]
-        bpy.ops.mesh.separate(type='SELECTED')
-
-        new_objects = bpy.data.objects.values()
-        for object in new_objects:
-            if object not in old_objects:
-                parts.append(object)
-
-    bpy.ops.object.mode_set(mode='OBJECT')
-
-    for part in parts:
-        remove_unused_vertex_groups_of_mesh(part)
-        part.name = part.vertex_groups[0].name
-        # remove unused materials
-        bpy.ops.object.select_all(action='DESELECT')
-        part.select_set(True)
-        bpy.ops.object.material_slot_remove_unused()
-
-    if len(obj.data.vertices) > 0:
-        remove_unused_vertex_groups_of_mesh(obj)
-        obj.name = "unknown"
-        bpy.ops.object.select_all(action='DESELECT')
-        obj.select_set(True)
-        bpy.ops.object.material_slot_remove_unused()
-    else:
-        bpy.data.objects.remove(obj, do_unlink=True)
-
-
 def split_object(obj, parent):
     objs = []
     bpy.ops.object.select_all(action='DESELECT')
@@ -140,7 +99,13 @@ def join_objects(objs):
         obj.select_set(True)
     bpy.ops.object.join()
     bpy.ops.object.select_all(action='DESELECT')
-    return
+    return bpy.context.view_layer.objects.active
+
+
+def remove_unused_materials(obj):
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.ops.object.material_slot_remove_unused()
 
 # MIT License
 
