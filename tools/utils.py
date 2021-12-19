@@ -51,6 +51,10 @@ def float32_list(list):
     return result
 
 
+def abs_vector(v):
+    return Vector((abs(v.x), abs(v.y), abs(v.z)))
+
+
 def divide_vector_inv(v):
     r = Vector((0, 0, 0))
     r.x = 1 / v.x

@@ -146,7 +146,7 @@ def on_file_loaded(_):
 
 def update_bounds(self, context):
     if self.sollum_type == SollumType.BOUND_BOX:
-        create_box(self.data, 2, Matrix.Diagonal(
+        create_box(self.data, 1, Matrix.Diagonal(
             Vector(self.bound_dimensions)))
     elif self.sollum_type == SollumType.BOUND_SPHERE or self.sollum_type == SollumType.BOUND_POLY_SPHERE:
         create_sphere(mesh=self.data, radius=self.bound_radius)
