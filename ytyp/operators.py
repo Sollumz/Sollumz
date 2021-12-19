@@ -583,7 +583,8 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                         portal.flags.total = str(portal_xml.flags)
                         portal.mirror_priority = portal_xml.mirror_priority
                         portal.opacity = portal_xml.opacity
-                        portal.audio_occlusion = portal_xml.audio_occlusion
+                        portal.audio_occlusion = str(
+                            portal_xml.audio_occlusion)
                         for index in portal_xml.attached_objects:
                             arch.entities[index].attached_portal_id = portal.id
                     for tcm_xml in arch_xml.timecycle_modifiers:
@@ -778,7 +779,8 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
                         self.set_portal_attached_objects(
                             portal_xml, portal_index, archetype.entities)
                         portal_xml.opacity = portal.opacity
-                        portal_xml.audio_occlusion = portal.audio_occlusion
+                        portal_xml.audio_occlusion = int(
+                            portal.audio_occlusion)
                         archetype_xml.portals.append(portal_xml)
                     for tcm in archetype.timecycle_modifiers:
                         tcm_xml = TimeCycleModifier()

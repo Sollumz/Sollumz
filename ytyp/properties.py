@@ -123,6 +123,21 @@ class PortalProperties(bpy.types.PropertyGroup):
     def get_name(self):
         return f"{self.room_from_name} to {self.room_to_name}"
 
+    # Work around to store audio_occlusion as a string property since blender int property cant store 32 bit unsigned integers
+    def update_audio_occlusion(self, context):
+        try:
+            int(self.audio_occlusion)
+        except ValueError:
+            self.audio_occlusion = "0"
+
+        value = int(self.audio_occlusion)
+        max_val = (2**32) - 1
+
+        if value < 0:
+            self.audio_occlusion = str(max_val)
+        elif value > max_val:
+            self.audio_occlusion = "0"
+
     corner1: bpy.props.FloatVectorProperty(name="Corner 1", subtype="XYZ")
     corner2: bpy.props.FloatVectorProperty(name="Corner 2", subtype="XYZ")
     corner3: bpy.props.FloatVectorProperty(name="Corner 3", subtype="XYZ")
@@ -140,7 +155,8 @@ class PortalProperties(bpy.types.PropertyGroup):
     flags: bpy.props.PointerProperty(type=PortalFlags, name="Flags")
     mirror_priority: bpy.props.IntProperty(name="Mirror Priority")
     opacity: bpy.props.IntProperty(name="Opacity")
-    audio_occlusion: bpy.props.IntProperty(name="Audio Occlusion")
+    audio_occlusion: bpy.props.StringProperty(
+        name="Audio Occlusion", update=update_audio_occlusion, default="0")
 
     # Blender use only
     name: bpy.props.StringProperty(name="Name", get=get_name)
