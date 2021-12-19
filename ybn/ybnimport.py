@@ -213,16 +213,7 @@ def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
 
     # apply vertex colors
     if len(vertex_colors) != 0:
-        mesh = obj.data
-        mesh.vertex_colors.new(name="Vertex Colors")
-        color_layer = mesh.vertex_colors[0]
-        for i in range(len(color_layer.data)):
-            rgba = vertex_colors[mesh.loops[i].vertex_index]
-            r = rgba[0] / 255
-            g = rgba[1] / 255
-            b = rgba[2] / 255
-            a = rgba[3] / 255
-            color_layer.data[i].color = [r, g, b, a]
+        create_vertexcolor_layer(obj.data, 0, "Color Layer", vertex_colors)
 
     # apply materials
     for mat in materials:
