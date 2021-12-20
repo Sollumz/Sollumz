@@ -45,7 +45,7 @@ def add_material(material, materials):
         materials.append(mat_item)
 
 
-def polygon_from_object(obj, geometry, export_settings):
+def polygon_from_object(obj, geometry, verts_map, export_settings):
     vertices = geometry.vertices
     materials = geometry.materials
     geom_center = geometry.geometry_center
@@ -59,8 +59,9 @@ def polygon_from_object(obj, geometry, export_settings):
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
             world_vert = (obj.matrix_world @ vert) - geom_center
-            vertices.append(
-                world_vert if export_settings.use_transforms else obj.matrix_basis @ vert)
+            vert = world_vert if export_settings.use_transforms else obj.matrix_basis @ vert
+            verts_map[tuple(vert)] = len(verts_map)
+            geometry.vertices.append(vert)
             indices.append(len(vertices) - 1)
 
         box.v1 = indices[0]
@@ -72,6 +73,7 @@ def polygon_from_object(obj, geometry, export_settings):
     elif obj.sollum_type == SollumType.BOUND_POLY_SPHERE:
         sphere = init_poly_bound(Sphere(), obj, materials)
         vertices.append(pos)
+        verts_map[tuple(pos)] = len(verts_map)
         sphere.v = len(vertices) - 1
         bound_box = get_total_bounds(obj)
 
@@ -108,6 +110,9 @@ def polygon_from_object(obj, geometry, export_settings):
 
         vertices.append(v1)
         vertices.append(v2)
+
+        verts_map[tuple(v1)] = len(verts_map)
+        verts_map[tuple(v2)] = len(verts_map)
 
         bound.v1 = len(vertices) - 2
         bound.v2 = len(vertices) - 1
@@ -147,6 +152,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     if geometry.unk_type == 2:
         geometry.geometry_center = obj.children[0].location
     else:
+        geometry.composite_position = Vector()
         geometry.geometry_center = obj.location
 
     # Ensure object has geometry
@@ -227,7 +233,8 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
                         vertices2[vertex] = len(vertices2)
                         geometry.vertices_2.append(Vector(vertex))
         else:
-            poly = polygon_from_object(child, geometry, export_settings)
+            poly = polygon_from_object(
+                child, geometry, vertices, export_settings)
             if poly:
                 found = True
                 geometry.polygons.append(poly)
