@@ -207,7 +207,8 @@ class SOLLUMZ_PT_YTYP_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_archetype(context) is not None
+        archetype = get_selected_archetype(context)
+        return archetype and archetype.type == ArchetypeType.TIME
 
     def get_flags(self, context):
         return get_selected_archetype(context).time_flags
