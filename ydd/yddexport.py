@@ -7,7 +7,7 @@ from ..sollumz_properties import SollumType
 
 
 def get_hash(item):
-    return jenkhash.Generate(item[1].name.split(".")[0])
+    return jenkhash.Generate(item.name.split(".")[0])
 
 
 def drawable_dict_from_object(exportop, obj, filepath, export_settings):
@@ -26,7 +26,7 @@ def drawable_dict_from_object(exportop, obj, filepath, export_settings):
                 exportop, child, filepath, bones, None, export_settings)
             if export_settings.exclude_skeleton:
                 drawable.skeleton = None
-            drawable_dict[drawable.name] = drawable
+            drawable_dict.append(drawable)
 
     drawable_dict.sort(key=get_hash)
 

@@ -4,7 +4,7 @@ from .codewalker_xml import *
 from ..tools.utils import *
 from .bound import *
 from collections import namedtuple
-from collections.abc import Mapping
+from collections.abc import MutableSequence
 from enum import Enum
 
 
@@ -581,23 +581,21 @@ class Drawable(ElementTree, AbstractClass):
         return element
 
 
-class DrawableDictionary(Mapping, Element):
+class DrawableDictionary(MutableSequence, Element):
     tag_name = "DrawableDictionary"
 
     def __init__(self, value=None):
         super().__init__()
-        self._value = value or {}
-        self._key = None
+        self._value = value or []
 
-    # Access drawables by indexing the name (i.e. DrawableDictionary[<drawable name>])
     def __getitem__(self, name):
-        try:
-            return self._value[name]
-        except KeyError:
-            raise KeyError(f"Drawable with name '{name}' not found!")
+        return self._value[name]
 
     def __setitem__(self, key, value):
         self._value[key] = value
+
+    def __delitem__(self, key):
+        del self._value[key]
 
     def __iter__(self):
         return iter(self._value)
@@ -605,8 +603,11 @@ class DrawableDictionary(Mapping, Element):
     def __len__(self):
         return len(self._value)
 
+    def insert(self, index, value):
+        self._value.insert(index, value)
+
     def sort(self, key):
-        self._value = dict(sorted(self._value.items(), key=key))
+        self._value.sort(key=key)
 
     @ classmethod
     def from_xml(cls, element: ET.Element):
@@ -615,14 +616,15 @@ class DrawableDictionary(Mapping, Element):
         children = element.findall(new.tag_name)
 
         for child in children:
+            print(child)
             drawable = Drawable.from_xml(child)
-            new._value[drawable.name] = drawable
+            new.append(drawable)
 
         return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        for drawable in self._value.values():
+        for drawable in self._value:
             if isinstance(drawable, Drawable):
                 drawable.tag_name = "Item"
                 element.append(drawable.to_xml())

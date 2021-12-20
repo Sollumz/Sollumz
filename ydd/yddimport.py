@@ -8,7 +8,7 @@ from ..sollumz_properties import SollumType
 from ..sollumz_helper import find_fragment_file
 
 
-def drawable_dict_to_obj(drawable_dict, filepath):
+def drawable_dict_to_obj(drawable_dict, filepath, import_settings):
 
     name = os.path.basename(filepath)[:-8]
     vmodels = []
@@ -17,14 +17,14 @@ def drawable_dict_to_obj(drawable_dict, filepath):
     armature_with_skel_obj = None
     mod_objs = []
     drawable_with_skel = None
-    for drawable in drawable_dict.values():
+    for drawable in drawable_dict:
         if len(drawable.skeleton.bones) > 0:
             drawable_with_skel = drawable
             break
 
-    for drawable in drawable_dict.values():
+    for drawable in drawable_dict:
         drawable_obj = drawable_to_obj(
-            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones if drawable_with_skel else None)
+            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones if drawable_with_skel else None, import_settings=import_settings)
         if (armature_with_skel_obj is None and drawable_with_skel is not None and len(drawable.skeleton.bones) > 0):
             armature_with_skel_obj = drawable_obj
 
@@ -67,7 +67,7 @@ def import_ydd(export_op, filepath, import_settings):
         else:
             export_op.warning("No external skeleton file found.")
 
-    drawable_dict = drawable_dict_to_obj(ydd_xml, filepath)
+    drawable_dict = drawable_dict_to_obj(ydd_xml, filepath, import_settings)
     if import_settings.join_geometries:
         for child in drawable_dict.children:
             if child.sollum_type == SollumType.DRAWABLE:
