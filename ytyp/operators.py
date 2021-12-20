@@ -379,7 +379,7 @@ class SOLLUMZ_OT_set_mlo_entity_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        return get_selected_entity(context) is not None and get_selected_room(context) is not None
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
@@ -396,7 +396,8 @@ class SOLLUMZ_OT_clear_mlo_entity_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        entity = get_selected_entity(context)
+        return entity is not None and entity.attached_room_index != -1
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
@@ -412,7 +413,7 @@ class SOLLUMZ_OT_set_mlo_entity_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        return get_selected_entity(context) is not None and get_selected_portal(context) is not None
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
@@ -429,7 +430,8 @@ class SOLLUMZ_OT_clear_mlo_entity_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        entity = get_selected_entity(context)
+        return entity is not None and entity.attached_portal_index != -1
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
