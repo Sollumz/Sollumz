@@ -1,7 +1,9 @@
 import bpy
 from bpy.props import PointerProperty
 
-from ..sollumz_properties import items_from_enums, ArchetypeType, AssetType, EntityProperties, FlagPropertyGroup, TimeFlags
+from ..tools.meshhelper import get_children_recursive
+
+from ..sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, EntityProperties, FlagPropertyGroup, TimeFlags
 from mathutils import Vector
 from ..tools.utils import get_list_item
 
@@ -443,11 +445,36 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
     def update_asset(self, context):
         if self.asset:
             self.asset_name = self.asset.name
-        else:
-            self.asset_name = ""
-
-    def set_asset_name(self, value):
-        self["asset_name"] = value
+            # Automatically determine asset type
+            if self.asset.sollum_type == SollumType.BOUND_COMPOSITE:
+                self.asset_type = AssetType.ASSETLESS
+                self.drawable_dictionary = ""
+                self.physics_dictionary = ""
+                self.texture_dictionary = ""
+            elif self.asset.sollum_type == SollumType.DRAWABLE:
+                self.asset_type = AssetType.DRAWABLE
+                # Check if in a drawable dictionary
+                if self.asset.parent and hasattr(self.asset.parent, "sollum_type") and self.asset.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                    self.drawable_dictionary = self.asset.parent.name
+            elif self.asset.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                self.asset_type = AssetType.DRAWABLE_DICTIONARY
+            elif self.asset.sollum_type == AssetType.FRAGMENT:
+                self.asset_type = AssetType.FRAGMENT
+            # Check for embedded collisions
+            if self.asset_type in [AssetType.DRAWABLE, AssetType.FRAGMENT]:
+                for child in get_children_recursive(self.asset):
+                    if child.sollum_type == SollumType.BOUND_COMPOSITE:
+                        self.physics_dictionary = self.asset_name
+                    # Check for embedded textures
+                    if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
+                        for mat in child.data.materials:
+                            if not mat.use_nodes:
+                                continue
+                            for node in mat.node_tree.nodes:
+                                if isinstance(node, bpy.types.ShaderNodeTexImage):
+                                    if node.texture_properties.embedded == True:
+                                        self.texture_dictionary = self.asset_name
+                                        break
 
     def new_portal(self):
         item = self.portals.add()
