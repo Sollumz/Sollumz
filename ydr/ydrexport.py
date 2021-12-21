@@ -504,7 +504,7 @@ def joints_from_object(obj):
     return joints
 
 
-def light_from_object(obj, export_settings):
+def light_from_object(obj, export_settings, armature_obj=None):
     light = LightItem()
     light.position = obj.location if not export_settings.use_transforms else obj.location + \
         obj.parent.location
@@ -523,10 +523,15 @@ def light_from_object(obj, export_settings):
     light.flashiness = obj.data.light_properties.flashiness
     light.intensity = obj.data.energy
     light.type = SOLLUMZ_UI_NAMES[obj.data.sollum_type]
-    # light.flags = obj.data.light_properties.flags
-    if obj.parent_bone:
-        armature = obj.parent.data
-        light.bone_id = armature.bones[obj.parent_bone].bone_properties.tag
+
+    # Get light bone
+    if armature_obj and armature_obj.type == "ARMATURE":
+        armature = armature_obj.data
+        for constraint in obj.constraints:
+            if isinstance(constraint, bpy.types.CopyTransformsConstraint):
+                bone = constraint.subtarget
+                light.bone_id = armature.bones[bone].bone_properties.tag
+
     light.group_id = obj.data.light_properties.group_id
     light.falloff = obj.data.cutoff_distance
     light.falloff_exponent = obj.data.shadow_soft_size * 5
@@ -560,6 +565,16 @@ def light_from_object(obj, export_settings):
     light.projected_texture_hash = obj.data.light_properties.projected_texture_hash
 
     return light
+
+
+def lights_from_object(obj, lights_xml, export_settings, armature_obj=None):
+    if obj.type == "LIGHT" and obj.data.sollum_type != LightType.NONE:
+        lights_xml.append(light_from_object(
+            obj, export_settings, armature_obj))
+    elif obj.sollum_type != SollumType.DRAWABLE_MODEL and obj.sollum_type != SollumType.BOUND_COMPOSITE:
+        for child in obj.children:
+            lights_from_object(child, lights_xml,
+                               export_settings, armature_obj)
 
 
 # REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
@@ -652,8 +667,8 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
             else:
                 drawable.bounds.append(
                     bound_from_object(child, export_settings))
-        elif child.type == 'LIGHT' and child.data.sollum_type != LightType.NONE:
-            drawable.lights.append(light_from_object(child, export_settings))
+        else:
+            lights_from_object(child, drawable.lights, export_settings, obj)
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count
