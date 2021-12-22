@@ -14,20 +14,10 @@ class VerticesLimitError(Exception):
     pass
 
 
-def init_poly_bound(poly_bound, obj, materials):
-    # materials = obj.parent.data.materials.values()
-    mat_index = 0
-    try:
-        mat_index = materials.index(obj.active_material)
-    except:
-        add_material(obj.active_material, materials)
-        mat_index = len(materials) - 1
-    poly_bound.material_index = mat_index
+def add_material(material, mat_map, materials):
+    if material in mat_map:
+        return mat_map[material]
 
-    return poly_bound
-
-
-def add_material(material, materials):
     if material and material.sollum_type == MaterialType.COLLISION:
         mat_item = MaterialItem()
         mat_item.type = material.collision_properties.collision_index
@@ -41,28 +31,42 @@ def add_material(material, materials):
             # flag_exists = getattr(material.collision_flags, flag_name)
             if flag_name in material.collision_flags:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
-
+        idx = len(mat_map)
+        mat_map[material] = idx
         materials.append(mat_item)
+        return idx
 
 
-def polygon_from_object(obj, geometry, verts_map, export_settings):
+def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
     vertices = geometry.vertices
     materials = geometry.materials
     geom_center = geometry.geometry_center
     pos = obj.matrix_world.to_translation(
     ) - geom_center if export_settings.use_transforms else obj.location
 
+    def handle_vert(vert):
+        vert = tuple(vert)
+
+        if vert in verts_map:
+            idx = verts_map[vert]
+        else:
+            idx = len(verts_map)
+            verts_map[vert] = len(verts_map)
+            vertices.append(Vector(vert))
+        return idx
+
     if obj.sollum_type == SollumType.BOUND_POLY_BOX:
-        box = init_poly_bound(Box(), obj, materials)
+        box = Box()
+        box.material_index = add_material(
+            obj.active_material, mat_map, materials)
         indices = []
         bound_box = [Vector(pos) for pos in obj.bound_box]
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
             world_vert = (obj.matrix_world @ vert) - geom_center
             vert = world_vert if export_settings.use_transforms else obj.matrix_basis @ vert
-            verts_map[tuple(vert)] = len(verts_map)
-            geometry.vertices.append(vert)
-            indices.append(len(vertices) - 1)
+            idx = handle_vert(vert)
+            indices.append(idx)
 
         box.v1 = indices[0]
         box.v2 = indices[1]
@@ -71,10 +75,11 @@ def polygon_from_object(obj, geometry, verts_map, export_settings):
 
         return box
     elif obj.sollum_type == SollumType.BOUND_POLY_SPHERE:
-        sphere = init_poly_bound(Sphere(), obj, materials)
-        vertices.append(pos)
-        verts_map[tuple(pos)] = len(verts_map)
-        sphere.v = len(vertices) - 1
+        sphere = Sphere()
+        sphere.material_index = add_material(
+            obj.active_material, mat_map, materials)
+        idx = handle_vert(pos)
+        sphere.v = idx
         bound_box = get_total_bounds(obj)
 
         radius = get_distance_of_vectors(
@@ -86,10 +91,12 @@ def polygon_from_object(obj, geometry, verts_map, export_settings):
     elif obj.sollum_type == SollumType.BOUND_POLY_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
         bound = None
         if obj.sollum_type == SollumType.BOUND_POLY_CYLINDER:
-            bound = init_poly_bound(Cylinder(), obj, materials)
+            bound = Cylinder()
         elif obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
-            bound = init_poly_bound(Capsule(), obj, materials)
+            bound = Capsule()
 
+        bound.material_index = add_material(
+            obj.active_material, mat_map, materials)
         bound_box = get_total_bounds(obj)
 
         # Get bound height
@@ -108,29 +115,15 @@ def polygon_from_object(obj, geometry, verts_map, export_settings):
         v1 = pos - vertical
         v2 = pos + vertical
 
-        vertices.append(v1)
-        vertices.append(v2)
+        idx1 = handle_vert(v1)
+        idx2 = handle_vert(v2)
 
-        verts_map[tuple(v1)] = len(verts_map)
-        verts_map[tuple(v2)] = len(verts_map)
-
-        bound.v1 = len(vertices) - 2
-        bound.v2 = len(vertices) - 1
+        bound.v1 = idx1
+        bound.v2 = idx2
 
         bound.radius = radius
 
         return bound
-
-
-def triangle_from_face(face):
-    triangle = Triangle()
-    triangle.material_index = face.material_index
-
-    triangle.v1 = face.vertices[0]
-    triangle.v2 = face.vertices[1]
-    triangle.v3 = face.vertices[2]
-
-    return triangle
 
 
 def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_settings=None, is_frag=False):
@@ -158,6 +151,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     # Ensure object has geometry
     found = False
     vertices = {}
+    mat_map = {}
     # Get child poly bounds
     for child in get_children_recursive(obj):
         mesh = child.to_mesh()
@@ -166,22 +160,21 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
         if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
             found = True
             # mats
-            for material in mesh.materials:
-                add_material(material, geometry.materials)
+            # for material in mesh.materials:
+            #     add_material(material, materials)
 
             # vert colors
             for poly in mesh.polygons:
                 for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-                    #vi = mesh.loops[loop_index].vertex_index
-                    #geometry.vertices.append((child.matrix_world @ mesh.vertices[vi].co) - geometry.geometry_center)
                     if(len(mesh.vertex_colors) > 0):
                         geometry.vertex_colors.append(
                             mesh.vertex_colors[0].data[loop_index].color)
-                    # geometry.polygons.append(tiangle_from_mesh_loop(mesh.loops[loop_index]))
 
             for tri in mesh.loop_triangles:
                 triangle = Triangle()
-                triangle.material_index = tri.material_index
+                mat = child.data.materials[tri.material_index]
+                triangle.material_index = add_material(
+                    mat, mat_map, geometry.materials)
 
                 vert_indices = []
                 for loop_idx in tri.loops:
@@ -234,11 +227,10 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
                         geometry.vertices_2.append(Vector(vertex))
         else:
             poly = polygon_from_object(
-                child, geometry, vertices, export_settings)
+                child, geometry, vertices, mat_map, export_settings)
             if poly:
                 found = True
                 geometry.polygons.append(poly)
-
     if not found:
         raise NoGeometryError()
 
