@@ -62,7 +62,7 @@ def import_ydd(export_op, filepath, import_settings):
         skel_filepath = find_fragment_file(filepath)
         if skel_filepath:
             yft = YFT.from_xml_file(skel_filepath)
-            for drawable in ydd_xml.values():
+            for drawable in ydd_xml:
                 drawable.skeleton = yft.drawable.skeleton
         else:
             export_op.warning("No external skeleton file found.")
