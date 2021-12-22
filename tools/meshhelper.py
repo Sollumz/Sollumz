@@ -192,6 +192,17 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
+def create_plane():
+    x = 1.0
+    y = 1.0
+    vert = [(-x, -y, 0.0), (x, -y, 0.0), (-x, y, 0.0), (x, y, 0.0)]
+    fac = [(0, 1, 3, 2)]
+    pl_data = bpy.data.meshes.new("Window")
+    pl_data.from_pydata(vert, [], fac)
+    pl_obj = bpy.data.objects.new("Window", pl_data)
+    return pl_obj
+
+
 def create_uv_layer(mesh, num, name, texcoords):
     mesh.uv_layers.new()
     uv_layer = mesh.uv_layers[num]

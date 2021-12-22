@@ -1,5 +1,6 @@
 import bpy
 from mathutils import Matrix, Vector
+from ..tools.meshhelper import create_plane
 from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
 from ..resources.fragment import YFT
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, light_to_obj
@@ -13,7 +14,7 @@ def get_bound_object_from_child_index(bobj, index):
             return bound
 
 
-def create_lod_obj(lod, filepath, materials, import_settings):
+def create_lod_obj(fragment, lod, filepath, materials, import_settings):
     has_bounds = True if lod.archetype.bounds else False
 
     if not has_bounds:
@@ -81,6 +82,12 @@ def create_lod_obj(lod, filepath, materials, import_settings):
         gobj.group_properties.unk_float_74 = group.unk_float_74
         gobj.group_properties.unk_float_78 = group.unk_float_78
         gobj.group_properties.unk_float_a8 = group.unk_float_a8
+
+        #window = fragment.vehicle_glass_windows[group.glass_window_index]
+        #wobj = create_plane()
+        #wobj.matrix_basis = window.projection_matrix
+        #wobj.parent = gobj
+        # bpy.context.collection.objects.link(wobj)
 
         try:
             if group.parent_index == 255:
@@ -163,17 +170,17 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
         dobj.parent = fobj
 
     if len(fragment.physics.lod1.groups) > 0:
-        lobj = create_lod_obj(fragment.physics.lod1,
+        lobj = create_lod_obj(fragment, fragment.physics.lod1,
                               filepath, materials, import_settings)
         lobj.lod_properties.type = 1
         lobj.parent = fobj
     if len(fragment.physics.lod2.groups) > 0:
-        lobj = create_lod_obj(fragment.physics.lod2,
+        lobj = create_lod_obj(fragment, fragment.physics.lod2,
                               filepath, materials, import_settings)
         lobj.lod_properties.type = 2
         lobj.parent = fobj
     if len(fragment.physics.lod3.groups) > 0:
-        lobj = create_lod_obj(fragment.physics.lod3,
+        lobj = create_lod_obj(fragment, fragment.physics.lod3,
                               filepath, materials, import_settings)
         lobj.lod_properties.type = 3
         lobj.parent = fobj
