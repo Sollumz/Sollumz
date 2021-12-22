@@ -94,16 +94,17 @@ class SOLLUMZ_UL_ROOM_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
+        name = f"{index}: {item.name}"
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=item.name, icon="CUBE")
+            row.label(text=name, icon="CUBE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="CUBE")
+                        text=name, emboss=False, icon="CUBE")
 
 
-class SOLLUMZ_UL_PORTAL_LIST(OrderListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_PORTAL_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_PORTAL_LIST"
 
     def draw_item(
