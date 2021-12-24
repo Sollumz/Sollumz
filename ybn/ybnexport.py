@@ -301,8 +301,8 @@ def init_bound(bound, obj, export_settings, is_frag=False):
 def bound_from_object(obj, export_settings, is_frag=None):
     if obj.sollum_type == SollumType.BOUND_BOX:
         bound = init_bound_item(BoundBox(), obj, export_settings, is_frag)
-        bound.box_max = Vector(obj.bound_dimensions)
-        bound.box_min = Vector(obj.bound_dimensions * -1)
+        bound.box_max = Vector(obj.bound_dimensions) / 2
+        bound.box_min = Vector(obj.bound_dimensions * -1) / 2
         if bound.unk_type == 2:
             bound.sphere_center = Vector()
             bound.box_center = Vector()
