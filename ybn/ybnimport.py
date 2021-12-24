@@ -303,18 +303,15 @@ def init_bound_obj(bound, sollum_type):
             if f.lower() == prop:
                 setattr(obj.composite_flags2, prop, True)
 
-    translation = bound.composite_position if bound.unk_type == 2 or sollum_type in [
-        SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH] else bound.box_center
-
     mat = bound.composite_rotation.to_matrix().to_4x4()
     # Set scale
     mat[0][0] = bound.composite_scale.x
     mat[1][1] = bound.composite_scale.y
     mat[2][2] = bound.composite_scale.z
     # Set position
-    mat[0][3] = translation.x
-    mat[1][3] = translation.y
-    mat[2][3] = translation.z
+    mat[0][3] = bound.composite_position.x
+    mat[1][3] = bound.composite_position.y
+    mat[2][3] = bound.composite_position.z
 
     obj.matrix_world = mat
 
@@ -327,6 +324,7 @@ def bound_to_obj(bound):
     if bound.type == 'Box':
         box = init_bound_obj(bound, SollumType.BOUND_BOX)
         box.bound_dimensions = abs_vector(bound.box_max - bound.box_min)
+        box.data.transform(Matrix.Translation(bound.box_center))
 
         return box
     elif bound.type == 'Sphere':
