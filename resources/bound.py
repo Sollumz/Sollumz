@@ -147,6 +147,8 @@ class OctantsProperty(ElementProperty):
     @staticmethod
     def from_xml(element: ET.Element):
         new = OctantsProperty(element.tag, [])
+        if not element.text:
+            return new
         allinds = []
         ind_s = element.text.strip().replace(" ", "").replace("\n", ",").split(",")
         ind = []
