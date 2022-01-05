@@ -9,77 +9,25 @@ import bpy
 
 
 class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz drawable"""
+    """Create a sollumz drawable of the selected type."""
     bl_idname = "sollumz.createdrawable"
     bl_label = f"Create Drawable"
     bl_action = "Create a Drawable"
 
     def run(self, context):
+        aobj = context.active_object
         selected = context.selected_objects
-        if len(selected) == 0:
-            create_drawable()
-            return True
-        else:
+        drawable_type = context.scene.create_drawable_type
+        if drawable_type == SollumType.DRAWABLE and len(selected) > 0:
             convert_selected_to_drawable(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
-            # self.messages.append(
-            #    f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             self.message(
                 f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             return True
-
-
-class SOLLUMZ_OT_create_drawable_model(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz drawable model"""
-    bl_idname = "sollumz.createdrawablemodel"
-    bl_label = f"Create Drawable Model"
-    bl_action = "Create a Drawable Model"
-
-    def run(self, context):
-        obj = context.active_object
-        if obj:
-            if obj.type == "MESH":
-                dobj = create_drawable(SollumType.DRAWABLE_MODEL)
-                obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
-                obj.parent = dobj
-                return True
-            else:
-                dobj = create_drawable(SollumType.DRAWABLE_MODEL)
-                return True
         else:
-            dobj = create_drawable(SollumType.DRAWABLE_MODEL)
-            return True
-
-
-class SOLLUMZ_OT_create_drawable_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz drawable dictionary"""
-    bl_idname = "sollumz.createdrawabledictionary"
-    bl_label = f"Create Drawable Dictionary"
-    bl_action = "Create a Drawable Dictionary"
-
-    def run(self, context):
-        create_drawable(SollumType.DRAWABLE_DICTIONARY)
-        return True
-
-
-class SOLLUMZ_OT_create_geometry(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz geometry"""
-    bl_idname = "sollumz.creategeometry"
-    bl_label = f"Create Drawable Geometry"
-    bl_action = "Create a Drawable Geometry"
-
-    def run(self, context):
-        obj = context.active_object
-
-        if obj:
-            if obj.type == "MESH":
-                obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
-                return True
-            else:
-                obj = create_drawable(SollumType.DRAWABLE_GEOMETRY)
-                return True
-        else:
-            obj = create_drawable(SollumType.DRAWABLE_GEOMETRY)
+            obj = create_drawable(drawable_type)
+            if aobj:
+                obj.parent = aobj
             return True
 
 

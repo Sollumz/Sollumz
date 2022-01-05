@@ -463,24 +463,3 @@ class TimeFlagsPanel(FlagsPanel):
         row.prop(flags, "time_flags_end", text="to")
         row = self.layout.row()
         row.operator(self.clear_operator)
-
-
-class SOLLUMZ_MT_sollumz(bpy.types.Menu):
-    bl_label = "Sollumz"
-    bl_idname = "SOLLUMZ_MT_sollumz"
-
-    def draw(self, context):
-        layout = self.layout
-
-
-def DrawSollumzMenu(self, context):
-    self.layout.separator()
-    self.layout.menu(SOLLUMZ_MT_sollumz.bl_idname, icon="BLENDER")
-
-
-def register():
-    bpy.types.VIEW3D_MT_add.append(DrawSollumzMenu)
-
-
-def unregister():
-    bpy.types.VIEW3D_MT_add.remove(DrawSollumzMenu)

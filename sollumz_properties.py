@@ -145,8 +145,23 @@ BOUND_TYPES = [
     SollumType.BOUND_CYLINDER,
     SollumType.BOUND_CAPSULE,
     SollumType.BOUND_DISC,
+    SollumType.BOUND_CLOTH,
     SollumType.BOUND_GEOMETRY,
     SollumType.BOUND_GEOMETRYBVH,
+]
+
+BOUND_SHAPE_TYPES = [
+    SollumType.BOUND_BOX,
+    SollumType.BOUND_SPHERE,
+    SollumType.BOUND_CYLINDER,
+    SollumType.BOUND_CAPSULE,
+    SollumType.BOUND_DISC,
+    SollumType.BOUND_POLY_BOX,
+    SollumType.BOUND_POLY_SPHERE,
+    SollumType.BOUND_POLY_CAPSULE,
+    SollumType.BOUND_POLY_CYLINDER,
+    SollumType.BOUND_POLY_TRIANGLE,
+    SollumType.BOUND_POLY_TRIANGLE2,
 ]
 
 BOUND_POLYGON_TYPES = [
@@ -193,7 +208,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
     SollumType.DRAWABLE: "Drawable",
     SollumType.DRAWABLE_MODEL: "Drawable Model",
-    SollumType.DRAWABLE_GEOMETRY: "Geometry",
+    SollumType.DRAWABLE_GEOMETRY: "Drawable Geometry",
     SollumType.SKELETON: "Skeleton",
     SollumType.LIGHT: "Light",
 

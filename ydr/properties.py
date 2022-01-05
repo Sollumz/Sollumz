@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
+from ..sollumz_properties import DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
 
@@ -251,6 +251,22 @@ def register():
         type=TextureProperties)
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(
         type=TextureFlags)
+
+    bpy.types.Scene.create_drawable_type = bpy.props.EnumProperty(
+        items=[
+            (SollumType.DRAWABLE.value,
+             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], "Create a drawable object. (if objects are selected a drawable will be created with them as the children)"),
+            (SollumType.DRAWABLE_MODEL.value,
+             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], "Create a drawable model object."),
+            (SollumType.DRAWABLE_GEOMETRY.value,
+             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY], "Create a drawable geoemtry object."),
+            (SollumType.DRAWABLE_DICTIONARY.value,
+             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY], "Create a drawable dictionary object."),
+        ],
+        name="Type",
+        default=SollumType.DRAWABLE.value
+    )
+
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(
         type=BoneProperties)
     bpy.types.Light.sollum_type = bpy.props.EnumProperty(

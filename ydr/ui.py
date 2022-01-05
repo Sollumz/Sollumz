@@ -196,20 +196,31 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
+        row.prop(context.scene, "create_drawable_type")
+        row = layout.row()
         row.prop(context.scene, "use_mesh_name")
         row.prop(context.scene, "create_seperate_objects")
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_create_drawable_model.bl_idname)
-        row.operator(SOLLUMZ_OT_create_geometry.bl_idname)
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_create_drawable_dictionary.bl_idname)
-        layout.separator()
+
+
+class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
+    bl_label = "Create Lights"
+    bl_idname = "SOLLUMZ_PT_CREATE_LIGHT_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="LIGHT")
+
+    def draw(self, context):
+        layout = self.layout
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_light.bl_idname)
-        row.prop(context.scene, 'create_light_type', text='')
+        row.prop(context.scene, "create_light_type", text="")
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
@@ -397,34 +408,13 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
                     row.prop(w.outputs[0], "default_value", text="W:")
 
 
-class SOLLUMZ_MT_add_drawable(bpy.types.Menu):
-
-    bl_label = "Drawable"
-    bl_idname = "SOLLUMZ_MT_add_drawable"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator(SOLLUMZ_OT_create_drawable.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[SollumType.DRAWABLE])
-        layout.operator(SOLLUMZ_OT_create_drawable_model.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL])
-        layout.operator(SOLLUMZ_OT_create_geometry.bl_idname,
-                        text=SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY])
-
-
-def DrawDrawableMenu(self, context):
-    self.layout.menu(SOLLUMZ_MT_add_drawable.bl_idname)
-
-
 def register():
-    bpy.types.SOLLUMZ_MT_sollumz.append(DrawDrawableMenu)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_model_properties)
     SOLLUMZ_PT_MAT_PANEL.append(draw_shader)
 
 
 def unregister():
-    bpy.types.SOLLUMZ_MT_sollumz.remove(DrawDrawableMenu)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_model_properties)
     SOLLUMZ_PT_MAT_PANEL.remove(draw_shader)
