@@ -65,10 +65,7 @@ class BoundItem(Bounds, AbstractClass):
     def __init__(self):
         super().__init__()
         self.type = AttributeProperty('type', self.type)
-        self.composite_position = VectorProperty('CompositePosition')
-        self.composite_rotation = QuaternionProperty('CompositeRotation')
-        self.composite_scale = VectorProperty(
-            'CompositeScale', Vector([1, 1, 1]))
+        self.composite_transform = MatrixProperty('CompositeTransform')
         self.composite_flags1 = FlagsProperty('CompositeFlags1')
         self.composite_flags2 = FlagsProperty('CompositeFlags2')
 
