@@ -227,7 +227,7 @@ def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
 
 
 def geometry_to_obj(geometry, sollum_type):
-    obj = init_bound_obj(geometry, sollum_type)
+    obj = init_bound_item_obj(geometry, sollum_type)
 
     materials = []
     for gmat in geometry.materials:
@@ -256,6 +256,36 @@ def geometry_to_obj(geometry, sollum_type):
             vert2_obj.location = geometry.geometry_center
             vert2_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE2
             vert2_obj.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE2]
+
+    return obj
+
+
+def init_bound_item_obj(bound, sollum_type):
+    obj = init_bound_obj(bound, sollum_type)
+    # assign obj composite flags
+    for prop in dir(obj.composite_flags1):
+        for f in bound.composite_flags1:
+            if f.lower() == prop:
+                setattr(obj.composite_flags1, prop, True)
+
+    for prop in dir(obj.composite_flags2):
+        for f in bound.composite_flags2:
+            if f.lower() == prop:
+                setattr(obj.composite_flags2, prop, True)
+
+    mat = bound.composite_rotation.to_matrix().to_4x4()
+    # Set scale
+    mat[0][0] = bound.composite_scale.x
+    mat[1][1] = bound.composite_scale.y
+    mat[2][2] = bound.composite_scale.z
+    # Set position
+    mat[0][3] = bound.composite_position.x
+    mat[1][3] = bound.composite_position.y
+    mat[2][3] = bound.composite_position.z
+
+    obj.matrix_world = mat
+
+    bpy.context.collection.objects.link(obj)
 
     return obj
 
@@ -292,55 +322,30 @@ def init_bound_obj(bound, sollum_type):
         obj.bound_properties.unk_float_1 = bound.unk_float_1
         obj.bound_properties.unk_float_2 = bound.unk_float_2
 
-    # assign obj composite flags
-    for prop in dir(obj.composite_flags1):
-        for f in bound.composite_flags1:
-            if f.lower() == prop:
-                setattr(obj.composite_flags1, prop, True)
-
-    for prop in dir(obj.composite_flags2):
-        for f in bound.composite_flags2:
-            if f.lower() == prop:
-                setattr(obj.composite_flags2, prop, True)
-
-    mat = bound.composite_rotation.to_matrix().to_4x4()
-    # Set scale
-    mat[0][0] = bound.composite_scale.x
-    mat[1][1] = bound.composite_scale.y
-    mat[2][2] = bound.composite_scale.z
-    # Set position
-    mat[0][3] = bound.composite_position.x
-    mat[1][3] = bound.composite_position.y
-    mat[2][3] = bound.composite_position.z
-
-    obj.matrix_world = mat
-
-    bpy.context.collection.objects.link(obj)
-
     return obj
 
 
 def bound_to_obj(bound):
     if bound.type == 'Box':
-        box = init_bound_obj(bound, SollumType.BOUND_BOX)
+        box = init_bound_item_obj(bound, SollumType.BOUND_BOX)
         box.bound_dimensions = abs_vector(bound.box_max - bound.box_min)
         box.data.transform(Matrix.Translation(bound.box_center))
 
         return box
     elif bound.type == 'Sphere':
-        sphere = init_bound_obj(bound, SollumType.BOUND_SPHERE)
+        sphere = init_bound_item_obj(bound, SollumType.BOUND_SPHERE)
         sphere.bound_radius = bound.sphere_radius
 
         return sphere
     elif bound.type == 'Capsule':
-        capsule = init_bound_obj(bound, SollumType.BOUND_CAPSULE)
+        capsule = init_bound_item_obj(bound, SollumType.BOUND_CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
         capsule.bound_length = bbmax.z - bbmin.z
         capsule.bound_radius = bound.sphere_radius
 
         return capsule
     elif bound.type == 'Cylinder':
-        cylinder = init_bound_obj(bound, SollumType.BOUND_CYLINDER)
+        cylinder = init_bound_item_obj(bound, SollumType.BOUND_CYLINDER)
         bbmin, bbmax = bound.box_min, bound.box_max
         extent = bbmax - bbmin
         cylinder.bound_length = extent.y
@@ -348,14 +353,14 @@ def bound_to_obj(bound):
 
         return cylinder
     elif bound.type == 'Disc':
-        disc = init_bound_obj(bound, SollumType.BOUND_DISC)
+        disc = init_bound_item_obj(bound, SollumType.BOUND_DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
         disc.bound_radius = bound.sphere_radius
         create_disc(disc.data, bound.sphere_radius, bound.margin * 2)
 
         return disc
     elif bound.type == 'Cloth':
-        cloth = init_bound_obj(bound, SollumType.BOUND_CLOTH)
+        cloth = init_bound_item_obj(bound, SollumType.BOUND_CLOTH)
         return cloth
     elif bound.type == 'Geometry':
         geometry = geometry_to_obj(bound, SollumType.BOUND_GEOMETRY)
@@ -371,9 +376,8 @@ def composite_to_obj(bounds, name, from_drawable=False):
     else:
         composite = bounds.composite
 
-    obj = bpy.data.objects.new(name, None)
-    obj.empty_display_size = 0
-    obj.sollum_type = SollumType.BOUND_COMPOSITE
+    obj = init_bound_obj(composite, SollumType.BOUND_COMPOSITE)
+    obj.name = name
 
     for idx, child in enumerate(composite.children):
         child_obj = bound_to_obj(child)
