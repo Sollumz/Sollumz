@@ -3,7 +3,7 @@ from mathutils import Matrix, Vector
 from ..tools.meshhelper import create_plane
 from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
 from ..resources.fragment import YFT
-from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, light_to_obj
+from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
@@ -163,11 +163,13 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
     if fragment.drawable:
         materials = shadergroup_to_materials(
             fragment.drawable.shader_group, filepath)
-        fragment.drawable.lights = fragment.lights
         dobj = drawable_to_obj(
             fragment.drawable, filepath, fragment.drawable.name, None, materials, import_settings)
         dobj.matrix_basis = fragment.drawable.matrix
         dobj.parent = fobj
+
+        if len(fragment.lights) > 0:
+            create_lights(fragment.lights, parent=fobj, armature_obj=dobj)
 
     if len(fragment.physics.lod1.groups) > 0:
         lobj = create_lod_obj(fragment, fragment.physics.lod1,

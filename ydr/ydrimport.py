@@ -217,7 +217,7 @@ def rotation_limits_to_obj(rotation_limits, armature):
     return bones_with_constraint
 
 
-def light_to_obj(light, obj):
+def light_to_obj(light, armature_obj=None):
     light_type = None
 
     if light.type == 'Point':
@@ -241,17 +241,20 @@ def light_to_obj(light, obj):
 
     lobj = bpy.data.objects.new(name=name, object_data=light_data)
     bpy.context.collection.objects.link(lobj)
-    lobj.parent = obj
     lobj.sollum_type = SollumType.LIGHT
 
-    if obj.type == 'ARMATURE':
-        armature = obj.data
+    if armature_obj and armature_obj.type == "ARMATURE":
+        armature = armature_obj.data
         bone_map = {
             bone.bone_properties.tag: bone for bone in armature.bones}
         # Apply bone id
         if light.bone_id in bone_map.keys():
-            lobj.parent_type = 'BONE'
-            lobj.parent_bone = bone_map[light.bone_id].name
+            constraint = lobj.constraints.new("COPY_TRANSFORMS")
+            constraint.target = armature_obj
+            constraint.subtarget = bone_map[light.bone_id].name
+            constraint.mix_mode = "BEFORE_FULL"
+            constraint.target_space = "POSE"
+            constraint.owner_space = "LOCAL"
 
     # Calculate orientation
     light.direction.negate()
@@ -519,6 +522,18 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     return dobj
 
 
+def create_lights(lights, parent, armature_obj=None):
+    if not armature_obj:
+        armature_obj = parent
+    lights_parent = bpy.data.objects.new("Lights", None)
+    lights_parent.empty_display_size = 0
+    lights_parent.parent = parent
+    bpy.context.collection.objects.link(lights_parent)
+    for light in lights:
+        lobj = light_to_obj(light, armature_obj)
+        lobj.parent = lights_parent
+
+
 def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None, import_settings=None):
 
     if not materials:
@@ -597,8 +612,8 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             mod = child.modifiers.new("Armature", 'ARMATURE')
             mod.object = obj
 
-    for light in drawable.lights:
-        light_to_obj(light, obj)
+    if len(drawable.lights) > 0:
+        create_lights(drawable.lights, obj)
 
     return obj
 

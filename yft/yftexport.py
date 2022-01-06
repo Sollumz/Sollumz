@@ -2,7 +2,7 @@ import os
 import traceback
 from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
-from ..ydr.ydrexport import drawable_from_object, get_used_materials
+from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_object, composite_from_objects
 from ..resources.fragment import BoneTransformItem, BoneTransformsListProperty, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem
 from ..tools.meshhelper import *
@@ -76,6 +76,9 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
     for child in fobj.children:
         if child.sollum_type == SollumType.DRAWABLE:
             dobj = child
+
+    lights_from_object(fobj, fragment.lights,
+                       export_settings, armature_obj=dobj)
 
     if dobj == None:
         raise Exception("NO DRAWABLE TO EXPORT.")
