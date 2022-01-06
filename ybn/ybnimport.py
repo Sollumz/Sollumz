@@ -273,17 +273,7 @@ def init_bound_item_obj(bound, sollum_type):
             if f.lower() == prop:
                 setattr(obj.composite_flags2, prop, True)
 
-    mat = bound.composite_rotation.to_matrix().to_4x4()
-    # Set scale
-    mat[0][0] = bound.composite_scale.x
-    mat[1][1] = bound.composite_scale.y
-    mat[2][2] = bound.composite_scale.z
-    # Set position
-    mat[0][3] = bound.composite_position.x
-    mat[1][3] = bound.composite_position.y
-    mat[2][3] = bound.composite_position.z
-
-    obj.matrix_world = mat
+    obj.matrix_world = bound.composite_transform.transposed()
 
     bpy.context.collection.objects.link(obj)
 

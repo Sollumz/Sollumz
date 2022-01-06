@@ -145,7 +145,10 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     if geometry.unk_type == 2:
         geometry.geometry_center = obj.children[0].location
     else:
-        geometry.composite_position = Vector()
+        # Set translation of the transposed matrix to 0,0,0
+        geometry.composite_transform[3][0] = 0
+        geometry.composite_transform[3][1] = 0
+        geometry.composite_transform[3][2] = 0
         geometry.geometry_center = obj.location
 
     # Ensure object has geometry
@@ -259,13 +262,10 @@ def init_bound_item(bound_item, obj, export_settings, is_frag=False):
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
 
-    mat = obj.matrix_world if export_settings.use_transforms else obj.matrix_basis
-    position, rotation, scale = mat.decompose()
-    bound_item.composite_position = position
-    bound_item.composite_rotation = rotation.normalized()
-    # Get scale directly from matrix (decompose gives incorrect scale)
-    bound_item.composite_scale = Vector(
-        (mat[0][0], mat[1][1], mat[2][2]))
+    bound_item.composite_transform = obj.matrix_world.copy(
+    ) if export_settings.use_transforms else obj.matrix_basis.copy()
+    bound_item.composite_transform.transpose()
+
     if obj.active_material and obj.active_material.sollum_type == MaterialType.COLLISION:
         bound_item.material_index = obj.active_material.collision_properties.collision_index
 
