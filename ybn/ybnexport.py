@@ -1,6 +1,6 @@
 from .properties import CollisionMatFlags
 from ..resources.bound import *
-from ..sollumz_properties import MaterialType, SollumType
+from ..sollumz_properties import BOUND_SHAPE_TYPES, MaterialType, SollumType
 from ..tools.meshhelper import *
 from ..tools.blenderhelper import delete_object
 from ..tools.utils import *
@@ -276,15 +276,21 @@ def init_bound(bound, obj, export_settings, is_frag=False):
     use_world = export_settings.use_transforms and (
         obj.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_COMPOSITE)
 
-    bbmin, bbmax = get_bound_extents(obj, use_world, obj.margin)
-    bound.box_min = bbmin
-    bound.box_max = bbmax
-    center = get_bound_center_from_bounds(
-        bbmin, bbmax)  # get_bound_center(obj, use_world)
-    bound.box_center = center
-    bound.sphere_center = center
-    bound.sphere_radius = get_obj_radius(
-        obj, world=use_world)
+    if obj.sollum_type in BOUND_SHAPE_TYPES:
+        bound.box_max = get_max_vector_list(obj.bound_box)
+        bound.box_min = get_min_vector_list(obj.bound_box)
+        bound.box_center = (bound.box_max + bound.box_min) * 0.5
+        bound.sphere_center = bound.box_center
+    else:
+        bbmin, bbmax = get_bound_extents(obj, use_world, obj.margin)
+        bound.box_min = bbmin
+        bound.box_max = bbmax
+        center = get_bound_center_from_bounds(
+            bbmin, bbmax)
+        bound.box_center = center
+        bound.sphere_center = center
+        bound.sphere_radius = get_obj_radius(
+            obj, world=use_world)
     bound.procedural_id = obj.bound_properties.procedural_id
     bound.room_id = obj.bound_properties.room_id
     bound.ped_density = obj.bound_properties.ped_density
@@ -301,8 +307,6 @@ def init_bound(bound, obj, export_settings, is_frag=False):
 def bound_from_object(obj, export_settings, is_frag=None):
     if obj.sollum_type == SollumType.BOUND_BOX:
         bound = init_bound_item(BoundBox(), obj, export_settings, is_frag)
-        bound.box_max = Vector(obj.bound_dimensions) / 2
-        bound.box_min = Vector(obj.bound_dimensions * -1) / 2
         if bound.unk_type == 2:
             bound.sphere_center = Vector()
             bound.box_center = Vector()
