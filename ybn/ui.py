@@ -31,6 +31,8 @@ def draw_bound_properties(self, context):
     if obj and obj.sollum_type in BOUND_TYPES:
         grid = self.layout.grid_flow(columns=2, row_major=True)
         for prop in BoundProperties.__annotations__:
+            if "unk_float" in prop:
+                continue
             grid.prop(obj.bound_properties, prop)
         if obj.sollum_type == SollumType.BOUND_GEOMETRY:
             grid.prop(obj.bound_properties, "unk_float_1")
