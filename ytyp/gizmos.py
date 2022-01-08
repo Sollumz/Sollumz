@@ -1,5 +1,6 @@
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Matrix
+from math import radians
 from .properties import *
 from ..tools.blenderhelper import find_parent
 
@@ -136,9 +137,8 @@ class PortalGizmo(bpy.types.Gizmo):
         ]
 
     def draw(self, context):
-        selected_ytyp = get_selected_ytyp(context)
-        selected_archetype = selected_ytyp.selected_archetype
-        selected_portal = selected_archetype.portals[selected_archetype.portal_index]
+        selected_archetype = get_selected_archetype(context)
+        selected_portal = get_selected_portal(context)
         portal = self.linked_portal
         asset = selected_archetype.asset
 
@@ -152,10 +152,57 @@ class PortalGizmo(bpy.types.Gizmo):
         if portal and asset:
             corners = [portal.corner1, portal.corner2,
                        portal.corner3, portal.corner4]
-            self.custom_shape = self.new_custom_shape(
+            self.portal_poly = self.new_custom_shape(
                 "TRIS", PortalGizmo.get_verts(corners))
             self.draw_custom_shape(
-                self.custom_shape, matrix=asset.matrix_world)
+                self.portal_poly, matrix=asset.matrix_world)
+
+
+class PortalNormalGizmo(bpy.types.Gizmo):
+    bl_idname = "OBJECT_GT_portal_normal"
+
+    def __init__(self):
+        super().__init__()
+        self.linked_portal = None
+
+    def draw(self, context):
+        selected_archetype = get_selected_archetype(context)
+        selected_portal = get_selected_portal(context)
+        portal = self.linked_portal
+        asset = selected_archetype.asset
+
+        self.color = 0, 0.6, 1
+
+        if selected_portal != portal:
+            self.alpha = 0
+
+        if selected_portal == portal:
+            self.alpha = 0.3
+
+            if portal and asset:
+                corners = [portal.corner1, portal.corner2,
+                           portal.corner3, portal.corner4]
+                x = [p[0] for p in corners]
+                y = [p[1] for p in corners]
+                z = [p[2] for p in corners]
+                centroid = Vector(
+                    (sum(x) / len(corners), sum(y) / len(corners), sum(z) / len(corners)))
+                normal = (corners[2] - corners[0]
+                          ).cross(corners[1] - corners[0]).normalized()
+                # Axis parameter for draw_preset_arrow is an enum ugh
+                axis = "POS_X"
+                if normal == Vector((-1, 0, 0)):
+                    axis = "NEG_X"
+                elif normal == Vector((0, 1, 0)):
+                    axis = "POS_Y"
+                elif normal == Vector((0, -1, 0)):
+                    axis = "NEG_Y"
+                elif normal == Vector((0, 0, 1)):
+                    axis = "POS_Z"
+                elif normal == Vector((0, 0, -1)):
+                    axis = "NEG_Z"
+                self.draw_preset_arrow(
+                    matrix=asset.matrix_world @ Matrix.Translation(centroid) @ Matrix.Diagonal(Vector((0.3, 0.3, 0.3))).to_4x4(), axis=axis)
 
 
 class PortalGizmoGroup(bpy.types.GizmoGroup):
@@ -165,7 +212,7 @@ class PortalGizmoGroup(bpy.types.GizmoGroup):
     bl_region_type = 'WINDOW'
     bl_options = {'3D', 'PERSISTENT', 'SELECT'}
 
-    @classmethod
+    @ classmethod
     def poll(cls, context):
         if can_draw_gizmos(context):
             selected_ytyp = get_selected_ytyp(context)
@@ -182,5 +229,7 @@ class PortalGizmoGroup(bpy.types.GizmoGroup):
         selected_archetype = selected_ytyp.selected_archetype
 
         for portal in selected_archetype.portals:
+            ngz = self.gizmos.new(PortalNormalGizmo.bl_idname)
+            ngz.linked_portal = portal
             gz = self.gizmos.new(PortalGizmo.bl_idname)
             gz.linked_portal = portal

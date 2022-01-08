@@ -4,11 +4,12 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, Sol
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..tools.blenderhelper import get_selected_vertices
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_obj_radius
-from ..tools.utils import get_min_vector_list, get_max_vector_list
+from ..tools.utils import get_min_vector_list, get_max_vector_list, sort_points, is_coplanar
 from ..resources.ytyp import *
 from ..resources.ymap import *
 from .properties import *
 from bpy_extras.io_utils import ImportHelper
+from bpy_extras.view3d_utils import location_3d_to_region_2d
 
 import os
 import traceback
@@ -242,6 +243,11 @@ class SOLLUMZ_OT_create_portal_from_selection(SOLLUMZ_OT_base, bpy.types.Operato
         selected_archetype = get_selected_archetype(context)
         selected_verts = []
 
+        if context.active_object.mode != "EDIT":
+            self.message(
+                "Must be in edit mode and have a selection of 4 vertices.")
+            return False
+
         for obj in context.objects_in_mode:
             selected_verts.extend(get_selected_vertices(obj))
 
@@ -249,19 +255,33 @@ class SOLLUMZ_OT_create_portal_from_selection(SOLLUMZ_OT_base, bpy.types.Operato
             self.message("You must select exactly 4 vertices.")
             return False
 
+        if not is_coplanar(selected_verts):
+            self.message("Selection of points must be coplanar!")
+            return False
+
         if not selected_archetype.asset:
             self.message("You must select an asset.")
             return False
 
-        corners = selected_verts
-        corners.sort()
+        # Get 2D screen coords of selected vertices
+        region = bpy.context.region
+        region_3d = bpy.context.space_data.region_3d
+
+        corners2d = []
+        for corner in selected_verts:
+            corners2d.append(location_3d_to_region_2d(
+                region, region_3d, corner))
+
+        # Sort the 2d points in a winding order
+        sort_order = sort_points(corners2d)
+        sorted_corners = [selected_verts[i] for i in sort_order]
 
         pos = selected_archetype.asset.location
         new_portal = selected_archetype.new_portal()
-        new_portal.corner1 = corners[0] - pos
-        new_portal.corner2 = corners[1] - pos
-        new_portal.corner3 = corners[3] - pos
-        new_portal.corner4 = corners[2] - pos
+        new_portal.corner1 = sorted_corners[2] - pos
+        new_portal.corner2 = sorted_corners[1] - pos
+        new_portal.corner3 = sorted_corners[0] - pos
+        new_portal.corner4 = sorted_corners[3] - pos
 
         return True
 
@@ -379,7 +399,7 @@ class SOLLUMZ_OT_set_mlo_entity_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        return get_selected_entity(context) is not None and get_selected_room(context) is not None
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
@@ -396,7 +416,8 @@ class SOLLUMZ_OT_clear_mlo_entity_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        entity = get_selected_entity(context)
+        return entity is not None and entity.attached_room_index != -1
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
@@ -412,7 +433,7 @@ class SOLLUMZ_OT_set_mlo_entity_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        return get_selected_entity(context) is not None and get_selected_portal(context) is not None
 
     def run(self, context):
         selected_entity = get_selected_entity(context)
@@ -429,7 +450,8 @@ class SOLLUMZ_OT_clear_mlo_entity_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None
+        entity = get_selected_entity(context)
+        return entity is not None and entity.attached_portal_index != -1
 
     def run(self, context):
         selected_entity = get_selected_entity(context)

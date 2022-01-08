@@ -212,3 +212,41 @@ def multiW(m, v):
     w = (((m[0][3] * v.x) + (m[1][3] * v.y)) + (m[2][3] * v.z)) + m[3][3]
     iw = 1.0 / abs(w)
     return Vector((x * iw, y * iw, z * iw))
+
+
+# Thank you Pranav! https://stackoverflow.com/a/70624269/11903486
+def sort_points(pts):
+    """Sort 4 points in a winding order"""
+    pts = numpy.array(pts)
+    centroid = numpy.sum(pts, axis=0) / pts.shape[0]
+    vector_from_centroid = pts - centroid
+    vector_angle = numpy.arctan2(
+        vector_from_centroid[:, 1], vector_from_centroid[:, 0])
+    # Find the indices that give a sorted vector_angle array
+    sort_order = numpy.argsort(-vector_angle)
+
+    # Apply sort_order to original pts array.
+    return list(sort_order)
+
+
+def is_coplanar(points):
+    """Check if 4 points lie on the same plane"""
+    a1 = points[1].x - points[0].x
+    b1 = points[1].y - points[0].y
+    c1 = points[1].z - points[0].z
+    a2 = points[2].x - points[0].x
+    b2 = points[2].y - points[0].y
+    c2 = points[2].z - points[0].z
+    a = b1 * c2 - b2 * c1
+    b = a2 * c1 - a1 * c2
+    c = a1 * b2 - b1 * a2
+    d = (- a * points[0].x - b * points[0].y - c * points[0].z)
+
+    # equation of plane is: a*x + b*y + c*z = 0 #
+
+    # checking if the 4th point satisfies
+    # the above equation
+    if(a * points[3].x + b * points[3].y + c * points[3].z + d == 0):
+        return True
+
+    return False

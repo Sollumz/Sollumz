@@ -94,16 +94,17 @@ class SOLLUMZ_UL_ROOM_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
+        name = f"{index}: {item.name}"
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=item.name, icon="CUBE")
+            row.label(text=name, icon="CUBE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="CUBE")
+                        text=name, emboss=False, icon="CUBE")
 
 
-class SOLLUMZ_UL_PORTAL_LIST(OrderListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_PORTAL_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_PORTAL_LIST"
 
     def draw_item(
@@ -170,10 +171,11 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(bpy.types.Panel):
         layout.prop(selected_archetype, "type")
         layout.prop(selected_archetype, "name")
         layout.prop(selected_archetype, "special_attribute")
-        layout.prop(selected_archetype, "texture_dictionary")
-        layout.prop(selected_archetype, "clip_dictionary")
-        layout.prop(selected_archetype, "drawable_dictionary")
-        layout.prop(selected_archetype, "physics_dictionary")
+        if selected_archetype.asset_type != AssetType.ASSETLESS:
+            layout.prop(selected_archetype, "texture_dictionary")
+            layout.prop(selected_archetype, "clip_dictionary")
+            layout.prop(selected_archetype, "drawable_dictionary")
+            layout.prop(selected_archetype, "physics_dictionary")
         layout.prop(selected_archetype, "asset_type")
         layout.prop(selected_archetype, "asset_name")
         layout.prop(selected_archetype, "asset", text="Linked Object")
@@ -207,7 +209,8 @@ class SOLLUMZ_PT_YTYP_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_archetype(context) is not None
+        archetype = get_selected_archetype(context)
+        return archetype and archetype.type == ArchetypeType.TIME
 
     def get_flags(self, context):
         return get_selected_archetype(context).time_flags
