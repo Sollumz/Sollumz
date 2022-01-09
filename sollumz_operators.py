@@ -10,6 +10,7 @@ from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, Sollu
 from .resources.drawable import YDR, YDD
 from .resources.fragment import YFT
 from .resources.bound import YBN
+from .resources.navmesh import YNV
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd
@@ -18,6 +19,7 @@ from .yft.yftimport import import_yft
 from .yft.yftexport import export_yft
 from .ybn.ybnimport import import_ybn
 from .ybn.ybnexport import export_ybn
+from .ynv.ynvimport import import_ynv
 from .resources.ymap import YMAP, EntityItem, CMapData
 from .tools.meshhelper import *
 from .tools.utils import *
@@ -32,7 +34,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_showtime = True
 
     filter_glob: bpy.props.StringProperty(
-        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};",
+        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};",
         options={"HIDDEN"},
         maxlen=255,
     )
@@ -40,7 +42,8 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     import_settings: bpy.props.PointerProperty(type=SollumzImportSettings)
 
     filename_exts = [YDR.file_extension, YDD.file_extension,
-                     YFT.file_extension, YBN.file_extension]
+                     YFT.file_extension, YBN.file_extension,
+                     YNV.file_extension]
 
     def draw(self, context):
         pass
@@ -60,6 +63,8 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
             elif ext == YBN.file_extension:
                 import_ybn(filepath)
                 valid_type = True
+            elif ext == YNV.file_extension:
+                import_ynv(filepath)
 
             if valid_type:
                 self.message(f"Succesfully imported: {filepath}")

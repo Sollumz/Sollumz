@@ -35,6 +35,11 @@ class SollumType(str, Enum):
     BOUND_POLY_TRIANGLE = "sollumz_bound_poly_triangle"
     BOUND_POLY_TRIANGLE2 = "sollumz_bound_poly_triangle2"
 
+    NAVMESH = "sollumz_navmesh"
+    NAVMESH_POLY_MESH = "sollumz_navmesh_mesh"
+    NAVMESH_PORTAL = "sollumz_navmesh_portal"
+    NAVMESH_POINT = "sollumz_navmesh_point"
+
 
 class LightType(str, Enum):
     NONE = 'sollumz_light_none'
@@ -211,6 +216,11 @@ SOLLUMZ_UI_NAMES = {
     SollumType.DRAWABLE_GEOMETRY: "Drawable Geometry",
     SollumType.SKELETON: "Skeleton",
     SollumType.LIGHT: "Light",
+
+    SollumType.NAVMESH: "NavMesh",
+    SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
+    SollumType.NAVMESH_PORTAL: "NavMesh Portal",
+    SollumType.NAVMESH_POINT: "NavMesh Point",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",

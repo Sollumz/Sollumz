@@ -1,5 +1,6 @@
 from .codewalker_xml import *
 from xml.etree import ElementTree as ET
+from mathutils import Vector
 
 
 class YNV:
@@ -27,7 +28,7 @@ class NavPointItem(ElementTree):
 
 class NavPointListProperty(ListProperty):
     list_type = NavPointItem
-    tag_name = "Portals"
+    tag_name = "Points"
 
 
 class NavPortalItem(ElementTree):
@@ -48,13 +49,38 @@ class NavPortalListProperty(ListProperty):
     tag_name = "Portals"
 
 
+class NavPolygonVertices(ListProperty):
+    list_type = Vector
+    tag_name = "Vertices"
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name=tag_name, value=value)
+
+    @ classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        verts = []
+        if element.text:
+            txts = element.text.strip().split("\n")
+            for txt in txts:
+                txt = txt.strip()
+            for txt in txts:
+                nums = txt.split(", ")
+                v0 = float(nums[0])
+                v1 = float(nums[1])
+                v2 = float(nums[2])
+                verts.append(Vector((v0, v1, v2)))
+        new.value = verts
+        return new
+
+
 class NavPolygonItem(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
         super().__init__()
         self.flags = TextProperty("Flags")
-        self.vertices = TextProperty("Vertices")
+        self.vertices = NavPolygonVertices("Vertices")
         self.edges = TextProperty("Edges")
 
 
