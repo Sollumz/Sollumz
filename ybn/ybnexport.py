@@ -343,6 +343,9 @@ def bound_from_object(obj, export_settings, is_frag=None):
 
 
 def composite_from_objects(objs, export_settings, is_frag=False):
+    if len(objs) <= 0:
+        return
+
     tobj = bpy.data.objects.new("temp", None)
     old_parents = []
     for obj in objs:

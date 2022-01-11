@@ -57,9 +57,9 @@ def abs_vector(v):
 
 def divide_vector_inv(v):
     r = Vector((0, 0, 0))
-    r.x = 1 / v.x
-    r.y = 1 / v.y
-    r.z = 1 / v.z
+    r.x = 1 / v.x if v.x != 0 else 0
+    r.y = 1 / v.y if v.y != 0 else 0
+    r.z = 1 / v.z if v.z != 0 else 0
     return r
 
 
