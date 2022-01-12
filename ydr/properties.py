@@ -2,6 +2,7 @@ import bpy
 from ..sollumz_properties import DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
+from os import path
 
 
 class DrawableProperties(bpy.types.PropertyGroup):
@@ -235,6 +236,15 @@ def set_light_type(self, value):
         self.is_capsule = False
 
 
+def get_img_path(self):
+    return self.filepath
+
+
+def set_img_path(self, value):
+    self.filepath = value
+    self.name = path.basename(value)
+
+
 def register():
     bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
@@ -251,6 +261,9 @@ def register():
         type=TextureProperties)
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(
         type=TextureFlags)
+    # Custom property so image name can be updated when path is updated
+    bpy.types.Image.sollumz_filepath = bpy.props.StringProperty(
+        subtype="FILE_PATH", get=get_img_path, set=set_img_path)
 
     bpy.types.Scene.create_drawable_type = bpy.props.EnumProperty(
         items=[

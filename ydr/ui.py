@@ -308,7 +308,7 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                 if n.image:
                     row.label(text="Texture Name: " + n.image.name)
                     row = box.row()
-                    row.prop(n.image, "filepath", text="Texture Path")
+                    row.prop(n.image, "sollumz_filepath", text="Texture Path")
                 row = box.row(align=True)
                 row.prop(n.texture_properties, "embedded")
                 if(n.texture_properties.embedded == False):
