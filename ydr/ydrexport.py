@@ -463,7 +463,6 @@ def bone_from_object(obj):
 def calculate_skeleton_unks(skel):
     # from what oiv calcs Unknown50 and Unknown54 are related to BoneTag and Flags, and obviously the hierarchy of bones
     # assuming those hashes/flags are all based on joaat
-    # would crash the game when Unknown50 >= Unknown54
     # Unknown58 is related to BoneTag, Flags, Rotation, Location and Scale. Named as DataCRC so we stick to CRC-32 as a hack, since we and possibly oiv don't know how R* calc them
     # hopefully this doesn't break in game!
     # hacky solution with inaccurate results, the implementation here is only for ensure they are unique regardless the correctness, further investigation is required
