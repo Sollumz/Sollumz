@@ -3,9 +3,11 @@ import shutil
 import collections
 import bmesh
 import bpy
+import zlib
 from ..resources.fragment import FragmentDrawable
 from ..resources.drawable import *
 from ..resources.shader import ShaderManager
+from ..tools import jenkhash
 from ..tools.meshhelper import *
 from ..tools.utils import *
 from ..tools.blenderhelper import *
@@ -458,6 +460,41 @@ def bone_from_object(obj):
     return bone
 
 
+def calculate_skeleton_unks(skel):
+    # from what oiv calcs Unknown50 and Unknown54 are related to BoneTag and Flags, and obviously the hierarchy of bones
+    # assuming those hashes/flags are all based on joaat
+    # Unknown58 is related to BoneTag, Flags, Rotation, Location and Scale. Named as DataCRC so we stick to CRC-32 as a hack, since we and possibly oiv don't know how R* calc them
+    # hopefully this doesn't break in game!
+    # hacky solution with inaccurate results, the implementation here is only for ensure they are unique regardless the correctness, further investigation is required
+    if skel is None or len(skel.bones) == 0:
+        return
+
+    unk_50 = []
+    unk_58 = []
+    for bone in skel.bones:
+        unk_50_str = ' '.join((str(bone.tag), ' '.join(bone.flags)))
+
+        translation = []
+        for item in bone.translation:
+            translation.append(str(item))
+
+        rotation = []
+        for item in bone.rotation:
+            rotation.append(str(item))
+
+        scale = []
+        for item in bone.scale:
+            scale.append(str(item))
+
+        unk_58_str = ' '.join((str(bone.tag), ' '.join(bone.flags), ' '.join(translation), ' '.join(rotation), ' '.join(scale)))
+        unk_50.append(unk_50_str)
+        unk_58.append(unk_58_str)
+
+    skel.unknown_50 = jenkhash.Generate(' '.join(unk_50))
+    skel.unknown_54 = zlib.crc32(' '.join(unk_50).encode())
+    skel.unknown_58 = zlib.crc32(' '.join(unk_58).encode())
+
+
 def skeleton_from_object(obj):
 
     if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
@@ -475,6 +512,8 @@ def skeleton_from_object(obj):
     for pbone in bones:
         bone = bone_from_object(pbone.bone)
         skeleton.bones.append(bone)
+
+    calculate_skeleton_unks(skeleton)
 
     return skeleton
 
