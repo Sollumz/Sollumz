@@ -32,6 +32,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_label = "Import Codewalker XML"
     bl_action = "import"
     bl_showtime = True
+    bl_update_view = True
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};",
@@ -282,6 +283,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     filename_ext = ".ymap.xml"
     bl_action = "Import a YMAP"
     bl_showtime = True
+    bl_update_view = True
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",

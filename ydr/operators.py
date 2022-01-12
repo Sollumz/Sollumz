@@ -13,6 +13,7 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createdrawable"
     bl_label = f"Create Drawable"
     bl_action = "Create a Drawable"
+    bl_update_view = True
 
     def run(self, context):
         aobj = context.active_object
