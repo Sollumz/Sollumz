@@ -1,8 +1,10 @@
 import bpy
 from mathutils import Matrix, Vector
-from ..tools.meshhelper import create_plane
+from ..tools.utils import multiW
+from ..tools.meshhelper import create_plane, create_uv_layer
 from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
 from ..resources.fragment import YFT
+from ..tools.fragmenthelper import shattermap_to_image, shattermap_to_material
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
@@ -12,6 +14,28 @@ def get_bound_object_from_child_index(bobj, index):
     for bound in bobj.children:
         if bound.creation_index == index:
             return bound
+
+
+def create_vehicle_window_obj(window, name):
+    mat = window.projection_matrix
+    mat[3][3] = 1
+    mat = mat.transposed().inverted()
+    min = Vector((0, 0, 0))
+    max = Vector((window.width / 2, window.height, 1))
+    v0 = multiW(mat, Vector((min.x, min.y, 0)))
+    v1 = multiW(mat, Vector((min.x, max.y, 0)))
+    v2 = multiW(mat, Vector((max.x, max.y, 0)))
+    v3 = multiW(mat, Vector((max.x, min.y, 0)))
+    verts = [v0, v1, v2, v3]
+    faces = [[0, 1, 2, 3]]
+    uvs = [[1, 1], [1, 0], [0, 0], [0, 1]]
+    mesh = bpy.data.meshes.new(name + " vehicle window")
+    mesh.from_pydata(verts, [], faces)
+    create_uv_layer(mesh, 0, "UVMap", uvs)
+    mat = shattermap_to_material(window.shattermap, name + " shattermap.bmp")
+    mesh.materials.append(mat)
+    wobj = bpy.data.objects.new("", mesh)
+    return wobj
 
 
 def create_lod_obj(fragment, lod, filepath, materials, import_settings):
@@ -83,11 +107,14 @@ def create_lod_obj(fragment, lod, filepath, materials, import_settings):
         gobj.group_properties.unk_float_78 = group.unk_float_78
         gobj.group_properties.unk_float_a8 = group.unk_float_a8
 
-        #window = fragment.vehicle_glass_windows[group.glass_window_index]
-        #wobj = create_plane()
-        #wobj.matrix_basis = window.projection_matrix
-        #wobj.parent = gobj
-        # bpy.context.collection.objects.link(wobj)
+        for window in fragment.vehicle_glass_windows:
+            print(idx)
+            print(window.item_id)
+            if window.item_id == idx:
+                pass
+                wobj = create_vehicle_window_obj(window, group.name)
+                wobj.parent = gobj
+                bpy.context.collection.objects.link(wobj)
 
         try:
             if group.parent_index == 255:

@@ -177,7 +177,7 @@ class ShatterMapProperty(ElementProperty):
         if element.text:
             txt = element.text.strip().split("\n")
             for row in txt:
-                rows.append(row)
+                rows.append(row.strip())
         new.value = rows
         return new
 
@@ -201,6 +201,14 @@ class WindowItem(ElementTree):
         self.unk_float_18 = ValueProperty("UnkFloat18")
         self.cracks_texture_tiling = ValueProperty("CracksTextureTiling")
         self.shattermap = ShatterMapProperty("ShatterMap")
+
+    @property
+    def width(self):
+        return len(self.shattermap[0]) if self.height > 0 else 0
+
+    @property
+    def height(self):
+        return len(self.shattermap) if self.shattermap else 0
 
 
 class VehicleGlassWindows(ListProperty):

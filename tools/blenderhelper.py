@@ -42,6 +42,18 @@ def get_terrain_texture_brush(idx):
     return brush
 
 
+def material_from_image(img, name="Material"):
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    node_tree = mat.node_tree
+    links = node_tree.links
+    bsdf = node_tree.nodes["Principled BSDF"]
+    imgnode = node_tree.nodes.new("ShaderNodeTexImage")
+    links.new(imgnode.outputs[0], bsdf.inputs[0])
+    imgnode.image = img
+    return mat
+
+
 def copy_children(res, children):
     for child in children:
         resc = child.copy()
