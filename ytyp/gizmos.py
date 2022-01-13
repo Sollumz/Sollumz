@@ -189,8 +189,8 @@ class PortalNormalGizmo(bpy.types.Gizmo):
                 z = [p[2] for p in corners]
                 centroid = Vector(
                     (sum(x) / len(corners), sum(y) / len(corners), sum(z) / len(corners)))
-                normal = (corners[2] - corners[0]
-                          ).cross(corners[1] - corners[0]).normalized()
+                normal = -(corners[2] - corners[0]
+                           ).cross(corners[1] - corners[0]).normalized()
                 # Axis parameter for draw_preset_arrow is an enum ugh
                 axis = "POS_X"
                 if normal == Vector((-1, 0, 0)):
