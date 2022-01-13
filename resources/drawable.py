@@ -206,6 +206,11 @@ class SkeletonProperty(ElementTree):
         # unknown_1c is either 0 or 16777216, the latter in most cases
         # oiv seems to get unknown_50 and unknown_54 correct somehow
         # unknown_58 is DataCRC in gims, oiv doesn't seem to calc it correctly so they leave it for user to edit this
+
+        # UPDATE
+        # from: NcProductions and ArthurLopes
+        # to my knowledge, having two addon peds with the same unknown 1C, 50, 54 and 58 value will cause one of them to be messed up when spawned together. for example, first add-on will spawn without problem, the second will have the bones messed up. 
+        # fixing this issue is simple by changing the value like you mentioned.
         self.unknown_1c = ValueProperty("Unknown1C", 16777216)
         self.unknown_50 = ValueProperty("Unknown50", 567032952)
         self.unknown_54 = ValueProperty("Unknown54", 2134582703)

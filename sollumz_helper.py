@@ -9,6 +9,7 @@ class SOLLUMZ_OT_base:
     bl_options = {"UNDO"}
     bl_action = "do"
     bl_showtime = False
+    bl_update_view = False
 
     def __init__(self):
         self.messages = []
@@ -21,7 +22,8 @@ class SOLLUMZ_OT_base:
         start = time.time()
         try:
             result = self.run(context)
-            reset_sollumz_view(context.scene)
+            if self.bl_update_view:
+                reset_sollumz_view(context.scene)
         except:
             result = False
             self.error(

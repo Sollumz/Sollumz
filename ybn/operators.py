@@ -21,24 +21,12 @@ def handle_load_flag_presets(self):
         self.report({'ERROR'}, traceback.format_exc())
 
 
-class CreateBoundShapeHelper(SOLLUMZ_OT_base):
-    @property
-    @abstractmethod
-    def bound_type():
-        raise NotImplementedError
-
-    def run(self, context):
-        aobj = context.active_object
-        obj = create_bound_shape(self.bound_type, aobj)
-        context.view_layer.objects.active = bpy.data.objects[obj.name]
-        return True
-
-
 class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz polygon bound of the selected type."""
     bl_idname = "sollumz.createpolygonbound"
     bl_label = "Create Polygon Bound"
     bl_action = f"{bl_label}"
+    bl_update_view = True
 
     def create_poly_from_verts(self, context, type, parent):
         if not parent:
@@ -146,6 +134,7 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createbound"
     bl_label = f"Create Bound"
     bl_action = f"{bl_label}"
+    bl_update_view = True
 
     def run(self, context):
         aobj = context.active_object
