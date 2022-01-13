@@ -99,6 +99,8 @@ class RoomGizmoGroup(bpy.types.GizmoGroup):
 
     @classmethod
     def poll(cls, context):
+        if not context.scene.show_room_gizmo:
+            return False
         if can_draw_gizmos(context):
             selected_ytyp = get_selected_ytyp(context)
             selected_archetype = selected_ytyp.selected_archetype
@@ -212,8 +214,10 @@ class PortalGizmoGroup(bpy.types.GizmoGroup):
     bl_region_type = 'WINDOW'
     bl_options = {'3D', 'PERSISTENT', 'SELECT'}
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
+        if not context.scene.show_portal_gizmo:
+            return False
         if can_draw_gizmos(context):
             selected_ytyp = get_selected_ytyp(context)
             selected_archetype = selected_ytyp.selected_archetype
