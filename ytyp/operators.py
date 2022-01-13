@@ -10,6 +10,7 @@ from ..resources.ymap import *
 from .properties import *
 from bpy_extras.io_utils import ImportHelper
 from bpy_extras.view3d_utils import location_3d_to_region_2d
+from .gizmos import PortalGizmoGroup
 
 import os
 import traceback
@@ -37,6 +38,8 @@ class SOLLUMZ_OT_delete_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         context.scene.ytyps.remove(context.scene.ytyp_index)
         context.scene.ytyp_index = max(context.scene.ytyp_index - 1, 0)
+        # Force redraw of gizmos
+        context.space_data.show_gizmo = context.space_data.show_gizmo
 
         return True
 
@@ -124,6 +127,8 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         selected_ytyp.archetypes.remove(selected_ytyp.archetype_index)
         selected_ytyp.archetype_index = max(
             selected_ytyp.archetype_index - 1, 0)
+        # Force redraw of gizmos
+        context.space_data.show_gizmo = context.space_data.show_gizmo
 
         return True
 
@@ -211,6 +216,9 @@ class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
         selected_archetype.rooms.remove(selected_archetype.room_index)
         selected_archetype.room_index = max(
             selected_archetype.room_index - 1, 0)
+        # Force redraw of gizmos
+        context.space_data.show_gizmo = context.space_data.show_gizmo
+
         return True
 
 
@@ -300,6 +308,8 @@ class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
         selected_archetype.portals.remove(selected_archetype.portal_index)
         selected_archetype.portal_index = max(
             selected_archetype.portal_index - 1, 0)
+        # Force redraw of gizmos
+        context.space_data.show_gizmo = context.space_data.show_gizmo
         return True
 
 
