@@ -99,6 +99,8 @@ class RoomGizmoGroup(bpy.types.GizmoGroup):
 
     @classmethod
     def poll(cls, context):
+        if not context.scene.show_room_gizmo:
+            return False
         if can_draw_gizmos(context):
             selected_ytyp = get_selected_ytyp(context)
             selected_archetype = selected_ytyp.selected_archetype
@@ -187,8 +189,8 @@ class PortalNormalGizmo(bpy.types.Gizmo):
                 z = [p[2] for p in corners]
                 centroid = Vector(
                     (sum(x) / len(corners), sum(y) / len(corners), sum(z) / len(corners)))
-                normal = (corners[2] - corners[0]
-                          ).cross(corners[1] - corners[0]).normalized()
+                normal = -(corners[2] - corners[0]
+                           ).cross(corners[1] - corners[0]).normalized()
                 # Axis parameter for draw_preset_arrow is an enum ugh
                 axis = "POS_X"
                 if normal == Vector((-1, 0, 0)):
@@ -212,8 +214,10 @@ class PortalGizmoGroup(bpy.types.GizmoGroup):
     bl_region_type = 'WINDOW'
     bl_options = {'3D', 'PERSISTENT', 'SELECT'}
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
+        if not context.scene.show_portal_gizmo:
+            return False
         if can_draw_gizmos(context):
             selected_ytyp = get_selected_ytyp(context)
             selected_archetype = selected_ytyp.selected_archetype
