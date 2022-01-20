@@ -260,18 +260,20 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 f"No objects of type: {' or '.join([SOLLUMZ_UI_NAMES[t].lower() for t in self.export_settings.sollum_types])} to export.")
             return False
 
+        mode = context.active_object.mode
+        # Switch to object mode during export
+        if mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
         if len(objects) > 0:
             for obj in objects:
-                mode = obj.mode
-                # Switch to object mode during export
-                if mode != 'OBJECT':
-                    bpy.ops.object.mode_set(mode='OBJECT')
                 result = self.export_object(obj)
-                if obj.mode != mode:
-                    bpy.ops.object.mode_set(mode=mode)
                 # Dont show time on failure
                 if not result:
                     self.bl_showtime = False
+
+        if context.active_object != mode:
+            bpy.ops.object.mode_set(mode=mode)
 
         return True
 
