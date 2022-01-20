@@ -66,7 +66,7 @@ def shadergroup_to_materials(shadergroup, filepath):
 
                         # assign non color to normal maps
                         if "Bump" in param.name:
-                            n.image.colorspace_settings.name = "Non-Color"
+                            n.image.colorspace_settings.name = "Linear"
 
                         # Assign embedded texture dictionary properties
                         if shadergroup.texture_dictionary != None:
@@ -97,7 +97,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                                                     n.texture_flags, prop, True)
 
                         if param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings'):
-                            n.image.colorspace_settings.name = 'Non-Color'
+                            n.image.colorspace_settings.name = 'Linear'
 
                 elif isinstance(n, bpy.types.ShaderNodeValue):
                     if param.name == n.name[:-2]:
