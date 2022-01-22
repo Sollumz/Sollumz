@@ -40,6 +40,12 @@ class SollumType(str, Enum):
     NAVMESH_PORTAL = "sollumz_navmesh_portal"
     NAVMESH_POINT = "sollumz_navmesh_point"
 
+    CLIP_DICTIONARY = "sollumz_clip_dictionary"
+    CLIPS = "sollumz_clips"
+    CLIP = "sollumz_clip"
+    ANIMATIONS = "sollumz_animations"
+    ANIMATION = "sollumz_animation"
+
 
 class LightType(str, Enum):
     NONE = 'sollumz_light_none'
@@ -221,6 +227,12 @@ SOLLUMZ_UI_NAMES = {
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
     SollumType.NAVMESH_PORTAL: "NavMesh Portal",
     SollumType.NAVMESH_POINT: "NavMesh Point",
+
+    SollumType.CLIP_DICTIONARY: "Clip Dictionary",
+    SollumType.CLIPS: "Clips",
+    SollumType.CLIP: "Clip",
+    SollumType.ANIMATIONS: "Animations",
+    SollumType.ANIMATION: "Animation",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
@@ -493,6 +505,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         name="Import External Skeleton",
         description="Imports the first found yft skeleton in the same folder as the selected file.",
         default=False,
+    )
+
+    selected_armature: bpy.props.IntProperty(
+        name="Armature",
+        description="Armature on which the animation will be applied.",
+        default=-1,
     )
 
 

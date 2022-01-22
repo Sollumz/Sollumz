@@ -11,6 +11,7 @@ from .resources.drawable import YDR, YDD
 from .resources.fragment import YFT
 from .resources.bound import YBN
 from .resources.navmesh import YNV
+from .resources.clipsdictionary import YCD
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd
@@ -20,6 +21,7 @@ from .yft.yftexport import export_yft
 from .ybn.ybnimport import import_ybn
 from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
+from .ycd.ycdimport import import_ycd
 from .resources.ymap import YMAP, EntityItem, CMapData
 from .tools.meshhelper import *
 from .tools.utils import *
@@ -35,7 +37,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_update_view = True
 
     filter_glob: bpy.props.StringProperty(
-        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};",
+        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};*{YCD.file_extension};",
         options={"HIDDEN"},
         maxlen=255,
     )
@@ -44,7 +46,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     filename_exts = [YDR.file_extension, YDD.file_extension,
                      YFT.file_extension, YBN.file_extension,
-                     YNV.file_extension]
+                     YNV.file_extension, YCD.file_extension]
 
     def draw(self, context):
         pass
@@ -66,6 +68,8 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 valid_type = True
             elif ext == YNV.file_extension:
                 import_ynv(filepath)
+            elif ext == YCD.file_extension:
+                import_ycd(self, filepath, self.import_settings)
 
             if valid_type:
                 self.message(f"Succesfully imported: {filepath}")
@@ -574,7 +578,7 @@ class ClearTimeFlags(SOLLUMZ_OT_base):
 
 def sollumz_menu_func_import(self, context):
     self.layout.operator(SOLLUMZ_OT_import.bl_idname,
-                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension})")
+                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
 
 
 def sollumz_menu_func_export(self, context):

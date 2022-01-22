@@ -87,7 +87,6 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
 
         layout.prop(operator.import_settings, "split_by_bone")
 
-
 class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
     bl_region_type = 'TOOL_PROPS'
@@ -110,6 +109,49 @@ class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.import_settings, "import_ext_skeleton")
+
+
+class SOLLUMZ_UL_ARMATURE_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_ARMATURE_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon="OUTLINER_DATA_ARMATURE")
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
+
+class SOLLUMZ_PT_import_animation(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Animation"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 4
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_import"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        armature_list_box = layout.box()
+
+        armature_list_box.label(text="Target skeleton")
+
+        armature_list_box.template_list(SOLLUMZ_UL_ARMATURE_LIST.bl_idname, "",
+                                        bpy.data, "armatures", operator.import_settings, "selected_armature")
 
 
 class SOLLUMZ_PT_export_main(bpy.types.Panel):

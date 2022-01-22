@@ -250,3 +250,6 @@ def is_coplanar(points):
         return True
 
     return False
+
+def list_index_exists(ls, i):
+    return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
