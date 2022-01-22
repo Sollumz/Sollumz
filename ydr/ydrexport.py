@@ -46,6 +46,9 @@ def get_shaders_from_blender(materials):
                 param.type = "Texture"
                 if node.image == None:
                     param.texture_name = ""
+                #Disable extra material writing to xml
+                elif param.name == "Extra":
+                        continue
                 else:
                     param.texture_name = node.image.name.split('.')[0]
                 shader.parameters.append(param)
@@ -399,7 +402,7 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-            if len(child.data.materials) > 1:
+            if len(child.data.materials) > 0:
                 # Preserve original order of materials
                 objs = split_object(child, obj)
                 for obj in objs:
