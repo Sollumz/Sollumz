@@ -527,6 +527,7 @@ def link_value_shader_parameters(shader, node_tree):
             map = node_tree.nodes.new("ShaderNodeMapRange")
             map.inputs[2].default_value = 512
             map.inputs[3].default_value = 1
+            map.inputs[4].default_value = 0
             map.clamp = True
             links.new(spec_fm.outputs[0], map.inputs[0])
             links.new(map.outputs[0], bsdf.inputs["Roughness"])
