@@ -46,7 +46,6 @@ class SOLLUMZ_PT_ANIM_PANEL(bpy.types.Panel):
 
             toolbox.prop(clip_properties, 'hash')
             toolbox.prop(clip_properties, 'name')
-            toolbox.prop(clip_properties, 'unknown30')
 
             toolbox.prop(clip_properties, 'duration')
 
@@ -54,12 +53,12 @@ class SOLLUMZ_PT_ANIM_PANEL(bpy.types.Panel):
             toolbox.operator(SOLLUMZ_OT_CLIP_NEW_ANIMATION.bl_idname, text='New animation')
 
             for clip_animation in clip_properties.animations:
-                toolbox = layout.box()
-                toolbox.prop(clip_animation, 'animation')
-                toolbox.prop(clip_animation, 'start_frame')
-                toolbox.prop(clip_animation, 'end_frame')
+                toolbox_animation = toolbox.box()
+                toolbox_animation.prop(clip_animation, 'animation')
+                toolbox_animation.prop(clip_animation, 'start_frame')
+                toolbox_animation.prop(clip_animation, 'end_frame')
 
-                delete_op = toolbox.operator(SOLLUMZ_OT_CLIP_DELETE_ANIMATION.bl_idname, text='Delete')
+                delete_op = toolbox_animation.operator(SOLLUMZ_OT_CLIP_DELETE_ANIMATION.bl_idname, text='Delete')
                 delete_op.animation_hash = clip_animation.animation.animation_properties.hash
         elif active_object.sollum_type == SollumType.ANIMATION:
             animation_properties = active_object.animation_properties
@@ -68,10 +67,6 @@ class SOLLUMZ_PT_ANIM_PANEL(bpy.types.Panel):
             toolbox.label(text='Animation')
             toolbox.prop(animation_properties, 'hash')
             toolbox.prop(animation_properties, 'frame_count')
-            toolbox.prop(animation_properties, 'sequence_frame_limit')
-            toolbox.prop(animation_properties, 'duration')
-            toolbox.prop(animation_properties, 'unknown10')
-            toolbox.prop(animation_properties, 'unknown1C')
             toolbox.prop(animation_properties, 'base_action')
             toolbox.prop(animation_properties, 'root_motion_location_action')
             toolbox.prop(animation_properties, 'root_motion_rotation_action')

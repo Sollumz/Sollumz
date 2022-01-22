@@ -542,12 +542,14 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         items=((SollumType.DRAWABLE.value, "Drawables", ""),
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
                (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
-               (SollumType.FRAGMENT.value, "Fragments", "")),
+               (SollumType.FRAGMENT.value, "Fragments", ""),
+               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", "")),
         description="Which kind of sollumz objects to export",
         default={SollumType.DRAWABLE.value,
                  SollumType.DRAWABLE_DICTIONARY.value,
                  SollumType.BOUND_COMPOSITE.value,
-                 SollumType.FRAGMENT.value},
+                 SollumType.FRAGMENT.value,
+                 SollumType.CLIP_DICTIONARY.value},
     )
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",

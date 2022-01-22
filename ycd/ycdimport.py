@@ -4,7 +4,7 @@ from mathutils import Vector, Quaternion, Matrix
 from ..resources.clipsdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import build_bone_map, get_armature_obj
-from ..tools.animationhelper import is_ped_bone_tag, rotate_preserve_sign, rotation_difference_preserve_sign
+from ..tools.animationhelper import is_ped_bone_tag, rotation_difference_preserve_sign
 from ..tools.utils import list_index_exists
 
 def create_anim_obj(type):
@@ -297,10 +297,6 @@ def animation_to_obj(animation, armature, is_ped_animation):
     animation_obj.name = animation.hash
     animation_obj.animation_properties.hash = animation.hash
     animation_obj.animation_properties.frame_count = animation.frame_count
-    animation_obj.animation_properties.sequence_frame_limit = animation.frame_count + 30
-    animation_obj.animation_properties.duration = animation.duration
-    animation_obj.animation_properties.unknown10 = animation.unknown10
-    animation_obj.animation_properties.unknown1C = animation.unknown1C
 
     actions_data = combine_sequences_and_convert_to_groups(animation, armature, is_ped_animation)
     actions = actions_data_to_actions(animation.hash, actions_data, armature, animation.frame_count)
@@ -323,7 +319,6 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
     clip_obj.name = clip.hash
     clip_obj.clip_properties.hash = clip.hash
     clip_obj.clip_properties.name = clip.name
-    clip_obj.clip_properties.unknown30 = clip.unknown30
     clip_obj.clip_properties.animations.clear()
 
     if clip.type == 'Animation':

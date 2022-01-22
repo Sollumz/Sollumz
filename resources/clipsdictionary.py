@@ -203,6 +203,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.value = QuaternionProperty('Value')
+            self.type = 'StaticQuaternion'
 
         def get_value(self, frame_id, channel_values):
           return self.value
@@ -213,6 +214,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.value = VectorProperty('Value')
+            self.type = 'StaticVector3'
 
         def get_value(self, frame_id, channel_values):
           return self.value
@@ -223,6 +225,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.value = ValueProperty('Value', 0.0)
+            self.type = 'StaticFloat'
 
         def get_value(self, frame_id, channel_values):
           return self.value
@@ -233,6 +236,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.values = ValuesBuffer()
+            self.type = 'RawFloat'
 
         def get_value(self, frame_id, channel_values):
           return self.values[frame_id % len(self.values)]
@@ -245,6 +249,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.quantum = ValueProperty('Quantum', 0.0)
             self.offset = ValueProperty('Offset', 0.0)
             self.values = ValuesBuffer()
+            self.type = 'QuantizeFloat'
 
         def get_value(self, frame_id, channel_values):
           return self.values[frame_id % len(self.values)]
@@ -255,6 +260,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.frames = FramesBuffer()
+            self.type = 'IndirectQuantizeFloat'
 
         def get_value(self, frame_id, channel_values):
           return self.values[(self.frames[frame_id % len(self.frames)]) % len(self.values)]
@@ -266,6 +272,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             super().__init__()
             self.numints = ValueProperty('NumInts', 0)
             self.counts = ValueProperty('Counts', 0)
+            self.type = 'LinearFloat'
 
     class CachedQuaternion1(Channel):
         type = 'CachedQuaternion1'
@@ -273,6 +280,7 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.quat_index = ValueProperty('QuatIndex', 0)
+            self.type = 'CachedQuaternion1'
 
         def get_value(self, frame_id, channel_values):
             vec_len = Vector((channel_values[0], channel_values[1], channel_values[2])).length
@@ -281,6 +289,11 @@ class ChannelsListProperty(ItemTypeListProperty):
 
     class CachedQuaternion2(CachedQuaternion1):
         type = 'CachedQuaternion2'
+
+        def __init__(self):
+            super().__init__()
+            self.quat_index = ValueProperty('QuatIndex', 0)
+            self.type = 'CachedQuaternion2'
 
     list_type = Channel
     tag_name = "Channels"
@@ -409,6 +422,7 @@ class ClipsListProperty(ItemTypeListProperty):
 
         def __init__(self):
             super().__init__()
+            self.type = "AnimationList"
             self.duration = ValueProperty("Duration", 0.0)
             self.animations = ClipAnimationsListProperty()
 

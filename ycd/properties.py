@@ -27,19 +27,8 @@ class ClipAnimation(bpy.types.PropertyGroup):
 class ClipProperties(bpy.types.PropertyGroup):
     hash: bpy.props.StringProperty(name='Hash', default='')
     name: bpy.props.StringProperty(name='Name', default='')
-    type: bpy.props.EnumProperty(
-        name='Clip Type',
-        items = [
-            ('Animation', 'Animation', 'Animation'),
-            ('AnimationList', 'AnimationList', 'AnimationList')
-        ],
-        default='Animation'
-    )
 
-    unknown30: bpy.props.IntProperty(name='Unknown30', default=12, min=0)
     duration: bpy.props.FloatProperty(name='Duration', default=0, min=0)
-
-    animation: bpy.props.PointerProperty(name='Animation', type=bpy.types.Object)
 
     start_frame: bpy.props.IntProperty(name='Start Frame', default=0, min=0)
     end_frame: bpy.props.IntProperty(name='End Frame', default=0, min=0)
@@ -50,10 +39,6 @@ class ClipProperties(bpy.types.PropertyGroup):
 class AnimationProperties(bpy.types.PropertyGroup):
     hash: bpy.props.StringProperty(name='Hash', default='')
     frame_count: bpy.props.IntProperty(name='Frame Count', default=1, min=1)
-    sequence_frame_limit: bpy.props.IntProperty(name='Sequence Frame Limit', default=1, min=1)
-    duration: bpy.props.FloatProperty(name = 'Duration', default=0.0, min=0)
-    unknown10: bpy.props.IntProperty(name='Unknown10', default=0, min=0)
-    unknown1C: bpy.props.StringProperty(name='Unknown1C', default='')
 
     base_action: bpy.props.PointerProperty(name='Base action', type=bpy.types.Action)
     root_motion_location_action: bpy.props.PointerProperty(name='Root motion location action', type=bpy.types.Action)

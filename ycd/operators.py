@@ -35,7 +35,7 @@ class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
             start_frames = clip_animation.start_frame
             end_frames = clip_animation.end_frame
 
-            visual_frame_count = round(clip_properties.duration * 30)
+            visual_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
 
             actions = []
 
@@ -45,7 +45,6 @@ class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
             if animation_properties.root_motion_location_action != None:
                 actions.append(animation_properties.root_motion_location_action)
 
-            # TODO: solve problem with root motion
             # if animation_properties.root_motion_rotation_action != None:
             #     actions.append(animation_properties.root_motion_rotation_action)
 
@@ -81,7 +80,6 @@ class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
                 nla_strip.frame_start = 0
                 nla_strip.frame_end = virtual_frames_count
 
-                bpy.context.scene.render.fps = 30
                 bpy.context.scene.frame_start = 0
                 bpy.context.scene.frame_end = nla_strip.frame_end
 
@@ -257,7 +255,6 @@ class SOLLUMZ_OT_ANIMATION_FILL(bpy.types.Operator):
 
         animation_properties = active_object.animation_properties
 
-
         action_list = []
 
         if animation_properties.base_action:
@@ -277,33 +274,6 @@ class SOLLUMZ_OT_ANIMATION_FILL(bpy.types.Operator):
         frame_count = (end_frame - start_frame) + 1
 
         animation_properties.frame_count = frame_count
-        animation_properties.sequence_frame_limit = frame_count + 30
-        animation_properties.duration = frame_count / 30
-
-
-        # animations_obj = None
-
-        # if active_object.sollum_type == SollumType.CLIP:
-        #     clip_dictionary_obj = active_object.parent.parent
-
-        #     animations_obj = find_child_by_type(clip_dictionary_obj, SollumType.ANIMATIONS)
-        # elif active_object.sollum_type == SollumType.ANIMATION:
-        #     animations_obj = active_object.parent
-        # elif active_object.sollum_type == SollumType.CLIPS:
-        #     clip_dictionary_obj = active_object.parent
-
-        #     animations_obj = find_child_by_type(clip_dictionary_obj, SollumType.ANIMATIONS)
-        # elif active_object.sollum_type == SollumType.ANIMATIONS:
-        #     animations_obj = active_object
-        # elif active_object.sollum_type == SollumType.CLIP_DICTIONARY:
-        #     clip_dictionary_obj = active_object
-
-        #     animations_obj = find_child_by_type(clip_dictionary_obj, SollumType.ANIMATIONS)
-
-        # if animations_obj != None:
-        #     animation_obj = create_anim_obj(SollumType.ANIMATION)
-
-        #     animation_obj.parent = animations_obj
 
         return {'FINISHED'}
 
