@@ -183,6 +183,10 @@ def find_parent(obj, parent_name):
     else:
         return None
 
+def find_child_by_type(parent, sollum_type):
+    for obj in bpy.data.objects:
+        if obj.parent == parent and obj.sollum_type == sollum_type:
+            return obj
 
 def build_tag_bone_map(armature):
     if (armature == None):
@@ -196,3 +200,34 @@ def build_tag_bone_map(armature):
         tag_bone_map[pose_bone.bone.bone_properties.tag] = pose_bone.name
 
     return tag_bone_map
+
+def build_name_bone_map(armature):
+    if (armature == None):
+        return None
+
+    if (armature.pose == None):
+        return None
+
+    tag_bone_map = {}
+    for pose_bone in armature.pose.bones:
+        tag_bone_map[pose_bone.name] = pose_bone.bone.bone_properties.tag
+
+    return tag_bone_map
+
+def build_bone_map(armature):
+    if (armature == None):
+        return None
+
+    if (armature.pose == None):
+        return None
+
+    tag_bone_map = {}
+    for pose_bone in armature.pose.bones:
+        tag_bone_map[pose_bone.bone.bone_properties.tag] = pose_bone
+
+    return tag_bone_map
+
+def get_armature_obj(armature):
+    for obj in bpy.data.objects:
+        if isinstance(obj.data, bpy.types.Armature) and obj.data == armature:
+            return obj
