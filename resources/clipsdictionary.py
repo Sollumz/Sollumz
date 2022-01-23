@@ -1,9 +1,11 @@
 from .codewalker_xml import *
 from xml.etree import ElementTree as ET
 from inspect import isclass
-
+from math import sqrt
 
 class YCD:
+
+    file_extension = ".ycd.xml"
 
     @staticmethod
     def from_xml_file(filepath):
@@ -103,7 +105,7 @@ class AttributesListProperty(ItemTypeListProperty):
 
         def __init__(self):
             super().__init__()
-            self.value = ValueProperty('Value', '')
+            self.value = TextProperty('Value', '')
 
     list_type = Attribute
     tag_name = "Attributes"
@@ -112,8 +114,8 @@ class AttributesListProperty(ItemTypeListProperty):
 class ValuesBuffer(ElementProperty):
     value_types = (list)
 
-    def __init__(self, tag_name=None, value=None):
-        super().__init__(tag_name=tag_name or 'Values', value=[])
+    def __init__(self):
+        super().__init__(tag_name='Values', value=[])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
@@ -124,6 +126,41 @@ class ValuesBuffer(ElementProperty):
                 items = line.strip().split(" ")
                 for item in items:
                     new.value.append(float(item))
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        columns = 10
+        text = []
+
+        for index, value in enumerate(self.value):
+            text.append(str(value))
+            if index < len(self.value) - 1:
+                text.append(' ')
+            if (index + 1) % columns == 0:
+                text.append('\n')
+
+        element.text = ''.join(text)
+
+        return element
+
+
+class FramesBuffer(ElementProperty):
+    value_types = (list)
+
+    def __init__(self):
+        super().__init__(tag_name='Frames', value=[])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        text = element.text.strip().split('\n')
+        if len(text) > 0:
+            for line in text:
+                items = line.strip().split(" ")
+                for item in items:
+                    new.value.append(int(item))
 
         return new
 
@@ -157,12 +194,19 @@ class ChannelsListProperty(ItemTypeListProperty):
             super().__init__()
             self.type = ValueProperty('Type', '')
 
+        def get_value(self, frame_id, channel_values):
+            raise NotImplementedError
+
     class StaticQuaternion(Channel):
         type = 'StaticQuaternion'
 
         def __init__(self):
             super().__init__()
             self.value = QuaternionProperty('Value')
+            self.type = 'StaticQuaternion'
+
+        def get_value(self, frame_id, channel_values):
+          return self.value
 
     class StaticVector3(Channel):
         type = 'StaticVector3'
@@ -170,6 +214,10 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.value = VectorProperty('Value')
+            self.type = 'StaticVector3'
+
+        def get_value(self, frame_id, channel_values):
+          return self.value
 
     class StaticFloat(Channel):
         type = 'StaticFloat'
@@ -177,6 +225,10 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.value = ValueProperty('Value', 0.0)
+            self.type = 'StaticFloat'
+
+        def get_value(self, frame_id, channel_values):
+          return self.value
 
     class RawFloat(Channel):
         type = 'RawFloat'
@@ -184,6 +236,10 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.values = ValuesBuffer()
+            self.type = 'RawFloat'
+
+        def get_value(self, frame_id, channel_values):
+          return self.values[frame_id % len(self.values)]
 
     class QuantizeFloat(Channel):
         type = 'QuantizeFloat'
@@ -193,13 +249,21 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.quantum = ValueProperty('Quantum', 0.0)
             self.offset = ValueProperty('Offset', 0.0)
             self.values = ValuesBuffer()
+            self.type = 'QuantizeFloat'
+
+        def get_value(self, frame_id, channel_values):
+          return self.values[frame_id % len(self.values)]
 
     class IndirectQuantizeFloat(QuantizeFloat):
         type = 'IndirectQuantizeFloat'
 
         def __init__(self):
             super().__init__()
-            self.frames = ValuesBuffer('Frames')
+            self.frames = FramesBuffer()
+            self.type = 'IndirectQuantizeFloat'
+
+        def get_value(self, frame_id, channel_values):
+          return self.values[(self.frames[frame_id % len(self.frames)]) % len(self.values)]
 
     class LinearFloat(QuantizeFloat):
         type = 'LinearFloat'
@@ -208,6 +272,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             super().__init__()
             self.numints = ValueProperty('NumInts', 0)
             self.counts = ValueProperty('Counts', 0)
+            self.type = 'LinearFloat'
 
     class CachedQuaternion1(Channel):
         type = 'CachedQuaternion1'
@@ -215,9 +280,20 @@ class ChannelsListProperty(ItemTypeListProperty):
         def __init__(self):
             super().__init__()
             self.quat_index = ValueProperty('QuatIndex', 0)
+            self.type = 'CachedQuaternion1'
+
+        def get_value(self, frame_id, channel_values):
+            vec_len = Vector((channel_values[0], channel_values[1], channel_values[2])).length
+
+            return sqrt(max(1.0 - vec_len * vec_len, 0))
 
     class CachedQuaternion2(CachedQuaternion1):
         type = 'CachedQuaternion2'
+
+        def __init__(self):
+            super().__init__()
+            self.quat_index = ValueProperty('QuatIndex', 0)
+            self.type = 'CachedQuaternion2'
 
     list_type = Channel
     tag_name = "Channels"
@@ -314,6 +390,22 @@ class Clip(ItemTypeListProperty.Item, AbstractClass):
         self.properties = Clip.PropertyListProperty()
 
 
+class ClipAnimationsListProperty(ListProperty):
+    class ClipAnimation(ElementTree):
+
+        tag_name = 'Item'
+
+        def __init__(self):
+            super().__init__()
+            self.animation_hash = TextProperty('AnimationHash', '')
+            self.start_time = ValueProperty('StartTime', 0.0)
+            self.end_time = ValueProperty('EndTime', 0.0)
+            self.rate = ValueProperty('Rate', 0.0)
+
+    list_type = ClipAnimation
+    tag_name = "Animations"
+
+
 class ClipsListProperty(ItemTypeListProperty):
     class ClipAnimation(Clip):
         type = "Animation"
@@ -330,8 +422,9 @@ class ClipsListProperty(ItemTypeListProperty):
 
         def __init__(self):
             super().__init__()
+            self.type = "AnimationList"
             self.duration = ValueProperty("Duration", 0.0)
-            self.animations = ClipsDictionary.AnimationsListProperty()
+            self.animations = ClipAnimationsListProperty()
 
     list_type = Clip
     tag_name = "Clips"

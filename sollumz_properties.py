@@ -40,6 +40,12 @@ class SollumType(str, Enum):
     NAVMESH_PORTAL = "sollumz_navmesh_portal"
     NAVMESH_POINT = "sollumz_navmesh_point"
 
+    CLIP_DICTIONARY = "sollumz_clip_dictionary"
+    CLIPS = "sollumz_clips"
+    CLIP = "sollumz_clip"
+    ANIMATIONS = "sollumz_animations"
+    ANIMATION = "sollumz_animation"
+
 
 class LightType(str, Enum):
     NONE = 'sollumz_light_none'
@@ -221,6 +227,12 @@ SOLLUMZ_UI_NAMES = {
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
     SollumType.NAVMESH_PORTAL: "NavMesh Portal",
     SollumType.NAVMESH_POINT: "NavMesh Point",
+
+    SollumType.CLIP_DICTIONARY: "Clip Dictionary",
+    SollumType.CLIPS: "Clips",
+    SollumType.CLIP: "Clip",
+    SollumType.ANIMATIONS: "Animations",
+    SollumType.ANIMATION: "Animation",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
@@ -495,6 +507,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+    selected_armature: bpy.props.IntProperty(
+        name="Armature",
+        description="Armature on which the animation will be applied.",
+        default=-1,
+    )
+
 
 class SollumzExportSettings(bpy.types.PropertyGroup):
     local: bpy.props.BoolProperty(
@@ -524,12 +542,14 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         items=((SollumType.DRAWABLE.value, "Drawables", ""),
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
                (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
-               (SollumType.FRAGMENT.value, "Fragments", "")),
+               (SollumType.FRAGMENT.value, "Fragments", ""),
+               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", "")),
         description="Which kind of sollumz objects to export",
         default={SollumType.DRAWABLE.value,
                  SollumType.DRAWABLE_DICTIONARY.value,
                  SollumType.BOUND_COMPOSITE.value,
-                 SollumType.FRAGMENT.value},
+                 SollumType.FRAGMENT.value,
+                 SollumType.CLIP_DICTIONARY.value},
     )
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",
