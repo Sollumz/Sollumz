@@ -1,9 +1,13 @@
+from msilib import sequence
+from operator import contains
+import bl_keymap_utils
 import bpy
+from bpy.types import PoseBone, FCurve, Action
 from mathutils import Vector, Quaternion, Euler
 from ..resources.clipsdictionary import *
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
-from ..tools.animationhelper import is_ped_bone_tag, rotate_preserve_sign, get_quantum_and_min_val
+from ..tools.animationhelper import evaluate_euler_to_quaternion, evaluate_quaternion, evaluate_vector, is_ped_bone_tag, rotate_preserve_sign, get_quantum_and_min_val
 from ..tools.utils import list_index_exists
 
 def get_name(item):
@@ -14,6 +18,8 @@ def get_track_id(type, action_type, with_unk0=False):
     track = -1
     unk0 = -1
 
+    # TODO: Move to enum
+
     if type == 'location':
         unk0 = 0
 
@@ -21,7 +27,7 @@ def get_track_id(type, action_type, with_unk0=False):
             track = 0
         elif action_type == 'root_motion':
             track = 5
-    elif type == 'rotation_quaternion':
+    elif type == 'rotation_quaternion' or type == 'rotation_euler':
         unk0 = 1
 
         if action_type == 'base':
@@ -29,7 +35,7 @@ def get_track_id(type, action_type, with_unk0=False):
         elif action_type == 'root_motion':
             track = 6
     elif type == 'scale':
-        unk0 = 1
+        unk0 = 0
 
         if action_type == 'base':
             track = 2
@@ -40,7 +46,7 @@ def get_track_id(type, action_type, with_unk0=False):
     return track
 
 
-def bone_ids_from_action(action, bone_groups, bones_name_map, action_type):
+def fill_bone_ids_from_action(action, bone_groups, bones_name_map, action_type):
     bones_list_map = {}
 
     for fcurve in action.fcurves.values():
@@ -69,71 +75,40 @@ def bone_ids_from_action(action, bone_groups, bones_name_map, action_type):
             bone_groups[track].append(bone_id)
 
 
-def sequence_items_from_action(action, sequence_items, bones_name_map, bones_map, action_type, frame_count, is_ped_animation):
+def sequence_items_from_action(action: Action, sequence_items, bones_map, action_type, frame_count, is_ped_animation):
     locations = {}
-    rotations_quaternion = {}
-    rotations_euler = {}
+    rotations = {}
+    scales = {}
+    
+    p_bone: PoseBone
+    for bone_id, p_bone in bones_map.items():
+        pos_vector_path = p_bone.path_from_id('location')
+        rot_quaternion_path = p_bone.path_from_id('rotation_quaternion')
+        rot_euler_path = p_bone.path_from_id('rotation_euler')
+        scale_vector_path = p_bone.path_from_id('scale')
 
-    for fcurve in action.fcurves.values():
-        bone_name, type = fcurve.data_path.replace('pose.bones["', '').replace('"]', '').split('.')
+        # Get list of per-frame data for every path
 
-        if bone_name not in bones_name_map:
-            continue
+        b_locations = evaluate_vector(action.fcurves, pos_vector_path, frame_count)
+        b_quaternions = evaluate_quaternion(action.fcurves, rot_quaternion_path, frame_count)
+        b_euler_quaternions = evaluate_euler_to_quaternion(action.fcurves, rot_euler_path, frame_count)
+        b_scales = evaluate_vector(action.fcurves, scale_vector_path, frame_count)
+        
+        # Link them with Bone ID
 
-        bone_id = bones_name_map[bone_name]
+        if len(b_locations) > 0:
+            locations[bone_id] = b_locations
 
-        if type == 'location':
-            if bone_id not in locations:
-                locations[bone_id] = []
+        # Its a bit of a edge case scenario because blender uses either
+        # euler or quaternion (I cant really understand why quaternion doesnt update with euler)
+        # So we will prefer quaternion over euler for now
+        if len(b_quaternions) > 0:
+            rotations[bone_id] = b_quaternions
+        elif len(b_euler_quaternions) > 0:
+            rotations[bone_id] = b_euler_quaternions
 
-            for frame_id in range(0, frame_count):
-                if not list_index_exists(locations[bone_id], frame_id):
-                    locations[bone_id].append(Vector((0, 0, 0)))
-
-                if fcurve.array_index == 0:
-                    locations[bone_id][frame_id].x = fcurve.evaluate(frame_id)
-                elif fcurve.array_index == 1:
-                    locations[bone_id][frame_id].y = fcurve.evaluate(frame_id)
-                elif fcurve.array_index == 2:
-                    locations[bone_id][frame_id].z = fcurve.evaluate(frame_id)
-        elif type == 'rotation_quaternion':
-            if bone_id not in rotations_quaternion:
-                rotations_quaternion[bone_id] = []
-
-            for frameId in range(0, frame_count):
-                if not list_index_exists(rotations_quaternion[bone_id], frameId):
-                    rotations_quaternion[bone_id].append(Quaternion((0, 0, 0, 0)))
-
-                quaternion = rotations_quaternion[bone_id][frameId]
-
-                angle = fcurve.evaluate(frameId)
-
-                if fcurve.array_index == 0:
-                    quaternion.w = angle
-                elif fcurve.array_index == 1:
-                    quaternion.x = angle
-                elif fcurve.array_index == 2:
-                    quaternion.y = angle
-                elif fcurve.array_index == 3:
-                    quaternion.z = angle
-        elif type == 'rotation_euler':
-            if bone_id not in rotations_euler:
-                rotations_euler[bone_id] = []
-
-            for frameId in range(0, frame_count):
-                if not list_index_exists(rotations_euler[bone_id], frameId):
-                    rotations_euler[bone_id].append(Euler((0, 0, 0, 0)))
-
-                euler = rotations_euler[bone_id][frameId]
-
-                angle = fcurve.evaluate(frameId)
-
-                if fcurve.array_index == 0:
-                    euler.x = angle
-                elif fcurve.array_index == 1:
-                    euler.y = angle
-                elif fcurve.array_index == 2:
-                    euler.z = angle
+        if len(b_scales) > 0:
+            scales[bone_id] = b_scales
 
     if not is_ped_animation:
         for bone_id, positions in locations.items():
@@ -161,28 +136,25 @@ def sequence_items_from_action(action, sequence_items, bones_name_map, bones_map
 
                 positions[frame_id] = diff_location
 
-    for bone_id, eulers in rotations_euler.items():
-        p_bone = bones_map[bone_id]
-        bone = p_bone.bone
-
-        if bone_id not in rotations_quaternion:
-            rotations_quaternion[bone_id] = []
-
-        for frame_id, euler in enumerate(eulers):
-            quaternion = euler.to_quaternion()
-
-            if not list_index_exists(rotations_quaternion[bone_id], frameId):
-                rotations_quaternion[bone_id].append(quaternion)
-            else:
-                rotations_quaternion[bone_id][frame_id] = quaternion
-
-    for bone_id, quaternions in rotations_quaternion.items():
+    for bone_id, quaternions in rotations.items():
         p_bone = bones_map[bone_id]
         bone = p_bone.bone
 
         for quaternion in quaternions:
-            # Make sure not to use 'Quaternion.Rotate' because it will
-            # mess up quaternion by changing the signs
+            # 'Flickering bug' fix - killso:
+            # This bug is caused by interpolation algorithm used in GTA
+            # which is not Slerp, they directly interpolate Quaternion
+            # values without taking actual rotation into account. 
+            # (probably for optimization purposes)
+            # So in usual scenario Q and -Q would represent the same
+            # rotation but with different signs and Slerp will work just fine,
+            # but in gta it will interpolate XYZW values and it will lead to
+            # interpolating in 'different direction'.
+            # Another problem here, is that mathutils functions like
+            # rotate or any other that affect quaternion mess up the signs,
+            # so i've made special functions for that, which check
+            # quaternion direction before and after operation
+            # and in case if it doesn't match - flip signs
             if p_bone.parent is not None:
                 pose_rot = Matrix.to_quaternion(bone.matrix)
                 rotate_preserve_sign(quaternion, pose_rot)
@@ -190,8 +162,11 @@ def sequence_items_from_action(action, sequence_items, bones_name_map, bones_map
     if len(locations) > 0:
         sequence_items[get_track_id('location', action_type)] = locations
 
-    if len(rotations_quaternion) > 0:
-        sequence_items[get_track_id('rotation_quaternion', action_type)] = rotations_quaternion
+    if len(rotations) > 0:
+        sequence_items[get_track_id('rotation_quaternion', action_type)] = rotations
+
+    if len(scales) > 0:
+        sequence_items[get_track_id('scale', action_type)] = scales
 
 
 def build_values_channel(values, uniq_values, indirect_percentage=0.1):
@@ -227,7 +202,10 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
 def sequence_item_from_frames_data(track, frames_data):
     sequence_data = Animation.SequenceDataListProperty.SequenceData()
 
-    if track == 0 or track == 5:
+    # TODO: Would be good to put this in enum
+
+    # Location, Scale, RootMotion Position
+    if track == 0 or track == 2 or track == 5:
         values_x = []
         values_y = []
         values_z = []
@@ -255,6 +233,7 @@ def sequence_item_from_frames_data(track, frames_data):
             sequence_data.channels.append(build_values_channel(values_x, uniq_x))
             sequence_data.channels.append(build_values_channel(values_y, uniq_y))
             sequence_data.channels.append(build_values_channel(values_z, uniq_z))
+    # Rotation, RootMotion Rotation
     elif track == 1 or track == 6:
         values_x = []
         values_y = []
@@ -309,11 +288,12 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     bone_groups = {}
     sequence_items = {}
 
+    # TODO: Get it from sequence_items_from_action data
     if animation_properties.base_action:
-        bone_ids_from_action(animation_properties.base_action, bone_groups, bones_name_map, 'base')
+        fill_bone_ids_from_action(animation_properties.base_action, bone_groups, bones_name_map, 'base')
 
     if animation_properties.root_motion_location_action:
-        bone_ids_from_action(animation_properties.root_motion_location_action, bone_groups, bones_name_map, 'root_motion')
+        fill_bone_ids_from_action(animation_properties.root_motion_location_action, bone_groups, bones_name_map, 'root_motion')
 
     # if animation_properties.root_motion_rotation_action:
     #     bone_ids_from_action(animation_properties.root_motion_rotation_action, bone_groups, bones_name_map, 'root_motion')
@@ -325,13 +305,19 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
         if track == 5 or track == 6:
             animation.unknown10 = 16
 
+    action: Action
+    action_type: str
     if animation_properties.base_action:
-        sequence_items_from_action(animation_properties.base_action, sequence_items, bones_name_map, bones_map, 'base',
-                                   animation_properties.frame_count, is_ped_animation)
+        action = animation_properties.base_action
+        action_type = 'base'
 
     if animation_properties.root_motion_location_action:
-        sequence_items_from_action(animation_properties.root_motion_location_action, sequence_items, bones_name_map,
-                                   bones_map, 'root_motion', animation_properties.frame_count, is_ped_animation)
+        action = animation_properties.root_motion_location_action
+        action_type = 'root_motion'
+
+    if action is not None:
+        sequence_items_from_action(
+            action, sequence_items, bones_map, action_type, animation_properties.frame_count, is_ped_animation)
 
     # if animation_properties.root_motion_rotation_action:
     #     sequence_items_from_action(animation_properties.root_motion_rotation_action, sequence_items, bones_name_map,

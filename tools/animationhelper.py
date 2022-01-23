@@ -1,5 +1,6 @@
 from sys import float_info
-from mathutils import Quaternion
+from mathutils import Quaternion, Vector, Euler
+from bpy.types import FCurve
 
 ped_bone_tags = [
     11816,
@@ -56,6 +57,59 @@ def rotation_difference_preserve_sign(quat_left, quat_right):
         diff *= -1
 
     return diff
+
+def evaluate_vector(fcurves, data_path, frames):
+    xCurve = fcurves.find(data_path, index = 0)
+    yCurve = fcurves.find(data_path, index = 1)
+    zCurve = fcurves.find(data_path, index = 2)
+
+    if xCurve is None:
+        return []
+
+    result = []
+    for frame_id in range(0, frames):
+        x = xCurve.evaluate(frame_id)
+        y = yCurve.evaluate(frame_id)
+        z = zCurve.evaluate(frame_id)
+
+        result.append(Vector((x, y, z)))
+    return result
+
+def evaluate_euler_to_quaternion(fcurves, data_path, frames):
+    xCurve = fcurves.find(data_path, index = 0)
+    yCurve = fcurves.find(data_path, index = 1)
+    zCurve = fcurves.find(data_path, index = 2)
+
+    if xCurve is None:
+        return []
+
+    result = []
+    for frame_id in range(0, frames):
+        x = xCurve.evaluate(frame_id)
+        y = yCurve.evaluate(frame_id)
+        z = zCurve.evaluate(frame_id)
+
+        result.append(Euler((x, y, z)).to_quaternion())
+    return result
+
+def evaluate_quaternion(fcurves, data_path, frames):
+    wCurve = fcurves.find(data_path, index = 0)
+    xCurve = fcurves.find(data_path, index = 0)
+    yCurve = fcurves.find(data_path, index = 1)
+    zCurve = fcurves.find(data_path, index = 2)
+
+    if xCurve is None:
+        return []
+
+    result = []
+    for frame_id in range(0, frames):
+        w = wCurve.evaluate(frame_id)
+        x = xCurve.evaluate(frame_id)
+        y = yCurve.evaluate(frame_id)
+        z = zCurve.evaluate(frame_id)
+
+        result.append(Quaternion((w, x, y, z)))
+    return result
 
 def get_quantum_and_min_val(nums):
     min_val = float_info.max
