@@ -139,9 +139,9 @@ def evaluate_euler_to_quaternion(fcurves, data_path, frames):
 
 def evaluate_quaternion(fcurves, data_path, frames):
     wCurve = fcurves.find(data_path, index = 0)
-    xCurve = fcurves.find(data_path, index = 0)
-    yCurve = fcurves.find(data_path, index = 1)
-    zCurve = fcurves.find(data_path, index = 2)
+    xCurve = fcurves.find(data_path, index = 1)
+    yCurve = fcurves.find(data_path, index = 2)
+    zCurve = fcurves.find(data_path, index = 3)
 
     if xCurve is None:
         return []

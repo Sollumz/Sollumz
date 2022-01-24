@@ -223,12 +223,12 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation = Animation()
 
     animation_properties = animation_obj.animation_properties
-    frames_count = animation_properties.frames_count
+    frame_count = animation_properties.frame_count
 
     animation.hash = animation_properties.hash
-    animation.frame_count = frames_count
-    animation.sequence_frame_limit = frames_count + 30
-    animation.duration = frames_count / bpy.context.scene.render.fps
+    animation.frame_count = frame_count
+    animation.sequence_frame_limit = frame_count + 30
+    animation.duration = frame_count / bpy.context.scene.render.fps
     animation.unknown10 = AnimationFlag.Default
     animation.unknown1C = ''  # TODO: Should be unique
 
@@ -238,7 +238,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
         action = animation_properties.base_action
         action_type = ActionType.Base
         sequence_items_from_action(
-            action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
+            action, sequence_items, bones_map, action_type, frame_count, is_ped_animation)
 
     if animation_properties.root_motion_location_action:
         action = animation_properties.root_motion_location_action
@@ -246,8 +246,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
 
         animation.unknown10 |= AnimationFlag.RootMotion
         sequence_items_from_action(
-            action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
-
+            action, sequence_items, bones_map, action_type, frame_count, is_ped_animation)
 
     # if animation_properties.root_motion_rotation_action:
         # action = animation_properties.root_motion_rotation_action
@@ -258,7 +257,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
         #     action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
 
     sequence = Animation.SequenceListProperty.Sequence()
-    sequence.frame_count = frames_count
+    sequence.frame_count = frame_count
     sequence.hash = 'hash_' + hex(0)[2:].zfill(8)
 
     for track, bones_data in sorted(sequence_items.items()):
