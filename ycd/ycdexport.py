@@ -1,85 +1,32 @@
-from msilib import sequence
-from operator import contains
-import bl_keymap_utils
 import bpy
-from bpy.types import PoseBone, FCurve, Action
-from mathutils import Vector, Quaternion, Euler
+from bpy.types import PoseBone
+from mathutils import Vector
+import mathutils
 from ..resources.clipsdictionary import *
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
-from ..tools.animationhelper import evaluate_euler_to_quaternion, evaluate_quaternion, evaluate_vector, is_ped_bone_tag, rotate_preserve_sign, get_quantum_and_min_val
-from ..tools.utils import list_index_exists
+from ..tools.animationhelper import *
 
 def get_name(item):
     return item.name.split('.')[0]
 
+def ensure_action_track(track_type: TrackType, action_type: ActionType):
+    if action_type is ActionType.RootMotion:
+        if track_type is TrackType.BonePosition:
+            return TrackType.RootMotionPosition
+        if track_type is TrackType.BoneRotation:
+            return TrackType.RootMotionRotation
+    
+    return track_type
 
-def get_track_id(type, action_type, with_unk0=False):
-    track = -1
-    unk0 = -1
-
-    # TODO: Move to enum
-
-    if type == 'location':
-        unk0 = 0
-
-        if action_type == 'base':
-            track = 0
-        elif action_type == 'root_motion':
-            track = 5
-    elif type == 'rotation_quaternion' or type == 'rotation_euler':
-        unk0 = 1
-
-        if action_type == 'base':
-            track = 1
-        elif action_type == 'root_motion':
-            track = 6
-    elif type == 'scale':
-        unk0 = 0
-
-        if action_type == 'base':
-            track = 2
-
-    if with_unk0:
-        return track, unk0
-
-    return track
-
-
-def fill_bone_ids_from_action(action, bone_groups, bones_name_map, action_type):
-    bones_list_map = {}
-
-    for fcurve in action.fcurves.values():
-        bone_name, type = fcurve.data_path.replace('pose.bones["', '').replace('"]', '').split('.')
-
-        if bone_name not in bones_name_map:
-            continue
-
-        if '%s-%s' % (bone_name, type) not in bones_list_map:
-            bones_list_map['%s-%s' % (bone_name, type)] = True
-
-            track, unk0 = get_track_id(type, action_type, True)
-
-            if track == -1:
-                continue
-
-            bone_id = Animation.BoneIdListProperty.BoneId()
-
-            bone_id.bone_id = bones_name_map[bone_name]
-            bone_id.track = track
-            bone_id.unk0 = unk0
-
-            if track not in bone_groups:
-                bone_groups[track] = []
-
-            bone_groups[track].append(bone_id)
-
-
-def sequence_items_from_action(action: Action, sequence_items, bones_map, action_type, frame_count, is_ped_animation):
+def sequence_items_from_action(action, sequence_items, bones_map, action_type, frame_count, is_ped_animation):
     locations = {}
     rotations = {}
     scales = {}
     
+    # for fcurve in action.fcurves:
+    #     print(fcurve.data_path)
+
     p_bone: PoseBone
     for bone_id, p_bone in bones_map.items():
         pos_vector_path = p_bone.path_from_id('location')
@@ -158,15 +105,15 @@ def sequence_items_from_action(action: Action, sequence_items, bones_map, action
             if p_bone.parent is not None:
                 pose_rot = Matrix.to_quaternion(bone.matrix)
                 rotate_preserve_sign(quaternion, pose_rot)
-
+        
     if len(locations) > 0:
-        sequence_items[get_track_id('location', action_type)] = locations
+        sequence_items[ensure_action_track(TrackType.BonePosition, action_type)] = locations
 
     if len(rotations) > 0:
-        sequence_items[get_track_id('rotation_quaternion', action_type)] = rotations
+        sequence_items[ensure_action_track(TrackType.BoneRotation, action_type)] = rotations
 
     if len(scales) > 0:
-        sequence_items[get_track_id('scale', action_type)] = scales
+        sequence_items[ensure_action_track(TrackType.BoneScale, action_type)] = scales
 
 
 def build_values_channel(values, uniq_values, indirect_percentage=0.1):
@@ -276,65 +223,60 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation = Animation()
 
     animation_properties = animation_obj.animation_properties
+    frames_count = animation_properties.frames_count
 
     animation.hash = animation_properties.hash
-    animation.frame_count = animation_properties.frame_count
-    animation.sequence_frame_limit = animation_properties.frame_count + 30
-    animation.duration = animation_properties.frame_count / bpy.context.scene.render.fps
+    animation.frame_count = frames_count
+    animation.sequence_frame_limit = frames_count + 30
+    animation.duration = frames_count / bpy.context.scene.render.fps
+    animation.unknown10 = AnimationFlag.Default
+    animation.unknown1C = ''  # TODO: Should be unique
 
-    animation.unknown10 = 0
-    animation.unknown1C = ''
-
-    bone_groups = {}
     sequence_items = {}
 
-    # TODO: Get it from sequence_items_from_action data
-    if animation_properties.base_action:
-        fill_bone_ids_from_action(animation_properties.base_action, bone_groups, bones_name_map, 'base')
-
-    if animation_properties.root_motion_location_action:
-        fill_bone_ids_from_action(animation_properties.root_motion_location_action, bone_groups, bones_name_map, 'root_motion')
-
-    # if animation_properties.root_motion_rotation_action:
-    #     bone_ids_from_action(animation_properties.root_motion_rotation_action, bone_groups, bones_name_map, 'root_motion')
-
-    for track, bones in sorted(bone_groups.items()):
-        for bone_id in sorted(bones, key=lambda bone_id: bone_id.bone_id):
-            animation.bone_ids.append(bone_id)
-
-        if track == 5 or track == 6:
-            animation.unknown10 = 16
-
-    action: Action
-    action_type: str
     if animation_properties.base_action:
         action = animation_properties.base_action
-        action_type = 'base'
+        action_type = ActionType.Base
+        sequence_items_from_action(
+            action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
 
     if animation_properties.root_motion_location_action:
         action = animation_properties.root_motion_location_action
-        action_type = 'root_motion'
+        action_type = ActionType.RootMotion
 
-    if action is not None:
+        animation.unknown10 |= AnimationFlag.RootMotion
         sequence_items_from_action(
-            action, sequence_items, bones_map, action_type, animation_properties.frame_count, is_ped_animation)
+            action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
+
 
     # if animation_properties.root_motion_rotation_action:
-    #     sequence_items_from_action(animation_properties.root_motion_rotation_action, sequence_items, bones_name_map,
-    #                                bones_map, 'root_motion', animation_properties.frame_count, is_ped_animation)
+        # action = animation_properties.root_motion_rotation_action
+        # action_type = ActionType.RootMotion
+
+        # animation.unknown10 |= AnimationFlag.RootMotion
+        # sequence_items_from_action(
+        #     action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
 
     sequence = Animation.SequenceListProperty.Sequence()
-
-    sequence.frame_count = animation_properties.frame_count
+    sequence.frame_count = frames_count
     sequence.hash = 'hash_' + hex(0)[2:].zfill(8)
 
     for track, bones_data in sorted(sequence_items.items()):
         for bone_id, frames_data in sorted(bones_data.items()):
             sequence_data = sequence_item_from_frames_data(track, frames_data)
 
+            seq_bone_id = Animation.BoneIdListProperty.BoneId()
+            seq_bone_id.bone_id = bone_id
+            seq_bone_id.track = track.value
+            seq_bone_id.unk0 = TrackTypeValueMap[track].value
+            animation.bone_ids.append(seq_bone_id)
+
             sequence.sequence_data.append(sequence_data)
 
     animation.sequences.append(sequence)
+
+    # Get int value from enum, a bit junky...
+    animation.unknown10 = animation.unknown10.value
 
     return animation
 

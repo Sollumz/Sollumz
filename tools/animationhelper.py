@@ -1,6 +1,6 @@
 from sys import float_info
 from mathutils import Quaternion, Vector, Euler
-from bpy.types import FCurve
+from enum import IntFlag, IntEnum
 
 ped_bone_tags = [
     11816,
@@ -39,6 +39,51 @@ ped_bone_tags = [
     4153,
     4154,
 ]
+
+class AnimationFlag(IntFlag):
+    Default = 0
+    RootMotion = 16
+
+class TrackType(IntEnum):
+    """An enumeration of Animation Tracks supported by GTA."""
+    BonePosition = 0
+    BoneRotation = 1
+    BoneScale = 2
+    RootMotionPosition = 5
+    RootMotionRotation = 6
+    CameraPosition = 7
+    CameraRotation = 8
+    UV0 = 17
+    UV1 = 18
+
+    # TODO: Research remaning track types
+    LightColor = -1
+    LightRange = -1
+    LightIntensity1 = -1
+    LightIntensity2 = -1
+    LightDirection = -1
+    CameraFov = -1
+    CameraDof = -1
+
+class TrackValueType(IntEnum):
+    Vector3 = 0
+    Quaternion = 1
+
+class ActionType(IntEnum):
+    Base = 0,
+    RootMotion = 1
+
+TrackTypeValueMap = {
+    TrackType.BonePosition: TrackValueType.Vector3,
+    TrackType.BoneRotation: TrackValueType.Quaternion,
+    TrackType.BoneScale: TrackValueType.Vector3,
+    TrackType.RootMotionPosition: TrackValueType.Vector3,
+    TrackType.RootMotionRotation: TrackValueType.Quaternion,
+    TrackType.CameraPosition: TrackValueType.Vector3,
+    TrackType.CameraRotation: TrackValueType.Quaternion,
+    TrackType.UV0: TrackValueType.Vector3,
+    TrackType.UV1: TrackValueType.Vector3,
+}
 
 def is_ped_bone_tag(bone_tag):
     return bone_tag in ped_bone_tags
