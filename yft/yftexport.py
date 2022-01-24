@@ -3,7 +3,9 @@ from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_object, composite_from_objects
-from ..resources.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem
+from ..resources.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
+from ..sollumz_helper import get_sollumz_objects_from_objects
+from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import *
 from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
 from ..tools.blenderhelper import copy_object, delete_object, split_object
@@ -25,30 +27,59 @@ def get_group_objects(fragment, index=0):
     return groups
 
 
-def get_group_parent_index(gobjs, group):
-    parent = group.parent
+def get_obj_parent_group_index(gobjs, obj):
+    parent = obj.parent
     if parent.sollum_type == SollumType.FRAGGROUP:
         return gobjs.index(parent)
     else:
         return 255
 
 
-def get_bound_objects_from_groups(gobjs):
-    bobjs = []
-    for g in gobjs:
-        for child in g.children:
-            if child.sollum_type in BOUND_TYPES:
-                bobjs.append(child)
-    return bobjs
+def get_shattermap_image(obj):
+    mat = obj.data.materials[0]
+    return mat.node_tree.nodes["ShatterMap"].image
 
 
-def get_child_objects_from_groups(gobjs):
-    cobjs = []
-    for g in gobjs:
-        for child in g.children:
-            if child.sollum_type == SollumType.FRAGCHILD:
-                cobjs.append(child)
-    return cobjs
+def obj_to_vehicle_window(obj, materials):
+    mesh = obj.data
+
+    v1 = None
+    v2 = None
+    v3 = None
+
+    for loop in mesh.loops:
+        vert_idx = loop.vertex_index
+        uv = mesh.uv_layers[0].data[loop.index].uv
+        if uv.x == 0 and uv.y == 1:
+            v1 = mesh.vertices[vert_idx].co
+        elif uv.x == 1 and uv.y == 1:
+            v2 = mesh.vertices[vert_idx].co
+        elif uv.x == 0 and uv.y == 0:
+            v3 = mesh.vertices[vert_idx].co
+
+    shattermap = get_shattermap_image(obj)
+    resx = shattermap.size[0]
+    resy = shattermap.size[1]
+    thickness = 0.01
+
+    edge1 = (v2 - v1) / resx
+    edge2 = (v3 - v1) / resy
+    edge3 = edge1.normalized().cross(edge2.normalized()) * thickness
+
+    mat = Matrix()
+    mat[0] = edge1.x, edge2.x, edge3.x, v1.x
+    mat[1] = edge1.y, edge2.y, edge3.y, v1.y
+    mat[2] = edge1.z, edge2.z, edge3.z, v1.z
+    mat.invert()
+
+    window = WindowItem()
+    window.projection_matrix = mat
+    window.shattermap = image_to_shattermap(shattermap)
+    window.unk_ushort_1 = materials.index(obj.data.materials[1])
+    window.unk_float_17 = obj.vehicle_window_properties.unk_float_17
+    window.unk_float_18 = obj.vehicle_window_properties.unk_float_18
+    window.cracks_texture_tiling = obj.vehicle_window_properties.cracks_texture_tiling
+    return window
 
 
 def fragment_from_object(exportop, obj, exportpath, export_settings=None):
@@ -111,8 +142,10 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
 
     for idx, lod in enumerate(lods):
         gobjs = get_group_objects(lod)
-        bobjs = get_bound_objects_from_groups(gobjs)
-        cobjs = get_child_objects_from_groups(gobjs)
+        bobjs = get_sollumz_objects_from_objects(gobjs, BOUND_TYPES)
+        cobjs = get_sollumz_objects_from_objects(gobjs, SollumType.FRAGCHILD)
+        vwobjs = get_sollumz_objects_from_objects(
+            gobjs, SollumType.FRAGVEHICLEWINDOW)
 
         flod = LODProperty()
         flod.tag_name = f"LOD{idx+1}"
@@ -155,7 +188,7 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
             group = GroupItem()
             group.name = gobj.name if "group" not in gobj.name else gobj.name.replace(
                 "_group", "").split(".")[0]
-            group.parent_index = get_group_parent_index(gobjs, gobj)
+            group.parent_index = get_obj_parent_group_index(gobjs, gobj)
             group.glass_window_index = gobj.group_properties.glass_window_index
             group.glass_flags = gobj.group_properties.glass_flags
             group.strength = gobj.group_properties.strength
@@ -217,6 +250,11 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
             transform[3][2] = c
             flod.transforms.append(TransformItem("Item", transform))
             flod.children.append(child)
+
+        for wobj in vwobjs:
+            vehwindow = obj_to_vehicle_window(wobj, materials)
+            vehwindow.item_id = get_obj_parent_group_index(gobjs, wobj)
+            fragment.vehicle_glass_windows.append(vehwindow)
 
         if lod.lod_properties.type == 1:
             lod1 = flod

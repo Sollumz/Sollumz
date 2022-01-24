@@ -203,12 +203,14 @@ def create_plane():
     return pl_obj
 
 
-def create_uv_layer(mesh, num, name, texcoords):
+def create_uv_layer(mesh, num, name, texcoords, flip_uvs=True):
     mesh.uv_layers.new()
     uv_layer = mesh.uv_layers[num]
     uv_layer.name = name
     for i in range(len(uv_layer.data)):
-        uv = flip_uv(texcoords[mesh.loops[i].vertex_index])
+        uv = texcoords[mesh.loops[i].vertex_index]
+        if flip_uvs:
+            uv = flip_uv(uv)
         uv_layer.data[i].uv = uv
 
 

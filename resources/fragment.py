@@ -183,7 +183,10 @@ class ShatterMapProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.text = ", ".join([str(id) for id in self.value])
+        text = []
+        for row in self.value:
+            text.append("".join(row))
+        element.text = "\n".join(text)
         return element
 
 
@@ -202,11 +205,11 @@ class WindowItem(ElementTree):
         self.cracks_texture_tiling = ValueProperty("CracksTextureTiling")
         self.shattermap = ShatterMapProperty("ShatterMap")
 
-    @property
+    @ property
     def width(self):
         return len(self.shattermap[0]) if self.height > 0 else 0
 
-    @property
+    @ property
     def height(self):
         return len(self.shattermap) if self.shattermap else 0
 

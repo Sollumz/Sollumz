@@ -79,16 +79,27 @@ class ChildProperties(bpy.types.PropertyGroup):
     # group_index: bpy.props.IntProperty(name="EventSet") ???
 
 
+class VehicleWindowProperties(bpy.types.PropertyGroup):
+    unk_float_17: bpy.props.FloatProperty(name="Unk Float 17")
+    unk_float_18: bpy.props.FloatProperty(name="Unk Float 18")
+    cracks_texture_tiling: bpy.props.FloatProperty(
+        name="Cracks Texture Tiling")
+
+
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
         type=FragmentProperties)
     bpy.types.Object.lod_properties = bpy.props.PointerProperty(
         type=LODProperties)
     bpy.types.Object.group_properties = bpy.props.PointerProperty(
-        type=GroupProperties
-    )
+        type=GroupProperties)
     bpy.types.Object.child_properties = bpy.props.PointerProperty(
         type=ChildProperties)
+    bpy.types.Object.vehicle_window_properties = bpy.props.PointerProperty(
+        type=VehicleWindowProperties)
+
+    bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
+        name="Thickness", default=0.1)
 
 
 def unregister():

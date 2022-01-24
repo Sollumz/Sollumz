@@ -16,7 +16,7 @@ def get_bound_object_from_child_index(bobj, index):
             return bound
 
 
-def create_vehicle_window_obj(window, name):
+def create_vehicle_window_obj(window, name, materials):
     mat = window.projection_matrix
     mat[3][3] = 1
     mat = mat.transposed().inverted()
@@ -28,13 +28,18 @@ def create_vehicle_window_obj(window, name):
     v3 = multiW(mat, Vector((max.x, min.y, 0)))
     verts = [v0, v1, v2, v3]
     faces = [[0, 1, 2, 3]]
-    uvs = [[1, 1], [1, 0], [0, 0], [0, 1]]
+    uvs = [[0, 1], [0, 0], [1, 0], [1, 1]]
     mesh = bpy.data.meshes.new(name + " vehicle window")
     mesh.from_pydata(verts, [], faces)
-    create_uv_layer(mesh, 0, "UVMap", uvs)
+    create_uv_layer(mesh, 0, "UVMap", uvs, False)
     mat = shattermap_to_material(window.shattermap, name + " shattermap.bmp")
     mesh.materials.append(mat)
-    wobj = bpy.data.objects.new("", mesh)
+    mesh.materials.append(materials[window.unk_ushort_1 - 1])
+    wobj = bpy.data.objects.new(name + " vehicle window", mesh)
+    wobj.sollum_type = SollumType.FRAGVEHICLEWINDOW
+    wobj.vehicle_window_properties.unk_float_17 = window.unk_float_17
+    wobj.vehicle_window_properties.unk_float_18 = window.unk_float_18
+    wobj.vehicle_window_properties.cracks_texture_tiling = window.cracks_texture_tiling
     return wobj
 
 
@@ -108,11 +113,8 @@ def create_lod_obj(fragment, lod, filepath, materials, import_settings):
         gobj.group_properties.unk_float_a8 = group.unk_float_a8
 
         for window in fragment.vehicle_glass_windows:
-            print(idx)
-            print(window.item_id)
             if window.item_id == idx:
-                pass
-                wobj = create_vehicle_window_obj(window, group.name)
+                wobj = create_vehicle_window_obj(window, group.name, materials)
                 wobj.parent = gobj
                 bpy.context.collection.objects.link(wobj)
 

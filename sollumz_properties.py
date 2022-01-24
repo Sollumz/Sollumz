@@ -10,6 +10,7 @@ class SollumType(str, Enum):
     FRAGGROUP = "sollumz_fraggroup"
     FRAGCHILD = "sollumz_fragchild"
     FRAGLOD = "sollumz_lod"
+    FRAGVEHICLEWINDOW = "sollumz_frag_vehicle_window"
 
     DRAWABLE_DICTIONARY = "sollumz_drawable_dictionary"
     DRAWABLE = "sollumz_drawable"
@@ -214,6 +215,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.FRAGGROUP: "Fragment Group",
     SollumType.FRAGCHILD: "Fragment Child",
     SollumType.FRAGLOD: "Fragment LOD",
+    SollumType.FRAGVEHICLEWINDOW: "Fragment Vehicle Window",
 
     SollumType.NONE: "None",
     SollumType.DRAWABLE_DICTIONARY: "Drawable Dictionary",

@@ -2,6 +2,13 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..sollumz_properties import SollumType
 
 
+def draw_veh_window_properties(self, context):
+    obj = context.active_object
+    if obj.sollum_type == SollumType.FRAGVEHICLEWINDOW:
+        for prop in obj.vehicle_window_properties.__annotations__:
+            self.layout.prop(obj.vehicle_window_properties, prop)
+
+
 def draw_child_properties(self, context):
     obj = context.active_object
     if obj.sollum_type == SollumType.FRAGCHILD:
@@ -46,6 +53,7 @@ def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_lod_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_group_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_child_properties)
+    SOLLUMZ_PT_OBJECT_PANEL.append(draw_veh_window_properties)
 
 
 def unregister():
@@ -53,3 +61,4 @@ def unregister():
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_lod_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_group_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_child_properties)
+    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_veh_window_properties)

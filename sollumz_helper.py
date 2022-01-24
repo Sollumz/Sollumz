@@ -73,6 +73,17 @@ def is_sollum_object_in_objects(objs):
     return False
 
 
+def get_sollumz_objects_from_objects(objs, sollum_type):
+    robjs = []
+    for obj in objs:
+        if obj.sollum_type in sollum_type:
+            robjs.append(obj)
+        for child in obj.children:
+            if child.sollum_type in sollum_type:
+                robjs.append(child)
+    return robjs
+
+
 def find_fragment_file(filepath):
     directory = os.path.dirname(filepath)
     for file in os.listdir(directory):
