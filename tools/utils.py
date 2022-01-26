@@ -179,6 +179,9 @@ def get_distance_of_vectors(a, b):
 def get_direction_of_vectors(a, b):
     direction = (a - b).normalized()
     axis_align = Vector((0.0, 0.0, 1.0))
+    
+    if (a == b):
+        direction = axis_align
 
     angle = axis_align.angle(direction)
     axis = axis_align.cross(direction)
