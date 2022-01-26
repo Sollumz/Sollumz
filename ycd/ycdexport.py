@@ -1,7 +1,6 @@
 import bpy
 from bpy.types import PoseBone
 from mathutils import Vector
-import mathutils
 from ..resources.clipsdictionary import *
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
@@ -20,15 +19,12 @@ def ensure_action_track(track_type: TrackType, action_type: ActionType):
     return track_type
 
 def sequence_items_from_action(action, sequence_items, bones_map, action_type, frame_count, is_ped_animation):
-    locations = {}
-    rotations = {}
-    scales = {}
-    
-    # for fcurve in action.fcurves:
-    #     print(fcurve.data_path)
+    locations_map = {}
+    rotations_map = {}
+    scales_map = {}
 
     p_bone: PoseBone
-    for bone_id, p_bone in bones_map.items():
+    for parent_tag, p_bone in bones_map.items():
         pos_vector_path = p_bone.path_from_id('location')
         rot_quaternion_path = p_bone.path_from_id('rotation_quaternion')
         rot_euler_path = p_bone.path_from_id('rotation_euler')
@@ -44,29 +40,30 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
         # Link them with Bone ID
 
         if len(b_locations) > 0:
-            locations[bone_id] = b_locations
+            locations_map[parent_tag] = b_locations
 
         # Its a bit of a edge case scenario because blender uses either
         # euler or quaternion (I cant really understand why quaternion doesnt update with euler)
         # So we will prefer quaternion over euler for now
+        # TODO: Theres also third rotation in blender, angles or something...
         if len(b_quaternions) > 0:
-            rotations[bone_id] = b_quaternions
+            rotations_map[parent_tag] = b_quaternions
         elif len(b_euler_quaternions) > 0:
-            rotations[bone_id] = b_euler_quaternions
+            rotations_map[parent_tag] = b_euler_quaternions
 
         if len(b_scales) > 0:
-            scales[bone_id] = b_scales
+            scales_map[parent_tag] = b_scales
 
-    if not is_ped_animation:
-        for bone_id, positions in locations.items():
-            p_bone = bones_map[bone_id]
-            bone = p_bone.bone
+    # Transform position from local to armature space
+    for parent_tag, positions in locations_map.items():
+        p_bone = bones_map[parent_tag]
+        bone = p_bone.bone
 
-            for frame_id, position in enumerate(positions):
-                mat = bone.matrix_local
+        for frame_id, position in enumerate(positions):
+            mat = bone.matrix_local
 
-                if (bone.parent != None):
-                    mat = bone.parent.matrix_local.inverted() @ bone.matrix_local
+            if (bone.parent != None):
+                mat = bone.parent.matrix_local.inverted() @ bone.matrix_local
 
                 mat_decomposed = mat.decompose()
 
@@ -83,8 +80,9 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
 
                 positions[frame_id] = diff_location
 
-    for bone_id, quaternions in rotations.items():
-        p_bone = bones_map[bone_id]
+    # Transform rotation from local to armature space
+    for parent_tag, quaternions in rotations_map.items():
+        p_bone = bones_map[parent_tag]
         bone = p_bone.bone
 
         for quaternion in quaternions:
@@ -105,15 +103,15 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
             if p_bone.parent is not None:
                 pose_rot = Matrix.to_quaternion(bone.matrix)
                 rotate_preserve_sign(quaternion, pose_rot)
-        
-    if len(locations) > 0:
-        sequence_items[ensure_action_track(TrackType.BonePosition, action_type)] = locations
 
-    if len(rotations) > 0:
-        sequence_items[ensure_action_track(TrackType.BoneRotation, action_type)] = rotations
+    if len(locations_map) > 0:
+        sequence_items[ensure_action_track(TrackType.BonePosition, action_type)] = locations_map
 
-    if len(scales) > 0:
-        sequence_items[ensure_action_track(TrackType.BoneScale, action_type)] = scales
+    if len(rotations_map) > 0:
+        sequence_items[ensure_action_track(TrackType.BoneRotation, action_type)] = rotations_map
+
+    if len(scales_map) > 0:
+        sequence_items[ensure_action_track(TrackType.BoneScale, action_type)] = scales_map
 
 
 def build_values_channel(values, uniq_values, indirect_percentage=0.1):
@@ -230,7 +228,10 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation.sequence_frame_limit = frame_count + 30
     animation.duration = frame_count / bpy.context.scene.render.fps
     animation.unknown10 = AnimationFlag.Default
-    animation.unknown1C = ''  # TODO: Should be unique
+
+    # This value must be unique (Looks like its used internally for animation caching)
+    # So for now we just set animation hash
+    animation.unknown1C = animation_properties.hash
 
     sequence_items = {}
 
@@ -248,6 +249,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
         sequence_items_from_action(
             action, sequence_items, bones_map, action_type, frame_count, is_ped_animation)
 
+    # TODO: Figure out root motion rotation
     # if animation_properties.root_motion_rotation_action:
         # action = animation_properties.root_motion_rotation_action
         # action_type = ActionType.RootMotion
