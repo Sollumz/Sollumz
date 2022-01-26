@@ -285,6 +285,25 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
         layout.prop(operator.export_settings, "export_with_hi")
 
 
+class SOLLUMZ_PT_CW_PANEL(bpy.types.Panel):
+    bl_label = "Import | Export"
+    bl_idname = "SOLLUMZ_PT_CW_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+#   bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 0
+    
+    def draw_header(self, context):
+        self.layout.label(text="", icon="IMPORT")
+    
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("SOLLUMZ_OT_import")
+        row.operator("SOLLUMZ_OT_export")
+
+
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
