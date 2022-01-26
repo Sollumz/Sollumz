@@ -2,13 +2,11 @@ import os
 from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
-from ..ybn.ybnexport import composite_from_object, composite_from_objects
+from ..ybn.ybnexport import composite_from_objects
 from ..resources.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
 from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import *
-from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
-from ..tools.blenderhelper import copy_object, delete_object, split_object
 
 
 def get_group_objects(fragment, index=0):
@@ -82,8 +80,7 @@ def obj_to_vehicle_window(obj, materials):
     return window
 
 
-def fragment_from_object(exportop, obj, exportpath, export_settings=None):
-    fobj = copy_object(obj, True)
+def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
 
     fragment = Fragment()
     fragment.name = fobj.name.split(".")[0]
@@ -102,26 +99,20 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
     fragment.buoyancy_factor = fobj.fragment_properties.buoyancy_factor
 
     dobj = None
-
     for child in fobj.children:
         if child.sollum_type == SollumType.DRAWABLE:
             dobj = child
-
-    lights_from_object(fobj, fragment.lights,
-                       export_settings, armature_obj=dobj)
-
     if dobj == None:
         raise Exception("NO DRAWABLE TO EXPORT.")
 
     materials = None
     materials = get_used_materials(fobj)
 
-    # join geos cause split by bone
-    for child in dobj.children:
-        if child.sollum_type == SollumType.DRAWABLE_MODEL:
-            join_drawable_geometries(child)
     fragment.drawable = drawable_from_object(
         exportop, dobj, exportpath, None, materials, export_settings, True)
+
+    lights_from_object(fobj, fragment.lights,
+                       export_settings, armature_obj=dobj)
 
     for idx in range(len(dobj.data.bones)):
         m = Matrix()
@@ -266,9 +257,6 @@ def fragment_from_object(exportop, obj, exportpath, export_settings=None):
     fragment.physics.lod1 = lod1
     fragment.physics.lod2 = lod2
     fragment.physics.lod3 = lod3
-
-    # delete duplicated object
-    delete_object(fobj, True)
 
     return fragment
 

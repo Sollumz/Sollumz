@@ -55,31 +55,23 @@ def material_from_image(img, name="Material", nodename="Image"):
     return mat
 
 
-def copy_children(res, children):
-    for child in children:
-        resc = child.copy()
-        bpy.context.collection.objects.link(resc)
-        resc.parent = res
-        if len(child.children) > 0:
-            copy_children(resc, child.children)
-
-
-def copy_object(obj, children=False):
-    if children:
-        res = obj.copy()
-        bpy.context.collection.objects.link(res)
-        copy_children(res, obj.children)
-        return res
-    else:
-        return obj.copy()
-
-
 def select_object_and_children(obj):
+    if obj.hide_get():
+        obj.hide_set(False)
     obj.select_set(True)
     for child in obj.children:
+        if child.hide_get():
+            child.hide_set(False)
         child.select_set(True)
         for grandchild in child.children:
             select_object_and_children(grandchild)
+
+
+def copy_object(obj):
+    bpy.ops.object.select_all(action='DESELECT')
+    select_object_and_children(obj)
+    bpy.ops.object.duplicate()
+    return bpy.context.selected_objects[0]
 
 
 def delete_object(obj, children=False):
@@ -94,12 +86,8 @@ def delete_object(obj, children=False):
 def split_object(obj, parent):
     objs = []
     bpy.ops.object.select_all(action='DESELECT')
-    bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.separate(type='MATERIAL')
-    bpy.ops.object.mode_set(mode='OBJECT')
     for child in parent.children:
         objs.append(child)
     return objs
