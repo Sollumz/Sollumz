@@ -114,8 +114,7 @@ def poly_to_obj(poly, materials, vertices):
         return obj
     elif type(poly) == Sphere:
         sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
-        mesh = sphere.data
-        create_sphere(mesh, poly.radius)
+        sphere.bound_radius = poly.radius
 
         sphere.location = vertices[poly.v]
 
@@ -124,10 +123,9 @@ def poly_to_obj(poly, materials, vertices):
         capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
-        length = (v1 - v2).length + (poly.radius * 2)
         rot = get_direction_of_vectors(v1, v2)
-
-        create_capsule(capsule.data, poly.radius, length / 2)
+        capsule.bound_radius = poly.radius * 2
+        capsule.bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
 
         capsule.location = (v1 + v2) / 2
         capsule.rotation_euler = rot
@@ -139,11 +137,11 @@ def poly_to_obj(poly, materials, vertices):
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
 
-        length = get_distance_of_vectors(v1, v2)
         rot = get_direction_of_vectors(v1, v2)
 
-        cylinder.data = create_cylinder(
-            cylinder.data, poly.radius, length, rot_mat=None)
+        cylinder.bound_radius = poly.radius
+        cylinder.bound_length = get_distance_of_vectors(v1, v2)
+        cylinder.matrix_world = Matrix()
 
         cylinder.location = (v1 + v2) / 2
         cylinder.rotation_euler = rot
