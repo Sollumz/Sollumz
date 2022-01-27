@@ -88,21 +88,6 @@ TrackTypeValueMap = {
 def is_ped_bone_tag(bone_tag):
     return bone_tag in ped_bone_tags
 
-def rotate_preserve_sign(quaternion, by):
-    quaternion_orig = quaternion.copy()
-    Quaternion.rotate(quaternion, by)
-
-    if Quaternion.dot(quaternion, quaternion_orig) < 0:
-        quaternion *= -1
-
-def rotation_difference_preserve_sign(quat_left, quat_right):
-    diff = quat_left.rotation_difference(quat_right)
-
-    if Quaternion.dot(diff, quat_right) < 0:
-        diff *= -1
-
-    return diff
-
 def evaluate_vector(fcurves, data_path, frames):
     xCurve = fcurves.find(data_path, index = 0)
     yCurve = fcurves.find(data_path, index = 1)

@@ -87,24 +87,38 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
         p_bone = bones_map[parent_tag]
         bone = p_bone.bone
 
+        prev_quaternion = None
         for quaternion in quaternions:
-            # 'Flickering bug' fix - killso:
-            # This bug is caused by interpolation algorithm used in GTA
-            # which is not Slerp, they directly interpolate Quaternion
-            # values without taking actual rotation into account. 
-            # (probably for optimization purposes)
-            # So in usual scenario Q and -Q would represent the same
-            # rotation but with different signs and Slerp will work just fine,
-            # but in gta it will interpolate XYZW values and it will lead to
-            # interpolating in 'different direction'.
-            # Another problem here, is that mathutils functions like
-            # rotate or any other that affect quaternion mess up the signs,
-            # so i've made special functions for that, which check
-            # quaternion direction before and after operation
-            # and in case if it doesn't match - flip signs
             if p_bone.parent is not None:
                 pose_rot = Matrix.to_quaternion(bone.matrix)
-                rotate_preserve_sign(quaternion, pose_rot)
+                quaternion.rotate(pose_rot)
+
+                if prev_quaternion is not None:
+                    # 'Flickering bug' fix - killso:
+                    # This bug is caused by interpolation algorithm used in GTA
+                    # which is not slerp, but straight interpolation of every value
+                    # and this leads to incorrect results in cases if dot(this, next) < 0
+                    # This is correct 'Quaternion Lerp' algorithm:
+                    # if (Dot(start, end) >= 0f)
+                    # {
+                    #   result.X = (1 - amount) * start.X + amount * end.X
+                    #   ...
+                    # }
+                    # else
+                    # {
+                    #   result.X = (1 - amount) * start.X - amount * end.X
+                    #   ...
+                    # }
+                    # (Statement difference is only substracting instead of adding)
+                    # But GTA algorithm doesn't have Dot check,
+                    # resulting all values that are not passing this statement to 'lag' in game.
+                    # (because of incorrect interpolation direction)
+                    # So what we do is make all values to pass Dot(start, end) >= 0f statement
+                    if Quaternion.dot(prev_quaternion, quaternion) < 0:
+                        quaternion *= -1
+                
+                prev_quaternion = quaternion
+    # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
 
     if len(locations_map) > 0:
         sequence_items[ensure_action_track(TrackType.BonePosition, action_type)] = locations_map
@@ -228,7 +242,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation.hash = animation_properties.hash
     animation.frame_count = frame_count
     animation.sequence_frame_limit = frame_count + 30
-    animation.duration = frame_count / bpy.context.scene.render.fps
+    animation.duration = (frame_count - 1) / bpy.context.scene.render.fps
     animation.unknown10 = AnimationFlag.Default
 
     # This value must be unique (Looks like its used internally for animation caching)

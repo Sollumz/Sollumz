@@ -4,7 +4,7 @@ from mathutils import Vector, Quaternion, Matrix
 from ..resources.clipsdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import build_bone_map, get_armature_obj
-from ..tools.animationhelper import is_ped_bone_tag, rotation_difference_preserve_sign
+from ..tools.animationhelper import is_ped_bone_tag
 from ..tools.utils import list_index_exists
 
 def create_anim_obj(type):
@@ -110,7 +110,7 @@ def get_quaternion_from_sequence_data(sequence_data, frame_id, p_bone, is_conver
     if is_convert_local_to_pose == True:
         if p_bone.parent is not None:
             pose_rot = Matrix.to_quaternion(p_bone.bone.matrix)
-            return rotation_difference_preserve_sign(pose_rot, rotation)
+            return pose_rot.rotation_difference(rotation)
 
         return rotation
     else:
