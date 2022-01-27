@@ -1,8 +1,10 @@
 import bpy
 from bpy.types import PoseBone
 from mathutils import Vector
+
 from ..resources.clipsdictionary import *
 from ..sollumz_properties import SollumType
+from ..tools.jenkhash import Generate
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
 from ..tools.animationhelper import *
 
@@ -230,8 +232,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation.unknown10 = AnimationFlag.Default
 
     # This value must be unique (Looks like its used internally for animation caching)
-    # So for now we just set animation hash
-    animation.unknown1C = animation_properties.hash
+    animation.unknown1C = 'hash_' + hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
 
     sequence_items = {}
 
