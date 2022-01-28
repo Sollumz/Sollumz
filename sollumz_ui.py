@@ -87,6 +87,7 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
 
         layout.prop(operator.import_settings, "split_by_bone")
 
+
 class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
     bl_region_type = 'TOOL_PROPS'
@@ -124,6 +125,7 @@ class SOLLUMZ_UL_ARMATURE_LIST(bpy.types.UIList):
             layout.alignment = "CENTER"
             layout.prop(item, "name",
                         text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
+
 
 class SOLLUMZ_PT_import_animation(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
@@ -211,6 +213,8 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel):
 
         col = layout.column()
         col.prop(operator.export_settings, "sollum_types")
+
+        layout.prop(operator.export_settings, "export_with_ytyp")
 
 
 class SOLLUMZ_PT_export_exclude(bpy.types.Panel):

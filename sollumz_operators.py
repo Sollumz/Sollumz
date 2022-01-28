@@ -12,6 +12,8 @@ from .resources.fragment import YFT
 from .resources.bound import YBN
 from .resources.navmesh import YNV
 from .resources.clipsdictionary import YCD
+from .resources.ytyp import YTYP
+from .resources.ymap import YMAP, EntityItem, CMapData
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd
@@ -23,10 +25,10 @@ from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
-from .resources.ymap import YMAP, EntityItem, CMapData
 from .tools.meshhelper import *
 from .tools.utils import *
 from .tools.blenderhelper import get_terrain_texture_brush
+from .tools.ytyphelper import ytyp_from_objects
 
 
 class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
@@ -281,6 +283,12 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 # Dont show time on failure
                 if not result:
                     self.bl_showtime = False
+
+            if self.export_settings.export_with_ytyp:
+                ytyp = ytyp_from_objects(objects)
+                fp = self.get_filepath(
+                    ytyp.name, YTYP.file_extension)
+                ytyp.write_xml(fp)
 
         if context.active_object:
             if context.active_object != mode:

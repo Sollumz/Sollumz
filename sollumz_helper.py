@@ -1,8 +1,11 @@
+import bpy
 import traceback
 import os
 import time
 from abc import abstractmethod
-from .sollumz_properties import SollumType
+from .tools.meshhelper import get_children_recursive
+from .sollumz_properties import BOUND_TYPES, SollumType
+from .ydr.ydrexport import get_used_materials
 
 
 class SOLLUMZ_OT_base:
@@ -90,3 +93,20 @@ def find_fragment_file(filepath):
         if file.endswith(".yft.xml"):
             return os.path.join(directory, file)
     return None
+
+
+def has_embedded_textures(obj):
+    for mat in get_used_materials(obj):
+        nodes = mat.node_tree.nodes
+        for node in nodes:
+            if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                if(node.texture_properties.embedded == True):
+                    return True
+    return False
+
+
+def has_collision(obj):
+    for child in get_children_recursive(obj):
+        if child.sollum_type in BOUND_TYPES:
+            return True
+    return False
