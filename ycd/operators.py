@@ -6,7 +6,7 @@ from .ycdimport import create_clip_dictionary_template, create_anim_obj
 class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
     bl_idname = "sollumz.anim_apply_nla"
     bl_label = "Apply NLA"
-    bl_description = "Applies clip as Nonlinear Animation for quick preview."
+    bl_description = "Applies clip as a Nonlinear Animation for a quick preview"
 
     def execute(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -104,7 +104,7 @@ class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
 class SOLLUMZ_OT_CLIP_NEW_ANIMATION(bpy.types.Operator):
     bl_idname = "sollumz.anim_new_animation"
     bl_label = "Add a new animation"
-    bl_description = "Adds new animation entry to clip dictionary"
+    bl_description = "Adds a new animation entry to the clip dictionary"
 
     def execute(self, context):
         if len(bpy.context.selected_objects) <= 0:
