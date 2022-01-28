@@ -6,6 +6,7 @@ from .ycdimport import create_clip_dictionary_template, create_anim_obj
 class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
     bl_idname = "sollumz.anim_apply_nla"
     bl_label = "Apply NLA"
+    bl_description = "Applies clip as Nonlinear Animation for quick preview."
 
     def execute(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -103,6 +104,7 @@ class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
 class SOLLUMZ_OT_CLIP_NEW_ANIMATION(bpy.types.Operator):
     bl_idname = "sollumz.anim_new_animation"
     bl_label = "Add a new animation"
+    bl_description = "Adds new animation entry to clip dictionary"
 
     def execute(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -124,7 +126,7 @@ class SOLLUMZ_OT_CLIP_DELETE_ANIMATION(bpy.types.Operator):
     bl_idname='sollumz.anim_delete_animation'
     bl_label='Delete animation'
 
-    animation_hash : bpy.props.StringProperty(name="animation_hash")
+    animation_index : bpy.props.IntProperty(name="animation_index")
 
     def execute(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -137,15 +139,7 @@ class SOLLUMZ_OT_CLIP_DELETE_ANIMATION(bpy.types.Operator):
 
         clip_properties = active_object.clip_properties
 
-        if clip_properties.type != "AnimationList":
-            return {'FINISHED'}
-
-        for i, anim in enumerate(clip_properties.animations):
-            if anim.animation.hash == self.animation_hash:
-                clip_properties.animations.remove(i)
-
-                break
-
+        clip_properties.animations.remove(self.animation_index)
 
         return {'FINISHED'}
 
