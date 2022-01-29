@@ -30,7 +30,7 @@ from .tools.blenderhelper import get_terrain_texture_brush
 
 
 class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
-    """Imports xml files exported by codewalker."""
+    """Imports xml files exported by codewalker"""
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
     bl_action = "import"
@@ -101,7 +101,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
 
 class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Exports codewalker xml files."""
+    """Exports codewalker xml files"""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
     bl_action = "export"
@@ -286,7 +286,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
 
 
 class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
-    """Imports .ymap.xml file exported from codewalker."""
+    """Imports .ymap.xml file exported from codewalker"""
     bl_idname = "sollumz.importymap"
     bl_label = "Import ymap.xml"
     filename_ext = ".ymap.xml"
@@ -349,7 +349,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
 
 class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
-    """Exports .ymap.xml file exported from codewalker."""
+    """Exports .ymap.xml file exported from codewalker"""
     bl_idname = "sollumz.exportymap"
     bl_label = "Export ymap.xml"
     bl_action = "Export a YMAP"
