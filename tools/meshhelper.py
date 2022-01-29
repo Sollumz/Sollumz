@@ -291,6 +291,9 @@ def get_bound_center_from_bounds(bbmin, bbmax):
 def get_children_recursive(obj):
     children = []
 
+    if obj is None:
+        return children
+
     if len(obj.children) < 1:
         return children
 

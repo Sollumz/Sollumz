@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_helper import SOLLUMZ_OT_base
+from ..sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType, EntityPriorityLevel, EntityLodLevel
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..tools.blenderhelper import get_selected_vertices
@@ -95,8 +95,15 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
 
             item.name = obj.name
             item.asset = obj
-
             item.type = archetype_type
+            item.texture_dictionary = obj.name if has_embedded_textures(
+                obj) else ""
+            drawable_dictionary = ""
+            if obj.parent:
+                if obj.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                    drawable_dictionary = obj.parent.name
+            item.drawable_dictionary = drawable_dictionary
+            item.physics_dictionary = obj.name if has_collision(obj) else ""
 
             if obj.sollum_type == SollumType.DRAWABLE:
                 item.asset_type = AssetType.DRAWABLE

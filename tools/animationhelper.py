@@ -1,5 +1,6 @@
 from sys import float_info
-from mathutils import Quaternion
+from mathutils import Quaternion, Vector, Euler
+from enum import IntFlag, IntEnum
 
 ped_bone_tags = [
     11816,
@@ -39,23 +40,106 @@ ped_bone_tags = [
     4154,
 ]
 
+class AnimationFlag(IntFlag):
+    Default = 0
+    RootMotion = 16
+
+class TrackType(IntEnum):
+    """An enumeration of Animation Tracks supported by GTA."""
+    BonePosition = 0
+    BoneRotation = 1
+    BoneScale = 2
+    RootMotionPosition = 5
+    RootMotionRotation = 6
+    CameraPosition = 7
+    CameraRotation = 8
+    UV0 = 17
+    UV1 = 18
+
+    # TODO: Research remaning track types
+    LightColor = -1
+    LightRange = -1
+    LightIntensity1 = -1
+    LightIntensity2 = -1
+    LightDirection = -1
+    CameraFov = -1
+    CameraDof = -1
+
+class TrackValueType(IntEnum):
+    Vector3 = 0
+    Quaternion = 1
+
+class ActionType(IntEnum):
+    Base = 0,
+    RootMotion = 1
+
+TrackTypeValueMap = {
+    TrackType.BonePosition: TrackValueType.Vector3,
+    TrackType.BoneRotation: TrackValueType.Quaternion,
+    TrackType.BoneScale: TrackValueType.Vector3,
+    TrackType.RootMotionPosition: TrackValueType.Vector3,
+    TrackType.RootMotionRotation: TrackValueType.Quaternion,
+    TrackType.CameraPosition: TrackValueType.Vector3,
+    TrackType.CameraRotation: TrackValueType.Quaternion,
+    TrackType.UV0: TrackValueType.Vector3,
+    TrackType.UV1: TrackValueType.Vector3,
+}
+
 def is_ped_bone_tag(bone_tag):
     return bone_tag in ped_bone_tags
 
-def rotate_preserve_sign(quaternion, by):
-    quaternion_orig = quaternion.copy()
-    Quaternion.rotate(quaternion, by)
+def evaluate_vector(fcurves, data_path, frames):
+    xCurve = fcurves.find(data_path, index = 0)
+    yCurve = fcurves.find(data_path, index = 1)
+    zCurve = fcurves.find(data_path, index = 2)
 
-    if Quaternion.dot(quaternion, quaternion_orig) < 0:
-        quaternion *= -1
+    if xCurve is None:
+        return []
 
-def rotation_difference_preserve_sign(quat_left, quat_right):
-    diff = quat_left.rotation_difference(quat_right)
+    result = []
+    for frame_id in range(0, frames):
+        x = xCurve.evaluate(frame_id)
+        y = yCurve.evaluate(frame_id)
+        z = zCurve.evaluate(frame_id)
 
-    if Quaternion.dot(diff, quat_right) < 0:
-        diff *= -1
+        result.append(Vector((x, y, z)))
+    return result
 
-    return diff
+def evaluate_euler_to_quaternion(fcurves, data_path, frames):
+    xCurve = fcurves.find(data_path, index = 0)
+    yCurve = fcurves.find(data_path, index = 1)
+    zCurve = fcurves.find(data_path, index = 2)
+
+    if xCurve is None:
+        return []
+
+    result = []
+    for frame_id in range(0, frames):
+        x = xCurve.evaluate(frame_id)
+        y = yCurve.evaluate(frame_id)
+        z = zCurve.evaluate(frame_id)
+
+        result.append(Euler((x, y, z)).to_quaternion())
+    return result
+
+def evaluate_quaternion(fcurves, data_path, frames):
+    wCurve = fcurves.find(data_path, index = 0)
+    xCurve = fcurves.find(data_path, index = 1)
+    yCurve = fcurves.find(data_path, index = 2)
+    zCurve = fcurves.find(data_path, index = 3)
+
+    if xCurve is None:
+        return []
+
+    result = []
+    for frame_id in range(0, frames):
+        w = wCurve.evaluate(frame_id)
+        x = xCurve.evaluate(frame_id)
+        y = yCurve.evaluate(frame_id)
+        z = zCurve.evaluate(frame_id)
+
+        result.append(Quaternion((w, x, y, z)))
+    return result
 
 def get_quantum_and_min_val(nums):
     min_val = float_info.max

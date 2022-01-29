@@ -578,6 +578,11 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         description="Exclude skeleton from export. Usually done with mp ped components.",
         default=False
     )
+    export_with_ytyp: bpy.props.BoolProperty(
+        name="Export with ytyp",
+        description="Exports a .ytyp.xml with an archetype for every drawable or drawable dictionary being exported.",
+        default=False
+    )
 
 
 def hide_obj_and_children(obj, value):

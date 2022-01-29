@@ -5,6 +5,8 @@ from numpy import float32
 
 class YTYP:
 
+    file_extension = ".ytyp.xml"
+
     @staticmethod
     def from_xml_file(filepath):
         return CMapTypes.from_xml_file(filepath)
