@@ -147,7 +147,7 @@ def combine_sequences_and_convert_to_groups(animation, armature, is_ped_animatio
             bone_name = p_bone.name
 
             if bone_data.track == 0:
-                location = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, not is_ped_animation)
+                location = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, True)
                 insert_action_data(actions_data, 'base', bone_data.track, bone_name, location)
             elif bone_data.track == 1:
                 rotation = get_quaternion_from_sequence_data(sequence_data, sequence_frame, p_bone, True)
@@ -156,7 +156,7 @@ def combine_sequences_and_convert_to_groups(animation, armature, is_ped_animatio
                 scale = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, False)
                 insert_action_data(actions_data, 'base', bone_data.track, bone_name, scale)
             elif bone_data.track == 5:
-                location = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, not is_ped_animation)
+                location = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, True)
                 insert_action_data(actions_data, 'root_motion_location', bone_data.track, bone_name, location)
             elif bone_data.track == 6:
                 rotation = get_quaternion_from_sequence_data(sequence_data, sequence_frame, p_bone, False)
