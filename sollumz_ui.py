@@ -1,4 +1,5 @@
 import bpy
+from .tools.blenderhelper import get_armature_obj
 from .sollumz_helper import *
 from .sollumz_properties import *
 
@@ -111,19 +112,24 @@ class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
         layout.prop(operator.import_settings, "import_ext_skeleton")
 
 
-class SOLLUMZ_UL_ARMATURE_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_ARMATURE_LIST"
+class SOLLUMZ_UL_armature_list(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_armature_list"
 
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=item.name, icon="OUTLINER_DATA_ARMATURE")
+
+            # Armature is contained in 'skel' object, so we need its parent (which is pack:/... or ped root..)
+            armature_parent = get_armature_obj(item).parent
+
+            row.label(text=F'{armature_parent.name} - {item.name}', icon="OUTLINER_DATA_ARMATURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
                         text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
+
 
 class SOLLUMZ_PT_import_animation(bpy.types.Panel):
     bl_space_type = 'FILE_BROWSER'
@@ -150,7 +156,7 @@ class SOLLUMZ_PT_import_animation(bpy.types.Panel):
 
         armature_list_box.label(text="Target skeleton")
 
-        armature_list_box.template_list(SOLLUMZ_UL_ARMATURE_LIST.bl_idname, "",
+        armature_list_box.template_list(SOLLUMZ_UL_armature_list.bl_idname, "",
                                         bpy.data, "armatures", operator.import_settings, "selected_armature")
 
 
