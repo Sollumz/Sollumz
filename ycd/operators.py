@@ -265,7 +265,7 @@ class SOLLUMZ_OT_ANIMATION_FILL(bpy.types.Operator):
         start_frame = frames[0]
         end_frame = frames[-1]
 
-        frame_count = (end_frame - start_frame) + 1
+        frame_count = end_frame - start_frame
 
         animation_properties.frame_count = frame_count
 
