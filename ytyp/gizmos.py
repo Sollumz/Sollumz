@@ -1,5 +1,5 @@
 import bpy
-from mathutils import Vector, Matrix
+from mathutils import Vector, Matrix, Quaternion
 from math import radians
 from .properties import *
 from ..tools.blenderhelper import find_parent
@@ -191,20 +191,12 @@ class PortalNormalGizmo(bpy.types.Gizmo):
                     (sum(x) / len(corners), sum(y) / len(corners), sum(z) / len(corners)))
                 normal = -(corners[2] - corners[0]
                            ).cross(corners[1] - corners[0]).normalized()
-                # Axis parameter for draw_preset_arrow is an enum ugh
-                axis = "POS_X"
-                if normal == Vector((-1, 0, 0)):
-                    axis = "NEG_X"
-                elif normal == Vector((0, 1, 0)):
-                    axis = "POS_Y"
-                elif normal == Vector((0, -1, 0)):
-                    axis = "NEG_Y"
-                elif normal == Vector((0, 0, 1)):
-                    axis = "POS_Z"
-                elif normal == Vector((0, 0, -1)):
-                    axis = "NEG_Z"
+                default_axis = Vector((0, 0, 1))
+                rot = default_axis.rotation_difference(normal)
+                arrow_mat = Matrix.LocRotScale(
+                    centroid, rot, Vector((0.3, 0.3, 0.3)))
                 self.draw_preset_arrow(
-                    matrix=asset.matrix_world @ Matrix.Translation(centroid) @ Matrix.Diagonal(Vector((0.3, 0.3, 0.3))).to_4x4(), axis=axis)
+                    matrix=asset.matrix_world @ arrow_mat)
 
 
 class PortalGizmoGroup(bpy.types.GizmoGroup):

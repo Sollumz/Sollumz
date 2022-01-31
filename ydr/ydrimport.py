@@ -265,20 +265,8 @@ def light_to_obj(light, armature_obj=None):
     mat.col[2] = light.direction
     lobj.matrix_basis = mat.to_4x4()
 
-    # Apply flags
-    for i in range(32):
-        enabled = ((light.time_flags >> i) & 1) == 1
-        if enabled:
-            if i <= 23:
-                lobj.data.time_flags[f"hour{i + 1}"] = True
-            else:
-                lobj.data.time_flags[f"unk{i - 23}"] = True
-
-    light_flag_keys = list(LightFlags.__annotations__.keys())
-    for i in range(32):
-        enabled = ((light.flags >> i) & 1) == 1
-        if enabled:
-            lobj.data.light_flags[light_flag_keys[i]] = True
+    lobj.data.time_flags.total = str(light.time_flags)
+    lobj.data.light_flags.total = str(light.flags)
 
     lobj.location = light.position
     lobj.data.sollum_type = light_type
