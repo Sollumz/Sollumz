@@ -223,5 +223,5 @@ def build_bone_map(armature):
 
 def get_armature_obj(armature):
     for obj in bpy.data.objects:
-        if isinstance(obj.data, bpy.types.Armature) and obj.data == armature:
+        if obj.data == armature:
             return obj
