@@ -624,7 +624,17 @@ class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
                         for geom in model.children:
                             if geom.type == "MESH":
                                 geom.sollum_type = SollumType.DRAWABLE_GEOMETRY
-            if sollum_type == SollumType.BOUND_COMPOSITE:
+            elif sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                for draw in obj.children:
+                    if draw.type == "EMPTY":
+                        draw.sollum_type = SollumType.DRAWABLE
+                        for model in draw.children:
+                            if model.type == "EMPTY":
+                                model.sollum_type = SollumType.DRAWABLE_MODEL
+                                for geom in model.children:
+                                    if geom.type == "MESH":
+                                        geom.sollum_type = SollumType.DRAWABLE_GEOMETRY
+            elif sollum_type == SollumType.BOUND_COMPOSITE:
                 for bound in obj.children:
                     if bound.type == "EMPTY":
                         if "CLOTH" in bound.name:

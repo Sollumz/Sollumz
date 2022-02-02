@@ -709,6 +709,8 @@ def register():
 
     bpy.types.Scene.debug_sollum_type = bpy.props.EnumProperty(
         items=[(SollumType.DRAWABLE.value, SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]),
+               (SollumType.DRAWABLE_DICTIONARY.value,
+                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY]),
                (SollumType.BOUND_COMPOSITE.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE])],
         name="Hierarchy Type",
         default=SollumType.DRAWABLE,
