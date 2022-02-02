@@ -125,7 +125,8 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
             # Armature is contained in 'skel' object, so we need its parent (which is pack:/... or ped root..)
             armature_parent = get_armature_obj(item).parent
 
-            row.label(text=F'{armature_parent.name} - {item.name}', icon="OUTLINER_DATA_ARMATURE")
+            row.label(text=F'{armature_parent.name} - {item.name}',
+                      icon="OUTLINER_DATA_ARMATURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
@@ -309,6 +310,9 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        row = layout.row()
+        row.operator("sollumz.import")
+        row.operator("sollumz.export")
         layout.label(text="View")
         layout.prop(context.scene, "hide_collision")
         layout.prop(context.scene, "hide_high_lods")
