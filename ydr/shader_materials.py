@@ -787,6 +787,7 @@ def create_shader(name, filename=None):
     mat.use_nodes = True
     mat.shader_properties.name = shader.name
     mat.shader_properties.filename = filename
+    mat.shader_properties.renderbucket = shader.render_buckets[0]
 
     if filename in ShaderManager.terrains:
         create_terrain_shader(mat, shader, filename)

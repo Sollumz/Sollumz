@@ -17,7 +17,7 @@ class RenderBucketProperty(ElementProperty):
         items = element.text.strip().split(" ")
         for item in items:
             new.value.append(int(item))
-        return items
+        return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
@@ -47,7 +47,7 @@ class Shader(ElementTree):
         super().__init__()
         self.name = TextProperty("Name", "")
         self.filenames = FileNameListProperty()
-        self.render_bucket = RenderBucketProperty()
+        self.render_buckets = RenderBucketProperty()
         self.layouts = LayoutListProperty()
         self.parameters = ParametersListProperty("Parameters")
 

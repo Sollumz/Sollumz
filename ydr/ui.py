@@ -179,7 +179,12 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
         layout.operator(SOLLUMZ_OT_create_shader_material.bl_idname)
-        layout.operator(SOLLUMZ_OT_convert_to_shader_material.bl_idname)
+        row = layout.row()
+        row.operator(
+            SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
+        row.operator(
+            SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
+        layout.operator(SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
@@ -381,7 +386,6 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         if(mat == None):
             return
 
-        value_param_box = layout.box()
         # only using selected nodes because if you use the node tree weird bug
         # where if you select one of the image nodes it swaps around the order that you edit them in...
         # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
@@ -394,7 +398,7 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
             if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):
                 if(n.name[-1] == "x"):
-                    row = value_param_box.row()
+                    row = layout.row()
                     row.label(text=n.name[:-2])
 
                     x = n

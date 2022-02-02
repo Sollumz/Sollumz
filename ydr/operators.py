@@ -52,22 +52,43 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
         bpy.context.collection.objects.link(obj)
 
 
-class SOLLUMZ_OT_convert_to_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_auto_convert_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Convert material to a sollumz shader material"""
-    bl_idname = "sollumz.converttoshadermaterial"
+    bl_idname = "sollumz.autoconvertmaterial"
     bl_label = "Convert Material To Shader Material"
     bl_action = "Convert a Material To a Shader Material"
 
     def run(self, context):
-
         for obj in context.selected_objects:
-
             if len(obj.data.materials) == 0:
                 self.messages.append(
                     f"{obj.name} has no materials to convert.")
 
             for material in obj.data.materials:
                 new_material = convert_material(material)
+                if new_material != None:
+                    for ms in obj.material_slots:
+                        if(ms.material == material):
+                            ms.material = new_material
+
+        return True
+
+
+class SOLLUMZ_OT_convert_material_to_selected(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Convert objects material to the selected sollumz shader"""
+    bl_idname = "sollumz.convertmaterialtoselected"
+    bl_label = "Convert Material To Selected Sollumz Shader"
+    bl_action = "Convert a Material To Selected Sollumz Shader"
+
+    def run(self, context):
+        shader = shadermats[context.scene.shader_material_index].value
+        for obj in context.selected_objects:
+            if len(obj.data.materials) == 0:
+                self.messages.append(
+                    f"{obj.name} has no materials to convert.")
+
+            for material in obj.data.materials:
+                new_material = convert_material_to_selected(material, shader)
                 if new_material != None:
                     for ms in obj.material_slots:
                         if(ms.material == material):
@@ -110,6 +131,41 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
             except:
                 self.message(
                     f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
+
+        return True
+
+
+class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Sets all textures to embedded on the selected objects active material"""
+    bl_idname = "sollumz.setallembedded"
+    bl_label = "Set all Textures Embedded"
+    bl_action = "Set all Textures Embedded"
+
+    def set_textures_embedded(self, obj):
+        mat = obj.active_material
+        if mat == None:
+            self.message(f"No active material on {obj.name} will be skipped")
+            return
+
+        if mat.sollum_type == MaterialType.SHADER:
+            for node in mat.node_tree.nodes:
+                if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                    node.texture_properties.embedded = True
+            self.message(
+                f"Set {obj.name}s material {mat.name} textures to embedded.")
+        else:
+            self.message(
+                f"Skipping object {obj.name} because it does not have a sollumz shader active.")
+
+    def run(self, context):
+        objs = bpy.context.selected_objects
+        if(len(objs) == 0):
+            self.warning(
+                f"Please select objects to set all textures embedded.")
+            return False
+
+        for obj in objs:
+            self.set_textures_embedded(obj)
 
         return True
 
