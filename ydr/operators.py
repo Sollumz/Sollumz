@@ -80,19 +80,28 @@ class SOLLUMZ_OT_convert_material_to_selected(SOLLUMZ_OT_base, bpy.types.Operato
     bl_label = "Convert Material To Selected Sollumz Shader"
     bl_action = "Convert a Material To Selected Sollumz Shader"
 
-    def run(self, context):
-        shader = shadermats[context.scene.shader_material_index].value
-        for obj in context.selected_objects:
-            if len(obj.data.materials) == 0:
-                self.messages.append(
-                    f"{obj.name} has no materials to convert.")
+    def convert_material(self, shader, obj):
+        mat = obj.active_material
+        if mat == None:
+            self.message(f"No active material on {obj.name} will be skipped")
+            return
 
-            for material in obj.data.materials:
-                new_material = convert_material_to_selected(material, shader)
-                if new_material != None:
-                    for ms in obj.material_slots:
-                        if(ms.material == material):
-                            ms.material = new_material
+        new_material = convert_material_to_selected(mat, shader)
+        if new_material != None:
+            for ms in obj.material_slots:
+                if(ms.material == mat):
+                    ms.material = new_material
+
+    def run(self, context):
+        objs = bpy.context.selected_objects
+        if(len(objs) == 0):
+            self.warning(
+                f"Please select a object with materials.")
+            return False
+
+        shader = shadermats[context.scene.shader_material_index].value
+        for obj in objs:
+            self.convert_material(shader, obj)
 
         return True
 
@@ -161,7 +170,7 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
         objs = bpy.context.selected_objects
         if(len(objs) == 0):
             self.warning(
-                f"Please select objects to set all textures embedded.")
+                f"Please select a object to set all textures embedded.")
             return False
 
         for obj in objs:
