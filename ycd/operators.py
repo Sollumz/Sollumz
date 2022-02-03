@@ -1,14 +1,16 @@
 import bpy
+
+from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_child_by_type, get_armature_obj
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 
-class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
+class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.anim_apply_nla"
     bl_label = "Apply NLA"
     bl_description = "Applies clip as a Nonlinear Animation for a quick preview"
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
@@ -101,12 +103,12 @@ class SOLLUMZ_OT_CLIP_APPLY_NLA(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_CLIP_NEW_ANIMATION(bpy.types.Operator):
+class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.anim_new_animation"
     bl_label = "Add a new animation"
     bl_description = "Adds a new animation entry to the clip dictionary"
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
@@ -122,13 +124,13 @@ class SOLLUMZ_OT_CLIP_NEW_ANIMATION(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_CLIP_DELETE_ANIMATION(bpy.types.Operator):
+class SOLLUMZ_OT_clip_delete_animation(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname='sollumz.anim_delete_animation'
     bl_label='Delete animation'
 
     animation_index : bpy.props.IntProperty(name="animation_index")
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
@@ -144,11 +146,11 @@ class SOLLUMZ_OT_CLIP_DELETE_ANIMATION(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_CREATE_CLIP_DICTIONARY(bpy.types.Operator):
+class SOLLUMZ_OT_create_clip_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.crate_clip_dictionary"
     bl_label = "Create clip dictionary template"
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
@@ -163,11 +165,11 @@ class SOLLUMZ_OT_CREATE_CLIP_DICTIONARY(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_CREATE_CLIP(bpy.types.Operator):
+class SOLLUMZ_OT_create_clip(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.crate_clip"
     bl_label = "Create clip"
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
@@ -200,11 +202,11 @@ class SOLLUMZ_OT_CREATE_CLIP(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_CREATE_ANIMATION(bpy.types.Operator):
+class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.crate_animation"
     bl_label = "Create animation"
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
@@ -237,11 +239,11 @@ class SOLLUMZ_OT_CREATE_ANIMATION(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_ANIMATION_FILL(bpy.types.Operator):
+class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.animation_fill"
     bl_label = "Fill animation data"
 
-    def execute(self, context):
+    def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
             return {'FINISHED'}
 
