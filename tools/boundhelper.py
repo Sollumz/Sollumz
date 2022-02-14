@@ -91,8 +91,7 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
             dmobj.parent = dobj
 
         if obj.type == 'MESH':
-            if use_name:
-                dobj.name = obj.name
+            name = obj.name
 
             poly_mesh = obj if replace_original else create_mesh(
                 SollumType.BOUND_POLY_TRIANGLE)
@@ -106,3 +105,6 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
             else:
                 poly_mesh.data = obj.data.copy()
                 poly_mesh.matrix_world = obj.matrix_world
+
+            if use_name:
+                dobj.name = name
