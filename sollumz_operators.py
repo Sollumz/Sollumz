@@ -359,20 +359,31 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
             return False
 
 
-class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
+class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
     """Exports .ymap.xml file exported from codewalker"""
     bl_idname = "sollumz.exportymap"
     bl_label = "Export ymap.xml"
     bl_action = "Export a YMAP"
     bl_showtime = True
 
-    filename_ext = ".ymap.xml"
-
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",
         options={'HIDDEN'},
         maxlen=255,
     )
+
+    directory: bpy.props.StringProperty(
+        name="Output directory",
+        description="Select export output directory",
+        subtype="DIR_PATH",
+    )
+
+    def get_filepath(self, name):
+        return os.path.join(self.directory, name + ".ymap.xml")
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
 
     def entity_from_obj(self, obj):
         entity = EntityItem()
@@ -434,8 +445,9 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
 
         try:
             ymap = CMapData()
-            ymap.name = os.path.splitext(
+            name = os.path.splitext(
                 os.path.basename(context.blend_data.filepath))[0]  # use blender files name ? idk
+            ymap.name = name if len(name) > 0 else "untitled"
             ymap.parent = ""  # add a property ? if so how?
             ymap.flags = 0
             ymap.content_flags = 0
@@ -450,9 +462,10 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ExportHelper):
             ymap.entities_extents_min = smin
             ymap.entities_extents_max = smax
 
-            ymap.write_xml(self.filepath)
+            filepath = self.get_filepath(ymap.name)
+            ymap.write_xml(filepath)
 
-            self.message(f"Succesfully exported: {self.filepath}")
+            self.message(f"Succesfully exported: {filepath}")
             return True
         except:
             self.message(f"Error during export: {traceback.format_exc()}")
