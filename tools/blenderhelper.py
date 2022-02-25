@@ -67,30 +67,18 @@ def select_object_and_children(obj):
             select_object_and_children(grandchild)
 
 
-def copy_object(obj):
+def duplicate_object(obj):
     bpy.ops.object.select_all(action='DESELECT')
-    select_object_and_children(obj)
+    obj.select_set(True)
     bpy.ops.object.duplicate()
     return bpy.context.selected_objects[0]
 
 
-def delete_object(obj, children=False):
-    bpy.ops.object.select_all(action='DESELECT')
-    if children:
-        select_object_and_children(obj)
-        bpy.ops.object.delete(use_global=False)
-    else:
-        bpy.ops.object.delete(use_global=False)
-
-
-def split_object(obj, parent):
-    objs = []
+def split_object(obj):
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.ops.mesh.separate(type='MATERIAL')
-    for child in parent.children:
-        objs.append(child)
-    return objs
+    return list(bpy.context.selected_objects)
 
 
 def join_objects(objs):

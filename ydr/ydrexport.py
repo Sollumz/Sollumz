@@ -402,10 +402,18 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-            objs = split_object(child, obj)
-            for obj in objs:
+            if len(child.data.materials) > 1:
+                # Preserve original order of materials
+                child_copy = duplicate_object(child)
+                objs = split_object(child_copy)
+                for obj in objs:
+                    geometry = geometry_from_object(
+                        obj, materials, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
+                    drawable_model.geometries.append(geometry)
+                    bpy.data.objects.remove(obj)
+            else:
                 geometry = geometry_from_object(
-                    obj, materials, bones, export_settings)
+                    child, materials, bones, export_settings)
                 drawable_model.geometries.append(geometry)
 
     return drawable_model
@@ -621,28 +629,26 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     else:
         drawable = Drawable()
 
-    dobj = copy_object(obj)
-
     drawable.name = obj.name if "." not in obj.name else obj.name.split(".")[0]
 
     if is_frag:
-        drawable.matrix = dobj.matrix_basis
+        drawable.matrix = obj.matrix_basis
     drawable.bounding_sphere_center = get_bound_center(
-        dobj, world=export_settings.use_transforms)
+        obj, world=export_settings.use_transforms)
     drawable.bounding_sphere_radius = get_obj_radius(
-        dobj, world=export_settings.use_transforms)
+        obj, world=export_settings.use_transforms)
     bbmin, bbmax = get_bound_extents(
-        dobj, world=export_settings.use_transforms)
+        obj, world=export_settings.use_transforms)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
 
-    drawable.lod_dist_high = dobj.drawable_properties.lod_dist_high
-    drawable.lod_dist_med = dobj.drawable_properties.lod_dist_med
-    drawable.lod_dist_low = dobj.drawable_properties.lod_dist_low
-    drawable.lod_dist_vlow = dobj.drawable_properties.lod_dist_vlow
+    drawable.lod_dist_high = obj.drawable_properties.lod_dist_high
+    drawable.lod_dist_med = obj.drawable_properties.lod_dist_med
+    drawable.lod_dist_low = obj.drawable_properties.lod_dist_low
+    drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_vlow
 
     if not materials:
-        materials = get_used_materials(dobj)
+        materials = get_used_materials(obj)
     shaders = get_shaders_from_blender(materials)
 
     if len(shaders) == 0:
@@ -656,7 +662,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
             foldername = obj.name
             if is_frag:
                 # trim blenders .001 suffix
-                foldername = dobj.parent.name[:-3].replace("pack:/", "")
+                foldername = obj.parent.name[:-3].replace("pack:/", "")
 
             td, messages = texture_dictionary_from_materials(
                 foldername, materials, os.path.dirname(exportpath))
@@ -666,14 +672,14 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         drawable.shader_group = None
 
     if bones is None:
-        if dobj.pose is not None:
+        if obj.pose is not None:
             bones = obj.pose.bones
 
-    drawable.skeleton = skeleton_from_object(dobj)
-    drawable.joints = joints_from_object(dobj)
-    if dobj.pose is not None:
+    drawable.skeleton = skeleton_from_object(obj)
+    drawable.joints = joints_from_object(obj)
+    if obj.pose is not None:
         for bone in drawable.skeleton.bones:
-            pbone = dobj.pose.bones[bone.index]
+            pbone = obj.pose.bones[bone.index]
             for con in pbone.constraints:
                 if con.type == 'LIMIT_ROTATION':
                     bone.flags.append("LimitRotation")
@@ -684,7 +690,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     lowhmodel_count = 0
     vlowmodel_count = 0
 
-    for child in dobj.children:
+    for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             # join drawable geometries
             join_objects(get_drawable_geometries(child))
@@ -710,7 +716,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
                 drawable.bounds.append(
                     bound_from_object(child, export_settings))
         else:
-            lights_from_object(child, drawable.lights, export_settings, dobj)
+            lights_from_object(child, drawable.lights, export_settings, obj)
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count
@@ -718,8 +724,6 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     drawable.flags_low = lowhmodel_count
     drawable.flags_vlow = vlowmodel_count
     # drawable.unknown_9A = ?
-
-    delete_object(dobj, True)
 
     return drawable
 
