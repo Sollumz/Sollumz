@@ -2,7 +2,6 @@ from .properties import CollisionMatFlags
 from ..resources.bound import *
 from ..sollumz_properties import BOUND_SHAPE_TYPES, MaterialType, SollumType
 from ..tools.meshhelper import *
-from ..tools.blenderhelper import delete_object
 from ..tools.utils import *
 
 
