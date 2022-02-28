@@ -563,7 +563,7 @@ def light_from_object(obj, export_settings, armature_obj=None):
 
     light.flags = obj.data.light_flags.total
 
-    light.color = obj.data.color
+    light.color = obj.data.color * 255
     light.flashiness = obj.data.light_properties.flashiness
     light.intensity = obj.data.energy
     light.type = SOLLUMZ_UI_NAMES[obj.data.sollum_type]
@@ -586,10 +586,8 @@ def light_from_object(obj, export_settings, armature_obj=None):
     light.unknown_46 = obj.data.light_properties.unknown_46
     light.volume_intensity = obj.data.volume_factor
     light.volume_size_scale = obj.data.light_properties.volume_size_scale
-    voc = obj.data.light_properties.volume_outer_color
-    # relocate but works for now..
-    color = collections.namedtuple("Color", ["r", "g", "b"])
-    light.volume_outer_color = color(voc[0], voc[1], voc[2])
+    light.volume_outer_color = obj.data.light_properties.volume_outer_color * \
+        255
     light.light_hash = obj.data.light_properties.light_hash
     light.volume_outer_intensity = obj.data.light_properties.volume_outer_intensity
     light.corona_size = obj.data.light_properties.corona_size
