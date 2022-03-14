@@ -112,7 +112,7 @@ class LightProperties(bpy.types.PropertyGroup):
     volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color", subtype='COLOR')
+        name="Volume Outer Color", subtype='COLOR', min=0.0, max=1.0)
     light_hash: bpy.props.IntProperty(name="Light Hash")
     volume_outer_intensity: bpy.props.FloatProperty(
         name="Volume Outer Intensity")
