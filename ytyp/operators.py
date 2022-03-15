@@ -726,13 +726,13 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         arch_xml.clip_dictionary = arch.clip_dictionary
         arch_xml.drawable_dictionary = arch.drawable_dictionary
         arch_xml.physics_dictionary = arch.physics_dictionary
-        if arch.asset:
+        if arch.asset and arch.type != ArchetypeType.MLO:
             bbmin, bbmax = get_bound_extents(arch.asset, world=False)
             arch_xml.bb_min = bbmin
             arch_xml.bb_max = bbmax
             arch_xml.bs_center = get_bound_center(arch.asset, world=False)
             arch_xml.bs_radius = get_obj_radius(arch.asset, world=False)
-        else:
+        elif arch.type is not ArchetypeType.MLO:
             arch_xml.bb_min = Vector(arch.bb_min)
             arch_xml.bb_max = Vector(arch.bb_max)
             arch_xml.bs_center = Vector(arch.bs_center)
