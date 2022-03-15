@@ -377,33 +377,37 @@ class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add an object as an entity to the selected mlo archetype"""
     bl_idname = "sollumz.addobjasmloentity"
-    bl_label = "Add Selected Object as Entity"
+    bl_label = "Add Selected Object(s) as Entity"
 
     @classmethod
     def poll(cls, context):
         return get_selected_archetype(context) is not None
 
     def run(self, context):
-        selected_archetype = get_selected_archetype(context)
-        item = selected_archetype.entities.add()
-        aobj = context.active_object
-        # Set entity transforms before linking object so the original object's transforms won't be reset
-        item.position = aobj.location
-        item.rotation = aobj.rotation_euler.to_quaternion()
-        if aobj.scale.x != aobj.scale.y:
-            self.message(
-                "Failed to add entity. The X and Y scale of the entity must be equal.")
-            selected_archetype.entities.remove(
-                len(selected_archetype.entities) - 1)
+        selected_objects = context.selected_objects
+        if len(selected_objects) < 1:
+            self.message("No objects selected")
             return False
-        item.scale_xy = aobj.scale.x
-        item.scale_z = aobj.scale.z
-        item.linked_object = aobj
-        name = aobj.name
-        # Remove number suffix if present
-        if name[-4] == ".":
-            name = name[0:-4]
-        item.archetype_name = name
+        selected_archetype = get_selected_archetype(context)
+        for obj in selected_objects:
+            item = selected_archetype.entities.add()
+            # Set entity transforms before linking object so the original object's transforms won't be reset
+            item.position = obj.location
+            item.rotation = obj.rotation_euler.to_quaternion()
+            if obj.scale.x != obj.scale.y:
+                self.message(
+                    "Failed to add entity. The X and Y scale of the entity must be equal.")
+                selected_archetype.entities.remove(
+                    len(selected_archetype.entities) - 1)
+                return False
+            item.scale_xy = obj.scale.x
+            item.scale_z = obj.scale.z
+            item.linked_object = obj
+            name = obj.name
+            # Remove number suffix if present
+            if name[-4] == ".":
+                name = name[0:-4]
+            item.archetype_name = name
         return True
 
 
