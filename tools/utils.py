@@ -179,7 +179,7 @@ def get_distance_of_vectors(a, b):
 def get_direction_of_vectors(a, b):
     direction = (a - b).normalized()
     axis_align = Vector((0.0, 0.0, 1.0))
-    
+
     if (a == b):
         direction = axis_align
 
@@ -238,19 +238,8 @@ def is_coplanar(points):
     leg2 = points[2] - points[0]
     leg3 = points[3] - points[0]
 
-    vertNorm1 = leg1.cross(leg2)
-    vertNorm2 = leg1.cross(leg3)
+    return leg3.dot(leg1.cross(leg2)) == 0
 
-    coplanarity = vertNorm1.dot(vertNorm2)
-
-    #If the dot product result is 1 or -1 normals are colinear
-    #so the points are all coplanar
-    if coplanarity == 1.0 or coplanarity == -1.0:
-        #They are coplanar
-        return True
-
-    #They are NOT coplanar
-    return False
 
 def list_index_exists(ls, i):
     return (0 <= i < len(ls)) or (-len(ls) <= i < 0)

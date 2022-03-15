@@ -271,8 +271,8 @@ class SOLLUMZ_OT_create_portal_from_selection(SOLLUMZ_OT_base, bpy.types.Operato
             return False
 
         if not is_coplanar(selected_verts):
-            self.message("Selection of points must be coplanar!")
-            return False
+            self.warning(
+                "Selection of points are not coplanar. This may cause issues with the portal.")
 
         if not selected_archetype.asset:
             self.message("You must select an asset.")
