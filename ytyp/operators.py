@@ -386,8 +386,20 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
         item = selected_archetype.entities.add()
-        item.linked_object = context.active_object
-        item.archetype_name = context.active_object.name
+        aobj = context.active_object
+        # Set entity transforms before linking object so the original object's transforms won't be reset
+        item.position = aobj.location
+        item.rotation = aobj.rotation_euler.to_quaternion()
+        if aobj.scale.x != aobj.scale.y:
+            self.message(
+                "Failed to add entity. The X and Y scale of the entity must be equal.")
+            selected_archetype.entities.remove(
+                len(selected_archetype.entities) - 1)
+            return False
+        item.scale_xy = aobj.scale.x
+        item.scale_z = aobj.scale.z
+        item.linked_object = aobj
+        item.archetype_name = aobj.name
         return True
 
 
