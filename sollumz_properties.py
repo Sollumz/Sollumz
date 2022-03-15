@@ -462,7 +462,7 @@ class EntityProperties:
     lod_level: bpy.props.EnumProperty(
         items=items_from_enums(EntityLodLevel),
         name="LOD Level",
-        default=EntityLodLevel.LODTYPES_DEPTH_HD,
+        default=EntityLodLevel.LODTYPES_DEPTH_ORPHANHD,
         options={"HIDDEN"}
     )
     num_children: bpy.props.IntProperty(name="Number of Children")
