@@ -399,7 +399,11 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
         item.scale_xy = aobj.scale.x
         item.scale_z = aobj.scale.z
         item.linked_object = aobj
-        item.archetype_name = aobj.name
+        name = aobj.name
+        # Remove number suffix if present
+        if name[-4] == ".":
+            name = name[0:-4]
+        item.archetype_name = name
         return True
 
 
