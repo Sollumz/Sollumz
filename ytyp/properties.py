@@ -481,6 +481,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
         self.portal_index = len(self.portals) - 1
         item.id = self.last_portal_id + 1
         self.last_portal_id = item.id
+        selected_archetype = get_selected_archetype(bpy.context)
+        if len(selected_archetype.rooms) > 0:
+            room_id = selected_archetype.rooms[0].id
+            item.room_to_id = room_id
+            item.room_from_id = room_id
         return item
 
     def new_room(self):
