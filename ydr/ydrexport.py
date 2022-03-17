@@ -234,7 +234,8 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     kwargs["position"] = tuple([0, 0, 0])
             if "normal" in vertex_type._fields:
                 if loop.normal:
-                    normal = float32_list(loop.normal)
+                    normal = float32_list(
+                        obj.matrix_world @ loop.normal if export_settings.use_transforms else obj.matrix_basis @ loop.normal)
                     kwargs["normal"] = tuple(normal)
                 else:
                     kwargs["normal"] = tuple([0, 0, 0])
