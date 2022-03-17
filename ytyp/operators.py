@@ -377,17 +377,37 @@ class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add an object as an entity to the selected mlo archetype"""
     bl_idname = "sollumz.addobjasmloentity"
-    bl_label = "Add Selected Object as Entity"
+    bl_label = "Add Selected Object(s) as Entity"
 
     @classmethod
     def poll(cls, context):
         return get_selected_archetype(context) is not None
 
     def run(self, context):
+        selected_objects = context.selected_objects
+        if len(selected_objects) < 1:
+            self.message("No objects selected")
+            return False
         selected_archetype = get_selected_archetype(context)
-        item = selected_archetype.entities.add()
-        item.linked_object = context.active_object
-        item.archetype_name = context.active_object.name
+        for obj in selected_objects:
+            item = selected_archetype.entities.add()
+            # Set entity transforms before linking object so the original object's transforms won't be reset
+            item.position = obj.location
+            item.rotation = obj.rotation_euler.to_quaternion()
+            if obj.scale.x != obj.scale.y:
+                self.message(
+                    "Failed to add entity. The X and Y scale of the entity must be equal.")
+                selected_archetype.entities.remove(
+                    len(selected_archetype.entities) - 1)
+                return False
+            item.scale_xy = obj.scale.x
+            item.scale_z = obj.scale.z
+            item.linked_object = obj
+            name = obj.name
+            # Remove number suffix if present
+            if name[-4] == ".":
+                name = name[0:-4]
+            item.archetype_name = name
         return True
 
 
@@ -714,13 +734,13 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         arch_xml.clip_dictionary = arch.clip_dictionary
         arch_xml.drawable_dictionary = arch.drawable_dictionary
         arch_xml.physics_dictionary = arch.physics_dictionary
-        if arch.asset:
+        if arch.asset and arch.type != ArchetypeType.MLO:
             bbmin, bbmax = get_bound_extents(arch.asset, world=False)
             arch_xml.bb_min = bbmin
             arch_xml.bb_max = bbmax
             arch_xml.bs_center = get_bound_center(arch.asset, world=False)
             arch_xml.bs_radius = get_obj_radius(arch.asset, world=False)
-        else:
+        elif arch.type is not ArchetypeType.MLO:
             arch_xml.bb_min = Vector(arch.bb_min)
             arch_xml.bb_max = Vector(arch.bb_max)
             arch_xml.bs_center = Vector(arch.bs_center)
