@@ -56,6 +56,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
         name = obj.name
 
         if use_names:
+            obj.name = name + '_old'
             dobj.name = name
 
         # set properties
@@ -68,7 +69,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
         # add object to collection
         bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
-        new_obj.name = name + "_geom"    
+        new_obj.name = name + "_geom"
 
 
 def join_drawable_geometries(drawable):
