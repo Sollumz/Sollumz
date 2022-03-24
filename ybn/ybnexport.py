@@ -288,8 +288,7 @@ def init_bound(bound, obj, export_settings, is_frag=False):
             bbmin, bbmax)
         bound.box_center = center
         bound.sphere_center = center
-        bound.sphere_radius = get_obj_radius(
-            obj, world=use_world)
+        bound.sphere_radius = get_sphere_radius(bbmax, center)
     bound.procedural_id = obj.bound_properties.procedural_id
     bound.room_id = obj.bound_properties.room_id
     bound.ped_density = obj.bound_properties.ped_density

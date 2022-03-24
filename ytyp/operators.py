@@ -3,7 +3,7 @@ from ..sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collisi
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType, EntityPriorityLevel, EntityLodLevel
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..tools.blenderhelper import get_selected_vertices
-from ..tools.meshhelper import get_bound_extents, get_bound_center, get_obj_radius
+from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from ..tools.utils import get_min_vector_list, get_max_vector_list, sort_points, is_coplanar
 from ..resources.ytyp import *
 from ..resources.ymap import *
@@ -739,7 +739,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
             arch_xml.bb_min = bbmin
             arch_xml.bb_max = bbmax
             arch_xml.bs_center = get_bound_center(arch.asset, world=False)
-            arch_xml.bs_radius = get_obj_radius(arch.asset, world=False)
+            arch_xml.bs_radius = get_sphere_radius(bbmax, arch_xml.bs_center)
         elif arch.type is not ArchetypeType.MLO:
             arch_xml.bb_min = Vector(arch.bb_min)
             arch_xml.bb_max = Vector(arch.bb_max)

@@ -305,18 +305,8 @@ def get_children_recursive(obj):
     return children
 
 
-"""Get the radius of an object's bounding box"""
-
-
-def get_obj_radius(obj, world=True):
-    bb_min, bb_max = get_bound_extents(obj, world)
-
-    p1 = Vector((bb_min.x, bb_min.y, 0))
-    p2 = Vector((bb_max.x, bb_max.y, 0))
-
-    # Distance between bb_min and bb_max x,y values
-    distance = get_distance_of_vectors(p1, p2)
-    return distance / 2
+def get_sphere_radius(bbmax, bbcenter):
+    return (bbmax - bbcenter).length
 
 
 def get_local_pos(obj):

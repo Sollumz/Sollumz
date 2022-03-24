@@ -632,12 +632,12 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
-    drawable.bounding_sphere_center = get_bound_center(
-        obj, world=export_settings.use_transforms)
-    drawable.bounding_sphere_radius = get_obj_radius(
-        obj, world=export_settings.use_transforms)
     bbmin, bbmax = get_bound_extents(
         obj, world=export_settings.use_transforms)
+    drawable.bounding_sphere_center = get_bound_center(
+        obj, world=export_settings.use_transforms)
+    drawable.bounding_sphere_radius = get_sphere_radius(
+        bbmax, drawable.bounding_sphere_center)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
 
