@@ -224,6 +224,7 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
             SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
         )
         layout.operator(SOLLUMZ_OT_create_collision_material.bl_idname)
+        layout.operator(SOLLUMZ_OT_convert_to_collision_material.bl_idname)
 
 
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
