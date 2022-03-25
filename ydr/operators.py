@@ -21,7 +21,7 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
         drawable_type = context.scene.create_drawable_type
         if drawable_type == SollumType.DRAWABLE and len(selected) > 0:
             convert_selected_to_drawable(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects)
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.create_center_to_selection)
             self.message(
                 f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             return True

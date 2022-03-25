@@ -197,12 +197,12 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
             row.prop(context.scene, "poly_parent", expand=True)
         else:
             row.prop(context.scene, "create_poly_bound_type")
-        row = layout.row()
-        row.prop(context.scene, "use_mesh_name")
-        row.prop(context.scene, "create_seperate_objects")
-        row = layout.row()
-        row.prop(context.scene, "composite_replace_original")
-        row.prop(context.scene, "composite_create_bvh")
+        grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
+        grid.prop(context.scene, "use_mesh_name")
+        grid.prop(context.scene, "create_seperate_objects")
+        grid.prop(context.scene, "composite_replace_original")
+        grid.prop(context.scene, "composite_create_bvh")
+        grid.prop(context.scene, "create_center_to_selection")
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
