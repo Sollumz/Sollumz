@@ -3,6 +3,8 @@ import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
+
+from ..sollumz_properties import SollumType
 from .utils import *
 from .version import USE_LEGACY
 
@@ -271,8 +273,12 @@ def get_total_bounds(obj, world=True):
     corners = []
     for obj in objects:
         for pos in obj.bound_box:
-            corners.append(obj.matrix_world @ Vector(pos)
-                           if world else obj.matrix_basis @ Vector(pos))
+            corner = obj.matrix_world @ Vector(
+                pos) if world else obj.matrix_basis @ Vector(pos)
+            # Need to offset collisions by center of geometry
+            if not world and obj.parent and obj.parent.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH]:
+                corner += obj.parent.location
+            corners.append(corner)
 
     return corners
 
