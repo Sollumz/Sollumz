@@ -266,7 +266,7 @@ def get_total_bounds(obj, world=True):
 
     if len(objects) < 1:
         raise ValueError(
-            'Failed to get bounds: Object has no geometry data or children with geometry data.')
+            f"Could not calculate extents for '{obj.name}': Object has no geometry data or children with geometry data (object is empty).")
 
     corners = []
     for obj in objects:
