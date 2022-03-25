@@ -241,6 +241,7 @@ def get_img_path(self):
 
 
 def set_img_path(self, value):
+    self.source = "FILE"
     self.filepath = value
     self.name = path.basename(value)
 
