@@ -387,6 +387,9 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
 
+    # Remove mesh copy
+    bpy.data.meshes.remove(mesh)
+
     return geometry
 
 
