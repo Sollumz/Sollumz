@@ -143,7 +143,7 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if bound_type == SollumType.BOUND_COMPOSITE and len(selected) > 0:
             convert_selected_to_bound(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh, context.scene.composite_replace_original)
+                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh, context.scene.composite_replace_original, context.scene.create_center_to_selection)
             return True
         elif bound_type in BOUND_SHAPE_TYPES:
             obj = create_bound_shape(bound_type)

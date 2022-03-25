@@ -207,6 +207,7 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         row = layout.row()
         row.prop(context.scene, "use_mesh_name")
         row.prop(context.scene, "create_seperate_objects")
+        row.prop(context.scene, "create_center_to_selection")
 
 
 class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):

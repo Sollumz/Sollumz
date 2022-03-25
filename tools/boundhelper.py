@@ -75,13 +75,21 @@ def create_mesh(sollum_type):
     return obj
 
 
-def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_original):
+def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_original, do_center=True):
+
+    center = Vector()
 
     if not multiple:
         dobj = create_bound()
         dmobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
             SollumType.BOUND_GEOMETRY)
         dmobj.parent = dobj
+        if do_center:
+            for obj in selected:
+                center += obj.location
+
+            center /= len(selected)
+            dmobj.location = center
 
     for obj in selected:
         if multiple:
@@ -89,6 +97,11 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
             dmobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
                 SollumType.BOUND_GEOMETRY)
             dmobj.parent = dobj
+            if do_center:
+                dmobj.location = obj.location
+                obj.location = Vector()
+        elif do_center:
+            obj.location -= center
 
         if obj.type == 'MESH':
             name = obj.name
