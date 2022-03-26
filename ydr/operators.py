@@ -3,6 +3,7 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, TimeFl
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import *
+from ..tools.boundhelper import convert_selected_to_bound
 from ..resources.shader import ShaderManager
 import traceback
 import bpy
@@ -20,8 +21,18 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
         selected = context.selected_objects
         drawable_type = context.scene.create_drawable_type
         if drawable_type == SollumType.DRAWABLE and len(selected) > 0:
-            convert_selected_to_drawable(
+            dobjs = convert_selected_to_drawable(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.create_center_to_selection)
+            if context.scene.auto_create_embedded_col:
+                cobjs = convert_selected_to_bound(
+                    context.selected_objects, use_name=False, multiple=context.scene.create_seperate_objects, bvhs=True, replace_original=False, do_center=False)
+                for index, composite in enumerate(cobjs):
+                    composite.parent = dobjs[index]
+                    if context.scene.create_center_to_selection:
+                        for child in get_children_recursive(composite):
+                            if child.type == "MESH":
+                                child.location -= dobjs[index].location
+
             self.message(
                 f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             return True

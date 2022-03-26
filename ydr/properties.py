@@ -280,6 +280,8 @@ def register():
         name="Type",
         default=SollumType.DRAWABLE.value
     )
+    bpy.types.Scene.auto_create_embedded_col = bpy.props.BoolProperty(
+        name="Auto-Embed Collision", description="Automatically create embedded collision.")
 
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(
         type=BoneProperties)
@@ -325,5 +327,6 @@ def unregister():
     del bpy.types.Light.time_flags
     del bpy.types.Light.light_flags
     del bpy.types.Light.is_capsule
+    del bpy.types.Scene.auto_create_embedded_col
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

@@ -20,9 +20,11 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
     parent = None
 
     center = Vector()
+    dobjs = []
 
     if not multiple:
         dobj = create_drawable()
+        dobjs.append(dobj)
         if do_center:
             for obj in objs:
                 center += obj.location
@@ -40,6 +42,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
 
         if multiple:
             dobj = parent or create_drawable()
+            dobjs.append(dobj)
             if do_center:
                 dobj.location = obj.location
                 obj.location = Vector()
@@ -84,6 +87,8 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
         bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
         new_obj.name = name + "_geom"
+
+    return dobjs
 
 
 def join_drawable_geometries(drawable):

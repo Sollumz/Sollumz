@@ -78,27 +78,30 @@ def create_mesh(sollum_type):
 def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_original, do_center=True):
 
     center = Vector()
+    cobjs = []
 
     if not multiple:
-        dobj = create_bound()
-        dmobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
+        cobj = create_bound()
+        cobjs.append(cobj)
+        gobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
             SollumType.BOUND_GEOMETRY)
-        dmobj.parent = dobj
+        gobj.parent = cobj
         if do_center:
             for obj in selected:
                 center += obj.location
 
             center /= len(selected)
-            dmobj.location = center
+            gobj.location = center
 
     for obj in selected:
         if multiple:
-            dobj = create_bound()
-            dmobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
+            cobj = create_bound()
+            cobjs.append(cobj)
+            gobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
                 SollumType.BOUND_GEOMETRY)
-            dmobj.parent = dobj
+            gobj.parent = cobj
             if do_center:
-                dmobj.location = obj.location
+                gobj.location = obj.location
                 obj.location = Vector()
         elif do_center:
             obj.location -= center
@@ -109,7 +112,7 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
             poly_mesh = obj if replace_original else create_mesh(
                 SollumType.BOUND_POLY_TRIANGLE)
 
-            poly_mesh.parent = dmobj
+            poly_mesh.parent = gobj
 
             if replace_original:
                 poly_mesh.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]
@@ -120,4 +123,6 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
                 poly_mesh.matrix_world = obj.matrix_world
 
             if use_name:
-                dobj.name = name
+                cobj.name = name
+
+    return cobjs
