@@ -231,6 +231,31 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
         bpy.data.materials.remove(active_mat)
 
 
+class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Delete all materials on selected object(s) and add selected collision material."""
+    bl_idname = "sollumz.clearandcreatecollisionmaterial"
+    bl_label = "Clear and Create Collision Material"
+    bl_action = f"{bl_label}"
+
+    def run(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.message("No objects selected")
+            return False
+
+        for obj in selected:
+            try:
+                obj.data.materials.clear()
+                mat = create_collision_material_from_index(
+                    context.scene.collision_material_index)
+                obj.data.materials.append(mat)
+            except Exception as e:
+                self.warning(
+                    f"Failure to add material to {obj.name}: {traceback.format_exc()}")
+
+        return True
+
+
 class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete a flag preset"""
     bl_idname = "sollumz.delete_flag_preset"
