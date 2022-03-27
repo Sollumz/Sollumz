@@ -3,6 +3,8 @@ import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
+
+from ..sollumz_properties import SollumType
 from .utils import *
 from .version import USE_LEGACY
 
@@ -266,13 +268,17 @@ def get_total_bounds(obj, world=True):
 
     if len(objects) < 1:
         raise ValueError(
-            'Failed to get bounds: Object has no geometry data or children with geometry data.')
+            f"Could not calculate extents for '{obj.name}': Object has no geometry data or children with geometry data (object is empty).")
 
     corners = []
     for obj in objects:
         for pos in obj.bound_box:
-            corners.append(obj.matrix_world @ Vector(pos)
-                           if world else obj.matrix_basis @ Vector(pos))
+            corner = obj.matrix_world @ Vector(
+                pos) if world else obj.matrix_basis @ Vector(pos)
+            # Need to offset collisions by center of geometry
+            if not world and obj.parent and obj.parent.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH]:
+                corner += obj.parent.location
+            corners.append(corner)
 
     return corners
 
@@ -305,18 +311,8 @@ def get_children_recursive(obj):
     return children
 
 
-"""Get the radius of an object's bounding box"""
-
-
-def get_obj_radius(obj, world=True):
-    bb_min, bb_max = get_bound_extents(obj, world)
-
-    p1 = Vector((bb_min.x, bb_min.y, 0))
-    p2 = Vector((bb_max.x, bb_max.y, 0))
-
-    # Distance between bb_min and bb_max x,y values
-    distance = get_distance_of_vectors(p1, p2)
-    return distance / 2
+def get_sphere_radius(bbmax, bbcenter):
+    return (bbmax - bbcenter).length
 
 
 def get_local_pos(obj):

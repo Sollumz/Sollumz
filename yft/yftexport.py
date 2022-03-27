@@ -81,22 +81,7 @@ def obj_to_vehicle_window(obj, materials):
 
 
 def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
-
     fragment = Fragment()
-    fragment.name = fobj.name.split(".")[0]
-    fragment.bounding_sphere_center = get_bound_center(
-        fobj, world=export_settings.use_transforms)
-    fragment.bounding_sphere_radius = get_obj_radius(
-        fobj, world=export_settings.use_transforms)
-
-    fragment.unknown_b0 = fobj.fragment_properties.unk_b0
-    fragment.unknown_b8 = fobj.fragment_properties.unk_b8
-    fragment.unknown_bc = fobj.fragment_properties.unk_bc
-    fragment.unknown_c0 = fobj.fragment_properties.unk_c0
-    fragment.unknown_c4 = fobj.fragment_properties.unk_c4
-    fragment.unknown_cc = fobj.fragment_properties.unk_cc
-    fragment.gravity_factor = fobj.fragment_properties.gravity_factor
-    fragment.buoyancy_factor = fobj.fragment_properties.buoyancy_factor
 
     dobj = None
     for child in fobj.children:
@@ -113,6 +98,21 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
 
     lights_from_object(fobj, fragment.lights,
                        export_settings, armature_obj=dobj)
+
+    fragment.name = fobj.name.split(".")[0]
+    fragment.bounding_sphere_center = get_bound_center(
+        fobj, world=export_settings.use_transforms)
+    fragment.bounding_sphere_radius = get_sphere_radius(
+        fragment.drawable.bounding_box_max, fragment.drawable.bounding_sphere_center)
+
+    fragment.unknown_b0 = fobj.fragment_properties.unk_b0
+    fragment.unknown_b8 = fobj.fragment_properties.unk_b8
+    fragment.unknown_bc = fobj.fragment_properties.unk_bc
+    fragment.unknown_c0 = fobj.fragment_properties.unk_c0
+    fragment.unknown_c4 = fobj.fragment_properties.unk_c4
+    fragment.unknown_cc = fobj.fragment_properties.unk_cc
+    fragment.gravity_factor = fobj.fragment_properties.gravity_factor
+    fragment.buoyancy_factor = fobj.fragment_properties.buoyancy_factor
 
     for idx in range(len(dobj.data.bones)):
         m = Matrix()

@@ -462,7 +462,7 @@ class EntityProperties:
     lod_level: bpy.props.EnumProperty(
         items=items_from_enums(EntityLodLevel),
         name="LOD Level",
-        default=EntityLodLevel.LODTYPES_DEPTH_HD,
+        default=EntityLodLevel.LODTYPES_DEPTH_ORPHANHD,
         options={"HIDDEN"}
     )
     num_children: bpy.props.IntProperty(name="Number of Children")
@@ -704,6 +704,8 @@ def register():
         name="Alpha", min=-1, max=1)
     bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
         name="Separate Objects", description="Create a object for each selected mesh.")
+    bpy.types.Scene.create_center_to_selection = bpy.props.BoolProperty(
+        name="Center to Selection", description="Center newly created objects to selection.", default=True)
     bpy.types.Scene.use_mesh_name = bpy.props.BoolProperty(
         name="Use Name(s)", description="Use the names of the meshes for the created objects.", default=True)
 
@@ -732,3 +734,4 @@ def unregister():
     del bpy.types.Scene.create_seperate_objects
     del bpy.types.Scene.use_mesh_name
     del bpy.types.Scene.debug_sollum_type
+    del bpy.types.Scene.create_center_to_selection

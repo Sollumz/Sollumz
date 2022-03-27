@@ -204,9 +204,11 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
         row.prop(context.scene, "create_drawable_type")
-        row = layout.row()
-        row.prop(context.scene, "use_mesh_name")
-        row.prop(context.scene, "create_seperate_objects")
+        grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
+        grid.prop(context.scene, "use_mesh_name")
+        grid.prop(context.scene, "create_seperate_objects")
+        grid.prop(context.scene, "create_center_to_selection")
+        grid.prop(context.scene, "auto_create_embedded_col")
 
 
 class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):

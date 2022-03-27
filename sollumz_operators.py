@@ -418,10 +418,7 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
 
         for obj in objs:
             loddist = obj.entity_properties.lod_dist
-            radius = get_obj_radius(obj)
-
-            bbmin = subtract_from_vector(obj.location, radius)
-            bbmax = add_to_vector(obj.location, radius)
+            bbmin, bbmax = get_bound_extents(obj)
             sbmin = subtract_from_vector(bbmin, loddist)
             sbmax = add_to_vector(bbmax, loddist)
 

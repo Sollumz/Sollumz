@@ -234,7 +234,8 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     kwargs["position"] = tuple([0, 0, 0])
             if "normal" in vertex_type._fields:
                 if loop.normal:
-                    normal = float32_list(loop.normal)
+                    normal = float32_list(
+                        obj.matrix_world.inverted_safe().transposed().to_3x3() @ loop.normal if export_settings.use_transforms else obj.matrix_basis.inverted_safe().transposed().to_3x3() @ loop.normal)
                     kwargs["normal"] = tuple(normal)
                 else:
                     kwargs["normal"] = tuple([0, 0, 0])
@@ -385,6 +386,9 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
+
+    # Remove mesh copy
+    bpy.data.meshes.remove(mesh)
 
     return geometry
 
@@ -631,12 +635,12 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
-    drawable.bounding_sphere_center = get_bound_center(
-        obj, world=export_settings.use_transforms)
-    drawable.bounding_sphere_radius = get_obj_radius(
-        obj, world=export_settings.use_transforms)
     bbmin, bbmax = get_bound_extents(
         obj, world=export_settings.use_transforms)
+    drawable.bounding_sphere_center = get_bound_center(
+        obj, world=export_settings.use_transforms)
+    drawable.bounding_sphere_radius = get_sphere_radius(
+        bbmax, drawable.bounding_sphere_center)
     drawable.bounding_box_min = bbmin
     drawable.bounding_box_max = bbmax
 

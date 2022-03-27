@@ -2,7 +2,7 @@ import bpy
 import os
 from ..sollumz_helper import has_embedded_textures, has_collision
 from ..resources.ytyp import *
-from ..tools.meshhelper import get_bound_extents, get_bound_center, get_obj_radius
+from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from ..sollumz_properties import SollumType
 
 
@@ -25,7 +25,7 @@ def base_archetype_from_object(obj):
     arch.bb_min = bbmin
     arch.bb_max = bbmax
     arch.bs_center = get_bound_center(obj, world=False)
-    arch.bs_radius = get_obj_radius(obj, world=False)
+    arch.bs_radius = get_sphere_radius(bbmax, arch.bs_center)
     arch.asset_name = obj.name
     if obj.sollum_type == SollumType.FRAGMENT:
         arch.asset_type = "ASSET_TYPE_FRAGMENT"

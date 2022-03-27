@@ -1,8 +1,9 @@
 import bpy
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
-from ..tools.meshhelper import get_children_recursive
+from ..tools.meshhelper import get_bound_center, get_children_recursive
 from ..tools.blenderhelper import join_objects
+from mathutils import Vector
 
 
 def create_drawable(sollum_type=SollumType.DRAWABLE):
@@ -15,11 +16,21 @@ def create_drawable(sollum_type=SollumType.DRAWABLE):
     return empty
 
 
-def convert_selected_to_drawable(objs, use_names=False, multiple=False):
+def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_center=True):
     parent = None
+
+    center = Vector()
+    dobjs = []
 
     if not multiple:
         dobj = create_drawable()
+        dobjs.append(dobj)
+        if do_center:
+            for obj in objs:
+                center += obj.location
+
+            center /= len(objs)
+            dobj.location = center
         dmobj = create_drawable(SollumType.DRAWABLE_MODEL)
         dmobj.parent = dobj
 
@@ -31,8 +42,14 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
 
         if multiple:
             dobj = parent or create_drawable()
+            dobjs.append(dobj)
+            if do_center:
+                dobj.location = obj.location
+                obj.location = Vector()
             dmobj = create_drawable(SollumType.DRAWABLE_MODEL)
             dmobj.parent = dobj
+        elif do_center:
+            obj.location -= center
 
         # create material
         i = 0
@@ -70,6 +87,8 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False):
         bpy.data.objects.remove(obj, do_unlink=True)
         bpy.context.collection.objects.link(new_obj)
         new_obj.name = name + "_geom"
+
+    return dobjs
 
 
 def join_drawable_geometries(drawable):
