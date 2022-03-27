@@ -155,7 +155,7 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
 
 class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Center a bound composite with the rest of it's geometry. Note: Has no effect on export"""
+    f"""Center the selected {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]} with the rest of it's geometry. Note: Has no effect on export"""
     bl_idname = "sollumz.centercomposite"
     bl_label = "Center Composite"
     bl_action = f"{bl_label}"

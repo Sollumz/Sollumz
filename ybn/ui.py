@@ -168,8 +168,9 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        if context.active_object and context.active_object.sollum_type == SollumType.BOUND_COMPOSITE:
-            row.operator(SOLLUMZ_OT_center_composite.bl_idname)
+        row.enabled = context.active_object and context.active_object.sollum_type == SollumType.BOUND_COMPOSITE
+        row.operator(SOLLUMZ_OT_center_composite.bl_idname,
+                     icon="PIVOT_CURSOR")
 
 
 class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
