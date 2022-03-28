@@ -69,7 +69,6 @@ def create_mesh(sollum_type):
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type
-    obj.data.materials.append(create_collision_material_from_index(0))
     bpy.context.collection.objects.link(obj)
 
     return obj

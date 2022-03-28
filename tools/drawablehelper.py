@@ -51,23 +51,6 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
         elif do_center:
             obj.location -= center
 
-        # create material
-        i = 0
-        if(len(obj.data.materials) > 0):
-            mat = obj.data.materials[0]
-            if(mat.sollum_type != MaterialType.SHADER):
-                # remove old materials
-                try:
-                    new_mat = convert_material(mat)
-                    if new_mat != None:
-                        obj.material_slots[i].material = new_mat
-                    else:
-                        raise Exception  # continute to creating a default shader
-                except:
-                    new_mat = create_shader("default")
-                    obj.material_slots[i].material = new_mat
-            i += 1
-
         obj.parent = dmobj
 
         name = obj.name
