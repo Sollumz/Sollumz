@@ -228,7 +228,6 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
             context.scene.collision_material_index)
         active_mat_index = aobj.active_material_index
         aobj.data.materials[active_mat_index] = mat
-        bpy.data.materials.remove(active_mat)
 
 
 class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
