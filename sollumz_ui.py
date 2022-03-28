@@ -314,13 +314,18 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row.operator("sollumz.import")
         row.operator("sollumz.export")
         layout.label(text="View")
-        layout.prop(context.scene, "hide_collision")
-        layout.prop(context.scene, "hide_high_lods")
-        layout.prop(context.scene, "hide_medium_lods")
-        layout.prop(context.scene, "hide_low_lods")
-        layout.prop(context.scene, "hide_very_low_lods")
-        layout.prop(context.space_data.overlay,
-                    "show_bones", text="Show Skeleton")
+        
+        row = layout.row()
+        row.prop(context.scene, "hide_high_lods")
+        row.prop(context.scene, "hide_medium_lods")
+        
+        row2 = layout.row()
+        row2.prop(context.scene, "hide_low_lods")
+        row2.prop(context.scene, "hide_collision")
+        
+        row3 = layout.row()
+        row3.prop(context.scene, "hide_very_low_lods")
+        row3.prop(context.space_data.overlay, "show_bones", text="Show Skeleton")
 
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
