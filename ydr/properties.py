@@ -2,7 +2,7 @@ import bpy
 from ..sollumz_properties import DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
-from os import path
+from bpy.path import basename
 
 
 class DrawableProperties(bpy.types.PropertyGroup):
@@ -236,14 +236,15 @@ def set_light_type(self, value):
         self.is_capsule = False
 
 
-def get_img_path(self):
-    return self.filepath
-
-
-def set_img_path(self, value):
-    self.source = "FILE"
-    self.filepath = value
-    self.name = path.basename(value)
+def get_texture_name(self):
+    if (self.texture_properties.embedded or self.external_texture_use_filename) and self.image:
+        return basename(self.image.filepath.split('.')[0])
+    elif not self.texture_properties.embedded:
+        if self.image:
+            return self.image.name
+        else:
+            return self.external_texture_name
+    return "None"
 
 
 def register():
@@ -262,9 +263,12 @@ def register():
         type=TextureProperties)
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(
         type=TextureFlags)
-    # Custom property so image name can be updated when path is updated
-    bpy.types.Image.sollumz_filepath = bpy.props.StringProperty(
-        subtype="FILE_PATH", get=get_img_path, set=set_img_path)
+    bpy.types.ShaderNodeTexImage.sollumz_texture_name = bpy.props.StringProperty(
+        name="Texture Name", description="Name of texture.", get=get_texture_name)
+    bpy.types.ShaderNodeTexImage.external_texture_name = bpy.props.StringProperty(
+        name="External Texture Name", description="Name of external texture from YTD.")
+    bpy.types.ShaderNodeTexImage.external_texture_use_filename = bpy.props.BoolProperty(
+        name="Use Filename", description="Use filename from image path.")
 
     bpy.types.Scene.create_drawable_type = bpy.props.EnumProperty(
         items=[
@@ -314,6 +318,9 @@ def register():
 
 
 def unregister():
+    del bpy.types.ShaderNodeTexImage.sollumz_texture_name
+    del bpy.types.ShaderNodeTexImage.external_texture_use_filename
+    del bpy.types.ShaderNodeTexImage.external_texture_name
     del bpy.types.Scene.shader_material_index
     del bpy.types.Scene.shader_materials
     del bpy.types.Object.drawable_properties

@@ -44,13 +44,11 @@ def get_shaders_from_blender(materials):
                 param = TextureShaderParameter()
                 param.name = node.name
                 param.type = "Texture"
-                if node.image == None:
-                    param.texture_name = ""
                 # Disable extra material writing to xml
-                elif param.name == "Extra":
+                if param.name == "Extra":
                     continue
                 else:
-                    param.texture_name = node.image.name.split('.')[0]
+                    param.texture_name = node.sollumz_texture_name
                 shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
@@ -78,7 +76,7 @@ def get_shaders_from_blender(materials):
 def texture_item_from_node(n):
     texture_item = TextureItem()
     if n.image:
-        texture_item.name = n.image.name.split('.')[0]
+        texture_item.name = n.sollumz_texture_name
         texture_item.width = n.image.size[0]
         texture_item.height = n.image.size[1]
     else:
