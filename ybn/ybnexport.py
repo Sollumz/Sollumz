@@ -227,7 +227,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
                     else:
                         vertices2[vertex] = len(vertices2)
                         geometry.vertices_2.append(Vector(vertex))
-        else:
+        elif sollum_type == SollumType.BOUND_GEOMETRYBVH:
             poly = polygon_from_object(
                 child, geometry, vertices, mat_map, export_settings)
             if poly:
