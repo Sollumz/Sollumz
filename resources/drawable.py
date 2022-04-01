@@ -209,7 +209,7 @@ class SkeletonProperty(ElementTree):
 
         # UPDATE
         # from: NcProductions and ArthurLopes
-        # to my knowledge, having two addon peds with the same unknown 1C, 50, 54 and 58 value will cause one of them to be messed up when spawned together. for example, first add-on will spawn without problem, the second will have the bones messed up. 
+        # to my knowledge, having two addon peds with the same unknown 1C, 50, 54 and 58 value will cause one of them to be messed up when spawned together. for example, first add-on will spawn without problem, the second will have the bones messed up.
         # fixing this issue is simple by changing the value like you mentioned.
         self.unknown_1c = ValueProperty("Unknown1C", 16777216)
         self.unknown_50 = ValueProperty("Unknown50", 567032952)
@@ -621,7 +621,6 @@ class DrawableDictionary(MutableSequence, Element):
         children = element.findall(new.tag_name)
 
         for child in children:
-            print(child)
             drawable = Drawable.from_xml(child)
             new.append(drawable)
 
