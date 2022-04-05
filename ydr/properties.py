@@ -237,13 +237,8 @@ def set_light_type(self, value):
 
 
 def get_texture_name(self):
-    if (self.texture_properties.embedded or self.external_texture_use_filename) and self.image:
+    if self.image:
         return basename(self.image.filepath.split('.')[0])
-    elif not self.texture_properties.embedded:
-        if self.image:
-            return self.image.name
-        else:
-            return self.external_texture_name
     return "None"
 
 
@@ -265,10 +260,6 @@ def register():
         type=TextureFlags)
     bpy.types.ShaderNodeTexImage.sollumz_texture_name = bpy.props.StringProperty(
         name="Texture Name", description="Name of texture.", get=get_texture_name)
-    bpy.types.ShaderNodeTexImage.external_texture_name = bpy.props.StringProperty(
-        name="External Texture Name", description="Name of external texture from YTD.")
-    bpy.types.ShaderNodeTexImage.external_texture_use_filename = bpy.props.BoolProperty(
-        name="Use Filename", description="Use filename from image path.")
 
     bpy.types.Scene.create_drawable_type = bpy.props.EnumProperty(
         items=[
@@ -319,8 +310,6 @@ def register():
 
 def unregister():
     del bpy.types.ShaderNodeTexImage.sollumz_texture_name
-    del bpy.types.ShaderNodeTexImage.external_texture_use_filename
-    del bpy.types.ShaderNodeTexImage.external_texture_name
     del bpy.types.Scene.shader_material_index
     del bpy.types.Scene.shader_materials
     del bpy.types.Object.drawable_properties

@@ -313,21 +313,10 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                 row = box.row(align=True)
                 row.label(text="Texture Type: " + n.name)
                 row.label(text="Texture Name: " + n.sollumz_texture_name)
-                if not n.texture_properties.embedded:
-                    row = box.row()
-                    if n.image:
-                        row.prop(n.image, "name", text="External Texture Name")
-                    else:
-                        row.prop(n, "external_texture_name")
-                    row.enabled = not n.external_texture_use_filename or not n.image
-                    if n.image:
-                        row = box.row()
-                        row.prop(n, "external_texture_use_filename")
-                        row.separator()
-                if n.image and n.texture_properties.embedded:
+                if n.image:
                     row = box.row()
                     row.prop(n.image, "filepath", text="Texture Path")
-                elif n.texture_properties.embedded and not n.image:
+                else:
                     row = box.row()
                     row.label(
                         text="Image Texture has no linked image.", icon="ERROR")
