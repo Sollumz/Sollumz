@@ -38,6 +38,11 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_showtime = True
     bl_update_view = True
 
+    files: bpy.props.CollectionProperty(
+        name="File Path",
+        type=bpy.types.OperatorFileListElement,
+    )
+
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};*{YCD.file_extension};",
         options={"HIDDEN"},
@@ -92,8 +97,12 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                     filepath = os.path.join(folderpath, file)
                     result = self.import_file(filepath, ext)
         else:
-            ext = ''.join(pathlib.Path(self.filepath).suffixes)
-            result = self.import_file(self.filepath, ext)
+            for file_elem in self.files:
+                directory = os.path.dirname(self.filepath)
+                filepath = os.path.join(directory, file_elem.name)
+                if os.path.isfile(filepath):
+                    ext = ''.join(pathlib.Path(filepath).suffixes)
+                    result = self.import_file(filepath, ext)
 
         if not result:
             self.bl_showtime = False

@@ -487,8 +487,8 @@ class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
 class SollumzImportSettings(bpy.types.PropertyGroup):
     batch_mode: bpy.props.EnumProperty(
         name="Batch Mode",
-        items=(('SELECTED_FILE', "Selected File", "Import selected file."),
-               ('DIRECTORY', "Directory", "Import every file from active directory the file browser is in."))
+        items=(('SELECTED_FILE', "Selected File(s)", "Import selected file(s)"),
+               ('DIRECTORY', "Directory", "Import every file from active directory the file browser is in"))
     )
 
     join_geometries: bpy.props.BoolProperty(
