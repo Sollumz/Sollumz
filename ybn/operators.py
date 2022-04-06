@@ -1,5 +1,4 @@
-from abc import abstractmethod
-from math import degrees
+from math import ceil
 from ..tools.obb import get_obb, get_obb_extents
 import traceback
 from ..resources.flag_preset import FlagPreset
@@ -251,6 +250,99 @@ class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.
             except Exception as e:
                 self.warning(
                     f"Failure to add material to {obj.name}: {traceback.format_exc()}")
+
+        return True
+
+
+class SOLLUMZ_OT_split_collision(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Split a collision into many parts. Sorted based on location"""
+    bl_idname = "sollumz.splitcollision"
+    bl_label = "Split Collision"
+    bl_action = f"{bl_label}"
+
+    def run(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.message("No objects selected.")
+            return False
+
+        # Gather all selected collision objects and store as hierarchy
+        selected_composites = {}
+        num_bound_polys_selected = 0
+        for composite in selected:
+            if composite.sollum_type != SollumType.BOUND_COMPOSITE:
+                self.message(
+                    f"Selected object {composite.name} is not a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}, skipping...")
+                continue
+
+            # Create list for storing bound polys
+            selected_composites[composite] = []
+            # Gather GeometryBVH(s)
+            for bvh in get_children_recursive(composite):
+                if bvh.sollum_type == SollumType.BOUND_GEOMETRYBVH:
+                    for bound_poly in bvh.children:
+                        if bound_poly.sollum_type in BOUND_POLYGON_TYPES:
+                            selected_composites[composite].append(
+                                bound_poly)
+                            num_bound_polys_selected += 1
+
+        # Split objects
+        for composite, bound_polys in selected_composites.items():
+            composite_name = composite.name
+            composite.name = ""
+
+            parts_per_col = ceil(
+                num_bound_polys_selected / context.scene.split_collision_count)
+
+            if num_bound_polys_selected < parts_per_col:
+                self.message(
+                    f"Can't divide by a value less than the number of Bound Polygon(s) ({num_bound_polys_selected} selected).")
+                return False
+
+            new_composite = None
+
+            for i, bound_poly in enumerate(bound_polys):
+                if i % parts_per_col == 0:
+                    new_composite = create_bound(
+                        SollumType.BOUND_COMPOSITE, do_link=False)
+
+                    bound_poly.users_collection[0].objects.link(
+                        new_composite)
+
+                    new_composite.name = composite_name
+                    new_composite.matrix_world = composite.matrix_world
+
+                if new_composite is None:
+                    continue
+
+                if bound_poly is None:
+                    continue
+
+                bound_polys[i] = None
+
+                new_bvh = create_bound(
+                    SollumType.BOUND_GEOMETRYBVH, do_link=False)
+
+                # Link the new empties to the object's collection (not always the active collection)
+                bound_poly.users_collection[0].objects.link(new_bvh)
+
+                bound_poly_mat = bound_poly.matrix_world.copy()
+
+                new_bvh.parent = new_composite
+
+                new_bvh.matrix_world = bound_poly.parent.matrix_world
+                new_bvh.matrix_world.translation = bound_poly.matrix_world.translation
+
+                bound_poly.parent = new_bvh
+
+                bound_poly.matrix_world = bound_poly_mat
+                bound_poly.location = Vector()
+
+            for child in composite.children:
+                if child.sollum_type == SollumType.BOUND_GEOMETRYBVH:
+                    bpy.data.objects.remove(child)
+
+            bpy.data.objects.remove(composite)
 
         return True
 

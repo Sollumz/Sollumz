@@ -49,13 +49,14 @@ def create_bound_shape(type):
     return pobj
 
 
-def create_bound(sollum_type=SollumType.BOUND_COMPOSITE, aobj=None):
+def create_bound(sollum_type=SollumType.BOUND_COMPOSITE, aobj=None, do_link=True):
 
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
-    bpy.context.collection.objects.link(empty)
-    bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
+    if do_link:
+        bpy.context.collection.objects.link(empty)
+        bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
     if aobj:
         if aobj.sollum_type == SollumType.BOUND_COMPOSITE:

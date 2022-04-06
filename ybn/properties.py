@@ -268,6 +268,9 @@ def register():
     bpy.types.Scene.composite_replace_original = bpy.props.BoolProperty(
         name='Replace Original', description=f'If true, the operator will replace the selected objects with the {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}.', default=True)
 
+    bpy.types.Scene.split_collision_count = bpy.props.IntProperty(
+        name="Divide By", description=f"Amount to split {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}s or {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}s by", default=2, min=2)
+
 
 def unregister():
     del bpy.types.Object.bound_properties
@@ -290,5 +293,6 @@ def unregister():
     del bpy.types.Scene.poly_parent
     del bpy.types.Scene.composite_create_bvh
     del bpy.types.Scene.composite_replace_original
+    del bpy.types.Scene.split_collision_count
 
     bpy.app.handlers.load_post.remove(on_file_loaded)
