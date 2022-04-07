@@ -31,27 +31,9 @@ bl_info = {
 auto_load.init()
 
 
-# sollumz settings
-class SollumzSettings(bpy.types.AddonPreferences):
-    bl_idname = __name__
-
-    shared_texture_folder: bpy.props.StringProperty(
-        name="Shared Texture Folder Path",
-        description="Path to the folder containing the textures to try to import",
-        default=os.path.dirname(__file__) + "\\resources\\textures",
-        subtype='DIR_PATH'
-    )
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "shared_texture_folder")
-
 
 def register():
     auto_load.register()
-    bpy.utils.register_class(SollumzSettings)
-
-
+    
 def unregister():
     auto_load.unregister()
-    bpy.utils.unregister_class(SollumzSettings)
