@@ -275,7 +275,7 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.DXT5: "D3DFMT_DXT5",
     TextureFormat.ATI1: "D3DFMT_ATI1",
     TextureFormat.ATI2: "D3DFMT_ATI2",
-    TextureFormat.BC7: "D3DFMT_DXT1",
+    TextureFormat.BC7: "D3DFMT_BC7",
     TextureFormat.A1R5G5B5: "D3DFMT_A1R5G5B5",
     TextureFormat.A1R8G8B8: "D3DFMT_A1R8G8B8",
     TextureFormat.A8R8G8B8: "D3DFMT_A8R8G8B8",
