@@ -84,7 +84,7 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
                 nla_strip.frame_end = virtual_frames_count
 
                 bpy.context.scene.frame_start = 0
-                bpy.context.scene.frame_end = nla_strip.frame_end
+                bpy.context.scene.frame_end = int(nla_strip.frame_end)
 
                 if '_root_motion_location' in group_name:
                     nla_strip.blend_type = "ADD"
@@ -269,7 +269,7 @@ class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
 
         frame_count = end_frame - start_frame
 
-        animation_properties.frame_count = frame_count
+        animation_properties.frame_count = int(frame_count)
 
         return {'FINISHED'}
 
