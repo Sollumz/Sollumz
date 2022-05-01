@@ -396,7 +396,24 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
-    drawable_model.bone_index = obj.drawable_model_properties.bone_index
+    # drawable_model.bone_index = obj.drawable_model_properties.bone_index
+    drawable_constraints = obj.constraints
+    if len(drawable_constraints) > 0:
+        found_armature_constraint = False
+        for constraint in drawable_constraints:
+            if isinstance(constraint, bpy.types.ArmatureConstraint):
+                armature = constraint.targets[0].target
+                bone = constraint.targets[0].subtarget
+                bone_index = armature.data.bones[bone].bone_properties.tag
+                drawable_model.bone_index = bone_index
+                found_armature_constraint = True
+                break
+
+        if not found_armature_constraint:
+            drawable_model.bone_index = 0
+    else:
+        drawable_model.bone_index = 0
+
     drawable_model.unknown_1 = obj.drawable_model_properties.unknown_1
 
     if obj.children[0].vertex_groups:
