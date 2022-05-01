@@ -241,26 +241,26 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             valid_type = False
             filepath = None
             if obj.sollum_type == SollumType.DRAWABLE:
-                filepath = self.get_filepath(obj.name, YDR.file_extension)
+                filepath = self.get_filepath(obj.name.lower(), YDR.file_extension)
                 export_ydr(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
-                filepath = self.get_filepath(obj.name, YDD.file_extension)
+                filepath = self.get_filepath(obj.name.lower(), YDD.file_extension)
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.FRAGMENT:
                 self.export_settings.use_transforms = False
                 name = obj.name if "/" not in obj.name else obj.name.replace(
                     "pack:/", "")
-                filepath = self.get_filepath(name, YFT.file_extension)
+                filepath = self.get_filepath(name.lower(), YFT.file_extension)
                 export_yft(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
-                filepath = self.get_filepath(obj.name, YCD.file_extension)
+                filepath = self.get_filepath(obj.name.lower(), YCD.file_extension)
                 export_ycd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type in BOUND_TYPES:
-                filepath = self.get_filepath(obj.name, YBN.file_extension)
+                filepath = self.get_filepath(obj.name.lower(), YBN.file_extension)
                 export_ybn(obj, filepath, self.export_settings)
                 valid_type = True
             if valid_type:

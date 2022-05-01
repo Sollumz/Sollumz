@@ -729,11 +729,11 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         arch_xml.flags = arch.flags.total
         arch_xml.special_attribute = arch.special_attribute
         arch_xml.hd_texture_dist = arch.hd_texture_dist
-        arch_xml.name = arch.name
-        arch_xml.texture_dictionary = arch.texture_dictionary
+        arch_xml.name = arch.name.lower()
+        arch_xml.texture_dictionary = arch.texture_dictionary.lower()
         arch_xml.clip_dictionary = arch.clip_dictionary
-        arch_xml.drawable_dictionary = arch.drawable_dictionary
-        arch_xml.physics_dictionary = arch.physics_dictionary
+        arch_xml.drawable_dictionary = arch.drawable_dictionary.lower()
+        arch_xml.physics_dictionary = arch.physics_dictionary.lower()
         if arch.asset and arch.type != ArchetypeType.MLO:
             bbmin, bbmax = get_bound_extents(arch.asset, world=False)
             arch_xml.bb_min = bbmin
@@ -763,7 +763,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         try:
             selected_ytyp = context.scene.ytyps[context.scene.ytyp_index]
             ytyp = CMapTypes()
-            ytyp.name = selected_ytyp.name
+            ytyp.name = selected_ytyp.name.lower()
             for archetype in selected_ytyp.archetypes:
                 archetype_xml = None
                 if archetype.type == ArchetypeType.BASE:

@@ -238,7 +238,7 @@ def set_light_type(self, value):
 
 def get_texture_name(self):
     if self.image:
-        return basename(self.image.filepath.split('.')[0])
+        return basename(self.image.filepath).split('.')[0]
     return "None"
 
 
