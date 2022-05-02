@@ -22,7 +22,7 @@ def draw_drawable_model_properties(self, context):
     if obj and obj.sollum_type == SollumType.DRAWABLE_MODEL:
         layout = self.layout
         layout.prop(obj.drawable_model_properties, "render_mask")
-        layout.prop(obj.drawable_model_properties, "bone_index")
+        # layout.prop(obj.drawable_model_properties, "bone_index")
         layout.prop(obj.drawable_model_properties, "unknown_1")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
