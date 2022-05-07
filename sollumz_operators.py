@@ -299,7 +299,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 ytyp.write_xml(fp)
 
         if context.active_object:
-            if context.active_object != mode:
+            if context.active_object.mode != mode:
                 bpy.ops.object.mode_set(mode=mode)
 
         return True
