@@ -413,21 +413,25 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
     if obj.children[0].vertex_groups:
         drawable_model.has_skin = 1
 
+    geometries_to_join = []
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             if len(child.data.materials) > 1:
-                # Preserve original order of materials
-                child_copy = duplicate_object(child)
-                objs = split_object(child_copy)
-                for obj in objs:
-                    geometry = geometry_from_object(
-                        obj, materials, bones, export_settings)  # MAYBE WRONG ASK LOYALIST
-                    drawable_model.geometries.append(geometry)
-                    bpy.data.objects.remove(obj)
+                geometries_to_join.append(duplicate_object(child))
             else:
                 geometry = geometry_from_object(
                     child, materials, bones, export_settings)
                 drawable_model.geometries.append(geometry)
+
+    if len(geometries_to_join) > 0:
+        # Join geometries that have multiple materials (as duplicate) before splitting by material
+        joined_geometry = join_objects(geometries_to_join)
+        objs = split_object(joined_geometry)
+        for obj in objs:
+            geometry = geometry_from_object(
+                obj, materials, bones, export_settings)
+            drawable_model.geometries.append(geometry)
+            bpy.data.meshes.remove(obj.data)
 
     return drawable_model
 
@@ -703,8 +707,6 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
-            # join drawable geometries
-            join_objects(get_drawable_geometries(child))
             drawable_model = drawable_model_from_object(
                 child, bones, materials, export_settings)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:

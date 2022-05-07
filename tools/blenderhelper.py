@@ -84,11 +84,19 @@ def split_object(obj):
 def join_objects(objs):
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = objs[0]
+    meshes = []
     for obj in objs:
+        meshes.append(obj.data)
         obj.select_set(True)
     bpy.ops.object.join()
     bpy.ops.object.select_all(action='DESELECT')
-    return bpy.context.view_layer.objects.active
+    joined_obj = bpy.context.view_layer.objects.active
+    # Delete leftover meshes
+    for mesh in meshes:
+        if mesh == joined_obj.data:
+            continue
+        bpy.data.meshes.remove(mesh)
+    return joined_obj
 
 
 def remove_unused_materials(obj):
