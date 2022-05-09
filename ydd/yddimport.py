@@ -23,8 +23,12 @@ def drawable_dict_to_obj(drawable_dict, filepath, import_settings):
             break
 
     for drawable in drawable_dict:
+        # Pass is_ydd=True in drawable_to_obj function to opt out the drawable_model and bone parenting. 
+        # If is_ydd is not passed or set to False in case of YDD,
+        # drawable_model and drawable_mesh are rotated by 180° on Z-axis
+
         drawable_obj = drawable_to_obj(
-            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones if drawable_with_skel else None, import_settings=import_settings)
+            drawable, filepath, drawable.name, bones_override=drawable_with_skel.skeleton.bones if drawable_with_skel else None, import_settings=import_settings, is_ydd=True)
         if (armature_with_skel_obj is None and drawable_with_skel is not None and len(drawable.skeleton.bones) > 0):
             armature_with_skel_obj = drawable_obj
 
