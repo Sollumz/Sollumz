@@ -223,8 +223,13 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
             modeltransforms.append(transforms[i].value)
 
         for child in dobj.children:
-            boneidx = child.drawable_model_properties.bone_index
+            bone_index = 0
+            if child.parent_type == 'BONE':
+                parent_bone = child.parent_bone
+                if parent_bone != None and parent_bone != '':
+                    bone_index = child.parent.data.bones[parent_bone].bone_properties.tag
 
+            boneidx = bone_index
             m = modeltransforms[boneidx] if boneidx < len(
                 modeltransforms) else Matrix()
 
