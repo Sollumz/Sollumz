@@ -396,10 +396,9 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
-    # drawable_model.bone_index = obj.drawable_model_properties.bone_index
 
     drawable_model_parent = obj.parent
-    if drawable_model_parent.type == 'ARMATURE':
+    if drawable_model_parent.type == 'BONE':
         parent_bone = obj.parent_bone
         if parent_bone != None and parent_bone != '':
             drawable_model_bone_index = drawable_model_parent.data.bones[parent_bone].bone_properties.tag

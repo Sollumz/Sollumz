@@ -117,7 +117,13 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
     for idx in range(len(dobj.data.bones)):
         m = Matrix()
         for model in dobj.children:
-            if model.drawable_model_properties.bone_index == idx:
+            bone_index = 0
+            if model.parent_type == 'BONE':
+                parent_bone = model.parent_bone
+                if parent_bone != None and parent_bone != '':
+                    bone_index = model.parent.data.bones[parent_bone].bone_properties.tag
+
+            if bone_index == idx:
                 m = model.matrix_basis
         fragment.bones_transforms.append(
             BoneTransformItem("Item", m))
