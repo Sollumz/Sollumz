@@ -21,10 +21,10 @@ class BoundFile(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.composite = BoundsComposite()
+        self.composite = BoundComposite()
 
 
-class Bounds(ElementTree, AbstractClass):
+class Bound(ElementTree, AbstractClass):
     tag_name = 'Bounds'
 
     def __init__(self):
@@ -47,14 +47,14 @@ class Bounds(ElementTree, AbstractClass):
         self.unk_type = ValueProperty('UnkType', 0)
 
 
-class BoundsComposite(Bounds):
+class BoundComposite(Bound):
     def __init__(self):
         super().__init__()
         self.type = AttributeProperty('type', 'Composite')
         self.children = BoundListProperty()
 
 
-class BoundItem(Bounds, AbstractClass):
+class BoundItem(Bound, AbstractClass):
     tag_name = 'Item'
 
     @property

@@ -350,7 +350,7 @@ def composite_from_objects(objs, export_settings, is_frag=False):
         old_parents.append(obj.parent)
         obj.parent = tobj
 
-    composite = init_bound(BoundsComposite(), tobj, export_settings, is_frag)
+    composite = init_bound(BoundComposite(), tobj, export_settings, is_frag)
 
     for child in objs:
         bound = bound_from_object(child, export_settings, is_frag)
@@ -365,7 +365,7 @@ def composite_from_objects(objs, export_settings, is_frag=False):
 
 
 def composite_from_object(obj, export_settings):
-    composite = init_bound(BoundsComposite(), obj, export_settings)
+    composite = init_bound(BoundComposite(), obj, export_settings)
 
     for child in get_children_recursive(obj):
         bound = bound_from_object(child, export_settings)

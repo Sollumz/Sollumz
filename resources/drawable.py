@@ -554,7 +554,7 @@ class Drawable(ElementTree, AbstractClass):
             bound_type = child.get("type")
             bound = None
             if bound_type == "Composite":
-                bound = BoundsComposite.from_xml(child)
+                bound = BoundComposite.from_xml(child)
             elif bound_type == "Box":
                 bound = BoundBox.from_xml(child)
             elif bound_type == "Sphere":

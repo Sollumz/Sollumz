@@ -2,7 +2,7 @@ from abc import ABC as AbstractClass
 from xml.etree import ElementTree as ET
 from .codewalker_xml import *
 from .drawable import Drawable, LightsProperty
-from .bound import BoundsComposite
+from .bound import BoundComposite
 
 
 class YFT:
@@ -48,7 +48,7 @@ class ArchetypeProperty(ElementTree):
         self.unknown_54 = ValueProperty("Unknown54")
         self.inertia_tensor = VectorProperty("InertiaTensor")
         self.inertia_tensor_inv = VectorProperty("InertiaTensorInv")
-        self.bounds = BoundsComposite()
+        self.bounds = BoundComposite()
 
 
 class TransformItem(MatrixProperty):
