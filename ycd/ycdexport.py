@@ -8,8 +8,10 @@ from ..tools.jenkhash import Generate
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
 from ..tools.animationhelper import *
 
+
 def get_name(item):
     return item.name.split('.')[0]
+
 
 def ensure_action_track(track_type: TrackType, action_type: ActionType):
     if action_type is ActionType.RootMotion:
@@ -19,6 +21,7 @@ def ensure_action_track(track_type: TrackType, action_type: ActionType):
             return TrackType.RootMotionRotation
 
     return track_type
+
 
 def sequence_items_from_action(action, sequence_items, bones_map, action_type, frame_count, is_ped_animation):
     locations_map = {}
@@ -34,10 +37,14 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
 
         # Get list of per-frame data for every path
 
-        b_locations = evaluate_vector(action.fcurves, pos_vector_path, frame_count)
-        b_quaternions = evaluate_quaternion(action.fcurves, rot_quaternion_path, frame_count)
-        b_euler_quaternions = evaluate_euler_to_quaternion(action.fcurves, rot_euler_path, frame_count)
-        b_scales = evaluate_vector(action.fcurves, scale_vector_path, frame_count)
+        b_locations = evaluate_vector(
+            action.fcurves, pos_vector_path, frame_count)
+        b_quaternions = evaluate_quaternion(
+            action.fcurves, rot_quaternion_path, frame_count)
+        b_euler_quaternions = evaluate_euler_to_quaternion(
+            action.fcurves, rot_euler_path, frame_count)
+        b_scales = evaluate_vector(
+            action.fcurves, scale_vector_path, frame_count)
 
         # Link them with Bone ID
 
@@ -121,13 +128,16 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
     # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
 
     if len(locations_map) > 0:
-        sequence_items[ensure_action_track(TrackType.BonePosition, action_type)] = locations_map
+        sequence_items[ensure_action_track(
+            TrackType.BonePosition, action_type)] = locations_map
 
     if len(rotations_map) > 0:
-        sequence_items[ensure_action_track(TrackType.BoneRotation, action_type)] = rotations_map
+        sequence_items[ensure_action_track(
+            TrackType.BoneRotation, action_type)] = rotations_map
 
     if len(scales_map) > 0:
-        sequence_items[ensure_action_track(TrackType.BoneScale, action_type)] = scales_map
+        sequence_items[ensure_action_track(
+            TrackType.BoneScale, action_type)] = scales_map
 
 
 def build_values_channel(values, uniq_values, indirect_percentage=0.1):
@@ -191,9 +201,12 @@ def sequence_item_from_frames_data(track, frames_data):
 
             sequence_data.channels.append(channel)
         else:
-            sequence_data.channels.append(build_values_channel(values_x, uniq_x))
-            sequence_data.channels.append(build_values_channel(values_y, uniq_y))
-            sequence_data.channels.append(build_values_channel(values_z, uniq_z))
+            sequence_data.channels.append(
+                build_values_channel(values_x, uniq_x))
+            sequence_data.channels.append(
+                build_values_channel(values_y, uniq_y))
+            sequence_data.channels.append(
+                build_values_channel(values_z, uniq_z))
     # Rotation, RootMotion Rotation
     elif track == 1 or track == 6:
         values_x = []
@@ -225,10 +238,14 @@ def sequence_item_from_frames_data(track, frames_data):
 
             sequence_data.channels.append(channel)
         else:
-            sequence_data.channels.append(build_values_channel(values_x, uniq_x))
-            sequence_data.channels.append(build_values_channel(values_y, uniq_y))
-            sequence_data.channels.append(build_values_channel(values_z, uniq_z))
-            sequence_data.channels.append(build_values_channel(values_w, uniq_w))
+            sequence_data.channels.append(
+                build_values_channel(values_x, uniq_x))
+            sequence_data.channels.append(
+                build_values_channel(values_y, uniq_y))
+            sequence_data.channels.append(
+                build_values_channel(values_z, uniq_z))
+            sequence_data.channels.append(
+                build_values_channel(values_w, uniq_w))
 
     return sequence_data
 
@@ -246,7 +263,8 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation.unknown10 = AnimationFlag.Default
 
     # This value must be unique (Looks like its used internally for animation caching)
-    animation.unknown1C = 'hash_' + hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
+    animation.unknown1C = 'hash_' + \
+        hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
 
     sequence_items = {}
 
@@ -310,8 +328,10 @@ def clip_from_object(clip_obj):
         animation_duration = animation_properties.frame_count / bpy.context.scene.render.fps
 
         clip.animation_hash = animation_properties.hash
-        clip.start_time = (clip_animation_property.start_frame / animation_properties.frame_count) * animation_duration
-        clip.end_time = (clip_animation_property.end_frame / animation_properties.frame_count) * animation_duration
+        clip.start_time = (clip_animation_property.start_frame /
+                           animation_properties.frame_count) * animation_duration
+        clip.end_time = (clip_animation_property.end_frame /
+                         animation_properties.frame_count) * animation_duration
 
         clip_animation_duration = clip.end_time - clip.start_time
         clip.rate = clip_animation_duration / clip_properties.duration
@@ -327,8 +347,10 @@ def clip_from_object(clip_obj):
             animation_duration = animation_properties.frame_count / bpy.context.scene.render.fps
 
             clip_animation.animation_hash = animation_properties.hash
-            clip_animation.start_time = (clip_animation_property.start_frame / animation_properties.frame_count) * animation_duration
-            clip_animation.end_time = (clip_animation_property.end_frame / animation_properties.frame_count) * animation_duration
+            clip_animation.start_time = (
+                clip_animation_property.start_frame / animation_properties.frame_count) * animation_duration
+            clip_animation.end_time = (
+                clip_animation_property.end_frame / animation_properties.frame_count) * animation_duration
 
             clip_animation_duration = clip_animation.end_time - clip_animation.start_time
             clip_animation.rate = clip_animation_duration / clip_properties.duration
@@ -368,7 +390,8 @@ def clip_dictionary_from_object(exportop, obj, exportpath, export_settings=None)
             clips_obj = child_obj
 
     for animation_obj in animations_obj.children:
-        animation = animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_animation)
+        animation = animation_from_object(
+            animation_obj, bones_name_map, bones_map, is_ped_animation)
 
         clip_dictionary.animations.append(animation)
 
@@ -381,4 +404,5 @@ def clip_dictionary_from_object(exportop, obj, exportpath, export_settings=None)
 
 
 def export_ycd(exportop, obj, filepath, export_settings):
-    clip_dictionary_from_object(exportop, obj, filepath, export_settings).write_xml(filepath)
+    clip_dictionary_from_object(
+        exportop, obj, filepath, export_settings).write_xml(filepath)

@@ -23,7 +23,7 @@ def drawable_dict_to_obj(drawable_dict, filepath, import_settings):
             break
 
     for drawable in drawable_dict:
-        # Pass is_ydd=True in drawable_to_obj function to opt out the drawable_model and bone parenting. 
+        # Pass is_ydd=True in drawable_to_obj function to opt out the drawable_model and bone parenting.
         # If is_ydd is not passed or set to False in case of YDD,
         # drawable_model and drawable_mesh are rotated by 180° on Z-axis
 

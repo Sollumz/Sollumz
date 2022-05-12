@@ -477,19 +477,19 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     dobj.empty_display_size = 0
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
-    
+
     if (bones != None or armatureName != None) and (is_ydd == None or is_ydd == False):
         does_armature_obj_exist = armatureName in bpy.data.objects
         is_obj_armature = bpy.data.objects[armatureName].type
         if does_armature_obj_exist == True and is_obj_armature == 'ARMATURE':
             armature = bpy.data.objects[armatureName]
-            parent_bone_name = None 
+            parent_bone_name = None
             for bone in armature.pose.bones[:]:
                 bone_index = armature.data.bones[bone.name].bone_properties.tag
                 if bone_index == model.bone_index:
                     parent_bone_name = bone.name
                     break
-            
+
             if parent_bone_name != None:
                 bone = armature.pose.bones.get(parent_bone_name)
                 bpy.context.evaluated_depsgraph_get().update()

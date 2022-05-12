@@ -7,6 +7,7 @@ from ..tools.blenderhelper import build_bone_map, get_armature_obj
 from ..tools.animationhelper import is_ped_bone_tag
 from ..tools.utils import list_index_exists
 
+
 def create_anim_obj(type):
     anim_obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[type], None)
     anim_obj.empty_display_size = 0
@@ -92,20 +93,27 @@ def get_quaternion_from_sequence_data(sequence_data, frame_id, p_bone, is_conver
                     cached_value = channel.get_value(frame_id, channel_values)
 
                     if channel.quat_index == 0:
-                        channel_values = [cached_value, channel_values[0], channel_values[1], channel_values[2]]
+                        channel_values = [
+                            cached_value, channel_values[0], channel_values[1], channel_values[2]]
                     elif channel.quat_index == 1:
-                        channel_values = [channel_values[0], cached_value, channel_values[1], channel_values[2]]
+                        channel_values = [
+                            channel_values[0], cached_value, channel_values[1], channel_values[2]]
                     elif channel.quat_index == 2:
-                        channel_values = [channel_values[0], channel_values[1], cached_value, channel_values[2]]
+                        channel_values = [
+                            channel_values[0], channel_values[1], cached_value, channel_values[2]]
                     elif channel.quat_index == 3:
-                        channel_values = [channel_values[0], channel_values[1], channel_values[2], cached_value]
+                        channel_values = [
+                            channel_values[0], channel_values[1], channel_values[2], cached_value]
 
             if channel.type == 'CachedQuaternion2':
-                rotation = Quaternion((channel_values[0], channel_values[1], channel_values[2], channel_values[3]))
+                rotation = Quaternion(
+                    (channel_values[0], channel_values[1], channel_values[2], channel_values[3]))
             else:
-                rotation = Quaternion((channel_values[3], channel_values[0], channel_values[1], channel_values[2]))
+                rotation = Quaternion(
+                    (channel_values[3], channel_values[0], channel_values[1], channel_values[2]))
         else:
-            rotation = Quaternion((channel_values[3], channel_values[0], channel_values[1], channel_values[2]))
+            rotation = Quaternion(
+                (channel_values[3], channel_values[0], channel_values[1], channel_values[2]))
 
     if is_convert_local_to_pose == True:
         if p_bone.parent is not None:
@@ -147,20 +155,30 @@ def combine_sequences_and_convert_to_groups(animation, armature, is_ped_animatio
             bone_name = p_bone.name
 
             if bone_data.track == 0:
-                location = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, True)
-                insert_action_data(actions_data, 'base', bone_data.track, bone_name, location)
+                location = get_location_from_sequence_data(
+                    sequence_data, sequence_frame, p_bone, True)
+                insert_action_data(actions_data, 'base',
+                                   bone_data.track, bone_name, location)
             elif bone_data.track == 1:
-                rotation = get_quaternion_from_sequence_data(sequence_data, sequence_frame, p_bone, True)
-                insert_action_data(actions_data, 'base', bone_data.track, bone_name, rotation)
+                rotation = get_quaternion_from_sequence_data(
+                    sequence_data, sequence_frame, p_bone, True)
+                insert_action_data(actions_data, 'base',
+                                   bone_data.track, bone_name, rotation)
             elif bone_data.track == 2:
-                scale = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, False)
-                insert_action_data(actions_data, 'base', bone_data.track, bone_name, scale)
+                scale = get_location_from_sequence_data(
+                    sequence_data, sequence_frame, p_bone, False)
+                insert_action_data(actions_data, 'base',
+                                   bone_data.track, bone_name, scale)
             elif bone_data.track == 5:
-                location = get_location_from_sequence_data(sequence_data, sequence_frame, p_bone, True)
-                insert_action_data(actions_data, 'root_motion_location', bone_data.track, bone_name, location)
+                location = get_location_from_sequence_data(
+                    sequence_data, sequence_frame, p_bone, True)
+                insert_action_data(
+                    actions_data, 'root_motion_location', bone_data.track, bone_name, location)
             elif bone_data.track == 6:
-                rotation = get_quaternion_from_sequence_data(sequence_data, sequence_frame, p_bone, False)
-                insert_action_data(actions_data, 'root_motion_rotation', bone_data.track, bone_name, rotation)
+                rotation = get_quaternion_from_sequence_data(
+                    sequence_data, sequence_frame, p_bone, False)
+                insert_action_data(
+                    actions_data, 'root_motion_rotation', bone_data.track, bone_name, rotation)
 
     for type in actions_data:
         for track in actions_data[type]:
@@ -168,10 +186,12 @@ def combine_sequences_and_convert_to_groups(animation, armature, is_ped_animatio
                 bones_data = actions_data[type][track]
 
                 if 'SKEL_L_Thigh' in bones_data:
-                    bones_data['RB_L_ThighRoll'] = list(bones_data['SKEL_L_Thigh'])
+                    bones_data['RB_L_ThighRoll'] = list(
+                        bones_data['SKEL_L_Thigh'])
 
                 if 'SKEL_R_Thigh' in bones_data:
-                    bones_data['RB_R_ThighRoll'] = list(bones_data['SKEL_R_Thigh'])
+                    bones_data['RB_R_ThighRoll'] = list(
+                        bones_data['SKEL_R_Thigh'])
 
     return actions_data
 
@@ -195,13 +215,19 @@ def apply_action_data_to_action(action_data, action, frame_count):
             if type == 'location':
                 data_path_loc = 'pose.bones["%s"].location' % bone_name
 
-                location_tracks_x = list(map(lambda location: location.x, frames_data))
-                location_tracks_y = list(map(lambda location: location.y, frames_data))
-                location_tracks_z = list(map(lambda location: location.z, frames_data))
+                location_tracks_x = list(
+                    map(lambda location: location.x, frames_data))
+                location_tracks_y = list(
+                    map(lambda location: location.y, frames_data))
+                location_tracks_z = list(
+                    map(lambda location: location.z, frames_data))
 
-                pos_curve_x = action.fcurves.new(data_path=data_path_loc, index=0)
-                pos_curve_y = action.fcurves.new(data_path=data_path_loc, index=1)
-                pos_curve_z = action.fcurves.new(data_path=data_path_loc, index=2)
+                pos_curve_x = action.fcurves.new(
+                    data_path=data_path_loc, index=0)
+                pos_curve_y = action.fcurves.new(
+                    data_path=data_path_loc, index=1)
+                pos_curve_z = action.fcurves.new(
+                    data_path=data_path_loc, index=2)
 
                 pos_curve_x.group = groupItem
                 pos_curve_y.group = groupItem
@@ -211,9 +237,12 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 pos_curve_y.keyframe_points.add(len(frames_data))
                 pos_curve_z.keyframe_points.add(len(frames_data))
 
-                pos_curve_x.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, location_tracks_x) for x in co])
-                pos_curve_y.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, location_tracks_y) for x in co])
-                pos_curve_z.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, location_tracks_z) for x in co])
+                pos_curve_x.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, location_tracks_x) for x in co])
+                pos_curve_y.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, location_tracks_y) for x in co])
+                pos_curve_z.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, location_tracks_z) for x in co])
 
                 pos_curve_x.update()
                 pos_curve_y.update()
@@ -221,13 +250,19 @@ def apply_action_data_to_action(action_data, action, frame_count):
             elif type == 'scale':
                 data_path_loc = 'pose.bones["%s"].scale' % bone_name
 
-                scale_tracks_x = list(map(lambda location: location.x, frames_data))
-                scale_tracks_y = list(map(lambda location: location.y, frames_data))
-                scale_tracks_z = list(map(lambda location: location.z, frames_data))
+                scale_tracks_x = list(
+                    map(lambda location: location.x, frames_data))
+                scale_tracks_y = list(
+                    map(lambda location: location.y, frames_data))
+                scale_tracks_z = list(
+                    map(lambda location: location.z, frames_data))
 
-                pos_curve_x = action.fcurves.new(data_path=data_path_loc, index=0)
-                pos_curve_y = action.fcurves.new(data_path=data_path_loc, index=1)
-                pos_curve_z = action.fcurves.new(data_path=data_path_loc, index=2)
+                pos_curve_x = action.fcurves.new(
+                    data_path=data_path_loc, index=0)
+                pos_curve_y = action.fcurves.new(
+                    data_path=data_path_loc, index=1)
+                pos_curve_z = action.fcurves.new(
+                    data_path=data_path_loc, index=2)
 
                 pos_curve_x.group = groupItem
                 pos_curve_y.group = groupItem
@@ -237,9 +272,12 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 pos_curve_y.keyframe_points.add(len(frames_data))
                 pos_curve_z.keyframe_points.add(len(frames_data))
 
-                pos_curve_x.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, scale_tracks_x) for x in co])
-                pos_curve_y.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, scale_tracks_y) for x in co])
-                pos_curve_z.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, scale_tracks_z) for x in co])
+                pos_curve_x.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, scale_tracks_x) for x in co])
+                pos_curve_y.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, scale_tracks_y) for x in co])
+                pos_curve_z.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, scale_tracks_z) for x in co])
 
                 pos_curve_x.update()
                 pos_curve_y.update()
@@ -247,15 +285,23 @@ def apply_action_data_to_action(action_data, action, frame_count):
             elif type == 'rotation':
                 data_path_rot = 'pose.bones["%s"].rotation_quaternion' % bone_name
 
-                rotation_tracks_x = list(map(lambda rotation: rotation.x, frames_data))
-                rotation_tracks_y = list(map(lambda rotation: rotation.y, frames_data))
-                rotation_tracks_z = list(map(lambda rotation: rotation.z, frames_data))
-                rotation_tracks_w = list(map(lambda rotation: rotation.w, frames_data))
+                rotation_tracks_x = list(
+                    map(lambda rotation: rotation.x, frames_data))
+                rotation_tracks_y = list(
+                    map(lambda rotation: rotation.y, frames_data))
+                rotation_tracks_z = list(
+                    map(lambda rotation: rotation.z, frames_data))
+                rotation_tracks_w = list(
+                    map(lambda rotation: rotation.w, frames_data))
 
-                rot_curve_w = action.fcurves.new(data_path=data_path_rot, index=0)
-                rot_curve_x = action.fcurves.new(data_path=data_path_rot, index=1)
-                rot_curve_y = action.fcurves.new(data_path=data_path_rot, index=2)
-                rot_curve_z = action.fcurves.new(data_path=data_path_rot, index=3)
+                rot_curve_w = action.fcurves.new(
+                    data_path=data_path_rot, index=0)
+                rot_curve_x = action.fcurves.new(
+                    data_path=data_path_rot, index=1)
+                rot_curve_y = action.fcurves.new(
+                    data_path=data_path_rot, index=2)
+                rot_curve_z = action.fcurves.new(
+                    data_path=data_path_rot, index=3)
 
                 rot_curve_w.group = groupItem
                 rot_curve_x.group = groupItem
@@ -267,10 +313,14 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 rot_curve_y.keyframe_points.add(len(frames_data))
                 rot_curve_z.keyframe_points.add(len(frames_data))
 
-                rot_curve_w.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, rotation_tracks_w) for x in co])
-                rot_curve_x.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, rotation_tracks_x) for x in co])
-                rot_curve_y.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, rotation_tracks_y) for x in co])
-                rot_curve_z.keyframe_points.foreach_set('co', [x for co in zip(frames_ids, rotation_tracks_z) for x in co])
+                rot_curve_w.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, rotation_tracks_w) for x in co])
+                rot_curve_x.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, rotation_tracks_x) for x in co])
+                rot_curve_y.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, rotation_tracks_y) for x in co])
+                rot_curve_z.keyframe_points.foreach_set(
+                    'co', [x for co in zip(frames_ids, rotation_tracks_z) for x in co])
 
                 rot_curve_w.update()
                 rot_curve_x.update()
@@ -284,7 +334,8 @@ def actions_data_to_actions(action_name, actions_data, armature, frame_count):
     for action_type in actions_data:
         action = bpy.data.actions.new(f'{action_name}_{action_type}')
 
-        apply_action_data_to_action(actions_data[action_type], action, frame_count)
+        apply_action_data_to_action(
+            actions_data[action_type], action, frame_count)
 
         actions[action_type] = action
 
@@ -298,17 +349,21 @@ def animation_to_obj(animation, armature, is_ped_animation):
     animation_obj.animation_properties.hash = animation.hash
     animation_obj.animation_properties.frame_count = animation.frame_count
 
-    actions_data = combine_sequences_and_convert_to_groups(animation, armature, is_ped_animation)
-    actions = actions_data_to_actions(animation.hash, actions_data, armature, animation.frame_count)
+    actions_data = combine_sequences_and_convert_to_groups(
+        animation, armature, is_ped_animation)
+    actions = actions_data_to_actions(
+        animation.hash, actions_data, armature, animation.frame_count)
 
     if 'base' in actions:
         animation_obj.animation_properties.base_action = actions['base']
 
     if 'root_motion_location' in actions:
-        animation_obj.animation_properties.root_motion_location_action = actions['root_motion_location']
+        animation_obj.animation_properties.root_motion_location_action = actions[
+            'root_motion_location']
 
     if 'root_motion_rotation' in actions:
-        animation_obj.animation_properties.root_motion_rotation_action = actions['root_motion_rotation']
+        animation_obj.animation_properties.root_motion_rotation_action = actions[
+            'root_motion_rotation']
 
     return animation_obj
 
@@ -328,8 +383,10 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
 
         clip_animation = clip_obj.clip_properties.animations.add()
         clip_animation.animation = animations_obj_map[clip.animation_hash]
-        clip_animation.start_frame = int((clip.start_time / animation_data.duration) * animation_data.frame_count)
-        clip_animation.end_frame = int((clip.end_time / animation_data.duration) * animation_data.frame_count)
+        clip_animation.start_frame = int(
+            (clip.start_time / animation_data.duration) * animation_data.frame_count)
+        clip_animation.end_frame = int(
+            (clip.end_time / animation_data.duration) * animation_data.frame_count)
     elif clip.type == 'AnimationList':
         clip_obj.clip_properties.duration = clip.duration
 
@@ -338,9 +395,10 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
 
             clip_animation = clip_obj.clip_properties.animations.add()
             clip_animation.animation = animations_obj_map[animation.animation_hash]
-            clip_animation.start_frame = int((animation.start_time / animation_data.duration) * animation_data.frame_count)
-            clip_animation.end_frame = int((animation.end_time / animation_data.duration) * animation_data.frame_count)
-
+            clip_animation.start_frame = int(
+                (animation.start_time / animation_data.duration) * animation_data.frame_count)
+            clip_animation.end_frame = int(
+                (animation.end_time / animation_data.duration) * animation_data.frame_count)
 
     return clip_obj
 
@@ -361,7 +419,8 @@ def create_clip_dictionary_template(name, armature):
 
 
 def clip_dictionary_to_obj(clip_dictionary, name, armature, armature_obj):
-    clip_dictionary_obj, clips_obj, animations_obj = create_clip_dictionary_template(name, armature)
+    clip_dictionary_obj, clips_obj, animations_obj = create_clip_dictionary_template(
+        name, armature)
 
     is_ped_animation = False
 
@@ -376,7 +435,8 @@ def clip_dictionary_to_obj(clip_dictionary, name, armature, armature_obj):
     for animation in clip_dictionary.animations:
         animations_map[animation.hash] = animation
 
-        animation_obj = animation_to_obj(animation, armature_obj, is_ped_animation)
+        animation_obj = animation_to_obj(
+            animation, armature_obj, is_ped_animation)
         animation_obj.parent = animations_obj
 
         animations_obj_map[animation.hash] = animation_obj

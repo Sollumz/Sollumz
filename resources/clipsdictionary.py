@@ -3,6 +3,7 @@ from xml.etree import ElementTree as ET
 from inspect import isclass
 from math import sqrt
 
+
 class YCD:
 
     file_extension = ".ycd.xml"
@@ -206,7 +207,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'StaticQuaternion'
 
         def get_value(self, frame_id, channel_values):
-          return self.value
+            return self.value
 
     class StaticVector3(Channel):
         type = 'StaticVector3'
@@ -217,7 +218,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'StaticVector3'
 
         def get_value(self, frame_id, channel_values):
-          return self.value
+            return self.value
 
     class StaticFloat(Channel):
         type = 'StaticFloat'
@@ -228,7 +229,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'StaticFloat'
 
         def get_value(self, frame_id, channel_values):
-          return self.value
+            return self.value
 
     class RawFloat(Channel):
         type = 'RawFloat'
@@ -239,7 +240,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'RawFloat'
 
         def get_value(self, frame_id, channel_values):
-          return self.values[frame_id % len(self.values)]
+            return self.values[frame_id % len(self.values)]
 
     class QuantizeFloat(Channel):
         type = 'QuantizeFloat'
@@ -252,7 +253,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'QuantizeFloat'
 
         def get_value(self, frame_id, channel_values):
-          return self.values[frame_id % len(self.values)]
+            return self.values[frame_id % len(self.values)]
 
     class IndirectQuantizeFloat(QuantizeFloat):
         type = 'IndirectQuantizeFloat'
@@ -263,7 +264,7 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'IndirectQuantizeFloat'
 
         def get_value(self, frame_id, channel_values):
-          return self.values[(self.frames[frame_id % len(self.frames)]) % len(self.values)]
+            return self.values[(self.frames[frame_id % len(self.frames)]) % len(self.values)]
 
     class LinearFloat(QuantizeFloat):
         type = 'LinearFloat'
@@ -283,7 +284,8 @@ class ChannelsListProperty(ItemTypeListProperty):
             self.type = 'CachedQuaternion1'
 
         def get_value(self, frame_id, channel_values):
-            vec_len = Vector((channel_values[0], channel_values[1], channel_values[2])).length
+            vec_len = Vector(
+                (channel_values[0], channel_values[1], channel_values[2])).length
 
             return sqrt(max(1.0 - vec_len * vec_len, 0))
 

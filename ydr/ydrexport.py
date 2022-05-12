@@ -401,7 +401,8 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
     if drawable_model_parent.type == 'BONE':
         parent_bone = obj.parent_bone
         if parent_bone != None and parent_bone != '':
-            drawable_model_bone_index = drawable_model_parent.data.bones[parent_bone].bone_properties.tag
+            drawable_model_bone_index = drawable_model_parent.data.bones[
+                parent_bone].bone_properties.tag
             drawable_model.bone_index = drawable_model_bone_index
         else:
             drawable_model.bone_index = 0
