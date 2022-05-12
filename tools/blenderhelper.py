@@ -176,10 +176,10 @@ def find_child_by_type(parent, sollum_type):
 
 
 def build_tag_bone_map(armature):
-    if (armature is None):
+    if armature is None:
         return None
 
-    if (armature.pose is None):
+    if armature.pose is None:
         return None
 
     tag_bone_map = {}
@@ -190,10 +190,10 @@ def build_tag_bone_map(armature):
 
 
 def build_name_bone_map(armature):
-    if (armature is None):
+    if armature is None:
         return None
 
-    if (armature.pose is None):
+    if armature.pose is None:
         return None
 
     tag_bone_map = {}
@@ -204,10 +204,10 @@ def build_name_bone_map(armature):
 
 
 def build_bone_map(armature):
-    if (armature is None):
+    if armature is None:
         return None
 
-    if (armature.pose is None):
+    if armature.pose is None:
         return None
 
     tag_bone_map = {}

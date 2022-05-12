@@ -119,7 +119,7 @@ class ElementTree(Element):
         for child in vars(self).values():
             if isinstance(child, Element):
                 element = child.to_xml()
-                if(element is not None):
+                if element is not None:
                     root.append(element)
             elif isinstance(child, AttributeProperty):
                 root.set(child.name, str(child.value))

@@ -62,7 +62,7 @@ def get_location_from_sequence_data(sequence_data, frame_id, p_bone, is_convert_
 
     mat = p_bone.bone.matrix_local
 
-    if (p_bone.bone.parent is not None):
+    if p_bone.bone.parent is not None:
         mat = p_bone.bone.parent.matrix_local.inverted() @ p_bone.bone.matrix_local
 
     mat_decomposed = mat.decompose()

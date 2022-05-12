@@ -278,5 +278,5 @@ def create_collision_material_from_type(materialtype: str):
 
     for i in range(len(collisionmats)):
         type = collisionmats[i].name
-        if(type == materialtype):
+        if type == materialtype:
             return create_collision_material_from_index(i)

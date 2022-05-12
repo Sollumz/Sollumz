@@ -139,7 +139,7 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                 layout.operator(SOLLUMZ_OT_create_clip.bl_idname)
                 layout.operator(SOLLUMZ_OT_create_animation.bl_idname)
 
-                if (active_object.sollum_type == SollumType.ANIMATION):
+                if active_object.sollum_type == SollumType.ANIMATION:
                     layout.operator(SOLLUMZ_OT_animation_fill.bl_idname)
             else:
                 layout.operator(SOLLUMZ_OT_create_clip_dictionary.bl_idname)

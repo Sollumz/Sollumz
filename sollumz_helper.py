@@ -99,8 +99,8 @@ def has_embedded_textures(obj):
     for mat in get_used_materials(obj):
         nodes = mat.node_tree.nodes
         for node in nodes:
-            if(isinstance(node, bpy.types.ShaderNodeTexImage)):
-                if(node.texture_properties.embedded == True):
+            if isinstance(node, bpy.types.ShaderNodeTexImage):
+                if node.texture_properties.embedded == True:
                     return True
     return False
 

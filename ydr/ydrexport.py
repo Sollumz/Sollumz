@@ -19,10 +19,10 @@ from math import degrees, pi
 def get_used_materials(obj):
     materials = []
     for child in get_children_recursive(obj):
-        if(child.sollum_type == SollumType.DRAWABLE_GEOMETRY):
+        if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             mats = child.data.materials
             for mat in mats:
-                if(mat.sollum_type == MaterialType.SHADER):
+                if mat.sollum_type == MaterialType.SHADER:
                     if mat not in materials:
                         materials.append(mat)
     return materials
@@ -106,8 +106,8 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
     for mat in materials:
         nodes = mat.node_tree.nodes
         for n in nodes:
-            if(isinstance(n, bpy.types.ShaderNodeTexImage)):
-                if(n.texture_properties.embedded == True):
+            if isinstance(n, bpy.types.ShaderNodeTexImage):
+                if n.texture_properties.embedded == True:
                     has_td = True
                     texture_item = texture_item_from_node(n)
                     if texture_item.name in t_names:
@@ -120,7 +120,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
                         folderpath = os.path.join(exportpath, foldername)
                         txtpath = bpy.path.abspath(n.image.filepath)
                         if os.path.isfile(txtpath):
-                            if(os.path.isdir(folderpath) == False):
+                            if os.path.isdir(folderpath) == False:
                                 os.mkdir(folderpath)
                             dstpath = folderpath + "\\" + \
                                 os.path.basename(txtpath)
@@ -134,7 +134,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
                         messages.append(
                             f"Material: {mat.name} is missing the {n.name} texture and will not be exported.")
 
-    if(has_td):
+    if has_td:
         return texture_dictionary, messages
     else:
         return None, []
@@ -142,7 +142,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
 
 def get_blended_verts(mesh, vertex_groups, bones=None):
     bone_index_map = {}
-    if(bones is not None):
+    if bones is not None:
         for i in range(len(bones)):
             bone_index_map[bones[i].name] = i
     else:
@@ -172,7 +172,7 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
                 if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
                     bw[valid_weights] = weight
                     bi[valid_weights] = bone_index
-                    if (max_weights < weight):
+                    if max_weights < weight:
                         max_weights_index = valid_weights
                         max_weights = weight
                     valid_weights += 1
@@ -464,7 +464,7 @@ def bone_from_object(obj):
         bone.flags.append("Unk0")
 
     mat = obj.matrix_local
-    if (obj.parent is not None):
+    if obj.parent is not None:
         mat = obj.parent.matrix_local.inverted() @ obj.matrix_local
 
     mat_decomposed = mat.decompose()

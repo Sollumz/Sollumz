@@ -119,7 +119,7 @@ def polygons_to_obj(polygons):
                 vertices[vertex] = idx
                 verts.append(vert)
             face.append(idx)
-            if (len(face) == maxtcount):
+            if len(face) == maxtcount:
                 indices.append(face)
                 face = []
 

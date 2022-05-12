@@ -360,7 +360,7 @@ def bound_to_obj(bound):
 
 
 def composite_to_obj(bounds, name, from_drawable=False):
-    if(from_drawable):
+    if from_drawable:
         composite = bounds
     else:
         composite = bounds.composite

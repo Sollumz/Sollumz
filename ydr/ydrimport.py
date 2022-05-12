@@ -30,7 +30,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                     if param.name == n.name:
                         texture_path = os.path.join(
                             texture_folder, param.texture_name + ".dds")
-                        if(os.path.isfile(texture_path)):
+                        if os.path.isfile(texture_path):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
                             n.image = img
@@ -75,7 +75,7 @@ def shadergroup_to_materials(shadergroup, filepath):
 
                                     for prop in dir(n.texture_flags):
                                         for uf in texture.usage_flags:
-                                            if(uf.lower() == prop):
+                                            if uf.lower() == prop:
                                                 setattr(
                                                     n.texture_flags, prop, True)
 
@@ -141,7 +141,7 @@ def set_bone_properties(bone, armature):
     # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
     flags_restricted = set(["LimitRotation", "Unk0"])
     for _flag in bone.flags:
-        if (_flag in flags_restricted):
+        if _flag in flags_restricted:
             continue
 
         flag = bl_bone.bone_properties.flags.add()
@@ -365,7 +365,7 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
                 for i in range(0, 4):
                     weight = vertex.blendweights[i] / 255
                     index = vertex.blendindices[i]
-                    if (weight > 0.0):
+                    if weight > 0.0:
                         obj.vertex_groups[index].add(
                             [vertex_idx], weight, "ADD")
 

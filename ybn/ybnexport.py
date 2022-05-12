@@ -164,7 +164,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
             # vert colors
             for poly in mesh.polygons:
                 for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-                    if(len(mesh.vertex_colors) > 0):
+                    if len(mesh.vertex_colors) > 0:
                         geometry.vertex_colors.append(
                             mesh.vertex_colors[0].data[loop_index].color)
 

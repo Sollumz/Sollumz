@@ -262,7 +262,7 @@ class VertexColorProperty(ElementProperty):
         element = ET.Element(self.tag_name)
         element.text = '\n'
 
-        if(len(self.value) == 0):
+        if len(self.value) == 0:
             return None
 
         for color in self.value:

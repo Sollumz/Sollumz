@@ -353,7 +353,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
             if ymap.entities:
                 for obj in context.collection.all_objects:
                     for entity in ymap.entities:
-                        if(entity.archetype_name == obj.name and obj.name in context.view_layer.objects):
+                        if entity.archetype_name == obj.name and obj.name in context.view_layer.objects:
                             found = True
                             self.apply_entity_properties(obj, entity)
                 if found:
@@ -444,7 +444,7 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
 
         objs = []
         for obj in context.collection.objects:
-            if(obj.sollum_type == SollumType.DRAWABLE):
+            if obj.sollum_type == SollumType.DRAWABLE:
                 objs.append(obj)
 
         if len(objs) == 0:
@@ -503,7 +503,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if len(objs) > 0:
             for obj in objs:
-                if(obj.sollum_type == SollumType.DRAWABLE_GEOMETRY):
+                if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
                     self.paint_mesh(obj.data, context.scene.vert_paint_color)
                     self.messages.append(
                         f"{obj.name} was successfully painted.")

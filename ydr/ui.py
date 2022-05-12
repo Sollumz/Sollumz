@@ -250,7 +250,7 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        if (context.active_pose_bone is None):
+        if context.active_pose_bone is None:
             return
 
         bone = context.active_pose_bone.bone
@@ -288,16 +288,16 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object is None):
+        if context.active_object is None:
             return
 
         mat = aobj.active_material
-        if(mat is None):
+        if mat is None:
             return
 
         nodes = mat.node_tree.nodes
         for n in nodes:
-            if(isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz):
+            if isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz:
                 box = layout.box()
                 row = box.row(align=True)
                 row.label(text="Texture Type: " + n.name)
@@ -311,7 +311,7 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                         text="Image Texture has no linked image.", icon="ERROR")
                 row = box.row(align=True)
                 row.prop(n.texture_properties, "embedded")
-                if(n.texture_properties.embedded == False):
+                if n.texture_properties.embedded == False:
                     continue
                 row.prop(n.texture_properties, "format")
                 row.prop(n.texture_properties, "usage")
@@ -373,17 +373,17 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object is None):
+        if context.active_object is None:
             return
 
         mat = aobj.active_material
-        if(mat is None):
+        if mat is None:
             return
 
         nodes = mat.node_tree.nodes
         for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-            if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):
-                if(n.name[-1] == "x"):
+            if isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz:
+                if n.name[-1] == "x":
                     row = layout.row()
                     row.label(text=n.name[:-2])
 
