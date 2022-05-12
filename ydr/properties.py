@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_properties import DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
 from bpy.path import basename

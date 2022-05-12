@@ -1,6 +1,5 @@
 import bpy
-from mathutils import Vector, Matrix, Quaternion
-from math import radians
+from mathutils import Vector, Matrix
 from .properties import *
 from ..tools.blenderhelper import find_parent
 

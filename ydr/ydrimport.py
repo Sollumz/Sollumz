@@ -9,7 +9,6 @@ from ..resources.drawable import *
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
 from ..tools.utils import *
 from ..tools.blenderhelper import *
-from .properties import LightFlags
 from ..tools.drawablehelper import join_drawable_geometries
 
 

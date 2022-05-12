@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_properties import items_from_enums, SOLLUMZ_UI_NAMES, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
 from ..resources.flag_preset import FlagPresetsFile

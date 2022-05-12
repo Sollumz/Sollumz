@@ -1,10 +1,9 @@
 import bpy
 from mathutils import Matrix, Vector
 from ..tools.utils import multiW
-from ..tools.meshhelper import create_plane, create_uv_layer
-from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
+from ..tools.meshhelper import create_uv_layer
 from ..resources.fragment import YFT
-from ..tools.fragmenthelper import shattermap_to_image, shattermap_to_material
+from ..tools.fragmenthelper import shattermap_to_material
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType

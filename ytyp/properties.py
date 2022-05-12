@@ -1,5 +1,4 @@
 import bpy
-from bpy.props import PointerProperty
 
 from ..tools.meshhelper import get_children_recursive
 

@@ -10,7 +10,6 @@ from ..resources.ymap import *
 from .properties import *
 from bpy_extras.io_utils import ImportHelper
 from bpy_extras.view3d_utils import location_3d_to_region_2d
-from .gizmos import PortalGizmoGroup
 
 import os
 import traceback

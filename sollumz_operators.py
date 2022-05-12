@@ -1,9 +1,8 @@
 import traceback
 import os
 import pathlib
-from abc import abstractmethod
 import bpy
-from bpy_extras.io_utils import ImportHelper, ExportHelper
+from bpy_extras.io_utils import ImportHelper
 from .sollumz_helper import *
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
 from .resources.drawable import YDR, YDD

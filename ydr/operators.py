@@ -1,5 +1,5 @@
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, TimeFlags
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import *

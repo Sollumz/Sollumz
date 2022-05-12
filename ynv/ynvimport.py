@@ -1,4 +1,3 @@
-import math
 from ..tools.meshhelper import create_box
 from ..resources.navmesh import YNV
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType

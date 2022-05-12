@@ -1,5 +1,4 @@
 from .codewalker_xml import *
-from xml.etree import ElementTree as ET
 
 
 class YND:

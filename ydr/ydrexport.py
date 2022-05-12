@@ -1,6 +1,5 @@
 import os
 import shutil
-import collections
 import bmesh
 import bpy
 import zlib

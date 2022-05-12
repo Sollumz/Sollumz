@@ -1,9 +1,8 @@
 import bpy
 
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_POLYGON_TYPES
-from ..ybn.collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
-from mathutils import Vector, Matrix
+from ..tools.meshhelper import create_box
+from mathutils import Vector
 
 
 def create_bound_shape(type):

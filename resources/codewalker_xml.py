@@ -2,7 +2,7 @@
 from mathutils import Vector, Quaternion, Matrix
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod
 from dataclasses import dataclass
-from typing import Any, Text
+from typing import Any
 from xml.etree import ElementTree as ET
 from numpy import float32
 

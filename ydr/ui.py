@@ -1,9 +1,8 @@
 import bpy
 from .shader_materials import *
 from .operators import *
-from .properties import LightFlags
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
-from ..sollumz_properties import SollumType, TimeFlags
+from ..sollumz_properties import SollumType
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 
 
