@@ -328,6 +328,7 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
     # create mesh
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY])
     mesh.from_pydata(vertices, [], index_buffer)
+    mesh.validate()
 
     # set normals
     if has_normals:

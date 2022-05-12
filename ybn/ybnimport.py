@@ -1,3 +1,4 @@
+from tabnanny import verbose
 import bpy
 from .properties import CollisionMatFlags
 from ..resources.bound import *
@@ -206,6 +207,7 @@ def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
         tri_materials.append(poly.material_index)
 
     obj.data.from_pydata(verts, [], faces)
+    obj.data.validate()
     bpy.context.collection.objects.link(obj)
     obj.parent = parent
 
