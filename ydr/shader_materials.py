@@ -315,7 +315,7 @@ def link_detailed_normal(node_tree, bumptex, dtltex, spectex):
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
     mathns = []
-    for i in range(9):
+    for _ in range(9):
         math = node_tree.nodes.new("ShaderNodeVectorMath")
         mathns.append(math)
     nrm = node_tree.nodes.new("ShaderNodeNormalMap")
@@ -393,7 +393,7 @@ def create_pixel_tint_nodes(node_tree, tex, tinttex, tintflags):
     mathns = []
     locx = 0
     locy = 50
-    for i in range(6):
+    for _ in range(6):
         math = node_tree.nodes.new("ShaderNodeMath")
         math.location.x = locx
         math.location.y = locy
@@ -699,7 +699,7 @@ def create_terrain_shader(mat, shader, filename):
                 f"Unknown shader parameter! {param.type} {param.name}")
 
     mixns = []
-    for i in range(8 if tm else 7):
+    for _ in range(8 if tm else 7):
         mix = node_tree.nodes.new("ShaderNodeMixRGB")
         mixns.append(mix)
 

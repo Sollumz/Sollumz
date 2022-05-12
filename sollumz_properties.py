@@ -335,7 +335,7 @@ class FlagPropertyGroup:
     def update_flags_total(self, context):
         # Ensure string can be converted to int
         try:
-            value = int((self.total))
+            int((self.total))
         except ValueError:
             self.total = "0"
 

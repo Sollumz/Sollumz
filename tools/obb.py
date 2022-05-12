@@ -100,7 +100,6 @@ def get_obb(verts):
 
     min_mx = Matrix.Identity(4)
     min_box = bbox_orient(hull_verts, min_mx)
-    min_axis = Vector((0, 0, 1))
     min_V = bbox_vol(min_box)
     axes = []
     # Iterate through all degrees to obtain a more predictable result
@@ -126,7 +125,7 @@ def get_obb(verts):
                 min_box = box
                 min_axis = axis
                 min_mx = rot_mx
-    elapsed_time = time.time() - start
+
     bme.free()
     fmx = tr_mx @ r_mx @ min_mx.inverted_safe() @ sc_mx
 

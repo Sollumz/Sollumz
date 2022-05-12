@@ -247,7 +247,7 @@ class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.
                 mat = create_collision_material_from_index(
                     context.scene.collision_material_index)
                 obj.data.materials.append(mat)
-            except Exception as e:
+            except Exception:
                 self.warning(
                     f"Failure to add material to {obj.name}: {traceback.format_exc()}")
 

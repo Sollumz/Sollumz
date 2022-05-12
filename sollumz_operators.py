@@ -217,7 +217,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                                    for scene in bpy.data.scenes if scene.objects)
 
             # this is how you can create the folder names if the user clicks "use_batch_own_dir"
-            for data, name, data_obj_paramname in data_block:
+            for data, _, data_obj_paramname in data_block:
                 objects = getattr(
                     data, data_obj_paramname).values()
 
@@ -490,7 +490,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     def paint_map(self, mesh, map, color):
         i = 0
         for poly in mesh.polygons:
-            for idx in poly.loop_indices:
+            for _ in poly.loop_indices:
                 map[i].color = color
                 i += 1
 
@@ -524,7 +524,7 @@ class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 1"
 
     def run(self, context):
-        brush = get_terrain_texture_brush(1)
+        get_terrain_texture_brush(1)
         return True
 
 
@@ -534,7 +534,7 @@ class SOLLUMZ_OT_paint_terrain_tex2(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 2"
 
     def run(self, context):
-        brush = get_terrain_texture_brush(2)
+        get_terrain_texture_brush(2)
         return True
 
 
@@ -544,7 +544,7 @@ class SOLLUMZ_OT_paint_terrain_tex3(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 3"
 
     def run(self, context):
-        brush = get_terrain_texture_brush(3)
+        get_terrain_texture_brush(3)
         return True
 
 
@@ -554,7 +554,7 @@ class SOLLUMZ_OT_paint_terrain_tex4(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 4"
 
     def run(self, context):
-        brush = get_terrain_texture_brush(4)
+        get_terrain_texture_brush(4)
         return True
 
 
@@ -564,7 +564,7 @@ class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Alpha"
 
     def run(self, context):
-        brush = get_terrain_texture_brush(5)
+        get_terrain_texture_brush(5)
         return True
 
 

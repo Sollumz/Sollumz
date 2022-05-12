@@ -598,7 +598,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 elif arch_xml.type == "CMloArchetypeDef":
                     arch.type = ArchetypeType.MLO
                     arch.mlo_flags.total = str(arch_xml.mlo_flags)
-                    for entity_index, entity_xml in enumerate(arch_xml.entities):
+                    for entity_xml in arch_xml.entities:
                         entity = arch.entities.add()
                         entity.position = entity_xml.position
                         entity.rotation = entity_xml.rotation

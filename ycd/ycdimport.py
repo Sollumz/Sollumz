@@ -419,7 +419,7 @@ def create_clip_dictionary_template(name, armature):
 
 
 def clip_dictionary_to_obj(clip_dictionary, name, armature, armature_obj):
-    clip_dictionary_obj, clips_obj, animations_obj = create_clip_dictionary_template(
+    _, clips_obj, animations_obj = create_clip_dictionary_template(
         name, armature)
 
     is_ped_animation = False
