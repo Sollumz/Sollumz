@@ -62,11 +62,7 @@ class Shader(ElementTree):
         for layout in self.layouts:
             if layout.vertex_semantic == vertex_semantic:
                 return layout
-        #error = f"{vertex_semantic} layout is not found in the shader '{self.name}'"
-        #error += "\nThe possible layouts you can have are"
-        # for l in self.layouts:
-        #    error += f", {l.vertex_semantic}"
-        #raise Exception(error)
+
         if is_skinned:
             for layout in self.layouts:
                 if "BlendWeights" in layout.value:

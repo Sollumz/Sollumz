@@ -78,7 +78,6 @@ class ChildrenItem(ElementTree):
         self.unk_float = ValueProperty("UnkFloat")
         self.unk_vec = VectorProperty("UnkVec")
         self.inertia_tensor = QuaternionProperty("InertiaTensor")
-        # self.event_set = None # ?????????? FIND
         self.drawable = FragmentDrawable()
 
 

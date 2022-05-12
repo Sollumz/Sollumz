@@ -52,9 +52,6 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
                 actions.append(
                     animation_properties.root_motion_location_action)
 
-            # if animation_properties.root_motion_rotation_action != None:
-            #     actions.append(animation_properties.root_motion_rotation_action)
-
             for action in actions:
                 if action.name not in groups:
                     groups[action.name] = []

@@ -19,7 +19,6 @@ class DrawableProperties(bpy.types.PropertyGroup):
 class DrawableModelProperties(bpy.types.PropertyGroup):
     render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
     flags: bpy.props.IntProperty(name="Flags", default=0)
-    # bone_index: bpy.props.IntProperty(name="Bone Index", default=0)
     unknown_1: bpy.props.IntProperty(name="Unknown 1", default=0)
     sollum_lod: bpy.props.EnumProperty(
         items=items_from_enums(LODLevel),
@@ -36,7 +35,6 @@ class ShaderProperties(bpy.types.PropertyGroup):
 
 
 class TextureFlags(bpy.types.PropertyGroup):
-    # usage flags
     not_half: bpy.props.BoolProperty(name="NOT_HALF", default=False)
     hd_split: bpy.props.BoolProperty(name="HD_SPLIT", default=False)
     x2: bpy.props.BoolProperty(name="X2", default=False)
@@ -67,14 +65,12 @@ class TextureFlags(bpy.types.PropertyGroup):
 
 class TextureProperties(bpy.types.PropertyGroup):
     embedded: bpy.props.BoolProperty(name="Embedded", default=False)
-    ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     usage: bpy.props.EnumProperty(
         items=items_from_enums(TextureUsage),
         name="Usage",
         default=TextureUsage.DIFFUSE
     )
 
-    ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     format: bpy.props.EnumProperty(
         items=items_from_enums(TextureFormat),
         name="Format",
@@ -203,9 +199,8 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     unk32: bpy.props.BoolProperty(
         name="Unk32", update=FlagPropertyGroup.update_flag)
 
+
 # Handler sets the default value of the ShaderMaterials collection on blend file load
-
-
 @persistent
 def on_file_loaded(_):
     bpy.context.scene.shader_materials.clear()

@@ -27,7 +27,6 @@ def add_material(material, mat_map, materials):
 
         # Assign flags
         for flag_name in CollisionMatFlags.__annotations__.keys():
-            # flag_exists = getattr(material.collision_flags, flag_name)
             if flag_name in material.collision_flags:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
         idx = len(mat_map)
@@ -161,9 +160,6 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
         mesh.calc_loop_triangles()
         if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
             found = True
-            # mats
-            # for material in mesh.materials:
-            #     add_material(material, materials)
 
             # vert colors
             for poly in mesh.polygons:

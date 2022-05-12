@@ -316,9 +316,8 @@ SOLLUMZ_UI_NAMES = {
     AssetType.ASSETLESS: "Assetless"
 }
 
+
 # Generate items from provided enums
-
-
 def items_from_enums(*enums):
     items = []
     for enum in enums:
@@ -472,7 +471,6 @@ class EntityProperties:
         default=EntityPriorityLevel.PRI_REQUIRED,
         options={"HIDDEN"}
     )
-    # extensions?
     ambient_occlusion_multiplier: bpy.props.FloatProperty(
         name="Ambient Occlusion Multiplier", default=255)
     artificial_ambient_occlusion: bpy.props.FloatProperty(

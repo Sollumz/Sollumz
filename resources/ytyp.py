@@ -272,6 +272,6 @@ class CMapTypes(ElementTree):
         self.extensions = ExtensionsListProperty()
         self.archetypes = ArchetypesListProperty()
         self.name = TextProperty("name")
-        # Investigate: Not used in any ytyp file in the game?
+        # TODO: Investigate: Not used in any ytyp file in the game?
         # self.dependencies = DependenciesListProperty()
         self.composite_entity_type = CompositeEntityTypeListProperty()

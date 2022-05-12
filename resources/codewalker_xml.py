@@ -246,7 +246,7 @@ class TextProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return TextProperty(element.tag, element.text)  # .strip())
+        return TextProperty(element.tag, element.text)
 
     def to_xml(self):
         if not self.value or len(self.value) < 1:

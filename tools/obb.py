@@ -70,10 +70,6 @@ def get_obb_extents(obb):
 
 
 def get_obb(verts):
-    start = time.time()
-    # rand_sample = 400  #randomly select this many directions on a solid hemisphere to measure from
-    # spin_res = 180   #180 steps is 0.5 degrees
-
     world_mx = Matrix.Identity(4)
     scale = world_mx.to_scale()
     trans = world_mx.to_translation()

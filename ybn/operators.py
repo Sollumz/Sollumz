@@ -59,23 +59,10 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             center = world_matrix @ (bbmin + bbmax) / 2
             local_center = (bbmin + bbmax) / 2
 
-            # long, short = get_short_long_edge(bbmin, bbmax)
-
-            # if context.scene.poly_edge == 'short':
-            #     t1 = long
-            #     long = short
-            #     short = t1
-            #     world_matrix = Matrix.Rotation(
-            #         degrees(90), 4, 'Z') @ world_matrix
-
             if type == SollumType.BOUND_POLY_BOX:
                 create_box_from_extents(
                     pobj.data, bbmin - local_center, bbmax - local_center)
-            # elif type == SollumType.BOUND_POLY_SPHERE:
-            #     pobj.bound_radius = (bbmax - bbmin).magnitude / 2
-            # elif type == SollumType.BOUND_POLY_CAPSULE or type == SollumType.BOUND_POLY_CYLINDER:
-            #     pobj.bound_radius = short / 2
-            #     pobj.bound_length = long
+
             pobj.matrix_world = world_matrix
             pobj.location = center
         else:

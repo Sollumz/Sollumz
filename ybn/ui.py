@@ -57,7 +57,6 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
         obj = context.active_object
         self.layout.use_property_split = True
         grid = self.layout.grid_flow(columns=2, row_major=True)
-        # if obj.sollum_type != SollumType.BOUND_GEOMETRY and obj.sollum_type != SollumType.BOUND_GEOMETRYBVH and obj.sollum_type != SollumType.BOUND_BOX:
         if not obj.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH, SollumType.BOUND_BOX, SollumType.BOUND_POLY_BOX, SollumType.BOUND_POLY_TRIANGLE]:
             grid.prop(obj, 'bound_radius',
                       text='SphereRadius' if obj.sollum_type in BOUND_TYPES else 'Radius')
@@ -87,11 +86,9 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
         obj = context.active_object
         layout = self.layout
         layout.label(text="Composite Flags 1")
-        # layout.separator(factor=0.5)
         generate_flags(layout, obj.composite_flags1)
         layout.separator_spacer()
         layout.label(text="Composite Flags 2")
-        # layout.separator(factor=0.5)
         generate_flags(layout, obj.composite_flags2)
 
 
@@ -112,7 +109,6 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
     def draw(self, context):
         mat = context.active_object.active_material
         layout = self.layout
-        # box.use_property_split = False
         layout.label(text="Flags")
         grid = layout.grid_flow(columns=4, even_columns=True, even_rows=True)
         for prop_name in CollisionMatFlags.__annotations__:
@@ -126,7 +122,6 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         name = collisionmats[item.index].ui_name
-        # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
             row.label(text=name, icon='MATERIAL')
@@ -142,7 +137,6 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
             row.label(text=item.name, icon='BOOKMARKS')

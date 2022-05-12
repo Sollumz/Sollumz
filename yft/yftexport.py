@@ -13,7 +13,6 @@ def get_group_objects(fragment, index=0):
     groups = []
     for child in fragment.children:
         if child.sollum_type == SollumType.FRAGGROUP:
-            # print(f"{child.name} {index}")
             groups.append(child)
             index += 1
     for g in groups:

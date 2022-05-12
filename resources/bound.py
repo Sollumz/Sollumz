@@ -120,7 +120,6 @@ class VerticesProperty(ElementProperty):
         text = ['\n']
 
         for vertex in self.value:
-            # Should be a list of Vectors
             if not isinstance(vertex, Vector):
                 raise TypeError(
                     f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")

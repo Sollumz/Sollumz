@@ -12,7 +12,6 @@ def create_bound_shape(type):
     if pobj.sollum_type in BOUND_POLYGON_TYPES and type != SollumType.BOUND_POLY_BOX and type != SollumType.BOUND_POLY_TRIANGLE:
         constraint = pobj.constraints.new(type='LIMIT_SCALE')
         constraint.use_transform_limit = True
-        # Why blender? So ugly
         constraint.use_min_x = True
         constraint.use_min_y = True
         constraint.use_min_z = True
@@ -115,7 +114,6 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
 
             if replace_original:
                 poly_mesh.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]
-                # set properties
                 poly_mesh.sollum_type = SollumType.BOUND_POLY_TRIANGLE
             else:
                 poly_mesh.data = obj.data.copy()

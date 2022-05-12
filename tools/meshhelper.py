@@ -99,8 +99,6 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
 
 def create_disc(mesh, radius=1, length=0.08):
     bm = bmesh.new()
-    # rot_mat = Matrix.Rotation(radians(90.0), 4, "Y") @ lookatlh(
-    #     Vector((0, 0, 0)), Vector((1, 0, 0)), Vector((0, 0, 1)))
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
 
     kwargs = {}
@@ -151,7 +149,6 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     bottom = []
     bottom_faces = []
 
-    # amount = length - (diameter * 2)
     amount = (length - diameter) * 2
     vec = Vector((0, 0, amount))
 
@@ -241,10 +238,6 @@ def get_short_long_edge(bbmin, bbmax):
         v1 = bbox.vertices[edge.vertices[0]].co
         v2 = bbox.vertices[edge.vertices[1]].co
         edge_lengths.append(get_distance_of_vectors(v1, v2))
-    # edge_lengths = np.array(edge_lengths)
-    # height = edge_lengths.max(axis=0)
-    # width = edge_lengths.min(axis=0)
-    # return height, width
     return max(edge_lengths), min(edge_lengths)
 
 

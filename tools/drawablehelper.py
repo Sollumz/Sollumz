@@ -59,7 +59,6 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
             obj.name = name + '_old'
             dobj.name = name
 
-        # set properties
         obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
 
         new_obj = obj.copy()
@@ -94,11 +93,6 @@ def convert_material(material):
 
     bsdf = material.node_tree.nodes["Principled BSDF"]
 
-    # if(bsdf == None):
-    # self.messages.append(
-    # f"{material.name} Material must have a Principled BSDF node.")
-    # return None
-
     diffuse_node = None
     diffuse_input = bsdf.inputs["Base Color"]
     if diffuse_input.is_linked:
@@ -129,7 +123,6 @@ def convert_material(material):
         shader_name = "spec"
 
     new_material = create_shader(shader_name)
-    # new_mat.name = mat.name
 
     bsdf = new_material.node_tree.nodes["Principled BSDF"]
 
@@ -155,11 +148,6 @@ def convert_material_to_selected(material, shader_name):
 
     bsdf = material.node_tree.nodes["Principled BSDF"]
 
-    # if(bsdf == None):
-    # self.messages.append(
-    # f"{material.name} Material must have a Principled BSDF node.")
-    # return None
-
     diffuse_node = None
     diffuse_input = bsdf.inputs["Base Color"]
     if diffuse_input.is_linked:
@@ -182,7 +170,6 @@ def convert_material_to_selected(material, shader_name):
             normal_node = normal_map_input.links[0].from_node
 
     new_material = create_shader(shader_name)
-    # new_mat.name = mat.name
 
     bsdf = new_material.node_tree.nodes["Principled BSDF"]
 
@@ -206,7 +193,7 @@ def convert_shader_to_shader(material, shader_name):
     shader = ShaderManager.shaders[shader_name]
     new_material = create_shader(shader_name)
 
-    # todo array nodes params
+    # TODO: array nodes params
     for param in shader.parameters:
         if param.type == "Texture":
             node = try_get_node(material.node_tree, param.name)

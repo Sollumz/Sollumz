@@ -305,7 +305,6 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_order = 0
 
     def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
         self.layout.label(text="", icon="MODIFIER_DATA")
 
     def draw(self, context):
@@ -339,7 +338,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
         self.layout.label(text="", icon="PREFERENCES")
 
     def draw(self, context):
@@ -359,7 +357,6 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
         self.layout.label(text="", icon="BRUSH_DATA")
 
     def draw(self, context):
@@ -378,7 +375,6 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
         self.layout.label(text="", icon="IMAGE")
 
     def draw(self, context):
@@ -403,7 +399,6 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
         self.layout.label(text="", icon="FILE")
 
     def draw(self, context):

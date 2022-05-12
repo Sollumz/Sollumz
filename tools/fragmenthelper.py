@@ -70,8 +70,6 @@ def image_to_shattermap(img):
             value = int(img.pixels[idx * 4] * 255)
             if value == 0:
                 value = "##"
-            # elif value == 255:
-                # value = "--"
             elif value <= 15:
                 value = "0{0:X}".format(value)
             else:

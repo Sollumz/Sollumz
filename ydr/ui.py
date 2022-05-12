@@ -21,7 +21,6 @@ def draw_drawable_model_properties(self, context):
     if obj and obj.sollum_type == SollumType.DRAWABLE_MODEL:
         layout = self.layout
         layout.prop(obj.drawable_model_properties, "render_mask")
-        # layout.prop(obj.drawable_model_properties, "bone_index")
         layout.prop(obj.drawable_model_properties, "unknown_1")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
@@ -296,18 +295,9 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         if(mat is None):
             return
 
-        # only using selected nodes because if you use the node tree weird bug
-        # where if you select one of the image nodes it swaps around the order that you edit them in...
-        # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
-        # annoyying as hell
-        #selected_nodes = []
-        # for n in nodes:
-        # if(n.select == True):
-        # selected_nodes.append(n)
         nodes = mat.node_tree.nodes
         for n in nodes:
             if(isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz):
-                # if(n.name == "SpecSampler"):
                 box = layout.box()
                 row = box.row(align=True)
                 row.label(text="Texture Type: " + n.name)
@@ -325,7 +315,6 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                     continue
                 row.prop(n.texture_properties, "format")
                 row.prop(n.texture_properties, "usage")
-                #box = box.box()
                 box.label(text="Flags")
                 row = box.row()
                 row.prop(n.texture_flags, "not_half")
@@ -391,14 +380,6 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         if(mat is None):
             return
 
-        # only using selected nodes because if you use the node tree weird bug
-        # where if you select one of the image nodes it swaps around the order that you edit them in...
-        # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
-        # annoyying as hell
-        #selected_nodes = []
-        # for n in nodes:
-        # if(n.select == True):
-        # selected_nodes.append(n)
         nodes = mat.node_tree.nodes
         for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
             if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):

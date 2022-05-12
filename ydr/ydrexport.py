@@ -88,7 +88,6 @@ def texture_item_from_node(n):
     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
     texture_item.miplevels = 0
     texture_item.filename = texture_item.name + ".dds"
-    # texture_item.unk32 = 0
     for prop in dir(n.texture_flags):
         value = getattr(n.texture_flags, prop)
         if value == True:
@@ -486,7 +485,7 @@ def calculate_skeleton_unks(skel):
     # assuming those hashes/flags are all based on joaat
     # Unknown58 is related to BoneTag, Flags, Rotation, Location and Scale. Named as DataCRC so we stick to CRC-32 as a hack, since we and possibly oiv don't know how R* calc them
     # hopefully this doesn't break in game!
-    # hacky solution with inaccurate results, the implementation here is only for ensure they are unique regardless the correctness, further investigation is required
+    # hacky solution with inaccurate results, the implementation here is only to ensure they are unique regardless the correctness, further investigation is required
     if skel is None or len(skel.bones) == 0:
         return
 
@@ -636,7 +635,6 @@ def lights_from_object(obj, lights_xml, export_settings, armature_obj=None):
                                export_settings, armature_obj)
 
 
-# REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
 def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, export_settings=None, is_frag=False, write_shaders=True):
     drawable = None
     if is_frag:

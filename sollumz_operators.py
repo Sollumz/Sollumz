@@ -400,7 +400,6 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
     def entity_from_obj(self, obj):
         entity = EntityItem()
 
-        # entity.archetype_name = obj.entity_properties.archetype_name
         entity.archetype_name = obj.name
         entity.flags = int(obj.entity_properties.flags)
         entity.guid = int(obj.entity_properties.guid)
@@ -455,7 +454,7 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
         try:
             ymap = CMapData()
             name = os.path.splitext(
-                os.path.basename(context.blend_data.filepath))[0]  # use blender files name ? idk
+                os.path.basename(context.blend_data.filepath))[0]
             ymap.name = name if len(name) > 0 else "untitled"
             ymap.parent = ""  # add a property ? if so how?
             ymap.flags = 0

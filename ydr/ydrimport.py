@@ -46,8 +46,6 @@ def shadergroup_to_materials(shadergroup, filepath):
                             texture = bpy.data.images.new(
                                 name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
                             n.image = texture
-                            # n.image = bpy.data.images.new(
-                            #     name=param.texture_name, width=512, height=512)
 
                         # assign non color to normal maps
                         if "Bump" in param.name:
