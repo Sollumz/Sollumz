@@ -22,24 +22,6 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
-def make_matrix(v1, v2, v3):
-    a = v2 - v1
-    b = v3 - v1
-
-    c = a.cross(b)
-    if c.magnitude > 0:
-        c = c.normalized()
-    else:
-        raise BaseException("A B C are colinear")
-
-    b2 = c.cross(a).normalized()
-    a2 = a.normalized()
-    m = Matrix([a2, b2, c]).transposed()
-    m = Matrix.Translation(v1) @ m.to_4x4()
-
-    return m
-
-
 def poly_to_obj(poly, materials, vertices):
     if type(poly) == Box:
         obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)

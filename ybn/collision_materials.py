@@ -272,11 +272,3 @@ def create_collision_material_from_index(collisionindex: int):
         r, g, b, 1)
 
     return mat
-
-
-def create_collision_material_from_type(materialtype: str):
-
-    for i in range(len(collisionmats)):
-        type = collisionmats[i].name
-        if type == materialtype:
-            return create_collision_material_from_index(i)

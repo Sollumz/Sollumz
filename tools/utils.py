@@ -117,56 +117,6 @@ def get_max_vector_list(vecs):
     return Vector((max(x), max(y), max(z)))
 
 
-def add_vector_list(list1, list2):
-    x = list1[0] + list2[0]
-    y = list1[1] + list2[1]
-    z = list1[2] + list2[2]
-    return [x, y, z]
-
-
-def subtract_vector_list(list1, list2):
-    x = list1[0] - list2[0]
-    y = list1[1] - list2[1]
-    z = list1[2] - list2[2]
-    return [x, y, z]
-
-
-def multiple_vector_list(list, num):
-    x = list[0] * num
-    y = list[1] * num
-    z = list[2] * num
-    return [x, y, z]
-
-
-def get_vector_list_length(list):
-    sx = list[0] ** 2
-    sy = list[1] ** 2
-    sz = list[2] ** 2
-    length = (sx + sy + sz) ** 0.5
-    return length
-
-
-def divide_vectors(a, b):
-    return Vector((a.x / b.x, a.y / b.y, a.z / b.z))
-
-
-def get_closest_axis_point(axis, center, points):
-
-    closest = None
-    closest_dist = inf
-
-    for p in points:
-
-        rel = (p - center).normalized()
-        dist = (rel - axis).length
-
-        if dist < closest_dist:
-            closest = p
-            closest_dist = dist
-
-    return closest
-
-
 def get_distance_of_vectors(a, b):
     locx = b.x - a.x
     locy = b.y - a.y
@@ -189,23 +139,6 @@ def get_direction_of_vectors(a, b):
     q = Quaternion(axis, angle)
 
     return q.to_euler("XYZ")
-
-
-def lookatlh(eye, target, up):
-    mz = Vector((eye[0] - target[0], eye[1] - target[1], eye[2] -
-                target[2])).normalized()  # inverse line of sight
-    mx = Vector(up.cross(mz)).normalized()
-    my = Vector(mz.cross(mx)).normalized()
-    tx = mx.dot(eye)
-    ty = my.dot(eye)
-    tz = mz.dot(eye) * -1
-    mat = Matrix()
-    mat[0] = mx[0], mz[0], my[0], 0
-    mat[1] = mx[2], mz[2], my[2], 0
-    mat[2] = mx[1], mz[1], my[1], 0
-    mat[3] = tx, tz, ty, 1
-
-    return mat
 
 
 def multiW(m, v):

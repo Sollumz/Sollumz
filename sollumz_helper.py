@@ -69,13 +69,6 @@ def reset_sollumz_view(scene):
     scene.hide_very_low_lods = not scene.hide_very_low_lods
 
 
-def is_sollum_object_in_objects(objs):
-    for obj in objs:
-        if obj.sollum_type != SollumType.NONE:
-            return True
-    return False
-
-
 def get_sollumz_objects_from_objects(objs, sollum_type):
     robjs = []
     for obj in objs:

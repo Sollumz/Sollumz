@@ -191,17 +191,6 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def create_plane():
-    x = 1.0
-    y = 1.0
-    vert = [(-x, -y, 0.0), (x, -y, 0.0), (-x, y, 0.0), (x, y, 0.0)]
-    fac = [(0, 1, 3, 2)]
-    pl_data = bpy.data.meshes.new("Window")
-    pl_data.from_pydata(vert, [], fac)
-    pl_obj = bpy.data.objects.new("Window", pl_data)
-    return pl_obj
-
-
 def create_uv_layer(mesh, num, name, texcoords, flip_uvs=True):
     mesh.uv_layers.new()
     uv_layer = mesh.uv_layers[num]
@@ -227,18 +216,6 @@ def flip_uv(uv):
     v = (uv[1] - 1.0) * -1
 
     return [u, v]
-
-
-def get_short_long_edge(bbmin, bbmax):
-    bbox = bpy.data.meshes.new('bbox')
-    create_box_from_extents(
-        bbox, bbmin, bbmax)
-    edge_lengths = []
-    for edge in bbox.edges:
-        v1 = bbox.vertices[edge.vertices[0]].co
-        v2 = bbox.vertices[edge.vertices[1]].co
-        edge_lengths.append(get_distance_of_vectors(v1, v2))
-    return max(edge_lengths), min(edge_lengths)
 
 
 """Get min and max bounds for an object and all of its children"""
@@ -306,10 +283,6 @@ def get_children_recursive(obj):
 
 def get_sphere_radius(bbmax, bbcenter):
     return (bbmax - bbcenter).length
-
-
-def get_local_pos(obj):
-    return Vector(obj.parent.matrix_world.inverted() @ obj.matrix_world.translation)
 
 
 def prop_array_to_vector(prop, size=3):

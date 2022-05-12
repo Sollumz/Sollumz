@@ -25,14 +25,6 @@ def init():
     ordered_classes = get_ordered_classes_to_register(modules)
 
 
-def check_if_duplicates(list_of_elems):
-    ''' Check if given list contains any duplicates '''
-    if len(list_of_elems) == len(set(list_of_elems)):
-        return False
-    else:
-        return True
-
-
 def register():
     for cls in ordered_classes:
         bpy.utils.register_class(cls)
