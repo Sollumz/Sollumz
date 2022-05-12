@@ -37,7 +37,7 @@ class ItemTypeListProperty(ListProperty, AbstractClass):
                 type_map[item_class.type] = item_class
         for child in element:
             type_elem = child.find("Type")
-            if type_elem != None:
+            if type_elem is not None:
                 type = type_elem.get("value")
                 if type in type_map:
                     new.value.append(type_map[type].from_xml(child))

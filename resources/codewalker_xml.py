@@ -11,14 +11,14 @@ from numpy import float32
 
 def indent(elem: ET.Element, level=0):
     amount = "  "
-    i = "\n" + level*amount
+    i = "\n" + level * amount
     if len(elem):
         if not elem.text or not elem.text.strip():
             elem.text = i + amount
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
-            indent(elem, level+1)
+            indent(elem, level + 1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
     else:
@@ -102,7 +102,7 @@ class ElementTree(Element):
         for prop_name, obj_element in vars(new).items():
             if isinstance(obj_element, Element):
                 child = element.find(obj_element.tag_name)
-                if child != None and obj_element.tag_name == child.tag:
+                if child is not None and obj_element.tag_name == child.tag:
                     # Add element to object if tag is defined in class definition
                     setattr(new, prop_name, type(obj_element).from_xml(child))
             elif isinstance(obj_element, AttributeProperty):
@@ -119,7 +119,7 @@ class ElementTree(Element):
         for child in vars(self).values():
             if isinstance(child, Element):
                 element = child.to_xml()
-                if(element != None):
+                if(element is not None):
                     root.append(element)
             elif isinstance(child, AttributeProperty):
                 root.set(child.name, str(child.value))

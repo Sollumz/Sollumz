@@ -40,12 +40,12 @@ def get_loose_nodes(node_tree):
         ni = False
         for output in node.outputs:
             for link in output.links:
-                if link.to_node != None and link.from_node != None:
+                if link.to_node is not None and link.from_node is not None:
                     no = True
                     break
         for input in node.inputs:
             for link in input.links:
-                if link.to_node != None and link.from_node != None:
+                if link.to_node is not None and link.from_node is not None:
                     ni = True
                     break
         if no == False and ni == False:
@@ -127,7 +127,7 @@ def create_tinted_texture_from_image(img):  # move to blenderhelper.py?
 def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     mat = obj.data.materials[0]
     tint_img = get_tinted_sampler(mat)
-    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img == None:  # check here or?
+    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:  # check here or?
         return
 
     bpy.ops.object.select_all(action='DESELECT')

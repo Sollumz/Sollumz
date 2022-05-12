@@ -22,7 +22,7 @@ def shattermap_to_image(shattermap, name):
     pixels = []
     i = 0
     for row in reversed(shattermap):
-        frow = [row[x:x+2] for x in range(0, len(row), 2)]
+        frow = [row[x:x + 2] for x in range(0, len(row), 2)]
         for value in frow:
             pixels.append(get_rgb(value))
             i += 1
@@ -42,7 +42,7 @@ def longest(lst, string):
            for k, g in groupby(enumerate(lst), key=lambda x: x[1]) if k == string]
     if len(lst) > 0:
         group = max(lst, key=len)
-        return group[0][0], 1+group[-1][0]
+        return group[0][0], 1 + group[-1][0]
     else:
         return [0, 0]
 

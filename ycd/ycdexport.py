@@ -71,7 +71,7 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
         for frame_id, position in enumerate(positions):
             mat = bone.matrix_local
 
-            if (bone.parent != None):
+            if (bone.parent is not None):
                 mat = bone.parent.matrix_local.inverted() @ bone.matrix_local
 
                 mat_decomposed = mat.decompose()

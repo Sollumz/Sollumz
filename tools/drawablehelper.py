@@ -121,11 +121,11 @@ def convert_material(material):
             normal_node = normal_map_input.links[0].from_node
 
     shader_name = "default"
-    if normal_node != None and specular_node != None:
+    if normal_node is not None and specular_node is not None:
         shader_name = "normal_spec"
-    elif normal_node != None:
+    elif normal_node is not None:
         shader_name = "normal"
-    elif normal_node == None and specular_node != None:
+    elif normal_node is None and specular_node is not None:
         shader_name = "spec"
 
     new_material = create_shader(shader_name)

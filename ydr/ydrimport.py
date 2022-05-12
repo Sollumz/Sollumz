@@ -55,7 +55,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                             n.image.colorspace_settings.name = "Non-Color"
 
                         # Assign embedded texture dictionary properties
-                        if shadergroup.texture_dictionary != None:
+                        if shadergroup.texture_dictionary is not None:
                             for texture in shadergroup.texture_dictionary:
                                 if texture.name == param.texture_name:
                                     n.texture_properties.embedded = True
@@ -131,7 +131,7 @@ def bone_to_obj(bone, armature):
     edit_bone.head = (0, 0, 0)
     edit_bone.tail = (0, 0.05, 0)
     edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
-    if edit_bone.parent != None:
+    if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
     return bone.name
@@ -478,7 +478,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
 
-    if (bones != None or armatureName != None) and (is_ydd == None or is_ydd == False):
+    if (bones is not None or armatureName is not None) and (is_ydd is None or is_ydd == False):
         does_armature_obj_exist = armatureName in bpy.data.objects
         is_obj_armature = bpy.data.objects[armatureName].type
         if does_armature_obj_exist == True and is_obj_armature == 'ARMATURE':
@@ -490,7 +490,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
                     parent_bone_name = bone.name
                     break
 
-            if parent_bone_name != None:
+            if parent_bone_name is not None:
                 bone = armature.pose.bones.get(parent_bone_name)
                 bpy.context.evaluated_depsgraph_get().update()
                 dobj.parent = armature

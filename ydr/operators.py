@@ -77,7 +77,7 @@ class SOLLUMZ_OT_auto_convert_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
             for material in obj.data.materials:
                 new_material = convert_material(material)
-                if new_material != None:
+                if new_material is not None:
                     for ms in obj.material_slots:
                         if(ms.material == material):
                             ms.material = new_material
@@ -93,12 +93,12 @@ class SOLLUMZ_OT_convert_material_to_selected(SOLLUMZ_OT_base, bpy.types.Operato
 
     def convert_material(self, shader, obj):
         mat = obj.active_material
-        if mat == None:
+        if mat is None:
             self.message(f"No active material on {obj.name} will be skipped")
             return
 
         new_material = convert_material_to_selected(mat, shader)
-        if new_material != None:
+        if new_material is not None:
             for ms in obj.material_slots:
                 if(ms.material == mat):
                     ms.material = new_material
@@ -163,7 +163,7 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def set_textures_embedded(self, obj):
         mat = obj.active_material
-        if mat == None:
+        if mat is None:
             self.message(f"No active material on {obj.name} will be skipped")
             return
 

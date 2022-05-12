@@ -447,7 +447,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     @ classmethod
     def poll(cls, context):
         aobj = context.active_object
-        return aobj != None and aobj.sollum_type == SollumType.DRAWABLE
+        return aobj is not None and aobj.sollum_type == SollumType.DRAWABLE
 
     def draw(self, context):
         layout = self.layout
@@ -479,7 +479,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if context.active_object == None:
+        if context.active_object is None:
             return
 
         mat = aobj.active_material

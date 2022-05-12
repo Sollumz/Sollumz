@@ -144,7 +144,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
 
 def get_blended_verts(mesh, vertex_groups, bones=None):
     bone_index_map = {}
-    if(bones != None):
+    if(bones is not None):
         for i in range(len(bones)):
             bone_index_map[bones[i].name] = i
     else:
@@ -400,7 +400,7 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
     drawable_model_parent = obj.parent
     if drawable_model_parent.type == 'BONE':
         parent_bone = obj.parent_bone
-        if parent_bone != None and parent_bone != '':
+        if parent_bone is not None and parent_bone != '':
             drawable_model_bone_index = drawable_model_parent.data.bones[
                 parent_bone].bone_properties.tag
             drawable_model.bone_index = drawable_model_bone_index
@@ -444,7 +444,7 @@ def bone_from_object(obj):
     bone.tag = obj.bone_properties.tag
     bone.index = obj["BONE_INDEX"]
 
-    if obj.parent != None:
+    if obj.parent is not None:
         bone.parent_index = obj.parent["BONE_INDEX"]
         children = obj.parent.children
         sibling = -1
@@ -466,7 +466,7 @@ def bone_from_object(obj):
         bone.flags.append("Unk0")
 
     mat = obj.matrix_local
-    if (obj.parent != None):
+    if (obj.parent is not None):
         mat = obj.parent.matrix_local.inverted() @ obj.matrix_local
 
     mat_decomposed = mat.decompose()

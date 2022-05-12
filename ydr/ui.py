@@ -252,7 +252,7 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        if (context.active_pose_bone == None):
+        if (context.active_pose_bone is None):
             return
 
         bone = context.active_pose_bone.bone
@@ -290,11 +290,11 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object == None):
+        if(context.active_object is None):
             return
 
         mat = aobj.active_material
-        if(mat == None):
+        if(mat is None):
             return
 
         # only using selected nodes because if you use the node tree weird bug
@@ -385,11 +385,11 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object == None):
+        if(context.active_object is None):
             return
 
         mat = aobj.active_material
-        if(mat == None):
+        if(mat is None):
             return
 
         # only using selected nodes because if you use the node tree weird bug

@@ -494,7 +494,7 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
 
         aobj = context.active_object
-        if(aobj == None):
+        if(aobj is None):
             self.message("Please select an object.")
             return False
 

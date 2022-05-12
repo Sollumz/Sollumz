@@ -62,7 +62,7 @@ def get_location_from_sequence_data(sequence_data, frame_id, p_bone, is_convert_
 
     mat = p_bone.bone.matrix_local
 
-    if (p_bone.bone.parent != None):
+    if (p_bone.bone.parent is not None):
         mat = p_bone.bone.parent.matrix_local.inverted() @ p_bone.bone.matrix_local
 
     mat_decomposed = mat.decompose()
@@ -147,7 +147,7 @@ def combine_sequences_and_convert_to_groups(animation, armature, is_ped_animatio
         for sequence_data_index, sequence_data in enumerate(sequence.sequence_data):
             bone_data = animation.bone_ids[sequence_data_index]
 
-            if bone_data == None or bone_data.bone_id not in bone_map:
+            if bone_data is None or bone_data.bone_id not in bone_map:
                 continue
 
             p_bone = bone_map[bone_data.bone_id]

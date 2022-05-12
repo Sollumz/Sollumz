@@ -32,7 +32,7 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
         groups = {}
 
         for clip_animation in clip_properties.animations:
-            if clip_animation.animation == None:
+            if clip_animation.animation is None:
                 continue
 
             animation_properties = clip_animation.animation.animation_properties
@@ -45,10 +45,10 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
 
             actions = []
 
-            if animation_properties.base_action != None:
+            if animation_properties.base_action is not None:
                 actions.append(animation_properties.base_action)
 
-            if animation_properties.root_motion_location_action != None:
+            if animation_properties.root_motion_location_action is not None:
                 actions.append(
                     animation_properties.root_motion_location_action)
 
@@ -200,7 +200,7 @@ class SOLLUMZ_OT_create_clip(SOLLUMZ_OT_base, bpy.types.Operator):
             clips_obj = find_child_by_type(
                 clip_dictionary_obj, SollumType.CLIPS)
 
-        if clips_obj != None:
+        if clips_obj is not None:
             animation_obj = create_anim_obj(SollumType.CLIP)
 
             animation_obj.parent = clips_obj
@@ -240,7 +240,7 @@ class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
             animations_obj = find_child_by_type(
                 clip_dictionary_obj, SollumType.ANIMATIONS)
 
-        if animations_obj != None:
+        if animations_obj is not None:
             animation_obj = create_anim_obj(SollumType.ANIMATION)
 
             animation_obj.parent = animations_obj

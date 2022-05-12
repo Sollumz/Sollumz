@@ -147,7 +147,7 @@ def get_vector_list_length(list):
 
 
 def divide_vectors(a, b):
-    return Vector((a.x/b.x, a.y/b.y, a.z/b.z))
+    return Vector((a.x / b.x, a.y / b.y, a.z / b.z))
 
 
 def get_closest_axis_point(axis, center, points):
@@ -192,7 +192,7 @@ def get_direction_of_vectors(a, b):
 
 
 def lookatlh(eye, target, up):
-    mz = Vector((eye[0]-target[0], eye[1]-target[1], eye[2] -
+    mz = Vector((eye[0] - target[0], eye[1] - target[1], eye[2] -
                 target[2])).normalized()  # inverse line of sight
     mx = Vector(up.cross(mz)).normalized()
     my = Vector(mz.cross(mx)).normalized()

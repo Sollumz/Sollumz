@@ -41,7 +41,7 @@ def bbox_orient(bme_verts, mx):
 
 def bbox_vol(box):
 
-    V = (box[1]-box[0]) * (box[3]-box[2]) * (box[5]-box[4])
+    V = (box[1] - box[0]) * (box[3] - box[2]) * (box[5] - box[4])
 
     return V
 
@@ -115,7 +115,7 @@ def get_obb(verts):
         axis = Vector((x, y, z))
         axes.append(axis)
         for n in range(0, 40):
-            angle = math.pi/2 * n/40
+            angle = math.pi / 2 * n / 40
             rot_mx = Matrix.Rotation(angle, 4, axis)
 
             box = bbox_orient(hull_verts, rot_mx)

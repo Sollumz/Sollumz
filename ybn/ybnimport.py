@@ -24,8 +24,8 @@ def init_poly_obj(poly, sollum_type, materials):
 
 
 def make_matrix(v1, v2, v3):
-    a = v2-v1
-    b = v3-v1
+    a = v2 - v1
+    b = v3 - v1
 
     c = a.cross(b)
     if c.magnitude > 0:

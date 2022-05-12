@@ -87,7 +87,7 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
     for child in fobj.children:
         if child.sollum_type == SollumType.DRAWABLE:
             dobj = child
-    if dobj == None:
+    if dobj is None:
         raise Exception("NO DRAWABLE TO EXPORT.")
 
     materials = None
@@ -120,7 +120,7 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
             bone_index = 0
             if model.parent_type == 'BONE':
                 parent_bone = model.parent_bone
-                if parent_bone != None and parent_bone != '':
+                if parent_bone is not None and parent_bone != '':
                     bone_index = model.parent.data.bones[parent_bone].bone_properties.tag
 
             if bone_index == idx:
