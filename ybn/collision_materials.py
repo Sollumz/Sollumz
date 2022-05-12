@@ -252,8 +252,8 @@ collisionmats = [
                       'Metal Solid Road Surface', (155, 180, 190, 255)),
     CollisionMaterial('STUNT_RAMP_SURFACE',
                       'Stunt Ramp Surface', (155, 180, 190, 255)),
-    CollisionMaterial('TEMP_01', 'Temp 01', (255, 0, 255, 255),
-    CollisionMaterial('TEMP_02', 'Temp 02', (255, 0, 255, 255),
+    CollisionMaterial('TEMP_01', 'Temp 01', (255, 0, 255, 255)),
+    CollisionMaterial('TEMP_02', 'Temp 02', (255, 0, 255, 255)),
 ]
 
 
