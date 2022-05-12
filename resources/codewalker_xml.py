@@ -78,9 +78,9 @@ class Element(AbstractClass):
     """Read XML from filepath"""
     @classmethod
     def from_xml_file(cls, filepath):
-        elementTree = ET.ElementTree()
-        elementTree.parse(filepath)
-        return cls.from_xml(elementTree.getroot())
+        element_tree = ET.ElementTree()
+        element_tree.parse(filepath)
+        return cls.from_xml(element_tree.getroot())
 
     """Write object as XML to filepath"""
 

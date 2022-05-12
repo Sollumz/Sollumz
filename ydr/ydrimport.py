@@ -470,7 +470,7 @@ def geometry_to_obj_split_by_bone(model, materials, bones):
     return bobjs
 
 
-def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armatureName=None, is_ydd=None):
+def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature_name=None, is_ydd=None):
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], None)
     dobj.sollum_type = SollumType.DRAWABLE_MODEL
@@ -478,11 +478,11 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
 
-    if (bones is not None or armatureName is not None) and (is_ydd is None or is_ydd == False):
-        does_armature_obj_exist = armatureName in bpy.data.objects
-        is_obj_armature = bpy.data.objects[armatureName].type
+    if (bones is not None or armature_name is not None) and (is_ydd is None or is_ydd == False):
+        does_armature_obj_exist = armature_name in bpy.data.objects
+        is_obj_armature = bpy.data.objects[armature_name].type
         if does_armature_obj_exist == True and is_obj_armature == 'ARMATURE':
-            armature = bpy.data.objects[armatureName]
+            armature = bpy.data.objects[armature_name]
             parent_bone_name = None
             for bone in armature.pose.bones[:]:
                 bone_index = armature.data.bones[bone.name].bone_properties.tag

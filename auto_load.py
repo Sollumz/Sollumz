@@ -27,9 +27,9 @@ def init():
     ordered_classes = get_ordered_classes_to_register(modules)
 
 
-def checkIfDuplicates_1(listOfElems):
+def check_if_duplicates(list_of_elems):
     ''' Check if given list contains any duplicates '''
-    if len(listOfElems) == len(set(listOfElems)):
+    if len(list_of_elems) == len(set(list_of_elems)):
         return False
     else:
         return True

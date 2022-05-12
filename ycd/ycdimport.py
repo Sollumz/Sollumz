@@ -210,7 +210,7 @@ def apply_action_data_to_action(action_data, action, frame_count):
             type = 'scale'
 
         for bone_name, frames_data in bones_data.items():
-            groupItem = action.groups.new('%s-%s' % (bone_name, track_id))
+            group_item = action.groups.new('%s-%s' % (bone_name, track_id))
 
             if type == 'location':
                 data_path_loc = 'pose.bones["%s"].location' % bone_name
@@ -229,9 +229,9 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 pos_curve_z = action.fcurves.new(
                     data_path=data_path_loc, index=2)
 
-                pos_curve_x.group = groupItem
-                pos_curve_y.group = groupItem
-                pos_curve_z.group = groupItem
+                pos_curve_x.group = group_item
+                pos_curve_y.group = group_item
+                pos_curve_z.group = group_item
 
                 pos_curve_x.keyframe_points.add(len(frames_data))
                 pos_curve_y.keyframe_points.add(len(frames_data))
@@ -264,9 +264,9 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 pos_curve_z = action.fcurves.new(
                     data_path=data_path_loc, index=2)
 
-                pos_curve_x.group = groupItem
-                pos_curve_y.group = groupItem
-                pos_curve_z.group = groupItem
+                pos_curve_x.group = group_item
+                pos_curve_y.group = group_item
+                pos_curve_z.group = group_item
 
                 pos_curve_x.keyframe_points.add(len(frames_data))
                 pos_curve_y.keyframe_points.add(len(frames_data))
@@ -303,10 +303,10 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 rot_curve_z = action.fcurves.new(
                     data_path=data_path_rot, index=3)
 
-                rot_curve_w.group = groupItem
-                rot_curve_x.group = groupItem
-                rot_curve_y.group = groupItem
-                rot_curve_z.group = groupItem
+                rot_curve_w.group = group_item
+                rot_curve_x.group = group_item
+                rot_curve_y.group = group_item
+                rot_curve_z.group = group_item
 
                 rot_curve_w.keyframe_points.add(len(frames_data))
                 rot_curve_x.keyframe_points.add(len(frames_data))

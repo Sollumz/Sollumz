@@ -153,16 +153,16 @@ def divide_vectors(a, b):
 def get_closest_axis_point(axis, center, points):
 
     closest = None
-    closestDist = inf
+    closest_dist = inf
 
     for p in points:
 
         rel = (p - center).normalized()
         dist = (rel - axis).length
 
-        if dist < closestDist:
+        if dist < closest_dist:
             closest = p
-            closestDist = dist
+            closest_dist = dist
 
     return closest
 
