@@ -2,14 +2,15 @@ import bpy
 
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_POLYGON_TYPES
 from ..tools.meshhelper import create_box
+from .blenderhelper import create_mesh_object
 from mathutils import Vector
 
 
-def create_bound_shape(type):
-    pobj = create_mesh(type)
+def create_bound_shape(sollum_type):
+    pobj = create_mesh_object(sollum_type)
 
     # Constrain scale for bound polys
-    if pobj.sollum_type in BOUND_POLYGON_TYPES and type != SollumType.BOUND_POLY_BOX and type != SollumType.BOUND_POLY_TRIANGLE:
+    if pobj.sollum_type in BOUND_POLYGON_TYPES and sollum_type != SollumType.BOUND_POLY_BOX and sollum_type != SollumType.BOUND_POLY_TRIANGLE:
         constraint = pobj.constraints.new(type="LIMIT_SCALE")
         constraint.use_transform_limit = True
         constraint.use_min_x = True
@@ -25,22 +26,22 @@ def create_bound_shape(type):
         constraint.max_y = 1
         constraint.max_z = 1
 
-    if type == SollumType.BOUND_POLY_BOX:
+    if sollum_type == SollumType.BOUND_POLY_BOX:
         create_box(pobj.data)
-    elif type == SollumType.BOUND_BOX:
+    elif sollum_type == SollumType.BOUND_BOX:
         pobj.bound_dimensions = Vector((1, 1, 1))
-    elif type == SollumType.BOUND_SPHERE or type == SollumType.BOUND_POLY_SPHERE:
+    elif sollum_type == SollumType.BOUND_SPHERE or sollum_type == SollumType.BOUND_POLY_SPHERE:
         pobj.bound_radius = 1
-    elif type == SollumType.BOUND_POLY_CAPSULE:
+    elif sollum_type == SollumType.BOUND_POLY_CAPSULE:
         pobj.bound_radius = 1
         pobj.bound_length = 1
-    elif type == SollumType.BOUND_CAPSULE:
+    elif sollum_type == SollumType.BOUND_CAPSULE:
         pobj.bound_radius = 1
         pobj.margin = 0.5
-    elif type == SollumType.BOUND_CYLINDER or type == SollumType.BOUND_POLY_CYLINDER:
+    elif sollum_type == SollumType.BOUND_CYLINDER or sollum_type == SollumType.BOUND_POLY_CYLINDER:
         pobj.bound_length = 2
         pobj.bound_radius = 1
-    elif type == SollumType.BOUND_DISC:
+    elif sollum_type == SollumType.BOUND_DISC:
         pobj.margin = 0.04
         pobj.bound_radius = 1
 
@@ -61,16 +62,6 @@ def create_bound(sollum_type=SollumType.BOUND_COMPOSITE, aobj=None, do_link=True
             empty.parent = aobj
 
     return empty
-
-
-def create_mesh(sollum_type):
-    name = SOLLUMZ_UI_NAMES[sollum_type]
-    mesh = bpy.data.meshes.new(name)
-    obj = bpy.data.objects.new(name, mesh)
-    obj.sollum_type = sollum_type
-    bpy.context.collection.objects.link(obj)
-
-    return obj
 
 
 def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_original, do_center=True):
@@ -106,15 +97,15 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
 
         if obj.type == "MESH":
             name = obj.name
-
-            poly_mesh = obj if replace_original else create_mesh(
-                SollumType.BOUND_POLY_TRIANGLE)
+            sollum_type = SollumType.BOUND_POLY_TRIANGLE
+            poly_mesh = obj if replace_original else create_mesh_object(
+                sollum_type)
 
             poly_mesh.parent = gobj
 
             if replace_original:
-                poly_mesh.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]
-                poly_mesh.sollum_type = SollumType.BOUND_POLY_TRIANGLE
+                poly_mesh.name = SOLLUMZ_UI_NAMES[sollum_type]
+                poly_mesh.sollum_type = sollum_type
             else:
                 poly_mesh.data = obj.data.copy()
                 poly_mesh.matrix_world = obj.matrix_world

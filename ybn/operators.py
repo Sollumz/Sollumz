@@ -8,13 +8,12 @@ from ..tools.boundhelper import (
     convert_selected_to_bound,
     create_bound,
     create_bound_shape,
-    create_mesh,
     BOUND_POLYGON_TYPES
 )
 from ..tools.meshhelper import create_box_from_extents, get_bound_center
 from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..tools.blenderhelper import get_selected_vertices, get_children_recursive
+from ..tools.blenderhelper import get_selected_vertices, get_children_recursive, create_mesh_object
 import bpy
 import bmesh
 from mathutils import Vector
@@ -34,7 +33,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"{bl_label}"
     bl_update_view = True
 
-    def create_poly_from_verts(self, context, type, parent):
+    def create_poly_from_verts(self, context, sollum_type, parent):
         if not parent:
             self.message("Must specify a parent object!")
             return False
@@ -56,9 +55,9 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message("Please select at least three vertices.")
             return False
 
-        if type != SollumType.BOUND_POLY_TRIANGLE:
+        if sollum_type != SollumType.BOUND_POLY_TRIANGLE:
             pobj = create_bound_shape(
-                type) if type != SollumType.BOUND_POLY_BOX else create_mesh(type)
+                sollum_type) if sollum_type != SollumType.BOUND_POLY_BOX else create_mesh_object(sollum_type)
 
             obb, world_matrix = get_obb(verts)
             bbmin, bbmax = get_obb_extents(obb)
@@ -66,7 +65,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             center = world_matrix @ (bbmin + bbmax) / 2
             local_center = (bbmin + bbmax) / 2
 
-            if type == SollumType.BOUND_POLY_BOX:
+            if sollum_type == SollumType.BOUND_POLY_BOX:
                 create_box_from_extents(
                     pobj.data, bbmin - local_center, bbmax - local_center)
 
@@ -95,7 +94,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
                 nfverts = [onm[v.index] for v in f.verts]
                 new_mesh.faces.new(nfverts)
 
-            pobj = create_mesh(type)
+            pobj = create_mesh_object(sollum_type)
             pobj.location = obj.location
             new_mesh.to_mesh(pobj.data)
             bm.free()
