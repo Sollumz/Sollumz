@@ -1,5 +1,5 @@
-# Sollumz
-Blender plugin to import codewalker converter xml files from GTA V
+# Sollumz (Beta)
+Blender plugin to import, export, or create GTA V assets in the Codewalker XML format.
 
 ## Using the plugin
 See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sure to read the wiki before posting an issue or asking questions!
@@ -10,11 +10,13 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
   * YDD
   * YDR
   * YBN
+  * YCD
   
 **Supported Formats (Export)**
   * YDD
   * YDR
   * YBN
+  * YCD
   
 **General Features**
   * Fast import
