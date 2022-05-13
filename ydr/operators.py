@@ -1,8 +1,14 @@
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
-from ..tools.drawablehelper import *
+from ..tools.drawablehelper import (
+    convert_selected_to_drawable,
+    create_drawable,
+    convert_material,
+    convert_material_to_selected
+)
+from ..tools.meshhelper import get_children_recursive
 from ..tools.boundhelper import convert_selected_to_bound
 from ..cwxml.shader import ShaderManager
 import traceback

@@ -3,17 +3,31 @@ import shutil
 import bmesh
 import bpy
 import zlib
+from ..cwxml import drawable as ydrxml
 from ..cwxml.fragment import FragmentDrawable
-from ..cwxml.drawable import *
 from ..cwxml.shader import ShaderManager
 from ..tools import jenkhash
-from ..tools.meshhelper import *
-from ..tools.utils import *
-from ..tools.blenderhelper import *
-from ..tools.drawablehelper import *
-from ..sollumz_properties import BOUND_TYPES, SOLLUMZ_UI_NAMES, LightType, MaterialType, LODLevel, SollumType
+from ..tools.meshhelper import (
+    flip_uv,
+    get_bound_extents,
+    get_bound_center,
+    get_sphere_radius,
+    get_children_recursive
+)
+from ..tools.utils import float32_list
+from ..tools.blenderhelper import duplicate_object, split_object
+from ..tools.drawablehelper import join_objects
+from ..sollumz_properties import (
+    BOUND_TYPES,
+    SOLLUMZ_UI_NAMES,
+    LightType,
+    MaterialType,
+    LODLevel,
+    SollumType
+)
 from ..ybn.ybnexport import bound_from_object, composite_from_object
 from math import degrees, pi
+from mathutils import Quaternion, Vector
 
 
 def get_used_materials(obj):
@@ -32,7 +46,7 @@ def get_shaders_from_blender(materials):
     shaders = []
 
     for material in materials:
-        shader = ShaderItem()
+        shader = ydrxml.ShaderItem()
         # Maybe make this a property?
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
@@ -40,7 +54,7 @@ def get_shaders_from_blender(materials):
 
         for node in material.node_tree.nodes:
             if isinstance(node, bpy.types.ShaderNodeTexImage):
-                param = TextureShaderParameter()
+                param = ydrxml.TextureShaderParameter()
                 param.name = node.name
                 param.type = "Texture"
                 # Disable extra material writing to xml
@@ -51,7 +65,7 @@ def get_shaders_from_blender(materials):
                 shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
-                    param = VectorShaderParameter()
+                    param = ydrxml.VectorShaderParameter()
                     param.name = node.name[:-2]
                     param.type = "Vector"
 
@@ -73,7 +87,7 @@ def get_shaders_from_blender(materials):
 
 
 def texture_item_from_node(n):
-    texture_item = TextureItem()
+    texture_item = ydrxml.TextureItem()
     if n.image:
         texture_item.name = n.sollumz_texture_name
         texture_item.width = n.image.size[0]
@@ -285,7 +299,7 @@ def get_semantic_from_object(shader, mesh):
     sematic = []
 
     # always has a position
-    sematic.append(VertexSemantic.position)
+    sematic.append(ydrxml.VertexSemantic.position)
     # add blend weights and blend indicies
     # maybe pass is_skinned param in this function and check there ?
     is_skinned = False
@@ -294,27 +308,27 @@ def get_semantic_from_object(shader, mesh):
             is_skinned = True
             break
     if is_skinned:
-        sematic.append(VertexSemantic.blend_weight)
-        sematic.append(VertexSemantic.blend_index)
+        sematic.append(ydrxml.VertexSemantic.blend_weight)
+        sematic.append(ydrxml.VertexSemantic.blend_index)
     # add normal
     # dont know what to check so always add for now??
-    sematic.append(VertexSemantic.normal)
+    sematic.append(ydrxml.VertexSemantic.normal)
     # add colors
     vcs = len(mesh.vertex_colors)
     if vcs > 0:
         for vc in mesh.vertex_colors:
             if vc.name != "TintColor":
-                sematic.append(VertexSemantic.color)
+                sematic.append(ydrxml.VertexSemantic.color)
     # add texcoords
     tcs = len(mesh.uv_layers)
     if tcs > 0:
         if tcs > 8:  # or tcs == 0: add this restriction?? although some vertexs buffers may not have uv data???
             raise Exception(f"To many uv layers or none on mesh: {mesh.name}")
         for _ in range(tcs):
-            sematic.append(VertexSemantic.texcoord)
+            sematic.append(ydrxml.VertexSemantic.texcoord)
     # add tangents
     if shader.required_tangent:
-        sematic.append(VertexSemantic.tangent)
+        sematic.append(ydrxml.VertexSemantic.tangent)
 
     return "".join(sematic)
 
@@ -354,7 +368,7 @@ def get_bone_ids(obj, bones=None):
 
 
 def geometry_from_object(obj, mats, bones=None, export_settings=None):
-    geometry = GeometryItem()
+    geometry = ydrxml.GeometryItem()
 
     geometry.shader_index = get_shader_index(mats, obj.active_material)
 
@@ -390,7 +404,7 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
 
 
 def drawable_model_from_object(obj, bones=None, materials=None, export_settings=None):
-    drawable_model = DrawableModelItem()
+    drawable_model = ydrxml.DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
@@ -437,7 +451,7 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
 def bone_from_object(obj):
 
-    bone = BoneItem()
+    bone = ydrxml.BoneItem()
     bone.name = obj.name
     bone.tag = obj.bone_properties.tag
     bone.index = obj["BONE_INDEX"]
@@ -521,7 +535,7 @@ def skeleton_from_object(obj):
     if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
         return None
 
-    skeleton = SkeletonProperty()
+    skeleton = ydrxml.SkeletonProperty()
     bones = obj.pose.bones
 
     ind = 0
@@ -542,7 +556,7 @@ def skeleton_from_object(obj):
 def rotation_limit_from_object(obj):
     for con in obj.constraints:
         if con.type == 'LIMIT_ROTATION':
-            joint = RotationLimitItem()
+            joint = ydrxml.RotationLimitItem()
             joint.bone_id = obj.bone.bone_properties.tag
             joint.min = Vector((con.min_x, con.min_y, con.min_z))
             joint.max = Vector((con.max_x, con.max_y, con.max_z))
@@ -555,7 +569,7 @@ def joints_from_object(obj):
     if obj.pose is None:
         return None
 
-    joints = JointsProperty()
+    joints = ydrxml.JointsProperty()
     for bone in obj.pose.bones:
         joint = rotation_limit_from_object(bone)
         if joint is not None:
@@ -565,7 +579,7 @@ def joints_from_object(obj):
 
 
 def light_from_object(obj, export_settings, armature_obj=None):
-    light = LightItem()
+    light = ydrxml.LightItem()
     light.position = obj.location if not export_settings.use_transforms else obj.location + \
         obj.parent.location
     mat = obj.matrix_basis if not export_settings.use_transforms else obj.matrix_world
@@ -640,7 +654,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     if is_frag:
         drawable = FragmentDrawable()
     else:
-        drawable = Drawable()
+        drawable = ydrxml.Drawable()
 
     drawable.name = obj.name if "." not in obj.name else obj.name.split(".")[0]
 

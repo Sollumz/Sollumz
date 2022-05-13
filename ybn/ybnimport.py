@@ -1,13 +1,12 @@
 import bpy
 from .properties import CollisionMatFlags
-from ..cwxml.bound import *
-from ..sollumz_properties import *
+from ..cwxml import bound as ybnxml
+from ..sollumz_properties import SollumType, MaterialType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
-from ..sollumz_ui import SOLLUMZ_UI_NAMES
-from ..tools.meshhelper import *
-from ..tools.utils import *
+from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc
+from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
 import os
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 
 def init_poly_obj(poly, sollum_type, materials):
@@ -23,7 +22,7 @@ def init_poly_obj(poly, sollum_type, materials):
 
 
 def poly_to_obj(poly, materials, vertices):
-    if type(poly) == Box:
+    if type(poly) == ybnxml.Box:
         obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
 
         v1 = vertices[poly.v1]
@@ -94,14 +93,14 @@ def poly_to_obj(poly, materials, vertices):
         obj.matrix_basis = mat
 
         return obj
-    elif type(poly) == Sphere:
+    elif type(poly) == ybnxml.Sphere:
         sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
         sphere.bound_radius = poly.radius
 
         sphere.location = vertices[poly.v]
 
         return sphere
-    elif type(poly) == Capsule:
+    elif type(poly) == ybnxml.Capsule:
         capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
@@ -113,7 +112,7 @@ def poly_to_obj(poly, materials, vertices):
         capsule.rotation_euler = rot
 
         return capsule
-    elif type(poly) == Cylinder:
+    elif type(poly) == ybnxml.Cylinder:
         cylinder = init_poly_obj(
             poly, SollumType.BOUND_POLY_CYLINDER, materials)
         v1 = vertices[poly.v1]
@@ -215,14 +214,14 @@ def geometry_to_obj(geometry, sollum_type):
         materials.append(mat_to_obj(gmat))
 
     triangle_polys = [
-        poly for poly in geometry.polygons if type(poly) == Triangle]
+        poly for poly in geometry.polygons if type(poly) == ybnxml.Triangle]
     triangle_obj = verts_to_obj(geometry.vertices, triangle_polys, materials,
                                 obj, geometry.vertex_colors)
     vert2_obj = verts_to_obj(
         geometry.vertices_2, triangle_polys, materials, obj, geometry.vertex_colors)
 
     for poly in geometry.polygons:
-        if type(poly) is not Triangle:
+        if type(poly) is not ybnxml.Triangle:
             poly_obj = poly_to_obj(
                 poly, triangle_obj.data.materials, geometry.vertices)
             if poly_obj:
@@ -362,6 +361,6 @@ def composite_to_obj(bounds, name, from_drawable=False):
 
 
 def import_ybn(filepath):
-    ybn_xml = YBN.from_xml_file(filepath)
+    ybn_xml = ybnxml.YBN.from_xml_file(filepath)
     composite_to_obj(ybn_xml, os.path.basename(
-        filepath.replace(YBN.file_extension, '')))
+        filepath.replace(ybnxml.YBN.file_extension, '')))

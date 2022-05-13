@@ -1,6 +1,17 @@
 from abc import ABC as AbstractClass
+from mathutils import Matrix
 from xml.etree import ElementTree as ET
-from .element import *
+from .element import (
+    AttributeProperty,
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    MatrixProperty,
+    QuaternionProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty
+)
 from .drawable import Drawable, LightsProperty
 from .bound import BoundComposite
 

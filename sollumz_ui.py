@@ -1,7 +1,6 @@
 import bpy
 from .tools.blenderhelper import get_armature_obj
-from .sollumz_helper import *
-from .sollumz_properties import *
+from .sollumz_properties import SollumType, MaterialType
 
 
 class OrderListHelper:

@@ -4,13 +4,20 @@ import traceback
 from ..cwxml.flag_preset import FlagPreset
 from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from ..ybn.collision_materials import create_collision_material_from_index
-from ..tools.boundhelper import *
-from ..tools.meshhelper import *
+from ..tools.boundhelper import (
+    convert_selected_to_bound,
+    create_bound,
+    create_bound_shape,
+    create_mesh,
+    BOUND_POLYGON_TYPES
+)
+from ..tools.meshhelper import create_box_from_extents, get_bound_center, get_children_recursive
 from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..tools.blenderhelper import get_selected_vertices
-from ..sollumz_helper import *
 import bpy
+import bmesh
+from mathutils import Vector
 
 
 def handle_load_flag_presets(self):

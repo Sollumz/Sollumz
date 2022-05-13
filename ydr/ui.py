@@ -1,8 +1,8 @@
 import bpy
-from .shader_materials import *
-from .operators import *
+from . import operators as ydr_ops
+from .shader_materials import shadermats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
-from ..sollumz_properties import SollumType
+from ..sollumz_properties import SollumType, MaterialType, LightType
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 
 
@@ -176,13 +176,13 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
         layout.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
-        layout.operator(SOLLUMZ_OT_create_shader_material.bl_idname)
+        layout.operator(ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname)
         row = layout.row()
         row.operator(
-            SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
+            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
         row.operator(
-            SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
-        layout.operator(SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
+            ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
+        layout.operator(ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
@@ -200,7 +200,7 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
+        row.operator(ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname)
         row.prop(context.scene, "create_drawable_type")
         grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
         grid.prop(context.scene, "use_mesh_name")
@@ -224,7 +224,7 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_light.bl_idname)
+        row.operator(ydr_ops.SOLLUMZ_OT_create_light.bl_idname)
         row.prop(context.scene, "create_light_type", text="")
 
 

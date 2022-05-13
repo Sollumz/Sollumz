@@ -1,12 +1,22 @@
 import bpy
 from bpy.types import PoseBone
-from mathutils import Vector
+from mathutils import Vector, Matrix, Quaternion
 
-from ..cwxml.clipsdictionary import *
+from ..cwxml import clipsdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
-from ..tools.animationhelper import *
+from ..tools.animationhelper import (
+    TrackType,
+    ActionType,
+    AnimationFlag,
+    evaluate_vector,
+    evaluate_quaternion,
+    evaluate_euler_to_quaternion,
+    get_quantum_and_min_val,
+    is_ped_bone_tag,
+    TrackTypeValueMap,
+)
 
 
 def get_name(item):
@@ -144,11 +154,11 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
     values_len_percentage = len(uniq_values) / len(values)
 
     if len(uniq_values) == 1:
-        channel = ChannelsListProperty.StaticFloat()
+        channel = ycdxml.ChannelsListProperty.StaticFloat()
 
         channel.value = uniq_values[0]
     elif values_len_percentage <= indirect_percentage:
-        channel = ChannelsListProperty.IndirectQuantizeFloat()
+        channel = ycdxml.ChannelsListProperty.IndirectQuantizeFloat()
 
         min_value, quantum = get_quantum_and_min_val(uniq_values)
 
@@ -159,7 +169,7 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
         for value in values:
             channel.frames.append(uniq_values.index(value))
     else:
-        channel = ChannelsListProperty.QuantizeFloat()
+        channel = ycdxml.ChannelsListProperty.QuantizeFloat()
 
         min_value, quantum = get_quantum_and_min_val(values)
 
@@ -171,7 +181,7 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
 
 
 def sequence_item_from_frames_data(track, frames_data):
-    sequence_data = Animation.SequenceDataListProperty.SequenceData()
+    sequence_data = ycdxml.Animation.SequenceDataListProperty.SequenceData()
 
     # TODO: Would be good to put this in enum
 
@@ -196,7 +206,7 @@ def sequence_item_from_frames_data(track, frames_data):
         len_uniq_z = len(uniq_z)
 
         if len_uniq_x == 1 and len_uniq_y == 1 and len_uniq_z == 1:
-            channel = ChannelsListProperty.StaticVector3()
+            channel = ycdxml.ChannelsListProperty.StaticVector3()
             channel.value = frames_data[0]
 
             sequence_data.channels.append(channel)
@@ -233,7 +243,7 @@ def sequence_item_from_frames_data(track, frames_data):
         len_uniq_w = len(uniq_w)
 
         if len_uniq_x == 1 and len_uniq_y == 1 and len_uniq_z == 1 and len_uniq_w == 1:
-            channel = ChannelsListProperty.StaticQuaternion()
+            channel = ycdxml.ChannelsListProperty.StaticQuaternion()
             channel.value = frames_data[0]
 
             sequence_data.channels.append(channel)
@@ -251,7 +261,7 @@ def sequence_item_from_frames_data(track, frames_data):
 
 
 def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_animation):
-    animation = Animation()
+    animation = ycdxml.Animation()
 
     animation_properties = animation_obj.animation_properties
     frame_count = animation_properties.frame_count
@@ -291,7 +301,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
         # sequence_items_from_action(
         #     action, sequence_items, bones_map, action_type, frames_count, is_ped_animation)
 
-    sequence = Animation.SequenceListProperty.Sequence()
+    sequence = ycdxml.Animation.SequenceListProperty.Sequence()
     sequence.frame_count = frame_count
     sequence.hash = 'hash_' + hex(0)[2:].zfill(8)
 
@@ -299,7 +309,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
         for bone_id, frames_data in sorted(bones_data.items()):
             sequence_data = sequence_item_from_frames_data(track, frames_data)
 
-            seq_bone_id = Animation.BoneIdListProperty.BoneId()
+            seq_bone_id = ycdxml.Animation.BoneIdListProperty.BoneId()
             seq_bone_id.bone_id = bone_id
             seq_bone_id.track = track.value
             seq_bone_id.unk0 = TrackTypeValueMap[track].value
@@ -321,7 +331,7 @@ def clip_from_object(clip_obj):
     is_single_animation = len(clip_properties.animations) == 1
 
     if is_single_animation:
-        clip = ClipsListProperty.ClipAnimation()
+        clip = ycdxml.ClipsListProperty.ClipAnimation()
         clip_animation_property = clip_properties.animations[0]
         animation_properties = clip_animation_property.animation.animation_properties
 
@@ -336,11 +346,11 @@ def clip_from_object(clip_obj):
         clip_animation_duration = clip.end_time - clip.start_time
         clip.rate = clip_animation_duration / clip_properties.duration
     else:
-        clip = ClipsListProperty.ClipAnimationList()
+        clip = ycdxml.ClipsListProperty.ClipAnimationList()
         clip.duration = clip_properties.duration
 
         for clip_animation_property in clip_properties.animations:
-            clip_animation = ClipAnimationsListProperty.ClipAnimation()
+            clip_animation = ycdxml.ClipAnimationsListProperty.ClipAnimation()
 
             animation_properties = clip_animation_property.animation.animation_properties
 
@@ -365,7 +375,7 @@ def clip_from_object(clip_obj):
 
 
 def clip_dictionary_from_object(exportop, obj, exportpath, export_settings=None):
-    clip_dictionary = ClipsDictionary()
+    clip_dictionary = ycdxml.ClipsDictionary()
 
     armature = obj.clip_dict_properties.armature
     armature_obj = get_armature_obj(armature)

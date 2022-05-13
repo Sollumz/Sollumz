@@ -1,8 +1,12 @@
 import xml.etree.ElementTree as ET
 import os
-from .element import *
+from .element import (
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    TextProperty,
+)
 from .drawable import ParametersListProperty, VertexLayoutListProperty
-from ..tools.utils import *
 
 
 class RenderBucketProperty(ElementProperty):

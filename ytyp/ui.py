@@ -1,7 +1,18 @@
 import bpy
 
-from ..sollumz_properties import ArchetypeType, EntityProperties
-from .properties import *
+from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
+from .properties import (
+    RoomProperties,
+    PortalProperties,
+    UnlinkedEntityProperties,
+    TimecycleModifierProperties,
+    get_selected_tcm,
+    get_selected_ytyp,
+    get_selected_archetype,
+    get_selected_room,
+    get_selected_entity,
+    get_selected_portal
+)
 from ..sollumz_ui import FlagsPanel, OrderListHelper, TimeFlagsPanel
 
 

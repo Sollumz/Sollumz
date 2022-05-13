@@ -1,4 +1,10 @@
-from .element import *
+from .element import (
+    ElementTree,
+    ListProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty
+)
 from xml.etree import ElementTree as ET
 from mathutils import Vector
 

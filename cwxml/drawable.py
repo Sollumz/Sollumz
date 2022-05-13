@@ -1,8 +1,30 @@
 from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
-from .element import *
-from ..tools.utils import *
-from .bound import *
+from .element import (
+    AttributeProperty,
+    FlagsProperty,
+    Element,
+    ColorProperty,
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    QuaternionProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty,
+    get_str_type
+)
+from .bound import (
+    BoundBox,
+    BoundCapsule,
+    BoundCloth,
+    BoundComposite,
+    BoundCylinder,
+    BoundDisc,
+    BoundGeometry,
+    BoundGeometryBVH,
+    BoundSphere
+)
 from collections import namedtuple
 from collections.abc import MutableSequence
 from enum import Enum

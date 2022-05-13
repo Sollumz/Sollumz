@@ -1,7 +1,7 @@
 import bpy
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
-from .operators import *
+from . import operators as ycd_ops
 
 
 def draw_clip_properties(self, context):
@@ -15,9 +15,9 @@ def draw_clip_properties(self, context):
         layout.prop(clip_properties, 'name')
         layout.prop(clip_properties, 'duration')
 
-        layout.operator(SOLLUMZ_OT_clip_apply_nla.bl_idname,
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_apply_nla.bl_idname,
                         text='Apply Clip to NLA')
-        layout.operator(SOLLUMZ_OT_clip_new_animation.bl_idname,
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_animation.bl_idname,
                         text='Add a new Animation Link')
 
 
@@ -70,7 +70,7 @@ class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
             toolbox_animation.prop(clip_animation, 'end_frame')
 
             delete_op = toolbox_animation.operator(
-                SOLLUMZ_OT_clip_delete_animation.bl_idname, text='Delete')
+                ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname, text='Delete')
             delete_op.animation_index = animation_index
 
 
@@ -136,15 +136,18 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
             if active_object.sollum_type == SollumType.CLIP or active_object.sollum_type == SollumType.ANIMATION or \
                     active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
                     active_object.sollum_type == SollumType.CLIP_DICTIONARY:
-                layout.operator(SOLLUMZ_OT_create_clip.bl_idname)
-                layout.operator(SOLLUMZ_OT_create_animation.bl_idname)
+                layout.operator(ycd_ops.SOLLUMZ_OT_create_clip.bl_idname)
+                layout.operator(ycd_ops.SOLLUMZ_OT_create_animation.bl_idname)
 
                 if active_object.sollum_type == SollumType.ANIMATION:
-                    layout.operator(SOLLUMZ_OT_animation_fill.bl_idname)
+                    layout.operator(
+                        ycd_ops.SOLLUMZ_OT_animation_fill.bl_idname)
             else:
-                layout.operator(SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+                layout.operator(
+                    ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
         else:
-            layout.operator(SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+            layout.operator(
+                ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
 
 
 def register():

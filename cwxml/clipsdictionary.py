@@ -1,4 +1,15 @@
-from .element import *
+# from .element import *
+from abc import ABC as AbstractClass, abstractmethod
+from mathutils import Vector
+from .element import (
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    QuaternionProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty
+)
 from xml.etree import ElementTree as ET
 from inspect import isclass
 from math import sqrt

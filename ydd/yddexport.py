@@ -1,6 +1,4 @@
-from ..cwxml.drawable import *
-from ..tools.meshhelper import *
-from ..tools.utils import *
+from ..cwxml.drawable import DrawableDictionary
 from ..ydr.ydrexport import drawable_from_object
 from ..tools import jenkhash
 from ..sollumz_properties import SollumType

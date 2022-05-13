@@ -1,6 +1,6 @@
 import bpy
 import os
-from ..cwxml.drawable import *
+from ..cwxml.drawable import YDD
 from ..cwxml.fragment import YFT
 from ..ydr.ydrimport import drawable_to_obj
 from ..tools.drawablehelper import join_drawable_geometries

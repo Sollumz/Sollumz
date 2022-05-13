@@ -5,10 +5,9 @@ from mathutils import Matrix
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
-from ..cwxml.drawable import *
+from ..cwxml.drawable import YDR
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
-from ..tools.utils import *
-from ..tools.blenderhelper import *
+from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials
 from ..tools.drawablehelper import join_drawable_geometries
 
 

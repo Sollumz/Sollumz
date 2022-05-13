@@ -1,6 +1,16 @@
 from abc import ABC as AbstractClass, abstractmethod
+from mathutils import Vector
 from xml.etree import ElementTree as ET
-from .element import *
+from .element import (
+    AttributeProperty,
+    ElementTree,
+    ElementProperty,
+    FlagsProperty,
+    ListProperty,
+    MatrixProperty,
+    ValueProperty,
+    VectorProperty
+)
 
 
 class YBN:

@@ -3,7 +3,8 @@ import os
 import pathlib
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from .sollumz_helper import *
+from mathutils import Vector
+from .sollumz_helper import SOLLUMZ_OT_base
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
@@ -23,8 +24,8 @@ from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
-from .tools.meshhelper import *
-from .tools.utils import *
+from .tools.meshhelper import get_bound_extents
+from .tools.utils import subtract_from_vector, add_to_vector, get_min_vector, get_max_vector
 from .tools.blenderhelper import get_terrain_texture_brush
 from .tools.ytyphelper import ytyp_from_objects
 

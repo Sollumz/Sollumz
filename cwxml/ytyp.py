@@ -1,4 +1,14 @@
-from .element import *
+from xml.etree import ElementTree as ET
+from .element import (
+    AttributeProperty,
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    QuaternionProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty
+)
 from .ymap import EntityListProperty, ExtensionsListProperty
 from numpy import float32
 

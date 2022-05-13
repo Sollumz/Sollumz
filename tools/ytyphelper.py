@@ -1,7 +1,7 @@
 import bpy
 import os
 from ..sollumz_helper import has_embedded_textures, has_collision
-from ..cwxml.ytyp import *
+from ..cwxml.ytyp import BaseArchetype, CMapTypes
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from ..sollumz_properties import SollumType
 

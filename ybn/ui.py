@@ -2,8 +2,8 @@ import bpy
 from .properties import BoundFlags, CollisionProperties, CollisionMatFlags, BoundProperties
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
-from .operators import *
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
+from . import operators as ybn_ops
 
 
 def draw_collision_material_properties(self, context):
@@ -163,10 +163,10 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.enabled = context.active_object is not None and context.active_object.sollum_type == SollumType.BOUND_COMPOSITE
-        row.operator(SOLLUMZ_OT_center_composite.bl_idname,
+        row.operator(ybn_ops.SOLLUMZ_OT_center_composite.bl_idname,
                      icon="PIVOT_CURSOR")
         row = layout.row()
-        row.operator(SOLLUMZ_OT_split_collision.bl_idname,
+        row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname,
                      icon="SCULPTMODE_HLT")
         row.prop(context.scene, "split_collision_count")
 
@@ -187,10 +187,10 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_bound.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_create_bound.bl_idname)
         row.prop(context.scene, "create_bound_type")
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_polygon_bound.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_create_polygon_bound.bl_idname)
         if context.active_object and context.active_object.mode == 'EDIT':
             row.prop(context.scene, "poly_bound_type_verts")
             row.prop(context.scene, "poly_parent", expand=True)
@@ -223,10 +223,12 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
             SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
         )
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_collision_material.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_create_collision_material.bl_idname)
         row = layout.row()
-        row.operator(SOLLUMZ_OT_convert_to_collision_material.bl_idname)
-        row.operator(SOLLUMZ_OT_clear_and_create_collision_material.bl_idname)
+        row.operator(
+            ybn_ops.SOLLUMZ_OT_convert_to_collision_material.bl_idname)
+        row.operator(
+            ybn_ops.SOLLUMZ_OT_clear_and_create_collision_material.bl_idname)
 
 
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
@@ -248,14 +250,14 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
             SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "", context.scene, "flag_presets", context.scene, "flag_preset_index"
         )
         row = layout.row()
-        row.operator(SOLLUMZ_OT_save_flag_preset.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname)
         row.prop(context.scene, 'new_flag_preset_name', text='Name')
         row = layout.row()
-        row.operator(SOLLUMZ_OT_delete_flag_preset.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname)
         row = layout.row()
-        row.operator(SOLLUMZ_OT_load_flag_preset.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname)
         row = layout.row()
-        row.operator(SOLLUMZ_OT_clear_col_flags.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname)
 
 
 def register():
