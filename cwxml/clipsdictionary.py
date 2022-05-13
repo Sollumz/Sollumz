@@ -1,4 +1,4 @@
-from .codewalker_xml import *
+from .element import *
 from xml.etree import ElementTree as ET
 from inspect import isclass
 from math import sqrt

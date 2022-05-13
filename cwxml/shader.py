@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import os
-from .codewalker_xml import *
+from .element import *
 from .drawable import ParametersListProperty, VertexLayoutListProperty
 from ..tools.utils import *
 

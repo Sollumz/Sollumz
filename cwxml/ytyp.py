@@ -1,4 +1,4 @@
-from .codewalker_xml import *
+from .element import *
 from .ymap import EntityListProperty, ExtensionsListProperty
 from numpy import float32
 

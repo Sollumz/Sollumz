@@ -1,4 +1,4 @@
-from .codewalker_xml import *
+from .element import *
 
 
 class YND:

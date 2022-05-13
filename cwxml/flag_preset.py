@@ -1,4 +1,4 @@
-from .codewalker_xml import AttributeProperty, ElementTree, ListProperty, FlagsProperty
+from .element import AttributeProperty, ElementTree, ListProperty, FlagsProperty
 
 
 class FlagPresetsFile(ElementTree):

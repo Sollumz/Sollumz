@@ -1,6 +1,6 @@
 from abc import ABC as AbstractClass
 from xml.etree import ElementTree as ET
-from .codewalker_xml import *
+from .element import *
 from .drawable import Drawable, LightsProperty
 from .bound import BoundComposite
 
