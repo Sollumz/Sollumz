@@ -1,7 +1,7 @@
 import os
 import bpy
 from mathutils import Vector, Quaternion, Matrix
-from ..resources.clipsdictionary import YCD
+from ..cwxml.clipsdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import build_bone_map, get_armature_obj
 from ..tools.animationhelper import is_ped_bone_tag

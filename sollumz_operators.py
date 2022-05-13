@@ -5,13 +5,13 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from .sollumz_helper import *
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
-from .resources.drawable import YDR, YDD
-from .resources.fragment import YFT
-from .resources.bound import YBN
-from .resources.navmesh import YNV
-from .resources.clipsdictionary import YCD
-from .resources.ytyp import YTYP
-from .resources.ymap import YMAP, EntityItem, CMapData
+from .cwxml.drawable import YDR, YDD
+from .cwxml.fragment import YFT
+from .cwxml.bound import YBN
+from .cwxml.navmesh import YNV
+from .cwxml.clipsdictionary import YCD
+from .cwxml.ytyp import YTYP
+from .cwxml.ymap import YMAP, EntityItem, CMapData
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd

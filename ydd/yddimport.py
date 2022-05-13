@@ -1,7 +1,7 @@
 import bpy
 import os
-from ..resources.drawable import *
-from ..resources.fragment import YFT
+from ..cwxml.drawable import *
+from ..cwxml.fragment import YFT
 from ..ydr.ydrimport import drawable_to_obj
 from ..tools.drawablehelper import join_drawable_geometries
 from ..sollumz_properties import SollumType

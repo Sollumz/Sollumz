@@ -1,7 +1,7 @@
 from math import ceil
 from ..tools.obb import get_obb, get_obb_extents
 import traceback
-from ..resources.flag_preset import FlagPreset
+from ..cwxml.flag_preset import FlagPreset
 from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..tools.boundhelper import *

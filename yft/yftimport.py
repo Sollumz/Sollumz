@@ -2,7 +2,7 @@ import bpy
 from mathutils import Matrix, Vector
 from ..tools.utils import multiW
 from ..tools.meshhelper import create_uv_layer
-from ..resources.fragment import YFT
+from ..cwxml.fragment import YFT
 from ..tools.fragmenthelper import shattermap_to_material
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import composite_to_obj

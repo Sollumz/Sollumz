@@ -2,7 +2,7 @@ import bpy
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
-from ..resources.flag_preset import FlagPresetsFile
+from ..cwxml.flag_preset import FlagPresetsFile
 from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
 from mathutils import Vector, Matrix
 import os

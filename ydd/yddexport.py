@@ -1,4 +1,4 @@
-from ..resources.drawable import *
+from ..cwxml.drawable import *
 from ..tools.meshhelper import *
 from ..tools.utils import *
 from ..ydr.ydrexport import drawable_from_object

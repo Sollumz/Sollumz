@@ -1,6 +1,6 @@
 import bpy
 from .properties import CollisionMatFlags
-from ..resources.bound import *
+from ..cwxml.bound import *
 from ..sollumz_properties import *
 from .collision_materials import create_collision_material_from_index
 from ..sollumz_ui import SOLLUMZ_UI_NAMES

@@ -2,7 +2,7 @@ import bpy
 from bpy.types import PoseBone
 from mathutils import Vector
 
-from ..resources.clipsdictionary import *
+from ..cwxml.clipsdictionary import *
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj

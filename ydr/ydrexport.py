@@ -3,9 +3,9 @@ import shutil
 import bmesh
 import bpy
 import zlib
-from ..resources.fragment import FragmentDrawable
-from ..resources.drawable import *
-from ..resources.shader import ShaderManager
+from ..cwxml.fragment import FragmentDrawable
+from ..cwxml.drawable import *
+from ..cwxml.shader import ShaderManager
 from ..tools import jenkhash
 from ..tools.meshhelper import *
 from ..tools.utils import *

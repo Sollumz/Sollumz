@@ -5,8 +5,8 @@ from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..tools.blenderhelper import get_selected_vertices
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from ..tools.utils import get_min_vector_list, get_max_vector_list, sort_points, is_coplanar
-from ..resources.ytyp import *
-from ..resources.ymap import *
+from ..cwxml.ytyp import *
+from ..cwxml.ymap import *
 from .properties import *
 from bpy_extras.io_utils import ImportHelper
 from bpy_extras.view3d_utils import location_3d_to_region_2d

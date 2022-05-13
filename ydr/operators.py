@@ -4,7 +4,7 @@ from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import *
 from ..tools.boundhelper import convert_selected_to_bound
-from ..resources.shader import ShaderManager
+from ..cwxml.shader import ShaderManager
 import traceback
 import bpy
 
