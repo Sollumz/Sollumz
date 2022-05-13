@@ -1,9 +1,8 @@
 import bpy
 
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_POLYGON_TYPES
-from ..ybn.collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_sphere, create_capsule, create_cylinder
-from mathutils import Vector, Matrix
+from ..tools.meshhelper import create_box
+from mathutils import Vector
 
 
 def create_bound_shape(type):
@@ -11,9 +10,8 @@ def create_bound_shape(type):
 
     # Constrain scale for bound polys
     if pobj.sollum_type in BOUND_POLYGON_TYPES and type != SollumType.BOUND_POLY_BOX and type != SollumType.BOUND_POLY_TRIANGLE:
-        constraint = pobj.constraints.new(type='LIMIT_SCALE')
+        constraint = pobj.constraints.new(type="LIMIT_SCALE")
         constraint.use_transform_limit = True
-        # Why blender? So ugly
         constraint.use_min_x = True
         constraint.use_min_y = True
         constraint.use_min_z = True
@@ -106,7 +104,7 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
         elif do_center:
             obj.location -= center
 
-        if obj.type == 'MESH':
+        if obj.type == "MESH":
             name = obj.name
 
             poly_mesh = obj if replace_original else create_mesh(
@@ -116,7 +114,6 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
 
             if replace_original:
                 poly_mesh.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE]
-                # set properties
                 poly_mesh.sollum_type = SollumType.BOUND_POLY_TRIANGLE
             else:
                 poly_mesh.data = obj.data.copy()

@@ -1,14 +1,12 @@
-from tabnanny import verbose
 import bpy
 from .properties import CollisionMatFlags
-from ..resources.bound import *
-from ..sollumz_properties import *
-from .collision_materials import create_collision_material_from_index, collisionmats
-from ..sollumz_ui import SOLLUMZ_UI_NAMES
-from ..tools.meshhelper import *
-from ..tools.utils import *
+from ..cwxml import bound as ybnxml
+from ..sollumz_properties import SollumType, MaterialType, SOLLUMZ_UI_NAMES
+from .collision_materials import create_collision_material_from_index
+from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc
+from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
 import os
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 
 def init_poly_obj(poly, sollum_type, materials):
@@ -23,26 +21,8 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
-def make_matrix(v1, v2, v3):
-    a = v2-v1
-    b = v3-v1
-
-    c = a.cross(b)
-    if c.magnitude > 0:
-        c = c.normalized()
-    else:
-        raise BaseException("A B C are colinear")
-
-    b2 = c.cross(a).normalized()
-    a2 = a.normalized()
-    m = Matrix([a2, b2, c]).transposed()
-    m = Matrix.Translation(v1) @ m.to_4x4()
-
-    return m
-
-
 def poly_to_obj(poly, materials, vertices):
-    if type(poly) == Box:
+    if type(poly) == ybnxml.Box:
         obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
 
         v1 = vertices[poly.v1]
@@ -113,14 +93,14 @@ def poly_to_obj(poly, materials, vertices):
         obj.matrix_basis = mat
 
         return obj
-    elif type(poly) == Sphere:
+    elif type(poly) == ybnxml.Sphere:
         sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
         sphere.bound_radius = poly.radius
 
         sphere.location = vertices[poly.v]
 
         return sphere
-    elif type(poly) == Capsule:
+    elif type(poly) == ybnxml.Capsule:
         capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
@@ -132,7 +112,7 @@ def poly_to_obj(poly, materials, vertices):
         capsule.rotation_euler = rot
 
         return capsule
-    elif type(poly) == Cylinder:
+    elif type(poly) == ybnxml.Cylinder:
         cylinder = init_poly_obj(
             poly, SollumType.BOUND_POLY_CYLINDER, materials)
         v1 = vertices[poly.v1]
@@ -234,14 +214,14 @@ def geometry_to_obj(geometry, sollum_type):
         materials.append(mat_to_obj(gmat))
 
     triangle_polys = [
-        poly for poly in geometry.polygons if type(poly) == Triangle]
+        poly for poly in geometry.polygons if type(poly) == ybnxml.Triangle]
     triangle_obj = verts_to_obj(geometry.vertices, triangle_polys, materials,
                                 obj, geometry.vertex_colors)
     vert2_obj = verts_to_obj(
         geometry.vertices_2, triangle_polys, materials, obj, geometry.vertex_colors)
 
     for poly in geometry.polygons:
-        if type(poly) is not Triangle:
+        if type(poly) is not ybnxml.Triangle:
             poly_obj = poly_to_obj(
                 poly, triangle_obj.data.materials, geometry.vertices)
             if poly_obj:
@@ -316,25 +296,25 @@ def init_bound_obj(bound, sollum_type):
 
 
 def bound_to_obj(bound):
-    if bound.type == 'Box':
+    if bound.type == "Box":
         box = init_bound_item_obj(bound, SollumType.BOUND_BOX)
         box.bound_dimensions = abs_vector(bound.box_max - bound.box_min)
         box.data.transform(Matrix.Translation(bound.box_center))
 
         return box
-    elif bound.type == 'Sphere':
+    elif bound.type == "Sphere":
         sphere = init_bound_item_obj(bound, SollumType.BOUND_SPHERE)
         sphere.bound_radius = bound.sphere_radius
 
         return sphere
-    elif bound.type == 'Capsule':
+    elif bound.type == "Capsule":
         capsule = init_bound_item_obj(bound, SollumType.BOUND_CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
         capsule.bound_length = bbmax.z - bbmin.z
         capsule.bound_radius = bound.sphere_radius
 
         return capsule
-    elif bound.type == 'Cylinder':
+    elif bound.type == "Cylinder":
         cylinder = init_bound_item_obj(bound, SollumType.BOUND_CYLINDER)
         bbmin, bbmax = bound.box_min, bound.box_max
         extent = bbmax - bbmin
@@ -342,26 +322,26 @@ def bound_to_obj(bound):
         cylinder.bound_radius = extent.x * 0.5
 
         return cylinder
-    elif bound.type == 'Disc':
+    elif bound.type == "Disc":
         disc = init_bound_item_obj(bound, SollumType.BOUND_DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
         disc.bound_radius = bound.sphere_radius
         create_disc(disc.data, bound.sphere_radius, bound.margin * 2)
 
         return disc
-    elif bound.type == 'Cloth':
+    elif bound.type == "Cloth":
         cloth = init_bound_item_obj(bound, SollumType.BOUND_CLOTH)
         return cloth
-    elif bound.type == 'Geometry':
+    elif bound.type == "Geometry":
         geometry = geometry_to_obj(bound, SollumType.BOUND_GEOMETRY)
         return geometry
-    elif bound.type == 'GeometryBVH':
+    elif bound.type == "GeometryBVH":
         bvh = geometry_to_obj(bound, SollumType.BOUND_GEOMETRYBVH)
         return bvh
 
 
 def composite_to_obj(bounds, name, from_drawable=False):
-    if(from_drawable):
+    if from_drawable:
         composite = bounds
     else:
         composite = bounds.composite
@@ -381,6 +361,6 @@ def composite_to_obj(bounds, name, from_drawable=False):
 
 
 def import_ybn(filepath):
-    ybn_xml = YBN.from_xml_file(filepath)
+    ybn_xml = ybnxml.YBN.from_xml_file(filepath)
     composite_to_obj(ybn_xml, os.path.basename(
-        filepath.replace(YBN.file_extension, '')))
+        filepath.replace(ybnxml.YBN.file_extension, "")))

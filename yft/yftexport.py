@@ -1,19 +1,20 @@
 import os
+from mathutils import Matrix
 from ..yft.yftimport import get_fragment_drawable
 from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_objects
-from ..resources.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
+from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
 from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
-from ..tools.meshhelper import *
+from ..tools.meshhelper import get_bound_center, get_sphere_radius
+from ..tools.utils import divide_vector_inv, prop_array_to_vector
 
 
 def get_group_objects(fragment, index=0):
     groups = []
     for child in fragment.children:
         if child.sollum_type == SollumType.FRAGGROUP:
-            # print(f"{child.name} {index}")
             groups.append(child)
             index += 1
     for g in groups:
@@ -87,7 +88,7 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
     for child in fobj.children:
         if child.sollum_type == SollumType.DRAWABLE:
             dobj = child
-    if dobj == None:
+    if dobj is None:
         raise Exception("NO DRAWABLE TO EXPORT.")
 
     materials = None
@@ -118,9 +119,9 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
         m = Matrix()
         for model in dobj.children:
             bone_index = 0
-            if model.parent_type == 'BONE':
+            if model.parent_type == "BONE":
                 parent_bone = model.parent_bone
-                if parent_bone != None and parent_bone != '':
+                if parent_bone is not None and parent_bone != "":
                     bone_index = model.parent.data.bones[parent_bone].bone_properties.tag
 
             if bone_index == idx:

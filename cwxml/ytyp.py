@@ -1,4 +1,14 @@
-from .codewalker_xml import *
+from xml.etree import ElementTree as ET
+from .element import (
+    AttributeProperty,
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    QuaternionProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty
+)
 from .ymap import EntityListProperty, ExtensionsListProperty
 from numpy import float32
 
@@ -99,11 +109,11 @@ class AttachedObjectsBuffer(ElementProperty):
         for index, entity_index in enumerate(self.value):
             text.append(str(entity_index))
             if index < len(self.value) - 1:
-                text.append(' ')
+                text.append(" ")
             if (index + 1) % columns == 0:
-                text.append('\n')
+                text.append("\n")
 
-        element.text = ''.join(text)
+        element.text = "".join(text)
 
         return element
 
@@ -272,6 +282,6 @@ class CMapTypes(ElementTree):
         self.extensions = ExtensionsListProperty()
         self.archetypes = ArchetypesListProperty()
         self.name = TextProperty("name")
-        # Investigate: Not used in any ytyp file in the game?
+        # TODO: Investigate: Not used in any ytyp file in the game?
         # self.dependencies = DependenciesListProperty()
         self.composite_entity_type = CompositeEntityTypeListProperty()

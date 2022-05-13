@@ -1,12 +1,12 @@
-import bpy
 import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
 
 from ..sollumz_properties import SollumType
-from .utils import *
+from .utils import divide_list, subtract_from_vector, get_min_vector_list, add_to_vector, get_max_vector_list
 from .version import USE_LEGACY
+from .blenderhelper import get_children_recursive
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):
@@ -61,9 +61,9 @@ def create_sphere(mesh, radius=1):
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter'] = radius
+        kwargs["diameter"] = radius
     else:
-        kwargs['radius'] = radius
+        kwargs["radius"] = radius
 
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, **kwargs)
@@ -77,11 +77,11 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter1'] = radius
-        kwargs['diameter2'] = radius
+        kwargs["diameter1"] = radius
+        kwargs["diameter2"] = radius
     else:
-        kwargs['radius1'] = radius
-        kwargs['radius2'] = radius
+        kwargs["radius1"] = radius
+        kwargs["radius2"] = radius
 
     bmesh.ops.create_cone(
         bm,
@@ -99,17 +99,15 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
 
 def create_disc(mesh, radius=1, length=0.08):
     bm = bmesh.new()
-    # rot_mat = Matrix.Rotation(radians(90.0), 4, "Y") @ lookatlh(
-    #     Vector((0, 0, 0)), Vector((1, 0, 0)), Vector((0, 0, 1)))
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter1'] = radius
-        kwargs['diameter2'] = radius
+        kwargs["diameter1"] = radius
+        kwargs["diameter2"] = radius
     else:
-        kwargs['radius1'] = radius
-        kwargs['radius2'] = radius
+        kwargs["radius1"] = radius
+        kwargs["radius2"] = radius
 
     bmesh.ops.create_cone(
         bm,
@@ -128,15 +126,15 @@ def create_disc(mesh, radius=1, length=0.08):
 def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     length = length if diameter < length else diameter
     if diameter < 0:
-        raise ValueError('Cannot create capsule with a diameter less than 0!')
+        raise ValueError("Cannot create capsule with a diameter less than 0!")
 
     bm = bmesh.new()
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter'] = diameter
+        kwargs["diameter"] = diameter
     else:
-        kwargs['radius'] = diameter
+        kwargs["radius"] = diameter
 
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, **kwargs)
@@ -151,7 +149,6 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     bottom = []
     bottom_faces = []
 
-    # amount = length - (diameter * 2)
     amount = (length - diameter) * 2
     vec = Vector((0, 0, amount))
 
@@ -189,20 +186,9 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     bm.free()
 
     if use_rot:
-        mesh.transform(Matrix.Rotation(radians(90.0), 4, 'X'))
+        mesh.transform(Matrix.Rotation(radians(90.0), 4, "X"))
 
     return mesh
-
-
-def create_plane():
-    x = 1.0
-    y = 1.0
-    vert = [(-x, -y, 0.0), (x, -y, 0.0), (-x, y, 0.0), (x, y, 0.0)]
-    fac = [(0, 1, 3, 2)]
-    pl_data = bpy.data.meshes.new("Window")
-    pl_data.from_pydata(vert, [], fac)
-    pl_obj = bpy.data.objects.new("Window", pl_data)
-    return pl_obj
 
 
 def create_uv_layer(mesh, num, name, texcoords, flip_uvs=True):
@@ -230,22 +216,6 @@ def flip_uv(uv):
     v = (uv[1] - 1.0) * -1
 
     return [u, v]
-
-
-def get_short_long_edge(bbmin, bbmax):
-    bbox = bpy.data.meshes.new('bbox')
-    create_box_from_extents(
-        bbox, bbmin, bbmax)
-    edge_lengths = []
-    for edge in bbox.edges:
-        v1 = bbox.vertices[edge.vertices[0]].co
-        v2 = bbox.vertices[edge.vertices[1]].co
-        edge_lengths.append(get_distance_of_vectors(v1, v2))
-    # edge_lengths = np.array(edge_lengths)
-    # height = edge_lengths.max(axis=0)
-    # width = edge_lengths.min(axis=0)
-    # return height, width
-    return max(edge_lengths), min(edge_lengths)
 
 
 """Get min and max bounds for an object and all of its children"""
@@ -294,32 +264,5 @@ def get_bound_center_from_bounds(bbmin, bbmax):
     return (bbmin + bbmax) * 0.5
 
 
-def get_children_recursive(obj):
-    children = []
-
-    if obj is None:
-        return children
-
-    if len(obj.children) < 1:
-        return children
-
-    for child in obj.children:
-        children.append(child)
-        if len(child.children) > 0:
-            children.extend(get_children_recursive(child))
-
-    return children
-
-
 def get_sphere_radius(bbmax, bbcenter):
     return (bbmax - bbcenter).length
-
-
-def get_local_pos(obj):
-    return Vector(obj.parent.matrix_world.inverted() @ obj.matrix_world.translation)
-
-
-def prop_array_to_vector(prop, size=3):
-    if size == 4:
-        return Quaternion((prop[0], prop[1], prop[2], prop[3]))
-    return Vector((prop[0], prop[1], prop[2]))

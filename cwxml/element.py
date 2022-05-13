@@ -2,23 +2,22 @@
 from mathutils import Vector, Quaternion, Matrix
 from abc import abstractmethod, ABC as AbstractClass, abstractclassmethod
 from dataclasses import dataclass
-from typing import Any, Text
+from typing import Any
 from xml.etree import ElementTree as ET
 from numpy import float32
 
-"""Custom indentation to get elements like <VerticesProperty /> to output nicely"""
-
 
 def indent(elem: ET.Element, level=0):
+    """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
     amount = "  "
-    i = "\n" + level*amount
+    i = "\n" + level * amount
     if len(elem):
         if not elem.text or not elem.text.strip():
             elem.text = i + amount
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
-            indent(elem, level+1)
+            indent(elem, level + 1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
     else:
@@ -26,19 +25,17 @@ def indent(elem: ET.Element, level=0):
             elem.tail = i
 
         # Indent innertext of elements on new lines. Used in cases like <VerticesProperty />
-        if elem.text and len(elem.text.strip()) > 0 and elem.text.find('\n') != -1:
-            lines = elem.text.strip().split('\n')
+        if elem.text and len(elem.text.strip()) > 0 and elem.text.find("\n") != -1:
+            lines = elem.text.strip().split("\n")
             for index, line in enumerate(lines):
                 lines[index] = ((level + 1) * amount) + line
-            elem.text = '\n' + '\n'.join(lines) + i
-
-
-"""Determine if a string is a bool, int, or float"""
+            elem.text = "\n" + "\n".join(lines) + i
 
 
 def get_str_type(value: str):
+    """Determine if a string is a bool, int, or float"""
     if isinstance(value, str):
-        if value.lower() == 'true' or value.lower() == 'false':
+        if value.lower() == "true" or value.lower() == "false":
             return bool(value)
 
         try:
@@ -65,26 +62,25 @@ class Element(AbstractClass):
         raise ValueError(
             f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!")
 
-    """Convert ET.Element object to Element"""
     @abstractclassmethod
     def from_xml(cls, element: ET.Element):
+        """Convert ET.Element object to Element"""
         raise NotImplementedError
 
-    """Convert object to ET.Element object"""
     @abstractmethod
     def to_xml(self):
+        """Convert object to ET.Element object"""
         raise NotImplementedError
 
-    """Read XML from filepath"""
     @classmethod
     def from_xml_file(cls, filepath):
-        elementTree = ET.ElementTree()
-        elementTree.parse(filepath)
-        return cls.from_xml(elementTree.getroot())
-
-    """Write object as XML to filepath"""
+        """Read XML from filepath"""
+        element_tree = ET.ElementTree()
+        element_tree.parse(filepath)
+        return cls.from_xml(element_tree.getroot())
 
     def write_xml(self, filepath):
+        """Write object as XML to filepath"""
         element = self.to_xml()
         indent(element)
         elementTree = ET.ElementTree(element)
@@ -94,15 +90,15 @@ class Element(AbstractClass):
 class ElementTree(Element):
     """XML element that contains children defined by it's properties"""
 
-    """Convert ET.Element object to ElementTree"""
     @classmethod
     def from_xml(cls: Element, element: ET.Element):
+        """Convert ET.Element object to ElementTree"""
         new = cls()
 
         for prop_name, obj_element in vars(new).items():
             if isinstance(obj_element, Element):
                 child = element.find(obj_element.tag_name)
-                if child != None and obj_element.tag_name == child.tag:
+                if child is not None and obj_element.tag_name == child.tag:
                     # Add element to object if tag is defined in class definition
                     setattr(new, prop_name, type(obj_element).from_xml(child))
             elif isinstance(obj_element, AttributeProperty):
@@ -112,14 +108,13 @@ class ElementTree(Element):
 
         return new
 
-    """Convert ElementTree to ET.Element object"""
-
     def to_xml(self):
+        """Convert ElementTree to ET.Element object"""
         root = ET.Element(self.tag_name)
         for child in vars(self).values():
             if isinstance(child, Element):
                 element = child.to_xml()
-                if(element != None):
+                if element is not None:
                     root.append(element)
             elif isinstance(child, AttributeProperty):
                 root.set(child.name, str(child.value))
@@ -184,7 +179,7 @@ class ElementProperty(Element, AbstractClass):
         self.tag_name = tag_name
         if value and not isinstance(value, self.value_types):
             raise TypeError(
-                f'Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!')
+                f"Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!")
         self.value = value
 
 
@@ -239,14 +234,12 @@ class ListProperty(ElementProperty, AbstractClass):
 class TextProperty(ElementProperty):
     value_types = (str)
 
-    '''default = Name ?'''
-
-    def __init__(self, tag_name: str = 'Name', value=None):
+    def __init__(self, tag_name: str = "Name", value=None):
         super().__init__(tag_name, value or "")
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return TextProperty(element.tag, element.text)  # .strip())
+        return TextProperty(element.tag, element.text)
 
     def to_xml(self):
         if not self.value or len(self.value) < 1:
@@ -265,16 +258,16 @@ class ColorProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['r', 'g', 'b']):
+        if not all(x in element.attrib.keys() for x in ["r", "g", "b"]):
             return ColorProperty.read_value_error(element)
 
-        return ColorProperty(element.tag, [float(element.get('r')), float(element.get('g')), float(element.get('b'))])
+        return ColorProperty(element.tag, [float(element.get("r")), float(element.get("g")), float(element.get("b"))])
 
     def to_xml(self):
         r = str(int(self.value.r))
         g = str(int(self.value.g))
         b = str(int(self.value.b))
-        return ET.Element(self.tag_name, attrib={'r': r, 'g': g, 'b': b})
+        return ET.Element(self.tag_name, attrib={"r": r, "g": g, "b": b})
 
 
 class Vector2Property(ElementProperty):
@@ -285,15 +278,15 @@ class Vector2Property(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['x', 'y']):
+        if not all(x in element.attrib.keys() for x in ["x", "y"]):
             return VectorProperty.read_value_error(element)
 
-        return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')))))
+        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
         y = str(float32(self.value.y))
-        return ET.Element(self.tag_name, attrib={'x': x, 'y': y})
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y})
 
 
 class VectorProperty(ElementProperty):
@@ -304,16 +297,16 @@ class VectorProperty(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['x', 'y', 'z']):
+        if not all(x in element.attrib.keys() for x in ["x", "y", "z"]):
             return VectorProperty.read_value_error(element)
 
-        return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')), float(element.get('z')))))
+        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")), float(element.get("z")))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
         y = str(float32(self.value.y))
         z = str(float32(self.value.z))
-        return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z})
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z})
 
 
 class QuaternionProperty(ElementProperty):
@@ -324,17 +317,17 @@ class QuaternionProperty(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['x', 'y', 'z', 'w']):
+        if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
             QuaternionProperty.read_value_error(element)
 
-        return QuaternionProperty(element.tag, Quaternion((float(element.get('w')), float(element.get('x')), float(element.get('y')), float(element.get('z')))))
+        return QuaternionProperty(element.tag, Quaternion((float(element.get("w")), float(element.get("x")), float(element.get("y")), float(element.get("z")))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
         y = str(float32(self.value.y))
         z = str(float32(self.value.z))
         w = str(float32(self.value.w))
-        return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z, 'w': w})
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z, "w": w})
 
 
 class MatrixProperty(ElementProperty):
@@ -375,14 +368,14 @@ class MatrixProperty(ElementProperty):
 class FlagsProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self, tag_name: str = 'Flags', value=None):
+    def __init__(self, tag_name: str = "Flags", value=None):
         super().__init__(tag_name, value or [])
 
     @ staticmethod
     def from_xml(element: ET.Element):
         new = FlagsProperty(element.tag, [])
         if element.text and len(element.text.strip()) > 0:
-            text = element.text.replace(' ', '').split(',')
+            text = element.text.replace(" ", "").split(",")
             if not len(text) > 0:
                 return FlagsProperty.read_value_error(element)
 
@@ -399,10 +392,10 @@ class FlagsProperty(ElementProperty):
         for item in self.value:
             # Should be a list of strings
             if not isinstance(item, str):
-                return TypeError('FlagsProperty can only contain str objects!')
+                return TypeError("FlagsProperty can only contain str objects!")
 
         if len(self.value) > 0:
-            element.text = ', '.join(self.value)
+            element.text = ", ".join(self.value)
         return element
 
 
@@ -414,10 +407,10 @@ class ValueProperty(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not 'value' in element.attrib:
+        if not "value" in element.attrib:
             ValueProperty.read_value_error(element)
 
-        return ValueProperty(element.tag, get_str_type(element.get('value')))
+        return ValueProperty(element.tag, get_str_type(element.get("value")))
 
     def to_xml(self):
         value = self.value
@@ -426,7 +419,7 @@ class ValueProperty(ElementProperty):
         elif type(value) is float:
             value = int(self.value) if self.value.is_integer(
             ) else float32(self.value)
-        return ET.Element(self.tag_name, attrib={'value': str(value)})
+        return ET.Element(self.tag_name, attrib={"value": str(value)})
 
 
 class TextListProperty(ElementProperty):

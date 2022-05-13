@@ -1,6 +1,5 @@
-import math
 from ..tools.meshhelper import create_box
-from ..resources.navmesh import YNV
+from ..cwxml.navmesh import YNV
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 import os
 import bpy
@@ -120,7 +119,7 @@ def polygons_to_obj(polygons):
                 vertices[vertex] = idx
                 verts.append(vert)
             face.append(idx)
-            if (len(face) == maxtcount):
+            if len(face) == maxtcount:
                 indices.append(face)
                 face = []
 
@@ -140,7 +139,7 @@ def polygons_to_obj(polygons):
 
 
 def navmesh_to_obj(navmesh, filepath):
-    name = os.path.basename(filepath.replace(YNV.file_extension, ''))
+    name = os.path.basename(filepath.replace(YNV.file_extension, ""))
     nobj = bpy.data.objects.new(name, None)
     nobj.sollum_type = SollumType.NAVMESH
     nobj.empty_display_size = 0

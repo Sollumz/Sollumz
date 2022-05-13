@@ -1,4 +1,16 @@
-from .codewalker_xml import *
+from abc import ABC as AbstractClass, abstractmethod
+from xml.etree import ElementTree as ET
+from .element import (
+    AttributeProperty,
+    ElementTree,
+    FlagsProperty,
+    ListProperty,
+    QuaternionProperty,
+    TextProperty,
+    TextListProperty,
+    ValueProperty,
+    VectorProperty
+)
 
 
 class YMAP:

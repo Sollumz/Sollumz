@@ -1,8 +1,12 @@
 import xml.etree.ElementTree as ET
 import os
-from .codewalker_xml import *
+from .element import (
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    TextProperty,
+)
 from .drawable import ParametersListProperty, VertexLayoutListProperty
-from ..tools.utils import *
 
 
 class RenderBucketProperty(ElementProperty):
@@ -62,11 +66,7 @@ class Shader(ElementTree):
         for layout in self.layouts:
             if layout.vertex_semantic == vertex_semantic:
                 return layout
-        #error = f"{vertex_semantic} layout is not found in the shader '{self.name}'"
-        #error += "\nThe possible layouts you can have are"
-        # for l in self.layouts:
-        #    error += f", {l.vertex_semantic}"
-        #raise Exception(error)
+
         if is_skinned:
             for layout in self.layouts:
                 if "BlendWeights" in layout.value:
@@ -125,123 +125,6 @@ class ShaderManager:
         for node in tree.getroot():
             shader = Shader.from_xml(node)
             ShaderManager.shaders[shader.name] = shader
-
-    @staticmethod
-    def print_shader_collection():
-        string = ""
-        for shader in ShaderManager.shaders.values():
-            name = shader.name.upper()
-            ui_name = shader.name.replace("_", " ").upper()
-            value = shader.name.lower()
-            string += "ShaderMaterial(\"" + name + "\", \"" + \
-                ui_name + "\", \"" + value + "\"),\n"
-
-        print(string)
-
-    @staticmethod
-    def print_all_vertex_semantics():
-        sems = []
-        for shader in ShaderManager.shaders.values():
-            for layout in shader.layouts:
-                if layout.vertex_semantic in sems:
-                    continue
-                else:
-                    sems.append(layout.vertex_semantic)
-
-        for s in sems:
-            print(s)
-
-    @staticmethod
-    def check_bumpmap_to_tangents():
-        result = True
-
-        for shader in ShaderManager.shaders.values():
-            bumpsamp = False
-            tangent = False
-            for layout in shader.layouts:
-                if "Tangent" in layout.value:
-                    tangent = True
-            for param in shader.parameters:
-                if "BumpSampler" in param.name:
-                    bumpsamp = True
-
-            if bumpsamp != tangent:
-                result = False
-                print(
-                    f"shader: {shader.name} bumpsamp: {str(bumpsamp)} tangent: {str(tangent)}")
-
-        if result:
-            print(f"{result} dexy is correct")
-        else:
-            print(f"{result} :(")
-
-    @staticmethod
-    def check_if_all_layouts_have_tangents():
-
-        for shader in ShaderManager.shaders.values():
-            result = True
-            tangent = False
-            if "Tangent" in shader.layouts[0].value:
-                tangent = True
-            for layout in shader.layouts:
-                if "Tangent" in layout.value and tangent != True:
-                    result = False
-                    print(shader.name)
-                    break
-
-    @staticmethod
-    def print_filename_enum():
-        result = []
-        for shader in ShaderManager.shaders.values():
-            i = 0
-            for fn in shader.filenames:
-                if fn.value not in result:
-                    result.append(f"{shader.name.upper()}{i} = \"{fn.value}\"")
-                    i += 1
-        print("\t\n".join(result))
-
-    @staticmethod
-    def print_all_params():
-        result = []
-        for shader in ShaderManager.shaders.values():
-            for p in shader.parameters:
-                if p.name not in result:
-                    if p.name:
-                        if "sampler" not in p.name.lower():
-                            result.append(p.name)
-        print(result)
-        # print("\t\n".join(result))
-
-    @staticmethod
-    def shader_name_fixed(sn):
-        result = []
-        words = sn.split("_")
-        for w in words:
-            result.append(w.capitalize())
-        return " ".join(result)
-
-    @staticmethod
-    def print_layout_github_page():
-        result = []
-
-        for shader in ShaderManager.shaders.values():
-            res = f"## {ShaderManager.shader_name_fixed(shader.name)} Shader"
-            res += "\n"
-            res += "### Filenames"
-            for f in shader.filenames:
-                if f.value != "":
-                    res += "\n* " + f.value
-            res += "\n"
-            res += "### Parameters"
-            for p in shader.parameters:
-                res += f"\n* {p.type} - {p.name}"
-            res += "\n"
-            res += "### Vertex Layouts"
-            for l in shader.layouts:
-                res += f"\n* {l.vertex_semantic} - {l.pretty_vertex_semantic}"
-            result.append(res)
-
-        print("\n".join(result))
 
 
 ShaderManager.load_shaders()

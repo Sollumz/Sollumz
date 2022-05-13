@@ -40,9 +40,11 @@ ped_bone_tags = [
     4154,
 ]
 
+
 class AnimationFlag(IntFlag):
     Default = 0
     RootMotion = 16
+
 
 class TrackType(IntEnum):
     """An enumeration of Animation Tracks supported by GTA."""
@@ -65,13 +67,16 @@ class TrackType(IntEnum):
     CameraFov = -1
     CameraDof = -1
 
+
 class TrackValueType(IntEnum):
     Vector3 = 0
     Quaternion = 1
 
+
 class ActionType(IntEnum):
     Base = 0,
     RootMotion = 1
+
 
 TrackTypeValueMap = {
     TrackType.BonePosition: TrackValueType.Vector3,
@@ -85,13 +90,15 @@ TrackTypeValueMap = {
     TrackType.UV1: TrackValueType.Vector3,
 }
 
+
 def is_ped_bone_tag(bone_tag):
     return bone_tag in ped_bone_tags
 
+
 def evaluate_vector(fcurves, data_path, frames):
-    xCurve = fcurves.find(data_path, index = 0)
-    yCurve = fcurves.find(data_path, index = 1)
-    zCurve = fcurves.find(data_path, index = 2)
+    xCurve = fcurves.find(data_path, index=0)
+    yCurve = fcurves.find(data_path, index=1)
+    zCurve = fcurves.find(data_path, index=2)
 
     if xCurve is None:
         return []
@@ -105,10 +112,11 @@ def evaluate_vector(fcurves, data_path, frames):
         result.append(Vector((x, y, z)))
     return result
 
+
 def evaluate_euler_to_quaternion(fcurves, data_path, frames):
-    xCurve = fcurves.find(data_path, index = 0)
-    yCurve = fcurves.find(data_path, index = 1)
-    zCurve = fcurves.find(data_path, index = 2)
+    xCurve = fcurves.find(data_path, index=0)
+    yCurve = fcurves.find(data_path, index=1)
+    zCurve = fcurves.find(data_path, index=2)
 
     if xCurve is None:
         return []
@@ -122,11 +130,12 @@ def evaluate_euler_to_quaternion(fcurves, data_path, frames):
         result.append(Euler((x, y, z)).to_quaternion())
     return result
 
+
 def evaluate_quaternion(fcurves, data_path, frames):
-    wCurve = fcurves.find(data_path, index = 0)
-    xCurve = fcurves.find(data_path, index = 1)
-    yCurve = fcurves.find(data_path, index = 2)
-    zCurve = fcurves.find(data_path, index = 3)
+    wCurve = fcurves.find(data_path, index=0)
+    xCurve = fcurves.find(data_path, index=1)
+    yCurve = fcurves.find(data_path, index=2)
+    zCurve = fcurves.find(data_path, index=3)
 
     if xCurve is None:
         return []
@@ -140,6 +149,7 @@ def evaluate_quaternion(fcurves, data_path, frames):
 
         result.append(Quaternion((w, x, y, z)))
     return result
+
 
 def get_quantum_and_min_val(nums):
     min_val = float_info.max

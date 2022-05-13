@@ -1,16 +1,21 @@
 import bpy
+from mathutils import Quaternion, Vector
 from ..sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType, EntityPriorityLevel, EntityLodLevel
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..tools.blenderhelper import get_selected_vertices
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from ..tools.utils import get_min_vector_list, get_max_vector_list, sort_points, is_coplanar
-from ..resources.ytyp import *
-from ..resources.ymap import *
-from .properties import *
+from ..cwxml import ytyp as ytypxml
+from .properties import (
+    get_selected_ytyp,
+    get_selected_archetype,
+    get_selected_room,
+    get_selected_entity,
+    get_selected_portal
+)
 from bpy_extras.io_utils import ImportHelper
 from bpy_extras.view3d_utils import location_3d_to_region_2d
-from .gizmos import PortalGizmoGroup
 
 import os
 import traceback
@@ -562,13 +567,13 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     filter_glob: bpy.props.StringProperty(
         default="*.ytyp.xml",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 
     def run(self, context):
         try:
-            ytyp_xml = YTYP.from_xml_file(self.filepath)
+            ytyp_xml = ytypxml.YTYP.from_xml_file(self.filepath)
             ytyp = context.scene.ytyps.add()
             ytyp.name = ytyp_xml.name
             for arch_xml in ytyp_xml.archetypes:
@@ -599,7 +604,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 elif arch_xml.type == "CMloArchetypeDef":
                     arch.type = ArchetypeType.MLO
                     arch.mlo_flags.total = str(arch_xml.mlo_flags)
-                    for entity_index, entity_xml in enumerate(arch_xml.entities):
+                    for entity_xml in arch_xml.entities:
                         entity = arch.entities.add()
                         entity.position = entity_xml.position
                         entity.rotation = entity_xml.rotation
@@ -681,7 +686,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
     filter_glob: bpy.props.StringProperty(
         default="*.ytyp.xml",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 
@@ -762,23 +767,23 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         try:
             selected_ytyp = context.scene.ytyps[context.scene.ytyp_index]
-            ytyp = CMapTypes()
+            ytyp = ytypxml.CMapTypes()
             ytyp.name = selected_ytyp.name.lower()
             for archetype in selected_ytyp.archetypes:
                 archetype_xml = None
                 if archetype.type == ArchetypeType.BASE:
                     archetype_xml = self.init_archetype(
-                        BaseArchetype(), archetype)
+                        ytypxml.BaseArchetype(), archetype)
                 elif archetype.type == ArchetypeType.TIME:
                     archetype_xml = self.init_archetype(
-                        TimeArchetype(), archetype)
+                        ytypxml.TimeArchetype(), archetype)
                     archetype_xml.time_flags = archetype.time_flags.total
                 elif archetype.type == ArchetypeType.MLO:
                     archetype_xml = self.init_archetype(
-                        MloArchetype(), archetype)
+                        ytypxml.MloArchetype(), archetype)
                     archetype_xml.mlo_flags = archetype.mlo_flags.total
                     for entity in archetype.entities:
-                        entity_xml = EntityItem()
+                        entity_xml = ytypxml.EntityItem()
                         entity_obj = entity.linked_object
                         if entity_obj:
                             entity_xml.position = entity_obj.location
@@ -807,7 +812,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
                         archetype_xml.entities.append(entity_xml)
 
                     for room_index, room in enumerate(archetype.rooms):
-                        room_xml = Room()
+                        room_xml = ytypxml.Room()
                         room_xml.name = room.name
                         room_xml.bb_min = room.bb_min
                         room_xml.bb_max = room.bb_max
@@ -824,10 +829,10 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
                             room_xml, room_index, archetype.entities)
                         archetype_xml.rooms.append(room_xml)
                     for portal_index, portal in enumerate(archetype.portals):
-                        portal_xml = Portal()
+                        portal_xml = ytypxml.Portal()
                         for i in range(4):
                             corner = getattr(portal, f"corner{i + 1}")
-                            corner_xml = Corner()
+                            corner_xml = ytypxml.Corner()
                             corner_xml.value = corner
                             portal_xml.corners.append(corner_xml)
 
@@ -842,7 +847,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
                             portal.audio_occlusion)
                         archetype_xml.portals.append(portal_xml)
                     for tcm in archetype.timecycle_modifiers:
-                        tcm_xml = TimeCycleModifier()
+                        tcm_xml = ytypxml.TimeCycleModifier()
                         tcm_xml.name = tcm.name
                         tcm_xml.sphere = tcm.sphere
                         tcm_xml.percentage = tcm.percentage

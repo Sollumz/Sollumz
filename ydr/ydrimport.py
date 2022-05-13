@@ -5,11 +5,9 @@ from mathutils import Matrix
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
-from ..resources.drawable import *
+from ..cwxml.drawable import YDR
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
-from ..tools.utils import *
-from ..tools.blenderhelper import *
-from .properties import LightFlags
+from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials
 from ..tools.drawablehelper import join_drawable_geometries
 
 
@@ -31,7 +29,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                     if param.name == n.name:
                         texture_path = os.path.join(
                             texture_folder, param.texture_name + ".dds")
-                        if(os.path.isfile(texture_path)):
+                        if os.path.isfile(texture_path):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
                             n.image = img
@@ -47,21 +45,19 @@ def shadergroup_to_materials(shadergroup, filepath):
                             texture = bpy.data.images.new(
                                 name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
                             n.image = texture
-                            # n.image = bpy.data.images.new(
-                            #     name=param.texture_name, width=512, height=512)
 
                         # assign non color to normal maps
                         if "Bump" in param.name:
                             n.image.colorspace_settings.name = "Non-Color"
 
                         # Assign embedded texture dictionary properties
-                        if shadergroup.texture_dictionary != None:
+                        if shadergroup.texture_dictionary is not None:
                             for texture in shadergroup.texture_dictionary:
                                 if texture.name == param.texture_name:
                                     n.texture_properties.embedded = True
                                     try:
                                         format = TextureFormat[texture.format.replace(
-                                            'D3DFMT_', '')]
+                                            "D3DFMT_", "")]
                                         n.texture_properties.format = format
                                     except AttributeError:
                                         print(
@@ -78,7 +74,7 @@ def shadergroup_to_materials(shadergroup, filepath):
 
                                     for prop in dir(n.texture_flags):
                                         for uf in texture.usage_flags:
-                                            if(uf.lower() == prop):
+                                            if uf.lower() == prop:
                                                 setattr(
                                                     n.texture_flags, prop, True)
 
@@ -87,8 +83,8 @@ def shadergroup_to_materials(shadergroup, filepath):
                             n.image.source = "FILE"
                             n.image.filepath = "//" + n.image.name + ".dds"
 
-                        if param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings'):
-                            n.image.colorspace_settings.name = 'Non-Color'
+                        if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
+                            n.image.colorspace_settings.name = "Non-Color"
 
                 elif isinstance(n, bpy.types.ShaderNodeValue):
                     if param.name == n.name[:-2]:
@@ -131,7 +127,7 @@ def bone_to_obj(bone, armature):
     edit_bone.head = (0, 0, 0)
     edit_bone.tail = (0, 0.05, 0)
     edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
-    if edit_bone.parent != None:
+    if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
     return bone.name
@@ -144,7 +140,7 @@ def set_bone_properties(bone, armature):
     # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
     flags_restricted = set(["LimitRotation", "Unk0"])
     for _flag in bone.flags:
-        if (_flag in flags_restricted):
+        if _flag in flags_restricted:
             continue
 
         flag = bl_bone.bone_properties.flags.add()
@@ -158,12 +154,12 @@ def skeleton_to_obj(skeleton, armature):
 
     bpy.context.view_layer.objects.active = armature
     bones = skeleton.bones
-    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.object.mode_set(mode="EDIT")
 
     for bone in bones:
         bone_to_obj(bone, armature)
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.mode_set(mode="OBJECT")
 
     for bone in bones:
         set_bone_properties(bone, armature)
@@ -176,8 +172,8 @@ def set_rotation_limit(joint, bone):
     if bone is None:
         return None
 
-    constraint = bone.constraints.new('LIMIT_ROTATION')
-    constraint.owner_space = 'LOCAL'
+    constraint = bone.constraints.new("LIMIT_ROTATION")
+    constraint.owner_space = "LOCAL"
     constraint.use_limit_x = True
     constraint.use_limit_y = True
     constraint.use_limit_z = True
@@ -211,14 +207,14 @@ def rotation_limits_to_obj(rotation_limits, armature):
 def light_to_obj(light, armature_obj=None):
     light_type = None
 
-    if light.type == 'Point':
+    if light.type == "Point":
         light_type = LightType.POINT
-    elif light.type == 'Spot':
+    elif light.type == "Spot":
         light_type = LightType.SPOT
-    elif light.type == 'Capsule':
+    elif light.type == "Capsule":
         light_type = LightType.CAPSULE
     else:
-        raise TypeError('Invalid light type')
+        raise TypeError("Invalid light type")
 
     name = SOLLUMZ_UI_NAMES[light_type]
 
@@ -316,11 +312,11 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
             normals.append(vertex.normal)
 
         for key, value in vertex._asdict().items():
-            if 'texcoord' in key:
+            if "texcoord" in key:
                 if not key in texcoords.keys():
                     texcoords[key] = []
                 texcoords[key].append(value)
-            if 'colour' in key:
+            if "colour" in key:
                 if not key in colors.keys():
                     colors[key] = []
                 colors[key].append(value)
@@ -368,7 +364,7 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
                 for i in range(0, 4):
                     weight = vertex.blendweights[i] / 255
                     index = vertex.blendindices[i]
-                    if (weight > 0.0):
+                    if weight > 0.0:
                         obj.vertex_groups[index].add(
                             [vertex_idx], weight, "ADD")
 
@@ -470,27 +466,27 @@ def geometry_to_obj_split_by_bone(model, materials, bones):
     return bobjs
 
 
-def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armatureName=None, is_ydd=None):
+def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature_name=None, is_ydd=None):
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], None)
     dobj.sollum_type = SollumType.DRAWABLE_MODEL
     dobj.empty_display_size = 0
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
-    
-    if (bones != None or armatureName != None) and (is_ydd == None or is_ydd == False):
-        does_armature_obj_exist = armatureName in bpy.data.objects
-        is_obj_armature = bpy.data.objects[armatureName].type
-        if does_armature_obj_exist == True and is_obj_armature == 'ARMATURE':
-            armature = bpy.data.objects[armatureName]
-            parent_bone_name = None 
+
+    if (bones is not None or armature_name is not None) and (is_ydd is None or is_ydd == False):
+        does_armature_obj_exist = armature_name in bpy.data.objects
+        is_obj_armature = bpy.data.objects[armature_name].type
+        if does_armature_obj_exist == True and is_obj_armature == "ARMATURE":
+            armature = bpy.data.objects[armature_name]
+            parent_bone_name = None
             for bone in armature.pose.bones[:]:
                 bone_index = armature.data.bones[bone.name].bone_properties.tag
                 if bone_index == model.bone_index:
                     parent_bone_name = bone.name
                     break
-            
-            if parent_bone_name != None:
+
+            if parent_bone_name is not None:
                 bone = armature.pose.bones.get(parent_bone_name)
                 bpy.context.evaluated_depsgraph_get().update()
                 dobj.parent = armature
@@ -612,7 +608,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             if child.sollum_type != SollumType.DRAWABLE_GEOMETRY:
                 continue
 
-            mod = child.modifiers.new("Armature", 'ARMATURE')
+            mod = child.modifiers.new("Armature", "ARMATURE")
             mod.object = obj
 
     if len(drawable.lights) > 0:
@@ -624,7 +620,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
 def import_ydr(filepath, import_settings):
     ydr_xml = YDR.from_xml_file(filepath)
     drawable = drawable_to_obj(ydr_xml, filepath, os.path.basename(
-        filepath.replace(YDR.file_extension, '')), None, None, import_settings)
+        filepath.replace(YDR.file_extension, "")), None, None, import_settings)
     if import_settings.join_geometries:
         for child in drawable.children:
             if child.sollum_type == SollumType.DRAWABLE_MODEL:

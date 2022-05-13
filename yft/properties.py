@@ -75,8 +75,6 @@ class ChildProperties(bpy.types.PropertyGroup):
     damaged_mass: bpy.props.FloatProperty(name="Damaged Mass")
     unk_vec: bpy.props.FloatVectorProperty(name="UnkVec")
     inertia_tensor: bpy.props.FloatVectorProperty(name="InertiaTensor", size=4)
-    #bone: bpy.props.PointerProperty(type=bpy.types.Bone)
-    # group_index: bpy.props.IntProperty(name="EventSet") ???
 
 
 class VehicleWindowProperties(bpy.types.PropertyGroup):

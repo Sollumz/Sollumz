@@ -1,4 +1,4 @@
-def Generate(text, encoding='utf-8'):
+def Generate(text, encoding="utf-8"):
 
     bts = text.lower().encode(encoding)
     h = 0

@@ -1,8 +1,7 @@
 import bpy
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
-from ..tools.meshhelper import get_bound_center, get_children_recursive
-from ..tools.blenderhelper import join_objects
+from ..tools.blenderhelper import join_objects, get_children_recursive
 from mathutils import Vector
 
 
@@ -56,10 +55,9 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
         name = obj.name
 
         if use_names:
-            obj.name = name + '_old'
+            obj.name = name + "_old"
             dobj.name = name
 
-        # set properties
         obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
 
         new_obj = obj.copy()
@@ -94,11 +92,6 @@ def convert_material(material):
 
     bsdf = material.node_tree.nodes["Principled BSDF"]
 
-    # if(bsdf == None):
-    # self.messages.append(
-    # f"{material.name} Material must have a Principled BSDF node.")
-    # return None
-
     diffuse_node = None
     diffuse_input = bsdf.inputs["Base Color"]
     if diffuse_input.is_linked:
@@ -121,15 +114,14 @@ def convert_material(material):
             normal_node = normal_map_input.links[0].from_node
 
     shader_name = "default"
-    if normal_node != None and specular_node != None:
+    if normal_node is not None and specular_node is not None:
         shader_name = "normal_spec"
-    elif normal_node != None:
+    elif normal_node is not None:
         shader_name = "normal"
-    elif normal_node == None and specular_node != None:
+    elif normal_node is None and specular_node is not None:
         shader_name = "spec"
 
     new_material = create_shader(shader_name)
-    # new_mat.name = mat.name
 
     bsdf = new_material.node_tree.nodes["Principled BSDF"]
 
@@ -155,11 +147,6 @@ def convert_material_to_selected(material, shader_name):
 
     bsdf = material.node_tree.nodes["Principled BSDF"]
 
-    # if(bsdf == None):
-    # self.messages.append(
-    # f"{material.name} Material must have a Principled BSDF node.")
-    # return None
-
     diffuse_node = None
     diffuse_input = bsdf.inputs["Base Color"]
     if diffuse_input.is_linked:
@@ -182,7 +169,6 @@ def convert_material_to_selected(material, shader_name):
             normal_node = normal_map_input.links[0].from_node
 
     new_material = create_shader(shader_name)
-    # new_mat.name = mat.name
 
     bsdf = new_material.node_tree.nodes["Principled BSDF"]
 
@@ -206,7 +192,7 @@ def convert_shader_to_shader(material, shader_name):
     shader = ShaderManager.shaders[shader_name]
     new_material = create_shader(shader_name)
 
-    # todo array nodes params
+    # TODO: array nodes params
     for param in shader.parameters:
         if param.type == "Texture":
             node = try_get_node(material.node_tree, param.name)

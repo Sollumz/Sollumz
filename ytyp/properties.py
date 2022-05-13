@@ -1,7 +1,6 @@
 import bpy
-from bpy.props import PointerProperty
 
-from ..tools.meshhelper import get_children_recursive
+from ..tools.blenderhelper import get_children_recursive
 
 from ..sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, EntityProperties, FlagPropertyGroup, TimeFlags
 from mathutils import Vector

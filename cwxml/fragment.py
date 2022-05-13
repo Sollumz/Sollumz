@@ -1,8 +1,19 @@
 from abc import ABC as AbstractClass
+from mathutils import Matrix
 from xml.etree import ElementTree as ET
-from .codewalker_xml import *
+from .element import (
+    AttributeProperty,
+    ElementTree,
+    ElementProperty,
+    ListProperty,
+    MatrixProperty,
+    QuaternionProperty,
+    TextProperty,
+    ValueProperty,
+    VectorProperty
+)
 from .drawable import Drawable, LightsProperty
-from .bound import BoundsComposite
+from .bound import BoundComposite
 
 
 class YFT:
@@ -48,7 +59,7 @@ class ArchetypeProperty(ElementTree):
         self.unknown_54 = ValueProperty("Unknown54")
         self.inertia_tensor = VectorProperty("InertiaTensor")
         self.inertia_tensor_inv = VectorProperty("InertiaTensorInv")
-        self.bounds = BoundsComposite()
+        self.bounds = BoundComposite()
 
 
 class TransformItem(MatrixProperty):
@@ -78,7 +89,6 @@ class ChildrenItem(ElementTree):
         self.unk_float = ValueProperty("UnkFloat")
         self.unk_vec = VectorProperty("UnkVec")
         self.inertia_tensor = QuaternionProperty("InertiaTensor")
-        # self.event_set = None # ?????????? FIND
         self.drawable = FragmentDrawable()
 
 

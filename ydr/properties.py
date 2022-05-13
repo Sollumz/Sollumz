@@ -1,5 +1,5 @@
 import bpy
-from ..sollumz_properties import DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
 from bpy.path import basename
@@ -19,7 +19,6 @@ class DrawableProperties(bpy.types.PropertyGroup):
 class DrawableModelProperties(bpy.types.PropertyGroup):
     render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
     flags: bpy.props.IntProperty(name="Flags", default=0)
-    # bone_index: bpy.props.IntProperty(name="Bone Index", default=0)
     unknown_1: bpy.props.IntProperty(name="Unknown 1", default=0)
     sollum_lod: bpy.props.EnumProperty(
         items=items_from_enums(LODLevel),
@@ -36,7 +35,6 @@ class ShaderProperties(bpy.types.PropertyGroup):
 
 
 class TextureFlags(bpy.types.PropertyGroup):
-    # usage flags
     not_half: bpy.props.BoolProperty(name="NOT_HALF", default=False)
     hd_split: bpy.props.BoolProperty(name="HD_SPLIT", default=False)
     x2: bpy.props.BoolProperty(name="X2", default=False)
@@ -67,14 +65,12 @@ class TextureFlags(bpy.types.PropertyGroup):
 
 class TextureProperties(bpy.types.PropertyGroup):
     embedded: bpy.props.BoolProperty(name="Embedded", default=False)
-    ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     usage: bpy.props.EnumProperty(
         items=items_from_enums(TextureUsage),
         name="Usage",
         default=TextureUsage.DIFFUSE
     )
 
-    ########################## CHECK CW TO SEE IF THIS IS TRUE ##########################
     format: bpy.props.EnumProperty(
         items=items_from_enums(TextureFormat),
         name="Format",
@@ -95,8 +91,8 @@ class BoneProperties(bpy.types.PropertyGroup):
 
 
 class ShaderMaterial(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty('Index')
-    name: bpy.props.StringProperty('Name')
+    index: bpy.props.IntProperty("Index")
+    name: bpy.props.StringProperty("Name")
 
 
 class LightProperties(bpy.types.PropertyGroup):
@@ -112,7 +108,7 @@ class LightProperties(bpy.types.PropertyGroup):
     volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color", subtype='COLOR', min=0.0, max=1.0)
+        name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0)
     light_hash: bpy.props.IntProperty(name="Light Hash")
     volume_outer_intensity: bpy.props.FloatProperty(
         name="Volume Outer Intensity")
@@ -203,9 +199,8 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     unk32: bpy.props.BoolProperty(
         name="Unk32", update=FlagPropertyGroup.update_flag)
 
+
 # Handler sets the default value of the ShaderMaterials collection on blend file load
-
-
 @persistent
 def on_file_loaded(_):
     bpy.context.scene.shader_materials.clear()
@@ -216,9 +211,9 @@ def on_file_loaded(_):
 
 
 def get_light_type(self):
-    if self.type == 'POINT':
+    if self.type == "POINT":
         return 1 if not self.is_capsule else 3
-    elif self.type == 'SPOT':
+    elif self.type == "SPOT":
         return 2
     else:
         return 0
@@ -226,19 +221,19 @@ def get_light_type(self):
 
 def set_light_type(self, value):
     if value == 1:
-        self.type = 'POINT'
+        self.type = "POINT"
         self.is_capsule = False
     elif value == 3:
-        self.type = 'POINT'
+        self.type = "POINT"
         self.is_capsule = True
     elif value == 2:
-        self.type = 'SPOT'
+        self.type = "SPOT"
         self.is_capsule = False
 
 
 def get_texture_name(self):
     if self.image:
-        return basename(self.image.filepath).split('.')[0]
+        return basename(self.image.filepath).split(".")[0]
     return "None"
 
 
@@ -246,7 +241,7 @@ def register():
     bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
     bpy.types.Scene.shader_materials = bpy.props.CollectionProperty(
-        type=ShaderMaterial, name='Shader Materials')
+        type=ShaderMaterial, name="Shader Materials")
     bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
         type=DrawableProperties)

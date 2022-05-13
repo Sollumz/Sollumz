@@ -1,7 +1,8 @@
 import bpy
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
-from .operators import *
+from . import operators as ycd_ops
+
 
 def draw_clip_properties(self, context):
     obj = context.active_object
@@ -10,12 +11,15 @@ def draw_clip_properties(self, context):
 
         clip_properties = obj.clip_properties
 
-        layout.prop(clip_properties, 'hash')
-        layout.prop(clip_properties, 'name')
-        layout.prop(clip_properties, 'duration')
+        layout.prop(clip_properties, "hash")
+        layout.prop(clip_properties, "name")
+        layout.prop(clip_properties, "duration")
 
-        layout.operator(SOLLUMZ_OT_clip_apply_nla.bl_idname, text='Apply Clip to NLA')
-        layout.operator(SOLLUMZ_OT_clip_new_animation.bl_idname, text='Add a new Animation Link')
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_apply_nla.bl_idname,
+                        text="Apply Clip to NLA")
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_animation.bl_idname,
+                        text="Add a new Animation Link")
+
 
 def draw_animation_properties(self, context):
     obj = context.active_object
@@ -24,8 +28,9 @@ def draw_animation_properties(self, context):
 
         animation_properties = obj.animation_properties
 
-        layout.prop(animation_properties, 'hash')
-        layout.prop(animation_properties, 'frame_count')
+        layout.prop(animation_properties, "hash")
+        layout.prop(animation_properties, "frame_count")
+
 
 def draw_clip_dictionary_properties(self, context):
     obj = context.active_object
@@ -34,15 +39,15 @@ def draw_clip_dictionary_properties(self, context):
 
         clip_dict_properties = obj.clip_dict_properties
 
-        layout.prop(clip_dict_properties, 'armature')
+        layout.prop(clip_dict_properties, "armature")
 
 
 class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
     bl_label = "Linked Animations"
-    bl_idname = 'SOLLUMZ_PT_CLIP_ANIMATIONS'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_CLIP_ANIMATIONS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
     bl_order = 0
 
@@ -60,20 +65,21 @@ class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
 
         for animation_index, clip_animation in enumerate(clip_properties.animations):
             toolbox_animation = layout.box()
-            toolbox_animation.prop(clip_animation, 'animation')
-            toolbox_animation.prop(clip_animation, 'start_frame')
-            toolbox_animation.prop(clip_animation, 'end_frame')
+            toolbox_animation.prop(clip_animation, "animation")
+            toolbox_animation.prop(clip_animation, "start_frame")
+            toolbox_animation.prop(clip_animation, "end_frame")
 
-            delete_op = toolbox_animation.operator(SOLLUMZ_OT_clip_delete_animation.bl_idname, text='Delete')
+            delete_op = toolbox_animation.operator(
+                ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname, text="Delete")
             delete_op.animation_index = animation_index
 
 
 class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
     bl_label = "Actions"
-    bl_idname = 'SOLLUMZ_PT_ANIMATION_ACTIONS'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_ANIMATION_ACTIONS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
     bl_order = 0
 
@@ -90,18 +96,18 @@ class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
 
         animation_properties = obj.animation_properties
 
-        layout.prop(animation_properties, 'base_action')
-        layout.prop(animation_properties, 'root_motion_location_action')
-        layout.prop(animation_properties, 'root_motion_rotation_action')
+        layout.prop(animation_properties, "base_action")
+        layout.prop(animation_properties, "root_motion_location_action")
+        layout.prop(animation_properties, "root_motion_rotation_action")
 
 
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Animations Tools"
     bl_idname = "SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_order = 1
 
     @classmethod
@@ -111,8 +117,8 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
             active_object = bpy.context.selected_objects[0]
 
             if active_object.sollum_type == SollumType.CLIP or active_object.sollum_type == SollumType.ANIMATION or \
-                active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
-                active_object.sollum_type == SollumType.CLIP_DICTIONARY or isinstance(active_object.data, bpy.types.Armature):
+                    active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
+                    active_object.sollum_type == SollumType.CLIP_DICTIONARY or isinstance(active_object.data, bpy.types.Armature):
 
                 return True
 
@@ -128,17 +134,20 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
             active_object = bpy.context.selected_objects[0]
 
             if active_object.sollum_type == SollumType.CLIP or active_object.sollum_type == SollumType.ANIMATION or \
-                active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
-                active_object.sollum_type == SollumType.CLIP_DICTIONARY:
-                    layout.operator(SOLLUMZ_OT_create_clip.bl_idname)
-                    layout.operator(SOLLUMZ_OT_create_animation.bl_idname)
+                    active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
+                    active_object.sollum_type == SollumType.CLIP_DICTIONARY:
+                layout.operator(ycd_ops.SOLLUMZ_OT_create_clip.bl_idname)
+                layout.operator(ycd_ops.SOLLUMZ_OT_create_animation.bl_idname)
 
-                    if (active_object.sollum_type == SollumType.ANIMATION):
-                        layout.operator(SOLLUMZ_OT_animation_fill.bl_idname)
+                if active_object.sollum_type == SollumType.ANIMATION:
+                    layout.operator(
+                        ycd_ops.SOLLUMZ_OT_animation_fill.bl_idname)
             else:
-                layout.operator(SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+                layout.operator(
+                    ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
         else:
-            layout.operator(SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+            layout.operator(
+                ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
 
 
 def register():

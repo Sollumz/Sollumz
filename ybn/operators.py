@@ -1,23 +1,30 @@
 from math import ceil
 from ..tools.obb import get_obb, get_obb_extents
 import traceback
-from ..resources.flag_preset import FlagPreset
+from ..cwxml.flag_preset import FlagPreset
 from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from ..ybn.collision_materials import create_collision_material_from_index
-from ..tools.boundhelper import *
-from ..tools.meshhelper import *
+from ..tools.boundhelper import (
+    convert_selected_to_bound,
+    create_bound,
+    create_bound_shape,
+    create_mesh,
+    BOUND_POLYGON_TYPES
+)
+from ..tools.meshhelper import create_box_from_extents, get_bound_center
 from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..tools.blenderhelper import get_selected_vertices
-from ..sollumz_helper import *
+from ..tools.blenderhelper import get_selected_vertices, get_children_recursive
 import bpy
+import bmesh
+from mathutils import Vector
 
 
 def handle_load_flag_presets(self):
     try:
         load_flag_presets()
     except FileNotFoundError:
-        self.report({'ERROR'}, traceback.format_exc())
+        self.report({"ERROR"}, traceback.format_exc())
 
 
 class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -33,7 +40,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
         elif parent.sollum_type != SollumType.BOUND_GEOMETRYBVH and parent.sollum_type != SollumType.BOUND_GEOMETRY:
             self.message(
-                f'Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}!')
+                f"Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}!")
             return False
 
         selected = context.selected_objects
@@ -59,27 +66,14 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             center = world_matrix @ (bbmin + bbmax) / 2
             local_center = (bbmin + bbmax) / 2
 
-            # long, short = get_short_long_edge(bbmin, bbmax)
-
-            # if context.scene.poly_edge == 'short':
-            #     t1 = long
-            #     long = short
-            #     short = t1
-            #     world_matrix = Matrix.Rotation(
-            #         degrees(90), 4, 'Z') @ world_matrix
-
             if type == SollumType.BOUND_POLY_BOX:
                 create_box_from_extents(
                     pobj.data, bbmin - local_center, bbmax - local_center)
-            # elif type == SollumType.BOUND_POLY_SPHERE:
-            #     pobj.bound_radius = (bbmax - bbmin).magnitude / 2
-            # elif type == SollumType.BOUND_POLY_CAPSULE or type == SollumType.BOUND_POLY_CYLINDER:
-            #     pobj.bound_radius = short / 2
-            #     pobj.bound_length = long
+
             pobj.matrix_world = world_matrix
             pobj.location = center
         else:
-            if obj.mode == 'EDIT':
+            if obj.mode == "EDIT":
                 bm = bmesh.from_edit_mesh(obj.data)
             else:
                 bm = bmesh.new()
@@ -169,7 +163,7 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message(
                 f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
             return False
-        if context.mode != 'OBJECT':
+        if context.mode != "OBJECT":
             self.message(f"{self.bl_idname} can only be ran in Object mode.")
             return False
 
@@ -247,7 +241,7 @@ class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.
                 mat = create_collision_material_from_index(
                     context.scene.collision_material_index)
                 obj.data.materials.append(mat)
-            except Exception as e:
+            except Exception:
                 self.warning(
                     f"Failure to add material to {obj.name}: {traceback.format_exc()}")
 
@@ -353,7 +347,7 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Delete Flag Preset"
     bl_action = f"{bl_label}"
 
-    preset_blacklist = ['Default']
+    preset_blacklist = ["Default"]
 
     def run(self, context):
         index = context.scene.flag_preset_index
@@ -440,8 +434,8 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Load a flag preset to the selected Geometry bounds"""
     bl_idname = "sollumz.load_flag_preset"
     bl_label = "Apply Flags Preset"
-    bl_context = 'object'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_context = "object"
+    bl_options = {"REGISTER", "UNDO"}
     bl_action = f"{bl_label}"
 
     def run(self, context):
@@ -494,7 +488,7 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
 
         aobj = context.active_object
-        if(aobj == None):
+        if aobj is None:
             self.message("Please select an object.")
             return False
 

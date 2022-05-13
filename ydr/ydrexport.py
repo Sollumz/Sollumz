@@ -1,29 +1,41 @@
 import os
 import shutil
-import collections
 import bmesh
 import bpy
 import zlib
-from ..resources.fragment import FragmentDrawable
-from ..resources.drawable import *
-from ..resources.shader import ShaderManager
+from ..cwxml import drawable as ydrxml
+from ..cwxml.fragment import FragmentDrawable
+from ..cwxml.shader import ShaderManager
 from ..tools import jenkhash
-from ..tools.meshhelper import *
-from ..tools.utils import *
-from ..tools.blenderhelper import *
-from ..tools.drawablehelper import *
-from ..sollumz_properties import BOUND_TYPES, SOLLUMZ_UI_NAMES, LightType, MaterialType, LODLevel, SollumType
+from ..tools.meshhelper import (
+    flip_uv,
+    get_bound_extents,
+    get_bound_center,
+    get_sphere_radius,
+)
+from ..tools.utils import float32_list
+from ..tools.blenderhelper import duplicate_object, split_object, get_children_recursive
+from ..tools.drawablehelper import join_objects
+from ..sollumz_properties import (
+    BOUND_TYPES,
+    SOLLUMZ_UI_NAMES,
+    LightType,
+    MaterialType,
+    LODLevel,
+    SollumType
+)
 from ..ybn.ybnexport import bound_from_object, composite_from_object
 from math import degrees, pi
+from mathutils import Quaternion, Vector
 
 
 def get_used_materials(obj):
     materials = []
     for child in get_children_recursive(obj):
-        if(child.sollum_type == SollumType.DRAWABLE_GEOMETRY):
+        if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             mats = child.data.materials
             for mat in mats:
-                if(mat.sollum_type == MaterialType.SHADER):
+                if mat.sollum_type == MaterialType.SHADER:
                     if mat not in materials:
                         materials.append(mat)
     return materials
@@ -33,7 +45,7 @@ def get_shaders_from_blender(materials):
     shaders = []
 
     for material in materials:
-        shader = ShaderItem()
+        shader = ydrxml.ShaderItem()
         # Maybe make this a property?
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
@@ -41,7 +53,7 @@ def get_shaders_from_blender(materials):
 
         for node in material.node_tree.nodes:
             if isinstance(node, bpy.types.ShaderNodeTexImage):
-                param = TextureShaderParameter()
+                param = ydrxml.TextureShaderParameter()
                 param.name = node.name
                 param.type = "Texture"
                 # Disable extra material writing to xml
@@ -52,7 +64,7 @@ def get_shaders_from_blender(materials):
                 shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
-                    param = VectorShaderParameter()
+                    param = ydrxml.VectorShaderParameter()
                     param.name = node.name[:-2]
                     param.type = "Vector"
 
@@ -74,7 +86,7 @@ def get_shaders_from_blender(materials):
 
 
 def texture_item_from_node(n):
-    texture_item = TextureItem()
+    texture_item = ydrxml.TextureItem()
     if n.image:
         texture_item.name = n.sollumz_texture_name
         texture_item.width = n.image.size[0]
@@ -89,7 +101,6 @@ def texture_item_from_node(n):
     texture_item.format = SOLLUMZ_UI_NAMES[n.texture_properties.format]
     texture_item.miplevels = 0
     texture_item.filename = texture_item.name + ".dds"
-    # texture_item.unk32 = 0
     for prop in dir(n.texture_flags):
         value = getattr(n.texture_flags, prop)
         if value == True:
@@ -108,8 +119,8 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
     for mat in materials:
         nodes = mat.node_tree.nodes
         for n in nodes:
-            if(isinstance(n, bpy.types.ShaderNodeTexImage)):
-                if(n.texture_properties.embedded == True):
+            if isinstance(n, bpy.types.ShaderNodeTexImage):
+                if n.texture_properties.embedded == True:
                     has_td = True
                     texture_item = texture_item_from_node(n)
                     if texture_item.name in t_names:
@@ -122,7 +133,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
                         folderpath = os.path.join(exportpath, foldername)
                         txtpath = bpy.path.abspath(n.image.filepath)
                         if os.path.isfile(txtpath):
-                            if(os.path.isdir(folderpath) == False):
+                            if os.path.isdir(folderpath) == False:
                                 os.mkdir(folderpath)
                             dstpath = folderpath + "\\" + \
                                 os.path.basename(txtpath)
@@ -136,7 +147,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
                         messages.append(
                             f"Material: {mat.name} is missing the {n.name} texture and will not be exported.")
 
-    if(has_td):
+    if has_td:
         return texture_dictionary, messages
     else:
         return None, []
@@ -144,7 +155,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
 
 def get_blended_verts(mesh, vertex_groups, bones=None):
     bone_index_map = {}
-    if(bones != None):
+    if bones is not None:
         for i in range(len(bones)):
             bone_index_map[bones[i].name] = i
     else:
@@ -174,7 +185,7 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
                 if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
                     bw[valid_weights] = weight
                     bi[valid_weights] = bone_index
-                    if (max_weights < weight):
+                    if max_weights < weight:
                         max_weights_index = valid_weights
                         max_weights = weight
                     valid_weights += 1
@@ -227,7 +238,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     else:
                         pos = float32_list(
                             obj.matrix_basis @ mesh.vertices[vert_idx].co)
-                    kwargs['position'] = tuple(pos)
+                    kwargs["position"] = tuple(pos)
                 else:
                     kwargs["position"] = tuple([0, 0, 0])
             if "normal" in vertex_type._fields:
@@ -238,9 +249,9 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                 else:
                     kwargs["normal"] = tuple([0, 0, 0])
             if "blendweights" in vertex_type._fields:
-                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
+                kwargs["blendweights"] = tuple(blend_weights[vert_idx])
             if "blendindices" in vertex_type._fields:
-                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
+                kwargs["blendindices"] = tuple(blend_indices[vert_idx])
             if "tangent" in vertex_type._fields:
                 if loop.tangent:
                     tangent = float32_list(loop.tangent.to_4d())
@@ -250,7 +261,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     kwargs["tangent"] = tuple([0, 0, 0, 0])
             for i in range(6):
                 if f"texcoord{i}" in vertex_type._fields:
-                    key = f'texcoord{i}'
+                    key = f"texcoord{i}"
                     if mesh_layer_idx < len(mesh.uv_layers):
                         data = mesh.uv_layers[mesh_layer_idx].data
                         uv = float32_list(
@@ -261,7 +272,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                         kwargs[key] = (0, 0)
             for i in range(2):
                 if f"colour{i}" in vertex_type._fields:
-                    key = f'colour{i}'
+                    key = f"colour{i}"
                     if i < len(mesh.vertex_colors):
                         data = mesh.vertex_colors[i].data
                         kwargs[key] = tuple(
@@ -287,7 +298,7 @@ def get_semantic_from_object(shader, mesh):
     sematic = []
 
     # always has a position
-    sematic.append(VertexSemantic.position)
+    sematic.append(ydrxml.VertexSemantic.position)
     # add blend weights and blend indicies
     # maybe pass is_skinned param in this function and check there ?
     is_skinned = False
@@ -296,27 +307,27 @@ def get_semantic_from_object(shader, mesh):
             is_skinned = True
             break
     if is_skinned:
-        sematic.append(VertexSemantic.blend_weight)
-        sematic.append(VertexSemantic.blend_index)
+        sematic.append(ydrxml.VertexSemantic.blend_weight)
+        sematic.append(ydrxml.VertexSemantic.blend_index)
     # add normal
     # dont know what to check so always add for now??
-    sematic.append(VertexSemantic.normal)
+    sematic.append(ydrxml.VertexSemantic.normal)
     # add colors
     vcs = len(mesh.vertex_colors)
     if vcs > 0:
         for vc in mesh.vertex_colors:
             if vc.name != "TintColor":
-                sematic.append(VertexSemantic.color)
+                sematic.append(ydrxml.VertexSemantic.color)
     # add texcoords
     tcs = len(mesh.uv_layers)
     if tcs > 0:
         if tcs > 8:  # or tcs == 0: add this restriction?? although some vertexs buffers may not have uv data???
             raise Exception(f"To many uv layers or none on mesh: {mesh.name}")
-        for i in range(tcs):
-            sematic.append(VertexSemantic.texcoord)
+        for _ in range(tcs):
+            sematic.append(ydrxml.VertexSemantic.texcoord)
     # add tangents
     if shader.required_tangent:
-        sematic.append(VertexSemantic.tangent)
+        sematic.append(ydrxml.VertexSemantic.tangent)
 
     return "".join(sematic)
 
@@ -356,7 +367,7 @@ def get_bone_ids(obj, bones=None):
 
 
 def geometry_from_object(obj, mats, bones=None, export_settings=None):
-    geometry = GeometryItem()
+    geometry = ydrxml.GeometryItem()
 
     geometry.shader_index = get_shader_index(mats, obj.active_material)
 
@@ -392,16 +403,17 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
 
 
 def drawable_model_from_object(obj, bones=None, materials=None, export_settings=None):
-    drawable_model = DrawableModelItem()
+    drawable_model = ydrxml.DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
 
     drawable_model_parent = obj.parent
-    if drawable_model_parent.type == 'BONE':
+    if drawable_model_parent.type == "BONE":
         parent_bone = obj.parent_bone
-        if parent_bone != None and parent_bone != '':
-            drawable_model_bone_index = drawable_model_parent.data.bones[parent_bone].bone_properties.tag
+        if parent_bone is not None and parent_bone != "":
+            drawable_model_bone_index = drawable_model_parent.data.bones[
+                parent_bone].bone_properties.tag
             drawable_model.bone_index = drawable_model_bone_index
         else:
             drawable_model.bone_index = 0
@@ -438,12 +450,12 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
 
 def bone_from_object(obj):
 
-    bone = BoneItem()
+    bone = ydrxml.BoneItem()
     bone.name = obj.name
     bone.tag = obj.bone_properties.tag
     bone.index = obj["BONE_INDEX"]
 
-    if obj.parent != None:
+    if obj.parent is not None:
         bone.parent_index = obj.parent["BONE_INDEX"]
         children = obj.parent.children
         sibling = -1
@@ -465,7 +477,7 @@ def bone_from_object(obj):
         bone.flags.append("Unk0")
 
     mat = obj.matrix_local
-    if (obj.parent != None):
+    if obj.parent is not None:
         mat = obj.parent.matrix_local.inverted() @ obj.matrix_local
 
     mat_decomposed = mat.decompose()
@@ -486,14 +498,14 @@ def calculate_skeleton_unks(skel):
     # assuming those hashes/flags are all based on joaat
     # Unknown58 is related to BoneTag, Flags, Rotation, Location and Scale. Named as DataCRC so we stick to CRC-32 as a hack, since we and possibly oiv don't know how R* calc them
     # hopefully this doesn't break in game!
-    # hacky solution with inaccurate results, the implementation here is only for ensure they are unique regardless the correctness, further investigation is required
+    # hacky solution with inaccurate results, the implementation here is only to ensure they are unique regardless the correctness, further investigation is required
     if skel is None or len(skel.bones) == 0:
         return
 
     unk_50 = []
     unk_58 = []
     for bone in skel.bones:
-        unk_50_str = ' '.join((str(bone.tag), ' '.join(bone.flags)))
+        unk_50_str = " ".join((str(bone.tag), " ".join(bone.flags)))
 
         translation = []
         for item in bone.translation:
@@ -507,22 +519,22 @@ def calculate_skeleton_unks(skel):
         for item in bone.scale:
             scale.append(str(item))
 
-        unk_58_str = ' '.join((str(bone.tag), ' '.join(bone.flags), ' '.join(
-            translation), ' '.join(rotation), ' '.join(scale)))
+        unk_58_str = " ".join((str(bone.tag), " ".join(bone.flags), " ".join(
+            translation), " ".join(rotation), " ".join(scale)))
         unk_50.append(unk_50_str)
         unk_58.append(unk_58_str)
 
-    skel.unknown_50 = jenkhash.Generate(' '.join(unk_50))
-    skel.unknown_54 = zlib.crc32(' '.join(unk_50).encode())
-    skel.unknown_58 = zlib.crc32(' '.join(unk_58).encode())
+    skel.unknown_50 = jenkhash.Generate(" ".join(unk_50))
+    skel.unknown_54 = zlib.crc32(" ".join(unk_50).encode())
+    skel.unknown_58 = zlib.crc32(" ".join(unk_58).encode())
 
 
 def skeleton_from_object(obj):
 
-    if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
+    if obj.type != "ARMATURE" or len(obj.pose.bones) == 0:
         return None
 
-    skeleton = SkeletonProperty()
+    skeleton = ydrxml.SkeletonProperty()
     bones = obj.pose.bones
 
     ind = 0
@@ -542,8 +554,8 @@ def skeleton_from_object(obj):
 
 def rotation_limit_from_object(obj):
     for con in obj.constraints:
-        if con.type == 'LIMIT_ROTATION':
-            joint = RotationLimitItem()
+        if con.type == "LIMIT_ROTATION":
+            joint = ydrxml.RotationLimitItem()
             joint.bone_id = obj.bone.bone_properties.tag
             joint.min = Vector((con.min_x, con.min_y, con.min_z))
             joint.max = Vector((con.max_x, con.max_y, con.max_z))
@@ -556,7 +568,7 @@ def joints_from_object(obj):
     if obj.pose is None:
         return None
 
-    joints = JointsProperty()
+    joints = ydrxml.JointsProperty()
     for bone in obj.pose.bones:
         joint = rotation_limit_from_object(bone)
         if joint is not None:
@@ -566,7 +578,7 @@ def joints_from_object(obj):
 
 
 def light_from_object(obj, export_settings, armature_obj=None):
-    light = LightItem()
+    light = ydrxml.LightItem()
     light.position = obj.location if not export_settings.use_transforms else obj.location + \
         obj.parent.location
     mat = obj.matrix_basis if not export_settings.use_transforms else obj.matrix_world
@@ -636,13 +648,12 @@ def lights_from_object(obj, lights_xml, export_settings, armature_obj=None):
                                export_settings, armature_obj)
 
 
-# REALLY NOT A FAN OF PASSING THIS EXPORT OP TO THIS AND APPENDING TO MESSAGES BUT WHATEVER
 def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, export_settings=None, is_frag=False, write_shaders=True):
     drawable = None
     if is_frag:
         drawable = FragmentDrawable()
     else:
-        drawable = Drawable()
+        drawable = ydrxml.Drawable()
 
     drawable.name = obj.name if "." not in obj.name else obj.name.split(".")[0]
 
@@ -696,7 +707,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         for bone in drawable.skeleton.bones:
             pbone = obj.pose.bones[bone.index]
             for con in pbone.constraints:
-                if con.type == 'LIMIT_ROTATION':
+                if con.type == "LIMIT_ROTATION":
                     bone.flags.append("LimitRotation")
                     break
 

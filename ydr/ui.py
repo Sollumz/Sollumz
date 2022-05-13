@@ -1,9 +1,8 @@
 import bpy
-from .shader_materials import *
-from .operators import *
-from .properties import LightFlags
+from . import operators as ydr_ops
+from .shader_materials import shadermats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
-from ..sollumz_properties import SollumType, TimeFlags
+from ..sollumz_properties import SollumType, MaterialType, LightType
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 
 
@@ -22,7 +21,6 @@ def draw_drawable_model_properties(self, context):
     if obj and obj.sollum_type == SollumType.DRAWABLE_MODEL:
         layout = self.layout
         layout.prop(obj.drawable_model_properties, "render_mask")
-        # layout.prop(obj.drawable_model_properties, "bone_index")
         layout.prop(obj.drawable_model_properties, "unknown_1")
         layout.prop(obj.drawable_model_properties, "flags")
         layout.prop(obj.drawable_model_properties, "sollum_lod")
@@ -51,18 +49,18 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
         # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=name, icon='SHADING_TEXTURE')
+            row.label(text=name, icon="SHADING_TEXTURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=name, emboss=False, icon='SHADING_TEXTURE')
+                        text=name, emboss=False, icon="SHADING_TEXTURE")
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_LIGHT_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
 
     @classmethod
@@ -111,8 +109,8 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
     bl_parent_id = SOLLUMZ_PT_LIGHT_PANEL.bl_idname
     select_operator = "sollumz.light_time_flags_select_range"
@@ -130,8 +128,8 @@ class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_label = "Flags"
     bl_idname = "SOLLUMZ_PT_LIGHT_FLAGS_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
     bl_parent_id = SOLLUMZ_PT_LIGHT_PANEL.bl_idname
 
@@ -148,9 +146,9 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Drawable Tools"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_order = 1
 
     def draw_header(self, context):
@@ -165,9 +163,9 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
     bl_label = "Create Shader"
     bl_idname = "SOLLUMZ_PT_CREATE_SHADER_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -178,22 +176,22 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
         layout.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
-        layout.operator(SOLLUMZ_OT_create_shader_material.bl_idname)
+        layout.operator(ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname)
         row = layout.row()
         row.operator(
-            SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
+            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
         row.operator(
-            SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
-        layout.operator(SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
+            ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
+        layout.operator(ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     bl_label = "Create Drawable Objects"
     bl_idname = "SOLLUMZ_PT_CREATE_DRAWABLE_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -202,7 +200,7 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_drawable.bl_idname)
+        row.operator(ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname)
         row.prop(context.scene, "create_drawable_type")
         grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
         grid.prop(context.scene, "use_mesh_name")
@@ -215,9 +213,9 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
     bl_label = "Create Lights"
     bl_idname = "SOLLUMZ_PT_CREATE_LIGHT_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -226,33 +224,33 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_light.bl_idname)
+        row.operator(ydr_ops.SOLLUMZ_OT_create_light.bl_idname)
         row.prop(context.scene, "create_light_type", text="")
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        custom_icon = 'FILE'
+        custom_icon = "FILE"
 
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.prop(item, 'name', text='', icon=custom_icon,
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            layout.prop(item, "name", text="", icon=custom_icon,
                         emboss=False, translate=False)
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.prop(item, 'name', text='', icon=custom_icon,
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name", text="", icon=custom_icon,
                         emboss=False, translate=False)
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
     bl_label = "Bone Properties"
     bl_idname = "SOLLUMZ_PT_BONE_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "bone"
 
     def draw(self, context):
         layout = self.layout
-        if (context.active_pose_bone == None):
+        if context.active_pose_bone is None:
             return
 
         bone = context.active_pose_bone.bone
@@ -264,16 +262,16 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
         layout.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags",
                              bone.bone_properties, "flags", bone.bone_properties, "ul_index")
         row = layout.row()
-        row.operator('sollumz.bone_flags_new_item', text='New')
-        row.operator('sollumz.bone_flags_delete_item', text='Delete')
+        row.operator("sollumz.bone_flags_new_item", text="New")
+        row.operator("sollumz.bone_flags_delete_item", text="Delete")
 
 
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Texture Parameters"
-    bl_idname = 'SOLLUMZ_PT_TXTPARAMS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_TXTPARAMS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 0
 
@@ -290,25 +288,16 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object == None):
+        if context.active_object is None:
             return
 
         mat = aobj.active_material
-        if(mat == None):
+        if mat is None:
             return
 
-        # only using selected nodes because if you use the node tree weird bug
-        # where if you select one of the image nodes it swaps around the order that you edit them in...
-        # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
-        # annoyying as hell
-        #selected_nodes = []
-        # for n in nodes:
-        # if(n.select == True):
-        # selected_nodes.append(n)
         nodes = mat.node_tree.nodes
         for n in nodes:
-            if(isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz):
-                # if(n.name == "SpecSampler"):
+            if isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz:
                 box = layout.box()
                 row = box.row(align=True)
                 row.label(text="Texture Type: " + n.name)
@@ -322,11 +311,10 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                         text="Image Texture has no linked image.", icon="ERROR")
                 row = box.row(align=True)
                 row.prop(n.texture_properties, "embedded")
-                if(n.texture_properties.embedded == False):
+                if n.texture_properties.embedded == False:
                     continue
                 row.prop(n.texture_properties, "format")
                 row.prop(n.texture_properties, "usage")
-                #box = box.box()
                 box.label(text="Flags")
                 row = box.row()
                 row.prop(n.texture_flags, "not_half")
@@ -365,10 +353,10 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Value Parameters"
-    bl_idname = 'SOLLUMZ_PT_VALUEPARAMS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_VALUEPARAMS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 1
 
@@ -385,25 +373,17 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         aobj = context.active_object
-        if(context.active_object == None):
+        if context.active_object is None:
             return
 
         mat = aobj.active_material
-        if(mat == None):
+        if mat is None:
             return
 
-        # only using selected nodes because if you use the node tree weird bug
-        # where if you select one of the image nodes it swaps around the order that you edit them in...
-        # I think this is because when you select something "mat.node_tree.nodes" is reordered for the selected to be in front.....
-        # annoyying as hell
-        #selected_nodes = []
-        # for n in nodes:
-        # if(n.select == True):
-        # selected_nodes.append(n)
         nodes = mat.node_tree.nodes
         for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-            if(isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz):
-                if(n.name[-1] == "x"):
+            if isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz:
+                if n.name[-1] == "x":
                     row = layout.row()
                     row.label(text=n.name[:-2])
 

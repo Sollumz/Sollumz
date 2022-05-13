@@ -1,10 +1,9 @@
 import bpy
 from mathutils import Matrix, Vector
 from ..tools.utils import multiW
-from ..tools.meshhelper import create_plane, create_uv_layer
-from ..tools.drawablehelper import get_drawable_geometries, join_drawable_geometries
-from ..resources.fragment import YFT
-from ..tools.fragmenthelper import shattermap_to_image, shattermap_to_material
+from ..tools.meshhelper import create_uv_layer
+from ..cwxml.fragment import YFT
+from ..tools.fragmenthelper import shattermap_to_material
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import composite_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
@@ -224,9 +223,9 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
 
         for child in dobj.children:
             bone_index = 0
-            if child.parent_type == 'BONE':
+            if child.parent_type == "BONE":
                 parent_bone = child.parent_bone
-                if parent_bone != None and parent_bone != '':
+                if parent_bone is not None and parent_bone != "":
                     bone_index = child.parent.data.bones[parent_bone].bone_properties.tag
 
             boneidx = bone_index

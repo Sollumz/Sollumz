@@ -1,6 +1,4 @@
-from ..resources.drawable import *
-from ..tools.meshhelper import *
-from ..tools.utils import *
+from ..cwxml.drawable import DrawableDictionary
 from ..ydr.ydrexport import drawable_from_object
 from ..tools import jenkhash
 from ..sollumz_properties import SollumType
@@ -16,7 +14,7 @@ def drawable_dict_from_object(exportop, obj, filepath, export_settings):
 
     bones = None
     for child in obj.children:
-        if child.sollum_type == SollumType.DRAWABLE and child.type == 'ARMATURE' and len(child.pose.bones) > 0:
+        if child.sollum_type == SollumType.DRAWABLE and child.type == "ARMATURE" and len(child.pose.bones) > 0:
             bones = child.pose.bones
             break
 

@@ -3,8 +3,8 @@ import traceback
 import os
 import time
 from abc import abstractmethod
-from .tools.meshhelper import get_children_recursive
-from .sollumz_properties import BOUND_TYPES, SollumType
+from .tools.blenderhelper import get_children_recursive
+from .sollumz_properties import BOUND_TYPES
 from .ydr.ydrexport import get_used_materials
 
 
@@ -38,7 +38,7 @@ class SOLLUMZ_OT_base:
                 f"{self.bl_label} took {round(end - start, 3)} seconds to {self.bl_action}.")
 
         if len(self.messages) > 0:
-            self.message('\n'.join(self.messages))
+            self.message("\n".join(self.messages))
 
         if result:
             return {"FINISHED"}
@@ -69,13 +69,6 @@ def reset_sollumz_view(scene):
     scene.hide_very_low_lods = not scene.hide_very_low_lods
 
 
-def is_sollum_object_in_objects(objs):
-    for obj in objs:
-        if obj.sollum_type != SollumType.NONE:
-            return True
-    return False
-
-
 def get_sollumz_objects_from_objects(objs, sollum_type):
     robjs = []
     for obj in objs:
@@ -99,8 +92,8 @@ def has_embedded_textures(obj):
     for mat in get_used_materials(obj):
         nodes = mat.node_tree.nodes
         for node in nodes:
-            if(isinstance(node, bpy.types.ShaderNodeTexImage)):
-                if(node.texture_properties.embedded == True):
+            if isinstance(node, bpy.types.ShaderNodeTexImage):
+                if node.texture_properties.embedded == True:
                     return True
     return False
 

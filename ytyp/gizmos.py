@@ -1,7 +1,7 @@
 import bpy
-from mathutils import Vector, Matrix, Quaternion
-from math import radians
-from .properties import *
+from ..sollumz_properties import ArchetypeType
+from mathutils import Vector, Matrix
+from .properties import get_selected_archetype, get_selected_ytyp, get_selected_portal
 from ..tools.blenderhelper import find_parent
 
 
@@ -93,9 +93,9 @@ class RoomGizmo(bpy.types.Gizmo):
 class RoomGizmoGroup(bpy.types.GizmoGroup):
     bl_idname = "OBJECT_GGT_Room"
     bl_label = "MLO Room"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'WINDOW'
-    bl_options = {'3D', 'PERSISTENT'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
+    bl_options = {"3D", "PERSISTENT"}
 
     @classmethod
     def poll(cls, context):
@@ -202,9 +202,9 @@ class PortalNormalGizmo(bpy.types.Gizmo):
 class PortalGizmoGroup(bpy.types.GizmoGroup):
     bl_idname = "OBJECT_GGT_Portal"
     bl_label = "MLO Portal"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'WINDOW'
-    bl_options = {'3D', 'PERSISTENT', 'SELECT'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "WINDOW"
+    bl_options = {"3D", "PERSISTENT", "SELECT"}
 
     @classmethod
     def poll(cls, context):

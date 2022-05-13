@@ -1,10 +1,16 @@
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, TimeFlags
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
-from ..tools.drawablehelper import *
+from ..tools.drawablehelper import (
+    convert_selected_to_drawable,
+    create_drawable,
+    convert_material,
+    convert_material_to_selected
+)
+from ..tools.blenderhelper import get_children_recursive
 from ..tools.boundhelper import convert_selected_to_bound
-from ..resources.shader import ShaderManager
+from ..cwxml.shader import ShaderManager
 import traceback
 import bpy
 
@@ -50,9 +56,9 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         light_type = context.scene.create_light_type
-        blender_light_type = 'POINT'
+        blender_light_type = "POINT"
         if light_type == LightType.SPOT:
-            blender_light_type = 'SPOT'
+            blender_light_type = "SPOT"
 
         light_data = bpy.data.lights.new(
             name=SOLLUMZ_UI_NAMES[light_type], type=blender_light_type)
@@ -77,9 +83,9 @@ class SOLLUMZ_OT_auto_convert_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
             for material in obj.data.materials:
                 new_material = convert_material(material)
-                if new_material != None:
+                if new_material is not None:
                     for ms in obj.material_slots:
-                        if(ms.material == material):
+                        if ms.material == material:
                             ms.material = new_material
 
         return True
@@ -93,19 +99,19 @@ class SOLLUMZ_OT_convert_material_to_selected(SOLLUMZ_OT_base, bpy.types.Operato
 
     def convert_material(self, shader, obj):
         mat = obj.active_material
-        if mat == None:
+        if mat is None:
             self.message(f"No active material on {obj.name} will be skipped")
             return
 
         new_material = convert_material_to_selected(mat, shader)
-        if new_material != None:
+        if new_material is not None:
             for ms in obj.material_slots:
-                if(ms.material == mat):
+                if ms.material == mat:
                     ms.material = new_material
 
     def run(self, context):
         objs = bpy.context.selected_objects
-        if(len(objs) == 0):
+        if len(objs) == 0:
             self.warning(
                 f"Please select a object with materials.")
             return False
@@ -138,7 +144,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
 
         objs = bpy.context.selected_objects
-        if(len(objs) == 0):
+        if len(objs) == 0:
             self.warning(
                 f"Please select a object to add a shader material to.")
             return False
@@ -163,13 +169,13 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def set_textures_embedded(self, obj):
         mat = obj.active_material
-        if mat == None:
+        if mat is None:
             self.message(f"No active material on {obj.name} will be skipped")
             return
 
         if mat.sollum_type == MaterialType.SHADER:
             for node in mat.node_tree.nodes:
-                if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                if isinstance(node, bpy.types.ShaderNodeTexImage):
                     node.texture_properties.embedded = True
             self.message(
                 f"Set {obj.name}s material {mat.name} textures to embedded.")
@@ -179,7 +185,7 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         objs = bpy.context.selected_objects
-        if(len(objs) == 0):
+        if len(objs) == 0:
             self.warning(
                 f"Please select a object to set all textures embedded.")
             return False

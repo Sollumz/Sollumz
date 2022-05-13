@@ -1,7 +1,7 @@
 import bpy
 
 from ..tools.version import USE_LEGACY
-from ..resources.shader import ShaderManager
+from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import MaterialType
 from collections import namedtuple
 
@@ -11,7 +11,7 @@ shadermats = []
 
 for shader in ShaderManager.shaders.values():
     shadermats.append(ShaderMaterial(
-        shader.name.upper(), shader.name.upper().replace('_', ' '), shader.name))
+        shader.name.upper(), shader.name.upper().replace("_", " "), shader.name))
 
 
 def try_get_node(node_tree, name):
@@ -40,12 +40,12 @@ def get_loose_nodes(node_tree):
         ni = False
         for output in node.outputs:
             for link in output.links:
-                if link.to_node != None and link.from_node != None:
+                if link.to_node is not None and link.from_node is not None:
                     no = True
                     break
         for input in node.inputs:
             for link in input.links:
-                if link.to_node != None and link.from_node != None:
+                if link.to_node is not None and link.from_node is not None:
                     ni = True
                     break
         if no == False and ni == False:
@@ -68,9 +68,9 @@ def organize_node(node):
 
     level = node.location.y
     for child in child_nodes:
-        child.location.x = node.location.x - 300  # (child.width + 25)
+        child.location.x = node.location.x - 300
         child.location.y = level
-        level -= 300  # child.height * 2 + 25
+        level -= 300
         organize_node(child)
 
 
@@ -127,10 +127,10 @@ def create_tinted_texture_from_image(img):  # move to blenderhelper.py?
 def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     mat = obj.data.materials[0]
     tint_img = get_tinted_sampler(mat)
-    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img == None:  # check here or?
+    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:  # check here or?
         return
 
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     bpy.ops.node.new_geometry_nodes_modifier()
@@ -279,7 +279,7 @@ def create_image_node(node_tree, param):
 
 def create_vector_nodes(node_tree, param):
     for attr in vars(param).values():
-        if attr.name != 'name' and attr.name != 'type':
+        if attr.name != "name" and attr.name != "type":
             node = node_tree.nodes.new("ShaderNodeValue")
             node.name = f"{param.name}_{attr.name}"
             node.is_sollumz = True
@@ -315,7 +315,7 @@ def link_detailed_normal(node_tree, bumptex, dtltex, spectex):
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
     mathns = []
-    for i in range(9):
+    for _ in range(9):
         math = node_tree.nodes.new("ShaderNodeVectorMath")
         mathns.append(math)
     nrm = node_tree.nodes.new("ShaderNodeNormalMap")
@@ -393,7 +393,7 @@ def create_pixel_tint_nodes(node_tree, tex, tinttex, tintflags):
     mathns = []
     locx = 0
     locy = 50
-    for i in range(6):
+    for _ in range(6):
         math = node_tree.nodes.new("ShaderNodeMath")
         math.location.x = locx
         math.location.y = locy
@@ -567,10 +567,6 @@ def create_basic_shader_nodes(mat, shader, filename):
                 isdistmap = True
             elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
                 texture2 = imgnode
-            # elif param.name == "heightSampler" or "EnvironmentSampler":
-                # continue
-            # elif param.name == "FlowSampler" or "FogSampler" or "FoamSampler":
-                # if not texture: texture = imgnode
             else:
                 if not texture:
                     texture = imgnode
@@ -625,7 +621,6 @@ def create_basic_shader_nodes(mat, shader, filename):
     if not use_decal:
         if use_diff:
             if use_diff2:
-                # texture = link_diffuses(node_tree, texture, texture2)
                 link_diffuses(node_tree, texture, texture2)
             else:
                 link_diffuse(node_tree, texture)
@@ -699,16 +694,9 @@ def create_terrain_shader(mat, shader, filename):
                 f"Unknown shader parameter! {param.type} {param.name}")
 
     mixns = []
-    for i in range(8 if tm else 7):
+    for _ in range(8 if tm else 7):
         mix = node_tree.nodes.new("ShaderNodeMixRGB")
         mixns.append(mix)
-
-    # attr_t0 = node_tree.nodes.new("ShaderNodeAttribute")
-    # attr_t0.attribute_name = "texcoord0"
-    # links.new(attr_t0.outputs[1], ts1.inputs[0])
-    # links.new(attr_t0.outputs[1], ts2.inputs[0])
-    # links.new(attr_t0.outputs[1], ts3.inputs[0])
-    # links.new(attr_t0.outputs[1], ts4.inputs[0])
 
     seprgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
     if filename in ShaderManager.mask_only_terrains:
@@ -739,12 +727,6 @@ def create_terrain_shader(mat, shader, filename):
     links.new(mixns[2].outputs[0], mixns[3].inputs[2])
 
     links.new(mixns[3].outputs[0], bsdf.inputs["Base Color"])
-
-    # link normals
-    # links.new(attr_t0.outputs[1], bs1.inputs[0])
-    # links.new(attr_t0.outputs[1], bs1.inputs[0])
-    # links.new(attr_t0.outputs[1], bs1.inputs[0])
-    # links.new(attr_t0.outputs[1], bs1.inputs[0])
 
     if bs1:
         links.new(seprgb.outputs[2], mixns[4].inputs[0])

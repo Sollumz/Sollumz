@@ -49,10 +49,10 @@ class SollumType(str, Enum):
 
 
 class LightType(str, Enum):
-    NONE = 'sollumz_light_none'
-    POINT = 'sollumz_light_point'
-    SPOT = 'sollumz_light_spot'
-    CAPSULE = 'sollumz_light_capsule'
+    NONE = "sollumz_light_none"
+    POINT = "sollumz_light_point"
+    SPOT = "sollumz_light_spot"
+    CAPSULE = "sollumz_light_capsule"
 
 
 class MaterialType(str, Enum):
@@ -300,10 +300,10 @@ SOLLUMZ_UI_NAMES = {
     EntityPriorityLevel.PRI_OPTIONAL_MEDIUM: "OPTIONAL MEDIUM",
     EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
 
-    LightType.NONE: 'None',
-    LightType.POINT: 'Point',
-    LightType.SPOT: 'Spot',
-    LightType.CAPSULE: 'Capsule',
+    LightType.NONE: "None",
+    LightType.POINT: "Point",
+    LightType.SPOT: "Spot",
+    LightType.CAPSULE: "Capsule",
 
     ArchetypeType.BASE: "Base",
     ArchetypeType.TIME: "Time",
@@ -316,9 +316,8 @@ SOLLUMZ_UI_NAMES = {
     AssetType.ASSETLESS: "Assetless"
 }
 
+
 # Generate items from provided enums
-
-
 def items_from_enums(*enums):
     items = []
     for enum in enums:
@@ -335,7 +334,7 @@ class FlagPropertyGroup:
     def update_flags_total(self, context):
         # Ensure string can be converted to int
         try:
-            value = int((self.total))
+            int((self.total))
         except ValueError:
             self.total = "0"
 
@@ -472,7 +471,6 @@ class EntityProperties:
         default=EntityPriorityLevel.PRI_REQUIRED,
         options={"HIDDEN"}
     )
-    # extensions?
     ambient_occlusion_multiplier: bpy.props.FloatProperty(
         name="Ambient Occlusion Multiplier", default=255)
     artificial_ambient_occlusion: bpy.props.FloatProperty(
@@ -487,8 +485,8 @@ class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
 class SollumzImportSettings(bpy.types.PropertyGroup):
     batch_mode: bpy.props.EnumProperty(
         name="Batch Mode",
-        items=(('SELECTED_FILE', "Selected File(s)", "Import selected file(s)"),
-               ('DIRECTORY', "Directory", "Import every file from active directory the file browser is in"))
+        items=(("SELECTED_FILE", "Selected File(s)", "Import selected file(s)"),
+               ("DIRECTORY", "Directory", "Import every file from active directory the file browser is in"))
     )
 
     join_geometries: bpy.props.BoolProperty(
@@ -521,14 +519,14 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         name="Export drawables local to position")
     batch_mode: bpy.props.EnumProperty(
         name="Batch Mode",
-        items=(('OFF', "Off", "Active scene"),
-               ('SCENE', "Scene", "Every scene"),
-               ('COLLECTION', "Collection",
+        items=(("OFF", "Off", "Active scene"),
+               ("SCENE", "Scene", "Every scene"),
+               ("COLLECTION", "Collection",
                 "Each collection (data-block ones), does not include content of children collections"),
-               ('SCENE_COLLECTION', "Scene Collections",
+               ("SCENE_COLLECTION", "Scene Collections",
                 "Each collection (including master, non-data-block ones) of each scene, "
                 "including content from children collections"),
-               ('ACTIVE_SCENE_COLLECTION', "Active Scene Collections",
+               ("ACTIVE_SCENE_COLLECTION", "Active Scene Collections",
                 "Each collection (including master, non-data-block one) of the active scene, "
                 "including content from children collections"),
                ),
@@ -540,7 +538,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     )
     sollum_types: bpy.props.EnumProperty(
         name="Sollum Types",
-        options={'ENUM_FLAG'},
+        options={"ENUM_FLAG"},
         items=((SollumType.DRAWABLE.value, "Drawables", ""),
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
                (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
@@ -607,7 +605,7 @@ def set_hide_collisions(self, value):
     self["hide_collision"] = value
 
     for obj in bpy.context.collection.all_objects:
-        if(obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES):
+        if obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES:
             if obj.name in bpy.context.view_layer.objects:
                 obj.hide_set(value)
 
@@ -620,8 +618,8 @@ def set_hide_high_lods(self, value):
     self["hide_high_lods"] = value
 
     for obj in bpy.context.collection.all_objects:
-        if(obj.sollum_type == SollumType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LODLevel.HIGH):
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+            if obj.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 hide_obj_and_children(obj, value)
 
 
@@ -633,8 +631,8 @@ def set_hide_medium_lods(self, value):
     self["hide_medium_lods"] = value
 
     for obj in bpy.context.collection.all_objects:
-        if(obj.sollum_type == SollumType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM):
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+            if obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM:
                 hide_obj_and_children(obj, value)
 
 
@@ -646,8 +644,8 @@ def set_hide_low_lods(self, value):
     self["hide_low_lods"] = value
 
     for obj in bpy.context.collection.all_objects:
-        if(obj.sollum_type == SollumType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LODLevel.LOW):
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+            if obj.drawable_model_properties.sollum_lod == LODLevel.LOW:
                 hide_obj_and_children(obj, value)
 
 
@@ -659,8 +657,8 @@ def set_hide_very_low_lods(self, value):
     self["hide_very_low_lods"] = value
 
     for obj in bpy.context.collection.all_objects:
-        if(obj.sollum_type == SollumType.DRAWABLE_MODEL):
-            if(obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW):
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+            if obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
                 hide_obj_and_children(obj, value)
 
 
