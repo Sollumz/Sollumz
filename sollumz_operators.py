@@ -92,7 +92,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         if self.import_settings.batch_mode == "DIRECTORY":
             folderpath = os.path.dirname(self.filepath)
             for file in os.listdir(folderpath):
-                ext = ''.join(pathlib.Path(file).suffixes)
+                ext = "".join(pathlib.Path(file).suffixes)
                 if ext in self.filename_exts:
                     filepath = os.path.join(folderpath, file)
                     result = self.import_file(filepath, ext)
@@ -101,7 +101,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 directory = os.path.dirname(self.filepath)
                 filepath = os.path.join(directory, file_elem.name)
                 if os.path.isfile(filepath):
-                    ext = ''.join(pathlib.Path(filepath).suffixes)
+                    ext = "".join(pathlib.Path(filepath).suffixes)
                     result = self.import_file(filepath, ext)
 
         if not result:
@@ -121,7 +121,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YCD.file_extension};",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 
@@ -147,7 +147,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                         return col.name
         elif mode in {"SCENE_COLLECTION", "ACTIVE_SCENE_COLLECTION"}:
             scenes = [
-                bpy.context.scene] if mode == 'ACTIVE_SCENE_COLLECTION' else bpy.data.scenes
+                bpy.context.scene] if mode == "ACTIVE_SCENE_COLLECTION" else bpy.data.scenes
             for scene in scenes:
                 if not scene.objects:
                     self.error(f"No objects in scene {scene.name} to export.")
@@ -198,10 +198,10 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         else:
             if mode == "COLLECTION":
                 data_block = tuple(
-                    (coll, coll.name, 'objects') for coll in bpy.data.collections if coll.objects)
+                    (coll, coll.name, "objects") for coll in bpy.data.collections if coll.objects)
             elif mode in {"SCENE_COLLECTION", "ACTIVE_SCENE_COLLECTION"}:
                 scenes = [
-                    context.scene] if mode == 'ACTIVE_SCENE_COLLECTION' else bpy.data.scenes
+                    context.scene] if mode == "ACTIVE_SCENE_COLLECTION" else bpy.data.scenes
                 data_block = []
                 for scene in scenes:
                     if not scene.objects:
@@ -212,9 +212,9 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                         coll, coll_name = todo_collections.pop()
                         todo_collections.extend(
                             ((c, c.name) for c in coll.children if c.all_objects))
-                        data_block.append((coll, coll_name, 'all_objects'))
+                        data_block.append((coll, coll_name, "all_objects"))
             else:
-                data_block = tuple((scene, scene.name, 'objects')
+                data_block = tuple((scene, scene.name, "objects")
                                    for scene in bpy.data.scenes if scene.objects)
 
             # this is how you can create the folder names if the user clicks "use_batch_own_dir"
@@ -286,8 +286,8 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         mode = "OBJECT"
         if context.active_object:
             mode = context.active_object.mode
-            if mode != 'OBJECT':
-                bpy.ops.object.mode_set(mode='OBJECT')
+            if mode != "OBJECT":
+                bpy.ops.object.mode_set(mode="OBJECT")
 
         if len(objects) > 0:
             for obj in objects:
@@ -320,7 +320,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 
@@ -338,7 +338,7 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         obj.entity_properties.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
         obj.entity_properties.tint_value = entity.tint_value
 
-        if entity.type != 'CMloInstanceDef':
+        if entity.type != "CMloInstanceDef":
             # Entities in YMAPs need rotation inverted
             entity.rotation.invert()
         obj.matrix_world = entity.rotation.to_matrix().to_4x4()
@@ -381,7 +381,7 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
 
     filter_glob: bpy.props.StringProperty(
         default="*.ymap.xml",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 

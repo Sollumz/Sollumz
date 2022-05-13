@@ -14,7 +14,7 @@ def drawable_dict_from_object(exportop, obj, filepath, export_settings):
 
     bones = None
     for child in obj.children:
-        if child.sollum_type == SollumType.DRAWABLE and child.type == 'ARMATURE' and len(child.pose.bones) > 0:
+        if child.sollum_type == SollumType.DRAWABLE and child.type == "ARMATURE" and len(child.pose.bones) > 0:
             bones = child.pose.bones
             break
 

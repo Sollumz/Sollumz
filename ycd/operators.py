@@ -13,19 +13,19 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
         if active_object.sollum_type != SollumType.CLIP:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         clip_dictionary = active_object.parent.parent
         armature = get_armature_obj(
             clip_dictionary.clip_dict_properties.armature)
 
         if armature is None:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         clip_properties = active_object.clip_properties
 
@@ -59,11 +59,11 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
                 group = groups[action.name]
 
                 group.append({
-                    'name': clip_properties.hash,
-                    'start_frames': start_frames,
-                    'end_frames': end_frames,
-                    'visual_frame_count': visual_frame_count,
-                    'action': action,
+                    "name": clip_properties.hash,
+                    "start_frames": start_frames,
+                    "end_frames": end_frames,
+                    "visual_frame_count": visual_frame_count,
+                    "action": action,
                 })
 
         if armature.animation_data is None:
@@ -77,31 +77,31 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
             track.name = group_name
 
             for clip in clips:
-                virtual_frames_count = clip['visual_frame_count']
-                action_frames_count = clip['end_frames'] - clip['start_frames']
+                virtual_frames_count = clip["visual_frame_count"]
+                action_frames_count = clip["end_frames"] - clip["start_frames"]
 
-                nla_strip = track.strips.new(clip['name'], 0, clip['action'])
+                nla_strip = track.strips.new(clip["name"], 0, clip["action"])
                 nla_strip.frame_start = 0
                 nla_strip.frame_end = virtual_frames_count
 
                 bpy.context.scene.frame_start = 0
                 bpy.context.scene.frame_end = int(nla_strip.frame_end)
 
-                if '_root_motion_location' in group_name:
+                if "_root_motion_location" in group_name:
                     nla_strip.blend_type = "ADD"
-                elif '_root_motion_rotation' in group_name:
+                elif "_root_motion_rotation" in group_name:
                     nla_strip.blend_type = "MULTIPLY"
-                elif '_base' in group_name:
+                elif "_base" in group_name:
                     nla_strip.blend_type = "COMBINE"
 
                 nla_strip.extrapolation = "NOTHING"
-                nla_strip.name = clip['name']
+                nla_strip.name = clip["name"]
 
                 nla_strip.scale = virtual_frames_count / action_frames_count
-                nla_strip.action_frame_start = clip['start_frames']
-                nla_strip.action_frame_end = clip['end_frames']
+                nla_strip.action_frame_start = clip["start_frames"]
+                nla_strip.action_frame_end = clip["end_frames"]
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -111,40 +111,40 @@ class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
         if active_object.sollum_type != SollumType.CLIP:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         clip_properties = active_object.clip_properties
 
         clip_properties.animations.add()
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_clip_delete_animation(SOLLUMZ_OT_base, bpy.types.Operator):
-    bl_idname = 'sollumz.anim_delete_animation'
-    bl_label = 'Delete animation'
+    bl_idname = "sollumz.anim_delete_animation"
+    bl_label = "Delete animation"
 
     animation_index: bpy.props.IntProperty(name="animation_index")
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
         if active_object.sollum_type != SollumType.CLIP:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         clip_properties = active_object.clip_properties
 
         clip_properties.animations.remove(self.animation_index)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_clip_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -153,16 +153,16 @@ class SOLLUMZ_OT_create_clip_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
         if not isinstance(active_object.data, bpy.types.Armature):
-            return {'FINISHED'}
+            return {"FINISHED"}
 
-        create_clip_dictionary_template('Clip Dictionary', active_object.data)
+        create_clip_dictionary_template("Clip Dictionary", active_object.data)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_clip(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -171,7 +171,7 @@ class SOLLUMZ_OT_create_clip(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
@@ -202,7 +202,7 @@ class SOLLUMZ_OT_create_clip(SOLLUMZ_OT_base, bpy.types.Operator):
 
             animation_obj.parent = clips_obj
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -211,7 +211,7 @@ class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
@@ -242,7 +242,7 @@ class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
 
             animation_obj.parent = animations_obj
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -251,7 +251,7 @@ class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
-            return {'FINISHED'}
+            return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
 
@@ -280,4 +280,4 @@ class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
 
         animation_properties.frame_count = int(frame_count)
 
-        return {'FINISHED'}
+        return {"FINISHED"}

@@ -34,7 +34,7 @@ class CollisionMatFlags(bpy.types.PropertyGroup):
 
 
 class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
-    collision_index: bpy.props.IntProperty(name='Collision Index', default=0)
+    collision_index: bpy.props.IntProperty(name="Collision Index", default=0)
     procedural_id: bpy.props.IntProperty(name="Procedural ID", default=0)
     room_id: bpy.props.IntProperty(name="Room ID", default=0)
     ped_density: bpy.props.IntProperty(name="Ped Density", default=0)
@@ -95,17 +95,17 @@ class BoundProperties(bpy.types.PropertyGroup):
 
 
 class CollisionMaterial(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty('Index')
-    name: bpy.props.StringProperty('Name')
+    index: bpy.props.IntProperty("Index")
+    name: bpy.props.StringProperty("Name")
 
 
 class FlagPresetProp(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty('Index')
-    name: bpy.props.StringProperty('Name')
+    index: bpy.props.IntProperty("Index")
+    name: bpy.props.StringProperty("Name")
 
 
 def get_flag_presets_path():
-    package_name = __name__.split('.')[0]
+    package_name = __name__.split(".")[0]
     presets_path = f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ybn\\flag_presets.xml"
     if os.path.exists(presets_path):
         return presets_path
@@ -180,7 +180,7 @@ def register():
     bpy.types.Object.bound_length = bpy.props.FloatProperty(
         name="Length", precision=3, update=update_bounds, min=0)
     bpy.types.Object.bound_dimensions = bpy.props.FloatVectorProperty(
-        name="Extents", precision=3, min=0, update=update_bounds, subtype='XYZ')
+        name="Extents", precision=3, min=0, update=update_bounds, subtype="XYZ")
 
     #nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(
@@ -194,15 +194,15 @@ def register():
     bpy.types.Scene.collision_material_index = bpy.props.IntProperty(
         name="Material Index")
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(
-        type=CollisionMaterial, name='Collision Materials')
+        type=CollisionMaterial, name="Collision Materials")
     bpy.app.handlers.load_post.append(on_file_loaded)
 
     bpy.types.Scene.new_flag_preset_name = bpy.props.StringProperty(
-        name='Flag Preset Name')
+        name="Flag Preset Name")
     bpy.types.Scene.flag_preset_index = bpy.props.IntProperty(
         name="Flag Preset Index")
     bpy.types.Scene.flag_presets = bpy.props.CollectionProperty(
-        type=FlagPresetProp, name='Flag Presets')
+        type=FlagPresetProp, name="Flag Presets")
 
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(
         type=CollisionProperties)
@@ -260,13 +260,13 @@ def register():
     bpy.types.Scene.poly_edge = bpy.props.EnumProperty(name="Edge", items=[("long", "Long Edge", "Create along the long edge"),
                                                                            ("short", "Short Edge", "Create along the short edge")])
     bpy.types.Scene.poly_parent = bpy.props.PointerProperty(
-        type=bpy.types.Object, name='Parent', description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}.")
+        type=bpy.types.Object, name="Parent", description=f"Bounds will be parented to this object. Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}.")
 
     bpy.types.Scene.composite_create_bvh = bpy.props.BoolProperty(
-        name='BVH', description='If true, the operator will create GeometryBVH objects, otherwise it will create Geometry objects.', default=True)
+        name="BVH", description="If true, the operator will create GeometryBVH objects, otherwise it will create Geometry objects.", default=True)
 
     bpy.types.Scene.composite_replace_original = bpy.props.BoolProperty(
-        name='Replace Original', description=f'If true, the operator will replace the selected objects with the {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}.', default=True)
+        name="Replace Original", description=f"If true, the operator will replace the selected objects with the {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}.", default=True)
 
     bpy.types.Scene.split_collision_count = bpy.props.IntProperty(
         name="Divide By", description=f"Amount to split {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}s or {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}s by", default=2, min=2)

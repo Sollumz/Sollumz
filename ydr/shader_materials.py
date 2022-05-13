@@ -11,7 +11,7 @@ shadermats = []
 
 for shader in ShaderManager.shaders.values():
     shadermats.append(ShaderMaterial(
-        shader.name.upper(), shader.name.upper().replace('_', ' '), shader.name))
+        shader.name.upper(), shader.name.upper().replace("_", " "), shader.name))
 
 
 def try_get_node(node_tree, name):
@@ -130,7 +130,7 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:  # check here or?
         return
 
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     bpy.ops.node.new_geometry_nodes_modifier()
@@ -279,7 +279,7 @@ def create_image_node(node_tree, param):
 
 def create_vector_nodes(node_tree, param):
     for attr in vars(param).values():
-        if attr.name != 'name' and attr.name != 'type':
+        if attr.name != "name" and attr.name != "type":
             node = node_tree.nodes.new("ShaderNodeValue")
             node.name = f"{param.name}_{attr.name}"
             node.is_sollumz = True

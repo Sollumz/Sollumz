@@ -20,7 +20,7 @@ from ..tools.animationhelper import (
 
 
 def get_name(item):
-    return item.name.split('.')[0]
+    return item.name.split(".")[0]
 
 
 def ensure_action_track(track_type: TrackType, action_type: ActionType):
@@ -40,10 +40,10 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
 
     p_bone: PoseBone
     for parent_tag, p_bone in bones_map.items():
-        pos_vector_path = p_bone.path_from_id('location')
-        rot_quaternion_path = p_bone.path_from_id('rotation_quaternion')
-        rot_euler_path = p_bone.path_from_id('rotation_euler')
-        scale_vector_path = p_bone.path_from_id('scale')
+        pos_vector_path = p_bone.path_from_id("location")
+        rot_quaternion_path = p_bone.path_from_id("rotation_quaternion")
+        rot_euler_path = p_bone.path_from_id("rotation_euler")
+        scale_vector_path = p_bone.path_from_id("scale")
 
         # Get list of per-frame data for every path
 
@@ -111,11 +111,11 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
                 quaternion.rotate(pose_rot)
 
             if prev_quaternion is not None:
-                # 'Flickering bug' fix - killso:
+                # "Flickering bug" fix - killso:
                 # This bug is caused by interpolation algorithm used in GTA
                 # which is not slerp, but straight interpolation of every value
                 # and this leads to incorrect results in cases if dot(this, next) < 0
-                # This is correct 'Quaternion Lerp' algorithm:
+                # This is correct "Quaternion Lerp" algorithm:
                 # if (Dot(start, end) >= 0f)
                 # {
                 #   result.X = (1 - amount) * start.X + amount * end.X
@@ -128,7 +128,7 @@ def sequence_items_from_action(action, sequence_items, bones_map, action_type, f
                 # }
                 # (Statement difference is only substracting instead of adding)
                 # But GTA algorithm doesn't have Dot check,
-                # resulting all values that are not passing this statement to 'lag' in game.
+                # resulting all values that are not passing this statement to "lag" in game.
                 # (because of incorrect interpolation direction)
                 # So what we do is make all values to pass Dot(start, end) >= 0f statement
                 if Quaternion.dot(prev_quaternion, quaternion) < 0:
@@ -273,7 +273,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation.unknown10 = AnimationFlag.Default
 
     # This value must be unique (Looks like its used internally for animation caching)
-    animation.unknown1C = 'hash_' + \
+    animation.unknown1C = "hash_" + \
         hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
 
     sequence_items = {}
@@ -303,7 +303,7 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
 
     sequence = ycdxml.Animation.SequenceListProperty.Sequence()
     sequence.frame_count = frame_count
-    sequence.hash = 'hash_' + hex(0)[2:].zfill(8)
+    sequence.hash = "hash_" + hex(0)[2:].zfill(8)
 
     for track, bones_data in sorted(sequence_items.items()):
         for bone_id, frames_data in sorted(bones_data.items()):

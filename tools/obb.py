@@ -24,10 +24,10 @@ import numpy as np
 
 
 def bbox_orient(bme_verts, mx):
-    '''
+    """
     takes a lsit of BMverts ora  list of vectors
-    '''
-    if hasattr(bme_verts[0], 'co'):
+    """
+    if hasattr(bme_verts[0], "co"):
         verts = [mx @ v.co for v in bme_verts]
     else:
         verts = [mx @ v for v in bme_verts]
@@ -47,10 +47,10 @@ def bbox_vol(box):
 
 
 def box_coords(box):
-    '''
+    """
     returns vertices in same configuration as default cube in blender
     easy to asign v.co of a cube primitive
-    '''
+    """
     coords = [Vector((box[0], box[2], box[4])),
               Vector((box[0], box[2], box[5])),
               Vector((box[0], box[3], box[4])),
@@ -81,7 +81,7 @@ def get_obb(verts):
     sc_mx[0][0], sc_mx[1][1], sc_mx[2][2] = scale[0], scale[1], scale[2]
     r_mx = world_mx.to_quaternion().to_matrix().to_4x4()
 
-    mesh = bpy.data.meshes.new('obb')
+    mesh = bpy.data.meshes.new("obb")
     bme = bmesh.new()
     bme.from_mesh(mesh)
 
@@ -90,9 +90,9 @@ def get_obb(verts):
 
     convex_hull = bmesh.ops.convex_hull(
         bme, input=bme.verts, use_existing_faces=True)
-    total_hull = convex_hull['geom']
+    total_hull = convex_hull["geom"]
 
-    hull_verts = [item for item in total_hull if hasattr(item, 'co')]
+    hull_verts = [item for item in total_hull if hasattr(item, "co")]
 
     min_mx = Matrix.Identity(4)
     min_box = bbox_orient(hull_verts, min_mx)

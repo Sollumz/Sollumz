@@ -34,9 +34,9 @@ class SOLLUMZ_UL_YTYP_LIST(bpy.types.UIList):
 class SOLLUMZ_PT_YTYP_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Archetype Definition"
     bl_idname = "SOLLUMZ_PT_YTYP_TOOL_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_category = "Sollumz Tools"
 
     def draw_header(self, context):
@@ -74,9 +74,9 @@ class SOLLUMZ_UL_ARCHETYPE_LIST(bpy.types.UIList):
 class SOLLUMZ_PT_YTYP_PANEL(bpy.types.Panel):
     bl_label = "YTYP"
     bl_idname = "SOLLUMZ_PT_YTYP_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname
 
     @classmethod
@@ -166,9 +166,9 @@ class SOLLUMZ_UL_ENTITIES_LIST(OrderListHelper, bpy.types.UIList):
 class SOLLUMZ_PT_ARCHETYPE_PANEL(bpy.types.Panel):
     bl_label = "Archetype"
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_YTYP_PANEL.bl_idname
 
     @classmethod
@@ -229,8 +229,8 @@ class SOLLUMZ_PT_YTYP_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 
 class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
 
     def get_flags(self, context):
@@ -241,9 +241,9 @@ class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 class SOLLUMZ_PT_ROOM_PANEL(bpy.types.Panel):
     bl_label = "Rooms"
     bl_idname = "SOLLUMZ_PT_ROOM_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
     bl_order = 0
 
@@ -302,9 +302,9 @@ class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 class SOLLUMZ_PT_PORTAL_PANEL(bpy.types.Panel):
     bl_label = "Portals"
     bl_idname = "SOLLUMZ_PT_PORTAL_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
     bl_order = 1
 
@@ -366,9 +366,9 @@ class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 class SOLLUMZ_PT_MLO_ENTITIES_PANEL(bpy.types.Panel):
     bl_label = "Entities"
     bl_idname = "SOLLUMZ_PT_MLO_ENTITIES_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
     bl_order = 2
 
@@ -437,9 +437,9 @@ class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(bpy.types.Panel):
     bl_label = "Timecycle Modifiers"
     bl_idname = "SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
     bl_order = 3
 

@@ -11,14 +11,14 @@ def draw_clip_properties(self, context):
 
         clip_properties = obj.clip_properties
 
-        layout.prop(clip_properties, 'hash')
-        layout.prop(clip_properties, 'name')
-        layout.prop(clip_properties, 'duration')
+        layout.prop(clip_properties, "hash")
+        layout.prop(clip_properties, "name")
+        layout.prop(clip_properties, "duration")
 
         layout.operator(ycd_ops.SOLLUMZ_OT_clip_apply_nla.bl_idname,
-                        text='Apply Clip to NLA')
+                        text="Apply Clip to NLA")
         layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_animation.bl_idname,
-                        text='Add a new Animation Link')
+                        text="Add a new Animation Link")
 
 
 def draw_animation_properties(self, context):
@@ -28,8 +28,8 @@ def draw_animation_properties(self, context):
 
         animation_properties = obj.animation_properties
 
-        layout.prop(animation_properties, 'hash')
-        layout.prop(animation_properties, 'frame_count')
+        layout.prop(animation_properties, "hash")
+        layout.prop(animation_properties, "frame_count")
 
 
 def draw_clip_dictionary_properties(self, context):
@@ -39,15 +39,15 @@ def draw_clip_dictionary_properties(self, context):
 
         clip_dict_properties = obj.clip_dict_properties
 
-        layout.prop(clip_dict_properties, 'armature')
+        layout.prop(clip_dict_properties, "armature")
 
 
 class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
     bl_label = "Linked Animations"
-    bl_idname = 'SOLLUMZ_PT_CLIP_ANIMATIONS'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_CLIP_ANIMATIONS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
     bl_order = 0
 
@@ -65,21 +65,21 @@ class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
 
         for animation_index, clip_animation in enumerate(clip_properties.animations):
             toolbox_animation = layout.box()
-            toolbox_animation.prop(clip_animation, 'animation')
-            toolbox_animation.prop(clip_animation, 'start_frame')
-            toolbox_animation.prop(clip_animation, 'end_frame')
+            toolbox_animation.prop(clip_animation, "animation")
+            toolbox_animation.prop(clip_animation, "start_frame")
+            toolbox_animation.prop(clip_animation, "end_frame")
 
             delete_op = toolbox_animation.operator(
-                ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname, text='Delete')
+                ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname, text="Delete")
             delete_op.animation_index = animation_index
 
 
 class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
     bl_label = "Actions"
-    bl_idname = 'SOLLUMZ_PT_ANIMATION_ACTIONS'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_ANIMATION_ACTIONS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
     bl_order = 0
 
@@ -96,18 +96,18 @@ class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
 
         animation_properties = obj.animation_properties
 
-        layout.prop(animation_properties, 'base_action')
-        layout.prop(animation_properties, 'root_motion_location_action')
-        layout.prop(animation_properties, 'root_motion_rotation_action')
+        layout.prop(animation_properties, "base_action")
+        layout.prop(animation_properties, "root_motion_location_action")
+        layout.prop(animation_properties, "root_motion_rotation_action")
 
 
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Animations Tools"
     bl_idname = "SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_order = 1
 
     @classmethod

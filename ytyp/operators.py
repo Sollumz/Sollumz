@@ -567,7 +567,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     filter_glob: bpy.props.StringProperty(
         default="*.ytyp.xml",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 
@@ -686,7 +686,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
     filter_glob: bpy.props.StringProperty(
         default="*.ytyp.xml",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
         maxlen=255,
     )
 

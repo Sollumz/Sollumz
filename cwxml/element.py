@@ -25,17 +25,17 @@ def indent(elem: ET.Element, level=0):
             elem.tail = i
 
         # Indent innertext of elements on new lines. Used in cases like <VerticesProperty />
-        if elem.text and len(elem.text.strip()) > 0 and elem.text.find('\n') != -1:
-            lines = elem.text.strip().split('\n')
+        if elem.text and len(elem.text.strip()) > 0 and elem.text.find("\n") != -1:
+            lines = elem.text.strip().split("\n")
             for index, line in enumerate(lines):
                 lines[index] = ((level + 1) * amount) + line
-            elem.text = '\n' + '\n'.join(lines) + i
+            elem.text = "\n" + "\n".join(lines) + i
 
 
 def get_str_type(value: str):
     """Determine if a string is a bool, int, or float"""
     if isinstance(value, str):
-        if value.lower() == 'true' or value.lower() == 'false':
+        if value.lower() == "true" or value.lower() == "false":
             return bool(value)
 
         try:
@@ -179,7 +179,7 @@ class ElementProperty(Element, AbstractClass):
         self.tag_name = tag_name
         if value and not isinstance(value, self.value_types):
             raise TypeError(
-                f'Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!')
+                f"Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!")
         self.value = value
 
 
@@ -234,7 +234,7 @@ class ListProperty(ElementProperty, AbstractClass):
 class TextProperty(ElementProperty):
     value_types = (str)
 
-    def __init__(self, tag_name: str = 'Name', value=None):
+    def __init__(self, tag_name: str = "Name", value=None):
         super().__init__(tag_name, value or "")
 
     @staticmethod
@@ -258,16 +258,16 @@ class ColorProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['r', 'g', 'b']):
+        if not all(x in element.attrib.keys() for x in ["r", "g", "b"]):
             return ColorProperty.read_value_error(element)
 
-        return ColorProperty(element.tag, [float(element.get('r')), float(element.get('g')), float(element.get('b'))])
+        return ColorProperty(element.tag, [float(element.get("r")), float(element.get("g")), float(element.get("b"))])
 
     def to_xml(self):
         r = str(int(self.value.r))
         g = str(int(self.value.g))
         b = str(int(self.value.b))
-        return ET.Element(self.tag_name, attrib={'r': r, 'g': g, 'b': b})
+        return ET.Element(self.tag_name, attrib={"r": r, "g": g, "b": b})
 
 
 class Vector2Property(ElementProperty):
@@ -278,15 +278,15 @@ class Vector2Property(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['x', 'y']):
+        if not all(x in element.attrib.keys() for x in ["x", "y"]):
             return VectorProperty.read_value_error(element)
 
-        return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')))))
+        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
         y = str(float32(self.value.y))
-        return ET.Element(self.tag_name, attrib={'x': x, 'y': y})
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y})
 
 
 class VectorProperty(ElementProperty):
@@ -297,16 +297,16 @@ class VectorProperty(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['x', 'y', 'z']):
+        if not all(x in element.attrib.keys() for x in ["x", "y", "z"]):
             return VectorProperty.read_value_error(element)
 
-        return VectorProperty(element.tag, Vector((float(element.get('x')), float(element.get('y')), float(element.get('z')))))
+        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")), float(element.get("z")))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
         y = str(float32(self.value.y))
         z = str(float32(self.value.z))
-        return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z})
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z})
 
 
 class QuaternionProperty(ElementProperty):
@@ -317,17 +317,17 @@ class QuaternionProperty(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ['x', 'y', 'z', 'w']):
+        if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
             QuaternionProperty.read_value_error(element)
 
-        return QuaternionProperty(element.tag, Quaternion((float(element.get('w')), float(element.get('x')), float(element.get('y')), float(element.get('z')))))
+        return QuaternionProperty(element.tag, Quaternion((float(element.get("w")), float(element.get("x")), float(element.get("y")), float(element.get("z")))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
         y = str(float32(self.value.y))
         z = str(float32(self.value.z))
         w = str(float32(self.value.w))
-        return ET.Element(self.tag_name, attrib={'x': x, 'y': y, 'z': z, 'w': w})
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z, "w": w})
 
 
 class MatrixProperty(ElementProperty):
@@ -368,14 +368,14 @@ class MatrixProperty(ElementProperty):
 class FlagsProperty(ElementProperty):
     value_types = (list)
 
-    def __init__(self, tag_name: str = 'Flags', value=None):
+    def __init__(self, tag_name: str = "Flags", value=None):
         super().__init__(tag_name, value or [])
 
     @ staticmethod
     def from_xml(element: ET.Element):
         new = FlagsProperty(element.tag, [])
         if element.text and len(element.text.strip()) > 0:
-            text = element.text.replace(' ', '').split(',')
+            text = element.text.replace(" ", "").split(",")
             if not len(text) > 0:
                 return FlagsProperty.read_value_error(element)
 
@@ -392,10 +392,10 @@ class FlagsProperty(ElementProperty):
         for item in self.value:
             # Should be a list of strings
             if not isinstance(item, str):
-                return TypeError('FlagsProperty can only contain str objects!')
+                return TypeError("FlagsProperty can only contain str objects!")
 
         if len(self.value) > 0:
-            element.text = ', '.join(self.value)
+            element.text = ", ".join(self.value)
         return element
 
 
@@ -407,10 +407,10 @@ class ValueProperty(ElementProperty):
 
     @ staticmethod
     def from_xml(element: ET.Element):
-        if not 'value' in element.attrib:
+        if not "value" in element.attrib:
             ValueProperty.read_value_error(element)
 
-        return ValueProperty(element.tag, get_str_type(element.get('value')))
+        return ValueProperty(element.tag, get_str_type(element.get("value")))
 
     def to_xml(self):
         value = self.value
@@ -419,7 +419,7 @@ class ValueProperty(ElementProperty):
         elif type(value) is float:
             value = int(self.value) if self.value.is_integer(
             ) else float32(self.value)
-        return ET.Element(self.tag_name, attrib={'value': str(value)})
+        return ET.Element(self.tag_name, attrib={"value": str(value)})
 
 
 class TextListProperty(ElementProperty):

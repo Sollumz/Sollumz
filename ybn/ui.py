@@ -15,7 +15,7 @@ def draw_collision_material_properties(self, context):
         grid = self.layout.grid_flow(
             columns=2, even_columns=True, even_rows=True)
         for prop in CollisionProperties.__annotations__:
-            if prop == 'collision_index':
+            if prop == "collision_index":
                 continue
             grid.prop(mat.collision_properties, prop)
 
@@ -40,11 +40,11 @@ def draw_bound_properties(self, context):
 
 
 class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
-    bl_label = 'Shape'
+    bl_label = "Shape"
     bl_idname = "SOLLUMZ_PT_BOUND_SHAPE_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
 
@@ -58,22 +58,22 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
         self.layout.use_property_split = True
         grid = self.layout.grid_flow(columns=2, row_major=True)
         if not obj.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH, SollumType.BOUND_BOX, SollumType.BOUND_POLY_BOX, SollumType.BOUND_POLY_TRIANGLE]:
-            grid.prop(obj, 'bound_radius',
-                      text='SphereRadius' if obj.sollum_type in BOUND_TYPES else 'Radius')
+            grid.prop(obj, "bound_radius",
+                      text="SphereRadius" if obj.sollum_type in BOUND_TYPES else "Radius")
         if obj.sollum_type == SollumType.BOUND_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
-            grid.prop(obj, 'bound_length')
+            grid.prop(obj, "bound_length")
         if obj.sollum_type == SollumType.BOUND_BOX:
-            grid.prop(obj, 'bound_dimensions')
+            grid.prop(obj, "bound_dimensions")
         if obj.sollum_type in BOUND_TYPES:
-            grid.prop(obj, 'margin')
+            grid.prop(obj, "margin")
 
 
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
-    bl_label = 'Collision Flags'
+    bl_label = "Collision Flags"
     bl_idname = "SOLLUMZ_PT_BOUND_FLAGS_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
 
@@ -93,11 +93,11 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
-    bl_label = 'Collision Flags'
+    bl_label = "Collision Flags"
     bl_idname = "SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = "SOLLUMZ_PT_MAT_PANEL"
 
@@ -124,11 +124,11 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
         name = collisionmats[item.index].ui_name
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=name, icon='MATERIAL')
+            row.label(text=name, icon="MATERIAL")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=name, emboss=False, icon='MATERIAL')
+                        text=name, emboss=False, icon="MATERIAL")
 
 
 class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
@@ -139,20 +139,20 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
     ):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=item.name, icon='BOOKMARKS')
+            row.label(text=item.name, icon="BOOKMARKS")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=item.name, emboss=False, icon='BOOKMARKS')
+                        text=item.name, emboss=False, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Collision Tools"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_order = 2
 
     def draw_header(self, context):
@@ -173,10 +173,10 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
     bl_label = "Create Bounds"
-    bl_idname = 'SOLLUMZ_PT_CREATE_BOUND_PANEL'
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_CREATE_BOUND_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 0
 
@@ -191,7 +191,7 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         row.prop(context.scene, "create_bound_type")
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_create_polygon_bound.bl_idname)
-        if context.active_object and context.active_object.mode == 'EDIT':
+        if context.active_object and context.active_object.mode == "EDIT":
             row.prop(context.scene, "poly_bound_type_verts")
             row.prop(context.scene, "poly_parent", expand=True)
         else:
@@ -207,9 +207,9 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
     bl_label = "Create Collision Material"
     bl_idname = "SOLLUMZ_PT_CREATE_MATERIAL_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 1
 
@@ -233,11 +233,11 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_label = "Flag Presets"
-    bl_idname = 'SOLLUMZ_PT_FLAG_PRESETS_PANEL'
+    bl_idname = "SOLLUMZ_PT_FLAG_PRESETS_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -251,7 +251,7 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
         )
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname)
-        row.prop(context.scene, 'new_flag_preset_name', text='Name')
+        row.prop(context.scene, "new_flag_preset_name", text="Name")
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname)
         row = layout.row()

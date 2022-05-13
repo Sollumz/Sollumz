@@ -57,7 +57,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                                     n.texture_properties.embedded = True
                                     try:
                                         format = TextureFormat[texture.format.replace(
-                                            'D3DFMT_', '')]
+                                            "D3DFMT_", "")]
                                         n.texture_properties.format = format
                                     except AttributeError:
                                         print(
@@ -83,8 +83,8 @@ def shadergroup_to_materials(shadergroup, filepath):
                             n.image.source = "FILE"
                             n.image.filepath = "//" + n.image.name + ".dds"
 
-                        if param.name == "BumpSampler" and hasattr(n.image, 'colorspace_settings'):
-                            n.image.colorspace_settings.name = 'Non-Color'
+                        if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
+                            n.image.colorspace_settings.name = "Non-Color"
 
                 elif isinstance(n, bpy.types.ShaderNodeValue):
                     if param.name == n.name[:-2]:
@@ -154,12 +154,12 @@ def skeleton_to_obj(skeleton, armature):
 
     bpy.context.view_layer.objects.active = armature
     bones = skeleton.bones
-    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.object.mode_set(mode="EDIT")
 
     for bone in bones:
         bone_to_obj(bone, armature)
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.mode_set(mode="OBJECT")
 
     for bone in bones:
         set_bone_properties(bone, armature)
@@ -172,8 +172,8 @@ def set_rotation_limit(joint, bone):
     if bone is None:
         return None
 
-    constraint = bone.constraints.new('LIMIT_ROTATION')
-    constraint.owner_space = 'LOCAL'
+    constraint = bone.constraints.new("LIMIT_ROTATION")
+    constraint.owner_space = "LOCAL"
     constraint.use_limit_x = True
     constraint.use_limit_y = True
     constraint.use_limit_z = True
@@ -207,14 +207,14 @@ def rotation_limits_to_obj(rotation_limits, armature):
 def light_to_obj(light, armature_obj=None):
     light_type = None
 
-    if light.type == 'Point':
+    if light.type == "Point":
         light_type = LightType.POINT
-    elif light.type == 'Spot':
+    elif light.type == "Spot":
         light_type = LightType.SPOT
-    elif light.type == 'Capsule':
+    elif light.type == "Capsule":
         light_type = LightType.CAPSULE
     else:
-        raise TypeError('Invalid light type')
+        raise TypeError("Invalid light type")
 
     name = SOLLUMZ_UI_NAMES[light_type]
 
@@ -312,11 +312,11 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
             normals.append(vertex.normal)
 
         for key, value in vertex._asdict().items():
-            if 'texcoord' in key:
+            if "texcoord" in key:
                 if not key in texcoords.keys():
                     texcoords[key] = []
                 texcoords[key].append(value)
-            if 'colour' in key:
+            if "colour" in key:
                 if not key in colors.keys():
                     colors[key] = []
                 colors[key].append(value)
@@ -477,7 +477,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     if (bones is not None or armature_name is not None) and (is_ydd is None or is_ydd == False):
         does_armature_obj_exist = armature_name in bpy.data.objects
         is_obj_armature = bpy.data.objects[armature_name].type
-        if does_armature_obj_exist == True and is_obj_armature == 'ARMATURE':
+        if does_armature_obj_exist == True and is_obj_armature == "ARMATURE":
             armature = bpy.data.objects[armature_name]
             parent_bone_name = None
             for bone in armature.pose.bones[:]:
@@ -608,7 +608,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             if child.sollum_type != SollumType.DRAWABLE_GEOMETRY:
                 continue
 
-            mod = child.modifiers.new("Armature", 'ARMATURE')
+            mod = child.modifiers.new("Armature", "ARMATURE")
             mod.object = obj
 
     if len(drawable.lights) > 0:
@@ -620,7 +620,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
 def import_ydr(filepath, import_settings):
     ydr_xml = YDR.from_xml_file(filepath)
     drawable = drawable_to_obj(ydr_xml, filepath, os.path.basename(
-        filepath.replace(YDR.file_extension, '')), None, None, import_settings)
+        filepath.replace(YDR.file_extension, "")), None, None, import_settings)
     if import_settings.join_geometries:
         for child in drawable.children:
             if child.sollum_type == SollumType.DRAWABLE_MODEL:

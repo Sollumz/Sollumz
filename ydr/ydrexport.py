@@ -239,7 +239,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     else:
                         pos = float32_list(
                             obj.matrix_basis @ mesh.vertices[vert_idx].co)
-                    kwargs['position'] = tuple(pos)
+                    kwargs["position"] = tuple(pos)
                 else:
                     kwargs["position"] = tuple([0, 0, 0])
             if "normal" in vertex_type._fields:
@@ -250,9 +250,9 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                 else:
                     kwargs["normal"] = tuple([0, 0, 0])
             if "blendweights" in vertex_type._fields:
-                kwargs['blendweights'] = tuple(blend_weights[vert_idx])
+                kwargs["blendweights"] = tuple(blend_weights[vert_idx])
             if "blendindices" in vertex_type._fields:
-                kwargs['blendindices'] = tuple(blend_indices[vert_idx])
+                kwargs["blendindices"] = tuple(blend_indices[vert_idx])
             if "tangent" in vertex_type._fields:
                 if loop.tangent:
                     tangent = float32_list(loop.tangent.to_4d())
@@ -262,7 +262,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                     kwargs["tangent"] = tuple([0, 0, 0, 0])
             for i in range(6):
                 if f"texcoord{i}" in vertex_type._fields:
-                    key = f'texcoord{i}'
+                    key = f"texcoord{i}"
                     if mesh_layer_idx < len(mesh.uv_layers):
                         data = mesh.uv_layers[mesh_layer_idx].data
                         uv = float32_list(
@@ -273,7 +273,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
                         kwargs[key] = (0, 0)
             for i in range(2):
                 if f"colour{i}" in vertex_type._fields:
-                    key = f'colour{i}'
+                    key = f"colour{i}"
                     if i < len(mesh.vertex_colors):
                         data = mesh.vertex_colors[i].data
                         kwargs[key] = tuple(
@@ -410,9 +410,9 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
     drawable_model.flags = obj.drawable_model_properties.flags
 
     drawable_model_parent = obj.parent
-    if drawable_model_parent.type == 'BONE':
+    if drawable_model_parent.type == "BONE":
         parent_bone = obj.parent_bone
-        if parent_bone is not None and parent_bone != '':
+        if parent_bone is not None and parent_bone != "":
             drawable_model_bone_index = drawable_model_parent.data.bones[
                 parent_bone].bone_properties.tag
             drawable_model.bone_index = drawable_model_bone_index
@@ -506,7 +506,7 @@ def calculate_skeleton_unks(skel):
     unk_50 = []
     unk_58 = []
     for bone in skel.bones:
-        unk_50_str = ' '.join((str(bone.tag), ' '.join(bone.flags)))
+        unk_50_str = " ".join((str(bone.tag), " ".join(bone.flags)))
 
         translation = []
         for item in bone.translation:
@@ -520,19 +520,19 @@ def calculate_skeleton_unks(skel):
         for item in bone.scale:
             scale.append(str(item))
 
-        unk_58_str = ' '.join((str(bone.tag), ' '.join(bone.flags), ' '.join(
-            translation), ' '.join(rotation), ' '.join(scale)))
+        unk_58_str = " ".join((str(bone.tag), " ".join(bone.flags), " ".join(
+            translation), " ".join(rotation), " ".join(scale)))
         unk_50.append(unk_50_str)
         unk_58.append(unk_58_str)
 
-    skel.unknown_50 = jenkhash.Generate(' '.join(unk_50))
-    skel.unknown_54 = zlib.crc32(' '.join(unk_50).encode())
-    skel.unknown_58 = zlib.crc32(' '.join(unk_58).encode())
+    skel.unknown_50 = jenkhash.Generate(" ".join(unk_50))
+    skel.unknown_54 = zlib.crc32(" ".join(unk_50).encode())
+    skel.unknown_58 = zlib.crc32(" ".join(unk_58).encode())
 
 
 def skeleton_from_object(obj):
 
-    if obj.type != 'ARMATURE' or len(obj.pose.bones) == 0:
+    if obj.type != "ARMATURE" or len(obj.pose.bones) == 0:
         return None
 
     skeleton = ydrxml.SkeletonProperty()
@@ -555,7 +555,7 @@ def skeleton_from_object(obj):
 
 def rotation_limit_from_object(obj):
     for con in obj.constraints:
-        if con.type == 'LIMIT_ROTATION':
+        if con.type == "LIMIT_ROTATION":
             joint = ydrxml.RotationLimitItem()
             joint.bone_id = obj.bone.bone_properties.tag
             joint.min = Vector((con.min_x, con.min_y, con.min_z))
@@ -708,7 +708,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         for bone in drawable.skeleton.bones:
             pbone = obj.pose.bones[bone.index]
             for con in pbone.constraints:
-                if con.type == 'LIMIT_ROTATION':
+                if con.type == "LIMIT_ROTATION":
                     bone.flags.append("LimitRotation")
                     break
 

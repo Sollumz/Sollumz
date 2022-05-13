@@ -49,10 +49,10 @@ class SollumType(str, Enum):
 
 
 class LightType(str, Enum):
-    NONE = 'sollumz_light_none'
-    POINT = 'sollumz_light_point'
-    SPOT = 'sollumz_light_spot'
-    CAPSULE = 'sollumz_light_capsule'
+    NONE = "sollumz_light_none"
+    POINT = "sollumz_light_point"
+    SPOT = "sollumz_light_spot"
+    CAPSULE = "sollumz_light_capsule"
 
 
 class MaterialType(str, Enum):
@@ -300,10 +300,10 @@ SOLLUMZ_UI_NAMES = {
     EntityPriorityLevel.PRI_OPTIONAL_MEDIUM: "OPTIONAL MEDIUM",
     EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
 
-    LightType.NONE: 'None',
-    LightType.POINT: 'Point',
-    LightType.SPOT: 'Spot',
-    LightType.CAPSULE: 'Capsule',
+    LightType.NONE: "None",
+    LightType.POINT: "Point",
+    LightType.SPOT: "Spot",
+    LightType.CAPSULE: "Capsule",
 
     ArchetypeType.BASE: "Base",
     ArchetypeType.TIME: "Time",
@@ -485,8 +485,8 @@ class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
 class SollumzImportSettings(bpy.types.PropertyGroup):
     batch_mode: bpy.props.EnumProperty(
         name="Batch Mode",
-        items=(('SELECTED_FILE', "Selected File(s)", "Import selected file(s)"),
-               ('DIRECTORY', "Directory", "Import every file from active directory the file browser is in"))
+        items=(("SELECTED_FILE", "Selected File(s)", "Import selected file(s)"),
+               ("DIRECTORY", "Directory", "Import every file from active directory the file browser is in"))
     )
 
     join_geometries: bpy.props.BoolProperty(
@@ -519,14 +519,14 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         name="Export drawables local to position")
     batch_mode: bpy.props.EnumProperty(
         name="Batch Mode",
-        items=(('OFF', "Off", "Active scene"),
-               ('SCENE', "Scene", "Every scene"),
-               ('COLLECTION', "Collection",
+        items=(("OFF", "Off", "Active scene"),
+               ("SCENE", "Scene", "Every scene"),
+               ("COLLECTION", "Collection",
                 "Each collection (data-block ones), does not include content of children collections"),
-               ('SCENE_COLLECTION', "Scene Collections",
+               ("SCENE_COLLECTION", "Scene Collections",
                 "Each collection (including master, non-data-block ones) of each scene, "
                 "including content from children collections"),
-               ('ACTIVE_SCENE_COLLECTION', "Active Scene Collections",
+               ("ACTIVE_SCENE_COLLECTION", "Active Scene Collections",
                 "Each collection (including master, non-data-block one) of the active scene, "
                 "including content from children collections"),
                ),
@@ -538,7 +538,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     )
     sollum_types: bpy.props.EnumProperty(
         name="Sollum Types",
-        options={'ENUM_FLAG'},
+        options={"ENUM_FLAG"},
         items=((SollumType.DRAWABLE.value, "Drawables", ""),
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
                (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),

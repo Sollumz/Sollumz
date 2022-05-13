@@ -68,28 +68,28 @@ def select_object_and_children(obj):
 
 
 def duplicate_object(obj):
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.ops.object.duplicate()
     return bpy.context.selected_objects[0]
 
 
 def split_object(obj):
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
-    bpy.ops.mesh.separate(type='MATERIAL')
+    bpy.ops.mesh.separate(type="MATERIAL")
     return list(bpy.context.selected_objects)
 
 
 def join_objects(objs):
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = objs[0]
     meshes = []
     for obj in objs:
         meshes.append(obj.data)
         obj.select_set(True)
     bpy.ops.object.join()
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     joined_obj = bpy.context.view_layer.objects.active
     # Delete leftover meshes
     for mesh in meshes:
@@ -100,7 +100,7 @@ def join_objects(objs):
 
 
 def remove_unused_materials(obj):
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.ops.object.material_slot_remove_unused()
 
@@ -109,7 +109,7 @@ def remove_unused_materials(obj):
 # Copyright (c) 2017 GiveMeAllYourCats
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the 'Software'), to deal
+# of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
@@ -118,7 +118,7 @@ def remove_unused_materials(obj):
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -151,8 +151,8 @@ def remove_unused_vertex_groups_of_mesh(mesh):
 
 def get_selected_vertices(obj):
     mode = obj.mode
-    if obj.mode != 'OBJECT':
-        bpy.ops.object.mode_set(mode='OBJECT')
+    if obj.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
     # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
     verts = [obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
              for v in obj.data.vertices if v.select]

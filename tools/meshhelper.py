@@ -60,9 +60,9 @@ def create_sphere(mesh, radius=1):
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter'] = radius
+        kwargs["diameter"] = radius
     else:
-        kwargs['radius'] = radius
+        kwargs["radius"] = radius
 
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, **kwargs)
@@ -76,11 +76,11 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter1'] = radius
-        kwargs['diameter2'] = radius
+        kwargs["diameter1"] = radius
+        kwargs["diameter2"] = radius
     else:
-        kwargs['radius1'] = radius
-        kwargs['radius2'] = radius
+        kwargs["radius1"] = radius
+        kwargs["radius2"] = radius
 
     bmesh.ops.create_cone(
         bm,
@@ -102,11 +102,11 @@ def create_disc(mesh, radius=1, length=0.08):
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter1'] = radius
-        kwargs['diameter2'] = radius
+        kwargs["diameter1"] = radius
+        kwargs["diameter2"] = radius
     else:
-        kwargs['radius1'] = radius
-        kwargs['radius2'] = radius
+        kwargs["radius1"] = radius
+        kwargs["radius2"] = radius
 
     bmesh.ops.create_cone(
         bm,
@@ -125,15 +125,15 @@ def create_disc(mesh, radius=1, length=0.08):
 def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     length = length if diameter < length else diameter
     if diameter < 0:
-        raise ValueError('Cannot create capsule with a diameter less than 0!')
+        raise ValueError("Cannot create capsule with a diameter less than 0!")
 
     bm = bmesh.new()
 
     kwargs = {}
     if USE_LEGACY:
-        kwargs['diameter'] = diameter
+        kwargs["diameter"] = diameter
     else:
-        kwargs['radius'] = diameter
+        kwargs["radius"] = diameter
 
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, **kwargs)
@@ -185,7 +185,7 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     bm.free()
 
     if use_rot:
-        mesh.transform(Matrix.Rotation(radians(90.0), 4, 'X'))
+        mesh.transform(Matrix.Rotation(radians(90.0), 4, "X"))
 
     return mesh
 

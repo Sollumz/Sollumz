@@ -24,7 +24,7 @@ def handle_load_flag_presets(self):
     try:
         load_flag_presets()
     except FileNotFoundError:
-        self.report({'ERROR'}, traceback.format_exc())
+        self.report({"ERROR"}, traceback.format_exc())
 
 
 class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -40,7 +40,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
         elif parent.sollum_type != SollumType.BOUND_GEOMETRYBVH and parent.sollum_type != SollumType.BOUND_GEOMETRY:
             self.message(
-                f'Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}!')
+                f"Parent must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}!")
             return False
 
         selected = context.selected_objects
@@ -73,7 +73,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
             pobj.matrix_world = world_matrix
             pobj.location = center
         else:
-            if obj.mode == 'EDIT':
+            if obj.mode == "EDIT":
                 bm = bmesh.from_edit_mesh(obj.data)
             else:
                 bm = bmesh.new()
@@ -163,7 +163,7 @@ class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message(
                 f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
             return False
-        if context.mode != 'OBJECT':
+        if context.mode != "OBJECT":
             self.message(f"{self.bl_idname} can only be ran in Object mode.")
             return False
 
@@ -347,7 +347,7 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Delete Flag Preset"
     bl_action = f"{bl_label}"
 
-    preset_blacklist = ['Default']
+    preset_blacklist = ["Default"]
 
     def run(self, context):
         index = context.scene.flag_preset_index
@@ -434,8 +434,8 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Load a flag preset to the selected Geometry bounds"""
     bl_idname = "sollumz.load_flag_preset"
     bl_label = "Apply Flags Preset"
-    bl_context = 'object'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_context = "object"
+    bl_options = {"REGISTER", "UNDO"}
     bl_action = f"{bl_label}"
 
     def run(self, context):

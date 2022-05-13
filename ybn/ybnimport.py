@@ -296,25 +296,25 @@ def init_bound_obj(bound, sollum_type):
 
 
 def bound_to_obj(bound):
-    if bound.type == 'Box':
+    if bound.type == "Box":
         box = init_bound_item_obj(bound, SollumType.BOUND_BOX)
         box.bound_dimensions = abs_vector(bound.box_max - bound.box_min)
         box.data.transform(Matrix.Translation(bound.box_center))
 
         return box
-    elif bound.type == 'Sphere':
+    elif bound.type == "Sphere":
         sphere = init_bound_item_obj(bound, SollumType.BOUND_SPHERE)
         sphere.bound_radius = bound.sphere_radius
 
         return sphere
-    elif bound.type == 'Capsule':
+    elif bound.type == "Capsule":
         capsule = init_bound_item_obj(bound, SollumType.BOUND_CAPSULE)
         bbmin, bbmax = bound.box_min, bound.box_max
         capsule.bound_length = bbmax.z - bbmin.z
         capsule.bound_radius = bound.sphere_radius
 
         return capsule
-    elif bound.type == 'Cylinder':
+    elif bound.type == "Cylinder":
         cylinder = init_bound_item_obj(bound, SollumType.BOUND_CYLINDER)
         bbmin, bbmax = bound.box_min, bound.box_max
         extent = bbmax - bbmin
@@ -322,20 +322,20 @@ def bound_to_obj(bound):
         cylinder.bound_radius = extent.x * 0.5
 
         return cylinder
-    elif bound.type == 'Disc':
+    elif bound.type == "Disc":
         disc = init_bound_item_obj(bound, SollumType.BOUND_DISC)
         bbmin, bbmax = bound.box_min, bound.box_max
         disc.bound_radius = bound.sphere_radius
         create_disc(disc.data, bound.sphere_radius, bound.margin * 2)
 
         return disc
-    elif bound.type == 'Cloth':
+    elif bound.type == "Cloth":
         cloth = init_bound_item_obj(bound, SollumType.BOUND_CLOTH)
         return cloth
-    elif bound.type == 'Geometry':
+    elif bound.type == "Geometry":
         geometry = geometry_to_obj(bound, SollumType.BOUND_GEOMETRY)
         return geometry
-    elif bound.type == 'GeometryBVH':
+    elif bound.type == "GeometryBVH":
         bvh = geometry_to_obj(bound, SollumType.BOUND_GEOMETRYBVH)
         return bvh
 
@@ -363,4 +363,4 @@ def composite_to_obj(bounds, name, from_drawable=False):
 def import_ybn(filepath):
     ybn_xml = ybnxml.YBN.from_xml_file(filepath)
     composite_to_obj(ybn_xml, os.path.basename(
-        filepath.replace(ybnxml.YBN.file_extension, '')))
+        filepath.replace(ybnxml.YBN.file_extension, "")))

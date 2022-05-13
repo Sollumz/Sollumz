@@ -93,7 +93,7 @@ class ShaderParameter(ElementTree, AbstractClass):
 
 
 class TextureShaderParameter(ShaderParameter):
-    type = 'Texture'
+    type = "Texture"
 
     def __init__(self):
         super().__init__()
@@ -101,7 +101,7 @@ class TextureShaderParameter(ShaderParameter):
 
 
 class VectorShaderParameter(ShaderParameter):
-    type = 'Vector'
+    type = "Vector"
 
     def __init__(self):
         super().__init__()
@@ -112,10 +112,10 @@ class VectorShaderParameter(ShaderParameter):
 
 
 class ArrayShaderParameterProperty(ListProperty, ShaderParameter):
-    type = 'Array'
+    type = "Array"
 
     class Value(QuaternionProperty):
-        tag_name = 'Value'
+        tag_name = "Value"
 
     list_type = Value
     tag_name = "Item"
@@ -130,8 +130,8 @@ class ParametersListProperty(ListProperty):
         new = ParametersListProperty()
 
         for child in element.iter():
-            if 'type' in child.attrib:
-                param_type = child.get('type')
+            if "type" in child.attrib:
+                param_type = child.get("type")
                 if param_type == TextureShaderParameter.type:
                     new.value.append(TextureShaderParameter.from_xml(child))
                 if param_type == VectorShaderParameter.type:
@@ -144,7 +144,7 @@ class ParametersListProperty(ListProperty):
 
 
 class ShaderItem(ElementTree):
-    tag_name = 'Item'
+    tag_name = "Item"
 
     def __init__(self):
         super().__init__()
@@ -324,12 +324,12 @@ class VertexSemantic(str, Enum):
 
 class VertexLayoutListProperty(ElementProperty):
     value_types = (list)
-    tag_name = 'Layout'
+    tag_name = "Layout"
 
     # Generate a namedtuple from a vertex layout
     @ property
     def vertex_type(self):
-        return namedtuple('Vertex', [name.lower() for name in self.value])
+        return namedtuple("Vertex", [name.lower() for name in self.value])
 
     @ property
     def pretty_vertex_semantic(self):
@@ -364,19 +364,19 @@ class VertexLayoutListProperty(ElementProperty):
 
     def __init__(self, tag_name=None):
         super().__init__(self.tag_name, [])
-        self.type = 'GTAV1'
+        self.type = "GTAV1"
 
     @ classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
-        new.type = element.get('type')
+        new.type = element.get("type")
         for child in element:
             new.value.append(child.tag)
         return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
-        element.set('type', self.type)
+        element.set("type", self.type)
         for item in self.value:
             element.append(ET.Element(item))
         return element
@@ -386,7 +386,7 @@ class VertexDataProperty(ElementProperty):
     value_types = (list)
 
     def __init__(self, tag_name=None):
-        super().__init__(tag_name=tag_name or 'Data', value=[])
+        super().__init__(tag_name=tag_name or "Data", value=[])
 
     @ classmethod
     def from_xml(cls, element: ET.Element):
@@ -394,7 +394,7 @@ class VertexDataProperty(ElementProperty):
         if not element.text:
             return new
 
-        text = element.text.strip().split('\n')
+        text = element.text.strip().split("\n")
         if len(text) > 0:
             for line in text:
                 items = line.strip().split("   ")
@@ -417,10 +417,10 @@ class VertexDataProperty(ElementProperty):
         text = []
         for vertex in self.value:
             for property in vertex:
-                text.append(' '.join([str(item)
-                                      for item in property]) + '   ')
-            text.append('\n')
-        element.text = ''.join(text)
+                text.append(" ".join([str(item)
+                                      for item in property]) + "   ")
+            text.append("\n")
+        element.text = "".join(text)
 
         return element
 
@@ -433,7 +433,7 @@ class VertexBuffer(ElementTree):
         self.flags = ValueProperty("Flags", 0)
         self.layout = VertexLayoutListProperty()
         self.data = VertexDataProperty()
-        self.data2 = VertexDataProperty('Data2')
+        self.data2 = VertexDataProperty("Data2")
 
     def get_data(self):
         if len(self.data) > 0:
@@ -442,7 +442,7 @@ class VertexBuffer(ElementTree):
             return self.data2
 
     def get_vertex_type(self):
-        return self.get_element('layout').vertex_type
+        return self.get_element("layout").vertex_type
 
     @ classmethod
     def from_xml(cls: Element, element: ET.Element):
@@ -458,7 +458,7 @@ class IndexDataProperty(ElementProperty):
     value_types = (int)
 
     def __init__(self):
-        super().__init__(tag_name='Data', value=[])
+        super().__init__(tag_name="Data", value=[])
 
     @ classmethod
     def from_xml(cls, element: ET.Element):
@@ -476,11 +476,11 @@ class IndexDataProperty(ElementProperty):
         for index, vert_index in enumerate(self.value):
             text.append(str(vert_index))
             if index < len(self.value) - 1:
-                text.append(' ')
+                text.append(" ")
             if (index + 1) % columns == 0:
-                text.append('\n')
+                text.append("\n")
 
-        element.text = ''.join(text)
+        element.text = "".join(text)
 
         return element
 
@@ -543,15 +543,15 @@ class Drawable(ElementTree, AbstractClass):
         self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
-        self.lod_dist_high = ValueProperty('LodDistHigh', 0)  # 9998?
-        self.lod_dist_med = ValueProperty('LodDistMed', 0)  # 9998?
-        self.lod_dist_low = ValueProperty('LodDistLow', 0)  # 9998?
-        self.lod_dist_vlow = ValueProperty('LodDistVlow', 0)  # 9998?
-        self.flags_high = ValueProperty('FlagsHigh', 0)
-        self.flags_med = ValueProperty('FlagsMed', 0)
-        self.flags_low = ValueProperty('FlagsLow', 0)
-        self.flags_vlow = ValueProperty('FlagsVlow', 0)
-        self.unknown_9A = ValueProperty('Unknown9A', 0)
+        self.lod_dist_high = ValueProperty("LodDistHigh", 0)  # 9998?
+        self.lod_dist_med = ValueProperty("LodDistMed", 0)  # 9998?
+        self.lod_dist_low = ValueProperty("LodDistLow", 0)  # 9998?
+        self.lod_dist_vlow = ValueProperty("LodDistVlow", 0)  # 9998?
+        self.flags_high = ValueProperty("FlagsHigh", 0)
+        self.flags_med = ValueProperty("FlagsMed", 0)
+        self.flags_low = ValueProperty("FlagsLow", 0)
+        self.flags_vlow = ValueProperty("FlagsVlow", 0)
+        self.unknown_9A = ValueProperty("Unknown9A", 0)
 
         self.shader_group = ShaderGroupProperty()
         self.skeleton = SkeletonProperty()

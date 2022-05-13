@@ -14,7 +14,7 @@ from ..tools.utils import get_distance_of_vectors, get_max_vector_list, get_min_
 
 
 class NoGeometryError(Exception):
-    message = 'Sollumz Bound Geometry has no geometry!'
+    message = "Sollumz Bound Geometry has no geometry!"
 
 
 class VerticesLimitError(Exception):
@@ -116,7 +116,7 @@ def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
 
         vertical = Vector((0, 0, height / 2))
         mat = obj.matrix_world if export_settings.use_transforms else obj.matrix_basis
-        vertical.rotate(mat.to_euler('XYZ'))
+        vertical.rotate(mat.to_euler("XYZ"))
 
         v1 = pos - vertical
         v2 = pos + vertical
@@ -140,7 +140,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     elif sollum_type == SollumType.BOUND_GEOMETRY:
         geometry = ybnxml.BoundGeometry()
     else:
-        return ValueError('Invalid argument for geometry sollum_type!')
+        return ValueError("Invalid argument for geometry sollum_type!")
 
     geometry = init_bound_item(geometry, obj, export_settings, is_frag)
 

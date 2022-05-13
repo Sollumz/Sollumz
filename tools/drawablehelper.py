@@ -56,7 +56,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
         name = obj.name
 
         if use_names:
-            obj.name = name + '_old'
+            obj.name = name + "_old"
             dobj.name = name
 
         obj.sollum_type = SollumType.DRAWABLE_GEOMETRY

@@ -91,8 +91,8 @@ class BoneProperties(bpy.types.PropertyGroup):
 
 
 class ShaderMaterial(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty('Index')
-    name: bpy.props.StringProperty('Name')
+    index: bpy.props.IntProperty("Index")
+    name: bpy.props.StringProperty("Name")
 
 
 class LightProperties(bpy.types.PropertyGroup):
@@ -108,7 +108,7 @@ class LightProperties(bpy.types.PropertyGroup):
     volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color", subtype='COLOR', min=0.0, max=1.0)
+        name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0)
     light_hash: bpy.props.IntProperty(name="Light Hash")
     volume_outer_intensity: bpy.props.FloatProperty(
         name="Volume Outer Intensity")
@@ -211,9 +211,9 @@ def on_file_loaded(_):
 
 
 def get_light_type(self):
-    if self.type == 'POINT':
+    if self.type == "POINT":
         return 1 if not self.is_capsule else 3
-    elif self.type == 'SPOT':
+    elif self.type == "SPOT":
         return 2
     else:
         return 0
@@ -221,19 +221,19 @@ def get_light_type(self):
 
 def set_light_type(self, value):
     if value == 1:
-        self.type = 'POINT'
+        self.type = "POINT"
         self.is_capsule = False
     elif value == 3:
-        self.type = 'POINT'
+        self.type = "POINT"
         self.is_capsule = True
     elif value == 2:
-        self.type = 'SPOT'
+        self.type = "SPOT"
         self.is_capsule = False
 
 
 def get_texture_name(self):
     if self.image:
-        return basename(self.image.filepath).split('.')[0]
+        return basename(self.image.filepath).split(".")[0]
     return "None"
 
 
@@ -241,7 +241,7 @@ def register():
     bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
     bpy.types.Scene.shader_materials = bpy.props.CollectionProperty(
-        type=ShaderMaterial, name='Shader Materials')
+        type=ShaderMaterial, name="Shader Materials")
     bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
         type=DrawableProperties)

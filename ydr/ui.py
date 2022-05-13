@@ -49,18 +49,18 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
         # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=name, icon='SHADING_TEXTURE')
+            row.label(text=name, icon="SHADING_TEXTURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=name, emboss=False, icon='SHADING_TEXTURE')
+                        text=name, emboss=False, icon="SHADING_TEXTURE")
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_LIGHT_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
 
     @classmethod
@@ -109,8 +109,8 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
     bl_parent_id = SOLLUMZ_PT_LIGHT_PANEL.bl_idname
     select_operator = "sollumz.light_time_flags_select_range"
@@ -128,8 +128,8 @@ class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_label = "Flags"
     bl_idname = "SOLLUMZ_PT_LIGHT_FLAGS_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "data"
     bl_parent_id = SOLLUMZ_PT_LIGHT_PANEL.bl_idname
 
@@ -146,9 +146,9 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Drawable Tools"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_order = 1
 
     def draw_header(self, context):
@@ -163,9 +163,9 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
     bl_label = "Create Shader"
     bl_idname = "SOLLUMZ_PT_CREATE_SHADER_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -189,9 +189,9 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     bl_label = "Create Drawable Objects"
     bl_idname = "SOLLUMZ_PT_CREATE_DRAWABLE_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -213,9 +213,9 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
     bl_label = "Create Lights"
     bl_idname = "SOLLUMZ_PT_CREATE_LIGHT_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -230,22 +230,22 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        custom_icon = 'FILE'
+        custom_icon = "FILE"
 
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.prop(item, 'name', text='', icon=custom_icon,
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            layout.prop(item, "name", text="", icon=custom_icon,
                         emboss=False, translate=False)
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.prop(item, 'name', text='', icon=custom_icon,
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name", text="", icon=custom_icon,
                         emboss=False, translate=False)
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
     bl_label = "Bone Properties"
     bl_idname = "SOLLUMZ_PT_BONE_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "bone"
 
     def draw(self, context):
@@ -262,16 +262,16 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
         layout.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags",
                              bone.bone_properties, "flags", bone.bone_properties, "ul_index")
         row = layout.row()
-        row.operator('sollumz.bone_flags_new_item', text='New')
-        row.operator('sollumz.bone_flags_delete_item', text='Delete')
+        row.operator("sollumz.bone_flags_new_item", text="New")
+        row.operator("sollumz.bone_flags_delete_item", text="Delete")
 
 
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Texture Parameters"
-    bl_idname = 'SOLLUMZ_PT_TXTPARAMS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_TXTPARAMS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 0
 
@@ -353,10 +353,10 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Value Parameters"
-    bl_idname = 'SOLLUMZ_PT_VALUEPARAMS_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "SOLLUMZ_PT_VALUEPARAMS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 1
 

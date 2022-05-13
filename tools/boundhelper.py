@@ -10,7 +10,7 @@ def create_bound_shape(type):
 
     # Constrain scale for bound polys
     if pobj.sollum_type in BOUND_POLYGON_TYPES and type != SollumType.BOUND_POLY_BOX and type != SollumType.BOUND_POLY_TRIANGLE:
-        constraint = pobj.constraints.new(type='LIMIT_SCALE')
+        constraint = pobj.constraints.new(type="LIMIT_SCALE")
         constraint.use_transform_limit = True
         constraint.use_min_x = True
         constraint.use_min_y = True
@@ -104,7 +104,7 @@ def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_origin
         elif do_center:
             obj.location -= center
 
-        if obj.type == 'MESH':
+        if obj.type == "MESH":
             name = obj.name
 
             poly_mesh = obj if replace_original else create_mesh(

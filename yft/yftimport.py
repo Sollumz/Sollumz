@@ -223,9 +223,9 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
 
         for child in dobj.children:
             bone_index = 0
-            if child.parent_type == 'BONE':
+            if child.parent_type == "BONE":
                 parent_bone = child.parent_bone
-                if parent_bone is not None and parent_bone != '':
+                if parent_bone is not None and parent_bone != "":
                     bone_index = child.parent.data.bones[parent_bone].bone_properties.tag
 
             boneidx = bone_index

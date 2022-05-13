@@ -16,11 +16,11 @@ class OrderListHelper:
 
 
 class SOLLUMZ_PT_import_main(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = ""
     bl_parent_id = "FILE_PT_operator"
-    bl_options = {'HIDE_HEADER'}
+    bl_options = {"HIDE_HEADER"}
     bl_order = 0
 
     @ classmethod
@@ -41,8 +41,8 @@ class SOLLUMZ_PT_import_main(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Geometry"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 1
@@ -65,8 +65,8 @@ class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Fragment"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 2
@@ -89,8 +89,8 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Skeleton"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 3
@@ -121,10 +121,10 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
 
-            # Armature is contained in 'skel' object, so we need its parent (which is pack:/... or ped root..)
+            # Armature is contained in "skel" object, so we need its parent (which is pack:/... or ped root..)
             armature_parent = get_armature_obj(item).parent
 
-            row.label(text=F'{armature_parent.name} - {item.name}',
+            row.label(text=F"{armature_parent.name} - {item.name}",
                       icon="OUTLINER_DATA_ARMATURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
@@ -133,8 +133,8 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_import_animation(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Animation"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 4
@@ -162,11 +162,11 @@ class SOLLUMZ_PT_import_animation(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_export_main(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = ""
     bl_parent_id = "FILE_PT_operator"
-    bl_options = {'HIDE_HEADER'}
+    bl_options = {"HIDE_HEADER"}
     bl_order = 0
 
     @ classmethod
@@ -187,12 +187,12 @@ class SOLLUMZ_PT_export_main(bpy.types.Panel):
         row.prop(operator.export_settings, "batch_mode")
         sub = row.row(align=True)
         sub.prop(operator.export_settings, "use_batch_own_dir",
-                 text="", icon='NEWFOLDER')
+                 text="", icon="NEWFOLDER")
 
 
 class SOLLUMZ_PT_export_include(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Include"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 1
@@ -223,8 +223,8 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_export_exclude(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Exclude"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 2
@@ -247,8 +247,8 @@ class SOLLUMZ_PT_export_exclude(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Geometry"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 3
@@ -271,8 +271,8 @@ class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
-    bl_space_type = 'FILE_BROWSER'
-    bl_region_type = 'TOOL_PROPS'
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
     bl_label = "Fragment"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 4
@@ -298,9 +298,9 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_order = 0
 
     def draw_header(self, context):
@@ -331,9 +331,9 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_label = "Debug"
     bl_idname = "SOLLUMZ_PT_DEBUG_PANEL"
     bl_category = "Sollumz Tools"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -350,9 +350,9 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Vertex Painter"
     bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -368,9 +368,9 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
     bl_label = "Terrain Painter"
     bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -392,9 +392,9 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Ymap Tools"
     bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
@@ -410,10 +410,10 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'object'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         layout = self.layout
@@ -431,11 +431,11 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_label = "Entity Definition"
-    bl_idname = 'SOLLUMZ_PT_ENTITY_PANEL'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_idname = "SOLLUMZ_PT_ENTITY_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
 
     @ classmethod
@@ -464,10 +464,10 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
 class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAT_PANEL"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'material'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "material"
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         layout = self.layout
@@ -484,7 +484,7 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
 class FlagsPanel:
     bl_label = "Flags"
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {"DEFAULT_CLOSED"}
 
     def get_flags(self, context):
         raise NotImplementedError(

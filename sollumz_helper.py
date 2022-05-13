@@ -38,7 +38,7 @@ class SOLLUMZ_OT_base:
                 f"{self.bl_label} took {round(end - start, 3)} seconds to {self.bl_action}.")
 
         if len(self.messages) > 0:
-            self.message('\n'.join(self.messages))
+            self.message("\n".join(self.messages))
 
         if result:
             return {"FINISHED"}

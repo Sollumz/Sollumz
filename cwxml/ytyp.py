@@ -109,11 +109,11 @@ class AttachedObjectsBuffer(ElementProperty):
         for index, entity_index in enumerate(self.value):
             text.append(str(entity_index))
             if index < len(self.value) - 1:
-                text.append(' ')
+                text.append(" ")
             if (index + 1) % columns == 0:
-                text.append('\n')
+                text.append("\n")
 
-        element.text = ''.join(text)
+        element.text = "".join(text)
 
         return element
 

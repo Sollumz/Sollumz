@@ -139,7 +139,7 @@ def polygons_to_obj(polygons):
 
 
 def navmesh_to_obj(navmesh, filepath):
-    name = os.path.basename(filepath.replace(YNV.file_extension, ''))
+    name = os.path.basename(filepath.replace(YNV.file_extension, ""))
     nobj = bpy.data.objects.new(name, None)
     nobj.sollum_type = SollumType.NAVMESH
     nobj.empty_display_size = 0

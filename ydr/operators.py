@@ -56,9 +56,9 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         light_type = context.scene.create_light_type
-        blender_light_type = 'POINT'
+        blender_light_type = "POINT"
         if light_type == LightType.SPOT:
-            blender_light_type = 'SPOT'
+            blender_light_type = "SPOT"
 
         light_data = bpy.data.lights.new(
             name=SOLLUMZ_UI_NAMES[light_type], type=blender_light_type)
