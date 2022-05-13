@@ -1,11 +1,12 @@
 import bmesh
-from mathutils import Vector, Matrix, Quaternion
+from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
 
 from ..sollumz_properties import SollumType
 from .utils import divide_list, subtract_from_vector, get_min_vector_list, add_to_vector, get_max_vector_list
 from .version import USE_LEGACY
+from .blenderhelper import get_children_recursive
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):
@@ -263,28 +264,5 @@ def get_bound_center_from_bounds(bbmin, bbmax):
     return (bbmin + bbmax) * 0.5
 
 
-def get_children_recursive(obj):
-    children = []
-
-    if obj is None:
-        return children
-
-    if len(obj.children) < 1:
-        return children
-
-    for child in obj.children:
-        children.append(child)
-        if len(child.children) > 0:
-            children.extend(get_children_recursive(child))
-
-    return children
-
-
 def get_sphere_radius(bbmax, bbcenter):
     return (bbmax - bbcenter).length
-
-
-def prop_array_to_vector(prop, size=3):
-    if size == 4:
-        return Quaternion((prop[0], prop[1], prop[2], prop[3]))
-    return Vector((prop[0], prop[1], prop[2]))

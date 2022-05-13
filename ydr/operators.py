@@ -8,7 +8,7 @@ from ..tools.drawablehelper import (
     convert_material,
     convert_material_to_selected
 )
-from ..tools.meshhelper import get_children_recursive
+from ..tools.blenderhelper import get_children_recursive
 from ..tools.boundhelper import convert_selected_to_bound
 from ..cwxml.shader import ShaderManager
 import traceback

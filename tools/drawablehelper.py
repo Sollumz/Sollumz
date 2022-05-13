@@ -1,8 +1,7 @@
 import bpy
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
-from ..tools.meshhelper import get_children_recursive
-from ..tools.blenderhelper import join_objects
+from ..tools.blenderhelper import join_objects, get_children_recursive
 from mathutils import Vector
 
 

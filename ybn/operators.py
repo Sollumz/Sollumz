@@ -11,10 +11,10 @@ from ..tools.boundhelper import (
     create_mesh,
     BOUND_POLYGON_TYPES
 )
-from ..tools.meshhelper import create_box_from_extents, get_bound_center, get_children_recursive
+from ..tools.meshhelper import create_box_from_extents, get_bound_center
 from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..tools.blenderhelper import get_selected_vertices
+from ..tools.blenderhelper import get_selected_vertices, get_children_recursive
 import bpy
 import bmesh
 from mathutils import Vector

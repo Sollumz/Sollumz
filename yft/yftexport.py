@@ -7,8 +7,8 @@ from ..ybn.ybnexport import composite_from_objects
 from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
 from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
-from ..tools.meshhelper import prop_array_to_vector, get_bound_center, get_sphere_radius
-from ..tools.utils import divide_vector_inv
+from ..tools.meshhelper import get_bound_center, get_sphere_radius
+from ..tools.utils import divide_vector_inv, prop_array_to_vector
 
 
 def get_group_objects(fragment, index=0):

@@ -12,10 +12,9 @@ from ..tools.meshhelper import (
     get_bound_extents,
     get_bound_center,
     get_sphere_radius,
-    get_children_recursive
 )
 from ..tools.utils import float32_list
-from ..tools.blenderhelper import duplicate_object, split_object
+from ..tools.blenderhelper import duplicate_object, split_object, get_children_recursive
 from ..tools.drawablehelper import join_objects
 from ..sollumz_properties import (
     BOUND_TYPES,

@@ -3,8 +3,8 @@ import traceback
 import os
 import time
 from abc import abstractmethod
-from .tools.meshhelper import get_children_recursive
-from .sollumz_properties import BOUND_TYPES, SollumType
+from .tools.blenderhelper import get_children_recursive
+from .sollumz_properties import BOUND_TYPES
 from .ydr.ydrexport import get_used_materials
 
 

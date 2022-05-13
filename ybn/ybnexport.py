@@ -3,9 +3,9 @@ from .properties import CollisionMatFlags
 from mathutils import Vector
 from ..cwxml import bound as ybnxml
 from ..sollumz_properties import BOUND_SHAPE_TYPES, MaterialType, SollumType
+from ..tools.blenderhelper import get_children_recursive
 from ..tools.meshhelper import (
     get_total_bounds,
-    get_children_recursive,
     get_bound_extents,
     get_bound_center_from_bounds,
     get_sphere_radius

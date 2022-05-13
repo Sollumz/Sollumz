@@ -1,7 +1,7 @@
 from mathutils import Vector
 import numpy
-from math import inf, sqrt
-from mathutils import Vector, Quaternion, Matrix
+from math import sqrt
+from mathutils import Vector, Quaternion
 
 
 def get_list_item(list, index):
@@ -176,3 +176,9 @@ def is_coplanar(points):
 
 def list_index_exists(ls, i):
     return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
+
+
+def prop_array_to_vector(prop, size=3):
+    if size == 4:
+        return Quaternion((prop[0], prop[1], prop[2], prop[3]))
+    return Vector((prop[0], prop[1], prop[2]))

@@ -221,3 +221,20 @@ def get_armature_obj(armature):
     for obj in bpy.data.objects:
         if obj.data == armature:
             return obj
+
+
+def get_children_recursive(obj):
+    children = []
+
+    if obj is None:
+        return children
+
+    if len(obj.children) < 1:
+        return children
+
+    for child in obj.children:
+        children.append(child)
+        if len(child.children) > 0:
+            children.extend(get_children_recursive(child))
+
+    return children
