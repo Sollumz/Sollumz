@@ -6,10 +6,9 @@ from typing import Any
 from xml.etree import ElementTree as ET
 from numpy import float32
 
-"""Custom indentation to get elements like <VerticesProperty /> to output nicely"""
-
 
 def indent(elem: ET.Element, level=0):
+    """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
     amount = "  "
     i = "\n" + level * amount
     if len(elem):
@@ -33,10 +32,8 @@ def indent(elem: ET.Element, level=0):
             elem.text = '\n' + '\n'.join(lines) + i
 
 
-"""Determine if a string is a bool, int, or float"""
-
-
 def get_str_type(value: str):
+    """Determine if a string is a bool, int, or float"""
     if isinstance(value, str):
         if value.lower() == 'true' or value.lower() == 'false':
             return bool(value)
@@ -65,26 +62,25 @@ class Element(AbstractClass):
         raise ValueError(
             f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!")
 
-    """Convert ET.Element object to Element"""
     @abstractclassmethod
     def from_xml(cls, element: ET.Element):
+        """Convert ET.Element object to Element"""
         raise NotImplementedError
 
-    """Convert object to ET.Element object"""
     @abstractmethod
     def to_xml(self):
+        """Convert object to ET.Element object"""
         raise NotImplementedError
 
-    """Read XML from filepath"""
     @classmethod
     def from_xml_file(cls, filepath):
+        """Read XML from filepath"""
         element_tree = ET.ElementTree()
         element_tree.parse(filepath)
         return cls.from_xml(element_tree.getroot())
 
-    """Write object as XML to filepath"""
-
     def write_xml(self, filepath):
+        """Write object as XML to filepath"""
         element = self.to_xml()
         indent(element)
         elementTree = ET.ElementTree(element)
@@ -94,9 +90,9 @@ class Element(AbstractClass):
 class ElementTree(Element):
     """XML element that contains children defined by it's properties"""
 
-    """Convert ET.Element object to ElementTree"""
     @classmethod
     def from_xml(cls: Element, element: ET.Element):
+        """Convert ET.Element object to ElementTree"""
         new = cls()
 
         for prop_name, obj_element in vars(new).items():
@@ -112,9 +108,8 @@ class ElementTree(Element):
 
         return new
 
-    """Convert ElementTree to ET.Element object"""
-
     def to_xml(self):
+        """Convert ElementTree to ET.Element object"""
         root = ET.Element(self.tag_name)
         for child in vars(self).values():
             if isinstance(child, Element):
@@ -238,8 +233,6 @@ class ListProperty(ElementProperty, AbstractClass):
 
 class TextProperty(ElementProperty):
     value_types = (str)
-
-    '''default = Name ?'''
 
     def __init__(self, tag_name: str = 'Name', value=None):
         super().__init__(tag_name, value or "")
