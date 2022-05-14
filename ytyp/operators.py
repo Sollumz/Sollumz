@@ -7,6 +7,7 @@ from ..tools.blenderhelper import get_selected_vertices
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from ..tools.utils import get_min_vector_list, get_max_vector_list, sort_points, is_coplanar
 from ..cwxml import ytyp as ytypxml
+from ..cwxml.ymap import EntityItem
 from .properties import (
     get_selected_ytyp,
     get_selected_archetype,
@@ -783,7 +784,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
                         ytypxml.MloArchetype(), archetype)
                     archetype_xml.mlo_flags = archetype.mlo_flags.total
                     for entity in archetype.entities:
-                        entity_xml = ytypxml.EntityItem()
+                        entity_xml = EntityItem()
                         entity_obj = entity.linked_object
                         if entity_obj:
                             entity_xml.position = entity_obj.location
