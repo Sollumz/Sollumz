@@ -623,9 +623,9 @@ def register():
         type=CMapTypesProperties, name="YTYPs")
     bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP Index")
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(
-        name="Show Room Gizmo")
+        name="Show Room Gizmo", default=True)
     bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(
-        name="Show Portal Gizmo")
+        name="Show Portal Gizmo", default=True)
 
     bpy.types.Scene.create_archetype_type = bpy.props.EnumProperty(
         items=items_from_enums(ArchetypeType), name="Type")
