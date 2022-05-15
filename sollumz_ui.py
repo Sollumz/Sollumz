@@ -122,10 +122,12 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
             row = layout.row()
 
             # Armature is contained in "skel" object, so we need its parent (which is pack:/... or ped root..)
-            armature_parent = get_armature_obj(item).parent
+            armature_obj = get_armature_obj(item)
+            if armature_obj is not None:
+                armature_parent = armature_obj.parent
 
-            row.label(text=F"{armature_parent.name} - {item.name}",
-                      icon="OUTLINER_DATA_ARMATURE")
+                row.label(text=F"{armature_parent.name} - {item.name}",
+                          icon="OUTLINER_DATA_ARMATURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
