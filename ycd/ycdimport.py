@@ -210,10 +210,10 @@ def apply_action_data_to_action(action_data, action, frame_count):
             type = "scale"
 
         for bone_name, frames_data in bones_data.items():
-            group_item = action.groups.new("%s-%s" % (bone_name, track_id))
+            group_item = action.groups.new('%s-%s' % (bone_name, track_id))
 
             if type == "location":
-                data_path_loc = "pose.bones['%s'].location" % bone_name
+                data_path_loc = 'pose.bones["%s"].location' % bone_name
 
                 location_tracks_x = list(
                     map(lambda location: location.x, frames_data))
@@ -248,7 +248,7 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 pos_curve_y.update()
                 pos_curve_z.update()
             elif type == "scale":
-                data_path_loc = "pose.bones['%s'].scale" % bone_name
+                data_path_loc = 'pose.bones["%s"].scale' % bone_name
 
                 scale_tracks_x = list(
                     map(lambda location: location.x, frames_data))
@@ -283,7 +283,7 @@ def apply_action_data_to_action(action_data, action, frame_count):
                 pos_curve_y.update()
                 pos_curve_z.update()
             elif type == "rotation":
-                data_path_rot = "pose.bones['%s'].rotation_quaternion" % bone_name
+                data_path_rot = 'pose.bones["%s"].rotation_quaternion' % bone_name
 
                 rotation_tracks_x = list(
                     map(lambda rotation: rotation.x, frames_data))
