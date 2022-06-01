@@ -1,3 +1,4 @@
+import re
 import traceback
 import os
 import pathlib
@@ -693,7 +694,24 @@ class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
         self.message("Hierarchy successfuly set.")
         return True
 
+class SOLLUMZ_OT_debug_textures(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Debug: Fix textures extensions. Press this button is you see '.dds.001' or any weird dds extension.\nYou will need to find missing textures after pressing this button"""
+    bl_idname = "sollumz.debug_textures"
+    bl_label = "Fix Textures"
+    bl_action = bl_label
+    bl_order = 100
 
+    def run(self, context):
+        regexDds = re.compile(r"(.dds.\d+).dds$", re.IGNORECASE)
+
+        for img in bpy.data.images:
+            img.filepath = regexDds.sub(".dds", img.filepath)
+        
+        for img in bpy.data.images:
+            img.reload()
+        
+        self.message('Textures succefully fixed, you may want to find missing textures now!')
+    
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(sollumz_menu_func_export)
