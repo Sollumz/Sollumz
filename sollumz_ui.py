@@ -345,6 +345,9 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         layout = self.layout
         layout.label(text="Sollumz Version: 1.3.1")
         row = layout.row()
+        row.operator("sollumz.debug_textures")
+        row.prop(context.scene, "debug_textures")
+        row = layout.row()
         row.operator("sollumz.debug_hierarchy")
         row.prop(context.scene, "debug_sollum_type")
 
