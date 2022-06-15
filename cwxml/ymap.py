@@ -227,7 +227,7 @@ class ExtensionSpawnPoint(Extension):
         super().__init__()
         self.offset_rotation = QuaternionProperty("offsetRotation")
         self.spawn_type = TextProperty("spawnType")
-        self.spawn_type = TextProperty("pedType")
+        self.ped_type = TextProperty("pedType")
         self.group = TextProperty("group")
         self.interior = TextProperty("interior")
         self.required_imap = TextProperty("required_imap")
