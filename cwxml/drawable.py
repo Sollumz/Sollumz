@@ -28,6 +28,7 @@ from .bound import (
 from collections import namedtuple
 from collections.abc import MutableSequence
 from enum import Enum
+import os
 
 
 class YDD:
@@ -659,3 +660,19 @@ class DrawableDictionary(MutableSequence, Element):
                     f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!")
 
         return element
+
+
+class BonePropertiesManager:
+    dictionary_xml = os.path.join(
+        os.path.dirname(__file__), "BoneProperties.xml")
+    bones = {}
+
+    @staticmethod
+    def load_bones():
+        tree = ET.parse(BonePropertiesManager.dictionary_xml)
+        for node in tree.getroot():
+            bone = BoneItem.from_xml(node)
+            BonePropertiesManager.bones[bone.name] = bone
+
+
+BonePropertiesManager.load_bones()

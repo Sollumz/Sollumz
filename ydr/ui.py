@@ -228,6 +228,28 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
         row.prop(context.scene, "create_light_type", text="")
 
 
+class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
+    bl_label = "Apply Bone Properties"
+    bl_idname = "SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="BONE_DATA")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname, icon='ARMATURE_DATA')
+        row2 = layout.row()
+        row2.operator(
+            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname, icon='BONE_DATA')
+
+
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         custom_icon = "FILE"
