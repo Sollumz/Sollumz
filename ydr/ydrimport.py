@@ -81,7 +81,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                         if not n.texture_properties.embedded:
                             # Set external texture name for non-embedded textures
                             n.image.source = "FILE"
-                            n.image.filepath = "//" + n.image.name + ".dds"
+                            n.image.filepath = "//" + param.texture_name + ".dds"
 
                         if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
                             n.image.colorspace_settings.name = "Non-Color"
