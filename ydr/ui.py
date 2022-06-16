@@ -182,7 +182,11 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
             ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
         row.operator(
             ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
-        layout.operator(ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
+        row2 = layout.row()
+        row2.operator(
+            ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
+        row2.operator(
+           ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):

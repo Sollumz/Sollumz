@@ -195,6 +195,40 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
 
         return True
 
+class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Remove all embeded textures on the selected objects active material"""
+    bl_idname = "sollumz.removeallembedded"
+    bl_label = "Remove all Embeded Textures"
+    bl_action = "Remove all Embeded Textures"
+
+    def set_textures_unembedded(self, obj):
+        mat = obj.active_material
+        if mat == None:
+            self.message(f"No active material on {obj.name} will be skipped")
+            return
+
+        if mat.sollum_type == MaterialType.SHADER:
+            for node in mat.node_tree.nodes:
+                if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                    node.texture_properties.embedded = False
+            self.message(
+                f"Set {obj.name}s material {mat.name} textures to unembedded.")
+        else:
+            self.message(
+                f"Skipping object {obj.name} because it does not have a sollumz shader active.")
+
+    def run(self, context):
+        objs = bpy.context.selected_objects
+        if(len(objs) == 0):
+            self.warning(
+                f"Please select a object to remove all embeded textures.")
+            return False
+
+        for obj in objs:
+            self.set_textures_unembedded(obj)
+
+        return True
+
 
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_new_item"
