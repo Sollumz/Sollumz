@@ -2,6 +2,7 @@ import bpy
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
 from ..tools.blenderhelper import join_objects, get_children_recursive
+from ..cwxml.drawable import BonePropertiesManager
 from mathutils import Vector
 
 
@@ -217,3 +218,19 @@ def convert_shader_to_shader(material, shader_name):
             tonode_w.outputs[0].default_value = node_w.outputs[0].default_value
 
     return new_material
+
+
+def set_recommended_bone_properties(bone):
+    bone_item = BonePropertiesManager.bones.get(bone.name)
+    if bone_item is None:
+        return
+
+    bone.bone_properties.tag = bone_item.tag
+    bone.bone_properties.flags.clear()
+    flags_restricted = set(["LimitRotation", "Unk0"])
+    for flag_name in bone_item.flags:
+        if flag_name in flags_restricted:
+            continue
+
+        flag = bone.bone_properties.flags.add()
+        flag.name = flag_name

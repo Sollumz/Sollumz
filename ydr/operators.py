@@ -6,7 +6,8 @@ from ..tools.drawablehelper import (
     convert_selected_to_drawable,
     create_drawable,
     convert_material,
-    convert_material_to_selected
+    convert_material_to_selected,
+    set_recommended_bone_properties
 )
 from ..tools.blenderhelper import get_children_recursive
 from ..tools.boundhelper import convert_selected_to_bound
@@ -285,3 +286,44 @@ class SOLLUMZ_OT_LIGHT_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
     def get_flags(self, context):
         light = context.light
         return light.time_flags
+
+
+class SOLLUMZ_OT_apply_bone_properties_to_armature(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.apply_bone_properties_to_armature"
+    bl_label = "To Armature"
+    bl_action = bl_label
+
+    def run(self, context):
+        armature = context.active_object
+        if armature is None or armature.type != "ARMATURE":
+            return
+
+        if armature.pose is None:
+            return
+
+        for pbone in armature.pose.bones:
+            bone = pbone.bone
+            set_recommended_bone_properties(bone)
+
+        self.message(f"Apply bone properties to armature: {armature.name}")
+        return True
+
+
+class SOLLUMZ_OT_apply_bone_properties_to_selected_bones(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.apply_bone_properties_to_selected_bones"
+    bl_label = "To Selected Bones"
+    bl_action = bl_label
+
+    def run(self, context):
+        pbones = context.selected_pose_bones
+        if pbones is None:
+            return
+
+        count = 0
+        for pbone in pbones:
+            bone = pbone.bone
+            set_recommended_bone_properties(bone)
+            count += 1
+
+        self.message(f"Apply bone properties to {count} bone(s)")
+        return True
