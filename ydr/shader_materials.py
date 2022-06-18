@@ -137,13 +137,20 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     tnt_ng = create_tinted_geometry_graph()
     geom = obj.modifiers["GeometryNodes"]
     geom.node_group = tnt_ng
-    txt = create_tinted_texture_from_image(tint_img)
-    txt_node = geom.node_group.nodes["Attribute Sample Texture"]
 
-    if USE_LEGACY:
-        txt_node.texture = txt
-    else:
-        txt_node.inputs[1].default_value = txt
+    # set input / output variables
+    input_id = geom.node_group.inputs[1].identifier
+    geom[input_id+"_attribute_name"] = "colour0"
+    geom[input_id+"_use_attribute"] = True
+    output_id = geom.node_group.outputs[1].identifier
+    geom[output_id+"_attribute_name"] = "TintColor"
+    geom[output_id+"_use_attribute"] = True
+
+    # create texture and get texture node
+    txt = create_tinted_texture_from_image(tint_img)  # remove this??
+    txt_node = geom.node_group.nodes["Image Texture"]
+    # apply texture
+    txt_node.inputs[0].default_value = txt.image
 
     obj.data.vertex_colors.new(name="TintColor")
 
@@ -156,116 +163,68 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt = bpy.data.node_groups.new(
         name="TintGeometry", type="GeometryNodeTree")
     input = gnt.nodes.new("NodeGroupInput")
-    input.location.x = -150
     output = gnt.nodes.new("NodeGroupOutput")
-    locx = 150
 
-    if USE_LEGACY:
-        sepxyz = gnt.nodes.new("GeometryNodeAttributeSeparateXYZ")
-    else:
-        sepxyz = gnt.nodes.new("GeometryNodeLegacyAttributeSeparateXYZ")
-    gnt.links.new(input.outputs[0], sepxyz.inputs[0])
+    # link input / output node to create geometry socket
+    cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
+    cptn.domain = "CORNER"
+    cptn.data_type = "FLOAT_COLOR"
+    gnt.links.new(input.outputs[0], cptn.inputs[0])
+    gnt.links.new(cptn.outputs[0], output.inputs[0])
 
+    # create and link texture node
+    txtn = gnt.nodes.new("GeometryNodeImageTexture")
+    gnt.links.new(cptn.outputs[3], txtn.inputs[1])
+    gnt.links.new(txtn.outputs[0], output.inputs[1])
+
+    # separate colour0
+    sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
+    gnt.links.new(input.outputs[1], sepn.inputs[0])
+
+    # create math nodes
     mathns = []
     for i in range(9):
-        if USE_LEGACY:
-            math = gnt.nodes.new("GeometryNodeAttributeMath")
-        else:
-            math = gnt.nodes.new("GeometryNodeLegacyAttributeMath")
+        mathns.append(gnt.nodes.new("ShaderNodeMath"))
 
-        math.location.x = locx
-        if len(mathns) > 0:
-            link_geos(gnt.links, math, mathns[i - 1])
-        else:
-            link_geos(gnt.links, math, sepxyz)
-        mathns.append(math)
-        locx += 150
-
-    if USE_LEGACY:
-        comxyz = gnt.nodes.new("GeometryNodeAttributeCombineXYZ")
-    else:
-        comxyz = gnt.nodes.new("GeometryNodeLegacyAttributeCombineXYZ")
-
-    comxyz.location.x = locx
-    locx += 150
-    gnt.links.new(mathns[len(mathns) - 1].outputs["Geometry"],
-                  comxyz.inputs["Geometry"])
-    if USE_LEGACY:
-        tsample = gnt.nodes.new("GeometryNodeAttributeSampleTexture")
-    else:
-        tsample = gnt.nodes.new("GeometryNodeLegacyAttributeSampleTexture")
-
-    tsample.location.x = locx
-    locx += 250
-    gnt.links.new(comxyz.outputs["Geometry"], tsample.inputs["Geometry"])
-    gnt.links.new(tsample.outputs[0], output.inputs[0])
-    output.location.x = locx
-
-    # assign attributes
-    sepxyz.inputs[1].default_value = "colour0"
-    sepxyz.inputs[5].default_value = "b"
-
+    # c1
     mathns[0].operation = "LESS_THAN"
-    mathns[0].inputs[1].default_value = "b"
-    mathns[0].input_type_b = "FLOAT"
-    mathns[0].inputs[4].default_value = 0.003131
-    mathns[0].inputs[7].default_value = "c1"
-
+    gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
+    mathns[0].inputs[1].default_value = 0.003
     mathns[1].operation = "SUBTRACT"
-    mathns[1].input_type_a = "FLOAT"
-    mathns[1].inputs[2].default_value = 1
-    mathns[1].inputs[3].default_value = "c1"
-    mathns[1].inputs[7].default_value = "c2"
+    gnt.links.new(mathns[0].outputs[0], mathns[1].inputs[1])
+    mathns[1].inputs[0].default_value = 1.0
 
+    # r1
     mathns[2].operation = "MULTIPLY"
-    mathns[2].input_type_b = "FLOAT"
-    mathns[2].inputs[1].default_value = "b"
-    mathns[2].inputs[4].default_value = 12.92
-    mathns[2].inputs[7].default_value = "r1"
-
+    gnt.links.new(sepn.outputs[2], mathns[2].inputs[0])
+    mathns[2].inputs[1].default_value = 12.920
     mathns[3].operation = "MULTIPLY"
-    mathns[3].inputs[1].default_value = "r1"
-    mathns[3].inputs[3].default_value = "c1"
-    mathns[3].inputs[7].default_value = "r1"
+    gnt.links.new(mathns[2].outputs[0], mathns[3].inputs[0])
+    gnt.links.new(mathns[0].outputs[0], mathns[3].inputs[1])
 
+    # r2
     mathns[4].operation = "POWER"
-    mathns[4].input_type_b = "FLOAT"
-    mathns[4].inputs[1].default_value = "b"
-    mathns[4].inputs[4].default_value = 0.416667
-    mathns[4].inputs[7].default_value = "r2"
-
+    gnt.links.new(sepn.outputs[2], mathns[4].inputs[0])
+    mathns[4].inputs[1].default_value = 0.417
     mathns[5].operation = "MULTIPLY"
-    mathns[5].input_type_b = "FLOAT"
-    mathns[5].inputs[1].default_value = "r2"
-    mathns[5].inputs[4].default_value = 1.055
-    mathns[5].inputs[7].default_value = "r2"
-
+    gnt.links.new(mathns[4].outputs[0], mathns[5].inputs[0])
+    mathns[5].inputs[1].default_value = 1.055
     mathns[6].operation = "SUBTRACT"
-    mathns[6].input_type_b = "FLOAT"
-    mathns[6].inputs[1].default_value = "r2"
-    mathns[6].inputs[4].default_value = 0.055
-    mathns[6].inputs[7].default_value = "r2"
-
+    gnt.links.new(mathns[5].outputs[0], mathns[6].inputs[0])
+    mathns[6].inputs[1].default_value = 0.055
     mathns[7].operation = "MULTIPLY"
-    mathns[7].inputs[1].default_value = "r2"
-    mathns[7].inputs[3].default_value = "c2"
-    mathns[7].inputs[7].default_value = "r2"
+    gnt.links.new(mathns[6].outputs[0], mathns[7].inputs[0])
+    gnt.links.new(mathns[1].outputs[0], mathns[7].inputs[1])
 
+    # add r1 and r2
     mathns[8].operation = "ADD"
-    mathns[8].inputs[1].default_value = "r1"
-    mathns[8].inputs[3].default_value = "r2"
-    mathns[8].inputs[7].default_value = "r3"
+    gnt.links.new(mathns[3].outputs[0], mathns[8].inputs[0])
+    gnt.links.new(mathns[7].outputs[0], mathns[8].inputs[1])
 
-    comxyz.input_type_x = "ATTRIBUTE"
-    comxyz.inputs[1].default_value = "r3"
-    comxyz.inputs[7].default_value = "TintUV"
-
-    if USE_LEGACY:
-        tsample.inputs[1].default_value = "TintUV"
-        tsample.inputs[2].default_value = "TintColor"
-    else:
-        tsample.inputs[2].default_value = "TintUV"
-        tsample.inputs[3].default_value = "TintColor"
+    # create and link vector
+    comb = gnt.nodes.new("ShaderNodeCombineRGB")
+    gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
+    gnt.links.new(comb.outputs[0], cptn.inputs[3])
 
     return gnt
 
@@ -434,17 +393,14 @@ def create_tint_nodes(node_tree, tinttex, txt, tintflags):
     if tintflags == 2:
         create_pixel_tint_nodes(node_tree, txt, tinttex, tintflags)
         return
-    # create shader attribute node and gamma node
+    # create shader attribute node
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     attr.attribute_name = "TintColor"
-    gamma = node_tree.nodes.new("ShaderNodeGamma")
-    gamma.inputs["Gamma"].default_value = 2.2
-    links.new(attr.outputs["Color"], gamma.inputs["Color"])
     mix = node_tree.nodes.new("ShaderNodeMixRGB")
     mix.inputs["Fac"].default_value = 0.95
-    links.new(gamma.outputs["Color"], mix.inputs[2])
+    links.new(attr.outputs["Color"], mix.inputs[2])
     links.new(txt.outputs[0], mix.inputs[1])
     links.new(mix.outputs[0], bsdf.inputs["Base Color"])
 
