@@ -383,7 +383,7 @@ class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add an object as an entity to the selected mlo archetype"""
     bl_idname = "sollumz.addobjasmloentity"
-    bl_label = "Add Selected Object(s) as Entity"
+    bl_label = "Add Selected Object(s) as Entity to Selected Room"
 
     @classmethod
     def poll(cls, context):
@@ -391,17 +391,38 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_objects = context.selected_objects
-        if len(selected_objects) < 1:
-            self.message("No objects selected")
-            return False
         selected_archetype = get_selected_archetype(context)
-        for obj in selected_objects:
+        if len(selected_objects) < 1:
+            self.warning("No objects selected")
+            return False
+        if len(selected_archetype.rooms) < 1:
+            self.warning("There're no rooms to attach entities to.") 
+            return False
+        
+        selected_room = get_selected_room(context)
+
+        archetype_entities = selected_archetype.entities
+        attachable_objects = selected_objects
+
+        for ent in archetype_entities:
+            if ent.linked_object in attachable_objects and ent.attached_room_id == selected_room.id:
+                self.warning("One or more of the selected objects are already attached to the selected room.")
+                # remove the entity from attachable objects list
+                attachable_objects.remove(ent.linked_object)
+
+        if len(attachable_objects) < 1:
+            self.warning("Nothing to attach, make sure your selected objects don't exist in the selected room.")
+            return False
+
+
+        for obj in attachable_objects:
             item = selected_archetype.entities.add()
             # Set entity transforms before linking object so the original object's transforms won't be reset
             item.position = obj.location
             item.rotation = obj.rotation_euler.to_quaternion()
+            item.attached_room_id = selected_room.id
             if obj.scale.x != obj.scale.y:
-                self.message(
+                self.warning(
                     "Failed to add entity. The X and Y scale of the entity must be equal.")
                 selected_archetype.entities.remove(
                     len(selected_archetype.entities) - 1)
