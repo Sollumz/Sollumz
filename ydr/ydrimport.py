@@ -480,21 +480,22 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
         if does_armature_obj_exist == True and is_obj_armature == "ARMATURE":
             armature = bpy.data.objects[armature_name]
             parent_bone_name = None
-            for bone in armature.pose.bones[:]:
-                bone_index = armature.data.bones[bone.name].bone_properties.tag
-                if bone_index == model.bone_index:
-                    parent_bone_name = bone.name
-                    break
-
+            has_bone_translation = False
+            
+            if len(armature.pose.bones) > model.bone_index:
+                parent_bone_name = armature.pose.bones[model.bone_index].name
+                translation = bones[model.bone_index].translation
+                if (translation is not None):
+                    if translation[0] != 0 or translation[1] != 0 or translation[2] != 0:
+                        has_bone_translation = True                        
+                        
             if parent_bone_name is not None:
-                bone = armature.pose.bones.get(parent_bone_name)
-                bpy.context.evaluated_depsgraph_get().update()
+                dobj_world_mat = dobj.matrix_world.copy()
                 dobj.parent = armature
                 dobj.parent_type = "BONE"
                 dobj.parent_bone = parent_bone_name
-                vec = bone.head - bone.tail
-                trans = Matrix.Translation(vec)
-                dobj.matrix_parent_inverse = bone.matrix.inverted() @ trans
+                if has_bone_translation is False:
+                    dobj.matrix_world = dobj_world_mat
 
     dobj.drawable_model_properties.unknown_1 = model.unknown_1
     dobj.drawable_model_properties.flags = model.flags
