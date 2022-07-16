@@ -126,7 +126,7 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
             if armature_obj is not None:
                 armature_parent = armature_obj.parent
 
-                row.label(text=F"{armature_parent.name} - {item.name}",
+                row.label(text=item.name if armature_parent is None else f"{armature_parent.name} - {item.name}",
                           icon="OUTLINER_DATA_ARMATURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
