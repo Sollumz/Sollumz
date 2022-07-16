@@ -187,7 +187,6 @@ def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
         tri_materials.append(poly.material_index)
 
     obj.data.from_pydata(verts, [], faces)
-    obj.data.validate()
     bpy.context.collection.objects.link(obj)
     obj.parent = parent
 
@@ -202,6 +201,8 @@ def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
     for index, poly in obj.data.polygons.items():
         if tri_materials[index]:
             poly.material_index = tri_materials[index]
+
+    obj.data.validate()
 
     return obj
 
