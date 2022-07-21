@@ -156,11 +156,24 @@ class SOLLUMZ_OT_create_clip_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
+        active_mat = active_object.active_material
+        anim_type = context.scene.create_animation_type
 
-        if not isinstance(active_object.data, bpy.types.Armature):
+        if (anim_type == "REGULAR" and not isinstance(active_object.data, bpy.types.Armature)):
+            self.report({"ERROR"}, "Selected object is not a valid armature to create animation")
+            return {"FINISHED"}
+        
+        if (anim_type == "UV" and (len(active_object.data.materials) <= 0 or active_mat.sollum_type == "sollumz_material_none")):
+            self.report({"ERROR"}, "Selected object/material does not a valid sollumz type to create animation")
             return {"FINISHED"}
 
-        create_clip_dictionary_template("Clip Dictionary", active_object.data)
+        # Verify if shader has UV parameter or not to prevent UV anim creation for unsupported shaders
+        if (anim_type == "UV" and ("globalAnimUV0_x" not in active_mat.node_tree.nodes)):
+            self.report({"ERROR"}, "Selected material shader does not support UV animations")
+            return {"FINISHED"}
+        
+
+        create_clip_dictionary_template("Clip Dictionary", active_object, anim_type)
 
         return {"FINISHED"}
 
@@ -279,5 +292,43 @@ class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
         frame_count = end_frame - start_frame
 
         animation_properties.frame_count = int(frame_count)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_create_uv_anim_node(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.create_uv_anim_node"
+    bl_label = "Add UV node to material"
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        active_object = bpy.context.selected_objects[0]
+
+        active_material = active_object.active_material
+        if active_material.sollum_type == "sollumz_material_none":
+            self.report({"ERROR"}, "Selected material is not a Sollumz shader")
+            return {"FINISHED"}
+        
+        mat_nodetree = active_material.node_tree
+        mat_nodes = mat_nodetree.nodes
+        for node in mat_nodes:
+            if node.type == "BSDF_PRINCIPLED":
+                base_color_input = node.inputs[0].links[0]
+                base_tex_node = base_color_input.from_node
+
+                texnode_location = base_tex_node.location
+                mathnode = mat_nodes.new("ShaderNodeVectorMath")
+                mathnode.operation = "ADD"
+                uvnode = mat_nodes.new("ShaderNodeUVMap")
+                
+                mathnode.location = (texnode_location[0]-250, 0)
+                uvnode.location = (mathnode.location[0]-250, 0)
+                
+                mat_nodetree.links.new(base_tex_node.inputs[0], mathnode.outputs[0])
+                mat_nodetree.links.new(mathnode.inputs[0], uvnode.outputs[0])
+                self.report({"INFO"}, "Added UV animation link to selected material")
+                break
 
         return {"FINISHED"}
