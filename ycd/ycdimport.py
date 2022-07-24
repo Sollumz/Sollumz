@@ -403,7 +403,7 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
     return clip_obj
 
 
-def create_clip_dictionary_template(name, armature):
+def create_clip_dictionary_template(name, obj, anim_type):
     clip_dictionary_obj = create_anim_obj(SollumType.CLIP_DICTIONARY)
     clips_obj = create_anim_obj(SollumType.CLIPS)
     animations_obj = create_anim_obj(SollumType.ANIMATIONS)
@@ -413,14 +413,23 @@ def create_clip_dictionary_template(name, armature):
     clips_obj.parent = clip_dictionary_obj
     animations_obj.parent = clip_dictionary_obj
 
-    clip_dictionary_obj.clip_dict_properties.armature = armature
+    if anim_type == "REGULAR":
+        clip_dictionary_obj.clip_dict_properties.armature = obj.data
+    elif anim_type == "UV":
+        if len(obj.data.materials) < 1:
+            raise Exception("Error cannot find any materials to animate")
+        else:
+            clip_dictionary_obj.clip_dict_properties.uv_obj = obj
+    else:
+        raise Exception("Selected animation type not implemented!")
 
     return clip_dictionary_obj, clips_obj, animations_obj
 
 
 def clip_dictionary_to_obj(clip_dictionary, name, armature, armature_obj):
+    animation_type = bpy.context.scene.create_animation_type
     _, clips_obj, animations_obj = create_clip_dictionary_template(
-        name, armature)
+        name, armature_obj, animation_type)
 
     is_ped_animation = False
 
@@ -455,6 +464,11 @@ def import_ycd(export_op, filepath, import_settings):
     armature_obj = get_armature_obj(armature)
 
     ycr_xml = YCD.from_xml_file(filepath)
+
+    animation_type = bpy.context.scene.create_animation_type
+    if animation_type == "UV":
+        export_op.warning("UV import is not supported. Change the animation type under Animation Tools panel")
+        return
 
     clip_dictionary_to_obj(
         ycr_xml,

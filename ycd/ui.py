@@ -40,6 +40,7 @@ def draw_clip_dictionary_properties(self, context):
         clip_dict_properties = obj.clip_dict_properties
 
         layout.prop(clip_dict_properties, "armature")
+        layout.prop(clip_dict_properties, "uv_obj")
 
 
 class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
@@ -87,7 +88,15 @@ class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
     def poll(cls, context):
         obj = context.active_object
 
-        return obj and obj.sollum_type == SollumType.ANIMATION
+        if obj and obj.sollum_type == SollumType.ANIMATION:
+            clip_dict = obj.parent.parent
+            dict_properties = clip_dict.clip_dict_properties
+            if dict_properties.armature != None and dict_properties.uv_obj == None:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def draw(self, context):
         layout = self.layout
@@ -101,6 +110,35 @@ class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
         layout.prop(animation_properties, "root_motion_rotation_action")
 
 
+class SOLLUMZ_PT_UV_ANIMATION_ACTIONS(bpy.types.Panel):
+    bl_label = "UV Actions"
+    bl_idname = "SOLLUMZ_PT_UV_ANIMATION_ACTIONS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+
+        if obj and obj.sollum_type == SollumType.ANIMATION:
+            clip_dict = obj.parent.parent
+            dict_properties = clip_dict.clip_dict_properties
+            if dict_properties.armature == None and dict_properties.uv_obj != None:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def draw(self, context):
+        obj = context.active_object
+        layout = self.layout
+        layout.prop(obj.uv_anim_materials, "material")
+
+
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Animations Tools"
     bl_idname = "SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL"
@@ -108,20 +146,13 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 1
+    bl_order = 2
 
     @classmethod
     def poll(cls, context):
 
         if len(bpy.context.selected_objects) > 0:
-            active_object = bpy.context.selected_objects[0]
-
-            if active_object.sollum_type == SollumType.CLIP or active_object.sollum_type == SollumType.ANIMATION or \
-                    active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
-                    active_object.sollum_type == SollumType.CLIP_DICTIONARY or isinstance(active_object.data, bpy.types.Armature):
-
-                return True
-
+            return True
         return False
 
     def draw_header(self, context):
@@ -143,8 +174,13 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                     layout.operator(
                         ycd_ops.SOLLUMZ_OT_animation_fill.bl_idname)
             else:
-                layout.operator(
+                row = layout.row(align=False)
+                row.operator(
                     ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+                row.prop(context.scene, "create_animation_type")
+                row = layout.row()
+                row.operator(
+                    ycd_ops.SOLLUMZ_OT_create_uv_anim_node.bl_idname)
         else:
             layout.operator(
                 ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
