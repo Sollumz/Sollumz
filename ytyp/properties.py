@@ -36,7 +36,7 @@ class RoomProperties(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name")
     bb_min: bpy.props.FloatVectorProperty(name="Bounds Min", subtype="XYZ")
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
-    blend: bpy.props.IntProperty(name="Blend", default=1)
+    blend: bpy.props.FloatProperty(name="Blend", default=1)
     timecycle: bpy.props.StringProperty(
         name="Timecycle", default="int_GasStation")
     secondary_timecycle: bpy.props.StringProperty(
