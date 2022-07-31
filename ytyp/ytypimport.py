@@ -7,7 +7,7 @@ from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, Timecycle
 def create_mlo_tcm(tcm_xml: ytypxml.TimeCycleModifier, archetype: ArchetypeProperties):
     """Create an mlo timecycle modifier from an xml for the provided archetype data-block."""
 
-    tcm: TimecycleModifierProperties = archetype.timecycle_modifiers.add()
+    tcm: TimecycleModifierProperties = archetype.new_tcm()
     tcm.name = tcm_xml.name
     tcm.sphere = tcm_xml.sphere
     tcm.percentage = tcm_xml.percentage
@@ -61,7 +61,7 @@ def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: MloEntit
 def create_mlo_entity(entity_xml: ymapxml.EntityItem, archetype: ArchetypeProperties):
     """Create an mlo entity from an xml for the provided archetype data-block."""
 
-    entity: MloEntityProperties = archetype.entities.add()
+    entity: MloEntityProperties = archetype.new_entity()
     entity.position = entity_xml.position
     entity.rotation = entity_xml.rotation.inverted()
     entity.scale_xy = entity_xml.scale_xy
@@ -125,7 +125,7 @@ def get_asset_type_enum(xml_asset_type: str) -> str:
 def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProperties):
     """Create a ytyp archetype given an archetype cwxml and a Blender ytyp data-block."""
 
-    archetype: ArchetypeProperties = ytyp.archetypes.add()
+    archetype: ArchetypeProperties = ytyp.new_archetype(bpy.context)
 
     archetype.name = archetype_xml.name
     archetype.flags.total = str(archetype_xml.flags)

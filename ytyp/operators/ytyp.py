@@ -50,10 +50,7 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_ytyp = get_selected_ytyp(context)
-        item = selected_ytyp.archetypes.add()
-        index = len(selected_ytyp.archetypes)
-        item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index}"
-        selected_ytyp.archetype_index = index - 1
+        selected_ytyp.new_archetype(context)
 
         return True
 
@@ -84,9 +81,7 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                     continue
             found = True
             selected_ytyp = get_selected_ytyp(context)
-            item = selected_ytyp.archetypes.add()
-            index = len(selected_ytyp.archetypes)
-            selected_ytyp.archetype_index = index - 1
+            item = selected_ytyp.new_archetype(context)
 
             item.name = obj.name
             item.asset = obj
@@ -146,7 +141,7 @@ class SOLLUMZ_OT_create_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        item = selected_archetype.timecycle_modifiers.add()
+        item = selected_archetype.new_tcm()
         item.name = f"Timecycle Modifier.{len(selected_archetype.timecycle_modifiers)}"
         return True
 

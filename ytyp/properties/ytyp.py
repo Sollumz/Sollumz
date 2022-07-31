@@ -1,9 +1,9 @@
 from typing import Union
 import bpy
 from ...tools.blenderhelper import get_children_recursive
-from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags
+from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
-from ..utils import get_selected_archetype
+from ..utils import get_selected_archetype, get_selected_ytyp
 from .mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, UnknownFlags
 
@@ -53,6 +53,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
             room_id = selected_archetype.rooms[0].id
             item.room_to_id = room_id
             item.room_from_id = room_id
+        item.mlo_archetype_id = self.id
         return item
 
     def new_room(self):
@@ -61,6 +62,17 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
         item.name = f"Room.{self.room_index}"
         item.id = self.last_room_id + 1
         self.last_room_id = item.id
+        item.mlo_archetype_id = self.id
+        return item
+
+    def new_entity(self):
+        item = self.entities.add()
+        item.mlo_archetype_id = self.id
+        return item
+
+    def new_tcm(self):
+        item = self.timecycle_modifiers.add()
+        item.mlo_archetype_id = self.id
         return item
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
@@ -112,6 +124,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier Index")
 
+    id: bpy.props.IntProperty(default=-1)
+
     @property
     def selected_room(self) -> Union[RoomProperties, None]:
         return get_list_item(self.rooms, self.room_index)
@@ -130,6 +144,35 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
 
 
 class CMapTypesProperties(bpy.types.PropertyGroup):
+    def update_mlo_archetype_ids(self):
+        for archetype in self.archetypes:
+            if archetype.type == ArchetypeType.MLO:
+                archetype.id = self.last_archetype_id
+                self.last_archetype_id += 1
+
+                for entity in archetype.entities:
+                    entity.mlo_archetype_id = archetype.id
+
+                for portal in archetype.portals:
+                    portal.mlo_archetype_id = archetype.id
+
+                for room in archetype.rooms:
+                    room.mlo_archetype_id = archetype.id
+
+                for tcm in archetype.timecycle_modifiers:
+                    tcm.mlo_archetype_id = archetype.id
+
+    def new_archetype(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        item = selected_ytyp.archetypes.add()
+        index = len(selected_ytyp.archetypes)
+        item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index}"
+        selected_ytyp.archetype_index = index - 1
+        item.id = self.last_archetype_id + 1
+        self.last_archetype_id += 1
+
+        return item
+
     name: bpy.props.StringProperty(name="Name")
     # extensions
     archetypes: bpy.props.CollectionProperty(
@@ -137,6 +180,8 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
     # Selected archetype index
     archetype_index: bpy.props.IntProperty(
         name="Archetype Index")
+    # Unique archetype id
+    last_archetype_id: bpy.props.IntProperty()
 
     @property
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:

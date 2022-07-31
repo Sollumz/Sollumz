@@ -14,7 +14,7 @@ class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.entities.add()
+        selected_archetype.new_entity()
         return True
 
 
@@ -55,7 +55,7 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
 
         for obj in attachable_objects:
-            item = selected_archetype.entities.add()
+            item = selected_archetype.new_entity()
             # Set entity transforms before linking object so the original object's transforms won't be reset
             item.position = obj.location
             item.rotation = obj.rotation_euler.to_quaternion()

@@ -2,11 +2,24 @@ import bpy
 from mathutils import Vector
 from ...sollumz_properties import EntityProperties
 from ...tools.utils import get_list_item
-from ..utils import get_selected_archetype
+from ..utils import get_selected_archetype, get_selected_ytyp
 from .flags import EntityFlags, RoomFlags, PortalFlags
 
 
-class RoomProperties(bpy.types.PropertyGroup):
+class MloArchetypeChild:
+    def get_mlo_archetype(self):
+        selected_ytyp = get_selected_ytyp(bpy.context)
+
+        if self.mlo_archetype_id == -1:
+            selected_ytyp.update_mlo_archetype_ids()
+        for archetype in selected_ytyp.archetypes:
+            if archetype.id == self.mlo_archetype_id:
+                return archetype
+
+    mlo_archetype_id: bpy.props.IntProperty(default=-1)
+
+
+class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     name: bpy.props.StringProperty(name="Name")
     bb_min: bpy.props.FloatVectorProperty(name="Bounds Min", subtype="XYZ")
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
@@ -24,7 +37,7 @@ class RoomProperties(bpy.types.PropertyGroup):
     id: bpy.props.IntProperty(name="Id")
 
 
-class PortalProperties(bpy.types.PropertyGroup):
+class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_room_index(self, room_from):
         selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
         selected_archetype = selected_ytyp.archetypes[selected_ytyp.archetype_index]
@@ -105,7 +118,7 @@ class PortalProperties(bpy.types.PropertyGroup):
     id: bpy.props.IntProperty(name="Id")
 
 
-class TimecycleModifierProperties(bpy.types.PropertyGroup):
+class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     name: bpy.props.StringProperty(name="Name")
     sphere: bpy.props.FloatVectorProperty(
         name="Sphere", subtype="QUATERNION", size=4)
@@ -115,7 +128,7 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup):
     end_hour: bpy.props.IntProperty(name="End Hour")
 
 
-class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties):
+class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild):
     def update_linked_object(self, context):
         linked_obj = self.linked_object
         if linked_obj:
@@ -125,14 +138,14 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties):
                 (self.scale_xy, self.scale_xy, self.scale_z))
 
     def get_portal_index(self):
-        selected_archetype = get_selected_archetype(bpy.context)
+        selected_archetype = self.get_mlo_archetype()
         for index, portal in enumerate(selected_archetype.portals):
             if portal.id == self.attached_portal_id:
                 return index
         return -1
 
     def get_portal_name(self):
-        selected_archetype = get_selected_archetype(bpy.context)
+        selected_archetype = self.get_mlo_archetype()
         portal = get_list_item(selected_archetype.portals,
                                self.attached_portal_index)
         if portal:
@@ -140,14 +153,14 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties):
         return ""
 
     def get_room_index(self):
-        selected_archetype = get_selected_archetype(bpy.context)
+        selected_archetype = self.get_mlo_archetype()
         for index, room in enumerate(selected_archetype.rooms):
             if room.id == self.attached_room_id:
                 return index
         return -1
 
     def get_room_name(self):
-        selected_archetype = get_selected_archetype(bpy.context)
+        selected_archetype = self.get_mlo_archetype()
         room = get_list_item(selected_archetype.rooms,
                              self.attached_room_index)
         if room:
