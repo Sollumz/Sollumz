@@ -1,7 +1,7 @@
 import bpy
 from ..sollumz_properties import ArchetypeType
 from mathutils import Vector, Matrix
-from .properties import get_selected_archetype, get_selected_ytyp, get_selected_portal
+from .utils import get_selected_archetype, get_selected_ytyp, get_selected_portal
 from ..tools.blenderhelper import find_parent
 
 

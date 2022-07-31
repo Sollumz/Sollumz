@@ -1,11 +1,8 @@
 import bpy
 
 from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
-from .properties import (
-    RoomProperties,
-    PortalProperties,
-    UnlinkedEntityProperties,
-    TimecycleModifierProperties,
+from .properties.ytyp import RoomProperties, PortalProperties, UnlinkedEntityProperties, TimecycleModifierProperties
+from .utils import (
     get_selected_tcm,
     get_selected_ytyp,
     get_selected_archetype,
