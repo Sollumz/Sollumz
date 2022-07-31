@@ -564,7 +564,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     use_transforms: bpy.props.BoolProperty(
         name="Use Parent Transforms",
         description="Exports objects with the parent empty object's transforms applied to the vertices",
-        default=True
+        default=False
     )
     export_with_hi: bpy.props.BoolProperty(
         name="Export With _hi",
