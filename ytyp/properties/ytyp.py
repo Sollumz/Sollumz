@@ -1,3 +1,4 @@
+from typing import Union
 import bpy
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags
@@ -112,19 +113,19 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
         name="Timecycle Modifier Index")
 
     @property
-    def selected_room(self):
+    def selected_room(self) -> Union[RoomProperties, None]:
         return get_list_item(self.rooms, self.room_index)
 
     @property
-    def selected_portal(self):
+    def selected_portal(self) -> Union[PortalProperties, None]:
         return get_list_item(self.portals, self.portal_index)
 
     @property
-    def selected_entity(self):
+    def selected_entity(self) -> Union[MloEntityProperties, None]:
         return get_list_item(self.entities, self.entity_index)
 
     @property
-    def selected_tcm(self):
+    def selected_tcm(self) -> Union[TimecycleModifierProperties, None]:
         return get_list_item(self.timecycle_modifiers, self.tcm_index)
 
 
@@ -138,7 +139,7 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
         name="Archetype Index")
 
     @property
-    def selected_archetype(self):
+    def selected_archetype(self) -> Union[ArchetypeProperties, None]:
         return get_list_item(self.archetypes, self.archetype_index)
 
 
