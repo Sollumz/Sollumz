@@ -4,10 +4,10 @@ from mathutils import Vector, Quaternion
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
-from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, UnlinkedEntityProperties
+from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
 
 
-def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[UnlinkedEntityProperties]):
+def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of room from the mlo archetype entities collection provided."""
 
     for index, entity in enumerate(entities):
@@ -15,7 +15,7 @@ def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities:
             room_xml.attached_objects.append(index)
 
 
-def set_portal_attached_objects(portal_xml: ytypxml.Portal, portal_index: int, entities: Iterable[UnlinkedEntityProperties]):
+def set_portal_attached_objects(portal_xml: ytypxml.Portal, portal_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of portal from the mlo archetype entities collection provided."""
 
     for index, entity in enumerate(entities):
@@ -43,7 +43,7 @@ def set_entity_xml_transforms_from_object(entity_obj: bpy.types.Object, entity_x
     entity_xml.scale_z = entity_obj.scale.z
 
 
-def set_entity_xml_transforms(entity: UnlinkedEntityProperties, entity_xml: ymapxml.EntityItem):
+def set_entity_xml_transforms(entity: MloEntityProperties, entity_xml: ymapxml.EntityItem):
     """Set the transforms of an entity xml based on the provided entity data-block."""
 
     entity_xml.position = Vector(entity.position)
@@ -62,7 +62,7 @@ def set_portal_xml_corners(portal: PortalProperties, portal_xml: ytypxml.Portal)
         portal_xml.corners.append(corner_xml)
 
 
-def create_entity_xml(entity: UnlinkedEntityProperties) -> ymapxml.EntityItem:
+def create_entity_xml(entity: MloEntityProperties) -> ymapxml.EntityItem:
     """Create xml mlo entity from an entity data-block."""
 
     entity_xml = ymapxml.EntityItem()

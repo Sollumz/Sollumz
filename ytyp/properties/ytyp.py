@@ -3,7 +3,7 @@ from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags
 from ...tools.utils import get_list_item
 from ..utils import get_selected_archetype
-from .mlo import RoomProperties, PortalProperties, UnlinkedEntityProperties, TimecycleModifierProperties
+from .mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, UnknownFlags
 
 
@@ -94,7 +94,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup):
     portals: bpy.props.CollectionProperty(
         type=PortalProperties, name="Portals")
     entities: bpy.props.CollectionProperty(
-        type=UnlinkedEntityProperties, name="Entities")
+        type=MloEntityProperties, name="Entities")
     timecycle_modifiers: bpy.props.CollectionProperty(
         type=TimecycleModifierProperties, name="Timecycle Modifiers")
     # Selected room index

@@ -115,7 +115,7 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup):
     end_hour: bpy.props.IntProperty(name="End Hour")
 
 
-class UnlinkedEntityProperties(bpy.types.PropertyGroup, EntityProperties):
+class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties):
     def update_linked_object(self, context):
         linked_obj = self.linked_object
         if linked_obj:

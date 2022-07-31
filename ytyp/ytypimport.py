@@ -1,7 +1,7 @@
 import bpy
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, UnlinkedEntityProperties
+from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
 
 
 def create_mlo_tcm(tcm_xml: ytypxml.TimeCycleModifier, archetype: ArchetypeProperties):
@@ -50,7 +50,7 @@ def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
         archetype.entities[index].attached_room_id = room.id
 
 
-def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: UnlinkedEntityProperties):
+def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: MloEntityProperties):
     """Atempt to find an existing entity object in the scene and link it to the entity data-block."""
 
     for obj in bpy.context.collection.all_objects:
@@ -61,7 +61,7 @@ def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: Unlinked
 def create_mlo_entity(entity_xml: ymapxml.EntityItem, archetype: ArchetypeProperties):
     """Create an mlo entity from an xml for the provided archetype data-block."""
 
-    entity: UnlinkedEntityProperties = archetype.entities.add()
+    entity: MloEntityProperties = archetype.entities.add()
     entity.position = entity_xml.position
     entity.rotation = entity_xml.rotation.inverted()
     entity.scale_xy = entity_xml.scale_xy
