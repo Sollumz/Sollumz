@@ -408,10 +408,10 @@ class SOLLUMZ_PT_MLO_ENTITIES_PANEL(bpy.types.Panel):
             layout.separator()
 
             if not selected_entity.linked_object:
-                for prop_name in UnlinkedEntityProperties.__annotations__:
-                    if prop_name == "linked_object":
-                        continue
-                    layout.prop(selected_entity, prop_name)
+                layout.prop(selected_entity, "position")
+                layout.prop(selected_entity, "rotation")
+                layout.prop(selected_entity, "scale_xy")
+                layout.prop(selected_entity, "scale_z")
                 layout.separator()
             for prop_name in EntityProperties.__annotations__:
                 if prop_name == "flags":
