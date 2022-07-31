@@ -396,9 +396,9 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
             self.warning("No objects selected")
             return False
         if len(selected_archetype.rooms) < 1:
-            self.warning("There're no rooms to attach entities to.") 
+            self.warning("There're no rooms to attach entities to.")
             return False
-        
+
         selected_room = get_selected_room(context)
 
         archetype_entities = selected_archetype.entities
@@ -406,14 +406,15 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
         for ent in archetype_entities:
             if ent.linked_object in attachable_objects and ent.attached_room_id == selected_room.id:
-                self.warning("One or more of the selected objects are already attached to the selected room.")
+                self.warning(
+                    "One or more of the selected objects are already attached to the selected room.")
                 # remove the entity from attachable objects list
                 attachable_objects.remove(ent.linked_object)
 
         if len(attachable_objects) < 1:
-            self.warning("Nothing to attach, make sure your selected objects don't exist in the selected room.")
+            self.warning(
+                "Nothing to attach, make sure your selected objects don't exist in the selected room.")
             return False
-
 
         for obj in attachable_objects:
             item = selected_archetype.entities.add()
@@ -629,7 +630,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                     for entity_xml in arch_xml.entities:
                         entity = arch.entities.add()
                         entity.position = entity_xml.position
-                        entity.rotation = entity_xml.rotation
+                        entity.rotation = entity_xml.rotation.inverted()
                         entity.scale_xy = entity_xml.scale_xy
                         entity.scale_z = entity_xml.scale_z
                         for obj in context.collection.all_objects:
@@ -809,7 +810,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
                         entity_obj = entity.linked_object
                         if entity_obj:
                             entity_xml.position = entity_obj.location
-                            entity_xml.rotation = entity_obj.rotation_euler.to_quaternion()
+                            entity_xml.rotation = entity_obj.rotation_euler.to_quaternion().inverted()
                             entity_xml.scale_xy = entity_obj.scale.x
                             entity_xml.scale_z = entity_obj.scale.z
                         else:
