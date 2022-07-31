@@ -239,6 +239,7 @@ def selected_ytyp_to_xml() -> ytypxml.CMapTypes:
 
     selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
     ytyp = ytypxml.CMapTypes()
+    ytyp.name = selected_ytyp.name
 
     for archetype in selected_ytyp.archetypes:
         archetype_xml = create_archetype_xml(archetype)
