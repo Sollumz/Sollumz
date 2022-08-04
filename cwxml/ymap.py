@@ -348,7 +348,7 @@ class EntityItem(ElementTree):
         self.rotation = QuaternionProperty("rotation")
         self.scale_xy = ValueProperty("scaleXY", 0)
         self.scale_z = ValueProperty("scaleZ", 0)
-        self.parent_index = ValueProperty("parentIndex", 0)
+        self.parent_index = ValueProperty("parentIndex", -1)
         self.lod_dist = ValueProperty("lodDist", 0)
         self.child_lod_dist = ValueProperty("childLodDist", 0)
         self.lod_level = TextProperty("lodLevel")
