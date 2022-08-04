@@ -655,7 +655,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     else:
         drawable = ydrxml.Drawable()
 
-    drawable.name = obj.name if "." not in obj.name else obj.name.split(".")[0]
+    drawable.name = obj.name.lower() if "." not in obj.name else obj.name.lower().split(".")[0]
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
@@ -685,10 +685,13 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         for shader in shaders:
             drawable.shader_group.shaders.append(shader)
 
-            foldername = obj.name
+            foldername = obj.name.lower()
             if is_frag:
-                # trim blenders .001 suffix
-                foldername = obj.parent.name[:-3].replace("pack:/", "")
+                foldername = obj.parent.name.lower().replace("pack:/", "")
+                if "." in foldername:
+                   foldername = foldername.split(".")[0]
+            else:
+                foldername = foldername.split(".")[0]
 
             td, messages = texture_dictionary_from_materials(
                 foldername, materials, os.path.dirname(exportpath))

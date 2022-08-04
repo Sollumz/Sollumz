@@ -241,8 +241,11 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             valid_type = False
             filepath = None
             if obj.sollum_type == SollumType.DRAWABLE:
+                obj_name = obj.name.lower()
+                if "." in obj_name:
+                    obj_name = obj_name.split(".")[0]
                 filepath = self.get_filepath(
-                    obj.name.lower(), YDR.file_extension)
+                    obj_name, YDR.file_extension)
                 export_ydr(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
