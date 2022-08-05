@@ -4,6 +4,11 @@ from mathutils import Vector
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 
+def remove_number_suffix(string: str):
+    """Remove the .00# at that Blender puts at the end of object names."""
+    return string.split(".")[0]
+
+
 def create_brush(name):
     bpy.data.brushes.new(name=name, mode="VERTEX_PAINT")
     return bpy.data.brushes[name]
