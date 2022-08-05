@@ -455,7 +455,7 @@ class EntityProperties:
     archetype_name: bpy.props.StringProperty(name="Archetype Name")
     flags: bpy.props.IntProperty(name="Flags")
     guid: bpy.props.FloatProperty(name="GUID")
-    parent_index: bpy.props.IntProperty(name="Parent Index")
+    parent_index: bpy.props.IntProperty(name="Parent Index", default=-1)
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200)
     child_lod_dist: bpy.props.FloatProperty(name="Child Lod Distance")
     lod_level: bpy.props.EnumProperty(
