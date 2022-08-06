@@ -26,7 +26,7 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .tools.meshhelper import get_bound_extents
 from .tools.utils import subtract_from_vector, add_to_vector, get_min_vector, get_max_vector
-from .tools.blenderhelper import get_terrain_texture_brush
+from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix
 from .tools.ytyphelper import ytyp_from_objects
 
 
@@ -242,29 +242,30 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             filepath = None
             if obj.sollum_type == SollumType.DRAWABLE:
                 filepath = self.get_filepath(
-                    obj.name.lower(), YDR.file_extension)
+                    remove_number_suffix(obj.name.lower()), YDR.file_extension)
                 export_ydr(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                 filepath = self.get_filepath(
-                    obj.name.lower(), YDD.file_extension)
+                    remove_number_suffix(obj.name.lower()), YDD.file_extension)
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.FRAGMENT:
                 self.export_settings.use_transforms = False
                 name = obj.name if "/" not in obj.name else obj.name.replace(
                     "pack:/", "")
-                filepath = self.get_filepath(name.lower(), YFT.file_extension)
+                filepath = self.get_filepath(
+                    remove_number_suffix(name.lower()), YFT.file_extension)
                 export_yft(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
                 filepath = self.get_filepath(
-                    obj.name.lower(), YCD.file_extension)
+                    remove_number_suffix(obj.name.lower()), YCD.file_extension)
                 export_ycd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type in BOUND_TYPES:
                 filepath = self.get_filepath(
-                    obj.name.lower(), YBN.file_extension)
+                    remove_number_suffix(obj.name.lower()), YBN.file_extension)
                 export_ybn(obj, filepath, self.export_settings)
                 valid_type = True
             if valid_type:

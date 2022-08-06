@@ -14,7 +14,7 @@ from ..tools.meshhelper import (
     get_sphere_radius,
 )
 from ..tools.utils import float32_list
-from ..tools.blenderhelper import duplicate_object, split_object, get_children_recursive
+from ..tools.blenderhelper import duplicate_object, split_object, get_children_recursive, remove_number_suffix
 from ..tools.drawablehelper import join_objects
 from ..sollumz_properties import (
     BOUND_TYPES,
@@ -412,7 +412,8 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
     if obj.parent_type == "BONE":
         parent_bone = obj.parent_bone
         if parent_bone is not None and parent_bone != "":
-            bones_names_list = list(map(lambda bone: bone.name, drawable_model_parent.data.bones))
+            bones_names_list = list(
+                map(lambda bone: bone.name, drawable_model_parent.data.bones))
             bone_index = bones_names_list.index(obj.parent_bone)
             drawable_model.bone_index = bone_index
         else:
@@ -655,7 +656,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     else:
         drawable = ydrxml.Drawable()
 
-    drawable.name = obj.name if "." not in obj.name else obj.name.split(".")[0]
+    drawable.name = remove_number_suffix(obj.name.lower())
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
@@ -685,10 +686,10 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         for shader in shaders:
             drawable.shader_group.shaders.append(shader)
 
-            foldername = obj.name
+            foldername = remove_number_suffix(obj.name.lower())
             if is_frag:
-                # trim blenders .001 suffix
-                foldername = obj.parent.name[:-3].replace("pack:/", "")
+                foldername = remove_number_suffix(
+                    obj.parent.name.lower()).replace("pack:/", "")
 
             td, messages = texture_dictionary_from_materials(
                 foldername, materials, os.path.dirname(exportpath))
