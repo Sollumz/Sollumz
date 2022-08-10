@@ -217,14 +217,13 @@ def geometry_to_obj(geometry, sollum_type):
     triangle_polys = [
         poly for poly in geometry.polygons if type(poly) == ybnxml.Triangle]
     triangle_obj = verts_to_obj(geometry.vertices, triangle_polys, materials,
-                                obj, geometry.vertex_colors)
+                                obj, geometry.vertex_colors) if triangle_polys else None
     vert2_obj = verts_to_obj(
-        geometry.vertices_2, triangle_polys, materials, obj, geometry.vertex_colors)
+        geometry.vertices_2, triangle_polys, materials, obj, geometry.vertex_colors) if triangle_polys else None
 
     for poly in geometry.polygons:
         if type(poly) is not ybnxml.Triangle:
-            poly_obj = poly_to_obj(
-                poly, triangle_obj.data.materials, geometry.vertices)
+            poly_obj = poly_to_obj(poly, materials, geometry.vertices)
             if poly_obj:
                 bpy.context.collection.objects.link(poly_obj)
                 poly_obj.parent = obj
