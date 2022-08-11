@@ -561,11 +561,6 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         description="Export only objects from the active collection (and its children)",
         default=False,
     )
-    use_transforms: bpy.props.BoolProperty(
-        name="Use Parent Transforms",
-        description="Exports objects with the parent empty object's transforms applied to the vertices",
-        default=False
-    )
     export_with_hi: bpy.props.BoolProperty(
         name="Export With _hi",
         description="Exports fragment with _hi file.",

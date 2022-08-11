@@ -248,30 +248,6 @@ class SOLLUMZ_PT_export_exclude(bpy.types.Panel):
         layout.prop(operator.export_settings, "exclude_skeleton")
 
 
-class SOLLUMZ_PT_export_geometry(bpy.types.Panel):
-    bl_space_type = "FILE_BROWSER"
-    bl_region_type = "TOOL_PROPS"
-    bl_label = "Geometry"
-    bl_parent_id = "FILE_PT_operator"
-    bl_order = 3
-
-    @classmethod
-    def poll(cls, context):
-        sfile = context.space_data
-        operator = sfile.active_operator
-        return operator.bl_idname == "SOLLUMZ_OT_export"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        sfile = context.space_data
-        operator = sfile.active_operator
-
-        layout.prop(operator.export_settings, "use_transforms")
-
-
 class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"
     bl_region_type = "TOOL_PROPS"

@@ -9,8 +9,8 @@ from ..cwxml.shader import ShaderManager
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     flip_uv,
+    get_bound_center_from_bounds,
     get_bound_extents,
-    get_bound_center,
     get_sphere_radius,
 )
 from ..tools.utils import float32_list
@@ -213,7 +213,7 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
     return blend_weights, blend_indices
 
 
-def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
+def get_mesh_buffers(obj, mesh, vertex_type, bones=None):
     # thanks dexy
 
     blend_weights, blend_indices = get_blended_verts(
@@ -221,6 +221,8 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
 
     vertices = {}
     indices = []
+
+    matrix = obj.parent.matrix_basis @ obj.matrix_basis
 
     for tri in mesh.loop_triangles:
         for loop_idx in tri.loops:
@@ -232,19 +234,15 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None, export_settings=None):
 
             if "position" in vertex_type._fields:
                 if mesh.vertices[vert_idx]:
-                    if export_settings.use_transforms:
-                        pos = float32_list(
-                            obj.matrix_world @ mesh.vertices[vert_idx].co)
-                    else:
-                        pos = float32_list(
-                            obj.matrix_basis @ mesh.vertices[vert_idx].co)
+                    pos = float32_list(
+                        matrix @ mesh.vertices[vert_idx].co)
                     kwargs["position"] = tuple(pos)
                 else:
                     kwargs["position"] = tuple([0, 0, 0])
             if "normal" in vertex_type._fields:
                 if loop.normal:
                     normal = float32_list(
-                        obj.matrix_world.inverted_safe().transposed().to_3x3() @ loop.normal if export_settings.use_transforms else obj.matrix_basis.inverted_safe().transposed().to_3x3() @ loop.normal)
+                        matrix.inverted_safe().transposed().to_3x3() @ loop.normal)
                     kwargs["normal"] = tuple(normal)
                 else:
                     kwargs["normal"] = tuple([0, 0, 0])
@@ -366,14 +364,14 @@ def get_bone_ids(obj, bones=None):
     return [id for id in range(bone_count)]
 
 
-def geometry_from_object(obj, mats, bones=None, export_settings=None):
+def geometry_from_object(obj, mats, bones=None):
     geometry = ydrxml.GeometryItem()
 
     geometry.shader_index = get_shader_index(mats, obj.active_material)
 
     obj, mesh = apply_and_triangulate_object(obj)
 
-    bbmin, bbmax = get_bound_extents(obj, world=export_settings.use_transforms)
+    bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
@@ -389,9 +387,10 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     layout = shader.get_layout_from_semantic(
         get_semantic_from_object(shader, mesh), is_skinned=is_skinned)
 
+    # Get export matrix without bone transforms
     geometry.vertex_buffer.layout = layout.value
     vertex_buffer, index_buffer = get_mesh_buffers(
-        obj, mesh, layout.vertex_type, bones, export_settings)
+        obj, mesh, layout.vertex_type, bones)
 
     geometry.vertex_buffer.data = vertex_buffer
     geometry.index_buffer.data = index_buffer
@@ -402,7 +401,7 @@ def geometry_from_object(obj, mats, bones=None, export_settings=None):
     return geometry
 
 
-def drawable_model_from_object(obj, bones=None, materials=None, export_settings=None):
+def drawable_model_from_object(obj, bones=None, materials=None):
     drawable_model = ydrxml.DrawableModelItem()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
@@ -433,7 +432,7 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
                 geometries_to_join.append(duplicate_object(child))
             else:
                 geometry = geometry_from_object(
-                    child, materials, bones, export_settings)
+                    child, materials, bones)
                 drawable_model.geometries.append(geometry)
 
     if len(geometries_to_join) > 0:
@@ -442,7 +441,7 @@ def drawable_model_from_object(obj, bones=None, materials=None, export_settings=
         objs = split_object(joined_geometry)
         for obj in objs:
             geometry = geometry_from_object(
-                obj, materials, bones, export_settings)
+                obj, materials, bones)
             drawable_model.geometries.append(geometry)
             bpy.data.meshes.remove(obj.data)
 
@@ -578,11 +577,10 @@ def joints_from_object(obj):
     return joints
 
 
-def light_from_object(obj, export_settings, armature_obj=None):
+def light_from_object(obj, armature_obj=None):
     light = ydrxml.LightItem()
-    light.position = obj.location if not export_settings.use_transforms else obj.location + \
-        obj.parent.location
-    mat = obj.matrix_basis if not export_settings.use_transforms else obj.matrix_world
+    light.position = obj.location
+    mat = obj.matrix_basis
     light.direction = Vector(
         (mat[0][2], mat[1][2], mat[2][2])).normalized()
     light.direction.negate()
@@ -639,17 +637,15 @@ def light_from_object(obj, export_settings, armature_obj=None):
     return light
 
 
-def lights_from_object(obj, lights_xml, export_settings, armature_obj=None):
+def lights_from_object(obj, lights_xml, armature_obj=None):
     if obj.type == "LIGHT" and obj.data.sollum_type != LightType.NONE:
-        lights_xml.append(light_from_object(
-            obj, export_settings, armature_obj))
+        lights_xml.append(light_from_object(obj, armature_obj))
     elif obj.sollum_type != SollumType.DRAWABLE_MODEL and obj.sollum_type != SollumType.BOUND_COMPOSITE:
         for child in obj.children:
-            lights_from_object(child, lights_xml,
-                               export_settings, armature_obj)
+            lights_from_object(child, lights_xml, armature_obj)
 
 
-def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, export_settings=None, is_frag=False, write_shaders=True):
+def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, is_frag=False, write_shaders=True):
     drawable = None
     if is_frag:
         drawable = FragmentDrawable()
@@ -660,10 +656,9 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
-    bbmin, bbmax = get_bound_extents(
-        obj, world=export_settings.use_transforms)
-    drawable.bounding_sphere_center = get_bound_center(
-        obj, world=export_settings.use_transforms)
+    bbmin, bbmax = get_bound_extents(obj)
+    drawable.bounding_sphere_center = get_bound_center_from_bounds(
+        bbmin, bbmax)
     drawable.bounding_sphere_radius = get_sphere_radius(
         bbmax, drawable.bounding_sphere_center)
     drawable.bounding_box_min = bbmin
@@ -720,7 +715,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             drawable_model = drawable_model_from_object(
-                child, bones, materials, export_settings)
+                child, bones, materials)
             if child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
                 highmodel_count += 1
                 drawable.drawable_models_high.append(drawable_model)
@@ -736,12 +731,12 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         if child.sollum_type in BOUND_TYPES:
             if child.sollum_type == SollumType.BOUND_COMPOSITE:
                 drawable.bounds.append(
-                    composite_from_object(child, export_settings))
+                    composite_from_object(child))
             else:
                 drawable.bounds.append(
-                    bound_from_object(child, export_settings))
+                    bound_from_object(child))
         else:
-            lights_from_object(child, drawable.lights, export_settings, obj)
+            lights_from_object(child, drawable.lights, obj)
 
     # flags = model count for each lod
     drawable.flags_high = highmodel_count
@@ -753,6 +748,6 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     return drawable
 
 
-def export_ydr(exportop, obj, filepath, export_settings):
-    drawable_from_object(exportop, obj, filepath, None, None,
-                         export_settings).write_xml(filepath)
+def export_ydr(exportop, obj, filepath):
+    drawable_from_object(exportop, obj, filepath, None,
+                         None).write_xml(filepath)

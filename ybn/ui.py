@@ -163,8 +163,6 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.enabled = context.active_object is not None and context.active_object.sollum_type == SollumType.BOUND_COMPOSITE
-        row.operator(ybn_ops.SOLLUMZ_OT_center_composite.bl_idname,
-                     icon="PIVOT_CURSOR")
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname,
                      icon="SCULPTMODE_HLT")

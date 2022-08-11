@@ -146,33 +146,6 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_center_composite(SOLLUMZ_OT_base, bpy.types.Operator):
-    f"""Center the selected {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]} with the rest of it's geometry. Note: Has no effect on export"""
-    bl_idname = "sollumz.centercomposite"
-    bl_label = "Center Composite"
-    bl_action = f"{bl_label}"
-
-    def run(self, context):
-        aobj = context.active_object
-        if not aobj:
-            self.message(
-                f"No {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]} selected.")
-            return False
-        if aobj.sollum_type != SollumType.BOUND_COMPOSITE:
-            self.message(
-                f"{aobj.name} must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
-            return False
-        if context.mode != "OBJECT":
-            self.message(f"{self.bl_idname} can only be ran in Object mode.")
-            return False
-
-        center = get_bound_center(aobj)
-        aobj.location = center
-        for obj in aobj.children:
-            obj.delta_location = -center
-        return True
-
-
 class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"

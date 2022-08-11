@@ -243,7 +243,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             if obj.sollum_type == SollumType.DRAWABLE:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YDR.file_extension)
-                export_ydr(self, obj, filepath, self.export_settings)
+                export_ydr(self, obj, filepath)
                 valid_type = True
             elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                 filepath = self.get_filepath(
@@ -251,7 +251,6 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.FRAGMENT:
-                self.export_settings.use_transforms = False
                 name = obj.name if "/" not in obj.name else obj.name.replace(
                     "pack:/", "")
                 filepath = self.get_filepath(
@@ -266,7 +265,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             elif obj.sollum_type in BOUND_TYPES:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YBN.file_extension)
-                export_ybn(obj, filepath, self.export_settings)
+                export_ybn(obj, filepath)
                 valid_type = True
             if valid_type:
                 self.message(f"Succesfully exported: {filepath}")

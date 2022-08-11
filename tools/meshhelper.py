@@ -221,40 +221,33 @@ def flip_uv(uv):
 """Get min and max bounds for an object and all of its children"""
 
 
-def get_bound_extents(obj, world=True, margin=0):
-    corners = get_total_bounds(obj, world)
+def get_bound_extents(obj, margin=0):
+    corners = get_total_bounds(obj)
+
+    if not corners:
+        return Vector(), Vector()
+
     min = subtract_from_vector(get_min_vector_list(corners), margin)
     max = add_to_vector(get_max_vector_list(corners), margin)
     return min, max
 
 
-def get_total_bounds(obj, world=True):
-    objects = []
+def get_total_bounds(obj):
+    corners = []
 
     # Ensure all objects are meshes
-    for obj in [obj, *get_children_recursive(obj)]:
-        if obj.type == "MESH":
-            objects.append(obj)
+    for child in [obj, *get_children_recursive(obj)]:
+        if child.type != "MESH":
+            continue
 
-    if len(objects) < 1:
-        raise ValueError(
-            f"Could not calculate extents for '{obj.name}': Object has no geometry data or children with geometry data (object is empty).")
-
-    corners = []
-    for obj in objects:
-        for pos in obj.bound_box:
-            corner = obj.matrix_world @ Vector(
-                pos) if world else obj.matrix_basis @ Vector(pos)
-            # Need to offset collisions by center of geometry
-            if not world and obj.parent and obj.parent.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH]:
-                corner += obj.parent.location
-            corners.append(corner)
+        corners.extend([child.parent.matrix_basis @ child.matrix_basis @ Vector(pos)
+                       for pos in child.bound_box])
 
     return corners
 
 
-def get_bound_center(obj, world=True):
-    bbmin, bbmax = get_bound_extents(obj, world)
+def get_bound_center(obj):
+    bbmin, bbmax = get_bound_extents(obj)
     center = (bbmin + bbmax) / 2
 
     return center

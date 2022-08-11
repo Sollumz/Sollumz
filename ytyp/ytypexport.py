@@ -151,10 +151,10 @@ def create_tcm_xml(tcm: TimecycleModifierProperties) -> ytypxml.TimeCycleModifie
 def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype):
     """Calculate bounds from the archetype asset."""
 
-    bbmin, bbmax = get_bound_extents(archetype.asset, world=False)
+    bbmin, bbmax = get_bound_extents(archetype.asset)
     archetype_xml.bb_min = bbmin
     archetype_xml.bb_max = bbmax
-    archetype_xml.bs_center = get_bound_center(archetype.asset, world=False)
+    archetype_xml.bs_center = get_bound_center(archetype.asset)
     archetype_xml.bs_radius = get_sphere_radius(bbmax, archetype_xml.bs_center)
 
 

@@ -21,10 +21,10 @@ def base_archetype_from_object(obj):
             drawable_dictionary = obj.parent.name
     arch.drawable_dictionary = drawable_dictionary
     arch.physics_dictionary = obj.name if has_collision(obj) else ""
-    bbmin, bbmax = get_bound_extents(obj, world=False)
+    bbmin, bbmax = get_bound_extents(obj)
     arch.bb_min = bbmin
     arch.bb_max = bbmax
-    arch.bs_center = get_bound_center(obj, world=False)
+    arch.bs_center = get_bound_center(obj)
     arch.bs_radius = get_sphere_radius(bbmax, arch.bs_center)
     arch.asset_name = obj.name
     if obj.sollum_type == SollumType.FRAGMENT:

@@ -81,7 +81,7 @@ def obj_to_vehicle_window(obj, materials):
     return window
 
 
-def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
+def fragment_from_object(exportop, fobj, exportpath):
     fragment = Fragment()
 
     dobj = None
@@ -95,14 +95,12 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
     materials = get_used_materials(fobj)
 
     fragment.drawable = drawable_from_object(
-        exportop, dobj, exportpath, None, materials, export_settings, True)
+        exportop, dobj, exportpath, None, materials, True)
 
-    lights_from_object(fobj, fragment.lights,
-                       export_settings, armature_obj=dobj)
+    lights_from_object(fobj, fragment.lights, armature_obj=dobj)
 
     fragment.name = fobj.name.split(".")[0]
-    fragment.bounding_sphere_center = get_bound_center(
-        fobj, world=export_settings.use_transforms)
+    fragment.bounding_sphere_center = get_bound_center(fobj)
     fragment.bounding_sphere_radius = get_sphere_radius(
         fragment.drawable.bounding_box_max, fragment.drawable.bounding_sphere_center)
 
@@ -178,8 +176,7 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
             lod.lod_properties.archetype_inertia_tensor)
         flod.archetype.inertia_tensor = arch_it
         flod.archetype.inertia_tensor_inv = divide_vector_inv(arch_it)
-        flod.archetype.bounds = composite_from_objects(
-            bobjs, export_settings, True)
+        flod.archetype.bounds = composite_from_objects(bobjs, True)
 
         gidx = 0
         for gobj in gobjs:
@@ -232,7 +229,7 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
 
             if dobj:
                 child.drawable = drawable_from_object(
-                    exportop, dobj, exportpath, None, materials, export_settings, True, False)
+                    exportop, dobj, exportpath, None, materials, True, False)
             else:
                 child.drawable.matrix = Matrix()
                 child.drawable.shader_group = None
@@ -269,7 +266,7 @@ def fragment_from_object(exportop, fobj, exportpath, export_settings=None):
 
 
 def export_yft(exportop, obj, filepath, export_settings):
-    fragment = fragment_from_object(exportop, obj, filepath, export_settings)
+    fragment = fragment_from_object(exportop, obj, filepath)
     fragment.write_xml(filepath)
 
     if export_settings.export_with_hi:

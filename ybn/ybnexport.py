@@ -43,12 +43,9 @@ def add_material(material, mat_map, materials):
         return idx
 
 
-def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
+def polygon_from_object(obj, geometry, verts_map, mat_map):
     vertices = geometry.vertices
     materials = geometry.materials
-    geom_center = geometry.geometry_center
-    pos = obj.matrix_world.to_translation(
-    ) - geom_center if export_settings.use_transforms else obj.location
 
     def handle_vert(vert):
         vert = tuple(vert)
@@ -66,11 +63,9 @@ def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
         box.material_index = add_material(
             obj.active_material, mat_map, materials)
         indices = []
-        bound_box = [Vector(pos) for pos in obj.bound_box]
+        bound_box = [obj.matrix_basis @ Vector(pos) for pos in obj.bound_box]
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
-            world_vert = (obj.matrix_world @ vert) - geom_center
-            vert = world_vert if export_settings.use_transforms else obj.matrix_basis @ vert
             idx = handle_vert(vert)
             indices.append(idx)
 
@@ -84,7 +79,7 @@ def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
         sphere = ybnxml.Sphere()
         sphere.material_index = add_material(
             obj.active_material, mat_map, materials)
-        idx = handle_vert(pos)
+        idx = handle_vert(obj.location)
         sphere.v = idx
         bound_box = get_total_bounds(obj)
 
@@ -115,11 +110,10 @@ def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
             height = height - (radius * 2)
 
         vertical = Vector((0, 0, height / 2))
-        mat = obj.matrix_world if export_settings.use_transforms else obj.matrix_basis
-        vertical.rotate(mat.to_euler("XYZ"))
+        vertical.rotate(obj.matrix_basis.to_euler("XYZ"))
 
-        v1 = pos - vertical
-        v2 = pos + vertical
+        v1 = obj.location - vertical
+        v2 = obj.location + vertical
 
         idx1 = handle_vert(v1)
         idx2 = handle_vert(v2)
@@ -132,7 +126,7 @@ def polygon_from_object(obj, geometry, verts_map, mat_map, export_settings):
         return bound
 
 
-def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_settings=None, is_frag=False):
+def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=False):
     geometry = None
 
     if sollum_type == SollumType.BOUND_GEOMETRYBVH:
@@ -142,20 +136,17 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     else:
         return ValueError("Invalid argument for geometry sollum_type!")
 
-    geometry = init_bound_item(geometry, obj, export_settings, is_frag)
+    geometry = init_bound_item(geometry, obj, is_frag)
 
     if sollum_type == SollumType.BOUND_GEOMETRY:
         geometry.unk_float_1 = obj.bound_properties.unk_float_1
         geometry.unk_float_2 = obj.bound_properties.unk_float_2
 
-    if geometry.unk_type == 2:
-        geometry.geometry_center = obj.children[0].location
-    else:
-        # Set translation of the transposed matrix to 0,0,0
-        geometry.composite_transform[3][0] = 0
-        geometry.composite_transform[3][1] = 0
-        geometry.composite_transform[3][2] = 0
-        geometry.geometry_center = obj.location
+    # Set translation of the transposed matrix to 0,0,0
+    geometry.composite_transform[3][0] = 0
+    geometry.composite_transform[3][1] = 0
+    geometry.composite_transform[3][2] = 0
+    geometry.geometry_center = obj.location
 
     # Ensure object has geometry
     found = False
@@ -166,6 +157,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
         mesh = child.to_mesh()
         mesh.calc_normals_split()
         mesh.calc_loop_triangles()
+
         if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
             found = True
 
@@ -186,16 +178,9 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
                 for loop_idx in tri.loops:
                     loop = mesh.loops[loop_idx]
 
-                    vertex = mesh.vertices[loop.vertex_index].co
-                    if export_settings.use_transforms:
-                        vertex = (child.matrix_world @ vertex) - \
-                            geometry.geometry_center
-                    else:
-                        if geometry.unk_type != 2:
-                            vertex = child.matrix_basis @ vertex
-
                     # Must be tuple for dedupe to work
-                    vertex = tuple(vertex)
+                    vertex = tuple(
+                        child.matrix_basis @ mesh.vertices[loop.vertex_index].co)
 
                     if vertex in vertices:
                         idx = vertices[vertex]
@@ -215,16 +200,10 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
             for tri in mesh.loop_triangles:
                 for loop_idx in tri.loops:
                     loop = mesh.loops[loop_idx]
-                    vertex = mesh.vertices[loop.vertex_index].co
-                    if export_settings.use_transforms:
-                        vertex = (child.matrix_world @ vertex) - \
-                            geometry.geometry_center
-                    else:
-                        if geometry.unk_type != 2:
-                            vertex = child.matrix_basis @ vertex
 
                     # Must be tuple for dedupe to work
-                    vertex = tuple(vertex)
+                    vertex = tuple(
+                        child.matrix_basis @ mesh.vertices[loop.vertex_index].co)
 
                     if vertex in vertices2:
                         idx = vertices2[vertex]
@@ -232,8 +211,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
                         vertices2[vertex] = len(vertices2)
                         geometry.vertices_2.append(Vector(vertex))
         elif sollum_type == SollumType.BOUND_GEOMETRYBVH:
-            poly = polygon_from_object(
-                child, geometry, vertices, mat_map, export_settings)
+            poly = polygon_from_object(child, geometry, vertices, mat_map)
             if poly:
                 found = True
                 geometry.polygons.append(poly)
@@ -252,8 +230,8 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, export_s
     return geometry
 
 
-def init_bound_item(bound_item, obj, export_settings, is_frag=False):
-    init_bound(bound_item, obj, export_settings, is_frag)
+def init_bound_item(bound_item, obj, is_frag=False):
+    init_bound(bound_item, obj, is_frag)
     # Get flags from object
     for prop in dir(obj.composite_flags1):
         value = getattr(obj.composite_flags1, prop)
@@ -265,9 +243,7 @@ def init_bound_item(bound_item, obj, export_settings, is_frag=False):
         if value == True:
             bound_item.composite_flags2.append(prop.upper())
 
-    bound_item.composite_transform = obj.matrix_world.copy(
-    ) if export_settings.use_transforms else obj.matrix_basis.copy()
-    bound_item.composite_transform.transpose()
+    bound_item.composite_transform = obj.matrix_basis.transposed()
 
     if obj.active_material and obj.active_material.sollum_type == MaterialType.COLLISION:
         bound_item.material_index = obj.active_material.collision_properties.collision_index
@@ -275,17 +251,14 @@ def init_bound_item(bound_item, obj, export_settings, is_frag=False):
     return bound_item
 
 
-def init_bound(bound, obj, export_settings, is_frag=False):
-    use_world = export_settings.use_transforms and (
-        obj.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_COMPOSITE)
-
+def init_bound(bound, obj, is_frag=False):
     if obj.sollum_type in BOUND_SHAPE_TYPES:
         bound.box_max = get_max_vector_list(obj.bound_box)
         bound.box_min = get_min_vector_list(obj.bound_box)
         bound.box_center = (bound.box_max + bound.box_min) * 0.5
         bound.sphere_center = bound.box_center
     else:
-        bbmin, bbmax = get_bound_extents(obj, use_world, obj.margin)
+        bbmin, bbmax = get_bound_extents(obj, obj.margin)
         bound.box_min = bbmin
         bound.box_max = bbmax
         center = get_bound_center_from_bounds(
@@ -306,32 +279,29 @@ def init_bound(bound, obj, export_settings, is_frag=False):
     return bound
 
 
-def bound_from_object(obj, export_settings, is_frag=None):
+def bound_from_object(obj, is_frag=None):
     if obj.sollum_type == SollumType.BOUND_BOX:
-        bound = init_bound_item(ybnxml.BoundBox(), obj,
-                                export_settings, is_frag)
+        bound = init_bound_item(ybnxml.BoundBox(), obj, is_frag)
         if bound.unk_type == 2:
             bound.sphere_center = Vector()
             bound.box_center = Vector()
         return bound
     elif obj.sollum_type == SollumType.BOUND_SPHERE:
-        bound = init_bound_item(ybnxml.BoundSphere(),
-                                obj, export_settings, is_frag)
+        bound = init_bound_item(ybnxml.BoundSphere(), obj, is_frag)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == SollumType.BOUND_CYLINDER:
-        bound = init_bound_item(ybnxml.BoundCylinder(),
-                                obj, export_settings, is_frag)
+        bound = init_bound_item(ybnxml.BoundCylinder(), obj, is_frag)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == SollumType.BOUND_CAPSULE:
         bound = init_bound_item(ybnxml.BoundCapsule(),
-                                obj, export_settings, is_frag)
+                                obj,  is_frag)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == SollumType.BOUND_DISC:
         bound = init_bound_item(ybnxml.BoundDisc(),
-                                obj, export_settings, is_frag)
+                                obj,  is_frag)
         bound.sphere_radius = obj.bound_radius
         bound.margin = obj.margin
         if bound.unk_type == 2:
@@ -342,14 +312,14 @@ def bound_from_object(obj, export_settings, is_frag=None):
             bound.box_min = bound.box_max * -1
         return bound
     elif obj.sollum_type == SollumType.BOUND_CLOTH:
-        return init_bound_item(ybnxml.BoundCloth(), obj, export_settings, is_frag)
+        return init_bound_item(ybnxml.BoundCloth(), obj, is_frag)
     elif obj.sollum_type == SollumType.BOUND_GEOMETRY:
-        return geometry_from_object(obj, SollumType.BOUND_GEOMETRY, export_settings, is_frag)
+        return geometry_from_object(obj, SollumType.BOUND_GEOMETRY, is_frag)
     elif obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
-        return geometry_from_object(obj, SollumType.BOUND_GEOMETRYBVH, export_settings, is_frag)
+        return geometry_from_object(obj, SollumType.BOUND_GEOMETRYBVH, is_frag)
 
 
-def composite_from_objects(objs, export_settings, is_frag=False):
+def composite_from_objects(objs,  is_frag=False):
     if len(objs) <= 0:
         return
 
@@ -360,10 +330,10 @@ def composite_from_objects(objs, export_settings, is_frag=False):
         obj.parent = tobj
 
     composite = init_bound(ybnxml.BoundComposite(),
-                           tobj, export_settings, is_frag)
+                           tobj,  is_frag)
 
     for child in objs:
-        bound = bound_from_object(child, export_settings, is_frag)
+        bound = bound_from_object(child,  is_frag)
         if bound:
             composite.children.append(bound)
 
@@ -374,25 +344,25 @@ def composite_from_objects(objs, export_settings, is_frag=False):
     return composite
 
 
-def composite_from_object(obj, export_settings):
-    composite = init_bound(ybnxml.BoundComposite(), obj, export_settings)
+def composite_from_object(obj):
+    composite = init_bound(ybnxml.BoundComposite(), obj)
 
     for child in get_children_recursive(obj):
-        bound = bound_from_object(child, export_settings)
+        bound = bound_from_object(child)
         if bound:
             composite.children.append(bound)
 
     return composite
 
 
-def boundfile_from_object(obj, export_settings):
+def boundfile_from_object(obj):
     bounds = ybnxml.BoundFile()
 
-    composite = composite_from_object(obj, export_settings)
+    composite = composite_from_object(obj)
     bounds.composite = composite
 
     return bounds
 
 
-def export_ybn(obj, filepath, export_settings):
-    boundfile_from_object(obj, export_settings).write_xml(filepath)
+def export_ybn(obj, filepath):
+    boundfile_from_object(obj).write_xml(filepath)
