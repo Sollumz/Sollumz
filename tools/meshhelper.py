@@ -237,10 +237,15 @@ def get_total_bounds(obj):
 
     # Ensure all objects are meshes
     for child in [obj, *get_children_recursive(obj)]:
-        if child.type != "MESH":
+        if child.type != "MESH" or child.sollum_type == SollumType.NONE:
             continue
 
-        corners.extend([child.parent.matrix_basis @ child.matrix_basis @ Vector(pos)
+        matrix = child.matrix_basis
+
+        if obj.sollum_type == SollumType.BOUND_COMPOSITE and child.parent.sollum_type != SollumType.BOUND_COMPOSITE:
+            matrix = child.parent.matrix_basis @ matrix
+
+        corners.extend([matrix @ Vector(pos)
                        for pos in child.bound_box])
 
     return corners

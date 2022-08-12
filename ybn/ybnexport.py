@@ -5,6 +5,7 @@ from ..cwxml import bound as ybnxml
 from ..sollumz_properties import BOUND_SHAPE_TYPES, MaterialType, SollumType
 from ..tools.blenderhelper import get_children_recursive
 from ..tools.meshhelper import (
+    get_bound_center,
     get_total_bounds,
     get_bound_extents,
     get_bound_center_from_bounds,
@@ -43,9 +44,10 @@ def add_material(material, mat_map, materials):
         return idx
 
 
-def polygon_from_object(obj, geometry, verts_map, mat_map):
+def polygon_from_object(obj, geometry, verts_map, mat_map, matrix):
     vertices = geometry.vertices
     materials = geometry.materials
+    location = matrix.translation
 
     def handle_vert(vert):
         vert = tuple(vert)
@@ -63,7 +65,7 @@ def polygon_from_object(obj, geometry, verts_map, mat_map):
         box.material_index = add_material(
             obj.active_material, mat_map, materials)
         indices = []
-        bound_box = [obj.matrix_basis @ Vector(pos) for pos in obj.bound_box]
+        bound_box = [matrix @ Vector(pos) for pos in obj.bound_box]
         corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
         for vert in corners:
             idx = handle_vert(vert)
@@ -79,7 +81,7 @@ def polygon_from_object(obj, geometry, verts_map, mat_map):
         sphere = ybnxml.Sphere()
         sphere.material_index = add_material(
             obj.active_material, mat_map, materials)
-        idx = handle_vert(obj.location)
+        idx = handle_vert(location)
         sphere.v = idx
         bound_box = get_total_bounds(obj)
 
@@ -110,10 +112,10 @@ def polygon_from_object(obj, geometry, verts_map, mat_map):
             height = height - (radius * 2)
 
         vertical = Vector((0, 0, height / 2))
-        vertical.rotate(obj.matrix_basis.to_euler("XYZ"))
+        vertical.rotate(matrix.to_euler("XYZ"))
 
-        v1 = obj.location - vertical
-        v2 = obj.location + vertical
+        v1 = location - vertical
+        v2 = location + vertical
 
         idx1 = handle_vert(v1)
         idx2 = handle_vert(v2)
@@ -142,11 +144,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
         geometry.unk_float_1 = obj.bound_properties.unk_float_1
         geometry.unk_float_2 = obj.bound_properties.unk_float_2
 
-    # Set translation of the transposed matrix to 0,0,0
-    geometry.composite_transform[3][0] = 0
-    geometry.composite_transform[3][1] = 0
-    geometry.composite_transform[3][2] = 0
-    geometry.geometry_center = obj.location
+    geometry.geometry_center = get_bound_center(obj) - obj.location
 
     # Ensure object has geometry
     found = False
@@ -157,6 +155,9 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
         mesh = child.to_mesh()
         mesh.calc_normals_split()
         mesh.calc_loop_triangles()
+
+        matrix = child.matrix_basis.copy()
+        matrix.translation -= geometry.geometry_center
 
         if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
             found = True
@@ -180,7 +181,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
 
                     # Must be tuple for dedupe to work
                     vertex = tuple(
-                        child.matrix_basis @ mesh.vertices[loop.vertex_index].co)
+                        matrix @ mesh.vertices[loop.vertex_index].co)
 
                     if vertex in vertices:
                         idx = vertices[vertex]
@@ -195,23 +196,24 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
                 triangle.v2 = vert_indices[1]
                 triangle.v3 = vert_indices[2]
                 geometry.polygons.append(triangle)
-        elif child.sollum_type == SollumType.BOUND_POLY_TRIANGLE2:
-            vertices2 = {}
-            for tri in mesh.loop_triangles:
-                for loop_idx in tri.loops:
-                    loop = mesh.loops[loop_idx]
+        # elif child.sollum_type == SollumType.BOUND_POLY_TRIANGLE2:
+            # vertices2 = {}
+            # for tri in mesh.loop_triangles:
+            #     for loop_idx in tri.loops:
+            #         loop = mesh.loops[loop_idx]
 
-                    # Must be tuple for dedupe to work
-                    vertex = tuple(
-                        child.matrix_basis @ mesh.vertices[loop.vertex_index].co)
+            #         # Must be tuple for dedupe to work
+            #         vertex = tuple(
+            #             matrix @ mesh.vertices[loop.vertex_index].co)
 
-                    if vertex in vertices2:
-                        idx = vertices2[vertex]
-                    else:
-                        vertices2[vertex] = len(vertices2)
-                        geometry.vertices_2.append(Vector(vertex))
+            #         if vertex in vertices2:
+            #             idx = vertices2[vertex]
+            #         else:
+            #             vertices2[vertex] = len(vertices2)
+            #             geometry.vertices_2.append(Vector(vertex))
         elif sollum_type == SollumType.BOUND_GEOMETRYBVH:
-            poly = polygon_from_object(child, geometry, vertices, mat_map)
+            poly = polygon_from_object(
+                child, geometry, vertices, mat_map, matrix)
             if poly:
                 found = True
                 geometry.polygons.append(poly)
@@ -258,7 +260,8 @@ def init_bound(bound, obj, is_frag=False):
         bound.box_center = (bound.box_max + bound.box_min) * 0.5
         bound.sphere_center = bound.box_center
     else:
-        bbmin, bbmax = get_bound_extents(obj, obj.margin)
+        # bbmin, bbmax = get_bound_extents(obj, obj.margin)
+        bbmin, bbmax = get_bound_extents(obj)
         bound.box_min = bbmin
         bound.box_max = bbmax
         center = get_bound_center_from_bounds(

@@ -3,7 +3,7 @@ from .properties import CollisionMatFlags
 from ..cwxml import bound as ybnxml
 from ..sollumz_properties import SollumType, MaterialType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc
+from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc, create_box_from_extents
 from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
 import os
 from mathutils import Matrix, Vector
@@ -226,16 +226,15 @@ def geometry_to_obj(geometry, sollum_type):
             poly_obj = poly_to_obj(poly, materials, geometry.vertices)
             if poly_obj:
                 bpy.context.collection.objects.link(poly_obj)
+                poly_obj.location += geometry.geometry_center
                 poly_obj.parent = obj
 
-    if geometry.unk_type != 2:
-        obj.location += geometry.geometry_center
-    else:
+    if triangle_obj:
         triangle_obj.location = geometry.geometry_center
-        if vert2_obj:
-            vert2_obj.location = geometry.geometry_center
-            vert2_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE2
-            vert2_obj.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE2]
+    if vert2_obj:
+        vert2_obj.location = geometry.geometry_center
+        vert2_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE2
+        vert2_obj.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE2]
 
     return obj
 
