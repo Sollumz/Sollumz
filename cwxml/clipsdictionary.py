@@ -110,7 +110,7 @@ class AttributesListProperty(ItemTypeListProperty):
 
         def __init__(self):
             super().__init__()
-            self.value = ValueProperty("Value", "")
+            self.value = TextProperty("Value", "")
 
     class HashStringAttribute(Attribute):
         type = "HashString"
