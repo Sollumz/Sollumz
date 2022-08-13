@@ -401,7 +401,7 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
     def entity_from_obj(self, obj):
         entity = EntityItem()
 
-        entity.archetype_name = obj.name
+        entity.archetype_name = remove_number_suffix(obj.name.lower())
         entity.flags = int(obj.entity_properties.flags)
         entity.guid = int(obj.entity_properties.guid)
         entity.position = obj.location
