@@ -83,6 +83,8 @@ class SOLLUMZ_OT_auto_convert_material(SOLLUMZ_OT_base, bpy.types.Operator):
                     f"{obj.name} has no materials to convert.")
 
             for material in obj.data.materials:
+                if material.sollum_type == 'sollumz_material_shader':
+                    continue
                 new_material = convert_material(material)
                 if new_material is not None:
                     for ms in obj.material_slots:
