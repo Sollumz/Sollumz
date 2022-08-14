@@ -14,8 +14,8 @@ def get_rgb(value):
 
 
 def shattermap_to_image(shattermap, name):
-    width = len(shattermap[0]) / 2
-    height = len(shattermap)
+    width = int(len(shattermap[0]) / 2)
+    height = int(len(shattermap))
 
     img = bpy.data.images.new(name, width, height)
 
