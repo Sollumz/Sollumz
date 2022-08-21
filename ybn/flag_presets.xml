@@ -1,9 +1,33 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <FlagPresetsFile>
   <Presets>
-    <Item name="Default">
+    <Item name="General (Default)">
       <Flags1>map_animal, map_cover, map_dynamic, map_vehicle, map_weapon</Flags1>
-      <Flags2>animal, animal_ragdoll, explosion, foliage, forklift_forks, glass, map_animal, map_cover, map_deep_surface, map_dynamic, map_river, map_stairs, map_vehicle, map_weapon, object, object_env_cloth, ped, pickup, plant, projectile, ragdoll, smoke, test_ai, test_camera, test_script, test_vehicle_wheel, test_weapon, unknown, unsmashed, vehicle_bvh, vehicle_not_bvh</Flags2>
+      <Flags2>vehicle_not_bvh, vehicle_bvh, ped, ragdoll, animal, animal_ragdoll, object, plant, projectile, explosion, forklift_forks, test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel, glass</Flags2>
+    </Item>
+    <Item name="General 2">
+      <Flags1>map_animal, map_cover, map_dynamic, map_vehicle</Flags1>
+      <Flags2>vehicle_not_bvh, vehicle_bvh, ped, ragdoll, animal, animal_ragdoll, object, plant, projectile, explosion, forklift_forks, test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel, glass</Flags2>
+    </Item>
+    <Item name="Water surface">
+      <Flags1>map_river</Flags1>
+      <Flags2>test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel</Flags2>
+    </Item>
+    <Item name="Leaves - Bush">
+      <Flags1>foliage</Flags1>
+      <Flags2>map_dynamic, vehicle_not_bvh, vehicle_bvh, ped, ragdoll, animal, animal_ragdoll, object, projectile, explosion, forklift_forks, test_weapon, test_camera, test_ai, test_script, glass</Flags2>
+    </Item>
+    <Item name="Stair plane">
+      <Flags1>map_stairs</Flags1>
+      <Flags2>ped, test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel</Flags2>
+    </Item>
+    <Item name="Stair mesh">
+      <Flags1>map_animal, map_cover, map_dynamic, map_vehicle, map_weapon, map_stairs</Flags1>
+      <Flags2>vehicle_not_bvh, vehicle_bvh, ped, ragdoll, animal, animal_ragdoll, object, plant, projectile, explosion, forklift_forks, test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel, glass</Flags2>
+    </Item>
+    <Item name="Deep surface">
+      <Flags1>map_weapon, map_deep_surface</Flags1>
+      <Flags2>projectile, test_weapon, test_camera</Flags2>
     </Item>
   </Presets>
 </FlagPresetsFile>
