@@ -125,6 +125,35 @@ class SOLLUMZ_OT_convert_material_to_selected(SOLLUMZ_OT_base, bpy.types.Operato
 
         return True
 
+class SOLLUMZ_OT_convert_allmaterials_to_selected(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Convert all materials to the selected sollumz shader"""
+    bl_idname = "sollumz.convertallmaterialstoselected"
+    bl_label = "Convert All Materials To Selected"
+    bl_action = "Convert All Materials To Selected"
+
+    def convert_material(self, shader, obj):
+        for mat in obj.data.materials:
+            if mat.sollum_type == 'sollumz_material_shader':
+                continue
+            new_material = convert_material_to_selected(mat, shader)
+            if new_material is not None:
+                for ms in obj.material_slots:
+                    if ms.material == mat:
+                        ms.material = new_material
+
+    def run(self, context):
+        objs = bpy.context.selected_objects
+        if len(objs) == 0:
+            self.warning(
+                f"Please select a object with materials.")
+            return False
+
+        shader = shadermats[context.scene.shader_material_index].value
+        for obj in objs:
+            self.convert_material(shader, obj)
+
+        return True
+        
 
 class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz shader material"""

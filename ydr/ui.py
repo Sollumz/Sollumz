@@ -188,6 +188,9 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
         row2.operator(
            ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
 
+        row3 = layout.row()
+        row3.operator(ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname)
+
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     bl_label = "Create Drawable Objects"
