@@ -23,12 +23,16 @@ class OokSollumzPie(Menu):
                      text="Add Objects To Room", icon='OBJECT_DATA')
         pie.operator("sollumz.load_flag_preset",
                      text="Apply Flag Preset", icon='ALIGN_TOP')
-        pie.operator("sollumz.createdrawable", text="Create Drawable", icon='CUBE')
+        pie.operator("sollumz.createdrawable",
+                     text="Create Drawable", icon='CUBE')
         pie.operator("file.find_missing_files",
                      text="Find Missing Textures", icon='VIEWZOOM')
-        pie.operator("sollumz.export", text="Export CodeWalker XML", icon='EXPORT')
-        pie.operator("sollumz.importymap", text="Import XML YMAP", icon='FILE_VOLUME')
-        pie.operator("sollumz.exportymap", text="Export XML YMAP", icon='ASSET_MANAGER')
+        pie.operator("sollumz.export",
+                     text="Export CodeWalker XML", icon='EXPORT')
+        pie.operator("sollumz.importymap",
+                     text="Import XML YMAP", icon='FILE_VOLUME')
+        pie.operator("sollumz.exportymap",
+                     text="Export XML YMAP", icon='ASSET_MANAGER')
 
 
 addon_keymaps = []
