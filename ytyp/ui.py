@@ -189,6 +189,28 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(bpy.types.Panel):
         layout.prop(selected_archetype, "asset", text="Linked Object")
 
 
+class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
+    bl_label = "Archetype Tools"
+    bl_idname = "SOLLUMZ_PT_YTYP_TOOLS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_YTYP_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_ytyp(context) is not None and len(get_selected_ytyp(context).archetypes) > 0
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        selected_ytyp = get_selected_ytyp(context)
+        row = layout.row()
+        row.prop(selected_ytyp, "all_texture_dictionary")
+        row.operator("sollumz.settexturedictionaryallarchs")
+        row = layout.row()
+
+
 class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_MLO_FLAGS_PANEL"
     bl_label = "MLO Flags"

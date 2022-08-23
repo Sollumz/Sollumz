@@ -54,6 +54,24 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
 
         return True
 
+class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Set texture dictionary for all archetypes within the selected ytyp"""
+    bl_idname = "sollumz.settexturedictionaryallarchs"
+    bl_label = "Set Texture Dictionary for All Archetypes"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_ytyp(context) is not None
+
+    def execute(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        for archetype in selected_ytyp.archetypes:
+            if archetype.asset_type != AssetType.ASSETLESS:
+                archetype.texture_dictionary = selected_ytyp.all_texture_dictionary
+            
+
+
+        return {'FINISHED'}
 
 class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create archetype from selected"""
