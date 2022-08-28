@@ -184,6 +184,8 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(bpy.types.Panel):
             layout.prop(selected_archetype, "clip_dictionary")
             layout.prop(selected_archetype, "drawable_dictionary")
             layout.prop(selected_archetype, "physics_dictionary")
+            layout.prop(selected_archetype, "hd_texture_dist")
+            layout.prop(selected_archetype, "lod_dist")
         layout.prop(selected_archetype, "asset_type")
         layout.prop(selected_archetype, "asset_name")
         layout.prop(selected_archetype, "asset", text="Linked Object")
