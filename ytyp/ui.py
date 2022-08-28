@@ -190,7 +190,7 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
-    bl_label = "Archetype Tools"
+    bl_label = "Tools"
     bl_idname = "SOLLUMZ_PT_YTYP_TOOLS_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -209,6 +209,15 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         row.prop(selected_ytyp, "all_texture_dictionary")
         row.operator("sollumz.settexturedictionaryallarchs")
         row = layout.row()
+        row.prop(selected_ytyp, "all_lod_dist")
+        row.operator("sollumz.setloddistallarchs")
+        row = layout.row()
+        row.prop(selected_ytyp, "all_hd_tex_dist")
+        row.operator("sollumz.sethdtexturedistallarchs")
+        row = layout.row()
+
+
+
 
 
 class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):

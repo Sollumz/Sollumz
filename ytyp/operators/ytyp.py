@@ -55,9 +55,9 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Set texture dictionary for all archetypes within the selected ytyp"""
+    """Sets texture dictionary for all archetypes within the selected ytyp"""
     bl_idname = "sollumz.settexturedictionaryallarchs"
-    bl_label = "Set Texture Dictionary for All Archetypes"
+    bl_label = "Set for All Archetypes"
 
     @classmethod
     def poll(cls, context):
@@ -68,6 +68,44 @@ class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.t
         for archetype in selected_ytyp.archetypes:
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.texture_dictionary = selected_ytyp.all_texture_dictionary
+            
+
+
+        return {'FINISHED'}
+
+class SOLLUMZ_OT_set_loddist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Sets lod dist for all archetypes within the selected ytyp"""
+    bl_idname = "sollumz.setloddistallarchs"
+    bl_label = "Set for All Archetypes"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_ytyp(context) is not None
+
+    def execute(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        for archetype in selected_ytyp.archetypes:
+            if archetype.asset_type != AssetType.ASSETLESS:
+                archetype.lod_dist = selected_ytyp.all_lod_dist
+            
+
+
+        return {'FINISHED'}
+
+class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Sets HD textures distance for all archetypes within the selected ytyp"""
+    bl_idname = "sollumz.sethdtexturedistallarchs"
+    bl_label = "Set for All Archetypes"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_ytyp(context) is not None
+
+    def execute(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        for archetype in selected_ytyp.archetypes:
+            if archetype.asset_type != AssetType.ASSETLESS:
+                archetype.hd_texture_dist = selected_ytyp.all_hd_tex_dist
             
 
 
