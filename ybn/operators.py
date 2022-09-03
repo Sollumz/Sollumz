@@ -1,5 +1,4 @@
 from math import ceil
-from pickle import NONE
 from ..tools.obb import get_obb, get_obb_extents
 import traceback
 from ..cwxml.flag_preset import FlagPreset
