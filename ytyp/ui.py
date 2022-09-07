@@ -356,6 +356,8 @@ class SOLLUMZ_PT_PORTAL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.createportalfromselection")
         row = layout.row()
+        row.operator("sollumz.updateportalfromselection")
+        row = layout.row()
         row.use_property_split = False
         row.prop(context.scene, "show_portal_gizmo")
         if not selected_archetype.asset:
