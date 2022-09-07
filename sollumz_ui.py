@@ -37,7 +37,6 @@ class SOLLUMZ_PT_import_main(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        layout.prop(operator.import_settings, "batch_mode")
 
 
 class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
@@ -185,11 +184,6 @@ class SOLLUMZ_PT_export_main(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        row = layout.row(align=True)
-        row.prop(operator.export_settings, "batch_mode")
-        sub = row.row(align=True)
-        sub.prop(operator.export_settings, "use_batch_own_dir",
-                 text="", icon="NEWFOLDER")
 
 
 class SOLLUMZ_PT_export_include(bpy.types.Panel):
