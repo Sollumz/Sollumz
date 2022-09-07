@@ -323,6 +323,9 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.debug_hierarchy")
         row.prop(context.scene, "debug_sollum_type")
+        row = layout.row()
+        row.operator("sollumz.debug_set_sollum_type")
+        row.prop(context.scene, "all_sollum_type")
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):

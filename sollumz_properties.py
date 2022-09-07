@@ -712,6 +712,12 @@ def register():
         options={"HIDDEN"}
     )
 
+    bpy.types.Scene.all_sollum_type = bpy.props.EnumProperty(
+        items=items_from_enums(SollumType),
+        name="Sollum Types",
+        options={"HIDDEN"}
+    )
+
 
 def unregister():
     del bpy.types.Object.sollum_type
@@ -727,4 +733,5 @@ def unregister():
     del bpy.types.Scene.create_seperate_objects
     del bpy.types.Scene.use_mesh_name
     del bpy.types.Scene.debug_sollum_type
+    del bpy.types.Scene.all_sollum_type
     del bpy.types.Scene.create_center_to_selection
