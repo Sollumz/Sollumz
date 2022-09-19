@@ -14,8 +14,9 @@ from ..tools.drawablehelper import join_drawable_geometries
 def shadergroup_to_materials(shadergroup, filepath):
     materials = []
 
-    texture_folder = os.path.dirname(
-        filepath) + "\\" + os.path.basename(filepath)[:-8]
+    texture_folder = bpy.path.native_pathsep(os.path.dirname(
+        filepath) + "\\" + os.path.basename(filepath)[:-8])
+
     for shader in shadergroup.shaders:
 
         material = create_shader(shader.name, shader.filename)
@@ -27,8 +28,8 @@ def shadergroup_to_materials(shadergroup, filepath):
             for n in material.node_tree.nodes:
                 if isinstance(n, bpy.types.ShaderNodeTexImage):
                     if param.name == n.name:
-                        texture_path = os.path.join(
-                            texture_folder, param.texture_name + ".dds")
+                        texture_path = bpy.path.resolve_ncase(os.path.join(
+                            texture_folder, param.texture_name + ".dds"))
                         if os.path.isfile(texture_path):
                             img = bpy.data.images.load(
                                 texture_path, check_existing=True)
@@ -40,6 +41,7 @@ def shadergroup_to_materials(shadergroup, filepath):
                             # Check for existing texture
                             existing_texture = None
                             for image in bpy.data.images:
+                                print(f"{image.name=} {param.texture_name=}")
                                 if image.name == param.texture_name:
                                     existing_texture = image
                             texture = bpy.data.images.new(
@@ -81,7 +83,8 @@ def shadergroup_to_materials(shadergroup, filepath):
                         if not n.texture_properties.embedded:
                             # Set external texture name for non-embedded textures
                             n.image.source = "FILE"
-                            n.image.filepath = "//" + param.texture_name + ".dds"
+                            n.image.filepath = bpy.path.resolve_ncase(
+                                bpy.path.native_pathsep(texture_folder + "//" + param.texture_name + ".dds"))
 
                         if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
                             n.image.colorspace_settings.name = "Non-Color"
