@@ -693,6 +693,19 @@ class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
         self.message("Hierarchy successfuly set.")
         return True
 
+class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Debug: Set Sollum Type"""
+    bl_idname = "sollumz.debug_set_sollum_type"
+    bl_label = "Set Sollum Type"
+    bl_action = bl_label
+    bl_order = 100
+
+    def run(self, context):
+        sel_sollum_type = context.scene.all_sollum_type
+        for obj in context.selected_objects:
+            obj.sollum_type = sel_sollum_type
+        self.message(f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sel_sollum_type]}.")
+        return True
 
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
