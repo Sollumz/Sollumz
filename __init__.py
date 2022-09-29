@@ -17,10 +17,10 @@ from . import auto_load
 
 
 bl_info = {
-    "name": "SollumzX Reloaded",
-    "author": "MrVicho13",
+    "name": "SollumzX Reloaded 🕊️",
+    "author": "MrVicho13 - and one one else 🧢",
     "description": "This plugins allows you to import/export CodeWalker XML files.",
-    "blender": (2, 92, 0),
+    "blender": (3, 0, 0),
     "version": (1, 0),
     "location": "",
     "warning": "This is a work-in-progress",
