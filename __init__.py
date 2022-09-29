@@ -17,13 +17,13 @@ from . import auto_load
 
 
 bl_info = {
-    "name": "Sollumz",
-    "author": "Skylumz",
-    "description": "This plugins allows you to import/export codewalker xml files.",
+    "name": "SollumzX Reloaded",
+    "author": "MrVicho13",
+    "description": "This plugins allows you to import/export CodeWalker XML files.",
     "blender": (2, 92, 0),
-    "version": (1, 3),
+    "version": (1, 0),
     "location": "",
-    "warning": "",
+    "warning": "This is a work-in-progress",
     "category": "Import-Export"
 }
 
