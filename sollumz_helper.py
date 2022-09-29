@@ -54,6 +54,9 @@ class SOLLUMZ_OT_base:
     def error(self, msg):
         self.report({"ERROR"}, msg)
 
+def get_scene_collection():
+
+    return bpy.context.scene.collection
 
 def reset_sollumz_view(scene):
     scene.hide_collision = not scene.hide_collision
@@ -105,16 +108,14 @@ def has_collision(obj):
     return False
 
 
-def copy_ob(ob, parent,  collection=bpy.context.collection):
+def copy_ob(ob, parent, collection):
     copy = ob.copy()
     copy.parent = parent
     copy.matrix_parent_inverse = ob.matrix_parent_inverse.copy()
-    for ps in copy.particle_systems:
-        ps.settings = ps.settings.copy()
     collection.objects.link(copy)
     return copy
     
-def tree_copy(ob, parent, levels=3):
+def tree_copy(ob, levels):
     def recurse(ob, parent, depth):
         if depth > levels: 
             return
@@ -123,3 +124,4 @@ def tree_copy(ob, parent, levels=3):
         for child in ob.children:
             recurse(child, copy, depth + 1)
     recurse(ob, ob.parent, 0)
+    return ob

@@ -26,7 +26,7 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .tools.meshhelper import get_bound_extents
 from .tools.utils import subtract_from_vector, add_to_vector, get_min_vector, get_max_vector
-from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix
+from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix, duplicate_object, duplicate_object_and_children
 from .tools.ytyphelper import ytyp_from_objects
 
 
@@ -351,26 +351,31 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         try:
             ymap = YMAP.from_xml_file(self.filepath)
             found = False
+            move_first_obj = False
+
             if ymap.entities:
                 for entity in ymap.entities:
 
                     archetypeInstances = [i for i in ymap.entities if i.archetype_name == entity.archetype_name]
+                    foundObj = bpy.context.scene.objects.get(entity.archetype_name)
 
-                    if len(archetypeInstances) == 1:          
-                        foundObj = bpy.context.scene.objects.get(entity.archetype_name)
+                    if len(archetypeInstances) < 1 > 0:          
                         if foundObj:
                             currentObj = bpy.data.objects[entity.archetype_name]
                             found = True
                             self.apply_entity_properties(currentObj, entity)
                         
                     else:
-                        foundObj = bpy.context.scene.objects.get(entity.archetype_name)
                         if foundObj:
                             currentObj = bpy.data.objects[entity.archetype_name]
-                            bpy.ops.object.duplicate({"object": [currentObj]}, linked=False)
-                            newObj = bpy.context.active_object
                             found = True
-                            self.apply_entity_properties(newObj, entity)
+                            self.apply_entity_properties(currentObj, entity)
+                            move_first_obj = True
+                            if move_first_obj:
+                                currentObj = bpy.data.objects[entity.archetype_name]
+                                newObj = duplicate_object_and_children(currentObj)
+                                found = True
+                                self.apply_entity_properties(newObj, entity)
                         
                 if found:
                     self.message(f"Succesfully imported: {self.filepath}")

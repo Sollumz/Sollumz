@@ -80,6 +80,12 @@ def duplicate_object(obj):
     bpy.ops.object.duplicate()
     return bpy.context.selected_objects[0]
 
+def duplicate_object_and_children(obj):
+    bpy.ops.object.select_all(action="DESELECT")
+    select_object_and_children(obj)
+    bpy.ops.object.duplicate()
+    return bpy.context.selected_objects[0]
+
 
 def split_object(obj):
     bpy.ops.object.select_all(action="DESELECT")
