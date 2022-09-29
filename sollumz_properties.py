@@ -47,6 +47,12 @@ class SollumType(str, Enum):
     ANIMATIONS = "sollumz_animations"
     ANIMATION = "sollumz_animation"
 
+    YMAP = "sollumz_ymap"
+    YMAP_BOX_OCCLUDER_GROUP = "sollumz_yamp_box_occluder_group"
+    YMAP_MODEL_OCCLUDER_GROUP = "sollumz_yamp_model_occluer_group"
+    YMAP_BOX_OCCLUDER = "sollumz_yamp_box_occluder"
+    YMAP_MODEL_OCCLUDER = "sollumz_yamp_model_occluer"
+
 
 class LightType(str, Enum):
     NONE = "sollumz_light_none"
@@ -235,6 +241,12 @@ SOLLUMZ_UI_NAMES = {
     SollumType.CLIP: "Clip",
     SollumType.ANIMATIONS: "Animations",
     SollumType.ANIMATION: "Animation",
+
+    SollumType.YMAP: "YMap",
+    SollumType.YMAP_BOX_OCCLUDER_GROUP: "Box Occluder Group",
+    SollumType.YMAP_MODEL_OCCLUDER_GROUP: "Model Occluder Group",
+    SollumType.YMAP_BOX_OCCLUDER: "Box Occluder",
+    SollumType.YMAP_MODEL_OCCLUDER: "Model Occluder",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
@@ -455,7 +467,7 @@ class EntityProperties:
     archetype_name: bpy.props.StringProperty(name="Archetype Name")
     flags: bpy.props.IntProperty(name="Flags")
     guid: bpy.props.FloatProperty(name="GUID")
-    parent_index: bpy.props.IntProperty(name="Parent Index", default=-1)
+    parent_index: bpy.props.IntProperty(name="Parent Index")
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200)
     child_lod_dist: bpy.props.FloatProperty(name="Child Lod Distance")
     lod_level: bpy.props.EnumProperty(
@@ -543,13 +555,15 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionarys", ""),
                (SollumType.BOUND_COMPOSITE.value, "Bounds", ""),
                (SollumType.FRAGMENT.value, "Fragments", ""),
-               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", "")),
+               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", ""),
+               (SollumType.YMAP.value, "YMap", "")),
         description="Which kind of sollumz objects to export",
         default={SollumType.DRAWABLE.value,
                  SollumType.DRAWABLE_DICTIONARY.value,
                  SollumType.BOUND_COMPOSITE.value,
                  SollumType.FRAGMENT.value,
-                 SollumType.CLIP_DICTIONARY.value},
+                 SollumType.CLIP_DICTIONARY.value,
+                 SollumType.YMAP.value},
     )
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",

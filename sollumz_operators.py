@@ -24,6 +24,8 @@ from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
+from .ymap.ymapimport import import_ymap
+from .ymap.ymapexport import export_ymap
 from .tools.meshhelper import get_bound_extents
 from .tools.utils import subtract_from_vector, add_to_vector, get_min_vector, get_max_vector
 from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix, duplicate_object_and_children
@@ -44,7 +46,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     )
 
     filter_glob: bpy.props.StringProperty(
-        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};*{YCD.file_extension};",
+        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
         options={"HIDDEN"},
         maxlen=255,
     )
@@ -53,7 +55,8 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     filename_exts = [YDR.file_extension, YDD.file_extension,
                      YFT.file_extension, YBN.file_extension,
-                     YNV.file_extension, YCD.file_extension]
+                     YNV.file_extension, YCD.file_extension,
+                     YMAP.file_extension]
 
     def draw(self, context):
         pass
@@ -77,7 +80,9 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 import_ynv(filepath)
             elif ext == YCD.file_extension:
                 import_ycd(self, filepath, self.import_settings)
-
+            elif ext == YMAP.file_extension:
+                import_ymap(self, filepath, self.import_settings)
+                valid_type = True
             if valid_type:
                 self.message(f"Succesfully imported: {filepath}")
         except:
@@ -120,7 +125,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     export_settings: bpy.props.PointerProperty(type=SollumzExportSettings)
 
     filter_glob: bpy.props.StringProperty(
-        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YCD.file_extension};",
+        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
         options={"HIDDEN"},
         maxlen=255,
     )
@@ -266,6 +271,11 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YBN.file_extension)
                 export_ybn(obj, filepath)
+                valid_type = True
+            elif obj.sollum_type == SollumType.YMAP:
+                filepath = self.get_filepath(
+                    remove_number_suffix(obj.name.lower()), YMAP.file_extension)
+                export_ymap(self, obj, filepath, self.export_settings)
                 valid_type = True
             if valid_type:
                 self.message(f"Succesfully exported: {filepath}")

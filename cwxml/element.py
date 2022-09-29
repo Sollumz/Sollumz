@@ -230,6 +230,29 @@ class ListProperty(ElementProperty, AbstractClass):
 
         return None
 
+class ListPropertyRequired(ListProperty):
+    '''Same as ListProperty but returns an empty element rather then None in case the passed element's value is empty or None'''
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or type(self).tag_name, value or [])
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+
+        for child in vars(self).values():
+            if isinstance(child, AttributeProperty):
+                element.set(child.name, str(child.value))
+
+        if self.value and len(self.value) > 0:
+            for item in self.value:
+                if isinstance(item, self.list_type):
+                    element.append(item.to_xml())
+                else:
+                    raise TypeError(
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+
+        return element
+
 
 class TextProperty(ElementProperty):
     value_types = (str)
@@ -249,6 +272,23 @@ class TextProperty(ElementProperty):
         result.text = self.value
         return result
 
+class TextPropertyRequired(ElementProperty):
+    '''Same as TextProperty but returns an empty element rather then None in case the passed element's value is empty or None'''
+    value_types = (str)
+
+    def __init__(self, tag_name: str = "Name", value=None):
+        super().__init__(tag_name, value or "")
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        return TextPropertyRequired(element.tag, element.text)
+
+    def to_xml(self):
+        result = ET.Element(self.tag_name)
+        if self.value or len(self.value) != 0:
+            result.text = self.value
+        
+        return result
 
 class ColorProperty(ElementProperty):
     value_types = (list)
@@ -308,6 +348,26 @@ class VectorProperty(ElementProperty):
         z = str(float32(self.value.z))
         return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z})
 
+class Vector4Property(ElementProperty):
+    value_types = (Vector)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Vector((0, 0, 0, 0)))
+
+    @ staticmethod
+    def from_xml(element: ET.Element):
+        if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
+            return Vector4Property.read_value_error(element)
+
+        return Vector4Property(
+            element.tag, Vector((float(element.get("x")), float(element.get("y")), float(element.get("z")), float(element.get("w")))))
+
+    def to_xml(self):
+        x = str(float32(self.value.x))
+        y = str(float32(self.value.y))
+        z = str(float32(self.value.z))
+        w = str(float32(self.value.w))
+        return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z, "w": w})
 
 class QuaternionProperty(ElementProperty):
     value_types = (Quaternion)
