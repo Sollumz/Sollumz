@@ -48,10 +48,10 @@ class SollumType(str, Enum):
     ANIMATION = "sollumz_animation"
 
     YMAP = "sollumz_ymap"
-    YMAP_BOX_OCCLUDER_GROUP = "sollumz_yamp_box_occluder_group"
-    YMAP_MODEL_OCCLUDER_GROUP = "sollumz_yamp_model_occluer_group"
-    YMAP_BOX_OCCLUDER = "sollumz_yamp_box_occluder"
-    YMAP_MODEL_OCCLUDER = "sollumz_yamp_model_occluer"
+    YMAP_BOX_OCCLUDER_GROUP = "sollumz_ymap_box_occluder_group"
+    YMAP_MODEL_OCCLUDER_GROUP = "sollumz_ymap_model_occluder_group"
+    YMAP_BOX_OCCLUDER = "sollumz_ymap_box_occluder"
+    YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
 
 
 class LightType(str, Enum):
