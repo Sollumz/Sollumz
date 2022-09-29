@@ -103,3 +103,23 @@ def has_collision(obj):
         if child.sollum_type in BOUND_TYPES:
             return True
     return False
+
+
+def copy_ob(ob, parent,  collection=bpy.context.collection):
+    copy = ob.copy()
+    copy.parent = parent
+    copy.matrix_parent_inverse = ob.matrix_parent_inverse.copy()
+    for ps in copy.particle_systems:
+        ps.settings = ps.settings.copy()
+    collection.objects.link(copy)
+    return copy
+    
+def tree_copy(ob, parent, levels=3):
+    def recurse(ob, parent, depth):
+        if depth > levels: 
+            return
+        copy = copy_ob(ob, parent)
+        
+        for child in ob.children:
+            recurse(child, copy, depth + 1)
+    recurse(ob, ob.parent, 0)

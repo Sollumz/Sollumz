@@ -4,7 +4,7 @@ import pathlib
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
-from .sollumz_helper import SOLLUMZ_OT_base
+from .sollumz_helper import SOLLUMZ_OT_base, copy_ob, tree_copy
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
@@ -352,11 +352,26 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
             ymap = YMAP.from_xml_file(self.filepath)
             found = False
             if ymap.entities:
-                for obj in context.collection.all_objects:
-                    for entity in ymap.entities:
-                        if entity.archetype_name == obj.name and obj.name in context.view_layer.objects:
+                for entity in ymap.entities:
+
+                    archetypeInstances = [i for i in ymap.entities if i.archetype_name == entity.archetype_name]
+
+                    if len(archetypeInstances) == 1:          
+                        foundObj = bpy.context.scene.objects.get(entity.archetype_name)
+                        if foundObj:
+                            currentObj = bpy.data.objects[entity.archetype_name]
                             found = True
-                            self.apply_entity_properties(obj, entity)
+                            self.apply_entity_properties(currentObj, entity)
+                        
+                    else:
+                        foundObj = bpy.context.scene.objects.get(entity.archetype_name)
+                        if foundObj:
+                            currentObj = bpy.data.objects[entity.archetype_name]
+                            bpy.ops.object.duplicate({"object": [currentObj]}, linked=False)
+                            newObj = bpy.context.active_object
+                            found = True
+                            self.apply_entity_properties(newObj, entity)
+                        
                 if found:
                     self.message(f"Succesfully imported: {self.filepath}")
                     return True
@@ -693,6 +708,7 @@ class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
         self.message("Hierarchy successfuly set.")
         return True
 
+
 class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
     """Debug: Set Sollum Type"""
     bl_idname = "sollumz.debug_set_sollum_type"
@@ -704,8 +720,10 @@ class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
         sel_sollum_type = context.scene.all_sollum_type
         for obj in context.selected_objects:
             obj.sollum_type = sel_sollum_type
-        self.message(f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sel_sollum_type]}.")
+        self.message(
+            f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sel_sollum_type]}.")
         return True
+
 
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
