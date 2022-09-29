@@ -77,6 +77,56 @@ class SOLLUMZ_OT_create_portal_from_selection(SOLLUMZ_OT_base, bpy.types.Operato
 
         return True
 
+class SOLLUMZ_OT_update_portal_from_selection(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Update a portal from selected verts"""
+    bl_idname = "sollumz.updateportalfromselection"
+    bl_label = "Update Portal From Verts"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_archetype(context) is not None and (context.active_object and context.active_object.mode == "EDIT") and get_selected_portal(context) is not None
+
+    def run(self, context):
+        selected_portal = get_selected_portal(context)
+        selected_archetype = get_selected_archetype(context)
+        selected_verts = []
+
+        if context.active_object.mode != "EDIT":
+            self.message(
+                "Must be in edit mode and have a selection of 4 vertices.")
+            return False
+
+        for obj in context.objects_in_mode:
+            selected_verts.extend(get_selected_vertices(obj))
+
+        if len(selected_verts) != 4:
+            self.message("You must select exactly 4 vertices.")
+            return False
+
+        if not is_coplanar(selected_verts):
+            self.warning(
+                "Selection of points are not coplanar. This may cause issues with the portal.")
+
+        # Get 2D screen coords of selected vertices
+        region = bpy.context.region
+        region_3d = bpy.context.space_data.region_3d
+
+        corners2d = []
+        for corner in selected_verts:
+            corners2d.append(location_3d_to_region_2d(
+                region, region_3d, corner))
+
+        # Sort the 2d points in a winding order
+        sort_order = sort_points(corners2d)
+        sorted_corners = [selected_verts[i] for i in sort_order]
+
+        pos = selected_archetype.asset.location
+        selected_portal.corner1 = sorted_corners[2] - pos
+        selected_portal.corner2 = sorted_corners[1] - pos
+        selected_portal.corner3 = sorted_corners[0] - pos
+        selected_portal.corner4 = sorted_corners[3] - pos
+
+        return True        
 
 class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete portal from selected archetype"""
