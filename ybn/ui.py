@@ -162,7 +162,7 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.enabled = len(context.selected_objects) > 1 and all(
+        row.enabled = len(context.selected_objects) >= 1 and all(
             elem.sollum_type == SollumType.BOUND_COMPOSITE for elem in context.selected_objects)
         row.operator(ybn_ops.SOLLUMZ_OT_center_composite.bl_idname,
                      icon="PIVOT_CURSOR")

@@ -105,7 +105,8 @@ def ymap_to_obj(import_op, ymap: CMapData):
     ymap_obj.ymap_properties.entities_extents_min =  ymap.entities_extents_min
     ymap_obj.ymap_properties.entities_extents_max =  ymap.entities_extents_max
 
-    # TODO: entities
+    if len(ymap.entities) > 0:
+        print('Hello World!')
 
     if len(ymap.box_occluders) > 0:
         box_to_obj(ymap_obj, ymap)
