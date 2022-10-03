@@ -1,6 +1,7 @@
 import bpy
 from mathutils import Vector
 
+
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 
@@ -62,27 +63,10 @@ def material_from_image(img, name="Material", nodename="Image"):
     return mat
 
 
-def select_object_and_children(obj):
-    if obj.hide_get():
-        obj.hide_set(False)
-    obj.select_set(True)
-    for child in obj.children:
-        if child.hide_get():
-            child.hide_set(False)
-        child.select_set(True)
-        for grandchild in child.children:
-            select_object_and_children(grandchild)
-
 
 def duplicate_object(obj):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
-    bpy.ops.object.duplicate()
-    return bpy.context.selected_objects[0]
-
-def duplicate_object_and_children(obj):
-    bpy.ops.object.select_all(action="DESELECT")
-    select_object_and_children(obj)
     bpy.ops.object.duplicate()
     return bpy.context.selected_objects[0]
 
@@ -251,7 +235,6 @@ def get_children_recursive(obj):
             children.extend(get_children_recursive(child))
 
     return children
-
 
 def create_mesh_object(sollum_type: SollumType, name: str = None) -> bpy.types.Object:
     """Create a bpy mesh object of the given sollum type and link it to the scene."""

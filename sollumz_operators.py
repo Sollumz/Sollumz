@@ -4,7 +4,7 @@ import pathlib
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
-from .sollumz_helper import SOLLUMZ_OT_base
+from .sollumz_helper import SOLLUMZ_OT_base, duplicate_object_with_children
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
@@ -28,8 +28,10 @@ from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
 from .tools.meshhelper import get_bound_extents
 from .tools.utils import subtract_from_vector, add_to_vector, get_min_vector, get_max_vector
-from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix, duplicate_object_and_children
+from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix
 from .tools.ytyphelper import ytyp_from_objects
+from bpy.types import PropertyGroup
+from bpy.props import StringProperty, BoolProperty, EnumProperty, CollectionProperty
 
 
 class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
@@ -328,11 +330,13 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_showtime = True
     bl_update_view = True
 
-    filter_glob: bpy.props.StringProperty(
+    filter_glob: StringProperty(
         default="*.ymap.xml",
         options={"HIDDEN"},
         maxlen=255,
     )
+
+    files: CollectionProperty(type=PropertyGroup)
 
     def apply_entity_properties(self, obj, entity):
         obj.entity_properties.archetype_name = entity.archetype_name
@@ -357,46 +361,55 @@ class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
             (entity.scale_xy, entity.scale_xy, entity.scale_z))
 
     def run(self, context):
-
         try:
-            ymap = YMAP.from_xml_file(self.filepath)
-            found = False
-            move_first_obj = False
+            for ymapFile in self.files:
+                print(ymapFile.name)
+                ymap = YMAP.from_xml_file(os.path.dirname(
+                    self.filepath) + "/" + ymapFile.name)
+                found = False
 
-            if ymap.entities:
-                for entity in ymap.entities:
+                if ymap.entities:
+                    move_first_obj = False
+                    
+                    for entity in ymap.entities:
 
-                    archetypeInstances = [i for i in ymap.entities if i.archetype_name == entity.archetype_name]
-                    foundObj = bpy.context.scene.objects.get(entity.archetype_name)
+                        archetypeInstances = [
+                            i for i in ymap.entities if i.archetype_name == entity.archetype_name]
+                        foundObj = bpy.context.scene.objects.get(
+                            entity.archetype_name)
 
-                    if len(archetypeInstances) < 1 > 0:          
-                        if foundObj:
-                            currentObj = bpy.data.objects[entity.archetype_name]
-                            found = True
-                            self.apply_entity_properties(currentObj, entity)
-                        
-                    else:
-                        if foundObj:
-                            currentObj = bpy.data.objects[entity.archetype_name]
-                            found = True
-                            self.apply_entity_properties(currentObj, entity)
-                            move_first_obj = True
-                            if move_first_obj:
+                        if len(archetypeInstances) == 0:
+                            continue
+                        elif len(archetypeInstances) == 1:
+                            if foundObj:
                                 currentObj = bpy.data.objects[entity.archetype_name]
-                                newObj = duplicate_object_and_children(currentObj)
                                 found = True
-                                self.apply_entity_properties(newObj, entity)
-                        
-                if found:
-                    self.message(f"Succesfully imported: {self.filepath}")
-                    return True
+                                self.apply_entity_properties(
+                                    currentObj, entity)
+                                #continue
+                        else:
+                            if foundObj:
+                                currentObj = bpy.data.objects[entity.archetype_name]
+                                found = True
+                                self.apply_entity_properties(
+                                    currentObj, entity)
+                                move_first_obj = True
+                                if move_first_obj:
+                                    currentObj = bpy.data.objects[entity.archetype_name]
+                                    newObj = duplicate_object_with_children(
+                                        currentObj)
+                                    found = True
+                                    self.apply_entity_properties(
+                                        newObj, entity)
+
+                    if found:
+                        self.message(f"Succesfully imported: {self.filepath}")
+                    else:
+                        self.message(
+                            f"No entities from '{self.filepath}' exist in the view layer!")
                 else:
-                    self.message(
-                        f"No entities from '{self.filepath}' exist in the view layer!")
-                    return False
-            else:
-                self.error(f"{self.filepath} contains no entities to import!")
-                return False
+                    self.error(
+                        f"{self.filepath} contains no entities to import!")
         except:
             self.error(f"Error during import: {traceback.format_exc()}")
             return False
