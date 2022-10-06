@@ -60,7 +60,7 @@ def create_lod_obj(fragment, lod, filepath, materials, import_settings):
     lobj.lod_properties.unknown_1c = lod.unknown_1c
     lobj.lod_properties.position_offset = lod.position_offset
     lobj.lod_properties.unknown_40 = lod.unknown_40
-    lobj.lod_properties.unknown_40 = lod.unknown_50
+    lobj.lod_properties.unknown_50 = lod.unknown_50
     lobj.lod_properties.damping_linear_c = lod.damping_linear_c
     lobj.lod_properties.damping_linear_v = lod.damping_linear_v
     lobj.lod_properties.damping_linear_v2 = lod.damping_linear_v2
