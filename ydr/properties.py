@@ -14,6 +14,8 @@ class DrawableProperties(bpy.types.PropertyGroup):
         min=0, max=10000, default=9998, name="Lod Distance Low")
     lod_dist_vlow: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Lod Distance Vlow")
+    unknown_9A: bpy.props.FloatProperty(
+        min=0, max=10000, default=9998, name="Unknown 9A")
 
 
 class DrawableModelProperties(bpy.types.PropertyGroup):
