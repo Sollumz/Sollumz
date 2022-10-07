@@ -43,6 +43,228 @@
   </Parameters>
  </Item>
  <Item>
+  <Name>normal_spec</Name>
+  <FileName>
+   <Item>normal_spec.sps</Item>
+   <Item>normal_spec_cutout.sps</Item>
+   <Item>normal_spec_alpha.sps</Item>
+   <Item>normal_spec_screendooralpha.sps</Item>
+  </FileName>
+  <RenderBucket>0 3 1</RenderBucket>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" />
+   <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
+   <Item name="specularFresnel" type="Vector" x="0.75" y="0" z="0" w="0" />
+  </Parameters>
+ </Item>
+  <Item>
+  <Name>normal</Name>
+  <FileName>
+   <Item>normal.sps</Item>
+   <Item>normal_cutout.sps</Item>
+   <Item>normal_alpha.sps</Item>
+   <Item>normal_screendooralpha.sps</Item>
+   <Item>gta_normal.sps</Item>
+   <Item>water_decal.sps</Item>
+  </FileName>
+  <RenderBucket>0 3 1 2</RenderBucket>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" />
+   <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
+   <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
+   <Item name="specularFresnel" type="Vector" x="0.75" y="0" z="0" w="0" />
+   <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
+   <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
+  </Parameters>
+ </Item>
+  <Item>
+  <Name>emissive</Name>
+  <FileName>
+   <Item>emissive.sps</Item>
+   <Item>emissive_alpha.sps</Item>
+  </FileName>
+  <RenderBucket>0 1</RenderBucket>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
+   <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="emissiveMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
+   <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
+  </Parameters>
+ </Item>
+  <Item>
+  <Name>decal</Name>
+  <FileName>
+   <Item>decal.sps</Item>
+  </FileName>
+  <RenderBucket>2</RenderBucket>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
+   <Item name="specularFresnel" type="Vector" x="0.97" y="0" z="0" w="0" />
+  </Parameters>
+ </Item>
+  <Item>
+  <Name>glass_env</Name>
+  <FileName>
+   <Item>glass_env.sps</Item>
+  </FileName>
+  <RenderBucket>1</RenderBucket>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" />
+   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="bumpiness" type="Vector" x="0.1" y="0" z="0" w="0" />
+   <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularFalloffMult" type="Vector" x="400" y="0" z="0" w="0" />
+   <Item name="specularFresnel" type="Vector" x="0.96" y="0" z="0" w="0" />
+   <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
+   <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
+  </Parameters>
+ </Item>
+  <Item>
+  <Name>glass</Name>
+  <FileName>
+   <Item>glass.sps</Item>
+  </FileName>
+  <RenderBucket>1</RenderBucket>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" />
+   <Item name="EnvironmentSampler" type="Texture" />
+   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
+   <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="specularFalloffMult" type="Vector" x="300" y="0" z="0" w="0" />
+   <Item name="specularFresnel" type="Vector" x="0.96" y="0" z="0" w="0" />
+  </Parameters>
+ </Item>
+  <Item>
   <Name>vehicle_mesh</Name>
   <FileName>
    <Item>vehicle_mesh.sps</Item>
@@ -89,47 +311,6 @@
     <Value x="0" y="0" z="0" w="0" />
     <Value x="0" y="0" z="0" w="0" />
    </Item>
-  </Parameters>
- </Item>
- <Item>
-  <Name>normal_spec</Name>
-  <FileName>
-   <Item>normal_spec.sps</Item>
-   <Item>normal_spec_cutout.sps</Item>
-   <Item>normal_spec_alpha.sps</Item>
-   <Item>normal_spec_screendooralpha.sps</Item>
-  </FileName>
-  <RenderBucket>0 3 1</RenderBucket>
-  <Layout>
-   <Item type="GTAV1">
-    <Position />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-   <Item type="GTAV1">
-    <Position />
-    <BlendWeights />
-    <BlendIndices />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-  </Layout>
-  <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
-   <Item name="specularFresnel" type="Vector" x="0.75" y="0" z="0" w="0" />
   </Parameters>
  </Item>
  <Item>
@@ -239,37 +420,6 @@
   </Parameters>
  </Item>
  <Item>
-  <Name>decal</Name>
-  <FileName>
-   <Item>decal.sps</Item>
-  </FileName>
-  <RenderBucket>2</RenderBucket>
-  <Layout>
-   <Item type="GTAV1">
-    <Position />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-   </Item>
-   <Item type="GTAV1">
-    <Position />
-    <BlendWeights />
-    <BlendIndices />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-   </Item>
-  </Layout>
-  <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
-   <Item name="specularFresnel" type="Vector" x="0.97" y="0" z="0" w="0" />
-  </Parameters>
- </Item>
- <Item>
   <Name>ped_default</Name>
   <FileName>
    <Item>ped_default.sps</Item>
@@ -308,49 +458,6 @@
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="detailSettings" type="Vector" x="0.1" y="0.75" z="40" w="0" />
    <Item name="StubbleControl" type="Vector" x="2" y="0.6" z="0" w="0" />
-  </Parameters>
- </Item>
- <Item>
-  <Name>normal</Name>
-  <FileName>
-   <Item>normal.sps</Item>
-   <Item>normal_cutout.sps</Item>
-   <Item>normal_alpha.sps</Item>
-   <Item>normal_screendooralpha.sps</Item>
-   <Item>gta_normal.sps</Item>
-   <Item>water_decal.sps</Item>
-  </FileName>
-  <RenderBucket>0 3 1 2</RenderBucket>
-  <Layout>
-   <Item type="GTAV1">
-    <Position />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-   <Item type="GTAV1">
-    <Position />
-    <BlendWeights />
-    <BlendIndices />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-  </Layout>
-  <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
-   <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
-   <Item name="specularFresnel" type="Vector" x="0.75" y="0" z="0" w="0" />
-   <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
-   <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
   </Parameters>
  </Item>
  <Item>
@@ -759,39 +866,6 @@
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
    <Item name="specularFresnel" type="Vector" x="0.97" y="0" z="0" w="0" />
-  </Parameters>
- </Item>
- <Item>
-  <Name>emissive</Name>
-  <FileName>
-   <Item>emissive.sps</Item>
-   <Item>emissive_alpha.sps</Item>
-  </FileName>
-  <RenderBucket>0 1</RenderBucket>
-  <Layout>
-   <Item type="GTAV1">
-    <Position />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-   </Item>
-   <Item type="GTAV1">
-    <Position />
-    <BlendWeights />
-    <BlendIndices />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-   </Item>
-  </Layout>
-  <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
-   <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="emissiveMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
-   <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
   </Parameters>
  </Item>
  <Item>
@@ -1569,44 +1643,6 @@
     <Value x="0" y="0" z="0" w="0" />
     <Value x="0" y="0" z="0" w="0" />
    </Item>
-  </Parameters>
- </Item>
- <Item>
-  <Name>glass_env</Name>
-  <FileName>
-   <Item>glass_env.sps</Item>
-  </FileName>
-  <RenderBucket>1</RenderBucket>
-  <Layout>
-   <Item type="GTAV1">
-    <Position />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-   <Item type="GTAV1">
-    <Position />
-    <BlendWeights />
-    <BlendIndices />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-  </Layout>
-  <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="bumpiness" type="Vector" x="0.1" y="0" z="0" w="0" />
-   <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularFalloffMult" type="Vector" x="400" y="0" z="0" w="0" />
-   <Item name="specularFresnel" type="Vector" x="0.96" y="0" z="0" w="0" />
-   <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
-   <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
   </Parameters>
  </Item>
  <Item>
@@ -4026,42 +4062,6 @@
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="matDiffuseColor" type="Vector" x="1" y="1" z="1" w="0" />
-  </Parameters>
- </Item>
- <Item>
-  <Name>glass</Name>
-  <FileName>
-   <Item>glass.sps</Item>
-  </FileName>
-  <RenderBucket>1</RenderBucket>
-  <Layout>
-   <Item type="GTAV1">
-    <Position />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-   <Item type="GTAV1">
-    <Position />
-    <BlendWeights />
-    <BlendIndices />
-    <Normal />
-    <Colour0 />
-    <TexCoord0 />
-    <Tangent />
-   </Item>
-  </Layout>
-  <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="EnvironmentSampler" type="Texture" />
-   <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
-   <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
-   <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
-   <Item name="specularFalloffMult" type="Vector" x="300" y="0" z="0" w="0" />
-   <Item name="specularFresnel" type="Vector" x="0.96" y="0" z="0" w="0" />
   </Parameters>
  </Item>
  <Item>
