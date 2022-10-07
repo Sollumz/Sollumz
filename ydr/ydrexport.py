@@ -668,6 +668,8 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     drawable.lod_dist_med = obj.drawable_properties.lod_dist_med
     drawable.lod_dist_low = obj.drawable_properties.lod_dist_low
     drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_vlow
+    drawable.unknown_9A = obj.drawable_properties.unknown_9A
+    
 
     if not materials:
         materials = get_used_materials(obj)
