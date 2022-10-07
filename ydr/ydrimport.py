@@ -554,6 +554,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable.lod_dist_vlow
+    obj.drawable_properties.unknown_9A = drawable.unknown_9A
 
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
