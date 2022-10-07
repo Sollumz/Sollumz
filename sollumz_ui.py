@@ -289,8 +289,10 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.import")
         row.operator("sollumz.export")
+
+
 class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
-    bl_label = "View Tools"
+    bl_label = "View"
     bl_idname = "SOLLUMZ_PT_VIEW_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
@@ -304,8 +306,6 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
         
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        layout.label(text="View")
         row = layout.row()
         row.prop(context.scene, "hide_high_lods")
         row.prop(context.scene, "hide_medium_lods")
