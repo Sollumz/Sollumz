@@ -22,7 +22,6 @@ def shadergroup_to_materials(shadergroup, filepath):
 
         material.shader_properties.renderbucket = shader.render_bucket
         material.shader_properties.filename = shader.filename
-        material.shader_properties.unknown_30 = shader.unknown30
 
         for param in shader.parameters:
             for n in material.node_tree.nodes:
@@ -555,7 +554,6 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
     obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable.lod_dist_vlow
-    obj.drawable_properties.unknown_9A = drawable.unknown_9A
 
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
