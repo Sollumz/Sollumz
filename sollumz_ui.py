@@ -289,8 +289,23 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.import")
         row.operator("sollumz.export")
-        layout.label(text="View")
+class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
+    bl_label = "View Tools"
+    bl_idname = "SOLLUMZ_PT_VIEW_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
 
+    def draw_header(self, context):
+        self.layout.label(text="", icon="VIEWZOOM")
+
+        
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        layout.label(text="View")
         row = layout.row()
         row.prop(context.scene, "hide_high_lods")
         row.prop(context.scene, "hide_medium_lods")
@@ -303,7 +318,7 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row3.prop(context.scene, "hide_very_low_lods")
         row3.prop(context.space_data.overlay,
                   "show_bones", text="Show Skeleton")
-
+    
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_label = "Debug"
