@@ -1,7 +1,5 @@
 import bpy
-from bpy.types import Menu, Operator
-from bpy_extras.io_utils import ImportHelper
-
+from bpy.types import Menu
 
 def find_missing_files(filepath):
     bpy.ops.file.find_missing_files(directory=filepath)
