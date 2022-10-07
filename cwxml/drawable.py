@@ -165,6 +165,7 @@ class ShaderGroupProperty(ElementTree):
 
     def __init__(self):
         super().__init__()
+        self.name = TextProperty("Name", "")
         self.unknown_30 = ValueProperty("Unknown30", 0)
         self.texture_dictionary = TextureDictionaryListProperty()
         self.shaders = ShadersListProperty()
@@ -535,7 +536,7 @@ class Drawable(ElementTree, AbstractClass):
 
     @ property
     def all_models(self):
-        return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
+        return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow + self.unknown_9A
 
     def __init__(self):
         super().__init__()
