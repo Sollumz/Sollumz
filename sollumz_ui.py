@@ -385,24 +385,6 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
         row.prop(context.scene, "vert_paint_alpha")
 
 
-class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Ymap Tools"
-    bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="FILE")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.importymap")
-        row.operator("sollumz.exportymap")
-
-
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"
