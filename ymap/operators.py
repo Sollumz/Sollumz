@@ -2,13 +2,13 @@ import os
 import traceback
 import bpy
 from mathutils import Vector
-from cwxml.ymap import YMAP, CMapData, EntityItem
+from ..cwxml.ymap import YMAP, CMapData, EntityItem
 from bpy_extras.io_utils import ImportHelper
-from sollumz_helper import SOLLUMZ_OT_base
-from sollumz_properties import SollumType
-from tools.blenderhelper import remove_number_suffix
-from tools.meshhelper import get_bound_extents
-from tools.utils import add_to_vector, get_max_vector, get_min_vector, subtract_from_vector
+from ..sollumz_helper import SOLLUMZ_OT_base
+from ..sollumz_properties import SollumType
+from ..tools.blenderhelper import remove_number_suffix
+from ..tools.meshhelper import get_bound_extents
+from ..tools.utils import add_to_vector, get_max_vector, get_min_vector, subtract_from_vector
 
 class SOLLUMZ_OT_import_ymap(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     """Imports .ymap.xml file exported from codewalker"""
@@ -179,3 +179,32 @@ class SOLLUMZ_OT_export_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
         except:
             self.message(f"Error during export: {traceback.format_exc()}")
             return False
+
+
+class SOLLUMZ_OT_CREATE_YMAP(SOLLUMZ_OT_base, bpy.types.Operator):
+    """creates a ymap"""
+    bl_idname = "sollumz.createymap"
+    bl_label = "Add a YMAP to the project"
+
+
+
+    def run(self, context):
+        item = context.scene.ymaps.add()
+        index = len(context.scene.ymaps)
+        item.name = f"YMAP.{index}"
+        context.scene.ymap_index = index - 1
+
+        return True
+
+class SOLLUMZ_OT_DELETE_YMAP(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Delete a YMAP from the project"""
+    bl_idname = "sollumz.deleteymap"
+    bl_label = "Delete YMAP"
+
+    def run(self, context):
+        context.scene.ymaps.remove(context.scene.ymaps_index)
+        context.scene.ymaps_index = max(context.scene.ymaps_index - 1, 0)
+        # Force redraw of gizmos
+        context.space_data.show_gizmo = context.space_data.show_gizmo
+
+        return True
