@@ -18,7 +18,7 @@ def get_bound_object_from_child_index(bobj, index):
 def create_vehicle_window_obj(window, name, materials):
     mat = window.projection_matrix
     mat[3][3] = 1
-    mat = mat.transposed().inverted()
+    mat = mat.transposed().inverted_safe()
     min = Vector((0, 0, 0))
     max = Vector((window.width / 2, window.height, 1))
     v0 = multiW(mat, Vector((min.x, min.y, 0)))
