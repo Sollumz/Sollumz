@@ -699,9 +699,9 @@ def register():
         name="Hide Low LODS", get=get_hide_low_lods, set=set_hide_low_lods)
     bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(
         name="Hide Very Low LODS", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
-    bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(
+    bpy.types.Scene.hide_vehicle_windows = bpy.props.BoolProperty(
         name="Hide Vehicle Windows", get=get_hide_vehicle_windows, set=set_hide_vehicle_windows)
-    
+
     bpy.types.Scene.vert_paint_color = bpy.props.FloatVectorProperty(
         name="Vertex Color",
         subtype="COLOR",
