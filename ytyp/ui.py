@@ -219,9 +219,6 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         row = layout.row()
 
 
-
-
-
 class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_MLO_FLAGS_PANEL"
     bl_label = "MLO Flags"
@@ -355,6 +352,8 @@ class SOLLUMZ_PT_PORTAL_PANEL(bpy.types.Panel):
         row.operator("sollumz.deleteportal")
         row = layout.row()
         row.operator("sollumz.createportalfromselection")
+        row = layout.row()
+        row.operator("sollumz.updateportalfromselection")
         row = layout.row()
         row.use_property_split = False
         row.prop(context.scene, "show_portal_gizmo")
