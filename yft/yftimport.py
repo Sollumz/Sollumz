@@ -6,7 +6,7 @@ from ..cwxml.fragment import YFT
 from ..tools.fragmenthelper import shattermap_to_material
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import composite_to_obj
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, SollumType
 
 
 def get_bound_object_from_child_index(bobj, index):
@@ -15,7 +15,23 @@ def get_bound_object_from_child_index(bobj, index):
             return bound
 
 
-def create_vehicle_window_obj(window, name, materials):
+def get_geometry_material(fragment, materials, geometry_index):
+    for dmodel in fragment.drawable.drawable_models_high:
+        geometries = dmodel.geometries
+
+        if geometry_index > len(geometries):
+            return None
+
+        geometry = geometries[geometry_index]
+        shader_index = geometry.shader_index
+
+        if shader_index > len(materials):
+            return None
+
+        return materials[shader_index]
+
+
+def create_vehicle_window_obj(fragment, window, name, materials):
     mat = window.projection_matrix
     mat[3][3] = 1
     mat = mat.transposed().inverted_safe()
@@ -28,17 +44,24 @@ def create_vehicle_window_obj(window, name, materials):
     verts = [v0, v1, v2, v3]
     faces = [[0, 1, 2, 3]]
     uvs = [[0, 1], [0, 0], [1, 0], [1, 1]]
+
     mesh = bpy.data.meshes.new(name + " vehicle window")
     mesh.from_pydata(verts, [], faces)
+
     create_uv_layer(mesh, 0, "UVMap", uvs, False)
+
     mat = shattermap_to_material(window.shattermap, name + " shattermap.bmp")
     mesh.materials.append(mat)
-    mesh.materials.append(materials[window.unk_ushort_1 - 1])
+    geometry_index = window.unk_ushort_1
+    window_mat = get_geometry_material(fragment, materials, geometry_index)
+    mesh.materials.append(window_mat)
+
     wobj = bpy.data.objects.new(name + " vehicle window", mesh)
     wobj.sollum_type = SollumType.FRAGVEHICLEWINDOW
     wobj.vehicle_window_properties.unk_float_17 = window.unk_float_17
     wobj.vehicle_window_properties.unk_float_18 = window.unk_float_18
     wobj.vehicle_window_properties.cracks_texture_tiling = window.cracks_texture_tiling
+
     return wobj
 
 
@@ -113,7 +136,8 @@ def create_lod_obj(fragment, lod, filepath, materials, import_settings):
 
         for window in fragment.vehicle_glass_windows:
             if window.item_id == idx:
-                wobj = create_vehicle_window_obj(window, group.name, materials)
+                wobj = create_vehicle_window_obj(
+                    fragment, window, group.name, materials)
                 wobj.parent = gobj
                 bpy.context.collection.objects.link(wobj)
 
@@ -191,6 +215,7 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
     if fragment.drawable:
         materials = shadergroup_to_materials(
             fragment.drawable.shader_group, filepath)
+
         dobj = drawable_to_obj(
             fragment.drawable, filepath, fragment.drawable.name, None, materials, import_settings)
         dobj.matrix_basis = fragment.drawable.matrix
