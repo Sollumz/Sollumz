@@ -671,6 +671,18 @@ def set_hide_very_low_lods(self, value):
                 hide_obj_and_children(obj, value)
 
 
+def get_hide_vehicle_windows(self):
+    return get_bool_prop(self, "hide_vehicle_windows")
+
+
+def set_hide_vehicle_windows(self, value):
+    self["hide_vehicle_windows"] = value
+
+    for obj in bpy.context.collection.all_objects:
+        if obj.sollum_type == SollumType.FRAGVEHICLEWINDOW:
+            hide_obj_and_children(obj, value)
+
+
 def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(SollumType),
@@ -701,6 +713,9 @@ def register():
         name="Hide Low LODS", get=get_hide_low_lods, set=set_hide_low_lods)
     bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(
         name="Hide Very Low LODS", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
+    bpy.types.Scene.hide_vehicle_windows = bpy.props.BoolProperty(
+        name="Hide Vehicle Windows", get=get_hide_vehicle_windows, set=set_hide_vehicle_windows)
+
     bpy.types.Scene.vert_paint_color = bpy.props.FloatVectorProperty(
         name="Vertex Color",
         subtype="COLOR",

@@ -219,9 +219,6 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         row = layout.row()
 
 
-
-
-
 class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_MLO_FLAGS_PANEL"
     bl_label = "MLO Flags"

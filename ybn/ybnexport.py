@@ -288,6 +288,8 @@ def bound_from_object(obj, is_frag=None):
         if bound.unk_type == 2:
             bound.sphere_center = Vector()
             bound.box_center = Vector()
+        bound.sphere_radius = get_sphere_radius(
+            bound.box_max, bound.box_center)
         return bound
     elif obj.sollum_type == SollumType.BOUND_SPHERE:
         bound = init_bound_item(ybnxml.BoundSphere(), obj, is_frag)

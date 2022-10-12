@@ -150,30 +150,6 @@ def multiW(m, v):
     return Vector((x * iw, y * iw, z * iw))
 
 
-# Thank you Pranav! https://stackoverflow.com/a/70624269/11903486
-def sort_points(pts):
-    """Sort 4 points in a winding order"""
-    pts = numpy.array(pts)
-    centroid = numpy.sum(pts, axis=0) / pts.shape[0]
-    vector_from_centroid = pts - centroid
-    vector_angle = numpy.arctan2(
-        vector_from_centroid[:, 1], vector_from_centroid[:, 0])
-    # Find the indices that give a sorted vector_angle array
-    sort_order = numpy.argsort(-vector_angle)
-
-    # Apply sort_order to original pts array.
-    return list(sort_order)
-
-
-def is_coplanar(points):
-    """Check if 4 points lie on the same plane"""
-    leg1 = points[1] - points[0]
-    leg2 = points[2] - points[0]
-    leg3 = points[3] - points[0]
-
-    return leg3.dot(leg1.cross(leg2)) == 0
-
-
 def list_index_exists(ls, i):
     return (0 <= i < len(ls)) or (-len(ls) <= i < 0)
 

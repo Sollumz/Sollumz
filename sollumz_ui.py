@@ -304,6 +304,9 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row3.prop(context.space_data.overlay,
                   "show_bones", text="Show Skeleton")
 
+        row4 = layout.row()
+        row4.prop(context.scene, "hide_vehicle_windows")
+
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_label = "Debug"
