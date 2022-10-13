@@ -1,7 +1,7 @@
 import os
 from mathutils import Matrix
 from ..yft.yftimport import get_fragment_drawable
-from ..sollumz_properties import BOUND_TYPES, SollumType
+from ..sollumz_properties import BOUND_TYPES, LODLevel, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_objects
 from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
@@ -39,7 +39,27 @@ def get_shattermap_image(obj):
     return mat.node_tree.nodes["ShatterMap"].image
 
 
-def obj_to_vehicle_window(obj, materials):
+def get_window_material(obj):
+    """Get first material with a vehicle_vehglass shader."""
+    for material in obj.data.materials:
+        if "vehicle_vehglass" in material.shader_properties.name:
+            return material
+    return None
+
+
+def get_window_geometry_index(drawable_xml, window_shader_index):
+    """Get index of the geometry using the window material."""
+    for dmodel_xml in drawable_xml.drawable_models_high:
+        for (index, geometry) in enumerate(dmodel_xml.geometries):
+            if geometry.shader_index != window_shader_index:
+                continue
+
+            return index
+
+    return 0
+
+
+def obj_to_vehicle_window(obj, drawable_xml, materials):
     mesh = obj.data
 
     v1 = None
@@ -69,15 +89,30 @@ def obj_to_vehicle_window(obj, materials):
     mat[0] = edge1.x, edge2.x, edge3.x, v1.x
     mat[1] = edge1.y, edge2.y, edge3.y, v1.y
     mat[2] = edge1.z, edge2.z, edge3.z, v1.z
-    mat.invert()
+    mat.invert_safe()
 
     window = WindowItem()
     window.projection_matrix = mat
     window.shattermap = image_to_shattermap(shattermap)
-    window.unk_ushort_1 = materials.index(obj.data.materials[1])
+
     window.unk_float_17 = obj.vehicle_window_properties.unk_float_17
     window.unk_float_18 = obj.vehicle_window_properties.unk_float_18
     window.cracks_texture_tiling = obj.vehicle_window_properties.cracks_texture_tiling
+
+    window_material = get_window_material(obj)
+
+    if window_material is None:
+        # Warning needed
+        return window
+
+    if window_material not in materials:
+        # Warning needed
+        return window
+
+    window_shader_index = materials.index(window_material)
+    window.unk_ushort_1 = get_window_geometry_index(
+        drawable_xml, window_shader_index)
+
     return window
 
 
@@ -247,7 +282,8 @@ def fragment_from_object(exportop, fobj, exportpath):
             flod.children.append(child)
 
         for wobj in vwobjs:
-            vehwindow = obj_to_vehicle_window(wobj, materials)
+            vehwindow = obj_to_vehicle_window(
+                wobj, fragment.drawable, materials)
             vehwindow.item_id = get_obj_parent_group_index(gobjs, wobj)
             fragment.vehicle_glass_windows.append(vehwindow)
 
