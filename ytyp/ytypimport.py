@@ -1,7 +1,12 @@
 import bpy
+from typing import Union
+
+from mathutils import Color, Quaternion
+
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
+from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
 
 
 def create_mlo_tcm(tcm_xml: ytypxml.TimeCycleModifier, archetype: ArchetypeProperties):
@@ -82,6 +87,50 @@ def create_mlo_entity(entity_xml: ymapxml.EntityItem, archetype: ArchetypeProper
     entity.artificial_ambient_occlusion = entity_xml.artificial_ambient_occlusion
     entity.tint_value = entity_xml.tint_value
 
+    for extension_xml in entity_xml.extensions:
+        create_extension(extension_xml, entity)
+
+
+def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionProperties):
+    """Set extension data-block properties to the provided extension xml props."""
+    extension.name = extension_xml.name
+    extension_properties = extension.get_properties()
+
+    extension_properties.offset_position = extension_xml.offset_position
+
+    for prop_name in extension_properties.__class__.__annotations__:
+        if not hasattr(extension_xml, prop_name):
+            # Unknown prop name. Need warning
+            print(
+                f"Unknown {extension.extension_type} prop name '{prop_name}'.")
+            continue
+
+        prop_value = getattr(extension_xml, prop_name)
+
+        if prop_value is None:
+            continue
+
+        if isinstance(prop_value, Quaternion):
+            prop_value = prop_value.to_euler()
+
+        setattr(extension_properties, prop_name, prop_value)
+
+
+def create_extension(extension_xml: ymapxml.Extension, extensions_container: ExtensionsContainer) -> Union[ExtensionProperties, None]:
+    """Create an entity extension from the given extension xml."""
+
+    extension_type = extension_xml.type
+
+    if extension_type not in ExtensionType._value2member_map_:
+        # Warning needed here. Unknown extension type
+        print(f"Unknown extension type {extension_type}")
+        return None
+
+    extension = extensions_container.new_extension(extension_type)
+    set_extension_props(extension_xml, extension)
+
+    return extension
+
 
 def create_mlo_archetype_children(archetype_xml: ytypxml.MloArchetype, archetype: ArchetypeProperties):
     """Create entities, rooms, portals, and timecylce modifiers for an mlo archetype."""
@@ -153,6 +202,9 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
         archetype.type = ArchetypeType.MLO
         archetype.mlo_flags.total = str(archetype_xml.mlo_flags)
         create_mlo_archetype_children(archetype_xml, archetype)
+
+    for extension_xml in archetype_xml.extensions:
+        create_extension(extension_xml, archetype)
 
 
 def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes):

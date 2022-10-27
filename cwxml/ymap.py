@@ -1,7 +1,9 @@
 from abc import ABC as AbstractClass, abstractmethod
+from typing import Union, Type
 from xml.etree import ElementTree as ET
 from .element import (
     AttributeProperty,
+    ElementProperty,
     ElementTree,
     FlagsProperty,
     ListProperty,
@@ -9,7 +11,8 @@ from .element import (
     TextProperty,
     TextListProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
+    Vector4Property
 )
 
 
@@ -22,6 +25,36 @@ class YMAP:
     @staticmethod
     def write_xml(cmap_data, filepath):
         return cmap_data.write_xml(filepath)
+
+
+class HexColorProperty(ElementProperty):
+    value_types = (tuple)
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or "color", value or (0, 0, 0, 0))
+
+    def hex_to_rgb(hex: str) -> tuple:
+        hex = hex.replace("0x", "")
+        return tuple(int(hex[i:i+2], 16) / 255 for i in (0, 2, 4, 6))
+
+    def rgb_to_hex(rgb: tuple) -> str:
+        return ('{:02X}{:02X}{:02X}{:02X}').format(*[int(x * 255) for x in rgb])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        if not "value" in element.attrib:
+            ValueProperty.read_value_error(element)
+
+        rgb = HexColorProperty.hex_to_rgb(element.get("value"))
+        print(rgb)
+
+        return HexColorProperty(element.tag, rgb)
+
+    def to_xml(self):
+        print(self.value)
+        hex = HexColorProperty.rgb_to_hex(self.value)
+
+        return ET.Element(self.tag_name, attrib={"value": "0x" + hex})
 
 
 class Extension(ElementTree, AbstractClass):
@@ -104,7 +137,7 @@ class ExtensionParticleEffect(Extension):
         self.scale = ValueProperty("scale")
         self.probability = ValueProperty("probability")
         self.flags = ValueProperty("flags")
-        self.color = ValueProperty("color", "0xFFFFFFFF")
+        self.color = HexColorProperty()
 
 
 class ExtensionLightEffect(Extension):
@@ -171,7 +204,7 @@ class ExtensionExpression(Extension):
         self.expression_dictionary_name = TextProperty(
             "expressionDictionaryName")
         self.expression_name = TextProperty("expressionName")
-        self.create_metadata_name = TextProperty("creatureMetadataname")
+        self.creature_metadata_name = TextProperty("creatureMetadataname")
         self.intialize_on_collision = ValueProperty(
             "initialiseOnCollision", False)
 
@@ -194,7 +227,7 @@ class ExtensionLightShaft(Extension):
         self.fade_out_time_end = ValueProperty("fadeOutTimeEnd")
         self.fade_distance_start = ValueProperty("fadeDistanceStart")
         self.fade_distance_end = ValueProperty("fadeDistanceEnd")
-        self.color = ValueProperty("color")
+        self.color = HexColorProperty()
         self.intensity = ValueProperty("intensity")
         self.flashiness = ValueProperty("flashiness")
         self.flags = ValueProperty("flags")
@@ -239,7 +272,7 @@ class ExtensionSpawnPoint(Extension):
         self.start = ValueProperty("start")
         self.end = ValueProperty("end")
         # CScenarioPointFlags__Flags
-        self.scenario_flags = FlagsProperty("flags")
+        self.scenario_flags = TextProperty("flags")
         self.high_pri = ValueProperty("highPri", False)
         self.extended_range = ValueProperty("extendedRange", False)
         self.short_range = ValueProperty("shortRange", False)
@@ -256,8 +289,8 @@ class ExtensionSpawnPointOverride(Extension):
         self.group = TextProperty("Group")
         self.model_set = TextProperty("ModelSet")
         self.available_in_mp_sp = TextProperty("AvailabilityInMpSp")
-        self.scenario_flags = FlagsProperty()
-        self.radius = TextProperty("Radius")
+        self.scenario_flags = TextProperty("flags")
+        self.radius = ValueProperty("Radius")
         self.time_till_ped_leaves = ValueProperty("TimeTillPedLeaves")
 
 
@@ -269,7 +302,7 @@ class ExtensionWindDisturbance(Extension):
         self.offset_rotation = QuaternionProperty("offsetRotation")
         self.disturbance_type = ValueProperty("disturbanceType")
         self.bone_tag = ValueProperty("boneTag")
-        self.size = QuaternionProperty("size")
+        self.size = Vector4Property("size")
         self.strength = ValueProperty("strength")
         self.flags = ValueProperty("flags")
 
@@ -297,41 +330,50 @@ class ExtensionsListProperty(ListProperty):
     tag_name = "extensions"
 
     @staticmethod
+    def get_extension_xml_class_from_type(ext_type: str) -> Union[Type[Extension], None]:
+        if ext_type == ExtensionLightEffect.type:
+            return ExtensionLightEffect
+        elif ext_type == ExtensionParticleEffect.type:
+            return ExtensionParticleEffect
+        elif ext_type == ExtensionAudioCollision.type:
+            return ExtensionAudioCollision
+        elif ext_type == ExtensionAudioEmitter.type:
+            return ExtensionAudioEmitter
+        elif ext_type == ExtensionExplosionEffect.type:
+            return ExtensionExplosionEffect
+        elif ext_type == ExtensionLadder.type:
+            return ExtensionLadder
+        elif ext_type == ExtensionBuoyancy.type:
+            return ExtensionBuoyancy
+        elif ext_type == ExtensionExpression.type:
+            return ExtensionExpression
+        elif ext_type == ExtensionLightShaft.type:
+            return ExtensionLightShaft
+        elif ext_type == ExtensionDoor.type:
+            return ExtensionDoor
+        elif ext_type == ExtensionSpawnPoint.type:
+            return ExtensionSpawnPoint
+        elif ext_type == ExtensionSpawnPointOverride.type:
+            return ExtensionSpawnPointOverride
+        elif ext_type == ExtensionWindDisturbance.type:
+            return ExtensionWindDisturbance
+        elif ext_type == ExtensionProcObject.type:
+            return ExtensionProcObject
+
+        return None
+
+    @staticmethod
     def from_xml(element: ET.Element):
         new = ExtensionsListProperty()
 
         for child in element.iter():
             if "type" in child.attrib:
                 ext_type = child.get("type")
-                if ext_type == ExtensionLightEffect.type:
-                    new.value.append(ExtensionLightEffect.from_xml(child))
-                elif ext_type == ExtensionParticleEffect.type:
-                    new.value.append(ExtensionParticleEffect.from_xml(child))
-                elif ext_type == ExtensionAudioCollision.type:
-                    new.value.append(ExtensionAudioCollision.from_xml(child))
-                elif ext_type == ExtensionAudioEmitter.type:
-                    new.value.append(ExtensionAudioEmitter.from_xml(child))
-                elif ext_type == ExtensionExplosionEffect.type:
-                    new.value.append(ExtensionExplosionEffect.from_xml(child))
-                elif ext_type == ExtensionLadder.type:
-                    new.value.append(ExtensionLadder.from_xml(child))
-                elif ext_type == ExtensionBuoyancy.type:
-                    new.value.append(ExtensionBuoyancy.from_xml(child))
-                elif ext_type == ExtensionExpression.type:
-                    new.value.append(ExtensionExpression.from_xml(child))
-                elif ext_type == ExtensionLightShaft.type:
-                    new.value.append(ExtensionLightShaft.from_xml(child))
-                elif ext_type == ExtensionDoor.type:
-                    new.value.append(ExtensionDoor.from_xml(child))
-                elif ext_type == ExtensionSpawnPoint.type:
-                    new.value.append(ExtensionSpawnPoint.from_xml(child))
-                elif ext_type == ExtensionSpawnPointOverride.type:
-                    new.value.append(
-                        ExtensionSpawnPointOverride.from_xml(child))
-                elif ext_type == ExtensionWindDisturbance.type:
-                    new.value.append(ExtensionWindDisturbance.from_xml(child))
-                elif ext_type == ExtensionProcObject.type:
-                    new.value.append(ExtensionProcObject.from_xml(child))
+                ext_class = ExtensionsListProperty.get_extension_xml_class_from_type(
+                    ext_type)
+
+                new.value.append(ext_class.from_xml(child))
+
         return new
 
 

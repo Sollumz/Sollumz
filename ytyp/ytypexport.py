@@ -1,10 +1,12 @@
 from typing import Iterable
 import bpy
-from mathutils import Vector, Quaternion
+from mathutils import Euler, Vector, Quaternion
+
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
+from .properties.extensions import ExtensionProperties
 
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
@@ -88,6 +90,10 @@ def create_entity_xml(entity: MloEntityProperties) -> ymapxml.EntityItem:
     entity_xml.lod_level = lod_level
     entity_xml.priority_level = priority_level
 
+    for extension in entity.extensions:
+        extension_xml = create_extension_xml(extension)
+        entity_xml.extensions.append(extension_xml)
+
     return entity_xml
 
 
@@ -146,6 +152,48 @@ def create_tcm_xml(tcm: TimecycleModifierProperties) -> ytypxml.TimeCycleModifie
     tcm_xml.end_hour = tcm.end_hour
 
     return tcm_xml
+
+
+def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapxml.Extension):
+    """Automatically set extension xml properties based on BaseExtensionProperties data-block."""
+    extension_xml.name = extension.name
+    extension_properties = extension.get_properties()
+
+    extension_xml.offset_position = Vector(
+        extension_properties.offset_position)
+
+    for prop_name in extension_properties.__class__.__annotations__:
+        if not hasattr(extension_xml, prop_name):
+            # Unknown prop name. Need warning
+            print(
+                f"Unknown {extension.extension_type} prop name '{prop_name}'.")
+            continue
+
+        prop_value = getattr(extension_properties, prop_name)
+
+        if isinstance(prop_value, Euler):
+            prop_value = prop_value.to_quaternion()
+
+        setattr(extension_xml, prop_name, prop_value)
+
+
+def create_extension_xml(extension: ExtensionProperties):
+    """Create an entity extension from the given extension xml."""
+
+    extension_type = extension.extension_type
+    extension_xml_class = ymapxml.ExtensionsListProperty.get_extension_xml_class_from_type(
+        extension_type)
+
+    if extension_xml_class is None:
+        # Warning needed here. Unknown extension type
+        print(f"Unknown extension type {extension_type}")
+        return None
+
+    extension_xml = extension_xml_class()
+
+    set_extension_xml_props(extension, extension_xml)
+
+    return extension_xml
 
 
 def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype):
@@ -230,6 +278,10 @@ def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetyp
     archetype_xml.physics_dictionary = archetype.physics_dictionary.lower()
     archetype_xml.asset_name = archetype.asset_name
     archetype_xml.asset_type = get_xml_asset_type(archetype.asset_type)
+
+    for extension in archetype.extensions:
+        extension_xml = create_extension_xml(extension)
+        archetype_xml.extensions.append(extension_xml)
 
     return archetype_xml
 

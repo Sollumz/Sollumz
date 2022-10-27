@@ -1,9 +1,11 @@
 import bpy
+from typing import Union
 from mathutils import Vector
 from ...sollumz_properties import EntityProperties
 from ...tools.utils import get_list_item
-from ..utils import get_selected_archetype, get_selected_ytyp
+from ..utils import get_selected_ytyp
 from .flags import EntityFlags, RoomFlags, PortalFlags
+from .extensions import ExtensionsContainer
 
 
 class MloArchetypeChild:
@@ -128,7 +130,7 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     end_hour: bpy.props.IntProperty(name="End Hour")
 
 
-class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild):
+class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):
     def update_linked_object(self, context):
         linked_obj = self.linked_object
         if linked_obj:

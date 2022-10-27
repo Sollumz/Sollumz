@@ -1,7 +1,9 @@
 import bpy
 
+
 from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
-from .properties.ytyp import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
+from .properties.ytyp import RoomProperties, PortalProperties, TimecycleModifierProperties
+from .properties.extensions import ExtensionsContainer
 from .utils import (
     get_selected_tcm,
     get_selected_ytyp,
@@ -11,6 +13,67 @@ from .utils import (
     get_selected_portal
 )
 from ..sollumz_ui import FlagsPanel, OrderListHelper, TimeFlagsPanel
+
+
+class ExtensionsListHelper:
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon="CON_TRACKTO")
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon="CON_TRACKTO")
+
+
+class ExtensionsPanelHelper:
+    ADD_OPERATOR_ID = ""
+    DELETE_OPERATOR_ID = ""
+    EXTENSIONS_LIST_ID = ""
+
+    @classmethod
+    def get_extensions_container(self, context) -> ExtensionsContainer:
+        """Get data-block that contains all of the extensions."""
+        raise NotImplementedError
+
+    @classmethod
+    def poll(cls, context):
+        return cls.get_extensions_container(context) is not None
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        extensions_container = self.get_extensions_container(context)
+
+        layout.template_list(self.EXTENSIONS_LIST_ID, "",
+                             extensions_container, "extensions", extensions_container, "extension_index")
+
+        row = layout.row()
+        row.operator(self.ADD_OPERATOR_ID)
+        row.operator(self.DELETE_OPERATOR_ID)
+
+        selected_extension = extensions_container.selected_extension
+        if selected_extension is not None:
+
+            layout.separator()
+
+            row = layout.row()
+            row.prop(selected_extension, "extension_type")
+            row = layout.row()
+            row.prop(selected_extension, "name")
+
+            layout.separator()
+
+            extension_properties = selected_extension.get_properties()
+
+            row = layout.row()
+            row.prop(extension_properties, "offset_position")
+
+            for prop_name in selected_extension.get_properties().__class__.__annotations__:
+                row = layout.row()
+                row.prop(extension_properties, prop_name)
 
 
 class SOLLUMZ_UL_YTYP_LIST(bpy.types.UIList):
@@ -189,6 +252,27 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(bpy.types.Panel):
         layout.prop(selected_archetype, "asset_type")
         layout.prop(selected_archetype, "asset_name")
         layout.prop(selected_archetype, "asset", text="Linked Object")
+
+
+class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(bpy.types.UIList, ExtensionsListHelper):
+    bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST"
+
+
+class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(bpy.types.Panel, ExtensionsPanelHelper):
+    bl_label = "Extensions"
+    bl_idname = "SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
+
+    ADD_OPERATOR_ID = "sollumz.addarchetypeextension"
+    DELETE_OPERATOR_ID = "sollumz.deletearchetypeextension"
+    EXTENSIONS_LIST_ID = SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST.bl_idname
+
+    @classmethod
+    def get_extensions_container(self, context):
+        return get_selected_archetype(context)
 
 
 class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
@@ -442,6 +526,7 @@ class SOLLUMZ_PT_MLO_ENTITIES_PANEL(bpy.types.Panel):
                 layout.prop(selected_entity, "scale_xy")
                 layout.prop(selected_entity, "scale_z")
                 layout.separator()
+
             for prop_name in EntityProperties.__annotations__:
                 if prop_name == "flags":
                     continue
@@ -461,6 +546,27 @@ class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     def get_flags(self, context):
         selected_entity = get_selected_entity(context)
         return selected_entity.flags
+
+
+class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(bpy.types.UIList, ExtensionsListHelper):
+    bl_idname = "SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST"
+
+
+class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(bpy.types.Panel, ExtensionsPanelHelper):
+    bl_label = "Extensions"
+    bl_idname = "SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_MLO_ENTITIES_PANEL.bl_idname
+
+    ADD_OPERATOR_ID = "sollumz.addentityextension"
+    DELETE_OPERATOR_ID = "sollumz.deleteentityextension"
+    EXTENSIONS_LIST_ID = SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST.bl_idname
+
+    @classmethod
+    def get_extensions_container(self, context):
+        return get_selected_entity(context)
 
 
 class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(bpy.types.Panel):
