@@ -3,7 +3,6 @@ import bpy
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
-from ..utils import get_selected_archetype, get_selected_ytyp
 from .mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, UnknownFlags
 from .extensions import ExtensionsContainer
@@ -49,9 +48,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         self.portal_index = len(self.portals) - 1
         item.id = self.last_portal_id + 1
         self.last_portal_id = item.id
-        selected_archetype = get_selected_archetype(bpy.context)
-        if len(selected_archetype.rooms) > 0:
-            room_id = selected_archetype.rooms[0].id
+        if len(self.rooms) > 0:
+            room_id = self.rooms[0].id
             item.room_to_id = room_id
             item.room_from_id = room_id
         item.mlo_archetype_id = self.id
@@ -163,12 +161,11 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
                 for tcm in archetype.timecycle_modifiers:
                     tcm.mlo_archetype_id = archetype.id
 
-    def new_archetype(self, context):
-        selected_ytyp = get_selected_ytyp(context)
-        item = selected_ytyp.archetypes.add()
-        index = len(selected_ytyp.archetypes)
+    def new_archetype(self):
+        item = self.archetypes.add()
+        index = len(self.archetypes)
         item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index}"
-        selected_ytyp.archetype_index = index - 1
+        self.archetype_index = index - 1
         item.id = self.last_archetype_id + 1
         self.last_archetype_id += 1
 

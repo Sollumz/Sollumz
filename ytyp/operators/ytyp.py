@@ -50,9 +50,10 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_ytyp = get_selected_ytyp(context)
-        selected_ytyp.new_archetype(context)
+        selected_ytyp.new_archetype()
 
         return True
+
 
 class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets texture dictionary for all archetypes within the selected ytyp"""
@@ -68,10 +69,9 @@ class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.t
         for archetype in selected_ytyp.archetypes:
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.texture_dictionary = selected_ytyp.all_texture_dictionary
-            
-
 
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_set_loddist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets lod dist for all archetypes within the selected ytyp"""
@@ -87,10 +87,9 @@ class SOLLUMZ_OT_set_loddist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Opera
         for archetype in selected_ytyp.archetypes:
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.lod_dist = selected_ytyp.all_lod_dist
-            
-
 
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets HD textures distance for all archetypes within the selected ytyp"""
@@ -106,10 +105,9 @@ class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types
         for archetype in selected_ytyp.archetypes:
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.hd_texture_dist = selected_ytyp.all_hd_tex_dist
-            
-
 
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create archetype from selected"""
@@ -137,7 +135,7 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                     continue
             found = True
             selected_ytyp = get_selected_ytyp(context)
-            item = selected_ytyp.new_archetype(context)
+            item = selected_ytyp.new_archetype()
 
             item.name = obj.name
             item.asset = obj

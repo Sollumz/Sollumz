@@ -174,7 +174,7 @@ def get_asset_type_enum(xml_asset_type: str) -> str:
 def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProperties):
     """Create a ytyp archetype given an archetype cwxml and a Blender ytyp data-block."""
 
-    archetype: ArchetypeProperties = ytyp.new_archetype(bpy.context)
+    archetype: ArchetypeProperties = ytyp.new_archetype()
 
     archetype.name = archetype_xml.name
     archetype.flags.total = str(archetype_xml.flags)
