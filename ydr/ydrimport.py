@@ -273,7 +273,7 @@ def light_to_obj(light, armature_obj=None):
     lobj.data.light_properties.unknown_45 = light.unknown_45
     lobj.data.light_properties.unknown_46 = light.unknown_46
     lobj.data.volume_factor = light.volume_intensity
-    lobj.data.shadow_blur = light.shadow_blur
+    lobj.data.light_properties.shadow_blur = light.shadow_blur
     lobj.data.light_properties.volume_size_scale = light.volume_size_scale
     lobj.data.light_properties.volume_outer_color = [
         channel / 255 for channel in light.volume_outer_color]
