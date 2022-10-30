@@ -305,6 +305,7 @@ class LightItem(ElementTree):
         self.cone_inner_angle = ValueProperty("ConeInnerAngle")
         self.cone_outer_angle = ValueProperty("ConeOuterAngle")
         self.extent = VectorProperty("Extent")
+        self.shadow_blur = ValueProperty("ShadowBlur")
         self.projected_texture_hash = TextProperty("ProjectedTextureHash")
 
 

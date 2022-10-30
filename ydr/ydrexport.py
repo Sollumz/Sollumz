@@ -613,6 +613,7 @@ def light_from_object(obj, armature_obj=None):
     light.unknown_45 = obj.data.light_properties.unknown_45
     light.unknown_46 = obj.data.light_properties.unknown_46
     light.volume_intensity = obj.data.volume_factor
+    light.shadow_blur = obj.data.shadow_blur
     light.volume_size_scale = obj.data.light_properties.volume_size_scale
     light.volume_outer_color = obj.data.light_properties.volume_outer_color * \
         255

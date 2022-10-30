@@ -105,6 +105,8 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
         layout.separator()
         layout.prop(light.light_properties, "unknown_45")
         layout.prop(light.light_properties, "unknown_46")
+        layout.separator()
+        layout.prop(light.light_properties, "shadow_blur")
 
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):

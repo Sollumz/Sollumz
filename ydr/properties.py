@@ -108,6 +108,7 @@ class LightProperties(bpy.types.PropertyGroup):
     unknown_45: bpy.props.FloatProperty(name="Unknown 45")
     unknown_46: bpy.props.FloatProperty(name="Unknown 46")
     volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
+    shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
     volume_outer_color: bpy.props.FloatVectorProperty(
         name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0)
