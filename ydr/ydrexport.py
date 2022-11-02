@@ -629,8 +629,8 @@ def light_from_object(obj, armature_obj=None):
     light.corona_z_bias = obj.data.light_properties.corona_z_bias
     if obj.data.sollum_type == LightType.SPOT:
         light.cone_inner_angle = degrees(
-            abs((obj.data.spot_blend * pi) - pi)) / 2
-        light.cone_outer_angle = degrees(obj.data.spot_size) / 2
+            abs((obj.data.spot_blend * pi) - pi))
+        light.cone_outer_angle = degrees(obj.data.spot_size)
     light.extent = Vector(obj.data.light_properties.extent)
     light.projected_texture_hash = obj.data.light_properties.projected_texture_hash
 

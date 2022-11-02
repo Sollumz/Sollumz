@@ -289,8 +289,8 @@ def light_to_obj(light, armature_obj=None):
     lobj.data.light_properties.corona_z_bias = light.corona_z_bias
     if light_type == LightType.SPOT:
         lobj.data.spot_blend = abs(
-            (radians(light.cone_inner_angle) / pi) - 1) * 2
-        lobj.data.spot_size = radians(light.cone_outer_angle) * 2
+            (radians(light.cone_inner_angle) / pi) - 1)
+        lobj.data.spot_size = radians(light.cone_outer_angle)
     lobj.data.light_properties.extent = light.extent
     lobj.data.light_properties.projected_texture_hash = light.projected_texture_hash
 
