@@ -36,7 +36,7 @@ def add_material(material, mat_map, materials):
 
         # Assign flags
         for flag_name in CollisionMatFlags.__annotations__.keys():
-            if flag_name in material.collision_flags:
+            if flag_name in material.collision_flags and material.collision_flags[flag_name] == True:
                 mat_item.flags.append(f"FLAG_{flag_name.upper()}")
         idx = len(mat_map)
         mat_map[material] = idx
