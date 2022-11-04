@@ -682,6 +682,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
     if write_shaders:
         for shader in shaders:
+            drawable.shader_group.unknown_30 = (len(shaders)-1)*3+8
             drawable.shader_group.shaders.append(shader)
 
             foldername = remove_number_suffix(obj.name.lower())
