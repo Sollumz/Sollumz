@@ -19,6 +19,21 @@ class ExtensionType(str, Enum):
     PROC_OBJECT = "CExtensionProcObject"
     EXPRESSION = "CExtensionDefExpression"
 
+class LightShaftDensityType(str, Enum):
+    CONSTANT = "LIGHTSHAFT_DENSITYTYPE_CONSTANT"
+    SOFT = "LIGHTSHAFT_DENSITYTYPE_SOFT"
+    SOFT_SHADOW = "LIGHTSHAFT_DENSITYTYPE_SOFT_SHADOW"
+    SOFT_SHADOW_HD = "LIGHTSHAFT_DENSITYTYPE_SOFT_SHADOW_HD"
+    LINEAR = "LIGHTSHAFT_DENSITYTYPE_LINEAR"
+    LINEAR_GRADIENT = "LIGHTSHAFT_DENSITYTYPE_LINEAR_GRADIENT"
+    QUADRATIC = "LIGHTSHAFT_DENSITYTYPE_QUADRATIC"
+    QUADRATIC_GRADIENT = "LIGHTSHAFT_DENSITYTYPE_QUADRATIC_GRADIENT"
+
+class LightShaftVolumeType(str, Enum):
+    SHAFT = "LIGHTSHAFT_VOLUMETYPE_SHAFT"
+    CYLINDER = "LIGHTSHAFT_VOLUMETYPE_CYLINDER"
+
+
 
 class BaseExtensionProperties:
     offset_position: bpy.props.FloatVectorProperty(
@@ -116,6 +131,9 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     flags: bpy.props.IntProperty(name="Flags")
     fade_in_time_start: bpy.props.FloatProperty(name="Fade In Time Start")
     fade_in_time_end: bpy.props.FloatProperty(name="Fade In Time End")
+    intensity: bpy.props.IntProperty(name="Intensity")
+    flashiness: bpy.props.IntProperty(name="Flashiness")
+    flag: bpy.props.IntProperty(name="Flags")
     fade_out_time_start: bpy.props.FloatProperty(name="Fade Out Time Start")
     fade_out_time_end: bpy.props.FloatProperty(name="Fade Out Time End")
     fade_distance_start: bpy.props.FloatProperty(name="Fade Distance Start")
@@ -123,10 +141,10 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     softness: bpy.props.FloatProperty(name="Softness")
     scale_by_sun_intensity: bpy.props.BoolProperty(
         name="Scale by Sun Intensity")
-
-    # TODO: Use enums
-    density_type: bpy.props.StringProperty(name="Density Type")
-    volume_type: bpy.props.StringProperty(name="Volume Type")
+    density_type: bpy.props.EnumProperty(
+        items=[(item.value, item.value, "") for item in LightShaftDensityType], name="Density Type")
+    volume_type: bpy.props.EnumProperty(
+        items=[(item.value, item.value, "") for item in LightShaftVolumeType], name="Volume Type")
 
 
 class SpawnPointExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
