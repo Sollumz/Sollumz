@@ -111,6 +111,9 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     length: bpy.props.FloatProperty(name="Length")
     color: bpy.props.FloatVectorProperty(
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
+    intensity: bpy.props.IntProperty(name="Intensity")
+    flashiness: bpy.props.IntProperty(name="Flashiness")
+    flags: bpy.props.IntProperty(name="Flags")
     fade_in_time_start: bpy.props.FloatProperty(name="Fade In Time Start")
     fade_in_time_end: bpy.props.FloatProperty(name="Fade In Time End")
     fade_out_time_start: bpy.props.FloatProperty(name="Fade Out Time Start")
