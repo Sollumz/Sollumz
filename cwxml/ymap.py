@@ -46,12 +46,10 @@ class HexColorProperty(ElementProperty):
             ValueProperty.read_value_error(element)
 
         rgb = HexColorProperty.hex_to_rgb(element.get("value"))
-        print(rgb)
 
         return HexColorProperty(element.tag, rgb)
 
     def to_xml(self):
-        print(self.value)
         hex = HexColorProperty.rgb_to_hex(self.value)
 
         return ET.Element(self.tag_name, attrib={"value": "0x" + hex})
