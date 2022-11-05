@@ -441,10 +441,10 @@ def drawable_model_from_object(obj, bones=None, materials=None):
         objs = split_object(joined_geometry)
         for obj in objs:
             obj.data.use_auto_smooth = True
-            obj.modifiers.new(name = "Transfer Normals" , type="DATA_TRANSFER")
-            obj.modifiers["Transfer Normals"].object = child
-            obj.modifiers["Transfer Normals"].use_loop_data = True
-            obj.modifiers["Transfer Normals"].data_types_loops = {"CUSTOM_NORMAL"}
+            obj.modifiers.new(name = "normals" , type="DATA_TRANSFER")
+            obj.modifiers["normals"].object = child
+            obj.modifiers["normals"].use_loop_data = True
+            obj.modifiers["normals"].data_types_loops = {"CUSTOM_NORMAL"}
             geometry = geometry_from_object(
                 obj, materials, bones)
             drawable_model.geometries.append(geometry)
