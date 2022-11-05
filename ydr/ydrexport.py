@@ -693,6 +693,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
                 foldername, materials, os.path.dirname(exportpath))
             drawable.shader_group.texture_dictionary = td
             exportop.messages += messages
+        drawable.shader_group.unknown_30 = (len(shaders)-1)*3+8
     else:
         drawable.shader_group = None
 
