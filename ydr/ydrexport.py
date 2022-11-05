@@ -449,13 +449,17 @@ def drawable_model_from_object(obj, bones=None, materials=None):
 
 
 def calculate_bone_tag(name):
+
     name = str.upper(name)
     asciil = []
     high = 0
     hash = 0
+
     for c in name:
         asciil.append(ord(c))
+
     length = len(asciil)
+
     while length:
         for c in asciil:
             hash = (hash << 4) + c
@@ -464,6 +468,7 @@ def calculate_bone_tag(name):
             hash &= ~high
             length = length - 1
     tag = hash % 0xFE8F + 0x170
+
     return(tag)
 
 
