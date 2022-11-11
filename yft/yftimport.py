@@ -246,19 +246,20 @@ def fragment_to_obj(fragment, filepath, import_settings=None):
         for i in range(len(transforms)):
             modeltransforms.append(transforms[i].value)
 
-        for child in dobj.children:
-            bone_index = 0
-            if child.parent_type == "BONE":
-                parent_bone = child.parent_bone
-                if parent_bone is not None and parent_bone != "":
-                    bone_index = child.parent.data.bones[parent_bone].bone_properties.tag
+        for dmodel in dobj.children:
+            for geo in dmodel.children:
+                bone_index = 0
+                if geo.parent_type == "BONE":
+                    parent_bone = geo.parent_bone
+                    if parent_bone is not None and parent_bone != "":
+                        bone_index = geo.parent.parent.data.bones[parent_bone].bone_properties.tag
 
-            boneidx = bone_index
+                boneidx = bone_index
 
-            m = modeltransforms[boneidx] if boneidx < len(
-                modeltransforms) else Matrix()
+                m = modeltransforms[boneidx] if boneidx < len(
+                    modeltransforms) else Matrix()
 
-            child.matrix_basis = m
+                geo.matrix_basis = m
 
     return fobj
 
