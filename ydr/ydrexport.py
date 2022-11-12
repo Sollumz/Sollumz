@@ -653,7 +653,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     else:
         drawable = ydrxml.Drawable()
 
-    drawable.name = remove_number_suffix(obj.name.lower())
+    drawable.name = remove_number_suffix(obj.name.lower()) + ".#dr"
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
