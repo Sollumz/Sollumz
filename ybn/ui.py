@@ -69,7 +69,7 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
-    bl_label = "Collision Flags"
+    bl_label = "Composite Flags"
     bl_idname = "SOLLUMZ_PT_BOUND_FLAGS_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -80,7 +80,7 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH)
+        return obj and (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_BOX or obj.sollum_type == SollumType.BOUND_SPHERE)
 
     def draw(self, context):
         obj = context.active_object
