@@ -330,7 +330,10 @@ def get_semantic_from_object(shader, mesh):
     return "".join(sematic)
 
 
-def apply_and_triangulate_object(obj):
+def apply_and_triangulate_object(obj, materials):
+    material_names = []
+    for mat in materials:
+        material_names.append(mat.shader_properties.name)
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(
@@ -340,7 +343,9 @@ def apply_and_triangulate_object(obj):
     bmesh.ops.triangulate(tempmesh, faces=tempmesh.faces)
     tempmesh.to_mesh(mesh)
     tempmesh.free()
-    mesh.calc_tangents()
+
+    if 'minimap' not in material_names:
+        mesh.calc_tangents()
     mesh.calc_loop_triangles()
     return obj_eval, mesh
 
@@ -369,7 +374,7 @@ def geometry_from_object(obj, mats, bones=None):
 
     geometry.shader_index = get_shader_index(mats, obj.active_material)
 
-    obj, mesh = apply_and_triangulate_object(obj)
+    obj, mesh = apply_and_triangulate_object(obj, mats)
 
     bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
@@ -671,7 +676,6 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_vlow
     drawable.unknown_9A = obj.drawable_properties.unknown_9A
     
-
     if not materials:
         materials = get_used_materials(obj)
     shaders = get_shaders_from_blender(materials)
