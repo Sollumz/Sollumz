@@ -492,13 +492,13 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
     join_geometries: bpy.props.BoolProperty(
         name="Join Geometries",
         description="Joins the drawables geometries into a single mesh.",
-        default=True,
+        default=False,
     )
 
     split_by_bone: bpy.props.BoolProperty(
         name="Split by Bone",
         description="Splits the geometries by bone.",
-        default=True,
+        default=False,
     )
 
     import_ext_skeleton: bpy.props.BoolProperty(
