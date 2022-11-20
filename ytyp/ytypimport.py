@@ -165,7 +165,7 @@ def get_asset_type_enum(xml_asset_type: str) -> str:
         return AssetType.FRAGMENT
     elif xml_asset_type == "ASSET_TYPE_DRAWABLE":
         return AssetType.DRAWABLE
-    elif xml_asset_type == "ASSET_TYPE_DRAWABLE_DICTIONARY":
+    elif xml_asset_type == "ASSET_TYPE_DRAWABLEDICTIONARY":
         return AssetType.DRAWABLE_DICTIONARY
 
     return AssetType.ASSETLESS

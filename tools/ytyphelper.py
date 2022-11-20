@@ -32,7 +32,7 @@ def base_archetype_from_object(obj):
     elif obj.sollum_type == SollumType.DRAWABLE:
         arch.asset_type = "ASSET_TYPE_DRAWABLE"
     elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
-        arch.asset_type = "ASSET_TYPE_DRAWABLE_DICTIONARY"
+        arch.asset_type = "ASSET_TYPE_DRAWABLEDICTIONARY"
     return arch
 
 
