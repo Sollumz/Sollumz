@@ -263,6 +263,7 @@ def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetyp
     else:
         if archetype.type == ArchetypeType.TIME:
             archetype_xml = ytypxml.TimeArchetype()
+            archetype_xml.time_flags = archetype.time_flags.total
         else:
             archetype_xml = ytypxml.BaseArchetype()
         set_archetype_xml_bounds(archetype, archetype_xml)
