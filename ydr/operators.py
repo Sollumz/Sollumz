@@ -3,10 +3,9 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, Materi
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import (
+    MaterialConverter,
     convert_selected_to_drawable,
     create_drawable,
-    convert_material,
-    convert_material_to_selected,
     set_recommended_bone_properties
 )
 from ..tools.blenderhelper import get_children_recursive
@@ -70,90 +69,63 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
         bpy.context.collection.objects.link(obj)
 
 
-class SOLLUMZ_OT_auto_convert_material(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Convert material to a sollumz shader material"""
-    bl_idname = "sollumz.autoconvertmaterial"
-    bl_label = "Convert Material To Shader Material"
-    bl_action = "Convert a Material To a Shader Material"
+class MaterialConverterHelper:
+    bl_options = {"UNDO"}
 
-    def run(self, context):
+    def get_materials(self, obj: bpy.types.Object):
+        materials = obj.data.materials
+
+        if len(materials) == 0:
+            self.report({"INFO"}, f"{obj.name} has no materials to convert!")
+
+        return materials
+
+    def get_shader_name(self):
+        return shadermats[bpy.context.scene.shader_material_index].value
+
+    def convert_material(self, obj, material):
+        return MaterialConverter(obj, material).convert(self.get_shader_name())
+
+    def execute(self, context):
         for obj in context.selected_objects:
-            if len(obj.data.materials) == 0:
-                self.messages.append(
-                    f"{obj.name} has no materials to convert.")
+            materials = self.get_materials(obj)
 
-            for material in obj.data.materials:
-                if material.sollum_type == 'sollumz_material_shader':
-                    continue
-                new_material = convert_material(material)
-                if new_material is not None:
-                    for ms in obj.material_slots:
-                        if ms.material == material:
-                            ms.material = new_material
+            for material in materials:
+                new_material = self.convert_material(obj, material)
 
-        return True
+                self.report(
+                    {"INFO"}, f"Successfuly converted material '{new_material.name}'.")
+
+        return {"FINISHED"}
 
 
-class SOLLUMZ_OT_convert_material_to_selected(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Convert objects material to the selected sollumz shader"""
-    bl_idname = "sollumz.convertmaterialtoselected"
-    bl_label = "Convert Material To Selected Sollumz Shader"
-    bl_action = "Convert a Material To Selected Sollumz Shader"
-
-    def convert_material(self, shader, obj):
-        mat = obj.active_material
-        if mat is None:
-            self.message(f"No active material on {obj.name} will be skipped")
-            return
-
-        new_material = convert_material_to_selected(mat, shader)
-        if new_material is not None:
-            for ms in obj.material_slots:
-                if ms.material == mat:
-                    ms.material = new_material
-
-    def run(self, context):
-        objs = bpy.context.selected_objects
-        if len(objs) == 0:
-            self.warning(
-                f"Please select a object with materials.")
-            return False
-
-        shader = shadermats[context.scene.shader_material_index].value
-        for obj in objs:
-            self.convert_material(shader, obj)
-
-        return True
-
-class SOLLUMZ_OT_convert_allmaterials_to_selected(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_convert_allmaterials_to_selected(bpy.types.Operator, MaterialConverterHelper):
     """Convert all materials to the selected sollumz shader"""
     bl_idname = "sollumz.convertallmaterialstoselected"
     bl_label = "Convert All Materials To Selected"
-    bl_action = "Convert All Materials To Selected"
 
-    def convert_material(self, shader, obj):
-        for mat in obj.data.materials:
-            if mat.sollum_type == 'sollumz_material_shader':
-                continue
-            new_material = convert_material_to_selected(mat, shader)
-            if new_material is not None:
-                for ms in obj.material_slots:
-                    if ms.material == mat:
-                        ms.material = new_material
 
-    def run(self, context):
-        objs = bpy.context.selected_objects
-        if len(objs) == 0:
-            self.warning(
-                f"Please select a object with materials.")
-            return False
+class SOLLUMZ_OT_convert_material_to_selected(bpy.types.Operator, MaterialConverterHelper):
+    """Convert objects material to the selected sollumz shader"""
+    bl_idname = "sollumz.convertmaterialtoselected"
+    bl_label = "Convert Material To Selected Sollumz Shader"
 
-        shader = shadermats[context.scene.shader_material_index].value
-        for obj in objs:
-            self.convert_material(shader, obj)
+    def get_materials(self, obj: bpy.types.Object):
+        if obj.active_material is None:
+            self.report({"INFO"}, f"{obj.name} has no active material!")
+            return []
 
-        return True
-        
+        return [obj.active_material]
+
+
+class SOLLUMZ_OT_auto_convert_material(bpy.types.Operator, MaterialConverterHelper):
+    """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material."""
+    bl_idname = "sollumz.autoconvertmaterial"
+    bl_label = "Convert Material To Shader Material"
+
+    def convert_material(self, obj, material):
+        return MaterialConverter(obj, material).auto_convert()
+
 
 class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz shader material"""
@@ -226,6 +198,7 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
             self.set_textures_embedded(obj)
 
         return True
+
 
 class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
     """Remove all embeded textures on the selected objects active material"""

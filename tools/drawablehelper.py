@@ -2,8 +2,183 @@ import bpy
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
 from ..tools.blenderhelper import join_objects, get_children_recursive
-from ..cwxml.drawable import BonePropertiesManager
+from ..cwxml.drawable import BonePropertiesManager, TextureShaderParameter, VectorShaderParameter
 from mathutils import Vector
+from typing import Union
+
+
+class MaterialConverter:
+    def __init__(self, obj: bpy.types.Object, material: bpy.types.Material) -> None:
+        self.obj = obj
+        self.material: Union[bpy.types.Material, None] = material
+        self.new_material: Union[bpy.types.Material, None] = None
+        self.bsdf: Union[bpy.types.ShaderNodeBsdfPrincipled, None] = None
+        self.diffuse_node: Union[bpy.types.ShaderNodeTexImage, None] = None
+        self.specular_node: Union[bpy.types.ShaderNodeTexImage, None] = None
+        self.normal_node: Union[bpy.types.ShaderNodeTexImage, None] = None
+
+    def _convert_texture_node(self, param: TextureShaderParameter):
+        node: bpy.types.ShaderNodeTexImage = try_get_node(
+            self.material.node_tree, param.name)
+        tonode: bpy.types.ShaderNodeTexImage = try_get_node(
+            self.new_material.node_tree, param.name)
+
+        if not node or not tonode:
+            return
+
+        tonode.image = node.image
+
+    def _convert_vector_node(self, param: VectorShaderParameter):
+        node_x = try_get_node(self.material.node_tree, param.name + "_x")
+
+        if not node_x:
+            return
+
+        node_y = try_get_node(self.material.node_tree, param.name + "_y")
+        node_z = try_get_node(self.material.node_tree, param.name + "_z")
+        node_w = try_get_node(self.material.node_tree, param.name + "_w")
+        tonode_x = try_get_node(self.new_material.node_tree, param.name + "_x")
+        tonode_y = try_get_node(self.new_material.node_tree, param.name + "_y")
+        tonode_z = try_get_node(self.new_material.node_tree, param.name + "_z")
+        tonode_w = try_get_node(self.new_material.node_tree, param.name + "_w")
+        tonode_x.outputs[0].default_value = node_x.outputs[0].default_value
+        tonode_y.outputs[0].default_value = node_y.outputs[0].default_value
+        tonode_z.outputs[0].default_value = node_z.outputs[0].default_value
+        tonode_w.outputs[0].default_value = node_w.outputs[0].default_value
+
+    def convert_shader_to_shader(self, shader_name):
+        shader = ShaderManager.shaders[shader_name]
+        # TODO: array nodes params
+        for param in shader.parameters:
+            if param.type == "Texture":
+                self._convert_texture_node(param)
+            elif param.type == "Vector":
+                self._convert_vector_node(param)
+
+        return self.new_material
+
+    def _get_diffuse_node(self):
+        diffuse_input = self.bsdf.inputs["Base Color"]
+
+        if diffuse_input.is_linked:
+            return diffuse_input.links[0].from_node
+
+        return None
+
+    def _get_specular_node(self):
+        specular_input = self.bsdf.inputs["Specular"]
+
+        if specular_input.is_linked:
+            return specular_input.links[0].from_node
+
+        return None
+
+    def _get_normal_node(self):
+        normal_input = self.bsdf.inputs["Normal"]
+        if len(normal_input.links) > 0:
+            normal_map_node = normal_input.links[0].from_node
+            normal_map_input = normal_map_node.inputs["Color"]
+            if len(normal_map_input.links) > 0:
+                return normal_map_input.links[0].from_node
+
+        return None
+
+    def _get_nodes(self):
+        self.bsdf = try_get_node(self.material.node_tree, "Principled BSDF")
+
+        if self.bsdf is None:
+            raise Exception(
+                "Failed to convert material: Node tree must contain a Princpled BSDF node.")
+
+        self.diffuse_node = self._get_diffuse_node()
+
+        if self.diffuse_node is None:
+            raise Exception(
+                "Failed to convert material: Material must have an image node linked to the base color.")
+
+        if not isinstance(self.diffuse_node, bpy.types.ShaderNodeTexImage):
+            raise Exception(
+                "Failed to convert material: Base color node is not an image node.")
+
+        self.specular_node = self._get_specular_node()
+        self.normal_node = self._get_normal_node()
+
+    def _create_new_material(self, shader_name):
+        self.new_material = create_shader(shader_name)
+
+    def _set_new_node_images(self):
+        if self.new_material is None:
+            raise Exception(
+                "Failed to set images: Sollumz material has not been created yet!")
+
+        for node, name in {self.diffuse_node: "DiffuseSampler", self.specular_node: "SpecSampler", self.normal_node: "BumpSampler"}.items():
+            new_node: bpy.types.ShaderNodeTexImage = try_get_node(
+                self.new_material.node_tree, name)
+
+            if node is None or new_node is None:
+                continue
+
+            new_node.image = node.image
+
+    def _get_material_slot(self):
+        for slot in self.obj.material_slots:
+            if slot.material == self.material:
+                return slot
+
+    def _replace_material(self):
+        if self.new_material is None:
+            raise Exception(
+                "Failed to replace material: Sollumz material has not been created yet!")
+
+        mat_name = self.material.name
+
+        slot = self._get_material_slot()
+        slot.material = self.new_material
+        bpy.data.materials.remove(self.material)
+
+        self.new_material.name = mat_name
+        self.material = None
+
+    def _determine_shader_name(self):
+        self._get_nodes()
+
+        has_specular_node = self.specular_node is not None
+        has_normal_node = self.normal_node is not None
+
+        if has_specular_node and not isinstance(self.specular_node, bpy.types.ShaderNodeTexImage):
+            raise Exception(
+                "Failed to convert material: Specular node is not an image node.")
+
+        if has_normal_node and not isinstance(self.normal_node, bpy.types.ShaderNodeTexImage):
+            raise Exception(
+                "Failed to convert material: Normal map color input is not an image node.")
+        if has_normal_node and has_specular_node:
+            return "normal_spec"
+        elif has_normal_node:
+            return "normal"
+        elif has_specular_node:
+            return "spec"
+
+        return "default"
+
+    def convert(self, shader_name: str) -> bpy.types.Material:
+        """Convert the material to a Sollumz material of the provided shader name."""
+        self._create_new_material(shader_name)
+
+        if self.material.sollum_type == MaterialType.SHADER:
+            self.convert_shader_to_shader(shader_name)
+        else:
+            self._get_nodes()
+            self._set_new_node_images()
+
+        self._replace_material()
+
+        return self.new_material
+
+    def auto_convert(self) -> bpy.types.Material:
+        """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material."""
+        shader_name = self._determine_shader_name()
+        return self.convert(shader_name)
 
 
 def create_drawable(sollum_type=SollumType.DRAWABLE):
@@ -84,140 +259,6 @@ def get_drawable_geometries(drawable):
         if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
             cobjs.append(obj)
     return cobjs
-
-
-def convert_material(material):
-
-    if material.sollum_type != MaterialType.NONE:
-        raise Exception("Error can not convert a sollumz material.")
-
-    bsdf = material.node_tree.nodes["Principled BSDF"]
-
-    diffuse_node = None
-    diffuse_input = bsdf.inputs["Base Color"]
-    if diffuse_input.is_linked:
-        diffuse_node = diffuse_input.links[0].from_node
-
-    if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-        raise Exception("Error linked base color node is not a image node.")
-
-    specular_node = None
-    specular_input = bsdf.inputs["Specular"]
-    if specular_input.is_linked:
-        specular_node = specular_input.links[0].from_node
-
-    normal_node = None
-    normal_input = bsdf.inputs["Normal"]
-    if len(normal_input.links) > 0:
-        normal_map_node = normal_input.links[0].from_node
-        normal_map_input = normal_map_node.inputs["Color"]
-        if len(normal_map_input.links) > 0:
-            normal_node = normal_map_input.links[0].from_node
-
-    shader_name = "default"
-    if normal_node is not None and specular_node is not None:
-        shader_name = "normal_spec"
-    elif normal_node is not None:
-        shader_name = "normal"
-    elif normal_node is None and specular_node is not None:
-        shader_name = "spec"
-
-    new_material = create_shader(shader_name)
-
-    bsdf = new_material.node_tree.nodes["Principled BSDF"]
-
-    new_diffuse_node = try_get_node(new_material.node_tree, "DiffuseSampler")
-    if diffuse_node and new_diffuse_node:
-        new_diffuse_node.image = diffuse_node.image
-
-    new_specular_node = try_get_node(new_material.node_tree, "SpecSampler")
-    if specular_node and new_specular_node:
-        new_specular_node.image = specular_node.image
-
-    new_normal_node = try_get_node(new_material.node_tree, "BumpSampler")
-    if normal_node and new_normal_node:
-        new_normal_node.image = normal_node.image
-
-    return new_material
-
-
-def convert_material_to_selected(material, shader_name):
-
-    if material.sollum_type == MaterialType.SHADER:
-        return convert_shader_to_shader(material, shader_name)
-
-    bsdf = material.node_tree.nodes["Principled BSDF"]
-
-    diffuse_node = None
-    diffuse_input = bsdf.inputs["Base Color"]
-    if diffuse_input.is_linked:
-        diffuse_node = diffuse_input.links[0].from_node
-
-    if not isinstance(diffuse_node, bpy.types.ShaderNodeTexImage):
-        raise Exception("Error linked base color node is not a image node.")
-
-    specular_node = None
-    specular_input = bsdf.inputs["Specular"]
-    if specular_input.is_linked:
-        specular_node = specular_input.links[0].from_node
-
-    normal_node = None
-    normal_input = bsdf.inputs["Normal"]
-    if len(normal_input.links) > 0:
-        normal_map_node = normal_input.links[0].from_node
-        normal_map_input = normal_map_node.inputs["Color"]
-        if len(normal_map_input.links) > 0:
-            normal_node = normal_map_input.links[0].from_node
-
-    new_material = create_shader(shader_name)
-
-    bsdf = new_material.node_tree.nodes["Principled BSDF"]
-
-    new_diffuse_node = try_get_node(new_material.node_tree, "DiffuseSampler")
-    if diffuse_node and new_diffuse_node:
-        new_diffuse_node.image = diffuse_node.image
-
-    new_specular_node = try_get_node(new_material.node_tree, "SpecSampler")
-    if specular_node and new_specular_node:
-        new_specular_node.image = specular_node.image
-
-    new_normal_node = try_get_node(new_material.node_tree, "BumpSampler")
-    if normal_node and new_normal_node:
-        new_normal_node.image = normal_node.image
-
-    return new_material
-
-
-def convert_shader_to_shader(material, shader_name):
-
-    shader = ShaderManager.shaders[shader_name]
-    new_material = create_shader(shader_name)
-
-    # TODO: array nodes params
-    for param in shader.parameters:
-        if param.type == "Texture":
-            node = try_get_node(material.node_tree, param.name)
-            if not node:
-                continue
-            tonode = try_get_node(new_material.node_tree, param.name)
-            tonode.image = node.image
-        elif param.type == "Vector":
-            node_x = try_get_node(material.node_tree, param.name + "_x")
-            if not node_x:
-                continue
-            node_y = try_get_node(material.node_tree, param.name + "_y")
-            node_z = try_get_node(material.node_tree, param.name + "_z")
-            node_w = try_get_node(material.node_tree, param.name + "_w")
-            tonode_x = try_get_node(new_material.node_tree, param.name + "_x")
-            tonode_y = try_get_node(new_material.node_tree, param.name + "_y")
-            tonode_z = try_get_node(new_material.node_tree, param.name + "_z")
-            tonode_w = try_get_node(new_material.node_tree, param.name + "_w")
-            tonode_x.outputs[0].default_value = node_x.outputs[0].default_value
-            tonode_y.outputs[0].default_value = node_y.outputs[0].default_value
-            tonode_z.outputs[0].default_value = node_z.outputs[0].default_value
-            tonode_w.outputs[0].default_value = node_w.outputs[0].default_value
-
-    return new_material
 
 
 def set_recommended_bone_properties(bone):
