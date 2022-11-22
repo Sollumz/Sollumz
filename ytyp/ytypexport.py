@@ -277,7 +277,7 @@ def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetyp
     archetype_xml.clip_dictionary = archetype.clip_dictionary
     archetype_xml.drawable_dictionary = archetype.drawable_dictionary.lower()
     archetype_xml.physics_dictionary = archetype.physics_dictionary.lower()
-    archetype_xml.asset_name = archetype.asset_name
+    archetype_xml.asset_name = archetype.asset_name.lower()
     archetype_xml.asset_type = get_xml_asset_type(archetype.asset_type)
 
     for extension in archetype.extensions:
