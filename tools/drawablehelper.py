@@ -130,14 +130,12 @@ class MaterialConverter:
             raise Exception(
                 "Failed to replace material: Sollumz material has not been created yet!")
 
-        mat_name = self.material.name
+        mat_name = f"{self.material.name}_{self.new_material.name}"
+
+        self.new_material.name = mat_name
 
         slot = self._get_material_slot()
         slot.material = self.new_material
-        bpy.data.materials.remove(self.material)
-
-        self.new_material.name = mat_name
-        self.material = None
 
     def _determine_shader_name(self):
         self._get_nodes()
