@@ -229,7 +229,7 @@ def get_xml_asset_type(asset_type: AssetType) -> str:
     elif asset_type == AssetType.DRAWABLE:
         return "ASSET_TYPE_DRAWABLE"
     elif asset_type == AssetType.DRAWABLE_DICTIONARY:
-        return "ASSET_TYPE_DRAWABLE_DICTIONARY"
+        return "ASSET_TYPE_DRAWABLEDICTIONARY"
     elif asset_type == AssetType.ASSETLESS:
         return "ASSET_TYPE_ASSETLESS"
 
