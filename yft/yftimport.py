@@ -44,7 +44,7 @@ def fragment_to_obj(frag_xml: Fragment, filepath: str):
         child_objs = create_children(lod_xml, group_objs, filepath, materials)
 
         create_bounds(lod_xml, child_objs)
-        create_vehicle_windows(frag_xml, materials, group_objs)
+        create_vehicle_windows(frag_xml, materials, child_objs)
 
         lod_obj.parent = frag_obj
 
@@ -138,18 +138,18 @@ def create_bounds(lod_xml: LODProperty, child_objs: list[bpy.types.Object]) -> U
         bound.parent = group_obj
 
 
-def create_vehicle_windows(frag_xml: Fragment, materials: list[bpy.types.Material], group_objs: list[bpy.types.Object]):
+def create_vehicle_windows(frag_xml: Fragment, materials: list[bpy.types.Material], child_objs: list[bpy.types.Object]):
     window_xml: WindowItem
     for window_xml in frag_xml.vehicle_glass_windows:
         # Each window corresponds to a fragment group
-        group_obj = get_window_group(window_xml, group_objs)
+        child_obj = get_window_child(window_xml, child_objs)
 
-        if group_obj is None:
+        if child_obj is None:
             import_op.report(
-                {"WARNING"}, f"Window has an invalid group index (ItemID) of {window_xml.item_id}! Expected a number in the range 0-{len(group_objs)} Skipping...")
+                {"WARNING"}, f"Window has an invalid child index (ItemID) of {window_xml.item_id}! Expected a number in the range 0-{len(child_objs)} Skipping...")
             continue
 
-        window_name = group_obj.name.replace("_group", "_vehicle_window")
+        window_name = child_obj.name.replace("_child", "_vehicle_window")
 
         try:
             mesh = create_vehicle_window_mesh(window_xml, window_name)
@@ -178,7 +178,7 @@ def create_vehicle_windows(frag_xml: Fragment, materials: list[bpy.types.Materia
 
         bpy.context.collection.objects.link(window_obj)
 
-        window_obj.parent = group_obj
+        window_obj.parent = child_obj
 
 
 def get_fragment_materials(frag_xml: Fragment, filepath: str) -> Union[list[bpy.types.Material], None]:
@@ -239,13 +239,13 @@ def apply_bones_transforms(drawable_obj: bpy.types.Object, bones_transforms: lis
         geom.matrix_basis = bones_transforms[bone_id]
 
 
-def get_window_group(window_xml: WindowItem, group_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
-    group_id = window_xml.item_id
+def get_window_child(window_xml: WindowItem, child_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
+    child_id = window_xml.item_id
 
-    if group_id < 0 or group_id >= len(group_objs):
+    if child_id < 0 or child_id >= len(child_objs):
         return None
 
-    return group_objs[group_id]
+    return child_objs[child_id]
 
 
 def create_vehicle_window_mesh(window_xml: WindowItem, name: str):

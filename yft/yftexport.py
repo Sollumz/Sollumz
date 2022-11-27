@@ -39,6 +39,14 @@ def get_obj_parent_group_index(gobjs, obj):
         return 255
 
 
+def get_obj_parent_child_index(cobjs, obj):
+    parent = obj.parent
+    if parent.sollum_type == SollumType.FRAGCHILD:
+        return cobjs.index(parent)
+    else:
+        return 0
+
+
 def get_shattermap_image(obj):
     mat = obj.data.materials[0]
     return mat.node_tree.nodes["ShatterMap"].image
@@ -181,7 +189,7 @@ def fragment_from_object(exportop, fobj, exportpath):
         bobjs = get_sollumz_objects_from_objects(gobjs, BOUND_TYPES)
         cobjs = get_sollumz_objects_from_objects(gobjs, SollumType.FRAGCHILD)
         vwobjs = get_sollumz_objects_from_objects(
-            gobjs, SollumType.FRAGVEHICLEWINDOW)
+            cobjs, SollumType.FRAGVEHICLEWINDOW)
 
         flod = LODProperty()
         flod.tag_name = f"LOD{idx+1}"
@@ -289,7 +297,7 @@ def fragment_from_object(exportop, fobj, exportpath):
         for wobj in vwobjs:
             vehwindow = obj_to_vehicle_window(
                 wobj, fragment.drawable, materials)
-            vehwindow.item_id = get_obj_parent_group_index(gobjs, wobj)
+            vehwindow.item_id = get_obj_parent_child_index(cobjs, wobj)
             fragment.vehicle_glass_windows.append(vehwindow)
 
         if lod.lod_properties.type == 1:
