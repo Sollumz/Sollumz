@@ -1,7 +1,6 @@
 import os
 from mathutils import Matrix
-from ..yft.yftimport import get_fragment_drawable
-from ..sollumz_properties import BOUND_TYPES, LODLevel, SollumType
+from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_objects
 from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
@@ -9,6 +8,12 @@ from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import get_bound_center, get_sphere_radius
 from ..tools.utils import divide_vector_inv, prop_array_to_vector
+
+
+def get_fragment_drawable(fragment):
+    for child in fragment.children:
+        if child.sollum_type == SollumType.DRAWABLE:
+            return child
 
 
 def get_group_objects(fragment, index=0):

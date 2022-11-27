@@ -68,7 +68,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 import_ydd(self, filepath, self.import_settings)
                 valid_type = True
             elif ext == YFT.file_extension:
-                import_yft(filepath, self.import_settings)
+                import_yft(filepath, self)
                 valid_type = True
             elif ext == YBN.file_extension:
                 import_ybn(filepath)
@@ -693,6 +693,7 @@ class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
         self.message("Hierarchy successfuly set.")
         return True
 
+
 class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
     """Debug: Set Sollum Type"""
     bl_idname = "sollumz.debug_set_sollum_type"
@@ -704,8 +705,10 @@ class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
         sel_sollum_type = context.scene.all_sollum_type
         for obj in context.selected_objects:
             obj.sollum_type = sel_sollum_type
-        self.message(f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sel_sollum_type]}.")
+        self.message(
+            f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sel_sollum_type]}.")
         return True
+
 
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)

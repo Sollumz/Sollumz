@@ -230,7 +230,7 @@ def get_armature_obj(armature):
             return obj
 
 
-def get_children_recursive(obj):
+def get_children_recursive(obj) -> list[bpy.types.Object]:
     children = []
 
     if obj is None:

@@ -524,7 +524,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
 
 
 def create_lights(lights, parent, armature_obj=None):
-    if not armature_obj:
+    if armature_obj is None:
         armature_obj = parent
     lights_parent = bpy.data.objects.new("Lights", None)
     lights_parent.empty_display_size = 0
