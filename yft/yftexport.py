@@ -102,6 +102,7 @@ def obj_to_vehicle_window(obj, drawable_xml, materials):
     mat[0] = edge1.x, edge2.x, edge3.x, v1.x
     mat[1] = edge1.y, edge2.y, edge3.y, v1.y
     mat[2] = edge1.z, edge2.z, edge3.z, v1.z
+    mat.translation += obj.matrix_world.translation
     mat.invert_safe()
 
     window = WindowItem()

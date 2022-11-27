@@ -152,8 +152,9 @@ def create_vehicle_windows(frag_xml: Fragment, materials: list[bpy.types.Materia
         window_name = child_obj.name.replace("_child", "_vehicle_window")
 
         try:
-            mesh = create_vehicle_window_mesh(window_xml, window_name)
-        except Exception as e:
+            mesh = create_vehicle_window_mesh(
+                window_xml, window_name, child_obj.location)
+        except:
             import_op.report(
                 {"ERROR"}, f"Error during creation of vehicle window mesh:\n{format_exc()}")
             continue
@@ -248,8 +249,9 @@ def get_window_child(window_xml: WindowItem, child_objs: list[bpy.types.Object])
     return child_objs[child_id]
 
 
-def create_vehicle_window_mesh(window_xml: WindowItem, name: str):
+def create_vehicle_window_mesh(window_xml: WindowItem, name: str, child_location: Vector):
     verts = calculate_window_verts(window_xml)
+    verts = [vert - child_location for vert in verts]
     faces = [[0, 1, 2, 3]]
 
     mesh = bpy.data.meshes.new(name)
