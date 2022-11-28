@@ -412,12 +412,13 @@ class EntityListProperty(ListPropertyRequired):
 
 
 class ContainerLodsListProperty(ElementTree):
-    '''This is not used by GTA5 but added for completion'''
+    """This is not used by GTA5 but added for completion"""
     tag_name = "containerLods"
 
     def __init__(self):
         super().__init__()
-        self.item_type = AttributeProperty("itemType", "rage__fwContainerLodDef")
+        self.item_type = AttributeProperty(
+            "itemType", "rage__fwContainerLodDef")
 
 
 class BoxOccluderItem(ElementTree):
@@ -446,7 +447,7 @@ class BoxOccludersListProperty(ListPropertyRequired):
 
 class OccludeModelItem(ElementTree):
     class VertsProperty(ElementProperty):
-        '''Same as a TextProperty but formats the input and output and returns an empty element rather than None'''
+        """Same as a TextProperty but formats the input and output and returns an empty element rather than None"""
         value_types = (str)
 
         def __init__(self, tag_name: str = "verts", value=None):
@@ -456,7 +457,8 @@ class OccludeModelItem(ElementTree):
         def from_xml(element: ET.Element):
             text = element.text.replace("\n", "").replace(" ", "")
             if not text:
-                raise ValueError(f'Missing verts data on {OccludeModelItem.VertsProperty.__name__}')
+                raise ValueError(
+                    f'Missing verts data on {OccludeModelItem.VertsProperty.__name__}')
             return OccludeModelItem.VertsProperty(element.tag, text)
 
         def to_xml(self):
@@ -466,7 +468,8 @@ class OccludeModelItem(ElementTree):
 
             text = []
             for chunk in [self.value[i:i + 64] for i in range(0, len(self.value), 64)]:
-                text.append(" ".join([chunk[j:j + 2] for j in range(0, len(chunk), 2)]))
+                text.append(" ".join([chunk[j:j + 2]
+                            for j in range(0, len(chunk), 2)]))
                 text.append("\n")
             element.text = "".join(text)
 
@@ -495,9 +498,9 @@ class OccludeModelsListProperty(ListPropertyRequired):
 
 
 class PhysicsDictionariesListProperty(ListProperty):
-    '''
+    """
     Same as ListPropertyRequired but only accepts items of type TextProperty.
-    '''
+    """
     class PhysicsDictionarieItem(TextProperty):
         tag_name = "Item"
 
@@ -593,6 +596,7 @@ class BlockProperty(ElementTree):
         self.exported_by = TextPropertyRequired("exportedBy")
         self.owner = TextPropertyRequired("owner")
         self.time = TextPropertyRequired("time")
+
 
 class CMapData(ElementTree, AbstractClass):
     tag_name = "CMapData"

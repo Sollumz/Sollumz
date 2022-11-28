@@ -231,7 +231,7 @@ class ListProperty(ElementProperty, AbstractClass):
         return None
 
 class ListPropertyRequired(ListProperty):
-    '''Same as ListProperty but returns an empty element rather then None in case the passed element's value is empty or None'''
+    """Same as ListProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
 
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name or type(self).tag_name, value or [])
@@ -273,7 +273,7 @@ class TextProperty(ElementProperty):
         return result
 
 class TextPropertyRequired(ElementProperty):
-    '''Same as TextProperty but returns an empty element rather then None in case the passed element's value is empty or None'''
+    """Same as TextProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
     value_types = (str)
 
     def __init__(self, tag_name: str = "Name", value=None):

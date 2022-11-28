@@ -21,7 +21,7 @@ def box_from_obj(obj):
     box.width = round(obj.scale.y * 4)
     box.height = round(obj.scale.z * 4)
     # TODO: Calculate sinZ and cosZ from corners coordinates.
-    dir = Vector((1,0,0))
+    dir = Vector((1, 0, 0))
     dir.rotate(obj.rotation_euler)
     dir *= 0.5
     box.sin_z = round(dir.x * 32767)
@@ -29,33 +29,36 @@ def box_from_obj(obj):
 
     return box
 
+
 def triangulate_obj(obj):
-    '''Convert mesh from n-polygons to triangles'''
+    """Convert mesh from n-polygons to triangles"""
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode="OBJECT")
 
+
 def get_verts_from_obj(obj):
-    '''
+    """
     For each vertex get its coordinates in global space (this way we don't need to apply transfroms)
     then get their bytes hex representation and append. After that for each face get its indices, 
     get their bytes hex representation and append.
 
     :return verts: String if vertex coordinates and face indices in hex representation
     :rtype str:
-    '''
+    """
     verts = ''
     for v in obj.data.vertices:
         for c in obj.matrix_world @ v.co:
             verts += str(hexlify(pack('f', c)))[2:-1].upper()
     for p in obj.data.polygons:
         for i in p.vertices:
-           verts += str(hexlify(pack('B', i)))[2:-1].upper()
+            verts += str(hexlify(pack('B', i)))[2:-1].upper()
     return verts
 
-def model_from_obj(obj, export_op):        
+
+def model_from_obj(obj, export_op):
     triangulate_obj(obj)
 
     model = OccludeModelItem()
@@ -68,6 +71,7 @@ def model_from_obj(obj, export_op):
     model.flags = obj.ymap_properties.flags
 
     return model
+
 
 def entity_from_obj(obj):
     # Removing " (not found)" suffix, created when importing ymaps while entity was not found in the view layer
@@ -89,25 +93,34 @@ def entity_from_obj(obj):
     entity.lod_level = obj.entity_properties.lod_level.upper().replace("SOLLUMZ_", "")
     entity.num_children = int(obj.entity_properties.num_children)
     entity.priority_level = obj.entity_properties.priority_level.upper().replace("SOLLUMZ_", "")
-    entity.ambient_occlusion_multiplier = int(obj.entity_properties.ambient_occlusion_multiplier)
-    entity.artificial_ambient_occlusion = int(obj.entity_properties.artificial_ambient_occlusion)
+    entity.ambient_occlusion_multiplier = int(
+        obj.entity_properties.ambient_occlusion_multiplier)
+    entity.artificial_ambient_occlusion = int(
+        obj.entity_properties.artificial_ambient_occlusion)
     entity.tint_value = int(obj.entity_properties.tint_value)
 
     return entity
 
 # TODO: This needs more work for non occluder object (entities )
+
+
 def calculate_extents(ymap, obj):
     bbmin, bbmax = get_bound_extents(obj)
 
-    ymap.entities_extents_min = get_min_vector(ymap.entities_extents_min, bbmin)
-    ymap.entities_extents_max = get_max_vector(ymap.entities_extents_max , bbmax)
-    ymap.streaming_extents_min = get_min_vector(ymap.streaming_extents_min, bbmin)
-    ymap.streaming_extents_max = get_max_vector(ymap.streaming_extents_max, bbmax)
+    ymap.entities_extents_min = get_min_vector(
+        ymap.entities_extents_min, bbmin)
+    ymap.entities_extents_max = get_max_vector(
+        ymap.entities_extents_max, bbmax)
+    ymap.streaming_extents_min = get_min_vector(
+        ymap.streaming_extents_min, bbmin)
+    ymap.streaming_extents_max = get_max_vector(
+        ymap.streaming_extents_max, bbmax)
+
 
 def cargen_from_obj(obj):
     cargen = CarGeneratorItem()
     cargen.position = obj.location
-    
+
     # TODO: Convert obj rotation to orientX/orientY
     cargen.orient_x = 0.0
     cargen.orient_y = 0.0
@@ -124,6 +137,7 @@ def cargen_from_obj(obj):
 
     return cargen
 
+
 def ymap_from_object(export_op, obj, exportpath, export_settings=None):
     ymap = CMapData()
     max_int = (2**31)-1
@@ -139,8 +153,9 @@ def ymap_from_object(export_op, obj, exportpath, export_settings=None):
                 if entity.sollum_type == SollumType.DRAWABLE:
                     ymap.entities.append(entity_from_obj(entity))
                 else:
-                    export_op.report({'WARNING'},f"Object {entity.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]} type.")
-        
+                    export_op.report(
+                        {'WARNING'}, f"Object {entity.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]} type.")
+
         # Box occluders
         if export_settings.ymap_box_occluders == False and child.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
@@ -150,7 +165,8 @@ def ymap_from_object(export_op, obj, exportpath, export_settings=None):
                     ymap.box_occluders.append(box_from_obj(cargen))
                     calculate_extents(ymap, cargen)
                 else:
-                    export_op.report({'WARNING'},f"Object {cargen.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_BOX_OCCLUDER]} type.")
+                    export_op.report(
+                        {'WARNING'}, f"Object {cargen.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_BOX_OCCLUDER]} type.")
 
         # Model occluders
         if export_settings.ymap_model_occluders == False and child.sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
@@ -159,13 +175,16 @@ def ymap_from_object(export_op, obj, exportpath, export_settings=None):
             for model in child.children:
                 if model.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
                     if len(model.data.vertices) > 256:
-                        export_op.report({"ERROR"}, message=f"Object {model.name} has too many vertices and will be skipped. It can not have more than 256 vertices.")
+                        export_op.report(
+                            {"ERROR"}, message=f"Object {model.name} has too many vertices and will be skipped. It can not have more than 256 vertices.")
                         continue
-                    
-                    ymap.occlude_models.append(model_from_obj(model, export_op))
+
+                    ymap.occlude_models.append(
+                        model_from_obj(model, export_op))
                     calculate_extents(ymap, model)
                 else:
-                    export_op.report({'WARNING'},f"Object {model.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_MODEL_OCCLUDER]} type.")
+                    export_op.report(
+                        {'WARNING'}, f"Object {model.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_MODEL_OCCLUDER]} type.")
 
         # TODO: physics_dictionaries
 
@@ -177,7 +196,8 @@ def ymap_from_object(export_op, obj, exportpath, export_settings=None):
                 if cargen.sollum_type == SollumType.YMAP_CAR_GENERATOR:
                     ymap.car_generators.append(cargen_from_obj(cargen))
                 else:
-                    export_op.report({'WARNING'},f"Object {cargen.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_CAR_GENERATOR]} type.")
+                    export_op.report(
+                        {'WARNING'}, f"Object {cargen.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_CAR_GENERATOR]} type.")
 
         # TODO: lod ligths
 
@@ -190,12 +210,12 @@ def ymap_from_object(export_op, obj, exportpath, export_settings=None):
 
     # TODO: Calc extents
 
-    ymap.block.version  = obj.ymap_properties.block.version 
-    ymap.block.versiflagson  = obj.ymap_properties.block.flags
-    ymap.block.name  = obj.ymap_properties.block.name
-    ymap.block.exported_by  = obj.ymap_properties.block.exported_by
-    ymap.block.owner  = obj.ymap_properties.block.owner
-    ymap.block.time  = obj.ymap_properties.block.time
+    ymap.block.version = obj.ymap_properties.block.version
+    ymap.block.versiflagson = obj.ymap_properties.block.flags
+    ymap.block.name = obj.ymap_properties.block.name
+    ymap.block.exported_by = obj.ymap_properties.block.exported_by
+    ymap.block.owner = obj.ymap_properties.block.owner
+    ymap.block.time = obj.ymap_properties.block.time
 
     return ymap
 

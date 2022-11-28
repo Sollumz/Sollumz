@@ -1,11 +1,12 @@
 import bpy
 
 from ..tools.utils import int_to_bool_list, flag_prop_to_list, flag_list_to_int
-from bpy.props import (EnumProperty, FloatProperty, PointerProperty, StringProperty, IntProperty, FloatVectorProperty, BoolProperty)
+from bpy.props import (EnumProperty, FloatProperty, PointerProperty,
+                       StringProperty, IntProperty, FloatVectorProperty, BoolProperty)
 
 
 def update_uint_prop(self, context, var_name):
-    '''Work around for storing uint values as a Blender property (credits: CFox)'''
+    """Work around for storing uint values as a Blender property (credits: CFox)"""
     try:
         int(getattr(self, var_name))
     except ValueError:
@@ -21,7 +22,7 @@ def update_uint_prop(self, context, var_name):
 
 
 class FlagPropertyGroup:
-    '''Credits: Sollumz'''
+    """Credits: Sollumz"""
 
     def update_flags_total(self, context):
         flags = int_to_bool_list(int(self.flags), size=2)
@@ -36,7 +37,7 @@ class FlagPropertyGroup:
 
 
 class ContentFlagPropertyGroup:
-    '''Credits: Sollumz'''
+    """Credits: Sollumz"""
 
     def update_flags_total(self, context):
         flags = int_to_bool_list(int(self.content_flags), size=11)
@@ -122,7 +123,8 @@ class YmapCarGeneratorProperties(bpy.types.PropertyGroup):
     car_model: StringProperty(name="CarModel", default="panto")
     cargen_flags: IntProperty(name="Flags", default=0)
     pop_group: StringProperty(name="PopGroup", default="")
-    perpendicular_length: FloatProperty(name="PerpendicularLength", default=2.3)
+    perpendicular_length: FloatProperty(
+        name="PerpendicularLength", default=2.3)
     body_color_remap_1: IntProperty(name="BodyColorRemap1", default=-1)
     body_color_remap_2: IntProperty(name="BodyColorRemap2", default=-1)
     body_color_remap_3: IntProperty(name="BodyColorRemap3", default=-1)
@@ -132,8 +134,10 @@ class YmapCarGeneratorProperties(bpy.types.PropertyGroup):
 
 def register():
     bpy.types.Object.ymap_properties = PointerProperty(type=YmapProperties)
-    bpy.types.Object.ymap_model_occl_properties = PointerProperty(type=YmapModelOccluderProperties)
-    bpy.types.Object.ymap_cargen_properties = PointerProperty(type=YmapCarGeneratorProperties)
+    bpy.types.Object.ymap_model_occl_properties = PointerProperty(
+        type=YmapModelOccluderProperties)
+    bpy.types.Object.ymap_cargen_properties = PointerProperty(
+        type=YmapCarGeneratorProperties)
 
 
 def unregister():
