@@ -49,7 +49,7 @@ def longest(lst, string):
 
 def remove_ff(row):
     target = longest(row, "FF")
-    start = target[0]
+    start = target[0] + 1
     end = target[1]
     length = end - start
     if length > 1:
