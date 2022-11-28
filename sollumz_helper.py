@@ -3,7 +3,7 @@ import traceback
 import os
 import time
 from abc import abstractmethod
-from .tools.blenderhelper import get_children_recursive
+from .tools.blenderhelper import get_children_recursive, get_object_with_children
 from .sollumz_properties import BOUND_TYPES
 from .ydr.ydrexport import get_used_materials
 
@@ -55,6 +55,16 @@ class SOLLUMZ_OT_base:
         self.report({"ERROR"}, msg)
 
 
+def set_object_collection(obj):
+    target = bpy.context.view_layer.active_layer_collection.collection
+    objs = get_object_with_children(obj)
+    for obj in objs:
+        if len(obj.users_collection) > 0:
+            collection = obj.users_collection[0]
+            collection.objects.unlink(obj)
+        target.objects.link(obj)
+
+
 def reset_sollumz_view(scene):
     scene.hide_collision = not scene.hide_collision
     scene.hide_high_lods = not scene.hide_high_lods
@@ -103,3 +113,18 @@ def has_collision(obj):
         if child.sollum_type in BOUND_TYPES:
             return True
     return False
+
+
+def duplicate_object_with_children(obj):
+    objs = get_object_with_children(obj)
+    new_objs = []
+    for o in objs:
+        new_obj = o.copy()
+        new_obj.animation_data_clear()
+        new_objs.append(new_obj)
+    for i in range(len(objs)):
+        if objs[i].parent:
+            new_objs[i].parent = new_objs[objs.index(objs[i].parent)]
+    for new_obj in new_objs:
+        bpy.context.scene.collection.objects.link(new_obj)
+    return new_objs[0]

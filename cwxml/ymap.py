@@ -5,18 +5,22 @@ from .element import (
     AttributeProperty,
     ElementProperty,
     ElementTree,
-    FlagsProperty,
     ListProperty,
     QuaternionProperty,
     TextProperty,
     TextListProperty,
     ValueProperty,
     VectorProperty,
-    Vector4Property
+    TextPropertyRequired,
+    ListPropertyRequired,
+    ElementProperty,
+    Vector4Property,
 )
 
 
 class YMAP:
+
+    file_extension = ".ymap.xml"
 
     @staticmethod
     def from_xml_file(filepath):
@@ -402,18 +406,201 @@ class EntityItem(ElementTree):
         self.tint_value = ValueProperty("tintValue", 0)
 
 
-class EntityListProperty(ListProperty):
+class EntityListProperty(ListPropertyRequired):
     list_type = EntityItem
     tag_name = "entities"
 
+
+class ContainerLodsListProperty(ElementTree):
+    '''This is not used by GTA5 but added for completion'''
+    tag_name = "containerLods"
+
+    def __init__(self):
+        super().__init__()
+        self.item_type = AttributeProperty("itemType", "rage__fwContainerLodDef")
+
+
+class BoxOccluderItem(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.center_x = ValueProperty("iCenterX")
+        self.center_y = ValueProperty("iCenterY")
+        self.center_z = ValueProperty("iCenterZ")
+        self.cos_z = ValueProperty("iCosZ")
+        self.length = ValueProperty("iLength")
+        self.width = ValueProperty("iWidth")
+        self.height = ValueProperty("iHeight")
+        self.sin_z = ValueProperty("iSinZ")
+
+
+class BoxOccludersListProperty(ListPropertyRequired):
+    list_type = BoxOccluderItem
+    tag_name = "boxOccluders"
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name, value)
+        self.item_type = AttributeProperty("itemType", "BoxOccluder")
+
+
+class OccludeModelItem(ElementTree):
+    class VertsProperty(ElementProperty):
+        '''Same as a TextProperty but formats the input and output and returns an empty element rather than None'''
+        value_types = (str)
+
+        def __init__(self, tag_name: str = "verts", value=None):
+            super().__init__(tag_name, value or "")
+
+        @staticmethod
+        def from_xml(element: ET.Element):
+            text = element.text.replace("\n", "").replace(" ", "")
+            if not text:
+                raise ValueError(f'Missing verts data on {OccludeModelItem.VertsProperty.__name__}')
+            return OccludeModelItem.VertsProperty(element.tag, text)
+
+        def to_xml(self):
+            element = ET.Element(self.tag_name)
+            if not self.value or len(self.value) < 1:
+                return element
+
+            text = []
+            for chunk in [self.value[i:i + 64] for i in range(0, len(self.value), 64)]:
+                text.append(" ".join([chunk[j:j + 2] for j in range(0, len(chunk), 2)]))
+                text.append("\n")
+            element.text = "".join(text)
+
+            return element
+
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.bmin = VectorProperty("bmin")
+        self.bmax = VectorProperty("bmax")
+        self.data_size = ValueProperty("dataSize")
+        self.verts = self.VertsProperty("verts")
+        self.num_verts_in_bytes = ValueProperty("numVertsInBytes")
+        self.num_tris = ValueProperty("numTris")
+        self.flags = ValueProperty("flags")
+
+
+class OccludeModelsListProperty(ListPropertyRequired):
+    list_type = OccludeModelItem
+    tag_name = "occludeModels"
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name, value)
+        self.item_type = AttributeProperty("itemType", "OccludeModel")
+
+
+class PhysicsDictionariesListProperty(ListProperty):
+    '''
+    Same as ListPropertyRequired but only accepts items of type TextProperty.
+    '''
+    class PhysicsDictionarieItem(TextProperty):
+        tag_name = "Item"
+
+    list_type = PhysicsDictionarieItem
+    tag_name = "physicsDictionaries"
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+
+        for child in vars(self).values():
+            if isinstance(child, AttributeProperty):
+                element.set(child.name, str(child.value))
+
+        if self.value and len(self.value) > 0:
+            for item in self.value:
+                if isinstance(item, TextProperty):
+                    element.append(item.to_xml())
+                else:
+                    raise TypeError(
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+
+        return element
+
+
+# TODO: InstancedData
+
+
+class TimeCycleModifierItem(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.name = TextProperty("name")
+        self.min_extents = VectorProperty("minExtents")
+        self.max_extents = VectorProperty("maxExtents")
+        self.percentage = ValueProperty("percentage")
+        self.range = ValueProperty("range")
+        self.start_hour = ValueProperty("startHour")
+        self.end_hour = ValueProperty("endHour")
+
+
+class TimeCycleModifiersListProperty(ListPropertyRequired):
+    list_type = TimeCycleModifierItem
+    tag_name = "timeCycleModifiers"
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name, value)
+        self.item_type = AttributeProperty("itemType", "CTimeCycleModifier")
+
+
+class CarGeneratorItem(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.position = VectorProperty("position")
+        self.orient_x = ValueProperty("orientX")
+        self.orient_y = ValueProperty("orientY")
+        self.perpendicular_length = ValueProperty("perpendicularLength")
+        self.car_model = TextPropertyRequired("carModel")
+        self.flags = ValueProperty("flags")
+        self.body_color_remap_1 = ValueProperty("bodyColorRemap1", -1)
+        self.body_color_remap_2 = ValueProperty("bodyColorRemap2", -1)
+        self.body_color_remap_3 = ValueProperty("bodyColorRemap3", -1)
+        self.body_color_remap_4 = ValueProperty("bodyColorRemap4", -1)
+        self.pop_group = TextPropertyRequired("popGroup")
+        self.livery = ValueProperty("livery", -1)
+
+
+class CarGeneratorsListProperty(ListPropertyRequired):
+    list_type = CarGeneratorItem
+    tag_name = "carGenerators"
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name, value)
+        self.item_type = AttributeProperty("itemType", "CCarGen")
+
+
+# TODO: Lod Lights
+
+
+# TODO: Distant Lod Lights
+
+
+class BlockProperty(ElementTree):
+    tag_name = "block"
+
+    def __init__(self):
+        super().__init__()
+        self.version = ValueProperty("version")
+        self.flags = ValueProperty("flags")
+        self.name = TextPropertyRequired("name")
+        self.exported_by = TextPropertyRequired("exportedBy")
+        self.owner = TextPropertyRequired("owner")
+        self.time = TextPropertyRequired("time")
 
 class CMapData(ElementTree, AbstractClass):
     tag_name = "CMapData"
 
     def __init__(self):
         super().__init__()
-        self.name = TextProperty("name")
-        self.parent = TextProperty("parent")
+        self.name = TextPropertyRequired("name")
+        self.parent = TextPropertyRequired("parent")
         self.flags = ValueProperty("flags", 0)
         self.content_flags = ValueProperty("contentFlags", 0)
         self.streaming_extents_min = VectorProperty("streamingExtentsMin")
@@ -421,3 +608,13 @@ class CMapData(ElementTree, AbstractClass):
         self.entities_extents_min = VectorProperty("entitiesExtentsMin")
         self.entities_extents_max = VectorProperty("entitiesExtentsMax")
         self.entities = EntityListProperty()
+        self.container_lods = ContainerLodsListProperty()
+        self.box_occluders = BoxOccludersListProperty()
+        self.occlude_models = OccludeModelsListProperty()
+        self.physics_dictionaries = PhysicsDictionariesListProperty()
+        # self.instanced_data = InstancedDataProperty()
+        self.time_cycle_modifiers = TimeCycleModifiersListProperty()
+        self.car_generators = CarGeneratorsListProperty()
+        # self.lod_lights = LODLightsSOAProperty()
+        # self.distant_lod_lights = DistantLODLightsSOAProperty()
+        self.block = BlockProperty()
