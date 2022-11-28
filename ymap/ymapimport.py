@@ -73,11 +73,13 @@ def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData):
 
         # Looping trough existing objects, if found in ymap, then dupplicate and place in specific ymap collection
         for obj in existingObjects:
+            temp_name = obj.name.replace("pack:/", "")
             for entity in ymap.entities:
-                if entity.archetype_name == obj.name:
-                    if obj.sollum_type == SollumType.DRAWABLE:
+                if entity.archetype_name.lower() == temp_name.lower():
+                    if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
                         new_obj = duplicate_object_with_children(obj)
                         apply_entity_properties(new_obj, entity)
+                        new_obj.name = temp_name
                         new_obj.parent = group_obj
                         count += 1
                         entity.found = True
