@@ -231,6 +231,30 @@ class ListProperty(ElementProperty, AbstractClass):
         return None
 
 
+class ListPropertyRequired(ListProperty):
+    """Same as ListProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name or type(self).tag_name, value or [])
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+
+        for child in vars(self).values():
+            if isinstance(child, AttributeProperty):
+                element.set(child.name, str(child.value))
+
+        if self.value and len(self.value) > 0:
+            for item in self.value:
+                if isinstance(item, self.list_type):
+                    element.append(item.to_xml())
+                else:
+                    raise TypeError(
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+
+        return element
+
+
 class TextProperty(ElementProperty):
     value_types = (str)
 
@@ -247,6 +271,25 @@ class TextProperty(ElementProperty):
 
         result = ET.Element(self.tag_name)
         result.text = self.value
+        return result
+
+
+class TextPropertyRequired(ElementProperty):
+    """Same as TextProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
+    value_types = (str)
+
+    def __init__(self, tag_name: str = "Name", value=None):
+        super().__init__(tag_name, value or "")
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        return TextPropertyRequired(element.tag, element.text)
+
+    def to_xml(self):
+        result = ET.Element(self.tag_name)
+        if self.value or len(self.value) != 0:
+            result.text = self.value
+
         return result
 
 

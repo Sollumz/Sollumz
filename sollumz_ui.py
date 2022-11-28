@@ -163,6 +163,33 @@ class SOLLUMZ_PT_import_animation(bpy.types.Panel):
                                         bpy.data, "armatures", operator.import_settings, "selected_armature")
 
 
+class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
+    bl_label = "Ymap"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 5
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_import"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.import_settings, "ymap_exclude_entities")
+        layout.prop(operator.import_settings, "ymap_box_occluders")
+        layout.prop(operator.import_settings, "ymap_model_occluders")
+        layout.prop(operator.import_settings, "ymap_car_generators")
+
+
 class SOLLUMZ_PT_export_main(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"
     bl_region_type = "TOOL_PROPS"
@@ -272,6 +299,33 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
         layout.prop(operator.export_settings, "export_with_hi")
 
 
+class SOLLUMZ_PT_export_ymap(bpy.types.Panel):
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
+    bl_label = "Ymap"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 5
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.export_settings, "ymap_exclude_entities")
+        layout.prop(operator.export_settings, "ymap_box_occluders")
+        layout.prop(operator.export_settings, "ymap_model_occluders")
+        layout.prop(operator.export_settings, "ymap_car_generators")
+
+
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
@@ -371,24 +425,6 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.paint_a")
         row.prop(context.scene, "vert_paint_alpha")
-
-
-class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Ymap Tools"
-    bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="FILE")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.importymap")
-        row.operator("sollumz.exportymap")
 
 
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):

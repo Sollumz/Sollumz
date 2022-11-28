@@ -247,6 +247,14 @@ def get_children_recursive(obj) -> list[bpy.types.Object]:
     return children
 
 
+def get_object_with_children(obj):
+    """Get the object including the whole child hierarchy"""
+    objs = [obj]
+    for child in get_children_recursive(obj):
+        objs.append(child)
+    return objs
+
+
 def create_mesh_object(sollum_type: SollumType, name: str = None) -> bpy.types.Object:
     """Create a bpy mesh object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]

@@ -47,6 +47,15 @@ class SollumType(str, Enum):
     ANIMATIONS = "sollumz_animations"
     ANIMATION = "sollumz_animation"
 
+    YMAP = "sollumz_ymap"
+    YMAP_ENTITY_GROUP = "sollumz_ymap_entity_group"
+    YMAP_BOX_OCCLUDER_GROUP = "sollumz_ymap_box_occluder_group"
+    YMAP_MODEL_OCCLUDER_GROUP = "sollumz_ymap_model_occluder_group"
+    YMAP_CAR_GENERATOR_GROUP = "sollumz_ymap_car_generator_group"
+    YMAP_BOX_OCCLUDER = "sollumz_ymap_box_occluder"
+    YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
+    YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
+
 
 class LightType(str, Enum):
     NONE = "sollumz_light_none"
@@ -193,6 +202,19 @@ DRAWABLE_TYPES = [
     SollumType.SKELETON,
 ]
 
+
+YMAP_GROUP_TYPES = [
+    SollumType.YMAP,
+    SollumType.YMAP_ENTITY_GROUP,
+    SollumType.YMAP_BOX_OCCLUDER_GROUP,
+    SollumType.YMAP_MODEL_OCCLUDER_GROUP,
+    SollumType.YMAP_CAR_GENERATOR_GROUP,
+    SollumType.YMAP_BOX_OCCLUDER,
+    SollumType.YMAP_MODEL_OCCLUDER,
+    SollumType.YMAP_CAR_GENERATOR,
+]
+
+
 SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_BOX: "Bound Box",
     SollumType.BOUND_SPHERE: "Bound Sphere",
@@ -235,6 +257,15 @@ SOLLUMZ_UI_NAMES = {
     SollumType.CLIP: "Clip",
     SollumType.ANIMATIONS: "Animations",
     SollumType.ANIMATION: "Animation",
+
+    SollumType.YMAP: "Ymap",
+    SollumType.YMAP_ENTITY_GROUP: "Entity Group",
+    SollumType.YMAP_BOX_OCCLUDER_GROUP: "Box Occluder Group",
+    SollumType.YMAP_MODEL_OCCLUDER_GROUP: "Model Occluder Group",
+    SollumType.YMAP_CAR_GENERATOR_GROUP: "Car Generator Group",
+    SollumType.YMAP_BOX_OCCLUDER: "Box Occluder",
+    SollumType.YMAP_MODEL_OCCLUDER: "Model Occluder",
+    SollumType.YMAP_CAR_GENERATOR: "Car Generator",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
@@ -513,6 +544,30 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=-1,
     )
 
+    ymap_exclude_entities: bpy.props.BoolProperty(
+        name="Exclude Entities",
+        description="If enabled, ignore all entities from the selected ymap(s).",
+        default=False,
+    )
+
+    ymap_box_occluders: bpy.props.BoolProperty(
+        name="Exclude Box Occluders",
+        description="If enabled, ignore all Box occluders from the selected ymap(s).",
+        default=False,
+    )
+
+    ymap_model_occluders: bpy.props.BoolProperty(
+        name="Exclude Model Occluders",
+        description="If enabled, ignore all Model occluders from the selected ymap(s).",
+        default=False,
+    )
+
+    ymap_car_generators: bpy.props.BoolProperty(
+        name="Exclude Car Generators",
+        description="If enabled, ignore all Car Generators from the selected ymap(s).",
+        default=False,
+    )
+
 
 class SollumzExportSettings(bpy.types.PropertyGroup):
     local: bpy.props.BoolProperty(
@@ -531,11 +586,13 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
                 "including content from children collections"),
                ),
     )
+
     use_batch_own_dir: bpy.props.BoolProperty(
         name="Batch Own Dir",
         description="Create a new directory for each exported file",
         default=False,
     )
+
     sollum_types: bpy.props.EnumProperty(
         name="Sollum Types",
         options={"ENUM_FLAG"},
@@ -543,38 +600,69 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
                (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionary", ""),
                (SollumType.BOUND_COMPOSITE.value, "Bound", ""),
                (SollumType.FRAGMENT.value, "Fragment", ""),
-               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", "")),
+               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", ""),
+               (SollumType.YMAP.value, "Ymap", "")),
         description="Which kind of sollumz objects to export",
         default={SollumType.DRAWABLE.value,
                  SollumType.DRAWABLE_DICTIONARY.value,
                  SollumType.BOUND_COMPOSITE.value,
                  SollumType.FRAGMENT.value,
-                 SollumType.CLIP_DICTIONARY.value},
+                 SollumType.CLIP_DICTIONARY.value,
+                 SollumType.YMAP.value},
     )
+
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",
         description="Export selected and visible objects only",
         default=False,
     )
+
     use_active_collection: bpy.props.BoolProperty(
         name="Active Collection",
         description="Export only objects from the active collection (and its children)",
         default=False,
     )
+
     export_with_hi: bpy.props.BoolProperty(
         name="Export With _hi",
         description="Exports fragment with _hi file.",
         default=False
     )
+
     exclude_skeleton: bpy.props.BoolProperty(
         name="Skeleton",
         description="Exclude skeleton from export. Usually done with mp ped components.",
         default=False
     )
+
     export_with_ytyp: bpy.props.BoolProperty(
         name="Export with ytyp",
         description="Exports a .ytyp.xml with an archetype for every drawable or drawable dictionary being exported.",
         default=False
+    )
+
+    ymap_exclude_entities: bpy.props.BoolProperty(
+        name="Exclude Entities",
+        description="If enabled, ignore all Entities from the selected ymap(s).",
+        default=False,
+    )
+
+    ymap_box_occluders: bpy.props.BoolProperty(
+        name="Exclude Box Occluders",
+        description="If enabled, ignore all Box occluders from the selected ymap(s).",
+        default=False,
+    )
+
+    ymap_model_occluders: bpy.props.BoolProperty(
+        name="Exclude Model Occluders",
+        description="If enabled, ignore all Model occluders from the selected ymap(s).",
+        default=False,
+    )
+
+    ymap_car_generators: bpy.props.BoolProperty(
+        name="Exclude Car Generators",
+        description="If enabled, ignore all Car Generators from the selected ymap(s).",
+        default=False,
     )
 
 

@@ -17,22 +17,22 @@ class OokSollumzPie(Menu):
         layout = self.layout
 
         pie = layout.menu_pie()
-        pie.operator("sollumz.autoconvertmaterial",
-                     text="Convert Material", icon='NODE_MATERIAL')
-        pie.operator("sollumz.addobjasmloentity",
-                     text="Add Objects To Room", icon='OBJECT_DATA')
-        pie.operator("sollumz.load_flag_preset",
-                     text="Apply Flag Preset", icon='ALIGN_TOP')
-        pie.operator("sollumz.createdrawable",
-                     text="Create Drawable", icon='CUBE')
-        pie.operator("file.find_missing_files",
-                     text="Find Missing Textures", icon='VIEWZOOM')
-        pie.operator("sollumz.export",
-                     text="Export CodeWalker XML", icon='EXPORT')
-        pie.operator("sollumz.importymap",
-                     text="Import XML YMAP", icon='FILE_VOLUME')
-        pie.operator("sollumz.exportymap",
-                     text="Export XML YMAP", icon='ASSET_MANAGER')
+        # Left
+        pie.operator("sollumz.autoconvertmaterial", text="Convert Material", icon='NODE_MATERIAL')
+        # Right
+        pie.operator("sollumz.addobjasmloentity", text="Add Objects To Room", icon='OBJECT_DATA')
+        # Bottom
+        pie.operator("sollumz.load_flag_preset", text="Apply Flag Preset", icon='ALIGN_TOP')
+        # Top
+        pie.operator("file.find_missing_files", text="Find Missing Textures", icon='VIEWZOOM')
+        # Top-left
+        pie.operator("sollumz.import", text="Import CodeWalker XML", icon='IMPORT')
+        # Top-right
+        pie.operator("sollumz.export", text="Export CodeWalker XML", icon='EXPORT')
+        # Bottom-left
+        pie.operator("sollumz.createdrawable", text="Create Drawable", icon='CUBE')
+        # Bottom-right
+        pie.operator("sollumz.createbound", text="Create Composite", icon='CUBE')
 
 
 addon_keymaps = []
