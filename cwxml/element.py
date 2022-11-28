@@ -230,6 +230,7 @@ class ListProperty(ElementProperty, AbstractClass):
 
         return None
 
+
 class ListPropertyRequired(ListProperty):
     """Same as ListProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
 
@@ -272,6 +273,7 @@ class TextProperty(ElementProperty):
         result.text = self.value
         return result
 
+
 class TextPropertyRequired(ElementProperty):
     """Same as TextProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
     value_types = (str)
@@ -287,8 +289,9 @@ class TextPropertyRequired(ElementProperty):
         result = ET.Element(self.tag_name)
         if self.value or len(self.value) != 0:
             result.text = self.value
-        
+
         return result
+
 
 class ColorProperty(ElementProperty):
     value_types = (list)
@@ -348,26 +351,6 @@ class VectorProperty(ElementProperty):
         z = str(float32(self.value.z))
         return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z})
 
-class Vector4Property(ElementProperty):
-    value_types = (Vector)
-
-    def __init__(self, tag_name: str, value=None):
-        super().__init__(tag_name, value or Vector((0, 0, 0, 0)))
-
-    @ staticmethod
-    def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
-            return Vector4Property.read_value_error(element)
-
-        return Vector4Property(
-            element.tag, Vector((float(element.get("x")), float(element.get("y")), float(element.get("z")), float(element.get("w")))))
-
-    def to_xml(self):
-        x = str(float32(self.value.x))
-        y = str(float32(self.value.y))
-        z = str(float32(self.value.z))
-        w = str(float32(self.value.w))
-        return ET.Element(self.tag_name, attrib={"x": x, "y": y, "z": z, "w": w})
 
 class Vector4Property(ElementProperty):
     value_types = (Vector)
