@@ -445,7 +445,7 @@ def clip_from_object(clip_obj):
             clip.animations.append(clip_animation)
 
     clip.hash = clip_properties.hash
-    clip.name = clip_properties.name
+    clip.name = "pack:/" + clip_properties.name
     clip.unknown30 = 0
 
     return clip

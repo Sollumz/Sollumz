@@ -8,6 +8,7 @@ from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import get_bound_center, get_sphere_radius
 from ..tools.utils import divide_vector_inv, prop_array_to_vector
+from ..tools.blenderhelper import remove_number_suffix
 
 
 def get_fragment_drawable(fragment):
@@ -148,7 +149,7 @@ def fragment_from_object(exportop, fobj, exportpath):
 
     lights_from_object(fobj, fragment.lights, armature_obj=dobj)
 
-    fragment.name = fobj.name.split(".")[0]
+    fragment.name = "pack:/" + remove_number_suffix(fobj.name)
     fragment.bounding_sphere_center = get_bound_center(fobj)
     fragment.bounding_sphere_radius = get_sphere_radius(
         fragment.drawable.bounding_box_max, fragment.drawable.bounding_sphere_center)

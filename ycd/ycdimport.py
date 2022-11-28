@@ -451,6 +451,7 @@ def clip_dictionary_to_obj(clip_dictionary, name, armature, armature_obj):
         animations_obj_map[animation.hash] = animation_obj
 
     for clip in clip_dictionary.clips:
+        clip.name = clip.name.replace("pack:/", "")
         clip_obj = clip_to_obj(clip, animations_map, animations_obj_map)
         clip_obj.parent = clips_obj
 

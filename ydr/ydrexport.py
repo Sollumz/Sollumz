@@ -686,8 +686,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
             foldername = remove_number_suffix(obj.name.lower())
             if is_frag:
-                foldername = remove_number_suffix(
-                    obj.parent.name.lower()).replace("pack:/", "")
+                foldername = remove_number_suffix(obj.parent.name.lower())
 
             td, messages = texture_dictionary_from_materials(
                 foldername, materials, os.path.dirname(exportpath))

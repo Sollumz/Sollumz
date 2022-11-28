@@ -40,7 +40,7 @@ def update_hashes(self, context):
 
     anim_hash = anim_drawable_model + "_uv_" + str(material_index)
     clip_hash = "hash_" + hex(Generate(anim_drawable_model) + (material_index + 1)).strip("0x").upper()
-    clip_name = "pack:/" + anim_hash + ".clip"
+    clip_name = anim_hash + ".clip"
     
     animation.animation_properties.hash = anim_hash
 

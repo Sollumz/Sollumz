@@ -256,10 +256,8 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.FRAGMENT:
-                name = obj.name if "/" not in obj.name else obj.name.replace(
-                    "pack:/", "")
                 filepath = self.get_filepath(
-                    remove_number_suffix(name.lower()), YFT.file_extension)
+                    remove_number_suffix(obj.name.lower()), YFT.file_extension)
                 export_yft(self, obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.CLIP_DICTIONARY:

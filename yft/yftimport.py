@@ -23,7 +23,7 @@ def import_yft(filepath: str, import_operator: bpy.types.Operator):
 
 
 def fragment_to_obj(frag_xml: Fragment, filepath: str):
-    frag_obj = create_empty_object(SollumType.FRAGMENT, frag_xml.name)
+    frag_obj = create_empty_object(SollumType.FRAGMENT, frag_xml.name.replace("pack:/", ""))
 
     set_fragment_properties(frag_xml, frag_obj)
 
