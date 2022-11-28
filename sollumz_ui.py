@@ -121,7 +121,7 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
 
-            # Armature is contained in "skel" object, so we need its parent (which is pack:/... or ped root..)
+            # Armature is contained in "skel" object, so we need its parent
             armature_obj = get_armature_obj(item)
             if armature_obj is not None:
                 armature_parent = armature_obj.parent
