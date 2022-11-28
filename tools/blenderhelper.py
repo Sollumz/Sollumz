@@ -230,7 +230,7 @@ def get_armature_obj(armature):
             return obj
 
 
-def get_children_recursive(obj):
+def get_children_recursive(obj) -> list[bpy.types.Object]:
     children = []
 
     if obj is None:
@@ -252,6 +252,17 @@ def create_mesh_object(sollum_type: SollumType, name: str = None) -> bpy.types.O
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
+    obj.sollum_type = sollum_type
+    bpy.context.collection.objects.link(obj)
+
+    return obj
+
+
+def create_empty_object(sollum_type: SollumType, name: str = None) -> bpy.types.Object:
+    """Create a bpy empty object of the given sollum type and link it to the scene."""
+    name = name or SOLLUMZ_UI_NAMES[sollum_type]
+    obj = bpy.data.objects.new(name, None)
+    obj.empty_display_size = 0
     obj.sollum_type = sollum_type
     bpy.context.collection.objects.link(obj)
 

@@ -1,7 +1,6 @@
 import os
 from mathutils import Matrix
-from ..yft.yftimport import get_fragment_drawable
-from ..sollumz_properties import BOUND_TYPES, LODLevel, SollumType
+from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_objects
 from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
@@ -9,6 +8,12 @@ from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import get_bound_center, get_sphere_radius
 from ..tools.utils import divide_vector_inv, prop_array_to_vector
+
+
+def get_fragment_drawable(fragment):
+    for child in fragment.children:
+        if child.sollum_type == SollumType.DRAWABLE:
+            return child
 
 
 def get_group_objects(fragment, index=0):
@@ -32,6 +37,14 @@ def get_obj_parent_group_index(gobjs, obj):
         return gobjs.index(parent)
     else:
         return 255
+
+
+def get_obj_parent_child_index(cobjs, obj):
+    parent = obj.parent
+    if parent.sollum_type == SollumType.FRAGCHILD:
+        return cobjs.index(parent)
+    else:
+        return 0
 
 
 def get_shattermap_image(obj):
@@ -176,7 +189,7 @@ def fragment_from_object(exportop, fobj, exportpath):
         bobjs = get_sollumz_objects_from_objects(gobjs, BOUND_TYPES)
         cobjs = get_sollumz_objects_from_objects(gobjs, SollumType.FRAGCHILD)
         vwobjs = get_sollumz_objects_from_objects(
-            gobjs, SollumType.FRAGVEHICLEWINDOW)
+            cobjs, SollumType.FRAGVEHICLEWINDOW)
 
         flod = LODProperty()
         flod.tag_name = f"LOD{idx+1}"
@@ -284,7 +297,7 @@ def fragment_from_object(exportop, fobj, exportpath):
         for wobj in vwobjs:
             vehwindow = obj_to_vehicle_window(
                 wobj, fragment.drawable, materials)
-            vehwindow.item_id = get_obj_parent_group_index(gobjs, wobj)
+            vehwindow.item_id = get_obj_parent_child_index(cobjs, wobj)
             fragment.vehicle_glass_windows.append(vehwindow)
 
         if lod.lod_properties.type == 1:
