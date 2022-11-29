@@ -2,9 +2,9 @@ import bpy
 
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-from ..tools.blenderhelper import get_children_recursive
+from ..tools.blenderhelper import create_empty_object, get_children_recursive
 from ..tools.boundhelper import convert_selected_to_bound
-from ..tools.fragmenthelper import convert_selected_to_fragment, create_fragment
+from ..tools.fragmenthelper import convert_selected_to_fragment
 
 
 class SOLLUMZ_OT_create_fragment(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -36,7 +36,7 @@ class SOLLUMZ_OT_create_fragment(SOLLUMZ_OT_base, bpy.types.Operator):
                 f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
             return True
         else:
-            obj = create_fragment(fragment_type)
+            obj = create_empty_object(fragment_type)
             if aobj:
                 obj.parent = aobj
             return True

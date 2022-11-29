@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-from .blenderhelper import material_from_image
+from .blenderhelper import create_empty_object, material_from_image
 from itertools import groupby
 
 
@@ -59,14 +59,6 @@ def remove_ff(row):
         row[start:end] = ["--"] * length
     return row
 
-def create_fragment(sollum_type=SollumType.FRAGMENT):
-    empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
-    empty.empty_display_size = 0
-    empty.sollum_type = sollum_type
-    bpy.context.collection.objects.link(empty)
-    bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
-
-    return empty
 
 def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_center=True):
     parent = None
@@ -75,7 +67,7 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
     dobjs = []
 
     if not multiple:
-        dobj = create_fragment()
+        dobj = create_empty_object(SollumType.FRAGMENT)
         dobjs.append(dobj)
         if do_center:
             for obj in objs:
@@ -83,9 +75,9 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
 
             center /= len(objs)
             dobj.location = center
-        dmobj = create_fragment(SollumType.FRAGLOD)
-        gobj = create_fragment(SollumType.FRAGGROUP)
-        cobj = create_fragment(SollumType.FRAGCHILD)
+        dmobj = create_empty_object(SollumType.FRAGLOD)
+        gobj = create_empty_object(SollumType.FRAGGROUP)
+        cobj = create_empty_object(SollumType.FRAGCHILD)
         dmobj.parent = dobj
         gobj.parent = dmobj
         cobj.parent = gobj
@@ -97,12 +89,12 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
                 f"{obj.name} cannot be converted because it has no mesh data.")
 
         if multiple:
-            dobj = parent or create_fragment()
+            dobj = parent or create_empty_object()
             dobjs.append(dobj)
             if do_center:
                 dobj.location = obj.location
                 obj.location = Vector()
-            dmobj = create_fragment(SollumType.FRAGLOD)
+            dmobj = create_empty_object(SollumType.FRAGLOD)
             dmobj.parent = dobj
             gobj.parent = dmobj
             cobj.parent = gobj
