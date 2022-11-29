@@ -89,7 +89,7 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
                 f"{obj.name} cannot be converted because it has no mesh data.")
 
         if multiple:
-            dobj = parent or create_empty_object()
+            dobj = parent or create_empty_object(SollumType.FRAGMENT)
             dobjs.append(dobj)
             if do_center:
                 dobj.location = obj.location
