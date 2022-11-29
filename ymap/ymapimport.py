@@ -75,7 +75,7 @@ def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData):
         for obj in existingObjects:
             for entity in ymap.entities:
                 if entity.archetype_name == obj.name:
-                    if obj.sollum_type == SollumType.DRAWABLE:
+                    if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
                         new_obj = duplicate_object_with_children(obj)
                         apply_entity_properties(new_obj, entity)
                         new_obj.parent = group_obj
