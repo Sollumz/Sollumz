@@ -122,6 +122,63 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
 
     return dobjs
 
+def convert_selected_to_window(objs, use_names=False, multiple=False, do_center=True):
+    parent = None
+
+    center = Vector()
+    dobjs = []
+
+    if not multiple:
+        dobj = create_empty_object(SollumType.FRAGGROUP)
+        dobjs.append(dobj)
+        if do_center:
+            for obj in objs:
+                center += obj.location
+
+            center /= len(objs)
+            dobj.location = center
+        cobj = create_empty_object(SollumType.FRAGCHILD)
+        cobj.parent = dobj
+
+    for obj in objs:
+
+        if obj.type != "MESH":
+            raise Exception(
+                f"{obj.name} cannot be converted because it has no mesh data.")
+
+        if multiple:
+            dobj = parent or create_empty_object(SollumType.FRAGGROUP)
+            dobjs.append(dobj)
+            if do_center:
+                dobj.location = obj.location
+                obj.location = Vector()
+            dmobj = create_empty_object(SollumType.FRAGCHILD)
+            dmobj.parent = dobj
+            cobj.parent = dmobj
+        elif do_center:
+            obj.location -= center
+
+        obj.parent = cobj
+
+        name = obj.name
+
+        if use_names:
+            obj.name = name + "_old"
+            dobj.name = name
+
+        obj.sollum_type = SollumType.FRAGVEHICLEWINDOW
+
+        new_obj = obj.copy()
+        # add color layer
+        if len(new_obj.data.vertex_colors) == 0:
+            new_obj.data.vertex_colors.new()
+        # add object to collection
+        bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.context.collection.objects.link(new_obj)
+        new_obj.name = name + "_geom"
+
+    return dobjs
+
 def image_to_shattermap(img):
     width = img.size[0]
     values = []

@@ -116,6 +116,11 @@ def register():
         default=SollumType.FRAGMENT.value
     )
 
+    bpy.types.Scene.create_window_type = bpy.props.EnumProperty(
+            (SollumType.FRAGVEHICLEWINDOW.value,
+             SOLLUMZ_UI_NAMES[SollumType.FRAGVEHICLEWINDOW], "Create a vehicle window fragment."),
+    )
+
 def unregister():
     bpy.types.Object.fragment_properties
     bpy.types.Object.lod_properties

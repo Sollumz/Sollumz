@@ -12,6 +12,8 @@ class SollumType(str, Enum):
     FRAGLOD = "sollumz_lod"
     FRAGVEHICLEWINDOW = "sollumz_frag_vehicle_window"
 
+    # todo: GlassWindows
+
     DRAWABLE_DICTIONARY = "sollumz_drawable_dictionary"
     DRAWABLE = "sollumz_drawable"
     DRAWABLE_MODEL = "sollumz_drawable_model"
