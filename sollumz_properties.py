@@ -687,10 +687,11 @@ def get_hide_collisions(self):
 def set_hide_collisions(self, value):
     self["hide_collision"] = value
 
-    for obj in bpy.context.collection.all_objects:
-        if obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES:
-            if obj.name in bpy.context.view_layer.objects:
-                obj.hide_set(value)
+    for collection in bpy.data.collections:
+        for obj in collection.all_objects:
+            if obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES:
+                if obj.name in bpy.context.view_layer.objects:
+                    obj.hide_set(value)
 
 
 def get_hide_high_lods(self):
@@ -700,10 +701,11 @@ def get_hide_high_lods(self):
 def set_hide_high_lods(self, value):
     self["hide_high_lods"] = value
 
-    for obj in bpy.context.collection.all_objects:
-        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-            if obj.drawable_model_properties.sollum_lod == LODLevel.HIGH:
-                hide_obj_and_children(obj, value)
+    for collection in bpy.data.collections:
+        for obj in collection.all_objects:
+            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+                if obj.drawable_model_properties.sollum_lod == LODLevel.HIGH:
+                    hide_obj_and_children(obj, value)
 
 
 def get_hide_medium_lods(self):
@@ -713,10 +715,11 @@ def get_hide_medium_lods(self):
 def set_hide_medium_lods(self, value):
     self["hide_medium_lods"] = value
 
-    for obj in bpy.context.collection.all_objects:
-        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-            if obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM:
-                hide_obj_and_children(obj, value)
+    for collection in bpy.data.collections:
+        for obj in collection.all_objects:
+            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+                if obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM:
+                    hide_obj_and_children(obj, value)
 
 
 def get_hide_low_lods(self):
@@ -726,10 +729,11 @@ def get_hide_low_lods(self):
 def set_hide_low_lods(self, value):
     self["hide_low_lods"] = value
 
-    for obj in bpy.context.collection.all_objects:
-        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-            if obj.drawable_model_properties.sollum_lod == LODLevel.LOW:
-                hide_obj_and_children(obj, value)
+    for collection in bpy.data.collections:
+        for obj in collection.all_objects:
+            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+                if obj.drawable_model_properties.sollum_lod == LODLevel.LOW:
+                    hide_obj_and_children(obj, value)
 
 
 def get_hide_very_low_lods(self):
@@ -739,10 +743,11 @@ def get_hide_very_low_lods(self):
 def set_hide_very_low_lods(self, value):
     self["hide_very_low_lods"] = value
 
-    for obj in bpy.context.collection.all_objects:
-        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-            if obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
-                hide_obj_and_children(obj, value)
+    for collection in bpy.data.collections:
+        for obj in collection.all_objects:
+            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+                if obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
+                    hide_obj_and_children(obj, value)
 
 
 def get_hide_vehicle_windows(self):
@@ -752,9 +757,10 @@ def get_hide_vehicle_windows(self):
 def set_hide_vehicle_windows(self, value):
     self["hide_vehicle_windows"] = value
 
-    for obj in bpy.context.collection.all_objects:
-        if obj.sollum_type == SollumType.FRAGVEHICLEWINDOW:
-            hide_obj_and_children(obj, value)
+    for collection in bpy.data.collections:
+        for obj in collection.all_objects:
+            if obj.sollum_type == SollumType.FRAGVEHICLEWINDOW:
+                hide_obj_and_children(obj, value)
 
 
 def register():
