@@ -1,12 +1,13 @@
 import bpy
+
 from typing import Union
-
 from mathutils import Color, Quaternion
-
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
-from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
+from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel, SollumType
 from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
+from ..sollumz_helper import duplicate_object_with_children, get_or_create_collection
+from ..ymap.ymapimport import apply_entity_properties
 
 
 def create_mlo_tcm(tcm_xml: ytypxml.TimeCycleModifier, archetype: ArchetypeProperties):
@@ -55,14 +56,6 @@ def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
         archetype.entities[index].attached_room_id = room.id
 
 
-def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: MloEntityProperties):
-    """Atempt to find an existing entity object in the scene and link it to the entity data-block."""
-
-    for obj in bpy.context.collection.all_objects:
-        if entity_xml.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
-            entity.linked_object = obj
-
-
 def create_mlo_entity(entity_xml: ymapxml.EntityItem, archetype: ArchetypeProperties):
     """Create an mlo entity from an xml for the provided archetype data-block."""
 
@@ -72,7 +65,19 @@ def create_mlo_entity(entity_xml: ymapxml.EntityItem, archetype: ArchetypeProper
     entity.scale_xy = entity_xml.scale_xy
     entity.scale_z = entity_xml.scale_z
 
-    find_and_link_entity_object(entity_xml, entity)
+    get_or_create_collection(bpy.context.scene, archetype.name)
+
+    existingObjects = []
+    for obj in bpy.context.view_layer.objects:
+        existingObjects.append(obj)
+
+    # Looping trough existing objects, if found in ytyp, then dupplicate and place in specific ytyp collection
+    for obj in existingObjects:
+        if entity_xml.archetype_name == obj.name:
+            if obj.sollum_type == SollumType.DRAWABLE:
+                new_obj = duplicate_object_with_children(obj, archetype.name)
+                apply_entity_properties(new_obj, entity_xml)
+                entity.linked_object = new_obj
 
     entity.archetype_name = entity_xml.archetype_name
     entity.flags.total = str(entity_xml.flags)

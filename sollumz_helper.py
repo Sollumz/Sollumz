@@ -115,16 +115,29 @@ def has_collision(obj):
     return False
 
 
-def duplicate_object_with_children(obj):
+def duplicate_object_with_children(obj: bpy.types.Object, collection_name: str = None):
+    if collection_name is not None:
+        collection = bpy.data.collections.get(collection_name)
     objs = get_object_with_children(obj)
     new_objs = []
     for o in objs:
         new_obj = o.copy()
         new_obj.animation_data_clear()
         new_objs.append(new_obj)
+        if collection_name is not None:
+            collection.objects.link(new_obj)
     for i in range(len(objs)):
         if objs[i].parent:
             new_objs[i].parent = new_objs[objs.index(objs[i].parent)]
-    for new_obj in new_objs:
-        bpy.context.scene.collection.objects.link(new_obj)
+    if collection_name is None:
+        for new_obj in new_objs:
+            bpy.context.scene.collection.objects.link(new_obj)
     return new_objs[0]
+
+
+def get_or_create_collection(scene, collection_name):
+    collection = bpy.data.collections.get(collection_name)
+    if collection is None:
+        collection = bpy.data.collections.new(collection_name)
+        scene.collection.children.link(collection)
+    return collection
