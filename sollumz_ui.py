@@ -343,8 +343,22 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.import")
         row.operator("sollumz.export")
-        layout.label(text="View")
 
+
+class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
+    bl_label = "View"
+    bl_idname = "SOLLUMZ_PT_VIEW_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 0
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="PREFERENCES")
+
+    def draw(self, context):
+        layout = self.layout
         row = layout.row()
         row.prop(context.scene, "hide_high_lods")
         row.prop(context.scene, "hide_medium_lods")
@@ -355,11 +369,29 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
 
         row3 = layout.row()
         row3.prop(context.scene, "hide_very_low_lods")
-        row3.prop(context.space_data.overlay,
-                  "show_bones", text="Show Skeleton")
+        row3.prop(context.space_data.overlay, "show_bones", text="Show Skeleton")
 
         row4 = layout.row()
         row4.prop(context.scene, "hide_vehicle_windows")
+
+
+class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Vertex Painter"
+    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 1
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="BRUSH_DATA")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.prop(context.scene, "vert_paint_color")
+        row.operator("sollumz.paint_vertices")
 
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
@@ -370,6 +402,7 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 2
 
     def draw_header(self, context):
         self.layout.label(text="", icon="PREFERENCES")
@@ -383,24 +416,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.debug_set_sollum_type")
         row.prop(context.scene, "all_sollum_type")
-
-
-class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Vertex Painter"
-    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="BRUSH_DATA")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.prop(context.scene, "vert_paint_color")
-        row.operator("sollumz.paint_vertices")
 
 
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
