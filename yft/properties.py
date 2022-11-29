@@ -1,5 +1,7 @@
 import bpy
 
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+
 
 class FragmentProperties(bpy.types.PropertyGroup):
     unk_b0: bpy.props.FloatProperty(name="UnknownB0")
@@ -99,6 +101,20 @@ def register():
     bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
         name="Thickness", default=0.1)
 
+    bpy.types.Scene.create_fragment_type = bpy.props.EnumProperty(
+        items=[
+            (SollumType.FRAGMENT.value,
+             SOLLUMZ_UI_NAMES[SollumType.FRAGMENT], "Create a fragment object."),
+            (SollumType.FRAGLOD.value,
+             SOLLUMZ_UI_NAMES[SollumType.FRAGLOD], "Create a fragment LOD object."),
+            (SollumType.FRAGGROUP.value,
+             SOLLUMZ_UI_NAMES[SollumType.FRAGGROUP], "Create a fragment group object."),
+            (SollumType.FRAGCHILD.value,
+             SOLLUMZ_UI_NAMES[SollumType.FRAGCHILD], "Create a fragment child object."),
+        ],
+        name="Type",
+        default=SollumType.FRAGMENT.value
+    )
 
 def unregister():
     bpy.types.Object.fragment_properties
