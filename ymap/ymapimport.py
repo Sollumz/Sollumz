@@ -11,6 +11,8 @@ from ..sollumz_properties import SollumType
 from ..cwxml.ymap import CMapData, OccludeModelItem, YMAP
 
 # TODO: Make better?
+
+
 def get_mesh_data(model: OccludeModelItem):
     result = ([], [])
     for i in range(int(model.num_verts_in_bytes / 12)):
@@ -52,7 +54,7 @@ def apply_entity_properties(obj, entity):
     obj.scale = Vector((entity.scale_xy, entity.scale_xy, entity.scale_z))
 
 
-def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData):
+def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData, import_settings):
     group_obj = bpy.data.objects.new("Entities", None)
     group_obj.sollum_type = SollumType.YMAP_ENTITY_GROUP
     group_obj.parent = ymap_obj
@@ -67,12 +69,12 @@ def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData):
         count = 0
 
         # Cloning 'context.view_layer.objects' to prevent infinite loop
-        existingObjects = []
+        existing_objects = []
         for obj in bpy.context.view_layer.objects:
-            existingObjects.append(obj)
+            existing_objects.append(obj)
 
         # Looping trough existing objects, if found in ymap, then dupplicate and place in specific ymap collection
-        for obj in existingObjects:
+        for obj in existing_objects:
             for entity in ymap.entities:
                 if entity.archetype_name == obj.name:
                     if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
@@ -82,21 +84,27 @@ def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData):
                         count += 1
                         entity.found = True
                     else:
-                        self.error(f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
+                        self.error(
+                            f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
 
         # Creating empty entity if no object was found for reference, and notify user
-        for entity in ymap.entities:
-            if entity.found is None:
-                empty_obj = bpy.data.objects.new(entity.archetype_name + " (not found)", None)
-                empty_obj.parent = group_obj
-                apply_entity_properties(empty_obj, entity)
-                empty_obj.sollum_type = SollumType.DRAWABLE
-                self.error(f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
+        if not import_settings.ymap_skip_missing_entities:
+            for entity in ymap.entities:
+                if entity.found is None:
+                    empty_obj = bpy.data.objects.new(
+                        entity.archetype_name + " (not found)", None)
+                    empty_obj.parent = group_obj
+                    apply_entity_properties(empty_obj, entity)
+                    empty_obj.sollum_type = SollumType.DRAWABLE
+                    self.error(
+                        f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
         if count > 0:
-            self.message(f"Succesfully placed {count}/{entities_amount} entities from scene!")
+            self.message(
+                f"Succesfully placed {count}/{entities_amount} entities from scene!")
             return group_obj
         else:
-            self.message(f"No entity from '{self.filepath}' exist in the view layer!")
+            self.message(
+                f"No entity from '{self.filepath}' exist in the view layer!")
             return False
     else:
         self.error(f"{self.filepath} doesn't contains any entity!")
@@ -120,8 +128,10 @@ def box_to_obj(obj, ymap: CMapData):
         box_obj = bpy.context.view_layer.objects.active
         box_obj.sollum_type = SollumType.YMAP_BOX_OCCLUDER
         box_obj.name = "Box"
-        box_obj.active_material = add_occluder_material(SollumType.YMAP_BOX_OCCLUDER)
-        box_obj.location = Vector([box.center_x, box.center_y, box.center_z]) / 4
+        box_obj.active_material = add_occluder_material(
+            SollumType.YMAP_BOX_OCCLUDER)
+        box_obj.location = Vector(
+            [box.center_x, box.center_y, box.center_z]) / 4
         box_obj.rotation_euler[2] = math.atan2(box.cos_z, box.sin_z)
         box_obj.scale = Vector([box.length, box.width, box.height]) / 4
         box_obj.parent = group_obj
@@ -148,7 +158,8 @@ def model_to_obj(import_op, obj: bpy.types.Object, ymap: CMapData):
         model_obj = bpy.data.objects.new("Model", mesh)
         model_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER
         model_obj.ymap_properties.flags = model.flags
-        model_obj.active_material = add_occluder_material(SollumType.YMAP_MODEL_OCCLUDER)
+        model_obj.active_material = add_occluder_material(
+            SollumType.YMAP_MODEL_OCCLUDER)
         bpy.context.collection.objects.link(model_obj)
         bpy.context.view_layer.objects.active = model_obj
         mesh.from_pydata(verts, [], faces)
@@ -167,9 +178,9 @@ def cargen_to_obj(import_op, obj: bpy.types.Object, ymap: CMapData):
     group_obj.lock_scale = (True, True, True)
     bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
-    
+
     file_loc = os.path.join(os.path.dirname(__file__), "car_model.obj")
-    
+
     for cargen in ymap.car_generators:
         bpy.ops.import_scene.obj(filepath=file_loc)
         cargen_obj = bpy.context.selected_objects[0]
@@ -210,18 +221,18 @@ def ymap_to_obj(import_op, ymap: CMapData, import_settings):
 
     ymap_obj.ymap_properties.streaming_extents_min = ymap.streaming_extents_min
     ymap_obj.ymap_properties.streaming_extents_max = ymap.streaming_extents_max
-    ymap_obj.ymap_properties.entities_extents_min =  ymap.entities_extents_min
-    ymap_obj.ymap_properties.entities_extents_max =  ymap.entities_extents_max
+    ymap_obj.ymap_properties.entities_extents_min = ymap.entities_extents_min
+    ymap_obj.ymap_properties.entities_extents_max = ymap.entities_extents_max
 
     # Entities
     # TODO: find a way to retrieve ignored stuff on export
     if import_settings.ymap_exclude_entities == False and len(ymap.entities) > 0:
-        entity_to_obj(import_op, ymap_obj, ymap)
-    
+        entity_to_obj(import_op, ymap_obj, ymap, import_settings)
+
     # Box occluders
     if import_settings.ymap_box_occluders == False and len(ymap.box_occluders) > 0:
         box_to_obj(ymap_obj, ymap)
-    
+
     # Model occluders
     if import_settings.ymap_model_occluders == False and len(ymap.occlude_models) > 0:
         model_to_obj(import_op, ymap_obj, ymap)
@@ -256,7 +267,8 @@ def import_ymap(import_op, filepath, import_settings):
     found = False
     for obj in bpy.context.scene.objects:
         if obj.name == ymap_xml.name:
-            import_op.error(f"{ymap_xml.name} is already existing in the scene. Aborting.")
+            import_op.error(
+                f"{ymap_xml.name} is already existing in the scene. Aborting.")
             found = True
             break
     if not found:
