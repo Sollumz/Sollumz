@@ -616,7 +616,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",
         description="Export selected and visible objects only",
-        default=False,
+        default=True,
     )
 
     use_active_collection: bpy.props.BoolProperty(
