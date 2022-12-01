@@ -184,6 +184,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
+        layout.prop(operator.import_settings, "ymap_skip_missing_entities")
         layout.prop(operator.import_settings, "ymap_exclude_entities")
         layout.prop(operator.import_settings, "ymap_box_occluders")
         layout.prop(operator.import_settings, "ymap_model_occluders")
@@ -369,7 +370,8 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
 
         row3 = layout.row()
         row3.prop(context.scene, "hide_very_low_lods")
-        row3.prop(context.space_data.overlay, "show_bones", text="Show Skeleton")
+        row3.prop(context.space_data.overlay,
+                  "show_bones", text="Show Skeleton")
 
         row4 = layout.row()
         row4.prop(context.scene, "hide_vehicle_windows")

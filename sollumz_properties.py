@@ -544,6 +544,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=-1,
     )
 
+    ymap_skip_missing_entities: bpy.props.BoolProperty(
+        name="Skip Missing Entities",
+        description="If enabled, missing entities wont be created as an empty object.",
+        default=True,
+    )
+
     ymap_exclude_entities: bpy.props.BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s).",
