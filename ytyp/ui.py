@@ -1,6 +1,4 @@
 import bpy
-
-
 from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
 from .properties.ytyp import RoomProperties, PortalProperties, TimecycleModifierProperties
 from .properties.extensions import ExtensionsContainer
@@ -51,8 +49,8 @@ class ExtensionsPanelHelper:
                              extensions_container, "extensions", extensions_container, "extension_index")
 
         row = layout.row()
-        row.operator(self.ADD_OPERATOR_ID)
-        row.operator(self.DELETE_OPERATOR_ID)
+        row.operator("sollumz.addarchetypeextension")
+        row.operator("sollumz.deletearchetypeextension")
 
         selected_extension = extensions_container.selected_extension
         if selected_extension is not None:

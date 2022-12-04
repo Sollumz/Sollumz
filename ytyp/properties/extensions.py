@@ -1,23 +1,10 @@
 import bpy
 from typing import Union
 from enum import Enum
+from mathutils import Vector
+from ...sollumz_properties import SOLLUMZ_UI_NAMES, ExtensionType, items_from_enums
 from ...tools.utils import get_list_item
 
-
-class ExtensionType(str, Enum):
-    DOOR = "CExtensionDefDoor"
-    PARTICLE = "CExtensionDefParticleEffect"
-    AUDIO_COLLISION = "CExtensionDefAudioCollisionSettings"
-    AUDIO_EMITTER = "CExtensionDefAudioEmitter"
-    EXPLOSION_EFFECT = "CExtensionDefExplosionEffect"
-    LADDER = "CExtensionDefLadder"
-    BUOYANCY = "CExtensionDefBuoyancy"
-    LIGHT_SHAFT = "CExtensionDefLightShaft"
-    SPAWN_POINT = "CExtensionDefSpawnPoint"
-    SPAWN_POINT_OVERRIDE = "CExtensionDefSpawnPointOverride"
-    WIND_DISTURBANCE = "CExtensionDefWindDisturbance"
-    PROC_OBJECT = "CExtensionProcObject"
-    EXPRESSION = "CExtensionDefExpression"
 
 class LightShaftDensityType(str, Enum):
     CONSTANT = "LIGHTSHAFT_DENSITYTYPE_CONSTANT"
@@ -34,10 +21,9 @@ class LightShaftVolumeType(str, Enum):
     CYLINDER = "LIGHTSHAFT_VOLUMETYPE_CYLINDER"
 
 
-
 class BaseExtensionProperties:
     offset_position: bpy.props.FloatVectorProperty(
-        name="Offset Position", subtype="TRANSLATION")
+        name="Offset Position")
 
 
 class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
@@ -51,6 +37,12 @@ class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
 
 
 class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+    def update_linked_object(self, context):
+        linked_obj = self.linked_object
+        if linked_obj:
+            linked_obj.location = self.offset_position
+            linked_obj.rotation_euler = self.offset_rotation.to_euler()
+                         
     offset_rotation: bpy.props.FloatVectorProperty(
         name="Offset Rotation", subtype="EULER")
     fx_name: bpy.props.StringProperty(name="FX Name")
@@ -61,6 +53,8 @@ class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperti
     flags: bpy.props.IntProperty(name="Flags")
     color: bpy.props.FloatVectorProperty(
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
+    linked_object: bpy.props.PointerProperty(
+        type=bpy.types.Object, name="Linked Object", update=update_linked_object)
 
 
 class AudioCollisionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
@@ -289,6 +283,18 @@ class ExtensionsContainer:
         type=ExtensionProperties, name="Extensions")
     extension_index: bpy.props.IntProperty(name="Extension Index")
 
+
     @property
     def selected_extension(self) -> Union[ExtensionProperties, None]:
         return get_list_item(self.extensions, self.extension_index)
+
+
+
+def register():
+        bpy.types.Scene.create_extension_type = bpy.props.EnumProperty(
+        items=items_from_enums(ExtensionType), name="Type")
+
+
+def unregister():
+    del bpy.types.Scene.create_archetype_type
+

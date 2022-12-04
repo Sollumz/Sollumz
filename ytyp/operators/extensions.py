@@ -1,7 +1,6 @@
 import bpy
 from ..utils import get_selected_archetype, get_selected_entity
 
-
 class SOLLUMZ_OT_add_archetype_extension(bpy.types.Operator):
     """Add an extension to the archetype."""
     bl_idname = "sollumz.addarchetypeextension"

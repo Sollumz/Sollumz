@@ -21,6 +21,10 @@ class SollumType(str, Enum):
     SKELETON = "sollumz_skeleton"
     LIGHT = "sollumz_light"
 
+    EXTENSION = "sollumz_extension"
+
+
+
     BOUND_BOX = "sollumz_bound_box"
     BOUND_SPHERE = "sollumz_bound_sphere"
     BOUND_CAPSULE = "sollumz_bound_capsule"
@@ -64,6 +68,22 @@ class LightType(str, Enum):
     POINT = "sollumz_light_point"
     SPOT = "sollumz_light_spot"
     CAPSULE = "sollumz_light_capsule"
+
+
+class ExtensionType(str, Enum):
+    DOOR = "CExtensionDefDoor"
+    PARTICLE = "CExtensionDefParticleEffect"
+    AUDIO_COLLISION = "CExtensionDefAudioCollisionSettings"
+    AUDIO_EMITTER = "CExtensionDefAudioEmitter"
+    EXPLOSION_EFFECT = "CExtensionDefExplosionEffect"
+    LADDER = "CExtensionDefLadder"
+    BUOYANCY = "CExtensionDefBuoyancy"
+    LIGHT_SHAFT = "CExtensionDefLightShaft"
+    SPAWN_POINT = "CExtensionDefSpawnPoint"
+    SPAWN_POINT_OVERRIDE = "CExtensionDefSpawnPointOverride"
+    WIND_DISTURBANCE = "CExtensionDefWindDisturbance"
+    PROC_OBJECT = "CExtensionProcObject"
+    EXPRESSION = "CExtensionDefExpression"
 
 
 class MaterialType(str, Enum):
@@ -248,6 +268,22 @@ SOLLUMZ_UI_NAMES = {
     SollumType.DRAWABLE_GEOMETRY: "Drawable Geometry",
     SollumType.SKELETON: "Skeleton",
     SollumType.LIGHT: "Light",
+
+    SollumType.EXTENSION: "Extension",
+
+    ExtensionType.DOOR: "CExtensionDefDoor",
+    ExtensionType.PARTICLE:"CExtensionDefParticleEffect",
+    ExtensionType.AUDIO_COLLISION: "CExtensionDefAudioCollisionSettings",
+    ExtensionType.AUDIO_EMITTER: "CExtensionDefAudioEmitter",
+    ExtensionType.EXPLOSION_EFFECT: "CExtensionDefExplosionEffect",
+    ExtensionType.LADDER: "CExtensionDefLadder",
+    ExtensionType.BUOYANCY: "CExtensionDefBuoyancy",
+    ExtensionType.LIGHT_SHAFT: "CExtensionDefLightShaft",
+    ExtensionType.SPAWN_POINT: "CExtensionDefSpawnPoint",
+    ExtensionType.SPAWN_POINT_OVERRIDE: "CExtensionDefSpawnPointOverride",
+    ExtensionType.WIND_DISTURBANCE: "CExtensionDefWindDisturbance",
+    ExtensionType.PROC_OBJECT: "CExtensionProcObject",
+    ExtensionType.EXPRESSION: "CExtensionDefExpression",
 
     SollumType.NAVMESH: "NavMesh",
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
