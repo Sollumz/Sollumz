@@ -672,6 +672,10 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     )
 
 
+def get_all_collections():
+    return [bpy.context.scene.collection, *bpy.data.collections]
+
+
 def hide_obj_and_children(obj, value):
     if obj.name in bpy.context.view_layer.objects:
         obj.hide_set(value)
@@ -693,7 +697,7 @@ def get_hide_collisions(self):
 def set_hide_collisions(self, value):
     self["hide_collision"] = value
 
-    for collection in bpy.data.collections:
+    for collection in get_all_collections():
         for obj in collection.all_objects:
             if obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES:
                 if obj.name in bpy.context.view_layer.objects:
@@ -707,7 +711,7 @@ def get_hide_high_lods(self):
 def set_hide_high_lods(self, value):
     self["hide_high_lods"] = value
 
-    for collection in bpy.data.collections:
+    for collection in get_all_collections():
         for obj in collection.all_objects:
             if obj.sollum_type == SollumType.DRAWABLE_MODEL:
                 if obj.drawable_model_properties.sollum_lod == LODLevel.HIGH:
@@ -721,7 +725,7 @@ def get_hide_medium_lods(self):
 def set_hide_medium_lods(self, value):
     self["hide_medium_lods"] = value
 
-    for collection in bpy.data.collections:
+    for collection in get_all_collections():
         for obj in collection.all_objects:
             if obj.sollum_type == SollumType.DRAWABLE_MODEL:
                 if obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM:
@@ -735,7 +739,7 @@ def get_hide_low_lods(self):
 def set_hide_low_lods(self, value):
     self["hide_low_lods"] = value
 
-    for collection in bpy.data.collections:
+    for collection in get_all_collections():
         for obj in collection.all_objects:
             if obj.sollum_type == SollumType.DRAWABLE_MODEL:
                 if obj.drawable_model_properties.sollum_lod == LODLevel.LOW:
@@ -749,7 +753,7 @@ def get_hide_very_low_lods(self):
 def set_hide_very_low_lods(self, value):
     self["hide_very_low_lods"] = value
 
-    for collection in bpy.data.collections:
+    for collection in get_all_collections():
         for obj in collection.all_objects:
             if obj.sollum_type == SollumType.DRAWABLE_MODEL:
                 if obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
@@ -763,7 +767,7 @@ def get_hide_vehicle_windows(self):
 def set_hide_vehicle_windows(self, value):
     self["hide_vehicle_windows"] = value
 
-    for collection in bpy.data.collections:
+    for collection in get_all_collections():
         for obj in collection.all_objects:
             if obj.sollum_type == SollumType.FRAGVEHICLEWINDOW:
                 hide_obj_and_children(obj, value)
