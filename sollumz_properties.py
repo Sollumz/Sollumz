@@ -23,8 +23,6 @@ class SollumType(str, Enum):
 
     EXTENSION = "sollumz_extension"
 
-
-
     BOUND_BOX = "sollumz_bound_box"
     BOUND_SPHERE = "sollumz_bound_sphere"
     BOUND_CAPSULE = "sollumz_bound_capsule"
