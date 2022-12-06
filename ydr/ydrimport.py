@@ -1,7 +1,8 @@
 from math import pi, radians
+import bmesh
 import os
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
@@ -330,7 +331,8 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
     # set normals
     if has_normals:
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
-        mesh.normals_split_custom_set_from_vertices(normals)
+        mesh.normals_split_custom_set_from_vertices(
+            [Vector(normal).normalized() for normal in normals])
         mesh.use_auto_smooth = True
 
     # set uvs
@@ -482,14 +484,14 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
             armature = bpy.data.objects[armature_name]
             parent_bone_name = None
             has_bone_translation = False
-            
+
             if len(armature.pose.bones) > model.bone_index:
                 parent_bone_name = armature.pose.bones[model.bone_index].name
                 translation = bones[model.bone_index].translation
                 if (translation is not None):
                     if translation[0] != 0 or translation[1] != 0 or translation[2] != 0:
-                        has_bone_translation = True                        
-                        
+                        has_bone_translation = True
+
             if parent_bone_name is not None:
                 dobj_world_mat = dobj.matrix_world.copy()
                 dobj.parent = armature
