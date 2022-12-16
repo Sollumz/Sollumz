@@ -195,6 +195,7 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
 
         row4 = layout.row()
         row4.operator(ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname)
+        row4.operator(ydr_ops.SOLLUMZ_OT_remove_all_materials_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
