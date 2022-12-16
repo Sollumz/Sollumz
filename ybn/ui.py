@@ -200,6 +200,7 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         grid.prop(context.scene, "composite_replace_original")
         grid.prop(context.scene, "composite_create_bvh")
         grid.prop(context.scene, "create_center_to_selection")
+        grid.prop(context.scene, "composite_apply_default_flag_preset")
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):

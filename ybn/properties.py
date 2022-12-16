@@ -271,6 +271,8 @@ def register():
     bpy.types.Scene.split_collision_count = bpy.props.IntProperty(
         name="Divide By", description=f"Amount to split {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}s or {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}s by", default=2, min=2)
 
+    bpy.types.Scene.composite_apply_default_flag_preset = bpy.props.BoolProperty(
+        name="Apply Default Flag", description=f"If true, the operator will apply the default flag preset to {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}.", default=True)
 
 def unregister():
     del bpy.types.Object.bound_properties
@@ -294,5 +296,6 @@ def unregister():
     del bpy.types.Scene.composite_create_bvh
     del bpy.types.Scene.composite_replace_original
     del bpy.types.Scene.split_collision_count
+    del bpy.types.Scene.composite_apply_default_flag_preset
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

@@ -134,11 +134,20 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         bound_type = context.scene.create_bound_type
 
         if bound_type == SollumType.BOUND_COMPOSITE and len(selected) > 0:
-            convert_selected_to_bound(
+            cobj = convert_selected_to_bound(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh, context.scene.composite_replace_original, context.scene.create_center_to_selection)
+            if context.scene.composite_apply_default_flag_preset:
+                for obj in cobj:
+                    for cobj_child in obj.children:
+                        if cobj_child.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_GEOMETRY:
+                            apply_default_flag_preset(cobj_child, self)
             return True
         elif bound_type in BOUND_SHAPE_TYPES:
             obj = create_bound_shape(bound_type)
+        elif context.scene.composite_apply_default_flag_preset and len(selected) > 0:
+            if bound_type == SollumType.BOUND_GEOMETRYBVH or bound_type == SollumType.BOUND_GEOMETRY:
+                obj = create_bound(bound_type)
+                apply_default_flag_preset(obj, self)
         else:
             obj = create_bound(bound_type)
         if aobj:
@@ -470,3 +479,20 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
                 aobj.composite_flags2[flag_name] = False
 
         return True
+
+
+def apply_default_flag_preset(obj, self):
+    handle_load_flag_presets(self)
+    preset = flag_presets.presets[0]
+    
+    for flag_name in BoundFlags.__annotations__.keys():
+        if flag_name in preset.flags1:
+            obj.composite_flags1[flag_name] = True
+        else:
+            obj.composite_flags1[flag_name] = False
+
+        if flag_name in preset.flags2:
+            obj.composite_flags2[flag_name] = True
+        else:
+            obj.composite_flags2[flag_name] = False
+    obj.margin = 0.005
