@@ -188,10 +188,16 @@ class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
         row2.operator(
             ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
         row2.operator(
-           ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
+            ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
 
         row3 = layout.row()
-        row3.operator(ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname)
+        row3.operator(
+            ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname)
+
+        row4 = layout.row()
+        row4.operator(ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname)
+        row4.operator(
+            ydr_ops.SOLLUMZ_OT_unset_all_materials_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):

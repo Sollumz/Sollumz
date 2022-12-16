@@ -200,6 +200,37 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
+class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Sets all materials to embedded"""
+    bl_idname = "sollumz.setallmatembedded"
+    bl_label = "Set all Materials Embedded"
+    bl_action = "Set All Materials Embedded"
+
+    def set_materials_embedded(self, obj):
+        for mat in obj.data.materials:
+            if mat.sollum_type == MaterialType.SHADER:
+                for node in mat.node_tree.nodes:
+                    if isinstance(node, bpy.types.ShaderNodeTexImage):
+                        node.texture_properties.embedded = True
+                self.message(
+                    f"Set {obj.name}s material {mat.name} textures to embedded.")
+            else:
+                self.message(
+                    f"Skipping object {obj.name} because it does not have a sollumz shader active.")
+
+    def run(self, context):
+        objs = bpy.context.selected_objects
+        if len(objs) == 0:
+            self.warning(
+                f"Please select a object to set all textures embedded.")
+            return False
+
+        for obj in objs:
+            self.set_materials_embedded(obj)
+
+        return True
+
+
 class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
     """Remove all embeded textures on the selected objects active material"""
     bl_idname = "sollumz.removeallembedded"
@@ -231,6 +262,37 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
 
         for obj in objs:
             self.set_textures_unembedded(obj)
+
+        return True
+
+
+class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Make all materials on the selected object use non-embedded textures"""
+    bl_idname = "sollumz.removeallmatembedded"
+    bl_label = "Set all Materials Unembedded"
+    bl_action = "Set all Materials Unembedded"
+
+    def set_materials_unembedded(self, obj):
+        for mat in obj.data.materials:
+            if mat.sollum_type == MaterialType.SHADER:
+                for node in mat.node_tree.nodes:
+                    if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                        node.texture_properties.embedded = False
+                self.message(
+                    f"Set {obj.name}s materials to unembedded.")
+            else:
+                self.message(
+                    f"Skipping object {obj.name} because it does not have a sollumz shader active.")
+
+    def run(self, context):
+        objs = bpy.context.selected_objects
+        if(len(objs) == 0):
+            self.warning(
+                f"Please select a object to remove all embedded materials.")
+            return False
+
+        for obj in objs:
+            self.set_materials_unembedded(obj)
 
         return True
 
