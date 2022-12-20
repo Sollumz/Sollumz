@@ -1,3 +1,4 @@
+from ..ybn.operators import apply_default_flag_preset
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
@@ -32,6 +33,11 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
             if context.scene.auto_create_embedded_col:
                 cobjs = convert_selected_to_bound(
                     context.selected_objects, use_name=False, multiple=context.scene.create_seperate_objects, bvhs=True, replace_original=False, do_center=False)
+                if context.scene.composite_apply_default_flag_preset:
+                    for obj in cobjs:
+                        for cobj_child in obj.children:
+                            if cobj_child.sollum_type == SollumType.BOUND_GEOMETRYBVH:
+                                apply_default_flag_preset(cobj_child, self)
                 for index, composite in enumerate(cobjs):
                     composite.parent = dobjs[index]
                     if context.scene.create_center_to_selection:
