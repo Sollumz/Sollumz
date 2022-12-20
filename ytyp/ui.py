@@ -301,6 +301,9 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         row.prop(selected_ytyp, "all_hd_tex_dist")
         row.operator("sollumz.sethdtexturedistallarchs")
         row = layout.row()
+        row.prop(selected_ytyp, "all_flags")
+        row.operator("sollumz.setflagsallarchs")
+        row = layout.row()
 
 
 class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):

@@ -176,6 +176,7 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
         name="Texture Dictionary: ")
     all_lod_dist: bpy.props.FloatProperty(name="Lod Distance: ")
     all_hd_tex_dist: bpy.props.FloatProperty(name="HD Texture Distance: ")
+    all_flags: bpy.props.IntProperty(name="Flags: ")
     # extensions
     archetypes: bpy.props.CollectionProperty(
         type=ArchetypeProperties, name="Archetypes")
