@@ -4,7 +4,7 @@ from mathutils.geometry import distance_point_to_plane
 from math import radians
 
 from ..sollumz_properties import SollumType
-from .utils import divide_list, subtract_from_vector, get_min_vector_list, add_to_vector, get_max_vector_list
+from .utils import divide_list, subtract_from_vector, get_min_vector_list, add_to_vector, get_max_vector_list, get_max_vector, get_min_vector
 from .version import USE_LEGACY
 from .blenderhelper import get_children_recursive
 
@@ -264,3 +264,30 @@ def get_bound_center_from_bounds(bbmin, bbmax):
 
 def get_sphere_radius(bbmax, bbcenter):
     return (bbmax - bbcenter).length
+
+
+def get_dimensions(bbmin, bbmax):
+    x = bbmax.x - bbmin.x
+    y = bbmax.y - bbmin.y
+
+    height = bbmax.z - bbmin.z
+    length = max(x, y)
+    width = min(x, y)
+
+    return length, width, height
+
+
+def calculate_volume(bbmin, bbmax):
+    length, width, height = get_dimensions(bbmin, bbmax)
+
+    return length * width * height
+
+
+def calculate_inertia(bbmin, bbmax):
+    width, depth, height = get_dimensions(bbmin, bbmax)
+
+    I_h = (1/12) * (pow(width, 2) + pow(depth, 2))
+    I_w = (1/12) * (pow(depth, 2) + pow(height, 2))
+    I_d = (1/12) * (pow(width, 2) + pow(height, 2))
+
+    return Vector((I_h, I_w, I_d))

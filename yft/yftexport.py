@@ -1,12 +1,12 @@
 import os
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_objects
 from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
 from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
-from ..tools.meshhelper import get_bound_center, get_sphere_radius
+from ..tools.meshhelper import get_bound_center, get_sphere_radius, calculate_inertia, calculate_volume
 from ..tools.utils import divide_vector_inv, prop_array_to_vector
 from ..tools.blenderhelper import remove_number_suffix
 
@@ -226,7 +226,8 @@ def fragment_from_object(exportop, fobj, exportpath):
             lod.lod_properties.archetype_inertia_tensor)
         flod.archetype.inertia_tensor = arch_it
         flod.archetype.inertia_tensor_inv = divide_vector_inv(arch_it)
-        flod.archetype.bounds = composite_from_objects(bobjs, True)
+        flod.archetype.bounds = composite_from_objects(
+            bobjs, exportop.export_settings, True)
 
         gidx = 0
         for gobj in gobjs:
@@ -263,7 +264,7 @@ def fragment_from_object(exportop, fobj, exportpath):
             flod.groups.append(group)
             gidx += 1
 
-        for cobj in cobjs:
+        for i, cobj in enumerate(cobjs):
             child = ChildrenItem()
             gobj = cobj.parent
             child.group_index = gobjs.index(gobj)
@@ -272,8 +273,14 @@ def fragment_from_object(exportop, fobj, exportpath):
             child.damaged_mass = cobj.child_properties.damaged_mass
             child.unk_vec = prop_array_to_vector(
                 cobj.child_properties.unk_vec)
-            child.inertia_tensor = prop_array_to_vector(
-                cobj.child_properties.inertia_tensor, 4)
+
+            bounds = flod.archetype.bounds
+
+            if bounds is not None:
+                child_bound = bounds.children[i]
+                inertia = child_bound.inertia * child.pristine_mass
+                child.inertia_tensor = Vector(
+                    (inertia.x, inertia.y, inertia.z, child_bound.volume * child.pristine_mass))
 
             dobj = get_fragment_drawable(cobj)
 

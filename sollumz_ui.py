@@ -298,6 +298,8 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.export_settings, "export_with_hi")
+        layout.prop(operator.export_settings, "auto_calculate_inertia")
+        layout.prop(operator.export_settings, "auto_calculate_volume")
 
 
 class SOLLUMZ_PT_export_ymap(bpy.types.Panel):

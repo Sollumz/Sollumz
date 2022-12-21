@@ -9,7 +9,9 @@ from ..tools.meshhelper import (
     get_total_bounds,
     get_bound_extents,
     get_bound_center_from_bounds,
-    get_sphere_radius
+    get_sphere_radius,
+    calculate_volume,
+    calculate_inertia
 )
 from ..tools.utils import get_distance_of_vectors, get_max_vector_list, get_min_vector_list
 
@@ -128,7 +130,7 @@ def polygon_from_object(obj, geometry, verts_map, mat_map, matrix):
         return bound
 
 
-def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=False):
+def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=False, export_settings=None):
     geometry = None
 
     if sollum_type == SollumType.BOUND_GEOMETRYBVH:
@@ -138,7 +140,7 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
     else:
         return ValueError("Invalid argument for geometry sollum_type!")
 
-    geometry = init_bound_item(geometry, obj, is_frag)
+    geometry = init_bound_item(geometry, obj, is_frag, export_settings)
 
     if sollum_type == SollumType.BOUND_GEOMETRY:
         geometry.unk_float_1 = obj.bound_properties.unk_float_1
@@ -232,8 +234,8 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
     return geometry
 
 
-def init_bound_item(bound_item, obj, is_frag=False):
-    init_bound(bound_item, obj, is_frag)
+def init_bound_item(bound_item, obj, is_frag=False, export_settings=None):
+    init_bound(bound_item, obj, is_frag, export_settings)
     # Get flags from object
     for prop in dir(obj.composite_flags1):
         value = getattr(obj.composite_flags1, prop)
@@ -253,7 +255,7 @@ def init_bound_item(bound_item, obj, is_frag=False):
     return bound_item
 
 
-def init_bound(bound, obj, is_frag=False):
+def init_bound(bound, obj, is_frag=False, export_settings=None):
     if obj.sollum_type in BOUND_SHAPE_TYPES:
         bound.box_max = get_max_vector_list(obj.bound_box)
         bound.box_min = get_min_vector_list(obj.bound_box)
@@ -273,18 +275,31 @@ def init_bound(bound, obj, is_frag=False):
     bound.room_id = obj.bound_properties.room_id
     bound.ped_density = obj.bound_properties.ped_density
     bound.poly_flags = obj.bound_properties.poly_flags
-    bound.inertia = Vector(obj.bound_properties.inertia)
-    bound.volume = obj.bound_properties.volume
     bound.unk_flags = obj.bound_properties.unk_flags
     bound.unk_type = 2 if is_frag else 1
     bound.margin = obj.margin
+    bound.volume = obj.bound_properties.volume
+    bound.inertia = Vector(obj.bound_properties.inertia)
+
+    if export_settings is None:
+        return bound
+
+    if export_settings.auto_calculate_volume:
+        bound.volume = calculate_volume(bound.box_min, bound.box_max)
+
+    if export_settings.auto_calculate_inertia:
+        if isinstance(bound, ybnxml.BoundComposite):
+            bound.inertia = Vector((1, 1, 1))
+        else:
+            bound.inertia = calculate_inertia(bound.box_min, bound.box_max)
 
     return bound
 
 
-def bound_from_object(obj, is_frag=None):
+def bound_from_object(obj, is_frag=None, export_settings=None):
     if obj.sollum_type == SollumType.BOUND_BOX:
-        bound = init_bound_item(ybnxml.BoundBox(), obj, is_frag)
+        bound = init_bound_item(ybnxml.BoundBox(), obj,
+                                is_frag, export_settings)
         if bound.unk_type == 2:
             bound.sphere_center = Vector()
             bound.box_center = Vector()
@@ -292,21 +307,23 @@ def bound_from_object(obj, is_frag=None):
             bound.box_max, bound.box_center)
         return bound
     elif obj.sollum_type == SollumType.BOUND_SPHERE:
-        bound = init_bound_item(ybnxml.BoundSphere(), obj, is_frag)
+        bound = init_bound_item(ybnxml.BoundSphere(),
+                                obj, is_frag, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == SollumType.BOUND_CYLINDER:
-        bound = init_bound_item(ybnxml.BoundCylinder(), obj, is_frag)
+        bound = init_bound_item(ybnxml.BoundCylinder(),
+                                obj, is_frag, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == SollumType.BOUND_CAPSULE:
         bound = init_bound_item(ybnxml.BoundCapsule(),
-                                obj,  is_frag)
+                                obj,  is_frag, export_settings)
         bound.sphere_radius = obj.bound_radius
         return bound
     elif obj.sollum_type == SollumType.BOUND_DISC:
         bound = init_bound_item(ybnxml.BoundDisc(),
-                                obj,  is_frag)
+                                obj,  is_frag, export_settings)
         bound.sphere_radius = obj.bound_radius
         bound.margin = obj.margin
         if bound.unk_type == 2:
@@ -317,14 +334,14 @@ def bound_from_object(obj, is_frag=None):
             bound.box_min = bound.box_max * -1
         return bound
     elif obj.sollum_type == SollumType.BOUND_CLOTH:
-        return init_bound_item(ybnxml.BoundCloth(), obj, is_frag)
+        return init_bound_item(ybnxml.BoundCloth(), obj, is_frag, export_settings)
     elif obj.sollum_type == SollumType.BOUND_GEOMETRY:
-        return geometry_from_object(obj, SollumType.BOUND_GEOMETRY, is_frag)
+        return geometry_from_object(obj, SollumType.BOUND_GEOMETRY, is_frag, export_settings)
     elif obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
-        return geometry_from_object(obj, SollumType.BOUND_GEOMETRYBVH, is_frag)
+        return geometry_from_object(obj, SollumType.BOUND_GEOMETRYBVH, is_frag, export_settings)
 
 
-def composite_from_objects(objs,  is_frag=False):
+def composite_from_objects(objs, export_settings, is_frag=False):
     if len(objs) <= 0:
         return
 
@@ -335,10 +352,10 @@ def composite_from_objects(objs,  is_frag=False):
         obj.parent = tobj
 
     composite = init_bound(ybnxml.BoundComposite(),
-                           tobj,  is_frag)
+                           tobj,  is_frag, export_settings)
 
     for child in objs:
-        bound = bound_from_object(child,  is_frag)
+        bound = bound_from_object(child,  is_frag, export_settings)
         if bound:
             composite.children.append(bound)
 

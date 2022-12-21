@@ -268,7 +268,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             elif obj.sollum_type in BOUND_TYPES:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YBN.file_extension)
-                export_ybn(obj, filepath)
+                export_ybn(obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.YMAP:
                 filepath = self.get_filepath(
