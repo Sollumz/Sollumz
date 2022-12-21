@@ -222,12 +222,20 @@ def fragment_from_object(exportop, fobj, exportpath):
         flod.archetype.unknown_4c = lod.lod_properties.archetype_unknown_4c
         flod.archetype.unknown_50 = lod.lod_properties.archetype_unknown_50
         flod.archetype.unknown_54 = lod.lod_properties.archetype_unknown_54
-        arch_it = prop_array_to_vector(
-            lod.lod_properties.archetype_inertia_tensor)
-        flod.archetype.inertia_tensor = arch_it
-        flod.archetype.inertia_tensor_inv = divide_vector_inv(arch_it)
+
         flod.archetype.bounds = composite_from_objects(
             bobjs, exportop.export_settings, True)
+
+        if exportop.export_settings.auto_calculate_inertia:
+            flod.archetype.inertia_tensor = calculate_inertia(
+                flod.archetype.bounds.box_min, flod.archetype.bounds.box_max) * flod.archetype.mass
+        else:
+            arch_it = prop_array_to_vector(
+                lod.lod_properties.archetype_inertia_tensor)
+            flod.archetype.inertia_tensor = arch_it
+
+        flod.archetype.inertia_tensor_inv = divide_vector_inv(
+            flod.archetype.inertia_tensor)
 
         gidx = 0
         for gobj in gobjs:
