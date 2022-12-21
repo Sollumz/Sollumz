@@ -269,25 +269,22 @@ def get_sphere_radius(bbmax, bbcenter):
 def get_dimensions(bbmin, bbmax):
     x = bbmax.x - bbmin.x
     y = bbmax.y - bbmin.y
+    z = bbmax.z - bbmin.z
 
-    height = bbmax.z - bbmin.z
-    length = max(x, y)
-    width = min(x, y)
-
-    return length, width, height
+    return x, y, z
 
 
 def calculate_volume(bbmin, bbmax):
-    length, width, height = get_dimensions(bbmin, bbmax)
+    x, y, z = get_dimensions(bbmin, bbmax)
 
-    return length * width * height
+    return x * y * z
 
 
 def calculate_inertia(bbmin, bbmax):
-    width, depth, height = get_dimensions(bbmin, bbmax)
+    x, y, z = get_dimensions(bbmin, bbmax)
 
-    I_h = (1/12) * (pow(width, 2) + pow(depth, 2))
-    I_w = (1/12) * (pow(depth, 2) + pow(height, 2))
-    I_d = (1/12) * (pow(width, 2) + pow(height, 2))
+    I_h = (1/12) * (pow(y, 2) + pow(z, 2))
+    I_w = (1/12) * (pow(z, 2) + pow(x, 2))
+    I_d = (1/12) * (pow(y, 2) + pow(x, 2))
 
     return Vector((I_h, I_w, I_d))
