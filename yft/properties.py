@@ -7,7 +7,7 @@ class FragmentProperties(bpy.types.PropertyGroup):
     unk_b0: bpy.props.FloatProperty(name="UnknownB0")
     unk_b8: bpy.props.FloatProperty(name="UnknownB8")
     unk_bc: bpy.props.FloatProperty(name="UnknownBC")
-    unk_c0: bpy.props.FloatProperty(name="UnknownC0")
+    unk_c0: bpy.props.FloatProperty(name="UnknownC0", default=65280)
     unk_c4: bpy.props.FloatProperty(name="UnknownC4")
     unk_cc: bpy.props.FloatProperty(name="UnknownCC")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor")
@@ -15,27 +15,34 @@ class FragmentProperties(bpy.types.PropertyGroup):
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    type: bpy.props.IntProperty(name="Type", default=0)
+    type: bpy.props.IntProperty(name="Type", default=1)
     unknown_14: bpy.props.FloatProperty(name="Unknown14")
     unknown_18: bpy.props.FloatProperty(name="Unknown18")
     unknown_1c: bpy.props.FloatProperty(name="Unknown1C")
     position_offset: bpy.props.FloatVectorProperty(name="Position Offset")
     unknown_40: bpy.props.FloatVectorProperty(name="Unknown40")
     unknown_50: bpy.props.FloatVectorProperty(name="Unknown50")
-    damping_linear_c: bpy.props.FloatVectorProperty(name="Damping Linear C")
-    damping_linear_v: bpy.props.FloatVectorProperty(name="Damping Linear V")
-    damping_linear_v2: bpy.props.FloatVectorProperty(name="Damping Linear V2")
-    damping_angular_c: bpy.props.FloatVectorProperty(name="Damping Angular C")
-    damping_angular_v: bpy.props.FloatVectorProperty(name="Damping Angular V")
+    damping_linear_c: bpy.props.FloatVectorProperty(
+        name="Damping Linear C", default=(0.02, 0.02, 0.02))
+    damping_linear_v: bpy.props.FloatVectorProperty(
+        name="Damping Linear V", default=(0.02, 0.02, 0.02))
+    damping_linear_v2: bpy.props.FloatVectorProperty(
+        name="Damping Linear V2", default=(0.01, 0.01, 0.01))
+    damping_angular_c: bpy.props.FloatVectorProperty(
+        name="Damping Angular C", default=(0.02, 0.02, 0.02))
+    damping_angular_v: bpy.props.FloatVectorProperty(
+        name="Damping Angular V", default=(0.02, 0.02, 0.02))
     damping_angular_v2: bpy.props.FloatVectorProperty(
-        name="Damping Angular V2")
+        name="Damping Angular V2", default=(0.01, 0.01, 0.01))
     # archetype properties
     archetype_name: bpy.props.StringProperty(name="Name")
     archetype_mass: bpy.props.FloatProperty(name="Mass")
-    archetype_unknown_48: bpy.props.FloatProperty(name="Unknown48")
-    archetype_unknown_4c: bpy.props.FloatProperty(name="Unknown4c")
-    archetype_unknown_50: bpy.props.FloatProperty(name="Unknown50")
-    archetype_unknown_54: bpy.props.FloatProperty(name="Unknown54")
+    archetype_unknown_48: bpy.props.FloatProperty(name="Unknown48", default=1)
+    archetype_unknown_4c: bpy.props.FloatProperty(
+        name="Unknown4c", default=150)
+    archetype_unknown_50: bpy.props.FloatProperty(
+        name="Unknown50", default=6.28)
+    archetype_unknown_54: bpy.props.FloatProperty(name="Unknown54", default=1)
     archetype_inertia_tensor: bpy.props.FloatVectorProperty(
         name="Inertia Tensor")
 
@@ -49,10 +56,14 @@ class GroupProperties(bpy.types.PropertyGroup):
     force_transmission_scale_down: bpy.props.FloatProperty(
         name="Force Transmission Scale Down")
     joint_stiffness: bpy.props.FloatProperty(name="Joint Stiffness")
-    min_soft_angle_1: bpy.props.FloatProperty(name="Min Soft Angle 1")
-    max_soft_angle_1: bpy.props.FloatProperty(name="Max Soft Angle 1")
-    max_soft_angle_2: bpy.props.FloatProperty(name="Max Soft Angle 2")
-    max_soft_angle_3: bpy.props.FloatProperty(name="Max Soft Angle 3")
+    min_soft_angle_1: bpy.props.FloatProperty(
+        name="Min Soft Angle 1", default=-1)
+    max_soft_angle_1: bpy.props.FloatProperty(
+        name="Max Soft Angle 1", default=1)
+    max_soft_angle_2: bpy.props.FloatProperty(
+        name="Max Soft Angle 2", default=1)
+    max_soft_angle_3: bpy.props.FloatProperty(
+        name="Max Soft Angle 3", default=1)
     rotation_speed: bpy.props.FloatProperty(name="Rotation Speed")
     rotation_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
@@ -115,6 +126,7 @@ def register():
         name="Type",
         default=SollumType.FRAGMENT.value
     )
+
 
 def unregister():
     bpy.types.Object.fragment_properties
