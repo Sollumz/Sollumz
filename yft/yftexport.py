@@ -297,7 +297,7 @@ def fragment_from_object(exportop, fobj, exportpath):
 
             bounds = flod.archetype.bounds
 
-            if bounds is not None:
+            if bounds is not None and i < len(bounds.children):
                 child_bound = bounds.children[i]
                 inertia = child_bound.inertia * child.pristine_mass
                 child.inertia_tensor = Vector(
