@@ -21,7 +21,7 @@ class DrawableProperties(bpy.types.PropertyGroup):
 class DrawableModelProperties(bpy.types.PropertyGroup):
     render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
     flags: bpy.props.IntProperty(name="Flags", default=0)
-    unknown_1: bpy.props.IntProperty(name="Unknown 1", default=0)
+    unknown_1: bpy.props.IntProperty(name="Bone Count", default=0)
     sollum_lod: bpy.props.EnumProperty(
         items=items_from_enums(LODLevel),
         name="LOD Level",
