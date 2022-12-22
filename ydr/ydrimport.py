@@ -479,26 +479,16 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
 
     if (bones is not None or armature_name is not None) and (is_ydd is None or is_ydd == False):
         does_armature_obj_exist = armature_name in bpy.data.objects
-        is_obj_armature = bpy.data.objects[armature_name].type
-        if does_armature_obj_exist == True and is_obj_armature == "ARMATURE":
+        is_obj_armature = bpy.data.objects[armature_name].type == "ARMATURE"
+
+        if does_armature_obj_exist and is_obj_armature:
             armature = bpy.data.objects[armature_name]
-            parent_bone_name = None
-            has_bone_translation = False
 
             if len(armature.pose.bones) > model.bone_index:
                 parent_bone_name = armature.pose.bones[model.bone_index].name
-                translation = bones[model.bone_index].translation
-                if (translation is not None):
-                    if translation[0] != 0 or translation[1] != 0 or translation[2] != 0:
-                        has_bone_translation = True
-
-            if parent_bone_name is not None:
-                dobj_world_mat = dobj.matrix_world.copy()
                 dobj.parent = armature
                 dobj.parent_type = "BONE"
                 dobj.parent_bone = parent_bone_name
-                if has_bone_translation is False:
-                    dobj.matrix_world = dobj_world_mat
 
     dobj.drawable_model_properties.unknown_1 = model.unknown_1
     dobj.drawable_model_properties.flags = model.flags
