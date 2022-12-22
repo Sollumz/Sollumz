@@ -139,6 +139,12 @@ def obj_to_vehicle_window(obj, drawable_xml, materials):
     return window
 
 
+def create_bone_transforms(frag, drawable_obj):
+    for bone in drawable_obj.data.bones:
+        frag.bones_transforms.append(
+            BoneTransformItem("Item", bone.matrix_local))
+
+
 def fragment_from_object(exportop, fobj, exportpath):
     fragment = Fragment()
 
@@ -170,19 +176,7 @@ def fragment_from_object(exportop, fobj, exportpath):
     fragment.gravity_factor = fobj.fragment_properties.gravity_factor
     fragment.buoyancy_factor = fobj.fragment_properties.buoyancy_factor
 
-    for idx in range(len(dobj.data.bones)):
-        m = Matrix()
-        for model in dobj.children:
-            bone_index = 0
-            if model.parent_type == "BONE":
-                parent_bone = model.parent_bone
-                if parent_bone is not None and parent_bone != "":
-                    bone_index = model.parent.data.bones[parent_bone].bone_properties.tag
-
-            if bone_index == idx:
-                m = model.matrix_basis
-        fragment.bones_transforms.append(
-            BoneTransformItem("Item", m))
+    create_bone_transforms(fragment, dobj)
 
     lods = []
     for child in fobj.children:

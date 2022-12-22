@@ -23,7 +23,8 @@ def import_yft(filepath: str, import_operator: bpy.types.Operator):
 
 
 def fragment_to_obj(frag_xml: Fragment, filepath: str):
-    frag_obj = create_empty_object(SollumType.FRAGMENT, frag_xml.name.replace("pack:/", ""))
+    frag_obj = create_empty_object(
+        SollumType.FRAGMENT, frag_xml.name.replace("pack:/", ""))
 
     set_fragment_properties(frag_xml, frag_obj)
 
@@ -47,8 +48,6 @@ def fragment_to_obj(frag_xml: Fragment, filepath: str):
         create_vehicle_windows(frag_xml, materials, child_objs)
 
         lod_obj.parent = frag_obj
-
-    apply_bones_transforms(drawable_obj, frag_xml.bones_transforms)
 
 
 def create_lod_obj(frag_obj: bpy.types.Object, lod_xml: LODProperty, id: int):
@@ -215,29 +214,6 @@ def set_child_transforms(lod_xml: LODProperty, child_obj: bpy.types.Object, chil
     transform[3][2] = c
 
     child_obj.matrix_basis = transform.transposed()
-
-
-def apply_bones_transforms(drawable_obj: bpy.types.Object, bones_transforms: list[BoneTransformItem]):
-    bones_transforms = [t.value for t in bones_transforms]
-
-    for geom in get_children_recursive(drawable_obj):
-        if geom.sollum_type != SollumType.DRAWABLE_GEOMETRY:
-            continue
-
-        if geom.parent_type != "BONE":
-            continue
-
-        parent_bone = geom.parent_bone
-
-        if parent_bone is None or parent_bone == "":
-            continue
-
-        bone_id = drawable_obj.data.bones[parent_bone].bone_properties.tag
-
-        if bone_id < len(bones_transforms):
-            continue
-
-        geom.matrix_basis = bones_transforms[bone_id]
 
 
 def get_window_child(window_xml: WindowItem, child_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
