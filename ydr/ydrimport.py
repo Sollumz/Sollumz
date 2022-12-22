@@ -469,7 +469,7 @@ def geometry_to_obj_split_by_bone(model, materials, bones):
     return bobjs
 
 
-def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature_name=None, is_ydd=None):
+def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature=None):
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], None)
     dobj.sollum_type = SollumType.DRAWABLE_MODEL
@@ -477,18 +477,12 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     dobj.drawable_model_properties.sollum_lod = lod
     dobj.drawable_model_properties.render_mask = model.render_mask
 
-    if (bones is not None or armature_name is not None) and (is_ydd is None or is_ydd == False):
-        does_armature_obj_exist = armature_name in bpy.data.objects
-        is_obj_armature = bpy.data.objects[armature_name].type == "ARMATURE"
-
-        if does_armature_obj_exist and is_obj_armature:
-            armature = bpy.data.objects[armature_name]
-
-            if len(armature.pose.bones) > model.bone_index:
-                parent_bone_name = armature.pose.bones[model.bone_index].name
-                dobj.parent = armature
-                dobj.parent_type = "BONE"
-                dobj.parent_bone = parent_bone_name
+    if armature is not None:
+        if len(armature.pose.bones) > model.bone_index:
+            parent_bone_name = armature.pose.bones[model.bone_index].name
+            dobj.parent = armature
+            dobj.parent_type = "BONE"
+            dobj.parent_bone = parent_bone_name
 
     dobj.drawable_model_properties.unknown_1 = model.unknown_1
     dobj.drawable_model_properties.flags = model.flags
@@ -575,24 +569,26 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
                 if bobj:
                     bobj.parent = obj
 
+    armature = obj if obj.type == "ARMATURE" and not is_ydd else None
+
     for model in drawable.drawable_models_high:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, LODLevel.HIGH, bones, import_settings, name, is_ydd)
+            model, materials, drawable.name, LODLevel.HIGH, bones, import_settings, armature)
         dobj.parent = obj
 
     for model in drawable.drawable_models_med:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, LODLevel.MEDIUM, bones, import_settings, name, is_ydd)
+            model, materials, drawable.name, LODLevel.MEDIUM, bones, import_settings, armature)
         dobj.parent = obj
 
     for model in drawable.drawable_models_low:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, LODLevel.LOW, bones, import_settings, name, is_ydd)
+            model, materials, drawable.name, LODLevel.LOW, bones, import_settings, armature)
         dobj.parent = obj
 
     for model in drawable.drawable_models_vlow:
         dobj = drawable_model_to_obj(
-            model, materials, drawable.name, LODLevel.VERYLOW, bones, import_settings, name, is_ydd)
+            model, materials, drawable.name, LODLevel.VERYLOW, bones, import_settings, armature)
         dobj.parent = obj
 
     for model in obj.children:
