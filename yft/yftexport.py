@@ -158,9 +158,8 @@ def fragment_from_object(exportop, fobj, exportpath):
     lights_from_object(fobj, fragment.lights, armature_obj=dobj)
 
     fragment.name = "pack:/" + remove_number_suffix(fobj.name)
-    fragment.bounding_sphere_center = get_bound_center(fobj)
-    fragment.bounding_sphere_radius = get_sphere_radius(
-        fragment.drawable.bounding_box_max, fragment.drawable.bounding_sphere_center)
+    fragment.bounding_sphere_center = fragment.drawable.bounding_sphere_center
+    fragment.bounding_sphere_radius = fragment.drawable.bounding_sphere_radius
 
     fragment.unknown_b0 = fobj.fragment_properties.unk_b0
     fragment.unknown_b8 = fobj.fragment_properties.unk_b8

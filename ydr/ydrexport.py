@@ -667,6 +667,19 @@ def lights_from_object(obj, lights_xml, armature_obj=None):
             lights_from_object(child, lights_xml, armature_obj)
 
 
+def get_drawable_extents(drawable_obj):
+    bbmin = Vector()
+    bbmax = Vector()
+
+    for child in drawable_obj.children:
+        if child.sollum_type == SollumType.DRAWABLE_MODEL and child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
+            child_bbmin, child_bbmax = get_bound_extents(child)
+            bbmin += child_bbmin
+            bbmax += child_bbmax
+
+    return bbmin, bbmax
+
+
 def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, is_frag=False, write_shaders=True):
     drawable = None
     if is_frag:
@@ -678,7 +691,8 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
 
     if is_frag:
         drawable.matrix = obj.matrix_basis
-    bbmin, bbmax = get_bound_extents(obj)
+
+    bbmin, bbmax = get_drawable_extents(obj)
     drawable.bounding_sphere_center = get_bound_center_from_bounds(
         bbmin, bbmax)
     drawable.bounding_sphere_radius = get_sphere_radius(
