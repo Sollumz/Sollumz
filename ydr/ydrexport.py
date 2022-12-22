@@ -448,12 +448,33 @@ def drawable_model_from_object(obj, bones=None, materials=None):
     return drawable_model
 
 
-def bone_from_object(obj):
+def calculate_bone_tag(bone_name):
+    hash = 0
+    x = 0
+
+    for char in str.upper(bone_name):
+        char = ord(char)
+        hash = (hash << 4) + char
+        x = hash & 0xF0000000
+
+        if x != 0:
+            hash ^= x >> 24
+
+        hash &= ~x
+
+    return hash % 0xFE8F + 0x170
+
+
+def bone_from_object(obj, export_settings):
 
     bone = ydrxml.BoneItem()
     bone.name = obj.name
-    bone.tag = obj.bone_properties.tag
     bone.index = obj["BONE_INDEX"]
+
+    if export_settings.auto_calculate_bone_tag:
+        bone.tag = calculate_bone_tag(bone.name) if bone.index > 0 else 0
+    else:
+        bone.tag = obj.bone_properties.tag
 
     if obj.parent is not None:
         bone.parent_index = obj.parent["BONE_INDEX"]
@@ -529,7 +550,7 @@ def calculate_skeleton_unks(skel):
     skel.unknown_58 = zlib.crc32(" ".join(unk_58).encode())
 
 
-def skeleton_from_object(obj):
+def skeleton_from_object(obj, export_settings):
 
     if obj.type != "ARMATURE" or len(obj.pose.bones) == 0:
         return None
@@ -544,7 +565,7 @@ def skeleton_from_object(obj):
         ind = ind + 1
 
     for pbone in bones:
-        bone = bone_from_object(pbone.bone)
+        bone = bone_from_object(pbone.bone, export_settings)
         skeleton.bones.append(bone)
 
     calculate_skeleton_unks(skeleton)
@@ -670,7 +691,6 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
     drawable.lod_dist_low = obj.drawable_properties.lod_dist_low
     drawable.lod_dist_vlow = obj.drawable_properties.lod_dist_vlow
     drawable.unknown_9A = obj.drawable_properties.unknown_9A
-    
 
     if not materials:
         materials = get_used_materials(obj)
@@ -699,7 +719,7 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         if obj.pose is not None:
             bones = obj.pose.bones
 
-    drawable.skeleton = skeleton_from_object(obj)
+    drawable.skeleton = skeleton_from_object(obj, exportop.export_settings)
     drawable.joints = joints_from_object(obj)
     if obj.pose is not None:
         for bone in drawable.skeleton.bones:

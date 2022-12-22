@@ -329,6 +329,30 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel):
         layout.prop(operator.export_settings, "ymap_car_generators")
 
 
+class SOLLUMZ_PT_export_drawable(bpy.types.Panel):
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
+    bl_label = "Drawable"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 6
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.export_settings, "auto_calculate_bone_tag")
+
+
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"

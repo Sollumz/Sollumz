@@ -11,6 +11,14 @@ from ..tools.utils import divide_vector_inv, prop_array_to_vector
 from ..tools.blenderhelper import remove_number_suffix
 
 
+def get_bone_tag_from_group_name(group_name, drawable):
+    for bone in drawable.skeleton.bones:
+        if bone.name == group_name:
+            return bone.tag
+
+    return 0
+
+
 def get_fragment_drawable(fragment):
     for child in fragment.children:
         if child.sollum_type == SollumType.DRAWABLE:
@@ -276,11 +284,16 @@ def fragment_from_object(exportop, fobj, exportpath):
             child = ChildrenItem()
             gobj = cobj.parent
             child.group_index = gobjs.index(gobj)
-            child.bone_tag = cobj.child_properties.bone_tag
             child.pristine_mass = cobj.child_properties.pristine_mass
             child.damaged_mass = cobj.child_properties.damaged_mass
             child.unk_vec = prop_array_to_vector(
                 cobj.child_properties.unk_vec)
+
+            if exportop.export_settings.auto_calculate_bone_tag:
+                child.bone_tag = get_bone_tag_from_group_name(
+                    flod.groups[child.group_index].name, fragment.drawable)
+            else:
+                child.bone_tag = cobj.child_properties.bone_tag
 
             bounds = flod.archetype.bounds
 
@@ -290,11 +303,11 @@ def fragment_from_object(exportop, fobj, exportpath):
                 child.inertia_tensor = Vector(
                     (inertia.x, inertia.y, inertia.z, child_bound.volume * child.pristine_mass))
 
-            dobj = get_fragment_drawable(cobj)
+            child_dobj = get_fragment_drawable(cobj)
 
-            if dobj:
+            if child_dobj:
                 child.drawable = drawable_from_object(
-                    exportop, dobj, exportpath, None, materials, True, False)
+                    exportop, child_dobj, exportpath, None, materials, True, False)
             else:
                 child.drawable.matrix = Matrix()
                 child.drawable.shader_group = None

@@ -629,6 +629,12 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+    auto_calculate_bone_tag: bpy.props.BoolProperty(
+        name="Auto Calculate Bone Tag",
+        description="Automatically calculate bone tags.",
+        default=True,
+    )
+
     export_with_hi: bpy.props.BoolProperty(
         name="Export With _hi",
         description="Exports fragment with _hi file.",
