@@ -11,6 +11,8 @@ from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
 from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials
 from ..tools.drawablehelper import join_drawable_geometries
 
+BONE_TAIL_POS = (0, 0.05, 0)
+
 
 def shadergroup_to_materials(shadergroup, filepath):
     materials = []
@@ -483,6 +485,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
             dobj.parent = armature
             dobj.parent_type = "BONE"
             dobj.parent_bone = parent_bone_name
+            dobj.delta_location -= Vector(BONE_TAIL_POS)
 
     dobj.drawable_model_properties.unknown_1 = model.unknown_1
     dobj.drawable_model_properties.flags = model.flags

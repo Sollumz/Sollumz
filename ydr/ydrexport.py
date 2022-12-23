@@ -223,6 +223,7 @@ def get_mesh_buffers(obj, mesh, vertex_type, bones=None):
     indices = []
 
     matrix = obj.parent.matrix_basis @ obj.matrix_basis
+    matrix.translation -= obj.parent.delta_location
 
     for tri in mesh.loop_triangles:
         for loop_idx in tri.loops:
