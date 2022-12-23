@@ -852,7 +852,7 @@ def register():
     )
 
     bpy.types.Scene.all_sollum_type = bpy.props.EnumProperty(
-        items=items_from_enums(SollumType),
+        items=sorted(items_from_enums(SollumType), key=lambda i: i[0]),
         name="Sollum Types",
         options={"HIDDEN"}
     )
