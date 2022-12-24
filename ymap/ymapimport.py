@@ -266,7 +266,7 @@ def import_ymap(import_op, filepath, import_settings):
     ymap_xml: CMapData = YMAP.from_xml_file(filepath)
     found = False
     for obj in bpy.context.scene.objects:
-        if obj.name == ymap_xml.name:
+        if obj.sollum_type == SollumType.YMAP and obj.name == ymap_xml.name:
             import_op.error(
                 f"{ymap_xml.name} is already existing in the scene. Aborting.")
             found = True
