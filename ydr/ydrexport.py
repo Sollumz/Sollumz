@@ -87,16 +87,17 @@ def get_shaders_from_blender(materials):
                     param.name = node_name
                     param.type = "Array"
 
-                    all_array_nodes = [x for x in material.node_tree.nodes if node_name in x.name]
+                    all_array_nodes = [
+                        x for x in material.node_tree.nodes if node_name in x.name]
                     all_array_values = []
-                    for itemNode in all_array_nodes:
-                        x = itemNode.inputs[0].default_value
-                        y = itemNode.inputs[1].default_value
-                        z = itemNode.inputs[2].default_value
-                        w = itemNode.inputs[3].default_value
+                    for item_node in all_array_nodes:
+                        x = item_node.inputs[0].default_value
+                        y = item_node.inputs[1].default_value
+                        z = item_node.inputs[2].default_value
+                        w = item_node.inputs[3].default_value
 
-                        all_array_values.append(Vector((x,y,z,w)))
-                    
+                        all_array_values.append(Vector((x, y, z, w)))
+
                     param.values = all_array_values
                     shader.parameters.append(param)
 

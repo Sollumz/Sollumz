@@ -140,7 +140,6 @@ class ArrayShaderParameterProperty(ShaderParameter):
         return element
 
 
-
 class ParametersListProperty(ListProperty):
     list_type = ShaderParameter
     tag_name = "Parameters"

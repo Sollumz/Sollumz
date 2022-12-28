@@ -248,10 +248,10 @@ def create_vector_nodes(node_tree, param):
 def create_array_item_node(group_name):
     array_item_group = bpy.data.node_groups.new(group_name, "ShaderNodeTree")
     array_item_group.nodes.new("NodeGroupInput")
-    array_item_group.inputs.new("NodeSocketFloat","X").default_value = 0
-    array_item_group.inputs.new("NodeSocketFloat","Y").default_value = 0
-    array_item_group.inputs.new("NodeSocketFloat","Z").default_value = 0
-    array_item_group.inputs.new("NodeSocketFloat","W").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "X").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "Y").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "Z").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "W").default_value = 0
     return array_item_group
 
 
@@ -262,17 +262,17 @@ def create_array_nodes(node_tree, param):
     else:
         array_item_group = bpy.data.node_groups["ArrayNode"]
 
-    count = 1
-    for value in param.values:
-        nodename = param.name+"_"+str(count)
+    for i, value in enumerate(param.values):
+        nodename = f"{param.name} {i + 1}"
         node = node_tree.nodes.new("ShaderNodeGroup")
         node.name = nodename
         node.label = nodename
         node.node_tree = array_item_group
+
         for index in range(0, len(node.inputs)):
             node.inputs[index].default_value = value[index]
+
         node.is_sollumz = True
-        count+=1
 
 
 def link_diffuse(node_tree, imgnode):
