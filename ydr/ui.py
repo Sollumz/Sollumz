@@ -435,6 +435,59 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
                     row.prop(w.outputs[0], "default_value", text="W:")
 
 
+class SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL(bpy.types.Panel):
+    bl_label = "Array Parameters"
+    bl_idname = "SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_VALUEPARAMS_PANEL.bl_idname
+    bl_order = 2
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj:
+            array_node_exists = False
+            mat = obj.active_material
+            nodes = mat.node_tree.nodes
+            for n in nodes:
+                if isinstance(n, bpy.types.ShaderNodeGroup) and n.is_sollumz:
+                    array_node_exists = True
+                    break
+            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION and array_node_exists
+        else:
+            return False
+
+
+    def draw(self, context):
+        layout = self.layout
+
+        aobj = context.active_object
+        if context.active_object is None:
+            return
+
+        mat = aobj.active_material
+        if mat is None:
+            return
+
+        nodes = mat.node_tree.nodes
+        for n in nodes:
+            if isinstance(n, bpy.types.ShaderNodeGroup) and n.is_sollumz:
+                    row = layout.row()
+                    row.label(text=n.name)
+                    
+                    x = n.inputs[0]
+                    y = n.inputs[1]
+                    z = n.inputs[2]
+                    w = n.inputs[3]
+
+                    row.prop(x, "default_value", text="X:")
+                    row.prop(y, "default_value", text="Y:")
+                    row.prop(z, "default_value", text="Z:")
+                    row.prop(w, "default_value", text="W:")
+
+
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_model_properties)

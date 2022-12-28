@@ -12,6 +12,7 @@ from .element import (
     TextProperty,
     ValueProperty,
     VectorProperty,
+    Vector4Property,
     get_str_type
 )
 from .bound import (
@@ -112,14 +113,32 @@ class VectorShaderParameter(ShaderParameter):
         self.w = AttributeProperty("w", 0)
 
 
-class ArrayShaderParameterProperty(ListProperty, ShaderParameter):
+class ArrayShaderParameterProperty(ShaderParameter):
     type = "Array"
 
-    class Value(QuaternionProperty):
-        tag_name = "Value"
+    def __init__(self):
+        super().__init__()
+        self.values = []
 
-    list_type = Value
-    tag_name = "Item"
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = super(ArrayShaderParameterProperty,
+                    ArrayShaderParameterProperty).from_xml(element)
+
+        for item in element:
+            new.values.append(Vector4Property.from_xml(item).value)
+
+        return new
+
+    def to_xml(self):
+        element = super().to_xml()
+
+        for value in self.values:
+            child_elem = Vector4Property("Value", value).to_xml()
+            element.append(child_elem)
+
+        return element
+
 
 
 class ParametersListProperty(ListProperty):

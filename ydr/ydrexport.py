@@ -79,6 +79,26 @@ def get_shaders_from_blender(materials):
                     param.w = w.outputs[0].default_value
 
                     shader.parameters.append(param)
+            elif isinstance(node, bpy.types.ShaderNodeGroup) and node.is_sollumz:
+                # Only perform logic if its ArrayNode
+                if node.node_tree.name == "ArrayNode" and node.name[-1] == "1":
+                    node_name = node.name[:-2]
+                    param = ydrxml.ArrayShaderParameterProperty()
+                    param.name = node_name
+                    param.type = "Array"
+
+                    all_array_nodes = [x for x in material.node_tree.nodes if node_name in x.name]
+                    all_array_values = []
+                    for itemNode in all_array_nodes:
+                        x = itemNode.inputs[0].default_value
+                        y = itemNode.inputs[1].default_value
+                        z = itemNode.inputs[2].default_value
+                        w = itemNode.inputs[3].default_value
+
+                        all_array_values.append(Vector((x,y,z,w)))
+                    
+                    param.values = all_array_values
+                    shader.parameters.append(param)
 
         shaders.append(shader)
 
