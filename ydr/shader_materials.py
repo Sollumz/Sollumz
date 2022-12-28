@@ -245,6 +245,36 @@ def create_vector_nodes(node_tree, param):
             node.outputs[0].default_value = float(attr.value)
 
 
+def create_array_item_node(group_name):
+    array_item_group = bpy.data.node_groups.new(group_name, "ShaderNodeTree")
+    array_item_group.nodes.new("NodeGroupInput")
+    array_item_group.inputs.new("NodeSocketFloat", "X").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "Y").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "Z").default_value = 0
+    array_item_group.inputs.new("NodeSocketFloat", "W").default_value = 0
+    return array_item_group
+
+
+def create_array_nodes(node_tree, param):
+    array_item_group = None
+    if "ArrayNode" not in bpy.data.node_groups:
+        array_item_group = create_array_item_node("ArrayNode")
+    else:
+        array_item_group = bpy.data.node_groups["ArrayNode"]
+
+    for i, value in enumerate(param.values):
+        nodename = f"{param.name} {i + 1}"
+        node = node_tree.nodes.new("ShaderNodeGroup")
+        node.name = nodename
+        node.label = nodename
+        node.node_tree = array_item_group
+
+        for index in range(0, len(node.inputs)):
+            node.inputs[index].default_value = value[index]
+
+        node.is_sollumz = True
+
+
 def link_diffuse(node_tree, imgnode):
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links
@@ -530,8 +560,7 @@ def create_basic_shader_nodes(mat, shader, filename):
         elif param.type == "Vector":
             create_vector_nodes(node_tree, param)
         elif param.type == "Array":
-            # IMPLEMENT
-            pass
+            create_array_nodes(node_tree, param)
         else:
             raise Exception(
                 f"Unknown shader parameter! {param.type} {param.name}")
@@ -643,8 +672,7 @@ def create_terrain_shader(mat, shader, filename):
         elif param.type == "Vector":
             create_vector_nodes(node_tree, param)
         elif param.type == "Array":
-            # IMPLEMENT
-            pass
+            create_array_nodes(node_tree, param)
         else:
             raise Exception(
                 f"Unknown shader parameter! {param.type} {param.name}")
