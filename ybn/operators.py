@@ -31,7 +31,7 @@ class SOLLUMZ_OT_create_polygon_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createpolygonbound"
     bl_label = "Create Polygon Bound"
     bl_action = f"{bl_label}"
-    bl_update_view = True
+    bl_update_view = False
 
     def create_poly_from_verts(self, context, sollum_type, parent):
         if not parent:
@@ -126,7 +126,7 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createbound"
     bl_label = f"Create Bound"
     bl_action = f"{bl_label}"
-    bl_update_view = True
+    bl_update_view = False
 
     def run(self, context):
         aobj = context.active_object

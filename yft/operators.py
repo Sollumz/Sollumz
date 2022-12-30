@@ -12,7 +12,7 @@ class SOLLUMZ_OT_create_fragment(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.createfragment"
     bl_label = f"Create fragment"
     bl_action = "Create a fragment"
-    bl_update_view = True
+    bl_update_view = False
 
 
     def run(self, context):
