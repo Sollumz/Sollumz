@@ -10,7 +10,7 @@ from ..tools.boundhelper import (
     create_bound_shape,
     BOUND_POLYGON_TYPES
 )
-from ..tools.meshhelper import create_box_from_extents, get_bound_center
+from ..tools.meshhelper import create_box_from_extents
 from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..tools.blenderhelper import get_selected_vertices, get_children_recursive, create_mesh_object
@@ -135,15 +135,19 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if bound_type == SollumType.BOUND_COMPOSITE and len(selected) > 0:
             cobj = convert_selected_to_bound(
+                # checks for a selected object and selected bound type is a bound composite from collision tool menu
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.composite_create_bvh, context.scene.composite_replace_original, context.scene.create_center_to_selection)
+                # converts selected object to bound depending on selected options
             if context.scene.composite_apply_default_flag_preset:
                 for obj in cobj:
                     for cobj_child in obj.children:
                         if cobj_child.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_GEOMETRY:
                             apply_default_flag_preset(cobj_child, self)
+                            # applies default flag preset if option is selected
             return True
         elif bound_type in BOUND_SHAPE_TYPES:
             obj = create_bound_shape(bound_type)
+            # if selected bound type is a bound shape
         elif context.scene.composite_apply_default_flag_preset and len(selected) > 0:
             if bound_type == SollumType.BOUND_GEOMETRYBVH or bound_type == SollumType.BOUND_GEOMETRY:
                 obj = create_bound(bound_type)

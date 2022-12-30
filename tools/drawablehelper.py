@@ -181,8 +181,11 @@ class MaterialConverter:
 
 def create_drawable(sollum_type=SollumType.DRAWABLE):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
+    # creates empty
     empty.empty_display_size = 0
+    # sets empty size to 0
     empty.sollum_type = sollum_type
+    # sets empty to sollum_type
     bpy.context.collection.objects.link(empty)
     bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
 
@@ -197,6 +200,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
 
     if not multiple:
         dobj = create_drawable()
+        # creates drawable empty
         dobjs.append(dobj)
         if do_center:
             for obj in objs:
@@ -205,7 +209,9 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
             center /= len(objs)
             dobj.location = center
         dmobj = create_drawable(SollumType.DRAWABLE_MODEL)
+        # creates drawable model empty
         dmobj.parent = dobj
+        # parents drawable model to drawable
 
     for obj in objs:
 
@@ -220,11 +226,14 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
                 dobj.location = obj.location
                 obj.location = Vector()
             dmobj = create_drawable(SollumType.DRAWABLE_MODEL)
+            # creates drawable model empty
             dmobj.parent = dobj
+            # parents drawable model to drawable
         elif do_center:
             obj.location -= center
 
         obj.parent = dmobj
+        # sets selected object parent to drawable model
 
         name = obj.name
 
@@ -233,6 +242,7 @@ def convert_selected_to_drawable(objs, use_names=False, multiple=False, do_cente
             dobj.name = name
 
         obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
+        # sets selected object sollum_type to drawable geometry
 
         new_obj = obj.copy()
         # add color layer

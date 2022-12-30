@@ -1,5 +1,4 @@
 import bpy
-
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 

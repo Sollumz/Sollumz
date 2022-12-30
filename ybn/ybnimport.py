@@ -3,7 +3,7 @@ from .properties import CollisionMatFlags
 from ..cwxml import bound as ybnxml
 from ..sollumz_properties import SollumType, MaterialType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc, create_box_from_extents
+from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc
 from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
 import os
 from mathutils import Matrix, Vector

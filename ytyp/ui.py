@@ -1,6 +1,4 @@
 import bpy
-
-
 from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
 from .properties.ytyp import RoomProperties, PortalProperties, TimecycleModifierProperties
 from .properties.extensions import ExtensionsContainer

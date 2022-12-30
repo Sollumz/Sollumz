@@ -1,6 +1,5 @@
 import bpy
 from mathutils import Vector
-
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 

@@ -1,8 +1,6 @@
 import bpy
 import re
-import math
-
-from mathutils import Vector, Euler
+from mathutils import Vector
 from struct import pack
 from ..cwxml.ymap import *
 from binascii import hexlify

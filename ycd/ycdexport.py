@@ -1,7 +1,6 @@
 import bpy
 from bpy.types import PoseBone
 from mathutils import Vector, Matrix, Quaternion
-
 from ..cwxml import clipsdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate

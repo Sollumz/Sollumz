@@ -3,7 +3,6 @@ import struct
 import math
 import os
 import bpy
-
 from mathutils import Vector, Euler
 from ..sollumz_helper import duplicate_object_with_children, set_object_collection
 from ..tools.ymaphelper import add_occluder_material

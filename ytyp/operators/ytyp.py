@@ -18,8 +18,11 @@ class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         item = context.scene.ytyps.add()
+        # creates new ytyp
         index = len(context.scene.ytyps)
+        # sets ytyp index
         item.name = f"YTYP.{index}"
+        # sets ytyp name to index value
         context.scene.ytyp_index = index - 1
 
         return True
@@ -145,6 +148,7 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
         for obj in selected_objs:
             archetype_type = context.scene.create_archetype_type
             if not obj.sollum_type in self.allowed_types:
+                # checks sollum_type for allowed sollum types
                 continue
             if archetype_type == ArchetypeType.MLO:
                 if obj.sollum_type != SollumType.BOUND_COMPOSITE:

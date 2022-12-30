@@ -1,5 +1,4 @@
 import bpy
-
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_POLYGON_TYPES
 from ..tools.meshhelper import create_box
 from .blenderhelper import create_mesh_object

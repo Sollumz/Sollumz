@@ -1,7 +1,5 @@
 import bpy
 import os
-
-from mathutils import Vector
 from ..sollumz_helper import SOLLUMZ_OT_base, set_object_collection
 from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType

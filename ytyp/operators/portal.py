@@ -1,7 +1,5 @@
-from math import radians
 import bpy
 import numpy
-from mathutils import Matrix, Vector
 from ...sollumz_operators import SOLLUMZ_OT_base
 from ...tools.blenderhelper import get_selected_vertices
 from ..utils import get_selected_archetype, get_selected_portal, get_selected_room

@@ -1,8 +1,6 @@
 import bpy
 from typing import Union
-
-from mathutils import Color, Quaternion
-
+from mathutils import Quaternion
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties

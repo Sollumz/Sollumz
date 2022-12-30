@@ -1,5 +1,4 @@
 from math import pi, radians
-import bmesh
 import os
 import bpy
 from mathutils import Matrix, Vector

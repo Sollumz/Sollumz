@@ -1,7 +1,6 @@
 from typing import Iterable
 import bpy
 from mathutils import Euler, Vector, Quaternion
-
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius

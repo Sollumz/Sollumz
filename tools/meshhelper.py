@@ -2,7 +2,6 @@ import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
-
 from ..sollumz_properties import SollumType
 from .utils import divide_list, subtract_from_vector, get_min_vector_list, add_to_vector, get_max_vector_list, get_max_vector, get_min_vector
 from .version import USE_LEGACY

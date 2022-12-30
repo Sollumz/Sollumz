@@ -1,5 +1,4 @@
 import bpy
-
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 # TODO: This is not a real flag calculation, definitely need to do better

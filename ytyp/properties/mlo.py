@@ -1,5 +1,4 @@
 import bpy
-from typing import Union
 from mathutils import Vector
 from ...sollumz_properties import EntityProperties
 from ...tools.utils import get_list_item

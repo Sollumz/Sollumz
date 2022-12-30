@@ -18,7 +18,6 @@
 import bpy
 import bmesh
 import math
-import time
 from mathutils import Vector, Matrix
 import numpy as np
 

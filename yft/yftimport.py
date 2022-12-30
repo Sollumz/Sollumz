@@ -4,7 +4,7 @@ from typing import Union
 from mathutils import Matrix, Vector
 from ..tools.utils import multiW
 from ..tools.meshhelper import create_uv_layer
-from ..cwxml.fragment import YFT, Fragment, LODProperty, GroupItem, ChildrenItem, BoneTransformItem, WindowItem
+from ..cwxml.fragment import YFT, Fragment, LODProperty, GroupItem, ChildrenItem, WindowItem
 from ..tools.fragmenthelper import shattermap_to_material
 from ..tools.blenderhelper import create_empty_object, get_children_recursive
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights

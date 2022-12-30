@@ -1,7 +1,6 @@
 import bpy
-
 from ..tools.utils import int_to_bool_list, flag_prop_to_list, flag_list_to_int
-from bpy.props import (EnumProperty, FloatProperty, PointerProperty,
+from bpy.props import (FloatProperty, PointerProperty,
                        StringProperty, IntProperty, FloatVectorProperty, BoolProperty)
 
 

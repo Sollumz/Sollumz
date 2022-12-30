@@ -76,6 +76,7 @@ class SOLLUMZ_PT_CREATE_FRAGMENT_PANEL(bpy.types.Panel):
 
     def draw_header(self, context):
         self.layout.label(text="", icon="CUBE")
+        # sub menu in fragment tools label
 
     def draw(self, context):
         layout = self.layout
@@ -86,6 +87,7 @@ class SOLLUMZ_PT_CREATE_FRAGMENT_PANEL(bpy.types.Panel):
         grid.prop(context.scene, "use_mesh_name")
         grid.prop(context.scene, "create_center_to_selection")
         grid.prop(context.scene, "auto_create_embedded_col")
+        # create fragment objects menu layout
 
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_fragment_properties)

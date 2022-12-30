@@ -28,7 +28,7 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
 
 ## Requirements ##
 
-  * Blender 2.8 or later - [blender.org](http://www.blender.org/download/)
+  * Blender 3.3 or later - [blender.org](http://www.blender.org/download/)
   
 ## Installation ##
 

@@ -28,22 +28,27 @@ class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
         selected = context.selected_objects
         drawable_type = context.scene.create_drawable_type
         if drawable_type == SollumType.DRAWABLE and len(selected) > 0:
+            # checks for a selected object
             dobjs = convert_selected_to_drawable(
                 selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.create_center_to_selection)
+                # converts selected object to drawable depending on selected options
             if context.scene.auto_create_embedded_col:
                 cobjs = convert_selected_to_bound(
                     context.selected_objects, use_name=False, multiple=context.scene.create_seperate_objects, bvhs=True, replace_original=False, do_center=False)
+                    # creates embedded collisions if auto embed collision option is selected
                 if context.scene.composite_apply_default_flag_preset:
                     for obj in cobjs:
                         for cobj_child in obj.children:
                             if cobj_child.sollum_type == SollumType.BOUND_GEOMETRYBVH:
                                 apply_default_flag_preset(cobj_child, self)
+                                # applies default flag preset if option is selected
                 for index, composite in enumerate(cobjs):
                     composite.parent = dobjs[index]
                     if context.scene.create_center_to_selection:
                         for child in get_children_recursive(composite):
                             if child.type == "MESH":
                                 child.location -= dobjs[index].location
+                                # sets mesh location to center of selected object
 
             self.message(
                 f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
@@ -65,6 +70,7 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
         blender_light_type = "POINT"
         if light_type == LightType.SPOT:
             blender_light_type = "SPOT"
+            # sets light to spot if sollum_type == spot
 
         light_data = bpy.data.lights.new(
             name=SOLLUMZ_UI_NAMES[light_type], type=blender_light_type)
@@ -144,6 +150,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
         obj.data.materials.append(mat)
         if mat.shader_properties.filename in ShaderManager.tinted_shaders():
             create_tinted_shader_graph(obj)
+            # checks if it needs to create a tint shader or not
 
         for n in mat.node_tree.nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage):
@@ -187,6 +194,7 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
             for node in mat.node_tree.nodes:
                 if isinstance(node, bpy.types.ShaderNodeTexImage):
                     node.texture_properties.embedded = True
+                    # if material is a sollumz shader, sets all textures for selected material to embedded
             self.message(
                 f"Set {obj.name}s material {mat.name} textures to embedded.")
         else:
@@ -218,6 +226,7 @@ class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator)
                 for node in mat.node_tree.nodes:
                     if isinstance(node, bpy.types.ShaderNodeTexImage):
                         node.texture_properties.embedded = True
+                        # runs through all materials on selected object, if material is a sollumz shader, set all textures for all materials to embedded
                 self.message(
                     f"Set {obj.name}s material {mat.name} textures to embedded.")
             else:
@@ -253,6 +262,7 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
             for node in mat.node_tree.nodes:
                 if(isinstance(node, bpy.types.ShaderNodeTexImage)):
                     node.texture_properties.embedded = False
+                    # if material is a sollumz shader, set all textures to unembedded for selected material
             self.message(
                 f"Set {obj.name}s material {mat.name} textures to unembedded.")
         else:
@@ -284,6 +294,7 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
                 for node in mat.node_tree.nodes:
                     if(isinstance(node, bpy.types.ShaderNodeTexImage)):
                         node.texture_properties.embedded = False
+                        # runs through all materials for selected object, if material is a sollumz shader, set all textures for all materials to unembedded
                 self.message(
                     f"Set {obj.name}s materials to unembedded.")
             else:

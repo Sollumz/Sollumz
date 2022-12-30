@@ -1,6 +1,5 @@
 import bpy
 from mathutils import Vector
-
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from .blenderhelper import create_empty_object, material_from_image
 from itertools import groupby
@@ -68,19 +67,25 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
 
     if not multiple:
         dobj = create_empty_object(SollumType.FRAGMENT)
+        # creates an empty and sets sollum_type to fragment
         dobjs.append(dobj)
         if do_center:
             for obj in objs:
                 center += obj.location
-
             center /= len(objs)
             dobj.location = center
         dmobj = create_empty_object(SollumType.FRAGLOD)
+        # creates empty and sets sollum_type to fragment LOD
         gobj = create_empty_object(SollumType.FRAGGROUP)
+        # creates empty and sets sollum_type to fragment group
         cobj = create_empty_object(SollumType.FRAGCHILD)
+        # creates empty and sets sollum_type to fragment child
         dmobj.parent = dobj
+        # parents fragment LOD to fragment
         gobj.parent = dmobj
+        # parents fragment group to fragment LOD
         cobj.parent = gobj
+        # parents fragment child to fragment group
 
     for obj in objs:
 
@@ -90,26 +95,34 @@ def convert_selected_to_fragment(objs, use_names=False, multiple=False, do_cente
 
         if multiple:
             dobj = parent or create_empty_object(SollumType.FRAGMENT)
+            # creates empty and sets sollum_type to fragment
             dobjs.append(dobj)
             if do_center:
                 dobj.location = obj.location
                 obj.location = Vector()
             dmobj = create_empty_object(SollumType.FRAGLOD)
+            # creates empty and sets sollum_type to fragment LOD
             dmobj.parent = dobj
+            # parents fragment LOD to fragment
             gobj.parent = dmobj
+            # parents fragment group to fragment LOD
             cobj.parent = gobj
+            # parents fragment child to fragment group
         elif do_center:
             obj.location -= center
 
         obj.parent = gobj
+        # parents selected object to fragment group
 
         name = obj.name
+        # sets fragment name to object name
 
         if use_names:
             obj.name = name + "_old"
             dobj.name = name
 
         obj.sollum_type = SollumType.BOUND_BOX
+        # sets selected object sollum_type to bound box
 
         new_obj = obj.copy()
         # add color layer

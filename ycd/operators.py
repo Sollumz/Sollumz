@@ -1,5 +1,4 @@
 import bpy
-
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_child_by_type, get_armature_obj
