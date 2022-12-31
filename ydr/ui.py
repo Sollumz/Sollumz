@@ -161,42 +161,48 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
         pass
 
 
-class SOLLUMZ_PT_CREATE_SHADER_PANEL(bpy.types.Panel):
-    bl_label = "Create Shader"
-    bl_idname = "SOLLUMZ_PT_CREATE_SHADER_PANEL"
+class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
+    bl_label = "Shader Tools"
+    bl_idname = "SOLLUMZ_PT_SHADER_TOOLS_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
-
+ 
     def draw_header(self, context):
-        self.layout.label(text="", icon="SHADING_RENDERED")
-
+        self.layout.label(text="", icon="TOOL_SETTINGS")
+ 
     def draw(self, context):
         layout = self.layout
+        layout.label(text="Create")
         layout.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
         )
-        layout.operator(ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname)
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert")
+            ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname, text="Create Shader Material")
+        grid = layout.grid_flow(align=True)
+        grid.operator(ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname,
+                      text="Convert Active Material", icon="FILE_REFRESH")
+        grid.operator(
+            ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname, text="Convert All Materials")
+ 
+        layout.separator()
+        layout.label(text="Tools")
+ 
+        row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname, text="Convert To Selected")
-        row2 = layout.row()
-        row2.operator(
-            ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname)
-        row2.operator(
+            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
+        grid = layout.grid_flow(align=True)
+        grid.operator(
+            ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname, icon="TEXTURE")
+        grid.operator(
             ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
-
-        row3 = layout.row()
-        row3.operator(
-            ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname)
-
-        row4 = layout.row()
-        row4.operator(ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname)
-        row4.operator(
+        grid = layout.grid_flow(align=True)
+        grid.operator(
+            ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname, icon="MATERIAL")
+        grid.operator(
             ydr_ops.SOLLUMZ_OT_unset_all_materials_embedded.bl_idname)
 
 
