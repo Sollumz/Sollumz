@@ -594,9 +594,10 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             model, materials, drawable.name, LODLevel.VERYLOW, bones, import_settings, armature)
         dobj.parent = obj
 
-    for model in obj.children:
-        if model.sollum_type != SollumType.DRAWABLE_MODEL:
-            continue
+    if armature is not None:
+        for model in obj.children:
+            if model.sollum_type != SollumType.DRAWABLE_MODEL:
+                continue
 
         for child in model.children:
             if child.sollum_type != SollumType.DRAWABLE_GEOMETRY:
