@@ -94,7 +94,7 @@ class TextureUsage(str, Enum):
     DETAIL = "sollumz_detail"
     NORMAL = "sollumz_normal"
     SPECULAR = "sollumz_specular"
-    EMMISIVE = "sollumz_emmisive"
+    EMISSIVE = "sollumz_emissive"
     SKIPPROCESSING = "sollumz_skipprocessing"
     DONTOPTIMIZE = "sollumz_dontoptimize"
     TEST = "sollumz_test"
@@ -294,7 +294,7 @@ SOLLUMZ_UI_NAMES = {
     TextureUsage.DETAIL: "DETAIL",
     TextureUsage.NORMAL: "NORMAL",
     TextureUsage.SPECULAR: "SPECULAR",
-    TextureUsage.EMMISIVE: "EMMISIVE",
+    TextureUsage.EMISSIVE: "EMISSIVE",
     TextureUsage.SKIPPROCESSING: "SKIPPROCESSING",
     TextureUsage.DONTOPTIMIZE: "DONTOPTIMIZE",
     TextureUsage.TEST: "TEST",
