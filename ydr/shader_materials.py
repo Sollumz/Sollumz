@@ -10,8 +10,10 @@ ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
 shadermats = []
 
 for shader in ShaderManager.shaders.values():
+    name = shader.filename.replace(".sps", "").upper()
+
     shadermats.append(ShaderMaterial(
-        shader.name.upper(), shader.name.upper().replace("_", " "), shader.name))
+        name, name.replace("_", " "), shader.filename))
 
 
 def try_get_node(node_tree, name):
@@ -741,17 +743,17 @@ def create_terrain_shader(mat, shader, filename):
     link_value_shader_parameters(shader, node_tree)
 
 
-def create_shader(name, filename=None):
-    if not name in ShaderManager.shaders:
-        raise AttributeError(f"Shader '{name}' does not exist!")
+def create_shader(filename: str):
+    if filename not in ShaderManager.shaders:
+        raise AttributeError(f"Shader '{filename}' does not exist!")
 
-    shader = ShaderManager.shaders[name]
-    filename = filename if filename else shader.filenames[0].value
+    shader = ShaderManager.shaders[filename]
+    base_name = ShaderManager.base_shaders[filename]
 
-    mat = bpy.data.materials.new(name)
+    mat = bpy.data.materials.new(filename.replace(".sps", ""))
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
-    mat.shader_properties.name = shader.name
+    mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename
     mat.shader_properties.renderbucket = shader.render_buckets[0]
 

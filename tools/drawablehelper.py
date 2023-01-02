@@ -151,13 +151,13 @@ class MaterialConverter:
             raise Exception(
                 "Failed to convert material: Normal map color input is not an image node.")
         if has_normal_node and has_specular_node:
-            return "normal_spec"
+            return "normal_spec.sps"
         elif has_normal_node:
-            return "normal"
+            return "normal.sps"
         elif has_specular_node:
-            return "spec"
+            return "spec.sps"
 
-        return "default"
+        return "default.sps"
 
     def convert(self, shader_name: str) -> bpy.types.Material:
         """Convert the material to a Sollumz material of the provided shader name."""

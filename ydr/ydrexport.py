@@ -399,7 +399,7 @@ def geometry_from_object(obj, mats, bones=None):
 
     geometry.bone_ids = get_bone_ids(obj, bones)
 
-    shader_name = obj.active_material.shader_properties.name
+    shader_name = obj.active_material.shader_properties.filename
     shader = ShaderManager.shaders[shader_name]
 
     is_skinned = False
