@@ -21,7 +21,12 @@ def shadergroup_to_materials(shadergroup, filepath):
         filepath) + "\\" + os.path.basename(filepath)[:-8]
     for shader in shadergroup.shaders:
 
-        material = create_shader(shader.filename)
+        filename = shader.filename
+
+        if not filename:
+            filename = f"{shader.name}.sps"
+
+        material = create_shader(filename)
 
         material.shader_properties.renderbucket = shader.render_bucket
         material.shader_properties.filename = shader.filename
