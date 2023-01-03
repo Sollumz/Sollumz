@@ -362,7 +362,8 @@ def apply_and_triangulate_object(obj):
     bmesh.ops.triangulate(tempmesh, faces=tempmesh.faces)
     tempmesh.to_mesh(mesh)
     tempmesh.free()
-    mesh.calc_tangents()
+    if mesh.uv_layers:
+        mesh.calc_tangents()
     mesh.calc_loop_triangles()
     return obj_eval, mesh
 
