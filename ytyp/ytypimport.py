@@ -55,7 +55,7 @@ def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
         archetype.entities[index].attached_room_id = room.id
 
 
-def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: MloEntityProperties):
+def find_and_link_entity_object(entity_xml: ymapxml.Entity, entity: MloEntityProperties):
     """Atempt to find an existing entity object in the scene and link it to the entity data-block."""
 
     for obj in bpy.context.collection.all_objects:
@@ -63,7 +63,7 @@ def find_and_link_entity_object(entity_xml: ymapxml.EntityItem, entity: MloEntit
             entity.linked_object = obj
 
 
-def create_mlo_entity(entity_xml: ymapxml.EntityItem, archetype: ArchetypeProperties):
+def create_mlo_entity(entity_xml: ymapxml.Entity, archetype: ArchetypeProperties):
     """Create an mlo entity from an xml for the provided archetype data-block."""
 
     entity: MloEntityProperties = archetype.new_entity()

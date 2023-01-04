@@ -8,12 +8,12 @@ from mathutils import Vector, Euler
 from ..sollumz_helper import duplicate_object_with_children, set_object_collection
 from ..tools.ymaphelper import add_occluder_material
 from ..sollumz_properties import SollumType
-from ..cwxml.ymap import CMapData, OccludeModelItem, YMAP
+from ..cwxml.ymap import CMapData, OccludeModel, YMAP
 
 # TODO: Make better?
 
 
-def get_mesh_data(model: OccludeModelItem):
+def get_mesh_data(model: OccludeModel):
     result = ([], [])
     for i in range(int(model.num_verts_in_bytes / 12)):
         pos_data: str = model.verts[i*24:(i*24)+24]

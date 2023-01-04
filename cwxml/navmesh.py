@@ -22,7 +22,7 @@ class YNV:
         return nav.write_xml(filepath)
 
 
-class NavPointItem(ElementTree):
+class NavPoint(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -32,12 +32,12 @@ class NavPointItem(ElementTree):
         self.position = VectorProperty("Position")
 
 
-class NavPointListProperty(ListProperty):
-    list_type = NavPointItem
+class NavPointList(ListProperty):
+    list_type = NavPoint
     tag_name = "Points"
 
 
-class NavPortalItem(ElementTree):
+class NavPortal(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -50,8 +50,8 @@ class NavPortalItem(ElementTree):
         self.position_to = VectorProperty("PositionTo")
 
 
-class NavPortalListProperty(ListProperty):
-    list_type = NavPortalItem
+class NavPortalList(ListProperty):
+    list_type = NavPortal
     tag_name = "Portals"
 
 
@@ -80,7 +80,7 @@ class NavPolygonVertices(ListProperty):
         return new
 
 
-class NavPolygonItem(ElementTree):
+class NavPolygon(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -90,8 +90,8 @@ class NavPolygonItem(ElementTree):
         self.edges = TextProperty("Edges")
 
 
-class NavPolygonListProperty(ListProperty):
-    list_type = NavPolygonItem
+class NavPolygonList(ListProperty):
+    list_type = NavPolygon
     tag_name = "Polygons"
 
 
@@ -105,6 +105,6 @@ class Navmesh(ElementTree):
         self.bb_min = VectorProperty("BBMin")
         self.bb_max = VectorProperty("BBMax")
         self.bb_size = VectorProperty("BBSize")
-        self.polygons = NavPolygonListProperty()
-        self.portals = NavPortalListProperty()
-        self.points = NavPointListProperty()
+        self.polygons = NavPolygonList()
+        self.portals = NavPortalList()
+        self.points = NavPointList()

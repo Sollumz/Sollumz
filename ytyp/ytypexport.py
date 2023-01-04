@@ -36,7 +36,7 @@ def get_portal_count(room: RoomProperties, portals: Iterable[PortalProperties]) 
     return count
 
 
-def set_entity_xml_transforms_from_object(entity_obj: bpy.types.Object, entity_xml: ymapxml.EntityItem):
+def set_entity_xml_transforms_from_object(entity_obj: bpy.types.Object, entity_xml: ymapxml.Entity):
     """Set the transforms of an entity xml based on a Blender mesh object."""
 
     entity_xml.position = entity_obj.location
@@ -45,7 +45,7 @@ def set_entity_xml_transforms_from_object(entity_obj: bpy.types.Object, entity_x
     entity_xml.scale_z = entity_obj.scale.z
 
 
-def set_entity_xml_transforms(entity: MloEntityProperties, entity_xml: ymapxml.EntityItem):
+def set_entity_xml_transforms(entity: MloEntityProperties, entity_xml: ymapxml.Entity):
     """Set the transforms of an entity xml based on the provided entity data-block."""
 
     entity_xml.position = Vector(entity.position)
@@ -64,10 +64,10 @@ def set_portal_xml_corners(portal: PortalProperties, portal_xml: ytypxml.Portal)
         portal_xml.corners.append(corner_xml)
 
 
-def create_entity_xml(entity: MloEntityProperties) -> ymapxml.EntityItem:
+def create_entity_xml(entity: MloEntityProperties) -> ymapxml.Entity:
     """Create xml mlo entity from an entity data-block."""
 
-    entity_xml = ymapxml.EntityItem()
+    entity_xml = ymapxml.Entity()
     entity_obj = entity.linked_object
     if entity_obj:
         set_entity_xml_transforms_from_object(entity_obj, entity_xml)
@@ -181,7 +181,7 @@ def create_extension_xml(extension: ExtensionProperties):
     """Create an entity extension from the given extension xml."""
 
     extension_type = extension.extension_type
-    extension_xml_class = ymapxml.ExtensionsListProperty.get_extension_xml_class_from_type(
+    extension_xml_class = ymapxml.ExtensionsList.get_extension_xml_class_from_type(
         extension_type)
 
     if extension_xml_class is None:

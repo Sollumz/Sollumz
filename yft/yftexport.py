@@ -3,7 +3,7 @@ from mathutils import Matrix, Vector
 from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
 from ..ybn.ybnexport import composite_from_objects
-from ..cwxml.fragment import BoneTransformItem, ChildrenItem, Fragment, GroupItem, LODProperty, TransformItem, WindowItem
+from ..cwxml.fragment import BoneTransform, Children, Fragment, Group, LOD, Transform, Window
 from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import get_bound_center, get_sphere_radius, calculate_inertia, calculate_volume
@@ -114,7 +114,7 @@ def obj_to_vehicle_window(obj, drawable_xml, materials):
     mat.translation += obj.matrix_world.translation
     mat.invert_safe()
 
-    window = WindowItem()
+    window = Window()
     window.projection_matrix = mat
     window.shattermap = image_to_shattermap(shattermap)
 
@@ -142,7 +142,7 @@ def obj_to_vehicle_window(obj, drawable_xml, materials):
 def create_bone_transforms(frag, drawable_obj):
     for bone in drawable_obj.data.bones:
         frag.bones_transforms.append(
-            BoneTransformItem("Item", bone.matrix_local))
+            BoneTransform("Item", bone.matrix_local))
 
 
 def fragment_from_object(exportop, fobj, exportpath):
@@ -194,7 +194,7 @@ def fragment_from_object(exportop, fobj, exportpath):
         vwobjs = get_sollumz_objects_from_objects(
             cobjs, SollumType.FRAGVEHICLEWINDOW)
 
-        flod = LODProperty()
+        flod = LOD()
         flod.tag_name = f"LOD{idx+1}"
         flod.unknown_14 = lod.lod_properties.unknown_14
         flod.unknown_18 = lod.lod_properties.unknown_18
@@ -240,7 +240,7 @@ def fragment_from_object(exportop, fobj, exportpath):
 
         gidx = 0
         for gobj in gobjs:
-            group = GroupItem()
+            group = Group()
             group.name = gobj.name if "group" not in gobj.name else gobj.name.replace(
                 "_group", "").split(".")[0]
             group.parent_index = get_obj_parent_group_index(gobjs, gobj)
@@ -274,7 +274,7 @@ def fragment_from_object(exportop, fobj, exportpath):
             gidx += 1
 
         for i, cobj in enumerate(cobjs):
-            child = ChildrenItem()
+            child = Children()
             gobj = cobj.parent
             child.group_index = gobjs.index(gobj)
             child.pristine_mass = cobj.child_properties.pristine_mass
@@ -314,7 +314,7 @@ def fragment_from_object(exportop, fobj, exportpath):
             transform[3][0] = a
             transform[3][1] = b
             transform[3][2] = c
-            flod.transforms.append(TransformItem("Item", transform))
+            flod.transforms.append(Transform("Item", transform))
             flod.children.append(child)
 
         for wobj in vwobjs:

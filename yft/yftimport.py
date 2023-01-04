@@ -4,7 +4,7 @@ from typing import Union
 from mathutils import Matrix, Vector
 from ..tools.utils import multiW
 from ..tools.meshhelper import create_uv_layer
-from ..cwxml.fragment import YFT, Fragment, LODProperty, GroupItem, ChildrenItem, BoneTransformItem, WindowItem
+from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, BoneTransform, Window
 from ..tools.fragmenthelper import shattermap_to_material
 from ..tools.blenderhelper import create_empty_object, get_children_recursive
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
@@ -50,7 +50,7 @@ def fragment_to_obj(frag_xml: Fragment, filepath: str):
         lod_obj.parent = frag_obj
 
 
-def create_lod_obj(frag_obj: bpy.types.Object, lod_xml: LODProperty, id: int):
+def create_lod_obj(frag_obj: bpy.types.Object, lod_xml: LOD, id: int):
     lod_obj = create_empty_object(SollumType.FRAGLOD, lod_xml.tag_name)
     lod_obj.lod_properties.type = id
     set_lod_properties(lod_xml, lod_obj)
@@ -60,10 +60,10 @@ def create_lod_obj(frag_obj: bpy.types.Object, lod_xml: LODProperty, id: int):
     return lod_obj
 
 
-def create_groups(lod_xml: LODProperty, lod_obj: bpy.types.Object):
+def create_groups(lod_xml: LOD, lod_obj: bpy.types.Object):
     group_objs: list[bpy.types.Object] = []
 
-    group_xml: GroupItem
+    group_xml: Group
     for group_xml in lod_xml.groups:
         parent_index = group_xml.parent_index
 
@@ -88,10 +88,10 @@ def create_groups(lod_xml: LODProperty, lod_obj: bpy.types.Object):
     return group_objs
 
 
-def create_children(lod_xml: LODProperty, group_objs: list[bpy.types.Object], filepath: str, materials: list[bpy.types.Material]):
+def create_children(lod_xml: LOD, group_objs: list[bpy.types.Object], filepath: str, materials: list[bpy.types.Material]):
     child_objs: list[bpy.types.Object] = []
 
-    child_xml: ChildrenItem
+    child_xml: Children
     for child_id, child_xml in enumerate(lod_xml.children):
         group_id = child_xml.group_index
 
@@ -121,7 +121,7 @@ def create_children(lod_xml: LODProperty, group_objs: list[bpy.types.Object], fi
     return child_objs
 
 
-def create_bounds(lod_xml: LODProperty, child_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
+def create_bounds(lod_xml: LOD, child_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
     bounds_xml = lod_xml.archetype.bounds
 
     if bounds_xml is None:
@@ -138,7 +138,7 @@ def create_bounds(lod_xml: LODProperty, child_objs: list[bpy.types.Object]) -> U
 
 
 def create_vehicle_windows(frag_xml: Fragment, materials: list[bpy.types.Material], child_objs: list[bpy.types.Object]):
-    window_xml: WindowItem
+    window_xml: Window
     for window_xml in frag_xml.vehicle_glass_windows:
         # Each window corresponds to a fragment group
         child_obj = get_window_child(window_xml, child_objs)
@@ -204,7 +204,7 @@ def create_fragment_drawable(frag_obj: bpy.types.Object, frag_xml: Fragment, fil
     return drawable_obj
 
 
-def set_child_transforms(lod_xml: LODProperty, child_obj: bpy.types.Object, child_id: int):
+def set_child_transforms(lod_xml: LOD, child_obj: bpy.types.Object, child_id: int):
     transform = lod_xml.transforms[child_id].value
     a = transform[3][0] + lod_xml.position_offset.x
     b = transform[3][1] + lod_xml.position_offset.y
@@ -216,7 +216,7 @@ def set_child_transforms(lod_xml: LODProperty, child_obj: bpy.types.Object, chil
     child_obj.matrix_basis = transform.transposed()
 
 
-def get_window_child(window_xml: WindowItem, child_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
+def get_window_child(window_xml: Window, child_objs: list[bpy.types.Object]) -> Union[bpy.types.Object, None]:
     child_id = window_xml.item_id
 
     if child_id < 0 or child_id >= len(child_objs):
@@ -225,7 +225,7 @@ def get_window_child(window_xml: WindowItem, child_objs: list[bpy.types.Object])
     return child_objs[child_id]
 
 
-def create_vehicle_window_mesh(window_xml: WindowItem, name: str, child_matrix: Vector):
+def create_vehicle_window_mesh(window_xml: Window, name: str, child_matrix: Vector):
     verts = calculate_window_verts(window_xml)
     verts = [(vert - child_matrix.translation) @ child_matrix
              for vert in verts]
@@ -237,7 +237,7 @@ def create_vehicle_window_mesh(window_xml: WindowItem, name: str, child_matrix: 
     return mesh
 
 
-def calculate_window_verts(window_xml: WindowItem):
+def calculate_window_verts(window_xml: Window):
     """Calculate the 4 vertices of the window from the projection matrix."""
     proj_mat = get_window_projection_matrix(window_xml)
 
@@ -252,7 +252,7 @@ def calculate_window_verts(window_xml: WindowItem):
     return v0, v1, v2, v3
 
 
-def get_window_projection_matrix(window_xml: WindowItem):
+def get_window_projection_matrix(window_xml: Window):
     proj_mat: Matrix = window_xml.projection_matrix
     proj_mat[3][3] = 1
 
@@ -287,7 +287,7 @@ def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
     frag_obj.fragment_properties.buoyancy_factor = frag_xml.buoyancy_factor
 
 
-def set_lod_properties(lod_xml: LODProperty, lod_obj: bpy.types.Object):
+def set_lod_properties(lod_xml: LOD, lod_obj: bpy.types.Object):
     lod_obj.lod_properties.unknown_14 = lod_xml.unknown_14
     lod_obj.lod_properties.unknown_18 = lod_xml.unknown_18
     lod_obj.lod_properties.unknown_1c = lod_xml.unknown_1c
@@ -310,7 +310,7 @@ def set_lod_properties(lod_xml: LODProperty, lod_obj: bpy.types.Object):
     lod_obj.lod_properties.archetype_inertia_tensor = lod_xml.archetype.inertia_tensor
 
 
-def set_group_properties(group_xml: GroupItem, group_obj: bpy.types.Object):
+def set_group_properties(group_xml: Group, group_obj: bpy.types.Object):
     group_obj.group_properties.name = group_xml.name
     group_obj.group_properties.glass_window_index = group_xml.glass_window_index
     group_obj.group_properties.glass_flags = group_xml.glass_flags
@@ -340,7 +340,7 @@ def set_group_properties(group_xml: GroupItem, group_obj: bpy.types.Object):
     group_obj.group_properties.unk_float_a8 = group_xml.unk_float_a8
 
 
-def set_child_properties(child_xml: ChildrenItem, child_obj: bpy.types.Object, group_obj: bpy.types.Object):
+def set_child_properties(child_xml: Children, child_obj: bpy.types.Object, group_obj: bpy.types.Object):
     child_obj.child_properties.group = group_obj
     child_obj.child_properties.bone_tag = child_xml.bone_tag
     child_obj.child_properties.pristine_mass = child_xml.pristine_mass
@@ -349,7 +349,7 @@ def set_child_properties(child_xml: ChildrenItem, child_obj: bpy.types.Object, g
     child_obj.child_properties.inertia_tensor = child_xml.inertia_tensor
 
 
-def set_veh_window_properties(window_xml: WindowItem, window_obj: bpy.types.Object):
+def set_veh_window_properties(window_xml: Window, window_obj: bpy.types.Object):
     window_obj.vehicle_window_properties.unk_float_17 = window_xml.unk_float_17
     window_obj.vehicle_window_properties.unk_float_18 = window_xml.unk_float_18
     window_obj.vehicle_window_properties.cracks_texture_tiling = window_xml.cracks_texture_tiling

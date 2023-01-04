@@ -61,10 +61,10 @@ class BoundComposite(Bound):
     def __init__(self):
         super().__init__()
         self.type = AttributeProperty("type", "Composite")
-        self.children = BoundListProperty()
+        self.children = BoundList()
 
 
-class BoundItem(Bound, AbstractClass):
+class BoundChild(Bound, AbstractClass):
     tag_name = "Item"
 
     @property
@@ -80,27 +80,27 @@ class BoundItem(Bound, AbstractClass):
         self.composite_flags2 = FlagsProperty("CompositeFlags2")
 
 
-class BoundBox(BoundItem):
+class BoundBox(BoundChild):
     type = "Box"
 
 
-class BoundSphere(BoundItem):
+class BoundSphere(BoundChild):
     type = "Sphere"
 
 
-class BoundCapsule(BoundItem):
+class BoundCapsule(BoundChild):
     type = "Capsule"
 
 
-class BoundCylinder(BoundItem):
+class BoundCylinder(BoundChild):
     type = "Cylinder"
 
 
-class BoundDisc(BoundItem):
+class BoundDisc(BoundChild):
     type = "Disc"
 
 
-class BoundCloth(BoundItem):
+class BoundCloth(BoundChild):
     type = "Cloth"
 
 
@@ -173,16 +173,16 @@ class OctantsProperty(ElementProperty):
         return element
 
 
-class BoundGeometryBVH(BoundItem):
+class BoundGeometryBVH(BoundChild):
     type = "GeometryBVH"
 
     def __init__(self):
         super().__init__()
         self.geometry_center = VectorProperty("GeometryCenter")
-        self.materials = MaterialsListProperty()
+        self.materials = MaterialsList()
         self.vertices = VerticesProperty("Vertices")
         self.vertex_colors = VertexColorProperty("VertexColours")
-        self.polygons = PolygonsProperty()
+        self.polygons = Polygons()
 
 
 class BoundGeometry(BoundGeometryBVH):
@@ -197,13 +197,13 @@ class BoundGeometry(BoundGeometryBVH):
         self.octants = OctantsProperty("Octants")
 
 
-class BoundListProperty(ListProperty):
-    list_type = BoundItem
+class BoundList(ListProperty):
+    list_type = BoundChild
     tag_name = "Children"
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = BoundListProperty()
+        new = BoundList()
 
         for child in element.iter():
             if "type" in child.attrib:
@@ -228,7 +228,7 @@ class BoundListProperty(ListProperty):
         return new
 
 
-class MaterialItem(ElementTree):
+class Material(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -242,8 +242,8 @@ class MaterialItem(ElementTree):
         self.unk = ValueProperty("Unk", 0)
 
 
-class MaterialsListProperty(ListProperty):
-    list_type = MaterialItem
+class MaterialsList(ListProperty):
+    list_type = Material
     tag_name = "Materials"
 
 
@@ -291,13 +291,13 @@ class Polygon(ElementTree, AbstractClass):
         self.material_index = AttributeProperty("m", 0)
 
 
-class PolygonsProperty(ListProperty):
+class Polygons(ListProperty):
     list_type = Polygon
     tag_name = "Polygons"
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = PolygonsProperty()
+        new = Polygons()
 
         for child in element.iter():
             if child.tag == "Box":

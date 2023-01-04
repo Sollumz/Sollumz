@@ -13,7 +13,7 @@ from ..tools.utils import get_min_vector, get_max_vector
 
 
 def box_from_obj(obj):
-    box = BoxOccluderItem()
+    box = BoxOccluder()
     box.center_x = round(obj.location.x * 4)
     box.center_y = round(obj.location.y * 4)
     box.center_z = round(obj.location.z * 4)
@@ -61,7 +61,7 @@ def get_verts_from_obj(obj):
 def model_from_obj(obj, export_op):
     triangulate_obj(obj)
 
-    model = OccludeModelItem()
+    model = OccludeModel()
     model.bmin, model.bmax = get_bound_extents(obj)
     model.verts = get_verts_from_obj(obj)
     model.num_verts_in_bytes = len(obj.data.vertices) * 12
@@ -77,7 +77,7 @@ def entity_from_obj(obj):
     # Removing " (not found)" suffix, created when importing ymaps while entity was not found in the view layer
     obj.name = re.sub(" \(not found\)", "", obj.name.lower())
 
-    entity = EntityItem()
+    entity = Entity()
     entity.archetype_name = remove_number_suffix(obj.name)
     entity.flags = int(obj.entity_properties.flags)
     entity.guid = int(obj.entity_properties.guid)
@@ -118,7 +118,7 @@ def calculate_extents(ymap, obj):
 
 
 def cargen_from_obj(obj):
-    cargen = CarGeneratorItem()
+    cargen = CarGenerator()
     cargen.position = obj.location
 
     # TODO: Convert obj rotation to orientX/orientY

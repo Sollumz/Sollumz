@@ -118,12 +118,12 @@ class LightInstance(ElementTree):
         self.projected_texture_key = ValueProperty("projectedTextureKey")
 
 
-class LightInstancesListProperty(ListProperty):
+class LightInstancesList(ListProperty):
     list_type = LightInstance
     tag_name = "instances"
 
     def __init__(self, tag_name=None, value=None):
-        super().__init__(LightInstancesListProperty.tag_name, value=value)
+        super().__init__(LightInstancesList.tag_name, value=value)
         self.item_type = AttributeProperty("itemType", "CLightAttrDef")
 
 
@@ -147,7 +147,7 @@ class ExtensionLightEffect(Extension):
 
     def __init__(self):
         super().__init__()
-        self.instances = LightInstancesListProperty()
+        self.instances = LightInstancesList()
 
 
 class ExtensionAudioCollision(Extension):
@@ -327,7 +327,7 @@ class ExtensionProcObject(Extension):
         self.flags = ValueProperty("flags")
 
 
-class ExtensionsListProperty(ListProperty):
+class ExtensionsList(ListProperty):
     list_type = Extension
     tag_name = "extensions"
 
@@ -366,12 +366,12 @@ class ExtensionsListProperty(ListProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = ExtensionsListProperty()
+        new = ExtensionsList()
 
         for child in element.iter():
             if "type" in child.attrib:
                 ext_type = child.get("type")
-                ext_class = ExtensionsListProperty.get_extension_xml_class_from_type(
+                ext_class = ExtensionsList.get_extension_xml_class_from_type(
                     ext_type)
 
                 new.value.append(ext_class.from_xml(child))
@@ -379,7 +379,7 @@ class ExtensionsListProperty(ListProperty):
         return new
 
 
-class EntityItem(ElementTree):
+class Entity(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -398,7 +398,7 @@ class EntityItem(ElementTree):
         self.lod_level = TextProperty("lodLevel")
         self.num_children = ValueProperty("numChildren", 0)
         self.priority_level = TextProperty("priorityLevel")
-        self.extensions = ExtensionsListProperty()
+        self.extensions = ExtensionsList()
         self.ambient_occlusion_multiplier = ValueProperty(
             "ambientOcclusionMultiplier", 0)
         self.artificial_ambient_occlusion = ValueProperty(
@@ -406,12 +406,12 @@ class EntityItem(ElementTree):
         self.tint_value = ValueProperty("tintValue", 0)
 
 
-class EntityListProperty(ListPropertyRequired):
-    list_type = EntityItem
+class EntityList(ListPropertyRequired):
+    list_type = Entity
     tag_name = "entities"
 
 
-class ContainerLodsListProperty(ElementTree):
+class ContainerLodsList(ElementTree):
     """This is not used by GTA5 but added for completion"""
     tag_name = "containerLods"
 
@@ -421,7 +421,7 @@ class ContainerLodsListProperty(ElementTree):
             "itemType", "rage__fwContainerLodDef")
 
 
-class BoxOccluderItem(ElementTree):
+class BoxOccluder(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -436,8 +436,8 @@ class BoxOccluderItem(ElementTree):
         self.sin_z = ValueProperty("iSinZ")
 
 
-class BoxOccludersListProperty(ListPropertyRequired):
-    list_type = BoxOccluderItem
+class BoxOccludersList(ListPropertyRequired):
+    list_type = BoxOccluder
     tag_name = "boxOccluders"
 
     def __init__(self, tag_name=None, value=None):
@@ -445,7 +445,7 @@ class BoxOccludersListProperty(ListPropertyRequired):
         self.item_type = AttributeProperty("itemType", "BoxOccluder")
 
 
-class OccludeModelItem(ElementTree):
+class OccludeModel(ElementTree):
     class VertsProperty(ElementProperty):
         """Same as a TextProperty but formats the input and output and returns an empty element rather than None"""
         value_types = (str)
@@ -458,8 +458,8 @@ class OccludeModelItem(ElementTree):
             text = element.text.replace("\n", "").replace(" ", "")
             if not text:
                 raise ValueError(
-                    f'Missing verts data on {OccludeModelItem.VertsProperty.__name__}')
-            return OccludeModelItem.VertsProperty(element.tag, text)
+                    f'Missing verts data on {OccludeModel.VertsProperty.__name__}')
+            return OccludeModel.VertsProperty(element.tag, text)
 
         def to_xml(self):
             element = ET.Element(self.tag_name)
@@ -488,8 +488,8 @@ class OccludeModelItem(ElementTree):
         self.flags = ValueProperty("flags")
 
 
-class OccludeModelsListProperty(ListPropertyRequired):
-    list_type = OccludeModelItem
+class OccludeModelsList(ListPropertyRequired):
+    list_type = OccludeModel
     tag_name = "occludeModels"
 
     def __init__(self, tag_name=None, value=None):
@@ -497,14 +497,14 @@ class OccludeModelsListProperty(ListPropertyRequired):
         self.item_type = AttributeProperty("itemType", "OccludeModel")
 
 
-class PhysicsDictionariesListProperty(ListProperty):
+class PhysicsDictionariesList(ListProperty):
     """
     Same as ListPropertyRequired but only accepts items of type TextProperty.
     """
-    class PhysicsDictionarieItem(TextProperty):
+    class PhysicsDictionarie(TextProperty):
         tag_name = "Item"
 
-    list_type = PhysicsDictionarieItem
+    list_type = PhysicsDictionarie
     tag_name = "physicsDictionaries"
 
     def to_xml(self):
@@ -528,7 +528,7 @@ class PhysicsDictionariesListProperty(ListProperty):
 # TODO: InstancedData
 
 
-class TimeCycleModifierItem(ElementTree):
+class TimeCycleModifier(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -542,8 +542,8 @@ class TimeCycleModifierItem(ElementTree):
         self.end_hour = ValueProperty("endHour")
 
 
-class TimeCycleModifiersListProperty(ListPropertyRequired):
-    list_type = TimeCycleModifierItem
+class TimeCycleModifiersList(ListPropertyRequired):
+    list_type = TimeCycleModifier
     tag_name = "timeCycleModifiers"
 
     def __init__(self, tag_name=None, value=None):
@@ -551,7 +551,7 @@ class TimeCycleModifiersListProperty(ListPropertyRequired):
         self.item_type = AttributeProperty("itemType", "CTimeCycleModifier")
 
 
-class CarGeneratorItem(ElementTree):
+class CarGenerator(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -570,8 +570,8 @@ class CarGeneratorItem(ElementTree):
         self.livery = ValueProperty("livery", -1)
 
 
-class CarGeneratorsListProperty(ListPropertyRequired):
-    list_type = CarGeneratorItem
+class CarGeneratorsList(ListPropertyRequired):
+    list_type = CarGenerator
     tag_name = "carGenerators"
 
     def __init__(self, tag_name=None, value=None):
@@ -585,7 +585,7 @@ class CarGeneratorsListProperty(ListPropertyRequired):
 # TODO: Distant Lod Lights
 
 
-class BlockProperty(ElementTree):
+class Block(ElementTree):
     tag_name = "block"
 
     def __init__(self):
@@ -611,14 +611,14 @@ class CMapData(ElementTree, AbstractClass):
         self.streaming_extents_max = VectorProperty("streamingExtentsMax")
         self.entities_extents_min = VectorProperty("entitiesExtentsMin")
         self.entities_extents_max = VectorProperty("entitiesExtentsMax")
-        self.entities = EntityListProperty()
-        self.container_lods = ContainerLodsListProperty()
-        self.box_occluders = BoxOccludersListProperty()
-        self.occlude_models = OccludeModelsListProperty()
-        self.physics_dictionaries = PhysicsDictionariesListProperty()
+        self.entities = EntityList()
+        self.container_lods = ContainerLodsList()
+        self.box_occluders = BoxOccludersList()
+        self.occlude_models = OccludeModelsList()
+        self.physics_dictionaries = PhysicsDictionariesList()
         # self.instanced_data = InstancedDataProperty()
-        self.time_cycle_modifiers = TimeCycleModifiersListProperty()
-        self.car_generators = CarGeneratorsListProperty()
+        self.time_cycle_modifiers = TimeCycleModifiersList()
+        self.car_generators = CarGeneratorsList()
         # self.lod_lights = LODLightsSOAProperty()
         # self.distant_lod_lights = DistantLODLightsSOAProperty()
-        self.block = BlockProperty()
+        self.block = Block()

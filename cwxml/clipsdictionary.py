@@ -28,7 +28,7 @@ class YCD:
         return clips_dict.write_xml(filepath)
 
 
-class ItemTypeListProperty(ListProperty, AbstractClass):
+class ItemTypeList(ListProperty, AbstractClass):
     class Item(ElementTree, AbstractClass):
         tag_name = "Item"
 
@@ -44,7 +44,7 @@ class ItemTypeListProperty(ListProperty, AbstractClass):
         new = cls()
         type_map = {}
         for key, item_class in vars(cls).items():
-            if isclass(item_class) and issubclass(item_class, ItemTypeListProperty.Item) and key == item_class.__name__:
+            if isclass(item_class) and issubclass(item_class, ItemTypeList.Item) and key == item_class.__name__:
                 type_map[item_class.type] = item_class
         for child in element:
             type_elem = child.find("Type")
@@ -55,8 +55,8 @@ class ItemTypeListProperty(ListProperty, AbstractClass):
         return new
 
 
-class AttributesListProperty(ItemTypeListProperty):
-    class Attribute(ItemTypeListProperty.Item, AbstractClass):
+class AttributesList(ItemTypeList):
+    class Attribute(ItemTypeList.Item, AbstractClass):
         tag_name = "Item"
 
         @property
@@ -193,8 +193,8 @@ class FramesBuffer(ElementProperty):
         return element
 
 
-class ChannelsListProperty(ItemTypeListProperty):
-    class Channel(ItemTypeListProperty.Item, AbstractClass):
+class ChannelsList(ItemTypeList):
+    class Channel(ItemTypeList.Item, AbstractClass):
         tag_name = "Item"
 
         @property
@@ -313,7 +313,7 @@ class ChannelsListProperty(ItemTypeListProperty):
 
 
 class Animation(ElementTree):
-    class BoneIdListProperty(ListProperty):
+    class BoneIdList(ListProperty):
         class BoneId(ElementTree):
             tag_name = "Item"
 
@@ -326,18 +326,18 @@ class Animation(ElementTree):
         list_type = BoneId
         tag_name = "BoneIds"
 
-    class SequenceDataListProperty(ListProperty):
+    class SequenceDataList(ListProperty):
         class SequenceData(ElementTree):
             tag_name = "Item"
 
             def __init__(self):
                 super().__init__()
-                self.channels = ChannelsListProperty()
+                self.channels = ChannelsList()
 
         list_type = SequenceData
         tag_name = "SequenceData"
 
-    class SequenceListProperty(ListProperty):
+    class SequenceList(ListProperty):
 
         class Sequence(ElementTree):
 
@@ -347,7 +347,7 @@ class Animation(ElementTree):
                 super().__init__()
                 self.hash = TextProperty("Hash", "")
                 self.frame_count = ValueProperty("FrameCount", 0)
-                self.sequence_data = Animation.SequenceDataListProperty()
+                self.sequence_data = Animation.SequenceDataList()
 
         list_type = Sequence
         tag_name = "Sequences"
@@ -362,8 +362,8 @@ class Animation(ElementTree):
         self.sequence_frame_limit = ValueProperty("SequenceFrameLimit", 0)
         self.duration = ValueProperty("Duration", 0.0)
         self.unknown1C = TextProperty("Unknown1C")
-        self.bone_ids = Animation.BoneIdListProperty()
-        self.sequences = Animation.SequenceListProperty()
+        self.bone_ids = Animation.BoneIdList()
+        self.sequences = Animation.SequenceList()
 
 
 class Property(ElementTree):
@@ -373,11 +373,11 @@ class Property(ElementTree):
         super().__init__()
         self.name_hash = TextProperty("NameHash", "")
         self.unk_hash = TextProperty("UnkHash", "")
-        self.attributes = AttributesListProperty()
+        self.attributes = AttributesList()
 
 
-class Clip(ItemTypeListProperty.Item, AbstractClass):
-    class TagListProperty(ListProperty):
+class Clip(ItemTypeList.Item, AbstractClass):
+    class TagList(ListProperty):
         class Tag(Property):
             tag_name = "Item"
 
@@ -389,7 +389,7 @@ class Clip(ItemTypeListProperty.Item, AbstractClass):
         list_type = Tag
         tag_name = "Tags"
 
-    class PropertyListProperty(ListProperty):
+    class PropertyList(ListProperty):
         list_type = Property
         tag_name = "Properties"
 
@@ -399,11 +399,11 @@ class Clip(ItemTypeListProperty.Item, AbstractClass):
         self.name = TextProperty("Name", "")
         self.type = ValueProperty("Type", "Animation")
         self.unknown30 = ValueProperty("Unknown30", 0)
-        self.tags = Clip.TagListProperty()
-        self.properties = Clip.PropertyListProperty()
+        self.tags = Clip.TagList()
+        self.properties = Clip.PropertyList()
 
 
-class ClipAnimationsListProperty(ListProperty):
+class ClipAnimationsList(ListProperty):
     class ClipAnimation(ElementTree):
 
         tag_name = "Item"
@@ -419,7 +419,7 @@ class ClipAnimationsListProperty(ListProperty):
     tag_name = "Animations"
 
 
-class ClipsListProperty(ItemTypeListProperty):
+class ClipsList(ItemTypeList):
     class ClipAnimation(Clip):
         type = "Animation"
 
@@ -437,14 +437,14 @@ class ClipsListProperty(ItemTypeListProperty):
             super().__init__()
             self.type = "AnimationList"
             self.duration = ValueProperty("Duration", 0.0)
-            self.animations = ClipAnimationsListProperty()
+            self.animations = ClipAnimationsList()
 
     list_type = Clip
     tag_name = "Clips"
 
 
 class ClipsDictionary(ElementTree):
-    class AnimationsListProperty(ListProperty):
+    class AnimationsList(ListProperty):
         list_type = Animation
         tag_name = "Animations"
 
@@ -452,5 +452,5 @@ class ClipsDictionary(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.clips = ClipsListProperty()
-        self.animations = ClipsDictionary.AnimationsListProperty()
+        self.clips = ClipsList()
+        self.animations = ClipsDictionary.AnimationsList()
