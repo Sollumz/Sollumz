@@ -62,7 +62,7 @@ class NavPolygonVertices(ListProperty):
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name=tag_name, value=value)
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         verts = []

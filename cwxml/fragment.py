@@ -180,7 +180,7 @@ class ShatterMapProperty(ElementProperty):
     def __init__(self, tag_name: str = "ShatterMap", value=None):
         super().__init__(tag_name, value or "")
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         rows = []
@@ -215,11 +215,11 @@ class Window(ElementTree):
         self.cracks_texture_tiling = ValueProperty("CracksTextureTiling")
         self.shattermap = ShatterMapProperty("ShatterMap")
 
-    @ property
+    @property
     def width(self):
         return len(self.shattermap[0]) if self.height > 0 else 0
 
-    @ property
+    @property
     def height(self):
         return len(self.shattermap) if self.shattermap else 0
 

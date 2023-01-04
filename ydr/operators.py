@@ -320,7 +320,7 @@ class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Deletes an item"
     bl_action = "Delete a Bone Flag"
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         if context.active_pose_bone:
             return context.active_pose_bone.bone.bone_properties.flags

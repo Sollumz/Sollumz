@@ -347,11 +347,11 @@ class VertexLayoutList(ElementProperty):
     tag_name = "Layout"
 
     # Generate a namedtuple from a vertex layout
-    @ property
+    @property
     def vertex_type(self):
         return namedtuple("Vertex", [name.lower() for name in self.value])
 
-    @ property
+    @property
     def pretty_vertex_semantic(self):
         result = []
         vgs = False
@@ -378,7 +378,7 @@ class VertexLayoutList(ElementProperty):
             result.append(f"{tidx} UV Layer{'s' if tidx > 1 else ''}")
         return ", ".join(result)
 
-    @ property
+    @property
     def vertex_semantic(self):
         return "".join([item[0] for item in self.value])
 
@@ -386,7 +386,7 @@ class VertexLayoutList(ElementProperty):
         super().__init__(self.tag_name, [])
         self.type = "GTAV1"
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         new.type = element.get("type")
@@ -408,7 +408,7 @@ class VertexDataProperty(ElementProperty):
     def __init__(self, tag_name=None):
         super().__init__(tag_name=tag_name or "Data", value=[])
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         if not element.text:
@@ -464,7 +464,7 @@ class VertexBuffer(ElementTree):
     def get_vertex_type(self):
         return self.get_element("layout").vertex_type
 
-    @ classmethod
+    @classmethod
     def from_xml(cls: Element, element: ET.Element):
         new = super().from_xml(element)
         # Convert data to namedtuple matching the layout
@@ -480,7 +480,7 @@ class IndexDataProperty(ElementProperty):
     def __init__(self):
         super().__init__(tag_name="Data", value=[])
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         indices = element.text.strip().replace("\n", "").split()
@@ -552,7 +552,7 @@ class DrawableModelList(ListProperty):
 class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
 
-    @ property
+    @property
     def all_models(self):
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
@@ -656,7 +656,7 @@ class DrawableDictionary(MutableSequence, Element):
     def sort(self, key):
         self._value.sort(key=key)
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         new.tag_name = "Item"
