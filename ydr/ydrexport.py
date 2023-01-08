@@ -637,7 +637,7 @@ def light_from_object(obj, armature_obj=None):
 
     light.color = obj.data.color * 255
     light.flashiness = obj.data.light_properties.flashiness
-    light.intensity = obj.data.energy
+    light.intensity = obj.data.energy / 500
     light.type = SOLLUMZ_UI_NAMES[obj.data.sollum_type]
 
     # Get light bone
