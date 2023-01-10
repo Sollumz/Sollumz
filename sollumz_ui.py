@@ -63,13 +63,35 @@ class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
 
         layout.prop(operator.import_settings, "join_geometries")
 
+class SOLLUMZ_PT_import_asset(bpy.types.Panel):
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
+    bl_label = "Asset"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 2
+
+    @ classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_import"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.import_settings, "import_as_asset")
 
 class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"
     bl_region_type = "TOOL_PROPS"
     bl_label = "Fragment"
     bl_parent_id = "FILE_PT_operator"
-    bl_order = 2
+    bl_order = 3
 
     @ classmethod
     def poll(cls, context):
@@ -93,7 +115,7 @@ class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
     bl_region_type = "TOOL_PROPS"
     bl_label = "Skeleton"
     bl_parent_id = "FILE_PT_operator"
-    bl_order = 3
+    bl_order = 4
 
     @ classmethod
     def poll(cls, context):
@@ -139,7 +161,7 @@ class SOLLUMZ_PT_import_animation(bpy.types.Panel):
     bl_region_type = "TOOL_PROPS"
     bl_label = "Animation"
     bl_parent_id = "FILE_PT_operator"
-    bl_order = 4
+    bl_order = 5
 
     @ classmethod
     def poll(cls, context):
@@ -168,7 +190,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
     bl_region_type = "TOOL_PROPS"
     bl_label = "Ymap"
     bl_parent_id = "FILE_PT_operator"
-    bl_order = 5
+    bl_order = 6
 
     @ classmethod
     def poll(cls, context):

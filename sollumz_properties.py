@@ -526,6 +526,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+    import_as_asset: bpy.props.BoolProperty(
+        name="Import as asset",
+        description="Converts drawable to YTYP-ready prop (.ydr/.yft)",
+        default=False,
+    )
+
     split_by_bone: bpy.props.BoolProperty(
         name="Split by Bone",
         description="Splits the geometries by bone.",

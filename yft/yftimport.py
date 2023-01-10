@@ -6,8 +6,8 @@ from ..tools.utils import multiW
 from ..tools.meshhelper import create_uv_layer
 from ..cwxml.fragment import YFT, Fragment, LODProperty, GroupItem, ChildrenItem, BoneTransformItem, WindowItem
 from ..tools.fragmenthelper import shattermap_to_material
-from ..tools.blenderhelper import create_empty_object, get_children_recursive
-from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
+from ..tools.blenderhelper import create_empty_object, join_objects
+from ..ydr.ydrimport import drawable_to_obj, drawable_to_obj_asset, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import bound_to_obj
 from ..sollumz_properties import SollumType
 
@@ -19,7 +19,11 @@ def import_yft(filepath: str, import_operator: bpy.types.Operator):
     import_op = import_operator
 
     yft_xml = YFT.from_xml_file(filepath)
-    fragment_to_obj(yft_xml, filepath)
+
+    if import_op.import_settings.import_as_asset:
+        fragment_to_obj_assets(yft_xml, filepath)
+    else:
+        fragment_to_obj(yft_xml, filepath)
 
 
 def fragment_to_obj(frag_xml: Fragment, filepath: str):
@@ -48,6 +52,23 @@ def fragment_to_obj(frag_xml: Fragment, filepath: str):
         create_vehicle_windows(frag_xml, materials, child_objs)
 
         lod_obj.parent = frag_obj
+
+
+def fragment_to_obj_assets(frag_xml: Fragment, filepath: str):
+    name = frag_xml.name.replace("pack:/", "")
+
+    materials = get_fragment_materials(frag_xml, filepath)
+    objs = create_fragment_drawable_asset(frag_xml, filepath, materials, name)
+
+    joined_children = []
+
+    for children in objs: # Loop for every objs children and join children in 1 child
+        joined_child = join_objects(children)
+        joined_children.append(joined_child)
+
+    # join all joined children in 1 obj
+    joined_obj = join_objects(joined_children)
+    bpy.ops.asset.mark({"id": joined_obj})
 
 
 def create_lod_obj(frag_obj: bpy.types.Object, lod_xml: LODProperty, id: int):
@@ -199,9 +220,22 @@ def create_fragment_drawable(frag_obj: bpy.types.Object, frag_xml: Fragment, fil
 
     if drawable_obj is not None:
         drawable_obj.matrix_basis = drawable_xml.matrix
+
         drawable_obj.parent = frag_obj
 
     return drawable_obj
+
+def create_fragment_drawable_asset(frag_xml: Fragment, filepath: str, materials: list[bpy.types.Material], name: str) -> Union[bpy.types.Object, None]:
+    import_op.message("Name "+name)
+
+    if not frag_xml.drawable:
+        return None
+
+    drawable_xml = frag_xml.drawable
+    objs = drawable_to_obj_asset(drawable=drawable_xml, filepath=filepath,
+                                   name=name, materials=materials, import_settings=import_op.import_settings)
+
+    return objs
 
 
 def set_child_transforms(lod_xml: LODProperty, child_obj: bpy.types.Object, child_id: int):

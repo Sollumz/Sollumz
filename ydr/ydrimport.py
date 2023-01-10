@@ -476,7 +476,7 @@ def geometry_to_obj_split_by_bone(model, materials, bones):
     return bobjs
 
 
-def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature=None):
+def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature=None):    
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], None)
     dobj.sollum_type = SollumType.DRAWABLE_MODEL
@@ -499,6 +499,7 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
         child_objs = geometry_to_obj_split_by_bone(model, materials, bones)
         for child_obj in child_objs:
             child_obj.parent = dobj
+
             for mat in materials:
                 child_obj.data.materials.append(mat)
             create_tinted_shader_graph(child_obj)
@@ -508,13 +509,37 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
                 child, materials[child.shader_index], bones, name)
             child_obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
             child_obj.parent = dobj
+
+
             # do this after because object has to be linked, will do nothing if a tint parameter is not found... kinda stupid way to do it but its how
             # we check if its a tint shader in the first place so ig it makes sense...
             create_tinted_shader_graph(child_obj)
 
     bpy.context.collection.objects.link(dobj)
-
     return dobj
+
+
+def drawable_model_to_obj_asset(model, materials, name, lod, bones=None, import_settings=None, armature=None):    
+    children = []
+
+    if import_settings.split_by_bone and model.has_skin == 1:
+        child_objs = geometry_to_obj_split_by_bone(model, materials, bones)
+        for child_obj in child_objs:
+            for mat in materials:
+                child_obj.data.materials.append(mat)
+            create_tinted_shader_graph(child_obj)
+    else:
+        for child in model.geometries:
+            child_obj = geometry_to_obj(
+                child, materials[child.shader_index], bones, name)
+            child_obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
+            children.append(child_obj)
+
+            # do this after because object has to be linked, will do nothing if a tint parameter is not found... kinda stupid way to do it but its how
+            # we check if its a tint shader in the first place so ig it makes sense...
+            create_tinted_shader_graph(child_obj)
+
+    return children
 
 
 def create_lights(lights, parent, armature_obj=None):
@@ -616,12 +641,43 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
 
     return obj
 
+def drawable_to_obj_asset(drawable, filepath, name, materials=None, import_settings=None):
+
+    if not materials:
+        materials = shadergroup_to_materials(drawable.shader_group, filepath)
+    
+    objs = []
+
+    for model in drawable.drawable_models_high:
+        children = drawable_model_to_obj_asset(
+            model, materials, name, LODLevel.HIGH, None, import_settings)
+
+        objs.append(children)
+
+    return objs
 
 def import_ydr(filepath, import_settings):
     ydr_xml = YDR.from_xml_file(filepath)
-    drawable = drawable_to_obj(ydr_xml, filepath, os.path.basename(
+    
+    if import_settings.import_as_asset:
+        objs = drawable_to_obj_asset(ydr_xml, filepath, os.path.basename(
+        filepath.replace(YDR.file_extension, "")), None, import_settings)
+
+        joined_children = []
+
+        for children in objs: # Loop for every objs children and join children in 1 child
+            joined_child = join_objects(children)
+            joined_children.append(joined_child)
+
+        # join all joined children in 1 obj
+        joined_obj = join_objects(joined_children)
+        bpy.ops.asset.mark({"id": joined_obj})
+
+    else: 
+        drawable = drawable_to_obj(ydr_xml, filepath, os.path.basename(
         filepath.replace(YDR.file_extension, "")), None, None, import_settings)
-    if import_settings.join_geometries:
-        for child in drawable.children:
-            if child.sollum_type == SollumType.DRAWABLE_MODEL:
-                join_drawable_geometries(child)
+
+        if import_settings.join_geometries:
+            for child in drawable.children:
+                if child.sollum_type == SollumType.DRAWABLE_MODEL:
+                    join_drawable_geometries(child)
