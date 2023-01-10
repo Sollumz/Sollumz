@@ -23,7 +23,7 @@ class SOLLUMZ_PT_import_main(bpy.types.Panel):
     bl_options = {"HIDE_HEADER"}
     bl_order = 0
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -47,7 +47,7 @@ class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
     bl_parent_id = "FILE_PT_operator"
     bl_order = 1
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -93,7 +93,7 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
     bl_parent_id = "FILE_PT_operator"
     bl_order = 3
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -117,7 +117,7 @@ class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
     bl_parent_id = "FILE_PT_operator"
     bl_order = 4
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -163,7 +163,7 @@ class SOLLUMZ_PT_import_animation(bpy.types.Panel):
     bl_parent_id = "FILE_PT_operator"
     bl_order = 5
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -192,7 +192,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
     bl_parent_id = "FILE_PT_operator"
     bl_order = 6
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -221,7 +221,7 @@ class SOLLUMZ_PT_export_main(bpy.types.Panel):
     bl_options = {"HIDE_HEADER"}
     bl_order = 0
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
@@ -523,7 +523,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
 
-    @ classmethod
+    @classmethod
     def poll(cls, context):
         aobj = context.active_object
         return aobj is not None and aobj.sollum_type == SollumType.DRAWABLE

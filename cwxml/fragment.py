@@ -12,7 +12,7 @@ from .element import (
     ValueProperty,
     VectorProperty
 )
-from .drawable import Drawable, LightsProperty
+from .drawable import Drawable, Lights
 from .bound import BoundComposite
 
 
@@ -29,23 +29,23 @@ class YFT:
         return fragment.write_xml(filepath)
 
 
-class BoneTransformItem(MatrixProperty):
+class BoneTransform(MatrixProperty):
     tag_name = "Item"
 
     def __init__(self, tag_name: str, value=None, size=3):
         super().__init__(tag_name, value or Matrix(), size)
 
 
-class BoneTransformsListProperty(ListProperty):
-    list_type = BoneTransformItem
+class BoneTransformsList(ListProperty):
+    list_type = BoneTransform
     tag_name = "BoneTransforms"
 
     def __init__(self, tag_name=None):
-        super().__init__(tag_name or BoneTransformsListProperty.tag_name)
+        super().__init__(tag_name or BoneTransformsList.tag_name)
         self.unk = AttributeProperty("unk", 1)
 
 
-class ArchetypeProperty(ElementTree):
+class Archetype(ElementTree):
     tag_name = "Archetype"
 
     def __init__(self):
@@ -62,22 +62,22 @@ class ArchetypeProperty(ElementTree):
         self.bounds = BoundComposite()
 
 
-class TransformItem(MatrixProperty):
+class Transform(MatrixProperty):
     tag_name = "Item"
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Matrix())
 
 
-class TransformsListProperty(ListProperty):
-    list_type = TransformItem
+class TransformsList(ListProperty):
+    list_type = Transform
     tag_name = "Transforms"
 
     def __init__(self, tag_name=None):
-        super().__init__(tag_name or TransformsListProperty.tag_name)
+        super().__init__(tag_name or TransformsList.tag_name)
 
 
-class ChildrenItem(ElementTree):
+class Children(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -92,12 +92,12 @@ class ChildrenItem(ElementTree):
         self.drawable = FragmentDrawable()
 
 
-class ChildrenListProperty(ListProperty):
-    list_type = ChildrenItem
+class ChildrenList(ListProperty):
+    list_type = Children
     tag_name = "Children"
 
 
-class GroupItem(ElementTree):
+class Group(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -135,12 +135,12 @@ class GroupItem(ElementTree):
         self.unk_float_a8 = ValueProperty("UnkFloatA8")
 
 
-class GroupsListProperty(ListProperty):
-    list_type = GroupItem
+class GroupsList(ListProperty):
+    list_type = Group
     tag_name = "Groups"
 
 
-class LODProperty(ElementTree):
+class LOD(ElementTree):
     tag_name = "LOD"
 
     def __init__(self, tag_name="LOD"):
@@ -158,20 +158,20 @@ class LODProperty(ElementTree):
         self.damping_angular_c = VectorProperty("DampingAngularC")
         self.damping_angular_v = VectorProperty("DampingAngularV")
         self.damping_angular_v2 = VectorProperty("DampingAngularV2")
-        self.archetype = ArchetypeProperty()
-        self.transforms = TransformsListProperty()
-        self.groups = GroupsListProperty()
-        self.children = ChildrenListProperty()
+        self.archetype = Archetype()
+        self.transforms = TransformsList()
+        self.groups = GroupsList()
+        self.children = ChildrenList()
 
 
-class PhysicsProperty(ElementTree):
+class Physics(ElementTree):
     tag_name = "Physics"
 
     def __init__(self):
         super().__init__()
-        self.lod1 = LODProperty("LOD1")
-        self.lod2 = LODProperty("LOD2")
-        self.lod3 = LODProperty("LOD3")
+        self.lod1 = LOD("LOD1")
+        self.lod2 = LOD("LOD2")
+        self.lod3 = LOD("LOD3")
 
 
 class ShatterMapProperty(ElementProperty):
@@ -180,7 +180,7 @@ class ShatterMapProperty(ElementProperty):
     def __init__(self, tag_name: str = "ShatterMap", value=None):
         super().__init__(tag_name, value or "")
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         rows = []
@@ -200,7 +200,7 @@ class ShatterMapProperty(ElementProperty):
         return element
 
 
-class WindowItem(ElementTree):
+class Window(ElementTree):
     tag_name = "Window"
 
     def __init__(self):
@@ -215,17 +215,17 @@ class WindowItem(ElementTree):
         self.cracks_texture_tiling = ValueProperty("CracksTextureTiling")
         self.shattermap = ShatterMapProperty("ShatterMap")
 
-    @ property
+    @property
     def width(self):
         return len(self.shattermap[0]) if self.height > 0 else 0
 
-    @ property
+    @property
     def height(self):
         return len(self.shattermap) if self.shattermap else 0
 
 
 class VehicleGlassWindows(ListProperty):
-    list_type = WindowItem
+    list_type = Window
     tag_name = "VehicleGlassWindows"
 
 
@@ -253,9 +253,9 @@ class Fragment(ElementTree, AbstractClass):
         self.gravity_factor = ValueProperty("GravityFactor")
         self.buoyancy_factor = ValueProperty("BuoyancyFactor")
         self.drawable = FragmentDrawable()
-        self.bones_transforms = BoneTransformsListProperty()
-        self.physics = PhysicsProperty()
-        self.lights = LightsProperty()
+        self.bones_transforms = BoneTransformsList()
+        self.physics = Physics()
+        self.lights = Lights()
         self.vehicle_glass_windows = VehicleGlassWindows()
 
     def get_lods_by_id(self):

@@ -9,7 +9,7 @@ from .element import (
     ValueProperty,
     VectorProperty
 )
-from .ymap import EntityListProperty, ExtensionsListProperty
+from .ymap import EntityList, ExtensionsList
 from numpy import float32
 
 
@@ -47,7 +47,7 @@ class BaseArchetype(ElementTree):
         self.physics_dictionary = TextProperty("physicsDictionary")
         self.asset_type = TextProperty("assetType")
         self.asset_name = TextProperty("assetName")
-        self.extensions = ExtensionsListProperty()
+        self.extensions = ExtensionsList()
 
 
 class TimeArchetype(BaseArchetype):
@@ -81,7 +81,7 @@ class Corner(ElementProperty):
         return elem
 
 
-class CornersListProperty(ListProperty):
+class CornersList(ListProperty):
     list_type = Corner
     tag_name = "corners"
 
@@ -129,11 +129,11 @@ class Portal(ElementTree):
         self.mirror_priority = ValueProperty("mirrorPriority")
         self.opacity = ValueProperty("opacity")
         self.audio_occlusion = ValueProperty("audioOcclusion")
-        self.corners = CornersListProperty()
+        self.corners = CornersList()
         self.attached_objects = AttachedObjectsBuffer()
 
 
-class PortalsListProperty(ListProperty):
+class PortalsList(ListProperty):
     tag_name = "portals"
     list_type = Portal
 
@@ -161,7 +161,7 @@ class Room(ElementTree):
         self.attached_objects = AttachedObjectsBuffer()
 
 
-class RoomsListProperty(ListProperty):
+class RoomsList(ListProperty):
     tag_name = "rooms"
     list_type = Room
 
@@ -177,10 +177,10 @@ class EntitySet(ElementTree):
         super().__init__()
         self.name = TextProperty("name")
         self.locations = TextProperty("locations")
-        self.entities = EntityListProperty()
+        self.entities = EntityList()
 
 
-class EntitySetsListProperty(ListProperty):
+class EntitySetsList(ListProperty):
     tag_name = "entitySets"
     list_type = EntitySet
 
@@ -201,7 +201,7 @@ class TimeCycleModifier(ElementTree):
         self.end_hour = ValueProperty("endHour")
 
 
-class TimeCycleModifiersListProperty(ListProperty):
+class TimeCycleModifiersList(ListProperty):
     tag_name = "timeCycleModifiers"
     list_type = TimeCycleModifier
 
@@ -215,20 +215,20 @@ class MloArchetype(BaseArchetype):
         super().__init__()
         self.type = AttributeProperty("type", "CMloArchetypeDef")
         self.mlo_flags = ValueProperty("mloFlags")
-        self.entities = EntityListProperty()
-        self.rooms = RoomsListProperty()
-        self.portals = PortalsListProperty()
-        self.entity_sets = EntitySetsListProperty()
-        self.timecycle_modifiers = TimeCycleModifiersListProperty()
+        self.entities = EntityList()
+        self.rooms = RoomsList()
+        self.portals = PortalsList()
+        self.entity_sets = EntitySetsList()
+        self.timecycle_modifiers = TimeCycleModifiersList()
 
 
-class ArchetypesListProperty(ListProperty):
+class ArchetypesList(ListProperty):
     list_type = BaseArchetype
     tag_name = "archetypes"
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = ArchetypesListProperty()
+        new = ArchetypesList()
 
         for child in element.iter():
             if "type" in child.attrib:
@@ -262,10 +262,10 @@ class CompositeEntityType(ElementTree):
         self.end_imap_file = TextProperty("EndImapFile")
         self.ptfx_assetname = TextProperty("PtFxAssetName")
         # TODO
-        # self.animations = AnimationsListProperty()
+        # self.animations = AnimationsList()
 
 
-class CompositeEntityTypeListProperty(ListProperty):
+class CompositeEntityTypeList(ListProperty):
     list_type = CompositeEntityType
     tag_name = "compositeEntityTypes"
 
@@ -279,9 +279,9 @@ class CMapTypes(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.extensions = ExtensionsListProperty()
-        self.archetypes = ArchetypesListProperty()
+        self.extensions = ExtensionsList()
+        self.archetypes = ArchetypesList()
         self.name = TextProperty("name")
         # TODO: Investigate: Not used in any ytyp file in the game?
         # self.dependencies = DependenciesListProperty()
-        self.composite_entity_type = CompositeEntityTypeListProperty()
+        self.composite_entity_type = CompositeEntityTypeList()

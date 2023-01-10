@@ -22,7 +22,7 @@ class YND:
         return node.write_xml(filepath)
 
 
-class JunctionRefItem(ElementTree):
+class JunctionRef(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -33,12 +33,12 @@ class JunctionRefItem(ElementTree):
         self.unk_0 = ValueProperty("Unk0")
 
 
-class JunctionRefListProperty(ListProperty):
-    list_type = JunctionRefItem
+class JunctionRefList(ListProperty):
+    list_type = JunctionRef
     tag_name = "JunctionRefs"
 
 
-class JunctionItem(ElementTree):
+class Junction(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -51,12 +51,12 @@ class JunctionItem(ElementTree):
         self.heightmap = TextProperty("Heightmap")
 
 
-class JunctionListProperty(ListProperty):
-    list_type = JunctionItem
+class JunctionList(ListProperty):
+    list_type = Junction
     tag_name = "Junctions"
 
 
-class LinkItem(ElementTree):
+class Link(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -69,12 +69,12 @@ class LinkItem(ElementTree):
         self.length = ValueProperty("LinkLength")
 
 
-class LinkListProperty(ListProperty):
-    list_type = LinkItem
+class LinkList(ListProperty):
+    list_type = Link
     tag_name = "Links"
 
 
-class NodeItem(ElementTree):
+class Node(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -89,11 +89,11 @@ class NodeItem(ElementTree):
         self.flags_3 = ValueProperty("Flags3")
         self.flags_4 = ValueProperty("Flags4")
         self.flags_5 = ValueProperty("Flags5")
-        self.links = LinkListProperty()
+        self.links = LinkList()
 
 
-class NodeListProperty(ListProperty):
-    list_type = NodeItem
+class NodeList(ListProperty):
+    list_type = Node
     tag_name = "Nodes"
 
 
@@ -104,4 +104,4 @@ class NodePath(ElementTree, AbstractClass):
         super().__init__()
         self.vehicle_node_count = ValueProperty("VehicleNodeCount")
         self.ped_node_count = ValueProperty("PedNodeCount")
-        self.nodes = NodeListProperty()
+        self.nodes = NodeList()

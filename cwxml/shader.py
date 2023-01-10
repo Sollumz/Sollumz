@@ -6,7 +6,7 @@ from .element import (
     ListProperty,
     TextProperty,
 )
-from .drawable import ParametersListProperty, VertexLayoutListProperty
+from .drawable import ParametersList, VertexLayoutList
 
 
 class RenderBucketProperty(ElementProperty):
@@ -28,16 +28,16 @@ class RenderBucketProperty(ElementProperty):
         element.text = " ".join(self.value)
 
 
-class FileNameListProperty(ListProperty):
-    class FileNameItem(TextProperty):
+class FileNameList(ListProperty):
+    class FileName(TextProperty):
         tag_name = "Item"
 
-    list_type = FileNameItem
+    list_type = FileName
     tag_name = "FileName"
 
 
-class LayoutListProperty(ListProperty):
-    class Layout(VertexLayoutListProperty):
+class LayoutList(ListProperty):
+    class Layout(VertexLayoutList):
         tag_name = "Item"
 
     list_type = Layout
@@ -51,8 +51,8 @@ class Shader(ElementTree):
         super().__init__()
         self.filename = TextProperty("Name", "")
         self.render_buckets = RenderBucketProperty()
-        self.layouts = LayoutListProperty()
-        self.parameters = ParametersListProperty("Parameters")
+        self.layouts = LayoutList()
+        self.parameters = ParametersList("Parameters")
 
     @property
     def required_tangent(self):

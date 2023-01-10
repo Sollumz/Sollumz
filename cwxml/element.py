@@ -319,7 +319,7 @@ class Vector2Property(ElementProperty):
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0)))
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ["x", "y"]):
             return VectorProperty.read_value_error(element)
@@ -338,7 +338,7 @@ class VectorProperty(ElementProperty):
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0, 0)))
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ["x", "y", "z"]):
             return VectorProperty.read_value_error(element)
@@ -358,7 +358,7 @@ class Vector4Property(ElementProperty):
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0, 0, 0)))
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
             return VectorProperty.read_value_error(element)
@@ -379,7 +379,7 @@ class QuaternionProperty(ElementProperty):
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Quaternion())
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
             QuaternionProperty.read_value_error(element)
@@ -402,7 +402,7 @@ class MatrixProperty(ElementProperty):
         super().__init__(tag_name, value or Matrix())
         self.size = size
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         s_mtx = element.text.strip().replace("\n", "").split("   ")
         s_mtx = [s for s in s_mtx if s]  # removes empty strings
@@ -435,7 +435,7 @@ class FlagsProperty(ElementProperty):
     def __init__(self, tag_name: str = "Flags", value=None):
         super().__init__(tag_name, value or [])
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         new = FlagsProperty(element.tag, [])
         if element.text and len(element.text.strip()) > 0:
@@ -469,7 +469,7 @@ class ValueProperty(ElementProperty):
     def __init__(self, tag_name: str, value=0):
         super().__init__(tag_name, value)
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element: ET.Element):
         if not "value" in element.attrib:
             ValueProperty.read_value_error(element)
@@ -493,7 +493,7 @@ class TextListProperty(ElementProperty):
     def __init__(self, tag_name, value=None):
         super().__init__(tag_name, value or [])
 
-    @ staticmethod
+    @staticmethod
     def from_xml(element):
         return TextListProperty(element.tag, value=element.text.split(" "))
 

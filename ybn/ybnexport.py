@@ -29,7 +29,7 @@ def add_material(material, mat_map, materials):
         return mat_map[material]
 
     if material and material.sollum_type == MaterialType.COLLISION:
-        mat_item = ybnxml.MaterialItem()
+        mat_item = ybnxml.Material()
         mat_item.type = material.collision_properties.collision_index
         mat_item.procedural_id = material.collision_properties.procedural_id
         mat_item.room_id = material.collision_properties.room_id

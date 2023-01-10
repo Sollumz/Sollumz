@@ -45,7 +45,7 @@ def get_shaders_from_blender(materials):
     shaders = []
 
     for material in materials:
-        shader = ydrxml.ShaderItem()
+        shader = ydrxml.Shader()
         # Maybe make this a property?
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
@@ -83,7 +83,7 @@ def get_shaders_from_blender(materials):
                 # Only perform logic if its ArrayNode
                 if node.node_tree.name == "ArrayNode" and node.name[-1] == "1":
                     node_name = node.name[:-2]
-                    param = ydrxml.ArrayShaderParameterProperty()
+                    param = ydrxml.ArrayShaderParameter()
                     param.name = node_name
                     param.type = "Array"
 
@@ -107,7 +107,7 @@ def get_shaders_from_blender(materials):
 
 
 def texture_item_from_node(n):
-    texture_item = ydrxml.TextureItem()
+    texture_item = ydrxml.Texture()
     if n.image:
         texture_item.name = n.sollumz_texture_name
         texture_item.width = n.image.size[0]
@@ -388,7 +388,7 @@ def get_bone_ids(obj, bones=None):
 
 
 def geometry_from_object(obj, mats, bones=None):
-    geometry = ydrxml.GeometryItem()
+    geometry = ydrxml.Geometry()
 
     geometry.shader_index = get_shader_index(mats, obj.active_material)
 
@@ -425,7 +425,7 @@ def geometry_from_object(obj, mats, bones=None):
 
 
 def drawable_model_from_object(obj, bones=None, materials=None):
-    drawable_model = ydrxml.DrawableModelItem()
+    drawable_model = ydrxml.DrawableModel()
 
     drawable_model.render_mask = obj.drawable_model_properties.render_mask
     drawable_model.flags = obj.drawable_model_properties.flags
@@ -490,7 +490,7 @@ def calculate_bone_tag(bone_name):
 
 def bone_from_object(obj, export_settings):
 
-    bone = ydrxml.BoneItem()
+    bone = ydrxml.Bone()
     bone.name = obj.name
     bone.index = obj["BONE_INDEX"]
 
@@ -578,7 +578,7 @@ def skeleton_from_object(obj, export_settings):
     if obj.type != "ARMATURE" or len(obj.pose.bones) == 0:
         return None
 
-    skeleton = ydrxml.SkeletonProperty()
+    skeleton = ydrxml.Skeleton()
     bones = obj.pose.bones
 
     ind = 0
@@ -599,7 +599,7 @@ def skeleton_from_object(obj, export_settings):
 def rotation_limit_from_object(obj):
     for con in obj.constraints:
         if con.type == "LIMIT_ROTATION":
-            joint = ydrxml.RotationLimitItem()
+            joint = ydrxml.RotationLimit()
             joint.bone_id = obj.bone.bone_properties.tag
             joint.min = Vector((con.min_x, con.min_y, con.min_z))
             joint.max = Vector((con.max_x, con.max_y, con.max_z))
@@ -612,7 +612,7 @@ def joints_from_object(obj):
     if obj.pose is None:
         return None
 
-    joints = ydrxml.JointsProperty()
+    joints = ydrxml.Joints()
     for bone in obj.pose.bones:
         joint = rotation_limit_from_object(bone)
         if joint is not None:
@@ -622,7 +622,7 @@ def joints_from_object(obj):
 
 
 def light_from_object(obj, armature_obj=None):
-    light = ydrxml.LightItem()
+    light = ydrxml.Light()
     light.position = obj.location
     mat = obj.matrix_basis
     light.direction = Vector(

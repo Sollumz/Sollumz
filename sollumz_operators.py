@@ -12,7 +12,7 @@ from .cwxml.bound import YBN
 from .cwxml.navmesh import YNV
 from .cwxml.clipsdictionary import YCD
 from .cwxml.ytyp import YTYP
-from .cwxml.ymap import YMAP, EntityItem, CMapData
+from .cwxml.ymap import YMAP, Entity, CMapData
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd

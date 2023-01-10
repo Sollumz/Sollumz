@@ -58,7 +58,7 @@ class YDR:
         return drawable.write_xml(filepath)
 
 
-class TextureItem(ElementTree):
+class Texture(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -75,8 +75,8 @@ class TextureItem(ElementTree):
         self.filename = TextProperty("FileName", "")
 
 
-class TextureDictionaryListProperty(ListProperty):
-    list_type = TextureItem
+class TextureDictionaryList(ListProperty):
+    list_type = Texture
     tag_name = "TextureDictionary"
 
 
@@ -113,7 +113,7 @@ class VectorShaderParameter(ShaderParameter):
         self.w = AttributeProperty("w", 0)
 
 
-class ArrayShaderParameterProperty(ShaderParameter):
+class ArrayShaderParameter(ShaderParameter):
     type = "Array"
 
     def __init__(self):
@@ -122,8 +122,8 @@ class ArrayShaderParameterProperty(ShaderParameter):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = super(ArrayShaderParameterProperty,
-                    ArrayShaderParameterProperty).from_xml(element)
+        new = super(ArrayShaderParameter,
+                    ArrayShaderParameter).from_xml(element)
 
         for item in element:
             new.values.append(Vector4Property.from_xml(item).value)
@@ -140,13 +140,13 @@ class ArrayShaderParameterProperty(ShaderParameter):
         return element
 
 
-class ParametersListProperty(ListProperty):
+class ParametersList(ListProperty):
     list_type = ShaderParameter
     tag_name = "Parameters"
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = ParametersListProperty()
+        new = ParametersList()
 
         for child in element.iter():
             if "type" in child.attrib:
@@ -155,14 +155,14 @@ class ParametersListProperty(ListProperty):
                     new.value.append(TextureShaderParameter.from_xml(child))
                 if param_type == VectorShaderParameter.type:
                     new.value.append(VectorShaderParameter.from_xml(child))
-                if param_type == ArrayShaderParameterProperty.type:
+                if param_type == ArrayShaderParameter.type:
                     new.value.append(
-                        ArrayShaderParameterProperty.from_xml(child))
+                        ArrayShaderParameter.from_xml(child))
 
         return new
 
 
-class ShaderItem(ElementTree):
+class Shader(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -170,22 +170,22 @@ class ShaderItem(ElementTree):
         self.name = TextProperty("Name", "")
         self.filename = TextProperty("FileName", "")
         self.render_bucket = ValueProperty("RenderBucket", 0)
-        self.parameters = ParametersListProperty()
+        self.parameters = ParametersList()
 
 
-class ShadersListProperty(ListProperty):
-    list_type = ShaderItem
+class ShadersList(ListProperty):
+    list_type = Shader
     tag_name = "Shaders"
 
 
-class ShaderGroupProperty(ElementTree):
+class ShaderGroup(ElementTree):
     tag_name = "ShaderGroup"
 
     def __init__(self):
         super().__init__()
         self.unknown_30 = ValueProperty("Unknown30", 0)
-        self.texture_dictionary = TextureDictionaryListProperty()
-        self.shaders = ShadersListProperty()
+        self.texture_dictionary = TextureDictionaryList()
+        self.shaders = ShadersList()
 
 
 class BoneIDProperty(ElementProperty):
@@ -210,7 +210,7 @@ class BoneIDProperty(ElementProperty):
         return element
 
 
-class BoneItem(ElementTree):
+class Bone(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -229,12 +229,12 @@ class BoneItem(ElementTree):
         self.transform_unk = QuaternionProperty("TransformUnk")
 
 
-class BonesListProperty(ListProperty):
-    list_type = BoneItem
+class BonesList(ListProperty):
+    list_type = Bone
     tag_name = "Bones"
 
 
-class SkeletonProperty(ElementTree):
+class Skeleton(ElementTree):
     tag_name = "Skeleton"
 
     def __init__(self):
@@ -256,10 +256,10 @@ class SkeletonProperty(ElementTree):
         self.unknown_50 = ValueProperty("Unknown50", 567032952)
         self.unknown_54 = ValueProperty("Unknown54", 2134582703)
         self.unknown_58 = ValueProperty("Unknown58", 2503907467)
-        self.bones = BonesListProperty("Bones")
+        self.bones = BonesList("Bones")
 
 
-class RotationLimitItem(ElementTree):
+class RotationLimit(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -270,21 +270,21 @@ class RotationLimitItem(ElementTree):
         self.max = VectorProperty("Max")
 
 
-class RotationLimitsListProperty(ListProperty):
-    list_type = RotationLimitItem
+class RotationLimitsList(ListProperty):
+    list_type = RotationLimit
     tag_name = "RotationLimits"
 
 
-class JointsProperty(ElementTree):
+class Joints(ElementTree):
     tag_name = "Joints"
 
     def __init__(self):
         super().__init__()
         # there should be more joint types than RotationLimits
-        self.rotation_limits = RotationLimitsListProperty("RotationLimits")
+        self.rotation_limits = RotationLimitsList("RotationLimits")
 
 
-class LightItem(ElementTree):
+class Light(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -327,8 +327,8 @@ class LightItem(ElementTree):
         self.projected_texture_hash = TextProperty("ProjectedTextureHash")
 
 
-class LightsProperty(ListProperty):
-    list_type = LightItem
+class Lights(ListProperty):
+    list_type = Light
     tag_name = "Lights"
 
 
@@ -342,16 +342,16 @@ class VertexSemantic(str, Enum):
     tangent = "T"
 
 
-class VertexLayoutListProperty(ElementProperty):
+class VertexLayoutList(ElementProperty):
     value_types = (list)
     tag_name = "Layout"
 
     # Generate a namedtuple from a vertex layout
-    @ property
+    @property
     def vertex_type(self):
         return namedtuple("Vertex", [name.lower() for name in self.value])
 
-    @ property
+    @property
     def pretty_vertex_semantic(self):
         result = []
         vgs = False
@@ -378,7 +378,7 @@ class VertexLayoutListProperty(ElementProperty):
             result.append(f"{tidx} UV Layer{'s' if tidx > 1 else ''}")
         return ", ".join(result)
 
-    @ property
+    @property
     def vertex_semantic(self):
         return "".join([item[0] for item in self.value])
 
@@ -386,7 +386,7 @@ class VertexLayoutListProperty(ElementProperty):
         super().__init__(self.tag_name, [])
         self.type = "GTAV1"
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         new.type = element.get("type")
@@ -408,7 +408,7 @@ class VertexDataProperty(ElementProperty):
     def __init__(self, tag_name=None):
         super().__init__(tag_name=tag_name or "Data", value=[])
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         if not element.text:
@@ -451,7 +451,7 @@ class VertexBuffer(ElementTree):
     def __init__(self):
         super().__init__()
         self.flags = ValueProperty("Flags", 0)
-        self.layout = VertexLayoutListProperty()
+        self.layout = VertexLayoutList()
         self.data = VertexDataProperty()
         self.data2 = VertexDataProperty("Data2")
 
@@ -464,7 +464,7 @@ class VertexBuffer(ElementTree):
     def get_vertex_type(self):
         return self.get_element("layout").vertex_type
 
-    @ classmethod
+    @classmethod
     def from_xml(cls: Element, element: ET.Element):
         new = super().from_xml(element)
         # Convert data to namedtuple matching the layout
@@ -480,7 +480,7 @@ class IndexDataProperty(ElementProperty):
     def __init__(self):
         super().__init__(tag_name="Data", value=[])
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         indices = element.text.strip().replace("\n", "").split()
@@ -513,7 +513,7 @@ class IndexBuffer(ElementTree):
         self.data = IndexDataProperty()
 
 
-class GeometryItem(ElementTree):
+class Geometry(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -526,12 +526,12 @@ class GeometryItem(ElementTree):
         self.index_buffer = IndexBuffer()
 
 
-class GeometriesListProperty(ListProperty):
-    list_type = GeometryItem
+class GeometriesList(ListProperty):
+    list_type = Geometry
     tag_name = "Geometries"
 
 
-class DrawableModelItem(ElementTree):
+class DrawableModel(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -541,18 +541,18 @@ class DrawableModelItem(ElementTree):
         self.has_skin = ValueProperty("HasSkin", 0)  # 0 = false, 1 = true
         self.bone_index = ValueProperty("BoneIndex", 0)
         self.unknown_1 = ValueProperty("Unknown1", 0)
-        self.geometries = GeometriesListProperty()
+        self.geometries = GeometriesList()
 
 
-class DrawableModelListProperty(ListProperty):
-    list_type = DrawableModelItem
+class DrawableModelList(ListProperty):
+    list_type = DrawableModel
     tag_name = "DrawableModels"
 
 
 class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
 
-    @ property
+    @property
     def all_models(self):
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
@@ -573,19 +573,19 @@ class Drawable(ElementTree, AbstractClass):
         self.flags_vlow = ValueProperty("FlagsVlow", 0)
         self.unknown_9A = ValueProperty("Unknown9A", 0)
 
-        self.shader_group = ShaderGroupProperty()
-        self.skeleton = SkeletonProperty()
-        self.joints = JointsProperty()
+        self.shader_group = ShaderGroup()
+        self.skeleton = Skeleton()
+        self.joints = Joints()
         # is embedded collision always type of composite? have to check
-        self.drawable_models_high = DrawableModelListProperty(
+        self.drawable_models_high = DrawableModelList(
             "DrawableModelsHigh")
-        self.drawable_models_med = DrawableModelListProperty(
+        self.drawable_models_med = DrawableModelList(
             "DrawableModelsMedium")
-        self.drawable_models_low = DrawableModelListProperty(
+        self.drawable_models_low = DrawableModelList(
             "DrawableModelsLow")
-        self.drawable_models_vlow = DrawableModelListProperty(
+        self.drawable_models_vlow = DrawableModelList(
             "DrawableModelsVeryLow")
-        self.lights = LightsProperty()
+        self.lights = Lights()
         self.bounds = []
 
     @classmethod
@@ -656,7 +656,7 @@ class DrawableDictionary(MutableSequence, Element):
     def sort(self, key):
         self._value.sort(key=key)
 
-    @ classmethod
+    @classmethod
     def from_xml(cls, element: ET.Element):
         new = cls()
         new.tag_name = "Item"
@@ -690,7 +690,7 @@ class BonePropertiesManager:
     def load_bones():
         tree = ET.parse(BonePropertiesManager.dictionary_xml)
         for node in tree.getroot():
-            bone = BoneItem.from_xml(node)
+            bone = Bone.from_xml(node)
             BonePropertiesManager.bones[bone.name] = bone
 
 
