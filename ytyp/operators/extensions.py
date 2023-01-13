@@ -1,5 +1,6 @@
 import bpy
-from ..utils import get_selected_archetype, get_selected_entity
+from ..properties.extensions import ExtensionsContainer
+from ..utils import get_selected_archetype, get_selected_entity, get_selected_ytyp
 
 
 class SOLLUMZ_OT_add_archetype_extension(bpy.types.Operator):
@@ -77,4 +78,42 @@ class SOLLUMZ_OT_delete_entity_extension(bpy.types.Operator):
         selected_entity = get_selected_entity(context)
         selected_entity.delete_selected_extension()
 
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_update_offset_and_top_from_selected(bpy.types.Operator):
+    """Update extension property from selection."""
+    bl_idname = "sollumz.updateoffsetandtopfromselectextension"
+    bl_options = {"UNDO"}
+    bl_label = "Update Offset and Top from selected"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_archetype(context) is not None
+
+    def execute(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        selected_archetype = get_selected_archetype(context)
+        active_object = context.active_object
+        context.scene.ytyps[selected_archetype.id].archetypes[selected_ytyp.archetype_index].extensions[selected_archetype.extension_index].ladder_extension_properties.offset_position = active_object.location
+        context.scene.ytyps[selected_archetype.id].archetypes[selected_ytyp.archetype_index].extensions[selected_archetype.extension_index].ladder_extension_properties.top = active_object.location
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_update_bottom_from_selected(bpy.types.Operator):
+    """Update extension property from selection."""
+    bl_idname = "sollumz.updatebottomfromselectextension"
+    bl_options = {"UNDO"}
+    bl_label = "Update Bottom from selected"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_archetype(context) is not None
+
+    def execute(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        selected_archetype = get_selected_archetype(context)
+        active_object = context.active_object
+
+        context.scene.ytyps[selected_archetype.id].archetypes[selected_ytyp.archetype_index].extensions[selected_archetype.extension_index].ladder_extension_properties.bottom = active_object.location
         return {"FINISHED"}

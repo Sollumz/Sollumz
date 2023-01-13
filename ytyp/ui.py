@@ -3,7 +3,8 @@ import bpy
 
 from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
 from .properties.ytyp import RoomProperties, PortalProperties, TimecycleModifierProperties
-from .properties.extensions import ExtensionsContainer
+from .properties.extensions import ExtensionType, ExtensionsContainer
+from .operators.extensions import SOLLUMZ_OT_update_offset_and_top_from_selected, SOLLUMZ_OT_update_bottom_from_selected
 from .utils import (
     get_selected_tcm,
     get_selected_ytyp,
@@ -74,6 +75,12 @@ class ExtensionsPanelHelper:
             for prop_name in selected_extension.get_properties().__class__.__annotations__:
                 row = layout.row()
                 row.prop(extension_properties, prop_name)
+
+            if selected_extension.extension_type == ExtensionType.LADDER:
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
 
 
 class SOLLUMZ_UL_YTYP_LIST(bpy.types.UIList):
