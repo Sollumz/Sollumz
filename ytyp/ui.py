@@ -33,6 +33,14 @@ class ExtensionsPanelHelper:
     ADD_OPERATOR_ID = ""
     DELETE_OPERATOR_ID = ""
     EXTENSIONS_LIST_ID = ""
+    UPDATE_OFFSET_TOP_ID = ""
+    UPDATE_BOTTOM_ID = ""
+    UPDATE_PTFXOFFSET_ID = ""
+    UPDATE_LIGHT_SHAFT_OFFSET_ID = ""
+    UPDATE_CORNER_A_ID = ""
+    UPDATE_CORNER_B_ID = ""
+    UPDATE_CORNER_C_ID = ""
+    UPDATE_CORNER_D_ID = ""
 
     @classmethod
     def get_extensions_container(self, context) -> ExtensionsContainer:
@@ -78,9 +86,21 @@ class ExtensionsPanelHelper:
 
             if selected_extension.extension_type == ExtensionType.LADDER:
                 row = layout.row()
-                row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
+                row.operator(self.UPDATE_OFFSET_TOP_ID)
+                row.operator(self.UPDATE_BOTTOM_ID)
+
+            if selected_extension.extension_type == ExtensionType.PARTICLE:
                 row = layout.row()
-                row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
+                row.operator(self.UPDATE_PTFXOFFSET_ID)
+            if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
+                row = layout.row()
+                row.operator(self.UPDATE_LIGHT_SHAFT_OFFSET_ID)
+                row = layout.row()
+                row.operator(self.UPDATE_CORNER_A_ID)
+                row.operator(self.UPDATE_CORNER_B_ID)
+                row = layout.row()
+                row.operator(self.UPDATE_CORNER_C_ID)
+                row.operator(self.UPDATE_CORNER_D_ID)
 
 
 class SOLLUMZ_UL_YTYP_LIST(bpy.types.UIList):
@@ -276,6 +296,14 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(bpy.types.Panel, ExtensionsPanelHelp
     ADD_OPERATOR_ID = "sollumz.addarchetypeextension"
     DELETE_OPERATOR_ID = "sollumz.deletearchetypeextension"
     EXTENSIONS_LIST_ID = SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST.bl_idname
+    UPDATE_OFFSET_TOP_ID = "sollumz.updateoffsetandtopfromselection"
+    UPDATE_BOTTOM_ID = "sollumz.updatebottomfromselection"
+    UPDATE_PTFXOFFSET_ID = "sollumz.updateptfxoffsetfromselection"
+    UPDATE_LIGHT_SHAFT_OFFSET_ID ="sollumz.updatelightshaftoffsetfromselection"
+    UPDATE_CORNER_A_ID = "sollumz.updatecornerafromselection"
+    UPDATE_CORNER_B_ID = "sollumz.updatecornerbfromselection"
+    UPDATE_CORNER_C_ID = "sollumz.updatecornercfromselection"
+    UPDATE_CORNER_D_ID = "sollumz.updatecornerdfromselection"
 
     @classmethod
     def get_extensions_container(self, context):
