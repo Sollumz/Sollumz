@@ -175,8 +175,10 @@ class MaterialConverter:
 
     def auto_convert(self) -> bpy.types.Material:
         """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material."""
-        shader_name = self._determine_shader_name()
-        return self.convert(shader_name)
+        if self.material.sollum_type != MaterialType.SHADER:
+            shader_name = self._determine_shader_name()
+            return self.convert(shader_name)
+        return self.material
 
 
 def create_drawable(sollum_type=SollumType.DRAWABLE):
