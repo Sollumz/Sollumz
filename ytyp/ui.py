@@ -505,6 +505,8 @@ class SOLLUMZ_PT_MLO_ENTITIES_PANEL(bpy.types.Panel):
         row.operator("sollumz.deletemloentity")
         row = layout.row()
         row.operator("sollumz.addobjasmloentity")
+        row = layout.row()
+        row.operator("sollumz.addobjasportalentity")
 
         layout.separator()
 
