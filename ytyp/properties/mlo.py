@@ -27,7 +27,7 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
     blend: bpy.props.FloatProperty(name="Blend", default=1)
     timecycle: bpy.props.StringProperty(
-        name="Timecycle", default="int_GasStation")
+        name="Timecycle", default="int_gasstation")
     secondary_timecycle: bpy.props.StringProperty(
         name="Secondary Timecycle")
     flags: bpy.props.PointerProperty(type=RoomFlags, name="Flags")
