@@ -228,7 +228,8 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
             ybn_ops.SOLLUMZ_OT_convert_to_collision_material.bl_idname)
         row.operator(
             ybn_ops.SOLLUMZ_OT_clear_and_create_collision_material.bl_idname)
-
+        row = layout.row()
+        row.operator(ybn_ops.SOLLUMZ_OT_convert_non_collision_materials_to_selected.bl_idname)
 
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_label = "Flag Presets"

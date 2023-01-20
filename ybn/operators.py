@@ -229,6 +229,28 @@ class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.
         return True
 
 
+class SOLLUMZ_OT_convert_non_collision_materials_to_selected(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Convert all non-collision materials to the selected collision material."""
+    bl_idname = "sollumz.convertnoncollisionmaterialstoselected"
+    bl_label = "Convert Non-Collision Materials To Selected"
+    bl_action = f"{bl_label}"
+    def run(self, context):
+        selected = context.selected_objects
+        if len(selected) < 1:
+            self.message("No objects selected")
+            return False
+        for obj in selected:
+            try:
+                mat = create_collision_material_from_index(
+                    context.scene.collision_material_index)
+                for i, material in enumerate(obj.data.materials):
+                    if obj.data.materials[i].sollum_type != 'sollumz_material_collision':
+                        obj.data.materials[i] = mat
+            except Exception:
+                self.warning(
+                    f"Failure to add material to {obj.name}: {traceback.format_exc()}")
+        return True
+
 class SOLLUMZ_OT_split_collision(SOLLUMZ_OT_base, bpy.types.Operator):
     """Split a collision into many parts. Sorted based on location"""
     bl_idname = "sollumz.splitcollision"
