@@ -4,14 +4,24 @@ import bpy
 from ..sollumz_properties import ArchetypeType, EntityProperties, AssetType
 from .properties.ytyp import RoomProperties, PortalProperties, TimecycleModifierProperties
 from .properties.extensions import ExtensionType, ExtensionsContainer
-from .operators.extensions import SOLLUMZ_OT_update_offset_and_top_from_selected, SOLLUMZ_OT_update_bottom_from_selected
+from .operators.extensions import (
+    SOLLUMZ_OT_update_bottom_from_selected,
+    SOLLUMZ_OT_update_corner_a_location,
+    SOLLUMZ_OT_update_corner_b_location,
+    SOLLUMZ_OT_update_corner_c_location,
+    SOLLUMZ_OT_update_corner_d_location,
+    SOLLUMZ_OT_update_light_shaft_offeset_location,
+    SOLLUMZ_OT_update_offset_and_top_from_selected,
+    SOLLUMZ_OT_update_particle_effect_location,
+)
 from .utils import (
     get_selected_tcm,
     get_selected_ytyp,
     get_selected_archetype,
     get_selected_room,
     get_selected_entity,
-    get_selected_portal
+    get_selected_portal,
+    get_selected_extension
 )
 from ..sollumz_ui import FlagsPanel, OrderListHelper, TimeFlagsPanel
 
@@ -33,14 +43,6 @@ class ExtensionsPanelHelper:
     ADD_OPERATOR_ID = ""
     DELETE_OPERATOR_ID = ""
     EXTENSIONS_LIST_ID = ""
-    UPDATE_OFFSET_TOP_ID = ""
-    UPDATE_BOTTOM_ID = ""
-    UPDATE_PTFXOFFSET_ID = ""
-    UPDATE_LIGHT_SHAFT_OFFSET_ID = ""
-    UPDATE_CORNER_A_ID = ""
-    UPDATE_CORNER_B_ID = ""
-    UPDATE_CORNER_C_ID = ""
-    UPDATE_CORNER_D_ID = ""
 
     @classmethod
     def get_extensions_container(self, context) -> ExtensionsContainer:
@@ -83,24 +85,6 @@ class ExtensionsPanelHelper:
             for prop_name in selected_extension.get_properties().__class__.__annotations__:
                 row = layout.row()
                 row.prop(extension_properties, prop_name)
-
-            if selected_extension.extension_type == ExtensionType.LADDER:
-                row = layout.row()
-                row.operator(self.UPDATE_OFFSET_TOP_ID)
-                row.operator(self.UPDATE_BOTTOM_ID)
-
-            if selected_extension.extension_type == ExtensionType.PARTICLE:
-                row = layout.row()
-                row.operator(self.UPDATE_PTFXOFFSET_ID)
-            if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
-                row = layout.row()
-                row.operator(self.UPDATE_LIGHT_SHAFT_OFFSET_ID)
-                row = layout.row()
-                row.operator(self.UPDATE_CORNER_A_ID)
-                row.operator(self.UPDATE_CORNER_B_ID)
-                row = layout.row()
-                row.operator(self.UPDATE_CORNER_C_ID)
-                row.operator(self.UPDATE_CORNER_D_ID)
 
 
 class SOLLUMZ_UL_YTYP_LIST(bpy.types.UIList):
@@ -296,18 +280,35 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(bpy.types.Panel, ExtensionsPanelHelp
     ADD_OPERATOR_ID = "sollumz.addarchetypeextension"
     DELETE_OPERATOR_ID = "sollumz.deletearchetypeextension"
     EXTENSIONS_LIST_ID = SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST.bl_idname
-    UPDATE_OFFSET_TOP_ID = "sollumz.updateoffsetandtopfromselection"
-    UPDATE_BOTTOM_ID = "sollumz.updatebottomfromselection"
-    UPDATE_PTFXOFFSET_ID = "sollumz.updateptfxoffsetfromselection"
-    UPDATE_LIGHT_SHAFT_OFFSET_ID ="sollumz.updatelightshaftoffsetfromselection"
-    UPDATE_CORNER_A_ID = "sollumz.updatecornerafromselection"
-    UPDATE_CORNER_B_ID = "sollumz.updatecornerbfromselection"
-    UPDATE_CORNER_C_ID = "sollumz.updatecornercfromselection"
-    UPDATE_CORNER_D_ID = "sollumz.updatecornerdfromselection"
 
     @classmethod
     def get_extensions_container(self, context):
         return get_selected_archetype(context)
+    
+    def draw(self, context):
+        super().draw(context)
+
+        layout = self.layout
+        selected_extension = get_selected_extension(context)
+        layout.separator()
+
+        if selected_extension.extension_type == ExtensionType.LADDER:
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
+            row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
+
+        if selected_extension.extension_type == ExtensionType.PARTICLE:
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_update_particle_effect_location.bl_idname)
+        if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
+            row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_update_corner_c_location.bl_idname)
+            row.operator(SOLLUMZ_OT_update_corner_d_location.bl_idname)
 
 
 class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):

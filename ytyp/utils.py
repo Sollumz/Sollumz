@@ -5,6 +5,7 @@ from typing import Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from .properties.ytyp import CMapTypesProperties, ArchetypeProperties
     from .properties.mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
+    from .properties.extensions import ExtensionProperties
 
 from ..tools.utils import get_list_item
 
@@ -50,3 +51,9 @@ def get_selected_tcm(context) -> Union[TimecycleModifierProperties, None]:
         archetype = ytyp.selected_archetype
         if archetype:
             return archetype.selected_tcm
+
+
+def get_selected_extension(context) -> Union[ExtensionProperties, None]:
+    archetype = get_selected_archetype(context)
+    if archetype:
+        return archetype.selected_extension
