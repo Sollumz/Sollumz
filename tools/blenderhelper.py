@@ -46,6 +46,7 @@ def get_terrain_texture_brush(idx):
     except:
         brush = create_brush(name)
     apply_brush_settings(brush, idx)
+    bpy.context.scene.tool_settings.vertex_paint.brush = brush
     return brush
 
 
