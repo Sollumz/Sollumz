@@ -5,7 +5,7 @@ from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, A
 from ...tools.utils import get_list_item
 from .mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, UnknownFlags
-from .extensions import ExtensionsContainer
+from .extensions import ExtensionsContainer, ExtensionProperties
 
 
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
