@@ -11,7 +11,7 @@ from ..tools.boundhelper import (
     BOUND_POLYGON_TYPES
 )
 from ..tools.meshhelper import create_box_from_extents, get_bound_center
-from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES
+from ..sollumz_properties import BOUND_SHAPE_TYPES, SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, MaterialType
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..tools.blenderhelper import get_selected_vertices, get_children_recursive, create_mesh_object
 import bpy
@@ -155,30 +155,58 @@ class SOLLUMZ_OT_create_bound(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
+class CreateCollisionMatHelper:
+    def create_material(self, mat_index: int, obj: bpy.types.Object):
+        mat = create_collision_material_from_index(mat_index)
+        obj.data.materials.append(mat)
+
+        self.report({"INFO"}, f"Succesfully added {mat.name} material to {obj.name}")
+
+    def execute(self, context):
+        selected = context.selected_objects
+
+        if len(selected) < 1:
+            self.report({"WARNING"}, "No objects selected")
+
+            return {"CANCELLED"}
+        
+        mat_index = context.scene.collision_material_index
+
+        for obj in selected:
+            self.create_material(mat_index, obj)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_create_collision_material(CreateCollisionMatHelper, bpy.types.Operator):
     """Create a sollumz collision material"""
     bl_idname = "sollumz.createcollisionmaterial"
     bl_label = "Create Collision Material"
-    bl_action = f"{bl_label}"
 
-    def run(self, context):
 
-        selected = context.selected_objects
-        if len(selected) < 1:
-            self.message("No objects selected")
-            return False
+class SOLLUMZ_OT_clear_and_create_collision_material(CreateCollisionMatHelper, bpy.types.Operator):
+    """Delete all materials on selected object(s) and add selected collision material."""
+    bl_idname = "sollumz.clearandcreatecollisionmaterial"
+    bl_label = "Clear and Create Collision Material"
 
-        for obj in selected:
-            try:
-                mat = create_collision_material_from_index(
-                    context.scene.collision_material_index)
-                obj.data.materials.append(mat)
-                self.messages.append(
-                    f"Succesfully added {mat.name} material to {obj.name}")
-            except:
-                self.messages.append(f"Failure to add material to {obj.name}")
+    def create_material(self, mat_index: int, obj: bpy.types.Object):
+        obj.data.materials.clear()
+        super().create_material(mat_index, obj)
 
-        return True
+
+class SOLLUMZ_OT_convert_non_collision_materials_to_selected(CreateCollisionMatHelper, bpy.types.Operator):
+    """Convert all non-collision materials to the selected collision material."""
+    bl_idname = "sollumz.convertnoncollisionmaterialstoselected"
+    bl_label = "Convert Non-Collision Materials To Selected"
+    
+    def create_material(self, mat_index: int, obj: bpy.types.Object):
+        mat = create_collision_material_from_index(mat_index)
+
+        for i, material in enumerate(obj.data.materials):
+            if material.sollum_type == MaterialType.COLLISION:
+                continue
+
+            obj.data.materials[i] = mat
 
 
 class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -202,31 +230,6 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
             context.scene.collision_material_index)
         active_mat_index = aobj.active_material_index
         aobj.data.materials[active_mat_index] = mat
-
-
-class SOLLUMZ_OT_clear_and_create_collision_material(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete all materials on selected object(s) and add selected collision material."""
-    bl_idname = "sollumz.clearandcreatecollisionmaterial"
-    bl_label = "Clear and Create Collision Material"
-    bl_action = f"{bl_label}"
-
-    def run(self, context):
-        selected = context.selected_objects
-        if len(selected) < 1:
-            self.message("No objects selected")
-            return False
-
-        for obj in selected:
-            try:
-                obj.data.materials.clear()
-                mat = create_collision_material_from_index(
-                    context.scene.collision_material_index)
-                obj.data.materials.append(mat)
-            except Exception:
-                self.warning(
-                    f"Failure to add material to {obj.name}: {traceback.format_exc()}")
-
-        return True
 
 
 class SOLLUMZ_OT_split_collision(SOLLUMZ_OT_base, bpy.types.Operator):
