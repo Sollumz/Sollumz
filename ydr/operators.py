@@ -89,7 +89,7 @@ class MaterialConverterHelper:
     def get_shader_name(self):
         return shadermats[bpy.context.scene.shader_material_index].value
 
-    def convert_material(self, obj, material):
+    def convert_material(self, obj: bpy.types.Object, material: bpy.types.Material) -> bpy.types.Material | None:
         return MaterialConverter(obj, material).convert(self.get_shader_name())
 
     def execute(self, context):
@@ -98,6 +98,9 @@ class MaterialConverterHelper:
 
             for material in materials:
                 new_material = self.convert_material(obj, material)
+
+                if new_material is None:
+                    continue
 
                 self.report(
                     {"INFO"}, f"Successfuly converted material '{new_material.name}'.")
@@ -129,7 +132,10 @@ class SOLLUMZ_OT_auto_convert_material(bpy.types.Operator, MaterialConverterHelp
     bl_idname = "sollumz.autoconvertmaterial"
     bl_label = "Convert Material To Shader Material"
 
-    def convert_material(self, obj, material):
+    def convert_material(self, obj: bpy.types.Object, material: bpy.types.Material) -> bpy.types.Material | None:
+        if material.sollum_type == MaterialType.SHADER:
+            return None
+
         return MaterialConverter(obj, material).auto_convert()
 
 
@@ -251,7 +257,7 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
 
         if mat.sollum_type == MaterialType.SHADER:
             for node in mat.node_tree.nodes:
-                if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                if (isinstance(node, bpy.types.ShaderNodeTexImage)):
                     node.texture_properties.embedded = False
             self.message(
                 f"Set {obj.name}s material {mat.name} textures to unembedded.")
@@ -261,7 +267,7 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
 
     def run(self, context):
         objs = bpy.context.selected_objects
-        if(len(objs) == 0):
+        if (len(objs) == 0):
             self.warning(
                 f"Please select a object to remove all embeded textures.")
             return False
@@ -282,7 +288,7 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
         for mat in obj.data.materials:
             if mat.sollum_type == MaterialType.SHADER:
                 for node in mat.node_tree.nodes:
-                    if(isinstance(node, bpy.types.ShaderNodeTexImage)):
+                    if (isinstance(node, bpy.types.ShaderNodeTexImage)):
                         node.texture_properties.embedded = False
                 self.message(
                     f"Set {obj.name}s materials to unembedded.")
@@ -292,7 +298,7 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
 
     def run(self, context):
         objs = bpy.context.selected_objects
-        if(len(objs) == 0):
+        if (len(objs) == 0):
             self.warning(
                 f"Please select a object to remove all embedded materials.")
             return False
