@@ -520,6 +520,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
                ("DIRECTORY", "Directory", "Import every file from active directory the file browser is in"))
     )
 
+    import_as_asset: bpy.props.BoolProperty(
+        name="Import as asset",
+        description="Create an asset from the .ydr/.yft high LOD.",
+        default=False,
+    )
+
     join_geometries: bpy.props.BoolProperty(
         name="Join Geometries",
         description="Joins the drawables geometries into a single mesh.",

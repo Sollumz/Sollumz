@@ -7,6 +7,7 @@ from ..tools.meshhelper import create_uv_layer
 from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, BoneTransform, Window
 from ..tools.fragmenthelper import shattermap_to_material
 from ..tools.blenderhelper import create_empty_object, get_children_recursive
+from ..tools.drawablehelper import drawable_to_asset
 from ..ydr.ydrimport import drawable_to_obj, shadergroup_to_materials, create_lights
 from ..ybn.ybnimport import bound_to_obj
 from ..sollumz_properties import SollumType
@@ -31,6 +32,11 @@ def fragment_to_obj(frag_xml: Fragment, filepath: str):
     materials = get_fragment_materials(frag_xml, filepath)
     drawable_obj = create_fragment_drawable(
         frag_obj, frag_xml, filepath, materials, frag_xml.drawable.name)
+
+    if import_op.import_settings.import_as_asset:
+        drawable_to_asset(drawable_obj, frag_obj.name)
+        bpy.data.objects.remove(frag_obj)
+        return
 
     if frag_xml.lights:
         create_lights(frag_xml.lights, parent=frag_obj,

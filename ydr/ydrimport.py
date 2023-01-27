@@ -6,10 +6,10 @@ from mathutils import Matrix, Vector
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
-from ..cwxml.drawable import YDR
+from ..cwxml.drawable import YDR, Drawable
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
 from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials
-from ..tools.drawablehelper import join_drawable_geometries
+from ..tools.drawablehelper import join_drawable_geometries, drawable_to_asset
 
 BONE_TAIL_POS = (0, 0.05, 0)
 
@@ -625,3 +625,6 @@ def import_ydr(filepath, import_settings):
         for child in drawable.children:
             if child.sollum_type == SollumType.DRAWABLE_MODEL:
                 join_drawable_geometries(child)
+
+    if import_settings.import_as_asset:
+        drawable_to_asset(drawable)

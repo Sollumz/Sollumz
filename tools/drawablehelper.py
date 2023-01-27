@@ -1,10 +1,10 @@
 import bpy
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
-from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType
-from ..tools.blenderhelper import join_objects, get_children_recursive
+from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, MaterialType, LODLevel
+from ..tools.blenderhelper import join_objects, get_children_recursive, duplicate_object
 from ..cwxml.drawable import BonePropertiesManager, TextureShaderParameter, VectorShaderParameter
 from mathutils import Vector
-from typing import Union
+from typing import Union, Optional
 
 
 class MaterialConverter:
@@ -273,3 +273,33 @@ def set_recommended_bone_properties(bone):
 
         flag = bone.bone_properties.flags.add()
         flag.name = flag_name
+
+
+def drawable_to_asset(drawable_obj: bpy.types.Object, name: Optional[str] = None):
+    """Creates an asset from the drawable's high LOD."""
+    mesh_objs = []
+
+    for child in drawable_obj.children:
+        if child.sollum_type != SollumType.DRAWABLE_MODEL or child.drawable_model_properties.sollum_lod != LODLevel.HIGH:
+            continue
+
+        mesh_objs.extend([duplicate_object(obj)
+                         for obj in child.children if obj.type == "MESH"])
+
+    joined_obj = join_objects(mesh_objs)
+
+    joined_obj.modifiers.clear()
+    joined_obj.parent = None
+
+    joined_obj.name = name or drawable_obj.name
+
+    joined_obj.asset_mark()
+    joined_obj.asset_generate_preview()
+
+    bpy.context.collection.objects.unlink(joined_obj)
+
+    for child in drawable_obj.children_recursive:
+        bpy.data.objects.remove(child)
+
+    bpy.data.objects.remove(drawable_obj)
+    bpy.data.orphans_purge(do_recursive=True)
