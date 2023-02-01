@@ -2,7 +2,7 @@ import bpy
 from traceback import format_exc
 from typing import Union
 from mathutils import Matrix, Vector
-from ..tools.utils import multiW
+from ..tools.utils import multiply_homogeneous
 from ..tools.meshhelper import create_uv_layer
 from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, BoneTransform, Window
 from ..tools.fragmenthelper import shattermap_to_material
@@ -250,10 +250,10 @@ def calculate_window_verts(window_xml: Window):
     min = Vector((0, 0, 0))
     max = Vector((window_xml.width / 2, window_xml.height, 1))
 
-    v0 = multiW(proj_mat, Vector((min.x, min.y, 0)))
-    v1 = multiW(proj_mat, Vector((min.x, max.y, 0)))
-    v2 = multiW(proj_mat, Vector((max.x, max.y, 0)))
-    v3 = multiW(proj_mat, Vector((max.x, min.y, 0)))
+    v0 = multiply_homogeneous(proj_mat, Vector((min.x, min.y, 0)))
+    v1 = multiply_homogeneous(proj_mat, Vector((min.x, max.y, 0)))
+    v2 = multiply_homogeneous(proj_mat, Vector((max.x, max.y, 0)))
+    v3 = multiply_homogeneous(proj_mat, Vector((max.x, min.y, 0)))
 
     return v0, v1, v2, v3
 

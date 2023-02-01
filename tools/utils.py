@@ -1,7 +1,6 @@
-from mathutils import Vector
 import numpy
 from math import sqrt
-from mathutils import Vector, Quaternion
+from mathutils import Vector, Quaternion, Matrix
 
 
 def get_list_item(list, index):
@@ -141,7 +140,9 @@ def get_direction_of_vectors(a, b):
     return q.to_euler("XYZ")
 
 
-def multiW(m, v):
+def multiply_homogeneous(m: Matrix, v: Vector):
+    """Multiply a 4x4 matrix by a 3d vector and get a 3d vector out. Takes the
+    resulting 4d vector and divides by the homogeneous coordinate 'w' to get a 3d vector."""
     x = (((m[0][0] * v.x) + (m[1][0] * v.y)) + (m[2][0] * v.z)) + m[3][0]
     y = (((m[0][1] * v.x) + (m[1][1] * v.y)) + (m[2][1] * v.z)) + m[3][1]
     z = (((m[0][2] * v.x) + (m[1][2] * v.y)) + (m[2][2] * v.z)) + m[3][2]
