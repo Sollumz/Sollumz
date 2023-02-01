@@ -15,7 +15,11 @@ class FragmentProperties(bpy.types.PropertyGroup):
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    type: bpy.props.IntProperty(name="Type", default=1)
+    def get_name(self) -> str:
+        return f"LOD{self.number}"
+
+    number: bpy.props.IntProperty(name="Number", default=1)
+
     unknown_14: bpy.props.FloatProperty(name="Unknown14")
     unknown_18: bpy.props.FloatProperty(name="Unknown18")
     unknown_1c: bpy.props.FloatProperty(name="Unknown1C")
@@ -68,7 +72,6 @@ class GroupProperties(bpy.types.PropertyGroup):
     rotation_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
-    mass: bpy.props.FloatProperty(name="Mass")
     min_damage_force: bpy.props.FloatProperty(name="Min Damage Force")
     damage_health: bpy.props.FloatProperty(name="Damage Health")
     unk_float_5c: bpy.props.FloatProperty(name="UnkFloat5C")
@@ -83,11 +86,8 @@ class GroupProperties(bpy.types.PropertyGroup):
 
 
 class ChildProperties(bpy.types.PropertyGroup):
-    bone_tag: bpy.props.IntProperty(name="Bone Tag")
-    pristine_mass: bpy.props.FloatProperty(name="Pristine Mass")
-    damaged_mass: bpy.props.FloatProperty(name="Damaged Mass")
-    unk_vec: bpy.props.FloatVectorProperty(name="UnkVec")
-    inertia_tensor: bpy.props.FloatVectorProperty(name="InertiaTensor", size=4)
+    mass: bpy.props.FloatProperty(name="Mass", min=0)
+    damaged: bpy.props.BoolProperty(name="Damaged")
 
 
 class VehicleWindowProperties(bpy.types.PropertyGroup):
@@ -100,14 +100,17 @@ class VehicleWindowProperties(bpy.types.PropertyGroup):
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
         type=FragmentProperties)
-    bpy.types.Object.lod_properties = bpy.props.PointerProperty(
-        type=LODProperties)
-    bpy.types.Object.group_properties = bpy.props.PointerProperty(
-        type=GroupProperties)
     bpy.types.Object.child_properties = bpy.props.PointerProperty(
         type=ChildProperties)
     bpy.types.Object.vehicle_window_properties = bpy.props.PointerProperty(
         type=VehicleWindowProperties)
+    bpy.types.Object.is_physics_child_mesh = bpy.props.BoolProperty(
+        name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children.")
+
+    bpy.types.Object.sollumz_fragment_lods = bpy.props.CollectionProperty(
+        type=LODProperties)
+    bpy.types.Object.sollumz_active_frag_lod_index = bpy.props.IntProperty(
+        min=0)
 
     bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
         name="Thickness", default=0.1)
@@ -127,9 +130,19 @@ def register():
         default=SollumType.FRAGMENT.value
     )
 
+    bpy.types.Bone.group_properties = bpy.props.PointerProperty(
+        type=GroupProperties)
+    bpy.types.Bone.sollumz_use_physics = bpy.props.BoolProperty(
+        name="Use Physics", description="Whether or not to use physics for this fragment bone")
+
 
 def unregister():
-    bpy.types.Object.fragment_properties
-    bpy.types.Object.lod_properties
-    bpy.types.Object.group_properties
-    bpy.types.Object.child_properties
+    del bpy.types.Object.fragment_properties
+    del bpy.types.Object.child_properties
+    del bpy.types.Object.vehicle_window_properties
+    del bpy.types.Object.is_physics_child_mesh
+    del bpy.types.Object.sollumz_fragment_lods
+    del bpy.types.Object.sollumz_active_frag_lod_index
+
+    del bpy.types.Bone.group_properties
+    del bpy.types.Bone.sollumz_use_physics

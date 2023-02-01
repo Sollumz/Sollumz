@@ -68,7 +68,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 import_ydd(self, filepath, self.import_settings)
                 valid_type = True
             elif ext == YFT.file_extension:
-                import_yft(filepath, self)
+                import_yft(filepath, self.import_settings)
                 valid_type = True
             elif ext == YBN.file_extension:
                 import_ybn(filepath)
@@ -252,11 +252,11 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
                     remove_number_suffix(obj.name.lower()), YDD.file_extension)
                 export_ydd(self, obj, filepath, self.export_settings)
                 valid_type = True
-            elif obj.sollum_type == SollumType.FRAGMENT:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YFT.file_extension)
-                export_yft(self, obj, filepath, self.export_settings)
-                valid_type = True
+            # elif obj.sollum_type == SollumType.FRAGMENT:
+            #     filepath = self.get_filepath(
+            #         remove_number_suffix(obj.name.lower()), YFT.file_extension)
+            #     export_yft(self, obj, filepath, self.export_settings)
+            #     valid_type = True
             elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YCD.file_extension)

@@ -450,6 +450,8 @@ def create_lights(lights, parent, armature_obj=None):
         lobj = light_to_obj(light, armature_obj)
         lobj.parent = lights_parent
 
+    return lights_parent
+
 
 def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None, import_settings=None, is_ydd=None):
 

@@ -182,14 +182,11 @@ def register():
     bpy.types.Object.bound_dimensions = bpy.props.FloatVectorProperty(
         name="Extents", precision=3, min=0, update=update_bounds, subtype="XYZ")
 
-    #nest these in object.bound_properties ? is it possible#
+    # nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(
         type=BoundFlags)
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(
         type=BoundFlags)
-
-    # TO KEEP TRACK OF THE INDEX IT WAS AT IN THE FILE, SLOPPY BUT EASIER THAN COMPARING VALUES WHEN IMPORTING FRAGMENTS
-    bpy.types.Object.creation_index = bpy.props.IntProperty(default=0)
 
     bpy.types.Scene.collision_material_index = bpy.props.IntProperty(
         name="Material Index")
@@ -274,6 +271,7 @@ def register():
     bpy.types.Scene.composite_apply_default_flag_preset = bpy.props.BoolProperty(
         name="Apply Default Flag", description=f"If true, the operator will apply the default flag preset to {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}.", default=True)
 
+
 def unregister():
     del bpy.types.Object.bound_properties
     del bpy.types.Object.margin
@@ -282,7 +280,6 @@ def unregister():
     del bpy.types.Object.bound_dimensions
     del bpy.types.Object.composite_flags1
     del bpy.types.Object.composite_flags2
-    del bpy.types.Object.creation_index
     del bpy.types.Scene.collision_material_index
     del bpy.types.Scene.collision_materials
     del bpy.types.Material.collision_properties
