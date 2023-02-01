@@ -165,7 +165,7 @@ def create_vehicle_windows(frag_xml: Fragment, materials: list[bpy.types.Materia
             continue
 
         texcoords = [[0, 1], [0, 0], [1, 0], [1, 1]]
-        create_uv_layer(mesh, 0, "UVMap", texcoords, flip_uvs=False)
+        create_uv_layer(mesh, 0, texcoords, flip_uvs=False)
 
         shattermap_mat = shattermap_to_material(
             window_xml.shattermap, mesh.name + "_shattermap.bmp")

@@ -347,14 +347,14 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
 
     # set uvs
     i = 0
-    for layer_name, coords in texcoords.items():
-        create_uv_layer(mesh, i, layer_name, coords)
+    for coords in texcoords.values():
+        create_uv_layer(mesh, i, coords)
         i += 1
 
     # set vertex colors
     i = 0
-    for layer_name, color in colors.items():
-        create_vertexcolor_layer(mesh, i, layer_name, color)
+    for color in colors.values():
+        create_vertexcolor_layer(mesh, i, color)
         i += 1
 
     obj = bpy.data.objects.new(name, mesh)

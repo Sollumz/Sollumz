@@ -1,3 +1,4 @@
+import bpy
 import bmesh
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
@@ -191,21 +192,24 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def create_uv_layer(mesh, num, name, texcoords, flip_uvs=True):
-    mesh.uv_layers.new()
-    uv_layer = mesh.uv_layers[num]
-    uv_layer.name = name
-    for i in range(len(uv_layer.data)):
-        uv = texcoords[mesh.loops[i].vertex_index]
+def create_uv_layer(mesh: bpy.types.Mesh, layer_index: int, coords: list[tuple, tuple], flip_uvs=True):
+    uv_layer = mesh.uv_layers.new()
+    uv_layer.name = f"UVMap {layer_index + 1}"
+
+    for i, uv_loop in enumerate(uv_layer.data):
+        vert_index = mesh.loops[i].vertex_index
+        if vert_index >= len(coords):
+            continue
+        uv = coords[vert_index]
         if flip_uvs:
             uv = flip_uv(uv)
-        uv_layer.data[i].uv = uv
+        uv_loop.uv = uv
 
 
-def create_vertexcolor_layer(mesh, num, name, colors):
+def create_vertexcolor_layer(mesh: bpy.types.Mesh, num: int, colors: list[tuple[float, float, float]]):
     mesh.vertex_colors.new(name="Vertex Colors " + str(num))
     color_layer = mesh.vertex_colors[num]
-    color_layer.name = name
+
     for i in range(len(color_layer.data)):
         rgba = colors[mesh.loops[i].vertex_index]
         color_layer.data[i].color = divide_list(rgba, 255)
