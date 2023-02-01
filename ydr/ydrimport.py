@@ -6,7 +6,7 @@ from mathutils import Matrix, Vector
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
-from ..cwxml.drawable import YDR, Drawable
+from ..cwxml.drawable import YDR, Shader, ShaderGroup
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
 from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials, get_addon_preferences
 from ..tools.drawablehelper import join_drawable_geometries, drawable_to_asset
@@ -14,107 +14,112 @@ from ..tools.drawablehelper import join_drawable_geometries, drawable_to_asset
 BONE_TAIL_POS = (0, 0.05, 0)
 
 
-def shadergroup_to_materials(shadergroup, filepath):
+def shadergroup_to_materials(shader_group, filepath):
     materials = []
 
-    texture_folder = os.path.dirname(
-        filepath) + "\\" + os.path.basename(filepath)[:-8]
-    for shader in shadergroup.shaders:
-
-        filename = shader.filename
-
-        if not filename:
-            filename = f"{shader.name}.sps"
-
-        material = create_shader(filename)
-
-        material.shader_properties.renderbucket = shader.render_bucket
-        material.shader_properties.filename = shader.filename
-
-        for param in shader.parameters:
-            for n in material.node_tree.nodes:
-                if isinstance(n, bpy.types.ShaderNodeTexImage):
-                    if param.name == n.name:
-                        texture_path = os.path.join(
-                            texture_folder, param.texture_name + ".dds")
-                        if os.path.isfile(texture_path):
-                            img = bpy.data.images.load(
-                                texture_path, check_existing=True)
-                            n.image = img
-                        if not n.image:
-                            # for texture shader parameters with no name
-                            if not param.texture_name:
-                                continue
-                            # Check for existing texture
-                            existing_texture = None
-                            for image in bpy.data.images:
-                                if image.name == param.texture_name:
-                                    existing_texture = image
-                            texture = bpy.data.images.new(
-                                name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
-                            n.image = texture
-
-                        # assign non color to normal maps
-                        if "Bump" in param.name:
-                            n.image.colorspace_settings.name = "Non-Color"
-
-                        # Assign embedded texture dictionary properties
-                        if shadergroup.texture_dictionary is not None:
-                            for texture in shadergroup.texture_dictionary:
-                                if texture.name == param.texture_name:
-                                    n.texture_properties.embedded = True
-                                    try:
-                                        format = TextureFormat[texture.format.replace(
-                                            "D3DFMT_", "")]
-                                        n.texture_properties.format = format
-                                    except AttributeError:
-                                        print(
-                                            f"Failed to set texture format: format '{texture.format}' unknown.")
-
-                                    try:
-                                        usage = TextureUsage[texture.usage]
-                                        n.texture_properties.usage = usage
-                                    except AttributeError:
-                                        print(
-                                            f"Failed to set texture usage: usage '{texture.usage}' unknown.")
-
-                                    n.texture_properties.extra_flags = texture.extra_flags
-
-                                    for prop in dir(n.texture_flags):
-                                        for uf in texture.usage_flags:
-                                            if uf.lower() == prop:
-                                                setattr(
-                                                    n.texture_flags, prop, True)
-
-                        if not n.texture_properties.embedded:
-                            # Set external texture name for non-embedded textures
-                            n.image.source = "FILE"
-                            n.image.filepath = "//" + param.texture_name + ".dds"
-
-                        if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
-                            n.image.colorspace_settings.name = "Non-Color"
-
-                elif isinstance(n, bpy.types.ShaderNodeValue):
-                    if param.name == n.name[:-2]:
-                        key = n.name[-1]
-                        if key == "x":
-                            n.outputs[0].default_value = param.x
-                        if key == "y":
-                            n.outputs[0].default_value = param.y
-                        if key == "z":
-                            n.outputs[0].default_value = param.z
-                        if key == "w":
-                            n.outputs[0].default_value = param.w
-
-        # assign extra detail node image for viewing
-        dtl_ext = get_detail_extra_sampler(material)
-        if dtl_ext:
-            dtl = material.node_tree.nodes["DetailSampler"]
-            dtl_ext.image = dtl.image
-
+    for shader in shader_group.shaders:
+        material = shader_item_to_material(shader, shader_group, filepath)
         materials.append(material)
 
     return materials
+
+
+def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath: str):
+    texture_folder = os.path.dirname(
+        filepath) + "\\" + os.path.basename(filepath)[:-8]
+
+    filename = shader.filename
+
+    if not filename:
+        filename = f"{shader.name}.sps"
+
+    material = create_shader(filename)
+
+    material.shader_properties.renderbucket = shader.render_bucket
+    material.shader_properties.filename = shader.filename
+
+    for param in shader.parameters:
+        for n in material.node_tree.nodes:
+            if isinstance(n, bpy.types.ShaderNodeTexImage):
+                if param.name == n.name:
+                    texture_path = os.path.join(
+                        texture_folder, param.texture_name + ".dds")
+                    if os.path.isfile(texture_path):
+                        img = bpy.data.images.load(
+                            texture_path, check_existing=True)
+                        n.image = img
+                    if not n.image:
+                        # for texture shader parameters with no name
+                        if not param.texture_name:
+                            continue
+                        # Check for existing texture
+                        existing_texture = None
+                        for image in bpy.data.images:
+                            if image.name == param.texture_name:
+                                existing_texture = image
+                        texture = bpy.data.images.new(
+                            name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
+                        n.image = texture
+
+                    # assign non color to normal maps
+                    if "Bump" in param.name:
+                        n.image.colorspace_settings.name = "Non-Color"
+
+                    # Assign embedded texture dictionary properties
+                    if shader_group.texture_dictionary is not None:
+                        for texture in shader_group.texture_dictionary:
+                            if texture.name == param.texture_name:
+                                n.texture_properties.embedded = True
+                                try:
+                                    format = TextureFormat[texture.format.replace(
+                                        "D3DFMT_", "")]
+                                    n.texture_properties.format = format
+                                except AttributeError:
+                                    print(
+                                        f"Failed to set texture format: format '{texture.format}' unknown.")
+
+                                try:
+                                    usage = TextureUsage[texture.usage]
+                                    n.texture_properties.usage = usage
+                                except AttributeError:
+                                    print(
+                                        f"Failed to set texture usage: usage '{texture.usage}' unknown.")
+
+                                n.texture_properties.extra_flags = texture.extra_flags
+
+                                for prop in dir(n.texture_flags):
+                                    for uf in texture.usage_flags:
+                                        if uf.lower() == prop:
+                                            setattr(
+                                                n.texture_flags, prop, True)
+
+                    if not n.texture_properties.embedded:
+                        # Set external texture name for non-embedded textures
+                        n.image.source = "FILE"
+                        n.image.filepath = "//" + param.texture_name + ".dds"
+
+                    if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
+                        n.image.colorspace_settings.name = "Non-Color"
+
+            elif isinstance(n, bpy.types.ShaderNodeValue):
+                if param.name == n.name[:-2]:
+                    key = n.name[-1]
+                    if key == "x":
+                        n.outputs[0].default_value = param.x
+                    if key == "y":
+                        n.outputs[0].default_value = param.y
+                    if key == "z":
+                        n.outputs[0].default_value = param.z
+                    if key == "w":
+                        n.outputs[0].default_value = param.w
+
+    # assign extra detail node image for viewing
+    dtl_ext = get_detail_extra_sampler(material)
+    if dtl_ext:
+        dtl = material.node_tree.nodes["DetailSampler"]
+        dtl_ext.image = dtl.image
+
+    return material
 
 
 def bone_to_obj(bone, armature):
