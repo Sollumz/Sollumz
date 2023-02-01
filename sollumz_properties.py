@@ -541,10 +541,16 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
-    split_by_bone: bpy.props.BoolProperty(
-        name="Split by Bone",
-        description="Splits the geometries by bone.",
-        default=False,
+    import_with_hi: bpy.props.BoolProperty(
+        name="Import with _hi",
+        description="Import the selected .yft.xml with the <name>_hi.yft.xml placed in the very high LOD (must be in the same directory).",
+        default=True
+    )
+
+    split_by_group: bpy.props.BoolProperty(
+        name="Split Mesh by Group",
+        description="Splits the mesh by vertex groups.",
+        default=True,
     )
 
     import_ext_skeleton: bpy.props.BoolProperty(

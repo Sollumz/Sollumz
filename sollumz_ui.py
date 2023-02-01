@@ -99,10 +99,10 @@ class SOLLUMZ_PT_import_main(bpy.types.Panel):
         layout.prop(operator.import_settings, "import_as_asset")
 
 
-class SOLLUMZ_PT_import_geometry(bpy.types.Panel):
+class SOLLUMZ_PT_import_drawable(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"
     bl_region_type = "TOOL_PROPS"
-    bl_label = "Geometry"
+    bl_label = "Drawable"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 1
 
@@ -144,7 +144,8 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        layout.prop(operator.import_settings, "split_by_bone")
+        layout.prop(operator.import_settings, "split_by_group")
+        layout.prop(operator.import_settings, "import_with_hi")
 
 
 class SOLLUMZ_PT_import_skeleton(bpy.types.Panel):
@@ -441,7 +442,7 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
     bl_order = 0
 
     def draw_header(self, context):
-        self.layout.label(text="", icon="PREFERENCES")
+        self.layout.label(text="", icon="RESTRICT_VIEW_OFF")
 
     def draw(self, context):
         layout = self.layout
@@ -449,17 +450,18 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
         row.prop(context.scene, "hide_high_lods")
         row.prop(context.scene, "hide_medium_lods")
 
-        row2 = layout.row()
-        row2.prop(context.scene, "hide_low_lods")
-        row2.prop(context.scene, "hide_collision")
+        row = layout.row()
+        row.prop(context.scene, "hide_low_lods")
+        row.prop(context.scene, "hide_collision")
 
-        row3 = layout.row()
-        row3.prop(context.scene, "hide_very_low_lods")
-        row3.prop(context.space_data.overlay,
-                  "show_bones", text="Show Skeleton")
+        row = layout.row()
+        row.prop(context.scene, "hide_very_low_lods")
+        row.prop(context.space_data.overlay,
+                 "show_bones", text="Show Skeleton")
 
-        row4 = layout.row()
-        row4.prop(context.scene, "hide_vehicle_windows")
+        row = layout.row()
+        row.prop(context.scene, "hide_vehicle_windows",
+                 text="Hide Glass Shards")
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
