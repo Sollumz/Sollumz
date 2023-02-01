@@ -138,7 +138,7 @@ def bone_to_obj(bone, armature):
     mat_sca = Matrix.Scale(1, 4, bone.scale)
 
     edit_bone.head = (0, 0, 0)
-    edit_bone.tail = (0, 0.05, 0)
+    edit_bone.tail = BONE_TAIL_POS
     edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
     if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
