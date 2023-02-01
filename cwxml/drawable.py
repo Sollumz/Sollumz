@@ -553,6 +553,10 @@ class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
 
     @property
+    def model_groups(self) -> list[list[DrawableModel]]:
+        return [self.drawable_models_high, self.drawable_models_med, self.drawable_models_low, self.drawable_models_vlow]
+
+    @property
     def all_models(self):
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
