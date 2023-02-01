@@ -1,5 +1,4 @@
 import bpy
-from .operators import SOLLUMZ_OT_create_fragment
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..sollumz_properties import SollumType
 
@@ -49,6 +48,7 @@ def draw_fragment_properties(self, context):
         for prop in obj.fragment_properties.__annotations__:
             self.layout.prop(obj.fragment_properties, prop)
 
+
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Fragment Tools"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_TOOL_PANEL"
@@ -80,12 +80,12 @@ class SOLLUMZ_PT_CREATE_FRAGMENT_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(SOLLUMZ_OT_create_fragment.bl_idname)
         row.prop(context.scene, "create_fragment_type")
         grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
         grid.prop(context.scene, "use_mesh_name")
         grid.prop(context.scene, "create_center_to_selection")
         grid.prop(context.scene, "auto_create_embedded_col")
+
 
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_fragment_properties)
