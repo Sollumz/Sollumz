@@ -7,7 +7,7 @@ from .element import (
     ElementProperty,
     ListProperty,
     MatrixProperty,
-    QuaternionProperty,
+    Vector4Property,
     TextProperty,
     ValueProperty,
     VectorProperty
@@ -62,6 +62,10 @@ class Archetype(ElementTree):
         self.bounds = BoundComposite()
 
 
+class Archetype2(Archetype):
+    tag_name = "Archetype2"
+
+
 class Transform(MatrixProperty):
     tag_name = "Item"
 
@@ -87,8 +91,8 @@ class Children(ElementTree):
         self.pristine_mass = ValueProperty("PristineMass")
         self.damaged_mass = ValueProperty("DamagedMass")
         self.unk_float = ValueProperty("UnkFloat")
-        self.unk_vec = VectorProperty("UnkVec")
-        self.inertia_tensor = QuaternionProperty("InertiaTensor")
+        self.unk_vec = Vector4Property("UnkVec")
+        self.inertia_tensor = Vector4Property("InertiaTensor")
         self.drawable = FragmentDrawable()
 
 
@@ -159,6 +163,7 @@ class LOD(ElementTree):
         self.damping_angular_v = VectorProperty("DampingAngularV")
         self.damping_angular_v2 = VectorProperty("DampingAngularV2")
         self.archetype = Archetype()
+        self.archetype2 = Archetype2()
         self.transforms = TransformsList()
         self.groups = GroupsList()
         self.children = ChildrenList()
