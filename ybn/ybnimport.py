@@ -3,8 +3,9 @@ from .properties import CollisionMatFlags
 from ..cwxml import bound as ybnxml
 from ..sollumz_properties import SollumType, MaterialType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc, create_box_from_extents
+from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc
 from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
+from ..tools.blenderhelper import create_mesh_object
 import os
 from mathutils import Matrix, Vector
 
@@ -21,7 +22,7 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
-def poly_to_obj(poly, materials, vertices):
+def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
     if type(poly) == ybnxml.Box:
         obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
 
@@ -146,24 +147,106 @@ def mat_to_obj(gmat):
     return mat
 
 
-def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
-    if vertices:
-        if len(vertices) == 0:
-            return None
-    else:
-        return None
+def bound_geometry_to_obj(geometry: ybnxml.BoundGeometry):
+    geom_obj = init_bound_item_obj(geometry, SollumType.BOUND_GEOMETRY)
+    materials = create_geometry_materials(geometry)
 
+    create_bvh_polys(geometry, materials, geom_obj)
+
+    triangles = get_poly_triangles(geometry.polygons)
+
+    mesh = create_bound_mesh_data(
+        geometry.vertices, triangles, geometry, materials)
+    mesh.transform(Matrix.Translation(geometry.geometry_center))
+    geom_obj.data = mesh
+
+    if geometry.vertices_2:
+        create_deformed_shape_keys(
+            geom_obj, triangles, geometry, materials)
+
+    return geom_obj
+
+
+def create_deformed_shape_keys(geom_obj: bpy.types.Object, triangles: list[ybnxml.Triangle], geometry: ybnxml.BoundGeometry, materials: list[bpy.types.Material]):
+    geom_obj.shape_key_add(name="Basis")
+    deformed_key = geom_obj.shape_key_add(name="Deformed")
+
+    mesh_damaged = create_bound_mesh_data(
+        geometry.vertices_2, triangles, geometry, materials)
+    mesh_damaged.transform(Matrix.Translation(geometry.geometry_center))
+
+    for i, vert in enumerate(mesh_damaged.vertices):
+        deformed_key.data[i].co = vert.co
+
+    bpy.data.meshes.remove(mesh_damaged)
+
+
+def bvh_to_obj(bvh: ybnxml.BoundGeometryBVH):
+    bvh_obj = init_bound_item_obj(bvh, SollumType.BOUND_GEOMETRYBVH)
+    materials = create_geometry_materials(bvh)
+
+    create_bvh_polys(bvh, materials, bvh_obj)
+
+    triangles = get_poly_triangles(bvh.polygons)
+
+    mesh = create_bound_mesh_data(bvh.vertices, triangles, bvh, materials)
+    bound_geom_obj = create_mesh_object(
+        SollumType.BOUND_POLY_TRIANGLE, mesh=mesh)
+    bound_geom_obj.location = bvh.geometry_center
+    bound_geom_obj.parent = bvh_obj
+
+    return bvh_obj
+
+
+def create_geometry_materials(geometry: ybnxml.BoundGeometryBVH):
+    materials: list[bpy.types.Material] = []
+
+    for gmat in geometry.materials:
+        materials.append(mat_to_obj(gmat))
+
+    return materials
+
+
+def create_bvh_polys(bvh: ybnxml.BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
+    for poly in bvh.polygons:
+        if type(poly) is ybnxml.Triangle:
+            continue
+
+        poly_obj = poly_to_obj(poly, materials, bvh.vertices)
+
+        bpy.context.collection.objects.link(poly_obj)
+        poly_obj.location += bvh.geometry_center
+        poly_obj.parent = bvh_obj
+
+
+def get_poly_triangles(polys: list[ybnxml.Polygon]):
+    return [poly for poly in polys if isinstance(poly, ybnxml.Triangle)]
+
+
+def create_bound_mesh_data(vertices: list[Vector], triangles: list[ybnxml.Triangle], geometry: ybnxml.BoundGeometryBVH, materials: list[bpy.types.Material]):
+    # obj = create_mesh_object(SollumType.BOUND_POLY_TRIANGLE)
     mesh = bpy.data.meshes.new(
         SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE])
-    obj = bpy.data.objects.new(
-        SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE], mesh)
-    obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE
 
+    verts, faces = get_bound_geom_mesh_data(vertices, triangles)
+
+    mesh.from_pydata(verts, [], faces)
+
+    if geometry.vertex_colors:
+        create_vertexcolor_layer(mesh, 0, geometry.vertex_colors)
+
+    apply_bound_geom_materials(mesh, triangles, materials)
+
+    mesh.validate()
+
+    return mesh
+
+
+def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[ybnxml.Triangle]):
     verts = []
     faces = []
-    tri_materials = []
 
-    for poly in polys:
+    for poly in triangles:
         face = []
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
@@ -184,59 +267,16 @@ def verts_to_obj(vertices, polys, materials, parent, vertex_colors=None):
         else:
             face.append(verts.index(v3))
         faces.append(face)
-        tri_materials.append(poly.material_index)
 
-    obj.data.from_pydata(verts, [], faces)
-    bpy.context.collection.objects.link(obj)
-    obj.parent = parent
+    return verts, faces
 
-    # apply vertex colors
-    if len(vertex_colors) != 0:
-        create_vertexcolor_layer(obj.data, 0, "Color Layer", vertex_colors)
 
-    # apply materials
+def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[ybnxml.Triangle], materials: list[bpy.types.Material]):
     for mat in materials:
-        obj.data.materials.append(mat)
+        mesh.materials.append(mat)
 
-    for index, poly in obj.data.polygons.items():
-        if tri_materials[index]:
-            poly.material_index = tri_materials[index]
-
-    obj.data.validate()
-
-    return obj
-
-
-def geometry_to_obj(geometry, sollum_type):
-    obj = init_bound_item_obj(geometry, sollum_type)
-
-    materials = []
-    for gmat in geometry.materials:
-        materials.append(mat_to_obj(gmat))
-
-    triangle_polys = [
-        poly for poly in geometry.polygons if type(poly) == ybnxml.Triangle]
-    triangle_obj = verts_to_obj(geometry.vertices, triangle_polys, materials,
-                                obj, geometry.vertex_colors) if triangle_polys else None
-    vert2_obj = verts_to_obj(
-        geometry.vertices_2, triangle_polys, materials, obj, geometry.vertex_colors) if triangle_polys else None
-
-    for poly in geometry.polygons:
-        if type(poly) is not ybnxml.Triangle:
-            poly_obj = poly_to_obj(poly, materials, geometry.vertices)
-            if poly_obj:
-                bpy.context.collection.objects.link(poly_obj)
-                poly_obj.location += geometry.geometry_center
-                poly_obj.parent = obj
-
-    if triangle_obj:
-        triangle_obj.location = geometry.geometry_center
-    if vert2_obj:
-        vert2_obj.location = geometry.geometry_center
-        vert2_obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE2
-        vert2_obj.name = SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE2]
-
-    return obj
+    for i, poly_xml in enumerate(triangles):
+        mesh.polygons[i].material_index = poly_xml.material_index
 
 
 def init_bound_item_obj(bound, sollum_type):
@@ -262,7 +302,7 @@ def init_bound_item_obj(bound, sollum_type):
 def init_bound_obj(bound, sollum_type):
     obj = None
     name = SOLLUMZ_UI_NAMES[sollum_type]
-    if not (sollum_type == SollumType.BOUND_COMPOSITE or sollum_type == SollumType.BOUND_GEOMETRYBVH or sollum_type == SollumType.BOUND_GEOMETRY):
+    if not (sollum_type == SollumType.BOUND_COMPOSITE or sollum_type == SollumType.BOUND_GEOMETRYBVH):
         mesh = bpy.data.meshes.new(name)
         obj = bpy.data.objects.new(name, mesh)
         mat_index = bound.material_index
@@ -332,10 +372,10 @@ def bound_to_obj(bound):
         cloth = init_bound_item_obj(bound, SollumType.BOUND_CLOTH)
         return cloth
     elif bound.type == "Geometry":
-        geometry = geometry_to_obj(bound, SollumType.BOUND_GEOMETRY)
+        geometry = bound_geometry_to_obj(bound)
         return geometry
     elif bound.type == "GeometryBVH":
-        bvh = geometry_to_obj(bound, SollumType.BOUND_GEOMETRYBVH)
+        bvh = bvh_to_obj(bound)
         return bvh
 
 
@@ -348,9 +388,8 @@ def composite_to_obj(bounds, name, from_drawable=False):
     obj = init_bound_obj(composite, SollumType.BOUND_COMPOSITE)
     obj.name = name
 
-    for idx, child in enumerate(composite.children):
+    for child in composite.children:
         child_obj = bound_to_obj(child)
-        child_obj.creation_index = idx
         if child_obj:
             child_obj.parent = obj
 
