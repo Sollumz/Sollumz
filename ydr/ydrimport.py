@@ -401,90 +401,6 @@ def geometry_to_obj(geometry, material, bones=None, name=None):
     return obj_from_buffer(vertex_buffer, index_buffer, material, bones, name, bone_ids)
 
 
-def geometry_to_obj_split_by_bone(model, materials, bones):
-    object_map = {}
-    for geo in model.geometries:
-        bone_ind_map = {}
-        vertex_map = {}
-
-        vertices = geo.vertex_buffer.get_data()
-        indices = geo.index_buffer.data
-        bone_ids = geo.bone_ids
-
-        # Split indices into groups of 3
-        triangles = [indices[i * 3:(i + 1) * 3]
-                     for i in range((len(indices) + 3 - 1) // 3)]
-
-        for tri in triangles:
-            key = []
-            for index in tri:
-                vert = vertices[index]
-                inds = vert.blendindices
-                for idx, w in enumerate(vert.blendweights):
-                    if w != 0:
-                        ind = inds[idx]
-                        if ind not in key:
-                            key.append(ind)
-            key.sort()
-            tkey = tuple(key)
-            if tkey not in bone_ind_map:
-                bone_ind_map[tkey] = []
-            bone_ind_map[tkey].append(tri)
-
-        for key in bone_ind_map:
-            vlist = []
-            vertex_map[key] = vlist
-            imap = {}
-            for tri in bone_ind_map[key]:
-                i0 = tri[0]
-                i1 = tri[1]
-                i2 = tri[2]
-                v0 = vertices[i0]
-                v1 = vertices[i1]
-                v2 = vertices[i2]
-                if i0 in imap:
-                    i0 = imap[i0]
-                else:
-                    imap[i0] = len(vlist)
-                    i0 = len(vlist)
-                    vlist.append(v0)
-                if i1 in imap:
-                    i1 = imap[i1]
-                else:
-                    imap[i1] = len(vlist)
-                    i1 = len(vlist)
-                    vlist.append(v1)
-                if i2 in imap:
-                    i2 = imap[i2]
-                else:
-                    imap[i2] = len(vlist)
-                    i2 = len(vlist)
-                    vlist.append(v2)
-                tri[0] = i0
-                tri[1] = i1
-                tri[2] = i2
-
-        for bone in bone_ind_map:
-            verts = vertex_map[bone]
-            faces = bone_ind_map[bone]
-
-            obj = obj_from_buffer(
-                verts, faces, materials[geo.shader_index], bones, "vgs", bone_ids)
-
-            if bone not in object_map:
-                object_map[bone] = []
-            object_map[bone].append(obj)
-
-    bobjs = []
-    for objects in object_map.values():
-        bobj = join_objects(objects)
-        remove_unused_materials(bobj)
-        bobj.name = ", ".join(
-            [vg.name for vg in bobj.vertex_groups])
-        bobjs.append(bobj)
-    return bobjs
-
-
 def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settings=None, armature=None):
     dobj = bpy.data.objects.new(
         SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], None)
@@ -504,22 +420,14 @@ def drawable_model_to_obj(model, materials, name, lod, bones=None, import_settin
     dobj.drawable_model_properties.unknown_1 = model.unknown_1
     dobj.drawable_model_properties.flags = model.flags
 
-    if import_settings.split_by_bone and model.has_skin == 1:
-        child_objs = geometry_to_obj_split_by_bone(model, materials, bones)
-        for child_obj in child_objs:
-            child_obj.parent = dobj
-            for mat in materials:
-                child_obj.data.materials.append(mat)
-            create_tinted_shader_graph(child_obj)
-    else:
-        for child in model.geometries:
-            child_obj = geometry_to_obj(
-                child, materials[child.shader_index], bones, name)
-            child_obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
-            child_obj.parent = dobj
-            # do this after because object has to be linked, will do nothing if a tint parameter is not found... kinda stupid way to do it but its how
-            # we check if its a tint shader in the first place so ig it makes sense...
-            create_tinted_shader_graph(child_obj)
+    for child in model.geometries:
+        child_obj = geometry_to_obj(
+            child, materials[child.shader_index], bones, name)
+        child_obj.sollum_type = SollumType.DRAWABLE_GEOMETRY
+        child_obj.parent = dobj
+        # do this after because object has to be linked, will do nothing if a tint parameter is not found... kinda stupid way to do it but its how
+        # we check if its a tint shader in the first place so ig it makes sense...
+        create_tinted_shader_graph(child_obj)
 
     bpy.context.collection.objects.link(dobj)
 
