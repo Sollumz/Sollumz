@@ -23,7 +23,8 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
     flags: bpy.props.IntProperty(name="Flags", default=0)
     unknown_1: bpy.props.IntProperty(name="Unknown 1", default=0)
     sollum_lod: bpy.props.EnumProperty(
-        items=items_from_enums(LODLevel),
+        items=items_from_enums(
+            [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]),
         name="LOD Level",
         default="sollumz_high"
     )
@@ -87,7 +88,7 @@ class BoneFlag(bpy.types.PropertyGroup):
 
 
 class BoneProperties(bpy.types.PropertyGroup):
-    tag: bpy.props.IntProperty(name="BoneTag", default=0, min=0)
+    tag: bpy.props.IntProperty(name="Tag", default=0, min=0)
     flags: bpy.props.CollectionProperty(type=BoneFlag)
     ul_index: bpy.props.IntProperty(name="UIListIndex", default=0)
 

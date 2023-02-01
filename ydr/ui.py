@@ -169,10 +169,10 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
- 
+
     def draw_header(self, context):
         self.layout.label(text="", icon="TOOL_SETTINGS")
- 
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="Create")
@@ -187,10 +187,10 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
                       text="Convert Active Material", icon="FILE_REFRESH")
         grid.operator(
             ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname, text="Convert All Materials")
- 
+
         layout.separator()
         layout.label(text="Tools")
- 
+
         row = layout.row()
         row.operator(
             ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
@@ -297,20 +297,21 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        if context.active_pose_bone is None:
-            return
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-        bone = context.active_pose_bone.bone
+        bone = context.active_bone
 
-        layout.prop(bone, "name", text="Bone Name")
-        layout.prop(bone.bone_properties, "tag", text="BoneTag")
+        layout.prop(bone.bone_properties, "tag")
+        layout.separator()
 
         layout.label(text="Flags")
-        layout.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags",
-                             bone.bone_properties, "flags", bone.bone_properties, "ul_index")
         row = layout.row()
-        row.operator("sollumz.bone_flags_new_item", text="New")
-        row.operator("sollumz.bone_flags_delete_item", text="Delete")
+        row.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags",
+                          bone.bone_properties, "flags", bone.bone_properties, "ul_index")
+        col = row.column(align=True)
+        col.operator("sollumz.bone_flags_new_item", text="", icon="ADD")
+        col.operator("sollumz.bone_flags_delete_item", text="", icon="REMOVE")
 
 
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
