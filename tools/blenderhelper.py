@@ -2,6 +2,7 @@ import re
 import bpy
 import bmesh
 from mathutils import Vector
+from typing import Optional
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, SollumzAddonPreferences
 
@@ -278,10 +279,10 @@ def get_object_with_children(obj):
     return objs
 
 
-def create_mesh_object(sollum_type: SollumType, name: str = None) -> bpy.types.Object:
+def create_mesh_object(sollum_type: SollumType, name: Optional[str] = None, mesh: Optional[bpy.types.Mesh] = None) -> bpy.types.Object:
     """Create a bpy mesh object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
-    mesh = bpy.data.meshes.new(name)
+    mesh = mesh or bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type
     bpy.context.collection.objects.link(obj)
@@ -289,7 +290,7 @@ def create_mesh_object(sollum_type: SollumType, name: str = None) -> bpy.types.O
     return obj
 
 
-def create_empty_object(sollum_type: SollumType, name: str = None) -> bpy.types.Object:
+def create_empty_object(sollum_type: SollumType, name: Optional[str] = None) -> bpy.types.Object:
     """Create a bpy empty object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
     obj = bpy.data.objects.new(name, None)
