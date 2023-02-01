@@ -4,7 +4,7 @@ import os
 import time
 from abc import abstractmethod
 from .tools.blenderhelper import get_children_recursive, get_object_with_children
-from .sollumz_properties import BOUND_TYPES
+from .sollumz_properties import BOUND_TYPES, SollumType
 from .ydr.ydrexport import get_used_materials
 
 
@@ -128,3 +128,14 @@ def duplicate_object_with_children(obj):
     for new_obj in new_objs:
         bpy.context.scene.collection.objects.link(new_obj)
     return new_objs[0]
+
+
+def find_fragment_parent(obj: bpy.types.Object) -> bpy.types.Object | None:
+    """Find parent fragment parent if one exists. Returns None otherwise."""
+    if obj.sollum_type == SollumType.FRAGMENT:
+        return obj
+
+    if not obj.parent:
+        return None
+
+    return find_fragment_parent(obj.parent)

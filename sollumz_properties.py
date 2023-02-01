@@ -56,6 +56,8 @@ class SollumType(str, Enum):
     YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
     YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
 
+    FRAG_GEOM = "sollumz_fragment_geometry"
+
 
 class LightType(str, Enum):
     NONE = "sollumz_light_none"
@@ -121,6 +123,7 @@ class LODLevel(str, Enum):
     MEDIUM = "sollumz_medium"
     LOW = "sollumz_low"
     VERYLOW = "sollumz_verylow"
+    VERYHIGH = "sollumz_veryhigh"
 
 
 class EntityLodLevel(str, Enum):
@@ -157,6 +160,10 @@ class AssetType(str, Enum):
 FRAGMENT_TYPES = [
     SollumType.FRAGMENT,
     SollumType.FRAGGROUP,
+    SollumType.FRAGCHILD,
+    SollumType.FRAGLOD,
+    SollumType.FRAG_GEOM,
+    SollumType.FRAGVEHICLEWINDOW,
 ]
 
 BOUND_TYPES = [
@@ -238,6 +245,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.FRAGCHILD: "Fragment Child",
     SollumType.FRAGLOD: "Fragment LOD",
     SollumType.FRAGVEHICLEWINDOW: "Fragment Vehicle Window",
+    SollumType.FRAG_GEOM: "Fragment Geometry",
 
     SollumType.NONE: "None",
     SollumType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
@@ -313,10 +321,11 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.A8: "D3DFMT_A8",
     TextureFormat.L8: "D3DFMT_L8",
 
+    LODLevel.VERYHIGH: "Very High",
     LODLevel.HIGH: "High",
     LODLevel.MEDIUM: "Med",
     LODLevel.LOW: "Low",
-    LODLevel.VERYLOW: "Vlow",
+    LODLevel.VERYLOW: "Very Low",
 
     EntityLodLevel.LODTYPES_DEPTH_HD: "DEPTH HD",
     EntityLodLevel.LODTYPES_DEPTH_LOD: "DEPTH LOD",
@@ -839,13 +848,13 @@ def register():
     bpy.types.Scene.hide_collision = bpy.props.BoolProperty(
         name="Hide Collision", get=get_hide_collisions, set=set_hide_collisions)
     bpy.types.Scene.hide_high_lods = bpy.props.BoolProperty(
-        name="Hide High LODS", get=get_hide_high_lods, set=set_hide_high_lods)
+        name="Hide High Models", get=get_hide_high_lods, set=set_hide_high_lods)
     bpy.types.Scene.hide_medium_lods = bpy.props.BoolProperty(
-        name="Hide Medium LODS", get=get_hide_medium_lods, set=set_hide_medium_lods)
+        name="Hide Medium Models", get=get_hide_medium_lods, set=set_hide_medium_lods)
     bpy.types.Scene.hide_low_lods = bpy.props.BoolProperty(
-        name="Hide Low LODS", get=get_hide_low_lods, set=set_hide_low_lods)
+        name="Hide Low Models", get=get_hide_low_lods, set=set_hide_low_lods)
     bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(
-        name="Hide Very Low LODS", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
+        name="Hide Very Low Models", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
     bpy.types.Scene.hide_vehicle_windows = bpy.props.BoolProperty(
         name="Hide Vehicle Windows", get=get_hide_vehicle_windows, set=set_hide_vehicle_windows)
 
