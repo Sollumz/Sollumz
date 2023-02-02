@@ -26,6 +26,207 @@ from ..tools.blenderhelper import create_mesh_object, create_empty_object
 from mathutils import Matrix, Vector
 
 
+def import_ybn(filepath):
+    ybn_xml: BoundFile = YBN.from_xml_file(filepath)
+    create_bound_composite(ybn_xml.composite, os.path.basename(
+        filepath.replace(YBN.file_extension, "")))
+
+
+def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = None):
+    obj = create_empty_object(SollumType.BOUND_COMPOSITE, name)
+    set_bound_properties(composite_xml, obj)
+
+    for child in composite_xml.children:
+        child_obj = create_bound_object(child)
+
+        if child_obj is None:
+            continue
+
+        child_obj.parent = obj
+
+    return obj
+
+
+def create_bound_object(bound_xml: BoundChild | Bound):
+    """Create a bound object based on ``bound_xml.type``"""
+    if bound_xml.type == "Box":
+        return create_bound_box(bound_xml)
+
+    if bound_xml.type == "Sphere":
+        return create_bound_sphere(bound_xml)
+
+    if bound_xml.type == "Capsule":
+        return create_bound_capsule(bound_xml)
+
+    if bound_xml.type == "Cylinder":
+        return create_bound_cylinder(bound_xml)
+
+    if bound_xml.type == "Disc":
+        return create_bound_disc(bound_xml)
+
+    if bound_xml.type == "Geometry":
+        return create_bound_geometry(bound_xml)
+
+    if bound_xml.type == "GeometryBVH":
+        return create_bvh_obj(bound_xml)
+
+
+def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType):
+    """Create a bound mesh object with materials and composite properties set."""
+    obj = create_mesh_object(sollum_type)
+
+    mat = create_collision_material_from_index(bound_xml.material_index)
+    obj.data.materials.append(mat)
+
+    set_bound_child_properties(bound_xml, obj)
+
+    return obj
+
+
+def set_composite_transforms(transforms: Matrix, bound_obj: bpy.types.Object):
+    bound_obj.matrix_world = transforms.transposed()
+
+
+def set_composite_flags(bound_xml: BoundChild, bound_obj: bpy.types.Object):
+    def set_flags(flags_propname: str):
+        flags = getattr(bound_xml, flags_propname)
+        for flag in flags:
+            flag_props = getattr(bound_obj, flags_propname)
+
+            setattr(flag_props, flag.lower(), True)
+
+    set_flags("composite_flags1")
+    set_flags("composite_flags2")
+
+
+def create_bound_box(bound_xml: BoundChild):
+    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_BOX)
+
+    obj.bound_dimensions = abs_vector(bound_xml.box_max - bound_xml.box_min)
+    obj.data.transform(Matrix.Translation(bound_xml.box_center))
+
+    return obj
+
+
+def create_bound_sphere(bound_xml: BoundChild):
+    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_SPHERE)
+
+    obj.bound_radius = bound_xml.sphere_radius
+
+    return obj
+
+
+def create_bound_capsule(bound_xml: BoundChild):
+    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CAPSULE)
+
+    bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
+    obj.bound_length = bbmax.z - bbmin.z
+    obj.bound_radius = bound_xml.sphere_radius
+
+    return obj
+
+
+def create_bound_cylinder(bound_xml: BoundChild):
+    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CYLINDER)
+
+    bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
+    extent = bbmax - bbmin
+    obj.bound_length = extent.y
+    obj.bound_radius = extent.x * 0.5
+
+    return obj
+
+
+def create_bound_disc(bound_xml: BoundChild):
+    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_DISC)
+
+    obj.bound_radius = bound_xml.sphere_radius
+    create_disc(obj.data, bound_xml.sphere_radius, bound_xml.margin * 2)
+
+    return obj
+
+
+def create_bound_geometry(geom_xml: BoundGeometry):
+    geom_obj = create_bound_child_mesh(geom_xml, SollumType.BOUND_GEOMETRY)
+    materials = create_geometry_materials(geom_xml)
+
+    create_bvh_polys(geom_xml, materials, geom_obj)
+
+    triangles = get_poly_triangles(geom_xml.polygons)
+
+    mesh = create_bound_mesh_data(
+        geom_xml.vertices, triangles, geom_xml, materials)
+    mesh.transform(Matrix.Translation(geom_xml.geometry_center))
+    geom_obj.data = mesh
+
+    if geom_xml.vertices_2:
+        create_deformed_shape_keys(
+            geom_obj, triangles, geom_xml, materials)
+
+    return geom_obj
+
+
+def create_bvh_obj(bvh_xml: BoundGeometryBVH):
+    bvh_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)
+    set_bound_child_properties(bvh_xml, bvh_obj)
+
+    materials = create_geometry_materials(bvh_xml)
+
+    create_bvh_polys(bvh_xml, materials, bvh_obj)
+
+    triangles = get_poly_triangles(bvh_xml.polygons)
+
+    mesh = create_bound_mesh_data(
+        bvh_xml.vertices, triangles, bvh_xml, materials)
+    bound_geom_obj = create_mesh_object(
+        SollumType.BOUND_POLY_TRIANGLE, mesh=mesh)
+    bound_geom_obj.location = bvh_xml.geometry_center
+    bound_geom_obj.parent = bvh_obj
+
+    return bvh_obj
+
+
+def create_geometry_materials(geometry: BoundGeometryBVH):
+    materials: list[bpy.types.Material] = []
+
+    mat_xml: ColMaterial
+    for mat_xml in geometry.materials:
+        mat = create_collision_material_from_index(mat_xml.type)
+        set_col_material_properties(mat_xml, mat)
+        set_col_mat_flags(mat_xml, mat)
+
+        materials.append(mat)
+
+    return materials
+
+
+def set_col_material_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
+    mat.collision_properties.procedural_id = mat_xml.procedural_id
+    mat.collision_properties.room_id = mat_xml.room_id
+    mat.collision_properties.ped_density = mat_xml.ped_density
+    mat.collision_properties.material_color_index = mat_xml.material_color_index
+
+
+def set_col_mat_flags(mat_xml: ColMaterial, mat: bpy.types.Material):
+    for flag_name in CollisionMatFlags.__annotations__.keys():
+        if f"FLAG_{flag_name.upper()}" not in mat_xml.flags:
+            continue
+
+        setattr(mat.collision_flags, flag_name, True)
+
+
+def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
+    for poly in bvh.polygons:
+        if type(poly) is Triangle:
+            continue
+
+        poly_obj = poly_to_obj(poly, materials, bvh.vertices)
+
+        bpy.context.collection.objects.link(poly_obj)
+        poly_obj.location += bvh.geometry_center
+        poly_obj.parent = bvh_obj
+
+
 def init_poly_obj(poly, sollum_type, materials):
     name = SOLLUMZ_UI_NAMES[sollum_type]
     mesh = bpy.data.meshes.new(name)
@@ -147,99 +348,6 @@ def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
         return cylinder
 
 
-def set_col_material_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
-    mat.collision_properties.procedural_id = mat_xml.procedural_id
-    mat.collision_properties.room_id = mat_xml.room_id
-    mat.collision_properties.ped_density = mat_xml.ped_density
-    mat.collision_properties.material_color_index = mat_xml.material_color_index
-
-
-def set_col_mat_flags(mat_xml: ColMaterial, mat: bpy.types.Material):
-    for flag_name in CollisionMatFlags.__annotations__.keys():
-        if f"FLAG_{flag_name.upper()}" not in mat_xml.flags:
-            continue
-
-        setattr(mat.collision_flags, flag_name, True)
-
-
-def create_bound_geometry(geom_xml: BoundGeometry):
-    geom_obj = create_bound_mesh(geom_xml, SollumType.BOUND_GEOMETRY)
-    materials = create_geometry_materials(geom_xml)
-
-    create_bvh_polys(geom_xml, materials, geom_obj)
-
-    triangles = get_poly_triangles(geom_xml.polygons)
-
-    mesh = create_bound_mesh_data(
-        geom_xml.vertices, triangles, geom_xml, materials)
-    mesh.transform(Matrix.Translation(geom_xml.geometry_center))
-    geom_obj.data = mesh
-
-    if geom_xml.vertices_2:
-        create_deformed_shape_keys(
-            geom_obj, triangles, geom_xml, materials)
-
-    return geom_obj
-
-
-def create_deformed_shape_keys(geom_obj: bpy.types.Object, triangles: list[Triangle], geometry: BoundGeometry, materials: list[bpy.types.Material]):
-    geom_obj.shape_key_add(name="Basis")
-    deformed_key = geom_obj.shape_key_add(name="Deformed")
-
-    mesh_damaged = create_bound_mesh_data(
-        geometry.vertices_2, triangles, geometry, materials)
-    mesh_damaged.transform(Matrix.Translation(geometry.geometry_center))
-
-    for i, vert in enumerate(mesh_damaged.vertices):
-        deformed_key.data[i].co = vert.co
-
-    bpy.data.meshes.remove(mesh_damaged)
-
-
-def create_bvh_obj(bvh_xml: BoundGeometryBVH):
-    bvh_obj = create_bound_empty(bvh_xml, SollumType.BOUND_GEOMETRYBVH)
-    materials = create_geometry_materials(bvh_xml)
-
-    create_bvh_polys(bvh_xml, materials, bvh_obj)
-
-    triangles = get_poly_triangles(bvh_xml.polygons)
-
-    mesh = create_bound_mesh_data(
-        bvh_xml.vertices, triangles, bvh_xml, materials)
-    bound_geom_obj = create_mesh_object(
-        SollumType.BOUND_POLY_TRIANGLE, mesh=mesh)
-    bound_geom_obj.location = bvh_xml.geometry_center
-    bound_geom_obj.parent = bvh_obj
-
-    return bvh_obj
-
-
-def create_geometry_materials(geometry: BoundGeometryBVH):
-    materials: list[bpy.types.Material] = []
-
-    mat_xml: ColMaterial
-    for mat_xml in geometry.materials:
-        mat = create_collision_material_from_index(mat_xml.type)
-        set_col_material_properties(mat_xml, mat)
-        set_col_mat_flags(mat_xml, mat)
-
-        materials.append(mat)
-
-    return materials
-
-
-def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
-    for poly in bvh.polygons:
-        if type(poly) is Triangle:
-            continue
-
-        poly_obj = poly_to_obj(poly, materials, bvh.vertices)
-
-        bpy.context.collection.objects.link(poly_obj)
-        poly_obj.location += bvh.geometry_center
-        poly_obj.parent = bvh_obj
-
-
 def get_poly_triangles(polys: list[Polygon]):
     return [poly for poly in polys if isinstance(poly, Triangle)]
 
@@ -260,6 +368,14 @@ def create_bound_mesh_data(vertices: list[Vector], triangles: list[Triangle], ge
     mesh.validate()
 
     return mesh
+
+
+def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[Triangle], materials: list[bpy.types.Material]):
+    for mat in materials:
+        mesh.materials.append(mat)
+
+    for i, poly_xml in enumerate(triangles):
+        mesh.polygons[i].material_index = poly_xml.material_index
 
 
 def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[Triangle]):
@@ -291,28 +407,23 @@ def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[Triangle]):
     return verts, faces
 
 
-def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[Triangle], materials: list[bpy.types.Material]):
-    for mat in materials:
-        mesh.materials.append(mat)
+def create_deformed_shape_keys(geom_obj: bpy.types.Object, triangles: list[Triangle], geometry: BoundGeometry, materials: list[bpy.types.Material]):
+    geom_obj.shape_key_add(name="Basis")
+    deformed_key = geom_obj.shape_key_add(name="Deformed")
 
-    for i, poly_xml in enumerate(triangles):
-        mesh.polygons[i].material_index = poly_xml.material_index
+    mesh_damaged = create_bound_mesh_data(
+        geometry.vertices_2, triangles, geometry, materials)
+    mesh_damaged.transform(Matrix.Translation(geometry.geometry_center))
+
+    for i, vert in enumerate(mesh_damaged.vertices):
+        deformed_key.data[i].co = vert.co
+
+    bpy.data.meshes.remove(mesh_damaged)
 
 
-def set_composite_transforms(transforms: Matrix, bound_obj: bpy.types.Object):
-    bound_obj.matrix_world = transforms.transposed()
-
-
-def set_composite_flags(bound_xml: BoundChild, bound_obj: bpy.types.Object):
-    def set_flags(flags_propname: str):
-        flags = getattr(bound_xml, flags_propname)
-        for flag in flags:
-            flag_props = getattr(bound_obj, flags_propname)
-
-            setattr(flag_props, flag.lower(), True)
-
-    set_flags("composite_flags1")
-    set_flags("composite_flags2")
+def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.Object):
+    geom_obj.bound_properties.unk_float_1 = geom_xml.unk_float_1
+    geom_obj.bound_properties.unk_float_2 = geom_xml.unk_float_2
 
 
 def set_bound_properties(bound_xml: Bound, bound_obj: bpy.types.Object):
@@ -326,123 +437,7 @@ def set_bound_properties(bound_xml: Bound, bound_obj: bpy.types.Object):
     bound_obj.bound_properties.volume = bound_xml.volume
 
 
-def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.Object):
-    geom_obj.bound_properties.unk_float_1 = geom_xml.unk_float_1
-    geom_obj.bound_properties.unk_float_2 = geom_xml.unk_float_2
-
-
-def create_bound_mesh(bound_xml: BoundChild, sollum_type: SollumType):
-    """Create a bound mesh object with materials and composite properties set."""
-    obj = create_mesh_object(sollum_type)
-
-    mat = create_collision_material_from_index(bound_xml.material_index)
-    obj.data.materials.append(mat)
-
-    set_bound_properties(bound_xml, obj)
-    set_composite_flags(bound_xml, obj)
-    set_composite_transforms(bound_xml.composite_transform, obj)
-
-    return obj
-
-
-def create_bound_empty(bound_xml: BoundChild, sollum_type: SollumType):
-    """Create bound object as empty with composite properties set."""
-    obj = create_empty_object(sollum_type)
-
-    set_bound_properties(bound_xml, obj)
-    set_composite_flags(bound_xml, obj)
-    set_composite_transforms(bound_xml.composite_transform, obj)
-
-    return obj
-
-
-def create_bound_box(bound_xml: BoundChild):
-    obj = create_bound_mesh(bound_xml, SollumType.BOUND_BOX)
-
-    obj.bound_dimensions = abs_vector(bound_xml.box_max - bound_xml.box_min)
-    obj.data.transform(Matrix.Translation(bound_xml.box_center))
-
-    return obj
-
-
-def create_bound_sphere(bound_xml: BoundChild):
-    obj = create_bound_mesh(bound_xml, SollumType.BOUND_SPHERE)
-
-    obj.bound_radius = bound_xml.sphere_radius
-
-    return obj
-
-
-def create_bound_capsule(bound_xml: BoundChild):
-    obj = create_bound_mesh(bound_xml, SollumType.BOUND_CAPSULE)
-
-    bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-    obj.bound_length = bbmax.z - bbmin.z
-    obj.bound_radius = bound_xml.sphere_radius
-
-    return obj
-
-
-def create_bound_cylinder(bound_xml: BoundChild):
-    obj = create_bound_mesh(bound_xml, SollumType.BOUND_CYLINDER)
-
-    bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-    extent = bbmax - bbmin
-    obj.bound_length = extent.y
-    obj.bound_radius = extent.x * 0.5
-
-    return obj
-
-
-def create_bound_disc(bound_xml: BoundChild):
-    obj = create_bound_mesh(bound_xml, SollumType.BOUND_DISC)
-
-    obj.bound_radius = bound_xml.sphere_radius
-    create_disc(obj.data, bound_xml.sphere_radius, bound_xml.margin * 2)
-
-    return obj
-
-
-def create_bound_object(bound_xml: BoundChild | Bound):
-    """Create a bound object based on ``bound_xml.type``"""
-    if bound_xml.type == "Box":
-        return create_bound_box(bound_xml)
-
-    if bound_xml.type == "Sphere":
-        return create_bound_sphere(bound_xml)
-
-    if bound_xml.type == "Capsule":
-        return create_bound_capsule(bound_xml)
-
-    if bound_xml.type == "Cylinder":
-        return create_bound_cylinder(bound_xml)
-
-    if bound_xml.type == "Disc":
-        return create_bound_disc(bound_xml)
-
-    if bound_xml.type == "Geometry":
-        return create_bound_geometry(bound_xml)
-
-    if bound_xml.type == "GeometryBVH":
-        return create_bvh_obj(bound_xml)
-
-
-def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = None):
-    obj = create_empty_object(SollumType.BOUND_COMPOSITE, name)
-    set_bound_properties(composite_xml, obj)
-
-    for child in composite_xml.children:
-        child_obj = create_bound_object(child)
-
-        if child_obj is None:
-            continue
-
-        child_obj.parent = obj
-
-    return obj
-
-
-def import_ybn(filepath):
-    ybn_xml: BoundFile = YBN.from_xml_file(filepath)
-    create_bound_composite(ybn_xml.composite, os.path.basename(
-        filepath.replace(YBN.file_extension, "")))
+def set_bound_child_properties(bound_xml: BoundChild, bound_obj: bpy.types.Object):
+    set_bound_properties(bound_xml, bound_obj)
+    set_composite_flags(bound_xml, bound_obj)
+    set_composite_transforms(bound_xml.composite_transform, bound_obj)
