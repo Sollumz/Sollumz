@@ -4,7 +4,7 @@ import os
 import bpy
 from mathutils import Matrix, Vector
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
-from ..ybn.ybnimport import composite_to_obj, bound_to_obj
+from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
 from ..cwxml.drawable import YDR, Shader, ShaderGroup
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
@@ -493,11 +493,10 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
         for bound in drawable.bounds:
             bobj = None
             if bound.type == "Composite":
-                bobj = composite_to_obj(
-                    bound, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], True)
+                bobj = create_bound_composite(bound)
                 bobj.parent = obj
             else:
-                bobj = bound_to_obj(bound)
+                bobj = create_bound_object(bound)
                 if bobj:
                     bobj.parent = obj
 

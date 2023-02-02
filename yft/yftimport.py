@@ -11,7 +11,7 @@ from ..sollumz_properties import SollumType, SollumzImportSettings, LODLevel
 from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, Window
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup
 from ..ydr.ydrimport import shadergroup_to_materials, shader_item_to_material, skeleton_to_obj, rotation_limits_to_obj, create_lights
-from ..ybn.ybnimport import bound_to_obj
+from ..ybn.ybnimport import create_bound_object
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
 from .properties import LODProperties
@@ -217,7 +217,7 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bp
     collisions_empty.parent = frag_obj
 
     for i, bound_xml in enumerate(bounds_xml.children):
-        bound_obj = bound_to_obj(bound_xml)
+        bound_obj = create_bound_object(bound_xml)
         bound_obj.parent = collisions_empty
 
         bone = find_bound_bone(i, frag_xml)

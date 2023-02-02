@@ -1,6 +1,7 @@
 import bpy
 from ..sollumz_properties import MaterialType
 from collections import namedtuple
+from .. import logger
 
 CollisionMaterial = namedtuple("CollisionMaterial", "name, ui_name, color")
 
@@ -257,13 +258,18 @@ collisionmats = [
 ]
 
 
-def create_collision_material_from_index(collisionindex: int):
+def create_collision_material_from_index(index: int):
+    matinfo = collisionmats[0]
 
-    matinfo = collisionmats[collisionindex]
+    try:
+        matinfo = collisionmats[index]
+    except IndexError:
+        logger.warning(
+            f"Invalid material index '{index}'! Setting to default...")
 
     mat = bpy.data.materials.new(matinfo.name)
     mat.sollum_type = MaterialType.COLLISION
-    mat.collision_properties.collision_index = collisionindex
+    mat.collision_properties.collision_index = index
     mat.use_nodes = True
     r = matinfo.color[0] / 255
     g = matinfo.color[1] / 255
