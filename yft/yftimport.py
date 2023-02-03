@@ -286,6 +286,7 @@ def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, m
     child_obj = create_joined_mesh(drawable_xml, materials)
     add_armature_constraint(child_obj, frag_obj, bone_name)
     child_obj.name = f"{bone_name}.child"
+    child_obj.data.name = child_obj.name
     child_obj.is_physics_child_mesh = True
 
     return child_obj
