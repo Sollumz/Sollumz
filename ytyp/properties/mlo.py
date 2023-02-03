@@ -41,9 +41,8 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_room_index(self, room_from):
-        selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
-        selected_archetype = selected_ytyp.archetypes[selected_ytyp.archetype_index]
-        for index, room in enumerate(selected_archetype.rooms):
+        archetype = self.get_mlo_archetype()
+        for index, room in enumerate(archetype.rooms):
             if room_from:
                 if room.id == self.room_from_id:
                     return index
@@ -59,17 +58,16 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         return self.get_room_index(False)
 
     def get_room_name(self, room_from):
-        selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
-        selected_archetype = selected_ytyp.archetypes[selected_ytyp.archetype_index]
-        if len(selected_archetype.rooms) < 1:
+        archetype = self.get_mlo_archetype()
+        if len(archetype.rooms) < 1:
             return ""
 
         index = self.room_from_index if room_from else self.room_to_index
 
-        if index < len(selected_archetype.rooms) and index >= 0:
-            return selected_archetype.rooms[index].name
+        if index < len(archetype.rooms) and index >= 0:
+            return archetype.rooms[index].name
         else:
-            return selected_archetype.rooms[0].name
+            return archetype.rooms[0].name
 
     def get_room_from_name(self):
         return self.get_room_name(True)
