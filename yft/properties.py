@@ -3,23 +3,18 @@ import bpy
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 
-class FragmentProperties(bpy.types.PropertyGroup):
-    unk_b0: bpy.props.FloatProperty(name="UnknownB0")
-    unk_b8: bpy.props.FloatProperty(name="UnknownB8")
-    unk_bc: bpy.props.FloatProperty(name="UnknownBC")
-    unk_c0: bpy.props.FloatProperty(name="UnknownC0", default=65280)
-    unk_c4: bpy.props.FloatProperty(name="UnknownC4")
-    unk_cc: bpy.props.FloatProperty(name="UnknownCC")
-    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor")
-    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor")
+class FragArchetypeProperties(bpy.types.PropertyGroup):
+    unknown_48: bpy.props.FloatProperty(name="Unknown48", default=1)
+    unknown_4c: bpy.props.FloatProperty(
+        name="Unknown4c", default=150)
+    unknown_50: bpy.props.FloatProperty(
+        name="Unknown50", default=6.28)
+    unknown_54: bpy.props.FloatProperty(name="Unknown54", default=1)
+    inertia_tensor: bpy.props.FloatVectorProperty(
+        name="Inertia Tensor")
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    def get_name(self) -> str:
-        return f"LOD{self.number}"
-
-    number: bpy.props.IntProperty(name="Number", default=1)
-
     unknown_14: bpy.props.FloatProperty(name="Unknown14")
     unknown_18: bpy.props.FloatProperty(name="Unknown18")
     unknown_1c: bpy.props.FloatProperty(name="Unknown1C")
@@ -38,17 +33,9 @@ class LODProperties(bpy.types.PropertyGroup):
         name="Damping Angular V", default=(0.02, 0.02, 0.02))
     damping_angular_v2: bpy.props.FloatVectorProperty(
         name="Damping Angular V2", default=(0.01, 0.01, 0.01))
-    # archetype properties
-    archetype_name: bpy.props.StringProperty(name="Name")
-    archetype_mass: bpy.props.FloatProperty(name="Mass")
-    archetype_unknown_48: bpy.props.FloatProperty(name="Unknown48", default=1)
-    archetype_unknown_4c: bpy.props.FloatProperty(
-        name="Unknown4c", default=150)
-    archetype_unknown_50: bpy.props.FloatProperty(
-        name="Unknown50", default=6.28)
-    archetype_unknown_54: bpy.props.FloatProperty(name="Unknown54", default=1)
-    archetype_inertia_tensor: bpy.props.FloatVectorProperty(
-        name="Inertia Tensor")
+
+    archetype_properties: bpy.props.PointerProperty(
+        type=FragArchetypeProperties)
 
 
 class GroupProperties(bpy.types.PropertyGroup):
@@ -97,6 +84,19 @@ class VehicleWindowProperties(bpy.types.PropertyGroup):
         name="Cracks Texture Tiling")
 
 
+class FragmentProperties(bpy.types.PropertyGroup):
+    unk_b0: bpy.props.FloatProperty(name="UnknownB0")
+    unk_b8: bpy.props.FloatProperty(name="UnknownB8")
+    unk_bc: bpy.props.FloatProperty(name="UnknownBC")
+    unk_c0: bpy.props.FloatProperty(name="UnknownC0", default=65280)
+    unk_c4: bpy.props.FloatProperty(name="UnknownC4")
+    unk_cc: bpy.props.FloatProperty(name="UnknownCC")
+    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor")
+    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor")
+
+    lod_properties: bpy.props.PointerProperty(type=LODProperties)
+
+
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
         type=FragmentProperties)
@@ -106,11 +106,6 @@ def register():
         type=VehicleWindowProperties)
     bpy.types.Object.is_physics_child_mesh = bpy.props.BoolProperty(
         name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children.")
-
-    bpy.types.Object.sollumz_fragment_lods = bpy.props.CollectionProperty(
-        type=LODProperties)
-    bpy.types.Object.sollumz_active_frag_lod_index = bpy.props.IntProperty(
-        min=0)
 
     bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
         name="Thickness", default=0.1)
@@ -141,8 +136,6 @@ def unregister():
     del bpy.types.Object.child_properties
     del bpy.types.Object.vehicle_window_properties
     del bpy.types.Object.is_physics_child_mesh
-    del bpy.types.Object.sollumz_fragment_lods
-    del bpy.types.Object.sollumz_active_frag_lod_index
 
     del bpy.types.Bone.group_properties
     del bpy.types.Bone.sollumz_use_physics

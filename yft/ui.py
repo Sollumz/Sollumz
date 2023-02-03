@@ -23,24 +23,6 @@ class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
         pass
 
 
-class SOLLUMZ_UL_PHYS_LODS_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_PHYS_LODS_LIST"
-
-    def draw_item(
-        self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_propname, index
-    ):
-        layout.label(text=item.get_name(), icon="NODE_COMPOSITING")
-
-
-class SOLLUMZ_UL_PHYS_CHILDREN_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_PHYSICS_CHILDREN_LIST"
-
-    def draw_item(
-        self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_propname, index
-    ):
-        layout.label(text=f"Child {index + 1}", icon="CON_CHILDOF")
-
-
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
     bl_label = "Fragment"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_PANEL"
@@ -51,7 +33,7 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object and context.active_object.sollum_type == SollumType.FRAGMENT
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.FRAGMENT
 
     def draw(self, context):
         layout = self.layout
@@ -61,6 +43,9 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
         obj = context.active_object
 
         for prop in FragmentProperties.__annotations__:
+            if prop == "lod_properties":
+                continue
+
             self.layout.prop(obj.fragment_properties, prop)
 
 
@@ -88,20 +73,13 @@ class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
-    bl_label = "Physics LODs"
+    bl_label = "LOD Properties"
     bl_idname = "SOLLUMZ_PT_PHYS_LODS_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
-
-    @classmethod
-    def poll(cls, context):
-        active_obj = context.view_layer.objects.active
-        if active_obj is None or active_obj.sollum_type != SollumType.FRAGMENT:
-            return False
-
-        return len(active_obj.sollumz_fragment_lods) >= 0
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
 
     def draw(self, context):
         layout = self.layout
@@ -109,48 +87,33 @@ class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
         layout.use_property_decorate = False
 
         obj = context.view_layer.objects.active
-        frag_lods = obj.sollumz_fragment_lods
+        lod_props = obj.fragment_properties.lod_properties
 
-        row = layout.row()
-        row.template_list(
-            SOLLUMZ_UL_PHYS_LODS_LIST.bl_idname, "", obj, "sollumz_fragment_lods", obj, "sollumz_active_frag_lod_index"
-        )
-
-        col = row.column()
-        col.operator(SOLLUMZ_OT_ADD_FRAG_LOD.bl_idname, text="", icon="ADD")
-        col.operator(SOLLUMZ_OT_REMOVE_FRAG_LOD.bl_idname,
-                     text="", icon="REMOVE")
-
-        layout.separator()
-
-        active_lod_index = obj.sollumz_active_frag_lod_index
-
-        if active_lod_index >= len(frag_lods):
-            return
-
-        active_lod = frag_lods[active_lod_index]
-
-        layout.prop(active_lod, "number", text="LOD Number")
-        layout.separator()
-
-        for prop in active_lod.__annotations__:
-            if "archetype" in prop:
-                break
-
-            if prop == "number":
+        for prop in lod_props.__annotations__:
+            if prop == "archetype_properties":
                 continue
+            layout.prop(lod_props, prop)
 
-            layout.prop(active_lod, prop)
 
-        layout.separator()
+class SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL(bpy.types.Panel):
+    bl_label = "Archetype Properties"
+    bl_idname = "SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
 
-        layout.label(text="Archetype Properties")
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-        for prop in active_lod.__annotations__:
-            if not "archetype" in prop:
-                continue
+        obj = context.view_layer.objects.active
+        arch_props = obj.fragment_properties.lod_properties.archetype_properties
 
-            layout.prop(active_lod, prop)
+        for prop in arch_props.__annotations__:
+            layout.prop(arch_props, prop)
 
 
 class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):

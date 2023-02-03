@@ -8,13 +8,13 @@ from ..tools.meshhelper import create_uv_layer
 from ..tools.drawablehelper import drawable_to_asset
 from ..tools.utils import multiply_homogeneous
 from ..sollumz_properties import SollumType, SollumzImportSettings, LODLevel
-from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, Window
+from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup
 from ..ydr.ydrimport import shadergroup_to_materials, shader_item_to_material, skeleton_to_obj, rotation_limits_to_obj, create_lights
 from ..ybn.ybnimport import create_bound_object
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
-from .properties import LODProperties
+from .properties import LODProperties, FragArchetypeProperties
 from .create_drawable_meshes import create_drawable_meshes, create_drawable_meshes_split_by_group, add_armature_constraint, create_joined_mesh
 
 
@@ -53,7 +53,7 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool 
 
     create_frag_collisions(frag_xml, frag_obj)
 
-    create_phys_lods(frag_xml, frag_obj)
+    create_phys_lod(frag_xml, frag_obj)
     set_all_bone_physics_properties(frag_obj.data, frag_xml)
 
     create_phys_child_meshes(
@@ -174,15 +174,16 @@ def parent_mesh_objects(mesh_objs: list[bpy.types.Object], frag_obj: bpy.types.O
     return mesh_empty
 
 
-def create_phys_lods(frag_xml: Fragment, frag_obj: bpy.types.Object):
+def create_phys_lod(frag_xml: Fragment, frag_obj: bpy.types.Object):
     """Create the Fragment.Physics.LOD1 data-block. (Currently LOD1 is only supported)"""
-    for i, lod_xml in frag_xml.get_lods_by_id().items():
-        if not lod_xml.groups:
-            continue
+    lod_xml = frag_xml.physics.lod1
 
-        lod_props: LODProperties = frag_obj.sollumz_fragment_lods.add()
-        set_lod_properties(lod_xml, lod_props)
-        lod_props.number = i
+    if not lod_xml.groups:
+        return
+
+    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
+    set_lod_properties(lod_xml, lod_props)
+    set_archetype_properties(lod_xml.archetype, lod_props.archetype_properties)
 
 
 def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Fragment):
@@ -492,14 +493,15 @@ def set_lod_properties(lod_xml: LOD, lod_props: LODProperties):
     lod_props.damping_angular_c = lod_xml.damping_angular_c
     lod_props.damping_angular_v = lod_xml.damping_angular_v
     lod_props.damping_angular_v2 = lod_xml.damping_angular_v2
-    # archetype properties
-    lod_props.archetype_name = lod_xml.archetype.name
-    lod_props.archetype_mass = lod_xml.archetype.mass
-    lod_props.archetype_unknown_48 = lod_xml.archetype.unknown_48
-    lod_props.archetype_unknown_4c = lod_xml.archetype.unknown_4c
-    lod_props.archetype_unknown_50 = lod_xml.archetype.unknown_50
-    lod_props.archetype_unknown_54 = lod_xml.archetype.unknown_54
-    lod_props.archetype_inertia_tensor = lod_xml.archetype.inertia_tensor
+
+
+def set_archetype_properties(arch_xml: Archetype, arch_props: FragArchetypeProperties):
+    arch_props.name = arch_xml.name
+    arch_props.unknown_48 = arch_xml.unknown_48
+    arch_props.unknown_4c = arch_xml.unknown_4c
+    arch_props.unknown_50 = arch_xml.unknown_50
+    arch_props.unknown_54 = arch_xml.unknown_54
+    arch_props.inertia_tensor = arch_xml.inertia_tensor
 
 
 def set_group_properties(group_xml: Group, bone: bpy.types.Bone):
