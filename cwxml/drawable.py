@@ -13,6 +13,7 @@ from .element import (
     ValueProperty,
     VectorProperty,
     Vector4Property,
+    MatrixProperty,
     get_str_type
 )
 from .bound import (
@@ -562,6 +563,9 @@ class Drawable(ElementTree, AbstractClass):
 
     def __init__(self):
         super().__init__()
+        # Only in fragment drawables
+        self.matrix = MatrixProperty("Matrix")
+
         self.name = TextProperty("Name", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
         self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")

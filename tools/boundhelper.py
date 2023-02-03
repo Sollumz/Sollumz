@@ -1,116 +1,194 @@
 import bpy
 
-from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_POLYGON_TYPES
+from ..sollumz_properties import SollumType
 from ..tools.meshhelper import create_box
-from .blenderhelper import create_mesh_object
+from ..ybn.properties import load_flag_presets, flag_presets, BoundFlags
+from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
 from mathutils import Vector
 
 
-def create_bound_shape(sollum_type):
-    pobj = create_mesh_object(sollum_type)
-
-    # Constrain scale for bound polys
-    if pobj.sollum_type in BOUND_POLYGON_TYPES and sollum_type != SollumType.BOUND_POLY_BOX and sollum_type != SollumType.BOUND_POLY_TRIANGLE:
-        constraint = pobj.constraints.new(type="LIMIT_SCALE")
-        constraint.use_transform_limit = True
-        constraint.use_min_x = True
-        constraint.use_min_y = True
-        constraint.use_min_z = True
-        constraint.use_max_x = True
-        constraint.use_max_y = True
-        constraint.use_max_z = True
-        constraint.min_x = 1
-        constraint.min_y = 1
-        constraint.min_z = 1
-        constraint.max_x = 1
-        constraint.max_y = 1
-        constraint.max_z = 1
-
-    if sollum_type == SollumType.BOUND_POLY_BOX:
-        create_box(pobj.data)
-    elif sollum_type == SollumType.BOUND_BOX:
-        pobj.bound_dimensions = Vector((1, 1, 1))
-    elif sollum_type == SollumType.BOUND_SPHERE or sollum_type == SollumType.BOUND_POLY_SPHERE:
-        pobj.bound_radius = 1
-    elif sollum_type == SollumType.BOUND_POLY_CAPSULE:
-        pobj.bound_radius = 1
-        pobj.bound_length = 1
-    elif sollum_type == SollumType.BOUND_CAPSULE:
-        pobj.bound_radius = 1
-        pobj.margin = 0.5
-    elif sollum_type == SollumType.BOUND_CYLINDER or sollum_type == SollumType.BOUND_POLY_CYLINDER:
-        pobj.bound_length = 2
-        pobj.bound_radius = 1
-    elif sollum_type == SollumType.BOUND_DISC:
-        pobj.margin = 0.04
-        pobj.bound_radius = 1
-
-    return pobj
+def create_bound_shape(bound_type: SollumType):
+    if bound_type == SollumType.BOUND_BOX:
+        return create_bound_box()
+    elif bound_type == SollumType.BOUND_SPHERE:
+        return create_bound_sphere()
+    elif bound_type == SollumType.BOUND_CAPSULE:
+        return create_bound_capsule()
+    elif bound_type == SollumType.BOUND_CYLINDER:
+        return create_bound_cylinder()
+    elif bound_type == SollumType.BOUND_DISC:
+        return create_bound_disc()
+    elif bound_type == SollumType.BOUND_POLY_BOX:
+        return create_bound_poly_box()
+    elif bound_type == SollumType.BOUND_POLY_SPHERE:
+        return create_bound_poly_sphere()
+    elif bound_type == SollumType.BOUND_POLY_CAPSULE:
+        return create_bound_poly_capsule()
+    elif bound_type == SollumType.BOUND_POLY_CYLINDER:
+        return create_bound_poly_cylinder()
 
 
-def create_bound(sollum_type=SollumType.BOUND_COMPOSITE, aobj=None, do_link=True):
+def create_bound_box():
+    bound_obj = create_blender_object(SollumType.BOUND_BOX)
+    bound_obj.bound_dimensions = Vector((1, 1, 1))
 
-    empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
-    empty.empty_display_size = 0
-    empty.sollum_type = sollum_type
-    if do_link:
-        bpy.context.collection.objects.link(empty)
-        bpy.context.view_layer.objects.active = bpy.data.objects[empty.name]
-
-    if aobj:
-        if aobj.sollum_type == SollumType.BOUND_COMPOSITE:
-            empty.parent = aobj
-
-    return empty
+    return bound_obj
 
 
-def convert_selected_to_bound(selected, use_name, multiple, bvhs, replace_original, do_center=True):
+def create_bound_poly_box():
+    bound_obj = create_blender_object(SollumType.BOUND_POLY_BOX)
+    create_box(bound_obj.data)
 
-    center = Vector()
-    cobjs = []
+    return bound_obj
 
-    if not multiple:
-        cobj = create_bound()
-        cobjs.append(cobj)
-        gobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
-            SollumType.BOUND_GEOMETRY)
-        gobj.parent = cobj
-        if do_center:
-            for obj in selected:
-                center += obj.location
 
-            center /= len(selected)
-            gobj.location = center
+def create_bound_sphere():
+    bound_obj = create_blender_object(SollumType.BOUND_SPHERE)
+    bound_obj.bound_radius = 1
 
-    for obj in selected:
-        if multiple:
-            cobj = create_bound()
-            cobjs.append(cobj)
-            gobj = create_bound(SollumType.BOUND_GEOMETRYBVH) if bvhs else create_bound(
-                SollumType.BOUND_GEOMETRY)
-            gobj.parent = cobj
-            if do_center:
-                gobj.location = obj.location
-                obj.location = Vector()
-        elif do_center:
-            obj.location -= center
+    return bound_obj
 
-        if obj.type == "MESH":
-            name = obj.name
-            sollum_type = SollumType.BOUND_POLY_TRIANGLE
-            poly_mesh = obj if replace_original else create_mesh_object(
-                sollum_type)
 
-            poly_mesh.parent = gobj
+def create_bound_poly_sphere():
+    bound_obj = create_blender_object(SollumType.BOUND_POLY_SPHERE)
+    bound_obj.bound_radius = 1
+    constrain_bound(bound_obj)
 
-            if replace_original:
-                poly_mesh.name = SOLLUMZ_UI_NAMES[sollum_type]
-                poly_mesh.sollum_type = sollum_type
-            else:
-                poly_mesh.data = obj.data.copy()
-                poly_mesh.matrix_world = obj.matrix_world
+    return bound_obj
 
-            if use_name:
-                cobj.name = name
 
-    return cobjs
+def create_bound_capsule():
+    bound_obj = create_blender_object(SollumType.BOUND_CAPSULE)
+    bound_obj.bound_radius = 1
+    bound_obj.margin = 0.5
+
+    return bound_obj
+
+
+def create_bound_poly_capsule():
+    bound_obj = create_blender_object(SollumType.BOUND_POLY_CAPSULE)
+    bound_obj.bound_radius = 1
+    bound_obj.bound_length = 1
+    constrain_bound(bound_obj)
+
+    return bound_obj
+
+
+def create_bound_cylinder():
+    bound_obj = create_blender_object(SollumType.BOUND_CYLINDER)
+    bound_obj.bound_length = 2
+    bound_obj.bound_radius = 1
+
+    return bound_obj
+
+
+def create_bound_poly_cylinder():
+    bound_obj = create_blender_object(SollumType.BOUND_POLY_CYLINDER)
+    bound_obj.bound_length = 2
+    bound_obj.bound_radius = 1
+    constrain_bound(bound_obj)
+
+    return bound_obj
+
+
+def create_bound_disc():
+    bound_obj = create_blender_object(SollumType.BOUND_DISC)
+    bound_obj.margin = 0.04
+    bound_obj.bound_radius = 1
+
+    return bound_obj
+
+
+def constrain_bound(obj: bpy.types.Object):
+    constraint = obj.constraints.new(type="LIMIT_SCALE")
+    constraint.use_transform_limit = True
+    constraint.use_min_x = True
+    constraint.use_min_y = True
+    constraint.use_min_z = True
+    constraint.use_max_x = True
+    constraint.use_max_y = True
+    constraint.use_max_z = True
+    constraint.min_x = 1
+    constraint.min_y = 1
+    constraint.min_z = 1
+    constraint.max_x = 1
+    constraint.max_y = 1
+    constraint.max_z = 1
+
+
+def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+    """Convert each object in ``objs`` to a Bound Composite."""
+    for obj in objs:
+        convert_obj_to_composite(obj, bound_child_type, apply_default_flags)
+
+
+def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+    """Create a single composite from all ``objs``."""
+    composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
+
+    for obj in objs:
+        if bound_child_type == SollumType.BOUND_GEOMETRY:
+            convert_obj_to_geometry(obj, apply_default_flags)
+            obj.parent = composite_obj
+        else:
+            bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
+            bvh_obj.parent = composite_obj
+
+    return composite_obj
+
+
+def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool):
+    composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
+    composite_obj.name = f"{remove_number_suffix(obj.name)}.col"
+    composite_obj.parent = obj.parent
+
+    if bound_child_type == SollumType.BOUND_GEOMETRY:
+        convert_obj_to_geometry(obj, apply_default_flags)
+        obj.parent = composite_obj
+    else:
+        bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
+        bvh_obj.parent = composite_obj
+
+    return composite_obj
+
+
+def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool):
+    obj.sollum_type = SollumType.BOUND_GEOMETRY
+    obj.name = f"{remove_number_suffix(obj.name)}.bound_geom"
+
+    if apply_default_flags:
+        apply_default_flag_preset(obj)
+
+
+def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
+    obj_name = remove_number_suffix(obj.name)
+
+    bvh_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)
+    bvh_obj.name = f"{obj_name}.bvh"
+
+    obj.sollum_type = SollumType.BOUND_POLY_TRIANGLE
+    obj.name = f"{obj_name}.poly_mesh"
+    obj.parent = bvh_obj
+
+    if apply_default_flags:
+        apply_default_flag_preset(bvh_obj)
+
+    return bvh_obj
+
+
+def apply_default_flag_preset(obj: bpy.types.Object):
+    load_flag_presets()
+
+    preset = flag_presets.presets[0]
+
+    for flag_name in BoundFlags.__annotations__.keys():
+        if flag_name in preset.flags1:
+            obj.composite_flags1[flag_name] = True
+        else:
+            obj.composite_flags1[flag_name] = False
+
+        if flag_name in preset.flags2:
+            obj.composite_flags2[flag_name] = True
+        else:
+            obj.composite_flags2[flag_name] = False
+    obj.margin = 0.005

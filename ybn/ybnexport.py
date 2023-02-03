@@ -123,6 +123,7 @@ def create_bound_geometry_xml(obj: bpy.types.Object, auto_calc_inertia: bool = F
     geom_xml = init_bound_child_xml(
         BoundGeometry(), obj, auto_calc_inertia, auto_calc_volume)
     set_bound_geom_xml_properties(geom_xml, obj)
+    geom_xml.material_index = 0
 
     create_bound_geom_xml_data(geom_xml, obj)
 
@@ -133,6 +134,7 @@ def create_bvh_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_
     geom_xml = init_bound_child_xml(
         BoundGeometryBVH(), obj, auto_calc_inertia, auto_calc_volume)
     set_bvh_extents(geom_xml, obj)
+    geom_xml.material_index = 0
 
     create_bound_geom_xml_data(geom_xml, obj)
 
@@ -276,7 +278,7 @@ def create_export_mesh(obj: bpy.types.Object):
 
 
 def create_xml_vertex_colors(geom_xml: BoundGeometry | BoundGeometryBVH, mesh: bpy.types.Mesh):
-    for loop, in mesh.loops:
+    for loop in mesh.loops:
         geom_xml.vertex_colors.append(
             mesh.vertex_colors[0].data[loop.index].color)
 

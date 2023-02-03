@@ -142,7 +142,7 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
 
     # set input / output variables
     input_id = geom.node_group.inputs[1].identifier
-    geom[input_id+"_attribute_name"] = "colour0"
+    geom[input_id+"_attribute_name"] = "Color 1"
     geom[input_id+"_use_attribute"] = True
     output_id = geom.node_group.outputs[1].identifier
     geom[output_id+"_attribute_name"] = "TintColor"

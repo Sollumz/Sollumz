@@ -1,58 +1,93 @@
-from ..ybn.operators import apply_default_flag_preset
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
-from ..tools.drawablehelper import (
-    MaterialConverter,
-    convert_selected_to_drawable,
-    create_drawable,
-    set_recommended_bone_properties
-)
-from ..tools.blenderhelper import get_children_recursive
-from ..tools.boundhelper import convert_selected_to_bound
+from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model
+from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ..cwxml.shader import ShaderManager
+from ..tools.blenderhelper import create_empty_object, duplicate_object
 import traceback
 import bpy
 
 
-class SOLLUMZ_OT_create_drawable(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Create a sollumz drawable of the selected type."""
+class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
+    """Create a Drawable empty"""
     bl_idname = "sollumz.createdrawable"
-    bl_label = f"Create Drawable"
-    bl_action = "Create a Drawable"
-    bl_update_view = False
+    bl_label = "Create Drawable"
 
-    def run(self, context):
-        aobj = context.active_object
+    def execute(self, context):
         selected = context.selected_objects
-        drawable_type = context.scene.create_drawable_type
-        if drawable_type == SollumType.DRAWABLE and len(selected) > 0:
-            dobjs = convert_selected_to_drawable(
-                selected, context.scene.use_mesh_name, context.scene.create_seperate_objects, context.scene.create_center_to_selection)
-            if context.scene.auto_create_embedded_col:
-                cobjs = convert_selected_to_bound(
-                    context.selected_objects, use_name=False, multiple=context.scene.create_seperate_objects, bvhs=True, replace_original=False, do_center=False)
-                if context.scene.composite_apply_default_flag_preset:
-                    for obj in cobjs:
-                        for cobj_child in obj.children:
-                            if cobj_child.sollum_type == SollumType.BOUND_GEOMETRYBVH:
-                                apply_default_flag_preset(cobj_child, self)
-                for index, composite in enumerate(cobjs):
-                    composite.parent = dobjs[index]
-                    if context.scene.create_center_to_selection:
-                        for child in get_children_recursive(composite):
-                            if child.type == "MESH":
-                                child.location -= dobjs[index].location
 
-            self.message(
-                f"Succesfully converted {', '.join([obj.name for obj in context.selected_objects])} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]}.")
-            return True
+        if selected:
+            parent = selected[0]
         else:
-            obj = create_drawable(drawable_type)
-            if aobj:
-                obj.parent = aobj
-            return True
+            parent = None
+
+        drawable_obj = create_empty_object(SollumType.DRAWABLE)
+        drawable_obj.parent = parent
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_create_drawable_dict(bpy.types.Operator):
+    """Create a Drawable Dictionary empty"""
+    bl_idname = "sollumz.createdrawabledict"
+    bl_label = "Create Drawable Dictionary"
+
+    def execute(self, context):
+        selected = context.selected_objects
+
+        if selected:
+            parent = selected[0]
+        else:
+            parent = None
+
+        ydd_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY)
+        ydd_obj.parent = parent
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
+    """Convert the selected object to a Drawable"""
+    bl_idname = "sollumz.converttodrawable"
+    bl_label = "Convert to Drawable"
+    bl_options = {"UNDO"}
+
+    def execute(self, context):
+        selected_meshes = [
+            obj for obj in context.selected_objects if obj.type == "MESH"]
+
+        if not selected_meshes:
+            self.report({"INFO"}, f"No mesh objects selected!")
+            return {"CANCELLED"}
+
+        auto_embed_col = context.scene.auto_create_embedded_col
+
+        if context.scene.create_seperate_drawables or len(selected_meshes) == 1:
+            for obj in selected_meshes:
+                composite_obj = convert_obj_to_composite(
+                    duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                drawable_obj = convert_obj_to_drawable(obj)
+
+                composite_obj.parent = drawable_obj
+        else:
+            drawable_obj = create_empty_object(SollumType.DRAWABLE)
+
+            if auto_embed_col:
+                col_objs = [duplicate_object(o) for o in selected_meshes]
+                composite_obj = convert_objs_to_single_composite(
+                    col_objs, SollumType.BOUND_GEOMETRYBVH, True)
+                composite_obj.parent = drawable_obj
+
+            for obj in selected_meshes:
+                convert_obj_to_model(obj)
+                obj.parent = drawable_obj
+
+        self.report(
+            {"INFO"}, f"Succesfully converted all selected objects to a Drawable.")
+
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):

@@ -1,7 +1,8 @@
 import bpy
 from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
-from typing import Tuple, Callable
+from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
+                   SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_GLASS_SHARDS, SOLLUMZ_OT_HIDE_OBJECT)
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -97,30 +98,6 @@ class SOLLUMZ_PT_import_main(bpy.types.Panel):
 
         layout.prop(operator.import_settings, "batch_mode")
         layout.prop(operator.import_settings, "import_as_asset")
-
-
-class SOLLUMZ_PT_import_drawable(bpy.types.Panel):
-    bl_space_type = "FILE_BROWSER"
-    bl_region_type = "TOOL_PROPS"
-    bl_label = "Drawable"
-    bl_parent_id = "FILE_PT_operator"
-    bl_order = 1
-
-    @classmethod
-    def poll(cls, context):
-        sfile = context.space_data
-        operator = sfile.active_operator
-        return operator.bl_idname == "SOLLUMZ_OT_import"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        sfile = context.space_data
-        operator = sfile.active_operator
-
-        layout.prop(operator.import_settings, "join_geometries")
 
 
 class SOLLUMZ_PT_import_fragment(bpy.types.Panel):
@@ -357,7 +334,6 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        layout.prop(operator.export_settings, "export_with_hi")
         layout.prop(operator.export_settings, "auto_calculate_inertia")
         layout.prop(operator.export_settings, "auto_calculate_volume")
 
@@ -446,22 +422,26 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.prop(context.scene, "hide_high_lods")
-        row.prop(context.scene, "hide_medium_lods")
 
-        row = layout.row()
-        row.prop(context.scene, "hide_low_lods")
-        row.prop(context.scene, "hide_collision")
+        grid = layout.grid_flow(align=True, row_major=True)
+        grid.scale_x = 0.7
+        grid.operator(SOLLUMZ_OT_HIDE_COLLISIONS.bl_idname)
+        grid.operator(SOLLUMZ_OT_HIDE_GLASS_SHARDS.bl_idname)
 
-        row = layout.row()
-        row.prop(context.scene, "hide_very_low_lods")
-        row.prop(context.space_data.overlay,
-                 "show_bones", text="Show Skeleton")
+        layout.separator()
 
-        row = layout.row()
-        row.prop(context.scene, "hide_vehicle_windows",
-                 text="Hide Glass Shards")
+        layout.label(text="Level of Detail")
+
+        grid = layout.grid_flow(align=True, row_major=True)
+        grid.scale_x = 0.7
+        grid.operator(SOLLUMZ_OT_SET_LOD_VERY_HIGH.bl_idname)
+        grid.operator(SOLLUMZ_OT_SET_LOD_HIGH.bl_idname)
+        grid.operator(SOLLUMZ_OT_SET_LOD_MED.bl_idname)
+        grid.operator(SOLLUMZ_OT_SET_LOD_LOW.bl_idname)
+        grid.operator(SOLLUMZ_OT_SET_LOD_VLOW.bl_idname)
+        grid.operator(SOLLUMZ_OT_HIDE_OBJECT.bl_idname)
+
+        grid.enabled = context.view_layer.objects.active is not None and context.view_layer.objects.active.mode == "OBJECT"
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
@@ -591,9 +571,9 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
                 "sollumz.paint_vertices").color = context.scene.vert_paint_color6
 
 
-class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
-    bl_label = "Debug"
-    bl_idname = "SOLLUMZ_PT_DEBUG_PANEL"
+class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(bpy.types.Panel):
+    bl_label = "Set Sollum Type"
+    bl_idname = "SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -602,22 +582,45 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_order = 2
 
     def draw_header(self, context):
+        self.layout.label(text="", icon="MESH_MONKEY")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("sollumz.setsollumtype")
+        row.prop(context.scene, "all_sollum_type", text="")
+
+
+class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
+    bl_label = "Debug"
+    bl_idname = "SOLLUMZ_PT_DEBUG_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 3
+
+    def draw_header(self, context):
         self.layout.label(text="", icon="PREFERENCES")
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Sollumz Version: 1.3.1")
         row = layout.row()
         row.operator("sollumz.debug_hierarchy")
         row.prop(context.scene, "debug_sollum_type")
-        row = layout.row()
-        row.operator("sollumz.debug_set_sollum_type")
-        row.prop(context.scene, "all_sollum_type")
         row = layout.row()
         row.operator("sollumz.debug_fix_light_intensity")
         row.prop(context.scene, "debug_lights_only_selected")
         row = layout.row()
         row.operator("sollumz.debug_reload_entity_sets")
+        row.operator("sollumz.debug_update_portal_names")
+        layout.separator()
+        layout.label(text="Migration")
+        layout.operator("sollumz.migratedrawable")
+        layout.label(
+            text="This will join all geometries for each LOD Level into a single object.", icon="ERROR")
+        layout.operator("sollumz.migrateboundgeoms")
 
 
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
@@ -658,7 +661,6 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
 
         obj = context.active_object
         row = layout.row()
-        row.enabled = False
         row.prop(obj, "sollum_type")
 
         if not obj or obj.sollum_type == SollumType.NONE:
@@ -705,6 +707,15 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "material"
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj:
+            mat = obj.active_material
+            return mat and mat.sollum_type == MaterialType.SHADER
+        else:
+            return False
 
     def draw(self, context):
         layout = self.layout

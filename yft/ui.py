@@ -2,9 +2,10 @@ import bpy
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..sollumz_properties import SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
-from ..sollumz_helper import find_fragment_parent
+from ..sollumz_helper import find_sollumz_parent
 from ..ydr.properties import DrawableProperties
 from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties
+from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS
 
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
@@ -17,10 +18,56 @@ class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_order = 6
 
     def draw_header(self, context):
-        self.layout.label(text="", icon="PACKAGE")
+        self.layout.label(text="", icon="MOD_PHYSICS")
 
     def draw(self, context):
         pass
+
+
+class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(bpy.types.Panel):
+    bl_label = "Create Fragment Objects"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_CREATE_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
+    bl_order = 1
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="ADD")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_CREATE_FRAGMENT.bl_idname,
+                        icon="MOD_PHYSICS")
+
+        layout.separator()
+
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS.bl_idname,
+                     icon="BONE_DATA")
+        row = layout.row()
+        row.prop(context.scene, "create_bones_fragment")
+        row.prop(context.scene, "create_bones_parent_to_selected")
+
+
+class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
+    bl_label = "Set Mass"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
+    bl_order = 2
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="WORLD")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+        row.operator(SOLLUMZ_OT_SET_MASS.bl_idname, icon="WORLD")
+        row.prop(context.scene, "set_mass_amount", text="")
 
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
@@ -47,84 +94,6 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
                 continue
 
             self.layout.prop(obj.fragment_properties, prop)
-
-
-class SOLLUMZ_PT_FRAGMENT_DRAWABLE_PANEL(bpy.types.Panel):
-    bl_label = "Drawable Properties"
-    bl_idname = "SOLLUMZ_PT_FRAGMENT_DRAWABLE_PANEL"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        obj = context.active_object
-
-        for prop in DrawableProperties.__annotations__:
-            if prop == "lod_properties":
-                continue
-
-            self.layout.prop(obj.drawable_properties, prop)
-
-
-class SOLLUMZ_PT_FRAG_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
-    bl_label = "LOD Properties"
-    bl_idname = "SOLLUMZ_PT_FRAG_DRAWABLE_MODEL_PANEL"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-
-        if obj is None:
-            return False
-
-        active_lod = obj.sollumz_lods.active_lod
-
-        return active_lod is not None and obj.sollum_type == SollumType.FRAG_GEOM and obj.type == "MESH"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_decorate = False
-        layout.use_property_split = True
-
-        obj = context.active_object
-        active_lod_level = obj.sollumz_lods.active_lod.type
-        mesh = obj.data
-        frag_parent = find_fragment_parent(obj)
-
-        model_props = mesh.drawable_model_properties
-
-        col = layout.column()
-        col.alignment = "RIGHT"
-        col.enabled = False
-
-        is_skinned_model = obj.vertex_groups and frag_parent is not None and not obj.sollumz_is_physics_child_mesh
-
-        # All skinned objects (objects with vertex groups) go in the same drawable model
-        if is_skinned_model:
-            model_props = frag_parent.skinned_model_properties.get_lod(
-                active_lod_level)
-
-            # col.label(text="*Skinned Model")
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
-        else:
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
-
-        col.separator()
-
-        layout.prop(model_props, "render_mask")
-        layout.prop(model_props, "unknown_1")
-        layout.prop(model_props, "flags")
 
 
 class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
@@ -236,11 +205,6 @@ class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
 
         bone = context.active_bone
 
-        # Display mass first and separated from other properties
-        # since it is most important
-        layout.prop(bone.group_properties, "mass")
-        layout.separator()
-
         for prop in GroupProperties.__annotations__:
             if prop == "mass":
                 continue
@@ -260,7 +224,7 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
-        return aobj is not None and aobj.sollum_type in BOUND_TYPES and find_fragment_parent(aobj)
+        return aobj is not None and aobj.sollum_type != SollumType.BOUND_COMPOSITE and aobj.sollum_type in BOUND_TYPES and find_sollumz_parent(aobj)
 
     def draw(self, context):
         layout = self.layout
@@ -272,7 +236,6 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
         child_props = aobj.child_properties
 
         layout.prop(child_props, "mass")
-        layout.prop(child_props, "Damaged")
 
 
 class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
@@ -287,7 +250,15 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
-        return aobj is not None and aobj.sollum_type == SollumType.FRAG_GEOM
+        if aobj is None or aobj.sollum_type != SollumType.DRAWABLE_MODEL:
+            return False
+
+        parent = find_sollumz_parent(aobj)
+
+        if parent is None or parent.sollum_type != SollumType.DRAWABLE:
+            return False
+
+        return parent.parent is not None and parent.parent.sollum_type == SollumType.FRAGMENT
 
     def draw(self, context):
         layout = self.layout

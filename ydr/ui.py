@@ -2,8 +2,9 @@ import bpy
 from . import operators as ydr_ops
 from .shader_materials import shadermats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
-from ..sollumz_properties import SollumType, MaterialType, LightType
+from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
+from ..sollumz_helper import find_sollumz_parent
 
 
 def draw_shader(self, context):
@@ -45,16 +46,23 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
-    bl_label = "Drawable Model Properties"
+    bl_label = "LOD Properties"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_MODEL_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_options = {"HIDE_HEADER"}
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+        obj = context.active_object
+
+        if obj is None:
+            return False
+
+        active_lod = obj.sollumz_lods.active_lod
+
+        return active_lod is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH"
 
     def draw(self, context):
         layout = self.layout
@@ -62,11 +70,34 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         layout.use_property_split = True
 
         obj = context.active_object
+        active_lod_level = obj.sollumz_lods.active_lod.level
+        mesh = obj.data
+        sollumz_parent = find_sollumz_parent(obj)
 
-        layout.prop(obj.drawable_model_properties, "render_mask")
-        layout.prop(obj.drawable_model_properties, "unknown_1")
-        layout.prop(obj.drawable_model_properties, "flags")
-        layout.prop(obj.drawable_model_properties, "sollum_lod")
+        model_props = mesh.drawable_model_properties
+
+        col = layout.column()
+        col.alignment = "RIGHT"
+        col.enabled = False
+
+        is_skinned_model = obj.vertex_groups and sollumz_parent is not None and not obj.sollumz_is_physics_child_mesh
+
+        # All skinned objects (objects with vertex groups) go in the same drawable model
+        if is_skinned_model:
+            model_props = sollumz_parent.skinned_model_properties.get_lod(
+                active_lod_level)
+
+            col.label(
+                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
+        else:
+            col.label(
+                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
+
+        col.separator()
+
+        layout.prop(model_props, "render_mask")
+        layout.prop(model_props, "unknown_1")
+        layout.prop(model_props, "flags")
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
@@ -251,13 +282,17 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator(ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname)
-        row.prop(context.scene, "create_drawable_type")
-        grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
-        grid.prop(context.scene, "use_mesh_name")
-        grid.prop(context.scene, "create_seperate_objects")
-        grid.prop(context.scene, "create_center_to_selection")
-        grid.prop(context.scene, "auto_create_embedded_col")
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_convert_to_drawable.bl_idname, icon="FILE_REFRESH")
+        row = layout.row()
+        row.prop(context.scene, "create_seperate_drawables")
+        row.prop(context.scene, "auto_create_embedded_col")
+        layout.separator()
+        row = layout.row(align=True)
+        row.operator(ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname,
+                     icon="OUTLINER_OB_MESH")
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_create_drawable_dict.bl_idname, icon="TEXT")
 
 
 class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
@@ -325,6 +360,10 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "bone"
 
+    @classmethod
+    def poll(cls, context):
+        return context.mode != "EDIT_ARMATURE"
+
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -352,15 +391,6 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 0
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        if obj:
-            mat = obj.active_material
-            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
-        else:
-            return False
 
     def draw(self, context):
         layout = self.layout
@@ -437,15 +467,6 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 1
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        if obj:
-            mat = obj.active_material
-            return mat and mat.sollum_type != MaterialType.NONE and mat.sollum_type != MaterialType.COLLISION
-        else:
-            return False
 
     def draw(self, context):
         layout = self.layout

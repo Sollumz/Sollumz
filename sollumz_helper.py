@@ -1,18 +1,17 @@
 import bpy
 import traceback
-import os
 import time
+from typing import Optional
 from abc import abstractmethod
-from .tools.blenderhelper import get_children_recursive, get_object_with_children
-from .sollumz_properties import BOUND_TYPES, SollumType
-from .ydr.ydrexport import get_used_materials
+from .tools.blenderhelper import get_children_recursive, get_object_with_children, duplicate_object, join_objects, create_blender_object
+from .sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
 
 
 class SOLLUMZ_OT_base:
+    # Deprecated
     bl_options = {"UNDO"}
     bl_action = "do"
     bl_showtime = False
-    bl_update_view = False
 
     def __init__(self):
         self.messages = []
@@ -25,8 +24,6 @@ class SOLLUMZ_OT_base:
         start = time.time()
         try:
             result = self.run(context)
-            if self.bl_update_view:
-                reset_sollumz_view(context.scene)
         except:
             result = False
             self.error(
@@ -65,20 +62,6 @@ def set_object_collection(obj):
         target.objects.link(obj)
 
 
-def reset_sollumz_view(scene):
-    scene.hide_collision = not scene.hide_collision
-    scene.hide_high_lods = not scene.hide_high_lods
-    scene.hide_medium_lods = not scene.hide_medium_lods
-    scene.hide_low_lods = not scene.hide_low_lods
-    scene.hide_very_low_lods = not scene.hide_very_low_lods
-
-    scene.hide_collision = not scene.hide_collision
-    scene.hide_high_lods = not scene.hide_high_lods
-    scene.hide_medium_lods = not scene.hide_medium_lods
-    scene.hide_low_lods = not scene.hide_low_lods
-    scene.hide_very_low_lods = not scene.hide_very_low_lods
-
-
 def get_sollumz_objects_from_objects(objs, sollum_type):
     robjs = []
     for obj in objs:
@@ -90,16 +73,8 @@ def get_sollumz_objects_from_objects(objs, sollum_type):
     return robjs
 
 
-def find_fragment_file(filepath):
-    directory = os.path.dirname(filepath)
-    for file in os.listdir(directory):
-        if file.endswith(".yft.xml"):
-            return os.path.join(directory, file)
-    return None
-
-
 def has_embedded_textures(obj):
-    for mat in get_used_materials(obj):
+    for mat in get_sollumz_materials(obj):
         nodes = mat.node_tree.nodes
         for node in nodes:
             if isinstance(node, bpy.types.ShaderNodeTexImage):
@@ -130,12 +105,38 @@ def duplicate_object_with_children(obj):
     return new_objs[0]
 
 
-def find_fragment_parent(obj: bpy.types.Object) -> bpy.types.Object | None:
-    """Find parent fragment parent if one exists. Returns None otherwise."""
-    if obj.sollum_type == SollumType.FRAGMENT:
+def find_sollumz_parent(obj: bpy.types.Object) -> bpy.types.Object | None:
+    """Find parent Fragment or Drawable if one exists. Returns None otherwise."""
+    if obj.sollum_type == SollumType.FRAGMENT or obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
         return obj
 
     if not obj.parent:
         return None
 
-    return find_fragment_parent(obj.parent)
+    return find_sollumz_parent(obj.parent)
+
+
+def get_sollumz_materials(obj: bpy.types.Object, exclude_hi: bool = True):
+    """Get all Sollumz materials used by ``drawable_obj``."""
+    materials: list[bpy.types.Material] = []
+    used_materials: dict[bpy.types.Material, bool] = {}
+
+    for child in get_children_recursive(obj):
+        if child.sollum_type != SollumType.DRAWABLE_MODEL:
+            continue
+
+        for lod in child.sollumz_lods.lods:
+            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
+                continue
+
+            mats = lod.mesh.materials
+
+            for mat in mats:
+                if mat.sollum_type != MaterialType.SHADER:
+                    continue
+
+                if mat not in used_materials:
+                    materials.append(mat)
+                    used_materials[mat] = True
+
+    return materials

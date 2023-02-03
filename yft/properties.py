@@ -1,27 +1,6 @@
 import bpy
 
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LODLevel
-from ..ydr.properties import DrawableModelProperties
-
-
-class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
-    very_high: bpy.props.PointerProperty(type=DrawableModelProperties)
-    high: bpy.props.PointerProperty(type=DrawableModelProperties)
-    medium: bpy.props.PointerProperty(type=DrawableModelProperties)
-    low: bpy.props.PointerProperty(type=DrawableModelProperties)
-    very_low: bpy.props.PointerProperty(type=DrawableModelProperties)
-
-    def get_lod(self, lod_level: LODLevel):
-        if lod_level == LODLevel.VERYHIGH:
-            return self.very_high
-        elif lod_level == LODLevel.HIGH:
-            return self.high
-        elif lod_level == LODLevel.MEDIUM:
-            return self.medium
-        elif lod_level == LODLevel.LOW:
-            return self.low
-        elif lod_level == LODLevel.VERYLOW:
-            return self.very_low
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -62,11 +41,11 @@ class LODProperties(bpy.types.PropertyGroup):
 class GroupProperties(bpy.types.PropertyGroup):
     glass_window_index: bpy.props.IntProperty(name="Glass Window Index")
     glass_flags: bpy.props.IntProperty(name="Glass Flags")
-    strength: bpy.props.FloatProperty(name="Strength")
+    strength: bpy.props.FloatProperty(name="Strength", default=100)
     force_transmission_scale_up: bpy.props.FloatProperty(
-        name="Force Transmission Scale Up")
+        name="Force Transmission Scale Up", default=0.25)
     force_transmission_scale_down: bpy.props.FloatProperty(
-        name="Force Transmission Scale Down")
+        name="Force Transmission Scale Down", default=0.25)
     joint_stiffness: bpy.props.FloatProperty(name="Joint Stiffness")
     min_soft_angle_1: bpy.props.FloatProperty(
         name="Min Soft Angle 1", default=-1)
@@ -80,17 +59,18 @@ class GroupProperties(bpy.types.PropertyGroup):
     rotation_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
-    min_damage_force: bpy.props.FloatProperty(name="Min Damage Force")
-    damage_health: bpy.props.FloatProperty(name="Damage Health")
+    min_damage_force: bpy.props.FloatProperty(
+        name="Min Damage Force", default=100)
+    damage_health: bpy.props.FloatProperty(name="Damage Health", default=1000)
     unk_float_5c: bpy.props.FloatProperty(name="UnkFloat5C")
-    unk_float_60: bpy.props.FloatProperty(name="UnkFloat60")
-    unk_float_64: bpy.props.FloatProperty(name="UnkFloat64")
-    unk_float_68: bpy.props.FloatProperty(name="UnkFloat68")
-    unk_float_6c: bpy.props.FloatProperty(name="UnkFloat6C")
-    unk_float_70: bpy.props.FloatProperty(name="UnkFloat70")
-    unk_float_74: bpy.props.FloatProperty(name="UnkFloat74")
-    unk_float_78: bpy.props.FloatProperty(name="UnkFloat78")
-    unk_float_a8: bpy.props.FloatProperty(name="UnkFloatA8")
+    unk_float_60: bpy.props.FloatProperty(name="UnkFloat60", default=1)
+    unk_float_64: bpy.props.FloatProperty(name="UnkFloat64", default=1)
+    unk_float_68: bpy.props.FloatProperty(name="UnkFloat68", default=1)
+    unk_float_6c: bpy.props.FloatProperty(name="UnkFloat6C", default=1)
+    unk_float_70: bpy.props.FloatProperty(name="UnkFloat70", default=1)
+    unk_float_74: bpy.props.FloatProperty(name="UnkFloat74", default=1)
+    unk_float_78: bpy.props.FloatProperty(name="UnkFloat78", default=1)
+    unk_float_a8: bpy.props.FloatProperty(name="UnkFloatA8", default=1)
 
 
 class ChildProperties(bpy.types.PropertyGroup):
@@ -126,16 +106,7 @@ def register():
     bpy.types.Object.vehicle_window_properties = bpy.props.PointerProperty(
         type=VehicleWindowProperties)
     bpy.types.Object.sollumz_is_physics_child_mesh = bpy.props.BoolProperty(
-        name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children.")
-
-    # Store properties for the DrawableModel with HasSkin=1. This is so all skinned objects share
-    # the same drawable model properties even when split by group. It seems there is only ever 1
-    # DrawableModel with HasSkin=1 in any given Drawable.
-    bpy.types.Object.skinned_model_properties = bpy.props.PointerProperty(
-        type=SkinnedDrawableModelProperties)
-    # DrawableModel properties stored per mesh for LOD system
-    bpy.types.Mesh.drawable_model_properties = bpy.props.PointerProperty(
-        type=DrawableModelProperties)
+        name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children")
 
     bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
         name="Thickness", default=0.1)
@@ -143,13 +114,13 @@ def register():
     bpy.types.Scene.create_fragment_type = bpy.props.EnumProperty(
         items=[
             (SollumType.FRAGMENT.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGMENT], "Create a fragment object."),
+             SOLLUMZ_UI_NAMES[SollumType.FRAGMENT], "Create a fragment object"),
             (SollumType.FRAGLOD.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGLOD], "Create a fragment LOD object."),
+             SOLLUMZ_UI_NAMES[SollumType.FRAGLOD], "Create a fragment LOD object"),
             (SollumType.FRAGGROUP.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGGROUP], "Create a fragment group object."),
+             SOLLUMZ_UI_NAMES[SollumType.FRAGGROUP], "Create a fragment group object"),
             (SollumType.FRAGCHILD.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGCHILD], "Create a fragment child object."),
+             SOLLUMZ_UI_NAMES[SollumType.FRAGCHILD], "Create a fragment child object"),
         ],
         name="Type",
         default=SollumType.FRAGMENT.value
@@ -160,6 +131,13 @@ def register():
     bpy.types.Bone.sollumz_use_physics = bpy.props.BoolProperty(
         name="Use Physics", description="Whether or not to use physics for this fragment bone")
 
+    bpy.types.Scene.create_bones_fragment = bpy.props.PointerProperty(type=bpy.types.Object,
+                                                                      name="Fragment", description="The Fragment to add the bones to")
+    bpy.types.Scene.create_bones_parent_to_selected = bpy.props.BoolProperty(
+        name="Parent to selected bone", description="Parent all bones to the currently selected bone")
+    bpy.types.Scene.set_mass_amount = bpy.props.FloatProperty(
+        name="Mass", description="Mass", min=0)
+
 
 def unregister():
     del bpy.types.Object.fragment_properties
@@ -167,8 +145,9 @@ def unregister():
     del bpy.types.Object.vehicle_window_properties
     del bpy.types.Object.sollumz_is_physics_child_mesh
 
-    del bpy.types.Object.skinned_model_properties
-    del bpy.types.Mesh.drawable_model_properties
-
     del bpy.types.Bone.group_properties
     del bpy.types.Bone.sollumz_use_physics
+
+    del bpy.types.Scene.create_bones_fragment
+    del bpy.types.Scene.create_bones_parent_to_selected
+    del bpy.types.Scene.set_mass_amount

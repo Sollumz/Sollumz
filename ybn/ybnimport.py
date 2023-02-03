@@ -20,9 +20,9 @@ from ..cwxml.bound import (
 )
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_vertexcolor_layer, create_disc
+from ..tools.meshhelper import create_box, create_color_attr, create_disc
 from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
-from ..tools.blenderhelper import create_mesh_object, create_empty_object
+from ..tools.blenderhelper import create_blender_object, create_empty_object
 from mathutils import Matrix, Vector
 
 
@@ -73,7 +73,7 @@ def create_bound_object(bound_xml: BoundChild | Bound):
 
 def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh: Optional[bpy.types.Mesh] = None):
     """Create a bound mesh object with materials and composite properties set."""
-    obj = create_mesh_object(sollum_type, mesh=mesh)
+    obj = create_blender_object(sollum_type, object_data=mesh)
 
     mat = create_collision_material_from_index(bound_xml.material_index)
     obj.data.materials.append(mat)
@@ -154,12 +154,15 @@ def create_bound_geometry(geom_xml: BoundGeometry):
         geom_xml.vertices, triangles, geom_xml, materials)
     mesh.transform(Matrix.Translation(geom_xml.geometry_center))
 
-    geom_obj = create_bound_child_mesh(
-        geom_xml, SollumType.BOUND_GEOMETRY, mesh)
+    geom_obj = create_blender_object(
+        SollumType.BOUND_GEOMETRY, object_data=mesh)
+    set_bound_child_properties(geom_xml, geom_obj)
 
     if geom_xml.vertices_2:
         create_deformed_shape_keys(
             geom_obj, triangles, geom_xml, materials)
+
+    set_bound_geometry_properties(geom_xml, geom_obj)
 
     return geom_obj
 
@@ -176,8 +179,8 @@ def create_bvh_obj(bvh_xml: BoundGeometryBVH):
 
     mesh = create_bound_mesh_data(
         bvh_xml.vertices, triangles, bvh_xml, materials)
-    bound_geom_obj = create_mesh_object(
-        SollumType.BOUND_POLY_TRIANGLE, mesh=mesh)
+    bound_geom_obj = create_blender_object(
+        SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
     bound_geom_obj.location = bvh_xml.geometry_center
     bound_geom_obj.parent = bvh_obj
 
@@ -359,7 +362,7 @@ def create_bound_mesh_data(vertices: list[Vector], triangles: list[PolyTriangle]
     mesh.from_pydata(verts, [], faces)
 
     if geometry.vertex_colors:
-        create_vertexcolor_layer(mesh, 0, geometry.vertex_colors)
+        create_color_attr(mesh, geometry.vertex_colors)
 
     apply_bound_geom_materials(mesh, triangles, materials)
 

@@ -129,6 +129,9 @@ class VerticesProperty(ElementProperty):
         element = ET.Element(self.tag_name)
         text = ["\n"]
 
+        if not self.value:
+            return
+
         for vertex in self.value:
             if not isinstance(vertex, Vector):
                 raise TypeError(

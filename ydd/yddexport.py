@@ -1,46 +1,48 @@
-import os
+import bpy
 from ..cwxml.drawable import DrawableDictionary
-from ..ydr.ydrexport import drawable_from_object, get_used_materials, texture_dictionary_from_materials
-from ..tools.blenderhelper import remove_number_suffix
+from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
 from ..tools import jenkhash
-from ..sollumz_properties import SollumType
+from ..sollumz_properties import SollumType, SollumzExportSettings
+
+
+def export_ydd(ydd_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
+    ydd_xml = create_ydd_xml(ydd_obj, export_settings.auto_calculate_bone_tag)
+
+    write_embedded_textures(ydd_obj, filepath)
+
+    ydd_xml.write_xml(filepath)
+
+
+def create_ydd_xml(ydd_obj: bpy.types.Object, auto_calc_bone_tag: bool = False):
+    ydd_xml = DrawableDictionary()
+
+    ydd_armature = find_ydd_armature(
+        ydd_obj) if ydd_obj.type != "ARMATURE" else ydd_obj
+
+    for child in ydd_obj.children:
+        if child.sollum_type != SollumType.DRAWABLE:
+            continue
+
+        if child.type != "ARMATURE":
+            armature_obj = ydd_armature
+        else:
+            armature_obj = None
+
+        drawable_xml = create_drawable_xml(
+            child, armature_obj=armature_obj, auto_calc_bone_tag=auto_calc_bone_tag)
+        ydd_xml.append(drawable_xml)
+
+    ydd_xml.sort(key=get_hash)
+
+    return ydd_xml
+
+
+def find_ydd_armature(ydd_obj: bpy.types.Object):
+    """Find first drawable with an armature in ``ydd_obj``."""
+    for child in ydd_obj.children:
+        if child.type == "ARMATURE":
+            return child
 
 
 def get_hash(item):
     return jenkhash.Generate(item.name.split(".")[0])
-
-
-def drawable_dict_from_object(exportop, obj, filepath, export_settings):
-
-    drawable_dict = DrawableDictionary()
-
-    bones = None
-    for child in obj.children:
-        if child.sollum_type == SollumType.DRAWABLE and child.type == "ARMATURE" and len(child.pose.bones) > 0:
-            bones = child.pose.bones
-            break
-
-    for child in obj.children:
-        if child.sollum_type == SollumType.DRAWABLE:
-            drawable = drawable_from_object(
-                exportop, child, filepath, bones, None, write_textures=False)
-
-            if export_settings.exclude_skeleton:
-                drawable.skeleton = None
-
-            drawable_dict.append(drawable)
-
-    # Write embedded texture dict folder
-    ydd_mats = get_used_materials(obj)
-    foldername = remove_number_suffix(obj.name.lower())
-    texture_dictionary_from_materials(
-        foldername, ydd_mats, os.path.dirname(filepath))
-
-    drawable_dict.sort(key=get_hash)
-
-    return drawable_dict
-
-
-def export_ydd(exportop, obj, filepath, export_settings):
-    drawable_dict_from_object(exportop, obj, filepath,
-                              export_settings).write_xml(filepath)

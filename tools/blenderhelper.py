@@ -11,6 +11,10 @@ def get_addon_preferences(context: bpy.types.Context) -> SollumzAddonPreferences
     return context.preferences.addons[__package__.split(".")[0]].preferences
 
 
+def get_all_collections():
+    return [bpy.context.scene.collection, *bpy.data.collections]
+
+
 def remove_number_suffix(string: str):
     """Remove the .00# at that Blender puts at the end of object names."""
     match = re.search("\.[0-9]", string)
@@ -279,11 +283,11 @@ def get_object_with_children(obj):
     return objs
 
 
-def create_mesh_object(sollum_type: SollumType, name: Optional[str] = None, mesh: Optional[bpy.types.Mesh] = None) -> bpy.types.Object:
-    """Create a bpy mesh object of the given sollum type and link it to the scene."""
+def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, object_data: Optional[bpy.types.Mesh] = None) -> bpy.types.Object:
+    """Create a bpy object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
-    mesh = mesh or bpy.data.meshes.new(name)
-    obj = bpy.data.objects.new(name, mesh)
+    object_data = object_data or bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, object_data)
     obj.sollum_type = sollum_type
     bpy.context.collection.objects.link(obj)
 

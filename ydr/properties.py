@@ -30,6 +30,26 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
     )
 
 
+class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
+    very_high: bpy.props.PointerProperty(type=DrawableModelProperties)
+    high: bpy.props.PointerProperty(type=DrawableModelProperties)
+    medium: bpy.props.PointerProperty(type=DrawableModelProperties)
+    low: bpy.props.PointerProperty(type=DrawableModelProperties)
+    very_low: bpy.props.PointerProperty(type=DrawableModelProperties)
+
+    def get_lod(self, lod_level: LODLevel) -> DrawableModelProperties:
+        if lod_level == LODLevel.VERYHIGH:
+            return self.very_high
+        elif lod_level == LODLevel.HIGH:
+            return self.high
+        elif lod_level == LODLevel.MEDIUM:
+            return self.medium
+        elif lod_level == LODLevel.LOW:
+            return self.low
+        elif lod_level == LODLevel.VERYLOW:
+            return self.very_low
+
+
 class ShaderProperties(bpy.types.PropertyGroup):
     renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0)
     filename: bpy.props.StringProperty(
@@ -108,9 +128,11 @@ class LightProperties(bpy.types.PropertyGroup):
     culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
     unknown_45: bpy.props.FloatProperty(name="Unknown 45")
     unknown_46: bpy.props.FloatProperty(name="Unknown 46")
-    volume_intensity: bpy.props.FloatProperty(name="Volume Intensity", default=1.0)
+    volume_intensity: bpy.props.FloatProperty(
+        name="Volume Intensity", default=1.0)
     shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")
-    volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale", default=1.0)
+    volume_size_scale: bpy.props.FloatProperty(
+        name="Volume Size Scale", default=1.0)
     volume_outer_color: bpy.props.FloatVectorProperty(
         name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0, default=(1.0, 1.0, 1.0))
     light_hash: bpy.props.IntProperty(name="Light Hash")
@@ -126,7 +148,8 @@ class LightProperties(bpy.types.PropertyGroup):
     volumetric_fade_distance: bpy.props.FloatProperty(
         name="Volumetric Fade Distance")
     shadow_near_clip: bpy.props.FloatProperty(name="Shadow Near Clip")
-    corona_intensity: bpy.props.FloatProperty(name="Corona Intensity", default=1.0)
+    corona_intensity: bpy.props.FloatProperty(
+        name="Corona Intensity", default=1.0)
     corona_z_bias: bpy.props.FloatProperty(name="Corona Z Bias", default=0.1)
     tangent: bpy.props.FloatVectorProperty(name="Tangent")
     cone_inner_angle: bpy.props.FloatProperty(name="Cone Inner Angle")
@@ -249,8 +272,6 @@ def register():
     bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
         type=DrawableProperties)
-    bpy.types.Object.drawable_model_properties = bpy.props.PointerProperty(
-        type=DrawableModelProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(
         type=ShaderProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(
@@ -260,22 +281,22 @@ def register():
     bpy.types.ShaderNodeTexImage.sollumz_texture_name = bpy.props.StringProperty(
         name="Texture Name", description="Name of texture.", get=get_texture_name)
 
-    bpy.types.Scene.create_drawable_type = bpy.props.EnumProperty(
-        items=[
-            (SollumType.DRAWABLE.value,
-             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], "Create a drawable object. (if objects are selected a drawable will be created with them as the children)"),
-            (SollumType.DRAWABLE_MODEL.value,
-             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL], "Create a drawable model object."),
-            (SollumType.DRAWABLE_GEOMETRY.value,
-             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY], "Create a drawable geoemtry object."),
-            (SollumType.DRAWABLE_DICTIONARY.value,
-             SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY], "Create a drawable dictionary object."),
-        ],
-        name="Type",
-        default=SollumType.DRAWABLE.value
-    )
+    # Store properties for the DrawableModel with HasSkin=1. This is so all skinned objects share
+    # the same drawable model properties even when split by group. It seems there is only ever 1
+    # DrawableModel with HasSkin=1 in any given Drawable.
+    bpy.types.Object.skinned_model_properties = bpy.props.PointerProperty(
+        type=SkinnedDrawableModelProperties)
+    # DrawableModel properties stored per mesh for LOD system
+    bpy.types.Mesh.drawable_model_properties = bpy.props.PointerProperty(
+        type=DrawableModelProperties)
+    # For backwards compatibility
+    bpy.types.Object.drawable_model_properties = bpy.props.PointerProperty(
+        type=DrawableModelProperties)
+
+    bpy.types.Scene.create_seperate_drawables = bpy.props.BoolProperty(
+        name="Separate Objects", description="Create a separate Drawable for each selected object")
     bpy.types.Scene.auto_create_embedded_col = bpy.props.BoolProperty(
-        name="Auto-Embed Collision", description="Automatically create embedded collision.")
+        name="Auto-Embed Collision", description="Automatically create embedded static collision")
 
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(
         type=BoneProperties)
@@ -312,7 +333,8 @@ def unregister():
     del bpy.types.Scene.shader_material_index
     del bpy.types.Scene.shader_materials
     del bpy.types.Object.drawable_properties
-    del bpy.types.Object.drawable_model_properties
+    del bpy.types.Mesh.drawable_model_properties
+    del bpy.types.Object.skinned_model_properties
     del bpy.types.Material.shader_properties
     del bpy.types.ShaderNodeTexImage.texture_properties
     del bpy.types.ShaderNodeTexImage.texture_flags
@@ -322,6 +344,7 @@ def unregister():
     del bpy.types.Light.time_flags
     del bpy.types.Light.light_flags
     del bpy.types.Light.is_capsule
+    del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

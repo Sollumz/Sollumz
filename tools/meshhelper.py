@@ -192,13 +192,15 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def create_uv_layer(mesh: bpy.types.Mesh, layer_index: int, coords: list[tuple, tuple], flip_uvs=True):
+def create_uv_layer(mesh: bpy.types.Mesh, coords: dict[int, tuple], flip_uvs=True):
+    """Create a uv layer for ``mesh`` with the specified index. ``coords`` should map uv coordinates to vertex indices."""
     uv_layer = mesh.uv_layers.new()
-    uv_layer.name = f"UVMap {layer_index + 1}"
+    uv_layer.name = f"UVMap {len(mesh.uv_layers)}"
 
     for i, uv_loop in enumerate(uv_layer.data):
         vert_index = mesh.loops[i].vertex_index
-        if vert_index >= len(coords):
+        if vert_index not in coords:
+            uv_loop.uv = (0, 0)
             continue
         uv = coords[vert_index]
         if flip_uvs:
@@ -206,13 +208,15 @@ def create_uv_layer(mesh: bpy.types.Mesh, layer_index: int, coords: list[tuple, 
         uv_loop.uv = uv
 
 
-def create_vertexcolor_layer(mesh: bpy.types.Mesh, num: int, colors: list[tuple[float, float, float]]):
-    mesh.vertex_colors.new(name="Vertex Colors " + str(num))
-    color_layer = mesh.vertex_colors[num]
+def create_color_attr(mesh: bpy.types.Mesh, colors: dict[int, tuple]):
+    """Create a color attribute layer for ``mesh`` with the specified index. ``colors`` should map RGBA colors to vertex indices."""
+    layer_num = len(mesh.color_attributes) + 1
+    color_attr = mesh.color_attributes.new(
+        name=f"Color {layer_num}", type="BYTE_COLOR", domain="CORNER")
 
-    for i in range(len(color_layer.data)):
+    for i, byte_color in enumerate(color_attr.data):
         rgba = colors[mesh.loops[i].vertex_index]
-        color_layer.data[i].color = divide_list(rgba, 255)
+        byte_color.color_srgb = divide_list(rgba, 255)
 
 
 def flip_uv(uv):
@@ -220,6 +224,14 @@ def flip_uv(uv):
     v = (uv[1] - 1.0) * -1
 
     return [u, v]
+
+
+def get_extents_from_points(points: list[tuple]):
+    """Returns min, max"""
+    # TODO: Use for all BB calculations
+    x, y, z = zip(*points)
+
+    return (min(x), min(y), min(z)), (max(x), max(y), max(z))
 
 
 def get_extents(obj: bpy.types.Object):

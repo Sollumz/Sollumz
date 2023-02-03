@@ -417,6 +417,9 @@ class MatrixProperty(ElementProperty):
         return MatrixProperty(element.tag, m)
 
     def to_xml(self):
+        if self.value is None:
+            return
+
         txt = "\n"
         for i in range(self.size):
             txt += f"{str(self.value[i][0])} "

@@ -81,7 +81,7 @@ class TransformsList(ListProperty):
         super().__init__(tag_name or TransformsList.tag_name)
 
 
-class Children(ElementTree):
+class PhysicsChild(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -93,15 +93,15 @@ class Children(ElementTree):
         self.unk_float = ValueProperty("UnkFloat")
         self.unk_vec = Vector4Property("UnkVec")
         self.inertia_tensor = Vector4Property("InertiaTensor")
-        self.drawable = FragmentDrawable()
+        self.drawable = Drawable()
 
 
 class ChildrenList(ListProperty):
-    list_type = Children
+    list_type = PhysicsChild
     tag_name = "Children"
 
 
-class Group(ElementTree):
+class PhysicsGroup(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -140,11 +140,11 @@ class Group(ElementTree):
 
 
 class GroupsList(ListProperty):
-    list_type = Group
+    list_type = PhysicsGroup
     tag_name = "Groups"
 
 
-class LOD(ElementTree):
+class PhysicsLOD(ElementTree):
     tag_name = "LOD"
 
     def __init__(self, tag_name="LOD"):
@@ -174,9 +174,9 @@ class Physics(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.lod1 = LOD("LOD1")
-        self.lod2 = LOD("LOD2")
-        self.lod3 = LOD("LOD3")
+        self.lod1 = PhysicsLOD("LOD1")
+        self.lod2 = PhysicsLOD("LOD2")
+        self.lod3 = PhysicsLOD("LOD3")
 
 
 class ShatterMapProperty(ElementProperty):
@@ -234,13 +234,6 @@ class VehicleGlassWindows(ListProperty):
     tag_name = "VehicleGlassWindows"
 
 
-class FragmentDrawable(Drawable):
-
-    def __init__(self):
-        super().__init__()
-        self.matrix = MatrixProperty("Matrix")
-
-
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
 
@@ -257,7 +250,7 @@ class Fragment(ElementTree, AbstractClass):
         self.unknown_cc = ValueProperty("UnknownCC")
         self.gravity_factor = ValueProperty("GravityFactor")
         self.buoyancy_factor = ValueProperty("BuoyancyFactor")
-        self.drawable = FragmentDrawable()
+        self.drawable = Drawable()
         self.bones_transforms = BoneTransformsList()
         self.physics = Physics()
         self.lights = Lights()

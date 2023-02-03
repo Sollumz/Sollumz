@@ -56,8 +56,6 @@ class SollumType(str, Enum):
     YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
     YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
 
-    FRAG_GEOM = "sollumz_fragment_geometry"
-
 
 class LightType(str, Enum):
     NONE = "sollumz_light_none"
@@ -70,6 +68,7 @@ class MaterialType(str, Enum):
     NONE = "sollumz_material_none",
     SHADER = "sollumz_material_shader",
     COLLISION = "sollumz_material_collision"
+    SHATTER_MAP = "sollumz_material_shard"
 
 
 class TextureUsage(str, Enum):
@@ -162,7 +161,6 @@ FRAGMENT_TYPES = [
     SollumType.FRAGGROUP,
     SollumType.FRAGCHILD,
     SollumType.FRAGLOD,
-    SollumType.FRAG_GEOM,
     SollumType.FRAGVEHICLEWINDOW,
 ]
 
@@ -245,7 +243,6 @@ SOLLUMZ_UI_NAMES = {
     SollumType.FRAGCHILD: "Fragment Child",
     SollumType.FRAGLOD: "Fragment LOD",
     SollumType.FRAGVEHICLEWINDOW: "Fragment Vehicle Window",
-    SollumType.FRAG_GEOM: "Fragment Geometry",
 
     SollumType.NONE: "None",
     SollumType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
@@ -278,6 +275,7 @@ SOLLUMZ_UI_NAMES = {
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
     MaterialType.COLLISION: "Sollumz Collision Material",
+    MaterialType.SHATTER_MAP: "Sollumz Shatter Map",
 
     TextureUsage.UNKNOWN: "UNKNOWN",
     TextureUsage.TINTPALETTE: "TINTPALETTE",
@@ -535,21 +533,15 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
-    join_geometries: bpy.props.BoolProperty(
-        name="Join Geometries",
-        description="Joins the drawables geometries into a single mesh.",
-        default=False,
-    )
-
     import_with_hi: bpy.props.BoolProperty(
         name="Import with _hi",
-        description="Import the selected .yft.xml with the <name>_hi.yft.xml placed in the very high LOD (must be in the same directory).",
+        description="Import the selected .yft.xml with the <name>_hi.yft.xml placed in the very high LOD (must be in the same directory)",
         default=True
     )
 
     split_by_group: bpy.props.BoolProperty(
         name="Split Mesh by Group",
-        description="Splits the mesh by vertex groups.",
+        description="Splits the mesh by vertex groups",
         default=True,
     )
 
@@ -652,25 +644,19 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
 
     auto_calculate_bone_tag: bpy.props.BoolProperty(
         name="Auto Calculate Bone Tag",
-        description="Automatically calculate bone tags.",
+        description="Automatically calculate bone tags",
         default=True,
-    )
-
-    export_with_hi: bpy.props.BoolProperty(
-        name="Export With _hi",
-        description="Exports fragment with _hi file.",
-        default=False
     )
 
     auto_calculate_inertia: bpy.props.BoolProperty(
         name="Auto Calculate Inertia",
-        description="Automatically calculate inertia for physics objects.",
+        description="Automatically calculate inertia for physics objects",
         default=False
     )
 
     auto_calculate_volume: bpy.props.BoolProperty(
         name="Auto Calculate Volume",
-        description="Automatically calculate volume for physics objects.",
+        description="Automatically calculate volume for physics objects",
         default=False
     )
 
@@ -730,107 +716,6 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "extra_color_swatches")
 
 
-def get_all_collections():
-    return [bpy.context.scene.collection, *bpy.data.collections]
-
-
-def hide_obj_and_children(obj, value):
-    if obj.name in bpy.context.view_layer.objects:
-        obj.hide_set(value)
-    for child in obj.children:
-        hide_obj_and_children(child, value)
-
-
-def get_bool_prop(obj, key):
-    try:
-        return obj[key]
-    except KeyError:
-        return False
-
-
-def get_hide_collisions(self):
-    return get_bool_prop(self, "hide_collision")
-
-
-def set_hide_collisions(self, value):
-    self["hide_collision"] = value
-
-    for collection in get_all_collections():
-        for obj in collection.all_objects:
-            if obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES:
-                if obj.name in bpy.context.view_layer.objects:
-                    obj.hide_set(value)
-
-
-def get_hide_high_lods(self):
-    return get_bool_prop(self, "hide_high_lods")
-
-
-def set_hide_high_lods(self, value):
-    self["hide_high_lods"] = value
-
-    for collection in get_all_collections():
-        for obj in collection.all_objects:
-            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-                if obj.drawable_model_properties.sollum_lod == LODLevel.HIGH:
-                    hide_obj_and_children(obj, value)
-
-
-def get_hide_medium_lods(self):
-    return get_bool_prop(self, "hide_medium_lods")
-
-
-def set_hide_medium_lods(self, value):
-    self["hide_medium_lods"] = value
-
-    for collection in get_all_collections():
-        for obj in collection.all_objects:
-            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-                if obj.drawable_model_properties.sollum_lod == LODLevel.MEDIUM:
-                    hide_obj_and_children(obj, value)
-
-
-def get_hide_low_lods(self):
-    return get_bool_prop(self, "hide_low_lods")
-
-
-def set_hide_low_lods(self, value):
-    self["hide_low_lods"] = value
-
-    for collection in get_all_collections():
-        for obj in collection.all_objects:
-            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-                if obj.drawable_model_properties.sollum_lod == LODLevel.LOW:
-                    hide_obj_and_children(obj, value)
-
-
-def get_hide_very_low_lods(self):
-    return get_bool_prop(self, "hide_very_low_lods")
-
-
-def set_hide_very_low_lods(self, value):
-    self["hide_very_low_lods"] = value
-
-    for collection in get_all_collections():
-        for obj in collection.all_objects:
-            if obj.sollum_type == SollumType.DRAWABLE_MODEL:
-                if obj.drawable_model_properties.sollum_lod == LODLevel.VERYLOW:
-                    hide_obj_and_children(obj, value)
-
-
-def get_hide_vehicle_windows(self):
-    return get_bool_prop(self, "hide_vehicle_windows")
-
-
-def set_hide_vehicle_windows(self, value):
-    self["hide_vehicle_windows"] = value
-
-    for collection in get_all_collections():
-        for obj in collection.all_objects:
-            if obj.sollum_type == SollumType.FRAGVEHICLEWINDOW:
-                hide_obj_and_children(obj, value)
-
-
 def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(SollumType),
@@ -850,19 +735,6 @@ def register():
 
     bpy.types.Object.entity_properties = bpy.props.PointerProperty(
         type=ObjectEntityProperties)
-
-    bpy.types.Scene.hide_collision = bpy.props.BoolProperty(
-        name="Hide Collision", get=get_hide_collisions, set=set_hide_collisions)
-    bpy.types.Scene.hide_high_lods = bpy.props.BoolProperty(
-        name="Hide High Models", get=get_hide_high_lods, set=set_hide_high_lods)
-    bpy.types.Scene.hide_medium_lods = bpy.props.BoolProperty(
-        name="Hide Medium Models", get=get_hide_medium_lods, set=set_hide_medium_lods)
-    bpy.types.Scene.hide_low_lods = bpy.props.BoolProperty(
-        name="Hide Low Models", get=get_hide_low_lods, set=set_hide_low_lods)
-    bpy.types.Scene.hide_very_low_lods = bpy.props.BoolProperty(
-        name="Hide Very Low Models", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
-    bpy.types.Scene.hide_vehicle_windows = bpy.props.BoolProperty(
-        name="Hide Vehicle Windows", get=get_hide_vehicle_windows, set=set_hide_vehicle_windows)
 
     bpy.types.Scene.vert_paint_color1 = bpy.props.FloatVectorProperty(
         name="Vert Color 1",
@@ -920,12 +792,6 @@ def register():
 
     bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
         name="Alpha", min=-1, max=1)
-    bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
-        name="Separate Objects", description="Create a object for each selected mesh.")
-    bpy.types.Scene.create_center_to_selection = bpy.props.BoolProperty(
-        name="Center to Selection", description="Center newly created objects to selection.", default=True)
-    bpy.types.Scene.use_mesh_name = bpy.props.BoolProperty(
-        name="Use Name(s)", description="Use the names of the meshes for the created objects.", default=True)
 
     bpy.types.Scene.debug_sollum_type = bpy.props.EnumProperty(
         items=[(SollumType.DRAWABLE.value, SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]),
@@ -953,21 +819,9 @@ def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
     del bpy.types.Object.entity_properties
-    del bpy.types.Scene.hide_collision
-    del bpy.types.Scene.hide_high_lods
-    del bpy.types.Scene.hide_medium_lods
-    del bpy.types.Scene.hide_low_lods
-    del bpy.types.Scene.hide_very_low_lods
-    del bpy.types.Scene.vert_paint_color1
-    del bpy.types.Scene.vert_paint_color2
-    del bpy.types.Scene.vert_paint_color3
-    del bpy.types.Scene.vert_paint_color4
     del bpy.types.Scene.vert_paint_alpha
-    del bpy.types.Scene.create_seperate_objects
-    del bpy.types.Scene.use_mesh_name
     del bpy.types.Scene.debug_sollum_type
     del bpy.types.Scene.all_sollum_type
-    del bpy.types.Scene.create_center_to_selection
     del bpy.types.Scene.debug_lights_only_selected
 
     bpy.utils.unregister_class(SollumzAddonPreferences)

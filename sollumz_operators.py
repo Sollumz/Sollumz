@@ -2,9 +2,10 @@ import traceback
 import os
 import pathlib
 import bpy
+from collections import defaultdict
 from bpy_extras.io_utils import ImportHelper
 from .sollumz_helper import SOLLUMZ_OT_base
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags, ArchetypeType
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags, ArchetypeType, LODLevel
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
 from .cwxml.bound import YBN
@@ -25,8 +26,10 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
-from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix
+from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
+from .ybn.properties import BoundProperties
+from .ybn.properties import BoundFlags
 
 from . import logger
 
@@ -37,7 +40,6 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_label = "Import Codewalker XML"
     bl_action = "import"
     bl_showtime = True
-    bl_update_view = True
 
     files: bpy.props.CollectionProperty(
         name="File Path",
@@ -67,7 +69,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
                 import_ydr(filepath, self.import_settings)
                 valid_type = True
             elif ext == YDD.file_extension:
-                import_ydd(self, filepath, self.import_settings)
+                import_ydd(filepath, self.import_settings)
                 valid_type = True
             elif ext == YFT.file_extension:
                 import_yft(filepath, self.import_settings)
@@ -249,18 +251,18 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             if obj.sollum_type == SollumType.DRAWABLE:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YDR.file_extension)
-                export_ydr(self, obj, filepath)
+                export_ydr(obj, filepath, self.export_settings)
                 valid_type = True
             elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YDD.file_extension)
-                export_ydd(self, obj, filepath, self.export_settings)
+                export_ydd(obj, filepath, self.export_settings)
                 valid_type = True
-            # elif obj.sollum_type == SollumType.FRAGMENT:
-            #     filepath = self.get_filepath(
-            #         remove_number_suffix(obj.name.lower()), YFT.file_extension)
-            #     export_yft(self, obj, filepath, self.export_settings)
-            #     valid_type = True
+            elif obj.sollum_type == SollumType.FRAGMENT:
+                filepath = self.get_filepath(
+                    remove_number_suffix(obj.name.lower()), YFT.file_extension)
+                export_yft(obj, filepath, self.export_settings)
+                valid_type = True
             elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
                 filepath = self.get_filepath(
                     remove_number_suffix(obj.name.lower()), YCD.file_extension)
@@ -470,90 +472,82 @@ def sollumz_menu_func_export(self, context):
                          text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
 
 
-class SOLLUMZ_OT_debug_hierarchy(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_debug_hierarchy(bpy.types.Operator):
     """Debug: Fix incorrect Sollum Type after update. Must set correct type for top-level object first."""
     bl_idname = "sollumz.debug_hierarchy"
     bl_label = "Fix Hierarchy"
-    bl_action = bl_label
+    bl_options = {"UNDO"}
     bl_order = 100
 
-    def run(self, context):
+    def execute(self, context):
         sollum_type = context.scene.debug_sollum_type
         for obj in context.selected_objects:
             if len(obj.children) < 1:
-                self.message(f"{obj.name} has no children! Skipping...")
+                self.report(
+                    {"INFO"}, f"{obj.name} has no children! Skipping...")
                 continue
 
             obj.sollum_type = sollum_type
             if sollum_type == SollumType.DRAWABLE:
-                for model in obj.children:
-                    if model.type == "EMPTY":
-                        model.sollum_type = SollumType.DRAWABLE_MODEL
-                        for geom in model.children:
-                            if geom.type == "MESH":
-                                geom.sollum_type = SollumType.DRAWABLE_GEOMETRY
+                self.fix_drawable(obj)
             elif sollum_type == SollumType.DRAWABLE_DICTIONARY:
-                for draw in obj.children:
-                    if draw.type == "EMPTY":
-                        draw.sollum_type = SollumType.DRAWABLE
-                        for model in draw.children:
-                            if model.type == "EMPTY":
-                                model.sollum_type = SollumType.DRAWABLE_MODEL
-                                for geom in model.children:
-                                    if geom.type == "MESH":
-                                        geom.sollum_type = SollumType.DRAWABLE_GEOMETRY
+                self.fix_drawable_dict(obj)
             elif sollum_type == SollumType.BOUND_COMPOSITE:
-                for bound in obj.children:
-                    if bound.type == "EMPTY":
-                        if "CLOTH" in bound.name:
-                            bound.sollum_type = SollumType.BOUND_CLOTH
-                            continue
+                self.fix_composite(obj)
 
-                        if "BVH" in bound.name:
-                            bound.sollum_type = SollumType.BOUND_GEOMETRYBVH
+        self.report({"INFO"}, "Hierarchy successfuly set.")
+
+        return {"FINISHED"}
+
+    def fix_drawable(self, obj: bpy.types.Object):
+        for model in obj.children:
+            if model.type != "MESH":
+                continue
+
+            model.sollum_type = SollumType.DRAWABLE_MODEL
+
+    def fix_drawable_dict(self, obj: bpy.types.Object):
+        for draw in obj.children:
+            if draw.type != "EMPTY":
+                continue
+
+            draw.sollum_type = SollumType.DRAWABLE
+            self.fix_drawable(draw)
+
+    def fix_composite(self, obj: bpy.types.Object):
+        for bound in obj.children:
+            if bound.type == "EMPTY":
+                if "cloth" in bound.name.lower():
+                    bound.sollum_type = SollumType.BOUND_CLOTH
+                    continue
+
+                if "bvh" in bound.name.lower():
+                    bound.sollum_type = SollumType.BOUND_GEOMETRYBVH
+                else:
+                    bound.sollum_type = SollumType.BOUND_GEOMETRY
+                for geom in bound.children:
+                    if geom.type == "MESH":
+                        if "Box" in geom.name:
+                            geom.sollum_type = SollumType.BOUND_POLY_BOX
+                        elif "Sphere" in geom.name:
+                            geom.sollum_type = SollumType.BOUND_POLY_SPHERE
+                        elif "Capsule" in geom.name:
+                            geom.sollum_type = SollumType.BOUND_POLY_CAPSULE
+                        elif "Cylinder" in geom.name:
+                            geom.sollum_type = SollumType.BOUND_POLY_CYLINDER
                         else:
-                            bound.sollum_type = SollumType.BOUND_GEOMETRY
-                        for geom in bound.children:
-                            if geom.type == "MESH":
-                                if "Box" in geom.name:
-                                    geom.sollum_type = SollumType.BOUND_POLY_BOX
-                                elif "Sphere" in geom.name:
-                                    geom.sollum_type = SollumType.BOUND_POLY_SPHERE
-                                elif "Capsule" in geom.name:
-                                    geom.sollum_type = SollumType.BOUND_POLY_CAPSULE
-                                elif "Cylinder" in geom.name:
-                                    geom.sollum_type = SollumType.BOUND_POLY_CYLINDER
-                                else:
-                                    geom.sollum_type = SollumType.BOUND_POLY_TRIANGLE
-                    if bound.type == "MESH":
-                        if "Box" in bound.name:
-                            bound.sollum_type = SollumType.BOUND_POLY_BOX
-                        elif "Sphere" in bound.name:
-                            bound.sollum_type = SollumType.BOUND_POLY_SPHERE
-                        elif "Capsule" in bound.name:
-                            bound.sollum_type = SollumType.BOUND_POLY_CAPSULE
-                        elif "Cylinder" in bound.name:
-                            bound.sollum_type = SollumType.BOUND_POLY_CYLINDER
-                        else:
-                            bound.sollum_type = SollumType.BOUND_POLY_TRIANGLE
-        self.message("Hierarchy successfuly set.")
-        return True
-
-
-class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Debug: Set Sollum Type"""
-    bl_idname = "sollumz.debug_set_sollum_type"
-    bl_label = "Set Sollum Type"
-    bl_action = bl_label
-    bl_order = 100
-
-    def run(self, context):
-        sel_sollum_type = context.scene.all_sollum_type
-        for obj in context.selected_objects:
-            obj.sollum_type = sel_sollum_type
-        self.message(
-            f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sel_sollum_type]}.")
-        return True
+                            geom.sollum_type = SollumType.BOUND_POLY_TRIANGLE
+            if bound.type == "MESH":
+                if "box" in bound.name.lower():
+                    bound.sollum_type = SollumType.BOUND_POLY_BOX
+                elif "sphere" in bound.name.lower():
+                    bound.sollum_type = SollumType.BOUND_POLY_SPHERE
+                elif "capsule" in bound.name.lower():
+                    bound.sollum_type = SollumType.BOUND_POLY_CAPSULE
+                elif "cylinder" in bound.name.lower():
+                    bound.sollum_type = SollumType.BOUND_POLY_CYLINDER
+                else:
+                    bound.sollum_type = SollumType.BOUND_POLY_TRIANGLE
 
 
 class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
@@ -604,6 +598,155 @@ class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):
                             new_entity[k] = v
 
                         new_entity.attached_entity_set_id = str(entity_set.id)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
+    """Convert old drawable model to use new LOD system"""
+    bl_idname = "sollumz.migratedrawable"
+    bl_label = "Migrate Drawable Model(s)"
+    bl_options = {"UNDO"}
+
+    def execute(self, context):
+        selected_models = [
+            obj for obj in context.selected_objects if obj.sollum_type == SollumType.DRAWABLE_MODEL]
+
+        if not selected_models:
+            self.report({"INFO"}, "No drawable models selected!")
+            return {"CANCELLED"}
+
+        parent = selected_models[0].parent
+
+        models_by_lod: dict[LODLevel,
+                            list[bpy.types.Object]] = defaultdict(list)
+
+        for obj in selected_models:
+            models_by_lod[obj.drawable_model_properties.sollum_lod].extend(
+                obj.children)
+            bpy.data.objects.remove(obj)
+
+        model_obj = create_blender_object(SollumType.DRAWABLE_MODEL)
+        model_obj.sollumz_lods.add_empty_lods()
+        old_mesh = model_obj.data
+
+        for lod_level, geometries in models_by_lod.items():
+
+            if len(geometries) > 1:
+                joined_obj = join_objects(geometries)
+            else:
+                joined_obj = geometries[0]
+
+            model_obj.sollumz_lods.set_lod_mesh(lod_level, joined_obj.data)
+            model_obj.sollumz_lods.set_active_lod(lod_level)
+
+            context.view_layer.objects.active = joined_obj
+            model_obj.select_set(True)
+
+            bpy.ops.object.make_links_data(type='MODIFIERS')
+            bpy.data.objects.remove(joined_obj)
+
+        bpy.data.meshes.remove(old_mesh)
+
+        model_obj.parent = parent
+
+        # Set highest lod level
+        for lod_level in [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]:
+            if model_obj.sollumz_lods.get_lod(lod_level) != None:
+                model_obj.sollumz_lods.set_active_lod(lod_level)
+                break
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
+    """Convert old bound geometries to new hiearchy using shape keys for damaged layers"""
+    bl_idname = "sollumz.migrateboundgeoms"
+    bl_label = "Migrate Bound Geometry(s)"
+    bl_options = {"UNDO"}
+
+    def execute(self, context):
+        selected = [
+            obj for obj in context.selected_objects if obj.sollum_type == SollumType.BOUND_GEOMETRY]
+
+        if not selected:
+            self.report({"INFO"}, "No bound geometries selected!")
+            return {"CANCELLED"}
+
+        for obj in selected:
+            bound_meshes = []
+            damaged_meshes = []
+
+            for child in obj.children:
+                if child.type != "MESH":
+                    continue
+
+                child.data.transform(child.matrix_basis)
+                child.matrix_basis.identity()
+
+                if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
+                    bound_meshes.append(child)
+                elif child.sollum_type == SollumType.BOUND_POLY_TRIANGLE2:
+                    damaged_meshes.append(child)
+
+            joined_obj = join_objects(bound_meshes)
+            joined_obj.sollum_type = SollumType.BOUND_GEOMETRY
+            joined_obj.name = obj.name
+            joined_obj.parent = obj.parent
+
+            self.set_bound_geometry_properties(obj, joined_obj)
+            self.set_composite_flags(obj, joined_obj)
+
+            joined_obj.matrix_basis = obj.matrix_basis
+
+            if damaged_meshes:
+                joined_damaged_obj = join_objects(damaged_meshes)
+                self.set_shape_keys(joined_obj, joined_damaged_obj)
+
+                bpy.data.meshes.remove(joined_damaged_obj.data)
+
+            bpy.data.objects.remove(obj)
+
+        return {"FINISHED"}
+
+    def set_bound_geometry_properties(self, old_obj: bpy.types.Object, new_obj: bpy.types.Object):
+        for prop_name in BoundProperties.__annotations__.keys():
+            value = getattr(old_obj.bound_properties, prop_name)
+            setattr(new_obj.bound_properties, prop_name, value)
+
+    def set_composite_flags(self, old_obj: bpy.types.Object, new_obj: bpy.types.Object):
+        def set_flags(prop_name: str):
+            flags_props = getattr(old_obj, prop_name)
+            new_flags_props = getattr(new_obj, prop_name)
+
+            for flag_name in BoundFlags.__annotations__.keys():
+                value = getattr(flags_props, flag_name)
+                setattr(new_flags_props, flag_name, value)
+
+        set_flags("composite_flags1")
+        set_flags("composite_flags2")
+
+    def set_shape_keys(self, bound_obj: bpy.types.Object, damaged_obj: bpy.types.Object):
+        bound_obj.shape_key_add(name="Basis")
+        deformed_key = bound_obj.shape_key_add(name="Deformed")
+
+        for i, vert in enumerate(damaged_obj.data.vertices):
+            deformed_key.data[i].co = vert.co
+
+
+class SOLLUMZ_OT_set_sollum_type(bpy.types.Operator):
+    """Set the sollum type of all selected objects"""
+    bl_idname = "sollumz.setsollumtype"
+    bl_label = "Set Sollum Type"
+
+    def execute(self, context):
+        sollum_type = context.scene.all_sollum_type
+
+        for obj in context.selected_objects:
+            obj.sollum_type = sollum_type
+
+        self.report(
+            {"INFO"}, f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sollum_type]}.")
 
         return {"FINISHED"}
 

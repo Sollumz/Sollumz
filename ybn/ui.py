@@ -199,23 +199,33 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_create_bound.bl_idname)
-        row.prop(context.scene, "create_bound_type")
+        row.operator(ybn_ops.SOLLUMZ_OT_convert_to_composite.bl_idname,
+                     icon="FILE_REFRESH")
+        row.prop(context.scene, "bound_child_type")
+
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_create_polygon_bound.bl_idname)
-        if context.active_object and context.active_object.mode == "EDIT":
-            row.prop(context.scene, "poly_bound_type_verts")
-            row.prop(context.scene, "poly_parent", expand=True)
-        else:
-            row.prop(context.scene, "create_poly_bound_type")
-        grid = layout.grid_flow(columns=3, even_columns=True, even_rows=True)
-        grid.prop(context.scene, "use_mesh_name")
-        grid.prop(context.scene, "create_seperate_objects")
-        grid.prop(context.scene, "composite_replace_original")
-        grid.prop(context.scene, "composite_create_bvh")
-        grid.prop(context.scene, "create_center_to_selection")
-        grid.prop(context.scene, "composite_apply_default_flag_preset")
+        row.prop(context.scene, "create_seperate_composites")
+        row.prop(context.scene, "composite_apply_default_flag_preset")
+
+        layout.separator()
+
+        row = layout.row()
+        row.operator(ybn_ops.SOLLUMZ_OT_create_bound.bl_idname, icon="CUBE")
+        row.prop(context.scene, "create_bound_type", text="")
+
+        row = layout.row()
+        row.operator(
+            ybn_ops.SOLLUMZ_OT_create_polygon_bound.bl_idname, icon="MESH_CAPSULE")
+        row.prop(context.scene, "create_poly_bound_type", text="")
+
+        layout.separator()
+
+        row = layout.row()
+        row.operator(
+            ybn_ops.SOLLUMZ_OT_create_polygon_box_from_verts.bl_idname, icon="GROUP_VERTEX")
+        row.prop(context.scene, "poly_bound_type_verts", text="")
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):

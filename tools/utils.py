@@ -1,5 +1,7 @@
+import os
 import numpy
 from math import sqrt
+from typing import Iterable
 from mathutils import Vector, Quaternion, Matrix
 
 
@@ -50,11 +52,21 @@ def float32_list(list):
     return result
 
 
+def float32_tuple(items: Iterable):
+    """Cast all ``items`` to float32 and return a tuple containing the items."""
+    result: list[numpy.float32] = []
+
+    for item in items:
+        result.append(numpy.float32(item))
+
+    return tuple(result)
+
+
 def abs_vector(v):
     return Vector((abs(v.x), abs(v.y), abs(v.z)))
 
 
-def divide_vector_inv(v):
+def vector_inv(v):
     r = Vector((0, 0, 0))
     r.x = 1 / v.x if v.x != 0 else 0
     r.y = 1 / v.y if v.y != 0 else 0
@@ -161,3 +173,8 @@ def prop_array_to_vector(prop, size=3):
     if size == 4:
         return Quaternion((prop[0], prop[1], prop[2], prop[3]))
     return Vector((prop[0], prop[1], prop[2]))
+
+
+def get_filename(filepath: str):
+    """Get file name from path without extension."""
+    return os.path.basename(filepath).split(".")[0]
