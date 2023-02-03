@@ -225,6 +225,7 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bp
             continue
 
         bound_obj.name = f"{bone.name}.col"
+        bound_obj.data.name = bound_obj.name
         add_armature_constraint(bound_obj, frag_obj, bone.name, False)
         bound_obj.child_properties.mass = frag_xml.physics.lod1.children[i].pristine_mass
 

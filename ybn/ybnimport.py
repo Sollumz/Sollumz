@@ -71,9 +71,9 @@ def create_bound_object(bound_xml: BoundChild | Bound):
         return create_bvh_obj(bound_xml)
 
 
-def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType):
+def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh: Optional[bpy.types.Mesh] = None):
     """Create a bound mesh object with materials and composite properties set."""
-    obj = create_mesh_object(sollum_type)
+    obj = create_mesh_object(sollum_type, mesh=mesh)
 
     mat = create_collision_material_from_index(bound_xml.material_index)
     obj.data.materials.append(mat)
@@ -147,17 +147,15 @@ def create_bound_disc(bound_xml: BoundChild):
 
 
 def create_bound_geometry(geom_xml: BoundGeometry):
-    geom_obj = create_bound_child_mesh(geom_xml, SollumType.BOUND_GEOMETRY)
     materials = create_geometry_materials(geom_xml)
-
-    create_bvh_polys(geom_xml, materials, geom_obj)
-
     triangles = get_poly_triangles(geom_xml.polygons)
 
     mesh = create_bound_mesh_data(
         geom_xml.vertices, triangles, geom_xml, materials)
     mesh.transform(Matrix.Translation(geom_xml.geometry_center))
-    geom_obj.data = mesh
+
+    geom_obj = create_bound_child_mesh(
+        geom_xml, SollumType.BOUND_GEOMETRY, mesh)
 
     if geom_xml.vertices_2:
         create_deformed_shape_keys(
@@ -354,7 +352,7 @@ def get_poly_triangles(polys: list[Polygon]):
 
 def create_bound_mesh_data(vertices: list[Vector], triangles: list[Triangle], geometry: BoundGeometryBVH, materials: list[bpy.types.Material]):
     mesh = bpy.data.meshes.new(
-        SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_TRIANGLE])
+        SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
 
     verts, faces = get_bound_geom_mesh_data(vertices, triangles)
 
