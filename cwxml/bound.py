@@ -54,7 +54,7 @@ class Bound(ElementTree, AbstractClass):
         self.ped_density = ValueProperty("PedDensity", 0)
         self.unk_flags = ValueProperty("UnkFlags", 0)
         self.poly_flags = ValueProperty("PolyFlags", 0)
-        self.unk_type = ValueProperty("UnkType", 0)
+        self.unk_type = ValueProperty("UnkType", 1)
 
 
 class BoundComposite(Bound):
@@ -301,20 +301,20 @@ class Polygons(ListProperty):
 
         for child in element.iter():
             if child.tag == "Box":
-                new.value.append(Box.from_xml(child))
+                new.value.append(PolyBox.from_xml(child))
             elif child.tag == "Sphere":
-                new.value.append(Sphere.from_xml(child))
+                new.value.append(PolySphere.from_xml(child))
             elif child.tag == "Capsule":
-                new.value.append(Capsule.from_xml(child))
+                new.value.append(PolyCapsule.from_xml(child))
             elif child.tag == "Cylinder":
-                new.value.append(Cylinder.from_xml(child))
+                new.value.append(PolyCylinder.from_xml(child))
             elif child.tag == "Triangle":
-                new.value.append(Triangle.from_xml(child))
+                new.value.append(PolyTriangle.from_xml(child))
 
         return new
 
 
-class Triangle(Polygon):
+class PolyTriangle(Polygon):
     tag_name = "Triangle"
 
     def __init__(self):
@@ -327,7 +327,7 @@ class Triangle(Polygon):
         self.f3 = AttributeProperty("f3", 0)
 
 
-class Sphere(Polygon):
+class PolySphere(Polygon):
     tag_name = "Sphere"
 
     def __init__(self):
@@ -336,7 +336,7 @@ class Sphere(Polygon):
         self.radius = AttributeProperty("radius", 0)
 
 
-class Capsule(Polygon):
+class PolyCapsule(Polygon):
     tag_name = "Capsule"
 
     def __init__(self):
@@ -346,7 +346,7 @@ class Capsule(Polygon):
         self.radius = AttributeProperty("radius", 0)
 
 
-class Box(Polygon):
+class PolyBox(Polygon):
     tag_name = "Box"
 
     def __init__(self):
@@ -357,7 +357,7 @@ class Box(Polygon):
         self.v4 = AttributeProperty("v4", 3)
 
 
-class Cylinder(Polygon):
+class PolyCylinder(Polygon):
     tag_name = "Cylinder"
 
     def __init__(self):

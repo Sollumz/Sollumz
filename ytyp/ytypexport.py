@@ -4,7 +4,7 @@ from mathutils import Euler, Vector, Quaternion
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
+from ..tools.meshhelper import get_extents, get_bound_center, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
 
@@ -212,7 +212,7 @@ def create_extension_xml(extension: ExtensionProperties):
 def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype):
     """Calculate bounds from the archetype asset."""
 
-    bbmin, bbmax = get_bound_extents(archetype.asset)
+    bbmin, bbmax = get_extents(archetype.asset)
     archetype_xml.bb_min = bbmin
     archetype_xml.bb_max = bbmax
     archetype_xml.bs_center = get_bound_center(archetype.asset)

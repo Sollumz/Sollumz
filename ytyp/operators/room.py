@@ -1,7 +1,7 @@
 import bpy
 from ...sollumz_operators import SOLLUMZ_OT_base
 from ...sollumz_properties import ArchetypeType
-from ...tools.meshhelper import get_bound_extents, get_min_vector_list, get_max_vector_list
+from ...tools.meshhelper import get_extents, get_min_vector_list, get_max_vector_list
 from ...tools.blenderhelper import get_selected_vertices
 from ..utils import get_selected_archetype, get_selected_room, validate_dynamic_enums, validate_dynamic_enum
 
@@ -36,7 +36,7 @@ class SOLLUMZ_OT_create_limbo_room(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
         room = selected_archetype.new_room()
-        bbmin, bbmax = get_bound_extents(selected_archetype.asset)
+        bbmin, bbmax = get_extents(selected_archetype.asset)
         room.bb_min = bbmin
         room.bb_max = bbmax
         room.name = "limbo"

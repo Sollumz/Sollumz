@@ -10,7 +10,7 @@ from ..tools import jenkhash
 from ..tools.meshhelper import (
     flip_uv,
     get_bound_center_from_bounds,
-    get_bound_extents,
+    get_extents,
     get_sphere_radius,
 )
 from ..tools.utils import float32_list
@@ -24,7 +24,7 @@ from ..sollumz_properties import (
     LODLevel,
     SollumType
 )
-from ..ybn.ybnexport import bound_from_object, composite_from_object
+from ..ybn.ybnexport import create_bound_xml, create_composite_xml
 from math import degrees, pi, isclose
 from mathutils import Quaternion, Vector
 from dataclasses import dataclass
@@ -421,7 +421,8 @@ def geometry_from_object(obj, mats, bones=None):
         raise Exception(
             f"{obj.name} has over 65535 vertices! This will cause issues with the mesh. Please lower the poly-count.")
 
-    bbmin, bbmax = get_bound_extents(obj)
+    bbmin, bbmax = get_extents(obj)
+
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
 
@@ -726,7 +727,7 @@ def get_drawable_extents(drawable_obj):
 
     for child in drawable_obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL and child.drawable_model_properties.sollum_lod == LODLevel.HIGH:
-            child_bbmin, child_bbmax = get_bound_extents(child)
+            child_bbmin, child_bbmax = get_extents(child)
             bbmin += child_bbmin
             bbmax += child_bbmax
 
@@ -816,10 +817,10 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         if child.sollum_type in BOUND_TYPES:
             if child.sollum_type == SollumType.BOUND_COMPOSITE:
                 drawable.bounds.append(
-                    composite_from_object(child))
+                    create_composite_xml(child))
             else:
                 drawable.bounds.append(
-                    bound_from_object(child))
+                    create_bound_xml(child))
         else:
             lights_from_object(child, drawable.lights, obj)
 

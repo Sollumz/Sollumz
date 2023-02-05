@@ -222,17 +222,16 @@ def flip_uv(uv):
     return [u, v]
 
 
-"""Get min and max bounds for an object and all of its children"""
-
-
-def get_bound_extents(obj, margin=0):
+def get_extents(obj: bpy.types.Object):
+    """Get min and max extents for an object and all of its children"""
     corners = get_total_bounds(obj)
 
     if not corners:
         return Vector(), Vector()
 
-    min = subtract_from_vector(get_min_vector_list(corners), margin)
-    max = add_to_vector(get_max_vector_list(corners), margin)
+    min = get_min_vector_list(corners)
+    max = get_max_vector_list(corners)
+
     return min, max
 
 
@@ -256,13 +255,13 @@ def get_total_bounds(obj):
 
 
 def get_bound_center(obj):
-    bbmin, bbmax = get_bound_extents(obj)
+    bbmin, bbmax = get_extents(obj)
     center = (bbmin + bbmax) / 2
 
     return center
 
 
-def get_bound_center_from_bounds(bbmin, bbmax):
+def get_bound_center_from_bounds(bbmin: Vector, bbmax: Vector):
     return (bbmin + bbmax) * 0.5
 
 
@@ -278,13 +277,16 @@ def get_dimensions(bbmin, bbmax):
     return x, y, z
 
 
-def calculate_volume(bbmin, bbmax):
+def calculate_volume(bbmin: Vector, bbmax: Vector):
+    """Calculates volume using box min and max. (Very rough approximation)"""
     x, y, z = get_dimensions(bbmin, bbmax)
 
     return x * y * z
 
 
-def calculate_inertia(bbmin, bbmax):
+def calculate_inertia(bbmin: Vector, bbmax: Vector):
+    """Calculate moment of inertia of a solid cuboid. Returns a Vector
+    representing the diagonal of the inertia tensor matrix."""
     x, y, z = get_dimensions(bbmin, bbmax)
 
     I_h = (1/12) * (pow(y, 2) + pow(z, 2))

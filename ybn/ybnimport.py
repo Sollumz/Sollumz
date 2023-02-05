@@ -9,11 +9,11 @@ from ..cwxml.bound import (
     BoundChild,
     BoundGeometryBVH,
     BoundGeometry,
-    Box,
-    Sphere,
-    Capsule,
-    Cylinder,
-    Triangle,
+    PolyBox,
+    PolySphere,
+    PolyCapsule,
+    PolyCylinder,
+    PolyTriangle,
     YBN,
     Polygon,
     Material as ColMaterial
@@ -215,7 +215,7 @@ def set_col_mat_flags(mat_xml: ColMaterial, mat: bpy.types.Material):
 
 def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
     for poly in bvh.polygons:
-        if type(poly) is Triangle:
+        if type(poly) is PolyTriangle:
             continue
 
         poly_obj = poly_to_obj(poly, materials, bvh.vertices)
@@ -238,7 +238,7 @@ def init_poly_obj(poly, sollum_type, materials):
 
 
 def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
-    if type(poly) == Box:
+    if type(poly) == PolyBox:
         obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
 
         v1 = vertices[poly.v1]
@@ -309,14 +309,14 @@ def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
         obj.matrix_basis = mat
 
         return obj
-    elif type(poly) == Sphere:
+    elif type(poly) == PolySphere:
         sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
         sphere.bound_radius = poly.radius
 
         sphere.location = vertices[poly.v]
 
         return sphere
-    elif type(poly) == Capsule:
+    elif type(poly) == PolyCapsule:
         capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
@@ -328,7 +328,7 @@ def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
         capsule.rotation_euler = rot
 
         return capsule
-    elif type(poly) == Cylinder:
+    elif type(poly) == PolyCylinder:
         cylinder = init_poly_obj(
             poly, SollumType.BOUND_POLY_CYLINDER, materials)
         v1 = vertices[poly.v1]
@@ -347,10 +347,10 @@ def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
 
 
 def get_poly_triangles(polys: list[Polygon]):
-    return [poly for poly in polys if isinstance(poly, Triangle)]
+    return [poly for poly in polys if isinstance(poly, PolyTriangle)]
 
 
-def create_bound_mesh_data(vertices: list[Vector], triangles: list[Triangle], geometry: BoundGeometryBVH, materials: list[bpy.types.Material]):
+def create_bound_mesh_data(vertices: list[Vector], triangles: list[PolyTriangle], geometry: BoundGeometryBVH, materials: list[bpy.types.Material]):
     mesh = bpy.data.meshes.new(
         SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
 
@@ -368,7 +368,7 @@ def create_bound_mesh_data(vertices: list[Vector], triangles: list[Triangle], ge
     return mesh
 
 
-def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[Triangle], materials: list[bpy.types.Material]):
+def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangle], materials: list[bpy.types.Material]):
     for mat in materials:
         mesh.materials.append(mat)
 
@@ -376,7 +376,7 @@ def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[Triangle], 
         mesh.polygons[i].material_index = poly_xml.material_index
 
 
-def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[Triangle]):
+def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[PolyTriangle]):
     verts = []
     faces = []
 
@@ -405,7 +405,7 @@ def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[Triangle]):
     return verts, faces
 
 
-def create_deformed_shape_keys(geom_obj: bpy.types.Object, triangles: list[Triangle], geometry: BoundGeometry, materials: list[bpy.types.Material]):
+def create_deformed_shape_keys(geom_obj: bpy.types.Object, triangles: list[PolyTriangle], geometry: BoundGeometry, materials: list[bpy.types.Material]):
     geom_obj.shape_key_add(name="Basis")
     deformed_key = geom_obj.shape_key_add(name="Deformed")
 

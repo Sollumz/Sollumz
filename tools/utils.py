@@ -94,7 +94,8 @@ def get_max_vector(v, c):
     return r
 
 
-def get_min_vector_list(vecs):
+def get_min_vector_list(vecs: list[Vector]):
+    """Get a Vector composed of the smallest components of all given Vectors."""
     x = []
     y = []
     z = []
@@ -105,7 +106,8 @@ def get_min_vector_list(vecs):
     return Vector((min(x), min(y), min(z)))
 
 
-def get_max_vector_list(vecs):
+def get_max_vector_list(vecs: list[Vector]):
+    """Get a Vector composed of the largest components of all given Vectors."""
     x = []
     y = []
     z = []

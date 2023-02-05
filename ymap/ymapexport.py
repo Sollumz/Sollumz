@@ -7,7 +7,7 @@ from struct import pack
 from ..cwxml.ymap import *
 from binascii import hexlify
 from ..tools.blenderhelper import remove_number_suffix
-from ..tools.meshhelper import get_bound_extents
+from ..tools.meshhelper import get_extents
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.utils import get_min_vector, get_max_vector
 
@@ -62,7 +62,7 @@ def model_from_obj(obj, export_op):
     triangulate_obj(obj)
 
     model = OccludeModel()
-    model.bmin, model.bmax = get_bound_extents(obj)
+    model.bmin, model.bmax = get_extents(obj)
     model.verts = get_verts_from_obj(obj)
     model.num_verts_in_bytes = len(obj.data.vertices) * 12
     face_count = len(obj.data.polygons)
@@ -105,7 +105,7 @@ def entity_from_obj(obj):
 
 
 def calculate_extents(ymap, obj):
-    bbmin, bbmax = get_bound_extents(obj)
+    bbmin, bbmax = get_extents(obj)
 
     ymap.entities_extents_min = get_min_vector(
         ymap.entities_extents_min, bbmin)

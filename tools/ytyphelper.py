@@ -2,7 +2,7 @@ import bpy
 import os
 from ..sollumz_helper import has_embedded_textures, has_collision
 from ..cwxml.ytyp import BaseArchetype, CMapTypes
-from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
+from ..tools.meshhelper import get_extents, get_bound_center, get_sphere_radius
 from ..sollumz_properties import SollumType
 
 
@@ -21,7 +21,7 @@ def base_archetype_from_object(obj):
             drawable_dictionary = obj.parent.name
     arch.drawable_dictionary = drawable_dictionary
     arch.physics_dictionary = obj.name if has_collision(obj) else ""
-    bbmin, bbmax = get_bound_extents(obj)
+    bbmin, bbmax = get_extents(obj)
     arch.bb_min = bbmin
     arch.bb_max = bbmax
     arch.bs_center = get_bound_center(obj)
