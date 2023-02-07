@@ -546,6 +546,29 @@ class SOLLUMZ_OT_debug_set_sollum_type(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
+class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
+    bl_idname = "sollumz.debug_fix_light_intensity"
+    bl_label = "Re-adjust Light Intensity"
+    bl_description = "Multiply light intensity by a factor of 500 to make older projects compatible with the light intensity change"
+    bl_options = {"UNDO"}
+
+    def execute(self, context):
+        only_selected = context.scene.debug_lights_only_selected
+
+        objects = context.selected_objects if only_selected else context.scene.objects
+        lights = [obj for obj in objects if obj.type ==
+                  "LIGHT" and obj.sollum_type == SollumType.LIGHT]
+
+        if not lights:
+            self.report(
+                {"INFO"}, "No Sollumz lights selected" if only_selected else "No Sollumz lights in the scene.")
+
+        for light_obj in lights:
+            light_obj.data.energy = light_obj.data.energy * 500
+
+        return {"FINISHED"}
+
+
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(sollumz_menu_func_export)

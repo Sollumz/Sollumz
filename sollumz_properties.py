@@ -863,6 +863,9 @@ def register():
         options={"HIDDEN"}
     )
 
+    bpy.types.Scene.debug_lights_only_selected = bpy.props.BoolProperty(
+        name="Limit to Selected", description="Only set intensity of the selected lights")
+
 
 def unregister():
     del bpy.types.Object.sollum_type
@@ -880,3 +883,4 @@ def unregister():
     del bpy.types.Scene.debug_sollum_type
     del bpy.types.Scene.all_sollum_type
     del bpy.types.Scene.create_center_to_selection
+    del bpy.types.Scene.debug_lights_only_selected
