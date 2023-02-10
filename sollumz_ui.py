@@ -449,6 +449,23 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.operator("sollumz.debug_fix_light_intensity")
         row.prop(context.scene, "debug_lights_only_selected")
 
+class SOLLUMZ_PT_OBJECTS_PANEL(bpy.types.Panel):
+    bl_label = "Object References"
+    bl_idname = "SOLLUMZ_PT_OBJECT_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 3
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="SNAP_INCREMENT")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("sollumz.createpedmodel", icon="OUTLINER_OB_ARMATURE")
 
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
     bl_label = "Terrain Painter"

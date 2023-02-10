@@ -568,6 +568,21 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
 
         return {"FINISHED"}
 
+class SOLLUMZ_OT_create_ped_model(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Create a default ped model"""
+    bl_idname = "sollumz.createpedmodel"
+    bl_label = "Create Ped Model"
+    bl_description = "Create a Ped Model"
+
+    def run(self, context):
+        group_obj = context.active_object
+        file_loc = os.path.join(os.path.dirname(__file__), "ped_model.obj")
+        bpy.ops.import_scene.obj(filepath=file_loc)
+        ped_obj = bpy.context.selected_objects[0]
+        ped_obj.name = "Ped Model"
+        bpy.context.view_layer.objects.active = ped_obj
+        ped_obj.parent = group_obj
+
 
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
