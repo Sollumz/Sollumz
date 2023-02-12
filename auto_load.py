@@ -150,7 +150,7 @@ def iter_classes_in_module(module):
 def get_register_base_types():
     return set(getattr(bpy.types, name) for name in [
         "Panel", "Operator", "PropertyGroup",
-        "AddonPreferences", "Header", "Menu",
+        "Header", "Menu",
         "Node", "NodeSocket", "NodeTree",
         "UIList", "RenderEngine",
         "Gizmo", "GizmoGroup",

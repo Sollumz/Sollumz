@@ -14,7 +14,7 @@ from ..tools.meshhelper import (
     get_sphere_radius,
 )
 from ..tools.utils import float32_list
-from ..tools.blenderhelper import duplicate_object, split_object, get_children_recursive, remove_number_suffix
+from ..tools.blenderhelper import duplicate_object, split_object, get_children_recursive, remove_number_suffix, get_addon_preferences
 from ..tools.drawablehelper import join_objects
 from ..sollumz_properties import (
     BOUND_TYPES,
@@ -622,6 +622,9 @@ def joints_from_object(obj):
 
 
 def light_from_object(obj, armature_obj=None):
+    preferences = get_addon_preferences(bpy.context)
+    intensity_factor = 500 if preferences.scale_light_intensity else 1
+
     light = ydrxml.Light()
     light.position = obj.location
     mat = obj.matrix_basis
@@ -637,7 +640,7 @@ def light_from_object(obj, armature_obj=None):
 
     light.color = obj.data.color * 255
     light.flashiness = obj.data.light_properties.flashiness
-    light.intensity = obj.data.energy / 500
+    light.intensity = obj.data.energy / intensity_factor
     light.type = SOLLUMZ_UI_NAMES[obj.data.sollum_type]
 
     # Get light bone

@@ -696,6 +696,17 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     )
 
 
+class SollumzAddonPreferences(bpy.types.AddonPreferences):
+    bl_idname = __package__.split(".")[0]
+
+    scale_light_intensity: bpy.props.BoolProperty(
+        name="Scale Light Intensity", description="Scale light intensity by 500 on import/export", default=True)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "scale_light_intensity")
+
+
 def get_all_collections():
     return [bpy.context.scene.collection, *bpy.data.collections]
 
@@ -866,6 +877,8 @@ def register():
     bpy.types.Scene.debug_lights_only_selected = bpy.props.BoolProperty(
         name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
 
+    bpy.utils.register_class(SollumzAddonPreferences)
+
 
 def unregister():
     del bpy.types.Object.sollum_type
@@ -884,3 +897,5 @@ def unregister():
     del bpy.types.Scene.all_sollum_type
     del bpy.types.Scene.create_center_to_selection
     del bpy.types.Scene.debug_lights_only_selected
+
+    bpy.utils.unregister_class(SollumzAddonPreferences)

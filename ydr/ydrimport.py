@@ -8,7 +8,7 @@ from ..ybn.ybnimport import composite_to_obj, bound_to_obj
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
 from ..cwxml.drawable import YDR, Drawable
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
-from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials
+from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials, get_addon_preferences
 from ..tools.drawablehelper import join_drawable_geometries, drawable_to_asset
 
 BONE_TAIL_POS = (0, 0.05, 0)
@@ -213,6 +213,9 @@ def rotation_limits_to_obj(rotation_limits, armature):
 
 
 def light_to_obj(light, armature_obj=None):
+    preferences = get_addon_preferences(bpy.context)
+    intensity_factor = 500 if preferences.scale_light_intensity else 1
+
     light_type = None
 
     if light.type == "Point":
@@ -268,7 +271,7 @@ def light_to_obj(light, armature_obj=None):
     lobj.name = name
     lobj.data.name = lobj.name
     lobj.data.color = [channel / 255 for channel in light.color]
-    lobj.data.energy = light.intensity * 500
+    lobj.data.energy = light.intensity * intensity_factor
     lobj.data.light_properties.flashiness = light.flashiness
     lobj.data.light_properties.flags = light.flags
     lobj.data.light_properties.group_id = light.group_id
