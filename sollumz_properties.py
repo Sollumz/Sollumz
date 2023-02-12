@@ -864,7 +864,7 @@ def register():
     )
 
     bpy.types.Scene.debug_lights_only_selected = bpy.props.BoolProperty(
-        name="Limit to Selected", description="Only set intensity of the selected lights")
+        name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
 
 
 def unregister():

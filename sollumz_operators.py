@@ -556,15 +556,21 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
         only_selected = context.scene.debug_lights_only_selected
 
         objects = context.selected_objects if only_selected else context.scene.objects
-        lights = [obj for obj in objects if obj.type ==
-                  "LIGHT" and obj.sollum_type == SollumType.LIGHT]
+        light_objs = [obj for obj in objects if obj.type ==
+                      "LIGHT" and obj.sollum_type == SollumType.LIGHT]
 
-        if not lights:
+        if not light_objs:
             self.report(
                 {"INFO"}, "No Sollumz lights selected" if only_selected else "No Sollumz lights in the scene.")
+            return {"CANCELLED"}
 
-        for light_obj in lights:
-            light_obj.data.energy = light_obj.data.energy * 500
+        lights: list[bpy.types.Light] = []
+        for light_obj in light_objs:
+            if light_obj.data not in lights:
+                lights.append(light_obj.data)
+
+        for light in lights:
+            light.energy = light.energy * 500
 
         return {"FINISHED"}
 
