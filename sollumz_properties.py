@@ -529,7 +529,7 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
     join_geometries: bpy.props.BoolProperty(
         name="Join Geometries",
         description="Joins the drawables geometries into a single mesh.",
-        default=False,
+        default=True,
     )
 
     split_by_bone: bpy.props.BoolProperty(
@@ -626,7 +626,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",
         description="Export selected and visible objects only",
-        default=False,
+        default=True,
     )
 
     use_active_collection: bpy.props.BoolProperty(
