@@ -165,12 +165,18 @@ def toposort(deps_dict):
     sorted_values = set()
     while len(deps_dict) > 0:
         unsorted = []
+        # source: https://github.com/JacquesLucke/blender_vscode/pull/118/commits/f0c3a636e251a8f24f22af6f1806d338c838bcea#diff-9738ac67607466100291c17470c593209a6ad718a574d0903d9eb2e8b0a33727
+        # JoseConseco forgot this code
+        # https://devtalk.blender.org/t/batch-registering-multiple-classes-in-blender-2-8/3253/42
+        sorted_list_sub = []      # helper for additional sorting by bl_order - in panels
         for value, deps in deps_dict.items():
             if len(deps) == 0:
-                sorted_list.append(value)
+                sorted_list_sub.append(value)
                 sorted_values.add(value)
             else:
                 unsorted.append(value)
         deps_dict = {value: deps_dict[value] -
                      sorted_values for value in unsorted}
+        sorted_list_sub.sort(key=lambda cls: getattr(cls, 'bl_order', 0))
+        sorted_list.extend(sorted_list_sub)
     return sorted_list
