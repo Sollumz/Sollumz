@@ -24,9 +24,19 @@ class SOLLUMZ_PT_YTYP_TOOL_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="OBJECT_DATA")
 
     def draw(self, context):
-        layout = self.layout
-        layout.label(text="YTYPS")
+        ...
 
+
+class SOLLUMZ_PT_YTYP_LIST_PANEL(bpy.types.Panel):
+    bl_label = "YTYPS"
+    bl_idname = "SOLLUMZ_PT_YTYP_LIST_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname
+
+    bl_order = 0
+
+    def draw(self, context):
         list_col = draw_list_with_add_remove(self.layout, "sollumz.createytyp", "sollumz.deleteytyp",
                                              SOLLUMZ_UL_YTYP_LIST.bl_idname, "", context.scene, "ytyps", context.scene, "ytyp_index", rows=3)
         row = list_col.row()
@@ -49,28 +59,27 @@ class SOLLUMZ_UL_ARCHETYPE_LIST(bpy.types.UIList):
         layout.prop(item, "name", text="", emboss=False, icon=icon)
 
 
-class SOLLUMZ_PT_YTYP_PANEL(bpy.types.Panel):
-    bl_label = "YTYP"
-    bl_idname = "SOLLUMZ_PT_YTYP_PANEL"
+class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(bpy.types.Panel):
+    bl_label = "Archetypes"
+    bl_idname = "SOLLUMZ_PT_ARCHETYPE_LIST_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"HIDE_HEADER"}
     bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname
+
+    bl_order = 1
 
     @classmethod
     def poll(cls, context):
         return get_selected_ytyp(context) is not None
 
     def draw(self, context):
-        layout = self.layout
         selected_ytyp = get_selected_ytyp(context)
-        layout.label(text="Archetypes")
 
         list_col = draw_list_with_add_remove(self.layout, "sollumz.createarchetype", "sollumz.deletearchetype", SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "", selected_ytyp, "archetypes",
-                                             selected_ytyp, "archetype_index")
-        list_col.separator()
+                                             selected_ytyp, "archetype_index", rows=3)
         row = list_col.row()
-        row.operator("sollumz.createarchetypefromselected")
+        row.operator("sollumz.createarchetypefromselected",
+                     icon="FILE_REFRESH")
         row.prop(context.scene, "create_archetype_type", text="")
 
 
@@ -80,13 +89,15 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_YTYP_PANEL.bl_idname
-
-    bl_order = 1
+    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_idname
 
     @classmethod
     def poll(cls, context):
-        return get_selected_ytyp(context) is not None and get_selected_ytyp(context).archetypes
+        selected_ytyp = get_selected_ytyp(context)
+        return selected_ytyp is not None and selected_ytyp.archetypes
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="TOOL_SETTINGS")
 
     def draw(self, context):
         layout = self.layout

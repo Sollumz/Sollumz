@@ -1,5 +1,6 @@
 import bpy
-from ...sollumz_ui import draw_list_with_add_remove
+from ...tabbed_panels import TabPanel
+from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.extensions import ExtensionsContainer, ExtensionType
 from ..operators.extensions import (
     SOLLUMZ_OT_update_bottom_from_selected,
@@ -12,7 +13,7 @@ from ..operators.extensions import (
     SOLLUMZ_OT_update_particle_effect_location,
 )
 from ..utils import get_selected_archetype, get_selected_extension
-from .archetype import SOLLUMZ_PT_ARCHETYPE_PANEL
+from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
 
 
 class ExtensionsListHelper:
@@ -73,24 +74,22 @@ class ExtensionsPanelHelper:
                 row.prop(extension_properties, prop_name)
 
 
-class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(bpy.types.UIList):
+class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST"
-
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        layout.prop(item, "name", text="",
-                    emboss=False, icon="CON_TRACKTO")
+    icon = "CON_TRACKTO"
 
 
-class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(bpy.types.Panel, ExtensionsPanelHelper):
+class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
     bl_label = "Extensions"
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
-    bl_order = 0
+    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
+
+    bl_order = 1
+
+    parent_tab_panel = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
+    icon = "CON_TRACKTO"
 
     ADD_OPERATOR_ID = "sollumz.addarchetypeextension"
     DELETE_OPERATOR_ID = "sollumz.deletearchetypeextension"

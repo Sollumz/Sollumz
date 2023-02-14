@@ -1,9 +1,31 @@
 import bpy
+from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ...sollumz_ui import BasicListHelper, FlagsPanel, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import RoomProperties, PortalProperties, TimecycleModifierProperties
 from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_tcm
-from .archetype import SOLLUMZ_PT_ARCHETYPE_PANEL
+from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
+
+
+class SOLLUMZ_PT_MLO_PANEL(TabbedPanelHelper, bpy.types.Panel):
+    bl_label = "MLO"
+    bl_idname = "SOLLUMZ_PT_MLO_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
+
+    default_tab = "SOLLUMZ_PT_ROOM_PANEL"
+
+    bl_order = 3
+
+    @classmethod
+    def poll(cls, context):
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO
+
+    def draw_before(self, context: bpy.types.Context):
+        self.layout.label(text="MLO")
 
 
 class SOLLUMZ_UL_ROOM_LIST(BasicListHelper, bpy.types.UIList):
@@ -11,18 +33,20 @@ class SOLLUMZ_UL_ROOM_LIST(BasicListHelper, bpy.types.UIList):
     item_icon = "CUBE"
 
 
-class SOLLUMZ_PT_ROOM_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_ROOM_PANEL(TabPanel, bpy.types.Panel):
     bl_label = "Rooms"
     bl_idname = "SOLLUMZ_PT_ROOM_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
+    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    bl_order = 2
+    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
+    icon = "CUBE"
+
+    bl_order = 0
 
     @classmethod
-    def poll(cls, context):
+    def poll_tab(cls, context):
         selected_archetype = get_selected_archetype(context)
 
         return selected_archetype.type == ArchetypeType.MLO
@@ -84,17 +108,20 @@ class SOLLUMZ_UL_PORTAL_LIST(BasicListHelper, bpy.types.UIList):
     name_editable = False
 
 
-class SOLLUMZ_PT_PORTAL_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
     bl_label = "Portals"
     bl_idname = "SOLLUMZ_PT_PORTAL_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
-    bl_order = 3
+    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
+
+    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
+    icon = "OUTLINER_OB_LIGHTPROBE"
+
+    bl_order = 1
 
     @classmethod
-    def poll(cls, context):
+    def poll_tab(cls, context):
         selected_archetype = get_selected_archetype(context)
         return selected_archetype.type == ArchetypeType.MLO
 
@@ -161,17 +188,20 @@ class SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST(BasicListHelper, bpy.types.UIList):
     item_icon = "MOD_TIME"
 
 
-class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(TabPanel, bpy.types.Panel):
     bl_label = "Timecycle Modifiers"
     bl_idname = "SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
-    bl_order = 4
+    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
+
+    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
+    icon = "MOD_TIME"
+
+    bl_order = 3
 
     @classmethod
-    def poll(cls, context):
+    def poll_tab(cls, context):
         selected_archetype = get_selected_archetype(context)
 
         return selected_archetype.type == ArchetypeType.MLO
@@ -196,17 +226,21 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(bpy.types.Panel):
             layout.prop(selected_tcm, prop_name)
 
 
-class SOLLUMZ_PT_MLO_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_MLO_FLAGS_PANEL(TabPanel, FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_MLO_FLAGS_PANEL"
     bl_label = "MLO Flags"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_PANEL.bl_idname
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    bl_order = 6
+    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
+    icon = "BOOKMARKS"
+
+    bl_order = 4
 
     @classmethod
-    def poll(cls, context):
+    def poll_tab(cls, context):
         selected_archetype = get_selected_archetype(context)
         return selected_archetype.type == ArchetypeType.MLO
 
