@@ -19,6 +19,7 @@ class ExtensionType(str, Enum):
     PROC_OBJECT = "CExtensionProcObject"
     EXPRESSION = "CExtensionDefExpression"
 
+
 class LightShaftDensityType(str, Enum):
     CONSTANT = "LIGHTSHAFT_DENSITYTYPE_CONSTANT"
     SOFT = "LIGHTSHAFT_DENSITYTYPE_SOFT"
@@ -29,10 +30,10 @@ class LightShaftDensityType(str, Enum):
     QUADRATIC = "LIGHTSHAFT_DENSITYTYPE_QUADRATIC"
     QUADRATIC_GRADIENT = "LIGHTSHAFT_DENSITYTYPE_QUADRATIC_GRADIENT"
 
+
 class LightShaftVolumeType(str, Enum):
     SHAFT = "LIGHTSHAFT_VOLUMETYPE_SHAFT"
     CYLINDER = "LIGHTSHAFT_VOLUMETYPE_CYLINDER"
-
 
 
 class BaseExtensionProperties:
@@ -287,7 +288,7 @@ class ExtensionsContainer:
 
     extensions: bpy.props.CollectionProperty(
         type=ExtensionProperties, name="Extensions")
-    extension_index: bpy.props.IntProperty(name="Extension Index")
+    extension_index: bpy.props.IntProperty(name="Extension")
 
     @property
     def selected_extension(self) -> Union[ExtensionProperties, None]:

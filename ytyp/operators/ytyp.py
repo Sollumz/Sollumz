@@ -225,7 +225,8 @@ class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_archetype(context) is not None
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype is not None and selected_archetype.timecycle_modifiers
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)

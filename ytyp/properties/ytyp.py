@@ -110,18 +110,18 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     timecycle_modifiers: bpy.props.CollectionProperty(
         type=TimecycleModifierProperties, name="Timecycle Modifiers")
     # Selected room index
-    room_index: bpy.props.IntProperty(name="Room Index")
+    room_index: bpy.props.IntProperty(name="Room")
     # Selected portal index
-    portal_index: bpy.props.IntProperty(name="Portal Index")
+    portal_index: bpy.props.IntProperty(name="Portal")
     # Unique portal id
     last_portal_id: bpy.props.IntProperty(name="")
     # Selected entity index
-    entity_index: bpy.props.IntProperty(name="Entity Index")
+    entity_index: bpy.props.IntProperty(name="Entity")
     # Unique room id
     last_room_id: bpy.props.IntProperty(name="")
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
-        name="Timecycle Modifier Index")
+        name="Timecycle Modifier")
 
     id: bpy.props.IntProperty(default=-1)
 
@@ -194,7 +194,7 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
 def register():
     bpy.types.Scene.ytyps = bpy.props.CollectionProperty(
         type=CMapTypesProperties, name="YTYPs")
-    bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP Index")
+    bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP")
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(
         name="Show Room Gizmo", default=True)
     bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(

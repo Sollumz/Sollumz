@@ -3,6 +3,36 @@ from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
 
 
+def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
+    """Draw a UIList with an add and remove button on the right column. Returns the left column."""
+    row = layout.row()
+    list_col = row.column()
+    list_col.template_list(*temp_list_args, **temp_list_kwargs)
+    col = row.column(align=True)
+    col.operator(add_operator, text="", icon="ADD")
+    col.operator(remove_operator, text="", icon="REMOVE")
+
+    return list_col
+
+
+class BasicListHelper:
+    """Provides functionality for drawing simple lists where each item has a name and icon"""
+    name_prop: str = "name"
+    item_icon: str = "NONE"
+    name_editable: bool = True
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        if not self.name_editable:
+            layout.label(text=getattr(item, self.name_prop),
+                         icon=self.item_icon)
+            return
+
+        layout.prop(item, self.name_prop, text="",
+                    emboss=False, icon=self.item_icon)
+
+
 class OrderListHelper:
     orderkey = "name"
 
