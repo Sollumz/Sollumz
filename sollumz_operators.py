@@ -323,6 +323,14 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint"
     bl_action = "Paint Vertices"
 
+    color : bpy.props.FloatVectorProperty(
+        subtype="COLOR_GAMMA",
+        default=(1.0, 1.0, 1.0, 1.0),
+        min=0,
+        max=1,
+        size=4
+    )
+
     def paint_map(self, mesh, map, color):
         i = 0
         for poly in mesh.polygons:
@@ -341,7 +349,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
         if len(objs) > 0:
             for obj in objs:
                 if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-                    self.paint_mesh(obj.data, context.scene.vert_paint_color)
+                    self.paint_mesh(obj.data, self.color)
                     self.messages.append(
                         f"{obj.name} was successfully painted.")
                 else:

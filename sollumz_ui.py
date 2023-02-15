@@ -352,7 +352,7 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.export_settings, "auto_calculate_bone_tag")
-
+    
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
@@ -419,9 +419,20 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.prop(context.scene, "vert_paint_color")
-        row.operator("sollumz.paint_vertices")
+        row.prop(context.scene, "vert_paint_color1", text="")
+        row.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color1
 
+        row2 = layout.row()
+        row2.prop(context.scene, "vert_paint_color2", text="")
+        row2.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color2
+
+        row3 = layout.row()
+        row3.prop(context.scene, "vert_paint_color3", text="")
+        row3.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color3
+        
+        row4 = layout.row()
+        row4.prop(context.scene, "vert_paint_color4", text="")
+        row4.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color4
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_label = "Debug"

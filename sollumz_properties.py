@@ -841,14 +841,43 @@ def register():
     bpy.types.Scene.hide_vehicle_windows = bpy.props.BoolProperty(
         name="Hide Vehicle Windows", get=get_hide_vehicle_windows, set=set_hide_vehicle_windows)
 
-    bpy.types.Scene.vert_paint_color = bpy.props.FloatVectorProperty(
-        name="Vertex Color",
+
+    bpy.types.Scene.vert_paint_color1 = bpy.props.FloatVectorProperty(
+        name="Vert Color 1",
         subtype="COLOR_GAMMA",
         default=(1.0, 1.0, 1.0, 1.0),
         min=0,
         max=1,
         size=4
     )
+
+    bpy.types.Scene.vert_paint_color2 = bpy.props.FloatVectorProperty(
+        name="Vert Color 2",
+        subtype="COLOR_GAMMA",
+        default=(0.0, 0.0, 1.0, 1.0),
+        min=0,
+        max=1,
+        size=4
+    )
+
+    bpy.types.Scene.vert_paint_color3 = bpy.props.FloatVectorProperty(
+        name="Vert Color 3",
+        subtype="COLOR_GAMMA",
+        default=(0.0, 1.0, 0.0, 1.0),
+        min=0,
+        max=1,
+        size=4
+    )
+
+    bpy.types.Scene.vert_paint_color4 = bpy.props.FloatVectorProperty(
+        name="Vert Color 4",
+        subtype="COLOR_GAMMA",
+        default=(1.0, 0.0, 0.0, 1.0),
+        min=0,
+        max=1,
+        size=4
+    )
+
     bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
         name="Alpha", min=-1, max=1)
     bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
@@ -889,7 +918,10 @@ def unregister():
     del bpy.types.Scene.hide_medium_lods
     del bpy.types.Scene.hide_low_lods
     del bpy.types.Scene.hide_very_low_lods
-    del bpy.types.Scene.vert_paint_color
+    del bpy.types.Scene.vert_paint_color1
+    del bpy.types.Scene.vert_paint_color2
+    del bpy.types.Scene.vert_paint_color3
+    del bpy.types.Scene.vert_paint_color4
     del bpy.types.Scene.vert_paint_alpha
     del bpy.types.Scene.create_seperate_objects
     del bpy.types.Scene.use_mesh_name
