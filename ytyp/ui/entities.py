@@ -42,6 +42,8 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
                                              SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
         list_col.operator("sollumz.addobjasmloentity")
         list_col.operator("sollumz.addobjasportalentity")
+        list_col.operator("sollumz.setobjentitytransforms",
+                          icon="OUTLINER_DATA_EMPTY")
 
         layout.separator()
 

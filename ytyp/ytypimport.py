@@ -1,7 +1,7 @@
 import bpy
 from typing import Union
 
-from mathutils import Color, Quaternion
+from mathutils import Vector, Quaternion
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
@@ -61,6 +61,10 @@ def find_and_link_entity_object(entity_xml: ymapxml.Entity, entity: MloEntityPro
     for obj in bpy.context.collection.all_objects:
         if entity_xml.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
             entity.linked_object = obj
+            obj.location = entity.position
+            obj.rotation_euler = entity.rotation.to_euler()
+            obj.scale = Vector(
+                (entity.scale_xy, entity.scale_xy, entity.scale_z))
 
 
 def create_mlo_entity(entity_xml: ymapxml.Entity, archetype: ArchetypeProperties):

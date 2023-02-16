@@ -1,4 +1,5 @@
 import bpy
+from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ..utils import get_selected_archetype, get_selected_room, get_selected_entity, get_selected_portal
 from ..properties.mlo import get_portal_items, get_room_items
@@ -135,6 +136,38 @@ class SOLLUMZ_OT_add_obj_as_portal(SOLLUMZ_OT_base, bpy.types.Operator):
                 name = name[0:-4]
             item.archetype_name = name
         return True
+
+
+class SOLLUMZ_OT_set_obj_entity_transforms(bpy.types.Operator):
+    """Set the transforms of the selected object(s) to that of the Entity"""
+    bl_idname = "sollumz.setobjentitytransforms"
+    bl_label = "Set Object Transforms to Entity"
+
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_entity(context) is not None and len(context.selected_objects) > 0
+
+    def execute(self, context):
+        entity = get_selected_entity(context)
+        selected_objects = context.selected_objects
+
+        location = entity.position
+        rotation_euler = entity.rotation.to_euler()
+        scale = Vector((entity.scale_xy, entity.scale_xy, entity.scale_z))
+
+        if entity.linked_object:
+            location = entity.linked_object.location
+            rotation_euler = entity.linked_object.rotation_euler
+            scale = entity.linked_object.scale
+
+        for obj in selected_objects:
+            obj.location = location
+            obj.rotation_euler = rotation_euler
+            obj.scale = scale
+
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):

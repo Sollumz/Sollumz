@@ -167,14 +167,6 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 
 class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):
-    def update_linked_object(self, context):
-        linked_obj = self.linked_object
-        if linked_obj:
-            linked_obj.location = self.position
-            linked_obj.rotation_euler = self.rotation.to_euler()
-            linked_obj.scale = Vector(
-                (self.scale_xy, self.scale_xy, self.scale_z))
-
     def get_portal_index(self):
         selected_archetype = self.get_mlo_archetype()
         for index, portal in enumerate(selected_archetype.portals):
@@ -227,4 +219,4 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
 
     linked_object: bpy.props.PointerProperty(
-        type=bpy.types.Object, name="Linked Object", update=update_linked_object)
+        type=bpy.types.Object, name="Linked Object")
