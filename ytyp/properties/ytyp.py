@@ -43,7 +43,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
                                         self.texture_dictionary = self.asset_name
                                         break
 
-    def new_portal(self):
+    def new_portal(self) -> PortalProperties:
         item = self.portals.add()
         self.portal_index = len(self.portals) - 1
         item.id = self.last_portal_id + 1
@@ -55,7 +55,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.mlo_archetype_id = self.id
         return item
 
-    def new_room(self):
+    def new_room(self) -> RoomProperties:
         item = self.rooms.add()
         self.room_index = len(self.rooms) - 1
         item.name = f"Room.{self.room_index}"
@@ -64,12 +64,12 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.mlo_archetype_id = self.id
         return item
 
-    def new_entity(self):
+    def new_entity(self) -> MloEntityProperties:
         item = self.entities.add()
         item.mlo_archetype_id = self.id
         return item
 
-    def new_tcm(self):
+    def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
         item.mlo_archetype_id = self.id
         return item

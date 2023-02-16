@@ -40,8 +40,12 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
 
         list_col = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
                                              SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
-        list_col.operator("sollumz.addobjasmloentity")
-        list_col.operator("sollumz.addobjasportalentity")
+        list_col.separator()
+        row = list_col.row(align=True)
+        row.operator("sollumz.addobjasentity", icon="OUTLINER_OB_MESH")
+        row.prop(context.scene, "sollumz_add_entity_portal",
+                 text="", icon="OUTLINER_OB_LIGHTPROBE")
+        row.prop(context.scene, "sollumz_add_entity_room", text="", icon="CUBE")
         list_col.operator("sollumz.setobjentitytransforms",
                           icon="OUTLINER_DATA_EMPTY")
 

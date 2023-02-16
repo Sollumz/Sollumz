@@ -178,6 +178,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         selected_archetype = self.get_mlo_archetype()
         portal = get_list_item(selected_archetype.portals,
                                self.portal_index)
+
         if portal:
             return portal.name
         return ""
@@ -220,3 +221,15 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
 
     linked_object: bpy.props.PointerProperty(
         type=bpy.types.Object, name="Linked Object")
+
+
+def register():
+    bpy.types.Scene.sollumz_add_entity_portal = bpy.props.EnumProperty(
+        name="Portal", items=get_portal_items)
+    bpy.types.Scene.sollumz_add_entity_room = bpy.props.EnumProperty(
+        name="Room", items=get_room_items)
+
+
+def unregister():
+    del bpy.types.Scene.sollumz_add_entity_portal
+    del bpy.types.Scene.sollumz_add_entity_room
