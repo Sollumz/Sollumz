@@ -50,8 +50,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         self.last_portal_id = item.id
         if len(self.rooms) > 0:
             room_id = self.rooms[0].id
-            item.room_to_id = room_id
-            item.room_from_id = room_id
+            item.room_to_id = str(room_id)
+            item.room_from_id = str(room_id)
         item.mlo_archetype_id = self.id
         return item
 

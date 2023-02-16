@@ -27,15 +27,15 @@ def create_mlo_portal(portal_xml: ytypxml.Portal, archetype: ArchetypeProperties
     portal: PortalProperties = archetype.new_portal()
     for index, corner in enumerate(portal_xml.corners):
         setattr(portal, f"corner{index + 1}", corner.value)
-    portal.room_from_id = archetype.rooms[portal_xml.room_from].id
-    portal.room_to_id = archetype.rooms[portal_xml.room_to].id
+    portal.room_from_id = str(archetype.rooms[portal_xml.room_from].id)
+    portal.room_to_id = str(archetype.rooms[portal_xml.room_to].id)
     portal.flags.total = str(portal_xml.flags)
     portal.mirror_priority = portal_xml.mirror_priority
     portal.opacity = portal_xml.opacity
     portal.audio_occlusion = str(
         portal_xml.audio_occlusion)
     for index in portal_xml.attached_objects:
-        archetype.entities[index].attached_portal_id = portal.id
+        archetype.entities[index].portal_id = str(portal.id)
 
 
 def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
@@ -52,7 +52,7 @@ def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
     room.floor_id = room_xml.floor_id
     room.exterior_visibility_depth = room_xml.exterior_visibility_depth
     for index in room_xml.attached_objects:
-        archetype.entities[index].attached_room_id = room.id
+        archetype.entities[index].room_id = str(room.id)
 
 
 def find_and_link_entity_object(entity_xml: ymapxml.Entity, entity: MloEntityProperties):

@@ -58,6 +58,10 @@ class SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL(TabbedPanelHelper, bpy.types.Panel):
 
     bl_order = 3
 
+    @classmethod
+    def poll(cls, context):
+        return get_selected_entity(context) is not None
+
 
 class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
     bl_label = "Entity"
@@ -71,10 +75,6 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
 
     bl_order = 0
 
-    @classmethod
-    def poll_tab(cls, context):
-        return get_selected_entity(context) is not None
-
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -82,16 +82,16 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
         selected_entity = get_selected_entity(context)
 
         layout.prop(selected_entity, "linked_object")
-        row = layout.row()
-        row.prop(selected_entity, "attached_portal_name",
-                 text="Attached Portal")
-        row.operator("sollumz.setmloentityportal")
-        row.operator("sollumz.clearmloentityportal", text="", icon="X")
-        row = layout.row()
-        row.prop(selected_entity, "attached_room_name",
-                 text="Attached Room")
-        row.operator("sollumz.setmloentityroom")
-        row.operator("sollumz.clearmloentityroom", text="", icon="X")
+
+        layout.separator()
+
+        row = layout.row(align=True)
+        row.prop(selected_entity, "portal_id")
+        row.operator("sollumz.search_entity_portals", text="", icon="VIEWZOOM")
+        row = layout.row(align=True)
+        row.prop(selected_entity, "room_id")
+        row.operator("sollumz.search_entity_rooms", text="", icon="VIEWZOOM")
+
         layout.separator()
 
         if not selected_entity.linked_object:
@@ -143,10 +143,6 @@ class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(TabPanel, FlagsPanel, bpy.types.Panel):
     icon = "BOOKMARKS"
 
     bl_order = 2
-
-    @classmethod
-    def poll_tab(cls, context):
-        return get_selected_entity(context) is not None
 
     def get_flags(self, context):
         selected_entity = get_selected_entity(context)

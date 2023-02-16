@@ -3,9 +3,37 @@ from typing import Union
 from mathutils import Vector
 from ...sollumz_properties import EntityProperties
 from ...tools.utils import get_list_item
-from ..utils import get_selected_ytyp
+from ..utils import get_selected_ytyp, get_selected_archetype
 from .flags import EntityFlags, RoomFlags, PortalFlags
 from .extensions import ExtensionsContainer
+
+
+def get_portal_items(self, context: bpy.types.Context):
+    selected_archetype = get_selected_archetype(context)
+
+    items = [("-1", "None", "")]
+
+    if not selected_archetype:
+        return items
+
+    for portal in selected_archetype.portals:
+        items.append((str(portal.id), portal.name, ""))
+
+    return items
+
+
+def get_room_items(self, context: bpy.types.Context):
+    selected_archetype = get_selected_archetype(context)
+
+    items = [("-1", "None", "")]
+
+    if not selected_archetype:
+        return items
+
+    for room in selected_archetype.rooms:
+        items.append((str(room.id), room.name, ""))
+
+    return items
 
 
 class MloArchetypeChild:
@@ -40,40 +68,46 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 
 class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
-    def get_room_index(self, room_from):
+    def get_room_from_index(self):
         archetype = self.get_mlo_archetype()
+
         for index, room in enumerate(archetype.rooms):
-            if room_from:
-                if room.id == self.room_from_id:
-                    return index
-            else:
-                if room.id == self.room_to_id:
-                    return index
+            if not self.room_from_id:
+                continue
+
+            if room.id == int(self.room_from_id):
+                return index
+
         return 0
 
-    def get_room_from_index(self):
-        return self.get_room_index(True)
-
     def get_room_to_index(self):
-        return self.get_room_index(False)
-
-    def get_room_name(self, room_from):
         archetype = self.get_mlo_archetype()
-        if len(archetype.rooms) < 1:
+
+        for index, room in enumerate(archetype.rooms):
+            if not self.room_to_id:
+                continue
+
+            if room.id == int(self.room_to_id):
+                return index
+
+        return 0
+
+    def get_room_name(self, room_index: int):
+        archetype = self.get_mlo_archetype()
+
+        if not archetype.rooms:
             return ""
 
-        index = self.room_from_index if room_from else self.room_to_index
+        if room_index < len(archetype.rooms) and room_index >= 0:
+            return archetype.rooms[room_index].name
 
-        if index < len(archetype.rooms) and index >= 0:
-            return archetype.rooms[index].name
-        else:
-            return archetype.rooms[0].name
+        return archetype.rooms[0].name
 
     def get_room_from_name(self):
-        return self.get_room_name(True)
+        return self.get_room_name(self.room_from_index)
 
     def get_room_to_name(self):
-        return self.get_room_name(False)
+        return self.get_room_name(self.room_to_index)
 
     def get_name(self):
         return f"{self.room_from_name} to {self.room_to_name}"
@@ -97,16 +131,20 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     corner2: bpy.props.FloatVectorProperty(name="Corner 2", subtype="XYZ")
     corner3: bpy.props.FloatVectorProperty(name="Corner 3", subtype="XYZ")
     corner4: bpy.props.FloatVectorProperty(name="Corner 4", subtype="XYZ")
-    room_from_id: bpy.props.IntProperty(name="Room From Id")
+
+    room_from_id: bpy.props.EnumProperty(
+        name="Room From", items=get_room_items)
     room_from_index: bpy.props.IntProperty(
         name="Room From Index", get=get_room_from_index)
     room_from_name: bpy.props.StringProperty(
         name="Room From", get=get_room_from_name)
-    room_to_id: bpy.props.IntProperty(name="Room To Id")
+
+    room_to_id: bpy.props.EnumProperty(name="Room To", items=get_room_items)
     room_to_index: bpy.props.IntProperty(
         name="Room To Index", get=get_room_to_index)
     room_to_name: bpy.props.StringProperty(
         name="Room To", get=get_room_to_name)
+
     flags: bpy.props.PointerProperty(type=PortalFlags, name="Flags")
     mirror_priority: bpy.props.IntProperty(name="Mirror Priority")
     opacity: bpy.props.IntProperty(name="Opacity")
@@ -140,14 +178,14 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     def get_portal_index(self):
         selected_archetype = self.get_mlo_archetype()
         for index, portal in enumerate(selected_archetype.portals):
-            if portal.id == self.attached_portal_id:
+            if portal.id == int(self.portal_id):
                 return index
         return -1
 
     def get_portal_name(self):
         selected_archetype = self.get_mlo_archetype()
         portal = get_list_item(selected_archetype.portals,
-                               self.attached_portal_index)
+                               self.portal_index)
         if portal:
             return portal.name
         return ""
@@ -155,14 +193,14 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     def get_room_index(self):
         selected_archetype = self.get_mlo_archetype()
         for index, room in enumerate(selected_archetype.rooms):
-            if room.id == self.attached_room_id:
+            if room.id == int(self.room_id):
                 return index
         return -1
 
     def get_room_name(self):
         selected_archetype = self.get_mlo_archetype()
         room = get_list_item(selected_archetype.rooms,
-                             self.attached_room_index)
+                             self.room_index)
         if room:
             return room.name
         return ""
@@ -174,19 +212,18 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     scale_xy: bpy.props.FloatProperty(name="Scale XY", default=1)
     scale_z: bpy.props.FloatProperty(name="Scale Z", default=1)
 
-    attached_portal_index: bpy.props.IntProperty(
+    portal_id: bpy.props.EnumProperty(name="Portal", items=get_portal_items)
+    portal_index: bpy.props.IntProperty(
         name="Attached Portal Index", get=get_portal_index)
-    attached_portal_id: bpy.props.IntProperty(
-        name="Attached Portal Id", default=-1)
-    attached_portal_name: bpy.props.StringProperty(
+    portal_name: bpy.props.StringProperty(
         name="Attached Portal Name", get=get_portal_name)
 
-    attached_room_index: bpy.props.IntProperty(
+    room_id: bpy.props.EnumProperty(name="Room", items=get_room_items)
+    room_index: bpy.props.IntProperty(
         name="Attached Room Index", get=get_room_index)
-    attached_room_id: bpy.props.IntProperty(
-        name="Attached Room Id", default=-1)
-    attached_room_name: bpy.props.StringProperty(
+    room_name: bpy.props.StringProperty(
         name="Attached Room Name", get=get_room_name)
+
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
 
     linked_object: bpy.props.PointerProperty(

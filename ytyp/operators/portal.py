@@ -1,12 +1,10 @@
-from math import radians
 import bpy
 import numpy
-from mathutils import Matrix, Vector
-from ...sollumz_operators import SOLLUMZ_OT_base
+from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import get_selected_vertices
 from ..utils import get_selected_archetype, get_selected_portal, get_selected_room
 from bpy_extras.view3d_utils import location_3d_to_region_2d
-from ..properties.mlo import PortalProperties
+from ..properties.mlo import PortalProperties, get_room_items
 
 
 class SOLLUMZ_OT_create_portal(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -176,19 +174,37 @@ class SetPortalRoomHelper(SOLLUMZ_OT_base):
             return False
 
         if self.room_from:
-            selected_portal.room_from_id = selected_room.id
+            selected_portal.room_from_id = str(selected_room.id)
         elif self.room_to:
-            selected_portal.room_to_id = selected_room.id
+            selected_portal.room_to_id = str(selected_room.id)
         return True
 
 
-class SOLLUMZ_OT_set_portal_room_from(SetPortalRoomHelper, bpy.types.Operator):
-    """Set 'room from' to selected room"""
-    bl_idname = "sollumz.setportalroomfrom"
-    room_from = True
+class SOLLUMZ_OT_search_portal_room_from(SearchEnumHelper, bpy.types.Operator):
+    """Search for room"""
+    bl_idname = "sollumz.search_portal_room_from"
+    bl_property = "room_from_id"
+
+    room_from_id: bpy.props.EnumProperty(items=get_room_items)
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_portal(context) is not None
+
+    def get_data_block(self, context):
+        return get_selected_portal(context)
 
 
-class SOLLUMZ_OT_set_portal_room_to(SetPortalRoomHelper, bpy.types.Operator):
-    """Set 'room to' to selected room"""
-    bl_idname = "sollumz.setportalroomto"
-    room_to = True
+class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
+    """Search for room"""
+    bl_idname = "sollumz.search_portal_room_to"
+    bl_property = "room_to_id"
+
+    room_to_id: bpy.props.EnumProperty(items=get_room_items)
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_portal(context) is not None
+
+    def get_data_block(self, context):
+        return get_selected_portal(context)

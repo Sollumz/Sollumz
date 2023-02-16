@@ -582,6 +582,30 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class SearchEnumHelper:
+    """Helper class for searching and setting enums"""
+    bl_label = "Search"
+
+    def get_data_block(self, context):
+        """Get the data-block containing the enum property"""
+        ...
+
+    def execute(self, context):
+        data_block = self.get_data_block(context)
+        prop_name = getattr(self, "bl_property")
+        enum_value = getattr(self, prop_name)
+
+        setattr(data_block, prop_name, enum_value)
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.invoke_search_popup(self)
+
+        return {'FINISHED'}
+
+
 def register():
     bpy.types.TOPBAR_MT_file_import.append(sollumz_menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(sollumz_menu_func_export)

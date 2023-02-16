@@ -13,7 +13,7 @@ def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities:
     """Set attached objects of room from the mlo archetype entities collection provided."""
 
     for index, entity in enumerate(entities):
-        if entity.attached_room_index == room_index:
+        if entity.room_index == room_index:
             room_xml.attached_objects.append(index)
 
 
@@ -21,7 +21,7 @@ def set_portal_attached_objects(portal_xml: ytypxml.Portal, portal_index: int, e
     """Set attached objects of portal from the mlo archetype entities collection provided."""
 
     for index, entity in enumerate(entities):
-        if entity.attached_portal_index == portal_index:
+        if entity.portal_index == portal_index:
             portal_xml.attached_objects.append(index)
 
 
@@ -30,7 +30,7 @@ def get_portal_count(room: RoomProperties, portals: Iterable[PortalProperties]) 
 
     count = 0
     for portal in portals:
-        if portal.room_from_id == room.id or portal.room_to_id == room.id:
+        if portal.room_from_id == str(room.id) or portal.room_to_id == str(room.id):
             count += 1
 
     return count

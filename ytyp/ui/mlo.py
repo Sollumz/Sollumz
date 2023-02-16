@@ -154,17 +154,26 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
             return
 
         layout.separator()
-        for prop_name in PortalProperties.__annotations__:
-            if prop_name in ["room_from_index", "room_to_index", "name", "room_from_id", "room_to_id", "flags", "id"]:
-                continue
 
-            row = layout.row()
-            row.prop(selected_portal, prop_name)
+        layout.prop(selected_portal, "corner1")
+        layout.prop(selected_portal, "corner2")
+        layout.prop(selected_portal, "corner3")
+        layout.prop(selected_portal, "corner4")
 
-            if prop_name == "room_from_name":
-                row.operator("sollumz.setportalroomfrom")
-            elif prop_name == "room_to_name":
-                row.operator("sollumz.setportalroomto")
+        layout.separator()
+
+        row = layout.row()
+        row.prop(selected_portal, "room_from_id")
+        row.operator("sollumz.search_portal_room_from",
+                     text="", icon="VIEWZOOM")
+        row = layout.row()
+        row.prop(selected_portal, "room_to_id")
+        row.operator("sollumz.search_portal_room_to", text="", icon="VIEWZOOM")
+
+        layout.separator()
+        layout.prop(selected_portal, "mirror_priority")
+        layout.prop(selected_portal, "opacity")
+        layout.prop(selected_portal, "audio_occlusion")
 
 
 class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):

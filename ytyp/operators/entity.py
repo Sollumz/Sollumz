@@ -1,6 +1,7 @@
 import bpy
-from ...sollumz_operators import SOLLUMZ_OT_base
+from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ..utils import get_selected_archetype, get_selected_room, get_selected_entity, get_selected_portal
+from ..properties.mlo import get_portal_items, get_room_items
 
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -43,7 +44,7 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
         attachable_objects = selected_objects
 
         for ent in archetype_entities:
-            if ent.linked_object in attachable_objects and ent.attached_room_id == selected_room.id:
+            if ent.linked_object in attachable_objects and str(ent.room_id) == selected_room.id:
                 self.warning(
                     "One or more of the selected objects are already attached to the selected room.")
                 # remove the entity from attachable objects list
@@ -59,7 +60,7 @@ class SOLLUMZ_OT_add_obj_as_entity(SOLLUMZ_OT_base, bpy.types.Operator):
             # Set entity transforms before linking object so the original object's transforms won't be reset
             item.position = obj.location
             item.rotation = obj.rotation_euler.to_quaternion()
-            item.attached_room_id = selected_room.id
+            item.room_id = str(selected_room.id)
             if obj.scale.x != obj.scale.y:
                 self.warning(
                     "Failed to add entity. The X and Y scale of the entity must be equal.")
@@ -102,7 +103,7 @@ class SOLLUMZ_OT_add_obj_as_portal(SOLLUMZ_OT_base, bpy.types.Operator):
         attachable_objects = selected_objects
 
         for ent in archetype_entities:
-            if ent.linked_object in attachable_objects and ent.attached_portal_id == selected_portal.id:
+            if ent.linked_object in attachable_objects and ent.portal_id == str(selected_portal.id):
                 self.warning(
                     "One or more of the selected objects are already attached to the selected portal.")
                 # remove the entity from attachable objects list
@@ -118,7 +119,7 @@ class SOLLUMZ_OT_add_obj_as_portal(SOLLUMZ_OT_base, bpy.types.Operator):
             # Set entity transforms before linking object so the original object's transforms won't be reset
             item.position = obj.location
             item.rotation = obj.rotation_euler.to_quaternion()
-            item.attached_portal_id = selected_portal.id
+            item.portal_id = str(selected_portal.id)
             if obj.scale.x != obj.scale.y:
                 self.warning(
                     "Failed to add entity. The X and Y scale of the entity must be equal.")
@@ -154,69 +155,31 @@ class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_set_mlo_entity_room(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Set entity attached room"""
-    bl_idname = "sollumz.setmloentityroom"
-    bl_label = "Set to Selected"
+class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
+    """Search for portal"""
+    bl_idname = "sollumz.search_entity_portals"
+    bl_property = "portal_id"
+
+    portal_id: bpy.props.EnumProperty(items=get_portal_items)
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None and get_selected_room(context) is not None
+        return get_selected_entity(context) is not None
 
-    def run(self, context):
-        selected_entity = get_selected_entity(context)
-        selected_room = get_selected_room(context)
-
-        selected_entity.attached_room_id = selected_room.id
-        return True
+    def get_data_block(self, context):
+        return get_selected_entity(context)
 
 
-class SOLLUMZ_OT_clear_mlo_entity_room(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Clear entity attached room"""
-    bl_idname = "sollumz.clearmloentityroom"
-    bl_label = "Clear Room"
+class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
+    """Search for room"""
+    bl_idname = "sollumz.search_entity_rooms"
+    bl_property = "room_id"
+
+    room_id: bpy.props.EnumProperty(items=get_room_items)
 
     @classmethod
     def poll(cls, context):
-        entity = get_selected_entity(context)
-        return entity is not None and entity.attached_room_index != -1
+        return get_selected_entity(context) is not None
 
-    def run(self, context):
-        selected_entity = get_selected_entity(context)
-
-        selected_entity.attached_room_id = -1
-        return True
-
-
-class SOLLUMZ_OT_set_mlo_entity_portal(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Set entity attached portal"""
-    bl_idname = "sollumz.setmloentityportal"
-    bl_label = "Set to Selected"
-
-    @classmethod
-    def poll(cls, context):
-        return get_selected_entity(context) is not None and get_selected_portal(context) is not None
-
-    def run(self, context):
-        selected_entity = get_selected_entity(context)
-        selected_portal = get_selected_portal(context)
-
-        selected_entity.attached_portal_id = selected_portal.id
-        return True
-
-
-class SOLLUMZ_OT_clear_mlo_entity_portal(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Clear entity attached portal"""
-    bl_idname = "sollumz.clearmloentityportal"
-    bl_label = "Clear Portal"
-
-    @classmethod
-    def poll(cls, context):
-        entity = get_selected_entity(context)
-        return entity is not None and entity.attached_portal_index != -1
-
-    def run(self, context):
-        selected_entity = get_selected_entity(context)
-
-        selected_entity.attached_portal_id = -1
-        return True
+    def get_data_block(self, context):
+        return get_selected_entity(context)
