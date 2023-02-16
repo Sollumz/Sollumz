@@ -30,6 +30,10 @@ class SOLLUMZ_OT_delete_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.deleteytyp"
     bl_label = "Delete YTYP"
 
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.ytyps) > 0
+
     def run(self, context):
         context.scene.ytyps.remove(context.scene.ytyp_index)
         context.scene.ytyp_index = max(context.scene.ytyp_index - 1, 0)
@@ -189,7 +193,8 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return len(context.scene.ytyps) > 0
+        selected_ytyp = get_selected_ytyp(context)
+        return selected_ytyp is not None and len(selected_ytyp.archetypes) > 0
 
     def run(self, context):
         selected_ytyp = get_selected_ytyp(context)
