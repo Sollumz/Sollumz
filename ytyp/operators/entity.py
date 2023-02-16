@@ -45,11 +45,11 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
             if entity_obj is None or entity_obj not in attachable_objects:
                 continue
 
-            if entity.room_id == room_id and room_id != "-1":
+            if room_id and room_id != "-1" and entity.room_id == room_id:
                 self.report(
                     {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_room_name()}. Skipping...")
                 attachable_objects.remove(entity_obj)
-            elif entity.portal_id == portal_id and portal_id != "-1":
+            elif portal_id and portal_id != "-1" and entity.portal_id == portal_id:
                 self.report(
                     {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_portal_name()}. Skipping...")
                 attachable_objects.remove(entity_obj)
@@ -60,8 +60,8 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
             entity.linked_object = obj
 
-            entity.portal_id = portal_id
-            entity.room_id = room_id
+            entity.portal_id = portal_id or "-1"
+            entity.room_id = room_id or "-1"
 
         return {"FINISHED"}
 
