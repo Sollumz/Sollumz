@@ -1,5 +1,5 @@
 import bpy
-from .tools.blenderhelper import get_armature_obj
+from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
 
 
@@ -352,7 +352,7 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.export_settings, "auto_calculate_bone_tag")
-
+    
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General Tools"
@@ -413,15 +413,44 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
     bl_order = 1
 
-    def draw_header(self, context):
+    @classmethod
+    def poll(self, context):
+        preferences = get_addon_preferences(bpy.context)
+        show_panel = preferences.show_vertex_painter
+        return show_panel
+    
+    def draw_header(self, context):    
         self.layout.label(text="", icon="BRUSH_DATA")
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.prop(context.scene, "vert_paint_color")
-        row.operator("sollumz.paint_vertices")
 
+        row = layout.row()
+        row.prop(context.scene, "vert_paint_color1", text="")
+        row.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color1
+
+        row2 = layout.row()
+        row2.prop(context.scene, "vert_paint_color2", text="")
+        row2.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color2
+        
+        row3 = layout.row()
+        row3.prop(context.scene, "vert_paint_color3", text="")
+        row3.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color3
+    
+        preferences = get_addon_preferences(bpy.context)
+        extra = preferences.extra_color_swatches
+        if extra:            
+            row4 = layout.row()
+            row4.prop(context.scene, "vert_paint_color4", text="")
+            row4.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color4
+
+            row5 = layout.row()
+            row5.prop(context.scene, "vert_paint_color5", text="")
+            row5.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color5
+            
+            row6 = layout.row()
+            row6.prop(context.scene, "vert_paint_color6", text="")
+            row6.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color6
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_label = "Debug"

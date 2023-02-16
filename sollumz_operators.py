@@ -323,17 +323,24 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint"
     bl_action = "Paint Vertices"
 
-    def paint_map(self, mesh, map, color):
-        i = 0
-        for poly in mesh.polygons:
-            for _ in poly.loop_indices:
-                map[i].color = color
-                i += 1
+    color : bpy.props.FloatVectorProperty(
+        subtype="COLOR_GAMMA",
+        default=(1.0, 1.0, 1.0, 1.0),
+        min=0,
+        max=1,
+        size=4
+    )
+
+    def paint_map(self, color_attr, color):
+        for datum in color_attr.data:
+            # Uses color_srgb to match the behavior of the old
+            # vertex_colors code. Requires 3.4+.
+            datum.color_srgb = color
 
     def paint_mesh(self, mesh, color):
-        if len(mesh.vertex_colors) == 0:
-            mesh.vertex_colors.new()
-        self.paint_map(mesh, mesh.vertex_colors.active.data, color)
+        if not mesh.color_attributes:
+            mesh.color_attributes.new("Color", 'BYTE_COLOR', 'CORNER')
+        self.paint_map(mesh.attributes.active_color, color)
 
     def run(self, context):
         objs = context.selected_objects
@@ -341,7 +348,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
         if len(objs) > 0:
             for obj in objs:
                 if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-                    self.paint_mesh(obj.data, context.scene.vert_paint_color)
+                    self.paint_mesh(obj.data, self.color)
                     self.messages.append(
                         f"{obj.name} was successfully painted.")
                 else:
@@ -352,7 +359,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
 
         return True
-
+ 
 
 class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 1 On Selected Object"""

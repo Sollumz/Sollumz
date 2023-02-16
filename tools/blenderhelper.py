@@ -4,6 +4,7 @@ from mathutils import Vector
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, SollumzAddonPreferences
 
 
+
 def get_addon_preferences(context: bpy.types.Context) -> SollumzAddonPreferences:
     return context.preferences.addons[__package__.split(".")[0]].preferences
 
