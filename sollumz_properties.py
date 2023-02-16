@@ -704,7 +704,7 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter", description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)", default=True)
     
-    extra_color_swatches: bpy.props.BoolProperty(name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=False)
+    extra_color_swatches: bpy.props.BoolProperty(name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
 
     def draw(self, context):
         layout = self.layout
