@@ -45,15 +45,13 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
             if entity_obj is None or entity_obj not in attachable_objects:
                 continue
 
-            if entity.room_id == room_id or entity.portal_id == portal_id:
-                if entity.room_id == room_id and room_id != "-1":
-                    self.report(
-                        {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_room_name()}. Skipping...")
-
-                if entity.portal_id == portal_id and portal_id != "-1":
-                    self.report(
-                        {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_portal_name()}. Skipping...")
-
+            if entity.room_id == room_id and room_id != "-1":
+                self.report(
+                    {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_room_name()}. Skipping...")
+                attachable_objects.remove(entity_obj)
+            elif entity.portal_id == portal_id and portal_id != "-1":
+                self.report(
+                    {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_portal_name()}. Skipping...")
                 attachable_objects.remove(entity_obj)
 
         for obj in attachable_objects:
@@ -123,7 +121,7 @@ class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_entity_portals"
     bl_property = "portal_id"
 
-    portal_id: bpy.props.EnumProperty(items=get_portal_items)
+    portal_id: bpy.props.EnumProperty(items=get_portal_items, default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -138,7 +136,7 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_entity_rooms"
     bl_property = "room_id"
 
-    room_id: bpy.props.EnumProperty(items=get_room_items)
+    room_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
 
     @classmethod
     def poll(cls, context):

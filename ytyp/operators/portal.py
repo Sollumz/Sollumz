@@ -185,7 +185,7 @@ class SOLLUMZ_OT_search_portal_room_from(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_portal_room_from"
     bl_property = "room_from_id"
 
-    room_from_id: bpy.props.EnumProperty(items=get_room_items)
+    room_from_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -200,7 +200,7 @@ class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_portal_room_to"
     bl_property = "room_to_id"
 
-    room_to_id: bpy.props.EnumProperty(items=get_room_items)
+    room_to_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
 
     @classmethod
     def poll(cls, context):

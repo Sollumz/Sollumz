@@ -11,7 +11,7 @@ from .extensions import ExtensionsContainer
 def get_portal_items(self, context: bpy.types.Context):
     selected_archetype = get_selected_archetype(context)
 
-    items = [("-1", "None", "")]
+    items = [("-1", "None", "", -1)]
 
     if not selected_archetype:
         return items
@@ -25,7 +25,7 @@ def get_portal_items(self, context: bpy.types.Context):
 def get_room_items(self, context: bpy.types.Context):
     selected_archetype = get_selected_archetype(context)
 
-    items = [("-1", "None", "")]
+    items = [("-1", "None", "", -1)]
 
     if not selected_archetype:
         return items
@@ -133,13 +133,14 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     corner4: bpy.props.FloatVectorProperty(name="Corner 4", subtype="XYZ")
 
     room_from_id: bpy.props.EnumProperty(
-        name="Room From", items=get_room_items)
+        name="Room From", items=get_room_items, default=-1)
     room_from_index: bpy.props.IntProperty(
         name="Room From Index", get=get_room_from_index)
     room_from_name: bpy.props.StringProperty(
         name="Room From", get=get_room_from_name)
 
-    room_to_id: bpy.props.EnumProperty(name="Room To", items=get_room_items)
+    room_to_id: bpy.props.EnumProperty(
+        name="Room To", items=get_room_items, default=-1)
     room_to_index: bpy.props.IntProperty(
         name="Room To Index", get=get_room_to_index)
     room_to_name: bpy.props.StringProperty(
@@ -205,13 +206,15 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     scale_xy: bpy.props.FloatProperty(name="Scale XY", default=1)
     scale_z: bpy.props.FloatProperty(name="Scale Z", default=1)
 
-    portal_id: bpy.props.EnumProperty(name="Portal", items=get_portal_items)
+    portal_id: bpy.props.EnumProperty(
+        name="Portal", items=get_portal_items, default=-1)
     portal_index: bpy.props.IntProperty(
         name="Attached Portal Index", get=get_portal_index)
     portal_name: bpy.props.StringProperty(
         name="Attached Portal Name", get=get_portal_name)
 
-    room_id: bpy.props.EnumProperty(name="Room", items=get_room_items)
+    room_id: bpy.props.EnumProperty(
+        name="Room", items=get_room_items, default=-1)
     room_index: bpy.props.IntProperty(
         name="Attached Room Index", get=get_room_index)
     room_name: bpy.props.StringProperty(
@@ -225,9 +228,9 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
 
 def register():
     bpy.types.Scene.sollumz_add_entity_portal = bpy.props.EnumProperty(
-        name="Portal", items=get_portal_items)
+        name="Portal", items=get_portal_items, default=-1)
     bpy.types.Scene.sollumz_add_entity_room = bpy.props.EnumProperty(
-        name="Room", items=get_room_items)
+        name="Room", items=get_room_items, default=-1)
 
 
 def unregister():
