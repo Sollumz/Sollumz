@@ -95,6 +95,24 @@ class SOLLUMZ_OT_set_loddist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Opera
         return {'FINISHED'}
 
 
+class SOLLUMZ_OT_set_entity_loddist_for_all_archetypes(bpy.types.Operator):
+    """Sets entity lod dist for all entities in all within the selected MLO archetype"""
+    bl_idname = "sollumz.setentityloddistallarchs"
+    bl_label = "Set to All Entities"
+
+    @classmethod
+    def poll(cls, context):
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO and len(selected_archetype.entities) > 0
+
+    def execute(self, context):
+        selected_archetype = get_selected_archetype(context)
+        for entity in selected_archetype.entities:
+            entity.lod_dist = selected_archetype.all_entity_lod_dist
+
+        return {'FINISHED'}
+
+
 class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets HD textures distance for all archetypes within the selected ytyp"""
     bl_idname = "sollumz.sethdtexturedistallarchs"

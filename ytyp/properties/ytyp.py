@@ -123,6 +123,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier")
 
+    all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
+
     id: bpy.props.IntProperty(default=-1)
 
     @property

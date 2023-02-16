@@ -3,7 +3,8 @@ from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ...sollumz_properties import ArchetypeType
 
 from ..utils import (
-    get_selected_ytyp
+    get_selected_ytyp,
+    get_selected_archetype
 )
 
 
@@ -116,4 +117,14 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         row = layout.row()
         row.prop(selected_ytyp, "all_flags")
         row.operator("sollumz.setflagsallarchs")
+
+        selected_archetype = get_selected_archetype(context)
+
+        if not selected_archetype:
+            return
+
+        layout.separator()
+
         row = layout.row()
+        row.prop(selected_archetype, "all_entity_lod_dist")
+        row.operator("sollumz.setentityloddistallarchs")
