@@ -331,17 +331,16 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
         size=4
     )
 
-    def paint_map(self, mesh, map, color):
-        i = 0
-        for poly in mesh.polygons:
-            for _ in poly.loop_indices:
-                map[i].color = color
-                i += 1
+    def paint_map(self, color_attr, color):
+        for datum in color_attr.data:
+            # Uses color_srgb to match the behavior of the old
+            # vertex_colors code. Requires 3.4+.
+            datum.color_srgb = color
 
     def paint_mesh(self, mesh, color):
-        if len(mesh.vertex_colors) == 0:
-            mesh.vertex_colors.new()
-        self.paint_map(mesh, mesh.vertex_colors.active.data, color)
+        if not mesh.color_attributes:
+            mesh.color_attributes.new("Color", 'BYTE_COLOR', 'CORNER')
+        self.paint_map(mesh.attributes.active_color, color)
 
     def run(self, context):
         objs = context.selected_objects
@@ -360,7 +359,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
 
         return True
-
+ 
 
 class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 1 On Selected Object"""
