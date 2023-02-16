@@ -107,17 +107,17 @@ class LightProperties(bpy.types.PropertyGroup):
     culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
     unknown_45: bpy.props.FloatProperty(name="Unknown 45")
     unknown_46: bpy.props.FloatProperty(name="Unknown 46")
-    volume_intensity: bpy.props.FloatProperty(name="Volume Intensity")
+    volume_intensity: bpy.props.FloatProperty(name="Volume Intensity", default=1.0)
     shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")
-    volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale")
+    volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale", default=1.0)
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0)
+        name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0, default=(1.0, 1.0, 1.0))
     light_hash: bpy.props.IntProperty(name="Light Hash")
     volume_outer_intensity: bpy.props.FloatProperty(
-        name="Volume Outer Intensity")
+        name="Volume Outer Intensity", default=1.0)
     corona_size: bpy.props.FloatProperty(name="Corona Size")
     volume_outer_exponent: bpy.props.FloatProperty(
-        name="Volume Outer Exponent")
+        name="Volume Outer Exponent", default=1.0)
     light_fade_distance: bpy.props.FloatProperty(name="Light Fade Distance")
     shadow_fade_distance: bpy.props.FloatProperty(name="Shadow Fade Distance")
     specular_fade_distance: bpy.props.FloatProperty(
@@ -125,8 +125,8 @@ class LightProperties(bpy.types.PropertyGroup):
     volumetric_fade_distance: bpy.props.FloatProperty(
         name="Volumetric Fade Distance")
     shadow_near_clip: bpy.props.FloatProperty(name="Shadow Near Clip")
-    corona_intensity: bpy.props.FloatProperty(name="Corona Intensity")
-    corona_z_bias: bpy.props.FloatProperty(name="Corona Z Bias")
+    corona_intensity: bpy.props.FloatProperty(name="Corona Intensity", default=1.0)
+    corona_z_bias: bpy.props.FloatProperty(name="Corona Z Bias", default=0.1)
     tangent: bpy.props.FloatVectorProperty(name="Tangent")
     cone_inner_angle: bpy.props.FloatProperty(name="Cone Inner Angle")
     cone_outer_angle: bpy.props.FloatProperty(name="Cone Outer Angle")
