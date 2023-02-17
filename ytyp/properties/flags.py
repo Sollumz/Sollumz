@@ -149,7 +149,7 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag10: bpy.props.BoolProperty(
         name="Bone anims (YCD)", update=FlagPropertyGroup.update_flag)
     flag11: bpy.props.BoolProperty(
-        name="Unknown 11", update=FlagPropertyGroup.update_flag)
+        name="UV anims (YCD)", update=FlagPropertyGroup.update_flag)
     flag12: bpy.props.BoolProperty(
         name="Unknown 12", update=FlagPropertyGroup.update_flag)
     flag13: bpy.props.BoolProperty(
