@@ -292,23 +292,24 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(bpy.types.Panel, ExtensionsPanelHelp
         selected_extension = get_selected_extension(context)
         layout.separator()
 
-        if selected_extension.extension_type == ExtensionType.LADDER:
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
-            row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
+        if selected_extension:
+            if selected_extension.extension_type == ExtensionType.LADDER:
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
+                row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
 
-        if selected_extension.extension_type == ExtensionType.PARTICLE:
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_update_particle_effect_location.bl_idname)
-        if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
-            row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_update_corner_c_location.bl_idname)
-            row.operator(SOLLUMZ_OT_update_corner_d_location.bl_idname)
+            if selected_extension.extension_type == ExtensionType.PARTICLE:
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_particle_effect_location.bl_idname)
+            if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
+                row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_corner_c_location.bl_idname)
+                row.operator(SOLLUMZ_OT_update_corner_d_location.bl_idname)
 
 
 class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
