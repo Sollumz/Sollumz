@@ -35,7 +35,7 @@ def create_mlo_portal(portal_xml: ytypxml.Portal, archetype: ArchetypeProperties
     portal.audio_occlusion = str(
         portal_xml.audio_occlusion)
     for index in portal_xml.attached_objects:
-        archetype.entities[index].portal_id = str(portal.id)
+        archetype.entities[index].attached_portal_id = str(portal.id)
 
 
 def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
@@ -52,7 +52,7 @@ def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
     room.floor_id = room_xml.floor_id
     room.exterior_visibility_depth = room_xml.exterior_visibility_depth
     for index in room_xml.attached_objects:
-        archetype.entities[index].room_id = str(room.id)
+        archetype.entities[index].attached_room_id = str(room.id)
 
 
 def find_and_link_entity_object(entity_xml: ymapxml.Entity, entity: MloEntityProperties):

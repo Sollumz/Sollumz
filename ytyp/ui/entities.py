@@ -92,10 +92,10 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
         layout.separator()
 
         row = layout.row(align=True)
-        row.prop(selected_entity, "portal_id")
+        row.prop(selected_entity, "attached_portal_id")
         row.operator("sollumz.search_entity_portals", text="", icon="VIEWZOOM")
         row = layout.row(align=True)
-        row.prop(selected_entity, "room_id")
+        row.prop(selected_entity, "attached_room_id")
         row.operator("sollumz.search_entity_rooms", text="", icon="VIEWZOOM")
 
         layout.separator()
