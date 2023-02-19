@@ -6,7 +6,7 @@ from typing import Optional
 from ..tools.blenderhelper import create_empty_object, material_from_image, create_mesh_object, remove_number_suffix
 from ..tools.meshhelper import create_uv_layer
 from ..tools.utils import multiply_homogeneous
-from ..sollumz_properties import SollumType, SollumzImportSettings, LODLevel
+from ..sollumz_properties import SollumType, SollumzImportSettings, LODLevel, SOLLUMZ_UI_NAMES
 from ..cwxml.fragment import YFT, Fragment, LOD, Group, Children, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup
 from ..ydr.ydrimport import shadergroup_to_materials, shader_item_to_material, skeleton_to_obj, rotation_limits_to_obj, create_lights, set_drawable_properties
@@ -14,7 +14,7 @@ from ..ybn.ybnimport import create_bound_object
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties
-from .create_drawable_models import create_drawable_models, create_drawable_models_split_by_group, add_armature_constraint, create_joined_mesh, set_lod_model_properties
+from .create_drawable_models import create_drawable_models, create_drawable_models_split_by_group, add_armature_constraint
 
 
 def import_yft(filepath: str, import_settings: SollumzImportSettings):
@@ -268,45 +268,51 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, mes
 
         bone_name = bone_name_by_tag[child_xml.bone_tag]
 
-        child_obj = create_phys_child_mesh(
-            child_xml.drawable, frag_obj, materials, bone_name)
+        child_objs = create_phys_child_mesh(
+            child_xml.drawable, frag_obj, materials, bone_name, mesh_parent)
 
         if hi_xml is not None and hi_materials is not None:
             hi_children: list[Children] = hi_xml.physics.lod1.children
             hi_drawable = hi_children[i].drawable
             create_frag_child_hi_lod(
-                bone_name, child_obj, hi_drawable, hi_materials)
-
-        child_obj.parent = mesh_parent
+                bone_name, child_objs, frag_obj, hi_drawable, hi_materials)
 
     return child_meshes
 
 
-def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str):
+def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, parent_obj: bpy.types.Object):
     """Create a single physics child mesh"""
-    child_obj = create_joined_mesh(drawable_xml, materials, bone_name)
+    # There is usually only one drawable model in each frag child
+    child_objs = create_drawable_models(drawable_xml, materials, frag_obj)
 
-    set_lod_model_properties([child_obj], drawable_xml)
-    add_armature_constraint(child_obj, frag_obj, bone_name)
+    for child_obj in child_objs:
+        add_armature_constraint(child_obj, frag_obj, bone_name)
 
-    child_obj.name = f"{bone_name}.child"
-    child_obj.sollumz_is_physics_child_mesh = True
+        child_obj.name = f"{bone_name}.child"
+        child_obj.sollumz_is_physics_child_mesh = True
+        child_obj.parent = parent_obj
 
-    return child_obj
+        # Rename the lod meshes
+        for lod in child_obj.sollumz_lods.lods:
+            if lod.mesh is None:
+                continue
+            lod.mesh.name = f"{bone_name}_{SOLLUMZ_UI_NAMES[lod.type].lower().replace(' ', '_')}"
+
+    return child_objs
 
 
-def create_frag_child_hi_lod(name: str, child_obj: bpy.types.Object, hi_drawable: Drawable, hi_materials: list[bpy.types.Material]):
+def create_frag_child_hi_lod(name: str, child_objs: list[bpy.types.Object], frag_obj: bpy.types.Object, hi_drawable: Drawable, hi_materials: list[bpy.types.Material]):
     """Create hi lod for a physics child mesh"""
-    child_hi_obj = create_joined_mesh(hi_drawable, hi_materials, name)
-    child_hi_obj.data.name = f"{name}_very_high"
+    child_hi_objs = create_drawable_models(hi_drawable, hi_materials, frag_obj)
 
-    set_lod_model_properties([child_hi_obj], hi_drawable)
+    for child_obj, child_hi_obj in zip(child_objs, child_hi_objs):
+        child_hi_obj.data.name = f"{name}_very_high"
 
-    child_obj.sollumz_lods.set_lod_mesh(
-        LODLevel.VERYHIGH, child_hi_obj.data)
-    child_obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
+        child_obj.sollumz_lods.set_lod_mesh(
+            LODLevel.VERYHIGH, child_hi_obj.data)
+        child_obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
 
-    bpy.data.objects.remove(child_hi_obj)
+        bpy.data.objects.remove(child_hi_obj)
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):
