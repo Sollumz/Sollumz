@@ -24,12 +24,16 @@ def apply_brush_settings(brush, idx):
         brush.blend = "MIX"
     if idx == 1:
         brush.color = (0, 0, 0)
+        brush.strength = 1
     elif idx == 2:
         brush.color = (0, 0, 1)
+        brush.strength = 1
     elif idx == 3:
         brush.color = (0, 1, 0)
+        brush.strength = 1
     elif idx == 4:
         brush.color = (0, 1, 1)
+        brush.strength = 1
     elif idx == 5:
         alpha = bpy.context.scene.vert_paint_alpha
         if alpha > 0:
