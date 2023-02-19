@@ -28,6 +28,8 @@ from .ymap.ymapexport import export_ymap
 from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix
 from .tools.ytyphelper import ytyp_from_objects
 
+from . import logger
+
 
 class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     """Imports xml files exported by codewalker"""
@@ -90,6 +92,8 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         return True
 
     def run(self, context):
+        logger.set_logging_operator(self)
+
         result = False
         if self.import_settings.batch_mode == "DIRECTORY":
             folderpath = os.path.dirname(self.filepath)
@@ -281,6 +285,8 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
     def run(self, context):
+        logger.set_logging_operator(self)
+
         objects = self.get_only_parent_objs(self.collect_objects(context))
 
         if len(objects) == 0:
