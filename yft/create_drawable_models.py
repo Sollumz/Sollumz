@@ -2,10 +2,11 @@ import bpy
 from typing import Dict, Optional
 from collections import defaultdict
 from ..tools.blenderhelper import create_mesh_object
-from ..cwxml.drawable import Geometry, Drawable, Bone
+from ..cwxml.drawable import Geometry, Drawable, Bone, DrawableModel
 from ..sollumz_properties import LODLevel, SollumType, SOLLUMZ_UI_NAMES
-from .geometry_data import GeometryData, VertexAttributes, MeshBuilder, split_indices
+from ..ydr.properties import DrawableModelProperties
 from ..lods import LODLevels
+from .geometry_data import GeometryData, VertexAttributes, MeshBuilder, split_indices
 
 # TODO: Make ydr use this module
 
@@ -14,44 +15,112 @@ GeomDataByBone = Dict[int, dict[LODLevel, GeometryData]]
 GeomsByBone = Dict[int, dict[LODLevel, list[Geometry]]]
 
 
-def create_drawable_meshes(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
+def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
     """Create fragment mesh joining all skinned geometries. Any non-skinned meshes will be split and parented to their corresponding bone. Returns all mesh objects."""
     bones: list[Bone] = drawable_xml.skeleton.bones
 
     if not bones:
         joined_geom = create_joined_mesh(
-            drawable_xml, materials, drawable_obj.name)
+            drawable_xml, materials, f"{drawable_obj.name}.mesh_object")
         return [joined_geom]
 
-    skinned_geom = create_skinned_drawable_mesh(
+    skinned_model = create_skinned_model(
         drawable_xml, materials, drawable_obj)
 
-    non_skinned_geoms = create_non_skinned_drawable_mesh(
+    models = create_non_skinned_model(
         drawable_xml, materials, drawable_obj)
 
-    return [skinned_geom, *non_skinned_geoms]
+    set_skinned_model_properties(drawable_obj, drawable_xml)
+    set_lod_model_properties(models, drawable_xml)
+
+    return [skinned_model, *models]
 
 
-def create_drawable_meshes_split_by_group(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
+def set_skinned_model_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
+    """Set drawable model properties for the skinned ``DrawableModel`` (only ever 1 per ``Drawable``)."""
+    skinned_models_by_lods = get_skinned_models_by_lod(drawable_xml)
+
+    if not skinned_models_by_lods:
+        return
+
+    # Use the first skinned model as there should only ever be 1 skinned drawable model
+    for lod_level, model_xml in skinned_models_by_lods.items():
+        skinned_model_props = drawable_obj.skinned_model_properties.get_lod(
+            lod_level)
+
+        set_drawable_model_properties(skinned_model_props, model_xml)
+
+
+def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: Drawable):
+    """Set drawable model properties for each LOD mesh in ``model_objs``."""
+    models_by_lods = get_models_by_lod(drawable_xml)
+
+    for i, obj in enumerate(model_objs):
+        model_xml = models_by_lods[i]
+        obj_lods: LODLevels = obj.sollumz_lods
+
+        for lod in obj_lods.lods:
+            if lod.mesh is None:
+                continue
+
+            set_drawable_model_properties(
+                lod.mesh.drawable_model_properties, model_xml[lod.type])
+
+
+def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
+    model_props.render_mask = model_xml.render_mask
+    model_props.unknown_1 = model_xml.unknown_1
+    model_props.flags = model_xml.flags
+
+
+def get_skinned_models_by_lod(drawable_xml: Drawable):
+    """Get all skinned or non-skinned ``DrawableModels`` in ``drawable_xml`` mapped by LODLevel."""
+    models_by_lod: dict[LODLevel, DrawableModel] = defaultdict(dict)
+
+    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+        for model_xml in models:
+            if model_xml.has_skin == 0:
+                continue
+
+            models_by_lod[lod_level] = model_xml
+
+    return models_by_lod
+
+
+def get_models_by_lod(drawable_xml: Drawable):
+    """Get all skinned or non-skinned ``DrawableModels`` in ``drawable_xml`` mapped by LODLevel."""
+    models_by_lod: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
+
+    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+        for i, model_xml in enumerate(models):
+            models_by_lod[i][lod_level] = model_xml
+
+    return list(models_by_lod.values())
+
+
+def create_drawable_models_split_by_group(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
     """Create fragment mesh split by vertex groups. Any non-skinned meshes will be split and parented to their corresponding bone. Returns all mesh objects."""
     bones: list[Bone] = drawable_xml.skeleton.bones
 
     if not bones:
-        return create_drawable_meshes(drawable_xml, materials, drawable_obj)
+        return create_drawable_models(drawable_xml, materials, drawable_obj)
 
-    skinned_geoms = create_split_drawable_mesh(
+    skinned_models = create_split_objects(
         drawable_xml, materials, drawable_obj)
 
-    non_skinned_geoms = create_non_skinned_drawable_mesh(
+    models = create_non_skinned_model(
         drawable_xml, materials, drawable_obj)
 
-    return skinned_geoms + non_skinned_geoms
+    set_skinned_model_properties(drawable_obj, drawable_xml)
+    set_lod_model_properties(models, drawable_xml)
+
+    return skinned_models + models
 
 
 def create_joined_mesh(drawable_xml: Drawable, materials: list[bpy.types.Material], name: Optional[str] = None):
     """Create a joined mesh from the drawable. This will break any rigging, so only use on drawables with no skeleton."""
     geometry_data_by_lod = get_joined_geometry_data(drawable_xml)
-    geom_name = f"{name or drawable_xml.name}.mesh_object"
+    geom_name = name or drawable_xml.name
     bones: list[Bone] = drawable_xml.skeleton.bones
 
     geom = create_drawable_geometry(
@@ -60,10 +129,11 @@ def create_joined_mesh(drawable_xml: Drawable, materials: list[bpy.types.Materia
     return geom
 
 
-def create_skinned_drawable_mesh(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
+def create_skinned_model(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
     """Create the skinned portion of the mesh (parts of mesh with vertex groups)."""
     skinned_geometry_data = get_joined_geometry_data(
         drawable_xml, only_skinned=True)
+
     name = f"{drawable_obj.name}.mesh_object"
     bones: list[Bone] = drawable_xml.skeleton.bones
 
@@ -74,7 +144,7 @@ def create_skinned_drawable_mesh(drawable_xml: Drawable, materials: list[bpy.typ
     return geom
 
 
-def create_split_drawable_mesh(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
+def create_split_objects(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
     """Create skinned portion of mesh split by vertex groups."""
     grouped_geometry_data = group_drawable_geometries(drawable_xml)
     bones: list[Bone] = drawable_xml.skeleton.bones
@@ -90,7 +160,7 @@ def create_split_drawable_mesh(drawable_xml: Drawable, materials: list[bpy.types
     return geoms
 
 
-def create_non_skinned_drawable_mesh(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
+def create_non_skinned_model(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object):
     """Create the non skinned parts of the fragment mesh. These objects are separated by drawable model so they can be parented to their bone."""
     non_skinned_geometry_data = create_non_skinned_geometry_data(
         drawable_xml)
@@ -112,7 +182,7 @@ def create_non_skinned_drawable_mesh(drawable_xml: Drawable, materials: list[bpy
 def create_drawable_geometry(name: str, geometry_data_by_lod: dict[LODLevel, GeometryData], materials: list[bpy.types.Material], bones: list[Bone]):
     """Create a single drawable geometry object. Requires a mapping of GeometryData to LODLevel."""
     geom: bpy.types.Object = create_mesh_object(SollumType.FRAG_GEOM, name)
-    lod_levels: LODLevels = geom.sollumz_object_lods
+    lod_levels: LODLevels = geom.sollumz_lods
     original_mesh = geom.data
 
     lod_levels.add_empty_lods()
@@ -136,10 +206,19 @@ def create_drawable_geometry(name: str, geometry_data_by_lod: dict[LODLevel, Geo
     return geom
 
 
+def get_drawable_models_by_lod(drawable: Drawable):
+    drawable_models_by_lod: dict[LODLevel,
+                                 list[DrawableModel]] = defaultdict(list)
+    for lod_level, models in zip(LODLevel, drawable.model_groups):
+        drawable_models_by_lod[lod_level].extend(models)
+
+    return drawable_models_by_lod
+
+
 def group_geometries_by_lod(drawable: Drawable, only_skinned=False):
     geometries_by_lod: dict[LODLevel, list[Geometry]] = defaultdict(list)
 
-    for lod_level, models in zip(LODLevel, drawable.model_groups):
+    for lod_level, models in get_drawable_models_by_lod(drawable).items():
         for model in models:
             if model.has_skin == 0 and only_skinned:
                 continue

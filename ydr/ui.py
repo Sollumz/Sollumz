@@ -6,26 +6,6 @@ from ..sollumz_properties import SollumType, MaterialType, LightType
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 
 
-def draw_drawable_properties(self, context):
-    obj = context.active_object
-    if obj and obj.sollum_type == SollumType.DRAWABLE:
-        layout = self.layout
-        layout.prop(obj.drawable_properties, "lod_dist_high")
-        layout.prop(obj.drawable_properties, "lod_dist_med")
-        layout.prop(obj.drawable_properties, "lod_dist_low")
-        layout.prop(obj.drawable_properties, "lod_dist_vlow")
-
-
-def draw_drawable_model_properties(self, context):
-    obj = context.active_object
-    if obj and obj.sollum_type == SollumType.DRAWABLE_MODEL:
-        layout = self.layout
-        layout.prop(obj.drawable_model_properties, "render_mask")
-        layout.prop(obj.drawable_model_properties, "unknown_1")
-        layout.prop(obj.drawable_model_properties, "flags")
-        layout.prop(obj.drawable_model_properties, "sollum_lod")
-
-
 def draw_shader(self, context):
     obj = context.active_object
     if not obj:
@@ -37,6 +17,56 @@ def draw_shader(self, context):
         row.prop(mat.shader_properties, "renderbucket")
         row.prop(mat.shader_properties, "filename")
         row.prop(mat.shader_properties, "name")
+
+
+class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
+    bl_label = "Drawable Properties"
+    bl_idname = "SOLLUMZ_PT_DRAWABLE_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_decorate = False
+        layout.use_property_split = True
+
+        obj = context.active_object
+
+        layout.prop(obj.drawable_properties, "lod_dist_high")
+        layout.prop(obj.drawable_properties, "lod_dist_med")
+        layout.prop(obj.drawable_properties, "lod_dist_low")
+        layout.prop(obj.drawable_properties, "lod_dist_vlow")
+
+
+class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
+    bl_label = "Drawable Model Properties"
+    bl_idname = "SOLLUMZ_PT_DRAWABLE_MODEL_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_decorate = False
+        layout.use_property_split = True
+
+        obj = context.active_object
+
+        layout.prop(obj.drawable_model_properties, "render_mask")
+        layout.prop(obj.drawable_model_properties, "unknown_1")
+        layout.prop(obj.drawable_model_properties, "flags")
+        layout.prop(obj.drawable_model_properties, "sollum_lod")
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
@@ -494,12 +524,8 @@ class SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL(bpy.types.Panel):
 
 
 def register():
-    SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_properties)
-    SOLLUMZ_PT_OBJECT_PANEL.append(draw_drawable_model_properties)
     SOLLUMZ_PT_MAT_PANEL.append(draw_shader)
 
 
 def unregister():
-    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_properties)
-    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_drawable_model_properties)
     SOLLUMZ_PT_MAT_PANEL.remove(draw_shader)

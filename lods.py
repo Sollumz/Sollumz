@@ -11,7 +11,7 @@ class ObjectLODProps(bpy.types.PropertyGroup):
     def update_object(self, context):
         obj: bpy.types.Object = self.id_data
 
-        active_obj_lod = obj.sollumz_object_lods.active_lod
+        active_obj_lod = obj.sollumz_lods.active_lod
 
         if active_obj_lod == self and self.mesh is not None:
             obj.data = self.mesh
@@ -105,7 +105,7 @@ class SetLodLevelHelper:
                 continue
 
             if child.type == "MESH":
-                child.sollumz_object_lods.set_active_lod(self.LOD_LEVEL)
+                child.sollumz_lods.set_active_lod(self.LOD_LEVEL)
                 continue
 
     def execute(self, context):
@@ -158,10 +158,10 @@ class SOLLUMZ_OT_SET_FRAG_HIDDEN(bpy.types.Operator, SetLodLevelHelper):
     @staticmethod
     def set_highest_lod_active(obj: bpy.types.Object):
         for lod_level in [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]:
-            if obj.sollumz_object_lods.get_lod(lod_level) is None:
+            if obj.sollumz_lods.get_lod(lod_level) is None:
                 continue
 
-            obj.sollumz_object_lods.set_active_lod(lod_level)
+            obj.sollumz_lods.set_active_lod(lod_level)
 
             break
 
@@ -218,7 +218,7 @@ class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
         active_obj = context.view_layer.objects.active
         row = layout.row()
         row.template_list(
-            SOLLUMZ_UL_OBJ_LODS_LIST.bl_idname, "", active_obj.sollumz_object_lods, "lods", active_obj.sollumz_object_lods, "active_lod_index"
+            SOLLUMZ_UL_OBJ_LODS_LIST.bl_idname, "", active_obj.sollumz_lods, "lods", active_obj.sollumz_lods, "active_lod_index"
         )
 
         layout.enabled = active_obj.mode == "OBJECT"
@@ -250,11 +250,11 @@ class SOLLUMZ_PT_LOD_VIEW_TOOLS(bpy.types.Panel):
 
 
 def register():
-    bpy.types.Object.sollumz_object_lods = bpy.props.PointerProperty(
+    bpy.types.Object.sollumz_lods = bpy.props.PointerProperty(
         type=LODLevels)
     bpy.types.Scene.sollumz_frag_is_hidden = bpy.props.BoolProperty()
 
 
 def unregister():
-    del bpy.types.Object.sollumz_object_lods
+    del bpy.types.Object.sollumz_lods
     del bpy.types.Scene.sollumz_frag_is_hidden

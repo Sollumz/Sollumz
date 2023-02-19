@@ -1,6 +1,27 @@
 import bpy
 
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LODLevel
+from ..ydr.properties import DrawableModelProperties
+
+
+class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
+    very_high: bpy.props.PointerProperty(type=DrawableModelProperties)
+    high: bpy.props.PointerProperty(type=DrawableModelProperties)
+    medium: bpy.props.PointerProperty(type=DrawableModelProperties)
+    low: bpy.props.PointerProperty(type=DrawableModelProperties)
+    very_low: bpy.props.PointerProperty(type=DrawableModelProperties)
+
+    def get_lod(self, lod_level: LODLevel):
+        if lod_level == LODLevel.VERYHIGH:
+            return self.very_high
+        elif lod_level == LODLevel.HIGH:
+            return self.high
+        elif lod_level == LODLevel.MEDIUM:
+            return self.medium
+        elif lod_level == LODLevel.LOW:
+            return self.low
+        elif lod_level == LODLevel.VERYLOW:
+            return self.very_low
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -104,8 +125,17 @@ def register():
         type=ChildProperties)
     bpy.types.Object.vehicle_window_properties = bpy.props.PointerProperty(
         type=VehicleWindowProperties)
-    bpy.types.Object.is_physics_child_mesh = bpy.props.BoolProperty(
+    bpy.types.Object.sollumz_is_physics_child_mesh = bpy.props.BoolProperty(
         name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children.")
+
+    # Store properties for the DrawableModel with HasSkin=1. This is so all skinned objects share
+    # the same drawable model properties even when split by group. It seems there is only ever 1
+    # DrawableModel with HasSkin=1 in any given Drawable.
+    bpy.types.Object.skinned_model_properties = bpy.props.PointerProperty(
+        type=SkinnedDrawableModelProperties)
+    # DrawableModel properties stored per mesh for LOD system
+    bpy.types.Mesh.drawable_model_properties = bpy.props.PointerProperty(
+        type=DrawableModelProperties)
 
     bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
         name="Thickness", default=0.1)
@@ -135,7 +165,10 @@ def unregister():
     del bpy.types.Object.fragment_properties
     del bpy.types.Object.child_properties
     del bpy.types.Object.vehicle_window_properties
-    del bpy.types.Object.is_physics_child_mesh
+    del bpy.types.Object.sollumz_is_physics_child_mesh
+
+    del bpy.types.Object.skinned_model_properties
+    del bpy.types.Mesh.drawable_model_properties
 
     del bpy.types.Bone.group_properties
     del bpy.types.Bone.sollumz_use_physics

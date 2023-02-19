@@ -2,7 +2,7 @@ import os
 from mathutils import Matrix, Vector
 from ..sollumz_properties import BOUND_TYPES, SollumType
 from ..ydr.ydrexport import drawable_from_object, get_used_materials, lights_from_object
-from ..ybn.ybnexport import composite_from_objects
+# from ..ybn.ybnexport import composite_from_objects
 from ..cwxml.fragment import BoneTransform, Children, Fragment, Group, LOD, Transform, Window
 from ..sollumz_helper import get_sollumz_objects_from_objects
 from ..tools.fragmenthelper import image_to_shattermap
@@ -224,8 +224,8 @@ def fragment_from_object(exportop, fobj, exportpath):
         flod.archetype.unknown_50 = lod.lod_properties.archetype_unknown_50
         flod.archetype.unknown_54 = lod.lod_properties.archetype_unknown_54
 
-        flod.archetype.bounds = composite_from_objects(
-            bobjs, exportop.export_settings, True)
+        # flod.archetype.bounds = composite_from_objects(
+        #     bobjs, exportop.export_settings, True)
 
         if exportop.export_settings.auto_calculate_inertia:
             flod.archetype.inertia_tensor = calculate_inertia(

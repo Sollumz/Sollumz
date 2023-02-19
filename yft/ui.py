@@ -1,9 +1,9 @@
 import bpy
-from .operators import SOLLUMZ_OT_ADD_FRAG_LOD, SOLLUMZ_OT_REMOVE_FRAG_LOD
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
-from ..sollumz_properties import SollumType, BOUND_TYPES
+from ..sollumz_properties import SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
 from ..sollumz_helper import find_fragment_parent
+from ..ydr.properties import DrawableProperties
 from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties
 
 
@@ -49,6 +49,84 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
             self.layout.prop(obj.fragment_properties, prop)
 
 
+class SOLLUMZ_PT_FRAGMENT_DRAWABLE_PANEL(bpy.types.Panel):
+    bl_label = "Drawable Properties"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_DRAWABLE_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.active_object
+
+        for prop in DrawableProperties.__annotations__:
+            if prop == "lod_properties":
+                continue
+
+            self.layout.prop(obj.drawable_properties, prop)
+
+
+class SOLLUMZ_PT_FRAG_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
+    bl_label = "LOD Properties"
+    bl_idname = "SOLLUMZ_PT_FRAG_DRAWABLE_MODEL_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+
+        if obj is None:
+            return False
+
+        active_lod = obj.sollumz_lods.active_lod
+
+        return active_lod is not None and obj.sollum_type == SollumType.FRAG_GEOM and obj.type == "MESH"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_decorate = False
+        layout.use_property_split = True
+
+        obj = context.active_object
+        active_lod_level = obj.sollumz_lods.active_lod.type
+        mesh = obj.data
+        frag_parent = find_fragment_parent(obj)
+
+        model_props = mesh.drawable_model_properties
+
+        col = layout.column()
+        col.alignment = "RIGHT"
+        col.enabled = False
+
+        is_skinned_model = obj.vertex_groups and frag_parent is not None and not obj.sollumz_is_physics_child_mesh
+
+        # All skinned objects (objects with vertex groups) go in the same drawable model
+        if is_skinned_model:
+            model_props = frag_parent.skinned_model_properties.get_lod(
+                active_lod_level)
+
+            # col.label(text="*Skinned Model")
+            col.label(
+                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
+        else:
+            col.label(
+                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
+
+        col.separator()
+
+        layout.prop(model_props, "render_mask")
+        layout.prop(model_props, "unknown_1")
+        layout.prop(model_props, "flags")
+
+
 class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
     bl_label = "Vehicle Window"
     bl_idname = "SOLLUMZ_PT_VEHICLE_WINDOW_PANEL"
@@ -73,7 +151,7 @@ class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
-    bl_label = "LOD Properties"
+    bl_label = "Physics LOD Properties"
     bl_idname = "SOLLUMZ_PT_PHYS_LODS_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -216,4 +294,4 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        layout.prop(context.active_object, "is_physics_child_mesh")
+        layout.prop(context.active_object, "sollumz_is_physics_child_mesh")

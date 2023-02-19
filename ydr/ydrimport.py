@@ -1,14 +1,13 @@
 from math import pi, radians
-import bmesh
 import os
 import bpy
 from mathutils import Matrix, Vector
 from .shader_materials import create_shader, create_tinted_shader_graph, get_detail_extra_sampler
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, TextureFormat, TextureUsage, SollumType, LightType
-from ..cwxml.drawable import YDR, Shader, ShaderGroup
+from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, DrawableModel
 from ..tools.meshhelper import create_uv_layer, create_vertexcolor_layer
-from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, join_objects, remove_unused_materials, get_addon_preferences
+from ..tools.blenderhelper import build_tag_bone_map, remove_unused_vertex_groups_of_mesh, get_addon_preferences
 from ..tools.drawablehelper import join_drawable_geometries, drawable_to_asset
 
 BONE_TAIL_POS = (0, 0.05, 0)
@@ -453,6 +452,14 @@ def create_lights(lights, parent, armature_obj=None):
     return lights_parent
 
 
+def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
+    obj.drawable_properties.lod_dist_high = drawable_xml.lod_dist_high
+    obj.drawable_properties.lod_dist_med = drawable_xml.lod_dist_med
+    obj.drawable_properties.lod_dist_low = drawable_xml.lod_dist_low
+    obj.drawable_properties.lod_dist_vlow = drawable_xml.lod_dist_vlow
+    obj.drawable_properties.unknown_9A = drawable_xml.unknown_9A
+
+
 def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=None, import_settings=None, is_ydd=None):
 
     if not materials:
@@ -469,11 +476,7 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
 
     obj.sollum_type = SollumType.DRAWABLE
     obj.empty_display_size = 0
-    obj.drawable_properties.lod_dist_high = drawable.lod_dist_high
-    obj.drawable_properties.lod_dist_med = drawable.lod_dist_med
-    obj.drawable_properties.lod_dist_low = drawable.lod_dist_low
-    obj.drawable_properties.lod_dist_vlow = drawable.lod_dist_vlow
-    obj.drawable_properties.unknown_9A = drawable.unknown_9A
+    set_drawable_properties(obj, drawable)
 
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
