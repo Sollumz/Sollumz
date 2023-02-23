@@ -342,7 +342,7 @@ def get_semantic_from_object(shader, mesh):
     tcs = len(mesh.uv_layers)
     if tcs > 0:
         if tcs > 8:  # or tcs == 0: add this restriction?? although some vertexs buffers may not have uv data???
-            raise Exception(f"To many uv layers or none on mesh: {mesh.name}")
+            raise Exception(f"Too many uv layers or none on mesh: {mesh.name}")
         for _ in range(tcs):
             sematic.append(ydrxml.VertexSemantic.texcoord)
     # add tangents
