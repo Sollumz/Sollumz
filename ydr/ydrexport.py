@@ -25,9 +25,9 @@ from ..sollumz_properties import (
     SollumType
 )
 from ..ybn.ybnexport import bound_from_object, composite_from_object
-from math import degrees, pi
+from math import degrees, pi, isclose
 from mathutils import Quaternion, Vector
-
+from dataclasses import dataclass
 
 def get_used_materials(obj):
     materials = []
@@ -175,6 +175,15 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
 
 
 def get_blended_verts(mesh, vertex_groups, bones=None):
+
+    @dataclass
+    class BoneWeight:
+        bone_index: int
+        weight: float
+
+    def get_weight(element):
+        return element.weight
+
     bone_index_map = {}
     if bones is not None:
         for i in range(len(bones)):
@@ -189,8 +198,8 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
         if len(v.groups) > 0:
             bw = [0] * 4
             bi = [0] * 4
+            processed_groups = []
             valid_weights = 0
-            total_weights = 0
             max_weights = 0
             max_weights_index = -1
 
@@ -201,18 +210,43 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
                 vertex_group = vertex_groups[element.group]
                 vg_name = vertex_group.name if bones else vertex_group.name[:-4]
                 bone_index = bone_index_map.get(vg_name, -1)
-                # 1/255 = 0.0039 the minimal weight for one vertex group
-                weight = round(element.weight * 255)
-                if (vertex_group.lock_weight == False and bone_index != -1 and weight > 0 and valid_weights < 4):
-                    bw[valid_weights] = weight
-                    bi[valid_weights] = bone_index
-                    if max_weights < weight:
-                        max_weights_index = valid_weights
-                        max_weights = weight
-                    valid_weights += 1
-                    total_weights += weight
 
-            # weights normalization
+                # skip the locked vertex groups
+                if vertex_group.lock_weight is True:
+                    continue
+
+                # skip the ones that don't have a corresponding bone
+                if bone_index == -1:
+                    continue
+
+                if isclose(element.weight, 0.0) is True:
+                    continue
+
+                processed_groups.append(BoneWeight(bone_index, element.weight))
+
+            processed_groups = sorted(processed_groups, reverse=True, key=get_weight)
+            # limit total
+            if len(processed_groups) > 4:
+                processed_groups = processed_groups[:4]
+
+            valid_weights = len(processed_groups)
+            total_weights_before_normalization = 0.0
+            for group in processed_groups:
+                total_weights_before_normalization += group.weight
+
+            # weights normalization on float and convert into int
+            for i, group in enumerate(processed_groups):
+                group.weight = group.weight / total_weights_before_normalization
+                weight = round(group.weight * 255)
+                bw[i] = weight
+                bi[i] = group.bone_index
+                if max_weights < weight:
+                    max_weights_index = i
+                    max_weights = weight
+
+            total_weights = sum(bw)
+
+            # weights normalization on int
             if valid_weights > 0 and max_weights_index != -1:
                 bw[max_weights_index] = bw[max_weights_index] + \
                     (255 - total_weights)
