@@ -367,10 +367,14 @@ def obj_from_buffer(vertex_buffer, index_buffer, material, bones=None, name=None
             num = max(256, bone_count)
             for i in range(num):
                 bone_name = "UNK"
-                if bones and i < bone_count:
-                    bone_name = bones[i].name
+                bone_id = i
+                if bone_ids and i < len(bone_ids):
+                    bone_id = bone_ids[i]
+
+                if bones and bone_id < bone_count:
+                    bone_name = bones[bone_id].name
                 elif bone_ids:
-                    bone_name = f"UNKNOWN_BONE.{str(i)}.{bone_ids[len(bone_ids) - 1]}"
+                    bone_name = f"UNKNOWN_BONE.{str(bone_id)}.{bone_ids[len(bone_ids) - 1]}"
                 obj.vertex_groups.new(name=bone_name)
 
             for vertex_idx, vertex in enumerate(vertex_buffer):
@@ -393,7 +397,8 @@ def geometry_to_obj(geometry, material, bones=None, name=None):
     vertex_buffer = geometry.vertex_buffer.get_data()
     index_buffer = [geometry.index_buffer.data[i * 3:(i + 1) * 3]
                     for i in range((len(geometry.index_buffer.data) + 3 - 1) // 3)]
-    return obj_from_buffer(vertex_buffer, index_buffer, material, bones, name)
+    bone_ids = geometry.bone_ids
+    return obj_from_buffer(vertex_buffer, index_buffer, material, bones, name, bone_ids)
 
 
 def geometry_to_obj_split_by_bone(model, materials, bones):
@@ -404,6 +409,7 @@ def geometry_to_obj_split_by_bone(model, materials, bones):
 
         vertices = geo.vertex_buffer.get_data()
         indices = geo.index_buffer.data
+        bone_ids = geo.bone_ids
 
         # Split indices into groups of 3
         triangles = [indices[i * 3:(i + 1) * 3]
@@ -463,7 +469,7 @@ def geometry_to_obj_split_by_bone(model, materials, bones):
             faces = bone_ind_map[bone]
 
             obj = obj_from_buffer(
-                verts, faces, materials[geo.shader_index], bones, "vgs", None)
+                verts, faces, materials[geo.shader_index], bones, "vgs", bone_ids)
 
             if bone not in object_map:
                 object_map[bone] = []
