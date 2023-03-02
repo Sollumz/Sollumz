@@ -374,6 +374,10 @@ class ExtensionsList(ListProperty):
                 ext_class = ExtensionsList.get_extension_xml_class_from_type(
                     ext_type)
 
+                if ext_class is None:
+                    print(f"Unknown extension type '{ext_type}'! Skipping...")
+                    continue
+
                 new.value.append(ext_class.from_xml(child))
 
         return new
