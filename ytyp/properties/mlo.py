@@ -70,24 +70,26 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_room_from_index(self):
         archetype = self.get_mlo_archetype()
+        room_from_id = self.room_from_id
 
         for index, room in enumerate(archetype.rooms):
-            if not self.room_from_id:
+            if not room_from_id:
                 continue
 
-            if room.id == int(self.room_from_id):
+            if room.id == int(room_from_id):
                 return index
 
         return 0
 
     def get_room_to_index(self):
         archetype = self.get_mlo_archetype()
+        room_to_id = self.room_to_id
 
         for index, room in enumerate(archetype.rooms):
-            if not self.room_to_id:
+            if not room_to_id:
                 continue
 
-            if room.id == int(self.room_to_id):
+            if room.id == int(room_to_id):
                 return index
 
         return 0
@@ -109,8 +111,8 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_room_to_name(self):
         return self.get_room_name(self.room_to_index)
 
-    def get_name(self):
-        return f"{self.room_from_name} to {self.room_to_name}"
+    def update_name(self, context):
+        self.name = f"{self.room_from_name} to {self.room_to_name}"
 
     # Work around to store audio_occlusion as a string property since blender int property cant store 32 bit unsigned integers
     def update_audio_occlusion(self, context):
@@ -133,14 +135,14 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     corner4: bpy.props.FloatVectorProperty(name="Corner 4", subtype="XYZ")
 
     room_from_id: bpy.props.EnumProperty(
-        name="Room From", items=get_room_items, default=-1)
+        name="Room From", items=get_room_items, update=update_name, default=-1)
     room_from_index: bpy.props.IntProperty(
         name="Room From Index", get=get_room_from_index)
     room_from_name: bpy.props.StringProperty(
         name="Room From", get=get_room_from_name)
 
     room_to_id: bpy.props.EnumProperty(
-        name="Room To", items=get_room_items, default=-1)
+        name="Room To", items=get_room_items, update=update_name, default=-1)
     room_to_index: bpy.props.IntProperty(
         name="Room To Index", get=get_room_to_index)
     room_to_name: bpy.props.StringProperty(
@@ -153,7 +155,7 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         name="Audio Occlusion", update=update_audio_occlusion, default="0")
 
     # Blender use only
-    name: bpy.props.StringProperty(name="Name", get=get_name)
+    name: bpy.props.StringProperty(name="Name", default="Portal")
     id: bpy.props.IntProperty(name="Id")
 
 
@@ -170,9 +172,13 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):
     def get_portal_index(self):
         selected_archetype = self.get_mlo_archetype()
-        for index, portal in enumerate(selected_archetype.portals):
-            if portal.id == int(self.attached_portal_id):
-                return index
+        attached_portal_id = self.attached_portal_id
+
+        if attached_portal_id:
+            for index, portal in enumerate(selected_archetype.portals):
+                if portal.id == int(attached_portal_id):
+                    return index
+
         return -1
 
     def get_portal_name(self):
@@ -186,9 +192,13 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
 
     def get_room_index(self):
         selected_archetype = self.get_mlo_archetype()
-        for index, room in enumerate(selected_archetype.rooms):
-            if room.id == int(self.attached_room_id):
-                return index
+        attached_room_id = self.attached_room_id
+
+        if attached_room_id:
+            for index, room in enumerate(selected_archetype.rooms):
+                if room.id == int(attached_room_id):
+                    return index
+
         return -1
 
     def get_room_name(self):

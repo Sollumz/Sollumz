@@ -5,7 +5,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
 from .sollumz_helper import SOLLUMZ_OT_base
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags, ArchetypeType
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
 from .cwxml.bound import YBN
@@ -323,7 +323,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint"
     bl_action = "Paint Vertices"
 
-    color : bpy.props.FloatVectorProperty(
+    color: bpy.props.FloatVectorProperty(
         subtype="COLOR_GAMMA",
         default=(1.0, 1.0, 1.0, 1.0),
         min=0,
@@ -359,7 +359,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
 
         return True
- 
+
 
 class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 1 On Selected Object"""
@@ -578,6 +578,24 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
 
         for light in lights:
             light.energy = light.energy * 500
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_debug_update_portal_names(bpy.types.Operator):
+    bl_idname = "sollumz.debug_update_portal_names"
+    bl_label = "Update Portal Names"
+    bl_description = "Update all portal names in the blend file based on room from/to."
+    bl_options = {"UNDO"}
+
+    def execute(self, context):
+        for ytyp in context.scene.ytyps:
+            for archetype in ytyp.archetypes:
+                if archetype.type != ArchetypeType.MLO:
+                    continue
+
+                for portal in archetype.portals:
+                    portal.update_name(context)
 
         return {"FINISHED"}
 
