@@ -10,6 +10,7 @@ from ..tools.blenderhelper import remove_number_suffix
 from ..tools.meshhelper import get_bound_extents
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.utils import get_min_vector, get_max_vector
+from math import radians, sin, cos
 
 
 def box_from_obj(obj):
@@ -116,14 +117,19 @@ def calculate_extents(ymap, obj):
     ymap.streaming_extents_max = get_max_vector(
         ymap.streaming_extents_max, bbmax)
 
+def convert_angle(angle):
+    sine_value = 5 * math.sin(math.radians(angle))
+    cosine_value = 5 * math.cos(math.radians(angle))
+    print(f"3 The second point is ({sine_value},{cosine_value}).")
+    return sine_value, cosine_value
 
 def cargen_from_obj(obj):
     cargen = CarGenerator()
     cargen.position = obj.location
 
-    # TODO: Convert obj rotation to orientX/orientY
-    cargen.orient_x = 0.0
-    cargen.orient_y = 0.0
+    # I have no idea why obj.rotation_euler needs to be multiplied by 57.3 in order to get close to the actual value in Blender, is it because of parental relationship? 
+    # *-1 because GTA likes to invert values
+    cargen.orient_x, cargen.orient_y = convert_angle((obj.rotation_euler[2]*57.29564553093965)*-1)
 
     cargen.perpendicular_length = obj.ymap_cargen_properties.perpendicular_length
     cargen.car_model = obj.ymap_cargen_properties.car_model
