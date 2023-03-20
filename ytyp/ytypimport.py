@@ -5,8 +5,55 @@ from mathutils import Vector, Quaternion
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
+from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
+
+
+def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties):
+    """Create an mlo entity sets from an xml for the provided archetype data-block."""
+
+    entity_set: EntitySetProperties = archetype.new_entity_set()
+    entity_set.name = entity_set_xml.name
+
+    locations = entity_set_xml.locations
+    entities = entity_set_xml.entities
+    
+    entity_index = len(entity_set.entities)
+    for index in range(0, len(locations)):
+        create_entity_set_entity(entities[index], entity_set)
+        entity_room = archetype.rooms[locations[index]]
+        entity_set.entities[entity_index].attached_entity_set_id = str(entity_set.id)
+        entity_set.entities[entity_index].attached_entity_set_room_id = str(entity_room.id)
+        entity_index+=1 
+    entity_index = len(entity_set.entities)
+
+
+def create_entity_set_entity(entity_xml: ymapxml.Entity, entity_set: EntitySetProperties):
+    """Create an mlo entity from an xml for the provided archetype data-block."""
+
+    entity: MloEntityProperties = entity_set.new_entity_set_entity()
+    entity.position = entity_xml.position
+    entity.rotation = entity_xml.rotation.inverted()
+    entity.scale_xy = entity_xml.scale_xy
+    entity.scale_z = entity_xml.scale_z
+
+    find_and_link_entity_object(entity_xml, entity)
+
+    entity.archetype_name = entity_xml.archetype_name
+    entity.flags.total = str(entity_xml.flags)
+    entity.guid = entity_xml.guid
+    entity.parent_index = entity_xml.parent_index
+    entity.lod_dist = entity_xml.lod_dist
+    entity.child_lod_dist = entity_xml.child_lod_dist
+    entity.lod_level = EntityLodLevel[entity_xml.lod_level]
+    entity.priority_level = EntityPriorityLevel[entity_xml.priority_level]
+    entity.num_children = entity_xml.num_children
+    entity.ambient_occlusion_multiplier = entity_xml.ambient_occlusion_multiplier
+    entity.artificial_ambient_occlusion = entity_xml.artificial_ambient_occlusion
+    entity.tint_value = entity_xml.tint_value
+
+    for extension_xml in entity_xml.extensions:
+        create_extension(extension_xml, entity)
 
 
 def create_mlo_tcm(tcm_xml: ytypxml.TimeCycleModifier, archetype: ArchetypeProperties):
@@ -150,6 +197,9 @@ def create_mlo_archetype_children(archetype_xml: ytypxml.MloArchetype, archetype
 
     for tcm_xml in archetype_xml.timecycle_modifiers:
         create_mlo_tcm(tcm_xml, archetype)
+
+    for entityset_xml in archetype_xml.entity_sets:
+        create_mlo_entity_set(entityset_xml, archetype)
 
 
 def find_and_set_archetype_asset(archetype: ArchetypeProperties):

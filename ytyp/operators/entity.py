@@ -3,7 +3,7 @@ from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ..utils import get_selected_archetype, get_selected_room, get_selected_entity, get_selected_portal
-from ..properties.mlo import get_portal_items, get_room_items
+from ..properties.mlo import get_portal_items, get_room_items, get_entityset_items
 
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -36,7 +36,6 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
         selected_archetype = get_selected_archetype(context)
         portal_id = context.scene.sollumz_add_entity_portal
         room_id = context.scene.sollumz_add_entity_room
-
         attachable_objects = list(selected_objects)
 
         for entity in selected_archetype.entities:
@@ -52,6 +51,7 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
             elif portal_id and portal_id != "-1" and entity.attached_portal_id == portal_id:
                 self.report(
                     {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_portal_name()}. Skipping...")
+                attachable_objects.remove(entity_obj)
                 attachable_objects.remove(entity_obj)
 
         for obj in attachable_objects:
@@ -138,6 +138,36 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
     bl_property = "attached_room_id"
 
     attached_room_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_entity(context) is not None
+
+    def get_data_block(self, context):
+        return get_selected_entity(context)
+    
+
+class SOLLUMZ_OT_search_entityset(SearchEnumHelper, bpy.types.Operator):
+    """Search for room"""
+    bl_idname = "sollumz.search_entityset"
+    bl_property = "attached_entity_set_id"
+
+    attached_entity_set_id: bpy.props.EnumProperty(items=get_entityset_items, default=-1)
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_entity(context) is not None
+
+    def get_data_block(self, context):
+        return get_selected_entity(context)
+
+
+class SOLLUMZ_OT_search_entityset_rooms(SearchEnumHelper, bpy.types.Operator):
+    """Search for room"""
+    bl_idname = "sollumz.search_entitysets_rooms"
+    bl_property = "attached_entity_set_room_id"
+
+    attached_entity_set_room_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
 
     @classmethod
     def poll(cls, context):

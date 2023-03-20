@@ -4,7 +4,7 @@ from typing import Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .properties.ytyp import CMapTypesProperties, ArchetypeProperties
-    from .properties.mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
+    from .properties.mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties, EntitySetProperties
     from .properties.extensions import ExtensionProperties
 
 from ..tools.utils import get_list_item
@@ -57,3 +57,25 @@ def get_selected_extension(context) -> Union[ExtensionProperties, None]:
     archetype = get_selected_archetype(context)
     if archetype:
         return archetype.selected_extension
+
+
+def get_selected_entity_set(context) -> Union[EntitySetProperties, None]:
+    ytyp = get_selected_ytyp(context)
+    if ytyp:
+        archetype = ytyp.selected_archetype
+        if archetype:
+            return archetype.selected_entity_set
+        
+def get_selected_entity_set_entity(context) -> Union[MloEntityProperties, None]:
+    entity_set = get_selected_entity_set(context)
+    if entity_set:
+        entity = entity_set.selected_entity
+        if entity:
+            return entity
+        
+def get_selected_entity_set_id(context):
+    ytyp = get_selected_ytyp(context)
+    if ytyp:
+        archetype = ytyp.selected_archetype
+        if archetype:
+            return str(archetype.selected_entity_set_id + 1)

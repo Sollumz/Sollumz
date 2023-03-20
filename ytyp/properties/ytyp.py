@@ -3,7 +3,7 @@ import bpy
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
-from .mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
+from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, UnknownFlags
 from .extensions import ExtensionsContainer, ExtensionProperties
 
@@ -73,6 +73,14 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item = self.timecycle_modifiers.add()
         item.mlo_archetype_id = self.id
         return item
+    
+    def new_entity_set(self) -> EntitySetProperties:
+        item = self.entity_sets.add()
+        item.id = self.last_entity_set_id + 1
+        self.last_entity_set_id = item.id
+        item.mlo_archetype_id = self.id
+        return item
+
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
@@ -109,6 +117,9 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         type=MloEntityProperties, name="Entities")
     timecycle_modifiers: bpy.props.CollectionProperty(
         type=TimecycleModifierProperties, name="Timecycle Modifiers")
+    entity_sets: bpy.props.CollectionProperty(
+        type=EntitySetProperties, name="EntitySets")
+    
     # Selected room index
     room_index: bpy.props.IntProperty(name="Room")
     # Selected portal index
@@ -122,6 +133,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier")
+    # Unique room id
+    last_entity_set_id: bpy.props.IntProperty(name="")
+    # Selected entityset
+    entity_set_index: bpy.props.IntProperty(
+        name="Entity Set")
 
     all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
 
@@ -142,6 +158,14 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     @property
     def selected_tcm(self) -> Union[TimecycleModifierProperties, None]:
         return get_list_item(self.timecycle_modifiers, self.tcm_index)
+
+    @property
+    def selected_entity_set(self) -> Union[EntitySetProperties, None]:
+        return get_list_item(self.entity_sets, self.entity_set_index)
+    
+    @property
+    def selected_entity_set_id(self):
+        return self.entity_set_index
 
 
 class CMapTypesProperties(bpy.types.PropertyGroup):

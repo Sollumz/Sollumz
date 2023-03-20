@@ -27,6 +27,7 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
 
     bl_order = 2
 
+
     @classmethod
     def poll_tab(cls, context):
         selected_archetype = get_selected_archetype(context)
@@ -34,7 +35,7 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.use_property_split = True
+        layout.use_property_split = False
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
@@ -94,9 +95,20 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(selected_entity, "attached_portal_id")
         row.operator("sollumz.search_entity_portals", text="", icon="VIEWZOOM")
+
         row = layout.row(align=True)
         row.prop(selected_entity, "attached_room_id")
         row.operator("sollumz.search_entity_rooms", text="", icon="VIEWZOOM")
+
+        row = layout.row(align=True)
+        row.prop(selected_entity, "attached_entity_set_id")
+        row.operator("sollumz.search_entityset", text="", icon="VIEWZOOM")
+
+        row = layout.row(align=True)
+        row.prop(selected_entity, "attached_entity_set_room_id")
+        row.operator("sollumz.search_entitysets_rooms", text="", icon="VIEWZOOM")
+        
+        
 
         layout.separator()
 
