@@ -112,10 +112,6 @@ class SOLLUMZ_PT_ES_ENTITY_PANEL(TabPanel, bpy.types.Panel):
         layout.separator()
 
         row = layout.row(align=True)
-        row.prop(selected_entity, "attached_entity_set_id")
-        row.operator("sollumz.search_entityset", text="", icon="VIEWZOOM")
-
-        row = layout.row(align=True)
         row.prop(selected_entity, "attached_entity_set_room_id")
         row.operator("sollumz.search_entitysets_rooms", text="", icon="VIEWZOOM")
         

@@ -2,12 +2,30 @@ import bpy
 from mathutils import Vector
 from ...tools.blenderhelper import remove_number_suffix
 from ...sollumz_helper import SOLLUMZ_OT_base
-from ..utils import get_selected_archetype, get_selected_entity_set, get_selected_entity_set_entity, get_selected_entity_set_id, get_selected_ytyp
+from ..utils import get_selected_archetype, get_selected_entity, get_selected_entity_set, get_selected_entity_set_entity, get_selected_entity_set_id, get_selected_ytyp
+from ...sollumz_operators import SearchEnumHelper
+from ..properties.mlo import get_room_items
+
+
+class SOLLUMZ_OT_search_entityset_rooms(SearchEnumHelper, bpy.types.Operator):
+    """Search for room"""
+    bl_idname = "sollumz.search_entitysets_rooms"
+    bl_property = "attached_entity_set_room_id"
+
+    attached_entity_set_room_id: bpy.props.EnumProperty(
+        items=get_room_items, default=-1)
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_entity(context) is not None
+
+    def get_data_block(self, context):
+        return get_selected_entity(context)
 
 
 class SOLLUMZ_OT_add_obj_as_entity_set_entity(bpy.types.Operator):
     bl_idname = "sollumz.addobjas_entity_set_entity"
-    bl_label = "Add object(s) as Entityset entity"
+    bl_label = "Add object(s) as EntitySet entity"
     bl_description = "Create Entities for EntitySet from selected objects (auto-sets linked object)"
 
     @classmethod
@@ -17,35 +35,27 @@ class SOLLUMZ_OT_add_obj_as_entity_set_entity(bpy.types.Operator):
     def execute(self, context: bpy.types.Context):
         selected_objects = context.selected_objects
 
+        selected_archetype = get_selected_archetype(context)
         selected_entity_set = get_selected_entity_set(context)
-        ytyp = get_selected_ytyp(context)
-        if ytyp:
-            archetype = ytyp.selected_archetype
-            if archetype:
-                print('All entity sets are:', archetype.entity_sets)
-
-        # entity_set_id = context.scene.sollumz_add_entity_entityset
         entity_set_id = get_selected_entity_set_id(context)
         entity_set_room_id = context.scene.sollumz_add_entity_entityset_room
         attachable_objects = list(selected_objects)
 
-        print('Selected entityset id is:', entity_set_id)
+        for entity_set in selected_archetype.entity_sets:
+            for entity in entity_set.entities:
+                entity_obj = entity.linked_object
 
-        for entity in selected_entity_set.entities:
-            entity_obj = entity.linked_object
+                if entity_obj is None or entity_obj not in attachable_objects:
+                    continue
 
-            if entity_obj is None or entity_obj not in attachable_objects:
-                continue
-
-            if entity_set_id and entity_set_id != "-1" and entity.attached_entity_set_id == entity_set_id:
-                self.report(
-                    {"WARNING"}, f"{entity_obj.name} already attached to {selected_entity_set.name}. Skipping...")
-                attachable_objects.remove(entity_obj)
-            elif entity_set_room_id and entity_set_room_id != "-1" and \
-                    entity.attached_entity_set_room_id == entity_set_room_id:
-                self.report(
-                    {"WARNING"}, f"{entity_obj.name} already attached to {selected_entity_set.name}'s EntitySet. Skipping...")
-                attachable_objects.remove(entity_obj)
+                if entity_set_id and entity_set_id != "-1" and entity.attached_entity_set_id != '-1':
+                    self.report(
+                        {"WARNING"}, f"{entity_obj.name} already attached to {entity_set.name} EntitySet. Skipping...")
+                    attachable_objects.remove(entity_obj)
+                elif entity_set_room_id and entity_set_room_id != "-1" and entity.attached_entity_set_room_id != '-1':
+                    self.report(
+                        {"WARNING"}, f"{entity_obj.name} already attached to {entity_set.name} EntitySet. Skipping...")
+                    attachable_objects.remove(entity_obj)
 
         for obj in attachable_objects:
             entity = selected_entity_set.new_entity_set_entity()
@@ -157,4 +167,3 @@ class SOLLUMZ_OT_delete_entity_set_entity(SOLLUMZ_OT_base, bpy.types.Operator):
         selected_entityset.entity_set_entity_index = max(
             selected_entityset.entity_set_entity_index - 1, 0)
         return True
-

@@ -145,33 +145,4 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
 
     def get_data_block(self, context):
         return get_selected_entity(context)
-    
 
-class SOLLUMZ_OT_search_entityset(SearchEnumHelper, bpy.types.Operator):
-    """Search for room"""
-    bl_idname = "sollumz.search_entityset"
-    bl_property = "attached_entity_set_id"
-
-    attached_entity_set_id: bpy.props.EnumProperty(items=get_entityset_items, default=-1)
-
-    @classmethod
-    def poll(cls, context):
-        return get_selected_entity(context) is not None
-
-    def get_data_block(self, context):
-        return get_selected_entity(context)
-
-
-class SOLLUMZ_OT_search_entityset_rooms(SearchEnumHelper, bpy.types.Operator):
-    """Search for room"""
-    bl_idname = "sollumz.search_entitysets_rooms"
-    bl_property = "attached_entity_set_room_id"
-
-    attached_entity_set_room_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
-
-    @classmethod
-    def poll(cls, context):
-        return get_selected_entity(context) is not None
-
-    def get_data_block(self, context):
-        return get_selected_entity(context)
