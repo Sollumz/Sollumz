@@ -36,6 +36,20 @@ def get_room_items(self, context: bpy.types.Context):
     return items
 
 
+def get_entityset_items(self, context: bpy.types.Context):
+    selected_archetype = get_selected_archetype(context)
+
+    items = [("-1", "None", "", -1)]
+
+    if not selected_archetype:
+        return items
+
+    for entitySet in selected_archetype.entity_sets:
+        items.append((str(entitySet.id), entitySet.name, ""))
+
+    return items
+
+
 class MloArchetypeChild:
     def get_mlo_archetype(self):
         selected_ytyp = get_selected_ytyp(bpy.context)
@@ -200,6 +214,25 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
                     return index
 
         return -1
+    
+    def get_entityset_name(self):
+        selected_archetype = self.get_mlo_archetype()
+        entity_set = get_list_item(selected_archetype.entity_sets,
+                               self.entity_set_index)
+        if entity_set:
+            return entity_set.name
+        return ""
+    
+    def get_entityset_index(self):
+        selected_archetype = self.get_mlo_archetype()
+        attached_entity_set_id = self.attached_entity_set_id
+
+        if attached_entity_set_id:
+            for index, room in enumerate(selected_archetype.entity_sets):
+                if room.id == int(attached_entity_set_id):
+                    return index
+
+        return -1
 
     def get_room_name(self):
         selected_archetype = self.get_mlo_archetype()
@@ -230,10 +263,54 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     room_name: bpy.props.StringProperty(
         name="Attached Room Name", get=get_room_name)
 
+    attached_entity_set_id: bpy.props.EnumProperty(
+        name="EntitySet", items=get_entityset_items, default=-1)
+    entity_set_index: bpy.props.IntProperty(
+        name="Attached EntitySet Index", get=get_entityset_index)
+    
+    attached_entity_set_room_id: bpy.props.EnumProperty(
+        name="EntitySet Room", items=get_room_items, default=-1)
+    entity_set_room_index: bpy.props.IntProperty(
+        name="Attached EntitySet Room Index", get=get_room_index)
+    entityset_room_name: bpy.props.StringProperty(
+        name="Attached EntitySet Room Name", get=get_room_name)
+    
+
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
 
     linked_object: bpy.props.PointerProperty(
         type=bpy.types.Object, name="Linked Object")
+
+
+class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
+    def get_entity_set_name(self, entity_set_index: int):
+        archetype = self.get_mlo_archetype()
+
+        if not archetype.entity_sets:
+            return ""
+
+        if entity_set_index < len(archetype.entity_sets) and entity_set_index >= 0:
+            return archetype.entity_sets[entity_set_index].name
+
+        return archetype.entity_sets[0].name
+    
+    def new_entity_set_entity(self) -> MloEntityProperties:
+        item = self.entities.add()
+        item.mlo_archetype_id = self.id
+        return item
+    
+    name: bpy.props.StringProperty(name="Name")
+    entities: bpy.props.CollectionProperty(
+        type=MloEntityProperties, name="EntitySet Entities")
+    
+    # Blender use obly
+    id: bpy.props.IntProperty(name="Id")
+    # Selected entity index
+    entity_set_entity_index: bpy.props.IntProperty(name="EntitySet Entity")
+
+    @property
+    def selected_entity(self) -> Union[MloEntityProperties, None]:
+        return get_list_item(self.entities, self.entity_set_entity_index)
 
 
 def register():
@@ -241,8 +318,14 @@ def register():
         name="Portal", items=get_portal_items, default=-1)
     bpy.types.Scene.sollumz_add_entity_room = bpy.props.EnumProperty(
         name="Room", items=get_room_items, default=-1)
+    bpy.types.Scene.sollumz_add_entity_entityset = bpy.props.EnumProperty(
+        name="EntitySet", items=get_entityset_items, default=-1)
+    bpy.types.Scene.sollumz_add_entity_entityset_room = bpy.props.EnumProperty(
+        name="EntitySet Room", items=get_room_items, default=-1)
 
 
 def unregister():
     del bpy.types.Scene.sollumz_add_entity_portal
     del bpy.types.Scene.sollumz_add_entity_room
+    del bpy.types.Scene.sollumz_add_entity_entityset
+    del bpy.types.Scene.sollumz_add_entity_entityset_room

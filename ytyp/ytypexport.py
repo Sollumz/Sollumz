@@ -5,7 +5,7 @@ from mathutils import Euler, Vector, Quaternion
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..tools.meshhelper import get_bound_extents, get_bound_center, get_sphere_radius
-from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties
+from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
 
 
@@ -62,6 +62,17 @@ def set_portal_xml_corners(portal: PortalProperties, portal_xml: ytypxml.Portal)
         corner_xml = ytypxml.Corner()
         corner_xml.value = corner
         portal_xml.corners.append(corner_xml)
+
+
+def create_entity_set_xml(entityset: EntitySetProperties) -> ytypxml.EntitySet:
+    """Create xml mlo entity sets from an entityset data-block"""
+    entity_set = ytypxml.EntitySet()
+    entity_set.name = entityset.name
+    for entity in entityset.entities:
+        entity_room_index = int(entity.attached_entity_set_room_id)-1
+        entity_set.entities.append(create_entity_xml(entity))
+        entity_set.locations.append(entity_room_index)
+    return entity_set
 
 
 def create_entity_xml(entity: MloEntityProperties) -> ymapxml.Entity:
@@ -250,6 +261,9 @@ def create_mlo_archetype_children_xml(archetype: ArchetypeProperties, archetype_
 
     for tcm in archetype.timecycle_modifiers:
         archetype_xml.timecycle_modifiers.append(create_tcm_xml(tcm))
+
+    for entityset in archetype.entity_sets:
+        archetype_xml.entity_sets.append(create_entity_set_xml(entityset))
 
 
 def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetype:

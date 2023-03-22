@@ -170,13 +170,45 @@ class RoomsList(ListProperty):
         self.item_type = AttributeProperty("itemType", "CMloRoomDef")
 
 
+class LocationsBuffer(ElementProperty):
+    value_types = (int)
+
+    def __init__(self):
+        super().__init__(tag_name="locations", value=[])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        if element.text:
+            indices = element.text.strip().replace("\n", "").split()
+            new.value = [int(i) for i in indices]
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        columns = 10
+        text = []
+
+        for index, entity_index in enumerate(self.value):
+            text.append(str(entity_index))
+            if index < len(self.value) - 1:
+                text.append(" ")
+            if (index + 1) % columns == 0:
+                text.append("\n")
+
+        element.text = "".join(text)
+
+        return element
+
+
 class EntitySet(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
         super().__init__()
         self.name = TextProperty("name")
-        self.locations = TextProperty("locations")
+        self.locations = LocationsBuffer()
         self.entities = EntityList()
 
 

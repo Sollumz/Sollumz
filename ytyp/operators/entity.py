@@ -3,7 +3,7 @@ from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ..utils import get_selected_archetype, get_selected_room, get_selected_entity, get_selected_portal
-from ..properties.mlo import get_portal_items, get_room_items
+from ..properties.mlo import get_portal_items, get_room_items, get_entityset_items
 
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -36,7 +36,6 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
         selected_archetype = get_selected_archetype(context)
         portal_id = context.scene.sollumz_add_entity_portal
         room_id = context.scene.sollumz_add_entity_room
-
         attachable_objects = list(selected_objects)
 
         for entity in selected_archetype.entities:
@@ -52,6 +51,7 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
             elif portal_id and portal_id != "-1" and entity.attached_portal_id == portal_id:
                 self.report(
                     {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_portal_name()}. Skipping...")
+                attachable_objects.remove(entity_obj)
                 attachable_objects.remove(entity_obj)
 
         for obj in attachable_objects:
@@ -145,3 +145,4 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
 
     def get_data_block(self, context):
         return get_selected_entity(context)
+
