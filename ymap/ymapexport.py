@@ -121,9 +121,7 @@ def cargen_from_obj(obj):
     cargen = CarGenerator()
     cargen.position = obj.location
 
-    # TODO: Convert obj rotation to orientX/orientY
-    cargen.orient_x = 0.0
-    cargen.orient_y = 0.0
+    cargen.orient_x, cargen.orient_y = calculate_cargen_orient(obj)
 
     cargen.perpendicular_length = obj.ymap_cargen_properties.perpendicular_length
     cargen.car_model = obj.ymap_cargen_properties.car_model
@@ -136,6 +134,13 @@ def cargen_from_obj(obj):
     cargen.livery = obj.ymap_cargen_properties.livery
 
     return cargen
+
+
+def calculate_cargen_orient(obj):
+    # *-1 because GTA likes to invert values
+    angle = obj.rotation_euler[2] * -1
+
+    return 5 * math.sin(angle), 5 * math.cos(angle)
 
 
 def ymap_from_object(export_op, obj, exportpath, export_settings=None):
