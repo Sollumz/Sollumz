@@ -469,7 +469,7 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
         else:
             layout.label(text="No objects selected")
 
-class SOLLUMZ_OT_CopyLocation(bpy.types.Operator):
+class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     """Copy the location of an object to the clipboard"""
     bl_idname = "wm.sollumz_copy_location"
     bl_label = ""
@@ -480,7 +480,7 @@ class SOLLUMZ_OT_CopyLocation(bpy.types.Operator):
         self.report({'INFO'}, "Location copied to clipboard: {}".format(self.location))
         return {'FINISHED'}
 
-class SOLLUMZ_OT_CopyAllLocations(bpy.types.Operator):
+class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
     """Copy the locations of all selected objects to the clipboard"""
     bl_idname = "wm.sollumz_copy_all_locations"
     bl_label = ""
