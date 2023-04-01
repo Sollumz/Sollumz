@@ -167,6 +167,12 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     input = gnt.nodes.new("NodeGroupInput")
     output = gnt.nodes.new("NodeGroupOutput")
 
+    # Create the necessary sockets for the node group
+    gnt.inputs.new("NodeSocketGeometry", "Geometry")
+    gnt.inputs.new("NodeSocketVector", "Vector")
+    gnt.outputs.new("NodeSocketGeometry", "Geometry")
+    gnt.outputs.new("NodeSocketColor", "Color")
+
     # link input / output node to create geometry socket
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
     cptn.domain = "CORNER"
