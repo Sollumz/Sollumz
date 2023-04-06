@@ -20,18 +20,23 @@ from .properties import LODProperties, FragArchetypeProperties, GroupProperties
 
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
-    frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
-                                   export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag)
 
-    if frag_xml is not None:
-        frag_xml.write_xml(filepath)
+    if export_settings.export_non_hi:
+        frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
+                                       export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag)
 
-    if has_hi_lods(frag_obj):
+        if frag_xml is not None:
+            frag_xml.write_xml(filepath)
+            write_embedded_textures(frag_obj, filepath)
+
+    if export_settings.export_hi and has_hi_lods(frag_obj):
+        hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
+
         hi_frag_xml = create_hi_frag_xml(frag_obj, export_settings.auto_calculate_inertia,
                                          export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag)
-        hi_frag_xml.write_xml(filepath.replace(".yft.xml", "_hi.yft.xml"))
+        hi_frag_xml.write_xml(hi_filepath)
 
-    write_embedded_textures(frag_obj, filepath)
+        write_embedded_textures(frag_obj, hi_filepath)
 
 
 def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False):

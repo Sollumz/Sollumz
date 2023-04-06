@@ -337,6 +337,11 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
         layout.prop(operator.export_settings, "auto_calculate_inertia")
         layout.prop(operator.export_settings, "auto_calculate_volume")
 
+        layout.separator()
+
+        layout.prop(operator.export_settings, "export_hi")
+        layout.prop(operator.export_settings, "export_non_hi")
+
 
 class SOLLUMZ_PT_export_ymap(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"

@@ -696,6 +696,18 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+    export_hi: bpy.props.BoolProperty(
+        name="Export _hi",
+        description="Export Very High LODs into <name>_hi.yft.xml",
+        default=True
+    )
+
+    export_non_hi: bpy.props.BoolProperty(
+        name="Export non-hi",
+        description="Export Very Low - High LODs into <name>.yft.xml",
+        default=True
+    )
+
 
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
