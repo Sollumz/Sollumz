@@ -352,13 +352,13 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if len(objs) > 0:
             for obj in objs:
-                if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
+                if obj.sollum_type == SollumType.DRAWABLE_MODEL:
                     self.paint_mesh(obj.data, self.color)
                     self.messages.append(
                         f"{obj.name} was successfully painted.")
                 else:
                     self.messages.append(
-                        f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]} type.")
+                        f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]} type.")
         else:
             self.message("No objects selected to paint.")
             return False
