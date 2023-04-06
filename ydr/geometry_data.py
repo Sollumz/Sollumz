@@ -266,14 +266,17 @@ class GeometryBuilder:
         geometry_xml = self.add_geometry()
         vertices: dict[tuple, int] = {}
 
+        limit_has_been_hit = False
+
         for tri in self.loop_triangles:
+            # Vertex limit for geometries is 2^16 - 1 since vertex indices are 16 bit unsigned ints.
+            if (len(vertices) + 3) >= 65535:
+                geometry_xml = self.add_geometry()
+                vertices = {}
+                limit_has_been_hit = True
+
             for loop_index in tri.loops:
                 vertex = vert_map[loop_index]
-
-                # Vertex limit for geometries is 2^16 - 1 since vertex indices are 16 bit unsigned ints.
-                if len(vertices) >= 65534:
-                    geometry_xml = self.add_geometry()
-                    vertices = {}
 
                 if vertex in vertices:
                     geom_vert_index = vertices[vertex]
@@ -284,6 +287,10 @@ class GeometryBuilder:
                     geometry_xml.vertex_buffer.data.append(vertex)
 
                 geometry_xml.index_buffer.data.append(geom_vert_index)
+
+        if limit_has_been_hit:
+            logger.warning(
+                f"Maximum vertex limit exceeded for '{self.mesh.name} - {self.material.name}'! The mesh has been split accordingly. Consider lowering the poly count.")
 
     def add_geometry(self):
         """Add a ``Geometry`` to ``self.geometry_xmls``."""
