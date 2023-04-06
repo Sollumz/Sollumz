@@ -362,7 +362,7 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.mode != "EDIT_ARMATURE"
+        return context.mode != "EDIT_ARMATURE" and context.active_bone is not None
 
     def draw(self, context):
         layout = self.layout
