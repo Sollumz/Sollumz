@@ -89,9 +89,6 @@ class GeometryData:
     # Maps bone index to (vert_index, weight)
     vertex_groups: dict[int, list[VertexGroup]
                         ] = field(default_factory=lambda: defaultdict(list))
-    # Maps vert index to (bone index, weight)
-    vertex_groups_by_vert: dict[int, list[VertexGroup]
-                                ] = field(default_factory=lambda: defaultdict(list))
 
     def add_vertex(self, vert_attrs: VertexAttributes):
         self.vertices.append(vert_attrs.position)
@@ -108,7 +105,6 @@ class GeometryData:
 
         for bone_index, weight in vert_attrs.weights.items():
             self.vertex_groups[bone_index].append((vert_index, weight))
-            self.vertex_groups_by_vert[vert_index].append((bone_index, weight))
 
     def add_faces(self, indices: list[int], shader_index: int):
         for face in split_indices(indices):
