@@ -240,10 +240,10 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
                 f"Skipping object {obj.name} because it does not have a sollumz shader active.")
 
     def run(self, context):
-        objs = bpy.context.selected_objects
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
         if len(objs) == 0:
-            self.warning(
-                f"Please select a object to set all textures embedded.")
+            self.message(
+                f"No mesh objects selected!")
             return False
 
         for obj in objs:
@@ -271,10 +271,10 @@ class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator)
                     f"Skipping object {obj.name} because it does not have a sollumz shader active.")
 
     def run(self, context):
-        objs = bpy.context.selected_objects
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
         if len(objs) == 0:
-            self.warning(
-                f"Please select a object to set all textures embedded.")
+            self.message(
+                f"No mesh objects selected!")
             return False
 
         for obj in objs:
@@ -306,10 +306,10 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
                 f"Skipping object {obj.name} because it does not have a sollumz shader active.")
 
     def run(self, context):
-        objs = bpy.context.selected_objects
-        if (len(objs) == 0):
-            self.warning(
-                f"Please select a object to remove all embeded textures.")
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if len(objs) == 0:
+            self.message(
+                f"No mesh objects selected!")
             return False
 
         for obj in objs:
@@ -337,10 +337,10 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
                     f"Skipping object {obj.name} because it does not have a sollumz shader active.")
 
     def run(self, context):
-        objs = bpy.context.selected_objects
-        if (len(objs) == 0):
-            self.warning(
-                f"Please select a object to remove all embedded materials.")
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if len(objs) == 0:
+            self.message(
+                f"No mesh objects selected!")
             return False
 
         for obj in objs:
