@@ -313,10 +313,10 @@ class SOLLUMZ_PT_export_exclude(bpy.types.Panel):
         layout.prop(operator.export_settings, "exclude_skeleton")
 
 
-class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
+class SOLLUMZ_PT_export_collision(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"
     bl_region_type = "TOOL_PROPS"
-    bl_label = "Fragment"
+    bl_label = "Collisions"
     bl_parent_id = "FILE_PT_operator"
     bl_order = 4
 
@@ -337,7 +337,51 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
         layout.prop(operator.export_settings, "auto_calculate_inertia")
         layout.prop(operator.export_settings, "auto_calculate_volume")
 
-        layout.separator()
+
+class SOLLUMZ_PT_export_drawable(bpy.types.Panel):
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
+    bl_label = "Drawable"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 5
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator.export_settings, "auto_calculate_bone_tag")
+
+
+class SOLLUMZ_PT_export_fragment(bpy.types.Panel):
+    bl_space_type = "FILE_BROWSER"
+    bl_region_type = "TOOL_PROPS"
+    bl_label = "Fragment"
+    bl_parent_id = "FILE_PT_operator"
+    bl_order = 6
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == "SOLLUMZ_OT_export"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        sfile = context.space_data
+        operator = sfile.active_operator
 
         layout.prop(operator.export_settings, "export_hi")
         layout.prop(operator.export_settings, "export_non_hi")
@@ -348,7 +392,7 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel):
     bl_region_type = "TOOL_PROPS"
     bl_label = "Ymap"
     bl_parent_id = "FILE_PT_operator"
-    bl_order = 5
+    bl_order = 7
 
     @classmethod
     def poll(cls, context):
@@ -368,30 +412,6 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel):
         layout.prop(operator.export_settings, "ymap_box_occluders")
         layout.prop(operator.export_settings, "ymap_model_occluders")
         layout.prop(operator.export_settings, "ymap_car_generators")
-
-
-class SOLLUMZ_PT_export_drawable(bpy.types.Panel):
-    bl_space_type = "FILE_BROWSER"
-    bl_region_type = "TOOL_PROPS"
-    bl_label = "Drawable"
-    bl_parent_id = "FILE_PT_operator"
-    bl_order = 6
-
-    @classmethod
-    def poll(cls, context):
-        sfile = context.space_data
-        operator = sfile.active_operator
-        return operator.bl_idname == "SOLLUMZ_OT_export"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        sfile = context.space_data
-        operator = sfile.active_operator
-
-        layout.prop(operator.export_settings, "auto_calculate_bone_tag")
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):

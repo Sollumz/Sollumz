@@ -33,13 +33,13 @@ from .. import logger
 
 def export_ydr(drawable_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
     drawable_xml = create_drawable_xml(
-        drawable_obj, auto_calc_bone_tag=export_settings.auto_calculate_bone_tag)
+        drawable_obj, auto_calc_bone_tag=export_settings.auto_calculate_bone_tag, auto_calc_inertia=export_settings.auto_calculate_inertia, auto_calc_volume=export_settings.auto_calculate_volume)
     drawable_xml.write_xml(filepath)
 
     write_embedded_textures(drawable_obj, filepath)
 
 
-def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, auto_calc_bone_tag: bool = False, materials: Optional[list[bpy.types.Material]] = None):
+def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, auto_calc_bone_tag: bool = False, materials: Optional[list[bpy.types.Material]] = None, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
     drawable_xml = Drawable()
     drawable_xml.matrix = None
@@ -89,7 +89,8 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     set_drawable_xml_flags(drawable_xml)
     set_drawable_xml_extents(drawable_xml)
 
-    create_embedded_collision_xmls(drawable_obj, drawable_xml)
+    create_embedded_collision_xmls(
+        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
 
     return drawable_xml
 
@@ -653,14 +654,16 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
     drawable_xml.bounding_box_max = bbmax
 
 
-def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
+def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
     for child in drawable_obj.children:
         bound_xml = None
 
         if child.sollum_type == SollumType.BOUND_COMPOSITE:
-            bound_xml = create_composite_xml(child)
+            bound_xml = create_composite_xml(
+                child, auto_calc_inertia, auto_calc_volume)
         elif child.sollum_type in BOUND_TYPES:
-            bound_xml = create_bound_xml(child)
+            bound_xml = create_bound_xml(
+                child, auto_calc_inertia, auto_calc_volume)
 
         if bound_xml is not None:
             drawable_xml.bounds.append(bound_xml)

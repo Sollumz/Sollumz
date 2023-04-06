@@ -303,7 +303,6 @@ def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_c
         arch_xml.bounds = composite_xml
 
         composite_xml.unk_type = 2
-        composite_xml.inertia = Vector((1, 1, 1))
 
         for bound_xml in composite_xml.children:
             bound_xml.unk_type = 2

@@ -47,7 +47,7 @@ def export_ybn(obj: bpy.types.Object, filepath: str, export_settings: SollumzExp
 def create_composite_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     composite_xml = init_bound_xml(
         BoundComposite(), obj, auto_calc_volume=auto_calc_volume)
-    set_bvh_extents(composite_xml, obj)
+    composite_xml.inertia = Vector((1, 1, 1))
 
     for child in obj.children:
         child_xml = create_bound_xml(
@@ -129,7 +129,11 @@ def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_ca
 
 def init_bound_xml(bound_xml: T_Bound, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Initialize ``bound_xml`` bound properties from object blender properties."""
-    set_bound_extents(bound_xml, obj)
+    if obj.type == "MESH":
+        set_bound_extents(bound_xml, obj)
+    elif obj.type == "EMPTY":
+        set_bvh_extents(bound_xml, obj)
+
     set_bound_properties(bound_xml, obj)
 
     if auto_calc_inertia:
@@ -157,7 +161,6 @@ def create_bound_geometry_xml(obj: bpy.types.Object, auto_calc_inertia: bool = F
 def create_bvh_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     geom_xml = init_bound_child_xml(
         BoundGeometryBVH(), obj, auto_calc_inertia, auto_calc_volume)
-    set_bvh_extents(geom_xml, obj)
     geom_xml.material_index = 0
 
     create_bound_geom_xml_data(geom_xml, obj)
