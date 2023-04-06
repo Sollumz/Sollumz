@@ -177,12 +177,13 @@ def create_bvh_obj(bvh_xml: BoundGeometryBVH):
 
     triangles = get_poly_triangles(bvh_xml.polygons)
 
-    mesh = create_bound_mesh_data(
-        bvh_xml.vertices, triangles, bvh_xml, materials)
-    bound_geom_obj = create_blender_object(
-        SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
-    bound_geom_obj.location = bvh_xml.geometry_center
-    bound_geom_obj.parent = bvh_obj
+    if triangles:
+        mesh = create_bound_mesh_data(
+            bvh_xml.vertices, triangles, bvh_xml, materials)
+        bound_geom_obj = create_blender_object(
+            SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
+        bound_geom_obj.location = bvh_xml.geometry_center
+        bound_geom_obj.parent = bvh_obj
 
     return bvh_obj
 
