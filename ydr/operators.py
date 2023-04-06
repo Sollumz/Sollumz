@@ -66,11 +66,16 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
 
         if context.scene.create_seperate_drawables or len(selected_meshes) == 1:
             for obj in selected_meshes:
-                composite_obj = convert_obj_to_composite(
-                    duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                if auto_embed_col:
+                    composite_obj = convert_obj_to_composite(
+                        duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                else:
+                    composite_obj = None
+
                 drawable_obj = convert_obj_to_drawable(obj)
 
-                composite_obj.parent = drawable_obj
+                if composite_obj is not None:
+                    composite_obj.parent = drawable_obj
         else:
             drawable_obj = create_empty_object(SollumType.DRAWABLE)
 
