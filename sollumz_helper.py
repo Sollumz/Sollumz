@@ -116,7 +116,7 @@ def find_sollumz_parent(obj: bpy.types.Object) -> bpy.types.Object | None:
     return find_sollumz_parent(obj.parent)
 
 
-def get_sollumz_materials(obj: bpy.types.Object, exclude_hi: bool = True):
+def get_sollumz_materials(obj: bpy.types.Object):
     """Get all Sollumz materials used by ``drawable_obj``."""
     materials: list[bpy.types.Material] = []
     used_materials: dict[bpy.types.Material, bool] = {}

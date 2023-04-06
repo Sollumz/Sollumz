@@ -525,9 +525,14 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
         window_xml.item_id = child_id_by_bone_tag[bone_tag]
         window_mat = get_window_material(obj)
 
-        if window_mat is None or window_mat.name not in mat_ind_by_name:
+        if window_mat is None:
             logger.warning(
                 f"Vehicle window '{obj.name}' has no material with the vehicle_vehglass shader!")
+            continue
+
+        if window_mat.name not in mat_ind_by_name:
+            logger.warning(
+                f"Vehicle window '{obj.name}' is using a vehicle_vehglass material '{window_mat.name}' that is not used in the Drawable! This material should be added to the mesh object attached to the bone '{bone.name}'.")
             continue
 
         shattermap_img = find_shattermap_image(obj)
