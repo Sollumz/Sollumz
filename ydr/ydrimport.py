@@ -282,30 +282,22 @@ def create_bone_constraint(rot_limit: RotationLimit, pose_bone: bpy.types.PoseBo
 def create_embedded_collisions(bounds_xml: list[BoundChild], drawable_obj: bpy.types.Object):
     col_name = f"{drawable_obj.name}.col"
     bound_objs: list[bpy.types.Object] = []
+    composite_objs: list[bpy.types.Object] = []
 
     for bound_xml in bounds_xml:
         if bound_xml.type == "Composite":
             bound_obj = create_bound_composite(bound_xml)
+            composite_objs.append(bound_obj)
         else:
             bound_obj = create_bound_object(bound_xml)
+            bound_objs.append(bound_obj)
 
-        bound_objs.append(bound_obj)
-
-    # If there is only one bound object, parent directly to drawable
-    if len(bound_objs) == 1:
-        bound_obj = bound_objs[0]
-        bound_obj.name = col_name
-        bound_obj.parent = drawable_obj
-
-        return bound_obj
-
-    # Otherwise parent all embedded bounds to an empty for organization
-    bounds_parent = create_empty_object(SollumType.NONE, col_name)
+    for obj in composite_objs:
+        obj.name = col_name
+        obj.parent = drawable_obj
 
     for bound_obj in bound_objs:
-        bound_obj.parent = bounds_parent
-
-    return bounds_parent
+        bound_obj.parent = drawable_obj
 
 
 def parent_model_objs(model_objs: list[bpy.types.Object], drawable_obj: bpy.types.Object):

@@ -9,7 +9,6 @@ from mathutils import Quaternion, Vector, Matrix
 from ..cwxml.drawable import Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader
 from ..tools import jenkhash
 from ..tools.meshhelper import (
-    flip_uv,
     get_bound_center_from_bounds,
     get_sphere_radius,
 )
@@ -18,10 +17,12 @@ from ..tools.blenderhelper import remove_number_suffix, join_objects
 from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
+    BOUND_TYPES,
     LODLevel,
     SollumType,
     SollumzExportSettings
 )
+from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import DrawableModelProperties
 from .geometry_data import GeometryBuilder
 from .properties import SkinnedDrawableModelProperties
@@ -87,6 +88,8 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
 
     set_drawable_xml_flags(drawable_xml)
     set_drawable_xml_extents(drawable_xml)
+
+    create_embedded_collision_xmls(drawable_obj, drawable_xml)
 
     return drawable_xml
 
@@ -648,6 +651,19 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
         bbmax, drawable_xml.bounding_sphere_center)
     drawable_xml.bounding_box_min = bbmin
     drawable_xml.bounding_box_max = bbmax
+
+
+def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
+    for child in drawable_obj.children:
+        bound_xml = None
+
+        if child.sollum_type == SollumType.BOUND_COMPOSITE:
+            bound_xml = create_composite_xml(child)
+        elif child.sollum_type in BOUND_TYPES:
+            bound_xml = create_bound_xml(child)
+
+        if bound_xml is not None:
+            drawable_xml.bounds.append(bound_xml)
 
 
 def set_model_xml_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
