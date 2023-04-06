@@ -51,6 +51,11 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
 
     create_shader_group_xml(materials, drawable_xml)
 
+    if not drawable_xml.shader_group.shaders:
+        logger.warning(
+            f"{drawable_xml.name} has no Sollumz materials! Aborting...")
+        return drawable_xml
+
     if armature_obj or drawable_obj.type == "ARMATURE":
         armature_obj = armature_obj or drawable_obj
 
@@ -265,6 +270,11 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
     model_obj.sollumz_lods.set_active_lod(current_lod_level)
     model_obj.hide_set(was_hidden)
 
+    if not mesh.materials:
+        logger.warning(
+            f"Mesh '{mesh.name}' has no Sollumz materials! Skipping...")
+        return []
+
     geometries: list[Geometry] = []
 
     tris_by_mat = get_loop_triangles_by_mat(mesh, materials)
@@ -297,7 +307,6 @@ def get_loop_triangles_by_mat(mesh: bpy.types.Mesh, materials: list[bpy.types.Ma
     has_unassigned_mats = False
 
     for tri in mesh.loop_triangles:
-
         if not (0 <= tri.material_index < len(mesh.materials)):
             has_unassigned_mats = True
             mat_index = 0
@@ -357,10 +366,6 @@ def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: D
 
     drawable_xml.shader_group.shaders = shaders
     drawable_xml.shader_group.texture_dictionary = texture_dictionary
-
-    if not shaders:
-        logger.warning(
-            f"{drawable_xml.name} has no Sollumz materials! Make sure all materials in this drawable are Sollumz materials.")
 
 
 def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
