@@ -281,13 +281,23 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        layout.label(text="Convert", icon="FILE_REFRESH")
+
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_convert_to_drawable.bl_idname, icon="FILE_REFRESH")
+            ydr_ops.SOLLUMZ_OT_convert_to_drawable_model.bl_idname, icon="MESH_DATA")
+        row = layout.row()
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_convert_to_drawable.bl_idname, icon="OUTLINER_OB_MESH")
         row = layout.row()
         row.prop(context.scene, "create_seperate_drawables")
         row.prop(context.scene, "auto_create_embedded_col")
-        layout.separator()
+
+        layout.separator(factor=2)
+
+        layout.label(text="Create", icon="ADD")
+
         row = layout.row(align=True)
         row.operator(ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname,
                      icon="OUTLINER_OB_MESH")

@@ -1,5 +1,5 @@
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType, LODLevel
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model
@@ -91,6 +91,26 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
 
         self.report(
             {"INFO"}, f"Succesfully converted all selected objects to a Drawable.")
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
+    """Convert the selected object to a Drawable Model"""
+    bl_idname = "sollumz.converttodrawablemodel"
+    bl_label = "Convert to Drawable Model"
+    bl_options = {"UNDO"}
+
+    def execute(self, context):
+        selected_meshes = [
+            obj for obj in context.selected_objects if obj.type == "MESH"]
+
+        if not selected_meshes:
+            self.report({"INFO"}, f"No mesh objects selected!")
+            return {"CANCELLED"}
+
+        for obj in selected_meshes:
+            convert_obj_to_model(obj)
 
         return {"FINISHED"}
 
