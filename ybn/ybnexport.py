@@ -49,7 +49,7 @@ def create_composite_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False,
         BoundComposite(), obj, auto_calc_volume=auto_calc_volume)
     set_bvh_extents(composite_xml, obj)
 
-    for child in obj.children_recursive:
+    for child in obj.children:
         child_xml = create_bound_xml(
             child, auto_calc_inertia, auto_calc_volume)
 
@@ -63,6 +63,10 @@ def create_composite_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False,
 
 def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
+    if (obj.type == "MESH" and not has_col_mats(obj)) or (obj.type == "EMPTY" and not bound_geom_has_mats(obj)):
+        logger.warning(f"'{obj.name}' has no collision materials! Skipping...")
+        return
+
     if obj.sollum_type == SollumType.BOUND_BOX:
         # return create_bound_box_xml(obj, auto_calc_inertia, auto_calc_volume)
         return init_bound_child_xml(BoundBox(), obj, auto_calc_inertia, auto_calc_volume)
@@ -90,6 +94,26 @@ def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, aut
 
     if obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
         return create_bvh_xml(obj, auto_calc_inertia, auto_calc_volume)
+
+
+def has_col_mats(obj: bpy.types.Object):
+    col_mats = [
+        mat for mat in obj.data.materials if mat.sollum_type == MaterialType.COLLISION]
+
+    return len(col_mats) > 0
+
+
+def bound_geom_has_mats(geom_obj: bpy.types.Object):
+    mats: list[bpy.types.Material] = []
+
+    for child in geom_obj.children:
+        if child.type != "MESH":
+            continue
+
+        mats.extend(
+            [mat for mat in child.data.materials if mat.sollum_type == MaterialType.COLLISION])
+
+    return len(mats) > 0
 
 
 def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
