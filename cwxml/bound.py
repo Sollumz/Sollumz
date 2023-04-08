@@ -1,4 +1,5 @@
 from abc import ABC as AbstractClass, abstractmethod
+from collections import defaultdict
 from mathutils import Vector
 from xml.etree import ElementTree as ET
 from .element import (
@@ -148,31 +149,48 @@ class VerticesProperty(ElementProperty):
 
 
 class OctantsProperty(ElementProperty):
-    value_types = (list)
+    value_types = (dict)
 
     def __init__(self, tag_name: str = "Octants", value=None):
-        super().__init__(tag_name, value or [])
+        super().__init__(tag_name, value or {})
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = OctantsProperty(element.tag, [])
+        new = OctantsProperty(element.tag, {})
+
         if not element.text:
             return new
-        allinds = []
-        ind_s = element.text.strip().replace(" ", "").replace("\n", ",").split(",")
-        ind = []
-        for idx, i in enumerate(ind_s):
-            if idx % 3 == 0 and idx != 0:
-                allinds.append(ind)
-                ind = []
-            if i:
-                ind.append(int(i))
 
-        new.value = allinds
+        octants = defaultdict(list)
+        lines = element.text.strip().split("\n")
+
+        for i, line in enumerate(lines):
+            for vert_ind in line.strip().replace(" ", "").split(","):
+                if not vert_ind:
+                    continue
+
+                octants[i].append(int(vert_ind))
+
+        new.value = octants
+
         return new
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
+
+        element.text = "\n"
+        lines: list[str] = []
+
+        for indices in self.value.values():
+            if not indices:
+                continue
+
+            str_indices = [str(i) for i in indices]
+
+            lines.append(",".join(str_indices))
+
+        element.text = "\n".join(lines)
+
         return element
 
 
