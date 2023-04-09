@@ -736,23 +736,18 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        if obj:
-            mat = obj.active_material
-            return mat and mat.sollum_type == MaterialType.SHADER
-        else:
-            return False
+
+        return obj is not None and obj.active_material is not None
 
     def draw(self, context):
         layout = self.layout
 
         aobj = context.active_object
-        if context.active_object is None:
-            return
-
         mat = aobj.active_material
 
         if not mat or mat.sollum_type == MaterialType.NONE:
             layout.label(text="No sollumz material active.", icon="ERROR")
+            return
 
 
 class FlagsPanel:
