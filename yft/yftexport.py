@@ -13,6 +13,7 @@ from ..tools.meshhelper import calculate_inertia
 from ..tools.utils import prop_array_to_vector, vector_inv
 from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_properties import SollumzExportSettings, BOUND_TYPES, SollumType, MaterialType, LODLevel
+from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
 from .. import logger
@@ -413,6 +414,9 @@ def get_child_cols(frag_obj: bpy.types.Object):
 
         for bound_obj in composite_obj.children:
             if not bound_obj.sollum_type in BOUND_TYPES:
+                continue
+
+            if (bound_obj.type == "MESH" and not has_col_mats(bound_obj)) or (bound_obj.type == "EMPTY" and not bound_geom_has_mats(bound_obj)):
                 continue
 
             bone = get_armature_constraint_bone(bound_obj, frag_obj)
