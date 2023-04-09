@@ -215,7 +215,10 @@ def create_color_attr(mesh: bpy.types.Mesh, colors: dict[int, tuple]):
         name=f"Color {layer_num}", type="BYTE_COLOR", domain="CORNER")
 
     for i, byte_color in enumerate(color_attr.data):
-        rgba = colors[mesh.loops[i].vertex_index]
+        vert_ind = mesh.loops[i].vertex_index
+        if vert_ind not in colors:
+            continue
+        rgba = colors[vert_ind]
         byte_color.color_srgb = divide_list(rgba, 255)
 
 
