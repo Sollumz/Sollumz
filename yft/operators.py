@@ -50,6 +50,7 @@ class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
         armature: bpy.types.Armature = armature_obj.data
 
         # Need to go into edit mode to modify edit bones
+        bpy.context.view_layer.objects.active = armature_obj
         bpy.ops.object.mode_set(mode="EDIT")
 
         if context.selected_bones and parent_to_selected:
