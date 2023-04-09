@@ -73,9 +73,8 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
         center = world_matrix @ (bbmin + bbmax) / 2
         local_center = (bbmin + bbmax) / 2
 
-        if sollum_type == SollumType.BOUND_POLY_BOX:
-            create_box_from_extents(
-                pobj.data, bbmin - local_center, bbmax - local_center)
+        create_box_from_extents(
+            pobj.data, bbmin - local_center, bbmax - local_center)
 
         pobj.matrix_world = world_matrix
         pobj.location = center
