@@ -301,10 +301,7 @@ class ColorProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ["r", "g", "b"]):
-            return ColorProperty.read_value_error(element)
-
-        return ColorProperty(element.tag, [float(element.get("r")), float(element.get("g")), float(element.get("b"))])
+        return ColorProperty(element.tag, [float(element.get("r", default=0)), float(element.get("g", default=0)), float(element.get("b", default=0))])
 
     def to_xml(self):
         r = str(int(self.value.r))
@@ -322,9 +319,9 @@ class Vector2Property(ElementProperty):
     @staticmethod
     def from_xml(element: ET.Element):
         if not all(x in element.attrib.keys() for x in ["x", "y"]):
-            return VectorProperty.read_value_error(element)
+            return Vector2Property.read_value_error(element)
 
-        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")))))
+        return Vector2Property(element.tag, Vector((float(element.get("x", default=0)), float(element.get("y", default=0)))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
@@ -340,10 +337,7 @@ class VectorProperty(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ["x", "y", "z"]):
-            return VectorProperty.read_value_error(element)
-
-        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")), float(element.get("z")))))
+        return VectorProperty(element.tag, Vector((float(element.get("x", default=0)), float(element.get("y", default=0)), float(element.get("z", default=0)))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
@@ -360,10 +354,7 @@ class Vector4Property(ElementProperty):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
-            return VectorProperty.read_value_error(element)
-
-        return VectorProperty(element.tag, Vector((float(element.get("x")), float(element.get("y")), float(element.get("z")), float(element.get("w")))))
+        return Vector4Property(element.tag, Vector((float(element.get("x", default=0)), float(element.get("y", default=0)), float(element.get("z", default=0)), float(element.get("w", default=0)))))
 
     def to_xml(self):
         x = str(float32(self.value.x))
