@@ -34,8 +34,11 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
 
   1. Download the archive by cloning the repository, but don't unzip it!
   1. Start Blender
-  1. Click menu _`File > User Preferences...`_
-  1. Activate the _`Addons`_ section
+  1. Click menu _`Edit > Preferences...`_
+  1. Activate the _`Add-ons`_ section
   1. Click _`Install...`_ button at the top
-  1. Open the downloaded archive
-  1. The following entry should be shown: _`Import: Sollumz`_
+  1. Navigate to the directory you downloaded the Sollumz zip
+  1. Click on the dropdown arrow next to the filter icon and uncheck `Folders` 
+  1. Select Sollumz*.zip, mine was Sollumz-main.zip
+  1. Click `Install Add-on`
+  1. After the install is complete, the following entry should be shown: _`Import: Sollumz`_
