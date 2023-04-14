@@ -1,6 +1,6 @@
 import bpy
-
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+import bmesh
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, items_from_enums
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -98,6 +98,44 @@ class FragmentProperties(bpy.types.PropertyGroup):
     lod_properties: bpy.props.PointerProperty(type=LODProperties)
 
 
+def get_light_id_of_selection(self):
+    face_mode = bpy.context.scene.tool_settings.mesh_select_mode[2]
+
+    if not face_mode or bpy.context.mode != "EDIT_MESH":
+        return -1
+
+    selected_mesh_objs = [
+        obj for obj in bpy.context.selected_objects if obj.type == "MESH"]
+
+    if not selected_mesh_objs:
+        return -1
+
+    light_id = -1
+
+    for obj in selected_mesh_objs:
+        mesh = obj.data
+        bm = bmesh.from_edit_mesh(mesh)
+
+        if not bm.loops.layers.color:
+            continue
+
+        color_layer = bm.loops.layers.color[0]
+
+        for face in bm.faces:
+            if not face.select:
+                continue
+
+            for loop in face.loops:
+                loop_light_id = int(loop[color_layer][3] * 255)
+
+                if light_id != -1 and loop_light_id != light_id:
+                    return -1
+                elif loop_light_id != light_id and light_id == -1:
+                    light_id = loop_light_id
+
+    return light_id
+
+
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
         type=FragmentProperties)
@@ -138,6 +176,17 @@ def register():
     bpy.types.Scene.set_mass_amount = bpy.props.FloatProperty(
         name="Mass", description="Mass", min=0)
 
+    bpy.types.Scene.set_vehicle_light_id = bpy.props.EnumProperty(items=items_from_enums(
+        VehicleLightID, exclude=VehicleLightID.NONE), name="Vehicle Light ID", description="Determines which action causes the emissive shader to activate (this is stored in the alpha channel of the vertex colors)")
+    bpy.types.Scene.select_vehicle_light_id = bpy.props.EnumProperty(items=items_from_enums(
+        VehicleLightID, exclude=VehicleLightID.NONE), name="Vehicle Light ID", description="Determines which action causes the emissive shader to activate (this is stored in the alpha channel of the vertex colors)")
+    bpy.types.Scene.set_custom_vehicle_light_id = bpy.props.IntProperty(
+        name="Custom")
+    bpy.types.Scene.select_custom_vehicle_light_id = bpy.props.IntProperty(
+        name="Custom")
+    bpy.types.Scene.selected_vehicle_light_id = bpy.props.IntProperty(
+        name="Light ID", get=get_light_id_of_selection)
+
 
 def unregister():
     del bpy.types.Object.fragment_properties
@@ -151,3 +200,8 @@ def unregister():
     del bpy.types.Scene.create_bones_fragment
     del bpy.types.Scene.create_bones_parent_to_selected
     del bpy.types.Scene.set_mass_amount
+    del bpy.types.Scene.set_vehicle_light_id
+    del bpy.types.Scene.select_vehicle_light_id
+    del bpy.types.Scene.set_custom_vehicle_light_id
+    del bpy.types.Scene.select_custom_vehicle_light_id
+    del bpy.types.Scene.selected_vehicle_light_id

@@ -1,6 +1,7 @@
 import bpy
+import bmesh
 from mathutils import Matrix
-from ..sollumz_properties import SollumType
+from ..sollumz_properties import SollumType, VehicleLightID
 from ..tools.blenderhelper import create_blender_object
 from ..ydr.create_drawable_models import add_armature_constraint
 
@@ -93,3 +94,119 @@ class SOLLUMZ_OT_SET_MASS(bpy.types.Operator):
             obj.child_properties.mass = set_mass_amount
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
+    """
+    Set the vehicle light ID of the selected vertices (must be in edit mode). 
+    This determines which action causes the emissive shader to activate, and is stored in the alpha channel of the vertex colors
+    """
+    bl_idname = "sollumz.setlightid"
+    bl_label = "Set Light ID"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        selected_mesh_objs = [
+            obj for obj in context.selected_objects if obj.type == "MESH"]
+
+        face_mode = context.scene.tool_settings.mesh_select_mode[2]
+
+        return selected_mesh_objs and context.mode == "EDIT_MESH" and face_mode
+
+    def execute(self, context):
+        selected_mesh_objs = [
+            obj for obj in context.selected_objects if obj.type == "MESH"]
+
+        set_light_id = context.scene.set_vehicle_light_id
+
+        if set_light_id == VehicleLightID.CUSTOM:
+            light_id = context.scene.set_custom_vehicle_light_id
+        else:
+            light_id = int(set_light_id)
+
+        alpha = light_id / 255
+
+        for obj in selected_mesh_objs:
+            bm = bmesh.from_edit_mesh(obj.data)
+
+            if not bm.loops.layers.color:
+                self.report(
+                    {"INFO"}, f"'{obj.name}' has no 'Face Corner > Byte Color' color attribute layers! Skipping...")
+                continue
+
+            color_layer = bm.loops.layers.color[0]
+
+            for face in bm.faces:
+                if not face.select:
+                    continue
+
+                for loop in face.loops:
+                    loop[color_layer][3] = alpha
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
+    """
+    Select vertices that have this light ID
+    """
+    bl_idname = "sollumz.selectlightid"
+    bl_label = "Select Light ID"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        selected_mesh_objs = [
+            obj for obj in context.selected_objects if obj.type == "MESH"]
+
+        face_mode = context.scene.tool_settings.mesh_select_mode[2]
+
+        return selected_mesh_objs and context.mode == "EDIT_MESH" and face_mode
+
+    def execute(self, context):
+        selected_mesh_objs = [
+            obj for obj in context.selected_objects if obj.type == "MESH"]
+
+        select_light_id = context.scene.select_vehicle_light_id
+
+        if select_light_id == VehicleLightID.CUSTOM:
+            light_id = context.scene.select_custom_vehicle_light_id
+        else:
+            light_id = int(select_light_id)
+
+        for obj in selected_mesh_objs:
+            mesh = obj.data
+            bm = bmesh.from_edit_mesh(mesh)
+
+            if not bm.loops.layers.color:
+                continue
+
+            color_layer = bm.loops.layers.color[0]
+
+            face_inds = self.get_light_id_faces(bm, color_layer, light_id)
+
+            mode = obj.mode
+            if obj.mode != "OBJECT":
+                bpy.ops.object.mode_set(mode="OBJECT")
+
+            for i in face_inds:
+                mesh.polygons[i].select = True
+
+            bpy.ops.object.mode_set(mode=mode)
+
+        return {"FINISHED"}
+
+    def get_light_id_faces(self, bm: bmesh.types.BMesh, color_layer: bmesh.types.BMLayerCollection, light_id: int):
+        """Get light id of the given selection of ``mesh``. Returns -1 if not found or vertices contain different light IDs"""
+        face_inds: list[int] = []
+
+        for face in bm.faces:
+            for loop in face.loops:
+                loop_light_id = int(loop[color_layer][3] * 255)
+
+                if loop_light_id == light_id:
+                    face_inds.append(face.index)
+                    break
+
+        return face_inds

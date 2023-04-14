@@ -3,9 +3,8 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..sollumz_properties import SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
 from ..sollumz_helper import find_sollumz_parent
-from ..ydr.properties import DrawableProperties
-from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties
-from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS
+from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID
+from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID, SOLLUMZ_OT_SELECT_LIGHT_ID
 
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
@@ -68,6 +67,57 @@ class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator(SOLLUMZ_OT_SET_MASS.bl_idname, icon="WORLD")
         row.prop(context.scene, "set_mass_amount", text="")
+
+
+class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):
+    bl_label = "Vehicle Light IDs"
+    bl_idname = "SOLLUMZ_PT_LIGHT_ID_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
+    bl_order = 3
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="OUTLINER_OB_LIGHT")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_decorate = False
+        layout.use_property_split = True
+
+        row = layout.row(align=True)
+        row.operator(SOLLUMZ_OT_SET_LIGHT_ID.bl_idname,
+                     icon="OUTLINER_OB_LIGHT")
+        row.prop(context.scene, "set_vehicle_light_id", text="")
+
+        if context.scene.set_vehicle_light_id == VehicleLightID.CUSTOM:
+            layout.prop(context.scene, "set_custom_vehicle_light_id")
+            layout.separator()
+
+        row = layout.row(align=True)
+
+        row.operator(SOLLUMZ_OT_SELECT_LIGHT_ID.bl_idname,
+                     icon="GROUP_VERTEX")
+        row.prop(context.scene, "select_vehicle_light_id", text="")
+
+        if context.scene.select_vehicle_light_id == VehicleLightID.CUSTOM:
+            layout.prop(context.scene, "select_custom_vehicle_light_id")
+            layout.separator()
+
+        face_mode = context.scene.tool_settings.mesh_select_mode[2]
+        light_id = context.scene.selected_vehicle_light_id
+
+        layout.separator()
+
+        if face_mode:
+            if light_id == -1:
+                light_id = "N/A"
+            layout.label(
+                text=f"Selection Light ID: {light_id}")
+        else:
+            layout.label(
+                text="Must be in Edit Mode > Face Selection.", icon="ERROR")
 
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):

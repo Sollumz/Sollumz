@@ -156,6 +156,29 @@ class AssetType(str, Enum):
     ASSETLESS = "sollumz_asset_assetless"
 
 
+class VehicleLightID(str, Enum):
+    NONE = "none"
+    ALWAYS_ON = "0"
+    LEFT_HEADLIGHT = "1"
+    RIGHT_HEADLIGHT = "2"
+    LEFT_TAILLIGHT = "3"
+    RIGHT_TAILLIGHT = "4"
+    FRONT_LEFT_INDICATOR = "5"
+    FRONT_RIGHT_INDICATOR = "6"
+    REAR_LEFT_INDICATOR = "7"
+    REAR_RIGHT_INDICATOR = "7"
+    LEFT_BRAKELIGHT = "9"
+    RIGHT_BRAKELIGHT = "10"
+    CENTER_BRAKELIGHT = "11"
+    LEFT_REVERSE_LIGHT = "12"
+    RIGHT_REVERSE_LIGHT = "13"
+    EXTRA_FRONT_LEFT = "14"
+    EXTRA_FRONT_RIGHT = "15"
+    EXTRA_REAR_LEFT = "16"
+    EXTRA_REAR_RIGHT = "17"
+    CUSTOM = "custom"
+
+
 FRAGMENT_TYPES = [
     SollumType.FRAGMENT,
     SollumType.FRAGGROUP,
@@ -351,15 +374,38 @@ SOLLUMZ_UI_NAMES = {
     AssetType.FRAGMENT: "Fragment",
     AssetType.DRAWABLE: "Drawable",
     AssetType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
-    AssetType.ASSETLESS: "Assetless"
+    AssetType.ASSETLESS: "Assetless",
+
+    VehicleLightID.NONE: "None",
+    VehicleLightID.CUSTOM: "Custom",
+    VehicleLightID.ALWAYS_ON: "Always On",
+    VehicleLightID.LEFT_HEADLIGHT: "Left Headlight (headlight_l)",
+    VehicleLightID.RIGHT_HEADLIGHT: "Right Headlight (headlight_r)",
+    VehicleLightID.LEFT_TAILLIGHT: "Left Taillight (taillight_l)",
+    VehicleLightID.RIGHT_TAILLIGHT: "Right Taillight (taillight_r)",
+    VehicleLightID.FRONT_LEFT_INDICATOR: "Front Left Indicator (indicator_lf)",
+    VehicleLightID.FRONT_RIGHT_INDICATOR: "Front Right Indicator (indicator_rf)",
+    VehicleLightID.REAR_LEFT_INDICATOR: "Rear Left Indicator (indicator_lr)",
+    VehicleLightID.REAR_RIGHT_INDICATOR: "Rear Right Indicator (indicator_rr)",
+    VehicleLightID.LEFT_BRAKELIGHT: "Left Brakelight (brakelight_l)",
+    VehicleLightID.RIGHT_BRAKELIGHT: "Right Brakelight (brakelight_r)",
+    VehicleLightID.CENTER_BRAKELIGHT: "Center Brakelight (brakelight_m)",
+    VehicleLightID.LEFT_REVERSE_LIGHT: "Left Reversing Light (reversinglight_l)",
+    VehicleLightID.RIGHT_REVERSE_LIGHT: "Right Reversing Light (reversinglight_r)",
+    VehicleLightID.EXTRA_FRONT_LEFT: "Extra Front Left (extralight_1)",
+    VehicleLightID.EXTRA_FRONT_RIGHT: "Extra Front Right (extralight_2)",
+    VehicleLightID.EXTRA_REAR_LEFT: "Extra Rear Left (extralight_3)",
+    VehicleLightID.EXTRA_REAR_RIGHT: "Extra Rear Right (extralight_4)",
 }
 
 
 # Generate items from provided enums
-def items_from_enums(*enums):
+def items_from_enums(*enums, exclude=None):
     items = []
     for enum in enums:
         for item in enum:
+            if exclude is not None and item in exclude:
+                continue
             if item not in SOLLUMZ_UI_NAMES:
                 raise KeyError(
                     f"UI name mapping not found for key {item} of {enum}.")
