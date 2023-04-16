@@ -402,6 +402,10 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 0
 
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.active_material is not None and context.active_object.active_material.sollum_type == MaterialType.SHADER
+
     def draw(self, context):
         layout = self.layout
 
@@ -477,6 +481,10 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.active_material is not None and context.active_object.active_material.sollum_type == MaterialType.SHADER
 
     def draw(self, context):
         layout = self.layout
