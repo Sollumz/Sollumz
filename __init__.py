@@ -21,7 +21,7 @@ bl_info = {
     "author": "Skylumz",
     "description": "This plugins allows you to import/export codewalker xml files.",
     "blender": (3, 4, 1),
-    "version": (1, 3, 1),
+    "version": (1, 0, 0),
     "location": "",
     "warning": "",
     "category": "Import-Export"
