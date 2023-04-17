@@ -1,6 +1,5 @@
 import bpy
-from bpy.types import Menu, Operator
-from bpy_extras.io_utils import ImportHelper
+from bpy.types import Menu
 
 
 def find_missing_files(filepath):
@@ -8,9 +7,9 @@ def find_missing_files(filepath):
     return {'FINISHED'}
 
 
-class OokSollumzPie(Menu):
-    bl_idname = "OOK_MT_sollumz_pie"
-    bl_label = "Sollumz Pie"
+class SOLLUMZ_OT_pie_menu(Menu):
+    bl_idname = "SOLLUMZ_OT_pie_menu"
+    bl_label = "Sollumz Pie Menu"
 
     def draw(self, context):
 
@@ -47,7 +46,7 @@ def register():
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(
             "wm.call_menu_pie", type='V', value='PRESS', shift=False)
-        kmi.properties.name = "OOK_MT_sollumz_pie"
+        kmi.properties.name = "SOLLUMZ_OT_pie_menu"
 
         addon_keymaps.append((km, kmi))
 
@@ -63,4 +62,4 @@ def unregister():
 if __name__ == "__main__":
     register()
 
-    bpy.ops.wm.call_menu_pie(name="OOK_MT_sollumz_pie")
+    bpy.ops.wm.call_menu_pie(name="SOLLUMZ_OT_pie_menu")
