@@ -27,15 +27,17 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
   * Shaders
 
 ## Requirements ##
-
-  * Blender 2.8 or later - [blender.org](http://www.blender.org/download/)
+  * Latest Codewalker release - [https://discord.gg/codewalker](https://discord.gg/codewalker)
+  * Blender 3.4.1 or later - [blender.org](http://www.blender.org/download/)
   
 ## Installation ##
 
   1. Download the archive by cloning the repository, but don't unzip it!
   1. Start Blender
-  1. Click menu _`File > User Preferences...`_
+  1. Click menu _`Edit > User Preferences...`_
   1. Activate the _`Addons`_ section
   1. Click _`Install...`_ button at the top
   1. Open the downloaded archive
   1. The following entry should be shown: _`Import: Sollumz`_
+  1. Enable the addon
+  1. Restart Blender
