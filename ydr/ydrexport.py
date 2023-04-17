@@ -428,6 +428,9 @@ def geometry_from_object(obj, mats, bones=None):
 
     obj, mesh = apply_and_triangulate_object(obj)
 
+    if len(mesh.vertices) > 65535:
+        raise Exception(f"{obj.name} has over 65535 vertices! This will cause issues with the mesh. Please lower the poly-count.")
+
     bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
     geometry.bounding_box_max = bbmax
@@ -456,6 +459,7 @@ def geometry_from_object(obj, mats, bones=None):
     bpy.data.meshes.remove(mesh)
 
     return geometry
+
 
 
 def drawable_model_from_object(obj, bones=None, materials=None):
