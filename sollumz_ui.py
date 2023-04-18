@@ -1,4 +1,5 @@
 import bpy
+from .sollumz_operators import SOLLUMZ_OT_animation_flags, SOLLUMZ_OT_weapon_flags
 from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
 
@@ -219,7 +220,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
         layout.prop(operator.import_settings, "ymap_exclude_entities")
         layout.prop(operator.import_settings, "ymap_box_occluders")
         layout.prop(operator.import_settings, "ymap_model_occluders")
-        layout.prop(operator.import_settings, "ymap_car_generators")
+        layout.prop(operator.import_settings, "ymap_car_generators")   
 
 
 class SOLLUMZ_PT_export_main(bpy.types.Panel):
@@ -677,6 +678,26 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
         if not mat or mat.sollum_type == MaterialType.NONE:
             layout.label(text="No sollumz material active.", icon="ERROR")
+
+
+class SOLLUMZ_PT_bone_flags(bpy.types.Panel):
+    bl_label = "Bone Flags"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 2
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="MODIFIER_ON") 
+        
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_animation_flags.bl_idname, icon="GROUP_BONE")
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_weapon_flags.bl_idname, icon="RENDER_ANIMATION")  
 
 
 class FlagsPanel:
