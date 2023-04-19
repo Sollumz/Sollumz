@@ -250,7 +250,7 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
-    bl_label = "Apply Bone Properties"
+    bl_label = "Bone Tools"
     bl_idname = "SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
@@ -263,13 +263,17 @@ class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
+        layout.label(text="Apply Bone Properties", icon="MODIFIER_ON")
+        row = layout.row(align=True)
         row.operator(
-            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname, icon='ARMATURE_DATA')
-        row2 = layout.row()
-        row2.operator(
-            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname, icon='BONE_DATA')
-
+            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname)
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname)
+        layout.separator()
+        layout.label(text="Apply Flag Presets", icon="BOOKMARKS")
+        row = layout.row(align=True)
+        row.operator(ydr_ops.SOLLUMZ_OT_animation_flags.bl_idname, text="Animation")
+        row.operator(ydr_ops.SOLLUMZ_OT_weapon_flags.bl_idname, text="Weapon")
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
