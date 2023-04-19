@@ -1,7 +1,9 @@
 import bpy
-from .sollumz_operators import SOLLUMZ_OT_animation_flags, SOLLUMZ_OT_weapon_flags
+
+from .sollumz_operators import SOLLUMZ_OT_weapon_flags
 from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
+from .ydr.properties import BoneFlag
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -15,6 +17,10 @@ def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, rem
 
     return list_col
 
+def generate_bone_flags(layout, prop):
+    grid = layout.grid_flow(columns=4, even_columns=True, even_rows=True)
+    for prop_name in BoneFlag.__annotations__:
+        grid.prop(prop, prop_name)
 
 class BasicListHelper:
     """Provides functionality for drawing simple lists where each item has a name and icon"""
@@ -220,7 +226,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
         layout.prop(operator.import_settings, "ymap_exclude_entities")
         layout.prop(operator.import_settings, "ymap_box_occluders")
         layout.prop(operator.import_settings, "ymap_model_occluders")
-        layout.prop(operator.import_settings, "ymap_car_generators")   
+        layout.prop(operator.import_settings, "ymap_car_generators")
 
 
 class SOLLUMZ_PT_export_main(bpy.types.Panel):
@@ -680,26 +686,6 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
             layout.label(text="No sollumz material active.", icon="ERROR")
 
 
-class SOLLUMZ_PT_bone_flags(bpy.types.Panel):
-    bl_label = "Bone Flags"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
-    bl_order = 2
-
-    def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
-        self.layout.label(text="", icon="MODIFIER_ON") 
-        
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_animation_flags.bl_idname, icon="GROUP_BONE")
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_weapon_flags.bl_idname, icon="RENDER_ANIMATION")  
-
-
 class FlagsPanel:
     bl_label = "Flags"
     bl_options = {"DEFAULT_CLOSED"}
@@ -736,3 +722,58 @@ class TimeFlagsPanel(FlagsPanel):
         row.prop(flags, "time_flags_end", text="to")
         row = self.layout.row()
         row.operator(self.clear_operator)
+
+class SOLLUMZ_PT_BONE_FLAGS_PANEL(bpy.types.Panel):
+    bl_label = "Bone Flags"
+    bl_idname = "SOLLUMZ_PT_BONE_FLAGS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = "SOLLUMZ_PT_TOOL_PANEL"
+
+    @classmethod
+    def poll(self, context):
+        obj = context.active_object
+        return obj 
+
+    def draw(self, context):
+        obj = context.active_object
+        layout = self.layout
+        layout.label(text="Weapon Flags")
+        generate_bone_flags(layout, obj.bone_flags)
+
+class SOLLUMZ_UL_BONE_FLAG_PRESET_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_BONE_FLAG_PRESET_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon="BOOKMARKS")
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon="BOOKMARKS")
+
+class SOLLUMZ_PT_BONE_FLAGS_PRESETS_PANEL(bpy.types.Panel):
+    bl_label = "Bone Flags Presets"
+    bl_idname = "SOLLUMZ_PT_BONE_FLAGS_PRESETS_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_BONE_FLAGS_PANEL.bl_idname
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="ALIGN_TOP")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.template_list(
+            SOLLUMZ_UL_BONE_FLAG_PRESET_LIST.bl_idname, "", context.scene, "flag_presets", context.scene, "flag_preset_index"
+        )
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_weapon_flags.bl_idname)

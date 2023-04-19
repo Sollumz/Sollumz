@@ -596,6 +596,20 @@ class SOLLUMZ_OT_debug_update_portal_names(bpy.types.Operator):
 
         return {"FINISHED"}
 
+class SOLLUMZ_OT_weapon_flags(bpy.types.Operator):
+    bl_idname = "sollumz.weaponflags"
+    bl_label = "Weapon Flags"
+    bl_description = "Removes selected bone flags and adds the proper weapon flags for custom bone locations"
+
+    def execute(self, context):
+        bone = context.active_pose_bone.bone
+        bone.bone_properties.flags.clear()
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "LimitRotation"  
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "LimitTranslation"  
+        self.report({'INFO'}, "Flags Cleared & Added") 
+        return {'FINISHED'}
 
 class SearchEnumHelper:
     """Helper class for searching and setting enums"""
@@ -619,6 +633,8 @@ class SearchEnumHelper:
         wm.invoke_search_popup(self)
 
         return {'FINISHED'}
+
+
 
 
 def register():
