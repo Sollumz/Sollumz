@@ -7,8 +7,8 @@ def find_missing_files(filepath):
     return {'FINISHED'}
 
 
-class SOLLUMZ_OT_pie_menu(Menu):
-    bl_idname = "SOLLUMZ_OT_pie_menu"
+class SOLLUMZ_MT_pie_menu(Menu):
+    bl_idname = "SOLLUMZ_MT_pie_menu"
     bl_label = "Sollumz Pie Menu"
 
     def draw(self, context):
@@ -17,21 +17,29 @@ class SOLLUMZ_OT_pie_menu(Menu):
 
         pie = layout.menu_pie()
         # Left
-        pie.operator("sollumz.autoconvertmaterial", text="Convert Material", icon='NODE_MATERIAL')
+        pie.operator("sollumz.autoconvertmaterial",
+                     text="Convert Material", icon='NODE_MATERIAL')
         # Right
-        pie.operator("sollumz.addobjasentity", text="Add Objects To Room", icon='OBJECT_DATA')
+        pie.operator("sollumz.addobjasentity",
+                     text="Add Objects To Room", icon='OBJECT_DATA')
         # Bottom
-        pie.operator("sollumz.load_flag_preset", text="Apply Flag Preset", icon='ALIGN_TOP')
+        pie.operator("sollumz.load_flag_preset",
+                     text="Apply Flag Preset", icon='ALIGN_TOP')
         # Top
-        pie.operator("file.find_missing_files", text="Find Missing Textures", icon='VIEWZOOM')
+        pie.operator("file.find_missing_files",
+                     text="Find Missing Textures", icon='VIEWZOOM')
         # Top-left
-        pie.operator("sollumz.import", text="Import CodeWalker XML", icon='IMPORT')
+        pie.operator("sollumz.import",
+                     text="Import CodeWalker XML", icon='IMPORT')
         # Top-right
-        pie.operator("sollumz.export", text="Export CodeWalker XML", icon='EXPORT')
+        pie.operator("sollumz.export",
+                     text="Export CodeWalker XML", icon='EXPORT')
         # Bottom-left
-        pie.operator("sollumz.createdrawable", text="Create Drawable", icon='CUBE')
+        pie.operator("sollumz.createdrawable",
+                     text="Create Drawable", icon='CUBE')
         # Bottom-right
-        pie.operator("sollumz.createbound", text="Create Composite", icon='CUBE')
+        pie.operator("sollumz.createbound",
+                     text="Create Composite", icon='CUBE')
 
 
 addon_keymaps = []
