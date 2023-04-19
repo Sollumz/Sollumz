@@ -54,7 +54,7 @@ def register():
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(
             "wm.call_menu_pie", type='V', value='PRESS', shift=False)
-        kmi.properties.name = "SOLLUMZ_OT_pie_menu"
+        kmi.properties.name = "SOLLUMZ_MT_pie_menu"
 
         addon_keymaps.append((km, kmi))
 
@@ -70,4 +70,4 @@ def unregister():
 if __name__ == "__main__":
     register()
 
-    bpy.ops.wm.call_menu_pie(name="SOLLUMZ_OT_pie_menu")
+    bpy.ops.wm.call_menu_pie(name="SOLLUMZ_MT_pie_menu")
