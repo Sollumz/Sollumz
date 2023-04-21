@@ -45,6 +45,37 @@ def add_material(material, mat_map, materials):
         materials.append(mat_item)
         return idx
 
+def filter_vertices_by_octants(vertices, mesh_center):
+    octants = [[] for _ in range(8)]
+
+    for idx, vertex in enumerate(vertices):
+        x, y, z = vertex
+        cx, cy, cz = mesh_center
+
+        if x >= cx:
+            if y >= cy:
+                if z >= cz:
+                    octant = 0
+                else:
+                    octant = 4
+            else:
+                if z >= cz:
+                    octant = 2
+                else:
+                    octant = 6
+        else:
+            if y >= cy:
+                if z >= cz:
+                    octant = 1
+                else:
+                    octant = 5
+            else:
+                if z >= cz:
+                    octant = 3
+                else:
+                    octant = 7
+        octants[octant].append(idx)
+    return octants
 
 def polygon_from_object(obj, geometry, verts_map, mat_map, matrix):
     vertices = geometry.vertices
@@ -221,6 +252,11 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
                 geometry.polygons.append(poly)
     if not found:
         raise NoGeometryError()
+    
+    if type(geometry) is ybnxml.BoundGeometry:
+        octants = filter_vertices_by_octants(vertices, geometry.geometry_center)
+        for octant in octants:
+            geometry.octants.append(octant)
 
     # Check vert count
     if len(geometry.vertices) > 32767:

@@ -170,6 +170,17 @@ class OctantsProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
+        text = ["\n"]
+
+        for octant in self.value:
+            if len(octant) == 0:
+                # don't import/export twice in CodeWalker cuz it breaks model without vertices in any octant.
+                text.append(",\n")
+            else:
+                text.append(",".join(map(str, octant)))
+                text.append(",\n")
+
+        element.text = "".join(text)
         return element
 
 
