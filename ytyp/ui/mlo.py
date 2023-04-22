@@ -138,7 +138,9 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
                      text="Create From Vertices", icon="GROUP_VERTEX")
         row.operator("sollumz.updateportalfromselection",
                      text="Update From Vertices")
-
+        row = list_col.row(align=True)        
+        row.operator("sollumz.flipportal",
+                     text="Flip Direction")            
         row = layout.row()
         row.use_property_split = False
         row.prop(context.scene, "show_portal_gizmo")

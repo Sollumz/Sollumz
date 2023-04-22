@@ -152,6 +152,19 @@ class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
         context.space_data.show_gizmo = context.space_data.show_gizmo
         return True
 
+class SOLLUMZ_OT_flip_portal(PortalCreatorHelper, SOLLUMZ_OT_base, bpy.types.Operator):
+    """Flip portal direction"""
+    bl_idname = "sollumz.flipportal"
+    bl_label = "Change portal direction"
+
+    def run(self, context):
+        selected_portal = get_selected_portal(context)
+        if selected_portal is not None:
+            corners = [selected_portal.corner1.copy(), selected_portal.corner2.copy(), selected_portal.corner3.copy(), selected_portal.corner4.copy()]
+            selected_portal.corner4 = corners[0]
+            selected_portal.corner3 = corners[1]
+            selected_portal.corner2 = corners[2]
+            selected_portal.corner1 = corners[3]
 
 class SetPortalRoomHelper(SOLLUMZ_OT_base):
     bl_label = "Set to Selected"
@@ -208,3 +221,4 @@ class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
 
     def get_data_block(self, context):
         return get_selected_portal(context)
+
