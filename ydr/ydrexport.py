@@ -276,7 +276,12 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
 
     if not mesh.materials:
         logger.warning(
-            f"Mesh '{mesh.name}' has no Sollumz materials! Skipping...")
+            f"Model '{model_obj.name}' has no Sollumz materials! Skipping...")
+        return []
+
+    if not mesh.uv_layers:
+        logger.warning(
+            f"Model '{model_obj.name}' has no UV Layers! Skipping...")
         return []
 
     geometries: list[Geometry] = []
