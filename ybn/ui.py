@@ -85,7 +85,9 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
+    bl_parent_id = SOLLUMZ_PT_BOUND_PROPERTIES_PANEL.bl_idname
+
+    bl_order = 0
 
     @classmethod
     def poll(self, context):
@@ -117,7 +119,9 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = "SOLLUMZ_PT_MAIN_PANEL"
+    bl_parent_id = SOLLUMZ_PT_BOUND_PROPERTIES_PANEL.bl_idname
+
+    bl_order = 1
 
     @classmethod
     def poll(self, context):

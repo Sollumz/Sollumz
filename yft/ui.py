@@ -1,7 +1,8 @@
 import bpy
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
-from ..sollumz_properties import SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
+from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
+from ..sollumz_properties import SollumType, BOUND_TYPES
 from ..sollumz_helper import find_sollumz_parent
 from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID
 from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID, SOLLUMZ_OT_SELECT_LIGHT_ID
@@ -269,7 +270,9 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_parent_id = SOLLUMZ_PT_BOUND_PROPERTIES_PANEL.bl_idname
+
+    bl_order = 2
 
     @classmethod
     def poll(cls, context):
