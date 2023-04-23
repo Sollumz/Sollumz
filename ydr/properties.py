@@ -1,4 +1,5 @@
 import bpy
+import os
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
@@ -260,7 +261,7 @@ def set_light_type(self, value):
 
 def get_texture_name(self):
     if self.image:
-        return basename(self.image.filepath).split(".")[0]
+        return os.path.splitext(basename(self.image.filepath))[0]
     return "None"
 
 
