@@ -169,7 +169,13 @@ class OctantsProperty(ElementProperty):
         return new
 
     def to_xml(self):
+        rows = list()
+        for row in self.value:
+            rows.append(", ".join(str(x) for x in row))
+        
         element = ET.Element(self.tag_name)
+        element.text = "\n".join(rows)
+
         return element
 
 

@@ -45,6 +45,55 @@ def add_material(material, mat_map, materials):
         materials.append(mat_item)
         return idx
 
+octants = [
+    (True, True, True),
+    (False, True, True),
+    (True, False, True),
+    (False, False, True),
+    (True, True, False),
+    (False, True, False),
+    (True, False, False),
+    (False, False, False),
+]
+
+def is_shadowed(v1, v2, o):
+    direction = v2 - v1
+
+    if not octants[o][0]:
+        direction.x = -direction.x
+
+    if not octants[o][1]:
+        direction.y = -direction.y
+
+    if not octants[o][2]:
+        direction.z = -direction.z
+
+    return direction.x >= 0.0 and direction.y >= 0.0 and direction.z >= 0.0
+
+def get_vertices_in_octant(vertices, o):
+    octantIndices = []
+
+    for idx, vtx in enumerate(vertices):
+        shouldAdd = True
+        octantIndices2 = []
+
+        for idx2 in octantIndices:
+            vtx2 = vertices[idx2]
+
+            if is_shadowed(vtx, vtx2, o):
+                shouldAdd = False
+                octantIndices2 = octantIndices
+                break
+
+            if not is_shadowed(vtx2, vtx, o):
+                octantIndices2.append(idx2)
+        
+        if shouldAdd:
+            octantIndices2.append(idx)
+
+        octantIndices = octantIndices2
+
+    return octantIndices
 
 def polygon_from_object(obj, geometry, verts_map, mat_map, matrix):
     vertices = geometry.vertices
@@ -221,6 +270,10 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
                 geometry.polygons.append(poly)
     if not found:
         raise NoGeometryError()
+    
+    if type(geometry) is ybnxml.BoundGeometry:
+        for o in range(8):
+            geometry.octants.append(get_vertices_in_octant(geometry.vertices, o))
 
     # Check vert count
     if len(geometry.vertices) > 32767:
