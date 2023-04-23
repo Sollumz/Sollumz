@@ -198,3 +198,26 @@ class SOLLUMZ_OT_update_corner_d_location(bpy.types.Operator, ExtensionUpdateFro
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.cornerD = verts_location
+
+class SOLLUMZ_OT_calculate_light_shaft_center_offset_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
+    """Calculates the center based on the corner coordinates"""
+    bl_idname = "sollumz.calculatelightshaftoffsetlocation"
+    bl_options = {"UNDO"}
+    bl_label = "Calculate Center Offset location"
+
+
+    def execute(self, context):
+        light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
+        cornerA = light_shaft_props.cornerA
+        cornerB = light_shaft_props.cornerB
+        cornerC = light_shaft_props.cornerC
+        cornerD = light_shaft_props.cornerD
+
+        verts_location = (cornerA + cornerB + cornerC + cornerD) / 4.0
+        self.set_extension_props(context, verts_location)
+        return {'FINISHED'}
+
+    @classmethod
+    def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
+        light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
+        light_shaft_props.offset_position = verts_location
