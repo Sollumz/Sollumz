@@ -160,9 +160,24 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="MESH_CYLINDER")
 
     def draw(self, context):
+        pass
+
+
+class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(bpy.types.Panel):
+    bl_label = "Collision Splitter"
+    bl_idname = "SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 0
+    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="SCULPTMODE_HLT")
+
+    def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.enabled = context.active_object is not None and context.active_object.sollum_type == SollumType.BOUND_COMPOSITE
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname,
                      icon="SCULPTMODE_HLT")
@@ -176,7 +191,7 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
-    bl_order = 0
+    bl_order = 1
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -210,7 +225,7 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
-    bl_order = 1
+    bl_order = 2
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -229,7 +244,9 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
         row.operator(
             ybn_ops.SOLLUMZ_OT_clear_and_create_collision_material.bl_idname)
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_convert_non_collision_materials_to_selected.bl_idname)
+        row.operator(
+            ybn_ops.SOLLUMZ_OT_convert_non_collision_materials_to_selected.bl_idname)
+
 
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_label = "Flag Presets"
@@ -239,6 +256,7 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
+    bl_order = 3
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
