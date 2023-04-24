@@ -456,18 +456,23 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
             for obj in selected_objects:
                 loc = obj.location
                 row = layout.row()
-                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(obj.name, loc[0], loc[1], loc[2]))
+                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(
+                    obj.name, loc[0], loc[1], loc[2]))
 
                 # Add a Clipboard button to copy the location to the clipboard
-                clip_button = row.operator("wm.sollumz_copy_location", text="", icon='COPYDOWN')
-                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(loc[0], loc[1], loc[2])
+                clip_button = row.operator(
+                    "wm.sollumz_copy_location", text="", icon='COPYDOWN')
+                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(
+                    loc[0], loc[1], loc[2])
 
             # Add a button to copy all selected objects' locations to the clipboard
             if len(selected_objects) > 1:
                 row = layout.row()
-                row.operator("wm.sollumz_copy_all_locations", text="Copy All Locations", icon='COPY_ID')
+                row.operator("wm.sollumz_copy_all_locations",
+                             text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
+
 
 class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     """Copy the location of an object to the clipboard"""
@@ -477,8 +482,10 @@ class SOLLUMZ_OT_copy_location(bpy.types.Operator):
 
     def execute(self, context):
         bpy.context.window_manager.clipboard = self.location
-        self.report({'INFO'}, "Location copied to clipboard: {}".format(self.location))
+        self.report(
+            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
     """Copy the locations of all selected objects to the clipboard"""
@@ -491,10 +498,13 @@ class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
         locations_text = ""
         for obj in selected_objects:
             loc = obj.location
-            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(obj.name, loc[0], loc[1], loc[2])
+            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(
+                obj.name, loc[0], loc[1], loc[2])
         bpy.context.window_manager.clipboard = locations_text
-        self.report({'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
+        self.report(
+            {'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
         return {'FINISHED'}
+
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Vertex Painter"
@@ -516,6 +526,7 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        settings = context.scene.vertex_color_master_settings
 
         row = layout.row()
         row.prop(context.scene, "vert_paint_color1", text="")
@@ -550,6 +561,34 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
             row6.operator(
                 "sollumz.paint_vertices").color = context.scene.vert_paint_color6
 
+        col = layout.column(align=True)
+        row = col.row()
+        row.label(text="Active Channels")
+        row = col.row(align=True)
+        row.prop(settings, 'active_channels', expand=True)
+        row = col.row(align=True)
+
+        can_isolate = len(settings.active_channels) == 1
+        iso_channel_id = 'R'
+        if can_isolate:
+            for channel_id in settings.active_channels:
+                iso_channel_id = channel_id
+                break
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.operator('sollumz.isolate_channel',
+                     text="Isolate Active Channel").src_channel_id = iso_channel_id
+        row.enabled = can_isolate
+        row = col.row(align=True)
+        row.operator("sollumz.apply_isolated")
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.operator('sollumz.gradient',
+                     text="Linear Gradient").circular_gradient = False
+        row10 = col.row(align=True)
+        row10.operator('sollumz.gradient',
+                       text="Circular Gradient").circular_gradient = True
+
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_label = "Debug"
@@ -578,30 +617,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.prop(context.scene, "debug_lights_only_selected")
         row = layout.row()
         row.operator("sollumz.debug_update_portal_names")
-
-
-class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
-    bl_label = "Terrain Painter"
-    bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="IMAGE")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.paint_tex1")
-        row.operator("sollumz.paint_tex2")
-        row = layout.row()
-        row.operator("sollumz.paint_tex3")
-        row.operator("sollumz.paint_tex4")
-        row = layout.row()
-        row.operator("sollumz.paint_a")
-        row.prop(context.scene, "vert_paint_alpha")
 
 
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):

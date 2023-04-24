@@ -695,6 +695,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
 
@@ -703,14 +704,74 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
 
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter", description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)", default=True)
-    
-    extra_color_swatches: bpy.props.BoolProperty(name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
+
+    extra_color_swatches: bpy.props.BoolProperty(
+        name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "scale_light_intensity")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
+
+
+red_id = 'R'
+green_id = 'G'
+blue_id = 'B'
+alpha_id = 'A'
+
+channel_items = ((red_id, "R", ""),
+                 (green_id, "G", ""),
+                 (blue_id, "B", ""),
+                 (alpha_id, "A", ""))
+
+isolate_mode_name_prefix = 'Sollumz-alpha'
+
+valid_channel_ids = 'RGBA'
+
+
+class SollumzVertexPainterProperties(bpy.types.PropertyGroup):
+
+    def update_active_channels(self, context):
+        if self.use_grayscale or not self.match_brush_to_active_channels:
+            return None
+
+        active_channels = self.active_channels
+
+        # set draw color based on mask
+        draw_color = [0.0, 0.0, 0.0]
+        if red_id in active_channels:
+            draw_color[0] = 1.0
+        if green_id in active_channels:
+            draw_color[1] = 1.0
+        if blue_id in active_channels:
+            draw_color[2] = 1.0
+
+        context.tool_settings.vertex_paint.brush.color = draw_color
+
+        return None
+
+    active_channels: bpy.props.EnumProperty(
+        name="Active Channels",
+        options={'ENUM_FLAG'},
+        items=channel_items,
+        description="Which channels to enable.",
+        default={'R', 'G', 'B'},
+        update=update_active_channels
+    )
+    # Used only to store the color between RGBA and isolate modes
+    brush_color: bpy.props.FloatVectorProperty(
+        name="Brush Color",
+        description="Brush primary color.",
+        default=(1, 0, 0)
+    )
+    src_channel_id: bpy.props.EnumProperty(
+        name="Source Channel",
+        items=channel_items,
+        # default=red_id,
+        description="Source (Src) color channel."
+    )
+
 
 def get_all_collections():
     return [bpy.context.scene.collection, *bpy.data.collections]
@@ -929,6 +990,7 @@ def register():
         name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
 
     bpy.utils.register_class(SollumzAddonPreferences)
+
 
 def unregister():
     del bpy.types.Object.sollum_type

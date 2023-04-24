@@ -4,7 +4,6 @@ from mathutils import Vector
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, SollumzAddonPreferences
 
 
-
 def get_addon_preferences(context: bpy.types.Context) -> SollumzAddonPreferences:
     return context.preferences.addons[__package__.split(".")[0]].preferences
 
@@ -44,18 +43,6 @@ def apply_brush_settings(brush, idx):
             brush.color = (0, 0, 0)
             brush.blend = "ERASE_ALPHA"
             brush.strength = alpha * -1
-    return brush
-
-
-def get_terrain_texture_brush(idx):
-    name = "TerrainBrush"
-
-    try:
-        brush = bpy.data.brushes[name]
-    except:
-        brush = create_brush(name)
-    apply_brush_settings(brush, idx)
-    bpy.context.scene.tool_settings.vertex_paint.brush = brush
     return brush
 
 
