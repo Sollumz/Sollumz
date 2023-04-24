@@ -71,29 +71,29 @@ def is_shadowed(v1, v2, o):
     return direction.x >= 0.0 and direction.y >= 0.0 and direction.z >= 0.0
 
 def get_vertices_in_octant(vertices, o):
-    octantIndices = []
+    octant_indices = []
 
     for idx, vtx in enumerate(vertices):
-        shouldAdd = True
-        octantIndices2 = []
+        should_add = True
+        octant_indices_2 = []
 
-        for idx2 in octantIndices:
-            vtx2 = vertices[idx2]
+        for idx_2 in octant_indices:
+            vtx2 = vertices[idx_2]
 
             if is_shadowed(vtx, vtx2, o):
-                shouldAdd = False
-                octantIndices2 = octantIndices
+                should_add = False
+                octant_indices_2 = octant_indices
                 break
 
             if not is_shadowed(vtx2, vtx, o):
-                octantIndices2.append(idx2)
+                octant_indices_2.append(idx_2)
         
-        if shouldAdd:
-            octantIndices2.append(idx)
+        if should_add:
+            octant_indices_2.append(idx)
 
-        octantIndices = octantIndices2
+        octant_indices = octant_indices_2
 
-    return octantIndices
+    return octant_indices
 
 def polygon_from_object(obj, geometry, verts_map, mat_map, matrix):
     vertices = geometry.vertices
