@@ -1,5 +1,5 @@
 import bpy
-from .tools.blenderhelper import get_armature_obj, get_addon_preferences
+from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import SollumType, MaterialType
 
 
@@ -555,6 +555,30 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         if not obj or obj.sollum_type == SollumType.NONE:
             layout.label(
                 text="No sollumz objects in scene selected.", icon="ERROR")
+
+
+class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
+    bl_label = "Terrain Painter"
+    bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="IMAGE")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator("sollumz.paint_tex1")
+        row.operator("sollumz.paint_tex2")
+        row = layout.row()
+        row.operator("sollumz.paint_tex3")
+        row.operator("sollumz.paint_tex4")
+        row = layout.row()
+        row.operator("sollumz.paint_a")
+        row.prop(context.scene, "vert_paint_alpha")
 
 
 class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):

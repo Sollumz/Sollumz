@@ -2,6 +2,7 @@ import bpy
 from ..sollumz_ui import SOLLUMZ_PT_TOOL_PANEL
 from ..tools.blenderhelper import get_addon_preferences
 
+
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Vertex Painter"
     bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
