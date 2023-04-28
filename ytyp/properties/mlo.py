@@ -126,7 +126,7 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         return self.get_room_name(self.room_to_index)
 
     def update_name(self, context):
-        self.name = f"{self.room_from_name} to {self.room_to_name}"
+        self.name = f"{self.id} | {self.room_from_name} to {self.room_to_name}"
 
     # Work around to store audio_occlusion as a string property since blender int property cant store 32 bit unsigned integers
     def update_audio_occlusion(self, context):
