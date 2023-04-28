@@ -11,6 +11,7 @@ from ..operators.extensions import (
     SOLLUMZ_OT_update_light_shaft_offeset_location,
     SOLLUMZ_OT_update_offset_and_top_from_selected,
     SOLLUMZ_OT_update_particle_effect_location,
+    SOLLUMZ_OT_calculate_light_shaft_center_offset_location,
 )
 from ..utils import get_selected_archetype, get_selected_extension
 from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
@@ -73,11 +74,9 @@ class ExtensionsPanelHelper:
                 row = layout.row()
                 row.prop(extension_properties, prop_name)
 
-
 class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST"
     icon = "CON_TRACKTO"
-
 
 class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
     bl_label = "Extensions"
@@ -123,9 +122,13 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy
             row = layout.row()
             row.operator(
                 SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
-            row = layout.row()
+            row = layout.row()  
             row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
             row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
             row = layout.row()
             row.operator(SOLLUMZ_OT_update_corner_c_location.bl_idname)
             row.operator(SOLLUMZ_OT_update_corner_d_location.bl_idname)
+            layout.separator()   
+            row = layout.row()            
+            row.operator(
+                SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname)  
