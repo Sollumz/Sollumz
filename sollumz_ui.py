@@ -456,18 +456,23 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
             for obj in selected_objects:
                 loc = obj.location
                 row = layout.row()
-                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(obj.name, loc[0], loc[1], loc[2]))
+                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(
+                    obj.name, loc[0], loc[1], loc[2]))
 
                 # Add a Clipboard button to copy the location to the clipboard
-                clip_button = row.operator("wm.sollumz_copy_location", text="", icon='COPYDOWN')
-                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(loc[0], loc[1], loc[2])
+                clip_button = row.operator(
+                    "wm.sollumz_copy_location", text="", icon='COPYDOWN')
+                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(
+                    loc[0], loc[1], loc[2])
 
             # Add a button to copy all selected objects' locations to the clipboard
             if len(selected_objects) > 1:
                 row = layout.row()
-                row.operator("wm.sollumz_copy_all_locations", text="Copy All Locations", icon='COPY_ID')
+                row.operator("wm.sollumz_copy_all_locations",
+                             text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
+
 
 class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     """Copy the location of an object to the clipboard"""
@@ -477,8 +482,10 @@ class SOLLUMZ_OT_copy_location(bpy.types.Operator):
 
     def execute(self, context):
         bpy.context.window_manager.clipboard = self.location
-        self.report({'INFO'}, "Location copied to clipboard: {}".format(self.location))
+        self.report(
+            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
     """Copy the locations of all selected objects to the clipboard"""
@@ -491,64 +498,12 @@ class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
         locations_text = ""
         for obj in selected_objects:
             loc = obj.location
-            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(obj.name, loc[0], loc[1], loc[2])
+            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(
+                obj.name, loc[0], loc[1], loc[2])
         bpy.context.window_manager.clipboard = locations_text
-        self.report({'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
+        self.report(
+            {'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
         return {'FINISHED'}
-
-class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Vertex Painter"
-    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
-    bl_order = 1
-
-    @classmethod
-    def poll(self, context):
-        preferences = get_addon_preferences(bpy.context)
-        show_panel = preferences.show_vertex_painter
-        return show_panel
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="BRUSH_DATA")
-
-    def draw(self, context):
-        layout = self.layout
-
-        row = layout.row()
-        row.prop(context.scene, "vert_paint_color1", text="")
-        row.operator(
-            "sollumz.paint_vertices").color = context.scene.vert_paint_color1
-
-        row2 = layout.row()
-        row2.prop(context.scene, "vert_paint_color2", text="")
-        row2.operator(
-            "sollumz.paint_vertices").color = context.scene.vert_paint_color2
-
-        row3 = layout.row()
-        row3.prop(context.scene, "vert_paint_color3", text="")
-        row3.operator(
-            "sollumz.paint_vertices").color = context.scene.vert_paint_color3
-
-        preferences = get_addon_preferences(bpy.context)
-        extra = preferences.extra_color_swatches
-        if extra:
-            row4 = layout.row()
-            row4.prop(context.scene, "vert_paint_color4", text="")
-            row4.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color4
-
-            row5 = layout.row()
-            row5.prop(context.scene, "vert_paint_color5", text="")
-            row5.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color5
-
-            row6 = layout.row()
-            row6.prop(context.scene, "vert_paint_color6", text="")
-            row6.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color6
 
 
 class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
@@ -578,30 +533,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.prop(context.scene, "debug_lights_only_selected")
         row = layout.row()
         row.operator("sollumz.debug_update_portal_names")
-
-
-class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
-    bl_label = "Terrain Painter"
-    bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="IMAGE")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.paint_tex1")
-        row.operator("sollumz.paint_tex2")
-        row = layout.row()
-        row.operator("sollumz.paint_tex3")
-        row.operator("sollumz.paint_tex4")
-        row = layout.row()
-        row.operator("sollumz.paint_a")
-        row.prop(context.scene, "vert_paint_alpha")
 
 
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):

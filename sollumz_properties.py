@@ -695,6 +695,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
 
@@ -703,14 +704,16 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
 
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter", description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)", default=True)
-    
-    extra_color_swatches: bpy.props.BoolProperty(name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
+
+    extra_color_swatches: bpy.props.BoolProperty(
+        name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "scale_light_intensity")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
+
 
 def get_all_collections():
     return [bpy.context.scene.collection, *bpy.data.collections]
@@ -845,63 +848,7 @@ def register():
         name="Hide Very Low LODS", get=get_hide_very_low_lods, set=set_hide_very_low_lods)
     bpy.types.Scene.hide_vehicle_windows = bpy.props.BoolProperty(
         name="Hide Vehicle Windows", get=get_hide_vehicle_windows, set=set_hide_vehicle_windows)
-
-    bpy.types.Scene.vert_paint_color1 = bpy.props.FloatVectorProperty(
-        name="Vert Color 1",
-        subtype="COLOR_GAMMA",
-        default=(1.0, 1.0, 1.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    bpy.types.Scene.vert_paint_color2 = bpy.props.FloatVectorProperty(
-        name="Vert Color 2",
-        subtype="COLOR_GAMMA",
-        default=(0.0, 0.0, 1.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    bpy.types.Scene.vert_paint_color3 = bpy.props.FloatVectorProperty(
-        name="Vert Color 3",
-        subtype="COLOR_GAMMA",
-        default=(0.0, 1.0, 0.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    bpy.types.Scene.vert_paint_color4 = bpy.props.FloatVectorProperty(
-        name="Vert Color 4",
-        subtype="COLOR_GAMMA",
-        default=(1.0, 0.0, 0.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    bpy.types.Scene.vert_paint_color5 = bpy.props.FloatVectorProperty(
-        name="Vert Color 5",
-        subtype="COLOR_GAMMA",
-        default=(0.0, 1.0, 0.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    bpy.types.Scene.vert_paint_color6 = bpy.props.FloatVectorProperty(
-        name="Vert Color 6",
-        subtype="COLOR_GAMMA",
-        default=(1.0, 0.0, 0.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
-        name="Alpha", min=-1, max=1)
+    
     bpy.types.Scene.create_seperate_objects = bpy.props.BoolProperty(
         name="Separate Objects", description="Create a object for each selected mesh.")
     bpy.types.Scene.create_center_to_selection = bpy.props.BoolProperty(
@@ -930,6 +877,7 @@ def register():
 
     bpy.utils.register_class(SollumzAddonPreferences)
 
+
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
@@ -939,11 +887,6 @@ def unregister():
     del bpy.types.Scene.hide_medium_lods
     del bpy.types.Scene.hide_low_lods
     del bpy.types.Scene.hide_very_low_lods
-    del bpy.types.Scene.vert_paint_color1
-    del bpy.types.Scene.vert_paint_color2
-    del bpy.types.Scene.vert_paint_color3
-    del bpy.types.Scene.vert_paint_color4
-    del bpy.types.Scene.vert_paint_alpha
     del bpy.types.Scene.create_seperate_objects
     del bpy.types.Scene.use_mesh_name
     del bpy.types.Scene.debug_sollum_type

@@ -25,7 +25,7 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
-from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix
+from .tools.blenderhelper import remove_number_suffix
 from .tools.ytyphelper import ytyp_from_objects
 
 
@@ -311,100 +311,6 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
             if context.active_object.mode != mode:
                 bpy.ops.object.mode_set(mode=mode)
 
-        return True
-
-
-class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Paint All Vertices Of Selected Object"""
-    bl_idname = "sollumz.paint_vertices"
-    bl_label = "Paint"
-    bl_action = "Paint Vertices"
-
-    color: bpy.props.FloatVectorProperty(
-        subtype="COLOR_GAMMA",
-        default=(1.0, 1.0, 1.0, 1.0),
-        min=0,
-        max=1,
-        size=4
-    )
-
-    def paint_map(self, color_attr, color):
-        for datum in color_attr.data:
-            # Uses color_srgb to match the behavior of the old
-            # vertex_colors code. Requires 3.4+.
-            datum.color_srgb = color
-
-    def paint_mesh(self, mesh, color):
-        if not mesh.color_attributes:
-            mesh.color_attributes.new("Color", 'BYTE_COLOR', 'CORNER')
-        self.paint_map(mesh.attributes.active_color, color)
-
-    def run(self, context):
-        objs = context.selected_objects
-
-        if len(objs) > 0:
-            for obj in objs:
-                if obj.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-                    self.paint_mesh(obj.data, self.color)
-                    self.messages.append(
-                        f"{obj.name} was successfully painted.")
-                else:
-                    self.messages.append(
-                        f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_GEOMETRY]} type.")
-        else:
-            self.message("No objects selected to paint.")
-            return False
-
-        return True
-
-
-class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Paint Texture 1 On Selected Object"""
-    bl_idname = "sollumz.paint_tex1"
-    bl_label = "Paint Texture 1"
-
-    def run(self, context):
-        get_terrain_texture_brush(1)
-        return True
-
-
-class SOLLUMZ_OT_paint_terrain_tex2(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Paint Texture 2 On Selected Object"""
-    bl_idname = "sollumz.paint_tex2"
-    bl_label = "Paint Texture 2"
-
-    def run(self, context):
-        get_terrain_texture_brush(2)
-        return True
-
-
-class SOLLUMZ_OT_paint_terrain_tex3(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Paint Texture 3 On Selected Object"""
-    bl_idname = "sollumz.paint_tex3"
-    bl_label = "Paint Texture 3"
-
-    def run(self, context):
-        get_terrain_texture_brush(3)
-        return True
-
-
-class SOLLUMZ_OT_paint_terrain_tex4(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Paint Texture 4 On Selected Object"""
-    bl_idname = "sollumz.paint_tex4"
-    bl_label = "Paint Texture 4"
-
-    def run(self, context):
-        get_terrain_texture_brush(4)
-        return True
-
-
-class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Paint Lookup Sampler Alpha On Selected Object"""
-    bl_idname = "sollumz.paint_a"
-    bl_label = "Paint Alpha"
-
-    def run(self, context):
-        get_terrain_texture_brush(5)
         return True
 
 
