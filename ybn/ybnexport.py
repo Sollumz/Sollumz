@@ -270,10 +270,6 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
                 geometry.polygons.append(poly)
     if not found:
         raise NoGeometryError()
-    
-    if type(geometry) is ybnxml.BoundGeometry:
-        for o in range(8):
-            geometry.octants.append(get_vertices_in_octant(geometry.vertices, o))
 
     # Check vert count
     if len(geometry.vertices) > 32767:
@@ -283,6 +279,8 @@ def geometry_from_object(obj, sollum_type=SollumType.BOUND_GEOMETRYBVH, is_frag=
     if type(geometry) is ybnxml.BoundGeometry:
         if len(geometry.vertices_2) == 0:
             geometry.vertices_2 = geometry.vertices
+        for o in range(8):
+            geometry.octants.append(get_vertices_in_octant(geometry.vertices_2, o))
 
     return geometry
 
