@@ -17,7 +17,7 @@ def get_portal_items(self, context: bpy.types.Context):
         return items
 
     for portal in selected_archetype.portals:
-        items.append((str(portal.id), portal.name, ""))
+        items.append((str(portal.id), portal.name, "", portal.id))
 
     return items
 
@@ -31,7 +31,7 @@ def get_room_items(self, context: bpy.types.Context):
         return items
 
     for room in selected_archetype.rooms:
-        items.append((str(room.id), room.name, ""))
+        items.append((str(room.id), room.name, "", room.id))
 
     return items
 
@@ -45,7 +45,7 @@ def get_entityset_items(self, context: bpy.types.Context):
         return items
 
     for entitySet in selected_archetype.entity_sets:
-        items.append((str(entitySet.id), entitySet.name, ""))
+        items.append((str(entitySet.id), entitySet.name, "", entitySet.id))
 
     return items
 
@@ -214,15 +214,15 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
                     return index
 
         return -1
-    
+
     def get_entityset_name(self):
         selected_archetype = self.get_mlo_archetype()
         entity_set = get_list_item(selected_archetype.entity_sets,
-                               self.entity_set_index)
+                                   self.entity_set_index)
         if entity_set:
             return entity_set.name
         return ""
-    
+
     def get_entityset_index(self):
         selected_archetype = self.get_mlo_archetype()
         attached_entity_set_id = self.attached_entity_set_id
@@ -267,14 +267,13 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         name="EntitySet", items=get_entityset_items, default=-1)
     entity_set_index: bpy.props.IntProperty(
         name="Attached EntitySet Index", get=get_entityset_index)
-    
+
     attached_entity_set_room_id: bpy.props.EnumProperty(
         name="EntitySet Room", items=get_room_items, default=-1)
     entity_set_room_index: bpy.props.IntProperty(
         name="Attached EntitySet Room Index", get=get_room_index)
     entityset_room_name: bpy.props.StringProperty(
         name="Attached EntitySet Room Name", get=get_room_name)
-    
 
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
 
@@ -293,16 +292,16 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
             return archetype.entity_sets[entity_set_index].name
 
         return archetype.entity_sets[0].name
-    
+
     def new_entity_set_entity(self) -> MloEntityProperties:
         item = self.entities.add()
         item.mlo_archetype_id = self.id
         return item
-    
+
     name: bpy.props.StringProperty(name="Name")
     entities: bpy.props.CollectionProperty(
         type=MloEntityProperties, name="EntitySet Entities")
-    
+
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")
     # Selected entity index
