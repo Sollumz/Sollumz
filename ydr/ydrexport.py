@@ -29,6 +29,7 @@ from math import degrees, pi, isclose
 from mathutils import Quaternion, Vector
 from dataclasses import dataclass
 
+
 def get_used_materials(obj):
     materials = []
     for child in get_children_recursive(obj):
@@ -130,11 +131,8 @@ def texture_item_from_node(n):
     return texture_item
 
 
-def texture_dictionary_from_materials(foldername, materials, exportpath):
+def texture_dictionary_from_materials(foldername, materials, exportpath, write_textures=True):
     texture_dictionary = []
-    messages = []
-
-    has_td = False
 
     t_names = []
     for mat in materials:
@@ -142,7 +140,6 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
         for n in nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage):
                 if n.texture_properties.embedded == True:
-                    has_td = True
                     texture_item = texture_item_from_node(n)
                     if texture_item.name in t_names:
                         continue
@@ -150,7 +147,7 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
                         t_names.append(texture_item.name)
                     texture_dictionary.append(texture_item)
 
-                    if n.image:
+                    if n.image and write_textures:
                         folderpath = os.path.join(exportpath, foldername)
                         txtpath = bpy.path.abspath(n.image.filepath)
                         if os.path.isfile(txtpath):
@@ -161,17 +158,8 @@ def texture_dictionary_from_materials(foldername, materials, exportpath):
                             # check if paths are the same because if they are no need to copy
                             if txtpath != dstpath:
                                 shutil.copyfile(txtpath, dstpath)
-                        else:
-                            messages.append(
-                                f"Missing Embedded Texture: {txtpath} please supply texture! The texture will not be copied to the texture folder until entered!")
-                    else:
-                        messages.append(
-                            f"Material: {mat.name} is missing the {n.name} texture and will not be exported.")
 
-    if has_td:
-        return texture_dictionary, messages
-    else:
-        return None, []
+    return texture_dictionary or None
 
 
 def get_blended_verts(mesh, vertex_groups, bones=None):
@@ -224,7 +212,8 @@ def get_blended_verts(mesh, vertex_groups, bones=None):
 
                 processed_groups.append(BoneWeight(bone_index, element.weight))
 
-            processed_groups = sorted(processed_groups, reverse=True, key=get_weight)
+            processed_groups = sorted(
+                processed_groups, reverse=True, key=get_weight)
             # limit total
             if len(processed_groups) > 4:
                 processed_groups = processed_groups[:4]
@@ -429,7 +418,8 @@ def geometry_from_object(obj, mats, bones=None):
     obj, mesh = apply_and_triangulate_object(obj)
 
     if len(mesh.vertices) > 65535:
-        raise Exception(f"{obj.name} has over 65535 vertices! This will cause issues with the mesh. Please lower the poly-count.")
+        raise Exception(
+            f"{obj.name} has over 65535 vertices! This will cause issues with the mesh. Please lower the poly-count.")
 
     bbmin, bbmax = get_bound_extents(obj)
     geometry.bounding_box_min = bbmin
@@ -459,7 +449,6 @@ def geometry_from_object(obj, mats, bones=None):
     bpy.data.meshes.remove(mesh)
 
     return geometry
-
 
 
 def drawable_model_from_object(obj, bones=None, materials=None):
@@ -744,7 +733,7 @@ def get_drawable_extents(drawable_obj):
     return bbmin, bbmax
 
 
-def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, is_frag=False, write_shaders=True):
+def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, is_frag=False, write_textures=True):
     drawable = None
     if is_frag:
         drawable = FragmentDrawable()
@@ -778,20 +767,16 @@ def drawable_from_object(exportop, obj, exportpath, bones=None, materials=None, 
         raise Exception(
             f"No materials on object: {obj.name}, will be skipped.")
 
-    if write_shaders:
-        for shader in shaders:
-            drawable.shader_group.shaders.append(shader)
+    for shader in shaders:
+        drawable.shader_group.shaders.append(shader)
 
-            foldername = remove_number_suffix(obj.name.lower())
-            if is_frag:
-                foldername = remove_number_suffix(obj.parent.name.lower())
+    foldername = remove_number_suffix(obj.name.lower())
+    if is_frag:
+        foldername = remove_number_suffix(obj.parent.name.lower())
 
-            td, messages = texture_dictionary_from_materials(
-                foldername, materials, os.path.dirname(exportpath))
-            drawable.shader_group.texture_dictionary = td
-            exportop.messages += messages
-    else:
-        drawable.shader_group = None
+    td = texture_dictionary_from_materials(
+        foldername, materials, os.path.dirname(exportpath), write_textures=write_textures)
+    drawable.shader_group.texture_dictionary = td
 
     if bones is None:
         if obj.pose is not None:

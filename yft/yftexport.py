@@ -300,7 +300,8 @@ def fragment_from_object(exportop, fobj, exportpath):
 
             if child_dobj:
                 child.drawable = drawable_from_object(
-                    exportop, child_dobj, exportpath, None, materials, True, False)
+                    exportop, child_dobj, exportpath, None, materials, True, write_textures=False)
+                child.drawable.shader_group = None
             else:
                 child.drawable.matrix = Matrix()
                 child.drawable.shader_group = None

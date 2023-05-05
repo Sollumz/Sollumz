@@ -1,5 +1,7 @@
+import os
 from ..cwxml.drawable import DrawableDictionary
-from ..ydr.ydrexport import drawable_from_object
+from ..ydr.ydrexport import drawable_from_object, get_used_materials, texture_dictionary_from_materials
+from ..tools.blenderhelper import remove_number_suffix
 from ..tools import jenkhash
 from ..sollumz_properties import SollumType
 
@@ -21,10 +23,18 @@ def drawable_dict_from_object(exportop, obj, filepath, export_settings):
     for child in obj.children:
         if child.sollum_type == SollumType.DRAWABLE:
             drawable = drawable_from_object(
-                exportop, child, filepath, bones, None)
+                exportop, child, filepath, bones, None, write_textures=False)
+
             if export_settings.exclude_skeleton:
                 drawable.skeleton = None
+
             drawable_dict.append(drawable)
+
+    # Write embedded texture dict folder
+    ydd_mats = get_used_materials(obj)
+    foldername = remove_number_suffix(obj.name.lower())
+    texture_dictionary_from_materials(
+        foldername, ydd_mats, os.path.dirname(filepath))
 
     drawable_dict.sort(key=get_hash)
 
