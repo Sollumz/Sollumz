@@ -626,7 +626,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     use_selection: bpy.props.BoolProperty(
         name="Selected Objects",
         description="Export selected and visible objects only",
-        default=False,
+        default=True,
     )
 
     use_active_collection: bpy.props.BoolProperty(
@@ -695,6 +695,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
 
@@ -703,14 +704,16 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
 
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter", description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)", default=True)
-    
-    extra_color_swatches: bpy.props.BoolProperty(name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
+
+    extra_color_swatches: bpy.props.BoolProperty(
+        name="Extra Vertex Color Swatches", description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)", default=True)
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "scale_light_intensity")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
+
 
 def get_all_collections():
     return [bpy.context.scene.collection, *bpy.data.collections]
@@ -929,6 +932,7 @@ def register():
         name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
 
     bpy.utils.register_class(SollumzAddonPreferences)
+
 
 def unregister():
     del bpy.types.Object.sollum_type
