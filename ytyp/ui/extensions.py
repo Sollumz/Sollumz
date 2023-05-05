@@ -81,7 +81,8 @@ class ExtensionsPanelHelper:
                 layout.separator()   
                 row = layout.row()            
                 row.operator(
-                    SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname)  
+                    SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname)
+                layout.separator()
 
             extension_properties = selected_extension.get_properties()
 
