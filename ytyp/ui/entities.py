@@ -27,7 +27,7 @@ class SOLLUMZ_UL_ENTITIES_LIST(BasicListHelper, FilterListHelper, bpy.types.UILi
             return scene.sollumz_entity_filter_portal == item.attached_portal_id
         elif filter_type == "entity_set":
             in_entity_set = scene.sollumz_entity_filter_entity_set == item.attached_entity_set_id
-            in_room = scene.sollumz_entity_filter_entity_set_room == item.attached_entity_set_room_id
+            in_room = scene.sollumz_entity_filter_entity_set_room == item.attached_room_id
 
             if scene.sollumz_do_entity_filter_entity_set_room:
                 return in_entity_set and in_room
@@ -87,9 +87,23 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
         list_col.separator()
         row = list_col.row(align=True)
         row.operator("sollumz.addobjasentity", icon="OUTLINER_OB_MESH")
-        row.prop(context.scene, "sollumz_add_entity_portal",
+
+        col = row.column()
+        col.enabled = context.scene.sollumz_add_entity_room == "-1" and context.scene.sollumz_add_entity_entityset == "-1"
+        col.prop(context.scene, "sollumz_add_entity_portal",
                  text="", icon="OUTLINER_OB_LIGHTPROBE")
-        row.prop(context.scene, "sollumz_add_entity_room", text="", icon="CUBE")
+
+        col = row.column()
+        col.enabled = context.scene.sollumz_add_entity_portal == "-1"
+        col.prop(context.scene, "sollumz_add_entity_room", text="", icon="CUBE")
+
+        col = row.column()
+        col.enabled = context.scene.sollumz_add_entity_portal == "-1"
+        col.prop(context.scene, "sollumz_add_entity_entityset",
+                 text="", icon="ASSET_MANAGER")
+
+        list_col.separator()
+
         list_col.operator("sollumz.setobjentitytransforms",
                           icon="OUTLINER_DATA_EMPTY")
 
@@ -147,11 +161,6 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(selected_entity, "attached_entity_set_id")
         row.operator("sollumz.search_entityset", text="", icon="VIEWZOOM")
-
-        row = layout.row(align=True)
-        row.prop(selected_entity, "attached_entity_set_room_id")
-        row.operator("sollumz.search_entitysets_rooms",
-                     text="", icon="VIEWZOOM")
 
         layout.separator()
 

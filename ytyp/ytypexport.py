@@ -11,18 +11,26 @@ from .properties.extensions import ExtensionProperties
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of room from the mlo archetype entities collection provided."""
+    # Not using enumerate since were only looping through entities not in an entity set
+    index = 0
 
-    for index, entity in enumerate(entities):
-        if entity.room_index == room_index:
+    for entity in entities:
+        if entity.room_index == room_index and entity.attached_entity_set_id == "-1":
             room_xml.attached_objects.append(index)
+
+            index += 1
 
 
 def set_portal_attached_objects(portal_xml: ytypxml.Portal, portal_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of portal from the mlo archetype entities collection provided."""
+    # Not using enumerate since were only looping through entities not in an entity set
+    index = 0
 
-    for index, entity in enumerate(entities):
-        if entity.portal_index == portal_index:
+    for entity in entities:
+        if entity.portal_index == portal_index and entity.attached_entity_set_id == "-1":
             portal_xml.attached_objects.append(index)
+
+            index += 1
 
 
 def get_portal_count(room: RoomProperties, portals: Iterable[PortalProperties]) -> int:
@@ -64,14 +72,18 @@ def set_portal_xml_corners(portal: PortalProperties, portal_xml: ytypxml.Portal)
         portal_xml.corners.append(corner_xml)
 
 
-def create_entity_set_xml(entityset: EntitySetProperties) -> ytypxml.EntitySet:
+def create_entity_set_xml(entityset: EntitySetProperties, entities: list[MloEntityProperties]) -> ytypxml.EntitySet:
     """Create xml mlo entity sets from an entityset data-block"""
     entity_set = ytypxml.EntitySet()
     entity_set.name = entityset.name
-    for entity in entityset.entities:
-        entity_room_index = int(entity.attached_entity_set_room_id)-1
+
+    for entity in entities:
+        if entity.attached_entity_set_id != str(entityset.id):
+            continue
+
         entity_set.entities.append(create_entity_xml(entity))
-        entity_set.locations.append(entity_room_index)
+        entity_set.locations.append(entity.room_index)
+
     return entity_set
 
 
@@ -247,8 +259,9 @@ def get_xml_asset_type(asset_type: AssetType) -> str:
 
 def create_mlo_archetype_children_xml(archetype: ArchetypeProperties, archetype_xml: ytypxml.MloArchetype):
     """Create all mlo children from an archetype data-block for the provided archetype xml."""
-
     for entity in archetype.entities:
+        if entity.attached_entity_set_id != "-1":
+            continue
         archetype_xml.entities.append(create_entity_xml(entity))
 
     for room_index, room in enumerate(archetype.rooms):
@@ -263,7 +276,8 @@ def create_mlo_archetype_children_xml(archetype: ArchetypeProperties, archetype_
         archetype_xml.timecycle_modifiers.append(create_tcm_xml(tcm))
 
     for entityset in archetype.entity_sets:
-        archetype_xml.entity_sets.append(create_entity_set_xml(entityset))
+        archetype_xml.entity_sets.append(
+            create_entity_set_xml(entityset, archetype.entities))
 
 
 def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetype:

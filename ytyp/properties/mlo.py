@@ -268,13 +268,6 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     entity_set_index: bpy.props.IntProperty(
         name="Attached EntitySet Index", get=get_entityset_index)
 
-    attached_entity_set_room_id: bpy.props.EnumProperty(
-        name="EntitySet Room", items=get_room_items, default=-1)
-    entity_set_room_index: bpy.props.IntProperty(
-        name="Attached EntitySet Room Index", get=get_room_index)
-    entityset_room_name: bpy.props.StringProperty(
-        name="Attached EntitySet Room Name", get=get_room_name)
-
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
 
     linked_object: bpy.props.PointerProperty(

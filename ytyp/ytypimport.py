@@ -17,15 +17,12 @@ def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: Archetyp
 
     locations = entity_set_xml.locations
     entities = entity_set_xml.entities
-    
-    entity_index = len(entity_set.entities)
-    for index in range(0, len(locations)):
-        create_entity_set_entity(entities[index], entity_set)
+
+    for index in range(len(locations)):
+        entity = create_mlo_entity(entities[index], archetype)
         entity_room = archetype.rooms[locations[index]]
-        entity_set.entities[entity_index].attached_entity_set_id = str(entity_set.id)
-        entity_set.entities[entity_index].attached_entity_set_room_id = str(entity_room.id)
-        entity_index+=1 
-    entity_index = len(entity_set.entities)
+        entity.attached_entity_set_id = str(entity_set.id)
+        entity.attached_room_id = str(entity_room.id)
 
 
 def create_entity_set_entity(entity_xml: ymapxml.Entity, entity_set: EntitySetProperties):
@@ -140,6 +137,8 @@ def create_mlo_entity(entity_xml: ymapxml.Entity, archetype: ArchetypeProperties
 
     for extension_xml in entity_xml.extensions:
         create_extension(extension_xml, entity)
+
+    return entity
 
 
 def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionProperties):
