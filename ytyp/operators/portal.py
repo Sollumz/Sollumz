@@ -1,5 +1,6 @@
 import bpy
 import numpy
+from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import get_selected_vertices
 from ..utils import get_selected_archetype, get_selected_portal, get_selected_room, validate_dynamic_enums, validate_dynamic_enum
@@ -114,7 +115,11 @@ class SOLLUMZ_OT_create_portal_from_selection(PortalCreatorHelper, SOLLUMZ_OT_ba
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
 
-        portal_offset = selected_archetype.asset.location
+        if selected_archetype.asset is not None:
+            portal_offset = selected_archetype.asset.location
+        else:
+            portal_offset = Vector()
+
         new_portal = selected_archetype.new_portal()
 
         return self.set_portal_corners_to_selected_verts(context, new_portal, portal_offset)
