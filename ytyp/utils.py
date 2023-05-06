@@ -68,14 +68,6 @@ def get_selected_entity_set(context) -> Union[EntitySetProperties, None]:
             return archetype.selected_entity_set
 
 
-def get_selected_entity_set_entity(context) -> Union[MloEntityProperties, None]:
-    entity_set = get_selected_entity_set(context)
-    if entity_set:
-        entity = entity_set.selected_entity
-        if entity:
-            return entity
-
-
 def get_selected_entity_set_id(context):
     ytyp = get_selected_ytyp(context)
     if ytyp:

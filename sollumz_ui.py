@@ -615,6 +615,8 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.prop(context.scene, "debug_lights_only_selected")
         row = layout.row()
         row.operator("sollumz.debug_update_portal_names")
+        row = layout.row()
+        row.operator("sollumz.debug_reload_entity_sets")
 
 
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):

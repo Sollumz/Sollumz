@@ -293,23 +293,12 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
         return archetype.entity_sets[0].name
 
-    def new_entity_set_entity(self) -> MloEntityProperties:
-        item = self.entities.add()
-        item.mlo_archetype_id = self.id
-        return item
-
     name: bpy.props.StringProperty(name="Name")
     entities: bpy.props.CollectionProperty(
         type=MloEntityProperties, name="EntitySet Entities")
 
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")
-    # Selected entity index
-    entity_set_entity_index: bpy.props.IntProperty(name="EntitySet Entity")
-
-    @property
-    def selected_entity(self) -> Union[MloEntityProperties, None]:
-        return get_list_item(self.entities, self.entity_set_entity_index)
 
 
 def register():
