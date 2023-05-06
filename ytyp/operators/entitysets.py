@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector
 from ...tools.blenderhelper import remove_number_suffix
 from ...sollumz_helper import SOLLUMZ_OT_base
-from ..utils import get_selected_archetype, get_selected_entity, get_selected_entity_set, get_selected_entity_set_entity, get_selected_entity_set_id, get_selected_ytyp
+from ..utils import get_selected_archetype, get_selected_entity, get_selected_entity_set, get_selected_entity_set_entity, get_selected_entity_set_id, validate_dynamic_enums, validate_dynamic_enum
 from ...sollumz_operators import SearchEnumHelper
 from ..properties.mlo import get_room_items, get_entityset_items
 
@@ -149,6 +149,12 @@ class SOLLUMZ_OT_delete_entityset(SOLLUMZ_OT_base, bpy.types.Operator):
             selected_archetype.entity_set_index)
         selected_archetype.entity_set_index = max(
             selected_archetype.entity_set_index - 1, 0)
+
+        validate_dynamic_enums(selected_archetype.entities,
+                               "attached_entity_set_id", selected_archetype.entity_sets)
+        validate_dynamic_enum(
+            context.scene, "sollumz_add_entity_entityset", selected_archetype.entity_sets)
+
         return True
 
 

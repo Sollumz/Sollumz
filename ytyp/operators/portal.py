@@ -2,7 +2,7 @@ import bpy
 import numpy
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import get_selected_vertices
-from ..utils import get_selected_archetype, get_selected_portal, get_selected_room
+from ..utils import get_selected_archetype, get_selected_portal, get_selected_room, validate_dynamic_enums, validate_dynamic_enum
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 from ..properties.mlo import PortalProperties, get_room_items
 
@@ -150,7 +150,14 @@ class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
             selected_archetype.portal_index - 1, 0)
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
+
+        validate_dynamic_enums(
+            selected_archetype.entities, "attached_portal_id", selected_archetype.portals)
+        validate_dynamic_enum(
+            context.scene, "sollumz_add_entity_portal", selected_archetype.portals)
+
         return True
+
 
 class SOLLUMZ_OT_flip_portal(bpy.types.Operator):
     """Flip portal direction"""
@@ -172,6 +179,7 @@ class SOLLUMZ_OT_flip_portal(bpy.types.Operator):
             selected_portal.corner1 = corners[3]
 
         return {"FINISHED"}
+
 
 class SetPortalRoomHelper(SOLLUMZ_OT_base):
     bl_label = "Set to Selected"
@@ -228,4 +236,3 @@ class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
 
     def get_data_block(self, context):
         return get_selected_portal(context)
-

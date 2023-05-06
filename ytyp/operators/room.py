@@ -3,7 +3,7 @@ from ...sollumz_operators import SOLLUMZ_OT_base
 from ...sollumz_properties import ArchetypeType
 from ...tools.meshhelper import get_bound_extents, get_min_vector_list, get_max_vector_list
 from ...tools.blenderhelper import get_selected_vertices
-from ..utils import get_selected_archetype, get_selected_room
+from ..utils import get_selected_archetype, get_selected_room, validate_dynamic_enums, validate_dynamic_enum
 
 
 class SOLLUMZ_OT_create_room(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -91,5 +91,22 @@ class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
             selected_archetype.room_index - 1, 0)
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
+
+        validate_dynamic_enums(selected_archetype.portals,
+                               "room_from_id", selected_archetype.rooms)
+        validate_dynamic_enums(selected_archetype.portals,
+                               "room_to_id", selected_archetype.rooms)
+        validate_dynamic_enums(selected_archetype.entities,
+                               "attached_room_id", selected_archetype.rooms)
+        validate_dynamic_enums(selected_archetype.entities,
+                               "attached_entity_set_room_id", selected_archetype.rooms)
+        validate_dynamic_enum(
+            context.scene, "sollumz_add_entity_room", selected_archetype.rooms)
+        validate_dynamic_enum(
+            context.scene, "sollumz_add_entity_entityset_room", selected_archetype.rooms)
+
+        for entity_set in selected_archetype.entity_sets:
+            validate_dynamic_enums(
+                entity_set.entities, "attached_entity_set_room_id", selected_archetype.rooms)
 
         return True

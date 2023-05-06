@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
-from ..utils import get_selected_archetype, get_selected_room, get_selected_entity, get_selected_portal
+from ..utils import get_selected_archetype, get_selected_room, get_selected_entity
 from ..properties.mlo import get_portal_items, get_room_items, get_entityset_items
 
 
@@ -113,6 +113,7 @@ class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
             selected_archetype.entity_index)
         selected_archetype.entity_index = max(
             selected_archetype.entity_index - 1, 0)
+
         return True
 
 
@@ -145,4 +146,3 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
 
     def get_data_block(self, context):
         return get_selected_entity(context)
-
