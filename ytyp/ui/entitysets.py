@@ -1,6 +1,6 @@
 import bpy
 from ...tabbed_panels import TabPanel, TabbedPanelHelper
-from ...sollumz_ui import BasicListHelper, OrderListHelper, FlagsPanel, draw_list_with_add_remove
+from ...sollumz_ui import BasicListHelper, FilterListHelper, FlagsPanel, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..utils import get_selected_archetype, get_selected_entity_set, get_selected_entity_set_entity
 from .mlo import SOLLUMZ_PT_MLO_PANEL
@@ -13,10 +13,10 @@ class SOLLUMZ_UL_ENTITY_SETS_LIST(BasicListHelper, bpy.types.UIList):
     item_icon = "ASSET_MANAGER"
 
 
-class SOLLUMZ_UL_ES_ENTITIES_LIST(BasicListHelper, OrderListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_ES_ENTITIES_LIST(BasicListHelper, FilterListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ES_ENTITIES_LIST"
     name_prop = "archetype_name"
-    orderkey = "archetype_name"
+    order_by_name_key = "archetype_name"
     item_icon = "OBJECT_DATA"
 
 
@@ -57,18 +57,20 @@ class SOLLUMZ_PT_ENTITY_SETS_PANEL(TabPanel, bpy.types.Panel):
         layout.label(text="Entity Set Entities")
         list_col = draw_list_with_add_remove(self.layout, "sollumz.create_entityset_entity", "sollumz.delete_entityset_entity",
                                              SOLLUMZ_UL_ES_ENTITIES_LIST.bl_idname, "", selected_entity_set, "entities", selected_entity_set, "entity_set_entity_index")
-        
+
         if not selected_entity_set_entity:
             return
 
         list_col.separator()
 
         row = list_col.row(align=True)
-        row.operator("sollumz.addobjas_entity_set_entity", icon="OUTLINER_OB_MESH")
-        row.prop(context.scene, "sollumz_add_entity_entityset_room", text="", icon="CUBE")
+        row.operator("sollumz.addobjas_entity_set_entity",
+                     icon="OUTLINER_OB_MESH")
+        row.prop(context.scene, "sollumz_add_entity_entityset_room",
+                 text="", icon="CUBE")
         list_col.operator("sollumz.setobj_entity_set_entitytransforms",
                           icon="OUTLINER_DATA_EMPTY")
-        
+
         layout.separator()
 
 
@@ -113,9 +115,8 @@ class SOLLUMZ_PT_ES_ENTITY_PANEL(TabPanel, bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(selected_entity, "attached_entity_set_room_id")
-        row.operator("sollumz.search_entitysets_rooms", text="", icon="VIEWZOOM")
-        
-        
+        row.operator("sollumz.search_entitysets_rooms",
+                     text="", icon="VIEWZOOM")
 
         layout.separator()
 

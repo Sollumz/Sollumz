@@ -155,6 +155,8 @@ class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
             selected_archetype.entities, "attached_portal_id", selected_archetype.portals)
         validate_dynamic_enum(
             context.scene, "sollumz_add_entity_portal", selected_archetype.portals)
+        validate_dynamic_enum(
+            context.scene, "sollumz_entity_filter_portal", selected_archetype.portals)
 
         return True
 

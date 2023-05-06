@@ -33,16 +33,43 @@ class BasicListHelper:
                     emboss=False, icon=self.item_icon)
 
 
-class OrderListHelper:
-    orderkey = "name"
+class FilterListHelper:
+    order_by_name_key = "name"
 
     def filter_items(self, context, data, propname):
         helper = bpy.types.UI_UL_list
         items = getattr(data, propname)
-        ordered = helper.sort_items_by_name(items, self.orderkey)
-        filtered = helper.filter_items_by_name(
-            self.filter_name, self.bitflag_filter_item, items, propname=self.orderkey, flags=None, reverse=False)
+
+        if self.use_filter_sort_alpha:
+            ordered = helper.sort_items_by_name(items, self.order_by_name_key)
+        else:
+            ordered = []
+
+        if self.use_filter_sort_reverse:
+            ordered = list(reversed(ordered))
+
+        # Filtered by self.filter_item
+        filtered = [self.bitflag_filter_item] * len(items)
+
+        for i, item in enumerate(items):
+            if self.filter_item(item) and self._filter_item_name(item):
+                continue
+
+            filtered[i] &= ~self.bitflag_filter_item
+
         return filtered, ordered
+
+    def _filter_item_name(self, item):
+        try:
+            name = getattr(item, self.order_by_name_key)
+        except:
+            AttributeError(
+                f"Invalid order_by_name_key for {self.__class__.__name__}! This should be the 'name' attribute for the list item.")
+
+        return not self.filter_name or self.filter_name.lower() in name.lower()
+
+    def filter_item(self, item):
+        return True
 
 
 class SOLLUMZ_PT_import_main(bpy.types.Panel):
@@ -456,18 +483,23 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
             for obj in selected_objects:
                 loc = obj.location
                 row = layout.row()
-                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(obj.name, loc[0], loc[1], loc[2]))
+                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(
+                    obj.name, loc[0], loc[1], loc[2]))
 
                 # Add a Clipboard button to copy the location to the clipboard
-                clip_button = row.operator("wm.sollumz_copy_location", text="", icon='COPYDOWN')
-                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(loc[0], loc[1], loc[2])
+                clip_button = row.operator(
+                    "wm.sollumz_copy_location", text="", icon='COPYDOWN')
+                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(
+                    loc[0], loc[1], loc[2])
 
             # Add a button to copy all selected objects' locations to the clipboard
             if len(selected_objects) > 1:
                 row = layout.row()
-                row.operator("wm.sollumz_copy_all_locations", text="Copy All Locations", icon='COPY_ID')
+                row.operator("wm.sollumz_copy_all_locations",
+                             text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
+
 
 class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     """Copy the location of an object to the clipboard"""
@@ -477,8 +509,10 @@ class SOLLUMZ_OT_copy_location(bpy.types.Operator):
 
     def execute(self, context):
         bpy.context.window_manager.clipboard = self.location
-        self.report({'INFO'}, "Location copied to clipboard: {}".format(self.location))
+        self.report(
+            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
         return {'FINISHED'}
+
 
 class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
     """Copy the locations of all selected objects to the clipboard"""
@@ -491,10 +525,13 @@ class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
         locations_text = ""
         for obj in selected_objects:
             loc = obj.location
-            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(obj.name, loc[0], loc[1], loc[2])
+            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(
+                obj.name, loc[0], loc[1], loc[2])
         bpy.context.window_manager.clipboard = locations_text
-        self.report({'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
+        self.report(
+            {'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
         return {'FINISHED'}
+
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Vertex Painter"

@@ -154,6 +154,8 @@ class SOLLUMZ_OT_delete_entityset(SOLLUMZ_OT_base, bpy.types.Operator):
                                "attached_entity_set_id", selected_archetype.entity_sets)
         validate_dynamic_enum(
             context.scene, "sollumz_add_entity_entityset", selected_archetype.entity_sets)
+        validate_dynamic_enum(
+            context.scene, "sollumz_entity_filter_entity_set", selected_archetype.entity_sets)
 
         return True
 

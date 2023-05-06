@@ -322,9 +322,27 @@ def register():
     bpy.types.Scene.sollumz_add_entity_entityset_room = bpy.props.EnumProperty(
         name="EntitySet Room", items=get_room_items, default=-1)
 
+    bpy.types.Scene.sollumz_entity_filter_type = bpy.props.EnumProperty(name="Filter By", items=(
+        ("all", "All", ""),
+        ("room", "Room", ""),
+        ("portal", "Portal", ""),
+        ("entity_set", "Entity Set", "")
+    ))
+
+    bpy.types.Scene.sollumz_entity_filter_room = bpy.props.EnumProperty(
+        items=get_room_items)
+    bpy.types.Scene.sollumz_entity_filter_portal = bpy.props.EnumProperty(
+        items=get_portal_items)
+    bpy.types.Scene.sollumz_entity_filter_entity_set = bpy.props.EnumProperty(
+        items=get_entityset_items)
+
 
 def unregister():
     del bpy.types.Scene.sollumz_add_entity_portal
     del bpy.types.Scene.sollumz_add_entity_room
     del bpy.types.Scene.sollumz_add_entity_entityset
     del bpy.types.Scene.sollumz_add_entity_entityset_room
+    del bpy.types.Scene.sollumz_entity_filter_type
+    del bpy.types.Scene.sollumz_entity_filter_room
+    del bpy.types.Scene.sollumz_entity_filter_portal
+    del bpy.types.Scene.sollumz_entity_filter_entity_set
