@@ -70,36 +70,36 @@ class ExtensionsPanelHelper:
                 row = layout.row()
                 row.operator(
                     SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
-                row = layout.row()  
+                row = layout.row()
                 row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
                 row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
                 row = layout.row()
-                row.operator(SOLLUMZ_OT_update_corner_d_location.bl_idname)            
+                row.operator(SOLLUMZ_OT_update_corner_d_location.bl_idname)
                 row.operator(SOLLUMZ_OT_update_corner_c_location.bl_idname)
-                row = layout.row()            
-                row.operator(SOLLUMZ_OT_update_light_shaft_direction.bl_idname)     
-                layout.separator()   
-                row = layout.row()            
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_update_light_shaft_direction.bl_idname)
+                layout.separator()
+                row = layout.row()
                 row.operator(
                     SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname)
                 layout.separator()
 
             extension_properties = selected_extension.get_properties()
 
-        for prop_name in selected_extension.get_properties().__class__.__annotations__:
-            if prop_name in {'direction_amount', 'cornerA'}:
-                layout.separator()
-            row = layout.row()
-            row.prop(extension_properties, prop_name)
-            
-        row = layout.row()
-        row.prop(extension_properties, "offset_position")
+            for prop_name in selected_extension.get_properties().__class__.__annotations__:
+                if prop_name in {'direction_amount', 'cornerA'}:
+                    layout.separator()
+                row = layout.row()
+                row.prop(extension_properties, prop_name)
 
+            row = layout.row()
+            row.prop(extension_properties, "offset_position")
 
 
 class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST"
     icon = "CON_TRACKTO"
+
 
 class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
     bl_label = "Extensions"
@@ -141,4 +141,3 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy
         if selected_extension.extension_type == ExtensionType.PARTICLE:
             row = layout.row()
             row.operator(SOLLUMZ_OT_update_particle_effect_location.bl_idname)
-
