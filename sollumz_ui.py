@@ -1,6 +1,7 @@
 import bpy
 from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
+from typing import Tuple, Callable
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -68,7 +69,7 @@ class FilterListHelper:
 
         return not self.filter_name or self.filter_name.lower() in name.lower()
 
-    def filter_item(self, item):
+    def filter_item(self, context):
         return True
 
 

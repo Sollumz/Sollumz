@@ -22,14 +22,17 @@ class SOLLUMZ_UL_ENTITIES_LIST(BasicListHelper, FilterListHelper, bpy.types.UILi
             return True
 
         if filter_type == "room":
-            # filter_rooom = scene.sollumz_entity_filter_room
-            # portal_items = get_portal_items(self, bpy.context)
-
             return scene.sollumz_entity_filter_room == item.attached_room_id
         elif filter_type == "portal":
             return scene.sollumz_entity_filter_portal == item.attached_portal_id
         elif filter_type == "entity_set":
-            return scene.sollumz_entity_filter_entity_set == item.attached_entity_set_id
+            in_entity_set = scene.sollumz_entity_filter_entity_set == item.attached_entity_set_id
+            in_room = scene.sollumz_entity_filter_entity_set_room == item.attached_entity_set_room_id
+
+            if scene.sollumz_do_entity_filter_entity_set_room:
+                return in_entity_set and in_room
+
+            return in_entity_set
 
         return True
 
@@ -59,14 +62,25 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
 
         filter_type = context.scene.sollumz_entity_filter_type
         row = layout.row()
-        row.prop(context.scene, "sollumz_entity_filter_type")
+        col = row.column()
+        col.prop(context.scene, "sollumz_entity_filter_type")
 
         if filter_type == "room":
             row.prop(context.scene, "sollumz_entity_filter_room", text="")
         elif filter_type == "portal":
             row.prop(context.scene, "sollumz_entity_filter_portal", text="")
         elif filter_type == "entity_set":
-            row.prop(context.scene, "sollumz_entity_filter_entity_set", text="")
+            col = row.column()
+            col.prop(context.scene, "sollumz_entity_filter_entity_set", text="")
+            col.separator()
+            row = col.row()
+            row.prop(context.scene, "sollumz_do_entity_filter_entity_set_room")
+            row.separator()
+            col = row.column()
+            col.enabled = context.scene.sollumz_do_entity_filter_entity_set_room
+            col.prop(context.scene,
+                     "sollumz_entity_filter_entity_set_room", text="")
+            layout.separator()
 
         list_col = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
                                              SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
