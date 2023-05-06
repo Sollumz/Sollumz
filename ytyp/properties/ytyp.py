@@ -58,7 +58,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     def new_room(self) -> RoomProperties:
         item = self.rooms.add()
         self.room_index = len(self.rooms) - 1
-        item.name = f"Room.{self.room_index}"
+        item.name = f"Room.{len(self.rooms)}"
         item.id = self.last_room_id + 1
         self.last_room_id = item.id
         item.mlo_archetype_id = self.id
@@ -66,21 +66,26 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     def new_entity(self) -> MloEntityProperties:
         item = self.entities.add()
+        self.entity_index = len(self.entities) - 1
         item.mlo_archetype_id = self.id
+        item.archetype_name = f"Entity.{len(self.entities)}"
         return item
 
     def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
         item.mlo_archetype_id = self.id
         return item
-    
+
     def new_entity_set(self) -> EntitySetProperties:
         item = self.entity_sets.add()
+        self.entity_set_index = len(self.entity_sets) - 1
         item.id = self.last_entity_set_id + 1
         self.last_entity_set_id = item.id
         item.mlo_archetype_id = self.id
-        return item
 
+        item.name = f"EntitySet.{len(self.entity_sets)}"
+
+        return item
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
@@ -119,7 +124,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         type=TimecycleModifierProperties, name="Timecycle Modifiers")
     entity_sets: bpy.props.CollectionProperty(
         type=EntitySetProperties, name="EntitySets")
-    
+
     # Selected room index
     room_index: bpy.props.IntProperty(name="Room")
     # Selected portal index
@@ -162,7 +167,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     @property
     def selected_entity_set(self) -> Union[EntitySetProperties, None]:
         return get_list_item(self.entity_sets, self.entity_set_index)
-    
+
     @property
     def selected_entity_set_id(self):
         return self.entity_set_index

@@ -48,8 +48,8 @@ class SOLLUMZ_OT_create_entityset(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        item = selected_archetype.new_entity_set()
-        item.name = f"EntitySet_{len(selected_archetype.entity_sets)}"
+        selected_archetype.new_entity_set()
+
         return True
 
 
