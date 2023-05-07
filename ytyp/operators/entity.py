@@ -37,28 +37,8 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
         portal_id = context.scene.sollumz_add_entity_portal
         room_id = context.scene.sollumz_add_entity_room
         entityset_id = context.scene.sollumz_add_entity_entityset
-        attachable_objects = list(selected_objects)
 
-        for entity in selected_archetype.entities:
-            entity_obj = entity.linked_object
-
-            if entity_obj is None or entity_obj not in attachable_objects:
-                continue
-
-            if room_id and room_id != "-1" and entity.attached_room_id == room_id:
-                self.report(
-                    {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_room_name()}. Skipping...")
-                attachable_objects.remove(entity_obj)
-            elif portal_id and portal_id != "-1" and entity.attached_portal_id == portal_id:
-                self.report(
-                    {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_portal_name()}. Skipping...")
-                attachable_objects.remove(entity_obj)
-            elif entityset_id and entityset_id != "-1" and entity.attached_entity_set_id == entityset_id:
-                self.report(
-                    {"WARNING"}, f"{entity_obj.name} already attached to {entity.get_entityset_name()}. Skipping...")
-                attachable_objects.remove(entity_obj)
-
-        for obj in attachable_objects:
+        for obj in selected_objects:
             entity = selected_archetype.new_entity()
             entity.archetype_name = remove_number_suffix(obj.name)
 
