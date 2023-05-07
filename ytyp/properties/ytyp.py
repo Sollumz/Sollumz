@@ -44,48 +44,91 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
                                         break
 
     def new_portal(self) -> PortalProperties:
+        item_id = self.get_new_item_id(self.portals)
+
         item = self.portals.add()
         self.portal_index = len(self.portals) - 1
-        item.id = self.last_portal_id + 1
-        self.last_portal_id = item.id
+
+        item.id = item_id
+
         if len(self.rooms) > 0:
             room_id = self.rooms[0].id
             item.room_to_id = str(room_id)
             item.room_from_id = str(room_id)
+
         item.mlo_archetype_id = self.id
+
         return item
 
     def new_room(self) -> RoomProperties:
+        item_id = self.get_new_item_id(self.rooms)
+
         item = self.rooms.add()
         self.room_index = len(self.rooms) - 1
-        item.name = f"Room.{len(self.rooms)}"
-        item.id = self.last_room_id + 1
-        self.last_room_id = item.id
+
+        item.id = item_id
         item.mlo_archetype_id = self.id
+
+        item.name = f"Room.{item.id}"
+
         return item
 
     def new_entity(self) -> MloEntityProperties:
+        item_id = self.get_new_item_id(self.entities)
+
         item = self.entities.add()
         self.entity_index = len(self.entities) - 1
+
+        item.id = item_id
+
         item.mlo_archetype_id = self.id
-        item.archetype_name = f"Entity.{len(self.entities)}"
+
+        item.archetype_name = f"Entity.{item.id}"
+
         return item
 
     def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
         item.mlo_archetype_id = self.id
+
         return item
 
     def new_entity_set(self) -> EntitySetProperties:
+        item_id = self.get_new_item_id(self.entity_sets)
+
         item = self.entity_sets.add()
         self.entity_set_index = len(self.entity_sets) - 1
-        item.id = self.last_entity_set_id + 1
-        self.last_entity_set_id = item.id
+
+        item.id = item_id
         item.mlo_archetype_id = self.id
 
-        item.name = f"EntitySet.{len(self.entity_sets)}"
+        item.name = f"EntitySet.{item.id}"
 
         return item
+
+    def get_new_item_id(self, collection: bpy.types.bpy_prop_collection) -> int:
+        """Gets unique ID for a new item in ``collection``"""
+        ids = sorted({item.id for item in collection})
+
+        if not ids:
+            return 1
+
+        for i, item_id in enumerate(ids):
+            new_id = item_id + 1
+
+            if new_id in ids:
+                continue
+
+            if i + 1 >= len(ids):
+                return new_id
+
+            next_item = ids[i + 1]
+
+            if next_item > new_id:
+                return new_id
+
+        # Max id + 1
+        return ids[-1] + 1
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
@@ -129,17 +172,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     room_index: bpy.props.IntProperty(name="Room")
     # Selected portal index
     portal_index: bpy.props.IntProperty(name="Portal")
-    # Unique portal id
-    last_portal_id: bpy.props.IntProperty(name="")
     # Selected entity index
     entity_index: bpy.props.IntProperty(name="Entity")
-    # Unique room id
-    last_room_id: bpy.props.IntProperty(name="")
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier")
-    # Unique room id
-    last_entity_set_id: bpy.props.IntProperty(name="")
     # Selected entityset
     entity_set_index: bpy.props.IntProperty(
         name="Entity Set")
