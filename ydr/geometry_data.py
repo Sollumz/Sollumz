@@ -133,12 +133,12 @@ class MeshBuilder:
                 f"Error during creation of fragment {name}:\n{format_exc()}\nEnsure the mesh data is not malformed.")
             return mesh
 
-        mesh.validate()
-
         self.create_mesh_materials(mesh, materials)
         self.set_mesh_normals(mesh)
         self.set_mesh_uvs(mesh)
         self.set_mesh_vertex_colors(mesh)
+
+        mesh.validate()
 
         return mesh
 
