@@ -2,7 +2,9 @@ import bpy
 from ..sollumz_properties import ArchetypeType
 from mathutils import Vector, Matrix
 from .utils import get_selected_archetype, get_selected_ytyp, get_selected_portal
+from .properties.mlo import PortalProperties
 from ..tools.blenderhelper import find_parent
+from typing import Set
 
 
 def can_draw_gizmos(context):
@@ -139,6 +141,9 @@ class PortalGizmo(bpy.types.Gizmo):
         ]
 
     def draw(self, context):
+        self.draw_select(context)
+
+    def draw_select(self, context, select_id=None):
         selected_archetype = get_selected_archetype(context)
         selected_portal = get_selected_portal(context)
         portal = self.linked_portal
@@ -151,13 +156,32 @@ class PortalGizmo(bpy.types.Gizmo):
             self.color = self.color * 1.5
             self.alpha = 0.7
 
+        self.color_highlight = self.color * 0.9
+        self.alpha_highlight = self.alpha
+
         if portal and asset:
             corners = [portal.corner1, portal.corner2,
                        portal.corner3, portal.corner4]
+
             self.portal_poly = self.new_custom_shape(
                 "TRIS", PortalGizmo.get_verts(corners))
+
             self.draw_custom_shape(
-                self.portal_poly, matrix=asset.matrix_world)
+                self.portal_poly, matrix=asset.matrix_world, select_id=select_id)
+
+    def invoke(self, context, event):
+        selected_archetype = get_selected_archetype(context)
+        portals = list(selected_archetype.portals)
+
+        if self.linked_portal not in portals:
+            return
+
+        selected_archetype.portal_index = portals.index(self.linked_portal)
+
+        return {'PASS_THROUGH'}
+
+    def modal(self, context, event, tweak):
+        return {'PASS_THROUGH'}
 
 
 class PortalNormalGizmo(bpy.types.Gizmo):
@@ -210,19 +234,20 @@ class PortalGizmoGroup(bpy.types.GizmoGroup):
     def poll(cls, context):
         if not context.scene.show_portal_gizmo:
             return False
-        if can_draw_gizmos(context):
-            selected_ytyp = get_selected_ytyp(context)
-            selected_archetype = selected_ytyp.selected_archetype
-            return selected_archetype.portal_index < len(selected_archetype.portals)
-        return False
+
+        if not can_draw_gizmos(context):
+            return False
+
+        selected_archetype = get_selected_archetype(context)
+
+        return selected_archetype.portal_index < len(selected_archetype.portals)
 
     def setup(self, context):
         pass
 
-    def draw_prepare(self, context):
+    def refresh(self, context):
         self.gizmos.clear()
-        selected_ytyp = get_selected_ytyp(context)
-        selected_archetype = selected_ytyp.selected_archetype
+        selected_archetype = get_selected_archetype(context)
 
         for portal in selected_archetype.portals:
             ngz = self.gizmos.new(PortalNormalGizmo.bl_idname)

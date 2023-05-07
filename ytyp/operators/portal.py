@@ -44,6 +44,10 @@ class PortalCreatorHelper:
 
         self.set_portal_corners_to_selected_verts(context, portal, matrix)
 
+        # Force gizmo redraw
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.mode_set(mode="EDIT")
+
         return {"FINISHED"}
 
     def get_portal(self, context) -> PortalProperties:
