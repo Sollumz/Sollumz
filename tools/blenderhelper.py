@@ -1,8 +1,8 @@
 import bpy
+import bmesh
 from mathutils import Vector
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, SollumzAddonPreferences
-
 
 
 def get_addon_preferences(context: bpy.types.Context) -> SollumzAddonPreferences:
@@ -175,6 +175,13 @@ def get_selected_vertices(obj):
              for v in obj.data.vertices if v.select]
     bpy.ops.object.mode_set(mode=mode)
     return verts
+
+
+def get_selected_edit_vertices(mesh: bpy.types.Mesh) -> list[Vector]:
+    """Get selected vertices of edit mode``mesh``."""
+    bm = bmesh.from_edit_mesh(mesh)
+
+    return [Vector(v.co) for v in bm.verts if v.select]
 
 
 def find_parent(obj, parent_name):
