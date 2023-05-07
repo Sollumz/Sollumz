@@ -101,10 +101,12 @@ class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
         validate_dynamic_enum(
             context.scene, "sollumz_add_entity_room", selected_archetype.rooms)
         validate_dynamic_enum(
-            context.scene, "sollumz_add_entity_entityset_room", selected_archetype.rooms)
-        validate_dynamic_enum(
             context.scene, "sollumz_entity_filter_room", selected_archetype.rooms)
         validate_dynamic_enum(
             context.scene, "sollumz_entity_filter_entity_set_room", selected_archetype.rooms)
+        validate_dynamic_enum(
+            context.scene, "sollumz_add_portal_room_from", selected_archetype.rooms)
+        validate_dynamic_enum(
+            context.scene, "sollumz_add_portal_room_to", selected_archetype.rooms)
 
         return True

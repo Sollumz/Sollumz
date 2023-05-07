@@ -133,14 +133,26 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
 
         list_col = draw_list_with_add_remove(self.layout, "sollumz.createportal", "sollumz.deleteportal",
                                              SOLLUMZ_UL_PORTAL_LIST.bl_idname, "", selected_archetype, "portals", selected_archetype, "portal_index")
-        row = list_col.row(align=True)
+
+        row = list_col.row()
         row.operator("sollumz.createportalfromselection",
                      text="Create From Vertices", icon="GROUP_VERTEX")
+        row.prop(context.scene, "sollumz_add_portal_room_from",
+                 icon="CUBE", text="")
+
+        row.label(text="", icon="FORWARD")
+
+        row.prop(context.scene, "sollumz_add_portal_room_to",
+                 icon="CUBE", text="")
+
+        list_col.separator(factor=2)
+
+        row = list_col.row(align=True)
         row.operator("sollumz.updateportalfromselection",
-                     text="Update From Vertices")
-        row = list_col.row(align=True)        
+                     text="Update From Vertices", icon="GROUP_VERTEX")
         row.operator("sollumz.flipportal",
-                     text="Flip Direction")            
+                     text="Flip Direction", icon="LOOP_FORWARDS")
+
         row = layout.row()
         row.use_property_split = False
         row.prop(context.scene, "show_portal_gizmo")
@@ -176,6 +188,19 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
         layout.prop(selected_portal, "mirror_priority")
         layout.prop(selected_portal, "opacity")
         layout.prop(selected_portal, "audio_occlusion")
+
+
+class SOLLUMZ_PT_CREATE_PORTAL_OPTIONS(bpy.types.Panel):
+    bl_idname = "SOLLUMZ_PT_CREATE_PORTAL_OPTIONS"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_label = "Options"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Creation Options")
+        layout.prop(context.scene, "sollumz_add_portal_room_from", text="From")
+        layout.prop(context.scene, "sollumz_add_portal_room_to", text="To")
 
 
 class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):

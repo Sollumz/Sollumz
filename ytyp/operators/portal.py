@@ -19,7 +19,10 @@ class SOLLUMZ_OT_create_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.new_portal()
+        portal = selected_archetype.new_portal()
+
+        portal.room_from_id = context.scene.sollumz_add_portal_room_from
+        portal.room_to_id = context.scene.sollumz_add_portal_room_to
 
         return True
 
@@ -121,6 +124,9 @@ class SOLLUMZ_OT_create_portal_from_selection(PortalCreatorHelper, SOLLUMZ_OT_ba
             portal_offset = Vector()
 
         new_portal = selected_archetype.new_portal()
+
+        new_portal.room_from_id = context.scene.sollumz_add_portal_room_from
+        new_portal.room_to_id = context.scene.sollumz_add_portal_room_to
 
         return self.set_portal_corners_to_selected_verts(context, new_portal, portal_offset)
 

@@ -60,10 +60,16 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
+        list_col = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
+                                             SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
+
         filter_type = context.scene.sollumz_entity_filter_type
-        row = layout.row()
+
+        row = list_col.row()
         col = row.column()
-        col.prop(context.scene, "sollumz_entity_filter_type")
+        col_row = col.row()
+        col_row.label(text="Filter By", icon="FILTER")
+        col_row.prop(context.scene, "sollumz_entity_filter_type", text="")
 
         if filter_type == "room":
             row.prop(context.scene, "sollumz_entity_filter_room", text="")
@@ -80,29 +86,11 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
             col.enabled = context.scene.sollumz_do_entity_filter_entity_set_room
             col.prop(context.scene,
                      "sollumz_entity_filter_entity_set_room", text="")
-            layout.separator()
+            list_col.separator()
 
-        list_col = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
-                                             SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
-        list_col.separator()
+        list_col.separator(factor=2)
         row = list_col.row(align=True)
         row.operator("sollumz.addobjasentity", icon="OUTLINER_OB_MESH")
-
-        col = row.column()
-        col.enabled = context.scene.sollumz_add_entity_room == "-1" and context.scene.sollumz_add_entity_entityset == "-1"
-        col.prop(context.scene, "sollumz_add_entity_portal",
-                 text="", icon="OUTLINER_OB_LIGHTPROBE")
-
-        col = row.column()
-        col.enabled = context.scene.sollumz_add_entity_portal == "-1"
-        col.prop(context.scene, "sollumz_add_entity_room", text="", icon="CUBE")
-
-        col = row.column()
-        col.enabled = context.scene.sollumz_add_entity_portal == "-1"
-        col.prop(context.scene, "sollumz_add_entity_entityset",
-                 text="", icon="ASSET_MANAGER")
-
-        list_col.separator()
 
         list_col.operator("sollumz.setobjentitytransforms",
                           icon="OUTLINER_DATA_EMPTY")
