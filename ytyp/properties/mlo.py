@@ -119,14 +119,24 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
         return archetype.rooms[0].name
 
-    def get_room_from_name(self):
-        return self.get_room_name(self.room_from_index)
+    def get_portal_index(self):
+        archetype = self.get_mlo_archetype()
 
-    def get_room_to_name(self):
-        return self.get_room_name(self.room_to_index)
+        for index, portal in enumerate(archetype.portals):
+            if portal.id == self.id:
+                return index
 
-    def update_name(self, context):
-        self.name = f"{self.id} | {self.room_from_name} to {self.room_to_name}"
+        return 0
+
+    def update_room_names(self, context):
+        self.room_from_name = self.get_room_name(self.room_from_index)
+        self.room_to_name = self.get_room_name(self.room_to_index)
+
+    def get_name(self):
+        if not self.room_from_name or not self.room_to_name:
+            self.update_room_names(bpy.context)
+
+        return f"{self.get_portal_index() + 1} | {self.room_from_name} to {self.room_to_name}"
 
     # Work around to store audio_occlusion as a string property since blender int property cant store 32 bit unsigned integers
     def update_audio_occlusion(self, context):
@@ -149,18 +159,16 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     corner4: bpy.props.FloatVectorProperty(name="Corner 4", subtype="XYZ")
 
     room_from_id: bpy.props.EnumProperty(
-        name="Room From", items=get_room_items, update=update_name, default=-1)
+        name="Room From", items=get_room_items, update=update_room_names, default=-1)
     room_from_index: bpy.props.IntProperty(
         name="Room From Index", get=get_room_from_index)
-    room_from_name: bpy.props.StringProperty(
-        name="Room From", get=get_room_from_name)
+    room_from_name: bpy.props.StringProperty(name="Room From")
 
     room_to_id: bpy.props.EnumProperty(
-        name="Room To", items=get_room_items, update=update_name, default=-1)
+        name="Room To", items=get_room_items, update=update_room_names, default=-1)
     room_to_index: bpy.props.IntProperty(
         name="Room To Index", get=get_room_to_index)
-    room_to_name: bpy.props.StringProperty(
-        name="Room To", get=get_room_to_name)
+    room_to_name: bpy.props.StringProperty(name="Room To")
 
     flags: bpy.props.PointerProperty(type=PortalFlags, name="Flags")
     mirror_priority: bpy.props.IntProperty(name="Mirror Priority")
@@ -169,7 +177,7 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         name="Audio Occlusion", update=update_audio_occlusion, default="0")
 
     # Blender use only
-    name: bpy.props.StringProperty(name="Name", default="Portal")
+    name: bpy.props.StringProperty(name="Name", default="Portal", get=get_name)
     id: bpy.props.IntProperty(name="Id")
 
 
