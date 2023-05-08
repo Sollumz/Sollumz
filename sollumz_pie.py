@@ -35,11 +35,9 @@ class SOLLUMZ_MT_pie_menu(Menu):
         pie.operator("sollumz.export",
                      text="Export CodeWalker XML", icon='EXPORT')
         # Bottom-left
-        pie.operator("sollumz.createdrawable",
-                     text="Create Drawable", icon='CUBE')
+        pie.operator("sollumz.converttodrawable", icon='CUBE')
         # Bottom-right
-        pie.operator("sollumz.createbound",
-                     text="Create Composite", icon='CUBE')
+        pie.operator("sollumz.converttocomposite", icon='CUBE')
 
 
 addon_keymaps = []
