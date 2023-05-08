@@ -2,10 +2,11 @@ from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType, LODLevel
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
-from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model
+from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ..cwxml.shader import ShaderManager
 from ..tools.blenderhelper import create_empty_object, duplicate_object
+from mathutils import Vector
 import traceback
 import bpy
 
@@ -63,36 +64,40 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
             return {"CANCELLED"}
 
         auto_embed_col = context.scene.auto_create_embedded_col
+        do_center = context.scene.center_drawable_to_selection
 
         if context.scene.create_seperate_drawables or len(selected_meshes) == 1:
-            for obj in selected_meshes:
-                if auto_embed_col:
-                    composite_obj = convert_obj_to_composite(
-                        duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
-                else:
-                    composite_obj = None
-
-                drawable_obj = convert_obj_to_drawable(obj)
-
-                if composite_obj is not None:
-                    composite_obj.parent = drawable_obj
+            self.convert_separate_drawables(selected_meshes, auto_embed_col)
         else:
-            drawable_obj = create_empty_object(SollumType.DRAWABLE)
-
-            if auto_embed_col:
-                col_objs = [duplicate_object(o) for o in selected_meshes]
-                composite_obj = convert_objs_to_single_composite(
-                    col_objs, SollumType.BOUND_GEOMETRYBVH, True)
-                composite_obj.parent = drawable_obj
-
-            for obj in selected_meshes:
-                convert_obj_to_model(obj)
-                obj.parent = drawable_obj
+            self.convert_to_single_drawable(
+                selected_meshes, auto_embed_col, do_center)
 
         self.report(
             {"INFO"}, f"Succesfully converted all selected objects to a Drawable.")
 
         return {"FINISHED"}
+
+    def convert_separate_drawables(self, selected_meshes: list[bpy.types.Object], auto_embed_col: bool = False):
+        for obj in selected_meshes:
+            drawable_obj = convert_obj_to_drawable(obj)
+
+            if auto_embed_col:
+                composite_obj = convert_obj_to_composite(
+                    duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                composite_obj.parent = drawable_obj
+                composite_obj.name = f"{drawable_obj.name}.col"
+
+    def convert_to_single_drawable(self, selected_meshes: list[bpy.types.Object], auto_embed_col: bool = False, do_center: bool = False):
+        drawable_obj = convert_objs_to_single_drawable(selected_meshes)
+
+        if do_center:
+            center_drawable_to_models(drawable_obj)
+
+        if auto_embed_col:
+            col_objs = [duplicate_object(o) for o in selected_meshes]
+            composite_obj = convert_objs_to_single_composite(
+                col_objs, SollumType.BOUND_GEOMETRYBVH, True)
+            composite_obj.parent = drawable_obj
 
 
 class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
@@ -465,6 +470,7 @@ class SOLLUMZ_OT_apply_bone_properties_to_selected_bones(SOLLUMZ_OT_base, bpy.ty
         self.message(f"Apply bone properties to {count} bone(s)")
         return True
 
+
 class SOLLUMZ_OT_animation_flags(bpy.types.Operator):
     bl_idname = "sollumz.animationflags"
     bl_label = "Animation Flags"
@@ -474,21 +480,21 @@ class SOLLUMZ_OT_animation_flags(bpy.types.Operator):
         bone = context.active_pose_bone.bone
         bone.bone_properties.flags.clear()  # Remove all the flags
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotX"  
+        new_flag.name = "RotX"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotY" 
+        new_flag.name = "RotY"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotZ" 
+        new_flag.name = "RotZ"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransX" 
+        new_flag.name = "TransX"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransY" 
+        new_flag.name = "TransY"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransZ"       
-        self.report({'INFO'}, "Flags Added") 
+        new_flag.name = "TransZ"
+        self.report({'INFO'}, "Flags Added")
         return {'FINISHED'}
-    
-   
+
+
 class SOLLUMZ_OT_weapon_flags(bpy.types.Operator):
     bl_idname = "sollumz.weaponflags"
     bl_label = "Weapon Flags"
@@ -498,8 +504,8 @@ class SOLLUMZ_OT_weapon_flags(bpy.types.Operator):
         bone = context.active_pose_bone.bone
         bone.bone_properties.flags.clear()  # Remove all the flags
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "LimitRotation"  
+        new_flag.name = "LimitRotation"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "LimitTranslation"  
-        self.report({'INFO'}, "Flags Cleared & Added") 
+        new_flag.name = "LimitTranslation"
+        self.report({'INFO'}, "Flags Cleared & Added")
         return {'FINISHED'}

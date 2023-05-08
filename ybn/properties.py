@@ -270,6 +270,8 @@ def register():
 
     bpy.types.Scene.composite_apply_default_flag_preset = bpy.props.BoolProperty(
         name="Apply Default Flag", description=f"Apply the default flag preset to the bound children", default=True)
+    bpy.types.Scene.center_composite_to_selection = bpy.props.BoolProperty(
+        name="Center to Selection", description="Center the Bound Composite to all selected objects", default=True)
 
 
 def unregister():
@@ -293,5 +295,6 @@ def unregister():
     del bpy.types.Scene.bound_child_type
     del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.composite_apply_default_flag_preset
+    del bpy.types.Scene.center_composite_to_selection
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

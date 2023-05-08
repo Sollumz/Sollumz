@@ -1,6 +1,6 @@
 import bpy
 
-from ..sollumz_properties import SollumType
+from ..sollumz_properties import SollumType, BOUND_TYPES
 from ..tools.meshhelper import create_box
 from ..ybn.properties import load_flag_presets, flag_presets, BoundFlags
 from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
@@ -134,11 +134,32 @@ def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_t
             bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
             bvh_obj.parent = composite_obj
 
+            bvh_obj.location = obj.location
+            obj.location = Vector()
+
     return composite_obj
+
+
+def center_composite_to_children(composite_obj: bpy.types.Object):
+    child_objs = [
+        child for child in composite_obj.children if child.sollum_type in BOUND_TYPES]
+
+    center = Vector()
+
+    for obj in child_objs:
+        center += obj.location
+
+    center /= len(child_objs)
+
+    composite_obj.location = center
+
+    for obj in child_objs:
+        obj.location -= center
 
 
 def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool):
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
+    composite_obj.location = obj.location
     composite_obj.parent = obj.parent
     name = obj.name
 
@@ -150,6 +171,7 @@ def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType
         bvh_obj.parent = composite_obj
 
     composite_obj.name = name
+    obj.location = Vector()
 
     return composite_obj
 

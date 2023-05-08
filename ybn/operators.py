@@ -4,7 +4,7 @@ import traceback
 from ..cwxml.flag_preset import FlagPreset
 from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from ..ybn.collision_materials import create_collision_material_from_index
-from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, convert_objs_to_single_composite
+from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, convert_objs_to_single_composite, center_composite_to_children
 from ..tools.meshhelper import create_box_from_extents
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, MaterialType, BOUND_POLYGON_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
@@ -100,13 +100,17 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
 
         bound_child_type = context.scene.bound_child_type
         apply_default_flags = context.scene.composite_apply_default_flag_preset
+        do_center = context.scene.center_composite_to_selection
 
         if context.scene.create_seperate_composites or len(selected_meshes) == 1:
             convert_objs_to_composites(
                 selected_meshes, bound_child_type, apply_default_flags)
         else:
-            convert_objs_to_single_composite(
+            composite_obj = convert_objs_to_single_composite(
                 selected_meshes, bound_child_type, apply_default_flags)
+
+            if do_center:
+                center_composite_to_children(composite_obj)
 
         self.report(
             {"INFO"}, f"Succesfully converted all selected objects to a Composite.")

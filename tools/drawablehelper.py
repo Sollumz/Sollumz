@@ -1,4 +1,5 @@
 import bpy
+from mathutils import Vector
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
 from ..tools.blenderhelper import create_empty_object
@@ -196,13 +197,27 @@ def set_recommended_bone_properties(bone):
 
 def convert_obj_to_drawable(obj: bpy.types.Object):
     drawable_obj = create_empty_object(SollumType.DRAWABLE)
+    drawable_obj.location = obj.location
+
     obj_name = obj.name
+
     convert_obj_to_model(obj)
     # Set drawable obj name after converting obj to a model to avoid .00# suffix
     drawable_obj.name = obj_name
 
     drawable_obj.parent = obj.parent
     obj.parent = drawable_obj
+    obj.location = Vector()
+
+    return drawable_obj
+
+
+def convert_objs_to_single_drawable(objs: list[bpy.types.Object]):
+    drawable_obj = create_empty_object(SollumType.DRAWABLE)
+
+    for obj in objs:
+        convert_obj_to_model(obj)
+        obj.parent = drawable_obj
 
     return drawable_obj
 
@@ -213,3 +228,20 @@ def convert_obj_to_model(obj: bpy.types.Object):
     obj.sollumz_lods.add_empty_lods()
     obj.sollumz_lods.set_lod_mesh(LODLevel.HIGH, obj.data)
     obj.sollumz_lods.set_active_lod(LODLevel.HIGH)
+
+
+def center_drawable_to_models(drawable_obj: bpy.types.Object):
+    model_objs = [
+        child for child in drawable_obj.children if child.sollum_type == SollumType.DRAWABLE_MODEL]
+
+    center = Vector()
+
+    for obj in model_objs:
+        center += obj.location
+
+    center /= len(model_objs)
+
+    drawable_obj.location = center
+
+    for obj in model_objs:
+        obj.location -= center

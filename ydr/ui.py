@@ -287,12 +287,14 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(
             ydr_ops.SOLLUMZ_OT_convert_to_drawable_model.bl_idname, icon="MESH_DATA")
+
         row = layout.row()
         row.operator(
             ydr_ops.SOLLUMZ_OT_convert_to_drawable.bl_idname, icon="OUTLINER_OB_MESH")
         row = layout.row()
         row.prop(context.scene, "create_seperate_drawables")
         row.prop(context.scene, "auto_create_embedded_col")
+        row.prop(context.scene, "center_drawable_to_selection")
 
         layout.separator(factor=2)
 
@@ -347,8 +349,10 @@ class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
         layout.separator()
         layout.label(text="Apply Flag Presets", icon="BOOKMARKS")
         row = layout.row(align=True)
-        row.operator(ydr_ops.SOLLUMZ_OT_animation_flags.bl_idname, text="Animation")
+        row.operator(ydr_ops.SOLLUMZ_OT_animation_flags.bl_idname,
+                     text="Animation")
         row.operator(ydr_ops.SOLLUMZ_OT_weapon_flags.bl_idname, text="Weapon")
+
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):

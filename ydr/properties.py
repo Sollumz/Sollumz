@@ -298,6 +298,8 @@ def register():
         name="Separate Objects", description="Create a separate Drawable for each selected object")
     bpy.types.Scene.auto_create_embedded_col = bpy.props.BoolProperty(
         name="Auto-Embed Collision", description="Automatically create embedded static collision")
+    bpy.types.Scene.center_drawable_to_selection = bpy.props.BoolProperty(
+        name="Center to Selection", description="Center Drawable(s) to selection", default=True)
 
     bpy.types.Bone.bone_properties = bpy.props.PointerProperty(
         type=BoneProperties)
@@ -347,5 +349,6 @@ def unregister():
     del bpy.types.Light.is_capsule
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
+    del bpy.types.Scene.center_drawable_to_selection
 
     bpy.app.handlers.load_post.remove(on_file_loaded)
