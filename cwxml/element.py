@@ -86,6 +86,10 @@ class Element(AbstractClass):
         elementTree = ET.ElementTree(element)
         elementTree.write(filepath, encoding="UTF-8", xml_declaration=True)
 
+    def __hash__(self) -> int:
+        xml = self.to_xml()
+        return hash(ET.tostring(xml, encoding="unicode"))
+
 
 class ElementTree(Element):
     """XML element that contains children defined by it's properties"""

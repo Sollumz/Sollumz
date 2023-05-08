@@ -8,7 +8,7 @@ from ..tools.meshhelper import create_uv_layer
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import SollumType, SollumzImportSettings, LODLevel, SOLLUMZ_UI_NAMES, MaterialType
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
-from ..cwxml.drawable import Drawable, Bone, ShaderGroup
+from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
 from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, set_drawable_properties, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag, get_sollumz_materials
@@ -113,19 +113,23 @@ def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, fil
 def create_hi_materials(non_hi_materials: list[bpy.types.Material], shader_group: ShaderGroup, hi_shader_group: ShaderGroup, filepath: str):
     """Create the _hi materials. Returns a list with the hi materials and non_hi_materials merged."""
     hi_materials: list[bpy.types.Material] = []
-    non_hi_index = 0
 
-    # Loop through hi shaders and compare with non_hi shaders each iteration. If the hi_shader and non_hi shader are the same,
-    # add the already created non_hi material to hi_materials. Otherwise create the hi material and add it to hi_materials.
+    non_hi_mat_by_shader: dict[Shader, bpy.types.Material] = {}
+
+    for i, shader in enumerate(shader_group.shaders):
+        # Pre-hash to avoid hashing multiple times
+        non_hi_mat_by_shader[hash(shader)] = non_hi_materials[i]
+
     for shader in hi_shader_group.shaders:
-        if non_hi_index >= len(shader_group.shaders) or shader_group.shaders[non_hi_index].name != shader.name:
+        # Pre-hash to avoid hashing multiple times
+        shader_hash = hash(shader)
+
+        if shader_hash in non_hi_mat_by_shader:
+            hi_mat = non_hi_mat_by_shader[shader_hash]
+        else:
             hi_mat = shader_item_to_material(shader, hi_shader_group, filepath)
-            hi_materials.append(hi_mat)
 
-            continue
-
-        hi_materials.append(non_hi_materials[non_hi_index])
-        non_hi_index += 1
+        hi_materials.append(hi_mat)
 
     return hi_materials
 
