@@ -230,6 +230,8 @@ def register():
              SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH], "Create a bound geometrybvh object"),
             (SollumType.BOUND_BOX.value,
              SOLLUMZ_UI_NAMES[SollumType.BOUND_BOX], "Create a bound box object"),
+            (SollumType.BOUND_SPHERE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_SPHERE], "Create a bound sphere object"),
             (SollumType.BOUND_CAPSULE.value,
              SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE], "Create a bound capsule object"),
             (SollumType.BOUND_CYLINDER.value,
