@@ -1,11 +1,10 @@
 import bpy
-from typing import Tuple, Optional
+from typing import Optional
 from collections import defaultdict
 from mathutils import Matrix, Vector
 from ..ybn.ybnexport import create_composite_xml
-from ..cwxml.fragment import Fragment, Physics, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, BoneTransform, Window
-from ..cwxml.bound import Bound
-from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform
+from ..cwxml.bound import Bound, BoundGeometry
+from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window
 from ..cwxml.drawable import Bone, Drawable
 from ..tools.blenderhelper import remove_number_suffix, delete_hierarchy
 from ..tools.fragmenthelper import image_to_shattermap
@@ -77,7 +76,7 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     create_phys_xml_groups(frag_obj, lod_xml)
     create_phys_child_xmls(
-        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials, parent_inverse)
+        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
 
     create_bone_transforms_xml(frag_xml)
 
@@ -361,7 +360,7 @@ def calculate_group_masses(lod_xml: PhysicsLOD):
         lod_xml.groups[child.group_index].mass += child.pristine_mass
 
 
-def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bones_xml: list[Bone], materials: list[bpy.types.Material], parent_inverse: Matrix = Matrix()):
+def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bones_xml: list[Bone], materials: list[bpy.types.Material]):
     child_meshes = get_child_meshes(frag_obj)
     child_cols = get_child_cols(frag_obj)
 
@@ -387,8 +386,13 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
                 mesh_objs = child_meshes[bone_name]
 
             create_phys_child_drawable(child_xml, materials, mesh_objs)
+
+            bound_xml = lod_xml.archetype.bounds.children[child_index]
+            # Need to make the vertices of this bound relative to the bone location so that the user-defined origin does not matter
+            offset_bound_by_bone(bound_xml, bone)
+
             create_child_transforms_xml(
-                parent_inverse @ obj.matrix_world, lod_xml)
+                bound_xml.composite_transform.transposed(), lod_xml)
 
             lod_xml.children.append(child_xml)
 
@@ -543,7 +547,7 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
         if shattermap_img is not None:
             window_xml.shattermap = image_to_shattermap(shattermap_img)
             window_xml.projection_matrix = calculate_shattermap_projection(
-                obj, shattermap_img)
+                obj, shattermap_img, bone.matrix_local.translation)
 
         set_veh_window_xml_properties(window_xml, obj)
 
@@ -563,17 +567,20 @@ def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Obje
     window_xml.cracks_texture_tiling = window_obj.vehicle_window_properties.cracks_texture_tiling
 
 
-def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image):
+def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image, bone_pos: Vector):
     mesh = obj.data
 
     v1 = Vector()
     v2 = Vector()
     v3 = Vector()
 
+    # Create projection matrix relative to bone
+    bone_offset = obj.matrix_world.translation - bone_pos
+
     # Get three corner vectors
     for loop in mesh.loops:
         uv = mesh.uv_layers[0].data[loop.index].uv
-        vert_pos = mesh.vertices[loop.vertex_index].co
+        vert_pos = bone_offset + mesh.vertices[loop.vertex_index].co
 
         if uv.x == 0 and uv.y == 1:
             v1 = vert_pos
@@ -594,7 +601,7 @@ def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image)
     matrix[0] = edge1.x, edge2.x, edge3.x, v1.x
     matrix[1] = edge1.y, edge2.y, edge3.y, v1.y
     matrix[2] = edge1.z, edge2.z, edge3.z, v1.z
-    matrix.translation += obj.matrix_world.translation
+    matrix.translation += bone_pos
 
     try:
         matrix.invert()
@@ -653,6 +660,28 @@ def create_child_transforms_xml(child_matrix: Matrix, lod_xml: PhysicsLOD):
     lod_xml.transforms.append(transform_xml)
 
     return transform_xml
+
+
+def offset_bound_by_bone(bound_xml: BoundGeometry, bone: bpy.types.Bone):
+    """Offset bound_xml such that the vertices are relative to ``bone``."""
+    if not bound_xml.vertices:
+        return
+
+    transforms = bound_xml.composite_transform.transposed()
+    bound_pos = transforms.translation
+
+    bone_offset = bound_pos - bone.matrix_local.translation
+
+    if bone_offset.length == 0:
+        return
+
+    for vert1, vert2 in zip(bound_xml.vertices, bound_xml.vertices_2):
+        vert1 += bone_offset
+        vert2 += bone_offset
+
+    transforms.translation -= bone_offset
+
+    bound_xml.composite_transform = transforms.transposed()
 
 
 def create_bone_transforms_xml(frag_xml: Fragment):
