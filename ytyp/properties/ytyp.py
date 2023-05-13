@@ -275,6 +275,9 @@ def register():
     bpy.types.Scene.create_archetype_type = bpy.props.EnumProperty(
         items=items_from_enums(ArchetypeType), name="Type")
 
+    bpy.types.Scene.ytyp_apply_transforms = bpy.props.BoolProperty(
+        name="Apply Parent Transforms", description="Apply transforms to all assets when calculating Archetype extents")
+
 
 def unregister():
     del bpy.types.Scene.ytyps
@@ -282,3 +285,4 @@ def unregister():
     del bpy.types.Scene.show_room_gizmo
     del bpy.types.Scene.show_portal_gizmo
     del bpy.types.Scene.create_archetype_type
+    del bpy.types.Scene.ytyp_apply_transforms

@@ -360,6 +360,7 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.export_settings, "auto_calculate_bone_tag")
+        layout.prop(operator.export_settings, "apply_transforms")
 
 
 class SOLLUMZ_PT_export_fragment(bpy.types.Panel):

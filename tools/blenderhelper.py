@@ -303,3 +303,10 @@ def create_empty_object(sollum_type: SollumType, name: Optional[str] = None) -> 
     bpy.context.collection.objects.link(obj)
 
     return obj
+
+
+def delete_hierarchy(obj: bpy.types.Object):
+    for child in obj.children:
+        delete_hierarchy(child)
+
+    bpy.data.objects.remove(obj)

@@ -174,7 +174,7 @@ def register():
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(
         type=BoundProperties)
     bpy.types.Object.margin = bpy.props.FloatProperty(
-        name="Margin", precision=3, update=update_bounds, min=0)
+        name="Margin", precision=3, update=update_bounds, min=0, default=0.04)
     bpy.types.Object.bound_radius = bpy.props.FloatProperty(
         name="Radius", precision=3, update=update_bounds, min=0)
     bpy.types.Object.bound_length = bpy.props.FloatProperty(

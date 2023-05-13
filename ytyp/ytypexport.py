@@ -1,10 +1,10 @@
 from typing import Iterable
 import bpy
-from mathutils import Euler, Vector, Quaternion
+from mathutils import Euler, Vector, Quaternion, Matrix
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from ..tools.meshhelper import get_extents, get_bound_center, get_sphere_radius
+from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
 
@@ -209,21 +209,31 @@ def create_extension_xml(extension: ExtensionProperties):
     return extension_xml
 
 
-def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype):
+def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype, apply_transforms: bool = False):
     """Calculate bounds from the archetype asset."""
 
-    bbmin, bbmax = get_extents(archetype.asset)
+    if apply_transforms:
+        # Unapply only translation
+        matrix = Matrix.Translation(
+            archetype.asset.matrix_world.translation).inverted()
+    else:
+        # Unapply all transforms
+        matrix = archetype.asset.matrix_world.inverted()
+
+    bbmin, bbmax = get_combined_bound_box(
+        archetype.asset, use_world=True, matrix=matrix)
     archetype_xml.bb_min = bbmin
     archetype_xml.bb_max = bbmax
-    archetype_xml.bs_center = get_bound_center(archetype.asset)
+    archetype_xml.bs_center = get_bound_center_from_bounds(bbmin, bbmax)
     archetype_xml.bs_radius = get_sphere_radius(bbmax, archetype_xml.bs_center)
 
 
-def set_archetype_xml_bounds(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype):
+def set_archetype_xml_bounds(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype, apply_transforms: bool = False):
     """Set archetype xml bounds from archetype data-block bounds."""
 
     if archetype.asset:
-        set_archetype_xml_bounds_from_asset(archetype, archetype_xml)
+        set_archetype_xml_bounds_from_asset(
+            archetype, archetype_xml, apply_transforms)
         return
 
     archetype_xml.bb_min = Vector(archetype.bb_min)
@@ -270,7 +280,7 @@ def create_mlo_archetype_children_xml(archetype: ArchetypeProperties, archetype_
             create_entity_set_xml(entityset, archetype.entities))
 
 
-def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetype:
+def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool = False) -> ytypxml.BaseArchetype:
     """Create archetype xml from an archetype data block"""
 
     archetype_xml = None
@@ -284,7 +294,7 @@ def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetyp
             archetype_xml.time_flags = archetype.time_flags.total
         else:
             archetype_xml = ytypxml.BaseArchetype()
-        set_archetype_xml_bounds(archetype, archetype_xml)
+        set_archetype_xml_bounds(archetype, archetype_xml, apply_transforms)
 
     archetype_xml.lod_dist = archetype.lod_dist
     archetype_xml.flags = archetype.flags.total
@@ -305,7 +315,7 @@ def create_archetype_xml(archetype: ArchetypeProperties) -> ytypxml.BaseArchetyp
     return archetype_xml
 
 
-def selected_ytyp_to_xml() -> ytypxml.CMapTypes:
+def selected_ytyp_to_xml(apply_transforms: bool = False) -> ytypxml.CMapTypes:
     """Create a ytyp xml from the selected ytyp data-block."""
 
     selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
@@ -313,7 +323,7 @@ def selected_ytyp_to_xml() -> ytypxml.CMapTypes:
     ytyp.name = selected_ytyp.name
 
     for archetype in selected_ytyp.archetypes:
-        archetype_xml = create_archetype_xml(archetype)
+        archetype_xml = create_archetype_xml(archetype, apply_transforms)
         ytyp.archetypes.append(archetype_xml)
 
     return ytyp

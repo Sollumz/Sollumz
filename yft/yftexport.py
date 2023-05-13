@@ -7,14 +7,14 @@ from ..cwxml.fragment import Fragment, Physics, PhysicsLOD, Archetype, PhysicsCh
 from ..cwxml.bound import Bound
 from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform
 from ..cwxml.drawable import Bone, Drawable
-from ..tools.blenderhelper import remove_number_suffix
+from ..tools.blenderhelper import remove_number_suffix, delete_hierarchy
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
 from ..tools.utils import prop_array_to_vector, vector_inv
 from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_properties import SollumzExportSettings, BOUND_TYPES, SollumType, MaterialType, LODLevel
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
-from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
+from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents, get_drawable_parent_inverse
 from ..ydr.lights import create_xml_lights
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, GroupProperties
@@ -24,7 +24,7 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str, export_settings: Sollu
 
     if export_settings.export_non_hi:
         frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
-                                       export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag)
+                                       export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
 
         if frag_xml is not None:
             frag_xml.write_xml(filepath)
@@ -34,13 +34,13 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str, export_settings: Sollu
         hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
 
         hi_frag_xml = create_hi_frag_xml(frag_obj, export_settings.auto_calculate_inertia,
-                                         export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag)
+                                         export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
         hi_frag_xml.write_xml(hi_filepath)
 
         write_embedded_textures(frag_obj, hi_filepath)
 
 
-def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False):
+def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
     """Create an XML parsable Fragment object. Returns the XML object and the hi XML object (if hi lods are present)."""
     frag_xml = Fragment()
     frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
@@ -54,7 +54,7 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     materials = get_sollumz_materials(frag_obj)
     drawable_xml = create_frag_drawable_xml(
-        frag_obj, auto_calc_bone_tag, materials)
+        frag_obj, auto_calc_bone_tag, materials, apply_transforms)
 
     if drawable_xml is None:
         logger.warning(
@@ -66,17 +66,20 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     frag_xml.drawable = drawable_xml
 
+    # Used for unapplying transforms
+    parent_inverse = get_drawable_parent_inverse(frag_obj, apply_transforms)
+
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
     arch_xml = create_archetype_xml(lod_xml, frag_obj)
     create_collision_xml(frag_obj, arch_xml,
-                         auto_calc_inertia, auto_calc_volume)
+                         auto_calc_inertia, auto_calc_volume, parent_inverse)
 
     create_phys_xml_groups(frag_obj, lod_xml)
     create_phys_child_xmls(
-        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
+        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials, parent_inverse)
 
-    create_bone_transforms_xml(frag_obj.data, frag_xml)
+    create_bone_transforms_xml(frag_xml)
 
     set_arch_mass_inertia(frag_obj, arch_xml,
                           lod_xml.children, auto_calc_inertia)
@@ -90,20 +93,20 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     return frag_xml
 
 
-def create_frag_drawable_xml(frag_obj: bpy.types.Object, auto_calc_bone_tag: bool, materials: list[bpy.types.Material]):
+def create_frag_drawable_xml(frag_obj: bpy.types.Object, auto_calc_bone_tag: bool, materials: list[bpy.types.Material], apply_transforms: bool = False):
     for obj in frag_obj.children:
         if obj.sollum_type != SollumType.DRAWABLE:
             continue
 
         drawable_xml = create_drawable_xml(
-            obj, auto_calc_bone_tag=auto_calc_bone_tag, materials=materials, armature_obj=frag_obj)
+            obj, auto_calc_bone_tag=auto_calc_bone_tag, materials=materials, armature_obj=frag_obj, apply_transforms=apply_transforms)
         drawable_xml.name = "skel"
         drawable_xml.matrix = obj.matrix_basis
 
         return drawable_xml
 
 
-def create_hi_frag_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False):
+def create_hi_frag_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
     hi_obj = frag_obj.copy()
     hi_obj.name = f"{remove_number_suffix(hi_obj.name)}_hi"
     composite_obj = None
@@ -123,7 +126,7 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fal
         remove_non_hi_lods(drawable_obj)
 
     hi_frag_xml = create_fragment_xml(
-        hi_obj, auto_calc_inertia, auto_calc_volume, auto_calc_bone_tag)
+        hi_obj, auto_calc_inertia, auto_calc_volume, auto_calc_bone_tag, apply_transforms)
 
     delete_hierarchy(hi_obj)
 
@@ -153,13 +156,6 @@ def copy_hierarchy(obj: bpy.types.Object, armature_obj: bpy.types.Object):
         child_copy.parent = obj_copy
 
     return obj_copy
-
-
-def delete_hierarchy(obj: bpy.types.Object):
-    for child in obj.children:
-        delete_hierarchy(child)
-
-    bpy.data.objects.remove(obj)
 
 
 def remove_non_hi_lods(drawable_obj: bpy.types.Object):
@@ -294,16 +290,17 @@ def calculate_arch_mass(phys_children: list[PhysicsChild]) -> float:
     return total_mass
 
 
-def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
+def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
     for child in frag_obj.children:
         if child.sollum_type != SollumType.BOUND_COMPOSITE:
             continue
 
         composite_xml = create_composite_xml(
-            child, auto_calc_inertia, auto_calc_volume)
+            child, auto_calc_inertia, auto_calc_volume, parent_inverse)
         arch_xml.bounds = composite_xml
 
         composite_xml.unk_type = 2
+        composite_xml.inertia = Vector((1, 1, 1))
 
         for bound_xml in composite_xml.children:
             bound_xml.unk_type = 2
@@ -364,7 +361,7 @@ def calculate_group_masses(lod_xml: PhysicsLOD):
         lod_xml.groups[child.group_index].mass += child.pristine_mass
 
 
-def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bones_xml: list[Bone], materials: list[bpy.types.Material]):
+def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bones_xml: list[Bone], materials: list[bpy.types.Material], parent_inverse: Matrix = Matrix()):
     child_meshes = get_child_meshes(frag_obj)
     child_cols = get_child_cols(frag_obj)
 
@@ -390,7 +387,8 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
                 mesh_objs = child_meshes[bone_name]
 
             create_phys_child_drawable(child_xml, materials, mesh_objs)
-            create_child_transforms_xml(obj.matrix_basis, lod_xml)
+            create_child_transforms_xml(
+                parent_inverse @ obj.matrix_world, lod_xml)
 
             lod_xml.children.append(child_xml)
 
@@ -488,7 +486,8 @@ def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.type
             if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
                 continue
 
-            model_xml = create_model_xml(obj, lod.level, materials)
+            model_xml = create_model_xml(
+                obj, lod.level, materials, parent_inverse=obj.matrix_world.inverted())
             model_xml.bone_index = 0
             append_model_xml(drawable_xml, model_xml, lod.level)
 
@@ -656,10 +655,11 @@ def create_child_transforms_xml(child_matrix: Matrix, lod_xml: PhysicsLOD):
     return transform_xml
 
 
-def create_bone_transforms_xml(armature: bpy.types.Armature, frag_xml: Fragment):
-    for bone in armature.bones:
-        frag_xml.bones_transforms.append(
-            BoneTransform("Item", bone.matrix_local))
+def create_bone_transforms_xml(frag_xml: Fragment):
+    for bone in frag_xml.drawable.skeleton.bones:
+        transforms = Matrix.LocRotScale(
+            bone.translation, bone.rotation, bone.scale)
+        frag_xml.bones_transforms.append(BoneTransform("Item", transforms))
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):

@@ -12,7 +12,7 @@ from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_sphere_radius,
 )
-from ..tools.utils import get_max_vector, get_min_vector
+from ..tools.utils import get_max_vector_list, get_min_vector_list
 from ..tools.blenderhelper import remove_number_suffix, join_objects
 from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_properties import (
@@ -33,13 +33,13 @@ from .. import logger
 
 def export_ydr(drawable_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
     drawable_xml = create_drawable_xml(
-        drawable_obj, auto_calc_bone_tag=export_settings.auto_calculate_bone_tag, auto_calc_inertia=export_settings.auto_calculate_inertia, auto_calc_volume=export_settings.auto_calculate_volume)
+        drawable_obj, auto_calc_bone_tag=export_settings.auto_calculate_bone_tag, auto_calc_inertia=export_settings.auto_calculate_inertia, auto_calc_volume=export_settings.auto_calculate_volume, apply_transforms=export_settings.apply_transforms)
     drawable_xml.write_xml(filepath)
 
     write_embedded_textures(drawable_obj, filepath)
 
 
-def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, auto_calc_bone_tag: bool = False, materials: Optional[list[bpy.types.Material]] = None, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
+def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, auto_calc_bone_tag: bool = False, materials: Optional[list[bpy.types.Material]] = None, auto_calc_volume: bool = False, auto_calc_inertia: bool = False, apply_transforms: bool = False):
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
     drawable_xml = Drawable()
     drawable_xml.matrix = None
@@ -57,11 +57,15 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
             f"{drawable_xml.name} has no Sollumz materials! Aborting...")
         return drawable_xml
 
+    # Used for unapplying transforms
+    parent_inverse = get_drawable_parent_inverse(
+        drawable_obj, apply_transforms)
+
     if armature_obj or drawable_obj.type == "ARMATURE":
         armature_obj = armature_obj or drawable_obj
 
         drawable_xml.skeleton = create_skeleton_xml(
-            armature_obj, auto_calc_bone_tag)
+            armature_obj, auto_calc_bone_tag, apply_transforms)
         drawable_xml.joints = create_joints_xml(
             armature_obj, auto_calc_bone_tag)
 
@@ -76,13 +80,13 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     if skinned_objs:
         model_props = drawable_obj.skinned_model_properties
         create_skinned_model_xml(
-            drawable_xml, skinned_objs, model_props, materials, bones)
+            drawable_xml, skinned_objs, model_props, materials, bones, parent_inverse)
 
     model_objs = get_model_objs(drawable_obj)
 
     if model_objs:
         create_drawable_model_xmls(
-            drawable_xml, model_objs, materials, bones)
+            drawable_xml, model_objs, materials, bones, parent_inverse)
 
     drawable_xml.lights = create_xml_lights(drawable_obj, armature_obj)
 
@@ -90,7 +94,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     set_drawable_xml_extents(drawable_xml)
 
     create_embedded_collision_xmls(
-        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
+        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia, parent_inverse)
 
     return drawable_xml
 
@@ -106,7 +110,7 @@ def get_skinned_model_objs(drawable_obj: bpy.types.Object):
     return skinned_objs
 
 
-def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.types.Object], skinned_model_props: SkinnedDrawableModelProperties, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.types.Object], skinned_model_props: SkinnedDrawableModelProperties, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
     skinned_obj = get_joined_skinned_obj(skinned_objs)
 
     if skinned_obj is None:
@@ -123,7 +127,7 @@ def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.type
         model_xml.has_skin = 1
 
         geometries = create_geometries_xml(
-            skinned_obj, lod.level, materials, bones)
+            skinned_obj, lod.level, materials, bones, parent_inverse)
         model_xml.geometries = geometries
 
         append_model_xml(drawable_xml, model_xml, lod.level)
@@ -203,23 +207,24 @@ def get_model_objs(drawable_obj: bpy.types.Object):
     return model_objs
 
 
-def create_drawable_model_xmls(drawable_xml: Drawable, model_objs: list[bpy.types.Object], materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_drawable_model_xmls(drawable_xml: Drawable, model_objs: list[bpy.types.Object], materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
     for model_obj in model_objs:
         for lod in model_obj.sollumz_lods.lods:
             if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
                 continue
 
             model_xml = create_model_xml(
-                model_obj, lod.level, materials, bones)
+                model_obj, lod.level, materials, bones, parent_inverse)
             append_model_xml(drawable_xml, model_xml, lod.level)
 
 
-def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
     model_xml = DrawableModel()
 
     set_lod_model_xml_properties(model_obj, model_xml)
 
-    geometries = create_geometries_xml(model_obj, lod_level, materials, bones)
+    geometries = create_geometries_xml(
+        model_obj, lod_level, materials, bones, parent_inverse)
     model_xml.geometries = geometries
 
     model_xml.bone_index = get_model_bone_index(model_obj)
@@ -264,7 +269,7 @@ def set_lod_model_xml_properties(model_obj: bpy.types.Object, model_xml: Drawabl
         set_model_xml_properties(lod.mesh.drawable_model_properties, model_xml)
 
 
-def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
     current_lod_level = model_obj.sollumz_lods.active_lod.level
     # Set the object lod level to lod_level to evaluate that lod mesh
     was_hidden = model_obj.hide_get()
@@ -287,6 +292,7 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
     geometries: list[Geometry] = []
 
     tris_by_mat = get_loop_triangles_by_mat(mesh, materials)
+    matrix = (parent_inverse or Matrix()) @ model_obj.matrix_world
 
     for mat_index, loop_triangles in tris_by_mat.items():
         geometry_xmls = GeometryBuilder(
@@ -295,7 +301,8 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
             materials[mat_index],
             mat_index,
             model_obj.vertex_groups,
-            bones or []
+            bones or [],
+            matrix
         ).build()
 
         geometries.extend(geometry_xmls)
@@ -333,7 +340,7 @@ def get_loop_triangles_by_mat(mesh: bpy.types.Mesh, materials: list[bpy.types.Ma
     return tris_by_mat
 
 
-def evaluate_and_triangulate_object(obj: bpy.types.Object):
+def evaluate_and_triangulate_object(obj: bpy.types.Object) -> bpy.types.Object:
     """Get an evaluated, triangulated version of the mesh (modifiers, constraints, etc applied)"""
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(depsgraph)
@@ -367,6 +374,14 @@ def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level
 
     elif lod_level == LODLevel.VERYLOW:
         drawable_xml.drawable_models_vlow.append(model_xml)
+
+
+def get_drawable_parent_inverse(drawable_obj: bpy.types.Object, apply_transforms: bool = False):
+    if apply_transforms:
+        # Even when apply transforms is enabled, we still don't want to apply location, as Drawables should always start from 0,0,0
+        return Matrix.Translation(drawable_obj.matrix_world.translation).inverted()
+
+    return drawable_obj.matrix_world.inverted()
 
 
 def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: Drawable):
@@ -439,17 +454,23 @@ def set_texture_flags(node: bpy.types.ShaderNodeTexImage, texture: Texture):
     return texture
 
 
-def create_skeleton_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool = False):
+def create_skeleton_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
     if armature_obj.type != "ARMATURE" or not armature_obj.pose.bones:
         return None
 
     skeleton_xml = Skeleton()
     bones = armature_obj.pose.bones
 
+    if apply_transforms:
+        matrix = armature_obj.matrix_world.copy()
+        matrix.translation = Vector()
+    else:
+        matrix = Matrix()
+
     for bone_index, pose_bone in enumerate(bones):
 
         bone_xml = create_bone_xml(
-            pose_bone, bone_index, armature_obj.data, auto_calc_bone_tag)
+            pose_bone, bone_index, armature_obj.data, auto_calc_bone_tag, matrix)
 
         skeleton_xml.bones.append(bone_xml)
 
@@ -458,7 +479,7 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool
     return skeleton_xml
 
 
-def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, auto_calc_bone_tag: bool = False):
+def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, auto_calc_bone_tag: bool = False, armature_matrix: Matrix = Matrix()):
     bone = pose_bone.bone
 
     bone_xml = Bone()
@@ -475,7 +496,7 @@ def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bp
     bone_xml.sibling_index = get_bone_sibling_index(bone, armature)
 
     set_bone_xml_flags(bone_xml, pose_bone)
-    set_bone_xml_transforms(bone_xml, bone)
+    set_bone_xml_transforms(bone_xml, bone, armature_matrix)
 
     return bone_xml
 
@@ -540,17 +561,16 @@ def set_bone_xml_flags(bone_xml: Bone, pose_bone: bpy.types.PoseBone):
         bone_xml.flags.append("Unk0")
 
 
-def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone):
-    mat = bone.matrix_local
+def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matrix: Matrix):
+    pos = armature_matrix @ bone.matrix_local.translation
 
     if bone.parent is not None:
-        mat = bone.parent.matrix_local.inverted() @ mat
-
-    pos, rot, scale = mat.decompose()
+        pos = armature_matrix @ bone.parent.matrix_local.inverted() @ bone.matrix_local.translation
 
     bone_xml.translation = pos
-    bone_xml.rotation = rot
-    bone_xml.scale = scale
+    bone_xml.rotation = bone.matrix.to_quaternion()
+    bone_xml.scale = bone.matrix.to_scale()
+
     # transform_unk doesn't appear in openformats so oiv calcs it right
     # what does it do? the bone length?
     # default value for this seems to be <TransformUnk x="0" y="4" z="-3" w="0" />
@@ -643,13 +663,16 @@ def set_drawable_xml_flags(drawable_xml: Drawable):
 
 
 def set_drawable_xml_extents(drawable_xml: Drawable):
-    bbmin = Vector()
-    bbmax = Vector()
+    mins: list[Vector] = []
+    maxes: list[Vector] = []
 
     for model_xml in drawable_xml.drawable_models_high:
         for geometry in model_xml.geometries:
-            bbmin = get_min_vector(geometry.bounding_box_min, bbmin)
-            bbmax = get_max_vector(geometry.bounding_box_max, bbmax)
+            mins.append(geometry.bounding_box_min)
+            maxes.append(geometry.bounding_box_max)
+
+    bbmin = get_min_vector_list(mins)
+    bbmax = get_max_vector_list(maxes)
 
     drawable_xml.bounding_sphere_center = get_bound_center_from_bounds(
         bbmin, bbmax)
@@ -659,16 +682,16 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
     drawable_xml.bounding_box_max = bbmax
 
 
-def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
+def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False, parent_inverse: Matrix = Matrix()):
     for child in drawable_obj.children:
         bound_xml = None
 
         if child.sollum_type == SollumType.BOUND_COMPOSITE:
             bound_xml = create_composite_xml(
-                child, auto_calc_inertia, auto_calc_volume)
+                child, auto_calc_inertia, auto_calc_volume, parent_inverse)
         elif child.sollum_type in BOUND_TYPES:
             bound_xml = create_bound_xml(
-                child, auto_calc_inertia, auto_calc_volume)
+                child, auto_calc_inertia, auto_calc_volume, parent_inverse)
 
         if bound_xml is not None:
             drawable_xml.bounds.append(bound_xml)

@@ -1,5 +1,6 @@
 import bpy
 import bmesh
+from typing import Optional
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
@@ -234,11 +235,14 @@ def get_extents_from_points(points: list[tuple]):
     # TODO: Use for all BB calculations
     x, y, z = zip(*points)
 
-    return (min(x), min(y), min(z)), (max(x), max(y), max(z))
+    return Vector((min(x), min(y), min(z))), Vector((max(x), max(y), max(z)))
 
 
 def get_extents(obj: bpy.types.Object):
-    """Get min and max extents for an object and all of its children"""
+    """
+    DEPRECATED. Use ``get_combined_bound_box``\n
+    Get min and max extents for an object and all of its children
+    """
     corners = get_total_bounds(obj)
 
     if not corners:
@@ -267,6 +271,23 @@ def get_total_bounds(obj):
                        for pos in child.bound_box])
 
     return corners
+
+
+def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
+    """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returhs bbmin, bbmax"""
+    total_bounds: list[Vector] = []
+
+    for child in [obj, *obj.children_recursive]:
+        if child.type != "MESH":
+            continue
+
+        child_matrix = matrix @ (
+            child.matrix_world if use_world else child.matrix_local)
+
+        total_bounds.extend([child_matrix @ Vector(v)
+                            for v in child.bound_box])
+
+    return get_min_vector_list(total_bounds), get_max_vector_list(total_bounds)
 
 
 def get_bound_center(obj):

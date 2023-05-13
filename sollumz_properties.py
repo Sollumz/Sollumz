@@ -754,6 +754,12 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=True
     )
 
+    apply_transforms: bpy.props.BoolProperty(
+        name="Apply Parent Transforms",
+        description="Apply Drawable/Fragment scale and rotation",
+        default=False
+    )
+
 
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]

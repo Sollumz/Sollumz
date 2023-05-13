@@ -193,13 +193,14 @@ class MeshBuilder:
 class GeometryBuilder:
     """Builds ``Geometry`` cwxml object(s) from ``GeometryData``. If vertex limit is reached, multiple will be made."""
 
-    def __init__(self, loop_triangles: list[bpy.types.MeshLoopTriangle], mesh: bpy.types.Mesh, material: bpy.types.Material, mat_index: int, vertex_groups: bpy.types.VertexGroups, bones: list[bpy.types.Bone]):
+    def __init__(self, loop_triangles: list[bpy.types.MeshLoopTriangle], mesh: bpy.types.Mesh, material: bpy.types.Material, mat_index: int, vertex_groups: bpy.types.VertexGroups, bones: list[bpy.types.Bone], matrix: Optional[Matrix] = None):
         self.loop_triangles = loop_triangles
         self.mesh = mesh
         self.material = material
         self.mat_index = mat_index
         self.vertex_groups = vertex_groups
         self.bones = bones
+        self.matrix = matrix or Matrix()
         self.geometry_xmls: list[Geometry] = []
 
         self.has_weights = False
@@ -395,7 +396,7 @@ class GeometryBuilder:
 
     def add_position(self, vertex: list[tuple], vertices: bpy.types.MeshVertices, vert_index: int):
         """Add Position component to ``vertex``."""
-        position = tuple(vertices[vert_index].co)
+        position = tuple(self.matrix @ vertices[vert_index].co)
         vertex.append(position)
 
     def add_weights(self, vertex: list[tuple], vert_index: int, weights: dict[int, tuple[tuple, tuple]]):
@@ -410,7 +411,9 @@ class GeometryBuilder:
 
     def add_normal(self, vertex: list[tuple], loop: bpy.types.MeshLoop):
         """Add Normal component to ``vertex``."""
-        vertex.append(float32_tuple(loop.normal))
+        normal = (self.matrix.inverted_safe().transposed().to_3x3()
+                  @ loop.normal).normalized()
+        vertex.append(float32_tuple(normal))
 
     def add_color_layers(self, vertex: list[tuple], loop_index: int, color_attrs: bpy.types.AttributeGroup):
         """Add color layers to ``vertex`` (i.e. Colour0, Colour1, ...)"""
@@ -450,8 +453,8 @@ class GeometryBuilder:
             vertex_positions = [vert[0]
                                 for vert in geom_xml.vertex_buffer.data]
             bbmin, bbmax = get_extents_from_points(vertex_positions)
-            geom_xml.bounding_box_max = Vector(bbmax)
-            geom_xml.bounding_box_min = Vector(bbmin)
+            geom_xml.bounding_box_max = bbmax
+            geom_xml.bounding_box_min = bbmin
 
     def set_bone_ids(self):
         """Set BoneIds for each geometry in ``self.geometry_xmls`` based on the number of bones."""

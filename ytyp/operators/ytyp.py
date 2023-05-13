@@ -323,6 +323,11 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         subtype="DIR_PATH",
     )
 
+    apply_transforms: bpy.props.BoolProperty(
+        name="Apply Parent Transforms",
+        description="Apply transforms to all assets when calculating Archetype extents"
+    )
+
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
@@ -337,7 +342,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         try:
-            ytyp = selected_ytyp_to_xml()
+            ytyp = selected_ytyp_to_xml(self.apply_transforms)
             filepath = self.get_filepath(ytyp.name)
             ytyp.write_xml(filepath)
             self.message(f"Successfully exported: {filepath}")
