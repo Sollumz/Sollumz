@@ -11,7 +11,8 @@ from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
 from ..tools.utils import prop_array_to_vector, vector_inv
 from ..sollumz_helper import get_sollumz_materials
-from ..sollumz_properties import SollumzExportSettings, BOUND_TYPES, SollumType, MaterialType, LODLevel
+from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
+from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents, get_drawable_parent_inverse
 from ..ydr.lights import create_xml_lights
@@ -19,7 +20,8 @@ from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, GroupProperties
 
 
-def export_yft(frag_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
+def export_yft(frag_obj: bpy.types.Object, filepath: str):
+    export_settings = get_export_settings()
 
     if export_settings.export_non_hi:
         frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,

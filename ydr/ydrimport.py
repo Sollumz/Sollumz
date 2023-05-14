@@ -4,7 +4,8 @@ from typing import Optional
 from mathutils import Matrix
 from .shader_materials import create_shader, get_detail_extra_sampler
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
-from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, SollumzImportSettings
+from ..sollumz_properties import TextureFormat, TextureUsage, SollumType
+from ..sollumz_preferences import get_import_settings
 from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit
 from ..cwxml.bound import BoundChild
 from ..tools.blenderhelper import create_empty_object, create_blender_object, join_objects
@@ -14,7 +15,9 @@ from .lights import create_light_objs
 from .. import logger
 
 
-def import_ydr(filepath: str, import_settings: SollumzImportSettings):
+def import_ydr(filepath: str):
+    import_settings = get_import_settings()
+
     name = get_filename(filepath)
     ydr_xml = YDR.from_xml_file(filepath)
 

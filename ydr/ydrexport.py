@@ -19,9 +19,9 @@ from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     BOUND_TYPES,
     LODLevel,
-    SollumType,
-    SollumzExportSettings
+    SollumType
 )
+from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import DrawableModelProperties
 from .geometry_data import GeometryBuilder
@@ -31,7 +31,9 @@ from .lights import create_xml_lights
 from .. import logger
 
 
-def export_ydr(drawable_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
+def export_ydr(drawable_obj: bpy.types.Object, filepath: str):
+    export_settings = get_export_settings()
+
     drawable_xml = create_drawable_xml(
         drawable_obj, auto_calc_bone_tag=export_settings.auto_calculate_bone_tag, auto_calc_inertia=export_settings.auto_calculate_inertia, auto_calc_volume=export_settings.auto_calculate_volume, apply_transforms=export_settings.apply_transforms)
     drawable_xml.write_xml(filepath)

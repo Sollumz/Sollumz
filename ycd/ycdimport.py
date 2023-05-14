@@ -6,6 +6,8 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import build_bone_map, get_armature_obj
 from ..tools.animationhelper import is_ped_bone_tag
 from ..tools.utils import list_index_exists
+from ..sollumz_preferences import get_import_settings
+from .. import logger
 
 
 def create_anim_obj(type):
@@ -456,9 +458,11 @@ def clip_dictionary_to_obj(clip_dictionary, name, armature, armature_obj):
         clip_obj.parent = clips_obj
 
 
-def import_ycd(export_op, filepath, import_settings):
+def import_ycd(filepath):
+    import_settings = get_import_settings()
+
     if import_settings.selected_armature == -1 or not list_index_exists(bpy.data.armatures, import_settings.selected_armature):
-        export_op.warning("Selected target skeleton not found.")
+        logger.warning("Selected target skeleton not found.")
         return
 
     armature = bpy.data.armatures[import_settings.selected_armature]
@@ -468,7 +472,8 @@ def import_ycd(export_op, filepath, import_settings):
 
     animation_type = bpy.context.scene.create_animation_type
     if animation_type == "UV":
-        export_op.warning("UV import is not supported. Change the animation type under Animation Tools panel")
+        logger.warning(
+            "UV import is not supported. Change the animation type under Animation Tools panel")
         return
 
     clip_dictionary_to_obj(

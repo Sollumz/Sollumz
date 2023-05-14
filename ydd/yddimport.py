@@ -4,14 +4,17 @@ from typing import Optional
 from ..cwxml.drawable import YDD, DrawableDictionary, Skeleton
 from ..cwxml.fragment import YFT, Fragment
 from ..ydr.ydrimport import create_drawable_obj, create_drawable_skel, apply_rotation_limits
-from ..sollumz_properties import SollumType, SollumzImportSettings
+from ..sollumz_properties import SollumType
+from ..sollumz_preferences import get_import_settings
 from ..tools.blenderhelper import create_empty_object, create_blender_object
 from ..tools.utils import get_filename
 
 from .. import logger
 
 
-def import_ydd(filepath: str, import_settings: SollumzImportSettings):
+def import_ydd(filepath: str):
+    import_settings = get_import_settings()
+
     ydd_xml = YDD.from_xml_file(filepath)
 
     if import_settings.import_ext_skeleton:

@@ -1,11 +1,12 @@
 import traceback
 import os
-import pathlib
 import bpy
+import time
 from collections import defaultdict
 from bpy_extras.io_utils import ImportHelper
 from .sollumz_helper import SOLLUMZ_OT_base
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags, ArchetypeType, LODLevel
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel
+from .sollumz_preferences import get_export_settings
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
 from .cwxml.bound import YBN
@@ -34,102 +35,91 @@ from .ybn.properties import BoundFlags
 from . import logger
 
 
-class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
+class TimedOperator:
+    @property
+    def time_elapsed(self) -> float:
+        """Get time elapsed since execution"""
+        return round(time.time() - self._start, 3)
+
+    def __init__(self) -> None:
+        self._start: float = 0.0
+
+    def execute(self, context: bpy.types.Context):
+        self._start = time.time()
+        return self.execute_timed(context)
+
+    def execute_timed(self, context: bpy.types.Context):
+        ...
+
+
+class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
     """Imports xml files exported by codewalker"""
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
-    bl_action = "import"
-    bl_showtime = True
+    bl_options = {"UNDO"}
 
     files: bpy.props.CollectionProperty(
         name="File Path",
         type=bpy.types.OperatorFileListElement,
+        options={"HIDDEN", "SKIP_SAVE"}
     )
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
-        options={"HIDDEN"},
+        options={"HIDDEN", "SKIP_SAVE"},
         maxlen=255,
     )
-
-    import_settings: bpy.props.PointerProperty(type=SollumzImportSettings)
-
-    filename_exts = [YDR.file_extension, YDD.file_extension,
-                     YFT.file_extension, YBN.file_extension,
-                     YNV.file_extension, YCD.file_extension,
-                     YMAP.file_extension]
 
     def draw(self, context):
         pass
 
-    def import_file(self, filepath, ext):
-        try:
-            valid_type = False
-            if ext == YDR.file_extension:
-                import_ydr(filepath, self.import_settings)
-                valid_type = True
-            elif ext == YDD.file_extension:
-                import_ydd(filepath, self.import_settings)
-                valid_type = True
-            elif ext == YFT.file_extension:
-                import_yft(filepath, self.import_settings)
-                valid_type = True
-            elif ext == YBN.file_extension:
-                import_ybn(filepath)
-                valid_type = True
-            elif ext == YNV.file_extension:
-                import_ynv(filepath)
-            elif ext == YCD.file_extension:
-                import_ycd(self, filepath, self.import_settings)
-            elif ext == YMAP.file_extension:
-                import_ymap(self, filepath, self.import_settings)
-                valid_type = True
-            if valid_type:
-                self.message(f"Succesfully imported: {filepath}")
-        except:
-            self.error(
-                f"Error importing: {filepath} \n {traceback.format_exc()}")
-            return False
-
-        return True
-
-    def run(self, context):
+    def execute_timed(self, context):
         logger.set_logging_operator(self)
 
-        result = False
-        if self.import_settings.batch_mode == "DIRECTORY":
-            folderpath = os.path.dirname(self.filepath)
-            for file in os.listdir(folderpath):
-                ext = "".join(pathlib.Path(file).suffixes)
-                if ext in self.filename_exts:
-                    filepath = os.path.join(folderpath, file)
-                    result = self.import_file(filepath, ext)
-        else:
-            for file_elem in self.files:
-                directory = os.path.dirname(self.filepath)
-                filepath = os.path.join(directory, file_elem.name)
-                if os.path.isfile(filepath):
-                    ext = "".join(pathlib.Path(filepath).suffixes)
-                    result = self.import_file(filepath, ext)
+        for file in self.files:
+            directory = os.path.dirname(self.filepath)
+            filepath = os.path.join(directory, file.name)
 
-        if not result:
-            self.bl_showtime = False
+            try:
 
-        return True
+                if YDR.file_extension in filepath:
+                    import_ydr(filepath)
+                elif YDD.file_extension in filepath:
+                    import_ydd(filepath)
+                elif YFT.file_extension in filepath:
+                    import_yft(filepath)
+                elif YBN.file_extension in filepath:
+                    import_ybn(filepath)
+                elif YNV.file_extension in filepath:
+                    import_ynv(filepath)
+                elif YCD.file_extension in filepath:
+                    import_ycd(filepath)
+                elif YMAP.file_extension in filepath:
+                    import_ymap(filepath)
+                else:
+                    continue
+
+                self.report({"INFO"}, f"Successfully imported '{filepath}'")
+            except:
+                self.report({"ERROR"},
+                            f"Error importing: {filepath} \n {traceback.format_exc()}")
+
+                return {"CANCELLED"}
+
+        self.report(
+            {"INFO"}, f"Imported in {self.time_elapsed} seconds")
+
+        return {"FINISHED"}
 
 
-class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
     """Exports codewalker xml files"""
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
-    bl_action = "export"
-    bl_showtime = True
-
-    export_settings: bpy.props.PointerProperty(type=SollumzExportSettings)
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
-        options={"HIDDEN"},
+        options={"HIDDEN", "SKIP_SAVE"},
         maxlen=255,
     )
 
@@ -137,189 +127,94 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
         name="Output directory",
         description="Select export output directory",
         subtype="DIR_PATH",
+        options={"HIDDEN", "SKIP_SAVE"}
     )
+
+    def draw(self, context):
+        pass
 
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
 
-    def draw(self, context):
-        pass
+    def execute_timed(self, context: bpy.types.Context):
+        logger.set_logging_operator(self)
+        objs = self.collect_objects(context)
+        export_settings = get_export_settings()
 
-    def get_data_name(self, obj_name):
-        mode = self.export_settings.batch_mode
-        if mode == "COLLECTION":
-            for col in bpy.data.collections:
-                for obj in col.objects:
-                    if obj.name == obj_name:
-                        return col.name
-        elif mode in {"SCENE_COLLECTION", "ACTIVE_SCENE_COLLECTION"}:
-            scenes = [
-                bpy.context.scene] if mode == "ACTIVE_SCENE_COLLECTION" else bpy.data.scenes
-            for scene in scenes:
-                if not scene.objects:
-                    self.error(f"No objects in scene {scene.name} to export.")
-                for obj in scene.collection.objects:
-                    if obj.name == obj_name:
-                        return f"{scene.name}_{scene.collection.name}"
-        else:
-            for scene in bpy.data.scenes:
-                if not scene.objects:
-                    self.error(f"No objects in scene {scene.name} to export.")
-                for obj in scene.objects:
-                    if obj.name == obj_name:
-                        return scene.name
-        return ""
+        for obj in objs:
+            filepath = None
+            try:
+                if obj.sollum_type == SollumType.DRAWABLE:
+                    filepath = self.get_filepath(obj, YDR.file_extension)
+                    export_ydr(obj, filepath)
+                elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                    filepath = self.get_filepath(obj, YDD.file_extension)
+                    export_ydd(obj, filepath)
+                elif obj.sollum_type == SollumType.FRAGMENT:
+                    filepath = self.get_filepath(obj, YFT.file_extension)
+                    export_yft(obj, filepath)
+                elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
+                    filepath = self.get_filepath(obj, YCD.file_extension)
+                    export_ycd(obj, filepath)
+                elif obj.sollum_type in BOUND_TYPES:
+                    filepath = self.get_filepath(obj, YBN.file_extension)
+                    export_ybn(obj, filepath)
+                elif obj.sollum_type == SollumType.YMAP:
+                    filepath = self.get_filepath(obj, YMAP.file_extension)
+                    export_ymap(obj, filepath)
+                else:
+                    continue
 
-    def make_directory(self, name):
-        dir = os.path.join(self.directory, self.get_data_name(
-            name) if self.export_settings.batch_mode != "OFF" else name)
-        if not os.path.exists(dir):
-            os.mkdir(dir)
-        return dir
+                self.report(
+                    {"INFO"}, f"Successfully exported '{filepath}'")
 
-    def get_filepath(self, name, ext):
-        return os.path.join(self.make_directory(name), name + ext) if self.export_settings.use_batch_own_dir else os.path.join(self.directory, name + ext)
+            except:
+                self.report({"ERROR"},
+                            f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
 
-    def get_only_parent_objs(self, objs):
-        pobjs = []
+                return {"CANCELLED"}
+
+            if export_settings.export_with_ytyp:
+                ytyp = ytyp_from_objects(objs)
+                filepath = os.path.join(
+                    self.directory, f"{ytyp.name}.ytyp.xml")
+                ytyp.write_xml(filepath)
+                self.report(
+                    {"INFO"}, f"Successfully exported '{filepath}' (auto-generated)")
+
+        self.report(
+            {"INFO"}, f"Exported in {self.time_elapsed} seconds")
+
+        return {"FINISHED"}
+
+    def collect_objects(self, context: bpy.types.Context) -> list[bpy.types.Object]:
+        export_settings = get_export_settings()
+
+        objs = context.scene.objects
+
+        if export_settings.limit_to_selected:
+            objs = context.selected_objects
+
+        sollum_types = export_settings.sollum_types
+        if sollum_types:
+            objs = [o for o in objs if o.sollum_type in sollum_types]
+
+        return self.get_only_parent_objs(objs)
+
+    def get_only_parent_objs(self, objs: list[bpy.types.Object]):
+        parent_objs = []
+
         for obj in objs:
             if obj.parent is None:
-                pobjs.append(obj)
-        return pobjs
+                parent_objs.append(obj)
 
-    def collect_objects(self, context):
-        mode = self.export_settings.batch_mode
-        objects = []
-        if mode == "OFF":
-            if self.export_settings.use_active_collection:
-                if self.export_settings.use_selection:
-                    objects = [
-                        obj for obj in context.view_layer.active_layer_collection.collection.all_objects if obj.select_get()]
-                else:
-                    objects = context.view_layer.active_layer_collection.collection.all_objects
-            else:
-                if self.export_settings.use_selection:
-                    objects = context.selected_objects
-                else:
-                    objects = context.view_layer.objects
-        else:
-            if mode == "COLLECTION":
-                data_block = tuple(
-                    (coll, coll.name, "objects") for coll in bpy.data.collections if coll.objects)
-            elif mode in {"SCENE_COLLECTION", "ACTIVE_SCENE_COLLECTION"}:
-                scenes = [
-                    context.scene] if mode == "ACTIVE_SCENE_COLLECTION" else bpy.data.scenes
-                data_block = []
-                for scene in scenes:
-                    if not scene.objects:
-                        continue
-                    todo_collections = [(scene.collection, "_".join(
-                        (scene.name, scene.collection.name)))]
-                    while todo_collections:
-                        coll, coll_name = todo_collections.pop()
-                        todo_collections.extend(
-                            ((c, c.name) for c in coll.children if c.all_objects))
-                        data_block.append((coll, coll_name, "all_objects"))
-            else:
-                data_block = tuple((scene, scene.name, "objects")
-                                   for scene in bpy.data.scenes if scene.objects)
+        return parent_objs
 
-            # this is how you can create the folder names if the user clicks "use_batch_own_dir"
-            for data, _, data_obj_paramname in data_block:
-                objects = getattr(
-                    data, data_obj_paramname).values()
+    def get_filepath(self, obj: bpy.types.Object, extension: str):
+        name = remove_number_suffix(obj.name.lower())
 
-        result = []
-
-        types = self.export_settings.sollum_types
-        for obj in objects:
-            if obj.sollum_type in BOUND_TYPES:
-                # this is to make sure we get all bound objects without having to specify its specific type
-                if any(bound_type.value in types for bound_type in BOUND_TYPES):
-                    result.append(obj)
-            else:
-                if obj.sollum_type in types:
-                    result.append(obj)
-
-        return result
-
-    def export_object(self, obj):
-        try:
-            valid_type = False
-            filepath = None
-            if obj.sollum_type == SollumType.DRAWABLE:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YDR.file_extension)
-                export_ydr(obj, filepath, self.export_settings)
-                valid_type = True
-            elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YDD.file_extension)
-                export_ydd(obj, filepath, self.export_settings)
-                valid_type = True
-            elif obj.sollum_type == SollumType.FRAGMENT:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YFT.file_extension)
-                export_yft(obj, filepath, self.export_settings)
-                valid_type = True
-            elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YCD.file_extension)
-                export_ycd(self, obj, filepath, self.export_settings)
-                valid_type = True
-            elif obj.sollum_type in BOUND_TYPES:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YBN.file_extension)
-                export_ybn(obj, filepath, self.export_settings)
-                valid_type = True
-            elif obj.sollum_type == SollumType.YMAP:
-                filepath = self.get_filepath(
-                    remove_number_suffix(obj.name.lower()), YMAP.file_extension)
-                export_ymap(self, obj, filepath, self.export_settings)
-                valid_type = True
-            if valid_type:
-                self.message(f"Succesfully exported: {filepath}")
-        except:
-            self.error(
-                f"Error exporting: {filepath} \n {traceback.format_exc()}")
-            return False
-        return True
-
-    def run(self, context):
-        logger.set_logging_operator(self)
-
-        objects = self.get_only_parent_objs(self.collect_objects(context))
-
-        if len(objects) == 0:
-            self.warning(
-                f"No objects of type: {' or '.join([SOLLUMZ_UI_NAMES[t].lower() for t in self.export_settings.sollum_types])} to export.")
-            return False
-
-        mode = "OBJECT"
-        if context.active_object:
-            mode = context.active_object.mode
-            if mode != "OBJECT":
-                bpy.ops.object.mode_set(mode="OBJECT")
-
-        if len(objects) > 0:
-            for obj in objects:
-                result = self.export_object(obj)
-                # Dont show time on failure
-                if not result:
-                    self.bl_showtime = False
-
-            if self.export_settings.export_with_ytyp:
-                ytyp = ytyp_from_objects(objects)
-                fp = self.get_filepath(
-                    ytyp.name, YTYP.file_extension)
-                ytyp.write_xml(fp)
-
-        if context.active_object:
-            if context.active_object.mode != mode:
-                bpy.ops.object.mode_set(mode=mode)
-
-        return True
+        return os.path.join(self.directory, name + extension)
 
 
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):

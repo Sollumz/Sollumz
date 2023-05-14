@@ -3,7 +3,8 @@ from math import radians, pi, degrees
 from typing import Optional
 from mathutils import Matrix, Vector
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LightType
-from ..tools.blenderhelper import create_empty_object, create_blender_object, get_addon_preferences
+from ..tools.blenderhelper import create_empty_object, create_blender_object
+from ..sollumz_preferences import get_addon_preferences
 from ..cwxml.drawable import Light
 from .properties import LightProperties
 from .. import logger

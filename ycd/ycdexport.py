@@ -170,12 +170,14 @@ def sequence_items_from_action(action, sequence_items, action_data, action_type,
                 vector_math_node = node
                 break
         if vector_math_node is None:
-            raise Exception("Unable to find Vector Math node in material to get UV animation data!")
+            raise Exception(
+                "Unable to find Vector Math node in material to get UV animation data!")
         else:
-            pos_vector_path = vector_math_node.inputs[1].path_from_id("default_value")
+            pos_vector_path = vector_math_node.inputs[1].path_from_id(
+                "default_value")
             uv_fcurve = uv_nodetree.animation_data.action.fcurves
             uv_locations = evaluate_vector(
-                    uv_fcurve, pos_vector_path, frame_count)
+                uv_fcurve, pos_vector_path, frame_count)
             if len(uv_locations) > 0:
                 u_channel_loc = []
                 v_channel_loc = []
@@ -184,10 +186,10 @@ def sequence_items_from_action(action, sequence_items, action_data, action_type,
                     v_channel_loc.append(-round(vector.y, 4))
 
                 if len(u_channel_loc) > 0:
-                        u_locations_map[0] = u_channel_loc
-                        
+                    u_locations_map[0] = u_channel_loc
+
                 if len(v_channel_loc) > 0:
-                        v_locations_map[0] = v_channel_loc
+                    v_locations_map[0] = v_channel_loc
 
             if len(u_locations_map) > 0:
                 sequence_items[ensure_action_track(
@@ -451,12 +453,12 @@ def clip_from_object(clip_obj):
     return clip
 
 
-def clip_dictionary_from_object(exportop, obj, exportpath, export_settings=None):
+def clip_dictionary_from_object(obj):
     clip_dictionary = ycdxml.ClipsDictionary()
 
     armature = obj.clip_dict_properties.armature
     uv_prop = obj.clip_dict_properties.uv_obj
-    
+
     if armature is not None and uv_prop is None:
         animation_type = "REGULAR"
         armature_obj = get_armature_obj(armature)
@@ -503,6 +505,5 @@ def clip_dictionary_from_object(exportop, obj, exportpath, export_settings=None)
     return clip_dictionary
 
 
-def export_ycd(exportop, obj, filepath, export_settings):
-    clip_dictionary_from_object(
-        exportop, obj, filepath, export_settings).write_xml(filepath)
+def export_ycd(obj, filepath):
+    clip_dictionary_from_object(obj).write_xml(filepath)

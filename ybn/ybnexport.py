@@ -23,7 +23,8 @@ from ..cwxml.bound import (
 from ..tools.utils import get_max_vector_list, get_min_vector_list
 from ..tools.meshhelper import (get_bound_center_from_bounds, calculate_volume,
                                 calculate_inertia, get_sphere_radius, get_bound_center, get_combined_bound_box)
-from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, SollumzExportSettings, BOUND_POLYGON_TYPES
+from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
+from ..sollumz_preferences import get_export_settings
 from .. import logger
 from .properties import CollisionMatFlags, BoundFlags
 
@@ -34,7 +35,9 @@ T_PolyCylCap = TypeVar("T_PolyCylCap", bound=PolyCylinder | PolyCapsule)
 MAX_VERTICES = 32767
 
 
-def export_ybn(obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
+def export_ybn(obj: bpy.types.Object, filepath: str):
+    export_settings = get_export_settings()
+
     bounds = BoundFile()
 
     composite = create_composite_xml(

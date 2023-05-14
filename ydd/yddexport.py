@@ -2,10 +2,13 @@ import bpy
 from ..cwxml.drawable import DrawableDictionary
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
 from ..tools import jenkhash
-from ..sollumz_properties import SollumType, SollumzExportSettings
+from ..sollumz_properties import SollumType
+from ..sollumz_preferences import get_export_settings
 
 
-def export_ydd(ydd_obj: bpy.types.Object, filepath: str, export_settings: SollumzExportSettings):
+def export_ydd(ydd_obj: bpy.types.Object, filepath: str):
+    export_settings = get_export_settings()
+
     ydd_xml = create_ydd_xml(ydd_obj, export_settings.auto_calculate_bone_tag)
 
     write_embedded_textures(ydd_obj, filepath)

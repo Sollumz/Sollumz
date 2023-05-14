@@ -5,6 +5,7 @@ from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
+from ...sollumz_preferences import get_export_settings
 from ...cwxml.ytyp import YTYP
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import ytyp_to_obj
@@ -323,10 +324,8 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         subtype="DIR_PATH",
     )
 
-    apply_transforms: bpy.props.BoolProperty(
-        name="Apply Parent Transforms",
-        description="Apply transforms to all assets when calculating Archetype extents"
-    )
+    def draw(self, context):
+        pass
 
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
@@ -342,7 +341,9 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         try:
-            ytyp = selected_ytyp_to_xml(self.apply_transforms)
+            export_settings = get_export_settings(context)
+
+            ytyp = selected_ytyp_to_xml(export_settings.apply_transforms)
             filepath = self.get_filepath(ytyp.name)
             ytyp.write_xml(filepath)
             self.message(f"Successfully exported: {filepath}")

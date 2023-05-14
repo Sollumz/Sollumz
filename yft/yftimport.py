@@ -6,18 +6,21 @@ from typing import Optional
 from ..tools.blenderhelper import create_empty_object, material_from_image, create_blender_object, remove_number_suffix
 from ..tools.meshhelper import create_uv_layer
 from ..tools.utils import multiply_homogeneous, get_filename
-from ..sollumz_properties import SollumType, SollumzImportSettings, LODLevel, SOLLUMZ_UI_NAMES, MaterialType
+from ..sollumz_properties import SollumType, LODLevel, SOLLUMZ_UI_NAMES, MaterialType
+from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
-from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, set_drawable_properties, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials
+from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
-from ..ydr.ydrexport import calculate_bone_tag, get_sollumz_materials
+from ..ydr.ydrexport import calculate_bone_tag
 from ..ydr.create_drawable_models import create_drawable_models, create_drawable_models_split_by_group, add_armature_constraint
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties
 
 
-def import_yft(filepath: str, import_settings: SollumzImportSettings):
+def import_yft(filepath: str):
+    import_settings = get_import_settings()
+
     yft_xml = YFT.from_xml_file(filepath)
 
     if import_settings.import_as_asset:
