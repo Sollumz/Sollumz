@@ -281,6 +281,9 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     linked_object: bpy.props.PointerProperty(
         type=bpy.types.Object, name="Linked Object")
 
+    # Blender usage only
+    id: bpy.props.IntProperty(name="Id")
+
 
 class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_entity_set_name(self, entity_set_index: int):

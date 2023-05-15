@@ -83,7 +83,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
         item.mlo_archetype_id = self.id
 
-        item.archetype_name = f"Entity.{item.id}"
+        item.archetype_name = f"Entity.{item_id}"
 
         return item
 
