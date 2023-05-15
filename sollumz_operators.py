@@ -4,7 +4,7 @@ import bpy
 import time
 from collections import defaultdict
 from bpy_extras.io_utils import ImportHelper
-from .sollumz_helper import SOLLUMZ_OT_base
+from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel
 from .sollumz_preferences import get_export_settings
 from .cwxml.drawable import YDR, YDD
@@ -196,20 +196,26 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         if export_settings.limit_to_selected:
             objs = context.selected_objects
 
+        parent_objs = self.get_only_parent_objs(objs)
+
         sollum_types = export_settings.sollum_types
-        if sollum_types:
-            objs = [o for o in objs if o.sollum_type in sollum_types]
-
-        return self.get_only_parent_objs(objs)
-
-    def get_only_parent_objs(self, objs: list[bpy.types.Object]):
-        parent_objs = []
-
-        for obj in objs:
-            if obj.parent is None:
-                parent_objs.append(obj)
+        parent_objs = [o for o in parent_objs if o.sollum_type in sollum_types]
 
         return parent_objs
+
+    def get_only_parent_objs(self, objs: list[bpy.types.Object]):
+        parent_objs = set()
+        objs = set(objs)
+
+        for obj in objs:
+            parent_obj = find_sollumz_parent(obj)
+
+            if parent_obj is None or parent_obj in parent_objs:
+                continue
+
+            parent_objs.add(parent_obj)
+
+        return list(parent_objs)
 
     def get_filepath(self, obj: bpy.types.Object, extension: str):
         name = remove_number_suffix(obj.name.lower())
