@@ -86,6 +86,9 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         archetype = self.get_mlo_archetype()
         room_from_id = self.room_from_id
 
+        if archetype is None:
+            return 0
+
         for index, room in enumerate(archetype.rooms):
             if not room_from_id:
                 continue
@@ -99,6 +102,9 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         archetype = self.get_mlo_archetype()
         room_to_id = self.room_to_id
 
+        if archetype is None:
+            return 0
+
         for index, room in enumerate(archetype.rooms):
             if not room_to_id:
                 continue
@@ -111,7 +117,7 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_room_name(self, room_index: int):
         archetype = self.get_mlo_archetype()
 
-        if not archetype.rooms:
+        if archetype is None or not archetype.rooms:
             return ""
 
         if room_index < len(archetype.rooms) and room_index >= 0:
@@ -196,6 +202,9 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         selected_archetype = self.get_mlo_archetype()
         attached_portal_id = self.attached_portal_id
 
+        if selected_archetype is None:
+            return -1
+
         if attached_portal_id:
             for index, portal in enumerate(selected_archetype.portals):
                 if portal.id == int(attached_portal_id):
@@ -208,6 +217,9 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         portal = get_list_item(selected_archetype.portals,
                                self.portal_index)
 
+        if selected_archetype is None:
+            return -1
+
         if portal:
             return portal.name
         return ""
@@ -215,6 +227,9 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
     def get_room_index(self):
         selected_archetype = self.get_mlo_archetype()
         attached_room_id = self.attached_room_id
+
+        if selected_archetype is None:
+            return -1
 
         if attached_room_id:
             for index, room in enumerate(selected_archetype.rooms):
@@ -227,7 +242,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         selected_archetype = self.get_mlo_archetype()
         entity_set = get_list_item(selected_archetype.entity_sets,
                                    self.entity_set_index)
-        if entity_set:
+        if entity_set and selected_archetype is not None:
             return entity_set.name
         return ""
 
@@ -235,7 +250,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         selected_archetype = self.get_mlo_archetype()
         attached_entity_set_id = self.attached_entity_set_id
 
-        if attached_entity_set_id:
+        if attached_entity_set_id and selected_archetype is not None:
             for index, room in enumerate(selected_archetype.entity_sets):
                 if room.id == int(attached_entity_set_id):
                     return index
@@ -246,7 +261,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         selected_archetype = self.get_mlo_archetype()
         room = get_list_item(selected_archetype.rooms,
                              self.room_index)
-        if room:
+        if room and selected_archetype is not None:
             return room.name
         return ""
 
@@ -289,7 +304,7 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def get_entity_set_name(self, entity_set_index: int):
         archetype = self.get_mlo_archetype()
 
-        if not archetype.entity_sets:
+        if archetype is None or not archetype.entity_sets:
             return ""
 
         if entity_set_index < len(archetype.entity_sets) and entity_set_index >= 0:

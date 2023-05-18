@@ -266,5 +266,7 @@ def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes):
     ytyp: CMapTypesProperties = bpy.context.scene.ytyps.add()
     ytyp.name = ytyp_xml.name
 
+    bpy.context.scene.ytyp_index = len(bpy.context.scene.ytyps) - 1
+
     for arch_xml in ytyp_xml.archetypes:
         create_archetype(arch_xml, ytyp)
