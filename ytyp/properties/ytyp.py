@@ -186,6 +186,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     id: bpy.props.IntProperty(default=-1)
 
     @property
+    def non_entity_set_entities(self) -> list[MloEntityProperties]:
+        return [entity for entity in self.entities if entity.attached_entity_set_id == "-1"]
+
+    @property
     def selected_room(self) -> Union[RoomProperties, None]:
         return get_list_item(self.rooms, self.room_index)
 

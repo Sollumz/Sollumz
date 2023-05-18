@@ -11,26 +11,16 @@ from .properties.extensions import ExtensionProperties
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of room from the mlo archetype entities collection provided."""
-    # Not using enumerate since were only looping through entities not in an entity set
-    index = 0
-
-    for entity in entities:
-        if entity.room_index == room_index and entity.attached_entity_set_id == "-1":
-            room_xml.attached_objects.append(index)
-
-            index += 1
+    for i, entity in enumerate(entities):
+        if entity.room_index == room_index:
+            room_xml.attached_objects.append(i)
 
 
 def set_portal_attached_objects(portal_xml: ytypxml.Portal, portal_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of portal from the mlo archetype entities collection provided."""
-    # Not using enumerate since were only looping through entities not in an entity set
-    index = 0
-
-    for entity in entities:
-        if entity.portal_index == portal_index and entity.attached_entity_set_id == "-1":
-            portal_xml.attached_objects.append(index)
-
-            index += 1
+    for i, entity in enumerate(entities):
+        if entity.portal_index == portal_index:
+            portal_xml.attached_objects.append(i)
 
 
 def get_portal_count(room: RoomProperties, portals: Iterable[PortalProperties]) -> int:
@@ -136,8 +126,8 @@ def create_room_xml(room: RoomProperties, room_index: int, archetype: ArchetypeP
     room_xml.portal_count = get_portal_count(
         room, archetype.portals)
 
-    set_room_attached_objects(
-        room_xml, room_index, archetype.entities)
+    set_room_attached_objects(room_xml, room_index,
+                              archetype.non_entity_set_entities)
 
     return room_xml
 
@@ -158,7 +148,7 @@ def create_portal_xml(portal: PortalProperties, portal_index: int, archetype: Ar
         portal.audio_occlusion)
 
     set_portal_attached_objects(
-        portal_xml, portal_index, archetype.entities)
+        portal_xml, portal_index, archetype.non_entity_set_entities)
 
     return portal_xml
 
