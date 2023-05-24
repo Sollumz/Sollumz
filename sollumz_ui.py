@@ -478,20 +478,28 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        # Get the locations of the selected objects
+        # Get the locations and rotations of the selected objects
         selected_objects = bpy.context.selected_objects
         if len(selected_objects) > 0:
             for obj in selected_objects:
                 loc = obj.location
                 row = layout.row()
-                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(
+                row.label(text="{}: {:.6f}, {:.6f}, {:.6f}".format(
                     obj.name, loc[0], loc[1], loc[2]))
 
                 # Add a Clipboard button to copy the location to the clipboard
                 clip_button = row.operator(
                     "wm.sollumz_copy_location", text="", icon='COPYDOWN')
-                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(
+                clip_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
                     loc[0], loc[1], loc[2])
+
+            # Convert the object's rotation to a quaternion and copy it to the clipboard
+            rot = obj.matrix_world.to_quaternion()
+            rot_xyzw = [rot.x, rot.y, rot.z, rot.w]
+            rot_button = row.operator(
+                "wm.sollumz_copy_rotation", text="", icon='COPYDOWN')
+            rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
+                rot.x, rot.y, rot.z, rot.w)
 
             # Add a button to copy all selected objects' locations to the clipboard
             if len(selected_objects) > 1:
@@ -511,7 +519,22 @@ class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     def execute(self, context):
         bpy.context.window_manager.clipboard = self.location
         self.report(
-            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
+            {'INFO'}, "Location XDd copied to clipboard: {}".format(self.location))
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_copy_rotation(bpy.types.Operator):
+    """Copy the quaternion rotation of an object to the clipboard"""
+    bl_idname = "wm.sollumz_copy_rotation"
+    bl_label = ""
+    rotation: bpy.props.StringProperty()
+
+    def execute(self, context):
+        # Remove the brackets from the rotation string
+        rotation = self.rotation.strip('[]')
+        bpy.context.window_manager.clipboard = rotation
+        self.report(
+            {'INFO'}, "Rotation copied to clipboard: {}".format(rotation))
         return {'FINISHED'}
 
 
@@ -526,7 +549,7 @@ class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
         locations_text = ""
         for obj in selected_objects:
             loc = obj.location
-            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(
+            locations_text += "{}: {:.6f}, {:.6f}, {:.6f}\n".format(
                 obj.name, loc[0], loc[1], loc[2])
         bpy.context.window_manager.clipboard = locations_text
         self.report(
