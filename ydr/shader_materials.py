@@ -182,6 +182,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
+    txtn.interpolation = "Closest"
     gnt.links.new(cptn.outputs[3], txtn.inputs[1])
     gnt.links.new(txtn.outputs[0], output.inputs[1])
 
