@@ -1,5 +1,4 @@
 import bpy
-
 from ..tools.version import USE_LEGACY
 from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import MaterialType
@@ -182,6 +181,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
+    txtn.interpolation = "Closest"
     gnt.links.new(cptn.outputs[3], txtn.inputs[1])
     gnt.links.new(txtn.outputs[0], output.inputs[1])
 
@@ -438,6 +438,7 @@ def create_tint_nodes(node_tree, tinttex, txt, tintflags):
     attr.attribute_name = "TintColor"
     mix = node_tree.nodes.new("ShaderNodeMixRGB")
     mix.inputs["Fac"].default_value = 0.95
+    mix.blend_type = "MULTIPLY"
     links.new(attr.outputs["Color"], mix.inputs[2])
     links.new(txt.outputs[0], mix.inputs[1])
     links.new(mix.outputs[0], bsdf.inputs["Base Color"])
