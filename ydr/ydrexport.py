@@ -403,7 +403,16 @@ def get_bone_ids(obj, bones=None):
     if bones:
         bone_count = len(bones)
     elif obj.vertex_groups:
-        bone_count = int(obj.vertex_groups[0].name.split(".")[2]) + 1
+        armature_modifiers = [
+            mod for mod in obj.modifiers if mod.type == 'ARMATURE']
+        if not armature_modifiers:
+            raise Exception("Vertex Groups without any bones detected.")
+        armature_obj = armature_modifiers[0].object
+        if not armature_obj:
+            raise Exception(f"No armature object found for {obj.name}")
+        bone_count = len(armature_obj.data.bones)
+        if bone_count == 0:
+            raise Exception(f"No bones in {obj.name}")
     else:
         return []
 
