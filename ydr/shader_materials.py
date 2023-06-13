@@ -671,7 +671,7 @@ def create_basic_shader_nodes(mat, shader, filename):
     if is_emissive:
         create_emissive_nodes(node_tree)
 
-    is_water = True if filename in ShaderManager.water_shaders else False
+    is_water = filename in ShaderManager.water_shaders
     if is_water:
         create_water_nodes(node_tree)
 
