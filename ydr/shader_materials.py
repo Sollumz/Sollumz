@@ -532,6 +532,41 @@ def link_value_shader_parameters(shader, node_tree):
             links.new(em_m.outputs[0], em.inputs[1])
 
 
+def create_water_nodes(node_tree):
+    links = node_tree.links
+    output = node_tree.nodes["Material Output"]
+    mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
+    add_shader = node_tree.nodes.new("ShaderNodeAddShader")
+    vol_absorb = node_tree.nodes.new("ShaderNodeVolumeAbsorption")
+    vol_absorb.inputs[0].default_value = (0.772, 0.91, 0.882, 1.0)
+    vol_absorb.inputs[1].default_value = 0.25  # Density
+    bsdf = node_tree.nodes["Principled BSDF"]
+    bsdf.inputs[0].default_value = (0.588, 0.91, 0.851, 1.0)
+    bsdf.inputs[19].default_value = (
+        0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
+    bsdf.inputs['Emission Strength'].default_value = 0.1
+    glass_shader = node_tree.nodes.new("ShaderNodeBsdfGlass")
+    glass_shader.inputs['IOR'].default_value = 1.333
+    trans_shader = node_tree.nodes.new("ShaderNodeBsdfTransparent")
+    light_path = node_tree.nodes.new("ShaderNodeLightPath")
+    bump = node_tree.nodes.new("ShaderNodeBump")
+    bump.inputs['Strength'].default_value = 0.05
+    noise_tex = node_tree.nodes.new("ShaderNodeTexNoise")
+    noise_tex.inputs['Scale'].default_value = 12.0
+    noise_tex.inputs['Detail'].default_value = 3.0
+    noise_tex.inputs[4].default_value = 0.85  # Roughness
+
+    links.new(glass_shader.outputs[0], mix_shader.inputs[1])
+    links.new(trans_shader.outputs[0], mix_shader.inputs[2])
+    links.new(bsdf.outputs[0], add_shader.inputs[0])
+    links.new(vol_absorb.outputs[0], add_shader.inputs[1])
+    links.new(add_shader.outputs[0], output.inputs['Volume'])
+    links.new(mix_shader.outputs[0], output.inputs['Surface'])
+    links.new(light_path.outputs['Is Shadow Ray'], mix_shader.inputs['Fac'])
+    links.new(noise_tex.outputs['Fac'], bump.inputs['Height'])
+    links.new(bump.outputs['Normal'], glass_shader.inputs['Normal'])
+
+
 def create_basic_shader_nodes(mat, shader, filename):
 
     node_tree = mat.node_tree
@@ -635,6 +670,10 @@ def create_basic_shader_nodes(mat, shader, filename):
 
     if is_emissive:
         create_emissive_nodes(node_tree)
+
+    is_water = filename in ShaderManager.water_shaders
+    if is_water:
+        create_water_nodes(node_tree)
 
     # link value parameters
     link_value_shader_parameters(shader, node_tree)
