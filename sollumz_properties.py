@@ -640,7 +640,7 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
     auto_calculate_bone_tag: bpy.props.BoolProperty(
         name="Auto Calculate Bone Tag",
         description="Automatically calculate bone tags.",
-        default=True,
+        default=False,
     )
 
     export_with_hi: bpy.props.BoolProperty(
