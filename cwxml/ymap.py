@@ -164,7 +164,7 @@ class ExtensionAudioEmitter(Extension):
     def __init__(self):
         super().__init__()
         self.offset_rotation = QuaternionProperty("offsetRotation")
-        self.effect_hash = TextProperty("effectHash")
+        self.effect_hash = ValueProperty("effectHash")
 
 
 class ExtensionExplosionEffect(Extension):
