@@ -182,7 +182,7 @@ def register():
     bpy.types.Object.bound_dimensions = bpy.props.FloatVectorProperty(
         name="Extents", precision=3, min=0, update=update_bounds, subtype="XYZ")
 
-    #nest these in object.bound_properties ? is it possible#
+    # nest these in object.bound_properties ? is it possible#
     bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(
         type=BoundFlags)
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(
@@ -229,22 +229,24 @@ def register():
 
     bpy.types.Scene.create_bound_type = bpy.props.EnumProperty(
         items=[
-            (SollumType.BOUND_COMPOSITE.value,
-             SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], "Create a bound composite object. (if objects are selected a drawable will be created with them as the children)"),
-            (SollumType.BOUND_GEOMETRY.value,
-             SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY], "Create a bound geometry object."),
-            (SollumType.BOUND_GEOMETRYBVH.value,
-             SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH], "Create a bound geometrybvh object."),
-            (SollumType.BOUND_BOX.value,
-             SOLLUMZ_UI_NAMES[SollumType.BOUND_BOX], "Create a bound box object."),
-            (SollumType.BOUND_CAPSULE.value,
-             SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE], "Create a bound capsule object."),
+            (SollumType.BOUND_SPHERE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_SPHERE], "Create a bound sphere object."),
             (SollumType.BOUND_CYLINDER.value,
              SOLLUMZ_UI_NAMES[SollumType.BOUND_CYLINDER], "Create a bound cylinder object."),
+            (SollumType.BOUND_CAPSULE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE], "Create a bound capsule object."),
+            (SollumType.BOUND_BOX.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_BOX], "Create a bound box object."),
             (SollumType.BOUND_DISC.value,
              SOLLUMZ_UI_NAMES[SollumType.BOUND_DISC], "Create a bound disc object."),
             (SollumType.BOUND_CLOTH.value,
              SOLLUMZ_UI_NAMES[SollumType.BOUND_CLOTH], "Create a bound cloth object."),
+            (SollumType.BOUND_GEOMETRY.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY], "Create a bound geometry object."),
+            (SollumType.BOUND_GEOMETRYBVH.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH], "Create a bound geometrybvh object."),
+            (SollumType.BOUND_COMPOSITE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], "Create a bound composite object. (if objects are selected a drawable will be created with them as the children)"),
         ],
         name="Type",
         default=SollumType.BOUND_COMPOSITE.value
@@ -273,6 +275,7 @@ def register():
 
     bpy.types.Scene.composite_apply_default_flag_preset = bpy.props.BoolProperty(
         name="Apply Default Flag", description=f"If true, the operator will apply the default flag preset to {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]}.", default=True)
+
 
 def unregister():
     del bpy.types.Object.bound_properties
