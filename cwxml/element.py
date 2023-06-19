@@ -142,7 +142,7 @@ class ElementTree(Element):
     def __setattr__(self, name: str, value) -> None:
         # Get the full object
         obj = self.__getattribute__(name, False)
-        if obj and isinstance(obj, (ElementProperty, AttributeProperty)) and not isinstance(value, (ElementProperty, AttributeProperty)):
+        if obj is not None and isinstance(obj, (ElementProperty, AttributeProperty)) and not isinstance(value, (ElementProperty, AttributeProperty)):
             # If the object is an ElementProperty or AttributeProperty, set it's value
             obj.value = value
             super().__setattr__(name, obj)

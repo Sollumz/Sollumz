@@ -1,19 +1,19 @@
 import os
 import bpy
+import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector
 from typing import Optional
 from ..tools.blenderhelper import create_empty_object, material_from_image, create_blender_object, remove_number_suffix
-from ..tools.meshhelper import create_uv_layer
+from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
-from ..sollumz_properties import SollumType, LODLevel, SOLLUMZ_UI_NAMES, MaterialType
+from ..sollumz_properties import SollumType, LODLevel, MaterialType
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
-from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials
+from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, add_armature_constraint, create_rigged_drawable_models, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
-from ..ydr.create_drawable_models import create_drawable_models, create_drawable_models_split_by_group, add_armature_constraint
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties
 
@@ -90,7 +90,7 @@ def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, fil
     drawable_xml = frag_xml.drawable
     materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
     drawable_obj = create_drawable_obj(
-        drawable_xml, filepath, f"{frag_obj.name}.mesh", split_by_group=split_by_group, external_armature=frag_obj, materials=materials
+        drawable_xml, filepath, name=f"{frag_obj.name}.mesh", split_by_group=split_by_group, external_armature=frag_obj, materials=materials
     )
     drawable_obj.matrix_basis = drawable_xml.matrix
 
@@ -100,11 +100,8 @@ def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, fil
         hi_materials = create_hi_materials(
             materials, drawable_xml.shader_group, hi_xml.drawable.shader_group, filepath)
 
-        hi_mesh_objs = (
-            create_drawable_models(hi_xml.drawable, hi_materials, frag_obj)
-            if not split_by_group
-            else create_drawable_models_split_by_group(hi_xml.drawable, hi_materials, frag_obj)
-        )
+        hi_mesh_objs = create_rigged_drawable_models(
+            hi_xml.drawable, hi_materials, drawable_obj, frag_obj, split_by_group)
 
         set_hi_lods(drawable_obj, hi_mesh_objs)
 
@@ -265,7 +262,7 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
             hi_children: list[PhysicsChild] = hi_xml.physics.lod1.children
             hi_drawable = hi_children[i].drawable
             create_frag_child_hi_lod(
-                bone_name, child_objs, frag_obj, hi_drawable, hi_materials)
+                bone_name, child_objs, hi_drawable, hi_materials)
 
     return child_meshes
 
@@ -273,27 +270,28 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
 def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, drawable_obj: bpy.types.Object):
     """Create a single physics child mesh"""
     # There is usually only one drawable model in each frag child
-    child_objs = create_drawable_models(drawable_xml, materials, frag_obj)
+    # child_objs = create_drawable_models(drawable_xml, materials, frag_obj)
+    child_objs = create_drawable_models(
+        drawable_xml, materials, f"{bone_name}.child")
 
     for child_obj in child_objs:
         add_armature_constraint(child_obj, frag_obj, bone_name)
 
-        child_obj.name = f"{bone_name}.child"
         child_obj.sollumz_is_physics_child_mesh = True
         child_obj.parent = drawable_obj
 
         # Rename the lod meshes
-        for lod in child_obj.sollumz_lods.lods:
-            if lod.mesh is None:
-                continue
-            lod.mesh.name = f"{bone_name}_{SOLLUMZ_UI_NAMES[lod.level].lower().replace(' ', '_')}"
+        # for lod in child_obj.sollumz_lods.lods:
+        #     if lod.mesh is None:
+        #         continue
+        #     lod.mesh.name = f"{bone_name}_{SOLLUMZ_UI_NAMES[lod.level].lower().replace(' ', '_')}"
 
     return child_objs
 
 
-def create_frag_child_hi_lod(name: str, child_objs: list[bpy.types.Object], frag_obj: bpy.types.Object, hi_drawable: Drawable, hi_materials: list[bpy.types.Material]):
+def create_frag_child_hi_lod(name: str, child_objs: list[bpy.types.Object], hi_drawable: Drawable, hi_materials: list[bpy.types.Material]):
     """Create hi lod for a physics child mesh"""
-    child_hi_objs = create_drawable_models(hi_drawable, hi_materials, frag_obj)
+    child_hi_objs = create_drawable_models(hi_drawable, hi_materials)
 
     for child_obj, child_hi_obj in zip(child_objs, child_hi_objs):
         child_hi_obj.data.name = f"{name}_very_high"
@@ -389,8 +387,9 @@ def create_vehicle_window_mesh(window_xml: Window, name: str, window_location: V
     mesh.from_pydata(verts, [], faces)
     mesh.transform(Matrix.Translation(-window_location))
 
-    texcoords = {0: [0, 1], 1: [0, 0], 2: [1, 0], 3: [1, 1]}
-    create_uv_layer(mesh, texcoords, flip_uvs=False)
+    uvs = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 0.0],
+                   [1.0, 1.0]], dtype=np.float64)
+    create_uv_attr(mesh, uvs)
 
     return mesh
 

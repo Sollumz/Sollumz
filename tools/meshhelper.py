@@ -1,12 +1,12 @@
 import bpy
 import bmesh
-from typing import Optional
+import numpy as np
+from numpy.typing import NDArray
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
-
 from ..sollumz_properties import SollumType
-from .utils import divide_list, subtract_from_vector, get_min_vector_list, add_to_vector, get_max_vector_list, get_max_vector, get_min_vector
+from .utils import divide_list, get_min_vector_list, get_max_vector_list
 from .version import USE_LEGACY
 from .blenderhelper import get_children_recursive
 
@@ -193,41 +193,21 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def create_uv_layer(mesh: bpy.types.Mesh, coords: dict[int, tuple], flip_uvs=True):
+def create_uv_attr(mesh: bpy.types.Mesh, coords: NDArray[np.float64]):
     """Create a uv layer for ``mesh`` with the specified index. ``coords`` should map uv coordinates to vertex indices."""
-    uv_layer = mesh.uv_layers.new()
-    uv_layer.name = f"UVMap {len(mesh.uv_layers)}"
+    uv_attr = mesh.attributes.new(
+        name=f"UVMap {len(mesh.uv_layers)}", type="FLOAT2", domain="CORNER")
 
-    for i, uv_loop in enumerate(uv_layer.data):
-        vert_index = mesh.loops[i].vertex_index
-        if vert_index not in coords:
-            uv_loop.uv = (0, 0)
-            continue
-        uv = coords[vert_index]
-        if flip_uvs:
-            uv = flip_uv(uv)
-        uv_loop.uv = uv
+    uv_attr.data.foreach_set("vector", coords.flatten())
 
 
-def create_color_attr(mesh: bpy.types.Mesh, colors: dict[int, tuple]):
+def create_color_attr(mesh: bpy.types.Mesh, colors: NDArray[np.float64]):
     """Create a color attribute layer for ``mesh`` with the specified index. ``colors`` should map RGBA colors to vertex indices."""
     layer_num = len(mesh.color_attributes) + 1
-    color_attr = mesh.color_attributes.new(
+    color_attr = mesh.attributes.new(
         name=f"Color {layer_num}", type="BYTE_COLOR", domain="CORNER")
 
-    for i, byte_color in enumerate(color_attr.data):
-        vert_ind = mesh.loops[i].vertex_index
-        if vert_ind not in colors:
-            continue
-        rgba = colors[vert_ind]
-        byte_color.color_srgb = divide_list(rgba, 255)
-
-
-def flip_uv(uv):
-    u = uv[0]
-    v = (uv[1] - 1.0) * -1
-
-    return [u, v]
+    color_attr.data.foreach_set("color_srgb", colors.flatten())
 
 
 def get_extents_from_points(points: list[tuple]):
@@ -325,8 +305,12 @@ def calculate_inertia(bbmin: Vector, bbmax: Vector):
     representing the diagonal of the inertia tensor matrix."""
     x, y, z = get_dimensions(bbmin, bbmax)
 
-    I_h = (1/12) * (pow(y, 2) + pow(z, 2))
-    I_w = (1/12) * (pow(z, 2) + pow(x, 2))
-    I_d = (1/12) * (pow(y, 2) + pow(x, 2))
+    I_h = (1 / 12) * (pow(y, 2) + pow(z, 2))
+    I_w = (1 / 12) * (pow(z, 2) + pow(x, 2))
+    I_d = (1 / 12) * (pow(y, 2) + pow(x, 2))
 
     return Vector((I_h, I_w, I_d))
+
+
+def flip_uvs(uvs: NDArray[np.float32]):
+    uvs[:, 1] = (uvs[:, 1] - 1.0) * -1

@@ -1,17 +1,21 @@
 import os
+import traceback
 import bpy
 from typing import Optional
 from mathutils import Matrix
-from .shader_materials import create_shader, get_detail_extra_sampler
+from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
-from ..sollumz_properties import TextureFormat, TextureUsage, SollumType
+from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, LODLevel, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_import_settings
-from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit
+from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import BoundChild
 from ..tools.blenderhelper import create_empty_object, create_blender_object, join_objects
 from ..tools.utils import get_filename
-from .create_drawable_models import create_drawable_models, create_drawable_models_split_by_group
+from .model_data import ModelData, get_model_data, get_model_data_split_by_group
+from .mesh_builder import MeshBuilder
+from ..lods import LODLevels
 from .lights import create_light_objs
+from .properties import DrawableModelProperties
 from .. import logger
 
 
@@ -49,12 +53,13 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     if drawable_xml.bounds:
         create_embedded_collisions(drawable_xml.bounds, drawable_obj)
 
-    if split_by_group and has_skeleton:
-        model_objs = create_drawable_models_split_by_group(
-            drawable_xml, materials, drawable_obj, external_armature)
-    else:
+    armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else external_armature
+    if armature_obj is None:
         model_objs = create_drawable_models(
-            drawable_xml, materials, drawable_obj, external_armature)
+            drawable_xml, materials, model_names=f"{name}.model")
+    else:
+        model_objs = create_rigged_drawable_models(
+            drawable_xml, materials, drawable_obj, armature_obj, split_by_group)
 
     parent_model_objs(model_objs, drawable_obj)
 
@@ -64,6 +69,122 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
         lights.parent = drawable_obj
 
     return drawable_obj
+
+
+def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], model_names: Optional[str] = None):
+    model_datas = get_model_data(drawable_xml)
+    model_names = model_names or SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]
+
+    return [create_model_obj(model_data, materials, name=model_names) for model_data in model_datas]
+
+
+def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object, armature_obj: bpy.types.Object, split_by_group: bool = False):
+    model_datas = get_model_data(
+        drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
+
+    set_skinned_model_properties(drawable_obj, drawable_xml)
+
+    return [create_rigged_model_obj(model_data, materials, armature_obj) for model_data in model_datas]
+
+
+def create_model_obj(model_data: ModelData, materials: list[bpy.types.Material], name: str, bones: Optional[list[bpy.types.Bone]] = None):
+    model_obj = create_blender_object(SollumType.DRAWABLE_MODEL, name)
+    create_lod_meshes(model_data, model_obj, materials, bones)
+
+    create_tinted_shader_graph(model_obj)
+
+    return model_obj
+
+
+def create_rigged_model_obj(model_data: ModelData, materials: list[bpy.types.Material], armature_obj: bpy.types.Object):
+    bones = armature_obj.data.bones
+    bone_name = bones[model_data.bone_index].name
+
+    model_obj = create_model_obj(model_data, materials, bone_name, bones)
+
+    if not model_obj.vertex_groups:
+        # Non-skinned models use armature constraints to link with bones
+        add_armature_constraint(model_obj, armature_obj, bone_name)
+    else:
+        add_armature_modifier(model_obj, armature_obj)
+
+    return model_obj
+
+
+def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+    lod_levels: LODLevels = model_obj.sollumz_lods
+    original_mesh = model_obj.data
+
+    lod_levels.add_empty_lods()
+
+    for lod_level, mesh_data in model_data.mesh_data_lods.items():
+        mesh_name = f"{model_obj.name}_{SOLLUMZ_UI_NAMES[lod_level].lower().replace(' ', '_')}"
+
+        try:
+            mesh_builder = MeshBuilder(
+                mesh_name,
+                mesh_data.vert_arr,
+                mesh_data.ind_arr,
+                mesh_data.mat_inds,
+                materials
+            )
+
+            lod_mesh = mesh_builder.build()
+        except:
+            logger.error(
+                f"Error occured during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
+            continue
+
+        lod_levels.set_lod_mesh(lod_level, lod_mesh)
+        lod_levels.set_active_lod(lod_level)
+
+        set_drawable_model_properties(
+            lod_mesh.drawable_model_properties, model_data.xml_lods[lod_level])
+
+        is_skinned = "BlendWeights" in mesh_data.vert_arr.dtype.names
+
+        if is_skinned and bones is not None:
+            mesh_builder.create_vertex_groups(model_obj, bones)
+
+    lod_levels.set_active_lod(LODLevel.HIGH)
+
+    # Original mesh no longer used since the obj is managed by LODs, so delete it
+    if model_obj.data != original_mesh:
+        bpy.data.meshes.remove(original_mesh)
+
+
+def set_skinned_model_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
+    """Set drawable model properties for the skinned ``DrawableModel`` (only ever 1 skinned model per ``Drawable``)."""
+    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+        for model_xml in models:
+            if model_xml.has_skin == 0:
+                continue
+
+            skinned_model_props = drawable_obj.skinned_model_properties.get_lod(
+                lod_level)
+
+            set_drawable_model_properties(skinned_model_props, model_xml)
+
+
+def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: Drawable):
+    """Set drawable model properties for each LOD mesh in ``model_objs``."""
+    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+        for i, model_xml in enumerate(models):
+            obj = model_objs[i]
+            obj_lods: LODLevels = obj.sollumz_lods
+            lod = obj_lods.get_lod(lod_level)
+
+            if lod.mesh is None:
+                continue
+
+            set_drawable_model_properties(
+                lod.mesh.drawable_model_properties, model_xml[lod.level])
+
+
+def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
+    model_props.render_mask = model_xml.render_mask
+    model_props.unknown_1 = model_xml.unknown_1
+    model_props.flags = model_xml.flags
 
 
 def create_drawable_armature(drawable_xml: Drawable, name: str):
@@ -340,3 +461,24 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     bpy.data.objects.remove(drawable_obj)
 
     return joined_obj
+
+
+def add_armature_modifier(obj: bpy.types.Object, armature_obj: bpy.types.Object):
+    mod: bpy.types.ArmatureModifier = obj.modifiers.new("skel", "ARMATURE")
+    mod.object = armature_obj
+
+    return mod
+
+
+def add_armature_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: str, set_transforms=True):
+    """Add armature constraint that is used for bone parenting on non-skinned objects."""
+    constraint: bpy.types.ArmatureConstraint = obj.constraints.new("ARMATURE")
+    target = constraint.targets.new()
+    target.target = armature_obj
+    target.subtarget = target_bone
+
+    if not set_transforms:
+        return
+
+    bone = armature_obj.data.bones[target_bone]
+    obj.matrix_local = bone.matrix_local

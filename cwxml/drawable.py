@@ -1,3 +1,9 @@
+import io
+import os
+import numpy as np
+from numpy.typing import NDArray
+from ..tools.utils import np_arr_to_str
+from typing import Optional
 from abc import ABC as AbstractClass, abstractmethod
 from xml.etree import ElementTree as ET
 from .element import (
@@ -13,8 +19,7 @@ from .element import (
     ValueProperty,
     VectorProperty,
     Vector4Property,
-    MatrixProperty,
-    get_str_type
+    MatrixProperty
 )
 from .bound import (
     BoundBox,
@@ -27,10 +32,7 @@ from .bound import (
     BoundGeometryBVH,
     BoundSphere
 )
-from collections import namedtuple
 from collections.abc import MutableSequence
-from enum import Enum
-import os
 
 
 class YDD:
@@ -333,55 +335,9 @@ class Lights(ListProperty):
     tag_name = "Lights"
 
 
-class VertexSemantic(str, Enum):
-    position = "P"
-    blend_weight = "B"
-    blend_index = "B"
-    normal = "N"
-    color = "C"
-    texcoord = "T"
-    tangent = "T"
-
-
 class VertexLayoutList(ElementProperty):
     value_types = (list)
     tag_name = "Layout"
-
-    # Generate a namedtuple from a vertex layout
-    @property
-    def vertex_type(self):
-        return namedtuple("Vertex", [name.lower() for name in self.value])
-
-    @property
-    def pretty_vertex_semantic(self):
-        result = []
-        vgs = False
-        cidx = 0
-        tidx = 0
-        for item in self.value:
-            semantic = item
-            if "colour" in item.lower():
-                cidx += 1
-                continue
-            elif "texcoord" in item.lower():
-                tidx += 1
-                continue
-            elif "blend" in item.lower():
-                if not vgs:
-                    semantic = "Vertex Group"
-                    vgs = True
-                else:
-                    continue
-            result.append(semantic)
-        if cidx != 0:
-            result.append(f"{cidx} Color Layer{'s' if cidx > 1 else ''}")
-        if tidx != 0:
-            result.append(f"{tidx} UV Layer{'s' if tidx > 1 else ''}")
-        return ", ".join(result)
-
-    @property
-    def vertex_semantic(self):
-        return "".join([item[0] for item in self.value])
 
     def __init__(self, tag_name=None):
         super().__init__(self.tag_name, [])
@@ -403,107 +359,90 @@ class VertexLayoutList(ElementProperty):
         return element
 
 
-class VertexDataProperty(ElementProperty):
-    value_types = (list)
-
-    def __init__(self, tag_name=None):
-        super().__init__(tag_name=tag_name or "Data", value=[])
-
-    @classmethod
-    def from_xml(cls, element: ET.Element):
-        new = cls()
-        if not element.text:
-            return new
-
-        text = element.text.strip().split("\n")
-        if len(text) > 0:
-            for line in text:
-                items = line.strip().split("   ")
-                vert = []
-                for item in items:
-                    words = item.strip().split(" ")
-                    # Convert item to correct type
-                    item = [get_str_type(word) for word in words]
-                    vert.append(item)
-
-                new.value.append(vert)
-
-        return new
-
-    def to_xml(self):
-        if len(self.value) < 1:
-            return None
-
-        element = ET.Element(self.tag_name)
-        text = []
-        for vertex in self.value:
-            for property in vertex:
-                text.append(" ".join([str(item)
-                                      for item in property]) + "   ")
-            text.append("\n")
-        element.text = "".join(text)
-
-        return element
-
-
 class VertexBuffer(ElementTree):
+    # Dtypes for vertex buffer structured numpy array
+    # Based off of CodeWalker.GameFiles.VertexTypeGTAV1
+    VERT_ATTR_DTYPES = {
+        "Position": ("Position", np.float32, 3),
+        "BlendWeights": ("BlendWeights", np.uint32, 4),
+        "BlendIndices": ("BlendIndices", np.uint32, 4),
+        "Normal": ("Normal", np.float32, 3),
+        "Colour0": ("Colour0", np.uint32, 4),
+        "Colour1": ("Colour1", np.uint32, 4),
+        "TexCoord0": ("TexCoord0", np.float32, 2),
+        "TexCoord1": ("TexCoord1", np.float32, 2),
+        "TexCoord2": ("TexCoord2", np.float32, 2),
+        "TexCoord3": ("TexCoord3", np.float32, 2),
+        "TexCoord4": ("TexCoord4", np.float32, 2),
+        "TexCoord5": ("TexCoord5", np.float32, 2),
+        "TexCoord6": ("TexCoord6", np.float32, 2),
+        "TexCoord7": ("TexCoord7", np.float32, 2),
+        "Tangent": ("Tangent", np.float32, 4),
+    }
+
     tag_name = "VertexBuffer"
 
     def __init__(self):
         super().__init__()
         self.flags = ValueProperty("Flags", 0)
+        self.data: Optional[NDArray] = None
+
         self.layout = VertexLayoutList()
-        self.data = VertexDataProperty()
-        self.data2 = VertexDataProperty("Data2")
-
-    def get_data(self):
-        if len(self.data) > 0:
-            return self.data
-        else:
-            return self.data2
-
-    def get_vertex_type(self):
-        return self.get_element("layout").vertex_type
-
-    @classmethod
-    def from_xml(cls: Element, element: ET.Element):
-        new = super().from_xml(element)
-        # Convert data to namedtuple matching the layout
-        vert_type = new.get_vertex_type()
-        new.data = list(map(lambda vert: vert_type(*vert), new.data))
-        new.data2 = list(map(lambda vert: vert_type(*vert), new.data2))
-        return new
-
-
-class IndexDataProperty(ElementProperty):
-    value_types = (int)
-
-    def __init__(self):
-        super().__init__(tag_name="Data", value=[])
 
     @classmethod
     def from_xml(cls, element: ET.Element):
-        new = cls()
-        indices = element.text.strip().replace("\n", "").split()
-        new.value = [int(i) for i in indices]
+        new = super().from_xml(element)
+
+        data_elem = element.find("Data")
+
+        if data_elem is None or not data_elem.text:
+            return new
+
+        new._load_data_from_str(data_elem.text)
 
         return new
 
     def to_xml(self):
-        element = ET.Element(self.tag_name)
-        columns = 24
-        text = []
+        self.layout = self.data.dtype.names
+        element = super().to_xml()
 
-        for index, vert_index in enumerate(self.value):
-            text.append(str(vert_index))
-            if index < len(self.value) - 1:
-                text.append(" ")
-            if (index + 1) % columns == 0:
-                text.append("\n")
+        if self.data is None:
+            return element
 
-        element.text = "".join(text)
+        data_elem = ET.Element("Data")
+        data_elem.text = self._data_to_str()
+
+        element.append(data_elem)
 
         return element
+
+    def _load_data_from_str(self, _str: str):
+        struct_dtype = np.dtype([self.VERT_ATTR_DTYPES[attr_name]
+                                 for attr_name in self.layout])
+
+        self.data = np.loadtxt(io.StringIO(_str), dtype=struct_dtype)
+
+    def _data_to_str(self):
+        vert_arr = self.data
+
+        FLOAT_FMT = "%.7f"
+        INT_FMT = "%.0u"
+        ATTR_SEP = "   "
+
+        formats: list[str] = []
+
+        for field_name in vert_arr.dtype.names:
+            attr_dtype = vert_arr.dtype[field_name].base
+            column = vert_arr[field_name]
+
+            attr_fmt = INT_FMT if attr_dtype == np.uint32 else FLOAT_FMT
+            formats.append(" ".join([attr_fmt] * column.shape[1]))
+
+        fmt = ATTR_SEP.join(formats)
+        vert_arr_2d = np.column_stack(
+            [vert_arr[name] for name in vert_arr.dtype.names])
+
+        return np_arr_to_str(vert_arr_2d, fmt)
 
 
 class IndexBuffer(ElementTree):
@@ -511,7 +450,51 @@ class IndexBuffer(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.data = IndexDataProperty()
+        self.data: Optional[NDArray] = None
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+
+        data_elem = element.find("Data")
+
+        if data_elem is None or not data_elem.text:
+            return new
+
+        new.data = np.fromstring(data_elem.text, sep=" ", dtype=np.uint32)
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+
+        if self.data is None:
+            return element
+
+        data_elem = ET.Element("Data")
+        data_elem.text = self._inds_to_str()
+
+        element.append(data_elem)
+
+        return element
+
+    def _inds_to_str(self):
+        indices_arr = self.data
+
+        num_inds = len(indices_arr)
+
+        # Get number of rows that can be split into 24 columns
+        num_divisble_inds = num_inds - (num_inds % 24)
+        num_rows = int(num_divisble_inds / 24)
+
+        indices_arr_2d = indices_arr[:num_divisble_inds].reshape(
+            (num_rows, 24))
+
+        index_buffer_str = np_arr_to_str(indices_arr_2d, fmt="%.0u")
+        # Add the last row
+        last_row_str = np_arr_to_str(
+            indices_arr[num_divisble_inds:], fmt="%.0u")
+
+        return f"{index_buffer_str}\n{last_row_str}"
 
 
 class Geometry(ElementTree):

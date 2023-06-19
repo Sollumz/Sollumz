@@ -127,6 +127,9 @@ def create_tinted_texture_from_image(img):  # move to blenderhelper.py?
 
 
 def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
+    if not obj.data.materials:
+        return
+
     mat = obj.data.materials[0]
     tint_img = get_tinted_sampler(mat)
     if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:  # check here or?
@@ -142,11 +145,11 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
 
     # set input / output variables
     input_id = geom.node_group.inputs[1].identifier
-    geom[input_id+"_attribute_name"] = "Color 1"
-    geom[input_id+"_use_attribute"] = True
+    geom[input_id + "_attribute_name"] = "Color 1"
+    geom[input_id + "_use_attribute"] = True
     output_id = geom.node_group.outputs[1].identifier
-    geom[output_id+"_attribute_name"] = "TintColor"
-    geom[output_id+"_use_attribute"] = True
+    geom[output_id + "_attribute_name"] = "TintColor"
+    geom[output_id + "_use_attribute"] = True
 
     # create texture and get texture node
     txt = create_tinted_texture_from_image(tint_img)  # remove this??

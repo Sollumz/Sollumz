@@ -61,18 +61,6 @@ class Shader(ElementTree):
                 return True
         return False
 
-    def get_layout_from_semantic(self, vertex_semantic, is_skinned=False):
-        for layout in self.layouts:
-            if layout.vertex_semantic == vertex_semantic:
-                return layout
-
-        if is_skinned:
-            for layout in self.layouts:
-                if "BlendWeights" in layout.value:
-                    return layout
-
-        return self.layouts[0]
-
 
 class ShaderManager:
     shaderxml = os.path.join(os.path.dirname(__file__), "Shaders.xml")

@@ -10,3 +10,5 @@ tmp
 load_submodules
 vsdevelopment.code-workspace
 .idea
+test_performance.py
+*.prof

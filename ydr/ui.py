@@ -61,8 +61,10 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
             return False
 
         active_lod = obj.sollumz_lods.active_lod
+        sollumz_parent = find_sollumz_parent(
+            obj, parent_type=SollumType.DRAWABLE)
 
-        return active_lod is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH"
+        return active_lod is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH" and sollumz_parent is not None
 
     def draw(self, context):
         layout = self.layout
@@ -72,7 +74,8 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         obj = context.active_object
         active_lod_level = obj.sollumz_lods.active_lod.level
         mesh = obj.data
-        sollumz_parent = find_sollumz_parent(obj)
+        sollumz_parent = find_sollumz_parent(
+            obj, parent_type=SollumType.DRAWABLE)
 
         model_props = mesh.drawable_model_properties
 

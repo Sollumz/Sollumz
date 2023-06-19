@@ -1,5 +1,6 @@
 import os
 import numpy
+from numpy.typing import NDArray
 from math import sqrt
 from typing import Iterable
 from mathutils import Vector, Quaternion, Matrix
@@ -108,6 +109,9 @@ def get_max_vector(v, c):
 
 def get_min_vector_list(vecs: list[Vector]):
     """Get a Vector composed of the smallest components of all given Vectors."""
+    if not vecs:
+        return Vector()
+
     x = []
     y = []
     z = []
@@ -120,6 +124,9 @@ def get_min_vector_list(vecs: list[Vector]):
 
 def get_max_vector_list(vecs: list[Vector]):
     """Get a Vector composed of the largest components of all given Vectors."""
+    if not vecs:
+        return Vector()
+
     x = []
     y = []
     z = []
@@ -178,3 +185,18 @@ def prop_array_to_vector(prop, size=3):
 def get_filename(filepath: str):
     """Get file name from path without extension."""
     return os.path.basename(filepath).split(".")[0]
+
+
+def np_arr_to_str(arr: NDArray, fmt: str):
+    """Convert numpy array to formatted string (faster than np.savetxt)"""
+    n_fmt_chars = fmt.count('%')
+
+    if arr.ndim == 1 and n_fmt_chars == 1:
+        fmt = ' '.join([fmt] * arr.size)
+    else:
+        if n_fmt_chars == 1:
+            fmt = ' '.join([fmt] * arr.shape[1])
+
+        fmt = '\n'.join([fmt] * arr.shape[0])
+
+    return fmt % tuple(arr.ravel())

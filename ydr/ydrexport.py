@@ -1,8 +1,10 @@
 import os
 import shutil
-import bmesh
+import math
 import bpy
 import zlib
+import numpy as np
+from numpy.typing import NDArray
 from typing import Optional
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
@@ -24,9 +26,10 @@ from ..sollumz_properties import (
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import DrawableModelProperties
-from .geometry_data import GeometryBuilder
+from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_unused_colors, remove_tangents, remove_unused_uvs, get_bone_by_vgroup
 from .properties import SkinnedDrawableModelProperties
 from .lights import create_xml_lights
+from ..cwxml.shader import ShaderManager
 
 from .. import logger
 
@@ -272,14 +275,7 @@ def set_lod_model_xml_properties(model_obj: bpy.types.Object, model_xml: Drawabl
 
 
 def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
-    current_lod_level = model_obj.sollumz_lods.active_lod.level
-    # Set the object lod level to lod_level to evaluate that lod mesh
-    was_hidden = model_obj.hide_get()
-    model_obj.sollumz_lods.set_active_lod(lod_level)
-    mesh = evaluate_and_triangulate_object(model_obj)
-    # Set the lod level back to what it was
-    model_obj.sollumz_lods.set_active_lod(current_lod_level)
-    model_obj.hide_set(was_hidden)
+    mesh = model_obj.sollumz_lods.get_lod(lod_level).mesh
 
     if not mesh.materials:
         logger.warning(
@@ -291,77 +287,131 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
             f"Model '{model_obj.name}' has no UV Layers! Skipping...")
         return []
 
+    mesh_eval = get_model_evaluated_mesh(model_obj, lod_level, parent_inverse)
+    loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
+
     geometries: list[Geometry] = []
 
-    tris_by_mat = get_loop_triangles_by_mat(mesh, materials)
-    matrix = (parent_inverse or Matrix()) @ model_obj.matrix_world
+    bone_by_vgroup = get_bone_by_vgroup(
+        model_obj.vertex_groups, bones) if bones and model_obj.vertex_groups else None
 
-    for mat_index, loop_triangles in tris_by_mat.items():
-        geometry_xmls = GeometryBuilder(
-            loop_triangles,
-            mesh,
-            materials[mat_index],
-            mat_index,
-            model_obj.vertex_groups,
-            bones or [],
-            matrix
-        ).build()
+    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup).build()
 
-        geometries.extend(geometry_xmls)
+    for mat_index, mat_loop_inds in loop_inds_by_mat.items():
+        material = materials[mat_index]
+        tangent_required = get_tangent_required(material)
 
-    bpy.data.meshes.remove(mesh)
+        for loop_inds in split_loops_by_vert_limit(mat_loop_inds):
+            vert_buffer = remove_unused_uvs(total_vert_buffer[loop_inds])
+            vert_buffer = remove_unused_colors(vert_buffer)
+
+            if not tangent_required:
+                vert_buffer = remove_tangents(vert_buffer)
+
+            vert_buffer, ind_buffer = dedupe_and_get_indices(vert_buffer)
+
+            geom_xml = Geometry()
+
+            geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(
+                vert_buffer["Position"])
+            geom_xml.shader_index = mat_index
+
+            if bones:
+                geom_xml.bone_ids = get_bone_ids(bones)
+
+            geom_xml.vertex_buffer.data = vert_buffer
+            geom_xml.index_buffer.data = ind_buffer
+
+            geometries.append(geom_xml)
+
+    bpy.data.meshes.remove(mesh_eval)
 
     return geometries
 
 
-def get_loop_triangles_by_mat(mesh: bpy.types.Mesh, materials: list[bpy.types.Material]):
-    """Return mapping of ``mesh.loop_triangles`` separated by each material in ``materials``."""
-    mat_ind_by_name: dict[str, int] = {
-        mat.name: i for i, mat in enumerate(materials)}
+def get_model_evaluated_mesh(model_obj: bpy.types.Object, lod_level: LODLevel, parent_inverse: Optional[Matrix] = None) -> bpy.types.Object:
+    """Get an evaluated, triangulated version of the mesh (modifiers, constraints, transforms applied)"""
+    mesh = model_obj.sollumz_lods.get_lod(lod_level).mesh
+    current_lod_level = model_obj.sollumz_lods.active_lod.level
 
-    tris_by_mat: dict[int, list[bpy.types.MeshLoopTriangle]
-                      ] = defaultdict(list)
+    # Set the object lod level to lod_level to evaluate that lod mesh
+    was_hidden = model_obj.hide_get()
+    model_obj.sollumz_lods.set_active_lod(lod_level)
 
-    has_unassigned_mats = False
-
-    for tri in mesh.loop_triangles:
-        if not (0 <= tri.material_index < len(mesh.materials)):
-            has_unassigned_mats = True
-            mat_index = 0
-        else:
-            mat = mesh.materials[tri.material_index]
-            # Get index of material on the entire drawable
-            mat_index = mat_ind_by_name[mat.name]
-
-        tris_by_mat[mat_index].append(tri)
-
-    if has_unassigned_mats:
-        logger.warning(
-            f"Mesh '{mesh.name}' has materials with no vertices assigned!")
-
-    return tris_by_mat
-
-
-def evaluate_and_triangulate_object(obj: bpy.types.Object) -> bpy.types.Object:
-    """Get an evaluated, triangulated version of the mesh (modifiers, constraints, etc applied)"""
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    obj_eval = obj.evaluated_get(depsgraph)
+    obj_eval = model_obj.evaluated_get(depsgraph)
 
     mesh = bpy.data.meshes.new_from_object(
         obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
-    tempmesh = bmesh.new()
-    tempmesh.from_mesh(mesh)
-    bmesh.ops.triangulate(tempmesh, faces=tempmesh.faces)
-    tempmesh.to_mesh(mesh)
-    tempmesh.free()
-
-    if mesh.uv_layers:
-        mesh.calc_tangents()
-
     mesh.calc_loop_triangles()
 
+    matrix = (parent_inverse or Matrix()) @ model_obj.matrix_world
+    mesh.transform(matrix)
+
+    # Set the lod level back to what it was
+    model_obj.sollumz_lods.set_active_lod(current_lod_level)
+    model_obj.hide_set(was_hidden)
+
     return mesh
+
+
+def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.types.Material]):
+    loop_inds_by_mat: dict[int, NDArray[np.uint32]] = {}
+
+    # Material indices for each triangle
+    tri_mat_indices = np.empty(len(mesh.loop_triangles), dtype=np.uint32)
+    mesh.loop_triangles.foreach_get("material_index", tri_mat_indices)
+
+    # Material indices for each loop triangle
+    loop_mat_inds = np.repeat(tri_mat_indices, 3)
+
+    all_loop_inds = np.empty(len(mesh.loop_triangles) * 3, dtype=np.uint32)
+    mesh.loop_triangles.foreach_get("loops", all_loop_inds)
+
+    mat_ind_by_name: dict[str, int] = {
+        mat.name: i for i, mat in enumerate(drawable_mats)}
+
+    for i, mat in enumerate(mesh.materials):
+        if mat.name not in mat_ind_by_name:
+            continue
+
+        # Get index of material on drawable (different from mesh material index)
+        shader_index = mat_ind_by_name[mat.name]
+        tri_loop_inds = np.where(loop_mat_inds == i)[0]
+        loop_indices = all_loop_inds[tri_loop_inds]
+
+        loop_inds_by_mat[shader_index] = loop_indices
+
+    return loop_inds_by_mat
+
+
+def split_loops_by_vert_limit(loop_inds: NDArray) -> list[NDArray]:
+    MAX_VERTS = 65535
+    num_geoms = math.ceil(len(loop_inds) / MAX_VERTS)
+
+    if num_geoms <= 1:
+        return [loop_inds]
+
+    num_tris = math.ceil(len(loop_inds) / 3)
+    tri_inds = loop_inds.reshape((num_tris, 3))
+
+    return [loop_inds.flatten() for loop_inds in np.array_split(tri_inds, num_geoms)]
+
+
+def get_tangent_required(material: bpy.types.Material):
+    shader_name = material.shader_properties.filename
+    shader = ShaderManager.shaders[shader_name]
+
+    return shader.required_tangent
+
+
+def get_geom_extents(positions: NDArray[np.float32]):
+    return Vector(np.max(positions, axis=0)), Vector(np.min(positions, axis=0))
+
+
+def get_bone_ids(bones: list[bpy.types.Bone]):
+    return [i for i in range(len(bones))]
 
 
 def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level: LODLevel):

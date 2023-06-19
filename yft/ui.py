@@ -306,12 +306,7 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
         if aobj is None or aobj.sollum_type != SollumType.DRAWABLE_MODEL:
             return False
 
-        parent = find_sollumz_parent(aobj)
-
-        if parent is None or parent.sollum_type != SollumType.DRAWABLE:
-            return False
-
-        return parent.parent is not None and parent.parent.sollum_type == SollumType.FRAGMENT
+        return find_sollumz_parent(aobj, parent_type=SollumType.FRAGMENT) is not None
 
     def draw(self, context):
         layout = self.layout
