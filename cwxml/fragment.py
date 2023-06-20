@@ -197,6 +197,9 @@ class ShatterMapProperty(ElementProperty):
         return new
 
     def to_xml(self):
+        if not self.value:
+            return None
+
         element = ET.Element(self.tag_name)
         text = []
         for row in self.value:
