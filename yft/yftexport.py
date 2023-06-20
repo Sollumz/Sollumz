@@ -317,6 +317,11 @@ def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
         if not bone.sollumz_use_physics:
             continue
 
+        if not does_bone_have_collision(bone.name, frag_obj):
+            logger.warning(
+                f"Bone '{bone.name}' has physics enabled, but no associated collision! A collision must be linked to the bone for physics to work.")
+            continue
+
         group_xml = PhysicsGroup()
         group_xml.name = remove_number_suffix(bone.name)
         bone_index = get_bone_index(frag_obj.data, bone)
@@ -354,6 +359,19 @@ def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
             lod_xml.groups.append(group_xml)
 
     return lod_xml.groups
+
+
+def does_bone_have_collision(bone_name: str, frag_obj: bpy.types.Object):
+    col_objs = [
+        obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
+
+    for obj in col_objs:
+        bone = get_armature_constraint_bone(obj, frag_obj)
+
+        if bone is not None and bone.name == bone_name:
+            return True
+
+    return False
 
 
 def calculate_group_masses(lod_xml: PhysicsLOD):
