@@ -39,7 +39,7 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str):
         hi_frag_xml.write_xml(hi_filepath)
 
         write_embedded_textures(frag_obj, hi_filepath)
-        logger.info(f"Exported _hi yft to '{hi_filepath}'")
+        logger.info(f"Exported Very High LODs to '{hi_filepath}'")
 
 
 def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):

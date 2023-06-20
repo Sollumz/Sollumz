@@ -120,17 +120,17 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         update=_save_preferences
     )
 
-    export_hi: bpy.props.BoolProperty(
-        name="Export _hi",
-        description="Export Very High LODs into <name>_hi.yft.xml",
-        default=True,
-        update=_save_preferences
-    )
-
-    export_non_hi: bpy.props.BoolProperty(
-        name="Export non-hi",
-        description="Export Very Low - High LODs into <name>.yft.xml",
-        default=True,
+    export_lods: bpy.props.EnumProperty(
+        name="Toggle LODs",
+        description="Toggle LODs to export",
+        options={"ENUM_FLAG"},
+        default=({"sollumz_export_very_high", "sollumz_export_main_lods"}),
+        items=(
+            ("sollumz_export_very_high", "Very High",
+             "Export Very High LODs into a _hi.yft"),
+            ("sollumz_export_main_lods", "High - Very Low",
+             "Export all LODs except Very High")
+        ),
         update=_save_preferences
     )
 
@@ -140,6 +140,14 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         default=False,
         update=_save_preferences
     )
+
+    @property
+    def export_hi(self):
+        return "sollumz_export_very_high" in self.export_lods
+
+    @property
+    def export_non_hi(self):
+        return "sollumz_export_main_lods" in self.export_lods
 
 
 class SollumzImportSettings(bpy.types.PropertyGroup):

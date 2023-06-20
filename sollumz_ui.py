@@ -239,8 +239,7 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_order = 4
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "export_hi")
-        layout.prop(settings, "export_non_hi")
+        layout.column().prop(settings, "export_lods")
 
 
 class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
