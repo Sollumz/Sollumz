@@ -19,9 +19,11 @@ def import_ydd(filepath: str):
 
     if import_settings.import_ext_skeleton:
         skel_yft = load_external_skeleton(filepath)
-        return create_ydd_obj_ext_skel(ydd_xml, filepath, skel_yft)
-    else:
-        return create_ydd_obj(ydd_xml, filepath)
+
+        if skel_yft is not None:
+            return create_ydd_obj_ext_skel(ydd_xml, filepath, skel_yft)
+
+    return create_ydd_obj(ydd_xml, filepath)
 
 
 def load_external_skeleton(ydd_filepath: str):
