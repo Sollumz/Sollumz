@@ -141,11 +141,11 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
 
     # set input / output variables
     input_id = geom.node_group.inputs[1].identifier
-    geom[input_id+"_attribute_name"] = "colour0"
-    geom[input_id+"_use_attribute"] = True
+    geom[input_id + "_attribute_name"] = "colour0"
+    geom[input_id + "_use_attribute"] = True
     output_id = geom.node_group.outputs[1].identifier
-    geom[output_id+"_attribute_name"] = "TintColor"
-    geom[output_id+"_use_attribute"] = True
+    geom[output_id + "_attribute_name"] = "TintColor"
+    geom[output_id + "_use_attribute"] = True
 
     # create texture and get texture node
     txt = create_tinted_texture_from_image(tint_img)  # remove this??
@@ -375,6 +375,30 @@ def link_normal(node_tree, nrmtex):
     normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
     links.new(nrmtex.outputs["Color"], normalmap.inputs["Color"])
     links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
+
+
+def link_normal(node_tree, nrmtex):
+    bsdf = node_tree.nodes["Principled BSDF"]
+    links = node_tree.links
+    normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
+
+    rgb_curves = create_normal_invert_node(node_tree)
+
+    links.new(nrmtex.outputs["Color"], rgb_curves.inputs["Color"])
+    links.new(rgb_curves.outputs["Color"], normalmap.inputs["Color"])
+    links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
+
+
+def create_normal_invert_node(node_tree: bpy.types.NodeTree):
+    """Create RGB curves node that inverts that green channel of normal maps"""
+    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new(
+        "ShaderNodeRGBCurve")
+
+    green_curves = rgb_curves.mapping.curves[1]
+    green_curves.points[0].location = (0, 1)
+    green_curves.points[1].location = (1, 0)
+
+    return rgb_curves
 
 
 def link_specular(node_tree, spctex):
