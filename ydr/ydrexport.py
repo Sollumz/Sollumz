@@ -276,6 +276,11 @@ def set_lod_model_xml_properties(model_obj: bpy.types.Object, model_xml: Drawabl
 
 def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
     mesh = model_obj.sollumz_lods.get_lod(lod_level).mesh
+    current_lod_level = model_obj.sollumz_lods.active_lod.level
+
+    # Since changing the LOD level changes hidden status, we need to update this after changing the LOD back
+    was_hidden = model_obj.hide_get()
+    model_obj.sollumz_lods.set_active_lod(lod_level)
 
     if not mesh.materials:
         logger.warning(
@@ -287,7 +292,7 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
             f"Model '{model_obj.name}' has no UV Layers! Skipping...")
         return []
 
-    mesh_eval = get_model_evaluated_mesh(model_obj, lod_level, parent_inverse)
+    mesh_eval = get_evaluated_mesh(model_obj, parent_inverse)
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
     geometries: list[Geometry] = []
@@ -326,18 +331,15 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
 
     bpy.data.meshes.remove(mesh_eval)
 
+    # Set the lod level back to what it was
+    model_obj.sollumz_lods.set_active_lod(current_lod_level)
+    model_obj.hide_set(was_hidden)
+
     return geometries
 
 
-def get_model_evaluated_mesh(model_obj: bpy.types.Object, lod_level: LODLevel, parent_inverse: Optional[Matrix] = None) -> bpy.types.Object:
+def get_evaluated_mesh(model_obj: bpy.types.Object, parent_inverse: Optional[Matrix] = None) -> bpy.types.Object:
     """Get an evaluated, triangulated version of the mesh (modifiers, constraints, transforms applied)"""
-    mesh = model_obj.sollumz_lods.get_lod(lod_level).mesh
-    current_lod_level = model_obj.sollumz_lods.active_lod.level
-
-    # Set the object lod level to lod_level to evaluate that lod mesh
-    was_hidden = model_obj.hide_get()
-    model_obj.sollumz_lods.set_active_lod(lod_level)
-
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = model_obj.evaluated_get(depsgraph)
 
@@ -348,10 +350,6 @@ def get_model_evaluated_mesh(model_obj: bpy.types.Object, lod_level: LODLevel, p
 
     matrix = (parent_inverse or Matrix()) @ model_obj.matrix_world
     mesh.transform(matrix)
-
-    # Set the lod level back to what it was
-    model_obj.sollumz_lods.set_active_lod(current_lod_level)
-    model_obj.hide_set(was_hidden)
 
     return mesh
 
