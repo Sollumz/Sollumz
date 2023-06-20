@@ -202,6 +202,7 @@ def convert_obj_to_drawable(obj: bpy.types.Object):
     obj_name = obj.name
 
     convert_obj_to_model(obj)
+    obj.name = f"{obj.name}.model"
     # Set drawable obj name after converting obj to a model to avoid .00# suffix
     drawable_obj.name = obj_name
 
@@ -217,13 +218,13 @@ def convert_objs_to_single_drawable(objs: list[bpy.types.Object]):
 
     for obj in objs:
         convert_obj_to_model(obj)
+        obj.name = f"{obj.name}.model"
         obj.parent = drawable_obj
 
     return drawable_obj
 
 
 def convert_obj_to_model(obj: bpy.types.Object):
-    obj.name = f"{obj.name}.model"
     obj.sollum_type = SollumType.DRAWABLE_MODEL
     obj.sollumz_lods.add_empty_lods()
     obj.sollumz_lods.set_lod_mesh(LODLevel.HIGH, obj.data)

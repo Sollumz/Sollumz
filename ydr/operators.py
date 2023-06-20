@@ -116,6 +116,8 @@ class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
 
         for obj in selected_meshes:
             convert_obj_to_model(obj)
+            self.report(
+                {"INFO"}, f"Converted {obj.name} to a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]}.")
 
         return {"FINISHED"}
 
