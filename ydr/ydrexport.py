@@ -398,6 +398,10 @@ def split_loops_by_vert_limit(loop_inds: NDArray) -> list[NDArray]:
 
 def get_tangent_required(material: bpy.types.Material):
     shader_name = material.shader_properties.filename
+
+    if shader_name not in ShaderManager.shaders:
+        return False
+
     shader = ShaderManager.shaders[shader_name]
 
     return shader.required_tangent
