@@ -103,7 +103,6 @@ def create_frag_drawable_xml(frag_obj: bpy.types.Object, auto_calc_bone_tag: boo
         drawable_xml = create_drawable_xml(
             obj, auto_calc_bone_tag=auto_calc_bone_tag, materials=materials, armature_obj=frag_obj, apply_transforms=apply_transforms)
         drawable_xml.name = "skel"
-        drawable_xml.matrix = obj.matrix_basis
 
         return drawable_xml
 
