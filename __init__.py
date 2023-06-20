@@ -11,19 +11,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
-import os
 from . import auto_load
 
 
 bl_info = {
     "name": "Sollumz",
-    "author": "Skylumz",
+    "author": "Skylumz and Colton",
     "description": "This plugins allows you to import/export codewalker xml files.",
-    "blender": (3, 4, 1),
-    "version": (1, 0, 0),
-    "location": "",
-    "warning": "",
+    "blender": (3, 5, 1),
+    "version": (0, 3, 0),
     "category": "Import-Export"
 }
 
