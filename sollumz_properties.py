@@ -537,7 +537,7 @@ class TimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 class EntityProperties:
     archetype_name: bpy.props.StringProperty(name="Archetype Name")
-    flags: bpy.props.IntProperty(name="Flags")
+    flags: bpy.props.IntProperty(name="Flags", default=32)
     guid: bpy.props.FloatProperty(name="GUID")
     parent_index: bpy.props.IntProperty(name="Parent Index", default=-1)
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200)
