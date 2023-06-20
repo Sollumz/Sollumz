@@ -26,7 +26,7 @@ from ..sollumz_properties import (
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import DrawableModelProperties
-from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_unused_colors, remove_tangents, remove_unused_uvs, get_bone_by_vgroup
+from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, remove_unused_uvs, get_bone_by_vgroup
 from .properties import SkinnedDrawableModelProperties
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager
@@ -287,11 +287,6 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
             f"Model '{model_obj.name}' has no Sollumz materials! Skipping...")
         return []
 
-    if not mesh.uv_layers:
-        logger.warning(
-            f"Model '{model_obj.name}' has no UV Layers! Skipping...")
-        return []
-
     mesh_eval = get_evaluated_mesh(model_obj, parent_inverse)
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
@@ -305,13 +300,17 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
     for mat_index, mat_loop_inds in loop_inds_by_mat.items():
         material = materials[mat_index]
         tangent_required = get_tangent_required(material)
+        normal_required = get_normal_required(material)
 
         for loop_inds in split_loops_by_vert_limit(mat_loop_inds):
             vert_buffer = remove_unused_uvs(total_vert_buffer[loop_inds])
             vert_buffer = remove_unused_colors(vert_buffer)
 
             if not tangent_required:
-                vert_buffer = remove_tangents(vert_buffer)
+                vert_buffer = remove_arr_field("Tangent", vert_buffer)
+
+            if not normal_required:
+                vert_buffer = remove_arr_field("Normal", vert_buffer)
 
             vert_buffer, ind_buffer = dedupe_and_get_indices(vert_buffer)
 
@@ -402,6 +401,11 @@ def get_tangent_required(material: bpy.types.Material):
     shader = ShaderManager.shaders[shader_name]
 
     return shader.required_tangent
+
+
+def get_normal_required(material: bpy.types.Material):
+    # Minimap shaders dont use normals. Any other shaders like this?
+    return material.shader_properties.filename != "minimap.sps"
 
 
 def get_geom_extents(positions: NDArray[np.float32]):

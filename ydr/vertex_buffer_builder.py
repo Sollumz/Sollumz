@@ -13,13 +13,13 @@ def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bo
     return {i: bone_ind_by_name[group.name] for i, group in enumerate(vgroups) if group.name in bone_ind_by_name}
 
 
-def remove_tangents(vertex_arr: NDArray):
-    names = [name for name in vertex_arr.dtype.names if name != "Tangent"]
+def remove_arr_field(name: str, vertex_arr: NDArray):
+    names = [n for n in vertex_arr.dtype.names if n != name]
     return vertex_arr[names]
 
 
 def remove_unused_colors(vertex_arr: NDArray):
-    """Remove color layers that are all (255, 255, 255, 255)"""
+    """Remove color layers that are all 0s"""
     new_names = []
 
     for name in vertex_arr.dtype.names:
@@ -35,9 +35,6 @@ def remove_unused_uvs(vertex_arr: NDArray):
     new_names = []
 
     for name in vertex_arr.dtype.names:
-        # if "TexCoord" in name:
-        #     uvs = vertex_arr[name]
-        #     w = 0
         if "TexCoord" in name and np.allclose(vertex_arr[name], 0.0):
             continue
         new_names.append(name)

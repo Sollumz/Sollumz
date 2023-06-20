@@ -10,9 +10,8 @@ class MeshBuilder:
     """Builds a bpy mesh from a structured numpy vertex array"""
 
     def __init__(self, name: str, vertex_arr: NDArray, ind_arr: NDArray[np.uint], mat_inds: NDArray[np.uint], drawable_mats: list[bpy.types.Material]):
-        if not ("Position" in vertex_arr.dtype.names and "Normal" in vertex_arr.dtype.names):
-            raise ValueError(
-                "Vertex array must at least have 'Position' and 'Normal' fields!")
+        if "Position" not in vertex_arr.dtype.names:
+            raise ValueError("Vertex array have a 'Position' field!")
 
         if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
             raise ValueError(
@@ -24,6 +23,12 @@ class MeshBuilder:
 
         self.name = name
         self.materials = drawable_mats
+
+        self._has_normals = "Normal" in vertex_arr.dtype.names
+        self._has_uvs = any(
+            "TexCoord" in name for name in vertex_arr.dtype.names)
+        self._has_colors = any(
+            "Colour" in name for name in vertex_arr.dtype.names)
 
     def build(self):
         mesh = bpy.data.meshes.new(self.name)
@@ -38,9 +43,15 @@ class MeshBuilder:
             return mesh
 
         self.create_mesh_materials(mesh)
-        self.set_mesh_normals(mesh)
-        self.set_mesh_uvs(mesh)
-        self.set_mesh_vertex_colors(mesh)
+
+        if self._has_normals:
+            self.set_mesh_normals(mesh)
+
+        if self._has_uvs:
+            self.set_mesh_uvs(mesh)
+
+        if self._has_colors:
+            self.set_mesh_vertex_colors(mesh)
 
         mesh.validate()
 
