@@ -478,7 +478,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.prop(context.scene, "debug_lights_only_selected")
         row = layout.row()
         row.operator("sollumz.debug_reload_entity_sets")
-        row.operator("sollumz.debug_update_portal_names")
         layout.separator()
         layout.label(text="Migration")
         layout.operator("sollumz.migratedrawable")
