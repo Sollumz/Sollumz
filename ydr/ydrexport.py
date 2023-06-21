@@ -376,6 +376,10 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
         # Get index of material on drawable (different from mesh material index)
         shader_index = mat_ind_by_name[mat.name]
         tri_loop_inds = np.where(loop_mat_inds == i)[0]
+
+        if tri_loop_inds.size == 0:
+            continue
+
         loop_indices = all_loop_inds[tri_loop_inds]
 
         loop_inds_by_mat[shader_index] = loop_indices
