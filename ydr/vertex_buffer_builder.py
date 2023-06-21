@@ -31,11 +31,11 @@ def remove_unused_colors(vertex_arr: NDArray):
 
 
 def remove_unused_uvs(vertex_arr: NDArray):
-    """Remove UV layers that contain all (0, 0) coordinates"""
+    """Remove UV layers that contain all duplicate coordinates"""
     new_names = []
 
     for name in vertex_arr.dtype.names:
-        if "TexCoord" in name and np.allclose(vertex_arr[name], 0.0):
+        if "TexCoord" in name and (np.all(vertex_arr[name] == vertex_arr[name][0])):
             continue
         new_names.append(name)
 
