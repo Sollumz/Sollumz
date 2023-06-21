@@ -6,6 +6,36 @@ from bpy.app.handlers import persistent
 from bpy.path import basename
 
 
+class ShaderOrderItem(bpy.types.PropertyGroup):
+    # For drawable shader order list
+    index: bpy.props.IntProperty(min=0)
+    name: bpy.props.StringProperty()
+    filename: bpy.props.StringProperty()
+
+
+class DrawableShaderOrder(bpy.types.PropertyGroup):
+    items: bpy.props.CollectionProperty(type=ShaderOrderItem)
+    active_index: bpy.props.IntProperty(min=0)
+
+    def get_active_shader_item_index(self) -> int:
+        return self.items[self.active_index].index
+
+    def change_shader_index(self, old: int, new: int):
+        if new >= len(self.items):
+            return
+
+        list_ind = self.active_index
+
+        for i, item in enumerate(self.items):
+            if item.index == new:
+                item.index = old
+            elif item.index == old:
+                item.index = new
+                list_ind = i
+
+        self.active_index = list_ind
+
+
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Lod Distance High")
@@ -17,6 +47,8 @@ class DrawableProperties(bpy.types.PropertyGroup):
         min=0, max=10000, default=9998, name="Lod Distance Vlow")
     unknown_9A: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Unknown 9A")
+
+    shader_order: bpy.props.PointerProperty(type=DrawableShaderOrder)
 
 
 class DrawableModelProperties(bpy.types.PropertyGroup):
@@ -52,6 +84,8 @@ class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
 
 
 class ShaderProperties(bpy.types.PropertyGroup):
+    index: bpy.props.IntProperty(min=0)
+
     renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0)
     filename: bpy.props.StringProperty(
         name="Shader Filename", default="default.sps")
@@ -228,9 +262,9 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
         name="Unk32", update=FlagPropertyGroup.update_flag)
 
 
-# Handler sets the default value of the ShaderMaterials collection on blend file load
 @persistent
 def on_file_loaded(_):
+    # Handler sets the default value of the ShaderMaterials collection on blend file load
     bpy.context.scene.shader_materials.clear()
     for index, mat in enumerate(shadermats):
         item = bpy.context.scene.shader_materials.add()

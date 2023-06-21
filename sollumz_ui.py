@@ -539,6 +539,7 @@ class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_order = 1
 
     @classmethod
     def poll(cls, context):

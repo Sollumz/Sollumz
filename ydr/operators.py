@@ -1,3 +1,5 @@
+import traceback
+import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType, LODLevel
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
@@ -6,9 +8,8 @@ from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_prope
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ..cwxml.shader import ShaderManager
 from ..tools.blenderhelper import create_empty_object, duplicate_object
-from mathutils import Vector
-import traceback
-import bpy
+from ..sollumz_helper import get_sollumz_materials
+from .properties import DrawableShaderOrder
 
 
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
@@ -511,3 +512,124 @@ class SOLLUMZ_OT_weapon_flags(bpy.types.Operator):
         new_flag.name = "LimitTranslation"
         self.report({'INFO'}, "Flags Cleared & Added")
         return {'FINISHED'}
+
+
+class SOLLUMZ_OT_move_shader_up(bpy.types.Operator):
+    bl_idname = "sollumz.move_shader_up"
+    bl_label = "Up"
+    bl_description = "Move shader up in the rendering order"
+
+    @classmethod
+    def poll(self, context):
+        aobj = context.active_object
+
+        if aobj is None or aobj.sollum_type != SollumType.DRAWABLE:
+            return False
+
+        drawable_props = aobj.drawable_properties
+        num_shaders = len(drawable_props.shader_order.items)
+        shader_ind = drawable_props.shader_order.get_active_shader_item_index()
+
+        return shader_ind < num_shaders and shader_ind != 0
+
+    def execute(self, context):
+        aobj = context.active_object
+        drawable_props = aobj.drawable_properties
+        shader_ind = drawable_props.shader_order.get_active_shader_item_index()
+
+        drawable_props.shader_order.change_shader_index(
+            shader_ind, shader_ind - 1)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_move_shader_down(bpy.types.Operator):
+    bl_idname = "sollumz.move_shader_down"
+    bl_label = "Down"
+    bl_description = "Move shader down in the rendering order"
+
+    @classmethod
+    def poll(self, context):
+        aobj = context.active_object
+
+        if aobj is None or aobj.sollum_type != SollumType.DRAWABLE:
+            return False
+
+        drawable_props = aobj.drawable_properties
+        num_shaders = len(drawable_props.shader_order.items)
+        shader_ind = drawable_props.shader_order.get_active_shader_item_index()
+
+        return shader_ind < num_shaders - 1 and num_shaders > 1
+
+    def execute(self, context):
+        aobj = context.active_object
+        drawable_props = aobj.drawable_properties
+        shader_ind = drawable_props.shader_order.get_active_shader_item_index()
+
+        drawable_props.shader_order.change_shader_index(
+            shader_ind, shader_ind + 1)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
+    bl_idname = "sollumz.order_shaders"
+    bl_label = "Order Shaders"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Determine shader rendering order"
+
+    def draw(self, context):
+        layout = self.layout
+        shader_order = context.active_object.drawable_properties.shader_order
+
+        row = layout.row()
+        col = row.column()
+
+        col.template_list("SOLLUMZ_UL_SHADER_ORDER_LIST", "", shader_order, "items",
+                          shader_order, "active_index", maxrows=40)
+
+        col = row.column(align=True)
+        col.operator("sollumz.move_shader_up", text="", icon="TRIA_UP")
+        col.operator("sollumz.move_shader_down", text="", icon="TRIA_DOWN")
+
+    def execute(self, context):
+        aobj = context.active_object
+        self.apply_order(aobj)
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+
+        aobj = context.active_object
+        self.add_initial_items(aobj)
+
+        return wm.invoke_props_dialog(self, width=800)
+
+    def add_initial_items(self, drawable_obj: bpy.types.Object):
+        """Add initial shader sort items based on materials from drawable_obj"""
+        shader_order: DrawableShaderOrder = drawable_obj.drawable_properties.shader_order
+        mats = get_sollumz_materials(drawable_obj)
+
+        shader_order.items.clear()
+
+        for mat in mats:
+            item = shader_order.items.add()
+            item.index = mat.shader_properties.index
+            item.name = mat.name
+            item.filename = mat.shader_properties.filename
+
+    def apply_order(self, drawable_obj: bpy.types.Object):
+        """Set material shader indices based on shader order"""
+        shader_order: DrawableShaderOrder = drawable_obj.drawable_properties.shader_order
+        mats = get_sollumz_materials(drawable_obj)
+
+        if len(shader_order.items) != len(mats):
+            self.report(
+                {"ERROR"}, "Failed to apply order, shader collection size mismatch!")
+            return {"CANCELLED"}
+
+        for i, mat in enumerate(mats):
+            mat.shader_properties.index = shader_order.items[i].index
+
+        return {"FINISHED"}

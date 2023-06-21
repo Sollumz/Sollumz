@@ -145,4 +145,4 @@ def get_sollumz_materials(obj: bpy.types.Object):
                     materials.append(mat)
                     used_materials[mat] = True
 
-    return materials
+    return sorted(materials, key=lambda m: m.shader_properties.index)

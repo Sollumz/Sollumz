@@ -205,8 +205,9 @@ def create_drawable_armature(drawable_xml: Drawable, name: str):
 def shadergroup_to_materials(shader_group: ShaderGroup, filepath: str):
     materials = []
 
-    for shader in shader_group.shaders:
+    for i, shader in enumerate(shader_group.shaders):
         material = shader_item_to_material(shader, shader_group, filepath)
+        material.shader_properties.index = i
         materials.append(material)
 
     return materials

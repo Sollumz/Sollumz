@@ -328,6 +328,9 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
 
             geometries.append(geom_xml)
 
+    # Sort by shader index
+    geometries = sorted(geometries, key=lambda g: g.shader_index)
+
     bpy.data.meshes.remove(mesh_eval)
 
     # Set the lod level back to what it was

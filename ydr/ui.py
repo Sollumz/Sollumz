@@ -44,6 +44,36 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
         layout.prop(obj.drawable_properties, "lod_dist_low")
         layout.prop(obj.drawable_properties, "lod_dist_vlow")
 
+        layout.separator()
+
+        layout.operator("sollumz.order_shaders", icon="MATERIAL")
+
+
+class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_SHADER_ORDER_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        row = layout.row()
+        col = row.column()
+        col.label(text=f"{item.index}: {item.name}", icon="MATERIAL")
+
+        col = row.column()
+        col.enabled = False
+        col.label(text=item.filename)
+
+    def draw_filter(self, context, layout):
+        ...
+
+    def filter_items(self, context, data, propname):
+        items = getattr(data, propname)
+
+        ordered = [item.index for item in items]
+        filtered = [self.bitflag_filter_item] * len(items)
+
+        return filtered, ordered
+
 
 class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
     bl_label = "LOD Properties"
