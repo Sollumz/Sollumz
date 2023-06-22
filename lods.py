@@ -183,7 +183,7 @@ class SOLLUMZ_OT_HIDE_GLASS_SHARDS(bpy.types.Operator, SetLodLevelHelper):
     def execute(self, context):
         for collection in get_all_collections():
             for obj in collection.all_objects:
-                if obj.sollum_type != SollumType.FRAGVEHICLEWINDOW:
+                if obj.sollum_type != SollumType.SHATTERMAP:
                     continue
 
                 obj.hide_set(not context.scene.sollumz_hide_glass_shards)

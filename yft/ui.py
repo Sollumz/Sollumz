@@ -157,7 +157,7 @@ class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object and context.active_object.sollum_type == SollumType.FRAGVEHICLEWINDOW
+        return context.active_object and context.active_object.sollum_type == SollumType.SHATTERMAP
 
     def draw(self, context):
         layout = self.layout
@@ -289,6 +289,12 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
         child_props = aobj.child_properties
 
         layout.prop(child_props, "mass")
+
+        layout.separator()
+
+        if child_props.is_veh_window:
+            layout.prop(child_props, "window_mat")
+        layout.prop(child_props, "is_veh_window")
 
 
 class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):

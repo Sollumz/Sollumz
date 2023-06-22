@@ -529,7 +529,7 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
     bones = frag_xml.drawable.skeleton.bones
 
     for obj in frag_obj.children_recursive:
-        if obj.sollum_type != SollumType.FRAGVEHICLEWINDOW:
+        if not obj.child_properties.is_veh_window:
             continue
 
         bone = get_armature_constraint_bone(obj, frag_obj)
@@ -550,7 +550,7 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
             continue
 
         window_xml.item_id = child_id_by_bone_tag[bone_tag]
-        window_mat = get_window_material(obj)
+        window_mat = obj.child_properties.window_mat
 
         if window_mat is None:
             logger.warning(
@@ -562,14 +562,9 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
                 f"Vehicle window '{obj.name}' is using a vehicle_vehglass material '{window_mat.name}' that is not used in the Drawable! This material should be added to the mesh object attached to the bone '{bone.name}'.")
             continue
 
-        shattermap_img = find_shattermap_image(obj)
-
-        if shattermap_img is not None:
-            window_xml.shattermap = image_to_shattermap(shattermap_img)
-            window_xml.projection_matrix = calculate_shattermap_projection(
-                obj, shattermap_img, bone.matrix_local.translation)
-
         set_veh_window_xml_properties(window_xml, obj)
+        create_window_shattermap(
+            obj, bone.matrix_local.translation, window_xml)
 
         shader_index = mat_ind_by_name[window_mat.name]
         window_xml.unk_ushort_1 = get_window_geometry_index(
@@ -579,6 +574,21 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
 
     frag_xml.vehicle_glass_windows = sorted(
         frag_xml.vehicle_glass_windows, key=lambda w: w.item_id)
+
+
+def create_window_shattermap(col_obj: bpy.types.Object, bone_pos: Vector, window_xml: Window):
+    """Create window shattermap (if it exists) and calculate projection"""
+    shattermap_obj = get_shattermap_obj(col_obj)
+
+    if shattermap_obj is None:
+        return
+
+    shattermap_img = find_shattermap_image(shattermap_obj)
+
+    if shattermap_img is not None:
+        window_xml.shattermap = image_to_shattermap(shattermap_img)
+        window_xml.projection_matrix = calculate_shattermap_projection(
+            shattermap_obj, shattermap_img, bone_pos)
 
 
 def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Object):
@@ -631,6 +641,12 @@ def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image,
         return Matrix()
 
     return matrix
+
+
+def get_shattermap_obj(col_obj: bpy.types.Object) -> Optional[bpy.types.Object]:
+    for child in col_obj.children:
+        if child.sollum_type == SollumType.SHATTERMAP:
+            return child
 
 
 def find_shattermap_image(obj: bpy.types.Object) -> Optional[bpy.types.Image]:

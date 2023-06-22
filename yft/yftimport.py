@@ -4,10 +4,11 @@ import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector
 from typing import Optional
+
 from ..tools.blenderhelper import create_empty_object, material_from_image, create_blender_object, remove_number_suffix
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
-from ..sollumz_properties import SollumType, LODLevel, MaterialType
+from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
@@ -16,6 +17,7 @@ from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties
+from .yftexport import get_armature_constraint_bone
 
 
 def import_yft(filepath: str):
@@ -304,49 +306,54 @@ def create_frag_child_hi_lod(name: str, child_objs: list[bpy.types.Object], hi_d
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):
-    veh_windows_empty = create_empty_object(
-        SollumType.NONE, f"{frag_obj.name}.glass_shards")
-    veh_windows_empty.parent = frag_obj
-
-    window_xml: Window
     for window_xml in frag_xml.vehicle_glass_windows:
         window_bone = get_window_bone(
             window_xml, frag_xml, frag_obj.data.bones)
+        col_obj = get_window_col(frag_obj, window_bone.name)
 
-        window_name = f"{window_bone.name}_glass_shard"
+        window_name = f"{window_bone.name}_shattermap"
 
-        try:
-            mesh = create_vehicle_window_mesh(
-                window_xml, window_name, window_bone.matrix_local.translation)
-        except:
-            logger.error(
-                f"Error during creation of vehicle window mesh:\n{format_exc()}")
+        if col_obj is None:
+            logger.warning(
+                f"Window with ItemID {window_xml.item_id} has no associated collision! Is the file malformed?")
             continue
 
+        col_obj.child_properties.is_veh_window = True
+
+        window_mat = get_veh_window_material(
+            window_xml, frag_xml.drawable, materials)
+
+        if window_mat is not None:
+            col_obj.child_properties.window_mat = window_mat
+
         if window_xml.shattermap:
-            shattermap_mat = shattermap_to_material(
-                window_xml.shattermap, mesh.name + "_shattermap.bmp")
-            mesh.materials.append(shattermap_mat)
+            shattermap_obj = create_shattermap_obj(
+                window_xml, window_name, window_bone.matrix_local.translation)
+            shattermap_obj.parent = col_obj
 
-        add_veh_window_material(window_xml, frag_xml.drawable, materials, mesh)
-
-        window_obj = create_veh_window_object(
-            frag_obj, window_xml, window_bone, mesh)
-        window_obj.parent = veh_windows_empty
+        set_veh_window_properties(window_xml, col_obj)
 
 
-def add_veh_window_material(window_xml: Window, drawable_xml: Drawable, materials: list[bpy.types.Material], mesh: bpy.types.Mesh):
-    """Add material to vehicle window based on UnkUShort1."""
+def get_window_col(frag_obj: bpy.types.Object, bone_name: str) -> Optional[bpy.types.Object]:
+    for obj in frag_obj.children_recursive:
+        if obj.sollum_type in BOUND_TYPES:
+            col_bone = get_armature_constraint_bone(obj, frag_obj)
+
+            if col_bone is not None and col_bone.name == bone_name:
+                return obj
+
+
+def get_veh_window_material(window_xml: Window, drawable_xml: Drawable, materials: list[bpy.types.Material]):
+    """Get vehicle window material based on UnkUShort1."""
     # UnkUShort1 indexes the geometry that the window uses.
     # The VehicleGlassWindow uses the same material that the geometry uses.
     geometry_index = window_xml.unk_ushort_1
-    window_mat = get_geometry_material(drawable_xml, materials, geometry_index)
-    mesh.materials.append(window_mat)
+    return get_geometry_material(drawable_xml, materials, geometry_index)
 
 
 def create_veh_window_object(frag_obj: bpy.types.Object, window_xml: Window, window_bone: bpy.types.Bone, mesh: bpy.types.Mesh):
     window_obj = bpy.data.objects.new(mesh.name, mesh)
-    window_obj.sollum_type = SollumType.FRAGVEHICLEWINDOW
+    window_obj.sollum_type = SollumType.SHATTERMAP
 
     window_obj.location = window_bone.matrix_local.translation
     add_armature_constraint(window_obj, frag_obj,
@@ -379,7 +386,25 @@ def get_window_bone(window_xml: Window, frag_xml: Fragment, bpy_bones: bpy.types
     return bpy_bones[0]
 
 
-def create_vehicle_window_mesh(window_xml: Window, name: str, window_location: Vector):
+def create_shattermap_obj(window_xml: Window, name: str, window_location: Vector):
+    try:
+        mesh = create_shattermap_mesh(window_xml, name, window_location)
+    except:
+        logger.error(
+            f"Error during creation of vehicle window mesh:\n{format_exc()}")
+        return
+
+    shattermap_obj = create_blender_object(SollumType.SHATTERMAP, name, mesh)
+
+    if window_xml.shattermap:
+        shattermap_mat = shattermap_to_material(
+            window_xml.shattermap, f"{name}_shattermap.bmp")
+        mesh.materials.append(shattermap_mat)
+
+    return shattermap_obj
+
+
+def create_shattermap_mesh(window_xml: Window, name: str, window_location: Vector):
     verts = calculate_window_verts(window_xml)
     faces = [[0, 1, 2, 3]]
 

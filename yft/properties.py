@@ -77,6 +77,11 @@ class ChildProperties(bpy.types.PropertyGroup):
     mass: bpy.props.FloatProperty(name="Mass", min=0)
     damaged: bpy.props.BoolProperty(name="Damaged")
 
+    window_mat: bpy.props.PointerProperty(
+        type=bpy.types.Material, name="Window Material", description="The material of the window mesh (usually a vehglass shader)")
+    is_veh_window: bpy.props.BoolProperty(
+        name="Is Glass Window")
+
 
 class VehicleWindowProperties(bpy.types.PropertyGroup):
     unk_float_17: bpy.props.FloatProperty(name="Unk Float 17")
