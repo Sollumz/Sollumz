@@ -193,6 +193,45 @@ class SOLLUMZ_OT_HIDE_GLASS_SHARDS(bpy.types.Operator, SetLodLevelHelper):
         return {"FINISHED"}
 
 
+class SOLLUMZ_OT_copy_lod(bpy.types.Operator):
+    bl_idname = "sollumz.copy_lod"
+    bl_label = "Copy LOD"
+    bl_description = "Copy the current LOD level into the specified LOD level"
+    bl_options = {"REGISTER", "UNDO"}
+
+    copy_lod_level: bpy.props.EnumProperty(items=items_from_enums(LODLevel))
+
+    @classmethod
+    def poll(self, context):
+        aobj = context.active_object
+
+        return aobj is not None and aobj.sollumz_lods.active_lod is not None
+
+    def draw(self, context):
+        self.layout.props_enum(self, "copy_lod_level")
+
+    def execute(self, context):
+        aobj = context.active_object
+
+        active_lod = aobj.sollumz_lods.active_lod
+        lod = aobj.sollumz_lods.get_lod(self.copy_lod_level)
+
+        if lod is None:
+            return {"CANCELLED"}
+
+        if lod.mesh is not None:
+            self.report(
+                {"INFO"}, f"{SOLLUMZ_UI_NAMES[self.copy_lod_level]} already has a mesh!")
+            return {"CANCELLED"}
+
+        lod.mesh = active_lod.mesh.copy()
+
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+
 class SOLLUMZ_UL_OBJ_LODS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_OBJ_LODS_LIST"
 
@@ -222,12 +261,15 @@ class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         active_obj = context.view_layer.objects.active
+
+        layout.enabled = active_obj.mode == "OBJECT"
+
         row = layout.row()
         row.template_list(
             SOLLUMZ_UL_OBJ_LODS_LIST.bl_idname, "", active_obj.sollumz_lods, "lods", active_obj.sollumz_lods, "active_lod_index"
         )
 
-        layout.enabled = active_obj.mode == "OBJECT"
+        row.operator("sollumz.copy_lod", icon="COPYDOWN", text="")
 
 
 def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
@@ -247,9 +289,12 @@ def register():
     bpy.types.Object.sollumz_obj_is_hidden = bpy.props.BoolProperty()
     bpy.types.Scene.sollumz_hide_collisions = bpy.props.BoolProperty()
     bpy.types.Scene.sollumz_hide_glass_shards = bpy.props.BoolProperty()
+    bpy.types.Scene.sollumz_copy_lod_level = bpy.props.EnumProperty(
+        items=items_from_enums(LODLevel))
 
 
 def unregister():
     del bpy.types.Object.sollumz_lods
     del bpy.types.Object.sollumz_obj_is_hidden
     del bpy.types.Scene.sollumz_hide_glass_shards
+    del bpy.types.Scene.sollumz_copy_lod_level
