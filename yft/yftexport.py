@@ -2,22 +2,23 @@ import bpy
 from typing import Optional
 from collections import defaultdict
 from mathutils import Matrix, Vector
+
 from ..ybn.ybnexport import create_composite_xml
 from ..cwxml.bound import Bound, BoundGeometry
 from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window
-from ..cwxml.drawable import Bone, Drawable
+from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
 from ..tools.blenderhelper import remove_number_suffix, delete_hierarchy
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
 from ..tools.utils import prop_array_to_vector, vector_inv
 from ..sollumz_helper import get_sollumz_materials
-from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
+from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents, get_drawable_parent_inverse
 from ..ydr.lights import create_xml_lights
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GroupProperties
+from .properties import LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES
 
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str):
@@ -63,6 +64,8 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
             f"Failed to create Fragment XML: {frag_obj.name} has no Drawable!")
         return
 
+    set_paint_layer_shader_params(materials, drawable_xml.shader_group)
+
     frag_xml.bounding_sphere_center = drawable_xml.bounding_sphere_center
     frag_xml.bounding_sphere_radius = drawable_xml.bounding_sphere_radius
 
@@ -105,6 +108,21 @@ def create_frag_drawable_xml(frag_obj: bpy.types.Object, auto_calc_bone_tag: boo
         drawable_xml.name = "skel"
 
         return drawable_xml
+
+
+def set_paint_layer_shader_params(materials: list[bpy.types.Material], shader_group: ShaderGroup):
+    """Set matDiffuseColor shader params based off of paint layer selection (expects materials to be ordered by shader)"""
+    for i, mat in enumerate(materials):
+        paint_layer = mat.sollumz_paint_layer
+        if paint_layer == VehiclePaintLayer.NOT_PAINTABLE:
+            continue
+
+        for param in shader_group.shaders[i].parameters:
+            if not isinstance(param, VectorShaderParameter) or param.name != "matDiffuseColor":
+                continue
+
+            value = PAINT_LAYER_VALUES[paint_layer]
+            param.x, param.y, param.z, param.w = (2, value, value, 0)
 
 
 def create_hi_frag_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):

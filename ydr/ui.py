@@ -7,19 +7,6 @@ from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
 
 
-def draw_shader(self, context):
-    obj = context.active_object
-    if not obj:
-        return
-    mat = obj.active_material
-    if mat and mat.sollum_type == MaterialType.SHADER:
-        self.layout.label(text="Material Properties")
-        row = self.layout.row()
-        row.prop(mat.shader_properties, "renderbucket")
-        row.prop(mat.shader_properties, "filename")
-        row.prop(mat.shader_properties, "name")
-
-
 class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
     bl_label = "Drawable Properties"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_PANEL"
@@ -430,6 +417,38 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
         col.operator("sollumz.bone_flags_delete_item", text="", icon="REMOVE")
 
 
+class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
+    bl_label = "Shader"
+    bl_idname = "SOLLUMZ_PT_SHADER_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_order = 0
+
+    @classmethod
+    def poll(self, context):
+        aobj = context.active_object
+
+        if aobj is None:
+            return False
+
+        mat = aobj.active_material
+
+        return mat is not None and mat.sollum_type == MaterialType.SHADER
+
+    def draw(self, context):
+        mat = context.active_object.active_material
+
+        self.layout.label(text="Material Properties")
+
+        row = self.layout.row()
+
+        row.prop(mat.shader_properties, "renderbucket")
+        row.prop(mat.shader_properties, "filename")
+        row.prop(mat.shader_properties, "name")
+
+
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Texture Parameters"
     bl_idname = "SOLLUMZ_PT_TXTPARAMS_PANEL"
@@ -437,7 +456,7 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
-    bl_order = 0
+    bl_order = 1
 
     @classmethod
     def poll(cls, context):
@@ -517,7 +536,7 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
-    bl_order = 1
+    bl_order = 2
 
     @classmethod
     def poll(cls, context):
@@ -559,7 +578,7 @@ class SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
-    bl_order = 2
+    bl_order = 3
 
     @classmethod
     def poll(cls, context):
@@ -597,11 +616,3 @@ class SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL(bpy.types.Panel):
             row.prop(y, "default_value", text="Y:")
             row.prop(z, "default_value", text="Z:")
             row.prop(w, "default_value", text="W:")
-
-
-def register():
-    SOLLUMZ_PT_MAT_PANEL.append(draw_shader)
-
-
-def unregister():
-    SOLLUMZ_PT_MAT_PANEL.remove(draw_shader)

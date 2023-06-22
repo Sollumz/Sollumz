@@ -4,11 +4,11 @@ import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector
 from typing import Optional
-
 from ..tools.blenderhelper import create_empty_object, material_from_image, create_blender_object, remove_number_suffix
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
-from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType
+from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType, VehiclePaintLayer
+from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
@@ -16,7 +16,7 @@ from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties
+from .properties import LODProperties, FragArchetypeProperties, PAINT_LAYER_VALUES
 from .yftexport import get_armature_constraint_bone
 
 
@@ -108,6 +108,7 @@ def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, fil
         set_hi_lods(drawable_obj, hi_mesh_objs)
 
     drawable_obj.parent = frag_obj
+    update_mat_paint_layers(frag_obj)
 
     return drawable_obj, materials, hi_materials
 
@@ -159,6 +160,36 @@ def set_hi_lods(drawable_obj: bpy.types.Object, hi_mesh_objs: list[bpy.types.Obj
 
         # In case a .00# suffix got added
         obj.name = obj_name
+
+
+def update_mat_paint_layers(frag_obj: bpy.types.Object):
+    for mat in get_sollumz_materials(frag_obj):
+        mat.sollumz_paint_layer = get_mat_paint_layer(mat)
+
+
+def get_mat_paint_layer(mat: bpy.types.Material):
+    """Get material paint layer (i.e Primary, Secondary) based on the value of matDiffuseColor"""
+    x = -1
+    y = -1
+    z = -1
+    w = -1
+
+    for node in mat.node_tree.nodes:
+        if isinstance(node, bpy.types.ShaderNodeValue) and node.is_sollumz and "matDiffuseColor" in node.name:
+            if "x" in node.name:
+                x = node.outputs[0].default_value
+            elif "y" in node.name:
+                y = node.outputs[0].default_value
+            elif "z" in node.name:
+                z = node.outputs[0].default_value
+            elif "w" in node.name:
+                w = node.outputs[0].default_value
+
+    for paint_layer, value in PAINT_LAYER_VALUES.items():
+        if x == 2 and y == value and z == value and w == 0:
+            return paint_layer
+
+    return VehiclePaintLayer.NOT_PAINTABLE
 
 
 def create_phys_lod(frag_xml: Fragment, frag_obj: bpy.types.Object):

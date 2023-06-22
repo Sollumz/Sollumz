@@ -1,8 +1,8 @@
 import bpy
-from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
+from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
-from ..sollumz_properties import SollumType, BOUND_TYPES
+from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES
 from ..sollumz_helper import find_sollumz_parent
 from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID
 from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID, SOLLUMZ_OT_SELECT_LIGHT_ID
@@ -320,3 +320,39 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
         layout.use_property_decorate = False
 
         layout.prop(context.active_object, "sollumz_is_physics_child_mesh")
+
+
+class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
+    bl_label = "Fragment"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_MAT_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "material"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_order = 4
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        if aobj is None or aobj.sollum_type != SollumType.DRAWABLE_MODEL:
+            return False
+
+        has_frag_parent = find_sollumz_parent(
+            aobj, parent_type=SollumType.FRAGMENT) is not None
+        mat = aobj.active_material
+
+        return mat is not None and mat.sollum_type == MaterialType.SHADER and has_frag_parent
+
+    def draw(self, context):
+        layout = self.layout
+        mat = context.active_object.active_material
+
+        has_mat_diffuse_color = any(
+            "matDiffuseColor" in n.name for n in mat.node_tree.nodes)
+        row = layout.row()
+        row.enabled = has_mat_diffuse_color
+        row.prop(mat, "sollumz_paint_layer")
+        if not has_mat_diffuse_color:
+            layout.label(
+                text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")

@@ -1,6 +1,8 @@
 import bpy
 import bmesh
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, items_from_enums
+
+from ..tools.blenderhelper import remove_number_suffix
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, VehiclePaintLayer, items_from_enums
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -141,6 +143,34 @@ def get_light_id_of_selection(self):
     return light_id
 
 
+PAINT_LAYER_VALUES = {
+    VehiclePaintLayer.NOT_PAINTABLE: 0,
+    VehiclePaintLayer.PRIMARY: 1,
+    VehiclePaintLayer.SECONDARY: 2,
+    VehiclePaintLayer.WHEEL: 4,
+    VehiclePaintLayer.INTERIOR_TRIM: 6,
+    VehiclePaintLayer.INTERIOR_DASH: 7,
+}
+
+
+def update_mat_paint_name(mat: bpy.types.Material):
+    """Update material name to have [PAINT_LAYER] extension at the end."""
+    def get_paint_layer_name(_paint_layer: VehiclePaintLayer):
+        if _paint_layer == VehiclePaintLayer.NOT_PAINTABLE:
+            return ""
+        return f"[{SOLLUMZ_UI_NAMES[_paint_layer].upper()}]"
+
+    new_name_ext = get_paint_layer_name(mat.sollumz_paint_layer)
+
+    # Replace existing extension
+    for paint_layer in VehiclePaintLayer:
+        name_ext = get_paint_layer_name(paint_layer)
+        if name_ext in mat.name:
+            mat.name = mat.name.replace(name_ext, "").strip()
+
+    mat.name = f"{remove_number_suffix(mat.name).strip()} {new_name_ext}"
+
+
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
         type=FragmentProperties)
@@ -192,6 +222,23 @@ def register():
     bpy.types.Scene.selected_vehicle_light_id = bpy.props.IntProperty(
         name="Light ID", get=get_light_id_of_selection)
 
+    bpy.types.Material.sollumz_paint_layer = bpy.props.EnumProperty(
+        items=(
+            (VehiclePaintLayer.NOT_PAINTABLE.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.NOT_PAINTABLE],
+             "Material cannot be painted at mod shops"),
+            (VehiclePaintLayer.PRIMARY.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.PRIMARY],
+             "Primary paint color will use this material"),
+            (VehiclePaintLayer.SECONDARY.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.SECONDARY],
+             "Secondary paint color will use this material"),
+            (VehiclePaintLayer.WHEEL.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.WHEEL],
+             "Wheel color will use this material"),
+            (VehiclePaintLayer.INTERIOR_TRIM.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_TRIM],
+             "Interior trim color will use this material"),
+            (VehiclePaintLayer.INTERIOR_DASH.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_DASH],
+             "Interior dash color will use this material"),
+        ),
+        name="Paint Layer", default=VehiclePaintLayer.NOT_PAINTABLE, update=lambda mat, context: update_mat_paint_name(mat))
+
 
 def unregister():
     del bpy.types.Object.fragment_properties
@@ -210,3 +257,4 @@ def unregister():
     del bpy.types.Scene.set_custom_vehicle_light_id
     del bpy.types.Scene.select_custom_vehicle_light_id
     del bpy.types.Scene.selected_vehicle_light_id
+    del bpy.types.Material.sollumz_paint_layer
