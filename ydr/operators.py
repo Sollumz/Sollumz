@@ -596,7 +596,7 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         aobj = context.active_object
         self.apply_order(aobj)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -610,6 +610,7 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         """Add initial shader sort items based on materials from drawable_obj"""
         shader_order: DrawableShaderOrder = drawable_obj.drawable_properties.shader_order
         mats = get_sollumz_materials(drawable_obj)
+        self.validate_indices(mats)
 
         shader_order.items.clear()
 
@@ -618,6 +619,19 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
             item.index = mat.shader_properties.index
             item.name = mat.name
             item.filename = mat.shader_properties.filename
+
+    def validate_indices(self, mats: list[bpy.types.Material]):
+        """Ensure valid and unique shader indices (in-case user changed them or blend file is from previous version)"""
+        shader_inds = [mat.shader_properties.index for mat in mats]
+        has_repeating_indices = any(
+            shader_inds.count(i) > 1 for i in shader_inds)
+        inds_out_of_range = any(i >= len(mats) for i in shader_inds)
+
+        if not has_repeating_indices and not inds_out_of_range:
+            return
+
+        for i, mat in enumerate(mats):
+            mat.shader_properties.index = i
 
     def apply_order(self, drawable_obj: bpy.types.Object):
         """Set material shader indices based on shader order"""
