@@ -185,6 +185,7 @@ def remove_non_hi_lods(drawable_obj: bpy.types.Object):
         very_high_lod = model_obj.sollumz_lods.get_lod(LODLevel.VERYHIGH)
 
         if very_high_lod is None or very_high_lod.mesh is None:
+            bpy.data.objects.remove(model_obj)
             continue
 
         lod_props = model_obj.sollumz_lods
