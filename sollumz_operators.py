@@ -76,6 +76,10 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
     def execute_timed(self, context):
         logger.set_logging_operator(self)
 
+        if not self.filepath or self.files[0].name == "":
+            self.report({"INFO"}, "No file selected for import!")
+            return {"CANCELLED"}
+
         for file in self.files:
             directory = os.path.dirname(self.filepath)
             filepath = os.path.join(directory, file.name)
@@ -141,6 +145,16 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         logger.set_logging_operator(self)
         objs = self.collect_objects(context)
         export_settings = get_export_settings()
+
+        if not objs:
+            if export_settings.limit_to_selected:
+                self.report(
+                    {"INFO"}, "No Sollumz objects selected for export!")
+            else:
+                self.report(
+                    {"INFO"}, "No Sollumz objects in the scene to export!")
+
+            return {"CANCELLED"}
 
         for obj in objs:
             filepath = None
