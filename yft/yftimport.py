@@ -428,8 +428,7 @@ def create_shattermap_obj(window_xml: Window, name: str, window_location: Vector
     shattermap_obj = create_blender_object(SollumType.SHATTERMAP, name, mesh)
 
     if window_xml.shattermap:
-        shattermap_mat = shattermap_to_material(
-            window_xml.shattermap, f"{name}_shattermap.bmp")
+        shattermap_mat = shattermap_to_material(window_xml.shattermap, name)
         mesh.materials.append(shattermap_mat)
 
     return shattermap_obj
