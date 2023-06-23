@@ -53,6 +53,12 @@ def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[Model
     mesh_data_by_bone: dict[int, dict[LODLevel, MeshData]] = defaultdict(dict)
 
     for lod_level, mesh_data in model_data.mesh_data_lods.items():
+        is_skinned = "BlendWeights" in mesh_data.vert_arr.dtype.names
+
+        if not is_skinned:
+            mesh_data_by_bone[model_data.bone_index][lod_level] = mesh_data
+            continue
+
         for i, face_inds in get_group_face_inds(mesh_data, bones).items():
             mesh_data_by_bone[i][lod_level] = select_faces(
                 mesh_data, face_inds)
