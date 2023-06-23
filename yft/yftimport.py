@@ -105,7 +105,10 @@ def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, fil
         hi_mesh_objs = create_rigged_drawable_models(
             hi_xml.drawable, hi_materials, drawable_obj, frag_obj, split_by_group)
 
-        set_hi_lods(drawable_obj, hi_mesh_objs)
+        remaining_objs = set_hi_lods(drawable_obj, hi_mesh_objs)
+
+        if remaining_objs:
+            create_remaining_hi_objs(drawable_obj, remaining_objs)
 
     drawable_obj.parent = frag_obj
     update_mat_paint_layers(frag_obj)
@@ -138,9 +141,11 @@ def create_hi_materials(non_hi_materials: list[bpy.types.Material], shader_group
 
 
 def set_hi_lods(drawable_obj: bpy.types.Object, hi_mesh_objs: list[bpy.types.Object]):
-    """Add the hi_meshes to the very high LOD level of each corresponding non_hi_mesh. Deletes all hi_mesh_objs."""
+    """Add the hi_meshes to the very high LOD level of each corresponding non_hi_mesh.
+    Deletes the extra hi_mesh_objs and returns the remaining hi_mesh_objs that dont have lower LODs."""
     hi_meshes_by_name: dict[str, bpy.types.Object] = {
         remove_number_suffix(obj.name): obj for obj in hi_mesh_objs}
+    used_names: set[str] = set()
 
     for obj in drawable_obj.children:
         if obj.sollum_type != SollumType.DRAWABLE_MODEL:
@@ -157,9 +162,27 @@ def set_hi_lods(drawable_obj: bpy.types.Object, hi_mesh_objs: list[bpy.types.Obj
         obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
 
         bpy.data.objects.remove(hi_mesh)
+        used_names.add(obj_name)
 
         # In case a .00# suffix got added
         obj.name = obj_name
+
+    return [obj for name, obj in hi_meshes_by_name.items() if name not in used_names]
+
+
+def create_remaining_hi_objs(drawable_obj: bpy.types.Object, objs: list[bpy.types.Object]):
+    """Create remaining hi objects that dont have any lower LOD levels"""
+    for obj in objs:
+        lod_mesh = obj.sollumz_lods.get_lod(LODLevel.HIGH).mesh
+
+        if lod_mesh is None:
+            continue
+
+        obj.sollumz_lods.set_lod_mesh(LODLevel.VERYHIGH, lod_mesh)
+        obj.sollumz_lods.set_lod_mesh(LODLevel.HIGH, None)
+        obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
+
+        obj.parent = drawable_obj
 
 
 def update_mat_paint_layers(frag_obj: bpy.types.Object):
