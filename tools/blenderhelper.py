@@ -306,3 +306,24 @@ def delete_hierarchy(obj: bpy.types.Object):
         delete_hierarchy(child)
 
     bpy.data.objects.remove(obj)
+
+
+def add_armature_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: str, set_transforms=True):
+    """Add armature constraint that is used for bone parenting on non-skinned objects."""
+    constraint: bpy.types.ArmatureConstraint = obj.constraints.new("ARMATURE")
+    target = constraint.targets.new()
+    target.target = armature_obj
+    target.subtarget = target_bone
+
+    if not set_transforms:
+        return
+
+    bone = armature_obj.data.bones[target_bone]
+    obj.matrix_local = bone.matrix_local
+
+
+def add_armature_modifier(obj: bpy.types.Object, armature_obj: bpy.types.Object):
+    mod: bpy.types.ArmatureModifier = obj.modifiers.new("skel", "ARMATURE")
+    mod.object = armature_obj
+
+    return mod

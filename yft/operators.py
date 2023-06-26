@@ -3,7 +3,7 @@ import bmesh
 from mathutils import Matrix
 from ..sollumz_properties import SollumType, VehicleLightID
 from ..tools.blenderhelper import create_blender_object
-from ..ydr.ydrimport import add_armature_constraint
+from ..tools.blenderhelper import add_armature_constraint
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):

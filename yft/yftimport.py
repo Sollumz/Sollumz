@@ -4,7 +4,7 @@ import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector
 from typing import Optional
-from ..tools.blenderhelper import create_empty_object, material_from_image, create_blender_object, remove_number_suffix
+from ..tools.blenderhelper import add_armature_constraint, create_empty_object, material_from_image, create_blender_object, remove_number_suffix
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType, VehiclePaintLayer
@@ -12,7 +12,7 @@ from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
-from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, add_armature_constraint, create_rigged_drawable_models, create_drawable_models
+from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_rigged_drawable_models, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger

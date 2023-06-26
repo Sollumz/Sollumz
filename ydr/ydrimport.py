@@ -3,13 +3,14 @@ import traceback
 import bpy
 from typing import Optional
 from mathutils import Matrix
+
 from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, LODLevel, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import BoundChild
-from ..tools.blenderhelper import create_empty_object, create_blender_object, join_objects
+from ..tools.blenderhelper import create_empty_object, create_blender_object, join_objects, add_armature_constraint, add_armature_modifier
 from ..tools.utils import get_filename
 from .model_data import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
@@ -462,24 +463,3 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     bpy.data.objects.remove(drawable_obj)
 
     return joined_obj
-
-
-def add_armature_modifier(obj: bpy.types.Object, armature_obj: bpy.types.Object):
-    mod: bpy.types.ArmatureModifier = obj.modifiers.new("skel", "ARMATURE")
-    mod.object = armature_obj
-
-    return mod
-
-
-def add_armature_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: str, set_transforms=True):
-    """Add armature constraint that is used for bone parenting on non-skinned objects."""
-    constraint: bpy.types.ArmatureConstraint = obj.constraints.new("ARMATURE")
-    target = constraint.targets.new()
-    target.target = armature_obj
-    target.subtarget = target_bone
-
-    if not set_transforms:
-        return
-
-    bone = armature_obj.data.bones[target_bone]
-    obj.matrix_local = bone.matrix_local
