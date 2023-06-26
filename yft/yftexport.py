@@ -407,7 +407,7 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
         for obj in objs:
             child_index = len(lod_xml.children)
 
-            bone = frag_obj.data.bones.get(bone_name)
+            bone: bpy.types.Bone = frag_obj.data.bones.get(bone_name)
             bone_index = get_bone_index(frag_obj.data, bone) or 0
 
             child_xml = PhysicsChild()
@@ -424,16 +424,23 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
             if bone_name in child_meshes:
                 mesh_objs = child_meshes[bone_name]
 
-            create_phys_child_drawable(child_xml, materials, mesh_objs)
-
             bound_xml = lod_xml.archetype.bounds.children[child_index]
+            composite_matrix = bound_xml.composite_transform
+
+            drawable_matrix = get_child_drawable_matrix(
+                composite_matrix, bone.matrix_local)
+
+            create_phys_child_drawable(
+                child_xml, materials, drawable_matrix, mesh_objs)
+
             # Need to make the vertices of this bound relative to the bone location so that the user-defined origin does not matter
             offset_bound_by_bone(bound_xml, bone)
 
-            create_child_transforms_xml(
-                bound_xml.composite_transform.transposed(), lod_xml)
+            create_child_transforms_xml(composite_matrix, lod_xml)
 
             lod_xml.children.append(child_xml)
+
+    create_child_mat_arrays(lod_xml.children)
 
 
 def get_child_inertia(arch_xml: Archetype, child_xml: PhysicsChild, child_index: int):
@@ -514,9 +521,36 @@ def get_bone_group_index(lod_xml: PhysicsLOD, bone_name: str):
     return -1
 
 
-def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], mesh_objs: Optional[list[bpy.types.Object]] = None):
+def get_child_drawable_matrix(composite_matrix: Matrix, bone_matrix: Matrix):
+    """The matrix for each physics child drawable matrix is the transformation of
+    the mesh relative to the bone."""
+    matrix = bone_matrix.transposed().inverted() @ composite_matrix
+
+    # Convert to 4x3 matrix
+    return Matrix([row[:3] for row in matrix])
+
+
+def create_child_mat_arrays(children: list[PhysicsChild]):
+    """Create the matrix arrays for each child. This appears to be in the first child of multiple children that
+    share the same group. Each matrix in the array is just the matrix for each child in that group."""
+    group_inds = set(child.group_index for child in children)
+
+    for i in group_inds:
+        group_children = [
+            child for child in children if child.group_index == i]
+
+        if len(group_children) <= 1:
+            continue
+
+        first = group_children[0]
+
+        for child in group_children[1:]:
+            first.drawable.matrices.append(child.drawable.matrix)
+
+
+def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], matrix: Matrix, mesh_objs: Optional[list[bpy.types.Object]] = None):
     drawable_xml = child_xml.drawable
-    drawable_xml.matrix = Matrix()
+    drawable_xml.matrix = matrix
     drawable_xml.shader_group = None
     drawable_xml.skeleton = None
     drawable_xml.joints = None
@@ -703,7 +737,7 @@ def get_window_geometry_index(drawable_xml: Drawable, window_shader_index: int):
 def create_child_transforms_xml(child_matrix: Matrix, lod_xml: PhysicsLOD):
     offset = lod_xml.position_offset
 
-    matrix = child_matrix.transposed()
+    matrix = child_matrix.copy()
     a = matrix[3][0] - offset.x
     b = matrix[3][1] - offset.y
     c = matrix[3][2] - offset.z

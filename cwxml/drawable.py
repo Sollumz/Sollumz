@@ -1,5 +1,6 @@
 import io
 import os
+from mathutils import Matrix
 import numpy as np
 from numpy.typing import NDArray
 from ..tools.utils import np_arr_to_str
@@ -548,6 +549,7 @@ class Drawable(ElementTree, AbstractClass):
         super().__init__()
         # Only in fragment drawables
         self.matrix = MatrixProperty("Matrix")
+        self.matrices = DrawableMatrices("Matrices")
 
         self.name = TextProperty("Name", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
@@ -670,6 +672,34 @@ class DrawableDictionary(MutableSequence, Element):
                     f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!")
 
         return element
+
+
+class DrawableMatrices(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str = "Matrices", value: list[Matrix] = None):
+        super().__init__(tag_name, value)
+        self.value = value or []
+
+    @classmethod
+    def from_xml(cls, element: Element):
+        # Import not needed (this should be eventually calculated in CW anyway)
+        return cls()
+
+    def to_xml(self):
+        if self.value is None or len(self.value) == 0:
+            return
+
+        elem = ET.Element("Matrices", attrib={"capacity": "64"})
+
+        for mat in self.value:
+            mat_prop = MatrixProperty("Item", mat)
+            mat_elem = mat_prop.to_xml()
+            mat_elem.attrib["id"] = "0"
+
+            elem.append(mat_elem)
+
+        return elem
 
 
 class BonePropertiesManager:
