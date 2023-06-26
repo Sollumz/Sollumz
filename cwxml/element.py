@@ -391,11 +391,9 @@ class QuaternionProperty(ElementProperty):
 
 class MatrixProperty(ElementProperty):
     value_types = (Matrix)
-    size = 4
 
-    def __init__(self, tag_name: str, value=None, size=4):
+    def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Matrix())
-        self.size = size
 
     @staticmethod
     def from_xml(element: ET.Element):
@@ -415,15 +413,13 @@ class MatrixProperty(ElementProperty):
         if self.value is None:
             return
 
-        txt = "\n"
-        for i in range(self.size):
-            txt += f"{str(self.value[i][0])} "
-            txt += f"{str(self.value[i][1])} "
-            txt += f"{str(self.value[i][2])} "
-            txt += f"{str(self.value[i][3])}"
-            txt += "\n"
+        matrix: Matrix = self.value
+
+        lines = [" ".join([str(x) for x in row]) for row in matrix]
+
         element = ET.Element(self.tag_name)
-        element.text = txt
+        element.text = "\n".join(lines)
+
         return element
 
 
