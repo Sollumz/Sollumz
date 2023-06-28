@@ -777,7 +777,14 @@ def create_bone_transforms_xml(frag_xml: Fragment):
     for bone in frag_xml.drawable.skeleton.bones:
         transforms = Matrix.LocRotScale(
             bone.translation, bone.rotation, bone.scale)
-        frag_xml.bones_transforms.append(BoneTransform("Item", transforms))
+        # Reshape to 3x4
+        transforms_reshaped = Matrix((
+            transforms[0],
+            transforms[1],
+            transforms[2],
+        ))
+        frag_xml.bones_transforms.append(
+            BoneTransform("Item", transforms_reshaped))
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
