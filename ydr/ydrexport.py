@@ -320,7 +320,7 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
                 vert_buffer["Position"])
             geom_xml.shader_index = mat_index
 
-            if bones:
+            if bones and "BlendWeights" in vert_buffer.dtype.names:
                 geom_xml.bone_ids = get_bone_ids(bones)
 
             geom_xml.vertex_buffer.data = vert_buffer

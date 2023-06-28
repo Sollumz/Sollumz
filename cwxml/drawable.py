@@ -210,6 +210,10 @@ class BoneIDProperty(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
+
+        if not self.value:
+            return None
+
         element.text = ", ".join([str(id) for id in self.value])
         return element
 
