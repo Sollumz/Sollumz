@@ -1,6 +1,5 @@
 import bpy
 
-from ..tools.version import USE_LEGACY
 from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import MaterialType
 from collections import namedtuple

@@ -7,7 +7,6 @@ from mathutils.geometry import distance_point_to_plane
 from math import radians
 from ..sollumz_properties import SollumType
 from .utils import divide_list, get_min_vector_list, get_max_vector_list
-from .version import USE_LEGACY
 from .blenderhelper import get_children_recursive
 
 
@@ -62,10 +61,7 @@ def create_sphere(mesh, radius=1):
     bm = bmesh.new()
 
     kwargs = {}
-    if USE_LEGACY:
-        kwargs["diameter"] = radius
-    else:
-        kwargs["radius"] = radius
+    kwargs["radius"] = radius
 
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, **kwargs)
@@ -78,12 +74,8 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
     bm = bmesh.new()
 
     kwargs = {}
-    if USE_LEGACY:
-        kwargs["diameter1"] = radius
-        kwargs["diameter2"] = radius
-    else:
-        kwargs["radius1"] = radius
-        kwargs["radius2"] = radius
+    kwargs["radius1"] = radius
+    kwargs["radius2"] = radius
 
     bmesh.ops.create_cone(
         bm,
@@ -104,12 +96,8 @@ def create_disc(mesh, radius=1, length=0.08):
     rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
 
     kwargs = {}
-    if USE_LEGACY:
-        kwargs["diameter1"] = radius
-        kwargs["diameter2"] = radius
-    else:
-        kwargs["radius1"] = radius
-        kwargs["radius2"] = radius
+    kwargs["radius1"] = radius
+    kwargs["radius2"] = radius
 
     bmesh.ops.create_cone(
         bm,
@@ -133,10 +121,7 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     bm = bmesh.new()
 
     kwargs = {}
-    if USE_LEGACY:
-        kwargs["diameter"] = diameter
-    else:
-        kwargs["radius"] = diameter
+    kwargs["radius"] = diameter
 
     bmesh.ops.create_uvsphere(
         bm, u_segments=32, v_segments=16, **kwargs)
