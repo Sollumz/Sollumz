@@ -4,10 +4,10 @@ from collections import defaultdict
 from mathutils import Matrix, Vector
 
 from ..ybn.ybnexport import create_composite_xml
-from ..cwxml.bound import Bound, BoundGeometry
+from ..cwxml.bound import Bound
 from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window
 from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
-from ..tools.blenderhelper import remove_number_suffix, delete_hierarchy
+from ..tools.blenderhelper import remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
 from ..tools.utils import prop_array_to_vector, vector_inv
@@ -385,7 +385,7 @@ def does_bone_have_collision(bone_name: str, frag_obj: bpy.types.Object):
         obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
 
     for obj in col_objs:
-        bone = get_armature_constraint_bone(obj, frag_obj)
+        bone = get_child_of_bone(obj)
 
         if bone is not None and bone.name == bone_name:
             return True
@@ -433,9 +433,6 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
             create_phys_child_drawable(
                 child_xml, materials, drawable_matrix, mesh_objs)
 
-            # Need to make the vertices of this bound relative to the bone location so that the user-defined origin does not matter
-            offset_bound_by_bone(bound_xml, bone)
-
             create_child_transforms_xml(composite_matrix, lod_xml)
 
             lod_xml.children.append(child_xml)
@@ -467,7 +464,7 @@ def get_child_cols(frag_obj: bpy.types.Object):
             if (bound_obj.type == "MESH" and not has_col_mats(bound_obj)) or (bound_obj.type == "EMPTY" and not bound_geom_has_mats(bound_obj)):
                 continue
 
-            bone = get_armature_constraint_bone(bound_obj, frag_obj)
+            bone = get_child_of_bone(bound_obj)
 
             if bone is None or not bone.sollumz_use_physics:
                 continue
@@ -489,7 +486,7 @@ def get_child_meshes(frag_obj: bpy.types.Object):
             if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
                 continue
 
-            bone = get_armature_constraint_bone(model_obj, frag_obj)
+            bone = get_child_of_bone(model_obj)
 
             if bone is None or not bone.sollumz_use_physics:
                 continue
@@ -497,19 +494,6 @@ def get_child_meshes(frag_obj: bpy.types.Object):
             child_meshes_by_bone[bone.name].append(model_obj)
 
     return child_meshes_by_bone
-
-
-def get_armature_constraint_bone(obj: bpy.types.Object, armature_obj: bpy.types.Object) -> Optional[bpy.types.Bone]:
-    """Get the first ``armature_obj`` bone attached to ``obj`` from the armature constraint. Returns None if not found."""
-    for constraint in obj.constraints:
-        if constraint.type != "ARMATURE":
-            continue
-
-        for constraint_target in constraint.targets:
-            if constraint_target.target != armature_obj:
-                continue
-
-            return armature_obj.data.bones[constraint_target.subtarget]
 
 
 def get_bone_group_index(lod_xml: PhysicsLOD, bone_name: str):
@@ -585,7 +569,7 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
         if not obj.child_properties.is_veh_window:
             continue
 
-        bone = get_armature_constraint_bone(obj, frag_obj)
+        bone = get_child_of_bone(obj)
 
         if bone is None or not bone.sollumz_use_physics:
             logger.warning(
@@ -749,28 +733,6 @@ def create_child_transforms_xml(child_matrix: Matrix, lod_xml: PhysicsLOD):
     lod_xml.transforms.append(transform_xml)
 
     return transform_xml
-
-
-def offset_bound_by_bone(bound_xml: BoundGeometry, bone: bpy.types.Bone):
-    """Offset bound_xml such that the vertices are relative to ``bone``."""
-    if not bound_xml.vertices:
-        return
-
-    transforms = bound_xml.composite_transform.transposed()
-    bound_pos = transforms.translation
-
-    bone_offset = bound_pos - bone.matrix_local.translation
-
-    if bone_offset.length == 0:
-        return
-
-    for vert1, vert2 in zip(bound_xml.vertices, bound_xml.vertices_2):
-        vert1 += bone_offset
-        vert2 += bone_offset
-
-    transforms.translation -= bone_offset
-
-    bound_xml.composite_transform = transforms.transposed()
 
 
 def create_bone_transforms_xml(frag_xml: Fragment):

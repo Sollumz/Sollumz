@@ -470,6 +470,7 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
         row = layout.row()
         row.operator("sollumz.debug_hierarchy")
         row.prop(context.scene, "debug_sollum_type")
@@ -478,12 +479,15 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         row.prop(context.scene, "debug_lights_only_selected")
         row = layout.row()
         row.operator("sollumz.debug_reload_entity_sets")
+
         layout.separator()
+
         layout.label(text="Migration")
         layout.operator("sollumz.migratedrawable")
         layout.label(
             text="This will join all geometries for each LOD Level into a single object.", icon="ERROR")
         layout.operator("sollumz.migrateboundgeoms")
+        layout.operator("sollumz.replace_armature_constraints")
 
 
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):

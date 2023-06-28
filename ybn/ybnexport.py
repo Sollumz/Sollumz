@@ -1,6 +1,8 @@
 import bpy
 from mathutils import Vector, Matrix
 from typing import Optional, TypeVar, Callable, Type
+
+from ..tools.blenderhelper import get_bone_pose_matrix, get_pose_inverse
 from ..cwxml.bound import (
     BoundFile,
     Bound,
@@ -269,7 +271,8 @@ def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeomet
 def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     mesh = create_export_mesh(obj)
 
-    transforms = obj.matrix_local.copy()
+    bone_inverse = get_bone_pose_matrix(obj).inverted()
+    transforms = bone_inverse @ obj.matrix_local.copy()
     transforms.translation -= geom_xml.geometry_center
 
     if mesh.vertex_colors:
@@ -467,8 +470,10 @@ def set_composite_xml_flags(bound_xml: BoundChild, obj: bpy.types.Object):
 
 
 def set_composite_xml_transforms(bound_xml: BoundChild, obj: bpy.types.Object, parent_inverse: Matrix = Matrix()):
+    pose_inverse = get_pose_inverse(obj)
+
     bound_xml.composite_transform = (
-        parent_inverse @ obj.matrix_world).transposed()
+        pose_inverse @ parent_inverse @ obj.matrix_world).transposed()
 
 
 def set_bound_xml_mat_index(bound_xml: BoundChild, obj: bpy.types.Object):

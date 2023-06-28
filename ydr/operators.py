@@ -1,13 +1,13 @@
 import traceback
 import bpy
-from ..sollumz_helper import SOLLUMZ_OT_base
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType, LODLevel
+from ..sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, shadermats
 from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ..cwxml.shader import ShaderManager
-from ..tools.blenderhelper import create_empty_object, duplicate_object
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space
 from ..sollumz_helper import get_sollumz_materials
 from .properties import DrawableShaderOrder
 
@@ -645,5 +645,52 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
 
         for i, mat in enumerate(mats):
             mat.shader_properties.index = shader_order.items[i].index
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_add_child_of_constraint(bpy.types.Operator):
+    bl_idname = "sollumz.add_child_of_constraint"
+    bl_label = "Add Bone Constraint"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Add Child Of constraint to the selected Drawable Model and set the proper constraint properties"
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        aobj = context.active_object
+        parent_obj = find_sollumz_parent(aobj)
+        is_drawable_model = aobj.sollum_type == SollumType.DRAWABLE_MODEL
+
+        if parent_obj is not None or not is_drawable_model:
+            self.report(
+                {"INFO"}, f"{aobj.name} must be a Drawable Model and parented to a Drawable!")
+            return {"CANCELLED"}
+
+        if parent_obj.type != "ARMATURE":
+            self.report(
+                {"INFO"}, f"{aobj.name} must be parented to a Drawable armature, or Drawable that is parented to a Fragment!")
+            return {"CANCELLED"}
+
+        add_child_of_bone_constraint(aobj, armature_obj=parent_obj)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_set_correct_child_of_space(bpy.types.Operator):
+    bl_idname = "sollumz.set_correct_child_of_space"
+    bl_label = "Set correct space for bone parenting"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Sets the owner space and target space such that it behaves the same way as bone parenting"
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and get_child_of_constraint(context.active_object) is not None
+
+    def execute(self, context):
+        constraint = get_child_of_constraint(context.active_object)
+        set_child_of_constraint_space(constraint)
 
         return {"FINISHED"}

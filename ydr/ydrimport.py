@@ -10,7 +10,7 @@ from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, LODLev
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import BoundChild
-from ..tools.blenderhelper import create_empty_object, create_blender_object, join_objects, add_armature_constraint, add_armature_modifier
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier
 from ..tools.utils import get_filename
 from .model_data import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
@@ -105,7 +105,7 @@ def create_rigged_model_obj(model_data: ModelData, materials: list[bpy.types.Mat
 
     if not model_obj.vertex_groups:
         # Non-skinned models use armature constraints to link with bones
-        add_armature_constraint(model_obj, armature_obj, bone_name)
+        add_child_of_bone_constraint(model_obj, armature_obj, bone_name)
     else:
         add_armature_modifier(model_obj, armature_obj)
 

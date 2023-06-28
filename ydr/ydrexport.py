@@ -15,7 +15,7 @@ from ..tools.meshhelper import (
     get_sphere_radius,
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list
-from ..tools.blenderhelper import remove_number_suffix, join_objects
+from ..tools.blenderhelper import get_bone_pose_matrix, get_child_of_constraint, remove_number_suffix, join_objects
 from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
@@ -116,7 +116,7 @@ def get_skinned_model_objs(drawable_obj: bpy.types.Object):
 
 
 def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.types.Object], skinned_model_props: SkinnedDrawableModelProperties, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
-    skinned_obj = get_joined_skinned_obj(skinned_objs)
+    skinned_obj = get_joined_skinned_obj(skinned_objs, parent_inverse)
 
     if skinned_obj is None:
         return
@@ -132,7 +132,7 @@ def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.type
         model_xml.has_skin = 1
 
         geometries = create_geometries_xml(
-            skinned_obj, lod.level, materials, bones, parent_inverse)
+            skinned_obj, lod.level, materials, bones)
         model_xml.geometries = geometries
 
         append_model_xml(drawable_xml, model_xml, lod.level)
@@ -141,13 +141,10 @@ def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.type
         delete_all_lod_meshes(skinned_obj)
 
 
-def get_joined_skinned_obj(skinned_objs: list[bpy.types.Object]):
+def get_joined_skinned_obj(skinned_objs: list[bpy.types.Object], parent_inverse: Optional[Matrix] = None):
     """Join all the skinned objects and their LODs into a single object."""
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
     # drawable can be split by vertex group, we have to join each separate part into a sinlge object.
-
-    if len(skinned_objs) == 1:
-        return skinned_objs[0]
 
     lod_objs: dict[LODLevel, list[bpy.types.Object]] = defaultdict(list)
     lod_meshes = []
@@ -163,7 +160,8 @@ def get_joined_skinned_obj(skinned_objs: list[bpy.types.Object]):
 
             lod_obj.parent = None
 
-            lod_obj.data.transform(lod_obj.matrix_world)
+            lod_obj.data.transform(
+                parent_inverse or Matrix() @ lod_obj.matrix_world)
             lod_obj.matrix_world = Matrix()
 
             bpy.context.collection.objects.link(lod_obj)
@@ -228,8 +226,13 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
 
     set_lod_model_xml_properties(model_obj, model_xml)
 
+    bone_inverse = get_bone_pose_matrix(model_obj).inverted()
+    # Models get exported with all transforms applied to the mesh data except for bone transformatios
+    # and any other transforms specified in parent_inverse (parent_inverse is determined by the "Apply Parent Transforms" option)
+    transforms_to_apply = bone_inverse @ parent_inverse @ model_obj.matrix_world
+
     geometries = create_geometries_xml(
-        model_obj, lod_level, materials, bones, parent_inverse)
+        model_obj, lod_level, materials, bones, transforms_to_apply)
     model_xml.geometries = geometries
 
     model_xml.bone_index = get_model_bone_index(model_obj)
@@ -237,30 +240,16 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     return model_xml
 
 
-def get_armature_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ArmatureConstraint]:
-    for constraint in obj.constraints:
-        if constraint.type != "ARMATURE" or not constraint.targets:
-            continue
-
-        target = constraint.targets[0]
-
-        if not target.target or not target.subtarget:
-            continue
-
-        return constraint
-
-
 def get_model_bone_index(model_obj: bpy.types.Object):
     bone_index = 0
 
-    constraint = get_armature_constraint(model_obj)
+    constraint = get_child_of_constraint(model_obj)
 
     if constraint is None:
         return bone_index
 
-    target = constraint.targets[0]
-    armature = target.target.data
-    bone_index = armature.bones.find(target.subtarget)
+    armature = constraint.target.data
+    bone_index = armature.bones.find(constraint.subtarget)
 
     return bone_index if bone_index != -1 else 0
 
@@ -274,7 +263,7 @@ def set_lod_model_xml_properties(model_obj: bpy.types.Object, model_xml: Drawabl
         set_model_xml_properties(lod.mesh.drawable_model_properties, model_xml)
 
 
-def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
+def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
     mesh = model_obj.sollumz_lods.get_lod(lod_level).mesh
     current_lod_level = model_obj.sollumz_lods.active_lod.level
 
@@ -287,7 +276,11 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
             f"Model '{model_obj.name}' has no Sollumz materials! Skipping...")
         return []
 
-    mesh_eval = get_evaluated_mesh(model_obj, parent_inverse)
+    mesh_eval = get_evaluated_mesh(model_obj)
+
+    if transforms_to_apply is not None:
+        mesh_eval.transform(transforms_to_apply)
+
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
     geometries: list[Geometry] = []
@@ -340,8 +333,8 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
     return geometries
 
 
-def get_evaluated_mesh(model_obj: bpy.types.Object, parent_inverse: Optional[Matrix] = None) -> bpy.types.Object:
-    """Get an evaluated, triangulated version of the mesh (modifiers, constraints, transforms applied)"""
+def get_evaluated_mesh(model_obj: bpy.types.Object) -> bpy.types.Mesh:
+    """Get an evaluated, triangulated version of the mesh"""
     depsgraph = bpy.context.evaluated_depsgraph_get()
     obj_eval = model_obj.evaluated_get(depsgraph)
 
@@ -349,9 +342,6 @@ def get_evaluated_mesh(model_obj: bpy.types.Object, parent_inverse: Optional[Mat
         obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
 
     mesh.calc_loop_triangles()
-
-    matrix = (parent_inverse or Matrix()) @ model_obj.matrix_world
-    mesh.transform(matrix)
 
     return mesh
 

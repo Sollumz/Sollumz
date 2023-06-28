@@ -1,9 +1,8 @@
 import bpy
 import bmesh
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from ..sollumz_properties import SollumType, VehicleLightID
-from ..tools.blenderhelper import create_blender_object
-from ..tools.blenderhelper import add_armature_constraint
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
@@ -75,8 +74,8 @@ class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
         for obj in selected:
             armature.bones[obj.name].sollumz_use_physics = True
 
-            add_armature_constraint(
-                obj, armature_obj, obj.name, set_transforms=False)
+            add_child_of_bone_constraint(obj, armature_obj, obj.name)
+            obj.location = Vector()
 
         return {"FINISHED"}
 

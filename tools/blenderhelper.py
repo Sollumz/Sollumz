@@ -1,7 +1,7 @@
 import re
 import bpy
 import bmesh
-from mathutils import Vector
+from mathutils import Matrix, Vector
 from typing import Optional
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
@@ -308,22 +308,85 @@ def delete_hierarchy(obj: bpy.types.Object):
     bpy.data.objects.remove(obj)
 
 
-def add_armature_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: str, set_transforms=True):
-    """Add armature constraint that is used for bone parenting on non-skinned objects."""
-    constraint: bpy.types.ArmatureConstraint = obj.constraints.new("ARMATURE")
-    target = constraint.targets.new()
-    target.target = armature_obj
-    target.subtarget = target_bone
-
-    if not set_transforms:
-        return
-
-    bone = armature_obj.data.bones[target_bone]
-    obj.matrix_local = bone.matrix_local
-
-
 def add_armature_modifier(obj: bpy.types.Object, armature_obj: bpy.types.Object):
     mod: bpy.types.ArmatureModifier = obj.modifiers.new("skel", "ARMATURE")
     mod.object = armature_obj
 
     return mod
+
+
+def add_child_of_bone_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: Optional[str] = None):
+    """Add Child Of constraint and set bone. Also sets bone target space and owner space so that parenting evaluated properly."""
+    constraint: bpy.types.ChildOfConstraint = obj.constraints.new("CHILD_OF")
+    constraint.target = armature_obj
+
+    if target_bone is not None:
+        constraint.subtarget = target_bone
+
+    set_child_of_constraint_space(constraint)
+
+    constraint.inverse_matrix = Matrix()
+
+    return constraint
+
+
+def set_child_of_constraint_space(constraint: bpy.types.ChildOfConstraint):
+    """Set Child Of constraing target space and owner space such that it matches the behavior of bone parenting
+    (owner_space = 'LOCAL', target_space = 'POSE')"""
+    constraint.owner_space = "LOCAL"
+    constraint.target_space = "POSE"
+
+
+def get_bone_pose_matrix(obj: bpy.types.Object) -> Matrix:
+    """Get the 4x4 pose matrix of the bone set in the child of constraint. Returns identity matrix if not found."""
+    pose_bone = get_child_of_pose_bone(obj)
+
+    if pose_bone is None:
+        return Matrix()
+
+    return pose_bone.matrix
+
+
+def get_pose_inverse(obj: bpy.types.Object) -> Matrix:
+    """Get matrix that inverts the pose of the bone in the first child of constraint. Returns identity matrix if no bone is found."""
+    bone = get_child_of_bone(obj)
+    pose_bone = get_child_of_pose_bone(obj)
+
+    if bone and pose_bone:
+        return (pose_bone.matrix @ bone.matrix_local.inverted()).inverted()
+
+    return Matrix()
+
+
+def get_child_of_bone(obj: bpy.types.Object) -> Optional[bpy.types.Bone]:
+    """Get the bone linked to the first armature child of constraint in obj. Returns None if not found."""
+    constraint = get_child_of_constraint(obj)
+
+    if constraint is None:
+        return None
+
+    armature = constraint.target.data
+
+    return armature.bones.get(constraint.subtarget)
+
+
+def get_child_of_pose_bone(obj: bpy.types.Object) -> Optional[bpy.types.PoseBone]:
+    """Get the pose bone linked to the first armature child of constraint in obj. Returns None if not found."""
+    constraint = get_child_of_constraint(obj)
+
+    if constraint is None:
+        return None
+
+    armature = constraint.target
+
+    return armature.pose.bones.get(constraint.subtarget)
+
+
+def get_child_of_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ChildOfConstraint]:
+    """Get first child of constraint with armature target and bone subtarget set. Returns None if not found."""
+    for constraint in obj.constraints:
+        if constraint.type != "CHILD_OF":
+            continue
+
+        if constraint.target and constraint.target.type == "ARMATURE" and constraint.subtarget:
+            return constraint

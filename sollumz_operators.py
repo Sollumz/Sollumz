@@ -1,5 +1,6 @@
 import traceback
 import os
+from typing import Optional
 import bpy
 import time
 from collections import defaultdict
@@ -27,7 +28,7 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
-from .tools.blenderhelper import get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
+from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
 from .ybn.properties import BoundProperties
 from .ybn.properties import BoundFlags
@@ -647,6 +648,55 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
 
         for i, vert in enumerate(damaged_obj.data.vertices):
             deformed_key.data[i].co = vert.co
+
+
+class SOLLUMZ_OT_debug_replace_armature_constraints(bpy.types.Operator):
+    """Replace the Armature constraints in all selected objects for Child Of constraints (for migrating pre version 0.3 projects)"""
+    bl_idname = "sollumz.replace_armature_constraints"
+    bl_label = "Replace Armature Constraints"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        if not context.selected_objects:
+            self.report({"INFO"}, "No objects selected!")
+            return {"CANCELLED"}
+
+        for obj in context.selected_objects:
+            constraint = self.get_armature_constraint(obj)
+
+            if constraint is None or not constraint.targets:
+                continue
+
+            target = constraint.targets[0]
+            armature_obj = target.target
+            target_bone = target.subtarget
+
+            obj.constraints.remove(constraint)
+
+            add_child_of_bone_constraint(obj, armature_obj, target_bone)
+            self.set_obj_child_of_bone_inverse(obj)
+
+        return {"FINISHED"}
+
+    @staticmethod
+    def get_armature_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ArmatureConstraint]:
+        for constraint in obj.constraints:
+            if constraint.type == "ARMATURE":
+                return constraint
+
+    @staticmethod
+    def set_obj_child_of_bone_inverse(obj: bpy.types.Object):
+        """Invert the transformations of the Child Of constraint bone on obj
+        so that the object doesn't get double transformed"""
+        # bone = get_child_of_bone(obj)
+        bone = get_child_of_pose_bone(obj)
+
+        if bone is None:
+            return
+
+        print(bone.matrix)
+
+        obj.matrix_local = bone.matrix.inverted() @ obj.matrix_local
 
 
 class SOLLUMZ_OT_set_sollum_type(bpy.types.Operator):

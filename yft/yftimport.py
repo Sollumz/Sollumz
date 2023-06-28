@@ -4,7 +4,7 @@ import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector
 from typing import Optional
-from ..tools.blenderhelper import add_armature_constraint, create_empty_object, material_from_image, create_blender_object, remove_number_suffix
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object, remove_number_suffix
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType, VehiclePaintLayer
@@ -17,7 +17,7 @@ from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, PAINT_LAYER_VALUES
-from .yftexport import get_armature_constraint_bone
+from ..tools.blenderhelper import get_child_of_bone
 
 
 def import_yft(filepath: str):
@@ -270,7 +270,7 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bp
         if bound_obj.data is not None:
             bound_obj.data.name = bound_obj.name
 
-        add_armature_constraint(bound_obj, frag_obj, bone.name, False)
+        add_col_bone_constraint(bound_obj, frag_obj, bone.name)
         bound_obj.child_properties.mass = frag_xml.physics.lod1.children[i].pristine_mass
 
 
@@ -287,6 +287,17 @@ def find_bound_bone(bound_index: int, frag_xml: Fragment) -> Bone | None:
             continue
 
         return bone
+
+
+def add_col_bone_constraint(bound_obj: bpy.types.Object, frag_obj: bpy.types.Object, bone_name: str):
+    constraint = add_child_of_bone_constraint(bound_obj, frag_obj, bone_name)
+
+    # Composite transforms include bone transforms, so adding the child of bone constraint will cause the object
+    # to get the bone transforms twice. We need to invert the bone transforms so this does not happen.
+    bpy_bone = frag_obj.data.bones.get(constraint.subtarget)
+    bound_obj.matrix_local = bpy_bone.matrix_local.inverted() @ bound_obj.matrix_local
+
+    return constraint
 
 
 def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], hi_materials: Optional[list[bpy.types.Material]] = None, hi_xml: Optional[Fragment] = None):
@@ -331,16 +342,10 @@ def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, m
         drawable_xml, materials, f"{bone_name}.child")
 
     for child_obj in child_objs:
-        add_armature_constraint(child_obj, frag_obj, bone_name)
+        add_child_of_bone_constraint(child_obj, frag_obj, bone_name)
 
         child_obj.sollumz_is_physics_child_mesh = True
         child_obj.parent = drawable_obj
-
-        # Rename the lod meshes
-        # for lod in child_obj.sollumz_lods.lods:
-        #     if lod.mesh is None:
-        #         continue
-        #     lod.mesh.name = f"{bone_name}_{SOLLUMZ_UI_NAMES[lod.level].lower().replace(' ', '_')}"
 
     return child_objs
 
@@ -391,7 +396,7 @@ def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, mater
 def get_window_col(frag_obj: bpy.types.Object, bone_name: str) -> Optional[bpy.types.Object]:
     for obj in frag_obj.children_recursive:
         if obj.sollum_type in BOUND_TYPES:
-            col_bone = get_armature_constraint_bone(obj, frag_obj)
+            col_bone = get_child_of_bone(obj)
 
             if col_bone is not None and col_bone.name == bone_name:
                 return obj

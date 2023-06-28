@@ -346,9 +346,9 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
         row.prop(context.scene, "create_light_type", text="")
 
 
-class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
     bl_label = "Bone Tools"
-    bl_idname = "SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL"
+    bl_idname = "SOLLUMZ_PT_BONE_TOOLS_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -360,6 +360,12 @@ class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        layout.label(text="Rigging", icon="ARMATURE_DATA")
+        layout.operator("sollumz.add_child_of_constraint",
+                        icon="CONSTRAINT_BONE")
+        layout.separator()
+
         layout.label(text="Apply Bone Properties", icon="MODIFIER_ON")
         row = layout.row(align=True)
         row.operator(
@@ -367,6 +373,7 @@ class SOLLUMZ_PT_APPLY_BONE_PROPERTIES_PANEL(bpy.types.Panel):
         row.operator(
             ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname)
         layout.separator()
+
         layout.label(text="Apply Flag Presets", icon="BOOKMARKS")
         row = layout.row(align=True)
         row.operator(ydr_ops.SOLLUMZ_OT_animation_flags.bl_idname,
@@ -616,3 +623,21 @@ class SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL(bpy.types.Panel):
             row.prop(y, "default_value", text="Y:")
             row.prop(z, "default_value", text="Z:")
             row.prop(w, "default_value", text="W:")
+
+
+class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_label = "Sollumz"
+    bl_parent_id = "OBJECT_PT_bChildOfConstraint"
+
+    def draw(self, context):
+        layout = self.layout
+        con = self.custom_data
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        layout.prop(con, "owner_space")
+        layout.prop(con, "target_space")
+        layout.separator()
+        layout.operator("sollumz.set_correct_child_of_space")
