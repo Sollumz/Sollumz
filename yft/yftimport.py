@@ -405,20 +405,6 @@ def get_veh_window_material(window_xml: Window, drawable_xml: Drawable, material
     return get_geometry_material(drawable_xml, materials, geometry_index)
 
 
-def create_veh_window_object(frag_obj: bpy.types.Object, window_xml: Window, window_bone: bpy.types.Bone, mesh: bpy.types.Mesh):
-    window_obj = bpy.data.objects.new(mesh.name, mesh)
-    window_obj.sollum_type = SollumType.SHATTERMAP
-
-    window_obj.location = window_bone.matrix_local.translation
-    add_armature_constraint(window_obj, frag_obj,
-                            window_bone.name, set_transforms=False)
-    set_veh_window_properties(window_xml, window_obj)
-
-    bpy.context.collection.objects.link(window_obj)
-
-    return window_obj
-
-
 def get_window_bone(window_xml: Window, frag_xml: Fragment, bpy_bones: bpy.types.ArmatureBones) -> bpy.types.Bone:
     """Get bone connected to window based on the bone tag of the physics child associated with the window."""
     children_xml: list[PhysicsChild] = frag_xml.physics.lod1.children
