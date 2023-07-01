@@ -2,7 +2,7 @@ import bpy
 
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SollumType
-from ..tools.blenderhelper import find_child_by_type, get_armature_obj
+from ..tools.blenderhelper import find_child_by_type, get_data_obj
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 
 
@@ -15,19 +15,22 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
         if len(bpy.context.selected_objects) <= 0:
             return {"FINISHED"}
 
-        active_object = bpy.context.selected_objects[0]
+        clip_obj = bpy.context.selected_objects[0]
 
-        if active_object.sollum_type != SollumType.CLIP:
+        if clip_obj.sollum_type != SollumType.CLIP:
             return {"FINISHED"}
 
-        clip_dictionary = active_object.parent.parent
-        armature = get_armature_obj(
-            clip_dictionary.clip_dict_properties.armature)
-
-        if armature is None:
+        clip_properties = clip_obj.clip_properties
+        if len(clip_properties.animations) <= 0:
             return {"FINISHED"}
 
-        clip_properties = active_object.clip_properties
+        clip_dictionary_obj = clip_obj.parent.parent
+        # TODO: animation may be None, or not all animations have the same target/are filled in
+        target = get_data_obj(clip_properties.animations[0].animation.animation_properties.target_id)
+        if target is None:
+            return {"FINISHED"}
+
+        clip_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
 
         groups = {}
 
@@ -40,64 +43,45 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
             start_frames = clip_animation.start_frame
             end_frames = clip_animation.end_frame
 
-            visual_frame_count = round(
-                clip_properties.duration * bpy.context.scene.render.fps)
+            action = animation_properties.action
 
-            actions = []
+            if action.name not in groups:
+                groups[action.name] = []
 
-            if animation_properties.base_action is not None:
-                actions.append(animation_properties.base_action)
+            group = groups[action.name]
 
-            if animation_properties.root_motion_location_action is not None:
-                actions.append(
-                    animation_properties.root_motion_location_action)
+            group.append({
+                "name": clip_properties.hash,
+                "start_frames": start_frames,
+                "end_frames": end_frames,
+                "action": action,
+            })
 
-            for action in actions:
-                if action.name not in groups:
-                    groups[action.name] = []
+        if target.animation_data is None:
+            target.animation_data_create()
 
-                group = groups[action.name]
-
-                group.append({
-                    "name": clip_properties.hash,
-                    "start_frames": start_frames,
-                    "end_frames": end_frames,
-                    "visual_frame_count": visual_frame_count,
-                    "action": action,
-                })
-
-        if armature.animation_data is None:
-            armature.animation_data_create()
-
-        for nla_track in armature.animation_data.nla_tracks:
-            armature.animation_data.nla_tracks.remove(nla_track)
+        for nla_track in target.animation_data.nla_tracks:
+            target.animation_data.nla_tracks.remove(nla_track)
 
         for group_name, clips in groups.items():
-            track = armature.animation_data.nla_tracks.new()
+            track = target.animation_data.nla_tracks.new()
             track.name = group_name
 
             for clip in clips:
-                virtual_frames_count = clip["visual_frame_count"]
                 action_frames_count = clip["end_frames"] - clip["start_frames"]
 
                 nla_strip = track.strips.new(clip["name"], 0, clip["action"])
                 nla_strip.frame_start = 0
-                nla_strip.frame_end = virtual_frames_count
+                nla_strip.frame_end = clip_frame_count
 
                 bpy.context.scene.frame_start = 0
                 bpy.context.scene.frame_end = int(nla_strip.frame_end)
 
-                if "_root_motion_location" in group_name:
-                    nla_strip.blend_type = "ADD"
-                elif "_root_motion_rotation" in group_name:
-                    nla_strip.blend_type = "MULTIPLY"
-                elif "_base" in group_name:
-                    nla_strip.blend_type = "COMBINE"
-
+                nla_strip.blend_type = "COMBINE"
                 nla_strip.extrapolation = "NOTHING"
                 nla_strip.name = clip["name"]
 
-                nla_strip.scale = virtual_frames_count / action_frames_count
+                nla_strip.scale = clip_frame_count / action_frames_count
                 nla_strip.action_frame_start = clip["start_frames"]
                 nla_strip.action_frame_end = clip["end_frames"]
 
@@ -156,22 +140,6 @@ class SOLLUMZ_OT_create_clip_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"FINISHED"}
 
         active_object = bpy.context.selected_objects[0]
-        active_mat = active_object.active_material
-        anim_type = context.scene.create_animation_type
-
-        if (anim_type == "REGULAR" and not isinstance(active_object.data, bpy.types.Armature)):
-            self.report({"ERROR"}, "Selected object is not a valid armature to create animation")
-            return {"FINISHED"}
-        
-        if (anim_type == "UV" and (len(active_object.data.materials) <= 0 or active_mat.sollum_type == "sollumz_material_none")):
-            self.report({"ERROR"}, "Selected object/material does not a valid sollumz type to create animation")
-            return {"FINISHED"}
-
-        # Verify if shader has UV parameter or not to prevent UV anim creation for unsupported shaders
-        if (anim_type == "UV" and ("globalAnimUV0_x" not in active_mat.node_tree.nodes)):
-            self.report({"ERROR"}, "Selected material shader does not support UV animations")
-            return {"FINISHED"}
-        
 
         create_clip_dictionary_template("Clip Dictionary", active_object, anim_type)
 

@@ -2,7 +2,8 @@ import bpy
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from . import operators as ycd_ops
-
+from .properties import AnimationTracks
+from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 
 def draw_clip_properties(self, context):
     obj = context.active_object
@@ -21,6 +22,55 @@ def draw_clip_properties(self, context):
                         text="Add a new Animation Link")
 
 
+animation_target_id_type_to_collection_name = {
+    "ARMATURE": "armatures",
+    "CAMERA": "cameras",
+    "DRAWABLE_GEOMETRY": "meshes",
+}
+
+
+# https://blender.stackexchange.com/a/293222
+def template_animation_target_ID(layout: bpy.types.UILayout, data, property: str, type_property: str,
+                    text: str = "", text_ctxt: str = "", translate: bool = True):
+    split = layout.split(factor=0.33)
+
+    # FIRST PART
+    row = split.row()
+
+    # Label - either use the provided text, or will become "ID-Block:"
+    if text != "":
+        row.label(text=text, text_ctxt=text_ctxt, translate=translate)
+    elif data.bl_rna.properties[property].name != "":
+        row.label(text=data.bl_rna.properties[property].name, text_ctxt=text_ctxt, translate=translate)
+    else:
+        row.label(text="ID-Block:")
+
+    # SECOND PART
+    row = split.row(align=True)
+
+    # ID-Type Selector - just have a menu of icons
+
+    # HACK: special group just for the enum,
+    # otherwise we get ugly layout with text included too...
+    sub = row.row(align=True)
+    sub.alignment = "LEFT"
+
+    sub.prop(data, type_property, icon_only=True)
+
+    # ID-Block Selector - just use pointer widget...
+
+    # HACK: special group to counteract the effects of the previous enum,
+    # which now pushes everything too far right.
+    sub = row.row(align=True)
+    sub.alignment = "EXPAND"
+
+    type_name = getattr(data, type_property)
+    if type_name in animation_target_id_type_to_collection_name:
+        icon = data.bl_rna.properties[type_property].enum_items[type_name].icon
+        sub.prop_search(data, property, bpy.data, animation_target_id_type_to_collection_name[type_name],
+                        text="", icon=icon)
+
+
 def draw_animation_properties(self, context):
     obj = context.active_object
     if obj and obj.sollum_type == SollumType.ANIMATION:
@@ -30,6 +80,11 @@ def draw_animation_properties(self, context):
 
         layout.prop(animation_properties, "hash")
         layout.prop(animation_properties, "frame_count")
+        layout.prop(animation_properties, "action")
+        r = layout.row()
+        r.use_property_split = True
+        r.use_property_decorate = False
+        template_animation_target_ID(r, animation_properties, "target_id", "target_id_type")
 
 
 def draw_clip_dictionary_properties(self, context):
@@ -41,6 +96,51 @@ def draw_clip_dictionary_properties(self, context):
 
         layout.prop(clip_dict_properties, "armature")
         layout.prop(clip_dict_properties, "uv_obj")
+
+
+class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
+    bl_label = "Animation Tracks"
+    bl_idname = "SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None  # and obj.sollum_type == SollumType.DRAWABLE
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+
+        animation_tracks = context.active_object.animation_tracks
+        for prop in AnimationTracks.__annotations__:
+            layout.prop(animation_tracks, prop)
+
+
+class SOLLUMZ_PT_POSE_BONE_ANIMATION_TRACKS(bpy.types.Panel):
+    bl_label = "Animation Tracks"
+    bl_idname = "SOLLUMZ_PT_POSE_BONE_ANIMATION_TRACKS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "bone"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_BONE_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_pose_bone is not None
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+
+        p_bone = context.active_pose_bone
+        # animation_tracks = context.active_pose_bone.animation_tracks
+        for prop in AnimationTracks.__annotations__:
+            layout.prop(p_bone, f"animation_tracks_{prop}")
 
 
 class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
@@ -75,70 +175,6 @@ class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
             delete_op.animation_index = animation_index
 
 
-class SOLLUMZ_PT_ANIMATION_ACTIONS(bpy.types.Panel):
-    bl_label = "Actions"
-    bl_idname = "SOLLUMZ_PT_ANIMATION_ACTIONS"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
-    bl_order = 0
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-
-        if obj and obj.sollum_type == SollumType.ANIMATION:
-            clip_dict = obj.parent.parent
-            dict_properties = clip_dict.clip_dict_properties
-            if dict_properties.armature != None and dict_properties.uv_obj == None:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def draw(self, context):
-        layout = self.layout
-
-        obj = context.active_object
-
-        animation_properties = obj.animation_properties
-
-        layout.prop(animation_properties, "base_action")
-        layout.prop(animation_properties, "root_motion_location_action")
-        layout.prop(animation_properties, "root_motion_rotation_action")
-
-
-class SOLLUMZ_PT_UV_ANIMATION_ACTIONS(bpy.types.Panel):
-    bl_label = "UV Actions"
-    bl_idname = "SOLLUMZ_PT_UV_ANIMATION_ACTIONS"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
-    bl_order = 1
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-
-        if obj and obj.sollum_type == SollumType.ANIMATION:
-            clip_dict = obj.parent.parent
-            dict_properties = clip_dict.clip_dict_properties
-            if dict_properties.armature == None and dict_properties.uv_obj != None:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def draw(self, context):
-        obj = context.active_object
-        layout = self.layout
-        layout.prop(obj.uv_anim_materials, "material")
-
-
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Animations"
     bl_idname = "SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL"
@@ -170,7 +206,6 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                 row = layout.row(align=False)
                 row.operator(
                     ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
-                row.prop(context.scene, "create_animation_type")
                 row = layout.row()
                 row.operator(
                     ycd_ops.SOLLUMZ_OT_create_uv_anim_node.bl_idname)

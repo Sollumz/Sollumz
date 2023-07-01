@@ -71,6 +71,7 @@ class TrackType(IntEnum):
 class TrackValueType(IntEnum):
     Vector3 = 0
     Quaternion = 1
+    Float = 2
 
 
 class ActionType(IntEnum):
