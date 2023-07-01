@@ -72,7 +72,7 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     frag_xml.drawable = drawable_xml
 
     # Used for unapplying transforms
-    parent_inverse = get_drawable_parent_inverse(frag_obj, apply_transforms)
+    parent_inverse = get_drawable_parent_inverse(frag_obj)
 
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
@@ -547,8 +547,7 @@ def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.type
             if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
                 continue
 
-            model_xml = create_model_xml(
-                obj, lod.level, materials, parent_inverse=obj.matrix_world.inverted())
+            model_xml = create_model_xml(obj, lod.level, materials)
             model_xml.bone_index = 0
             append_model_xml(drawable_xml, model_xml, lod.level)
 

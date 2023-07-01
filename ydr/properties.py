@@ -1,5 +1,6 @@
 import bpy
 import os
+from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
 from bpy.app.handlers import persistent
@@ -297,6 +298,21 @@ def get_texture_name(self):
     if self.image:
         return os.path.splitext(basename(self.image.filepath))[0]
     return "None"
+
+
+def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> DrawableModelProperties:
+    drawable_obj = find_sollumz_parent(model_obj, SollumType.DRAWABLE)
+
+    if drawable_obj is not None and model_obj.vertex_groups:
+        return drawable_obj.skinned_model_properties.get_lod(lod_level)
+
+    lod = model_obj.sollumz_lods.get_lod(lod_level)
+
+    if lod is None or lod.mesh is None:
+        raise ValueError(
+            f"Failed to get Drawable Model properties: {model_obj.name} has no {SOLLUMZ_UI_NAMES[lod_level]} LOD!")
+
+    return lod.mesh.drawable_model_properties
 
 
 def register():

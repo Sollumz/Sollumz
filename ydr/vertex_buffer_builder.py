@@ -65,6 +65,9 @@ class VertexBufferBuilder:
         self._vert_inds = vert_inds
 
     def build(self):
+        if not self.mesh.loop_triangles:
+            self.mesh.calc_loop_triangles()
+
         self.mesh.calc_normals_split()
 
         mesh_attrs = self._collect_attrs()

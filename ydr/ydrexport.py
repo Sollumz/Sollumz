@@ -8,15 +8,15 @@ from numpy.typing import NDArray
 from typing import Optional
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
-from ..cwxml.drawable import Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader
+from ..cwxml.drawable import Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader, VertexBuffer
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_sphere_radius,
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list
-from ..tools.blenderhelper import get_bone_pose_matrix, get_child_of_constraint, remove_number_suffix, join_objects
-from ..sollumz_helper import get_sollumz_materials
+from ..tools.blenderhelper import get_bone_pose_matrix, get_child_of_constraint, remove_number_suffix
+from ..sollumz_helper import get_sollumz_materials, find_sollumz_parent
 from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     BOUND_TYPES,
@@ -25,9 +25,8 @@ from ..sollumz_properties import (
 )
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
-from .properties import DrawableModelProperties
+from .properties import get_model_properties
 from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, remove_unused_uvs, get_bone_by_vgroup
-from .properties import SkinnedDrawableModelProperties
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager
 
@@ -62,10 +61,6 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
             f"{drawable_xml.name} has no Sollumz materials! Aborting...")
         return drawable_xml
 
-    # Used for unapplying transforms
-    parent_inverse = get_drawable_parent_inverse(
-        drawable_obj, apply_transforms)
-
     if armature_obj or drawable_obj.type == "ARMATURE":
         armature_obj = armature_obj or drawable_obj
 
@@ -80,18 +75,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
         drawable_xml.joints = None
         bones = None
 
-    skinned_objs = get_skinned_model_objs(drawable_obj)
-
-    if skinned_objs:
-        model_props = drawable_obj.skinned_model_properties
-        create_skinned_model_xml(
-            drawable_xml, skinned_objs, model_props, materials, bones, parent_inverse)
-
-    model_objs = get_model_objs(drawable_obj)
-
-    if model_objs:
-        create_drawable_model_xmls(
-            drawable_xml, model_objs, materials, bones, parent_inverse)
+    create_model_xmls(drawable_xml, drawable_obj, materials, bones)
 
     drawable_xml.lights = create_xml_lights(drawable_obj, armature_obj)
 
@@ -99,140 +83,38 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     set_drawable_xml_extents(drawable_xml)
 
     create_embedded_collision_xmls(
-        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia, parent_inverse)
+        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
 
     return drawable_xml
 
 
-def get_skinned_model_objs(drawable_obj: bpy.types.Object):
-    """Get all skinned Drawable Model objects under ``drawable_obj``."""
-    skinned_objs: list[bpy.types.Object] = []
+def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+    model_objs = get_model_objs(drawable_obj)
 
-    for child in drawable_obj.children_recursive:
-        if child.sollum_type == SollumType.DRAWABLE_MODEL and child.vertex_groups and not child.sollumz_is_physics_child_mesh:
-            skinned_objs.append(child)
-
-    return skinned_objs
-
-
-def create_skinned_model_xml(drawable_xml: Drawable, skinned_objs: list[bpy.types.Object], skinned_model_props: SkinnedDrawableModelProperties, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
-    skinned_obj = get_joined_skinned_obj(skinned_objs, parent_inverse)
-
-    if skinned_obj is None:
-        return
-
-    for lod in skinned_obj.sollumz_lods.lods:
-        if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
-            continue
-
-        model_xml = DrawableModel()
-
-        model_props = skinned_model_props.get_lod(lod.level)
-        set_model_xml_properties(model_props, model_xml)
-        model_xml.has_skin = 1
-
-        geometries = create_geometries_xml(
-            skinned_obj, lod.level, materials, bones)
-        model_xml.geometries = geometries
-
-        append_model_xml(drawable_xml, model_xml, lod.level)
-
-    if len(skinned_objs) > 1:
-        delete_all_lod_meshes(skinned_obj)
-
-
-def get_joined_skinned_obj(skinned_objs: list[bpy.types.Object], parent_inverse: Optional[Matrix] = None):
-    """Join all the skinned objects and their LODs into a single object."""
-    # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
-    # drawable can be split by vertex group, we have to join each separate part into a sinlge object.
-
-    lod_objs: dict[LODLevel, list[bpy.types.Object]] = defaultdict(list)
-    lod_meshes = []
-
-    for obj in skinned_objs:
-        for lod in obj.sollumz_lods.lods:
-            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
-                continue
-
-            lod_obj = obj.copy()
-            lod_obj.data = lod.mesh.copy()
-            lod_meshes.append(lod_obj.data)
-
-            lod_obj.parent = None
-
-            lod_obj.data.transform(
-                parent_inverse or Matrix() @ lod_obj.matrix_world)
-            lod_obj.matrix_world = Matrix()
-
-            bpy.context.collection.objects.link(lod_obj)
-
-            lod_objs[lod.level].append(lod_obj)
-
-    skinned_obj = None
-
-    for lod_level, objs in lod_objs.items():
-        lod_obj = join_objects(objs)
-
-        if skinned_obj is None:
-            skinned_obj = bpy.data.objects.new("_temp_skinned", lod_obj.data)
-            skinned_obj.sollumz_lods.add_empty_lods()
-
-        skinned_obj.sollumz_lods.set_lod_mesh(lod_level, lod_obj.data)
-
-        bpy.data.objects.remove(lod_obj)
-
-    return skinned_obj
-
-
-def delete_all_lod_meshes(obj: bpy.types.Object):
-    lod_meshes: list[bpy.types.Mesh] = []
-
-    for lod in obj.sollumz_lods.lods:
-        if lod.mesh is None:
-            continue
-
-        lod_meshes.append(lod.mesh)
-
-    bpy.data.objects.remove(obj)
-
-    for mesh in lod_meshes:
-        bpy.data.meshes.remove(mesh)
-
-
-def get_model_objs(drawable_obj: bpy.types.Object):
-    """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
-    model_objs: list[bpy.types.Object] = []
-
-    for child in drawable_obj.children_recursive:
-        if child.sollum_type == SollumType.DRAWABLE_MODEL and not child.vertex_groups and not child.sollumz_is_physics_child_mesh:
-            model_objs.append(child)
-
-    return model_objs
-
-
-def create_drawable_model_xmls(drawable_xml: Drawable, model_objs: list[bpy.types.Object], materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
     for model_obj in model_objs:
         for lod in model_obj.sollumz_lods.lods:
             if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
                 continue
 
             model_xml = create_model_xml(
-                model_obj, lod.level, materials, bones, parent_inverse)
+                model_obj, lod.level, materials, bones)
             append_model_xml(drawable_xml, model_xml, lod.level)
 
+    # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
+    # drawable can be split by vertex group, we have to join each separate part into a single object.
+    join_skinned_models_for_each_lod(drawable_xml)
 
-def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, parent_inverse: Optional[Matrix] = None):
+
+def get_model_objs(drawable_obj: bpy.types.Object):
+    """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
+    return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh]
+
+
+def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
     model_xml = DrawableModel()
 
-    set_lod_model_xml_properties(model_obj, model_xml)
-
-    bone_inverse = get_bone_pose_matrix(model_obj).inverted()
-    # Models get exported with all transforms applied to the mesh data except for bone transformatios
-    # and any other transforms specified in parent_inverse (parent_inverse is determined by the "Apply Parent Transforms" option)
-    transforms_to_apply = bone_inverse @ parent_inverse @ model_obj.matrix_world
-
-    geometries = create_geometries_xml(
-        model_obj, lod_level, materials, bones, transforms_to_apply)
+    set_model_xml_properties(model_obj, lod_level, model_xml)
+    geometries = create_geometries_xml(model_obj, lod_level, materials, bones)
     model_xml.geometries = geometries
 
     model_xml.bone_index = get_model_bone_index(model_obj)
@@ -241,29 +123,28 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
 
 
 def get_model_bone_index(model_obj: bpy.types.Object):
-    bone_index = 0
-
     constraint = get_child_of_constraint(model_obj)
 
     if constraint is None:
-        return bone_index
+        return 0
 
-    armature = constraint.target.data
+    armature: bpy.types.Armature = constraint.target.data
     bone_index = armature.bones.find(constraint.subtarget)
 
     return bone_index if bone_index != -1 else 0
 
 
-def set_lod_model_xml_properties(model_obj: bpy.types.Object, model_xml: DrawableModel):
+def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, model_xml: DrawableModel):
     """Set ``DrawableModel`` properties for each lod in ``model_obj``"""
-    for lod in model_obj.sollumz_lods.lods:
-        if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
-            continue
+    model_props = get_model_properties(model_obj, lod_level)
 
-        set_model_xml_properties(lod.mesh.drawable_model_properties, model_xml)
+    model_xml.render_mask = model_props.render_mask
+    model_xml.flags = model_props.flags
+    model_xml.unknown_1 = model_props.unknown_1
+    model_xml.has_skin = 1 if model_obj.vertex_groups else 0
 
 
-def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
+def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None) -> list[Geometry]:
     mesh = model_obj.sollumz_lods.get_lod(lod_level).mesh
     current_lod_level = model_obj.sollumz_lods.active_lod.level
 
@@ -276,10 +157,10 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
             f"Model '{model_obj.name}' has no Sollumz materials! Skipping...")
         return []
 
-    mesh_eval = get_evaluated_mesh(model_obj)
+    obj_eval = get_evaluated_obj(model_obj)
+    mesh_eval = obj_eval.data
 
-    if transforms_to_apply is not None:
-        mesh_eval.transform(transforms_to_apply)
+    apply_model_transforms(obj_eval)
 
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
@@ -321,10 +202,7 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
 
             geometries.append(geom_xml)
 
-    # Sort by shader index
-    geometries = sorted(geometries, key=lambda g: g.shader_index)
-
-    bpy.data.meshes.remove(mesh_eval)
+    geometries = sort_geoms_by_shader(geometries)
 
     # Set the lod level back to what it was
     model_obj.sollumz_lods.set_active_lod(current_lod_level)
@@ -333,21 +211,58 @@ def create_geometries_xml(model_obj: bpy.types.Object, lod_level: LODLevel, mate
     return geometries
 
 
-def get_evaluated_mesh(model_obj: bpy.types.Object) -> bpy.types.Mesh:
-    """Get an evaluated, triangulated version of the mesh"""
+def sort_geoms_by_shader(geometries: list[Geometry]):
+    return sorted(geometries, key=lambda g: g.shader_index)
+
+
+def get_evaluated_obj(obj: bpy.types.Object) -> bpy.types.Object:
+    """Evaluate the object and it's mesh."""
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    obj_eval = model_obj.evaluated_get(depsgraph)
+    obj_eval = obj.evaluated_get(depsgraph)
 
-    mesh = bpy.data.meshes.new_from_object(
-        obj_eval, preserve_all_data_layers=True, depsgraph=depsgraph)
+    return obj_eval
 
-    mesh.calc_loop_triangles()
 
-    return mesh
+def apply_model_transforms(model_obj: bpy.types.Object):
+    """Apply final transforms to model_obj mesh"""
+    transforms = get_model_transforms_to_apply(model_obj)
+    model_obj.data.transform(transforms)
+    model_obj.matrix_world = Matrix()
+
+
+def get_model_transforms_to_apply(model_obj: bpy.types.Object):
+    """Get final transforms for a Drawable Model that should be directly applied to vertices"""
+    # Avoid doing any uneccesary work if there are no transforms to apply
+    if model_obj.matrix_world.is_identity:
+        return Matrix()
+
+    drawable_obj = find_sollumz_parent(model_obj, SollumType.DRAWABLE)
+
+    if drawable_obj is None:
+        raise ValueError(
+            f"Failed to get final transforms of {model_obj.name}: Object is not parented to a Drawable!")
+
+    parent_inverse = get_drawable_parent_inverse(drawable_obj)
+    bone_inverse = get_bone_pose_matrix(model_obj).inverted()
+
+    # Apply all transforms except any transforms from the current pose, and any parent transforms (depends on "Apply Parent Transforms" option)
+    return bone_inverse @ parent_inverse @ model_obj.matrix_world
+
+
+def get_drawable_parent_inverse(drawable_obj: bpy.types.Object):
+    """Get the parent transforms to unapply based on the "Apply Parent Transforms" option"""
+    if get_export_settings().apply_transforms:
+        # Even when apply transforms is enabled, we still don't want to apply location, as Drawables should always start from 0,0,0
+        return Matrix.Translation(drawable_obj.matrix_world.translation).inverted()
+
+    return drawable_obj.matrix_world.inverted()
 
 
 def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.types.Material]):
     loop_inds_by_mat: dict[int, NDArray[np.uint32]] = {}
+
+    if not mesh.loop_triangles:
+        mesh.calc_loop_triangles()
 
     # Material indices for each triangle
     tri_mat_indices = np.empty(len(mesh.loop_triangles), dtype=np.uint32)
@@ -431,12 +346,121 @@ def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level
         drawable_xml.drawable_models_vlow.append(model_xml)
 
 
-def get_drawable_parent_inverse(drawable_obj: bpy.types.Object, apply_transforms: bool = False):
-    if apply_transforms:
-        # Even when apply transforms is enabled, we still don't want to apply location, as Drawables should always start from 0,0,0
-        return Matrix.Translation(drawable_obj.matrix_world.translation).inverted()
+def join_skinned_models_for_each_lod(drawable_xml: Drawable):
+    drawable_xml.drawable_models_high = join_skinned_models(
+        drawable_xml.drawable_models_high)
+    drawable_xml.drawable_models_med = join_skinned_models(
+        drawable_xml.drawable_models_med)
+    drawable_xml.drawable_models_low = join_skinned_models(
+        drawable_xml.drawable_models_low)
+    drawable_xml.drawable_models_vlow = join_skinned_models(
+        drawable_xml.drawable_models_vlow)
 
-    return drawable_obj.matrix_world.inverted()
+
+def join_skinned_models(model_xmls: list[DrawableModel]):
+    non_skinned_models = [model for model in model_xmls if model.has_skin == 0]
+    skinned_models = [model for model in model_xmls if model.has_skin == 1]
+
+    if not skinned_models:
+        return non_skinned_models
+
+    skinned_geoms: list[Geometry] = [
+        geom for model in skinned_models for geom in model.geometries]
+
+    skinned_model = DrawableModel()
+    skinned_model.has_skin = 1
+    skinned_model.render_mask = skinned_models[0].render_mask
+    skinned_model.unknown_1 = skinned_models[0].unknown_1
+    skinned_model.flags = skinned_models[0].flags
+
+    geoms_by_shader: dict[int, list[Geometry]] = defaultdict(list)
+
+    for geom in skinned_geoms:
+        geoms_by_shader[geom.shader_index].append(geom)
+
+    geoms = [join_geometries(
+        geoms, shader_ind) for shader_ind, geoms in geoms_by_shader.items()]
+    skinned_model.geometries = sort_geoms_by_shader(geoms)
+
+    return [skinned_model, *non_skinned_models]
+
+
+def join_geometries(geometry_xmls: list[Geometry], shader_index: int):
+    new_geom = Geometry()
+    new_geom.shader_index = shader_index
+
+    vert_arrs = get_valid_vert_arrs(geometry_xmls)
+    ind_arrs = get_valid_ind_arrs(geometry_xmls)
+    vert_counts = [len(vert_arr) for vert_arr in vert_arrs]
+
+    new_geom.vertex_buffer.data = join_vert_arrs(vert_arrs)
+    new_geom.index_buffer.data = join_ind_arrs(ind_arrs, vert_counts)
+
+    new_geom.bounding_box_max = get_max_vector_list(
+        geom.bounding_box_max for geom in geometry_xmls)
+    new_geom.bounding_box_min = get_min_vector_list(
+        geom.bounding_box_min for geom in geometry_xmls)
+    new_geom.bone_ids = list(
+        np.unique([geom.bone_ids for geom in geometry_xmls]))
+
+    return new_geom
+
+
+def get_valid_vert_arrs(geometry_xmls: list[Geometry]):
+    return [geom.vertex_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+
+
+def get_valid_ind_arrs(geometry_xmls: list[Geometry]):
+    return [geom.index_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+
+
+def join_vert_arrs(vert_arrs: list[NDArray]):
+    """Join vertex buffer structured arrays. Works with arrays that have different layouts."""
+    num_verts = sum(len(vert_arr) for vert_arr in vert_arrs)
+    struct_dtype = get_joined_vert_arr_dtype(vert_arrs)
+    joined_arr = np.zeros(num_verts, dtype=struct_dtype)
+
+    for attr_name in joined_arr.dtype.names:
+        row_start = 0
+
+        for vert_arr in vert_arrs:
+            if attr_name not in vert_arr.dtype.names:
+                continue
+
+            attr = vert_arr[attr_name]
+            num_attr_verts = len(attr)
+            row_end = row_start + num_attr_verts
+
+            joined_arr[attr_name][row_start:row_end] = attr
+
+            row_start = row_end
+
+    return joined_arr
+
+
+def get_joined_vert_arr_dtype(vert_arrs: list[NDArray]):
+    """Create a new structured dtype containing all vertex attrs present in all vert_arrs"""
+    attr_names = []
+
+    for vert_arr in vert_arrs:
+        attr_names.extend(
+            name for name in vert_arr.dtype.names if name not in attr_names)
+
+    return [VertexBuffer.VERT_ATTR_DTYPES[name] for name in attr_names]
+
+
+def join_ind_arrs(ind_arrs: list[NDArray[np.uint32]], vert_counts: list[int]) -> NDArray[np.uint32]:
+    """Join vertex index arrays by simply concatenating and offsetting indices based on vertex counts"""
+    def get_vert_ind_offset(arr_ind: int) -> int:
+        if arr_ind == 0:
+            return 0
+
+        return sum(num_verts for num_verts in vert_counts[:arr_ind])
+
+    offset_ind_arrs = [
+        ind_arr + get_vert_ind_offset(i) for i, ind_arr in enumerate(ind_arrs)]
+
+    return np.concatenate(offset_ind_arrs)
 
 
 def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: Drawable):
@@ -525,7 +549,7 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool
     for bone_index, pose_bone in enumerate(bones):
 
         bone_xml = create_bone_xml(
-            pose_bone, bone_index, armature_obj.data, auto_calc_bone_tag, matrix)
+            pose_bone, bone_index, armature_obj.data, matrix, auto_calc_bone_tag)
 
         skeleton_xml.bones.append(bone_xml)
 
@@ -534,7 +558,7 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool
     return skeleton_xml
 
 
-def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, auto_calc_bone_tag: bool = False, armature_matrix: Matrix = Matrix()):
+def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, armature_matrix: Matrix, auto_calc_bone_tag: bool = False):
     bone = pose_bone.bone
 
     bone_xml = Bone()
@@ -737,25 +761,19 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
     drawable_xml.bounding_box_max = bbmax
 
 
-def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False, parent_inverse: Matrix = Matrix()):
+def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
     for child in drawable_obj.children:
         bound_xml = None
 
         if child.sollum_type == SollumType.BOUND_COMPOSITE:
             bound_xml = create_composite_xml(
-                child, auto_calc_inertia, auto_calc_volume, parent_inverse)
+                child, auto_calc_inertia, auto_calc_volume)
         elif child.sollum_type in BOUND_TYPES:
             bound_xml = create_bound_xml(
-                child, auto_calc_inertia, auto_calc_volume, parent_inverse)
+                child, auto_calc_inertia, auto_calc_volume)
 
         if bound_xml is not None:
             drawable_xml.bounds.append(bound_xml)
-
-
-def set_model_xml_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
-    model_xml.render_mask = model_props.render_mask
-    model_xml.flags = model_props.flags
-    model_xml.unknown_1 = model_props.unknown_1
 
 
 def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
