@@ -70,10 +70,14 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
             armature_obj, auto_calc_bone_tag)
 
         bones = armature_obj.data.bones
+
+        original_pose = armature_obj.data.pose_position
+        armature_obj.data.pose_position = "REST"
     else:
         drawable_xml.skeleton = None
         drawable_xml.joints = None
         bones = None
+        original_pose = "POSE"
 
     create_model_xmls(drawable_xml, drawable_obj, materials, bones)
 
@@ -84,6 +88,9 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
 
     create_embedded_collision_xmls(
         drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
+
+    if armature_obj is not None:
+        armature_obj.data.pose_position = original_pose
 
     return drawable_xml
 

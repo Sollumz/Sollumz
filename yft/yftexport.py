@@ -64,6 +64,9 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
             f"Failed to create Fragment XML: {frag_obj.name} has no Drawable!")
         return
 
+    original_pose = frag_obj.data.pose_position
+    frag_obj.data.pose_position = "REST"
+
     set_paint_layer_shader_params(materials, drawable_xml.shader_group)
 
     frag_xml.bounding_sphere_center = drawable_xml.bounding_sphere_center
@@ -94,6 +97,8 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     create_vehicle_windows_xml(frag_obj, frag_xml, materials)
 
     frag_xml.lights = create_xml_lights(frag_obj, frag_obj)
+
+    frag_obj.data.pose_position = original_pose
 
     return frag_xml
 
