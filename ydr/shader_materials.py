@@ -37,28 +37,28 @@ def get_child_nodes(node):
 def get_loose_nodes(node_tree):
     loose_nodes = []
     for node in node_tree.nodes:
-        no = False
-        ni = False
+        node_output = False
+        node_input = False
         for output in node.outputs:
             for link in output.links:
                 if link.to_node is not None and link.from_node is not None:
-                    no = True
+                    node_output = True
                     break
         for input in node.inputs:
             for link in input.links:
                 if link.to_node is not None and link.from_node is not None:
-                    ni = True
+                    node_input = True
                     break
-        if no == False and ni == False:
+        if node_output == False and node_input == False:
             loose_nodes.append(node)
     return loose_nodes
 
 
 def organize_node_tree(node_tree):
-    mo = try_get_node(node_tree, "Material Output")
-    mo.location.x = 0
-    mo.location.y = 0
-    organize_node(mo)
+    mat_output = try_get_node(node_tree, "Material Output")
+    mat_output.location.x = 0
+    mat_output.location.y = 0
+    organize_node(mat_output)
     organize_loose_nodes(node_tree, 1000, 0)
 
 
@@ -94,7 +94,7 @@ def organize_loose_nodes(node_tree, start_x, start_y):
         grid_x -= node.width + 25
 
 
-def get_tinted_sampler(mat):  # move to blenderhelper.py?
+def get_tinted_sampler(mat):
     nodes = mat.node_tree.nodes
     for node in nodes:
         if node.name in ("TintPaletteSampler", "TextureSamplerDiffPal"):
@@ -105,7 +105,7 @@ def get_tinted_sampler(mat):  # move to blenderhelper.py?
     return None  # return none because that means it has no parameter which means it isnt a tinted shader
 
 
-def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
+def get_detail_extra_sampler(mat):
     nodes = mat.node_tree.nodes
     for node in nodes:
         if node.name == "Extra":
@@ -113,31 +113,31 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
     return None
 
 
-def create_tinted_texture_from_image(img):  # move to blenderhelper.py?
+def create_tinted_texture_from_image(img):
     bpy.ops.texture.new()
-    txt = bpy.data.textures[len(bpy.data.textures) - 1]
+    texture = bpy.data.textures[len(bpy.data.textures) - 1]
     if img is not None:
-        txt.image = img
-    txt.use_interpolation = False
-    txt.use_mipmap = False
-    txt.use_alpha = False
-    txt.name = img.name + "_texture" if img else "palette_texture"
-    return txt
+        texture.image = img
+    texture.use_interpolation = False
+    texture.use_mipmap = False
+    texture.use_alpha = False
+    texture.name = img.name + "_texture" if img else "palette_texture"
+    return texture
 
 
-def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
+def create_tinted_shader_graph(obj):
     mat = obj.data.materials[0]
     tint_img = get_tinted_sampler(mat)
-    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:  # check here or?
+    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:
         return
 
     bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     bpy.ops.node.new_geometry_nodes_modifier()
-    tnt_ng = create_tinted_geometry_graph()
+    tint_node_graph = create_tinted_geometry_graph()
     geom = obj.modifiers["GeometryNodes"]
-    geom.node_group = tnt_ng
+    geom.node_group = tint_node_graph
 
     # set input / output variables
     input_id = geom.node_group.inputs[1].identifier
@@ -148,10 +148,9 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     geom[output_id + "_use_attribute"] = True
 
     # create texture and get texture node
-    txt = create_tinted_texture_from_image(tint_img)  # remove this??
+    tint_txt = create_tinted_texture_from_image(tint_img)
     txt_node = geom.node_group.nodes["Image Texture"]
-    # apply texture
-    txt_node.inputs[0].default_value = txt.image
+    txt_node.inputs[0].default_value = tint_txt.image
 
     obj.data.vertex_colors.new(name="TintColor")
 
@@ -160,81 +159,100 @@ def link_geos(links, node1, node2):
     links.new(node1.inputs["Geometry"], node2.outputs["Geometry"])
 
 
-def create_tinted_geometry_graph():  # move to blenderhelper.py?
-    gnt = bpy.data.node_groups.new(
+def create_tinted_geometry_graph():
+    geo_node_tree = bpy.data.node_groups.new(
         name="TintGeometry", type="GeometryNodeTree")
-    input = gnt.nodes.new("NodeGroupInput")
-    output = gnt.nodes.new("NodeGroupOutput")
+    input = geo_node_tree.nodes.new("NodeGroupInput")
+    output = geo_node_tree.nodes.new("NodeGroupOutput")
 
     # Create the necessary sockets for the node group
-    gnt.inputs.new("NodeSocketGeometry", "Geometry")
-    gnt.inputs.new("NodeSocketVector", "Vector")
-    gnt.outputs.new("NodeSocketGeometry", "Geometry")
-    gnt.outputs.new("NodeSocketColor", "Color")
+    geo_node_tree.inputs.new("NodeSocketGeometry", "Geometry")
+    geo_node_tree.inputs.new("NodeSocketVector", "Vector")
+    geo_node_tree.outputs.new("NodeSocketGeometry", "Geometry")
+    geo_node_tree.outputs.new("NodeSocketColor", "Color")
 
     # link input / output node to create geometry socket
-    cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
-    cptn.domain = "CORNER"
-    cptn.data_type = "FLOAT_COLOR"
-    gnt.links.new(input.outputs[0], cptn.inputs[0])
-    gnt.links.new(cptn.outputs[0], output.inputs[0])
+    capture_attribute = geo_node_tree.nodes.new("GeometryNodeCaptureAttribute")
+    capture_attribute.domain = "CORNER"
+    capture_attribute.data_type = "FLOAT_COLOR"
+    geo_node_tree.links.new(input.outputs[0], capture_attribute.inputs[0])
+    geo_node_tree.links.new(capture_attribute.outputs[0], output.inputs[0])
 
     # create and link texture node
-    txtn = gnt.nodes.new("GeometryNodeImageTexture")
-    txtn.interpolation = "Closest"
-    gnt.links.new(cptn.outputs[3], txtn.inputs[1])
-    gnt.links.new(txtn.outputs[0], output.inputs[1])
+    texture_node = geo_node_tree.nodes.new("GeometryNodeImageTexture")
+    texture_node.interpolation = "Closest"
+    geo_node_tree.links.new(
+        capture_attribute.outputs[3], texture_node.inputs[1])
+    geo_node_tree.links.new(texture_node.outputs[0], output.inputs[1])
 
     # separate colour0
-    sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
-    gnt.links.new(input.outputs[1], sepn.inputs[0])
+    separate_node = geo_node_tree.nodes.new("ShaderNodeSeparateXYZ")
+    geo_node_tree.links.new(input.outputs[1], separate_node.inputs[0])
 
-    # create math nodes
-    mathns = []
-    for i in range(9):
-        mathns.append(gnt.nodes.new("ShaderNodeMath"))
+    # math node 0
+    less_than_node = geo_node_tree.nodes.new("ShaderNodeMath")
+    less_than_node.operation = "LESS_THAN"
+    geo_node_tree.links.new(separate_node.outputs[2], less_than_node.inputs[0])
+    less_than_node.inputs[1].default_value = 0.003
 
-    # c1
-    mathns[0].operation = "LESS_THAN"
-    gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
-    mathns[0].inputs[1].default_value = 0.003
-    mathns[1].operation = "SUBTRACT"
-    gnt.links.new(mathns[0].outputs[0], mathns[1].inputs[1])
-    mathns[1].inputs[0].default_value = 1.0
+    # math node 1
+    subtract_node = geo_node_tree.nodes.new("ShaderNodeMath")
+    subtract_node.operation = "SUBTRACT"
+    geo_node_tree.links.new(less_than_node.outputs[0], subtract_node.inputs[1])
+    subtract_node.inputs[0].default_value = 1.0
 
-    # r1
-    mathns[2].operation = "MULTIPLY"
-    gnt.links.new(sepn.outputs[2], mathns[2].inputs[0])
-    mathns[2].inputs[1].default_value = 12.920
-    mathns[3].operation = "MULTIPLY"
-    gnt.links.new(mathns[2].outputs[0], mathns[3].inputs[0])
-    gnt.links.new(mathns[0].outputs[0], mathns[3].inputs[1])
+    # math node 2
+    multiply_node = geo_node_tree.nodes.new("ShaderNodeMath")
+    multiply_node.operation = "MULTIPLY"
+    geo_node_tree.links.new(separate_node.outputs[2], multiply_node.inputs[0])
+    multiply_node.inputs[1].default_value = 12.920
 
-    # r2
-    mathns[4].operation = "POWER"
-    gnt.links.new(sepn.outputs[2], mathns[4].inputs[0])
-    mathns[4].inputs[1].default_value = 0.417
-    mathns[5].operation = "MULTIPLY"
-    gnt.links.new(mathns[4].outputs[0], mathns[5].inputs[0])
-    mathns[5].inputs[1].default_value = 1.055
-    mathns[6].operation = "SUBTRACT"
-    gnt.links.new(mathns[5].outputs[0], mathns[6].inputs[0])
-    mathns[6].inputs[1].default_value = 0.055
-    mathns[7].operation = "MULTIPLY"
-    gnt.links.new(mathns[6].outputs[0], mathns[7].inputs[0])
-    gnt.links.new(mathns[1].outputs[0], mathns[7].inputs[1])
+    # math node 3
+    multiply_node2 = geo_node_tree.nodes.new("ShaderNodeMath")
+    multiply_node2.operation = "MULTIPLY"
+    geo_node_tree.links.new(multiply_node.outputs[0], multiply_node2.inputs[0])
+    geo_node_tree.links.new(
+        less_than_node.outputs[0], multiply_node2.inputs[1])
 
-    # add r1 and r2
-    mathns[8].operation = "ADD"
-    gnt.links.new(mathns[3].outputs[0], mathns[8].inputs[0])
-    gnt.links.new(mathns[7].outputs[0], mathns[8].inputs[1])
+    # math node 4
+    power_node = geo_node_tree.nodes.new("ShaderNodeMath")
+    power_node.operation = "POWER"
+    geo_node_tree.links.new(separate_node.outputs[2], power_node.inputs[0])
+    power_node.inputs[1].default_value = 0.417
+
+    # math node 5
+    multiply_node3 = geo_node_tree.nodes.new("ShaderNodeMath")
+    multiply_node3.operation = "MULTIPLY"
+    geo_node_tree.links.new(power_node.outputs[0], multiply_node3.inputs[0])
+    multiply_node3.inputs[1].default_value = 1.055
+
+    # math node 6
+    subtract_node2 = geo_node_tree.nodes.new("ShaderNodeMath")
+    subtract_node2.operation = "SUBTRACT"
+    geo_node_tree.links.new(
+        multiply_node3.outputs[0], subtract_node2.inputs[0])
+    subtract_node2.inputs[1].default_value = 0.055
+
+    # math node 7
+    multiply_node4 = geo_node_tree.nodes.new("ShaderNodeMath")
+    multiply_node4.operation = "MULTIPLY"
+    geo_node_tree.links.new(
+        subtract_node2.outputs[0], multiply_node4.inputs[0])
+    geo_node_tree.links.new(subtract_node.outputs[0], multiply_node4.inputs[1])
+
+    # math node 8
+    add_node = geo_node_tree.nodes.new("ShaderNodeMath")
+    add_node.operation = "ADD"
+    geo_node_tree.links.new(multiply_node2.outputs[0], add_node.inputs[0])
+    geo_node_tree.links.new(multiply_node4.outputs[0], add_node.inputs[1])
 
     # create and link vector
-    comb = gnt.nodes.new("ShaderNodeCombineRGB")
-    gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
-    gnt.links.new(comb.outputs[0], cptn.inputs[3])
+    combine_rgb_node = geo_node_tree.nodes.new("ShaderNodeCombineRGB")
+    geo_node_tree.links.new(add_node.outputs[0], combine_rgb_node.inputs[0])
+    geo_node_tree.links.new(
+        combine_rgb_node.outputs[0], capture_attribute.inputs[3])
 
-    return gnt
+    return geo_node_tree
 
 
 def create_image_node(node_tree, param):
@@ -407,47 +425,56 @@ def link_specular(node_tree, spctex):
     links.new(spctex.outputs["Color"], bsdf.inputs["Specular"])
 
 
-def create_pixel_tint_nodes(node_tree, tex, tinttex, tintflags):
+def create_pixel_tint_nodes(node_tree, tex, tinttex):
     tinttex.interpolation = "Closest"
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links
-    mathns = []
+
+    math_nodes = []
     locx = 0
     locy = 50
     for _ in range(6):
         math = node_tree.nodes.new("ShaderNodeMath")
         math.location.x = locx
         math.location.y = locy
-        mathns.append(math)
+        math_nodes.append(math)
         locx += 150
-    comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+    # positions each math node instead of manually defining each location
+    combine_xyz_node = node_tree.nodes.new("ShaderNodeCombineXYZ")
 
-    mathns[0].operation = "MULTIPLY"
-    links.new(tex.outputs["Alpha"], mathns[0].inputs[0])
-    mathns[0].inputs[1].default_value = 255.009995
+    # math node 0
+    math_nodes[0].operation = "MULTIPLY"
+    links.new(tex.outputs["Alpha"], math_nodes[0].inputs[0])
+    math_nodes[0].inputs[1].default_value = 255.009995
 
-    mathns[1].operation = "ROUND"
-    links.new(mathns[0].outputs[0], mathns[1].inputs[0])
+    # math node 1
+    math_nodes[1].operation = "ROUND"
+    links.new(math_nodes[0].outputs[0], math_nodes[1].inputs[0])
 
-    mathns[2].operation = "SUBTRACT"
-    links.new(mathns[1].outputs[0], mathns[2].inputs[0])
-    mathns[2].inputs[1].default_value = 32.0
+    # math node 2
+    math_nodes[2].operation = "SUBTRACT"
+    links.new(math_nodes[1].outputs[0], math_nodes[2].inputs[0])
+    math_nodes[2].inputs[1].default_value = 32.0
 
-    mathns[3].operation = "MULTIPLY"
-    links.new(mathns[2].outputs[0], mathns[3].inputs[0])
-    mathns[3].inputs[1].default_value = 0.007813
-    links.new(mathns[3].outputs[0], comxyz.inputs[0])
+    # math node 3
+    math_nodes[3].operation = "MULTIPLY"
+    links.new(math_nodes[2].outputs[0], math_nodes[3].inputs[0])
+    math_nodes[3].inputs[1].default_value = 0.007813
+    links.new(math_nodes[3].outputs[0], combine_xyz_node.inputs[0])
 
-    mathns[4].operation = "MULTIPLY"
-    mathns[4].inputs[0].default_value = 0.03125
-    mathns[4].inputs[1].default_value = 0.5
+    # math node 4
+    math_nodes[4].operation = "MULTIPLY"
+    math_nodes[4].inputs[0].default_value = 0.03125
+    math_nodes[4].inputs[1].default_value = 0.5
 
-    mathns[5].operation = "SUBTRACT"
-    mathns[5].inputs[0].default_value = 1
-    links.new(mathns[4].outputs[0], mathns[5].inputs[1])
-    links.new(mathns[5].outputs[0], comxyz.inputs[1])
+    # math node 5
+    math_nodes[5].operation = "SUBTRACT"
+    math_nodes[5].inputs[0].default_value = 1
+    links.new(math_nodes[4].outputs[0], math_nodes[5].inputs[1])
+    links.new(math_nodes[5].outputs[0], combine_xyz_node.inputs[1])
 
-    links.new(comxyz.outputs[0], tinttex.inputs[0])
+    # link combine xyz node to tint texture and tint texture to BSDF base color
+    links.new(combine_xyz_node.outputs[0], tinttex.inputs[0])
     links.new(tinttex.outputs[0], bsdf.inputs["Base Color"])
 
 
@@ -472,123 +499,162 @@ def create_decal_nodes(node_tree, texture, decalflag):
     output = node_tree.nodes["Material Output"]
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links
-    mix = node_tree.nodes.new("ShaderNodeMixShader")
-    trans = node_tree.nodes.new("ShaderNodeBsdfTransparent")
+    mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
+    transparent_bsdf = node_tree.nodes.new("ShaderNodeBsdfTransparent")
     links.new(texture.outputs["Color"], bsdf.inputs["Base Color"])
 
     if decalflag == 0:
-        links.new(texture.outputs["Alpha"], mix.inputs["Fac"])
+        links.new(texture.outputs["Alpha"], mix_shader.inputs["Fac"])
     if decalflag == 1:
         vcs = node_tree.nodes.new("ShaderNodeVertexColor")
-        vcs.layer_name = "colour0"  # set in create shader???
-        multi = node_tree.nodes.new("ShaderNodeMath")
-        multi.operation = "MULTIPLY"
-        links.new(vcs.outputs["Alpha"], multi.inputs[0])
-        links.new(texture.outputs["Alpha"], multi.inputs[1])
-        links.new(multi.outputs["Value"], mix.inputs["Fac"])
+        vcs.layer_name = "colour0"
+        multiply_node = node_tree.nodes.new("ShaderNodeMath")
+        multiply_node.operation = "MULTIPLY"
+        links.new(vcs.outputs["Alpha"], multiply_node.inputs[0])
+        links.new(texture.outputs["Alpha"], multiply_node.inputs[1])
+        links.new(multiply_node.outputs["Value"], mix_shader.inputs["Fac"])
 
-    links.new(trans.outputs["BSDF"], mix.inputs[1])
+    # shader mixing / linking
+    links.new(transparent_bsdf.outputs["BSDF"], mix_shader.inputs[1])
     links.remove(bsdf.outputs["BSDF"].links[0])
-    links.new(bsdf.outputs["BSDF"], mix.inputs[2])
-    links.new(mix.outputs["Shader"], output.inputs["Surface"])
+    links.new(bsdf.outputs["BSDF"], mix_shader.inputs[2])
+    links.new(mix_shader.outputs["Shader"], output.inputs["Surface"])
 
 
 def create_emissive_nodes(node_tree):
     links = node_tree.links
     output = node_tree.nodes["Material Output"]
-    tmpn = output.inputs[0].links[0].from_node
-    if tmpn.name == "Principled BSDF":
-        em = node_tree.nodes.new("ShaderNodeEmission")
-        diff = node_tree.nodes["DiffuseSampler"]
-        links.new(diff.outputs[0], em.inputs[0])
-        links.new(em.outputs[0], output.inputs[0])
+    temp_node = output.inputs[0].links[0].from_node
+    if temp_node.name == "Principled BSDF":
+        emission_shader = node_tree.nodes.new("ShaderNodeEmission")
+        diffuse = node_tree.nodes["DiffuseSampler"]
+        links.new(diffuse.outputs[0], emission_shader.inputs[0])
+        links.new(emission_shader.outputs[0], output.inputs[0])
 
 
 def link_value_shader_parameters(shader, node_tree):
     links = node_tree.links
 
-    bmp = None
+    bump = None
     spec_im = None
     spec_fm = None
-    em_m = None
+    emissive_m = None
 
     for param in shader.parameters:
         if param.name == "bumpiness":
-            bmp = node_tree.nodes["bumpiness_x"]
+            bump = node_tree.nodes["bumpiness_x"]
         elif param.name == "specularIntensityMult":
             spec_im = node_tree.nodes["specularIntensityMult_x"]
         elif param.name == "specularFalloffMult":
             spec_fm = node_tree.nodes["specularFalloffMult_x"]
         elif param.name == "emissiveMultiplier":
-            em_m = node_tree.nodes["emissiveMultiplier_x"]
+            emissive_m = node_tree.nodes["emissiveMultiplier_x"]
 
-    if bmp:
-        nm = try_get_node(node_tree, "Normal Map")
-        if nm:
-            links.new(bmp.outputs[0], nm.inputs[0])
+    if bump:
+        normal_map = try_get_node(node_tree, "Normal Map")
+        if normal_map:
+            links.new(bump.outputs[0], normal_map.inputs[0])
     if spec_im:
-        spec = try_get_node(node_tree, "SpecSampler")
+        specular = try_get_node(node_tree, "SpecSampler")
         bsdf = try_get_node(node_tree, "Principled BSDF")
-        if spec and bsdf:
-            map = node_tree.nodes.new("ShaderNodeMapRange")
-            map.inputs[2].default_value = 1
-            map.inputs[4].default_value = 1
-            map.clamp = True
-            mult = node_tree.nodes.new("ShaderNodeMath")
-            mult.operation = "MULTIPLY"
-            links.new(spec.outputs[0], mult.inputs[0])
-            links.new(map.outputs[0], mult.inputs[1])
-            links.new(spec_im.outputs[0], map.inputs[0])
-            links.new(mult.outputs[0], bsdf.inputs["Specular"])
+        if specular and bsdf:
+            map_range = node_tree.nodes.new("ShaderNodeMapRange")
+            map_range.inputs[2].default_value = 1
+            map_range.inputs[4].default_value = 1
+            map_range.clamp = True
+            multiply_node = node_tree.nodes.new("ShaderNodeMath")
+            multiply_node.operation = "MULTIPLY"
+            links.new(specular.outputs[0], multiply_node.inputs[0])
+            links.new(map_range.outputs[0], multiply_node.inputs[1])
+            links.new(spec_im.outputs[0], map_range.inputs[0])
+            links.new(multiply_node.outputs[0], bsdf.inputs["Specular"])
     if spec_fm:
         bsdf = try_get_node(node_tree, "Principled BSDF")
         if bsdf:
-            map = node_tree.nodes.new("ShaderNodeMapRange")
-            map.inputs[2].default_value = 512
-            map.inputs[3].default_value = 1
-            map.inputs[4].default_value = 0
-            map.clamp = True
-            links.new(spec_fm.outputs[0], map.inputs[0])
-            links.new(map.outputs[0], bsdf.inputs["Roughness"])
-    if em_m:
-        em = try_get_node(node_tree, "Emission")
-        if em:
-            links.new(em_m.outputs[0], em.inputs[1])
+            map_range = node_tree.nodes.new("ShaderNodeMapRange")
+            map_range.inputs[2].default_value = 512
+            map_range.inputs[3].default_value = 1
+            map_range.inputs[4].default_value = 0
+            map_range.clamp = True
+            links.new(spec_fm.outputs[0], map_range.inputs[0])
+            links.new(map_range.outputs[0], bsdf.inputs["Roughness"])
+    if emissive_m:
+        emissive = try_get_node(node_tree, "Emission")
+        if emissive:
+            links.new(emissive_m.outputs[0], emissive.inputs[1])
 
 
 def create_water_nodes(node_tree):
-    links = node_tree.links
-    output = node_tree.nodes["Material Output"]
+    vol_absorb_density = 0.25
+    vol_absorb_color = (0.772, 0.91, 0.882, 1.0)
+    bsdf_base_color = (0.588, 0.91, 0.851, 1.0)
+    bsdf_emission_color = (0.49102, 0.938685, 1.0, 1.0)
+    bsdf_emission = 0.1
+    glass_shader_ior = 1.333
+    bump_strength = 0.05
+    noise_roughness = 0.85
+    noise_detail = 3.0
+    noise_scale = 12.0
+    # Material output
+    mat_output = node_tree.nodes["Material Output"]
+    mat_output_volume = mat_output.inputs['Volume']
+    mat_output_surface = mat_output.inputs['Surface']
+    # Mix Shader
     mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
+    mix_shader_factor = mix_shader.inputs[0]
+    mix_shader_shader1 = mix_shader.inputs[1]
+    mix_shader_shader2 = mix_shader.inputs[2]
+    mix_shader_out = mix_shader.outputs[0]
+    # Add Shader
     add_shader = node_tree.nodes.new("ShaderNodeAddShader")
+    add_shader_shader1 = add_shader.inputs[0]
+    add_shader_shader2 = add_shader.inputs[1]
+    add_shader_out = add_shader.outputs[0]
+    # Volume Absorbtion
     vol_absorb = node_tree.nodes.new("ShaderNodeVolumeAbsorption")
-    vol_absorb.inputs[0].default_value = (0.772, 0.91, 0.882, 1.0)
-    vol_absorb.inputs[1].default_value = 0.25  # Density
+    vol_absorb_out = vol_absorb.outputs[0]
+    vol_absorb.inputs[0].default_value = vol_absorb_color
+    vol_absorb.inputs[1].default_value = vol_absorb_density
+    # Principled BSDF
     bsdf = node_tree.nodes["Principled BSDF"]
-    bsdf.inputs[0].default_value = (0.588, 0.91, 0.851, 1.0)
-    bsdf.inputs[19].default_value = (
-        0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
-    bsdf.inputs['Emission Strength'].default_value = 0.1
+    bsdf_out = bsdf.outputs[0]
+    bsdf.inputs[0].default_value = bsdf_base_color
+    bsdf.inputs[19].default_value = bsdf_emission_color
+    bsdf.inputs['Emission Strength'].default_value = bsdf_emission
+    # Glass Shader
     glass_shader = node_tree.nodes.new("ShaderNodeBsdfGlass")
-    glass_shader.inputs['IOR'].default_value = 1.333
+    glass_shader.inputs['IOR'].default_value = glass_shader_ior
+    glass_shader_normal = glass_shader.inputs['Normal']
+    glass_shader_out = glass_shader.outputs[0]
+    # Transparent Shader
     trans_shader = node_tree.nodes.new("ShaderNodeBsdfTransparent")
+    trans_shader_out = trans_shader.outputs[0]
+    # Light Path
     light_path = node_tree.nodes.new("ShaderNodeLightPath")
+    light_path_out_shadow_ray = light_path.outputs['Is Shadow Ray']
+    # Bump Node
     bump = node_tree.nodes.new("ShaderNodeBump")
-    bump.inputs['Strength'].default_value = 0.05
+    bump_height = bump.inputs['Height']
+    bump_output = bump.outputs['Normal']
+    bump.inputs['Strength'].default_value = bump_strength
+    # Noise Texture
     noise_tex = node_tree.nodes.new("ShaderNodeTexNoise")
-    noise_tex.inputs['Scale'].default_value = 12.0
-    noise_tex.inputs['Detail'].default_value = 3.0
-    noise_tex.inputs[4].default_value = 0.85  # Roughness
+    noise_tex_factor = noise_tex.outputs['Fac']
+    noise_tex.inputs['Scale'].default_value = noise_scale
+    noise_tex.inputs['Detail'].default_value = noise_detail
+    noise_tex.inputs[4].default_value = noise_roughness
 
-    links.new(glass_shader.outputs[0], mix_shader.inputs[1])
-    links.new(trans_shader.outputs[0], mix_shader.inputs[2])
-    links.new(bsdf.outputs[0], add_shader.inputs[0])
-    links.new(vol_absorb.outputs[0], add_shader.inputs[1])
-    links.new(add_shader.outputs[0], output.inputs['Volume'])
-    links.new(mix_shader.outputs[0], output.inputs['Surface'])
-    links.new(light_path.outputs['Is Shadow Ray'], mix_shader.inputs['Fac'])
-    links.new(noise_tex.outputs['Fac'], bump.inputs['Height'])
-    links.new(bump.outputs['Normal'], glass_shader.inputs['Normal'])
+    # Link nodes
+    links = node_tree.links
+    links.new(glass_shader_out, mix_shader_shader1)
+    links.new(trans_shader_out, mix_shader_shader2)
+    links.new(bsdf_out, add_shader_shader1)
+    links.new(vol_absorb_out, add_shader_shader2)
+    links.new(add_shader_out, mat_output_volume)
+    links.new(mix_shader_out, mat_output_surface)
+    links.new(light_path_out_shadow_ray, mix_shader_factor)
+    links.new(noise_tex_factor, bump_height)
+    links.new(bump_output, glass_shader_normal)
 
 
 def create_basic_shader_nodes(mat, shader, filename):
@@ -597,10 +663,10 @@ def create_basic_shader_nodes(mat, shader, filename):
 
     texture = None
     texture2 = None
-    tintpal = None
-    bumptex = None
-    spectex = None
-    detltex = None
+    tint_pal = None
+    bump_tex = None
+    spec_tex = None
+    detail_tex = None
     isdistmap = False
 
     for param in shader.parameters:
@@ -609,13 +675,13 @@ def create_basic_shader_nodes(mat, shader, filename):
             if param.name in ("DiffuseSampler", "PlateBgSampler"):
                 texture = imgnode
             elif param.name in ("BumpSampler", "PlateBgBumpSampler"):
-                bumptex = imgnode
+                bump_tex = imgnode
             elif param.name == "SpecSampler":
-                spectex = imgnode
+                spec_tex = imgnode
             elif param.name == "DetailSampler":
-                detltex = imgnode
+                detail_tex = imgnode
             elif param.name in ("TintPaletteSampler", "TextureSamplerDiffPal"):
-                tintpal = imgnode
+                tint_pal = imgnode
             elif param.name == "distanceMapSampler":
                 texture = imgnode
                 isdistmap = True
@@ -633,12 +699,12 @@ def create_basic_shader_nodes(mat, shader, filename):
             raise Exception(
                 f"Unknown shader parameter! {param.type} {param.name}")
 
-    use_diff = True if texture else False
-    use_diff2 = True if texture2 else False
-    use_bump = True if bumptex else False
-    use_spec = True if spectex else False
-    use_detl = True if detltex else False
-    use_tint = True if tintpal else False
+    use_diffuse = True if texture else False
+    use_diffuse2 = True if texture2 else False
+    use_bump = True if bump_tex else False
+    use_spec = True if spec_tex else False
+    use_detail = True if detail_tex else False
+    use_tint = True if tint_pal else False
 
     # get correct vertex color index to use
     tintflag = 0
@@ -672,8 +738,8 @@ def create_basic_shader_nodes(mat, shader, filename):
     is_emissive = True if filename in ShaderManager.em_shaders else False
 
     if not use_decal:
-        if use_diff:
-            if use_diff2:
+        if use_diffuse:
+            if use_diffuse2:
                 link_diffuses(node_tree, texture, texture2)
             else:
                 link_diffuse(node_tree, texture)
@@ -681,16 +747,16 @@ def create_basic_shader_nodes(mat, shader, filename):
         create_decal_nodes(node_tree, texture, decalflag)
 
     if use_bump:
-        if use_detl:
-            link_detailed_normal(node_tree, bumptex, detltex, spectex)
+        if use_detail:
+            link_detailed_normal(node_tree, bump_tex, detail_tex, spec_tex)
         else:
-            link_normal(node_tree, bumptex)
+            link_normal(node_tree, bump_tex)
     if use_spec:
-        link_specular(node_tree, spectex)
+        link_specular(node_tree, spec_tex)
     else:
         node_tree.nodes["Principled BSDF"].inputs["Specular"].default_value = 0
     if use_tint:
-        create_tint_nodes(node_tree, tintpal, texture, tintflag)
+        create_tint_nodes(node_tree, tint_pal, texture, tintflag)
 
     if is_emissive:
         create_emissive_nodes(node_tree)
@@ -710,37 +776,37 @@ def create_terrain_shader(mat, shader, filename):
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links
 
-    ts1 = None
-    ts2 = None
-    ts3 = None
-    ts4 = None
-    bs1 = None
-    bs2 = None
-    bs3 = None
-    bs4 = None
-    tm = None
+    tex_sampler1 = None
+    tex_sampler2 = None
+    tex_sampler3 = None
+    tex_sampler4 = None
+    bump_sampler1 = None
+    bump_sampler2 = None
+    bump_sampler3 = None
+    bump_sampler4 = None
+    lookup_sampler = None
 
     for param in shader.parameters:
         if param.type == "Texture":
             imgnode = create_image_node(node_tree, param)
             if param.name == "TextureSampler_layer0":
-                ts1 = imgnode
+                tex_sampler1 = imgnode
             elif param.name == "TextureSampler_layer1":
-                ts2 = imgnode
+                tex_sampler2 = imgnode
             elif param.name == "TextureSampler_layer2":
-                ts3 = imgnode
+                tex_sampler3 = imgnode
             elif param.name == "TextureSampler_layer3":
-                ts4 = imgnode
+                tex_sampler4 = imgnode
             elif param.name == "BumpSampler_layer0":
-                bs1 = imgnode
+                bump_sampler1 = imgnode
             elif param.name == "BumpSampler_layer1":
-                bs2 = imgnode
+                bump_sampler2 = imgnode
             elif param.name == "BumpSampler_layer2":
-                bs3 = imgnode
+                bump_sampler3 = imgnode
             elif param.name == "BumpSampler_layer3":
-                bs4 = imgnode
+                bump_sampler4 = imgnode
             elif param.name == "lookupSampler":
-                tm = imgnode
+                lookup_sampler = imgnode
         elif param.type == "Vector":
             create_vector_nodes(node_tree, param)
         elif param.type == "Array":
@@ -749,64 +815,64 @@ def create_terrain_shader(mat, shader, filename):
             raise Exception(
                 f"Unknown shader parameter! {param.type} {param.name}")
 
-    mixns = []
-    for _ in range(8 if tm else 7):
+    mix_nodes = []
+    for _ in range(8 if lookup_sampler else 7):
         mix = node_tree.nodes.new("ShaderNodeMixRGB")
-        mixns.append(mix)
+        mix_nodes.append(mix)
 
-    seprgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
+    separate_rgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
     if filename in ShaderManager.mask_only_terrains:
-        links.new(tm.outputs[0], seprgb.inputs[0])
+        links.new(lookup_sampler.outputs[0], separate_rgb.inputs[0])
     else:
-        attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_c1.attribute_name = "colour1"
-        links.new(attr_c1.outputs[0], mixns[0].inputs[1])
-        links.new(attr_c1.outputs[0], mixns[0].inputs[2])
+        attr_colour1 = node_tree.nodes.new("ShaderNodeAttribute")
+        attr_colour1.attribute_name = "colour1"
+        links.new(attr_colour1.outputs[0], mix_nodes[0].inputs[1])
+        links.new(attr_colour1.outputs[0], mix_nodes[0].inputs[2])
 
-        attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_c0.attribute_name = "colour0"
-        links.new(attr_c0.outputs[3], mixns[0].inputs[0])
-        links.new(mixns[0].outputs[0], seprgb.inputs[0])
+        attr_colour0 = node_tree.nodes.new("ShaderNodeAttribute")
+        attr_colour0.attribute_name = "colour0"
+        links.new(attr_colour0.outputs[3], mix_nodes[0].inputs[0])
+        links.new(mix_nodes[0].outputs[0], separate_rgb.inputs[0])
 
-    # t1 / t2
-    links.new(seprgb.outputs[2], mixns[1].inputs[0])
-    links.new(ts1.outputs[0], mixns[1].inputs[1])
-    links.new(ts2.outputs[0], mixns[1].inputs[2])
+    # texture1 / texture2
+    links.new(separate_rgb.outputs[2], mix_nodes[1].inputs[0])
+    links.new(tex_sampler1.outputs[0], mix_nodes[1].inputs[1])
+    links.new(tex_sampler2.outputs[0], mix_nodes[1].inputs[2])
 
-    # t3 / t4
-    links.new(seprgb.outputs[2], mixns[2].inputs[0])
-    links.new(ts3.outputs[0], mixns[2].inputs[1])
-    links.new(ts4.outputs[0], mixns[2].inputs[2])
+    # texture3 / texture4
+    links.new(separate_rgb.outputs[2], mix_nodes[2].inputs[0])
+    links.new(tex_sampler3.outputs[0], mix_nodes[2].inputs[1])
+    links.new(tex_sampler4.outputs[0], mix_nodes[2].inputs[2])
 
-    links.new(seprgb.outputs[1], mixns[3].inputs[0])
-    links.new(mixns[1].outputs[0], mixns[3].inputs[1])
-    links.new(mixns[2].outputs[0], mixns[3].inputs[2])
+    links.new(separate_rgb.outputs[1], mix_nodes[3].inputs[0])
+    links.new(mix_nodes[1].outputs[0], mix_nodes[3].inputs[1])
+    links.new(mix_nodes[2].outputs[0], mix_nodes[3].inputs[2])
 
-    links.new(mixns[3].outputs[0], bsdf.inputs["Base Color"])
+    links.new(mix_nodes[3].outputs[0], bsdf.inputs["Base Color"])
 
-    if bs1:
-        links.new(seprgb.outputs[2], mixns[4].inputs[0])
-        links.new(bs1.outputs[0], mixns[4].inputs[1])
-        links.new(bs2.outputs[0], mixns[4].inputs[2])
+    if bump_sampler1:
+        links.new(separate_rgb.outputs[2], mix_nodes[4].inputs[0])
+        links.new(bump_sampler1.outputs[0], mix_nodes[4].inputs[1])
+        links.new(bump_sampler2.outputs[0], mix_nodes[4].inputs[2])
 
-        links.new(seprgb.outputs[2], mixns[5].inputs[0])
-        links.new(bs3.outputs[0], mixns[5].inputs[1])
-        links.new(bs4.outputs[0], mixns[5].inputs[2])
+        links.new(separate_rgb.outputs[2], mix_nodes[5].inputs[0])
+        links.new(bump_sampler3.outputs[0], mix_nodes[5].inputs[1])
+        links.new(bump_sampler4.outputs[0], mix_nodes[5].inputs[2])
 
-        links.new(seprgb.outputs[1], mixns[6].inputs[0])
-        links.new(mixns[4].outputs[0], mixns[6].inputs[1])
-        links.new(mixns[5].outputs[0], mixns[6].inputs[2])
+        links.new(separate_rgb.outputs[1], mix_nodes[6].inputs[0])
+        links.new(mix_nodes[4].outputs[0], mix_nodes[6].inputs[1])
+        links.new(mix_nodes[5].outputs[0], mix_nodes[6].inputs[2])
 
         nrm = node_tree.nodes.new("ShaderNodeNormalMap")
-        links.new(mixns[6].outputs[0], nrm.inputs[1])
+        links.new(mix_nodes[6].outputs[0], nrm.inputs[1])
         links.new(nrm.outputs[0], bsdf.inputs["Normal"])
 
     # assign lookup sampler last so that it overwrites any socket connections
-    if tm:
+    if lookup_sampler:
         attr_t1 = node_tree.nodes.new("ShaderNodeAttribute")
         attr_t1.attribute_name = "texcoord1"
-        links.new(attr_t1.outputs[1], tm.inputs[0])
-        links.new(tm.outputs[0], mixns[0].inputs[1])
+        links.new(attr_t1.outputs[1], lookup_sampler.inputs[0])
+        links.new(lookup_sampler.outputs[0], mix_nodes[0].inputs[1])
 
     # link value parameters
     bsdf.inputs["Specular"].default_value = 0
