@@ -390,3 +390,11 @@ def get_child_of_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ChildOf
 
         if constraint.target and constraint.target.type == "ARMATURE" and constraint.subtarget:
             return constraint
+
+
+def get_evaluated_obj(obj: bpy.types.Object) -> bpy.types.Object:
+    """Evaluate the object and it's mesh."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    obj_eval = obj.evaluated_get(depsgraph)
+
+    return obj_eval

@@ -3,19 +3,19 @@ from typing import Optional
 from collections import defaultdict
 from mathutils import Matrix, Vector
 
-from ..ybn.ybnexport import create_composite_xml
+from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
 from ..cwxml.bound import Bound
 from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window
 from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
-from ..tools.blenderhelper import remove_number_suffix, delete_hierarchy, get_child_of_bone
+from ..tools.blenderhelper import get_bone_pose_matrix, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
-from ..tools.utils import prop_array_to_vector, vector_inv
-from ..sollumz_helper import get_sollumz_materials
+from ..tools.utils import get_matrix_without_scale, prop_array_to_vector, vector_inv
+from ..sollumz_helper import get_export_transforms_to_apply, get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
-from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents, get_drawable_parent_inverse
+from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES
@@ -74,14 +74,11 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     frag_xml.drawable = drawable_xml
 
-    # Used for unapplying transforms
-    parent_inverse = get_drawable_parent_inverse(frag_obj)
-
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
     arch_xml = create_archetype_xml(lod_xml, frag_obj)
     create_collision_xml(frag_obj, arch_xml,
-                         auto_calc_inertia, auto_calc_volume, parent_inverse)
+                         auto_calc_inertia, auto_calc_volume)
 
     create_phys_xml_groups(frag_obj, lod_xml)
     create_phys_child_xmls(
@@ -315,13 +312,13 @@ def calculate_arch_mass(phys_children: list[PhysicsChild]) -> float:
     return total_mass
 
 
-def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
+def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     for child in frag_obj.children:
         if child.sollum_type != SollumType.BOUND_COMPOSITE:
             continue
 
         composite_xml = create_composite_xml(
-            child, auto_calc_inertia, auto_calc_volume, parent_inverse)
+            child, auto_calc_inertia, auto_calc_volume)
         arch_xml.bounds = composite_xml
 
         composite_xml.unk_type = 2
@@ -432,8 +429,7 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
             bound_xml = lod_xml.archetype.bounds.children[child_index]
             composite_matrix = bound_xml.composite_transform
 
-            drawable_matrix = get_child_drawable_matrix(
-                composite_matrix, bone.matrix_local)
+            drawable_matrix = get_child_drawable_matrix(obj)
 
             create_phys_child_drawable(
                 child_xml, materials, drawable_matrix, mesh_objs)
@@ -510,10 +506,12 @@ def get_bone_group_index(lod_xml: PhysicsLOD, bone_name: str):
     return -1
 
 
-def get_child_drawable_matrix(composite_matrix: Matrix, bone_matrix: Matrix):
+def get_child_drawable_matrix(bound_obj: bpy.types.Object):
     """The matrix for each physics child drawable matrix is the transformation of
     the mesh relative to the bone."""
-    matrix = bone_matrix.transposed().inverted() @ composite_matrix
+    export_transforms = get_export_transforms_to_apply(bound_obj)
+    # Including scale causes strange behavior so apply it to matrix
+    matrix = get_matrix_without_scale(export_transforms).transposed()
 
     # Convert to 4x3 matrix
     return Matrix([row[:3] for row in matrix])
@@ -548,11 +546,15 @@ def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.type
         return drawable_xml
 
     for obj in mesh_objs:
+        scale = get_scale_to_apply_to_bound(obj)
+        transforms_to_apply = Matrix.Diagonal(scale).to_4x4()
+
         for lod in obj.sollumz_lods.lods:
             if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
                 continue
 
-            model_xml = create_model_xml(obj, lod.level, materials)
+            model_xml = create_model_xml(
+                obj, lod.level, materials, transforms_to_apply=transforms_to_apply)
             model_xml.bone_index = 0
             append_model_xml(drawable_xml, model_xml, lod.level)
 
@@ -604,8 +606,8 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
             continue
 
         set_veh_window_xml_properties(window_xml, obj)
-        create_window_shattermap(
-            obj, bone.matrix_local.translation, window_xml)
+
+        create_window_shattermap(obj, window_xml)
 
         shader_index = mat_ind_by_name[window_mat.name]
         window_xml.unk_ushort_1 = get_window_geometry_index(
@@ -617,7 +619,7 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
         frag_xml.vehicle_glass_windows, key=lambda w: w.item_id)
 
 
-def create_window_shattermap(col_obj: bpy.types.Object, bone_pos: Vector, window_xml: Window):
+def create_window_shattermap(col_obj: bpy.types.Object, window_xml: Window):
     """Create window shattermap (if it exists) and calculate projection"""
     shattermap_obj = get_shattermap_obj(col_obj)
 
@@ -627,9 +629,11 @@ def create_window_shattermap(col_obj: bpy.types.Object, bone_pos: Vector, window
     shattermap_img = find_shattermap_image(shattermap_obj)
 
     if shattermap_img is not None:
+        pose_matrix = get_bone_pose_matrix(col_obj)
+
         window_xml.shattermap = image_to_shattermap(shattermap_img)
         window_xml.projection_matrix = calculate_shattermap_projection(
-            shattermap_obj, shattermap_img, bone_pos)
+            shattermap_obj, shattermap_img, pose_matrix)
 
 
 def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Object):
@@ -638,20 +642,17 @@ def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Obje
     window_xml.cracks_texture_tiling = window_obj.vehicle_window_properties.cracks_texture_tiling
 
 
-def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image, bone_pos: Vector):
+def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image, bone_matrix: Matrix):
     mesh = obj.data
 
     v1 = Vector()
     v2 = Vector()
     v3 = Vector()
 
-    # Create projection matrix relative to bone
-    bone_offset = obj.matrix_world.translation - bone_pos
-
     # Get three corner vectors
     for loop in mesh.loops:
         uv = mesh.uv_layers[0].data[loop.index].uv
-        vert_pos = bone_offset + mesh.vertices[loop.vertex_index].co
+        vert_pos = mesh.vertices[loop.vertex_index].co
 
         if uv.x == 0 and uv.y == 1:
             v1 = vert_pos
@@ -672,7 +673,12 @@ def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image,
     matrix[0] = edge1.x, edge2.x, edge3.x, v1.x
     matrix[1] = edge1.y, edge2.y, edge3.y, v1.y
     matrix[2] = edge1.z, edge2.z, edge3.z, v1.z
-    matrix.translation += bone_pos
+
+    # Create projection matrix relative to bone
+    mat = bone_matrix.copy()
+    parent_inverse = get_parent_inverse(obj)
+    mat.translation = Vector()
+    matrix = mat.inverted() @ parent_inverse @ obj.matrix_world @ matrix
 
     try:
         matrix.invert()

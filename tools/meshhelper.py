@@ -247,7 +247,7 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
             continue
 
         child_matrix = matrix @ (
-            child.matrix_world if use_world else child.matrix_local)
+            child.matrix_world if use_world else child.matrix_basis)
 
         total_bounds.extend([child_matrix @ Vector(v)
                             for v in child.bound_box])

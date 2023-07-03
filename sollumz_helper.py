@@ -3,7 +3,14 @@ import traceback
 import time
 from typing import Optional
 from abc import abstractmethod
-from .tools.blenderhelper import get_children_recursive, get_object_with_children, duplicate_object, join_objects, create_blender_object
+from mathutils import Matrix
+
+from .sollumz_properties import SollumType
+from .tools.blenderhelper import get_bone_pose_matrix
+
+
+from .sollumz_preferences import get_export_settings
+from .tools.blenderhelper import get_children_recursive, get_object_with_children
 from .sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
 
 
@@ -146,3 +153,28 @@ def get_sollumz_materials(obj: bpy.types.Object):
                     used_materials[mat] = True
 
     return sorted(materials, key=lambda m: m.shader_properties.index)
+
+
+def get_export_transforms_to_apply(obj: bpy.types.Object):
+    """Get final transforms for a mesh object that should be directly applied to vertices upon export."""
+    parent_inverse = get_parent_inverse(obj)
+    bone_inverse = get_bone_pose_matrix(obj).inverted()
+
+    # Apply all transforms except any transforms from the current pose, and any parent transforms (depends on "Apply Parent Transforms" option)
+    return parent_inverse @ obj.matrix_world @ bone_inverse
+
+
+def get_parent_inverse(obj: bpy.types.Object) -> Matrix:
+    """Get the parent transforms to unapply based on the "Apply Parent Transforms" option"""
+    parent_obj = find_sollumz_parent(obj)
+
+    if obj.matrix_world.is_identity or parent_obj is None:
+        return Matrix()
+
+    if get_export_settings().apply_transforms:
+        if parent_obj.sollum_type == SollumType.BOUND_COMPOSITE:
+            return Matrix()
+        # Even when apply transforms is enabled, we still don't want to apply location, as Drawables/Fragments should always start from 0,0,0
+        return Matrix.Translation(parent_obj.matrix_world.translation).inverted()
+
+    return parent_obj.matrix_world.inverted()

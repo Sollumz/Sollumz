@@ -200,3 +200,9 @@ def np_arr_to_str(arr: NDArray, fmt: str):
         fmt = '\n'.join([fmt] * arr.shape[0])
 
     return fmt % tuple(arr.ravel())
+
+
+def get_matrix_without_scale(matrix: Matrix) -> Matrix:
+    """Apply scale to transformation matrix"""
+    scale = matrix.to_scale()
+    return matrix @ Matrix.Diagonal(scale).inverted().to_4x4()

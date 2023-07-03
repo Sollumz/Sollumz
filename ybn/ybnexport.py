@@ -1,8 +1,10 @@
 import bpy
 from mathutils import Vector, Matrix
 from typing import Optional, TypeVar, Callable, Type
+import numpy as np
 
-from ..tools.blenderhelper import get_bone_pose_matrix, get_pose_inverse
+from ..sollumz_helper import get_parent_inverse
+from ..tools.blenderhelper import get_pose_inverse
 from ..cwxml.bound import (
     BoundFile,
     Bound,
@@ -22,9 +24,9 @@ from ..cwxml.bound import (
     PolyCylinder,
     Material
 )
-from ..tools.utils import get_max_vector_list, get_min_vector_list
+from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (get_bound_center_from_bounds, calculate_volume,
-                                calculate_inertia, get_sphere_radius, get_bound_center, get_combined_bound_box)
+                                calculate_inertia, get_sphere_radius, get_combined_bound_box)
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
 from ..sollumz_preferences import get_export_settings
 from .. import logger
@@ -49,12 +51,12 @@ def export_ybn(obj: bpy.types.Object, filepath: str):
     bounds.write_xml(filepath)
 
 
-def create_composite_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
+def create_composite_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     composite_xml = BoundComposite()
 
     for child in obj.children:
         child_xml = create_bound_xml(
-            child, auto_calc_inertia, auto_calc_volume, parent_inverse)
+            child, auto_calc_inertia, auto_calc_volume)
 
         if child_xml is None:
             continue
@@ -69,37 +71,38 @@ def create_composite_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False,
     return composite_xml
 
 
-def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
+def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
     if (obj.type == "MESH" and not has_col_mats(obj)) or (obj.type == "EMPTY" and not bound_geom_has_mats(obj)):
         logger.warning(f"'{obj.name}' has no collision materials! Skipping...")
         return
 
     if obj.sollum_type == SollumType.BOUND_BOX:
-        return init_bound_child_xml(BoundBox(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        return init_bound_child_xml(BoundBox(), obj, auto_calc_inertia, auto_calc_volume)
 
     if obj.sollum_type == SollumType.BOUND_DISC:
         disc_xml = init_bound_child_xml(
-            BoundDisc(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+            BoundDisc(), obj, auto_calc_inertia, auto_calc_volume)
+        scale = get_scale_to_apply_to_bound(obj)
         # For some reason the get_sphere_radius calculation does not work for bound discs
-        disc_xml.sphere_radius = obj.bound_radius
+        disc_xml.sphere_radius = scale.x * obj.bound_radius
 
         return disc_xml
 
     if obj.sollum_type == SollumType.BOUND_SPHERE:
-        return init_bound_child_xml(BoundSphere(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        return init_bound_child_xml(BoundSphere(), obj, auto_calc_inertia, auto_calc_volume)
 
     if obj.sollum_type == SollumType.BOUND_CYLINDER:
-        return init_bound_child_xml(BoundCylinder(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        return init_bound_child_xml(BoundCylinder(), obj, auto_calc_inertia, auto_calc_volume)
 
     if obj.sollum_type == SollumType.BOUND_CAPSULE:
-        return init_bound_child_xml(BoundCapsule(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        return init_bound_child_xml(BoundCapsule(), obj, auto_calc_inertia, auto_calc_volume)
 
     if obj.sollum_type == SollumType.BOUND_GEOMETRY:
-        return create_bound_geometry_xml(obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        return create_bound_geometry_xml(obj, auto_calc_inertia, auto_calc_volume)
 
     if obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
-        return create_bvh_xml(obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        return create_bvh_xml(obj, auto_calc_inertia, auto_calc_volume)
 
 
 def has_col_mats(obj: bpy.types.Object):
@@ -122,7 +125,7 @@ def bound_geom_has_mats(geom_obj: bpy.types.Object):
     return len(mats) > 0
 
 
-def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
+def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Initialize ``bound_xml`` bound child properties from object blender properties."""
     if obj.type == "MESH":
         bbmin, bbmax = get_bound_extents(obj)
@@ -137,7 +140,7 @@ def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_ca
         bound_xml, obj, auto_calc_inertia, auto_calc_volume)
 
     set_composite_xml_flags(bound_xml, obj)
-    set_composite_xml_transforms(bound_xml, obj, parent_inverse)
+    bound_xml.composite_transform = get_composite_transforms(obj).transposed()
     set_bound_xml_mat_index(bound_xml, obj)
 
     return bound_xml
@@ -158,32 +161,31 @@ def init_bound_xml(bound_xml: T_Bound, obj: bpy.types.Object, auto_calc_inertia:
     return bound_xml
 
 
-def create_bound_geometry_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
+def create_bound_geometry_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     geom_xml = init_bound_child_xml(
-        BoundGeometry(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        BoundGeometry(), obj, auto_calc_inertia, auto_calc_volume)
     set_bound_geom_xml_properties(geom_xml, obj)
     geom_xml.material_index = 0
 
-    create_bound_geom_xml_data(geom_xml, obj, parent_inverse)
+    create_bound_geom_xml_data(geom_xml, obj)
 
     return geom_xml
 
 
-def create_bvh_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, parent_inverse: Matrix = Matrix()):
+def create_bvh_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     geom_xml = init_bound_child_xml(
-        BoundGeometryBVH(), obj, auto_calc_inertia, auto_calc_volume, parent_inverse)
+        BoundGeometryBVH(), obj, auto_calc_inertia, auto_calc_volume)
     geom_xml.material_index = 0
 
-    create_bound_geom_xml_data(geom_xml, obj, parent_inverse)
+    create_bound_geom_xml_data(geom_xml, obj)
 
     return geom_xml
 
 
-def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object, parent_inverse: Matrix = Matrix()):
+def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object):
     """Create the vertices, polygons, and vertex colors of a ``BoundGeometry`` or ``BoundGeometryBVH`` from ``obj``."""
-    geom_xml.geometry_center = get_bound_center(obj) - obj.location
-
-    create_bound_xml_polys(geom_xml, obj, parent_inverse)
+    create_bound_xml_polys(geom_xml, obj)
+    geom_xml.geometry_center = center_verts_to_geometry(geom_xml)
 
     num_vertices = len(geom_xml.vertices)
 
@@ -196,7 +198,22 @@ def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: 
             f"{SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]} '{obj.name}' exceeds maximum vertex limit of {MAX_VERTICES} (has {num_vertices}!")
 
 
-def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object, parent_inverse: Matrix = Matrix()):
+def center_verts_to_geometry(geom_xml: BoundGeometry | BoundGeometryBVH):
+    """Position verts such that the origin is at their center of geometry. Returns the center of geometry."""
+    verts = np.array([tuple(v) for v in geom_xml.vertices], dtype=np.float32)
+
+    geom_center = Vector(np.average(verts, axis=0))
+    geom_xml.vertices = [
+        Vector(vert) - geom_center for vert in geom_xml.vertices]
+
+    if isinstance(geom_xml, BoundGeometry):
+        geom_xml.vertices_2 = [
+            Vector(vert) - geom_center for vert in geom_xml.vertices_2]
+
+    return Vector(geom_center)
+
+
+def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object):
     # Create mappings of vertices and materials by index to build the new geom_xml vertices
     ind_by_vert: dict[tuple, int] = {}
     ind_by_mat: dict[bpy.types.Material, int] = {}
@@ -257,7 +274,7 @@ def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeomet
 
     mesh = create_export_mesh(obj)
 
-    transforms = Matrix.Translation(-geom_xml.geometry_center)
+    transforms = get_bound_poly_transforms_to_apply(obj, geom_xml)
 
     triangles = create_poly_xml_triangles(
         mesh, transforms, get_vert_index, get_mat_index, add_deformed_vert)
@@ -271,9 +288,7 @@ def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeomet
 def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     mesh = create_export_mesh(obj)
 
-    bone_inverse = get_bone_pose_matrix(obj).inverted()
-    transforms = bone_inverse @ obj.matrix_local.copy()
-    transforms.translation -= geom_xml.geometry_center
+    transforms = get_bound_poly_transforms_to_apply(obj, geom_xml)
 
     if mesh.vertex_colors:
         create_xml_vertex_colors(geom_xml, mesh)
@@ -302,6 +317,25 @@ def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBV
         capsule_xml = create_poly_cylinder_capsule_xml(
             PolyCapsule, obj, transforms, get_vert_index, get_mat_index)
         geom_xml.polygons.append(capsule_xml)
+
+
+def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, geom_xml: BoundGeometryBVH):
+    """Get the transforms to apply directly to BoundGeometry vertices."""
+    composite_transform = geom_xml.composite_transform.transposed()
+    parent_inverse = get_parent_inverse(obj)
+
+    # Apply any transforms not covered in composite_transform
+    matrix = composite_transform.inverted() @ parent_inverse @ obj.matrix_world
+
+    return matrix
+
+
+def get_scale_to_apply_to_bound(bound_obj: bpy.types.Object) -> Vector:
+    """Get scale to apply to bound object based on "Apply Parent Transforms" option."""
+    parent_inverse = get_parent_inverse(bound_obj)
+    scale = (parent_inverse @ bound_obj.matrix_world).to_scale()
+
+    return scale
 
 
 def create_export_mesh(obj: bpy.types.Object):
@@ -469,11 +503,15 @@ def set_composite_xml_flags(bound_xml: BoundChild, obj: bpy.types.Object):
     set_flags("composite_flags2")
 
 
-def set_composite_xml_transforms(bound_xml: BoundChild, obj: bpy.types.Object, parent_inverse: Matrix = Matrix()):
-    pose_inverse = get_pose_inverse(obj)
+def get_composite_transforms(bound_obj: bpy.types.Object):
+    """Get CompositeTransforms for bound object. This is all transforms except
+    for the pose and scale."""
+    pose_inverse = get_pose_inverse(bound_obj)
+    parent_inverse = get_parent_inverse(bound_obj)
 
-    bound_xml.composite_transform = (
-        pose_inverse @ parent_inverse @ obj.matrix_world).transposed()
+    export_transforms = pose_inverse @ parent_inverse @ bound_obj.matrix_world
+
+    return get_matrix_without_scale(export_transforms)
 
 
 def set_bound_xml_mat_index(bound_xml: BoundChild, obj: bpy.types.Object):
@@ -498,12 +536,14 @@ def set_bound_geom_xml_properties(geom_xml: BoundGeometry, obj: bpy.types.Object
 
 
 def set_bound_properties(bound_xml: Bound, obj: bpy.types.Object):
+    scale = get_scale_to_apply_to_bound(obj)
+
     bound_xml.procedural_id = obj.bound_properties.procedural_id
     bound_xml.room_id = obj.bound_properties.room_id
     bound_xml.ped_density = obj.bound_properties.ped_density
     bound_xml.poly_flags = obj.bound_properties.poly_flags
     bound_xml.unk_flags = obj.bound_properties.unk_flags
-    bound_xml.margin = obj.margin
+    bound_xml.margin = scale.x * obj.margin
     bound_xml.volume = obj.bound_properties.volume
     bound_xml.inertia = Vector(obj.bound_properties.inertia)
 
@@ -520,11 +560,17 @@ def set_bound_extents(bound_xml: Bound, bbmin: Vector, bbmax: Vector):
 
 
 def get_bound_extents(obj: bpy.types.Object):
-    return get_min_vector_list(obj.bound_box), get_max_vector_list(obj.bound_box)
+    scale = get_scale_to_apply_to_bound(obj)
+
+    return scale * get_min_vector_list(obj.bound_box), scale * get_max_vector_list(obj.bound_box)
 
 
 def get_bvh_extents(obj: bpy.types.Object):
-    return get_combined_bound_box(obj)
+    scale = get_scale_to_apply_to_bound(obj)
+
+    bbmin, bbmax = get_combined_bound_box(obj)
+
+    return scale * bbmin, scale * bbmax
 
 
 def get_composite_extents(composite_xml: BoundComposite):
