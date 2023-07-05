@@ -35,7 +35,7 @@ class SOLLUMZ_OT_import(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     bl_label = "Import Codewalker XML"
     bl_action = "import"
     bl_showtime = True
-    bl_update_view = True
+    bl_update_view = False
 
     files: bpy.props.CollectionProperty(
         name="File Path",
