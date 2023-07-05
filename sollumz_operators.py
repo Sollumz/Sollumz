@@ -694,8 +694,6 @@ class SOLLUMZ_OT_debug_replace_armature_constraints(bpy.types.Operator):
         if bone is None:
             return
 
-        print(bone.matrix)
-
         obj.matrix_local = bone.matrix.inverted() @ obj.matrix_local
 
 
