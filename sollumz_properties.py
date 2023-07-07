@@ -581,6 +581,11 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         description="If enabled, ignore all Car Generators from the selected ymap(s).",
         default=False,
     )
+    ymap_instance_entities: bpy.props.BoolProperty(
+        name="Instance Entities",
+        description="If enabled, entities will be instanced.",
+        default=True,
+    )
 
 
 class SollumzExportSettings(bpy.types.PropertyGroup):
