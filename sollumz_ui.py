@@ -244,6 +244,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.import_settings, "ymap_skip_missing_entities")
+        layout.prop(operator.import_settings, "ymap_instance_entities")
         layout.prop(operator.import_settings, "ymap_exclude_entities")
         layout.prop(operator.import_settings, "ymap_box_occluders")
         layout.prop(operator.import_settings, "ymap_model_occluders")
