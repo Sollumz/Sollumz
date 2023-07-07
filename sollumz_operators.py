@@ -178,8 +178,10 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     def get_only_parent_objs(self, objs):
         pobjs = []
         for obj in objs:
-            if obj.parent is None:
+            if obj.parent is None or obj.parent.type == 'EMPTY':
                 pobjs.append(obj)
+            elif obj.parent.type == 'MESH' and obj.parent.sollum_type == SollumType.YMAP:
+                pobjs.append(obj.parent)
         return pobjs
 
     def collect_objects(self, context):
