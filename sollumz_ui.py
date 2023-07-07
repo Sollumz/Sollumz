@@ -1,3 +1,4 @@
+import re
 import bpy
 from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
@@ -463,7 +464,7 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
-    bl_label = "Copy Objects Location to Clipboard"
+    bl_label = "Object Location & Rotation Tools"
     bl_idname = "SOLLUMZ_PT_OBJ_YMAP_LOCATION"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
@@ -492,6 +493,8 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
                     "wm.sollumz_copy_location", text="", icon='COPYDOWN')
                 clip_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
                     loc[0], loc[1], loc[2])
+                row.operator("wm.sollumz_paste_location",
+                             text="", icon='PASTEDOWN')
 
             # Convert the object's rotation to a quaternion and copy it to the clipboard
             rot = obj.matrix_world.to_quaternion()
@@ -508,6 +511,36 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
                              text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
+
+
+class SOLLUMZ_OT_paste_location(bpy.types.Operator):
+    """Paste the location of an object from the clipboard"""
+    bl_idname = "wm.sollumz_paste_location"
+    bl_label = ""
+    location: bpy.props.StringProperty()
+
+    def execute(self, context):
+        # Function to parse the location string
+        def parse_location_string(location_string):
+            pattern = r"(-?\d+\.\d+)"
+            matches = re.findall(pattern, location_string)
+            if len(matches) == 3:
+                return float(matches[0]), float(matches[1]), float(matches[2])
+            else:
+                return None
+
+        location_string = bpy.context.window_manager.clipboard
+
+        location = parse_location_string(location_string)
+        if location is not None:
+            selected_object = bpy.context.object
+
+            selected_object.location = location
+            self.report({'INFO'}, "Location set successfully.")
+        else:
+            self.report({'ERROR'}, "Invalid location string.")
+
+        return {'FINISHED'}
 
 
 class SOLLUMZ_OT_copy_location(bpy.types.Operator):
