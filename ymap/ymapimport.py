@@ -64,51 +64,70 @@ def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData, import_setti
     bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
-    if ymap.entities:
-        entities_amount = len(ymap.entities)
-        count = 0
+    if import_settings.ymap_instance_entities:
+        if ymap.entities:
+            entities_amount = len(ymap.entities)
+            count = 0
 
-        # Cloning 'context.view_layer.objects' to prevent infinite loop
-        existing_objects = []
-        for obj in bpy.context.view_layer.objects:
-            existing_objects.append(obj)
+            # Cloning 'context.view_layer.objects' to prevent infinite loop
+            existing_objects = []
+            for obj in bpy.context.view_layer.objects:
+                existing_objects.append(obj)
 
-        # Looping trough existing objects, if found in ymap, then dupplicate and place in specific ymap collection
-        for obj in existing_objects:
-            for entity in ymap.entities:
-                if entity.archetype_name == obj.name:
-                    if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
-                        new_obj = duplicate_object_with_children(obj)
-                        apply_entity_properties(new_obj, entity)
-                        new_obj.parent = group_obj
-                        count += 1
-                        entity.found = True
-                    else:
+            # Looping trough existing objects, if found in ymap, then dupplicate and place in specific ymap collection
+            for obj in existing_objects:
+                for entity in ymap.entities:
+                    if entity.archetype_name == obj.name:
+                        if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
+                            new_obj = duplicate_object_with_children(obj)
+                            apply_entity_properties(new_obj, entity)
+                            new_obj.parent = group_obj
+                            count += 1
+                            entity.found = True
+                        else:
+                            self.error(
+                                f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
+
+            # Creating empty entity if no object was found for reference, and notify user
+            if not import_settings.ymap_skip_missing_entities:
+                for entity in ymap.entities:
+                    if entity.found is None:
+                        empty_obj = bpy.data.objects.new(
+                            entity.archetype_name + " (not found)", None)
+                        empty_obj.parent = group_obj
+                        apply_entity_properties(empty_obj, entity)
+                        empty_obj.sollum_type = SollumType.DRAWABLE
                         self.error(
-                            f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
-
-        # Creating empty entity if no object was found for reference, and notify user
-        if not import_settings.ymap_skip_missing_entities:
-            for entity in ymap.entities:
-                if entity.found is None:
-                    empty_obj = bpy.data.objects.new(
-                        entity.archetype_name + " (not found)", None)
-                    empty_obj.parent = group_obj
-                    apply_entity_properties(empty_obj, entity)
-                    empty_obj.sollum_type = SollumType.DRAWABLE
-                    self.error(
-                        f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
-        if count > 0:
-            self.message(
-                f"Succesfully placed {count}/{entities_amount} entities from scene!")
-            return group_obj
+                            f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
+            if count > 0:
+                self.message(
+                    f"Succesfully placed {count}/{entities_amount} entities from scene!")
+                return group_obj
+            else:
+                self.message(
+                    f"No entity from '{self.filepath}' exist in the view layer!")
+                return False
         else:
-            self.message(
-                f"No entity from '{self.filepath}' exist in the view layer!")
+            self.error(f"{self.filepath} doesn't contains any entity!")
             return False
-    else:
-        self.error(f"{self.filepath} doesn't contains any entity!")
-        return False
+    elif not import_settings.ymap_instance_entities:
+        found = False
+        if ymap.entities:
+            for obj in bpy.context.collection.all_objects:
+                for entity in ymap.entities:
+                    if entity.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
+                        found = True
+                        apply_entity_properties(obj, entity)
+            if found:
+                self.message(f"Succesfully imported: {self.filepath}")
+                return True
+            else:
+                self.message(
+                    f"No entities from '{self.filepath}' exist in the view layer!")
+                return False
+        else:
+            self.error(f"{self.filepath} contains no entities to import!")
+            return False
 
 
 def box_to_obj(obj, ymap: CMapData):
