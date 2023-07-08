@@ -1,51 +1,69 @@
 import bpy
-from bpy.types import PoseBone
 from mathutils import Vector, Matrix, Quaternion
 
 from ..cwxml import clipsdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
-from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_armature_obj
+from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from ..tools.animationhelper import (
-    TrackType,
-    ActionType,
+    Track,
+    TrackFormat,
+    TrackFormatMap,
     AnimationFlag,
     evaluate_vector,
     evaluate_quaternion,
     evaluate_euler_to_quaternion,
     get_quantum_and_min_val,
-    is_ped_bone_tag,
-    TrackTypeValueMap,
+    get_id_and_track_from_track_data_path,
 )
 
 
-def get_name(item):
-    return item.name.split(".")[0]
+def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID, frame_count: int):
+    if isinstance(target_id, bpy.types.Armature):
+        bone_name_map = build_name_bone_map(get_data_obj(target_id))
+    else:
+        bone_name_map = None
 
+    sequence_items = {}
+    for fcurve in action.fcurves:
+        data_path = fcurve.data_path
+        bone_id, track = get_id_and_track_from_track_data_path(data_path, target_id, bone_name_map)
+        comp_index = fcurve.array_index
+        format = TrackFormatMap[track]
 
-def ensure_action_track(track_type: TrackType, action_type: ActionType):
-    if action_type is ActionType.RootMotion:
-        if track_type is TrackType.BonePosition:
-            return TrackType.RootMotionPosition
-        if track_type is TrackType.BoneRotation:
-            return TrackType.RootMotionRotation
-    elif action_type is ActionType.Base:
-        if track_type is TrackType.UV0:
-            return TrackType.UV0
-        if track_type is TrackType.UV1:
-            return TrackType.UV1
+        if bone_id not in sequence_items:
+            sequence_items[bone_id] = {}
 
-    return track_type
+        bone_sequence = sequence_items[bone_id]
 
+        if track not in bone_sequence:
+            if format == TrackFormat.Vector3:
+                # TODO: get default value from property (e.g. UV0 and UV1 have non-zero default values)
+                bone_sequence[track] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+            elif format == TrackFormat.Quaternion:
+                bone_sequence[track] = [Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+            elif format == TrackFormat.Float:
+                bone_sequence[track] = [0.0] * frame_count
 
-def sequence_items_from_action(action, sequence_items, action_data, action_type, frame_count, animation_type):
+        track_sequence = bone_sequence[track]
+        for frame_id in range(0, frame_count):
+            value = fcurve.evaluate(frame_id)
+            if format == TrackFormat.Float:
+                track_sequence[frame_id] = value
+            else:
+                track_sequence[frame_id][comp_index] = value
+
+    # TODO: transform bone space and camera rotation
+
+    return sequence_items
+
     if animation_type == "REGULAR":
         locations_map = {}
         rotations_map = {}
         scales_map = {}
         bones_map = action_data
 
-        p_bone: PoseBone
+        p_bone: bpy.types.PoseBone
         for parent_tag, p_bone in bones_map.items():
             pos_vector_path = p_bone.path_from_id("location")
             rot_quaternion_path = p_bone.path_from_id("rotation_quaternion")
@@ -146,15 +164,15 @@ def sequence_items_from_action(action, sequence_items, action_data, action_type,
 
         if len(locations_map) > 0:
             sequence_items[ensure_action_track(
-                TrackType.BonePosition, action_type)] = locations_map
+                Track.BonePosition, action_type)] = locations_map
 
         if len(rotations_map) > 0:
             sequence_items[ensure_action_track(
-                TrackType.BoneRotation, action_type)] = rotations_map
+                Track.BoneRotation, action_type)] = rotations_map
 
         if len(scales_map) > 0:
             sequence_items[ensure_action_track(
-                TrackType.BoneScale, action_type)] = scales_map
+                Track.BoneScale, action_type)] = scales_map
 
     elif animation_type == "UV":
         u_locations_map = {}
@@ -193,11 +211,11 @@ def sequence_items_from_action(action, sequence_items, action_data, action_type,
 
             if len(u_locations_map) > 0:
                 sequence_items[ensure_action_track(
-                    TrackType.UV0, action_type)] = u_locations_map
+                    Track.UV0, action_type)] = u_locations_map
 
             if len(v_locations_map) > 0:
                 sequence_items[ensure_action_track(
-                    TrackType.UV1, action_type)] = v_locations_map
+                    Track.UV1, action_type)] = v_locations_map
 
 
 def build_values_channel(values, uniq_values, indirect_percentage=0.1):
@@ -230,13 +248,12 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
     return channel
 
 
-def sequence_item_from_frames_data(track, frames_data):
+def sequence_data_from_frames_data(track, frames_data):
     sequence_data = ycdxml.Animation.SequenceDataList.SequenceData()
 
-    # TODO: Would be good to put this in enum
+    format = TrackFormatMap[track]
 
-    # Location, Scale, RootMotion Position
-    if track == 0 or track == 2 or track == 5:
+    if format == TrackFormat.Vector3:
         values_x = []
         values_y = []
         values_z = []
@@ -261,14 +278,10 @@ def sequence_item_from_frames_data(track, frames_data):
 
             sequence_data.channels.append(channel)
         else:
-            sequence_data.channels.append(
-                build_values_channel(values_x, uniq_x))
-            sequence_data.channels.append(
-                build_values_channel(values_y, uniq_y))
-            sequence_data.channels.append(
-                build_values_channel(values_z, uniq_z))
-    # Rotation, RootMotion Rotation
-    elif track == 1 or track == 6:
+            sequence_data.channels.append(build_values_channel(values_x, uniq_x))
+            sequence_data.channels.append(build_values_channel(values_y, uniq_y))
+            sequence_data.channels.append(build_values_channel(values_z, uniq_z))
+    elif format == TrackFormat.Quaternion:
         values_x = []
         values_y = []
         values_z = []
@@ -298,43 +311,28 @@ def sequence_item_from_frames_data(track, frames_data):
 
             sequence_data.channels.append(channel)
         else:
-            sequence_data.channels.append(
-                build_values_channel(values_x, uniq_x))
-            sequence_data.channels.append(
-                build_values_channel(values_y, uniq_y))
-            sequence_data.channels.append(
-                build_values_channel(values_z, uniq_z))
-            sequence_data.channels.append(
-                build_values_channel(values_w, uniq_w))
+            sequence_data.channels.append(build_values_channel(values_x, uniq_x))
+            sequence_data.channels.append(build_values_channel(values_y, uniq_y))
+            sequence_data.channels.append(build_values_channel(values_z, uniq_z))
+            sequence_data.channels.append(build_values_channel(values_w, uniq_w))
+    elif format == TrackFormat.Float:
+        values = frames_data
 
-    # UV0/U or UV1/V
-    elif track == 17 or track == 18:
-        len_uniq_uv = len(frames_data)
+        uniq = list(set(values))
+        len_uniq = len(uniq)
 
-        if len_uniq_uv == 1:
+        if len_uniq == 1:
             channel = ycdxml.ChannelsList.StaticVector3()
             channel.value = frames_data[0]
 
             sequence_data.channels.append(channel)
         else:
-            channel1 = ycdxml.ChannelsList.StaticFloat()
-            channel2 = ycdxml.ChannelsList.StaticFloat()
-            if track == 17:
-                channel1.value = 1
-                channel2.value = 0
-            elif track == 18:
-                channel1.value = 0
-                channel2.value = 1
-            sequence_data.channels.append(channel1)
-            sequence_data.channels.append(channel2)
-            # Main channel item which contains frame data
-            sequence_data.channels.append(
-                build_values_channel(frames_data, list(set(frames_data))))
+            sequence_data.channels.append(build_values_channel(values, uniq))
 
     return sequence_data
 
 
-def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_animation, animation_type):
+def animation_from_object(animation_obj):
     animation = ycdxml.Animation()
 
     animation_properties = animation_obj.animation_properties
@@ -346,52 +344,29 @@ def animation_from_object(animation_obj, bones_name_map, bones_map, is_ped_anima
     animation.duration = (frame_count - 1) / bpy.context.scene.render.fps
     animation.unknown10 = AnimationFlag.Default
 
-    # This value must be unique (Looks like its used internally for animation caching)
-    animation.unknown1C = "hash_" + \
-        hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
+    # signature: this value must be unique (used internally for animation caching)
+    # TODO: CW should calculate this on import with the proper hash function
+    animation.unknown1C = "hash_" + hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
 
-    sequence_items = {}
-    if animation_type == "REGULAR":
-        if animation_properties.base_action:
-            action = animation_properties.base_action
-            action_type = ActionType.Base
-            sequence_items_from_action(
-                action, sequence_items, bones_map, action_type, frame_count, animation_type)
-
-        if animation_properties.root_motion_location_action:
-            action = animation_properties.root_motion_location_action
-            action_type = ActionType.RootMotion
-
-            animation.unknown10 |= AnimationFlag.RootMotion
-            sequence_items_from_action(
-                action, sequence_items, bones_map, action_type, frame_count, animation_type)
-
-        # TODO: Figure out root motion rotation
-        # if animation_properties.root_motion_rotation_action:
-            # action = animation_properties.root_motion_rotation_action
-            # action_type = ActionType.RootMotion
-
-            # animation.unknown10 |= AnimationFlag.RootMotion
-            # sequence_items_from_action(
-            #     action, sequence_items, bones_map, action_type, frames_count, animation_type)
-    elif animation_type == "UV":
-        action_material = animation_obj.uv_anim_materials.material
-        action_type = ActionType.Base
-        sequence_items_from_action(
-            action_material, sequence_items, animation_obj, action_type, frame_count, animation_type)
+    action = animation_properties.action
+    target_id = animation_properties.target_id
+    sequence_items = sequence_items_from_action(action, target_id, frame_count)
 
     sequence = ycdxml.Animation.SequenceList.Sequence()
     sequence.frame_count = frame_count
     sequence.hash = "hash_" + hex(0)[2:].zfill(8)
 
-    for track, bones_data in sorted(sequence_items.items()):
-        for bone_id, frames_data in sorted(bones_data.items()):
-            sequence_data = sequence_item_from_frames_data(track, frames_data)
+    for bone_id, bones_data in sorted(sequence_items.items()):
+        for track, frames_data in sorted(bones_data.items()):
+            if track == Track.MoverPosition or track == Track.MoverRotation:
+                animation.unknown10 |= AnimationFlag.RootMotion
+
+            sequence_data = sequence_data_from_frames_data(track, frames_data)
 
             seq_bone_id = ycdxml.Animation.BoneIdList.BoneId()
             seq_bone_id.bone_id = bone_id
             seq_bone_id.track = track.value
-            seq_bone_id.unk0 = TrackTypeValueMap[track].value
+            seq_bone_id.format = TrackFormatMap[track].value
             animation.bone_ids.append(seq_bone_id)
 
             sequence.sequence_data.append(sequence_data)
@@ -417,10 +392,8 @@ def clip_from_object(clip_obj):
         animation_duration = animation_properties.frame_count / bpy.context.scene.render.fps
 
         clip.animation_hash = animation_properties.hash
-        clip.start_time = (clip_animation_property.start_frame /
-                           animation_properties.frame_count) * animation_duration
-        clip.end_time = (clip_animation_property.end_frame /
-                         animation_properties.frame_count) * animation_duration
+        clip.start_time = (clip_animation_property.start_frame / animation_properties.frame_count) * animation_duration
+        clip.end_time = (clip_animation_property.end_frame / animation_properties.frame_count) * animation_duration
 
         clip_animation_duration = clip.end_time - clip.start_time
         clip.rate = clip_animation_duration / clip_properties.duration
@@ -454,34 +427,7 @@ def clip_from_object(clip_obj):
 
 
 def clip_dictionary_from_object(obj):
-    assert False, "Not implemented"
     clip_dictionary = ycdxml.ClipsDictionary()
-
-    armature = obj.clip_dict_properties.armature
-    uv_prop = obj.clip_dict_properties.uv_obj
-
-    if armature is not None and uv_prop is None:
-        animation_type = "REGULAR"
-        armature_obj = get_armature_obj(armature)
-    elif armature is None and uv_prop is not None:
-        animation_type = "UV"
-
-    if animation_type is None:
-        raise Exception("Invalid/unknown clip dictionary type")
-    elif animation_type == "REGULAR":
-        bones_name_map = build_name_bone_map(armature_obj)
-        bones_map = build_bone_map(armature_obj)
-
-        is_ped_animation = False
-
-        for p_bone in armature_obj.pose.bones:
-            if is_ped_bone_tag(p_bone.bone.bone_properties.tag):
-                is_ped_animation = True
-                break
-    elif animation_type == "UV":
-        bones_name_map = None
-        bones_map = None
-        is_ped_animation = False
 
     animations_obj = None
     clips_obj = None
@@ -493,8 +439,7 @@ def clip_dictionary_from_object(obj):
             clips_obj = child_obj
 
     for animation_obj in animations_obj.children:
-        animation = animation_from_object(
-            animation_obj, bones_name_map, bones_map, is_ped_animation, animation_type)
+        animation = animation_from_object(animation_obj)
 
         clip_dictionary.animations.append(animation)
 

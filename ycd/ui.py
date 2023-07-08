@@ -206,9 +206,6 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                 row = layout.row(align=False)
                 row.operator(
                     ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
-                row = layout.row()
-                row.operator(
-                    ycd_ops.SOLLUMZ_OT_create_uv_anim_node.bl_idname)
         else:
             layout.operator(
                 ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)

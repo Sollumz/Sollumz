@@ -321,7 +321,7 @@ class Animation(ElementTree):
                 super().__init__()
                 self.bone_id = ValueProperty("BoneId", 0)
                 self.track = ValueProperty("Track", 0)
-                self.unk0 = ValueProperty("Unk0", 0)
+                self.format = ValueProperty("Unk0", 0)
 
         list_type = BoneId
         tag_name = "BoneIds"

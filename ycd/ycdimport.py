@@ -1,12 +1,9 @@
 import os
 import bpy
-from mathutils import Vector, Quaternion, Matrix
+from mathutils import Vector, Quaternion
 from ..cwxml.clipsdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-from ..tools.blenderhelper import build_bone_map, get_armature_obj
-from ..tools.animationhelper import is_ped_bone_tag
-from ..tools.utils import list_index_exists
-from ..sollumz_preferences import get_import_settings
+from ..tools.animationhelper import TrackFormat, TrackFormatMap, get_canonical_track_data_path
 from .. import logger
 from .properties import AnimationTrackToPropertyName
 
@@ -20,14 +17,14 @@ def create_anim_obj(type):
     return anim_obj
 
 
-def insert_action_data(actions_data, bone_name, track, data):
-    if bone_name not in actions_data:
-        actions_data[bone_name] = {}
+def insert_action_data(actions_data, bone_id, track, data):
+    if bone_id not in actions_data:
+        actions_data[bone_id] = {}
 
-    if track not in actions_data[bone_name]:
-        actions_data[bone_name][track] = []
+    if track not in actions_data[bone_id]:
+        actions_data[bone_id][track] = []
 
-    actions_data[bone_name][track].append(data)
+    actions_data[bone_id][track].append(data)
 
 
 def get_values_from_sequence_data(sequence_data, frame_id):
@@ -45,7 +42,7 @@ def get_values_from_sequence_data(sequence_data, frame_id):
     return channel_values
 
 
-def get_location_from_sequence_data(sequence_data, frame_id):
+def get_vector3_from_sequence_data(sequence_data, frame_id):
     channel_values = get_values_from_sequence_data(sequence_data, frame_id)
 
     if len(channel_values) == 1:
@@ -98,28 +95,12 @@ def get_quaternion_from_sequence_data(sequence_data, frame_id):
 
 
 def combine_sequences_and_build_action_data(animation):
-    # def _add_pseudo_bone(bone_id):
-    #     bone_name = f"#{bone_id}"
-    #     bpy.context.view_layer.objects.active = armature_obj
-    #     bpy.ops.object.mode_set(mode="EDIT")
-    #     edit_bone = armature_obj.data.edit_bones.new(bone_name)
-    #     edit_bone.head = (0, 0, 0)
-    #     edit_bone.tail = (0, 0.05, 0)
-    #     edit_bone.matrix = Matrix.Identity(4)
-    #     bpy.ops.object.mode_set(mode="OBJECT")
-    #     bl_bone = armature_obj.pose.bones[bone_name].bone
-    #     bl_bone.bone_properties.tag = bone_id
-    #     return bone_name
-
-    # bone_map = build_bone_map(armature_obj)
-
     sequence_frame_limit = animation.sequence_frame_limit
 
     if len(animation.sequences) <= 1:
         sequence_frame_limit = animation.frame_count + 30
 
     action_data = {}
-    track_to_format = {}
 
     for frame_id in range(0, animation.frame_count):
         sequence_index = int(frame_id / (sequence_frame_limit))
@@ -137,58 +118,32 @@ def combine_sequences_and_build_action_data(animation):
             if bone_data is None:
                 continue
 
-            bone_name = f"#{bone_id}"
             track = bone_data.track
-            format = bone_data.unk0
-            track_to_format[track] = format
-            if format == 0:  # vector3
-                location = get_location_from_sequence_data(sequence_data, sequence_frame)
-                insert_action_data(action_data, bone_name, track, location)
-            elif format == 1:  # quaternion
-                rotation = get_quaternion_from_sequence_data(sequence_data, sequence_frame)
-                insert_action_data(action_data, bone_name, track, rotation)
-            elif format == 2:  # float
+            format = bone_data.format
+            assert TrackFormatMap[track] == format, f"Track format mismatch: {TrackFormatMap[track]} != {format}"
+
+            if format == TrackFormat.Vector3:
+                vec = get_vector3_from_sequence_data(sequence_data, sequence_frame)
+                insert_action_data(action_data, bone_id, track, vec)
+            elif format == TrackFormat.Quaternion:
+                quat = get_quaternion_from_sequence_data(sequence_data, sequence_frame)
+                insert_action_data(action_data, bone_id, track, quat)
+            elif format == TrackFormat.Float:
                 value = get_values_from_sequence_data(sequence_data, sequence_frame)[0]
-                insert_action_data(action_data, bone_name, track, value)
+                insert_action_data(action_data, bone_id, track, value)
 
-    return action_data, track_to_format
-
-
-def get_data_path_for_track(track, bone_name):
-    if bone_name is not None:
-        base = f'pose.bones["{bone_name}"].'
-        base_t = f'pose.bones["{bone_name}"].animation_tracks_'
-    else:
-        base = ""
-        base_t = "animation_tracks."
-
-    if track == 0:
-        return f'{base}location'
-    elif track == 1:
-        return f'{base}rotation_quaternion'
-    elif track == 2:
-        return f'{base}scale'
-    elif track == 5:  # only the root bone should have the root motion tracks, so `delta_` properties should be fine
-        return "delta_location"
-    elif track == 6:
-        return "delta_rotation_quaternion"
-    elif track == 7:  # for cameras
-        return f'location'
-    elif track == 8:
-        return f'rotation_quaternion'
-    else:
-        return f'{base_t}{AnimationTrackToPropertyName[track]}'
+    return action_data
 
 
-def apply_action_data_to_action(action_data, action, frame_count, track_to_format):
+def apply_action_data_to_action(action_data, action, frame_count):
     frames_ids = [*range(frame_count)]
 
-    for bone_name, bones_data in action_data.items():
-        group_item = action.groups.new(bone_name)
-        for track_id, frames_data in bones_data.items():
-            format = track_to_format[track_id]
-            data_path = get_data_path_for_track(track_id, bone_name)
-            if format == 0:  # vector3
+    for bone_id, bones_data in action_data.items():
+        group_item = action.groups.new(f"#{bone_id}")
+        for track, frames_data in bones_data.items():
+            format = TrackFormatMap[track]
+            data_path = get_canonical_track_data_path(track, bone_id)
+            if format == TrackFormat.Vector3:
                 vec_tracks_x = list(map(lambda vec: vec.x, frames_data))
                 vec_tracks_y = list(map(lambda vec: vec.y, frames_data))
                 vec_tracks_z = list(map(lambda vec: vec.z, frames_data))
@@ -215,7 +170,7 @@ def apply_action_data_to_action(action_data, action, frame_count, track_to_forma
                 vec_curve_x.update()
                 vec_curve_y.update()
                 vec_curve_z.update()
-            elif format == 1:  # quaternion
+            elif format == TrackFormat.Quaternion:
                 quat_tracks_x = list(map(lambda rotation: rotation.x, frames_data))
                 quat_tracks_y = list(map(lambda rotation: rotation.y, frames_data))
                 quat_tracks_z = list(map(lambda rotation: rotation.z, frames_data))
@@ -249,7 +204,7 @@ def apply_action_data_to_action(action_data, action, frame_count, track_to_forma
                 quat_curve_x.update()
                 quat_curve_y.update()
                 quat_curve_z.update()
-            elif format == 2:  # float
+            elif format == TrackFormat.Float:
                 value_curve = action.fcurves.new(data_path=data_path)
                 value_curve.group = group_item
 
@@ -259,9 +214,9 @@ def apply_action_data_to_action(action_data, action, frame_count, track_to_forma
                 value_curve.update()
 
 
-def action_data_to_action(action_name, action_data, frame_count, track_to_format):
+def action_data_to_action(action_name, action_data, frame_count):
     action = bpy.data.actions.new(f"{action_name}_action")
-    apply_action_data_to_action(action_data, action, frame_count, track_to_format)
+    apply_action_data_to_action(action_data, action, frame_count)
     return action
 
 
@@ -272,9 +227,9 @@ def animation_to_obj(animation):
     animation_obj.animation_properties.hash = animation.hash
     animation_obj.animation_properties.frame_count = animation.frame_count
 
-    action_data, track_to_format = combine_sequences_and_build_action_data(animation)
+    action_data = combine_sequences_and_build_action_data(animation)
     animation_obj.animation_properties.action = action_data_to_action(animation.hash, action_data,
-                                                                      animation.frame_count, track_to_format)
+                                                                      animation.frame_count)
 
     return animation_obj
 
