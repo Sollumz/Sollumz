@@ -1,5 +1,4 @@
 import bpy
-
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..ymap.operators import SOLLUMZ_OT_create_ymap
@@ -26,19 +25,25 @@ def draw_ymap_properties(self, context):
         row.prop(obj.ymap_properties.content_flags_toggle, "has_hd", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_lod", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_slod2", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_slod2", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_int", toggle=1)
         row = layout.row()
         row.prop(obj.ymap_properties.content_flags_toggle, "has_slod", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_occl", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_physics", toggle=1)
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_lod_lights", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_physics", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_lod_lights", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_dis_lod_lights", toggle=1)
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_critical", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_dis_lod_lights", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_critical", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_grass", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_grass", toggle=1)
 
 
 def draw_ymap_model_occluder_properties(self, context):
@@ -65,12 +70,30 @@ def draw_ymap_car_generator_properties(self, context):
 
 
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Map Data"
+    bl_label = "YMAP Tools"
     bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 1
+
+    def draw_header(self, context):
+        # Example property to display a checkbox, can be anything
+        self.layout.label(text="", icon="OBJECT_ORIGIN")
+
+    def draw(self, context):
+        pass
+
+
+class SOLLUMZ_PT_YMAP_PANEL(bpy.types.Panel):
+    bl_label = "Map Data"
+    bl_idname = "SOLLUMZ_PT_YMAP_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_YMAP_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):
         self.layout.label(text="", icon="OBJECT_ORIGIN")
@@ -78,33 +101,8 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator("sollumz.createymap")
-
-        if (len(bpy.context.selected_objects) > 0):
-            active_object = bpy.context.selected_objects[0]
-            
-            if active_object.sollum_type == SollumType.YMAP:
-                layout.label(text="Create groups")
-                layout.separator()
-                layout.operator("sollumz.create_entity_group")
-                layout.operator("sollumz.create_model_occluder_group")
-                layout.operator("sollumz.create_box_occluder_group")
-                layout.operator("sollumz.create_car_generator_group")
-            elif active_object.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
-                layout.label(text="Box Occluders Options")
-                row = layout.row()
-                row.operator("sollumz.create_box_occluder")
-            elif active_object.sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
-                layout.label(text="Model Occluders Options")
-                row = layout.row()
-                row.operator("sollumz.create_model_occluder")
-            elif active_object.sollum_type == SollumType.YMAP_CAR_GENERATOR_GROUP:
-                layout.label(text="Car Generators Options")
-                row = layout.row()
-                row.operator("sollumz.create_car_generator")
-
-        else:
-            layout.label(text="No Ymap Selected")        
+        row.operator(SOLLUMZ_OT_create_ymap.bl_idname)
+        row.prop(context.scene, "create_ymap_type")
 
 
 class OBJECT_PT_ymap_block(bpy.types.Panel):

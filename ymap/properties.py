@@ -1,5 +1,7 @@
 import bpy
 
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+
 from ..tools.utils import int_to_bool_list, flag_prop_to_list, flag_list_to_int
 from bpy.props import (EnumProperty, FloatProperty, PointerProperty,
                        StringProperty, IntProperty, FloatVectorProperty, BoolProperty)
@@ -138,6 +140,22 @@ def register():
         type=YmapModelOccluderProperties)
     bpy.types.Object.ymap_cargen_properties = PointerProperty(
         type=YmapCarGeneratorProperties)
+    bpy.types.Scene.create_ymap_type = bpy.props.EnumProperty(
+        items=[
+            (SollumType.YMAP.value,
+             SOLLUMZ_UI_NAMES[SollumType.YMAP], "Create a ymap object."),
+            (SollumType.YMAP_ENTITY_GROUP.value,
+             SOLLUMZ_UI_NAMES[SollumType.YMAP_ENTITY_GROUP], "Create a ymap entity group object."),
+            (SollumType.YMAP_BOX_OCCLUDER_GROUP.value,
+             SOLLUMZ_UI_NAMES[SollumType.YMAP_BOX_OCCLUDER_GROUP], "Create a ymap box occluder group object."),
+            (SollumType.YMAP_MODEL_OCCLUDER_GROUP.value,
+             SOLLUMZ_UI_NAMES[SollumType.YMAP_MODEL_OCCLUDER_GROUP], "Create a ymap model occluder group object."),
+            (SollumType.YMAP_CAR_GENERATOR_GROUP.value,
+             SOLLUMZ_UI_NAMES[SollumType.YMAP_CAR_GENERATOR_GROUP], "Create a ymap car generator group object."),
+        ],
+        name="Type",
+        default=SollumType.YMAP.value
+    )
 
 
 def unregister():

@@ -1,3 +1,4 @@
+import re
 import bpy
 from .tools.blenderhelper import get_armature_obj, get_addon_preferences
 from .sollumz_properties import SollumType, MaterialType
@@ -244,6 +245,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel):
         operator = sfile.active_operator
 
         layout.prop(operator.import_settings, "ymap_skip_missing_entities")
+        layout.prop(operator.import_settings, "ymap_instance_entities")
         layout.prop(operator.import_settings, "ymap_exclude_entities")
         layout.prop(operator.import_settings, "ymap_box_occluders")
         layout.prop(operator.import_settings, "ymap_model_occluders")
@@ -463,7 +465,7 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
-    bl_label = "Copy Objects Location to Clipboard"
+    bl_label = "Object Location & Rotation Tools"
     bl_idname = "SOLLUMZ_PT_OBJ_YMAP_LOCATION"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
@@ -492,13 +494,20 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
                     "wm.sollumz_copy_location", text="", icon='COPYDOWN')
                 clip_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
                     loc[0], loc[1], loc[2])
-
             # Convert the object's rotation to a quaternion and copy it to the clipboard
             rot = obj.matrix_world.to_quaternion()
             rot_xyzw = [rot.x, rot.y, rot.z, rot.w]
             rot_button = row.operator(
                 "wm.sollumz_copy_rotation", text="", icon='COPYDOWN')
             rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
+                rot.x, rot.y, rot.z, rot.w)
+            paste_button = row.operator("wm.sollumz_paste_location",
+                                        text="", icon='PASTEDOWN')
+            paste_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
+                loc[0], loc[1], loc[2])
+            paste_rot_button = row.operator(
+                "wm.sollumz_paste_rotation", text="", icon='PASTEDOWN')
+            paste_rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
                 rot.x, rot.y, rot.z, rot.w)
 
             # Add a button to copy all selected objects' locations to the clipboard
@@ -508,6 +517,68 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
                              text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
+
+
+class SOLLUMZ_OT_paste_location(bpy.types.Operator):
+    """Paste the location of an object from the clipboard"""
+    bl_idname = "wm.sollumz_paste_location"
+    bl_label = ""
+    location: bpy.props.StringProperty()
+
+    def execute(self, context):
+        # Function to parse the location string
+        def parse_location_string(location_string):
+            pattern = r"(-?\d+\.\d+)"
+            matches = re.findall(pattern, location_string)
+            if len(matches) == 3:
+                return float(matches[0]), float(matches[1]), float(matches[2])
+            else:
+                return None
+
+        location_string = bpy.context.window_manager.clipboard
+
+        location = parse_location_string(location_string)
+        if location is not None:
+            selected_object = bpy.context.object
+
+            selected_object.location = location
+            self.report({'INFO'}, "Location set successfully.")
+        else:
+            self.report({'ERROR'}, "Invalid location string.")
+
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_paste_rotation(bpy.types.Operator):
+    """Paste the rotation of an object from the clipboard"""
+    bl_idname = "wm.sollumz_paste_rotation"
+    bl_label = ""
+    rotation: bpy.props.StringProperty()
+
+
+def execute(self, context):
+    # Function to parse the rotation string
+    def parse_rotation_string(rotation_string):
+        pattern = r"(-?\d+\.\d+)"
+        matches = re.findall(pattern, rotation_string)
+        if len(matches) == 4:
+            return float(matches[0]), float(matches[1]), float(matches[2]), float(matches[3])
+        else:
+            return None
+
+    rotation_string = bpy.context.window_manager.clipboard
+
+    rotation = parse_rotation_string(rotation_string)
+    if rotation is not None:
+        selected_object = bpy.context.object
+
+        selected_object.rotation_mode = 'QUATERNION'
+        selected_object.rotation_quaternion = rotation
+        self.report({'INFO'}, "Rotation set successfully.")
+    else:
+        self.report({'ERROR'}, "Invalid rotation string.")
+
+    return {'FINISHED'}
 
 
 class SOLLUMZ_OT_copy_location(bpy.types.Operator):
