@@ -178,7 +178,7 @@ class SOLLUMZ_OT_export(SOLLUMZ_OT_base, bpy.types.Operator):
     def get_only_parent_objs(self, objs):
         pobjs = []
         for obj in objs:
-            if obj.parent is None:
+            if obj.parent is None or obj.parent.type == 'EMPTY':
                 pobjs.append(obj)
         return pobjs
 
