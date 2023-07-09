@@ -506,11 +506,11 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
                 paste_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
                     loc[0], loc[1], loc[2])
 
-        # Add a button to copy all selected objects' locations to the clipboard
-        if len(selected_objects) > 1:
-            row = layout.row()
-            row.operator(SOLLUMZ_OT_copy_all_locations.bl_idname,
-                         text="Copy All Locations", icon='COPY_ID')
+            # Add a button to copy all selected objects' locations to the clipboard
+            if len(selected_objects) > 1:
+                row = layout.row()
+                row.operator(SOLLUMZ_OT_copy_all_locations.bl_idname,
+                             text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
 
