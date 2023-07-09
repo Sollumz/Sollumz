@@ -112,6 +112,9 @@ class ClipProperties(bpy.types.PropertyGroup):
 
     tags: bpy.props.CollectionProperty(name="Tags", type=ClipTag)
 
+    properties: bpy.props.CollectionProperty(name="Properties", type=ClipAttribute)
+
+
 
 class AnimationProperties(bpy.types.PropertyGroup):
     def on_target_update(self, context):

@@ -266,6 +266,22 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
             clip_animation.end_frame = int(
                 (animation.end_time / animation_data.duration) * animation_data.frame_count)
 
+    def _init_attribute(attr, xml_attr):
+        attr.name = xml_attr.name_hash
+        attr.type = xml_attr.type
+        if attr.type == "Float":
+            attr.value_float = xml_attr.value
+        elif attr.type == "Int":
+            attr.value_int = xml_attr.value
+        elif attr.type == "Bool":
+            attr.value_bool = xml_attr.value
+        elif attr.type == "Vector3":
+            assert False, "TODO: Vector3 attribute"
+        elif attr.type == "Vector4":
+            assert False, "TODO: Vector4 attribute"
+        elif attr.type == "String" or attr.type == "HashString":
+            attr.value_string = xml_attr.value
+
     clip_obj.clip_properties.tags.clear()
     for tag in clip.tags:
         clip_tag = clip_obj.clip_properties.tags.add()
@@ -276,22 +292,15 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
         clip_tag.end_phase = tag.end_phase
         for attr in tag.attributes:
             clip_tag_attr = clip_tag.attributes.add()
-            clip_tag_attr.name = attr.name_hash
-            clip_tag_attr.type = attr.type
-            if attr.type == "Float":
-                clip_tag_attr.value_float = attr.value
-            elif attr.type == "Int":
-                clip_tag_attr.value_int = attr.value
-            elif attr.type == "Bool":
-                clip_tag_attr.value_bool = attr.value
-            elif attr.type == "Vector3":
-                pass  # TODO
-            elif attr.type == "Vector4":
-                pass  # TODO
-            elif attr.type == "String" or attr.type == "HashString":
-                clip_tag_attr.value_string = attr.value
+            _init_attribute(clip_tag_attr, attr)
 
+    clip_obj.clip_properties.properties.clear()
+    for prop in clip.properties:
+        assert len(prop.attributes) == 1
+        assert prop.name_hash == prop.attributes[0].name_hash
 
+        clip_prop = clip_obj.clip_properties.properties.add()
+        _init_attribute(clip_prop, prop.attributes[0])
 
     return clip_obj
 
