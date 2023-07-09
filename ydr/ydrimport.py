@@ -613,12 +613,12 @@ def drawable_to_obj(drawable, filepath, name, bones_override=None, materials=Non
             if model.sollum_type != SollumType.DRAWABLE_MODEL:
                 continue
 
-        for child in model.children:
-            if child.sollum_type != SollumType.DRAWABLE_GEOMETRY:
-                continue
+            for child in model.children:
+                if child.sollum_type != SollumType.DRAWABLE_GEOMETRY:
+                    continue
 
-            mod = child.modifiers.new("Armature", "ARMATURE")
-            mod.object = obj
+                mod = child.modifiers.new("Armature", "ARMATURE")
+                mod.object = obj
 
     if len(drawable.lights) > 0:
         create_lights(drawable.lights, obj)
