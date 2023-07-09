@@ -274,6 +274,24 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
         # self.attributes = AttributesList()  # TODO: tag attributes
         clip_tag.start_phase = tag.start_phase
         clip_tag.end_phase = tag.end_phase
+        for attr in tag.attributes:
+            clip_tag_attr = clip_tag.attributes.add()
+            clip_tag_attr.name = attr.name_hash
+            clip_tag_attr.type = attr.type
+            if attr.type == "Float":
+                clip_tag_attr.value_float = attr.value
+            elif attr.type == "Int":
+                clip_tag_attr.value_int = attr.value
+            elif attr.type == "Bool":
+                clip_tag_attr.value_bool = attr.value
+            elif attr.type == "Vector3":
+                pass  # TODO
+            elif attr.type == "Vector4":
+                pass  # TODO
+            elif attr.type == "String" or attr.type == "HashString":
+                clip_tag_attr.value_string = attr.value
+
+
 
     return clip_obj
 

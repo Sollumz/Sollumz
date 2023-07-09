@@ -48,6 +48,28 @@ def update_hashes(self, context):
                         break
 
 
+ClipAttributeTypes = [
+    ("Float", "Float", "Float", 0),
+    ("Int", "Int", "Int", 1),
+    ("Bool", "Bool", "Bool", 2),
+    ("Vector3", "Vector3", "Vector3", 3),
+    ("Vector4", "Vector4", "Vector4", 4),
+    ("String", "String", "String", 5),
+    ("HashString", "HashString", "HashString", 6),
+]
+
+
+class ClipAttribute(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", default="")
+    type: bpy.props.EnumProperty(name="Type", items=ClipAttributeTypes)
+    value_float: bpy.props.FloatProperty(name="Value", default=0.0)
+    value_int: bpy.props.IntProperty(name="Value", default=0)
+    value_bool: bpy.props.BoolProperty(name="Value", default=False)
+    value_vec3: bpy.props.FloatVectorProperty(name="Value", default=(0.0, 0.0, 0.0), size=3)
+    value_vec4: bpy.props.FloatVectorProperty(name="Value", default=(0.0, 0.0, 0.0, 0.0), size=4)
+    value_string: bpy.props.StringProperty(name="Value", default="")  # used with String and HashString
+
+
 class ClipTag(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", default="")
 
@@ -55,6 +77,12 @@ class ClipTag(bpy.types.PropertyGroup):
         name="Start Phase", default=0, min=0, max=1, description="Start phase of the tag")
     end_phase: bpy.props.FloatProperty(
         name="End Phase", default=0, min=0, max=1, description="End phase of the tag")
+
+    attributes: bpy.props.CollectionProperty(name="Attributes", type=ClipAttribute)
+
+    ui_show_expanded: bpy.props.BoolProperty(
+        name="Show Expanded", default=True, description="Show details of the tag")
+    ui_active_attribute_index: bpy.props.IntProperty()
 
 
 class ClipAnimation(bpy.types.PropertyGroup):
@@ -65,6 +93,9 @@ class ClipAnimation(bpy.types.PropertyGroup):
 
     animation: bpy.props.PointerProperty(
         name="Animation", type=bpy.types.Object, poll=animations_filter)
+
+    ui_show_expanded: bpy.props.BoolProperty(
+        name="Show Expanded", default=True, description="Show details of the linked animation")
 
 
 class ClipProperties(bpy.types.PropertyGroup):

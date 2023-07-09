@@ -93,6 +93,36 @@ def draw_clip_dictionary_properties(self, context):
         # nothing currently
 
 
+def draw_range_properties(layout, obj, prop_start, prop_end, label):
+    """Draw two properties in a row aligned to each other, with label on the left."""
+    split = layout.split(factor=0.4, align=True)
+    label_row = split.row()
+    label_row.alignment = 'RIGHT'
+    label_row.label(text=label)
+    value_row = split.row(align=True)
+    value_row.use_property_split = False
+    value_row.prop(obj, prop_start, text="Start")
+    value_row.prop(obj, prop_end, text="End")
+
+
+def draw_item_box_header(layout, obj, label, delete_op_cls, show_expanded_prop="ui_show_expanded"):
+    """
+    Draw a box header with a 'expand' button, label and 'delete' button.
+    Returns the delete operator properties to fill in.
+    """
+    header = layout.row(align=True)
+    is_expanded = getattr(obj, show_expanded_prop)
+    expanded_icon = "DISCLOSURE_TRI_DOWN" if is_expanded else "DISCLOSURE_TRI_RIGHT"
+    header.prop(obj, show_expanded_prop, text="", emboss=False, icon=expanded_icon)
+    if label:
+        header.label(text=label)
+    else:
+        header.label(text="Not Set")
+    delete_op = header.operator(delete_op_cls.bl_idname,
+                                text="", emboss=False, icon='X')
+    return delete_op
+
+
 class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
     bl_label = "Animation Tracks"
     bl_idname = "SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS"
@@ -165,21 +195,56 @@ class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
 
         for animation_index, clip_animation in enumerate(clip_properties.animations):
             box = layout.box()
-            box.use_property_split = True
-            box.use_property_decorate = False
-            box.prop(clip_animation, "animation", text="Animation")
 
-            col = box.column(align=True)
-            col.prop(clip_animation, "start_frame", text="Frame Start")
-            col.prop(clip_animation, "end_frame", text="End")
-
-            delete_op = box.operator(ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname,
-                                     text="Delete", icon='X')
+            label = clip_animation.animation.name if clip_animation.animation else None
+            delete_op = draw_item_box_header(box, clip_animation, label, ycd_ops.SOLLUMZ_OT_clip_delete_animation)
             delete_op.animation_index = animation_index
+
+            if clip_animation.ui_show_expanded:
+                box.use_property_split = True
+                box.use_property_decorate = False
+                box.prop(clip_animation, "animation", text="Animation")
+
+                draw_range_properties(box, clip_animation, "start_frame", "end_frame", "Frame Range")
+
+
+class SOLLUMZ_UL_clip_attributes_list(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_clip_attributes_list"
+
+    def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname):
+        # row = layout.row()
+        # split = row.split(factor=0.65)
+        # icon = 'NONE' if item.is_valid else 'ERROR'
+        # split.row().prop(item, "name", text="", icon=icon, emboss=False)
+        # split.row().prop(item, "type", text="", emboss=False)
+        row = layout.row()
+        # row.scale_x = 0.8
+        # row.scale_y = 0.8
+        split = row.split(factor=0.4)
+        left_row = split.row(align=True)
+        left_row.prop(item, "name", text="", emboss=False)
+        left_row.prop(item, "type", text="", emboss=False)
+        right_row = split.row(align=True)
+        right_row.use_property_split = True
+        if item.type == "Float":
+            right_row.prop(item, "value_float", text="", emboss=False)
+        elif item.type == "Int":
+            right_row.prop(item, "value_int", text="", emboss=False)
+        elif item.type == "Bool":
+            right_row.prop(item, "value_bool", text="", emboss=False)
+        elif item.type == "Vector3":
+            right_row.prop(item, "value_vec3", text="", emboss=False)
+        elif item.type == "Vector4":
+            right_row.prop(item, "value_vec4", text="", emboss=False)
+        elif item.type == "String":
+            right_row.prop(item, "value_string", text="", emboss=False)
+        elif item.type == "HashString":
+            right_row.prop(item, "value_string", text="", emboss=False)
 
 
 class SOLLUMZ_PT_CLIP_TAGS(bpy.types.Panel):
     bl_label = "Tags"
+    bl_description = "Tags are used to mark specific points in time (events) in a clip."
     bl_idname = "SOLLUMZ_PT_CLIP_TAGS"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -204,17 +269,49 @@ class SOLLUMZ_PT_CLIP_TAGS(bpy.types.Panel):
 
         for tag_index, clip_tag in enumerate(clip_properties.tags):
             box = layout.box()
-            box.use_property_split = True
-            box.use_property_decorate = False
-            box.prop(clip_tag, "name")
 
-            col = box.column(align=True)
-            col.prop(clip_tag, "start_phase", text="Phase Start")
-            col.prop(clip_tag, "end_phase", text="End")
+            del_op = draw_item_box_header(box, clip_tag, clip_tag.name, ycd_ops.SOLLUMZ_OT_clip_delete_tag)
+            del_op.tag_index = tag_index
 
-            delete_op = box.operator(ycd_ops.SOLLUMZ_OT_clip_delete_tag.bl_idname,
-                                     text="Delete", icon='X')
-            delete_op.tag_index = tag_index
+            if clip_tag.ui_show_expanded:
+                box.use_property_split = True
+                box.use_property_decorate = False
+                box.prop(clip_tag, "name")
+
+                draw_range_properties(box, clip_tag, "start_phase", "end_phase", "Phase Range")
+
+                attr_box = box.box()
+                attr_header = attr_box.row(align=True)
+                attr_header.label(text="Attributes")
+                new_op = attr_header.operator(ycd_ops.SOLLUMZ_OT_clip_new_tag_attribute.bl_idname,
+                                      text="", icon="ADD")
+                new_op.tag_index = tag_index
+                for attr_index, attr in enumerate(clip_tag.attributes):
+                    split = attr_box.split(factor=0.6)
+                    left_row = split.row(align=True)
+                    left_row.prop(attr, "name", text="")
+                    left_row.prop(attr, "type", text="")
+                    right_row = split.row()
+                    if attr.type == "Float":
+                        right_row.prop(attr, "value_float", text="")
+                    elif attr.type == "Int":
+                        right_row.prop(attr, "value_int", text="")
+                    elif attr.type == "Bool":
+                        right_row.alignment = "RIGHT"
+                        right_row.prop(attr, "value_bool", text="")
+                    elif attr.type == "Vector3":
+                        right_row.prop(attr, "value_vec3", text="")
+                    elif attr.type == "Vector4":
+                        right_row.prop(attr, "value_vec4", text="")
+                    elif attr.type == "String":
+                        right_row.prop(attr, "value_string", text="")
+                    elif attr.type == "HashString":
+                        right_row.prop(attr, "value_string", text="")
+
+                    del_op = right_row.operator(ycd_ops.SOLLUMZ_OT_clip_delete_tag_attribute.bl_idname,
+                                                text="", emboss=False, icon='X')
+                    del_op.tag_index = tag_index
+                    del_op.attribute_index = attr_index
 
 
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):

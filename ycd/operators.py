@@ -91,7 +91,7 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.clip_new_animation"
     bl_label = "Add a new Animation Link"
-    bl_description = "Adds a new animation link to the clip"
+    bl_description = "Add a new animation link to the clip"
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -112,7 +112,7 @@ class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_clip_delete_animation(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.clip_delete_animation"
     bl_label = "Delete Animation Link"
-    bl_description = "Removes the animation link from the clip"
+    bl_description = "Remove the animation link from the clip"
 
     animation_index: bpy.props.IntProperty()
 
@@ -135,7 +135,7 @@ class SOLLUMZ_OT_clip_delete_animation(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.clip_new_tag"
     bl_label = "Add a new Tag"
-    bl_description = "Adds a new tag to the clip"
+    bl_description = "Add a new tag to the clip"
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -156,7 +156,7 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_clip_delete_tag(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.clip_delete_tag"
     bl_label = "Delete Tag"
-    bl_description = "Removes the tag from the clip"
+    bl_description = "Remove the tag from the clip"
 
     tag_index: bpy.props.IntProperty()
 
@@ -172,6 +172,61 @@ class SOLLUMZ_OT_clip_delete_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         clip_properties = active_object.clip_properties
 
         clip_properties.tags.remove(self.tag_index)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_clip_new_tag_attribute(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.clip_new_tag_attribute"
+    bl_label = "Add a new Tag Attribute"
+    bl_description = "Add a new attribute to the tag"
+
+    tag_index: bpy.props.IntProperty()
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        active_object = bpy.context.selected_objects[0]
+
+        if active_object.sollum_type != SollumType.CLIP:
+            return {"FINISHED"}
+
+        clip_properties = active_object.clip_properties
+
+        tag = clip_properties.tags[self.tag_index]
+        if not tag:
+            return {"FINISHED"}
+
+        tag.attributes.add()
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_clip_delete_tag_attribute(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.clip_delete_tag_attribute"
+    bl_label = "Delete Tag Attribute"
+    bl_description = "Remove the attribute from the tag"
+
+    tag_index: bpy.props.IntProperty()
+    attribute_index: bpy.props.IntProperty()
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        active_object = bpy.context.selected_objects[0]
+
+        if active_object.sollum_type != SollumType.CLIP:
+            return {"FINISHED"}
+
+        clip_properties = active_object.clip_properties
+
+        tag = clip_properties.tags[self.tag_index]
+        if not tag:
+            return {"FINISHED"}
+
+        tag.attributes.remove(self.attribute_index)
 
         return {"FINISHED"}
 
