@@ -16,7 +16,7 @@ from ..cwxml.ymap import CMapData, OccludeModel, YMAP
 def get_mesh_data(model: OccludeModel):
     result = ([], [])
     for i in range(int(model.num_verts_in_bytes / 12)):
-        pos_data: str = model.verts[i*24:(i*24)+24]
+        pos_data: str = model.verts[i * 24:(i * 24) + 24]
         x = struct.unpack('<f', binascii.a2b_hex(pos_data[:8]))[0]
         y = struct.unpack('<f', binascii.a2b_hex(pos_data[8:16]))[0]
         z = struct.unpack('<f', binascii.a2b_hex(pos_data[16:24]))[0]
@@ -24,10 +24,10 @@ def get_mesh_data(model: OccludeModel):
 
     indicies: str = model.verts[int(model.num_verts_in_bytes * 2):]
     for i in range(int(model.num_tris - 32768)):
-        j = i*6
-        i0 = int.from_bytes(binascii.a2b_hex(indicies[j:j+2]), 'little')
-        i1 = int.from_bytes(binascii.a2b_hex(indicies[j+2:j+4]), 'little')
-        i2 = int.from_bytes(binascii.a2b_hex(indicies[j+4:j+6]), 'little')
+        j = i * 6
+        i0 = int.from_bytes(binascii.a2b_hex(indicies[j:j + 2]), 'little')
+        i1 = int.from_bytes(binascii.a2b_hex(indicies[j + 2:j + 4]), 'little')
+        i2 = int.from_bytes(binascii.a2b_hex(indicies[j + 4:j + 6]), 'little')
         result[1].append((i0, i1, i2))
 
     return result
@@ -64,24 +64,23 @@ def entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData, import_setti
     bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
-    if not import_settings.ymap_instance_entities:
-        found = False
-        if ymap.entities:
-            for obj in bpy.context.collection.all_objects:
-                for entity in ymap.entities:
-                    if entity.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
-                        found = True
-                        apply_entity_properties(obj, entity)
-            if found:
-                self.message(f"Succesfully imported: {self.filepath}")
-                return True
-            else:
-                self.message(
-                    f"No entities from '{self.filepath}' exist in the view layer!")
-                return False
+    found = False
+    if ymap.entities:
+        for obj in bpy.context.collection.all_objects:
+            for entity in ymap.entities:
+                if entity.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
+                    found = True
+                    apply_entity_properties(obj, entity)
+        if found:
+            self.message(f"Succesfully imported: {self.filepath}")
+            return True
         else:
-            self.error(f"{self.filepath} contains no entities to import!")
+            self.message(
+                f"No entities from '{self.filepath}' exist in the view layer!")
             return False
+    else:
+        self.error(f"{self.filepath} contains no entities to import!")
+        return False
 
 
 def instanced_entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData, import_settings):
@@ -94,49 +93,48 @@ def instanced_entity_to_obj(self, ymap_obj: bpy.types.Object, ymap: CMapData, im
     bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
-    if import_settings.ymap_instance_entities:
-        if ymap.entities:
-            entities_amount = len(ymap.entities)
-            count = 0
+    if ymap.entities:
+        entities_amount = len(ymap.entities)
+        count = 0
 
-            existing_objects = []
-            for obj in bpy.context.view_layer.objects:
-                existing_objects.append(obj)
+        existing_objects = []
+        for obj in bpy.context.view_layer.objects:
+            existing_objects.append(obj)
 
-            for obj in existing_objects:
-                for entity in ymap.entities:
-                    if entity.archetype_name == obj.name:
-                        if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
-                            new_obj = duplicate_object_with_children(obj)
-                            apply_entity_properties(new_obj, entity)
-                            new_obj.parent = group_obj
-                            count += 1
-                            entity.found = True
-                        else:
-                            self.error(
-                                f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
-
-            if not import_settings.ymap_skip_missing_entities:
-                for entity in ymap.entities:
-                    if entity.found is None:
-                        empty_obj = bpy.data.objects.new(
-                            entity.archetype_name + " (not found)", None)
-                        empty_obj.parent = group_obj
-                        apply_entity_properties(empty_obj, entity)
-                        empty_obj.sollum_type = SollumType.DRAWABLE
+        for obj in existing_objects:
+            for entity in ymap.entities:
+                if entity.archetype_name == obj.name:
+                    if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
+                        new_obj = duplicate_object_with_children(obj)
+                        apply_entity_properties(new_obj, entity)
+                        new_obj.parent = group_obj
+                        count += 1
+                        entity.found = True
+                    else:
                         self.error(
-                            f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
-            if count > 0:
-                self.message(
-                    f"Succesfully placed {count}/{entities_amount} entities from scene!")
-                return group_obj
-            else:
-                self.message(
-                    f"No entity from '{self.filepath}' exist in the view layer!")
-                return False
+                            f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
+
+        if not import_settings.ymap_skip_missing_entities:
+            for entity in ymap.entities:
+                if entity.found is None:
+                    empty_obj = bpy.data.objects.new(
+                        entity.archetype_name + " (not found)", None)
+                    empty_obj.parent = group_obj
+                    apply_entity_properties(empty_obj, entity)
+                    empty_obj.sollum_type = SollumType.DRAWABLE
+                    self.error(
+                        f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
+        if count > 0:
+            self.message(
+                f"Succesfully placed {count}/{entities_amount} entities from scene!")
+            return group_obj
         else:
-            self.error(f"{self.filepath} doesn't contains any entity!")
+            self.message(
+                f"No entity from '{self.filepath}' exist in the view layer!")
             return False
+    else:
+        self.error(f"{self.filepath} doesn't contains any entity!")
+        return False
 
 
 def box_to_obj(obj, ymap: CMapData):
@@ -226,7 +224,7 @@ def cargen_to_obj(import_op, obj: bpy.types.Object, ymap: CMapData):
         cargen_obj.ymap_cargen_properties.livery = cargen.livery
 
         angl = math.atan2(cargen.orient_x, cargen.orient_y)
-        cargen_obj.rotation_euler = Euler((0.0, 0.0, angl*-1))
+        cargen_obj.rotation_euler = Euler((0.0, 0.0, angl * -1))
 
         cargen_obj.location = cargen.position
         cargen_obj.sollum_type = SollumType.YMAP_CAR_GENERATOR
@@ -254,12 +252,11 @@ def ymap_to_obj(import_op, ymap: CMapData, import_settings):
 
     # Entities
     # TODO: find a way to retrieve ignored stuff on export
-    if import_settings.ymap_instance_entities == True and len(ymap.entities) > 0:
-        instanced_entity_to_obj(import_op, ymap_obj, ymap, import_settings)
-    if import_settings.ymap_instance_entities == False and len(ymap.entities) > 0:
-        entity_to_obj(import_op, ymap_obj, ymap, import_settings)
-    if import_settings.ymap_exclude_entities == False and len(ymap.entities) > 0:
-        entity_to_obj(import_op, ymap_obj, ymap, import_settings)
+    if ymap.entities and not import_settings.ymap_exclude_entities:
+        if import_settings.ymap_instance_entities and ymap.entities:
+            instanced_entity_to_obj(import_op, ymap_obj, ymap, import_settings)
+        elif ymap.entities:
+            entity_to_obj(import_op, ymap_obj, ymap, import_settings)
 
     # Box occluders
     if import_settings.ymap_box_occluders == False and len(ymap.box_occluders) > 0:
