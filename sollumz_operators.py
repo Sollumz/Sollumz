@@ -2,6 +2,7 @@ import traceback
 import os
 import pathlib
 import bpy
+import re
 from bpy_extras.io_utils import ImportHelper
 from .sollumz_helper import SOLLUMZ_OT_base
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, SollumzExportSettings, SollumzImportSettings, TimeFlags, ArchetypeType
@@ -577,6 +578,81 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
             light.energy = light.energy * 500
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_copy_location(bpy.types.Operator):
+    """Copy the location of an object to the clipboard"""
+    bl_idname = "wm.sollumz_copy_location"
+    bl_label = ""
+    location: bpy.props.StringProperty()
+
+    def execute(self, context):
+        bpy.context.window_manager.clipboard = self.location
+        self.report(
+            {'INFO'}, "Location XDd copied to clipboard: {}".format(self.location))
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_copy_rotation(bpy.types.Operator):
+    """Copy the quaternion rotation of an object to the clipboard"""
+    bl_idname = "wm.sollumz_copy_rotation"
+    bl_label = ""
+    rotation: bpy.props.StringProperty()
+
+    def execute(self, context):
+        rotation = self.rotation.strip('[]')
+        bpy.context.window_manager.clipboard = rotation
+        self.report(
+            {'INFO'}, "Rotation copied to clipboard: {}".format(rotation))
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
+    """Copy the locations of all selected objects to the clipboard"""
+    bl_idname = "wm.sollumz_copy_all_locations"
+    bl_label = ""
+    locations: bpy.props.StringProperty()
+
+    def execute(self, context):
+        selected_objects = bpy.context.selected_objects
+        locations_text = ""
+        for obj in selected_objects:
+            loc = obj.location
+            locations_text += "{}: {:.6f}, {:.6f}, {:.6f}\n".format(
+                obj.name, loc[0], loc[1], loc[2])
+        bpy.context.window_manager.clipboard = locations_text
+        self.report(
+            {'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_paste_location(bpy.types.Operator):
+    """Paste the location of an object from the clipboard"""
+    bl_idname = "wm.sollumz_paste_location"
+    bl_label = ""
+    location: bpy.props.StringProperty()
+
+    def execute(self, context):
+        def parse_location_string(location_string):
+            pattern = r"(-?\d+\.\d+)"
+            matches = re.findall(pattern, location_string)
+            if len(matches) == 3:
+                return float(matches[0]), float(matches[1]), float(matches[2])
+            else:
+                return None
+
+        location_string = bpy.context.window_manager.clipboard
+
+        location = parse_location_string(location_string)
+        if location is not None:
+            selected_object = bpy.context.object
+
+            selected_object.location = location
+            self.report({'INFO'}, "Location set successfully.")
+        else:
+            self.report({'ERROR'}, "Invalid location string.")
+
+        return {'FINISHED'}
 
 
 class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):
