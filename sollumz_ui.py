@@ -497,7 +497,6 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
 
             # Convert the object's rotation to a quaternion and copy it to the clipboard
             rot = obj.matrix_world.to_quaternion()
-            rot_xyzw = [rot.x, rot.y, rot.z, rot.w]
             rot_button = row.operator(
                 SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN')
             rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
