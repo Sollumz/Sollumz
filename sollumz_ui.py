@@ -495,22 +495,22 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
                 clip_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
                     loc[0], loc[1], loc[2])
 
-            # Convert the object's rotation to a quaternion and copy it to the clipboard
-            rot = obj.matrix_world.to_quaternion()
-            rot_button = row.operator(
-                SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN')
-            rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
-                rot.x, rot.y, rot.z, rot.w)
-            paste_button = row.operator(SOLLUMZ_OT_paste_location.bl_idname,
-                                        text="", icon='PASTEDOWN')
-            paste_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
-                loc[0], loc[1], loc[2])
+                # Convert the object's rotation to a quaternion and copy it to the clipboard
+                rot = obj.matrix_world.to_quaternion()
+                rot_button = row.operator(
+                    SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN')
+                rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
+                    rot.x, rot.y, rot.z, rot.w)
+                paste_button = row.operator(SOLLUMZ_OT_paste_location.bl_idname,
+                                            text="", icon='PASTEDOWN')
+                paste_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
+                    loc[0], loc[1], loc[2])
 
-            # Add a button to copy all selected objects' locations to the clipboard
-            if len(selected_objects) > 1:
-                row = layout.row()
-                row.operator(SOLLUMZ_OT_copy_all_locations.bl_idname,
-                             text="Copy All Locations", icon='COPY_ID')
+        # Add a button to copy all selected objects' locations to the clipboard
+        if len(selected_objects) > 1:
+            row = layout.row()
+            row.operator(SOLLUMZ_OT_copy_all_locations.bl_idname,
+                         text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
 
