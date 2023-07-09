@@ -34,18 +34,25 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
         if bone_id not in sequence_items:
             sequence_items[bone_id] = {}
 
-        bone_sequence = sequence_items[bone_id]
+        bone_sequences = sequence_items[bone_id]
 
-        if track not in bone_sequence:
+        if track not in bone_sequences:
             if format == TrackFormat.Vector3:
-                # TODO: get default value from property (e.g. UV0 and UV1 have non-zero default values)
-                bone_sequence[track] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+                # TODO: defaults should be kept in-sync with the properties defaults in AnimationTracks, refactor this
+                #  once we add more defaults to avoid duplication
+                if track == Track.UV0:
+                    default_vec = (1.0, 0.0, 0.0)
+                elif track == Track.UV1:
+                    default_vec = (0.0, 1.0, 0.0)
+                else:
+                    default_vec = (0.0, 0.0, 0.0)
+                bone_sequences[track] = [Vector(default_vec) for _ in range(0, frame_count)]
             elif format == TrackFormat.Quaternion:
-                bone_sequence[track] = [Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+                bone_sequences[track] = [Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
             elif format == TrackFormat.Float:
-                bone_sequence[track] = [0.0] * frame_count
+                bone_sequences[track] = [0.0] * frame_count
 
-        track_sequence = bone_sequence[track]
+        track_sequence = bone_sequences[track]
         for frame_id in range(0, frame_count):
             value = fcurve.evaluate(frame_id)
             if format == TrackFormat.Float:
@@ -422,6 +429,8 @@ def clip_from_object(clip_obj):
     clip.hash = clip_properties.hash
     clip.name = "pack:/" + clip_properties.name
     clip.unknown30 = 0
+
+    # TODO: add tags
 
     return clip
 

@@ -18,8 +18,6 @@ def draw_clip_properties(self, context):
 
         layout.operator(ycd_ops.SOLLUMZ_OT_clip_apply_nla.bl_idname,
                         text="Apply Clip to NLA")
-        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_animation.bl_idname,
-                        text="Add a new Animation Link")
 
 
 animation_target_id_type_to_collection_name = {
@@ -92,10 +90,7 @@ def draw_clip_dictionary_properties(self, context):
     if obj and obj.sollum_type == SollumType.CLIP_DICTIONARY:
         layout = self.layout
 
-        clip_dict_properties = obj.clip_dict_properties
-
-        layout.prop(clip_dict_properties, "armature")
-        layout.prop(clip_dict_properties, "uv_obj")
+        # nothing currently
 
 
 class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
@@ -106,6 +101,7 @@ class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_order = 9999
 
     @classmethod
     def poll(cls, context):
@@ -164,15 +160,61 @@ class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
         obj = context.active_object
         clip_properties = obj.clip_properties
 
-        for animation_index, clip_animation in enumerate(clip_properties.animations):
-            toolbox_animation = layout.box()
-            toolbox_animation.prop(clip_animation, "animation")
-            toolbox_animation.prop(clip_animation, "start_frame")
-            toolbox_animation.prop(clip_animation, "end_frame")
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_animation.bl_idname,
+                        text="New", icon="ADD")
 
-            delete_op = toolbox_animation.operator(
-                ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname, text="Delete")
+        for animation_index, clip_animation in enumerate(clip_properties.animations):
+            box = layout.box()
+            box.use_property_split = True
+            box.use_property_decorate = False
+            box.prop(clip_animation, "animation", text="Animation")
+
+            col = box.column(align=True)
+            col.prop(clip_animation, "start_frame", text="Frame Start")
+            col.prop(clip_animation, "end_frame", text="End")
+
+            delete_op = box.operator(ycd_ops.SOLLUMZ_OT_clip_delete_animation.bl_idname,
+                                     text="Delete", icon='X')
             delete_op.animation_index = animation_index
+
+
+class SOLLUMZ_PT_CLIP_TAGS(bpy.types.Panel):
+    bl_label = "Tags"
+    bl_idname = "SOLLUMZ_PT_CLIP_TAGS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+
+        return obj and obj.sollum_type == SollumType.CLIP
+
+    def draw(self, context):
+        layout = self.layout
+
+        obj = context.active_object
+        clip_properties = obj.clip_properties
+
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_tag.bl_idname,
+                        text="New", icon="ADD")
+
+        for tag_index, clip_tag in enumerate(clip_properties.tags):
+            box = layout.box()
+            box.use_property_split = True
+            box.use_property_decorate = False
+            box.prop(clip_tag, "name")
+
+            col = box.column(align=True)
+            col.prop(clip_tag, "start_phase", text="Phase Start")
+            col.prop(clip_tag, "end_phase", text="End")
+
+            delete_op = box.operator(ycd_ops.SOLLUMZ_OT_clip_delete_tag.bl_idname,
+                                     text="Delete", icon='X')
+            delete_op.tag_index = tag_index
 
 
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):

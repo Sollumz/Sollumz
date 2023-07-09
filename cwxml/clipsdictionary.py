@@ -383,8 +383,8 @@ class Clip(ItemTypeList.Item, AbstractClass):
 
             def __init__(self):
                 super().__init__()
-                self.unknown40 = ValueProperty("Unknown40", 0.0)
-                self.unknown44 = ValueProperty("Unknown44", 0.0)
+                self.start_phase = ValueProperty("Unknown40", 0.0)
+                self.end_phase = ValueProperty("Unknown44", 0.0)
 
         list_type = Tag
         tag_name = "Tags"

@@ -17,6 +17,7 @@ def animations_filter(self, object):
 
 
 def update_hashes(self, context):
+    assert False, "update_hashes is outdated"
     animation = context.object
     clip_dict = animation.parent.parent
     anim_drawable_mesh = clip_dict.clip_dict_properties.uv_obj
@@ -47,8 +48,13 @@ def update_hashes(self, context):
                         break
 
 
-class ClipDictionary(bpy.types.PropertyGroup):
-    pass
+class ClipTag(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", default="")
+
+    start_phase: bpy.props.FloatProperty(
+        name="Start Phase", default=0, min=0, max=1, description="Start phase of the tag")
+    end_phase: bpy.props.FloatProperty(
+        name="End Phase", default=0, min=0, max=1, description="End phase of the tag")
 
 
 class ClipAnimation(bpy.types.PropertyGroup):
@@ -71,9 +77,9 @@ class ClipProperties(bpy.types.PropertyGroup):
     start_frame: bpy.props.IntProperty(name="Start Frame", default=0, min=0)
     end_frame: bpy.props.IntProperty(name="End Frame", default=0, min=0)
 
-    animations: bpy.props.CollectionProperty(
-        name="Animations", type=ClipAnimation)
+    animations: bpy.props.CollectionProperty(name="Animations", type=ClipAnimation)
 
+    tags: bpy.props.CollectionProperty(name="Tags", type=ClipTag)
 
 
 class AnimationProperties(bpy.types.PropertyGroup):
@@ -172,8 +178,6 @@ def unregister_tracks(cls, inline=False):
 
 
 def register():
-    bpy.types.Object.clip_dict_properties = bpy.props.PointerProperty(
-        type=ClipDictionary)
     bpy.types.Object.clip_properties = bpy.props.PointerProperty(
         type=ClipProperties)
     bpy.types.Object.animation_properties = bpy.props.PointerProperty(
@@ -182,38 +186,8 @@ def register():
     register_tracks(bpy.types.PoseBone, inline=True)
     register_tracks(bpy.types.Object)
 
-    # def location_local_get(p_bone):
-    #     mat = p_bone.bone.matrix_local
-    #     if p_bone.bone.parent is not None:
-    #         mat = p_bone.bone.parent.matrix_local.inverted() @ mat
-    #     return mat @ p_bone.location
-    #
-    # def location_local_set(p_bone, value):
-    #     mat = p_bone.bone.matrix_local
-    #     if p_bone.bone.parent is not None:
-    #         mat = p_bone.bone.parent.matrix_local.inverted() @ mat
-    #
-    #     mat_decomposed = mat.decompose()
-    #
-    #     bone_location = mat_decomposed[0]
-    #     bone_rotation = mat_decomposed[1]
-    #
-    #     diff_location = mathutils.Vector((
-    #         (value.x - bone_location.x),
-    #         (value.y - bone_location.y),
-    #         (value.z - bone_location.z),
-    #     ))
-    #
-    #     diff_location.rotate(bone_rotation.inverted())
-    #
-    #     p_bone.location = diff_location
-    #
-    # bpy.types.PoseBone.location_local = bpy.props.FloatVectorProperty(
-    #     "Local Location", size=3, subtype="TRANSLATION", get=location_local_get, set=location_local_set)
-
 
 def unregister():
-    del bpy.types.Object.clip_dict_properties
     del bpy.types.Object.clip_properties
     del bpy.types.Object.animation_properties
 

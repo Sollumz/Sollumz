@@ -266,6 +266,15 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
             clip_animation.end_frame = int(
                 (animation.end_time / animation_data.duration) * animation_data.frame_count)
 
+    clip_obj.clip_properties.tags.clear()
+    for tag in clip.tags:
+        clip_tag = clip_obj.clip_properties.tags.add()
+        clip_tag.name = tag.name_hash
+        # self.unk_hash = TextProperty("UnkHash", "")  # probably signature
+        # self.attributes = AttributesList()  # TODO: tag attributes
+        clip_tag.start_phase = tag.start_phase
+        clip_tag.end_phase = tag.end_phase
+
     return clip_obj
 
 
