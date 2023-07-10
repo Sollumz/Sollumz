@@ -1,6 +1,7 @@
 import os
 import shutil
 import math
+import bmesh
 import bpy
 import zlib
 import numpy as np
@@ -130,6 +131,7 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     set_model_xml_properties(model_obj, lod_level, model_xml)
 
     mesh_eval = get_evaluated_lod_mesh(model_obj, lod_level)
+    triangulate_mesh(mesh_eval)
 
     if transforms_to_apply is not None:
         mesh_eval.transform(transforms_to_apply)
@@ -157,6 +159,18 @@ def get_evaluated_lod_mesh(model_obj: bpy.types.Object, lod_level: LODLevel):
     model_obj.hide_set(was_hidden)
 
     return obj_eval.to_mesh()
+
+
+def triangulate_mesh(mesh: bpy.types.Mesh):
+    temp_mesh = bmesh.new()
+    temp_mesh.from_mesh(mesh)
+
+    bmesh.ops.triangulate(temp_mesh, faces=temp_mesh.faces)
+
+    temp_mesh.to_mesh(mesh)
+    temp_mesh.free()
+
+    return mesh
 
 
 def get_model_bone_index(model_obj: bpy.types.Object):
