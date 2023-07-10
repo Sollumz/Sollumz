@@ -1,7 +1,7 @@
 import bpy
 from mathutils import Vector, Matrix, Quaternion
 
-from ..cwxml import clipsdictionary as ycdxml
+from ..cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
@@ -361,22 +361,25 @@ def animation_from_object(animation_obj):
 
     sequence = ycdxml.Animation.SequenceList.Sequence()
     sequence.frame_count = frame_count
-    sequence.hash = "hash_" + hex(0)[2:].zfill(8)
+    sequence.hash = "hash_" + hex(0)[2:].zfill(8)  # TODO: calculate signature
 
-    for bone_id, bones_data in sorted(sequence_items.items()):
-        for track, frames_data in sorted(bones_data.items()):
-            if track == Track.MoverPosition or track == Track.MoverRotation:
-                animation.unknown10 |= AnimationFlag.RootMotion
+    sequence_datas = [(bone_id, track, frames_data)
+                      for bone_id, bones_data in sequence_items.items()
+                      for track, frames_data in bones_data.items()]
+    sequence_datas.sort(key=lambda x: x[0] | (x[1].value << 16))
+    for bone_id, track, frames_data in sequence_datas:
+        if track == Track.MoverPosition or track == Track.MoverRotation:
+            animation.unknown10 |= AnimationFlag.RootMotion
 
-            sequence_data = sequence_data_from_frames_data(track, frames_data)
+        sequence_data = sequence_data_from_frames_data(track, frames_data)
 
-            seq_bone_id = ycdxml.Animation.BoneIdList.BoneId()
-            seq_bone_id.bone_id = bone_id
-            seq_bone_id.track = track.value
-            seq_bone_id.format = TrackFormatMap[track].value
-            animation.bone_ids.append(seq_bone_id)
+        seq_bone_id = ycdxml.Animation.BoneIdList.BoneId()
+        seq_bone_id.bone_id = bone_id
+        seq_bone_id.track = track.value
+        seq_bone_id.format = TrackFormatMap[track].value
+        animation.bone_ids.append(seq_bone_id)
 
-            sequence.sequence_data.append(sequence_data)
+        sequence.sequence_data.append(sequence_data)
 
     animation.sequences.append(sequence)
 
@@ -384,6 +387,32 @@ def animation_from_object(animation_obj):
     animation.unknown10 = animation.unknown10.value
 
     return animation
+
+
+def clip_attribute_to_xml(attr) -> ycdxml.AttributesList.Attribute:
+    if attr.type == "Float":
+        xml_attr = ycdxml.AttributesList.FloatAttribute()
+        xml_attr.value = attr.value_float
+    elif attr.type == "Int":
+        xml_attr = ycdxml.AttributesList.IntAttribute()
+        xml_attr.value = attr.value_int
+    elif attr.type == "Bool":
+        xml_attr = ycdxml.AttributesList.BoolAttribute()
+        xml_attr.value = attr.value_bool
+    elif attr.type == "Vector3":
+        assert False, "TODO: Vector3 attribute"
+    elif attr.type == "Vector4":
+        assert False, "TODO: Vector4 attribute"
+    elif attr.type == "String":
+        xml_attr = ycdxml.AttributesList.StringAttribute()
+        xml_attr.value = attr.value_string
+    elif attr.type == "HashString":
+        xml_attr = ycdxml.AttributesList.HashStringAttribute()
+        xml_attr.value = attr.value_string
+    else:
+        assert False, f"Unknown attribute type: {attr.type}"
+    xml_attr.name_hash = attr.name
+    return xml_attr
 
 
 def clip_from_object(clip_obj):
@@ -430,13 +459,28 @@ def clip_from_object(clip_obj):
     clip.name = "pack:/" + clip_properties.name
     clip.unknown30 = 0
 
-    # TODO: add tags
+    for tag in clip_properties.tags:
+        xml_tag = ycdxml.Clip.TagList.Tag()
+        xml_tag.name_hash = tag.name
+        xml_tag.unk_hash = "hash_" + hex(0)[2:].zfill(8)  # TODO: calculate signature
+        xml_tag.start_phase = tag.start_phase
+        xml_tag.end_phase = tag.end_phase
+        for attr in tag.attributes:
+            xml_tag.attributes.append(clip_attribute_to_xml(attr))
+        clip.tags.append(xml_tag)
+
+    for prop in clip_properties.properties:
+        xml_prop = ycdxml.Property()
+        xml_prop.name_hash = prop.name
+        xml_prop.unk_hash = "hash_" + hex(0)[2:].zfill(8)  # TODO: calculate signature
+        xml_prop.attributes.append(clip_attribute_to_xml(prop))
+        clip.properties.append(xml_prop)
 
     return clip
 
 
 def clip_dictionary_from_object(obj):
-    clip_dictionary = ycdxml.ClipsDictionary()
+    clip_dictionary = ycdxml.ClipDictionary()
 
     animations_obj = None
     clips_obj = None

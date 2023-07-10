@@ -1,7 +1,7 @@
 import os
 import bpy
 from mathutils import Vector, Quaternion
-from ..cwxml.clipsdictionary import YCD
+from ..cwxml.clipdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.animationhelper import TrackFormat, TrackFormatMap, get_canonical_track_data_path
 from .. import logger

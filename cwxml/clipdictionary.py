@@ -21,7 +21,7 @@ class YCD:
 
     @staticmethod
     def from_xml_file(filepath):
-        return ClipsDictionary.from_xml_file(filepath)
+        return ClipDictionary.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(clips_dict, filepath):
@@ -443,14 +443,14 @@ class ClipsList(ItemTypeList):
     tag_name = "Clips"
 
 
-class ClipsDictionary(ElementTree):
+class ClipDictionary(ElementTree):
     class AnimationsList(ListProperty):
         list_type = Animation
         tag_name = "Animations"
 
-    tag_name = "ClipsDictionary"
+    tag_name = "ClipDictionary"
 
     def __init__(self):
         super().__init__()
         self.clips = ClipsList()
-        self.animations = ClipsDictionary.AnimationsList()
+        self.animations = ClipDictionary.AnimationsList()
