@@ -126,7 +126,7 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH or obj.sollum_type == SollumType.BOUND_BOX or obj.sollum_type == SollumType.BOUND_SPHERE or obj.sollum_type == SollumType.BOUND_CAPSULE)
+        return obj is not None and obj.parent is not None and obj.parent.sollum_type == SollumType.BOUND_COMPOSITE and obj.sollum_type in BOUND_TYPES
 
     def draw(self, context):
         obj = context.active_object
