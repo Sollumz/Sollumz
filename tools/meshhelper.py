@@ -252,6 +252,9 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
         total_bounds.extend([child_matrix @ Vector(v)
                             for v in child.bound_box])
 
+    if not total_bounds:
+        return Vector(), Vector()
+
     return get_min_vector_list(total_bounds), get_max_vector_list(total_bounds)
 
 
