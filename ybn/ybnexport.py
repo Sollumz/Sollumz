@@ -26,7 +26,7 @@ from ..cwxml.bound import (
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (get_bound_center_from_bounds, calculate_volume,
-                                calculate_inertia, get_sphere_radius, get_combined_bound_box)
+                                calculate_inertia, get_corners_from_extents, get_sphere_radius, get_combined_bound_box)
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
 from ..sollumz_preferences import get_export_settings
 from .. import logger
@@ -127,10 +127,12 @@ def bound_geom_has_mats(geom_obj: bpy.types.Object):
 
 def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Initialize ``bound_xml`` bound child properties from object blender properties."""
+    bound_xml.composite_transform = get_composite_transforms(obj).transposed()
+
     if obj.type == "MESH":
         bbmin, bbmax = get_bound_extents(obj)
     elif obj.type == "EMPTY":
-        bbmin, bbmax = get_bvh_extents(obj)
+        bbmin, bbmax = get_bvh_extents(obj, bound_xml.composite_transform)
     else:
         return bound_xml
 
@@ -140,7 +142,6 @@ def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_ca
         bound_xml, obj, auto_calc_inertia, auto_calc_volume)
 
     set_composite_xml_flags(bound_xml, obj)
-    bound_xml.composite_transform = get_composite_transforms(obj).transposed()
     set_bound_xml_mat_index(bound_xml, obj)
 
     return bound_xml
@@ -274,7 +275,8 @@ def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeomet
 
     mesh = create_export_mesh(obj)
 
-    transforms = get_bound_poly_transforms_to_apply(obj, geom_xml)
+    transforms = get_bound_poly_transforms_to_apply(
+        obj, geom_xml.composite_transform)
 
     triangles = create_poly_xml_triangles(
         mesh, transforms, get_vert_index, get_mat_index, add_deformed_vert)
@@ -288,7 +290,8 @@ def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeomet
 def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     mesh = create_export_mesh(obj)
 
-    transforms = get_bound_poly_transforms_to_apply(obj, geom_xml)
+    transforms = get_bound_poly_transforms_to_apply(
+        obj, geom_xml.composite_transform)
 
     if mesh.vertex_colors:
         create_xml_vertex_colors(geom_xml, mesh)
@@ -319,9 +322,9 @@ def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBV
         geom_xml.polygons.append(capsule_xml)
 
 
-def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, geom_xml: BoundGeometryBVH):
+def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, composite_transform: Matrix):
     """Get the transforms to apply directly to BoundGeometry vertices."""
-    composite_transform = geom_xml.composite_transform.transposed()
+    composite_transform = composite_transform.transposed()
     parent_inverse = get_parent_inverse(obj)
 
     # Apply any transforms not covered in composite_transform
@@ -565,22 +568,23 @@ def get_bound_extents(obj: bpy.types.Object):
     return scale * get_min_vector_list(obj.bound_box), scale * get_max_vector_list(obj.bound_box)
 
 
-def get_bvh_extents(obj: bpy.types.Object):
-    scale = get_scale_to_apply_to_bound(obj)
+def get_bvh_extents(obj: bpy.types.Object, composite_transform: Matrix):
+    transforms_to_apply = get_bound_poly_transforms_to_apply(
+        obj, composite_transform)
 
-    bbmin, bbmax = get_combined_bound_box(obj)
+    bbmin, bbmax = get_combined_bound_box(obj, matrix=transforms_to_apply)
 
-    return scale * bbmin, scale * bbmax
+    return bbmin, bbmax
 
 
 def get_composite_extents(composite_xml: BoundComposite):
-    """Get composite extents based on children"""
-    mins: list[Vector] = []
-    maxes: list[Vector] = []
+    """Get composite extents based on child bound extents"""
+    corner_vecs: list[Vector] = []
 
     for child in composite_xml.children:
         transform = child.composite_transform.transposed()
-        mins.append(transform @ child.box_min)
-        maxes.append(transform @ child.box_max)
+        child_corners = get_corners_from_extents(child.box_min, child.box_max)
+        # Get AABB with transforms applied
+        corner_vecs.extend([transform @ corner for corner in child_corners])
 
-    return get_min_vector_list(mins), get_max_vector_list(maxes)
+    return get_min_vector_list(corner_vecs), get_max_vector_list(corner_vecs)

@@ -12,17 +12,7 @@ from .blenderhelper import get_children_recursive
 
 def create_box_from_extents(mesh, bbmin, bbmax):
     # Create box from bbmin and bbmax
-    vertices = [
-        bbmin,
-        Vector((bbmin.x, bbmin.y, bbmax.z)),
-        Vector((bbmin.x, bbmax.y, bbmax.z)),
-        Vector((bbmin.x, bbmax.y, bbmin.z)),
-
-        Vector((bbmax.x, bbmin.y, bbmax.z)),
-        Vector((bbmax.x, bbmin.y, bbmin.z)),
-        Vector((bbmax.x, bbmax.y, bbmin.z)),
-        bbmax
-    ]
+    vertices = get_corners_from_extents(bbmin, bbmax)
 
     faces = [
         [0, 1, 2, 3],
@@ -47,6 +37,20 @@ def create_box_from_extents(mesh, bbmin, bbmax):
     bm.free()
 
     return mesh
+
+
+def get_corners_from_extents(bbmin: Vector, bbmax: Vector):
+    return [
+        bbmin,
+        Vector((bbmin.x, bbmin.y, bbmax.z)),
+        Vector((bbmin.x, bbmax.y, bbmax.z)),
+        Vector((bbmin.x, bbmax.y, bbmin.z)),
+
+        Vector((bbmax.x, bbmin.y, bbmax.z)),
+        Vector((bbmax.x, bbmin.y, bbmin.z)),
+        Vector((bbmax.x, bbmax.y, bbmin.z)),
+        bbmax
+    ]
 
 
 def create_box(mesh, size=2, matrix=None):
