@@ -276,9 +276,9 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
         elif attr.type == "Bool":
             attr.value_bool = xml_attr.value
         elif attr.type == "Vector3":
-            assert False, "TODO: Vector3 attribute"
+            attr.value_vec3 = xml_attr.value
         elif attr.type == "Vector4":
-            assert False, "TODO: Vector4 attribute"
+            attr.value_vec4 = xml_attr.value
         elif attr.type == "String" or attr.type == "HashString":
             attr.value_string = xml_attr.value
 

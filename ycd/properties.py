@@ -115,12 +115,11 @@ class ClipProperties(bpy.types.PropertyGroup):
     properties: bpy.props.CollectionProperty(name="Properties", type=ClipAttribute)
 
 
-
 class AnimationProperties(bpy.types.PropertyGroup):
     def on_target_update(self, context):
-        print(f"Target updated: {self.target_id} (prev {self.target_id_prev})")
+        # print(f"Target updated: {self.target_id} (prev {self.target_id_prev})")
         if self.target_id != self.target_id_prev:
-            print("  Retargeting animation")
+            # print("  Retargeting animation")
             retarget_animation(self.action, self.target_id_prev, self.target_id)
 
         self.target_id_prev = self.target_id
@@ -224,8 +223,6 @@ def register():
 def unregister():
     del bpy.types.Object.clip_properties
     del bpy.types.Object.animation_properties
-
-    del bpy.types.Object.animation_properties_v2
 
     unregister_tracks(bpy.types.PoseBone, inline=True)
     unregister_tracks(bpy.types.Object)

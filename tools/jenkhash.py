@@ -1,7 +1,6 @@
-def Generate(text, encoding="utf-8"):
 
-    bts = text.lower().encode(encoding)
-    h = 0
+def GenerateData(bts: bytes, seed=0):
+    h = seed
 
     for b in bts:
         h += b
@@ -19,3 +18,8 @@ def Generate(text, encoding="utf-8"):
     h &= 0xFFFFFFFF
 
     return h
+
+
+def Generate(text, encoding="utf-8", seed=0):
+    bts = text.lower().encode(encoding)
+    return GenerateData(bts, seed)

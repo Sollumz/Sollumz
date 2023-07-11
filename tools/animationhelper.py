@@ -159,62 +159,6 @@ TrackToPropertyNameMap = {
 PropertyNameToTrackMap = {v: k for k, v in TrackToPropertyNameMap.items()}
 
 
-def evaluate_vector(fcurves, data_path, frames):
-    xCurve = fcurves.find(data_path, index=0)
-    yCurve = fcurves.find(data_path, index=1)
-    zCurve = fcurves.find(data_path, index=2)
-
-    if xCurve is None:
-        return []
-
-    result = []
-    for frame_id in range(0, frames):
-        x = xCurve.evaluate(frame_id)
-        y = yCurve.evaluate(frame_id)
-        z = zCurve.evaluate(frame_id)
-
-        result.append(Vector((x, y, z)))
-    return result
-
-
-def evaluate_euler_to_quaternion(fcurves, data_path, frames):
-    xCurve = fcurves.find(data_path, index=0)
-    yCurve = fcurves.find(data_path, index=1)
-    zCurve = fcurves.find(data_path, index=2)
-
-    if xCurve is None:
-        return []
-
-    result = []
-    for frame_id in range(0, frames):
-        x = xCurve.evaluate(frame_id)
-        y = yCurve.evaluate(frame_id)
-        z = zCurve.evaluate(frame_id)
-
-        result.append(Euler((x, y, z)).to_quaternion())
-    return result
-
-
-def evaluate_quaternion(fcurves, data_path, frames):
-    wCurve = fcurves.find(data_path, index=0)
-    xCurve = fcurves.find(data_path, index=1)
-    yCurve = fcurves.find(data_path, index=2)
-    zCurve = fcurves.find(data_path, index=3)
-
-    if xCurve is None:
-        return []
-
-    result = []
-    for frame_id in range(0, frames):
-        w = wCurve.evaluate(frame_id)
-        x = xCurve.evaluate(frame_id)
-        y = yCurve.evaluate(frame_id)
-        z = zCurve.evaluate(frame_id)
-
-        result.append(Quaternion((w, x, y, z)))
-    return result
-
-
 def get_quantum_and_min_val(nums):
     min_val = float_info.max
     max_val = float_info.min

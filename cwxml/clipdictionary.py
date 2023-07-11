@@ -8,7 +8,8 @@ from .element import (
     QuaternionProperty,
     TextProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
+    Vector4Property
 )
 from xml.etree import ElementTree as ET
 from inspect import isclass
@@ -103,7 +104,7 @@ class AttributesList(ItemTypeList):
 
         def __init__(self):
             super().__init__()
-            self.value = QuaternionProperty("Value")
+            self.value = Vector4Property("Value")
 
     class StringAttribute(Attribute):
         type = "String"

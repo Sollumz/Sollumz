@@ -1,28 +1,30 @@
 import bpy
 from mathutils import Vector, Matrix, Quaternion
-
+import math
 from ..cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SollumType
-from ..tools.jenkhash import Generate
+from ..tools import jenkhash
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from ..tools.animationhelper import (
     Track,
     TrackFormat,
     TrackFormatMap,
     AnimationFlag,
-    evaluate_vector,
-    evaluate_quaternion,
-    evaluate_euler_to_quaternion,
     get_quantum_and_min_val,
     get_id_and_track_from_track_data_path,
+    calculate_bone_space_transform_matrix,
 )
 
 
 def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID, frame_count: int):
-    if isinstance(target_id, bpy.types.Armature):
+    target_is_armature = isinstance(target_id, bpy.types.Armature)
+    target_is_camera = isinstance(target_id, bpy.types.Camera)
+    if target_is_armature:
         bone_name_map = build_name_bone_map(get_data_obj(target_id))
+        bone_map = build_bone_map(get_data_obj(target_id))
     else:
         bone_name_map = None
+        bone_map = None
 
     sequence_items = {}
     for fcurve in action.fcurves:
@@ -60,169 +62,58 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
             else:
                 track_sequence[frame_id][comp_index] = value
 
-    # TODO: transform bone space and camera rotation
+    if target_is_armature:
+        # transform bones from pose space to local space
+        for bone_id, bone_sequences in sequence_items.items():
+            transform_mat = calculate_bone_space_transform_matrix(bone_map.get(bone_id, None), None)
+
+            if Track.BonePosition in bone_sequences:
+                vecs = bone_sequences[Track.BonePosition]
+                for i in range(0, frame_count):
+                    vecs[i] = transform_mat @ vecs[i]
+
+            if Track.BoneRotation in bone_sequences:
+                quats = bone_sequences[Track.BoneRotation]
+                for i in range(0, frame_count):
+                    quats[i].rotate(transform_mat)
+
+                    if i > 0:
+                        # "Flickering bug" fix - killso:
+                        # This bug is caused by interpolation algorithm used in GTA
+                        # which is not slerp, but straight interpolation of every value
+                        # and this leads to incorrect results in cases if dot(this, next) < 0
+                        # This is correct "Quaternion Lerp" algorithm:
+                        # if (Dot(start, end) >= 0f)
+                        # {
+                        #   result.X = (1 - amount) * start.X + amount * end.X
+                        #   ...
+                        # }quats[i]
+                        # else
+                        # {
+                        #   result.X = (1 - amount) * start.X - amount * end.X
+                        #   ...
+                        # }
+                        # (Statement difference is only substracting instead of adding)
+                        # But GTA algorithm doesn't have Dot check,
+                        # resulting all values that are not passing this statement to "lag" in game.
+                        # (because of incorrect interpolation direction)
+                        # So what we do is make all values to pass Dot(start, end) >= 0f statement
+                        if quats[i - 1].dot(quats[i]) < 0:
+                            quats[i] *= -1
+                        # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
+
+    if target_is_camera:
+        # see animationhelper.transform_camera_rotation_quaternion
+        angle_delta = math.radians(-90.0)
+        x_axis = Vector((1.0, 0.0, 0.0))
+        for bone_id, bone_sequences in sequence_items.items():
+            if Track.CameraRotation in bone_sequences:
+                quats = bone_sequences[Track.CameraRotation]
+                for i in range(0, frame_count):
+                    x_axis_local = quats[i] @ x_axis
+                    quats[i].rotate(Quaternion(x_axis_local, angle_delta))
 
     return sequence_items
-
-    if animation_type == "REGULAR":
-        locations_map = {}
-        rotations_map = {}
-        scales_map = {}
-        bones_map = action_data
-
-        p_bone: bpy.types.PoseBone
-        for parent_tag, p_bone in bones_map.items():
-            pos_vector_path = p_bone.path_from_id("location")
-            rot_quaternion_path = p_bone.path_from_id("rotation_quaternion")
-            rot_euler_path = p_bone.path_from_id("rotation_euler")
-            scale_vector_path = p_bone.path_from_id("scale")
-
-            # Get list of per-frame data for every path
-
-            b_locations = evaluate_vector(
-                action.fcurves, pos_vector_path, frame_count)
-            b_quaternions = evaluate_quaternion(
-                action.fcurves, rot_quaternion_path, frame_count)
-            b_euler_quaternions = evaluate_euler_to_quaternion(
-                action.fcurves, rot_euler_path, frame_count)
-            b_scales = evaluate_vector(
-                action.fcurves, scale_vector_path, frame_count)
-
-            # Link them with Bone ID
-
-            if len(b_locations) > 0:
-                locations_map[parent_tag] = b_locations
-
-            # Its a bit of a edge case scenario because blender uses either
-            # euler or quaternion (I cant really understand why quaternion doesnt update with euler)
-            # So we will prefer quaternion over euler for now
-            # TODO: Theres also third rotation in blender, angles or something...
-            if len(b_quaternions) > 0:
-                rotations_map[parent_tag] = b_quaternions
-            elif len(b_euler_quaternions) > 0:
-                rotations_map[parent_tag] = b_euler_quaternions
-
-            if len(b_scales) > 0:
-                scales_map[parent_tag] = b_scales
-
-        # Transform position from local to armature space
-        for parent_tag, positions in locations_map.items():
-            p_bone = bones_map[parent_tag]
-            bone = p_bone.bone
-
-            for frame_id, position in enumerate(positions):
-                mat = bone.matrix_local
-
-                if bone.parent is not None:
-                    mat = bone.parent.matrix_local.inverted() @ bone.matrix_local
-
-                    mat_decomposed = mat.decompose()
-
-                    bone_location = mat_decomposed[0]
-                    bone_rotation = mat_decomposed[1]
-
-                    position.rotate(bone_rotation)
-
-                    diff_location = Vector((
-                        (position.x + bone_location.x),
-                        (position.y + bone_location.y),
-                        (position.z + bone_location.z),
-                    ))
-
-                    positions[frame_id] = diff_location
-
-        # Transform rotation from local to armature space
-        for parent_tag, quaternions in rotations_map.items():
-            p_bone = bones_map[parent_tag]
-            bone = p_bone.bone
-
-            prev_quaternion = None
-            for quaternion in quaternions:
-                if p_bone.parent is not None:
-                    pose_rot = Matrix.to_quaternion(bone.matrix)
-                    quaternion.rotate(pose_rot)
-
-                if prev_quaternion is not None:
-                    # "Flickering bug" fix - killso:
-                    # This bug is caused by interpolation algorithm used in GTA
-                    # which is not slerp, but straight interpolation of every value
-                    # and this leads to incorrect results in cases if dot(this, next) < 0
-                    # This is correct "Quaternion Lerp" algorithm:
-                    # if (Dot(start, end) >= 0f)
-                    # {
-                    #   result.X = (1 - amount) * start.X + amount * end.X
-                    #   ...
-                    # }
-                    # else
-                    # {
-                    #   result.X = (1 - amount) * start.X - amount * end.X
-                    #   ...
-                    # }
-                    # (Statement difference is only substracting instead of adding)
-                    # But GTA algorithm doesn't have Dot check,
-                    # resulting all values that are not passing this statement to "lag" in game.
-                    # (because of incorrect interpolation direction)
-                    # So what we do is make all values to pass Dot(start, end) >= 0f statement
-                    if Quaternion.dot(prev_quaternion, quaternion) < 0:
-                        quaternion *= -1
-
-                prev_quaternion = quaternion
-        # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
-
-        if len(locations_map) > 0:
-            sequence_items[ensure_action_track(
-                Track.BonePosition, action_type)] = locations_map
-
-        if len(rotations_map) > 0:
-            sequence_items[ensure_action_track(
-                Track.BoneRotation, action_type)] = rotations_map
-
-        if len(scales_map) > 0:
-            sequence_items[ensure_action_track(
-                Track.BoneScale, action_type)] = scales_map
-
-    elif animation_type == "UV":
-        u_locations_map = {}
-        v_locations_map = {}
-        uv_mat = action
-        uv_nodetree = uv_mat.node_tree
-        mat_nodes = uv_nodetree.nodes
-        vector_math_node = None
-
-        # Verify if material has required node(Vector Math) to get animation data
-        for node in mat_nodes:
-            if node.type == 'VECT_MATH':
-                vector_math_node = node
-                break
-        if vector_math_node is None:
-            raise Exception(
-                "Unable to find Vector Math node in material to get UV animation data!")
-        else:
-            pos_vector_path = vector_math_node.inputs[1].path_from_id(
-                "default_value")
-            uv_fcurve = uv_nodetree.animation_data.action.fcurves
-            uv_locations = evaluate_vector(
-                uv_fcurve, pos_vector_path, frame_count)
-            if len(uv_locations) > 0:
-                u_channel_loc = []
-                v_channel_loc = []
-                for vector in uv_locations:
-                    u_channel_loc.append(round(vector.x, 4))
-                    v_channel_loc.append(-round(vector.y, 4))
-
-                if len(u_channel_loc) > 0:
-                    u_locations_map[0] = u_channel_loc
-
-                if len(v_channel_loc) > 0:
-                    v_locations_map[0] = v_channel_loc
-
-            if len(u_locations_map) > 0:
-                sequence_items[ensure_action_track(
-                    Track.UV0, action_type)] = u_locations_map
-
-            if len(v_locations_map) > 0:
-                sequence_items[ensure_action_track(
-                    Track.UV1, action_type)] = v_locations_map
 
 
 def build_values_channel(values, uniq_values, indirect_percentage=0.1):
@@ -324,17 +215,8 @@ def sequence_data_from_frames_data(track, frames_data):
             sequence_data.channels.append(build_values_channel(values_w, uniq_w))
     elif format == TrackFormat.Float:
         values = frames_data
-
         uniq = list(set(values))
-        len_uniq = len(uniq)
-
-        if len_uniq == 1:
-            channel = ycdxml.ChannelsList.StaticVector3()
-            channel.value = frames_data[0]
-
-            sequence_data.channels.append(channel)
-        else:
-            sequence_data.channels.append(build_values_channel(values, uniq))
+        sequence_data.channels.append(build_values_channel(values, uniq))
 
     return sequence_data
 
@@ -353,7 +235,7 @@ def animation_from_object(animation_obj):
 
     # signature: this value must be unique (used internally for animation caching)
     # TODO: CW should calculate this on import with the proper hash function
-    animation.unknown1C = "hash_" + hex(Generate(animation_properties.hash) + 1)[2:].zfill(8)
+    animation.unknown1C = f"hash_{jenkhash.Generate(animation_properties.hash) + 1:08X}"
 
     action = animation_properties.action
     target_id = animation_properties.target_id
@@ -361,7 +243,7 @@ def animation_from_object(animation_obj):
 
     sequence = ycdxml.Animation.SequenceList.Sequence()
     sequence.frame_count = frame_count
-    sequence.hash = "hash_" + hex(0)[2:].zfill(8)  # TODO: calculate signature
+    sequence.hash = "hash_00000000"  # TODO: calculate signature
 
     sequence_datas = [(bone_id, track, frames_data)
                       for bone_id, bones_data in sequence_items.items()
@@ -400,9 +282,11 @@ def clip_attribute_to_xml(attr) -> ycdxml.AttributesList.Attribute:
         xml_attr = ycdxml.AttributesList.BoolAttribute()
         xml_attr.value = attr.value_bool
     elif attr.type == "Vector3":
-        assert False, "TODO: Vector3 attribute"
+        xml_attr = ycdxml.AttributesList.Vector3Attribute()
+        xml_attr.value = Vector(attr.value_vec3)
     elif attr.type == "Vector4":
-        assert False, "TODO: Vector4 attribute"
+        xml_attr = ycdxml.AttributesList.Vector4Attribute()
+        xml_attr.value = Vector(attr.value_vec4)
     elif attr.type == "String":
         xml_attr = ycdxml.AttributesList.StringAttribute()
         xml_attr.value = attr.value_string
@@ -413,6 +297,66 @@ def clip_attribute_to_xml(attr) -> ycdxml.AttributesList.Attribute:
         assert False, f"Unknown attribute type: {attr.type}"
     xml_attr.name_hash = attr.name
     return xml_attr
+
+
+def name_to_hash(name):
+    if name.startswith("hash_"):
+        return int(name[5:], 16) & 0xFFFFFFFF
+    else:
+        return jenkhash.Generate(name)
+
+
+def clip_attribute_calc_signature(attr):
+    import struct
+
+    signature = name_to_hash(attr.name)
+    if attr.type == "Float":
+        signature = jenkhash.GenerateData(struct.pack("f", attr.value_float), seed=signature)
+    elif attr.type == "Int":
+        signature = jenkhash.GenerateData(struct.pack("i", attr.value_int), seed=signature)
+    elif attr.type == "Bool":
+        signature = jenkhash.GenerateData(struct.pack("?", attr.value_bool), seed=signature)
+    elif attr.type == "Vector3":
+        vec3 = attr.value_vec3
+        signature = jenkhash.GenerateData(struct.pack("3f", vec3[0], vec3[1], vec3[2]), seed=signature)
+    elif attr.type == "Vector4":
+        vec4 = attr.value_vec4
+        signature = jenkhash.GenerateData(struct.pack("4f", vec4[0], vec4[1], vec4[2], vec4[3]), seed=signature)
+    elif attr.type == "String":
+        signature = jenkhash.Generate(attr.value_string, seed=signature)
+    elif attr.type == "HashString":
+        signature = name_to_hash(attr.value_string)
+    else:
+        assert False, f"Unknown attribute type: {attr.type}"
+
+    return signature
+
+
+# TODO: these calc_signature functions try to reproduce the original
+#  calculations but currently do not match the expected results, investigate.
+#  Should be good enough for now
+def clip_property_calc_signature(prop):
+    import struct
+
+    signature = name_to_hash(prop.name)
+    # for attr in prop:
+    attr_signature = clip_attribute_calc_signature(prop)
+    signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
+    return signature
+
+
+def clip_tag_calc_signature(tag):
+    import struct
+    import zlib
+
+    signature = name_to_hash(tag.name)
+    for attr in tag.attributes:
+        attr_signature = clip_attribute_calc_signature(attr)
+        signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
+
+    signature = zlib.crc32(struct.pack("f", tag.start_phase), name_to_hash(tag.name) ^ signature)
+    signature = zlib.crc32(struct.pack("f", tag.end_phase), signature)
+    return signature
 
 
 def clip_from_object(clip_obj):
@@ -462,7 +406,7 @@ def clip_from_object(clip_obj):
     for tag in clip_properties.tags:
         xml_tag = ycdxml.Clip.TagList.Tag()
         xml_tag.name_hash = tag.name
-        xml_tag.unk_hash = "hash_" + hex(0)[2:].zfill(8)  # TODO: calculate signature
+        xml_tag.unk_hash = f"hash_{clip_tag_calc_signature(tag):08X}"
         xml_tag.start_phase = tag.start_phase
         xml_tag.end_phase = tag.end_phase
         for attr in tag.attributes:
@@ -472,7 +416,7 @@ def clip_from_object(clip_obj):
     for prop in clip_properties.properties:
         xml_prop = ycdxml.Property()
         xml_prop.name_hash = prop.name
-        xml_prop.unk_hash = "hash_" + hex(0)[2:].zfill(8)  # TODO: calculate signature
+        xml_prop.unk_hash = f"hash_{clip_property_calc_signature(prop):08X}"
         xml_prop.attributes.append(clip_attribute_to_xml(prop))
         clip.properties.append(xml_prop)
 
