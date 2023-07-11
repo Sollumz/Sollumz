@@ -147,29 +147,6 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
             self.layout.prop(obj.fragment_properties, prop)
 
 
-class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
-    bl_label = "Vehicle Window"
-    bl_idname = "SOLLUMZ_PT_VEHICLE_WINDOW_PANEL"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"HIDE_HEADER"}
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object and context.active_object.sollum_type == SollumType.SHATTERMAP
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        obj = context.active_object
-
-        for prop in VehicleWindowProperties.__annotations__:
-            self.layout.prop(obj.vehicle_window_properties, prop)
-
-
 class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
     bl_label = "Physics LOD Properties"
     bl_idname = "SOLLUMZ_PT_PHYS_LODS_PANEL"
@@ -290,11 +267,39 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
 
         layout.prop(child_props, "mass")
 
+
+class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
+    bl_label = "Vehicle Window"
+    bl_idname = "SOLLUMZ_PT_VEHICLE_WINDOW_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_PHYSICS_CHILD_PANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        return aobj and aobj.sollum_type == SollumType.BOUND_GEOMETRY
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.active_object
+        child_props = obj.child_properties
+
+        layout.prop(child_props, "is_veh_window")
+
+        if not child_props.is_veh_window:
+            return
+
         layout.separator()
 
-        if child_props.is_veh_window:
-            layout.prop(child_props, "window_mat")
-        layout.prop(child_props, "is_veh_window")
+        layout.prop(child_props, "window_mat")
+
+        for prop in VehicleWindowProperties.__annotations__:
+            self.layout.prop(obj.vehicle_window_properties, prop)
 
 
 class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
