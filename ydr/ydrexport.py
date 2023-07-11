@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 from typing import Optional
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
+from .model_data import get_faces_subset
 
 from ..cwxml.drawable import Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader, VertexBuffer
 from ..tools import jenkhash
@@ -118,6 +119,7 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
     # drawable can be split by vertex group, we have to join each separate part into a single object.
     join_skinned_models_for_each_lod(drawable_xml)
+    split_drawable_by_vert_count(drawable_xml)
 
 
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
@@ -210,36 +212,35 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
     total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup).build()
 
-    for mat_index, mat_loop_inds in loop_inds_by_mat.items():
+    for mat_index, loop_inds in loop_inds_by_mat.items():
         material = materials[mat_index]
         tangent_required = get_tangent_required(material)
         normal_required = get_normal_required(material)
 
-        for loop_inds in split_loops_by_vert_limit(mat_loop_inds):
-            vert_buffer = remove_unused_uvs(total_vert_buffer[loop_inds])
-            vert_buffer = remove_unused_colors(vert_buffer)
+        vert_buffer = remove_unused_uvs(total_vert_buffer[loop_inds])
+        vert_buffer = remove_unused_colors(vert_buffer)
 
-            if not tangent_required:
-                vert_buffer = remove_arr_field("Tangent", vert_buffer)
+        if not tangent_required:
+            vert_buffer = remove_arr_field("Tangent", vert_buffer)
 
-            if not normal_required:
-                vert_buffer = remove_arr_field("Normal", vert_buffer)
+        if not normal_required:
+            vert_buffer = remove_arr_field("Normal", vert_buffer)
 
-            vert_buffer, ind_buffer = dedupe_and_get_indices(vert_buffer)
+        vert_buffer, ind_buffer = dedupe_and_get_indices(vert_buffer)
 
-            geom_xml = Geometry()
+        geom_xml = Geometry()
 
-            geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(
-                vert_buffer["Position"])
-            geom_xml.shader_index = mat_index
+        geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(
+            vert_buffer["Position"])
+        geom_xml.shader_index = mat_index
 
-            if bones and "BlendWeights" in vert_buffer.dtype.names:
-                geom_xml.bone_ids = get_bone_ids(bones)
+        if bones and "BlendWeights" in vert_buffer.dtype.names:
+            geom_xml.bone_ids = get_bone_ids(bones)
 
-            geom_xml.vertex_buffer.data = vert_buffer
-            geom_xml.index_buffer.data = ind_buffer
+        geom_xml.vertex_buffer.data = vert_buffer
+        geom_xml.index_buffer.data = ind_buffer
 
-            geometries.append(geom_xml)
+        geometries.append(geom_xml)
 
     geometries = sort_geoms_by_shader(geometries)
 
@@ -285,19 +286,6 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
         loop_inds_by_mat[shader_index] = loop_indices
 
     return loop_inds_by_mat
-
-
-def split_loops_by_vert_limit(loop_inds: NDArray) -> list[NDArray]:
-    MAX_VERTS = 65535
-    num_geoms = math.ceil(len(loop_inds) / MAX_VERTS)
-
-    if num_geoms <= 1:
-        return [loop_inds]
-
-    num_tris = math.ceil(len(loop_inds) / 3)
-    tri_inds = loop_inds.reshape((num_tris, 3))
-
-    return [loop_inds.flatten() for loop_inds in np.array_split(tri_inds, num_geoms)]
 
 
 def get_tangent_required(material: bpy.types.Material):
@@ -453,6 +441,69 @@ def join_ind_arrs(ind_arrs: list[NDArray[np.uint32]], vert_counts: list[int]) ->
         ind_arr + get_vert_ind_offset(i) for i, ind_arr in enumerate(ind_arrs)]
 
     return np.concatenate(offset_ind_arrs)
+
+
+def split_drawable_by_vert_count(drawable_xml: Drawable):
+    split_models_by_vert_count(drawable_xml.drawable_models_high)
+    split_models_by_vert_count(drawable_xml.drawable_models_med)
+    split_models_by_vert_count(drawable_xml.drawable_models_low)
+    split_models_by_vert_count(drawable_xml.drawable_models_vlow)
+
+
+def split_models_by_vert_count(model_xmls: list[DrawableModel]):
+    for model_xml in model_xmls:
+        geoms_split = [
+            geom_split for geom in model_xml.geometries for geom_split in split_geom_by_vert_count(geom)]
+        model_xml.geometries = geoms_split
+
+
+def split_geom_by_vert_count(geom_xml: Geometry):
+    if geom_xml.vertex_buffer.data is None or geom_xml.index_buffer.data is None:
+        raise ValueError(
+            "Failed to split Geometry by vertex count. Vertex buffer and index buffer cannot be None!")
+
+    MAX_VERTS = 65535
+
+    vert_buffers, ind_buffers = split_vert_buffers_by_count(
+        geom_xml.vertex_buffer.data, geom_xml.index_buffer.data, MAX_VERTS)
+
+    geoms: list[Geometry] = []
+
+    for vert_buffer, ind_buffer in zip(vert_buffers, ind_buffers):
+        new_geom = Geometry()
+        new_geom.bone_ids = geom_xml.bone_ids
+        new_geom.shader_index = geom_xml.shader_index
+        new_geom.bounding_box_max, new_geom.bounding_box_min = get_geom_extents(
+            vert_buffer["Position"])
+
+        new_geom.vertex_buffer.data = vert_buffer
+        new_geom.index_buffer.data = ind_buffer
+
+        geoms.append(new_geom)
+
+    return tuple(geoms)
+
+
+def split_vert_buffers_by_count(vert_buffer: NDArray, ind_buffer: NDArray[np.uint32], count: int) -> tuple[tuple[NDArray], tuple[NDArray[np.uint32]]]:
+    """Splits vertex and index buffers by vertex count. Returns tuple of split vertex buffers and tuple of index buffers"""
+    num_splits = math.ceil(len(vert_buffer) / count)
+
+    if num_splits <= 1:
+        return ((vert_buffer,), (ind_buffer,))
+
+    num_tris = math.ceil(len(ind_buffer) / 3)
+    face_inds = np.arange(num_tris, dtype=np.uint32)
+
+    split_vert_arrs = []
+    split_ind_arrs = []
+
+    for faces_split in np.array_split(face_inds, num_splits):
+        split_vert_arr, split_ind_arr = get_faces_subset(
+            vert_buffer, ind_buffer, faces_split)
+        split_vert_arrs.append(split_vert_arr)
+        split_ind_arrs.append(split_ind_arr)
+
+    return (tuple(split_vert_arrs), tuple(split_ind_arrs))
 
 
 def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: Drawable):

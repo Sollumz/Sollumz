@@ -60,8 +60,16 @@ def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[Model
             continue
 
         for i, face_inds in get_group_face_inds(mesh_data, bones).items():
-            mesh_data_by_bone[i][lod_level] = select_faces(
-                mesh_data, face_inds)
+            vert_arr, ind_arr = get_faces_subset(
+                mesh_data.vert_arr, mesh_data.ind_arr, face_inds)
+
+            group_mesh_data = MeshData(
+                vert_arr,
+                ind_arr,
+                mesh_data.mat_inds[face_inds]
+            )
+
+            mesh_data_by_bone[i][lod_level] = group_mesh_data
 
     for i, mesh_data_lods in mesh_data_by_bone.items():
         model_datas.append(ModelData(
@@ -167,15 +175,16 @@ def get_all_bone_parents(bone_ind: int, bones: list[Bone]):
     return parent_inds
 
 
-def select_faces(mesh_data: MeshData, face_inds: NDArray) -> MeshData:
-    """Select a subset of vertex indices. Returns a new MeshData with buffers on the subset."""
+def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: NDArray[np.uint32]) -> MeshData:
+    """Get subset of vertex array and index array by face."""
     # First get valid faces in the subset in case the new subset of indices is not divisble by 3.
-    num_tris = int(len(mesh_data.ind_arr) / 3)
-    faces = mesh_data.ind_arr.reshape((num_tris, 3))
+    num_tris = int(len(ind_arr) / 3)
+    faces = ind_arr.reshape((num_tris, 3))
 
     subset_inds = faces[face_inds].flatten()
 
     # Map old vert inds to new vert inds
+    # TODO: Remap inds using numpy?
     vert_inds_map: dict[int, int] = {}
     vert_inds = []
     new_inds = []
@@ -189,11 +198,10 @@ def select_faces(mesh_data: MeshData, face_inds: NDArray) -> MeshData:
             vert_inds_map[vert_ind] = new_vert_ind
             vert_inds.append(vert_ind)
 
-    return MeshData(
-        vert_arr=mesh_data.vert_arr[vert_inds],
-        ind_arr=np.array(new_inds, dtype=np.uint32),
-        mat_inds=mesh_data.mat_inds[face_inds]
-    )
+    new_vert_arr = vert_arr[vert_inds]
+    new_ind_arr = np.array(new_inds, dtype=np.uint32)
+
+    return new_vert_arr, new_ind_arr
 
 
 def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, DrawableModel]], list[int]]:
