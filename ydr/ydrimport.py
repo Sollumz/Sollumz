@@ -286,7 +286,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                                             setattr(
                                                 n.texture_flags, prop, True)
 
-                    if not n.texture_properties.embedded:
+                    if not n.texture_properties.embedded and not n.image.filepath:
                         # Set external texture name for non-embedded textures
                         n.image.source = "FILE"
                         n.image.filepath = "//" + param.texture_name + ".dds"
