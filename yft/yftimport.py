@@ -76,9 +76,7 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool 
         create_vehicle_windows(frag_xml, frag_obj, materials)
 
     if frag_xml.lights:
-        lights_parent = create_light_objs(frag_xml.lights, frag_obj)
-        lights_parent.name = f"{frag_obj.name}.lights"
-        lights_parent.parent = frag_obj
+        create_frag_lights(frag_xml, frag_obj)
 
     return frag_obj
 
@@ -448,6 +446,12 @@ def get_geometry_material(drawable_xml: Drawable, materials: list[bpy.types.Mate
             return None
 
         return materials[shader_index]
+
+
+def create_frag_lights(frag_xml: Fragment, frag_obj: bpy.types.Object):
+    lights_parent = create_light_objs(frag_xml.lights, frag_obj)
+    lights_parent.name = f"{frag_obj.name}.lights"
+    lights_parent.parent = frag_obj
 
 
 def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):

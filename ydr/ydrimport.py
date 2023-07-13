@@ -65,9 +65,7 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     parent_objs(model_objs, drawable_obj)
 
     if drawable_xml.lights:
-        armature_obj = drawable_obj if has_skeleton else None
-        lights = create_light_objs(drawable_xml.lights, armature_obj)
-        lights.parent = drawable_obj
+        create_drawable_lights(drawable_xml, drawable_obj, armature_obj)
 
     return drawable_obj
 
@@ -424,6 +422,11 @@ def create_embedded_collisions(bounds_xml: list[BoundChild], drawable_obj: bpy.t
 
     for bound_obj in bound_objs:
         bound_obj.parent = drawable_obj
+
+
+def create_drawable_lights(drawable_xml: Drawable, drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
+    lights = create_light_objs(drawable_xml.lights, armature_obj)
+    lights.parent = drawable_obj
 
 
 def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
