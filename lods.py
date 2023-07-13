@@ -53,6 +53,16 @@ class LODLevels(bpy.types.PropertyGroup):
 
         return obj_lod
 
+    def set_highest_lod_active(self):
+        lod_levels = [LODLevel.VERYHIGH, LODLevel.HIGH,
+                      LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]
+
+        for lod_level in lod_levels:
+            lod = self.get_lod(lod_level)
+            if lod.mesh is not None:
+                self.set_active_lod(lod_level)
+                return
+
     def set_active_lod(self, lod_level: str):
         for i, lod in enumerate(self.lods):
             if lod.level == lod_level:

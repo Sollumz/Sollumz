@@ -139,7 +139,7 @@ def get_sollumz_materials(obj: bpy.types.Object):
             continue
 
         for lod in child.sollumz_lods.lods:
-            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
+            if lod.mesh is None:
                 continue
 
             mats = lod.mesh.materials

@@ -3,14 +3,14 @@ import traceback
 import bpy
 from typing import Optional
 from mathutils import Matrix
-
+from ..tools.drawablehelper import get_model_xmls_by_lod
 from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, LODLevel, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import BoundChild
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..tools.utils import get_filename
 from .model_data import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
@@ -62,7 +62,7 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
         model_objs = create_rigged_drawable_models(
             drawable_xml, materials, drawable_obj, armature_obj, split_by_group)
 
-    parent_model_objs(model_objs, drawable_obj)
+    parent_objs(model_objs, drawable_obj)
 
     if drawable_xml.lights:
         armature_obj = drawable_obj if has_skeleton else None
@@ -147,7 +147,7 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
         if is_skinned and bones is not None:
             mesh_builder.create_vertex_groups(model_obj, bones)
 
-    lod_levels.set_active_lod(LODLevel.HIGH)
+    lod_levels.set_highest_lod_active()
 
     # Original mesh no longer used since the obj is managed by LODs, so delete it
     if model_obj.data != original_mesh:
@@ -156,7 +156,7 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
 
 def set_skinned_model_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
     """Set drawable model properties for the skinned ``DrawableModel`` (only ever 1 skinned model per ``Drawable``)."""
-    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+    for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
         for model_xml in models:
             if model_xml.has_skin == 0:
                 continue
@@ -169,7 +169,7 @@ def set_skinned_model_properties(drawable_obj: bpy.types.Object, drawable_xml: D
 
 def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: Drawable):
     """Set drawable model properties for each LOD mesh in ``model_objs``."""
-    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+    for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
         for i, model_xml in enumerate(models):
             obj = model_objs[i]
             obj_lods: LODLevels = obj.sollumz_lods
@@ -424,11 +424,6 @@ def create_embedded_collisions(bounds_xml: list[BoundChild], drawable_obj: bpy.t
 
     for bound_obj in bound_objs:
         bound_obj.parent = drawable_obj
-
-
-def parent_model_objs(model_objs: list[bpy.types.Object], drawable_obj: bpy.types.Object):
-    for obj in model_objs:
-        obj.parent = drawable_obj
 
 
 def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):

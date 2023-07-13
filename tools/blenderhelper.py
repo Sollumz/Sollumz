@@ -398,3 +398,8 @@ def get_evaluated_obj(obj: bpy.types.Object) -> bpy.types.Object:
     obj_eval = obj.evaluated_get(depsgraph)
 
     return obj_eval
+
+
+def parent_objs(objs: list[bpy.types.Object], parent_obj: bpy.types.Object):
+    for obj in objs:
+        obj.parent = parent_obj

@@ -105,6 +105,9 @@ class TextureShaderParameter(ShaderParameter):
         super().__init__()
         self.texture_name = TextProperty("Name")
 
+    def __hash__(self) -> int:
+        return hash((self.name, self.type, self.texture_name))
+
 
 class VectorShaderParameter(ShaderParameter):
     type = "Vector"
@@ -115,6 +118,9 @@ class VectorShaderParameter(ShaderParameter):
         self.y = AttributeProperty("y", 0)
         self.z = AttributeProperty("z", 0)
         self.w = AttributeProperty("w", 0)
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.type, self.x, self.y, self.z, self.w))
 
 
 class ArrayShaderParameter(ShaderParameter):
@@ -143,6 +149,11 @@ class ArrayShaderParameter(ShaderParameter):
 
         return element
 
+    def __hash__(self) -> int:
+        values_unpacked = [x for vector in self.values for x in [
+            vector.x, vector.y, vector.z, vector.w]]
+        return hash((self.name, self.type, *values_unpacked))
+
 
 class ParametersList(ListProperty):
     list_type = ShaderParameter
@@ -165,6 +176,9 @@ class ParametersList(ListProperty):
 
         return new
 
+    def __hash__(self) -> int:
+        return hash(tuple(hash(param) for param in self.value))
+
 
 class Shader(ElementTree):
     tag_name = "Item"
@@ -175,6 +189,16 @@ class Shader(ElementTree):
         self.filename = TextProperty("FileName", "")
         self.render_bucket = ValueProperty("RenderBucket", 0)
         self.parameters = ParametersList()
+
+    def __hash__(self) -> int:
+        params_elem = self.get_element("parameters")
+        return hash((hash(self.name), hash(self.filename), hash(self.render_bucket), hash(params_elem)))
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Shader):
+            return False
+
+        return hash(self) == hash(other)
 
 
 class ShadersList(ListProperty):
@@ -542,11 +566,15 @@ class Drawable(ElementTree, AbstractClass):
     tag_name = "Drawable"
 
     @property
-    def model_groups(self) -> list[list[DrawableModel]]:
-        return [self.drawable_models_high, self.drawable_models_med, self.drawable_models_low, self.drawable_models_vlow]
+    def is_empty(self) -> bool:
+        return len(self.all_models) == 0
 
     @property
-    def all_models(self):
+    def all_geoms(self) -> list[Geometry]:
+        return [geom for model in self.all_models for geom in model.geometries]
+
+    @property
+    def all_models(self) -> list[DrawableModel]:
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
     def __init__(self):
@@ -573,7 +601,6 @@ class Drawable(ElementTree, AbstractClass):
         self.shader_group = ShaderGroup()
         self.skeleton = Skeleton()
         self.joints = Joints()
-        # is embedded collision always type of composite? have to check
         self.drawable_models_high = DrawableModelList(
             "DrawableModelsHigh")
         self.drawable_models_med = DrawableModelList(
@@ -584,6 +611,9 @@ class Drawable(ElementTree, AbstractClass):
             "DrawableModelsVeryLow")
         self.lights = Lights()
         self.bounds = []
+
+        # For merging hi Drawables after import
+        self.hi_models: list[DrawableModel] = []
 
     @classmethod
     def from_xml(cls, element: ET.Element):

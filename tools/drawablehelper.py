@@ -3,7 +3,7 @@ from mathutils import Vector
 from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
 from ..tools.blenderhelper import create_empty_object
-from ..cwxml.drawable import BonePropertiesManager, TextureShaderParameter, VectorShaderParameter
+from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
 from typing import Union
 
 
@@ -246,3 +246,13 @@ def center_drawable_to_models(drawable_obj: bpy.types.Object):
 
     for obj in model_objs:
         obj.location -= center
+
+
+def get_model_xmls_by_lod(drawable_xml: Drawable) -> dict[LODLevel, DrawableModel]:
+    return {
+        LODLevel.VERYHIGH: drawable_xml.hi_models,
+        LODLevel.HIGH: drawable_xml.drawable_models_high,
+        LODLevel.MEDIUM: drawable_xml.drawable_models_med,
+        LODLevel.LOW: drawable_xml.drawable_models_low,
+        LODLevel.VERYLOW: drawable_xml.drawable_models_vlow,
+    }

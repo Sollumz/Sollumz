@@ -4,15 +4,17 @@ import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector
 from typing import Optional
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object, remove_number_suffix
+
+from .fragment_merger import FragmentMerger
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object, parent_objs, remove_number_suffix
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType, VehiclePaintLayer
 from ..sollumz_helper import get_sollumz_materials
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
-from ..cwxml.drawable import Drawable, Bone, ShaderGroup, Shader
-from ..ydr.ydrimport import shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_rigged_drawable_models, create_drawable_models
+from ..cwxml.drawable import Drawable, Bone, DrawableModelList, Geometry, ShaderGroup, Shader
+from ..ydr.ydrimport import set_drawable_properties, shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_rigged_drawable_models, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
@@ -53,16 +55,22 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool 
     frag_obj = create_frag_armature(frag_xml)
     set_fragment_properties(frag_xml, frag_obj)
 
-    drawable_obj, materials, hi_materials = create_fragment_drawable(
-        frag_xml, frag_obj, filepath, split_by_group, hi_xml)
+    if hi_xml is not None:
+        frag_xml = merge_hi_fragment(frag_xml, hi_xml)
+
+    materials = shadergroup_to_materials(
+        frag_xml.drawable.shader_group, filepath)
+    update_mat_paint_layers(materials)
+
+    drawable_obj = create_fragment_drawable(
+        frag_xml, frag_obj, filepath, materials, split_by_group)
 
     create_frag_collisions(frag_xml, frag_obj)
 
     create_phys_lod(frag_xml, frag_obj)
     set_all_bone_physics_properties(frag_obj.data, frag_xml)
 
-    create_phys_child_meshes(
-        frag_xml, frag_obj, drawable_obj, materials, hi_materials, hi_xml)
+    create_phys_child_meshes(frag_xml, frag_obj, drawable_obj, materials)
 
     if frag_xml.vehicle_glass_windows:
         create_vehicle_windows(frag_xml, frag_obj, materials)
@@ -84,109 +92,36 @@ def create_frag_armature(frag_xml: Fragment):
     create_drawable_skel(frag_xml.drawable.skeleton, frag_obj)
     apply_rotation_limits(frag_xml.drawable.joints.rotation_limits, frag_obj)
 
+    set_fragment_properties(frag_xml, frag_obj)
+
     return frag_obj
 
 
-def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
-    """Create the fragment drawable along with the _hi lods if present. Returns the drawable object, list of materials, and list of hi_materials."""
-    drawable_xml = frag_xml.drawable
-    materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
+def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, materials: list[bpy.types.Material], split_by_group: bool = False):
     drawable_obj = create_drawable_obj(
-        drawable_xml, filepath, name=f"{frag_obj.name}.mesh", split_by_group=split_by_group, external_armature=frag_obj, materials=materials
-    )
-    drawable_obj.matrix_basis = drawable_xml.matrix
-
-    hi_materials = []
-
-    if hi_xml is not None:
-        hi_materials = create_hi_materials(
-            materials, drawable_xml.shader_group, hi_xml.drawable.shader_group, filepath)
-
-        hi_mesh_objs = create_rigged_drawable_models(
-            hi_xml.drawable, hi_materials, drawable_obj, frag_obj, split_by_group)
-
-        remaining_objs = set_hi_lods(drawable_obj, hi_mesh_objs)
-
-        if remaining_objs:
-            create_remaining_hi_objs(drawable_obj, remaining_objs)
-
+        frag_xml.drawable, filepath, name=f"{frag_obj.name}.mesh", materials=materials, split_by_group=split_by_group, external_armature=frag_obj)
     drawable_obj.parent = frag_obj
-    update_mat_paint_layers(frag_obj)
 
-    return drawable_obj, materials, hi_materials
-
-
-def create_hi_materials(non_hi_materials: list[bpy.types.Material], shader_group: ShaderGroup, hi_shader_group: ShaderGroup, filepath: str):
-    """Create the _hi materials. Returns a list with the hi materials and non_hi_materials merged."""
-    hi_materials: list[bpy.types.Material] = []
-
-    non_hi_mat_by_shader: dict[Shader, bpy.types.Material] = {}
-
-    for i, shader in enumerate(shader_group.shaders):
-        # Pre-hash to avoid hashing multiple times
-        non_hi_mat_by_shader[hash(shader)] = non_hi_materials[i]
-
-    for shader in hi_shader_group.shaders:
-        # Pre-hash to avoid hashing multiple times
-        shader_hash = hash(shader)
-
-        if shader_hash in non_hi_mat_by_shader:
-            hi_mat = non_hi_mat_by_shader[shader_hash]
-        else:
-            hi_mat = shader_item_to_material(shader, hi_shader_group, filepath)
-
-        hi_materials.append(hi_mat)
-
-    return hi_materials
+    return drawable_obj
 
 
-def set_hi_lods(drawable_obj: bpy.types.Object, hi_mesh_objs: list[bpy.types.Object]):
-    """Add the hi_meshes to the very high LOD level of each corresponding non_hi_mesh.
-    Deletes the extra hi_mesh_objs and returns the remaining hi_mesh_objs that dont have lower LODs."""
-    hi_meshes_by_name: dict[str, bpy.types.Object] = {
-        remove_number_suffix(obj.name): obj for obj in hi_mesh_objs}
-    used_names: set[str] = set()
+def merge_hi_fragment(frag_xml: Fragment, hi_xml: Fragment) -> Fragment:
+    """Merge the _hi.yft variant of a Fragment (highest LOD, only used for vehicles)."""
+    non_hi_children = frag_xml.physics.lod1.children
+    hi_children = hi_xml.physics.lod1.children
 
-    for obj in drawable_obj.children:
-        if obj.sollum_type != SollumType.DRAWABLE_MODEL:
-            continue
+    if len(non_hi_children) != len(hi_children):
+        logger.warning(
+            f"Failed to merge Fragments, {frag_xml.name} and {hi_xml.name} have different physics data!")
+        return frag_xml
 
-        obj_name = remove_number_suffix(obj.name)
+    frag_xml = FragmentMerger(frag_xml, hi_xml).merge()
 
-        if obj_name not in hi_meshes_by_name:
-            continue
-
-        hi_mesh = hi_meshes_by_name[obj_name]
-        hi_mesh.data.name = f"{obj_name}_very_high"
-        obj.sollumz_lods.set_lod_mesh(LODLevel.VERYHIGH, hi_mesh.data)
-        obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
-
-        bpy.data.objects.remove(hi_mesh)
-        used_names.add(obj_name)
-
-        # In case a .00# suffix got added
-        obj.name = obj_name
-
-    return [obj for name, obj in hi_meshes_by_name.items() if name not in used_names]
+    return frag_xml
 
 
-def create_remaining_hi_objs(drawable_obj: bpy.types.Object, objs: list[bpy.types.Object]):
-    """Create remaining hi objects that dont have any lower LOD levels"""
-    for obj in objs:
-        lod_mesh = obj.sollumz_lods.get_lod(LODLevel.HIGH).mesh
-
-        if lod_mesh is None:
-            continue
-
-        obj.sollumz_lods.set_lod_mesh(LODLevel.VERYHIGH, lod_mesh)
-        obj.sollumz_lods.set_lod_mesh(LODLevel.HIGH, None)
-        obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
-
-        obj.parent = drawable_obj
-
-
-def update_mat_paint_layers(frag_obj: bpy.types.Object):
-    for mat in get_sollumz_materials(frag_obj):
+def update_mat_paint_layers(materials: list[bpy.types.Material]):
+    for mat in materials:
         mat.sollumz_paint_layer = get_mat_paint_layer(mat)
 
 
@@ -240,10 +175,6 @@ def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Frag
         bone = armature.bones[group_xml.name]
         bone.sollumz_use_physics = True
         set_group_properties(group_xml, bone)
-
-
-def drawable_is_empty(drawable: Drawable):
-    return len(drawable.all_models) == 0
 
 
 def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bpy.types.Object | None:
@@ -300,7 +231,7 @@ def add_col_bone_constraint(bound_obj: bpy.types.Object, frag_obj: bpy.types.Obj
     return constraint
 
 
-def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], hi_materials: Optional[list[bpy.types.Material]] = None, hi_xml: Optional[Fragment] = None):
+def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
     """Create all Fragment.Physics.LOD1.Children meshes. (Only LOD1 currently supported)"""
     lod_xml = frag_xml.physics.lod1
     children_xml: list[PhysicsChild] = lod_xml.children
@@ -311,8 +242,8 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
 
     child_meshes: list[bpy.types.Object] = []
 
-    for i, child_xml in enumerate(children_xml):
-        if drawable_is_empty(child_xml.drawable):
+    for child_xml in children_xml:
+        if child_xml.drawable.is_empty:
             continue
 
         if child_xml.bone_tag not in bone_name_by_tag:
@@ -322,22 +253,15 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
 
         bone_name = bone_name_by_tag[child_xml.bone_tag]
 
-        child_objs = create_phys_child_mesh(
+        create_phys_child_models(
             child_xml.drawable, frag_obj, materials, bone_name, drawable_obj)
-
-        if hi_xml is not None and hi_materials is not None:
-            hi_children: list[PhysicsChild] = hi_xml.physics.lod1.children
-            hi_drawable = hi_children[i].drawable
-            create_frag_child_hi_lod(
-                bone_name, child_objs, hi_drawable, hi_materials)
 
     return child_meshes
 
 
-def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, drawable_obj: bpy.types.Object):
+def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, drawable_obj: bpy.types.Object):
     """Create a single physics child mesh"""
     # There is usually only one drawable model in each frag child
-    # child_objs = create_drawable_models(drawable_xml, materials, frag_obj)
     child_objs = create_drawable_models(
         drawable_xml, materials, f"{bone_name}.child")
 
@@ -348,20 +272,6 @@ def create_phys_child_mesh(drawable_xml: Drawable, frag_obj: bpy.types.Object, m
         child_obj.parent = drawable_obj
 
     return child_objs
-
-
-def create_frag_child_hi_lod(name: str, child_objs: list[bpy.types.Object], hi_drawable: Drawable, hi_materials: list[bpy.types.Material]):
-    """Create hi lod for a physics child mesh"""
-    child_hi_objs = create_drawable_models(hi_drawable, hi_materials)
-
-    for child_obj, child_hi_obj in zip(child_objs, child_hi_objs):
-        child_hi_obj.data.name = f"{name}_very_high"
-
-        child_obj.sollumz_lods.set_lod_mesh(
-            LODLevel.VERYHIGH, child_hi_obj.data)
-        child_obj.sollumz_lods.set_active_lod(LODLevel.VERYHIGH)
-
-        bpy.data.objects.remove(child_hi_obj)
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):

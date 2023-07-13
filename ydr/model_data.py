@@ -3,6 +3,8 @@ from collections import defaultdict
 import numpy as np
 from numpy.typing import NDArray
 from typing import NamedTuple, Tuple
+
+from ..tools.drawablehelper import get_model_xmls_by_lod
 from ..sollumz_properties import LODLevel
 from ..cwxml.drawable import Bone, Drawable, DrawableModel, Geometry, VertexBuffer
 
@@ -209,7 +211,7 @@ def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, Draw
     model_xmls: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
     bone_inds: list[int] = []
 
-    for lod_level, models in zip(LODLevel, drawable_xml.model_groups):
+    for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
         for i, model_xml in enumerate(models):
             if i not in model_xmls:
                 # Each corresponding DrawableModel will always have the same bone index across all LODs (verified with CodeWalker)
