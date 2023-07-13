@@ -2,6 +2,8 @@ import bpy
 import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple, Optional
+
+from ..cwxml.shader import Shader
 from ..tools.meshhelper import flip_uvs
 from ..cwxml.drawable import VertexBuffer
 
@@ -30,12 +32,12 @@ def remove_unused_colors(vertex_arr: NDArray):
     return vertex_arr[new_names]
 
 
-def remove_unused_uvs(vertex_arr: NDArray):
-    """Remove UV layers that contain all (0, 0) coordinates"""
+def remove_unused_uvs(vertex_arr: NDArray, used_texcoords: set[str]):
+    """Remove UV layers that aren't used by the shader"""
     new_names = []
 
     for name in vertex_arr.dtype.names:
-        if "TexCoord" in name and np.allclose(vertex_arr[name], 0.0):
+        if "TexCoord" in name and name not in used_texcoords:
             continue
         new_names.append(name)
 

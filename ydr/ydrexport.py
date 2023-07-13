@@ -29,7 +29,7 @@ from ..sollumz_properties import (
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
-from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, remove_unused_uvs, get_bone_by_vgroup
+from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager
 
@@ -217,7 +217,10 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
         tangent_required = get_tangent_required(material)
         normal_required = get_normal_required(material)
 
-        vert_buffer = remove_unused_uvs(total_vert_buffer[loop_inds])
+        vert_buffer = total_vert_buffer[loop_inds]
+        used_texcoords = get_used_texcoords(material)
+
+        vert_buffer = remove_unused_uvs(vert_buffer, used_texcoords)
         vert_buffer = remove_unused_colors(vert_buffer)
 
         if not tangent_required:
@@ -297,6 +300,18 @@ def get_tangent_required(material: bpy.types.Material):
     shader = ShaderManager.shaders[shader_name]
 
     return shader.required_tangent
+
+
+def get_used_texcoords(material: bpy.types.Material):
+    """Get TexCoords that the material's shader uses"""
+    shader_name = material.shader_properties.filename
+
+    if shader_name not in ShaderManager.shaders:
+        return {"TexCoord0"}
+
+    shader = ShaderManager.shaders[shader_name]
+
+    return shader.used_texcoords
 
 
 def get_normal_required(material: bpy.types.Material):

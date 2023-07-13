@@ -61,6 +61,16 @@ class Shader(ElementTree):
                 return True
         return False
 
+    @property
+    def used_texcoords(self) -> set[str]:
+        names = set()
+        for layout in self.layouts:
+            for field_name in layout.value:
+                if "TexCoord" in field_name:
+                    names.add(field_name)
+
+        return names
+
 
 class ShaderManager:
     shaderxml = os.path.join(os.path.dirname(__file__), "Shaders.xml")
