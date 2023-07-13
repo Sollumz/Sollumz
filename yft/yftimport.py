@@ -53,7 +53,6 @@ def parse_hi_yft(yft_filepath: str) -> Fragment | None:
 
 def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
     frag_obj = create_frag_armature(frag_xml)
-    set_fragment_properties(frag_xml, frag_obj)
 
     if hi_xml is not None:
         frag_xml = merge_hi_fragment(frag_xml, hi_xml)

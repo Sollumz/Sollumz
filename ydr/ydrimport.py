@@ -47,9 +47,7 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     if has_skeleton and external_armature is None:
         drawable_obj = create_drawable_armature(drawable_xml, name)
     else:
-        drawable_obj = create_empty_object(SollumType.DRAWABLE, name)
-
-    set_drawable_properties(drawable_obj, drawable_xml)
+        drawable_obj = create_drawable_empty(name, drawable_xml)
 
     if drawable_xml.bounds:
         create_embedded_collisions(drawable_xml.bounds, drawable_obj)
@@ -197,6 +195,15 @@ def create_drawable_armature(drawable_xml: Drawable, name: str):
         apply_rotation_limits(
             drawable_xml.joints.rotation_limits, drawable_obj
         )
+
+    set_drawable_properties(drawable_obj, drawable_xml)
+
+    return drawable_obj
+
+
+def create_drawable_empty(name: str, drawable_xml: Drawable):
+    drawable_obj = create_empty_object(SollumType.DRAWABLE, name)
+    set_drawable_properties(drawable_obj, drawable_xml)
 
     return drawable_obj
 
