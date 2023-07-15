@@ -4,7 +4,7 @@ import bpy
 from typing import Optional
 from mathutils import Matrix
 from ..tools.drawablehelper import get_model_xmls_by_lod
-from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
+from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph, obj_has_tint_mats
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, LODLevel, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_import_settings
@@ -88,7 +88,8 @@ def create_model_obj(model_data: ModelData, materials: list[bpy.types.Material],
     model_obj = create_blender_object(SollumType.DRAWABLE_MODEL, name)
     create_lod_meshes(model_data, model_obj, materials, bones)
 
-    create_tinted_shader_graph(model_obj)
+    if obj_has_tint_mats(model_obj):
+        create_tinted_shader_graph(model_obj)
 
     return model_obj
 

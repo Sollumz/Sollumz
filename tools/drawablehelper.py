@@ -1,6 +1,6 @@
 import bpy
 from mathutils import Vector
-from ..ydr.shader_materials import create_shader, try_get_node, ShaderManager
+from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
 from ..tools.blenderhelper import create_empty_object
 from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
@@ -170,6 +170,9 @@ class MaterialConverter:
             self._set_new_node_images()
 
         self._replace_material()
+
+        if obj_has_tint_mats(self.obj):
+            create_tinted_shader_graph(self.obj)
 
         return self.new_material
 

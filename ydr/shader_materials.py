@@ -1,3 +1,4 @@
+from typing import Optional
 import bpy
 from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import MaterialType
@@ -93,15 +94,13 @@ def organize_loose_nodes(node_tree, start_x, start_y):
         grid_x -= node.width + 25
 
 
-def get_tinted_sampler(mat):  # move to blenderhelper.py?
+def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderNodeTexImage]:
     nodes = mat.node_tree.nodes
     for node in nodes:
-        if node.name in ("TintPaletteSampler", "TextureSamplerDiffPal"):
-            if node.image:
-                return node.image
-            else:
-                return None  # return none because that means it has the tinted sampler parameter but no image
-    return None  # return none because that means it has no parameter which means it isnt a tinted shader
+        if node.name in ("TintPaletteSampler", "TextureSamplerDiffPal") and isinstance(node, bpy.types.ShaderNodeTexImage):
+            return node
+
+    return None
 
 
 def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
@@ -112,26 +111,26 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
     return None
 
 
-def create_tinted_texture_from_image(img):  # move to blenderhelper.py?
-    bpy.ops.texture.new()
-    txt = bpy.data.textures[len(bpy.data.textures) - 1]
+def create_palette_texture(img: Optional[bpy.types.Image] = None):
+    txt = bpy.data.textures.new("palette_texture", type="IMAGE")
+
     if img is not None:
         txt.image = img
+        txt.name = f"{img.name}_texture"
+
     txt.use_interpolation = False
     txt.use_mipmap = False
     txt.use_alpha = False
-    txt.name = img.name + "_texture" if img else "palette_texture"
+
     return txt
 
 
-def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
+def create_tinted_shader_graph(obj):
     if not obj.data.materials:
         return
 
     mat = obj.data.materials[0]
-    tint_img = get_tinted_sampler(mat)
-    if mat.shader_properties.filename in ShaderManager.tint_flag_2 or tint_img is None:  # check here or?
-        return
+    tint_sampler_node = get_tint_sampler_node(mat)
 
     bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = obj
@@ -150,12 +149,24 @@ def create_tinted_shader_graph(obj):  # move to blenderhelper.py?
     geom[output_id + "_use_attribute"] = True
 
     # create texture and get texture node
-    txt = create_tinted_texture_from_image(tint_img)  # remove this??
+    txt = create_palette_texture(tint_sampler_node.image)  # remove this??
     txt_node = geom.node_group.nodes["Image Texture"]
     # apply texture
     txt_node.inputs[0].default_value = txt.image
 
     obj.data.vertex_colors.new(name="TintColor")
+
+
+def obj_has_tint_mats(obj: bpy.types.Object):
+    if not obj.data.materials:
+        return False
+
+    mat = obj.data.materials[0]
+    return is_tint_material(mat)
+
+
+def is_tint_material(mat: bpy.types.Material):
+    return mat.shader_properties.filename not in ShaderManager.tint_flag_2 and get_tint_sampler_node(mat) is not None
 
 
 def link_geos(links, node1, node2):
