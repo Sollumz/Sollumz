@@ -423,6 +423,10 @@ class VertexBuffer(ElementTree):
         new = super().from_xml(element)
 
         data_elem = element.find("Data")
+        data2_elem = element.find("Data2")
+
+        if data_elem is None and data2_elem is not None:
+            data_elem = data2_elem
 
         if data_elem is None or not data_elem.text:
             return new
