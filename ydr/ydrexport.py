@@ -270,15 +270,16 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
     all_loop_inds = np.empty(len(mesh.loop_triangles) * 3, dtype=np.uint32)
     mesh.loop_triangles.foreach_get("loops", all_loop_inds)
 
-    mat_ind_by_name: dict[str, int] = {
-        mat.name: i for i, mat in enumerate(drawable_mats)}
+    mat_inds: dict[str, int] = {mat: i for i, mat in enumerate(drawable_mats)}
 
     for i, mat in enumerate(mesh.materials):
-        if mat.name not in mat_ind_by_name:
+        original_mat = mat.original
+
+        if original_mat not in mat_inds:
             continue
 
         # Get index of material on drawable (different from mesh material index)
-        shader_index = mat_ind_by_name[mat.name]
+        shader_index = mat_inds[original_mat]
         tri_loop_inds = np.where(loop_mat_inds == i)[0]
 
         if tri_loop_inds.size == 0:
