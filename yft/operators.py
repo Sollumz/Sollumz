@@ -6,24 +6,27 @@ from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_o
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
-    """Create a Fragment object"""
+    """Create a Fragment object. If a Drawable or Bound Composite is selected,
+    they will be parented to the Fragment."""
     bl_idname = "sollumz.createfragment"
     bl_label = "Create Fragment"
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        selected = context.selected_objects
-
-        if selected:
-            parent = selected[0]
-        else:
-            parent = None
-
         armature = bpy.data.armatures.new(name="skel")
         frag_obj = create_blender_object(
             SollumType.FRAGMENT, object_data=armature)
-        frag_obj.parent = parent
+
+        self.parent_selected_objs(frag_obj, context)
 
         return {"FINISHED"}
+
+    def parent_selected_objs(self, frag_obj: bpy.types.Object, context):
+        selected = context.selected_objects
+
+        for obj in selected:
+            if obj.sollum_type in [SollumType.DRAWABLE, SollumType.BOUND_COMPOSITE]:
+                obj.parent = frag_obj
 
 
 class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
