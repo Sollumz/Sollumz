@@ -12,7 +12,7 @@ def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bo
     bone_ind_by_name: dict[str, int] = {
         b.name: i for i, b in enumerate(bones)}
 
-    return {i: bone_ind_by_name[group.name] for i, group in enumerate(vgroups) if group.name in bone_ind_by_name}
+    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else 0 for i, group in enumerate(vgroups)}
 
 
 def remove_arr_field(name: str, vertex_arr: NDArray):
