@@ -99,8 +99,9 @@ class FragmentProperties(bpy.types.PropertyGroup):
     unk_c0: bpy.props.FloatProperty(name="UnknownC0", default=65280)
     unk_c4: bpy.props.FloatProperty(name="UnknownC4")
     unk_cc: bpy.props.FloatProperty(name="UnknownCC")
-    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor")
-    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor")
+    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
+    buoyancy_factor: bpy.props.FloatProperty(
+        name="Buoyancy Factor", default=1.0)
 
     lod_properties: bpy.props.PointerProperty(type=LODProperties)
 
