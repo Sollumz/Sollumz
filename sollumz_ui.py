@@ -1,6 +1,7 @@
 import bpy
-from .tools.blenderhelper import get_armature_obj
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
+from .sollumz_operators import SOLLUMZ_OT_copy_all_locations, SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location
+from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import SollumType, MaterialType
 from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
                    SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_GLASS_SHARDS, SOLLUMZ_OT_HIDE_OBJECT)
@@ -189,6 +190,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "ymap_skip_missing_entities")
         layout.prop(settings, "ymap_exclude_entities")
+        layout.prop(settings, "ymap_instance_entities")
         layout.prop(settings, "ymap_box_occluders")
         layout.prop(settings, "ymap_model_occluders")
         layout.prop(settings, "ymap_car_generators")
@@ -309,7 +311,7 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
-    bl_label = "Copy Objects Location to Clipboard"
+    bl_label = "Object Location & Rotation Tools"
     bl_idname = "SOLLUMZ_PT_OBJ_YMAP_LOCATION"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
@@ -324,60 +326,39 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        # Get the locations of the selected objects
+        # Get the locations and rotations of the selected objects
         selected_objects = bpy.context.selected_objects
         if len(selected_objects) > 0:
             for obj in selected_objects:
                 loc = obj.location
                 row = layout.row()
-                row.label(text="{}: {:.2f}, {:.2f}, {:.2f}".format(
+                row.label(text="{}: {:.6f}, {:.6f}, {:.6f}".format(
                     obj.name, loc[0], loc[1], loc[2]))
 
                 # Add a Clipboard button to copy the location to the clipboard
                 clip_button = row.operator(
-                    "wm.sollumz_copy_location", text="", icon='COPYDOWN')
-                clip_button.location = "{:.2f}, {:.2f}, {:.2f}".format(
+                    SOLLUMZ_OT_copy_location.bl_idname, text="", icon='COPYDOWN')
+                clip_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
+                    loc[0], loc[1], loc[2])
+
+                # Convert the object's rotation to a quaternion and copy it to the clipboard
+                rot = obj.matrix_world.to_quaternion()
+                rot_button = row.operator(
+                    SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN')
+                rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
+                    rot.x, rot.y, rot.z, rot.w)
+                paste_button = row.operator(SOLLUMZ_OT_paste_location.bl_idname,
+                                            text="", icon='PASTEDOWN')
+                paste_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
                     loc[0], loc[1], loc[2])
 
             # Add a button to copy all selected objects' locations to the clipboard
             if len(selected_objects) > 1:
                 row = layout.row()
-                row.operator("wm.sollumz_copy_all_locations",
+                row.operator(SOLLUMZ_OT_copy_all_locations.bl_idname,
                              text="Copy All Locations", icon='COPY_ID')
         else:
             layout.label(text="No objects selected")
-
-
-class SOLLUMZ_OT_copy_location(bpy.types.Operator):
-    """Copy the location of an object to the clipboard"""
-    bl_idname = "wm.sollumz_copy_location"
-    bl_label = ""
-    location: bpy.props.StringProperty()
-
-    def execute(self, context):
-        bpy.context.window_manager.clipboard = self.location
-        self.report(
-            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
-    """Copy the locations of all selected objects to the clipboard"""
-    bl_idname = "wm.sollumz_copy_all_locations"
-    bl_label = ""
-    locations: bpy.props.StringProperty()
-
-    def execute(self, context):
-        selected_objects = bpy.context.selected_objects
-        locations_text = ""
-        for obj in selected_objects:
-            loc = obj.location
-            locations_text += "{}: {:.2f}, {:.2f}, {:.2f}\n".format(
-                obj.name, loc[0], loc[1], loc[2])
-        bpy.context.window_manager.clipboard = locations_text
-        self.report(
-            {'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
-        return {'FINISHED'}
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):

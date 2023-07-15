@@ -221,6 +221,12 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         update=_save_preferences
     )
 
+    ymap_instance_entities: bpy.props.BoolProperty(
+        name="Instance Entities",
+        description="If enabled, instance all entities from the selected ymap(s).",
+        default=False,
+    )
+
 
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]

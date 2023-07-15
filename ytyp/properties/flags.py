@@ -151,7 +151,7 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag11: bpy.props.BoolProperty(
         name="UV anims (YCD)", update=FlagPropertyGroup.update_flag)
     flag12: bpy.props.BoolProperty(
-        name="Unknown 12", update=FlagPropertyGroup.update_flag)
+        name="Invisible but blocks lights/shadows", update=FlagPropertyGroup.update_flag)
     flag13: bpy.props.BoolProperty(
         name="Unknown 13", update=FlagPropertyGroup.update_flag)
     flag14: bpy.props.BoolProperty(

@@ -112,6 +112,8 @@ class ShaderManager:
                   "emissivenight_geomnightonly.sps", "emissivestrong_alpha.sps", "emissivestrong.sps", "normal_spec_reflect_emissivenight_alpha.sps", "emissive_alpha.sps",
                   "emissive_alpha_tnt.sps", "emissive_additive_alpha.sps", "emissivenight_alpha.sps", "glass_emissive.sps", "glass_emissivenight.sps", "glass_emissivenight_alpha.sps",
                   "glass_emissive_alpha.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps"]
+    water_shaders = ["water_fountain.sps",
+                     "water_poolenv.sps", "water_decal.sps", "water_terrainfoam.sps", "water_riverlod.sps", "water_shallow.sps", "water_riverfoam.sps", "water_riverocean.sps", "water_rivershallow.sps"]
 
     def tinted_shaders():
         return ShaderManager.cutouts + ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_cutouts + ShaderManager.veh_glasses + ShaderManager.veh_decals + ShaderManager.shadow_proxies

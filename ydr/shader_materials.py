@@ -1,5 +1,4 @@
 import bpy
-
 from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import MaterialType
 from collections import namedtuple
@@ -184,6 +183,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
+    txtn.interpolation = "Closest"
     gnt.links.new(cptn.outputs[3], txtn.inputs[1])
     gnt.links.new(txtn.outputs[0], output.inputs[1])
 
@@ -379,6 +379,30 @@ def link_normal(node_tree, nrmtex):
     links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
 
 
+def link_normal(node_tree, nrmtex):
+    bsdf = node_tree.nodes["Principled BSDF"]
+    links = node_tree.links
+    normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
+
+    rgb_curves = create_normal_invert_node(node_tree)
+
+    links.new(nrmtex.outputs["Color"], rgb_curves.inputs["Color"])
+    links.new(rgb_curves.outputs["Color"], normalmap.inputs["Color"])
+    links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
+
+
+def create_normal_invert_node(node_tree: bpy.types.NodeTree):
+    """Create RGB curves node that inverts that green channel of normal maps"""
+    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new(
+        "ShaderNodeRGBCurve")
+
+    green_curves = rgb_curves.mapping.curves[1]
+    green_curves.points[0].location = (0, 1)
+    green_curves.points[1].location = (1, 0)
+
+    return rgb_curves
+
+
 def link_specular(node_tree, spctex):
     bsdf = node_tree.nodes["Principled BSDF"]
     links = node_tree.links
@@ -440,6 +464,7 @@ def create_tint_nodes(node_tree, tinttex, txt, tintflags):
     attr.attribute_name = "TintColor"
     mix = node_tree.nodes.new("ShaderNodeMixRGB")
     mix.inputs["Fac"].default_value = 0.95
+    mix.blend_type = "MULTIPLY"
     links.new(attr.outputs["Color"], mix.inputs[2])
     links.new(txt.outputs[0], mix.inputs[1])
     links.new(mix.outputs[0], bsdf.inputs["Base Color"])
@@ -531,6 +556,41 @@ def link_value_shader_parameters(shader, node_tree):
         em = try_get_node(node_tree, "Emission")
         if em:
             links.new(em_m.outputs[0], em.inputs[1])
+
+
+def create_water_nodes(node_tree):
+    links = node_tree.links
+    output = node_tree.nodes["Material Output"]
+    mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
+    add_shader = node_tree.nodes.new("ShaderNodeAddShader")
+    vol_absorb = node_tree.nodes.new("ShaderNodeVolumeAbsorption")
+    vol_absorb.inputs[0].default_value = (0.772, 0.91, 0.882, 1.0)
+    vol_absorb.inputs[1].default_value = 0.25  # Density
+    bsdf = node_tree.nodes["Principled BSDF"]
+    bsdf.inputs[0].default_value = (0.588, 0.91, 0.851, 1.0)
+    bsdf.inputs[19].default_value = (
+        0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
+    bsdf.inputs['Emission Strength'].default_value = 0.1
+    glass_shader = node_tree.nodes.new("ShaderNodeBsdfGlass")
+    glass_shader.inputs['IOR'].default_value = 1.333
+    trans_shader = node_tree.nodes.new("ShaderNodeBsdfTransparent")
+    light_path = node_tree.nodes.new("ShaderNodeLightPath")
+    bump = node_tree.nodes.new("ShaderNodeBump")
+    bump.inputs['Strength'].default_value = 0.05
+    noise_tex = node_tree.nodes.new("ShaderNodeTexNoise")
+    noise_tex.inputs['Scale'].default_value = 12.0
+    noise_tex.inputs['Detail'].default_value = 3.0
+    noise_tex.inputs[4].default_value = 0.85  # Roughness
+
+    links.new(glass_shader.outputs[0], mix_shader.inputs[1])
+    links.new(trans_shader.outputs[0], mix_shader.inputs[2])
+    links.new(bsdf.outputs[0], add_shader.inputs[0])
+    links.new(vol_absorb.outputs[0], add_shader.inputs[1])
+    links.new(add_shader.outputs[0], output.inputs['Volume'])
+    links.new(mix_shader.outputs[0], output.inputs['Surface'])
+    links.new(light_path.outputs['Is Shadow Ray'], mix_shader.inputs['Fac'])
+    links.new(noise_tex.outputs['Fac'], bump.inputs['Height'])
+    links.new(bump.outputs['Normal'], glass_shader.inputs['Normal'])
 
 
 def create_basic_shader_nodes(mat, shader, filename):
@@ -636,6 +696,10 @@ def create_basic_shader_nodes(mat, shader, filename):
 
     if is_emissive:
         create_emissive_nodes(node_tree)
+
+    is_water = filename in ShaderManager.water_shaders
+    if is_water:
+        create_water_nodes(node_tree)
 
     # link value parameters
     link_value_shader_parameters(shader, node_tree)
