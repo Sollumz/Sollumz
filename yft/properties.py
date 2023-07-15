@@ -162,14 +162,18 @@ def update_mat_paint_name(mat: bpy.types.Material):
         return f"[{SOLLUMZ_UI_NAMES[_paint_layer].upper()}]"
 
     new_name_ext = get_paint_layer_name(mat.sollumz_paint_layer)
+    mat_base_name = remove_number_suffix(mat.name).strip()
 
     # Replace existing extension
     for paint_layer in VehiclePaintLayer:
         name_ext = get_paint_layer_name(paint_layer)
-        if name_ext in mat.name:
-            mat.name = mat.name.replace(name_ext, "").strip()
+        if name_ext in mat_base_name:
+            mat_base_name = mat_base_name.replace(name_ext, "").strip()
 
-    mat.name = f"{remove_number_suffix(mat.name).strip()} {new_name_ext}"
+    if new_name_ext:
+        mat.name = f"{mat_base_name} {new_name_ext}"
+    else:
+        mat.name = mat_base_name
 
 
 def register():
