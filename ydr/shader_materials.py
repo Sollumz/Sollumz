@@ -319,7 +319,7 @@ def link_detailed_normal(node_tree, bumptex, dtltex, spectex):
         mathns.append(math)
     nrm = node_tree.nodes.new("ShaderNodeNormalMap")
 
-    attr.attribute_name = "texcoord0"
+    attr.attribute_name = "UVMap 0"
     links.new(attr.outputs[1], mathns[0].inputs[0])
 
     links.new(dsz.outputs[0], comxyz.inputs[0])
@@ -482,7 +482,7 @@ def create_decal_nodes(node_tree, texture, decalflag):
         links.new(texture.outputs["Alpha"], mix.inputs["Fac"])
     if decalflag == 1:
         vcs = node_tree.nodes.new("ShaderNodeVertexColor")
-        vcs.layer_name = "colour0"  # set in create shader???
+        vcs.layer_name = "Color 1"  # set in create shader???
         multi = node_tree.nodes.new("ShaderNodeMath")
         multi.operation = "MULTIPLY"
         links.new(vcs.outputs["Alpha"], multi.inputs[0])
@@ -761,12 +761,12 @@ def create_terrain_shader(mat, shader, filename):
         links.new(tm.outputs[0], seprgb.inputs[0])
     else:
         attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_c1.attribute_name = "colour1"
+        attr_c1.attribute_name = "Color 2"
         links.new(attr_c1.outputs[0], mixns[0].inputs[1])
         links.new(attr_c1.outputs[0], mixns[0].inputs[2])
 
         attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_c0.attribute_name = "colour0"
+        attr_c0.attribute_name = "Color 1"
         links.new(attr_c0.outputs[3], mixns[0].inputs[0])
         links.new(mixns[0].outputs[0], seprgb.inputs[0])
 
@@ -806,7 +806,7 @@ def create_terrain_shader(mat, shader, filename):
     # assign lookup sampler last so that it overwrites any socket connections
     if tm:
         attr_t1 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_t1.attribute_name = "texcoord1"
+        attr_t1.attribute_name = "UVMap 1"
         links.new(attr_t1.outputs[1], tm.inputs[0])
         links.new(tm.outputs[0], mixns[0].inputs[1])
 
