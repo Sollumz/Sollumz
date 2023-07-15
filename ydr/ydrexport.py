@@ -102,6 +102,9 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
 def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, apply_transforms: bool = False):
     model_objs = get_model_objs(drawable_obj)
 
+    if bones is not None:
+        model_objs = sort_skinned_models_by_bone(model_objs, bones)
+
     for model_obj in model_objs:
         if apply_transforms:
             transforms_to_apply = get_export_transforms_to_apply(model_obj)
@@ -125,6 +128,27 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
     """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
     return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh]
+
+
+def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[bpy.types.Bone]):
+    """Sort all models with vertex groups by bone index. If a model has multiple vertex group uses the vertex group
+    with the lowest bone index."""
+    # This is necessary to ensure proper render order of each vertex group. With many vertex groups on a single object
+    # you can just change the order, but if the object is split by group there is no way of manually sorting the vertex groups.
+    def get_model_bone_ind(obj: bpy.types.Object):
+        bone_ind_by_name: dict[str, int] = {
+            b.name: i for i, b in enumerate(bones)}
+        bone_inds = [bone_ind_by_name[group.name]
+                     for group in obj.vertex_groups if group.name in bone_ind_by_name]
+
+        if not bone_inds:
+            return 0
+
+        lowest_bone_ind = min(bone_inds)
+
+        return lowest_bone_ind
+
+    return sorted(model_objs, key=get_model_bone_ind)
 
 
 def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
