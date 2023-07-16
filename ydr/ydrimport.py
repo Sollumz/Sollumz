@@ -451,6 +451,9 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     drawable_xml.drawable_models_med = []
     drawable_xml.drawable_models_vlow = []
 
+    if drawable_xml.bounds:
+        drawable_xml.bounds = None
+
     drawable_obj = create_drawable_obj(drawable_xml, filepath)
 
     model_objs = []

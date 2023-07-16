@@ -6,15 +6,14 @@ from mathutils import Matrix, Vector
 from typing import Optional
 
 from .fragment_merger import FragmentMerger
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object, parent_objs, remove_number_suffix
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
-from ..sollumz_properties import BOUND_TYPES, SollumType, LODLevel, MaterialType, VehiclePaintLayer
-from ..sollumz_helper import get_sollumz_materials
+from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, VehiclePaintLayer
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
-from ..cwxml.drawable import Drawable, Bone, DrawableModelList, Geometry, ShaderGroup, Shader
-from ..ydr.ydrimport import set_drawable_properties, shader_item_to_material, create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_rigged_drawable_models, create_drawable_models
+from ..cwxml.drawable import Drawable, Bone
+from ..ydr.ydrimport import create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
