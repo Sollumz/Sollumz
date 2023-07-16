@@ -6,9 +6,11 @@ import bpy
 import zlib
 import numpy as np
 from numpy.typing import NDArray
-from typing import Optional
+from typing import Callable, Optional
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
+
+from ..lods import operates_on_lod_level
 from .model_data import get_faces_subset
 
 from ..cwxml.drawable import Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader, VertexBuffer
@@ -151,12 +153,14 @@ def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[
     return sorted(model_objs, key=get_model_bone_ind)
 
 
+@operates_on_lod_level
 def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
     model_xml = DrawableModel()
 
     set_model_xml_properties(model_obj, lod_level, model_xml)
 
-    mesh_eval = get_evaluated_lod_mesh(model_obj, lod_level)
+    obj_eval = get_evaluated_obj(model_obj)
+    mesh_eval = obj_eval.to_mesh()
     triangulate_mesh(mesh_eval)
 
     if transforms_to_apply is not None:
@@ -169,22 +173,6 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     model_xml.bone_index = get_model_bone_index(model_obj)
 
     return model_xml
-
-
-def get_evaluated_lod_mesh(model_obj: bpy.types.Object, lod_level: LODLevel):
-    """Get evaluated (modifiers, constraints, etc applied) Drawable Model object at the specified LOD level."""
-    current_lod_level = model_obj.sollumz_lods.active_lod.level
-
-    was_hidden = model_obj.hide_get()
-    model_obj.sollumz_lods.set_active_lod(lod_level)
-
-    obj_eval = get_evaluated_obj(model_obj)
-
-    # Set the lod level back to what it was
-    model_obj.sollumz_lods.set_active_lod(current_lod_level)
-    model_obj.hide_set(was_hidden)
-
-    return obj_eval.to_mesh()
 
 
 def triangulate_mesh(mesh: bpy.types.Mesh):

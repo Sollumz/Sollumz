@@ -1,6 +1,6 @@
 """LOD Management system."""
 import bpy
-from typing import Optional
+from typing import Callable, Optional
 from .sollumz_properties import SollumType, LODLevel, FRAGMENT_TYPES, DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, BOUND_TYPES, BOUND_POLYGON_TYPES, items_from_enums
 from .tools.blenderhelper import get_all_collections
 from .sollumz_helper import find_sollumz_parent
@@ -291,6 +291,27 @@ def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
         if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
             child.sollumz_lods.set_active_lod(lod_level)
             continue
+
+
+def operates_on_lod_level(func: Callable):
+    """Decorator for functions that operate on a particular LOD level of an object.
+    Will automatically set the LOD level to ``lod_level`` at the beginning of execution
+    and will set it back to the original LOD level at the end."""
+    def wrapper(model_obj: bpy.types.Object, lod_level: LODLevel, *args, **kwargs):
+        current_lod_level = model_obj.sollumz_lods.active_lod.level
+
+        was_hidden = model_obj.hide_get()
+        model_obj.sollumz_lods.set_active_lod(lod_level)
+
+        res = func(model_obj, lod_level, *args, **kwargs)
+
+        # Set the lod level back to what it was
+        model_obj.sollumz_lods.set_active_lod(current_lod_level)
+        model_obj.hide_set(was_hidden)
+
+        return res
+
+    return wrapper
 
 
 def register():
