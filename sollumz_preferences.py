@@ -31,25 +31,6 @@ def _save_preferences(self, context):
 
 
 class SollumzExportSettings(bpy.types.PropertyGroup):
-    sollum_types: bpy.props.EnumProperty(
-        name="Sollum Types",
-        options={"ENUM_FLAG"},
-        items=((SollumType.DRAWABLE.value, "Drawable", ""),
-               (SollumType.DRAWABLE_DICTIONARY.value, "Drawable Dictionary", ""),
-               (SollumType.BOUND_COMPOSITE.value, "Bound", ""),
-               (SollumType.FRAGMENT.value, "Fragment", ""),
-               (SollumType.CLIP_DICTIONARY.value, "Clip Dictionary", ""),
-               (SollumType.YMAP.value, "Ymap", "")),
-        description="Which kind of sollumz objects to export",
-        default={SollumType.DRAWABLE.value,
-                 SollumType.DRAWABLE_DICTIONARY.value,
-                 SollumType.BOUND_COMPOSITE.value,
-                 SollumType.FRAGMENT.value,
-                 SollumType.CLIP_DICTIONARY.value,
-                 SollumType.YMAP.value},
-        update=_save_preferences
-    )
-
     limit_to_selected: bpy.props.BoolProperty(
         name="Limit to Selected",
         description="Export selected and visible objects only",
@@ -66,20 +47,20 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
 
     auto_calculate_inertia: bpy.props.BoolProperty(
         name="Auto Calculate Inertia",
-        description="Automatically calculate inertia for physics objects",
+        description="Automatically calculate inertia for physics objects (applies to yfts and ydrs too)",
         default=False,
         update=_save_preferences
     )
 
     auto_calculate_volume: bpy.props.BoolProperty(
         name="Auto Calculate Volume",
-        description="Automatically calculate volume for physics objects",
+        description="Automatically calculate volume for physics objects (applies to yfts and ydrs too)",
         default=False,
         update=_save_preferences
     )
 
     exclude_skeleton: bpy.props.BoolProperty(
-        name="Skeleton",
+        name="Exclude Skeleton",
         description="Exclude skeleton from export. Usually done with mp ped components",
         default=False,
         update=_save_preferences

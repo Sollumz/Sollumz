@@ -142,8 +142,8 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel, SollumzImportSettingsPanel):
         layout.prop(settings, "import_with_hi")
 
 
-class SOLLUMZ_PT_import_skeleton(bpy.types.Panel, SollumzImportSettingsPanel):
-    bl_label = "Skeleton"
+class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
+    bl_label = "Drawable Dictionary"
     bl_order = 2
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
@@ -204,44 +204,40 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel, SollumzExportSettingsPanel):
         row = layout.row(heading="Limit To")
         row.prop(settings, "limit_to_selected", text="Selected Objects")
 
-        col = layout.column()
-        col.prop(settings, "sollum_types")
 
-        layout.prop(settings, "export_with_ytyp")
-
-
-class SOLLUMZ_PT_export_exclude(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Exclude"
+class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
+    bl_label = "Drawable"
     bl_order = 1
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "exclude_skeleton")
+        layout.prop(settings, "auto_calculate_bone_tag")
+        layout.prop(settings, "apply_transforms")
+        layout.prop(settings, "export_with_ytyp")
+
+
+class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
+    bl_label = "Fragment"
+    bl_order = 2
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+        layout.column().prop(settings, "export_lods")
 
 
 class SOLLUMZ_PT_export_collision(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Collisions"
-    bl_order = 2
+    bl_order = 3
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
         layout.prop(settings, "auto_calculate_inertia")
         layout.prop(settings, "auto_calculate_volume")
 
 
-class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Drawable"
-    bl_order = 3
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "auto_calculate_bone_tag")
-        layout.prop(settings, "apply_transforms")
-
-
-class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Fragment"
+class SOLLUMZ_PT_export_ydd(bpy.types.Panel, SollumzExportSettingsPanel):
+    bl_label = "Drawable Dictionary"
     bl_order = 4
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.column().prop(settings, "export_lods")
+        layout.prop(settings, "exclude_skeleton")
 
 
 class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):

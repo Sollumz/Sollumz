@@ -212,12 +212,7 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         if export_settings.limit_to_selected:
             objs = context.selected_objects
 
-        parent_objs = self.get_only_parent_objs(objs)
-
-        sollum_types = export_settings.sollum_types
-        parent_objs = [o for o in parent_objs if o.sollum_type in sollum_types]
-
-        return parent_objs
+        return self.get_only_parent_objs(objs)
 
     def get_only_parent_objs(self, objs: list[bpy.types.Object]):
         parent_objs = set()
