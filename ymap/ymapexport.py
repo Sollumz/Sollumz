@@ -7,7 +7,7 @@ from struct import pack
 from ..cwxml.ymap import *
 from binascii import hexlify
 from ..tools.blenderhelper import remove_number_suffix
-from ..tools.meshhelper import get_extents
+from ..tools.meshhelper import get_bound_center_from_bounds, get_extents, get_dimensions
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.utils import get_min_vector, get_max_vector
 from ..sollumz_preferences import get_export_settings
@@ -16,13 +16,19 @@ from .. import logger
 
 def box_from_obj(obj):
     box = BoxOccluder()
-    box.center_x = round(obj.location.x * 4)
-    box.center_y = round(obj.location.y * 4)
-    box.center_z = round(obj.location.z * 4)
-    box.length = round(obj.scale.x * 4)
-    box.width = round(obj.scale.y * 4)
-    box.height = round(obj.scale.z * 4)
-    # TODO: Calculate sinZ and cosZ from corners coordinates.
+
+    bbmin, bbmax = get_extents(obj)
+    center = get_bound_center_from_bounds(bbmin, bbmax)
+    dimensions = Vector(get_dimensions(bbmin, bbmax))
+
+    box.center_x = round(center.x * 4)
+    box.center_y = round(center.y * 4)
+    box.center_z = round(center.z * 4)
+
+    box.length = round(dimensions.x * 4)
+    box.width = round(dimensions.y * 4)
+    box.height = round(dimensions.z * 4)
+
     dir = Vector((1, 0, 0))
     dir.rotate(obj.rotation_euler)
     dir *= 0.5
