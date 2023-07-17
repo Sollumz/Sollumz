@@ -111,50 +111,71 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
     return None
 
 
-def create_palette_texture(img: Optional[bpy.types.Image] = None):
-    txt = bpy.data.textures.new("palette_texture", type="IMAGE")
+def create_tinted_shader_graph(obj: bpy.types.Object):
+    tint_mats = get_tinted_mats(obj)
 
-    if img is not None:
-        txt.image = img
-        txt.name = f"{img.name}_texture"
-
-    txt.use_interpolation = False
-    txt.use_mipmap = False
-    txt.use_alpha = False
-
-    return txt
-
-
-def create_tinted_shader_graph(obj):
-    if not obj.data.materials:
+    if not tint_mats:
         return
 
-    mat = obj.data.materials[0]
-    tint_sampler_node = get_tint_sampler_node(mat)
+    if obj.data.color_attributes:
+        input_color_attr_name = obj.data.color_attributes[0].name
+    else:
+        input_color_attr_name = None
 
-    bpy.ops.object.select_all(action="DESELECT")
-    bpy.context.view_layer.objects.active = obj
-    obj.select_set(True)
-    bpy.ops.node.new_geometry_nodes_modifier()
+    for mat in tint_mats:
+        tint_sampler_node = get_tint_sampler_node(mat)
+        palette_img = tint_sampler_node.image
+
+        if tint_sampler_node is None:
+            continue
+
+        tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
+
+        rename_tint_attr_node(mat.node_tree, name=tint_color_attr_name)
+
+        tint_color_attr = obj.data.attributes.new(
+            name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
+
+        mod = create_tint_geom_modifier(
+            obj, tint_color_attr.name, input_color_attr_name)
+
+        if palette_img is not None:
+            # create texture and get texture node
+            txt_node = mod.node_group.nodes["Image Texture"]
+            # apply texture
+            txt_node.inputs[0].default_value = palette_img
+
+
+def create_tint_geom_modifier(obj: bpy.types.Object, tint_color_attr_name: str, input_color_attr_name: Optional[str] = None):
     tnt_ng = create_tinted_geometry_graph()
-    geom = obj.modifiers["GeometryNodes"]
-    geom.node_group = tnt_ng
+    mod = obj.modifiers.new("GeometryNodes", "NODES")
+    mod.node_group = tnt_ng
 
     # set input / output variables
-    input_id = geom.node_group.inputs[1].identifier
-    geom[input_id + "_attribute_name"] = "Color 1"
-    geom[input_id + "_use_attribute"] = True
-    output_id = geom.node_group.outputs[1].identifier
-    geom[output_id + "_attribute_name"] = "TintColor"
-    geom[output_id + "_use_attribute"] = True
+    input_id = tnt_ng.inputs[1].identifier
+    mod[input_id + "_attribute_name"] = input_color_attr_name if input_color_attr_name is not None else ""
+    mod[input_id + "_use_attribute"] = True
+    output_id = tnt_ng.outputs[1].identifier
+    mod[output_id + "_attribute_name"] = tint_color_attr_name
+    mod[output_id + "_use_attribute"] = True
 
-    # create texture and get texture node
-    txt = create_palette_texture(tint_sampler_node.image)  # remove this??
-    txt_node = geom.node_group.nodes["Image Texture"]
-    # apply texture
-    txt_node.inputs[0].default_value = txt.image
+    return mod
 
-    obj.data.vertex_colors.new(name="TintColor")
+
+def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
+    for node in node_tree.nodes:
+        if not isinstance(node, bpy.types.ShaderNodeAttribute) or node.attribute_name != "TintColor":
+            continue
+
+        node.attribute_name = name
+        return
+
+
+def get_tinted_mats(obj: bpy.types.Object) -> list[bpy.types.Material]:
+    if obj.data is None or not obj.data.materials:
+        return []
+
+    return [mat for mat in obj.data.materials if is_tint_material(mat)]
 
 
 def obj_has_tint_mats(obj: bpy.types.Object):
@@ -181,9 +202,9 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # Create the necessary sockets for the node group
     gnt.inputs.new("NodeSocketGeometry", "Geometry")
-    gnt.inputs.new("NodeSocketVector", "Vector")
+    gnt.inputs.new("NodeSocketVector", "Vertex Colors")
     gnt.outputs.new("NodeSocketGeometry", "Geometry")
-    gnt.outputs.new("NodeSocketColor", "Color")
+    gnt.outputs.new("NodeSocketColor", "Tint Color")
 
     # link input / output node to create geometry socket
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")

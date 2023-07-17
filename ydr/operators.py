@@ -3,7 +3,7 @@ import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
-from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, shadermats
+from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, is_tint_material, obj_has_tint_mats, shadermats
 from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ..cwxml.shader import ShaderManager
@@ -217,14 +217,14 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
         mat = create_shader(shader)
         obj.data.materials.append(mat)
 
-        if obj_has_tint_mats(obj):
-            create_tinted_shader_graph(obj)
-
         for n in mat.node_tree.nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage):
                 texture = bpy.data.images.new(
                     name="Texture", width=512, height=512)
                 n.image = texture
+
+        if is_tint_material(mat):
+            create_tinted_shader_graph(obj)
 
     def run(self, context):
 

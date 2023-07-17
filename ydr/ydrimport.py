@@ -87,9 +87,7 @@ def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.ty
 def create_model_obj(model_data: ModelData, materials: list[bpy.types.Material], name: str, bones: Optional[list[bpy.types.Bone]] = None):
     model_obj = create_blender_object(SollumType.DRAWABLE_MODEL, name)
     create_lod_meshes(model_data, model_obj, materials, bones)
-
-    if obj_has_tint_mats(model_obj):
-        create_tinted_shader_graph(model_obj)
+    create_tinted_shader_graph(model_obj)
 
     return model_obj
 
