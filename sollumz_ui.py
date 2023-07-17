@@ -440,7 +440,7 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
-    bl_order = 3
+    bl_order = 4
 
     def draw_header(self, context):
         self.layout.label(text="", icon="PREFERENCES")

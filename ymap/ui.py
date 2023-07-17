@@ -26,19 +26,25 @@ def draw_ymap_properties(self, context):
         row.prop(obj.ymap_properties.content_flags_toggle, "has_hd", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_lod", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_slod2", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_slod2", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_int", toggle=1)
         row = layout.row()
         row.prop(obj.ymap_properties.content_flags_toggle, "has_slod", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_occl", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_physics", toggle=1)
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_lod_lights", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_physics", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_lod_lights", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_dis_lod_lights", toggle=1)
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_critical", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_dis_lod_lights", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_critical", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle, "has_grass", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle,
+                 "has_grass", toggle=1)
 
 
 def draw_ymap_model_occluder_properties(self, context):
@@ -71,6 +77,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 4
 
     def draw_header(self, context):
         self.layout.label(text="", icon="OBJECT_ORIGIN")
@@ -82,7 +89,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
 
         if (len(bpy.context.selected_objects) > 0):
             active_object = bpy.context.selected_objects[0]
-            
+
             if active_object.sollum_type == SollumType.YMAP:
                 layout.label(text="Create groups")
                 layout.separator()
@@ -104,7 +111,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
                 row.operator("sollumz.create_car_generator")
 
         else:
-            layout.label(text="No Ymap Selected")        
+            layout.label(text="No Ymap Selected")
 
 
 class OBJECT_PT_ymap_block(bpy.types.Panel):

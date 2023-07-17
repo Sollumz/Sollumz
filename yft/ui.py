@@ -15,7 +15,7 @@ class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_category = "Sollumz Tools"
-    bl_order = 6
+    bl_order = 3
 
     def draw_header(self, context):
         self.layout.label(text="", icon="MOD_PHYSICS")
