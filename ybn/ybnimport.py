@@ -1,6 +1,9 @@
 import os
 import bpy
 from typing import Optional
+
+import numpy as np
+from numpy.typing import NDArray
 from .properties import CollisionMatFlags
 from ..cwxml.bound import (
     Bound,
@@ -363,13 +366,21 @@ def create_bound_mesh_data(vertices: list[Vector], triangles: list[PolyTriangle]
     mesh.from_pydata(verts, [], faces)
 
     if geometry.vertex_colors:
-        create_color_attr(mesh, geometry.vertex_colors)
+        vert_colors = get_vert_colors_as_arr(geometry.vertex_colors)
+        create_color_attr(mesh, vert_colors, domain="POINT")
 
     apply_bound_geom_materials(mesh, triangles, materials)
 
     mesh.validate()
 
     return mesh
+
+
+def get_vert_colors_as_arr(vertex_colors: list[tuple]) -> NDArray[np.float64]:
+    def color_to_float(color_int: tuple[int, int, int]):
+        return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, 1)
+
+    return np.array([color_to_float(color) for color in vertex_colors], dtype=np.float64)
 
 
 def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangle], materials: list[bpy.types.Material]):

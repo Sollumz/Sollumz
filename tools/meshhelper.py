@@ -182,19 +182,19 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
-def create_uv_attr(mesh: bpy.types.Mesh, coords: NDArray[np.float64]):
-    """Create a uv layer for ``mesh`` with the specified index. ``coords`` should map uv coordinates to vertex indices."""
+def create_uv_attr(mesh: bpy.types.Mesh, coords: NDArray[np.float64], domain: str = "CORNER"):
+    """Create a uv layer for ``mesh`` with the specified index."""
     uv_attr = mesh.attributes.new(
-        name=f"UVMap {len(mesh.uv_layers)}", type="FLOAT2", domain="CORNER")
+        name=f"UVMap {len(mesh.uv_layers)}", type="FLOAT2", domain=domain)
 
     uv_attr.data.foreach_set("vector", coords.flatten())
 
 
-def create_color_attr(mesh: bpy.types.Mesh, colors: NDArray[np.float64]):
-    """Create a color attribute layer for ``mesh`` with the specified index. ``colors`` should map RGBA colors to vertex indices."""
+def create_color_attr(mesh: bpy.types.Mesh, colors: NDArray[np.float64], domain: str = "CORNER"):
+    """Create a color attribute layer for ``mesh`` with the specified index."""
     layer_num = len(mesh.color_attributes) + 1
     color_attr = mesh.attributes.new(
-        name=f"Color {layer_num}", type="BYTE_COLOR", domain="CORNER")
+        name=f"Color {layer_num}", type="BYTE_COLOR", domain=domain)
 
     color_attr.data.foreach_set("color_srgb", colors.flatten())
 
