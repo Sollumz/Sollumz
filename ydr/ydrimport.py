@@ -459,6 +459,9 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     for child in drawable_obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             model_objs.append(child)
+            child.parent = None
+
+    bpy.data.objects.remove(drawable_obj)
 
     joined_obj = join_objects(model_objs)
     joined_obj.name = name
@@ -467,6 +470,5 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     joined_obj.asset_generate_preview()
 
     bpy.context.collection.objects.unlink(joined_obj)
-    bpy.data.objects.remove(drawable_obj)
 
     return joined_obj
