@@ -147,7 +147,7 @@ def calculate_cargen_orient(obj):
 
 def ymap_from_object(obj):
     ymap = CMapData()
-    max_int = (2**31)-1
+    max_int = (2**31) - 1
     ymap.entities_extents_min = Vector((max_int, max_int, max_int))
     ymap.entities_extents_max = Vector((0, 0, 0))
     ymap.streaming_extents_min = Vector((max_int, max_int, max_int))
@@ -230,5 +230,5 @@ def ymap_from_object(obj):
 
 
 def export_ymap(obj, filepath):
-    ymap = ymap_from_object(obj, filepath)
+    ymap = ymap_from_object(obj)
     ymap.write_xml(filepath)
