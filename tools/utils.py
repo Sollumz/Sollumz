@@ -206,3 +206,11 @@ def get_matrix_without_scale(matrix: Matrix) -> Matrix:
     """Apply scale to transformation matrix"""
     scale = matrix.to_scale()
     return matrix @ Matrix.Diagonal(scale).inverted().to_4x4()
+
+
+def reshape_mat_3x4(mat_4x4: Matrix):
+    return Matrix((
+        mat_4x4[0],
+        mat_4x4[1],
+        mat_4x4[2],
+    ))

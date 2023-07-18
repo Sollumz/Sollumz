@@ -10,7 +10,7 @@ from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
 from ..tools.blenderhelper import get_bone_pose_matrix, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
-from ..tools.utils import get_matrix_without_scale, prop_array_to_vector, vector_inv
+from ..tools.utils import get_matrix_without_scale, prop_array_to_vector, vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_export_transforms_to_apply, get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
@@ -746,15 +746,22 @@ def create_child_transforms_xml(child_matrix: Matrix, lod_xml: PhysicsLOD):
 
 
 def create_bone_transforms_xml(frag_xml: Fragment):
-    for bone in frag_xml.drawable.skeleton.bones:
-        transforms = Matrix.LocRotScale(
-            bone.translation, bone.rotation, bone.scale)
+    def get_bone_transforms(bone: Bone):
+        return Matrix.LocRotScale(bone.translation, bone.rotation, bone.scale)
+
+    bones: list[Bone] = frag_xml.drawable.skeleton.bones
+
+    for bone in bones:
+
+        transforms = get_bone_transforms(bone)
+
+        if bone.parent_index != -1:
+            parent_transforms = frag_xml.bones_transforms[bone.parent_index].value
+            transforms = parent_transforms @ transforms
+
         # Reshape to 3x4
-        transforms_reshaped = Matrix((
-            transforms[0],
-            transforms[1],
-            transforms[2],
-        ))
+        transforms_reshaped = reshape_mat_3x4(transforms)
+
         frag_xml.bones_transforms.append(
             BoneTransform("Item", transforms_reshaped))
 
