@@ -195,7 +195,7 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Collision Tools"
+    bl_label = "Collisions"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"

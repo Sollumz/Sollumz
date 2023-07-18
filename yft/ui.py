@@ -9,7 +9,7 @@ from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OB
 
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Fragment Tools"
+    bl_label = "Fragments"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_TOOL_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

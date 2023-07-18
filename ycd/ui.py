@@ -140,20 +140,13 @@ class SOLLUMZ_PT_UV_ANIMATION_ACTIONS(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Animations Tools"
+    bl_label = "Animations"
     bl_idname = "SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 2
-
-    @classmethod
-    def poll(cls, context):
-
-        if len(bpy.context.selected_objects) > 0:
-            return True
-        return False
+    bl_order = 4
 
     def draw_header(self, context):
         self.layout.label(text="", icon="ARMATURE_DATA")

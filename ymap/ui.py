@@ -77,7 +77,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 4
+    bl_order = 5
 
     def draw_header(self, context):
         self.layout.label(text="", icon="OBJECT_ORIGIN")

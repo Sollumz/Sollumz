@@ -252,7 +252,7 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "General Tools"
+    bl_label = "General"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"

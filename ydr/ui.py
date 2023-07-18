@@ -226,7 +226,7 @@ class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 
 
 class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Drawable Tools"
+    bl_label = "Drawables"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
