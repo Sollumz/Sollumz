@@ -565,7 +565,9 @@ def set_bound_extents(bound_xml: Bound, bbmin: Vector, bbmax: Vector):
 def get_bound_extents(obj: bpy.types.Object):
     scale = get_scale_to_apply_to_bound(obj)
 
-    return scale * get_min_vector_list(obj.bound_box), scale * get_max_vector_list(obj.bound_box)
+    bbs = [scale * Vector(corner) for corner in obj.bound_box]
+
+    return get_min_vector_list(bbs), get_max_vector_list(bbs)
 
 
 def get_bvh_extents(obj: bpy.types.Object, composite_transform: Matrix):
