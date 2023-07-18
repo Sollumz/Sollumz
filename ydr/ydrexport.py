@@ -20,7 +20,7 @@ from ..tools.meshhelper import (
     get_sphere_radius,
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list
-from ..tools.blenderhelper import get_child_of_constraint, remove_number_suffix, get_evaluated_obj
+from ..tools.blenderhelper import get_child_of_constraint, get_pose_inverse, remove_number_suffix, get_evaluated_obj
 from ..sollumz_helper import get_export_transforms_to_apply, get_sollumz_materials
 from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
@@ -84,8 +84,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
         bones = None
         original_pose = "POSE"
 
-    create_model_xmls(drawable_xml, drawable_obj,
-                      materials, bones, apply_transforms)
+    create_model_xmls(drawable_xml, drawable_obj, materials, bones)
 
     drawable_xml.lights = create_xml_lights(drawable_obj, armature_obj)
 
@@ -101,17 +100,14 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     return drawable_xml
 
 
-def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, apply_transforms: bool = False):
+def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
     model_objs = get_model_objs(drawable_obj)
 
     if bones is not None:
         model_objs = sort_skinned_models_by_bone(model_objs, bones)
 
     for model_obj in model_objs:
-        if apply_transforms:
-            transforms_to_apply = get_export_transforms_to_apply(model_obj)
-        else:
-            transforms_to_apply = model_obj.matrix_basis
+        transforms_to_apply = get_export_transforms_to_apply(model_obj)
 
         for lod in model_obj.sollumz_lods.lods:
             if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
