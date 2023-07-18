@@ -339,19 +339,7 @@ def clip_dictionary_to_obj(clip_dictionary, name):
 
 
 def import_ycd(filepath):
-    # if import_settings.selected_armature == -1 or not list_index_exists(bpy.data.armatures, import_settings.selected_armature):
-    #     # logger.warning("Selected target skeleton not found.")
-    #     armature_obj = None
-    # else:
-    #     armature = bpy.data.armatures[import_settings.selected_armature]
-    #     armature_obj = get_armature_obj(armature)
-
     ycd_xml = YCD.from_xml_file(filepath)
-
-    # animation_type = bpy.context.scene.create_animation_type
-    # if animation_type == "UV":
-    #     logger.warning("UV import is not supported. Change the animation type under Animation Tools panel")
-    #     return
 
     clip_dictionary_to_obj(
         ycd_xml,

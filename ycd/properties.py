@@ -200,6 +200,7 @@ def register_tracks(cls, inline=False):
             setattr(cls, f"animation_tracks_{prop}", info)
     else:
         cls.animation_tracks = bpy.props.PointerProperty(name="Animation Tracks", type=AnimationTracks)
+        cls.animation_tracks_ui_show_advanced = bpy.props.BoolProperty(name="Show Advanced", default=False)
 
 
 def unregister_tracks(cls, inline=False):
@@ -208,6 +209,7 @@ def unregister_tracks(cls, inline=False):
             delattr(cls, f"animation_tracks_{prop}")
     else:
         del cls.animation_tracks
+        del cls.animation_tracks_ui_show_advanced
 
 
 def register():

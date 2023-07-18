@@ -162,15 +162,50 @@ class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None  # and obj.sollum_type == SollumType.DRAWABLE
+        if context.active_object is None:
+            return False
+
+        data = context.active_object.data
+        return data is not None and (isinstance(data, bpy.types.Armature) or
+                                     isinstance(data, bpy.types.Camera) or
+                                     isinstance(data, bpy.types.Mesh))
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
 
-        animation_tracks = context.active_object.animation_tracks
-        for prop in AnimationTracks.__annotations__:
-            layout.prop(animation_tracks, prop)
+        obj = context.active_object
+
+        animation_tracks = obj.animation_tracks
+
+        if isinstance(obj.data, bpy.types.Armature):
+            for prop in AnimationTracks.__annotations__:
+                if prop.startswith("camera_") or prop.startswith("uv"):
+                    continue
+
+                layout.prop(animation_tracks, prop)
+        elif isinstance(obj.data, bpy.types.Camera):
+            for prop in AnimationTracks.__annotations__:
+                if not prop.startswith("camera_"):
+                    continue
+
+                layout.prop(animation_tracks, prop)
+        elif isinstance(obj.data, bpy.types.Mesh):
+            layout.prop(animation_tracks, "uv0")
+            layout.prop(animation_tracks, "uv1")
+
+        box = layout.box()
+        box.use_property_split = True
+        box.use_property_decorate = False
+        header = box.row(align=True)
+        is_expanded = obj.animation_tracks_ui_show_advanced
+        expanded_icon = "DISCLOSURE_TRI_DOWN" if is_expanded else "DISCLOSURE_TRI_RIGHT"
+        header.prop(obj, "animation_tracks_ui_show_advanced", text="", emboss=False, icon=expanded_icon)
+        header.label(text="Advanced")
+
+        if obj.animation_tracks_ui_show_advanced:
+            for prop in AnimationTracks.__annotations__:
+                box.prop(animation_tracks, prop)
 
 
 class SOLLUMZ_PT_POSE_BONE_ANIMATION_TRACKS(bpy.types.Panel):
