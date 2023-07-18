@@ -4,7 +4,7 @@ from .sollumz_operators import SOLLUMZ_OT_copy_all_locations, SOLLUMZ_OT_copy_lo
 from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import SollumType, MaterialType
 from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
-                   SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_GLASS_SHARDS, SOLLUMZ_OT_HIDE_OBJECT)
+                   SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_SHATTERMAPS, SOLLUMZ_OT_HIDE_OBJECT, SOLLUMZ_OT_SHOW_COLLISIONS, SOLLUMZ_OT_SHOW_SHATTERMAPS)
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -287,8 +287,15 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
 
         grid = layout.grid_flow(align=True, row_major=True)
         grid.scale_x = 0.7
-        grid.operator(SOLLUMZ_OT_HIDE_COLLISIONS.bl_idname)
-        grid.operator(SOLLUMZ_OT_HIDE_GLASS_SHARDS.bl_idname)
+        if context.scene.sollumz_show_collisions:
+            grid.operator(SOLLUMZ_OT_HIDE_COLLISIONS.bl_idname)
+        else:
+            grid.operator(SOLLUMZ_OT_SHOW_COLLISIONS.bl_idname)
+
+        if context.scene.sollumz_show_shattermaps:
+            grid.operator(SOLLUMZ_OT_HIDE_SHATTERMAPS.bl_idname)
+        else:
+            grid.operator(SOLLUMZ_OT_SHOW_SHATTERMAPS.bl_idname)
 
         layout.separator()
 

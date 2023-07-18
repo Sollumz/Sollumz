@@ -167,38 +167,50 @@ class SOLLUMZ_OT_HIDE_OBJECT(bpy.types.Operator, SetLodLevelHelper):
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_HIDE_COLLISIONS(bpy.types.Operator, SetLodLevelHelper):
+class SOLLUMZ_OT_HIDE_COLLISIONS(bpy.types.Operator):
     bl_idname = "sollumz.hide_collisions"
     bl_label = "Hide Collisions"
     bl_description = "Hide all collisions in the scene"
 
     def execute(self, context):
-        for collection in get_all_collections():
-            for obj in collection.all_objects:
-                if not (obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES and obj.name in bpy.context.view_layer.objects):
-                    continue
-
-                obj.hide_set(not context.scene.sollumz_hide_collisions)
-
-        context.scene.sollumz_hide_collisions = not context.scene.sollumz_hide_collisions
+        context.scene.sollumz_show_collisions = False
+        set_collision_visibility(False)
 
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_HIDE_GLASS_SHARDS(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.hide_glass_shards"
-    bl_label = "Hide Glass Shards"
-    bl_description = "Hide all glass shards in the scene"
+class SOLLUMZ_OT_SHOW_COLLISIONS(bpy.types.Operator):
+    bl_idname = "sollumz.show_collisions"
+    bl_label = "Show Collisions"
+    bl_description = "Show all collisions in the scene"
 
     def execute(self, context):
-        for collection in get_all_collections():
-            for obj in collection.all_objects:
-                if obj.sollum_type != SollumType.SHATTERMAP:
-                    continue
+        context.scene.sollumz_show_collisions = True
+        set_collision_visibility(True)
 
-                obj.hide_set(not context.scene.sollumz_hide_glass_shards)
+        return {"FINISHED"}
 
-        context.scene.sollumz_hide_glass_shards = not context.scene.sollumz_hide_glass_shards
+
+class SOLLUMZ_OT_SHOW_SHATTERMAPS(bpy.types.Operator):
+    bl_idname = "sollumz.show_shattermaps"
+    bl_label = "Show Shattermaps"
+    bl_description = "Show all shattermaps in the scene"
+
+    def execute(self, context):
+        context.scene.sollumz_show_shattermaps = True
+        set_shattermaps_visibility(True)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_HIDE_SHATTERMAPS(bpy.types.Operator):
+    bl_idname = "sollumz.hide_shattermaps"
+    bl_label = "Hide Shattermaps"
+    bl_description = "Hide all shattermaps in the scene"
+
+    def execute(self, context):
+        context.scene.sollumz_show_shattermaps = False
+        set_shattermaps_visibility(False)
 
         return {"FINISHED"}
 
@@ -282,6 +294,26 @@ class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
         row.operator("sollumz.copy_lod", icon="COPYDOWN", text="")
 
 
+def set_collision_visibility(is_visible: bool):
+    """Set visibility of all collision objects in the scene"""
+    for obj in bpy.context.view_layer.objects:
+        obj_is_collision = obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES
+
+        if not obj_is_collision:
+            continue
+
+        obj.hide_set(not is_visible)
+
+
+def set_shattermaps_visibility(is_visible: bool):
+    """Set visibility of all shattermap objects in the scene"""
+    for obj in bpy.context.view_layer.objects:
+        if obj.sollum_type != SollumType.SHATTERMAP:
+            continue
+
+        obj.hide_set(not is_visible)
+
+
 def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
     """Set LOD levels of all of children of ``obj``"""
     obj.sollumz_obj_is_hidden = False
@@ -318,8 +350,10 @@ def register():
     bpy.types.Object.sollumz_lods = bpy.props.PointerProperty(
         type=LODLevels)
     bpy.types.Object.sollumz_obj_is_hidden = bpy.props.BoolProperty()
-    bpy.types.Scene.sollumz_hide_collisions = bpy.props.BoolProperty()
-    bpy.types.Scene.sollumz_hide_glass_shards = bpy.props.BoolProperty()
+    bpy.types.Scene.sollumz_show_collisions = bpy.props.BoolProperty(
+        default=True)
+    bpy.types.Scene.sollumz_show_shattermaps = bpy.props.BoolProperty(
+        default=True)
     bpy.types.Scene.sollumz_copy_lod_level = bpy.props.EnumProperty(
         items=items_from_enums(LODLevel))
 
@@ -327,5 +361,6 @@ def register():
 def unregister():
     del bpy.types.Object.sollumz_lods
     del bpy.types.Object.sollumz_obj_is_hidden
-    del bpy.types.Scene.sollumz_hide_glass_shards
+    del bpy.types.Scene.sollumz_show_collisions
+    del bpy.types.Scene.sollumz_show_shattermaps
     del bpy.types.Scene.sollumz_copy_lod_level

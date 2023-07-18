@@ -49,7 +49,10 @@ class SOLLUMZ_MT_view_pie_menu(Menu):
 
         pie = layout.menu_pie()
         # Left
-        pie.operator("sollumz.hide_collisions", text="Collisions")
+        if context.scene.sollumz_show_collisions:
+            pie.operator("sollumz.hide_collisions")
+        else:
+            pie.operator("sollumz.show_collisions")
         # Right
         pie.operator("sollumz.set_lod_med")
         # Bottom
@@ -57,7 +60,10 @@ class SOLLUMZ_MT_view_pie_menu(Menu):
         # Top
         pie.operator("sollumz.set_lod_very_high")
         # Top-left
-        pie.operator("sollumz.hide_glass_shards", text="Shattermaps")
+        if context.scene.sollumz_show_shattermaps:
+            pie.operator("sollumz.hide_shattermaps")
+        else:
+            pie.operator("sollumz.show_shattermaps")
         # Top-right
         pie.operator("sollumz.set_lod_high")
         # Bottom-left
