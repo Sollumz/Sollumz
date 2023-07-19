@@ -1,4 +1,6 @@
 import bpy
+import math
+from mathutils import Matrix
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
 from ..tools.animationhelper import retarget_animation
@@ -189,6 +191,105 @@ class AnimationTracks(bpy.types.PropertyGroup):
     unk_138: FloatProp("Unk 138")
     unk_139: FloatProp("Unk 139")
     unk_140: FloatProp("Unk 140")
+
+
+    def decompose_uv_affine_matrix(self):
+        a = self.uv0[0]
+        b = self.uv0[1]
+        c = self.uv1[0]
+        d = self.uv1[1]
+
+        tx = self.uv0[2]
+        ty = self.uv1[2]
+        rotation = math.atan2(c, a)
+        cos = math.cos(rotation)
+        sin = math.sin(rotation)
+        sx = math.sqrt(a * a + c * c)
+        sy = d * cos - b * sin
+        shear_x = (b * cos + d * sin) / sy
+
+        return (tx, ty), rotation, (sx, sy), shear_x
+
+    def compose_uv_affine_matrix(self, translation, rotation, scale, shear_x):
+        cos = math.cos(rotation)
+        sin = math.sin(rotation)
+
+        rotation_mat = Matrix((
+            (cos, -sin),
+            (sin, cos)
+        ))
+        shear_x_mat = Matrix((
+            (1.0, shear_x),
+            (0.0, 1.0)
+        ))
+        scale_mat = Matrix((
+            (scale[0], 0.0),
+            (0.0, scale[1])
+        ))
+
+        affine_mat = rotation_mat @ shear_x_mat @ scale_mat
+
+        self.uv0[0] = affine_mat[0][0]
+        self.uv0[1] = affine_mat[0][1]
+        self.uv1[0] = affine_mat[1][0]
+        self.uv1[1] = affine_mat[1][1]
+        self.uv0[2] = translation[0]
+        self.uv1[2] = translation[1]
+
+    def on_uv_update(self, context):
+        # force redraw of 3D view so the UVs update in real-time,
+        # like when editing uv0/uv1 directly in the UI
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+
+    def get_uv_translation(self):
+        return (self.uv0[2], self.uv1[2])
+
+    def set_uv_translation(self, value):
+        self.uv0[2] = value[0]
+        self.uv1[2] = value[1]
+
+    def get_uv_rotation(self):
+        _, rotation, _, _ = self.decompose_uv_affine_matrix()
+        return rotation
+
+    def set_uv_rotation(self, value):
+        translation, _, scale, shear_x = self.decompose_uv_affine_matrix()
+        rotation = value
+        self.compose_uv_affine_matrix(translation, rotation, scale, shear_x)
+
+    def get_uv_scale(self):
+        _, _, scale, _ = self.decompose_uv_affine_matrix()
+        return scale
+
+    def set_uv_scale(self, value):
+        translation, rotation, _, shear_x = self.decompose_uv_affine_matrix()
+        scale = value
+        self.compose_uv_affine_matrix(translation, rotation, scale, shear_x)
+
+    def get_uv_shear_x(self):
+        _, _, _, shear_x = self.decompose_uv_affine_matrix()
+        return shear_x
+
+    def set_uv_shear_x(self, value):
+        translation, rotation, scale, _ = self.decompose_uv_affine_matrix()
+        shear_x = value
+        self.compose_uv_affine_matrix(translation, rotation, scale, shear_x)
+
+    # wrapper properties for simpler UI
+    ui_uv_translation: bpy.props.FloatVectorProperty(
+        name="UV Translation", size=2, subtype="XYZ", options=set(),
+        get=get_uv_translation, set=set_uv_translation, update=on_uv_update)
+    ui_uv_rotation: bpy.props.FloatProperty(
+        name="UV Rotation", subtype="ANGLE", unit="ROTATION", options=set(),
+        get=get_uv_rotation, set=set_uv_rotation, update=on_uv_update)
+    ui_uv_scale: bpy.props.FloatVectorProperty(
+        name="UV Scale", size=2, subtype="XYZ", options=set(),
+        get=get_uv_scale, set=set_uv_scale, update=on_uv_update)
+    ui_uv_shear_x: bpy.props.FloatProperty(
+        name="UV Shear X", options=set(),
+        get=get_uv_shear_x, set=set_uv_shear_x, update=on_uv_update)
 
 
 def register_tracks(cls, inline=False):

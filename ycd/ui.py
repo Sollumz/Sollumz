@@ -191,6 +191,11 @@ class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
 
                 layout.prop(animation_tracks, prop)
         elif isinstance(obj.data, bpy.types.Mesh):
+            layout.prop(animation_tracks, "ui_uv_translation")
+            layout.prop(animation_tracks, "ui_uv_rotation")
+            layout.prop(animation_tracks, "ui_uv_scale")
+            layout.prop(animation_tracks, "ui_uv_shear_x")
+            layout.separator_spacer()
             layout.prop(animation_tracks, "uv0")
             layout.prop(animation_tracks, "uv1")
 
