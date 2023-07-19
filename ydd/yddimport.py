@@ -20,25 +20,32 @@ def import_ydd(filepath: str):
     if import_settings.import_ext_skeleton:
         skel_yft = load_external_skeleton(filepath)
 
-        if skel_yft is not None:
+        if skel_yft is not None and skel_yft.drawable.skeleton is not None:
             return create_ydd_obj_ext_skel(ydd_xml, filepath, skel_yft)
 
     return create_ydd_obj(ydd_xml, filepath)
 
 
-def load_external_skeleton(ydd_filepath: str):
+def load_external_skeleton(ydd_filepath: str) -> Optional[Fragment]:
+    """Read first yft at ydd_filepath into a Fragment"""
     directory = os.path.dirname(ydd_filepath)
-    ydd_name = get_filename(ydd_filepath)
 
-    yft_filepath = os.path.join(directory, f"{ydd_name}.yft.xml")
+    yft_filepath = get_first_yft_path(directory)
 
-    if not os.path.exists(yft_filepath):
-        logger.warning(f"External skeleton not found at '{yft_filepath}'!")
-        return None
+    if yft_filepath is None:
+        logger.warning(
+            f"Could not find external skeleton yft in directory '{directory}'.")
+        return
 
-    yft_xml: Fragment = YFT.from_xml_file(yft_filepath)
+    logger.info(f"Using '{yft_filepath}' as external skeleton...")
 
-    return yft_xml
+    return YFT.from_xml_file(yft_filepath)
+
+
+def get_first_yft_path(directory: str):
+    for filepath in os.listdir(directory):
+        if filepath.endswith(".yft.xml"):
+            return os.path.join(directory, filepath)
 
 
 def create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, external_skel: Fragment):
