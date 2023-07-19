@@ -214,3 +214,12 @@ def reshape_mat_3x4(mat_4x4: Matrix):
         mat_4x4[1],
         mat_4x4[2],
     ))
+
+
+def reshape_mat_4x3(mat_4x4: Matrix):
+    return Matrix((
+        mat_4x4[0][:3],
+        mat_4x4[1][:3],
+        mat_4x4[2][:3],
+        mat_4x4[3][:3],
+    ))

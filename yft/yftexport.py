@@ -10,7 +10,7 @@ from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
 from ..tools.blenderhelper import get_bone_pose_matrix, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
-from ..tools.utils import get_matrix_without_scale, prop_array_to_vector, vector_inv, reshape_mat_3x4
+from ..tools.utils import get_matrix_without_scale, prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_export_transforms_to_apply, get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
@@ -89,6 +89,7 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     set_arch_mass_inertia(frag_obj, arch_xml,
                           lod_xml.children, auto_calc_inertia)
     calculate_group_masses(lod_xml)
+    calculate_child_drawable_matrices(frag_xml)
 
     sort_cols_and_children(lod_xml)
     create_vehicle_windows_xml(frag_obj, frag_xml, materials)
@@ -429,10 +430,7 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
             bound_xml = lod_xml.archetype.bounds.children[child_index]
             composite_matrix = bound_xml.composite_transform
 
-            drawable_matrix = get_child_drawable_matrix(obj)
-
-            create_phys_child_drawable(
-                child_xml, materials, drawable_matrix, mesh_objs)
+            create_phys_child_drawable(child_xml, materials, mesh_objs)
 
             create_child_transforms_xml(composite_matrix, lod_xml)
 
@@ -506,17 +504,6 @@ def get_bone_group_index(lod_xml: PhysicsLOD, bone_name: str):
     return -1
 
 
-def get_child_drawable_matrix(bound_obj: bpy.types.Object):
-    """The matrix for each physics child drawable matrix is the transformation of
-    the mesh relative to the bone."""
-    export_transforms = get_export_transforms_to_apply(bound_obj)
-    # Including scale causes strange behavior so apply it to matrix
-    matrix = get_matrix_without_scale(export_transforms).transposed()
-
-    # Convert to 4x3 matrix
-    return Matrix([row[:3] for row in matrix])
-
-
 def create_child_mat_arrays(children: list[PhysicsChild]):
     """Create the matrix arrays for each child. This appears to be in the first child of multiple children that
     share the same group. Each matrix in the array is just the matrix for each child in that group."""
@@ -535,9 +522,8 @@ def create_child_mat_arrays(children: list[PhysicsChild]):
             first.drawable.matrices.append(child.drawable.matrix)
 
 
-def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], matrix: Matrix, mesh_objs: Optional[list[bpy.types.Object]] = None):
+def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], mesh_objs: Optional[list[bpy.types.Object]] = None):
     drawable_xml = child_xml.drawable
-    drawable_xml.matrix = matrix
     drawable_xml.shader_group = None
     drawable_xml.skeleton = None
     drawable_xml.joints = None
@@ -764,6 +750,27 @@ def create_bone_transforms_xml(frag_xml: Fragment):
 
         frag_xml.bones_transforms.append(
             BoneTransform("Item", transforms_reshaped))
+
+
+def calculate_child_drawable_matrices(frag_xml: Fragment):
+    """Calculate the matrix for each physics child Drawable from bone transforms
+    and composite transforms. Each matrix represents the transformation of the
+    child relative to the bone."""
+    bone_transforms = frag_xml.bones_transforms
+    bones = frag_xml.drawable.skeleton.bones
+    collisions = frag_xml.physics.lod1.archetype.bounds.children
+
+    bone_transform_by_tag: dict[str, Matrix] = {
+        b.tag: bone_transforms[i].value for i, b in enumerate(bones)}
+
+    for i, child in enumerate(frag_xml.physics.lod1.children):
+        bone_transform = bone_transform_by_tag[child.bone_tag]
+        col = collisions[i]
+
+        bone_inv = bone_transform.to_4x4().inverted()
+
+        matrix = col.composite_transform @ bone_inv.transposed()
+        child.drawable.matrix = reshape_mat_4x3(matrix)
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
