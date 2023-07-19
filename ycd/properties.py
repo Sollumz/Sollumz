@@ -194,6 +194,9 @@ class AnimationTracks(bpy.types.PropertyGroup):
 
 
     def decompose_uv_affine_matrix(self):
+        """
+        Decompose the UV affine matrix into translation, rotation in radians, scale, and shear along X axis.
+        """
         a = self.uv0[0]
         b = self.uv0[1]
         c = self.uv1[0]
@@ -242,6 +245,11 @@ class AnimationTracks(bpy.types.PropertyGroup):
         for area in context.screen.areas:
             if area.type == 'VIEW_3D':
                 area.tag_redraw()
+
+        # if auto-keying is enabled, insert keyframes for the underlying UV tracks when the UVs are changed
+        if context.scene.tool_settings.use_keyframe_insert_auto:
+            self.keyframe_insert(data_path='uv0', index=-1)
+            self.keyframe_insert(data_path='uv1', index=-1)
 
     def get_uv_translation(self):
         return (self.uv0[2], self.uv1[2])
