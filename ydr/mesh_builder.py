@@ -3,6 +3,7 @@ import numpy as np
 from numpy.typing import NDArray
 from traceback import format_exc
 from ..tools.meshhelper import create_uv_attr, create_color_attr, flip_uvs
+from mathutils import Vector
 from .. import logger
 
 
@@ -74,7 +75,11 @@ class MeshBuilder:
 
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
-        mesh.normals_split_custom_set_from_vertices(self.vertex_arr["Normal"])
+
+        normals_normalized = [Vector(n).normalized()
+                              for n in self.vertex_arr["Normal"]]
+        mesh.normals_split_custom_set_from_vertices(normals_normalized)
+
         mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
