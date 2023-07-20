@@ -7,6 +7,7 @@ from .element import (
     ElementTree,
     ListProperty,
     QuaternionProperty,
+    StringValueProperty,
     TextProperty,
     TextListProperty,
     ValueProperty,
@@ -39,7 +40,7 @@ class HexColorProperty(ElementProperty):
 
     def hex_to_rgb(hex: str) -> tuple:
         hex = hex.replace("0x", "")
-        return tuple(int(hex[i:i+2], 16) / 255 for i in (0, 2, 4, 6))
+        return tuple(int(hex[i:i + 2], 16) / 255 for i in (0, 2, 4, 6))
 
     def rgb_to_hex(rgb: tuple) -> str:
         return ('{:02X}{:02X}{:02X}{:02X}').format(*[int(x * 255) for x in rgb])
@@ -164,7 +165,7 @@ class ExtensionAudioEmitter(Extension):
     def __init__(self):
         super().__init__()
         self.offset_rotation = QuaternionProperty("offsetRotation")
-        self.effect_hash = ValueProperty("effectHash")
+        self.effect_hash = StringValueProperty("effectHash")
 
 
 class ExtensionExplosionEffect(Extension):
