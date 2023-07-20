@@ -14,6 +14,25 @@ from ..tools.animationhelper import (
     get_id_and_track_from_track_data_path,
     calculate_bone_space_transform_matrix,
 )
+from .properties import calculate_final_uv_transform_matrix
+
+
+def parse_uv_transform_data_path(data_path: str):
+    # data_path = '...uv_transforms[123].property'
+
+    # trim up to 'uv_transforms'
+    data_path = data_path[data_path.index("uv_transforms") + len("uv_transforms"):]
+
+    # extract transform index
+    index_start = data_path.index("[") + 1
+    index_end = data_path.index("]", index_start)
+    index = int(data_path[index_start:index_end])
+
+    # extract property name
+    prop_start = data_path.index(".", index_end) + 1
+    prop = data_path[prop_start:]
+
+    return index, prop
 
 
 def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID, frame_count: int):
@@ -26,10 +45,23 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
         bone_name_map = None
         bone_map = None
 
+    uv_transforms_fcurves = {}
+
     sequence_items = {}
     for fcurve in action.fcurves:
         data_path = fcurve.data_path
-        bone_id, track = get_id_and_track_from_track_data_path(data_path, target_id, bone_name_map)
+        bone_id_track_pair = get_id_and_track_from_track_data_path(data_path, target_id, bone_name_map)
+        if bone_id_track_pair is None:
+            # TODO: report warning
+            continue
+
+        bone_id, track = bone_id_track_pair
+        if track == Track.UVTransforms:
+            if bone_id not in uv_transforms_fcurves:
+                uv_transforms_fcurves[bone_id] = []
+            uv_transforms_fcurves[bone_id].append(fcurve)
+            continue
+
         comp_index = fcurve.array_index
         format = TrackFormatMap[track]
 
@@ -112,6 +144,51 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
                 for i in range(0, frame_count):
                     x_axis_local = quats[i] @ x_axis
                     quats[i].rotate(Quaternion(x_axis_local, angle_delta))
+
+    if target_id is not None and len(uv_transforms_fcurves) > 0:
+        target_obj = get_data_obj(target_id)
+
+        # copy the UV transforms defined by the user to apply f-curves on them without modifying the original ones
+        uv_transforms = target_obj.export_uv_transforms
+        uv_transforms.clear()
+        for uv_transform in target_obj.animation_tracks.uv_transforms:
+            uv_transform_copy = uv_transforms.add()
+            uv_transform_copy.update_uv_transform_matrix_on_change = False
+            uv_transform_copy.copy_from(uv_transform)
+
+        for bone_id, fcurves in uv_transforms_fcurves.items():
+            if bone_id not in sequence_items:
+                sequence_items[bone_id] = {}
+
+            bone_sequences = sequence_items[bone_id]
+
+            # compute uv0/uv1 from uv_transforms
+            bone_sequences[Track.UV0] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+            bone_sequences[Track.UV1] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+            uv0_sequence = bone_sequences[Track.UV0]
+            uv1_sequence = bone_sequences[Track.UV1]
+            for frame_id in range(0, frame_count):
+                # apply f-curves to UV transforms
+                for fcurve in fcurves:
+                    value = fcurve.evaluate(frame_id)
+                    transform_index, prop_name = parse_uv_transform_data_path(fcurve.data_path)
+
+                    prop = getattr(uv_transforms[transform_index], prop_name)
+                    if isinstance(prop, float):
+                        setattr(uv_transforms[transform_index], prop_name, value)
+                    else:  # Vector
+                        comp_index = fcurve.array_index
+                        prop[comp_index] = value
+
+                mat = calculate_final_uv_transform_matrix(uv_transforms)
+                uv0_sequence[frame_id][0] = mat[0][0]
+                uv0_sequence[frame_id][1] = mat[0][1]
+                uv0_sequence[frame_id][2] = mat[0][2]
+                uv1_sequence[frame_id][0] = mat[1][0]
+                uv1_sequence[frame_id][1] = mat[1][1]
+                uv1_sequence[frame_id][2] = mat[1][2]
+
+        uv_transforms.clear()
 
     return sequence_items
 

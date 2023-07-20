@@ -1,6 +1,8 @@
+from typing import Iterable
+
 import bpy
 import math
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
 from ..tools.animationhelper import retarget_animation
@@ -139,6 +141,129 @@ class AnimationProperties(bpy.types.PropertyGroup):
     ], default="ARMATURE")
 
 
+UVTransformModes = [
+    ("TRANSLATE", "Translate", "Translate", 0),
+    ("ROTATE", "Rotate", "Rotate", 1),
+    ("SCALE", "Scale", "Scale", 2),
+    ("SHEAR", "Shear", "Shear", 3),
+    ("REFLECT", "Reflect", "Reflect across an axis", 4),
+]
+
+
+class UVTransform(bpy.types.PropertyGroup):
+    def on_update(self, context):
+        if self.id_data is not None and self.update_uv_transform_matrix_on_change:
+            self.id_data.animation_tracks.update_uv_transform_matrix()
+
+    # we use custom getters/setters because the properties update callback is not called during animation playback
+    # and the UV matrix would not get updated when the value is changed by an animation
+    def values_array(self):
+        values = self.get("values")
+        if not values:
+            # tx, ty, rotation, scale_x, scale_y, shear_x, shear_y, reflect_x, reflect_y
+            self["values"] = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0]
+            values = self["values"]  # lookup again to get array converted to a IDPropertyArray instance
+        return values
+
+    @staticmethod
+    def _float_getter(index):
+        def getter(self):
+            return self.values_array()[index]
+        return getter
+
+    @staticmethod
+    def _float_setter(index):
+        def setter(self, value):
+            self.values_array()[index] = value
+            self.on_update(None)
+        return setter
+
+    @staticmethod
+    def _vec2_getter(index_x, index_y):
+        def getter(self):
+            values = self.values_array()
+            return (values[index_x], values[index_y])
+        return getter
+
+    @staticmethod
+    def _vec2_setter(index_x, index_y):
+        def setter(self, value):
+            values = self.values_array()
+            values[index_x] = value[0]
+            values[index_y] = value[1]
+            self.on_update(None)
+        return setter
+
+    update_uv_transform_matrix_on_change: bpy.props.BoolProperty(default=True, options={"HIDDEN", "SKIP_SAVE"})
+    mode: bpy.props.EnumProperty(
+        name="Transformation Mode", items=UVTransformModes, default="TRANSLATE", update=on_update, options=set())
+    translation: bpy.props.FloatVectorProperty(
+        name="Translation", size=2, subtype="XYZ", get=_vec2_getter(0, 1), set=_vec2_setter(0, 1))
+    rotation: bpy.props.FloatProperty(
+        name="Rotation", subtype="ANGLE", unit="ROTATION", get=_float_getter(2), set=_float_setter(2))
+    scale: bpy.props.FloatVectorProperty(
+        name="Scale", size=2, subtype="XYZ", get=_vec2_getter(3, 4), set=_vec2_setter(3, 4))
+    shear: bpy.props.FloatVectorProperty(
+        name="Shear", size=2, subtype="XYZ", get=_vec2_getter(5, 6), set=_vec2_setter(5, 6))
+    reflect: bpy.props.FloatVectorProperty(
+        name="Reflection Axis", size=2, subtype="XYZ", get=_vec2_getter(7, 8), set=_vec2_setter(7, 8))
+
+    def get_matrix(self) -> Matrix:
+        """
+        Returns the affine matrix for this transform.
+        """
+        if self.mode == "TRANSLATE":
+            return Matrix((
+                (1.0, 0.0, self.translation[0]),
+                (0.0, 1.0, self.translation[1]),
+                (0.0, 0.0, 1.0)
+            ))
+        elif self.mode == "ROTATE":
+            cos = math.cos(self.rotation)
+            sin = math.sin(self.rotation)
+            return Matrix((
+                (cos, -sin, 0.0),
+                (sin, cos, 0.0),
+                (0.0, 0.0, 1.0)
+            ))
+        elif self.mode == "SCALE":
+            return Matrix((
+                (self.scale[0], 0.0, 0.0),
+                (0.0, self.scale[1], 0.0),
+                (0.0, 0.0, 1.0)
+            ))
+        elif self.mode == "SHEAR":
+            return Matrix((
+                (1.0, self.shear[0], 0.0),
+                (self.shear[1], 1.0, 0.0),
+                (0.0, 0.0, 1.0)
+            ))
+        elif self.mode == "REFLECT":
+            v = Vector(self.reflect)
+            if v.length_squared == 0.0:
+                return Matrix.Identity(3)
+            v.normalize()
+            a = v.x ** 2 - v.y ** 2
+            b = 2 * v.x * v.y
+            c = b
+            d = v.y ** 2 - v.x ** 2
+            return Matrix((
+                (a, b, 0.0),
+                (c, d, 0.0),
+                (0.0, 0.0, 1.0)
+            ))
+        else:
+            return Matrix.Identity(3)
+
+    def copy_from(self, other: "UVTransform"):
+        self.mode = other.mode
+        self_values = self.values_array()
+        other_values = other.values_array()
+        for i in range(len(self_values)):
+            self_values[i] = other_values[i]
+
+
+
 class AnimationTracks(bpy.types.PropertyGroup):
     @staticmethod
     def Vec3Prop(name, subtype="TRANSLATION", default=(0.0, 0.0, 0.0)):
@@ -192,113 +317,30 @@ class AnimationTracks(bpy.types.PropertyGroup):
     unk_139: FloatProp("Unk 139")
     unk_140: FloatProp("Unk 140")
 
+    def update_uv_transform_matrix(self):
+        mat = calculate_final_uv_transform_matrix(self.uv_transforms)
+        self.uv0[0] = mat[0][0]
+        self.uv0[1] = mat[0][1]
+        self.uv0[2] = mat[0][2]
+        self.uv1[0] = mat[1][0]
+        self.uv1[1] = mat[1][1]
+        self.uv1[2] = mat[1][2]
 
-    def decompose_uv_affine_matrix(self):
-        """
-        Decompose the UV affine matrix into translation, rotation in radians, scale, and shear along X axis.
-        """
-        a = self.uv0[0]
-        b = self.uv0[1]
-        c = self.uv1[0]
-        d = self.uv1[1]
+        if bpy.context.screen is not None:
+            for area in bpy.context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    area.tag_redraw()
 
-        tx = self.uv0[2]
-        ty = self.uv1[2]
-        rotation = math.atan2(c, a)
-        cos = math.cos(rotation)
-        sin = math.sin(rotation)
-        sx = math.sqrt(a * a + c * c)
-        sy = d * cos - b * sin
-        shear_x = (b * cos + d * sin) / sy
+    uv_transforms: bpy.props.CollectionProperty(type=UVTransform,
+        name="UV Transformations")
+    uv_transforms_active_index: bpy.props.IntProperty(name="Active UV Transformation", options=set())
 
-        return (tx, ty), rotation, (sx, sy), shear_x
 
-    def compose_uv_affine_matrix(self, translation, rotation, scale, shear_x):
-        cos = math.cos(rotation)
-        sin = math.sin(rotation)
-
-        rotation_mat = Matrix((
-            (cos, -sin),
-            (sin, cos)
-        ))
-        shear_x_mat = Matrix((
-            (1.0, shear_x),
-            (0.0, 1.0)
-        ))
-        scale_mat = Matrix((
-            (scale[0], 0.0),
-            (0.0, scale[1])
-        ))
-
-        affine_mat = rotation_mat @ shear_x_mat @ scale_mat
-
-        self.uv0[0] = affine_mat[0][0]
-        self.uv0[1] = affine_mat[0][1]
-        self.uv1[0] = affine_mat[1][0]
-        self.uv1[1] = affine_mat[1][1]
-        self.uv0[2] = translation[0]
-        self.uv1[2] = translation[1]
-
-    def on_uv_update(self, context):
-        # force redraw of 3D view so the UVs update in real-time,
-        # like when editing uv0/uv1 directly in the UI
-        for area in context.screen.areas:
-            if area.type == 'VIEW_3D':
-                area.tag_redraw()
-
-        # if auto-keying is enabled, insert keyframes for the underlying UV tracks when the UVs are changed
-        if context.scene.tool_settings.use_keyframe_insert_auto:
-            self.keyframe_insert(data_path='uv0', index=-1)
-            self.keyframe_insert(data_path='uv1', index=-1)
-
-    def get_uv_translation(self):
-        return (self.uv0[2], self.uv1[2])
-
-    def set_uv_translation(self, value):
-        self.uv0[2] = value[0]
-        self.uv1[2] = value[1]
-
-    def get_uv_rotation(self):
-        _, rotation, _, _ = self.decompose_uv_affine_matrix()
-        return rotation
-
-    def set_uv_rotation(self, value):
-        translation, _, scale, shear_x = self.decompose_uv_affine_matrix()
-        rotation = value
-        self.compose_uv_affine_matrix(translation, rotation, scale, shear_x)
-
-    def get_uv_scale(self):
-        _, _, scale, _ = self.decompose_uv_affine_matrix()
-        return scale
-
-    def set_uv_scale(self, value):
-        translation, rotation, _, shear_x = self.decompose_uv_affine_matrix()
-        scale = value
-        self.compose_uv_affine_matrix(translation, rotation, scale, shear_x)
-
-    def get_uv_shear_x(self):
-        _, _, _, shear_x = self.decompose_uv_affine_matrix()
-        return shear_x
-
-    def set_uv_shear_x(self, value):
-        translation, rotation, scale, _ = self.decompose_uv_affine_matrix()
-        shear_x = value
-        self.compose_uv_affine_matrix(translation, rotation, scale, shear_x)
-
-    # wrapper properties for simpler UI
-    ui_uv_translation: bpy.props.FloatVectorProperty(
-        name="UV Translation", size=2, subtype="XYZ", options=set(),
-        get=get_uv_translation, set=set_uv_translation, update=on_uv_update)
-    ui_uv_rotation: bpy.props.FloatProperty(
-        name="UV Rotation", subtype="ANGLE", unit="ROTATION", options=set(),
-        get=get_uv_rotation, set=set_uv_rotation, update=on_uv_update)
-    ui_uv_scale: bpy.props.FloatVectorProperty(
-        name="UV Scale", size=2, subtype="XYZ", options=set(),
-        get=get_uv_scale, set=set_uv_scale, update=on_uv_update)
-    ui_uv_shear_x: bpy.props.FloatProperty(
-        name="UV Shear X", options=set(),
-        get=get_uv_shear_x, set=set_uv_shear_x, update=on_uv_update)
-
+def calculate_final_uv_transform_matrix(uv_transforms: Iterable[UVTransform]) -> Matrix:
+    mat = Matrix.Identity(3)
+    for transform in uv_transforms:
+        mat = transform.get_matrix() @ mat
+    return mat
 
 def register_tracks(cls, inline=False):
     if inline:
@@ -329,6 +371,10 @@ def register():
 
     register_tracks(bpy.types.PoseBone, inline=True)
     register_tracks(bpy.types.Object)
+
+    # used during export to temporarily store UV transforms
+    bpy.types.Object.export_uv_transforms = bpy.props.CollectionProperty(
+        type=UVTransform, options={"HIDDEN", "SKIP_SAVE"})
 
 
 def unregister():

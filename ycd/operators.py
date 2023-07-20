@@ -400,3 +400,79 @@ class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
         animation_properties.frame_count = int(frame_count)
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_uv_transform_add(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.uv_transform_add"
+    bl_label = "Add UV Transformation"
+    bl_description = "Add new UV transformation"
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        obj = context.active_object
+        animation_tracks = obj.animation_tracks
+        animation_tracks.uv_transforms.add()
+        animation_tracks.uv_transforms_active_index = len(animation_tracks.uv_transforms) - 1
+        animation_tracks.update_uv_transform_matrix()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_uv_transform_remove(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.uv_transform_remove"
+    bl_label = "Remove UV Transformation"
+    bl_description = "Remove active UV transformation"
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        obj = context.active_object
+        animation_tracks = obj.animation_tracks
+        animation_tracks.uv_transforms.remove(animation_tracks.uv_transforms_active_index)
+        length = len(animation_tracks.uv_transforms)
+        if length > 0 and animation_tracks.uv_transforms_active_index >= length:
+            animation_tracks.uv_transforms_active_index = length - 1
+        animation_tracks.update_uv_transform_matrix()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_uv_transform_move(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.uv_transform_move"
+    bl_label = "Move UV transformation"
+    bl_description = "Move the active UV transformation up/down the transformation stack"
+
+    direction: bpy.props.EnumProperty(items=[
+        ("UP", "Up", "Move up", 0),
+        ("DOWN", "Down", "Move down", 1),
+    ])
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        obj = context.active_object
+        animation_tracks = obj.animation_tracks
+
+        src_index = animation_tracks.uv_transforms_active_index
+        dst_index = src_index + 1 if self.direction == "DOWN" else src_index - 1
+        if dst_index < 0 or dst_index >= len(animation_tracks.uv_transforms):
+            return {"FINISHED"}
+
+        animation_tracks.uv_transforms.move(src_index, dst_index)
+        animation_tracks.uv_transforms_active_index = dst_index
+        animation_tracks.update_uv_transform_matrix()
+        return {"FINISHED"}

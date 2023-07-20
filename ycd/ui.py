@@ -150,6 +150,47 @@ def draw_clip_attribute(layout, attr, delete_op_cls):
     return del_op
 
 
+class SOLLUMZ_UL_uv_transforms_list(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_uv_transforms_list"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        split = layout.split(factor=0.25)
+        split.use_property_split = False
+
+        row = split.row(align=True)
+        row.label(icon="DRIVER_TRANSFORM")
+        row.prop(item, "mode", text="", emboss=False)
+
+        row = split.row(align=True)
+        if item.mode == "TRANSLATE":
+            row.prop(item, "translation", text="X", index=0)
+            row.prop_decorator(item, "translation", index=0)
+            row.prop(item, "translation", text="Y", index=1)
+            row.prop_decorator(item, "translation", index=1)
+        elif item.mode == "ROTATE":
+            row.prop(item, "rotation", text="")
+            row.prop_decorator(item, "rotation")
+        elif item.mode == "SCALE":
+            row.prop(item, "scale", text="X", index=0)
+            row.prop_decorator(item, "scale", index=0)
+            row.prop(item, "scale", text="Y", index=1)
+            row.prop_decorator(item, "scale", index=1)
+        elif item.mode == "SHEAR":
+            row.prop(item, "shear", text="X", index=0)
+            row.prop_decorator(item, "shear", index=0)
+            row.prop(item, "shear", text="Y", index=1)
+            row.prop_decorator(item, "shear", index=1)
+        elif item.mode == "REFLECT":
+            row.prop(item, "reflect", text="X", index=0)
+            row.prop_decorator(item, "reflect", index=0)
+            row.prop(item, "reflect", text="Y", index=1)
+            row.prop_decorator(item, "reflect", index=1)
+
+    def draw_filter(self, context, layout):
+        pass  # no filtering supported
+
 class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
     bl_label = "Animation Tracks"
     bl_idname = "SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS"
@@ -191,11 +232,21 @@ class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
 
                 layout.prop(animation_tracks, prop)
         elif isinstance(obj.data, bpy.types.Mesh):
-            layout.prop(animation_tracks, "ui_uv_translation")
-            layout.prop(animation_tracks, "ui_uv_rotation")
-            layout.prop(animation_tracks, "ui_uv_scale")
-            layout.prop(animation_tracks, "ui_uv_shear_x")
-            layout.separator_spacer()
+
+            layout.label(text="UV Transformations")
+            row = layout.row()
+            row.template_list(SOLLUMZ_UL_uv_transforms_list.bl_idname, "",
+                              animation_tracks, "uv_transforms", animation_tracks, "uv_transforms_active_index")
+
+            col = row.column(align=True)
+            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon='ADD', text="")
+            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon='REMOVE', text="")
+            col.separator()
+            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
+            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
+
+            layout.separator()
+
             layout.prop(animation_tracks, "uv0")
             layout.prop(animation_tracks, "uv1")
 

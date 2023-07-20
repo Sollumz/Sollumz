@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import bpy
 import math
 from sys import float_info
@@ -57,6 +59,9 @@ class Track(IntEnum):
     Unk138 = 138
     Unk139 = 139
     Unk140 = 140
+
+    # not a real track, refers to the uv_transforms collection
+    UVTransforms = 1000
 
 
 class TrackFormat(IntEnum):
@@ -371,6 +376,12 @@ def add_global_anim_uv_nodes(drawable_geometry_obj, material):
     #   uv.x = dot(uvw, globalAnimUV0.xyz);
     #   uv.y = dot(uvw, globalAnimUV1.xyz);
     uv = nodes.new("ShaderNodeUVMap")
+    flip_v_subtract = nodes.new("ShaderNodeMath")
+    flip_v_subtract.operation = "SUBTRACT"
+    flip_v_subtract.inputs[1].default_value = 1.0
+    flip_v_multiply = nodes.new("ShaderNodeMath")
+    flip_v_multiply.operation = "MULTIPLY"
+    flip_v_multiply.inputs[1].default_value = -1.0
     separate_uv = nodes.new("ShaderNodeSeparateXYZ")
     combine_augmented_uv = nodes.new("ShaderNodeCombineXYZ")
     combine_augmented_uv.inputs["Z"].default_value = 1.0
@@ -378,18 +389,28 @@ def add_global_anim_uv_nodes(drawable_geometry_obj, material):
     x_dot.operation = "DOT_PRODUCT"
     y_dot = nodes.new("ShaderNodeVectorMath")
     y_dot.operation = "DOT_PRODUCT"
+    flip_v_back_subtract = nodes.new("ShaderNodeMath")
+    flip_v_back_subtract.operation = "SUBTRACT"
+    flip_v_back_subtract.inputs[1].default_value = 1.0
+    flip_v_back_multiply = nodes.new("ShaderNodeMath")
+    flip_v_back_multiply.operation = "MULTIPLY"
+    flip_v_back_multiply.inputs[1].default_value = -1.0
     combine_new_uv = nodes.new("ShaderNodeCombineXYZ")
     combine_new_uv.inputs["Z"].default_value = 0.0
 
     tree.links.new(separate_uv.inputs["Vector"], uv.outputs["UV"])
+    tree.links.new(flip_v_subtract.inputs[0], separate_uv.outputs["Y"])
+    tree.links.new(flip_v_multiply.inputs[0], flip_v_subtract.outputs[0])
     tree.links.new(combine_augmented_uv.inputs["X"], separate_uv.outputs["X"])
-    tree.links.new(combine_augmented_uv.inputs["Y"], separate_uv.outputs["Y"])
+    tree.links.new(combine_augmented_uv.inputs["Y"], flip_v_multiply.outputs[0])
 
     tree.links.new(x_dot.inputs[0], combine_augmented_uv.outputs[0])
     tree.links.new(y_dot.inputs[0], combine_augmented_uv.outputs[0])
 
+    tree.links.new(flip_v_back_subtract.inputs[0], y_dot.outputs["Value"])
+    tree.links.new(flip_v_back_multiply.inputs[0], flip_v_back_subtract.outputs[0])
     tree.links.new(combine_new_uv.inputs["X"], x_dot.outputs["Value"])
-    tree.links.new(combine_new_uv.inputs["Y"], y_dot.outputs["Value"])
+    tree.links.new(combine_new_uv.inputs["Y"], flip_v_back_multiply.outputs[0])
 
     tree.links.new(base_tex_node.inputs["Vector"], combine_new_uv.outputs[0])
 
@@ -498,10 +519,12 @@ def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, targ
 
 def get_id_and_track_from_track_data_path(
         data_path: str, target_id: bpy.types.ID, target_bone_name_map
-) -> Tuple[int, Track]:
+) -> Tuple[int, Track] | None:
     """Gets the bone ID and track from a data path."""
     canon_data_path = track_data_path_to_canonical_form(data_path, target_id, target_bone_name_map)
     canon_data_path_parts = canon_data_path.split('"')
+    if len(canon_data_path_parts) != 3:
+        return None
 
     id = int(canon_data_path_parts[1].removeprefix("#"))
 
@@ -512,8 +535,13 @@ def get_id_and_track_from_track_data_path(
         track = Track.BoneRotation
     elif track_str == "scale":
         track = Track.BoneScale
+    elif track_str.startswith("animation_tracks_uv_transforms["):  # special case for UV transforms collection
+        track = Track.UVTransforms
     else:
-        track = PropertyNameToTrackMap[track_str.removeprefix("animation_tracks_")]
+        prop_name = track_str.removeprefix("animation_tracks_")
+        track = PropertyNameToTrackMap.get(prop_name, None)
+        if track is None:
+            return None
 
     return id, track
 
