@@ -189,7 +189,22 @@ class SOLLUMZ_UL_uv_transforms_list(bpy.types.UIList):
             row.prop_decorator(item, "reflect", index=1)
 
     def draw_filter(self, context, layout):
-        pass  # no filtering supported
+        # filtering doesn't make sense for this list, instead we show the final UV matrix in this subpanel
+        # mainly for debugging purposes
+        obj = context.active_object
+        animation_tracks = obj.animation_tracks
+
+        layout.label(text="Final Transformation Matrix")
+        col = layout.column(align=True)
+        col.enabled = False  # read-only view
+        col.use_property_decorate = False
+        col.use_property_split = False
+        row = col.row(align=True)
+        for i in range(3):
+            row.prop(animation_tracks, "uv0", index=i, text="")
+        row = col.row(align=True)
+        for i in range(3):
+            row.prop(animation_tracks, "uv1", index=i, text="")
 
 class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
     bl_label = "Animation Tracks"
@@ -245,10 +260,6 @@ class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
 
-            layout.separator()
-
-            layout.prop(animation_tracks, "uv0")
-            layout.prop(animation_tracks, "uv1")
 
         box = layout.box()
         box.use_property_split = True
