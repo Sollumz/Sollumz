@@ -115,6 +115,10 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
 
             model_xml = create_model_xml(
                 model_obj, lod.level, materials, bones, transforms_to_apply)
+
+            if not model_xml.geometries:
+                continue
+
             append_model_xml(drawable_xml, model_xml, lod.level)
 
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
