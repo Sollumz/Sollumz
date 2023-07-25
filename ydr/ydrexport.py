@@ -13,7 +13,7 @@ from mathutils import Quaternion, Vector, Matrix
 from ..lods import operates_on_lod_level
 from .model_data import get_faces_subset
 
-from ..cwxml.drawable import Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader, VertexBuffer
+from ..cwxml.drawable import BoneLimit, Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader, VertexBuffer
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
@@ -777,28 +777,56 @@ def create_joints_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool =
     joints = Joints()
 
     for pose_bone in armature_obj.pose.bones:
-        joint = create_rotation_limit_xml(pose_bone, auto_calc_bone_tag)
+        limit_rot_constraint = get_limit_rot_constraint(pose_bone)
+        limit_pos_constraint = get_limit_pos_constraint(pose_bone)
+        bone_tag = pose_bone.bone.bone_properties.tag if auto_calc_bone_tag else calculate_bone_tag(
+            pose_bone.bone.name)
 
-        if joint is not None:
-            joints.rotation_limits.append(joint)
+        if limit_rot_constraint is not None:
+            joints.rotation_limits.append(
+                create_rotation_limit_xml(limit_rot_constraint, bone_tag))
+
+        if limit_pos_constraint is not None:
+            joints.translation_limits.append(
+                create_translation_limit_xml(limit_pos_constraint, bone_tag))
 
     return joints
 
 
-def create_rotation_limit_xml(pose_bone: bpy.types.PoseBone, auto_calc_bone_tag: bool = False):
+def get_limit_rot_constraint(pose_bone: bpy.types.PoseBone) -> bpy.types.LimitRotationConstraint:
     for constraint in pose_bone.constraints:
-        if constraint.type != "LIMIT_ROTATION":
-            continue
+        if constraint.type == "LIMIT_ROTATION":
+            return constraint
 
-        joint = RotationLimit()
-        joint.bone_id = pose_bone.bone.bone_properties.tag if auto_calc_bone_tag else calculate_bone_tag(
-            pose_bone.bone.name)
-        joint.min = Vector(
-            (constraint.min_x, constraint.min_y, constraint.min_z))
-        joint.max = Vector(
-            (constraint.max_x, constraint.max_y, constraint.max_z))
 
-        return joint
+def get_limit_pos_constraint(pose_bone: bpy.types.PoseBone) -> bpy.types.LimitLocationConstraint:
+    for constraint in pose_bone.constraints:
+        if constraint.type == "LIMIT_LOCATION":
+            return constraint
+
+
+def create_rotation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bone_tag: str):
+    joint = RotationLimit()
+    set_joint_properties(joint, constraint, bone_tag)
+
+    return joint
+
+
+def create_translation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bone_tag: str):
+    joint = BoneLimit()
+    set_joint_properties(joint, constraint, bone_tag)
+
+    return joint
+
+
+def set_joint_properties(joint: BoneLimit, constraint: bpy.types.LimitRotationConstraint | bpy.types.LimitLocationConstraint, bone_tag: str):
+    joint.bone_id = bone_tag
+    joint.min = Vector(
+        (constraint.min_x, constraint.min_y, constraint.min_z))
+    joint.max = Vector(
+        (constraint.max_x, constraint.max_y, constraint.max_z))
+
+    return joint
 
 
 def set_drawable_xml_flags(drawable_xml: Drawable):

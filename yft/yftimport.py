@@ -13,7 +13,7 @@ from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, VehicleP
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
 from ..cwxml.drawable import Drawable, Bone
-from ..ydr.ydrimport import create_drawable_skel, apply_rotation_limits, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
+from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
@@ -82,11 +82,10 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool 
 def create_frag_armature(frag_xml: Fragment):
     """Create the fragment armature along with the bones and rotation limits."""
     name = frag_xml.name.replace("pack:/", "")
-    skel = bpy.data.armatures.new(f"{name}.skel")
-    frag_obj = create_blender_object(SollumType.FRAGMENT, name, skel)
-
-    create_drawable_skel(frag_xml.drawable.skeleton, frag_obj)
-    apply_rotation_limits(frag_xml.drawable.joints.rotation_limits, frag_obj)
+    drawable_xml = frag_xml.drawable
+    frag_obj = create_armature_obj_from_skel(
+        drawable_xml.skeleton, name, SollumType.FRAGMENT)
+    create_joint_constraints(frag_obj, drawable_xml.joints)
 
     set_fragment_properties(frag_xml, frag_obj)
 

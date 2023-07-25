@@ -291,15 +291,22 @@ class Skeleton(ElementTree):
         self.bones = BonesList("Bones")
 
 
-class RotationLimit(ElementTree):
+class BoneLimit(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
         super().__init__()
         self.bone_id = ValueProperty("BoneId", 0)
-        self.unk_a = ValueProperty("UnknownA", 0)
         self.min = VectorProperty("Min")
         self.max = VectorProperty("Max")
+
+
+class RotationLimit(BoneLimit):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.unk_a = ValueProperty("UnknownA", 0)
 
 
 class RotationLimitsList(ListProperty):
@@ -307,13 +314,18 @@ class RotationLimitsList(ListProperty):
     tag_name = "RotationLimits"
 
 
+class TranslationLimitsList(ListProperty):
+    list_type = BoneLimit
+    tag_name = "TranslationLimits"
+
+
 class Joints(ElementTree):
     tag_name = "Joints"
 
     def __init__(self):
         super().__init__()
-        # there should be more joint types than RotationLimits
         self.rotation_limits = RotationLimitsList("RotationLimits")
+        self.translation_limits = TranslationLimitsList("TranslationLimits")
 
 
 class Light(ElementTree):

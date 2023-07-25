@@ -4,11 +4,11 @@ import bpy
 from typing import Optional
 from mathutils import Matrix
 from ..tools.drawablehelper import get_model_xmls_by_lod
-from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph, obj_has_tint_mats
+from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
-from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, LODLevel, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_import_settings
-from ..cwxml.drawable import YDR, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
+from ..cwxml.drawable import YDR, BoneLimit, Joints, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import BoundChild
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..tools.utils import get_filename
@@ -184,20 +184,30 @@ def set_drawable_model_properties(model_props: DrawableModelProperties, model_xm
 
 
 def create_drawable_armature(drawable_xml: Drawable, name: str):
-    armature = bpy.data.armatures.new(f"{name}.skel")
-    drawable_obj = create_blender_object(
-        SollumType.DRAWABLE, name, armature)
-
-    create_drawable_skel(drawable_xml.skeleton, drawable_obj)
-
-    if drawable_xml.joints.rotation_limits:
-        apply_rotation_limits(
-            drawable_xml.joints.rotation_limits, drawable_obj
-        )
+    drawable_obj = create_armature_obj_from_skel(
+        drawable_xml.skeleton, name, SollumType.DRAWABLE)
+    create_joint_constraints(drawable_obj, drawable_xml.joints)
 
     set_drawable_properties(drawable_obj, drawable_xml)
 
     return drawable_obj
+
+
+def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType):
+    armature = bpy.data.armatures.new(f"{name}.skel")
+    obj = create_blender_object(sollum_type, name, armature)
+
+    create_drawable_skel(skeleton, obj)
+
+    return obj
+
+
+def create_joint_constraints(armature_obj: bpy.types.Object, joints: Joints):
+    if joints.rotation_limits:
+        apply_rotation_limits(joints.rotation_limits, armature_obj)
+
+    if joints.translation_limits:
+        apply_translation_limits(joints.translation_limits, armature_obj)
 
 
 def create_drawable_empty(name: str, drawable_xml: Drawable):
@@ -382,7 +392,20 @@ def apply_rotation_limits(rotation_limits: list[RotationLimit], armature_obj: bp
             continue
 
         bone = bone_by_tag[rot_limit.bone_id]
-        create_bone_constraint(rot_limit, bone)
+        create_limit_rot_bone_constraint(rot_limit, bone)
+
+
+def apply_translation_limits(translation_limits: list[BoneLimit], armature_obj: bpy.types.Object):
+    bone_by_tag: dict[str, bpy.types.PoseBone] = get_bone_by_tag(armature_obj)
+
+    for trans_limit in translation_limits:
+        if trans_limit.bone_id not in bone_by_tag:
+            logger.warning(
+                f"{armature_obj.name} contains a translation limit with an invalid bone id '{trans_limit.bone_id}'! Skipping...")
+            continue
+
+        bone = bone_by_tag[trans_limit.bone_id]
+        create_limit_pos_bone_constraint(trans_limit, bone)
 
 
 def get_bone_by_tag(armature_obj: bpy.types.Object):
@@ -395,7 +418,7 @@ def get_bone_by_tag(armature_obj: bpy.types.Object):
     return bone_by_tag
 
 
-def create_bone_constraint(rot_limit: RotationLimit, pose_bone: bpy.types.PoseBone):
+def create_limit_rot_bone_constraint(rot_limit: RotationLimit, pose_bone: bpy.types.PoseBone):
     constraint = pose_bone.constraints.new("LIMIT_ROTATION")
     constraint.owner_space = "LOCAL"
     constraint.use_limit_x = True
@@ -407,6 +430,23 @@ def create_bone_constraint(rot_limit: RotationLimit, pose_bone: bpy.types.PoseBo
     constraint.min_x = rot_limit.min.x
     constraint.min_y = rot_limit.min.y
     constraint.min_z = rot_limit.min.z
+
+
+def create_limit_pos_bone_constraint(trans_limit: BoneLimit, pose_bone: bpy.types.PoseBone):
+    constraint = pose_bone.constraints.new("LIMIT_LOCATION")
+    constraint.owner_space = "LOCAL"
+    constraint.use_min_x = True
+    constraint.use_min_y = True
+    constraint.use_min_z = True
+    constraint.use_max_x = True
+    constraint.use_max_y = True
+    constraint.use_max_z = True
+    constraint.max_x = trans_limit.max.x
+    constraint.max_y = trans_limit.max.y
+    constraint.max_z = trans_limit.max.z
+    constraint.min_x = trans_limit.min.x
+    constraint.min_y = trans_limit.min.y
+    constraint.min_z = trans_limit.min.z
 
 
 def create_embedded_collisions(bounds_xml: list[BoundChild], drawable_obj: bpy.types.Object):
