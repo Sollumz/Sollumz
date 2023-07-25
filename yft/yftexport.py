@@ -10,8 +10,8 @@ from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
 from ..tools.blenderhelper import get_bone_pose_matrix, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
-from ..tools.utils import get_matrix_without_scale, prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
-from ..sollumz_helper import get_export_transforms_to_apply, get_parent_inverse, get_sollumz_materials
+from ..tools.utils import prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
+from ..sollumz_helper import get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
@@ -74,25 +74,15 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     frag_xml.drawable = drawable_xml
 
-    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
-    lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
-    arch_xml = create_archetype_xml(lod_xml, frag_obj)
-    create_collision_xml(frag_obj, arch_xml,
-                         auto_calc_inertia, auto_calc_volume)
-
-    create_phys_xml_groups(frag_obj, lod_xml)
-    create_phys_child_xmls(
-        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
+    # Physics data doesn't do anything if no collisions are present and will cause crashes
+    if frag_has_collisions(frag_obj):
+        create_frag_physics_xml(
+            frag_obj, frag_xml, materials, auto_calc_inertia, auto_calc_volume)
+        create_vehicle_windows_xml(frag_obj, frag_xml, materials)
+    else:
+        frag_xml.physics = None
 
     create_bone_transforms_xml(frag_xml)
-
-    set_arch_mass_inertia(frag_obj, arch_xml,
-                          lod_xml.children, auto_calc_inertia)
-    calculate_group_masses(lod_xml)
-    calculate_child_drawable_matrices(frag_xml)
-
-    sort_cols_and_children(lod_xml)
-    create_vehicle_windows_xml(frag_obj, frag_xml, materials)
 
     frag_xml.lights = create_xml_lights(frag_obj, frag_obj)
 
@@ -265,6 +255,31 @@ def sort_cols_and_children(lod_xml: PhysicsLOD):
 
     lod_xml.archetype.bounds.children = sorted_collisions
     lod_xml.transforms = sorted_transforms
+
+
+def frag_has_collisions(frag_obj: bpy.types.Object):
+    return any(child.sollum_type == SollumType.BOUND_COMPOSITE for child in frag_obj.children)
+
+
+def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material], auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
+    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
+    drawable_xml = frag_xml.drawable
+
+    lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
+    arch_xml = create_archetype_xml(lod_xml, frag_obj)
+    create_collision_xml(frag_obj, arch_xml,
+                         auto_calc_inertia, auto_calc_volume)
+
+    create_phys_xml_groups(frag_obj, lod_xml)
+    create_phys_child_xmls(
+        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
+
+    set_arch_mass_inertia(frag_obj, arch_xml,
+                          lod_xml.children, auto_calc_inertia)
+    calculate_group_masses(lod_xml)
+    calculate_child_drawable_matrices(frag_xml)
+
+    sort_cols_and_children(lod_xml)
 
 
 def create_phys_lod_xml(phys_xml: Physics, lod_props: LODProperties):
