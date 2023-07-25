@@ -206,9 +206,14 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, m
 
 
 def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
+    if len(mesh_eval.loops) == 0:
+        logger.warning(
+            f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
+        return []
+
     if not mesh_eval.materials:
         logger.warning(
-            f"Could not create geometries for Drawable Model '{mesh_eval.name}': Mesh has no Sollumz materials!")
+            f"Could not create geometries for Drawable Model '{mesh_eval.original.name}': Mesh has no Sollumz materials!")
         return []
 
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
