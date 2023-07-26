@@ -24,7 +24,13 @@ class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.active_material is not None and context.active_object.active_material.sollum_type == MaterialType.COLLISION
+        aobj = context.active_object
+
+        if aobj is None:
+            return False
+
+        active_mat = aobj.active_material
+        return active_mat is not None and active_mat.sollum_type == MaterialType.COLLISION and aobj.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH]
 
     def draw(self, context):
         layout = self.layout
@@ -145,7 +151,7 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
+    bl_parent_id = SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL.bl_idname
 
     bl_order = 1
 
