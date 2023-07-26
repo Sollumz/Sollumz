@@ -1,7 +1,10 @@
+from copy import copy
 import bpy
 from typing import Optional
 from collections import defaultdict
 from mathutils import Matrix, Vector
+
+from ..ydr.ydrimport import shadergroup_to_materials
 
 from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
 from ..cwxml.bound import Bound
@@ -32,10 +35,10 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str):
             frag_xml.write_xml(filepath)
             write_embedded_textures(frag_obj, filepath)
 
-    if export_settings.export_hi and has_hi_lods(frag_obj):
+    if frag_xml is not None and export_settings.export_hi and has_hi_lods(frag_obj):
         hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
 
-        hi_frag_xml = create_hi_frag_xml(frag_obj, export_settings.auto_calculate_inertia,
+        hi_frag_xml = create_hi_frag_xml(frag_obj, frag_xml, export_settings.auto_calculate_inertia,
                                          export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
         hi_frag_xml.write_xml(hi_filepath)
 
@@ -118,27 +121,29 @@ def set_paint_layer_shader_params(materials: list[bpy.types.Material], shader_gr
             param.x, param.y, param.z, param.w = (2, value, value, 0)
 
 
-def create_hi_frag_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
+def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
     hi_obj = frag_obj.copy()
     hi_obj.name = f"{remove_number_suffix(hi_obj.name)}_hi"
-    composite_obj = None
     drawable_obj = None
 
     bpy.context.collection.objects.link(hi_obj)
 
     for child in frag_obj.children:
-        if child.sollum_type == SollumType.BOUND_COMPOSITE:
-            composite_obj = copy_hierarchy(child, hi_obj)
-            composite_obj.parent = hi_obj
-        elif child.sollum_type == SollumType.DRAWABLE:
+        if child.sollum_type == SollumType.DRAWABLE:
             drawable_obj = copy_hierarchy(child, hi_obj)
             drawable_obj.parent = hi_obj
 
     if drawable_obj is not None:
         remove_non_hi_lods(drawable_obj)
 
-    hi_frag_xml = create_fragment_xml(
-        hi_obj, auto_calc_inertia, auto_calc_volume, auto_calc_bone_tag, apply_transforms)
+    materials = get_sollumz_materials(frag_obj)
+    hi_drawable = create_frag_drawable_xml(
+        frag_obj, auto_calc_bone_tag, materials, apply_transforms)
+
+    hi_frag_xml = Fragment()
+    hi_frag_xml.__dict__ = frag_xml.__dict__.copy()
+    hi_frag_xml.drawable = hi_drawable
+    hi_frag_xml.vehicle_glass_windows = None
 
     delete_hierarchy(hi_obj)
 
