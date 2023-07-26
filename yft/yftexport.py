@@ -451,8 +451,6 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
 
             lod_xml.children.append(child_xml)
 
-    create_child_mat_arrays(lod_xml.children)
-
 
 def get_child_inertia(arch_xml: Archetype, child_xml: PhysicsChild, child_index: int):
     if not arch_xml.bounds or child_index >= len(arch_xml.bounds.children):
@@ -773,12 +771,13 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
     child relative to the bone."""
     bone_transforms = frag_xml.bones_transforms
     bones = frag_xml.drawable.skeleton.bones
-    collisions = frag_xml.physics.lod1.archetype.bounds.children
+    lod_xml = frag_xml.physics.lod1
+    collisions = lod_xml.archetype.bounds.children
 
     bone_transform_by_tag: dict[str, Matrix] = {
         b.tag: bone_transforms[i].value for i, b in enumerate(bones)}
 
-    for i, child in enumerate(frag_xml.physics.lod1.children):
+    for i, child in enumerate(lod_xml.children):
         bone_transform = bone_transform_by_tag[child.bone_tag]
         col = collisions[i]
 
@@ -786,6 +785,8 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
 
         matrix = col.composite_transform @ bone_inv.transposed()
         child.drawable.matrix = reshape_mat_4x3(matrix)
+
+    create_child_mat_arrays(lod_xml.children)
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
