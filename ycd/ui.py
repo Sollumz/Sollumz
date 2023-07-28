@@ -1,6 +1,6 @@
 import bpy
-from ..sollumz_properties import SollumType
-from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
+from ..sollumz_properties import SollumType, MaterialType
+from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from . import operators as ycd_ops
 from .properties import AnimationTracks
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
@@ -23,7 +23,7 @@ def draw_clip_properties(self, context):
 animation_target_id_type_to_collection_name = {
     "ARMATURE": "armatures",
     "CAMERA": "cameras",
-    "DRAWABLE_GEOMETRY": "meshes",
+    "MATERIAL": "materials",
 }
 
 
@@ -191,8 +191,7 @@ class SOLLUMZ_UL_uv_transforms_list(bpy.types.UIList):
     def draw_filter(self, context, layout):
         # filtering doesn't make sense for this list, instead we show the final UV matrix in this subpanel
         # mainly for debugging purposes
-        obj = context.active_object
-        animation_tracks = obj.animation_tracks
+        animation_tracks = context.animation_tracks
 
         layout.label(text="Final Transformation Matrix")
         col = layout.column(align=True)
@@ -206,71 +205,140 @@ class SOLLUMZ_UL_uv_transforms_list(bpy.types.UIList):
         for i in range(3):
             row.prop(animation_tracks, "uv1", index=i, text="")
 
-class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
+# TODO: show in armature panel and camera panel
+#
+# class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
+#     bl_label = "Animation Tracks"
+#     bl_idname = "SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS"
+#     bl_space_type = "PROPERTIES"
+#     bl_region_type = "WINDOW"
+#     bl_context = "object"
+#     bl_options = {"DEFAULT_CLOSED"}
+#     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+#     bl_order = 9999
+#
+#     @classmethod
+#     def poll(cls, context):
+#         if context.active_object is None:
+#             return False
+#
+#         obj = context.active_object
+#         if obj and obj.sollum_type == SollumType.ANIMATION:
+#             # UV tracks are stored in the animation object instead of the geometry object to try to
+#             # future-proof for when Sollumz-yft branch is released, where geometry objects have been removed
+#             return isinstance(obj.animation_properties.target_id, bpy.types.Mesh)
+#
+#         data = obj.data
+#         return data is not None and (isinstance(data, bpy.types.Armature) or
+#                                      isinstance(data, bpy.types.Camera))
+#
+#     def draw(self, context):
+#         layout = self.layout
+#         layout.use_property_split = True
+#
+#         obj = context.active_object
+#         if obj.sollum_type == SollumType.ANIMATION:
+#             animation_tracks = obj.animation_properties.animation_tracks
+#         else:
+#             animation_tracks = obj.animation_tracks
+#             target_is_armature = isinstance(obj.data, bpy.types.Armature)
+#             target_is_camera = isinstance(obj.data, bpy.types.Camera)
+#             target_is_material = isinstance(obj.data, bpy.types.Material)
+#
+#         if target_is_armature:
+#             for prop in AnimationTracks.__annotations__:
+#                 if prop.startswith("camera_") or prop.startswith("uv"):
+#                     continue
+#
+#                 layout.prop(animation_tracks, prop)
+#         elif target_is_camera:
+#             for prop in AnimationTracks.__annotations__:
+#                 if not prop.startswith("camera_"):
+#                     continue
+#
+#                 layout.prop(animation_tracks, prop)
+#         elif target_is_mesh:
+#
+#             layout.label(text="UV Transformations")
+#             row = layout.row()
+#             row.template_list(SOLLUMZ_UL_uv_transforms_list.bl_idname, "",
+#                               animation_tracks, "uv_transforms", animation_tracks, "uv_transforms_active_index")
+#
+#             col = row.column(align=True)
+#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon='ADD', text="")
+#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon='REMOVE', text="")
+#             col.separator()
+#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
+#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
+#
+#
+#         box = layout.box()
+#         box.use_property_split = True
+#         box.use_property_decorate = False
+#         header = box.row(align=True)
+#         is_expanded = obj.animation_tracks_ui_show_advanced
+#         expanded_icon = "DISCLOSURE_TRI_DOWN" if is_expanded else "DISCLOSURE_TRI_RIGHT"
+#         header.prop(obj, "animation_tracks_ui_show_advanced", text="", emboss=False, icon=expanded_icon)
+#         header.label(text="Advanced")
+#
+#         if obj.animation_tracks_ui_show_advanced:
+#             for prop in AnimationTracks.__annotations__:
+#                 box.prop(animation_tracks, prop)
+#
+
+
+class SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS(bpy.types.Panel):
     bl_label = "Animation Tracks"
-    bl_idname = "SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS"
+    bl_idname = "SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_context = "object"
+    bl_context = "material"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
     bl_order = 9999
 
     @classmethod
     def poll(cls, context):
-        if context.active_object is None:
+        obj = context.active_object
+        if not obj:
             return False
 
-        data = context.active_object.data
-        return data is not None and (isinstance(data, bpy.types.Armature) or
-                                     isinstance(data, bpy.types.Camera) or
-                                     isinstance(data, bpy.types.Mesh))
+        mat = obj.active_material
+        if not mat:
+            return False
+
+        return mat.sollum_type == MaterialType.SHADER
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
 
-        obj = context.active_object
+        mat = context.active_object.active_material
+        animation_tracks = mat.animation_tracks
 
-        animation_tracks = obj.animation_tracks
-
-        if isinstance(obj.data, bpy.types.Armature):
-            for prop in AnimationTracks.__annotations__:
-                if prop.startswith("camera_") or prop.startswith("uv"):
-                    continue
-
-                layout.prop(animation_tracks, prop)
-        elif isinstance(obj.data, bpy.types.Camera):
-            for prop in AnimationTracks.__annotations__:
-                if not prop.startswith("camera_"):
-                    continue
-
-                layout.prop(animation_tracks, prop)
-        elif isinstance(obj.data, bpy.types.Mesh):
-
-            layout.label(text="UV Transformations")
-            row = layout.row()
+        layout.label(text="UV Transformations")
+        row = layout.row()
+        with context.temp_override(animation_tracks=animation_tracks):
             row.template_list(SOLLUMZ_UL_uv_transforms_list.bl_idname, "",
                               animation_tracks, "uv_transforms", animation_tracks, "uv_transforms_active_index")
 
-            col = row.column(align=True)
-            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon='ADD', text="")
-            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon='REMOVE', text="")
-            col.separator()
-            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
-            col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
-
+        col = row.column(align=True)
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon='ADD', text="")
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon='REMOVE', text="")
+        col.separator()
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
 
         box = layout.box()
         box.use_property_split = True
         box.use_property_decorate = False
         header = box.row(align=True)
-        is_expanded = obj.animation_tracks_ui_show_advanced
+        is_expanded = mat.animation_tracks_ui_show_advanced
         expanded_icon = "DISCLOSURE_TRI_DOWN" if is_expanded else "DISCLOSURE_TRI_RIGHT"
-        header.prop(obj, "animation_tracks_ui_show_advanced", text="", emboss=False, icon=expanded_icon)
+        header.prop(mat, "animation_tracks_ui_show_advanced", text="", emboss=False, icon=expanded_icon)
         header.label(text="Advanced")
 
-        if obj.animation_tracks_ui_show_advanced:
+        if mat.animation_tracks_ui_show_advanced:
             for prop in AnimationTracks.__annotations__:
                 box.prop(animation_tracks, prop)
 

@@ -189,6 +189,55 @@ def get_quantum_and_min_val(nums):
     return min_val, quantum
 
 
+def decompose_uv_affine_matrix(
+        uv0: Vector, uv1: Vector
+) -> Tuple[Tuple[float, float], float, Tuple[float, float], float]:
+    """
+    Decompose the UV affine matrix into translation, rotation in radians, scale, and shear along X axis.
+    """
+    a = uv0[0]
+    b = uv0[1]
+    c = uv1[0]
+    d = uv1[1]
+
+    tx = uv0[2]
+    ty = uv1[2]
+    rotation = math.atan2(c, a)
+    cos = math.cos(rotation)
+    sin = math.sin(rotation)
+    sx = math.sqrt(a * a + c * c)
+    sy = d * cos - b * sin
+    shear_x = (b * cos + d * sin) / sy if sy != 0.0 else 0.0
+
+    return (tx, ty), rotation, (sx, sy), shear_x
+
+
+# def compose_uv_affine_matrix(self, translation, rotation, scale, shear_x):
+#     cos = math.cos(rotation)
+#     sin = math.sin(rotation)
+#
+#     rotation_mat = Matrix((
+#         (cos, -sin),
+#         (sin, cos)
+#     ))
+#     shear_x_mat = Matrix((
+#         (1.0, shear_x),
+#         (0.0, 1.0)
+#     ))
+#     scale_mat = Matrix((
+#         (scale[0], 0.0),
+#         (0.0, scale[1])
+#     ))
+#
+#     affine_mat = rotation_mat @ shear_x_mat @ scale_mat
+#
+#     self.uv0[0] = affine_mat[0][0]
+#     self.uv0[1] = affine_mat[0][1]
+#     self.uv1[0] = affine_mat[1][0]
+#     self.uv1[1] = affine_mat[1][1]
+#     self.uv0[2] = translation[0]
+#     self.uv1[2] = translation[1]
+
 def calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone):
     if old_pose_bone is None:
         old_mat = Matrix.Identity(4)
@@ -315,12 +364,12 @@ def transform_camera_rotation_quaternion(fcurves, old_camera, new_camera):
     z.update()
 
 
-def add_driver_variable_obj_prop(fcurve, name, obj, prop_data_path):
+def add_driver_variable_obj_prop(fcurve, name, obj, obj_type, prop_data_path):
     var = fcurve.driver.variables.new()
     var.name = name
     var.type = "SINGLE_PROP"
     var_target = var.targets[0]
-    var_target.id_type = "OBJECT"
+    var_target.id_type = obj_type
     var_target.id = obj
     var_target.data_path = prop_data_path
     return var
@@ -334,13 +383,13 @@ def setup_camera_for_animation(camera: bpy.types.Camera):
     # NOTE: seems to report a dependency cycle, but works fine, blender bug?
     camera.driver_remove("lens")
     fcurve_lens = camera.driver_add("lens")
-    add_driver_variable_obj_prop(fcurve_lens, "fov", camera_obj, "animation_tracks.camera_fov")
-    add_driver_variable_obj_prop(fcurve_lens, "sensor", camera_obj, "data.sensor_width")
+    add_driver_variable_obj_prop(fcurve_lens, "fov", camera, "CAMERA", "animation_tracks.camera_fov")
+    add_driver_variable_obj_prop(fcurve_lens, "sensor", camera, "CAMERA", "data.sensor_width")
     fcurve_lens.driver.expression = "(sensor * 0.5) / tan(radians(fov) * 0.5)"
     fcurve_lens.update()
 
 
-def add_global_anim_uv_drivers(drawable_geometry_obj, x_dot_node, y_dot_node):
+def add_global_anim_uv_drivers(material, x_dot_node, y_dot_node):
     def _add_driver(dot_node, track):
         vec_input = dot_node.inputs[1]
         vec_input.driver_remove("default_value")
@@ -349,7 +398,7 @@ def add_global_anim_uv_drivers(drawable_geometry_obj, x_dot_node, y_dot_node):
         for i in range(3):
             fcurve = fcurves[i]
             comp = components[i]
-            add_driver_variable_obj_prop(fcurve, comp, drawable_geometry_obj, f"animation_tracks.{track}.{comp}")
+            add_driver_variable_obj_prop(fcurve, comp, material, "MATERIAL", f"animation_tracks.{track}.{comp}")
             fcurve.driver.expression = comp
             fcurve.update()
 
@@ -357,7 +406,7 @@ def add_global_anim_uv_drivers(drawable_geometry_obj, x_dot_node, y_dot_node):
     _add_driver(y_dot_node, "uv1")
 
 
-def add_global_anim_uv_nodes(drawable_geometry_obj, material):
+def add_global_anim_uv_nodes(material: bpy.types.Materia):
     # TODO: don't create more nodes if they already exist
     tree = material.node_tree
     nodes = tree.nodes
@@ -414,17 +463,14 @@ def add_global_anim_uv_nodes(drawable_geometry_obj, material):
 
     tree.links.new(base_tex_node.inputs["Vector"], combine_new_uv.outputs[0])
 
-    add_global_anim_uv_drivers(drawable_geometry_obj, x_dot, y_dot)
+    add_global_anim_uv_drivers(material, x_dot, y_dot)
 
 
-def setup_drawable_geometry_for_animation(drawable_geometry: bpy.types.Mesh):
-    drawable_geometry_obj = get_data_obj(drawable_geometry)
-
-    material = drawable_geometry.materials[0]
+def setup_drawable_geometry_for_animation(material: bpy.types.Material):
     if material.sollum_type == MaterialType.NONE:
         raise Exception("Material is not a Sollumz material")
 
-    add_global_anim_uv_nodes(drawable_geometry_obj, material)
+    add_global_anim_uv_nodes(material)
 
 
 def get_canonical_track_data_path(track: Track, bone_id: int):
@@ -447,7 +493,7 @@ def get_canonical_track_data_path(track: Track, bone_id: int):
 def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, target_bone_name_map):
     is_armature = isinstance(target_id, bpy.types.Armature)
     is_camera = isinstance(target_id, bpy.types.Camera)
-    is_drawable_geometry = isinstance(target_id, bpy.types.Mesh)
+    is_material = isinstance(target_id, bpy.types.Material)
 
     if data_path == "delta_location":
         data_path = 'pose.bones["#0"].animation_tracks_mover_location'
@@ -459,7 +505,7 @@ def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, t
         data_path = 'pose.bones["#0"].animation_tracks_camera_rotation'
     elif is_camera and data_path.startswith("animation_tracks.camera_"):
         data_path = data_path.replace("animation_tracks.", 'pose.bones["#0"].animation_tracks_')
-    elif is_drawable_geometry and data_path.startswith("animation_tracks.uv"):
+    elif is_material and data_path.startswith("animation_tracks.uv"):
         data_path = data_path.replace("animation_tracks.", 'pose.bones["#0"].animation_tracks_')
     elif is_armature and data_path.startswith('pose.bones["'):  # bone properties
         data_path_parts = data_path.split('"')
@@ -486,7 +532,7 @@ def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, targ
 
     is_armature = isinstance(target_id, bpy.types.Armature)
     is_camera = isinstance(target_id, bpy.types.Camera)
-    is_drawable_geometry = isinstance(target_id, bpy.types.Mesh)
+    is_material = isinstance(target_id, bpy.types.Material)
 
     if data_path == 'pose.bones["#0"].animation_tracks_mover_location':
         data_path = "delta_location"
@@ -499,7 +545,7 @@ def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, targ
             data_path = "location"  # use the object location property
         elif data_path == "animation_tracks.camera_rotation":
             data_path = "rotation_quaternion"  # use the object rotation property
-    elif is_drawable_geometry and data_path.startswith('pose.bones["#0"].animation_tracks_uv'):  # uv properties
+    elif is_material and data_path.startswith('pose.bones["#0"].animation_tracks_uv'):  # uv properties
         # modify the actual drawable geometry object instead of a pose bone
         data_path = data_path.replace('pose.bones["#0"].animation_tracks_', "animation_tracks.")
     elif is_armature and data_path.startswith('pose.bones["'):  # bone properties
@@ -546,7 +592,7 @@ def get_id_and_track_from_track_data_path(
     return id, track
 
 
-def retarget_animation(action: bpy.types.Action, old_target_id: bpy.types.ID, new_target_id: bpy.types.ID):
+def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types.ID, new_target_id: bpy.types.ID):
     if isinstance(old_target_id, bpy.types.Armature):
         old_bone_map = build_bone_map(get_data_obj(old_target_id))
         old_bone_name_map = build_name_bone_map(get_data_obj(old_target_id))
@@ -560,13 +606,14 @@ def retarget_animation(action: bpy.types.Action, old_target_id: bpy.types.ID, ne
         new_bone_map = None
 
     new_is_camera = new_target_id is not None and isinstance(new_target_id, bpy.types.Camera)
-    new_is_drawable_geometry = new_target_id is not None and isinstance(new_target_id, bpy.types.Mesh)
+    new_is_material = new_target_id is not None and isinstance(new_target_id, bpy.types.Material)
 
     # bone_id -> [fcurves]
     bone_locations_to_transform = {}
     bone_rotations_to_transform = {}
     camera_rotations_to_transform = {}
 
+    action = animation_obj.animation_properties.action
     for fcurve in action.fcurves:
         # TODO: can we somehow store the track ID in the F-Curve to avoid parsing the data paths?
         data_path = fcurve.data_path
@@ -616,5 +663,8 @@ def retarget_animation(action: bpy.types.Action, old_target_id: bpy.types.ID, ne
     if new_is_camera:
         setup_camera_for_animation(new_target_id)
 
-    if new_is_drawable_geometry:
+    if new_is_material:
         setup_drawable_geometry_for_animation(new_target_id)
+
+    # TODO: may want to set the idroot of the action to the new target type
+    # TODO: maybe create animation_data of the action if it doesn't exist

@@ -26,8 +26,8 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
 
         clip_dictionary_obj = clip_obj.parent.parent
         # TODO: animation may be None, or not all animations have the same target/are filled in
-        target = get_data_obj(clip_properties.animations[0].animation.animation_properties.target_id)
-        if target is None:
+        target_id = clip_properties.animations[0].animation.animation_properties.target_id
+        if target_id is None:
             return {"FINISHED"}
 
         clip_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
@@ -57,14 +57,14 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
                 "action": action,
             })
 
-        if target.animation_data is None:
-            target.animation_data_create()
+        if target_id.animation_data is None:
+            target_id.animation_data_create()
 
-        for nla_track in target.animation_data.nla_tracks:
-            target.animation_data.nla_tracks.remove(nla_track)
+        for nla_track in target_id.animation_data.nla_tracks:
+            target_id.animation_data.nla_tracks.remove(nla_track)
 
         for group_name, clips in groups.items():
-            track = target.animation_data.nla_tracks.new()
+            track = target_id.animation_data.nla_tracks.new()
             track.name = group_name
 
             for clip in clips:
@@ -416,7 +416,7 @@ class SOLLUMZ_OT_uv_transform_add(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"FINISHED"}
 
         obj = context.active_object
-        animation_tracks = obj.animation_tracks
+        animation_tracks = obj.active_material.animation_tracks
         animation_tracks.uv_transforms.add()
         animation_tracks.uv_transforms_active_index = len(animation_tracks.uv_transforms) - 1
         animation_tracks.update_uv_transform_matrix()
@@ -437,7 +437,7 @@ class SOLLUMZ_OT_uv_transform_remove(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"FINISHED"}
 
         obj = context.active_object
-        animation_tracks = obj.animation_tracks
+        animation_tracks = obj.active_material.animation_tracks
         animation_tracks.uv_transforms.remove(animation_tracks.uv_transforms_active_index)
         length = len(animation_tracks.uv_transforms)
         if length > 0 and animation_tracks.uv_transforms_active_index >= length:
@@ -465,7 +465,7 @@ class SOLLUMZ_OT_uv_transform_move(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"FINISHED"}
 
         obj = context.active_object
-        animation_tracks = obj.animation_tracks
+        animation_tracks = obj.active_material.animation_tracks
 
         src_index = animation_tracks.uv_transforms_active_index
         dst_index = src_index + 1 if self.direction == "DOWN" else src_index - 1

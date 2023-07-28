@@ -122,9 +122,9 @@ class ClipProperties(bpy.types.PropertyGroup):
 class AnimationProperties(bpy.types.PropertyGroup):
     def on_target_update(self, context):
         # print(f"Target updated: {self.target_id} (prev {self.target_id_prev})")
-        if self.target_id != self.target_id_prev:
+        if self.target_id != self.target_id_prev and self.action:
             # print("  Retargeting animation")
-            retarget_animation(self.action, self.target_id_prev, self.target_id)
+            retarget_animation(self.id_data, self.target_id_prev, self.target_id)
 
         self.target_id_prev = self.target_id
 
@@ -135,9 +135,9 @@ class AnimationProperties(bpy.types.PropertyGroup):
     target_id: bpy.props.PointerProperty(name="Target", type=bpy.types.ID, update=on_target_update)
     target_id_prev: bpy.props.PointerProperty(name="Target (Prev)", type=bpy.types.ID)
     target_id_type: bpy.props.EnumProperty(name="Target Type", items=[
-        ("ARMATURE", "Armature", "Armature", "OUTLINER_DATA_ARMATURE", 0),
-        ("CAMERA", "Camera", "Camera", "OUTLINER_DATA_CAMERA", 1),
-        ("DRAWABLE_GEOMETRY", "Drawable Geometry", "Drawable Geometry", "OUTLINER_DATA_MESH", 2),
+        ("ARMATURE", "Armature", "Armature", "ARMATURE_DATA", 0),
+        ("CAMERA", "Camera", "Camera", "CAMERA_DATA", 1),
+        ("MATERIAL", "Material", "Material", "MATERIAL_DATA", 2),
     ], default="ARMATURE")
 
 
@@ -342,6 +342,7 @@ def calculate_final_uv_transform_matrix(uv_transforms: Iterable[UVTransform]) ->
         mat = transform.get_matrix() @ mat
     return mat
 
+
 def register_tracks(cls, inline=False):
     if inline:
         # Workaround for https://projects.blender.org/blender/blender/issues/48975
@@ -370,7 +371,9 @@ def register():
         type=AnimationProperties)
 
     register_tracks(bpy.types.PoseBone, inline=True)
-    register_tracks(bpy.types.Object)
+    register_tracks(bpy.types.Armature)
+    register_tracks(bpy.types.Camera)
+    register_tracks(bpy.types.Material)
 
     # used during export to temporarily store UV transforms
     bpy.types.Object.export_uv_transforms = bpy.props.CollectionProperty(
@@ -382,4 +385,6 @@ def unregister():
     del bpy.types.Object.animation_properties
 
     unregister_tracks(bpy.types.PoseBone, inline=True)
-    unregister_tracks(bpy.types.Object)
+    unregister_tracks(bpy.types.Armature)
+    unregister_tracks(bpy.types.Camera)
+    unregister_tracks(bpy.types.Material)
