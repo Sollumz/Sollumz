@@ -323,11 +323,13 @@ class SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS(bpy.types.Panel):
                               animation_tracks, "uv_transforms", animation_tracks, "uv_transforms_active_index")
 
         col = row.column(align=True)
-        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon='ADD', text="")
-        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon='REMOVE', text="")
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon="ADD", text="")
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon="REMOVE", text="")
         col.separator()
-        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
-        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon="TRIA_UP", text="").direction = "UP"
+        col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon="TRIA_DOWN", text="").direction = "DOWN"
+
+        layout.operator(ycd_ops.SOLLUMZ_OT_uv_sprite_sheet_anim.bl_idname)
 
         box = layout.box()
         box.use_property_split = True
