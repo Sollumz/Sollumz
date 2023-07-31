@@ -5,7 +5,8 @@ import math
 from sys import float_info
 from mathutils import Quaternion, Vector, Euler, Matrix
 from enum import IntFlag, IntEnum
-from ..sollumz_properties import MaterialType
+from ..sollumz_properties import MaterialType, SollumType
+from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from typing import Tuple
 
@@ -592,6 +593,33 @@ def get_id_and_track_from_track_data_path(
     return id, track
 
 
+def update_uv_anim_hash(animation_obj):
+    assert False, "TODO"  # TODO: update_uv_anim_hash
+    # target = animation_obj.animation_properties.get_target()
+    # if not isinstance(target, bpy.types.Material):
+    #     raise Exception("Target is not a material")
+    #
+    # material_index = target.shader_properties.index
+    #
+    # drawable_model_name = "test"
+    #
+    # anim_hash = f"{drawable_model_name}_uv_{material_index}"
+    # clip_hash = f"hash_{jenkhash.Generate(drawable_model_name) + (material_index + 1):08X}"
+    # clip_name = anim_hash + ".clip"
+    # animation_obj.animation_properties.hash = anim_hash
+    #
+    # clip_dict = None # TODO
+    # for item in clip_dict.children:
+    #     if item.sollum_type == SollumType.CLIPS:
+    #         for clip in item.children:
+    #             clip_linked_anims = clip.clip_properties.animations
+    #             for anim in clip_linked_anims:
+    #                 if anim.animation.name == animation_obj.name:
+    #                     clip.clip_properties.hash = clip_hash
+    #                     clip.clip_properties.name = clip_name
+    #                     break
+
+
 def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types.ID, new_target_id: bpy.types.ID):
     if isinstance(old_target_id, bpy.types.Armature):
         old_bone_map = build_bone_map(get_data_obj(old_target_id))
@@ -641,7 +669,7 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
                 camera_rotations_to_transform[bone_id] = [None, None, None, None]
             camera_rotations_to_transform[bone_id][fcurve.array_index] = fcurve
 
-        print(f"<{fcurve.data_path}> -> <{data_path}>")
+        # print(f"<{fcurve.data_path}> -> <{data_path}>")
         fcurve.data_path = data_path
 
     # perform required transformations
@@ -664,7 +692,30 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         setup_camera_for_animation(new_target_id)
 
     if new_is_material:
+        print("setup_material_for_animation")
         setup_material_for_animation(new_target_id)
 
     # TODO: may want to set the idroot of the action to the new target type
     # TODO: maybe create animation_data of the action if it doesn't exist
+
+
+def get_frame_range_and_count(action: bpy.types.Action) -> Tuple[Vector, int]:
+    frame_range = action.frame_range
+    frame_count = math.ceil(frame_range[1] - frame_range[0] + 1)
+    return frame_range, frame_count
+
+
+def get_target_from_id(target_id: bpy.types.ID) -> bpy.types.ID:
+    """Returns the ID instance where the animation data should be created to play the animation."""
+    if target_id is None:
+        return None
+
+    if isinstance(target_id, bpy.types.Material):
+        # for materials the animation (UV anim) is stored in the material data block itself because
+        # there can be multiple materials with a single parent object, so animations would conflict
+        return target_id
+
+    # for armatures and cameras the animation is stored in the parent object, because:
+    # - armature animations need to access pose bones and delta location/rotation
+    # - camera animations need to access the camera location/rotation
+    return get_data_obj(target_id)

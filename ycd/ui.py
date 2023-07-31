@@ -77,7 +77,6 @@ def draw_animation_properties(self, context):
         animation_properties = obj.animation_properties
 
         layout.prop(animation_properties, "hash")
-        layout.prop(animation_properties, "frame_count")
         layout.prop(animation_properties, "action")
         r = layout.row()
         r.use_property_split = True
@@ -511,10 +510,6 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                     active_object.sollum_type == SollumType.CLIP_DICTIONARY:
                 layout.operator(ycd_ops.SOLLUMZ_OT_create_clip.bl_idname)
                 layout.operator(ycd_ops.SOLLUMZ_OT_create_animation.bl_idname)
-
-                if active_object.sollum_type == SollumType.ANIMATION:
-                    layout.operator(
-                        ycd_ops.SOLLUMZ_OT_animation_fill.bl_idname)
             else:
                 row = layout.row(align=False)
                 row.operator(

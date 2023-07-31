@@ -364,44 +364,6 @@ class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_animation_fill(SOLLUMZ_OT_base, bpy.types.Operator):
-    bl_idname = "sollumz.animation_fill"
-    bl_label = "Fill animation data"
-
-    def run(self, context):
-        if len(bpy.context.selected_objects) <= 0:
-            return {"FINISHED"}
-
-        active_object = bpy.context.selected_objects[0]
-
-        animation_properties = active_object.animation_properties
-
-        action_list = []
-
-        if animation_properties.base_action:
-            action_list.append(animation_properties.base_action.frame_range)
-
-        if animation_properties.root_motion_location_action:
-            action_list.append(
-                animation_properties.root_motion_location_action.frame_range)
-
-        if animation_properties.root_motion_rotation_action:
-            action_list.append(
-                animation_properties.root_motion_rotation_action.frame_range)
-
-        frames = (
-            sorted(set([item for sublist in action_list for item in sublist])))
-
-        start_frame = frames[0]
-        end_frame = frames[-1]
-
-        frame_count = end_frame - start_frame
-
-        animation_properties.frame_count = int(frame_count)
-
-        return {"FINISHED"}
-
-
 class SOLLUMZ_OT_uv_transform_add(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.uv_transform_add"
     bl_label = "Add UV Transformation"
@@ -675,6 +637,7 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         scale_transform.keyframe_insert(data_path="scale", frame=0)
 
         frame_end = 0
+        frame_end_translation = (0.0, 0.0)
         for y in range(self.frames_vertical):
             for x in range(self.frames_horizontal):
                 i = y * self.frames_horizontal + x
@@ -686,8 +649,16 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                     frame_idx = round(frame.order * self.frame_duration * bpy.context.scene.render.fps)
                     translate_transform.translation = (frame_x, frame_y)
                     translate_transform.keyframe_insert(data_path="translation", frame=frame_idx)
+
                     next_frame_idx = round((frame.order + 1) * self.frame_duration * bpy.context.scene.render.fps)
-                    frame_end = max(frame_end, next_frame_idx)
+                    if next_frame_idx > frame_end:
+                        frame_end = next_frame_idx
+                        frame_end_translation = (frame_x, frame_y)
+
+        if frame_end != 0:
+            # insert one last keyframe to keep the last frame visible for the specified duration before it loops
+            translate_transform.translation = frame_end_translation
+            translate_transform.keyframe_insert(data_path="translation", frame=frame_end)
 
         # make all keyframes constant
         action = mat.animation_data.action

@@ -13,6 +13,8 @@ from ..tools.animationhelper import (
     get_quantum_and_min_val,
     get_id_and_track_from_track_data_path,
     calculate_bone_space_transform_matrix,
+    get_frame_range_and_count,
+    get_target_from_id,
 )
 from .properties import calculate_final_uv_transform_matrix
 
@@ -35,7 +37,12 @@ def parse_uv_transform_data_path(data_path: str):
     return index, prop
 
 
-def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID, target: bpy.types.ID, frame_count: int):
+def sequence_items_from_action(
+        action: bpy.types.Action,
+        target_id: bpy.types.ID
+):
+    frame_range, frame_count = get_frame_range_and_count(action)
+    target = get_target_from_id(target_id)
     target_is_armature = isinstance(target_id, bpy.types.Armature)
     target_is_camera = isinstance(target_id, bpy.types.Camera)
     if target_is_armature:
@@ -88,7 +95,7 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
 
         track_sequence = bone_sequences[track]
         for frame_id in range(0, frame_count):
-            value = fcurve.evaluate(frame_id)
+            value = fcurve.evaluate(frame_range[0] + frame_id)
             if format == TrackFormat.Float:
                 track_sequence[frame_id] = value
             else:
@@ -168,7 +175,7 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
             for frame_id in range(0, frame_count):
                 # apply f-curves to UV transforms
                 for fcurve in fcurves:
-                    value = fcurve.evaluate(frame_id)
+                    value = fcurve.evaluate(frame_range[0] + frame_id)
                     transform_index, prop_name = parse_uv_transform_data_path(fcurve.data_path)
 
                     prop = getattr(uv_transforms[transform_index], prop_name)
@@ -300,7 +307,8 @@ def animation_from_object(animation_obj):
     animation = ycdxml.Animation()
 
     animation_properties = animation_obj.animation_properties
-    frame_count = animation_properties.frame_count
+    action = animation_properties.action
+    frame_range, frame_count = get_frame_range_and_count(action)
 
     animation.hash = animation_properties.hash
     animation.frame_count = frame_count
@@ -312,10 +320,8 @@ def animation_from_object(animation_obj):
     # TODO: CW should calculate this on import with the proper hash function
     animation.unknown1C = f"hash_{jenkhash.Generate(animation_properties.hash) + 1:08X}"
 
-    action = animation_properties.action
     target_id = animation_properties.target_id
-    target = animation_properties.get_target()
-    sequence_items = sequence_items_from_action(action, target_id, target, frame_count)
+    sequence_items = sequence_items_from_action(action, target_id)
 
     sequence = ycdxml.Animation.SequenceList.Sequence()
     sequence.frame_count = frame_count
@@ -441,43 +447,43 @@ def clip_from_object(clip_obj):
     is_single_animation = len(clip_properties.animations) == 1
 
     if is_single_animation:
-        clip = ycdxml.ClipsList.ClipAnimation()
+        xml_clip = ycdxml.ClipsList.ClipAnimation()
         clip_animation_property = clip_properties.animations[0]
         animation_properties = clip_animation_property.animation.animation_properties
+        _, frame_count = get_frame_range_and_count(animation_properties.action)
 
-        animation_duration = animation_properties.frame_count / bpy.context.scene.render.fps
+        animation_duration = frame_count / bpy.context.scene.render.fps
 
-        clip.animation_hash = animation_properties.hash
-        clip.start_time = (clip_animation_property.start_frame / animation_properties.frame_count) * animation_duration
-        clip.end_time = (clip_animation_property.end_frame / animation_properties.frame_count) * animation_duration
+        xml_clip.animation_hash = animation_properties.hash
+        xml_clip.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
+        xml_clip.end_time = (clip_animation_property.end_frame / frame_count) * animation_duration
 
-        clip_animation_duration = clip.end_time - clip.start_time
-        clip.rate = clip_animation_duration / clip_properties.duration
+        clip_animation_duration = xml_clip.end_time - xml_clip.start_time
+        xml_clip.rate = clip_animation_duration / clip_properties.duration
     else:
-        clip = ycdxml.ClipsList.ClipAnimationList()
-        clip.duration = clip_properties.duration
+        xml_clip = ycdxml.ClipsList.ClipAnimationList()
+        xml_clip.duration = clip_properties.duration
 
         for clip_animation_property in clip_properties.animations:
             clip_animation = ycdxml.ClipAnimationsList.ClipAnimation()
 
             animation_properties = clip_animation_property.animation.animation_properties
+            _, frame_count = get_frame_range_and_count(animation_properties.action)
 
-            animation_duration = animation_properties.frame_count / bpy.context.scene.render.fps
+            animation_duration = frame_count / bpy.context.scene.render.fps
 
             clip_animation.animation_hash = animation_properties.hash
-            clip_animation.start_time = (
-                clip_animation_property.start_frame / animation_properties.frame_count) * animation_duration
-            clip_animation.end_time = (
-                clip_animation_property.end_frame / animation_properties.frame_count) * animation_duration
+            clip_animation.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
+            clip_animation.end_time = (clip_animation_property.end_frame / frame_count) * animation_duration
 
             clip_animation_duration = clip_animation.end_time - clip_animation.start_time
             clip_animation.rate = clip_animation_duration / clip_properties.duration
 
-            clip.animations.append(clip_animation)
+            xml_clip.animations.append(clip_animation)
 
-    clip.hash = clip_properties.hash
-    clip.name = "pack:/" + clip_properties.name
-    clip.unknown30 = 0
+    xml_clip.hash = clip_properties.hash
+    xml_clip.name = "pack:/" + clip_properties.name
+    xml_clip.unknown30 = 0
 
     for tag in clip_properties.tags:
         xml_tag = ycdxml.Clip.TagList.Tag()
@@ -487,16 +493,16 @@ def clip_from_object(clip_obj):
         xml_tag.end_phase = tag.end_phase
         for attr in tag.attributes:
             xml_tag.attributes.append(clip_attribute_to_xml(attr))
-        clip.tags.append(xml_tag)
+        xml_clip.tags.append(xml_tag)
 
     for prop in clip_properties.properties:
         xml_prop = ycdxml.Property()
         xml_prop.name_hash = prop.name
         xml_prop.unk_hash = f"hash_{clip_property_calc_signature(prop):08X}"
         xml_prop.attributes.append(clip_attribute_to_xml(prop))
-        clip.properties.append(xml_prop)
+        xml_clip.properties.append(xml_prop)
 
-    return clip
+    return xml_clip
 
 
 def clip_dictionary_from_object(obj):

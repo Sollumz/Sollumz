@@ -4,8 +4,7 @@ import bpy
 import math
 from mathutils import Matrix, Vector
 from ..sollumz_properties import SollumType
-from ..tools.jenkhash import Generate
-from ..tools.animationhelper import retarget_animation
+from ..tools.animationhelper import retarget_animation, get_target_from_id
 from ..tools.blenderhelper import get_data_obj
 
 
@@ -19,38 +18,6 @@ def animations_filter(self, object):
         return False
 
     return object.sollum_type == SollumType.ANIMATION and active_object.parent.parent == object.parent.parent
-
-
-def update_hashes(self, context):
-    assert False, "update_hashes is outdated"
-    animation = context.object
-    clip_dict = animation.parent.parent
-    anim_drawable_mesh = clip_dict.clip_dict_properties.uv_obj
-    anim_drawable_model = anim_drawable_mesh.parent.parent.name
-    material_index = None
-    for index, mat in enumerate(anim_drawable_mesh.data.materials):
-        if mat == self.material:
-            material_index = index
-            break
-
-    if material_index is None:
-        raise Exception("Selected material does not exist with UV object")
-
-    anim_hash = anim_drawable_model + "_uv_" + str(material_index)
-    clip_hash = "hash_" + hex(Generate(anim_drawable_model) + (material_index + 1)).strip("0x").upper()
-    clip_name = anim_hash + ".clip"
-    
-    animation.animation_properties.hash = anim_hash
-
-    for item in clip_dict.children:
-        if item.sollum_type == SollumType.CLIPS:
-            for clip in item.children:
-                clip_linked_anims = clip.clip_properties.animations
-                for anim in clip_linked_anims:
-                    if anim.animation.name == animation.name:
-                        clip.clip_properties.hash = clip_hash
-                        clip.clip_properties.name = clip_name
-                        break
 
 
 ClipAttributeTypes = [
@@ -130,7 +97,6 @@ class AnimationProperties(bpy.types.PropertyGroup):
         self.target_id_prev = self.target_id
 
     hash: bpy.props.StringProperty(name="Hash", default="")
-    frame_count: bpy.props.IntProperty(name="Frame Count", default=1, min=1)
     action: bpy.props.PointerProperty(name="Action", type=bpy.types.Action)
 
     target_id: bpy.props.PointerProperty(name="Target", type=bpy.types.ID, update=on_target_update)
@@ -143,18 +109,7 @@ class AnimationProperties(bpy.types.PropertyGroup):
 
     def get_target(self) -> bpy.types.ID:
         """Returns the ID instance where the animation data should be created to play the animation."""
-        if self.target_id is None:
-            return None
-
-        if isinstance(self.target_id, bpy.types.Material):
-            # for materials the animation (UV anim) is stored in the material data block itself because
-            # there can be multiple materials with a single parent object, so animations would conflict
-            return self.target_id
-
-        # for armatures and cameras the animation is stored in the parent object, because:
-        # - armature animations need to access pose bones and delta location/rotation
-        # - camera animations need to access the camera location/rotation
-        return get_data_obj(self.target_id)
+        return get_target_from_id(self.target_id)
 
 
 UVTransformModes = [
