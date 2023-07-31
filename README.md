@@ -28,7 +28,7 @@ Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Be
   * YTYP
   
 **General Features**
-  * Incredibly fast Import / Export speeds
+  * Import / Export
   * Automatic texture loading
   * Vertex colors
   * Bones and weights
