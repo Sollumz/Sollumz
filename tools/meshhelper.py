@@ -312,3 +312,10 @@ def calculate_inertia(bbmin: Vector, bbmax: Vector):
 
 def flip_uvs(uvs: NDArray[np.float32]):
     uvs[:, 1] = (uvs[:, 1] - 1.0) * -1
+
+
+def flip_uv(uv):
+    u = uv[0]
+    v = (uv[1] - 1.0) * -1
+
+    return [u, v]

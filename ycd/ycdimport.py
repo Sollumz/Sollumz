@@ -5,8 +5,6 @@ from ..cwxml.clipdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.animationhelper import TrackFormat, TrackFormatMap, get_canonical_track_data_path
 from .. import logger
-from .properties import AnimationTrackToPropertyName
-
 
 def create_anim_obj(type):
     anim_obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[type], None)
