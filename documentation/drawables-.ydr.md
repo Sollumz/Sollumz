@@ -1,3 +1,0 @@
-# 🌐 Drawables (.ydr)
-
-TODO

@@ -26,7 +26,9 @@
 
 ## 📄 Documentation
 
-* [🌐 Drawables (.ydr)](documentation/drawables-.ydr.md)
+* [🌐 Drawables (.ydr)](documentation/drawables-.ydr/README.md)
+  * [Level of Detail (LODs) Editing](documentation/drawables-.ydr/level-of-detail-lods-editing.md)
+  * [Rigging](documentation/drawables-.ydr/rigging.md)
 * [🗂 Drawable Dictionary (.ydd)](documentation/drawable-dictionary-.ydd.md)
 * [💥 Static Collisions (.ybn)](documentation/static-collisions-.ybn.md)
 * [🚙 Fragments (.yft)](documentation/fragments-.yft.md)
