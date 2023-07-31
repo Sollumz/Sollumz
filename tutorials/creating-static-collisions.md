@@ -1,0 +1,3 @@
+# 💥 Creating Static Collisions
+
+TODO

@@ -1,0 +1,3 @@
+# 🎬 Clip Dictionary (.ycd)
+
+TODO

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 434 622">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-2 {
+        fill: #e87d0d;
+      }
+
+      .cls-3 {
+        fill: url(#linear-gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="390.09" y1="386.71" x2="42.86" y2="535.3" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e87d0d"/>
+      <stop offset="1" stop-color="#f5840e"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="179.02" y1="222.6" x2="256.58" y2="403.12" gradientUnits="userSpaceOnUse">
+      <stop offset=".07" stop-color="#122a45"/>
+      <stop offset=".09" stop-color="#163353"/>
+      <stop offset=".16" stop-color="#1f4872"/>
+      <stop offset=".24" stop-color="#27598b"/>
+      <stop offset=".32" stop-color="#2c649d"/>
+      <stop offset=".4" stop-color="#2f6ba7"/>
+      <stop offset=".5" stop-color="#316eab"/>
+      <stop offset=".63" stop-color="#306ca8"/>
+      <stop offset=".7" stop-color="#2d66a0"/>
+      <stop offset=".76" stop-color="#295d92"/>
+      <stop offset=".82" stop-color="#23507e"/>
+      <stop offset=".86" stop-color="#1b3f64"/>
+      <stop offset=".91" stop-color="#122a45"/>
+    </linearGradient>
+  </defs>
+  <g id="Sollumz_logo">
+    <path class="cls-2" d="m301.66,192.31L1,325l-1-132.11L427,0h0c0,83.27-49.15,158.69-125.34,192.31Z"/>
+    <path class="cls-3" d="m132.34,429.69l300.66-132.69,1,132.11L7,622h0c0-83.27,49.15-158.69,125.34-192.31Z"/>
+    <polygon class="cls-1" points="240.9 381.78 1 325 199.72 237.3 433 297 240.9 381.78"/>
+  </g>
+</svg>

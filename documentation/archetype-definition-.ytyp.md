@@ -1,0 +1,3 @@
+# 📇 Archetype Definition (.ytyp)
+
+TODO
