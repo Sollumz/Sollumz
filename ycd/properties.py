@@ -6,6 +6,7 @@ from mathutils import Matrix, Vector
 from ..sollumz_properties import SollumType
 from ..tools.jenkhash import Generate
 from ..tools.animationhelper import retarget_animation
+from ..tools.blenderhelper import get_data_obj
 
 
 def animations_filter(self, object):
@@ -139,6 +140,21 @@ class AnimationProperties(bpy.types.PropertyGroup):
         ("CAMERA", "Camera", "Camera", "CAMERA_DATA", 1),
         ("MATERIAL", "Material", "Material", "MATERIAL_DATA", 2),
     ], default="ARMATURE")
+
+    def get_target(self) -> bpy.types.ID:
+        """Returns the ID instance where the animation data should be created to play the animation."""
+        if self.target_id is None:
+            return None
+
+        if isinstance(self.target_id, bpy.types.Material):
+            # for materials the animation (UV anim) is stored in the material data block itself because
+            # there can be multiple materials with a single parent object, so animations would conflict
+            return self.target_id
+
+        # for armatures and cameras the animation is stored in the parent object, because:
+        # - armature animations need to access pose bones and delta location/rotation
+        # - camera animations need to access the camera location/rotation
+        return get_data_obj(self.target_id)
 
 
 UVTransformModes = [
@@ -371,12 +387,11 @@ def register():
         type=AnimationProperties)
 
     register_tracks(bpy.types.PoseBone, inline=True)
-    register_tracks(bpy.types.Armature)
-    register_tracks(bpy.types.Camera)
+    register_tracks(bpy.types.Object)
     register_tracks(bpy.types.Material)
 
     # used during export to temporarily store UV transforms
-    bpy.types.Object.export_uv_transforms = bpy.props.CollectionProperty(
+    bpy.types.ID.export_uv_transforms = bpy.props.CollectionProperty(
         type=UVTransform, options={"HIDDEN", "SKIP_SAVE"})
 
 
@@ -385,6 +400,5 @@ def unregister():
     del bpy.types.Object.animation_properties
 
     unregister_tracks(bpy.types.PoseBone, inline=True)
-    unregister_tracks(bpy.types.Armature)
-    unregister_tracks(bpy.types.Camera)
+    unregister_tracks(bpy.types.Object)
     unregister_tracks(bpy.types.Material)

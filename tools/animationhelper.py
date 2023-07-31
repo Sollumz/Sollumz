@@ -377,14 +377,14 @@ def add_driver_variable_obj_prop(fcurve, name, obj, obj_type, prop_data_path):
 
 def setup_camera_for_animation(camera: bpy.types.Camera):
     camera_obj = get_data_obj(camera)
-    camera_obj.rotation_mode = 'QUATERNION'  # camera rotation track uses rotation_quaternion
+    camera_obj.rotation_mode = "QUATERNION"  # camera rotation track uses rotation_quaternion
 
     # connect camera_fov track to blender camera
     # NOTE: seems to report a dependency cycle, but works fine, blender bug?
     camera.driver_remove("lens")
     fcurve_lens = camera.driver_add("lens")
-    add_driver_variable_obj_prop(fcurve_lens, "fov", camera, "CAMERA", "animation_tracks.camera_fov")
-    add_driver_variable_obj_prop(fcurve_lens, "sensor", camera, "CAMERA", "data.sensor_width")
+    add_driver_variable_obj_prop(fcurve_lens, "fov", camera_obj, "OBJECT", "animation_tracks.camera_fov")
+    add_driver_variable_obj_prop(fcurve_lens, "sensor", camera, "CAMERA", "sensor_width")
     fcurve_lens.driver.expression = "(sensor * 0.5) / tan(radians(fov) * 0.5)"
     fcurve_lens.update()
 
@@ -466,7 +466,7 @@ def add_global_anim_uv_nodes(material: bpy.types.Materia):
     add_global_anim_uv_drivers(material, x_dot, y_dot)
 
 
-def setup_drawable_geometry_for_animation(material: bpy.types.Material):
+def setup_material_for_animation(material: bpy.types.Material):
     if material.sollum_type == MaterialType.NONE:
         raise Exception("Material is not a Sollumz material")
 
@@ -641,7 +641,7 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
                 camera_rotations_to_transform[bone_id] = [None, None, None, None]
             camera_rotations_to_transform[bone_id][fcurve.array_index] = fcurve
 
-        # print(f"<{fcurve.data_path}> -> <{data_path}>")
+        print(f"<{fcurve.data_path}> -> <{data_path}>")
         fcurve.data_path = data_path
 
     # perform required transformations
@@ -664,7 +664,7 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         setup_camera_for_animation(new_target_id)
 
     if new_is_material:
-        setup_drawable_geometry_for_animation(new_target_id)
+        setup_material_for_animation(new_target_id)
 
     # TODO: may want to set the idroot of the action to the new target type
     # TODO: maybe create animation_data of the action if it doesn't exist

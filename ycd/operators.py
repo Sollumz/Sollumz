@@ -26,8 +26,8 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
 
         clip_dictionary_obj = clip_obj.parent.parent
         # TODO: animation may be None, or not all animations have the same target/are filled in
-        target_id = clip_properties.animations[0].animation.animation_properties.target_id
-        if target_id is None:
+        target = clip_properties.animations[0].animation.animation_properties.get_target()
+        if target is None:
             return {"FINISHED"}
 
         clip_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
@@ -57,14 +57,14 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
                 "action": action,
             })
 
-        if target_id.animation_data is None:
-            target_id.animation_data_create()
+        if target.animation_data is None:
+            target.animation_data_create()
 
-        for nla_track in target_id.animation_data.nla_tracks:
-            target_id.animation_data.nla_tracks.remove(nla_track)
+        for nla_track in target.animation_data.nla_tracks:
+            target.animation_data.nla_tracks.remove(nla_track)
 
         for group_name, clips in groups.items():
-            track = target_id.animation_data.nla_tracks.new()
+            track = target.animation_data.nla_tracks.new()
             track.name = group_name
 
             for clip in clips:

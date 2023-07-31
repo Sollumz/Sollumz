@@ -35,12 +35,12 @@ def parse_uv_transform_data_path(data_path: str):
     return index, prop
 
 
-def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID, frame_count: int):
+def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID, target: bpy.types.ID, frame_count: int):
     target_is_armature = isinstance(target_id, bpy.types.Armature)
     target_is_camera = isinstance(target_id, bpy.types.Camera)
     if target_is_armature:
-        bone_name_map = build_name_bone_map(get_data_obj(target_id))
-        bone_map = build_bone_map(get_data_obj(target_id))
+        bone_name_map = build_name_bone_map(target)
+        bone_map = build_bone_map(target)
     else:
         bone_name_map = None
         bone_map = None
@@ -146,12 +146,10 @@ def sequence_items_from_action(action: bpy.types.Action, target_id: bpy.types.ID
                     quats[i].rotate(Quaternion(x_axis_local, angle_delta))
 
     if target_id is not None and len(uv_transforms_fcurves) > 0:
-        target_obj = get_data_obj(target_id)
-
         # copy the UV transforms defined by the user to apply f-curves on them without modifying the original ones
-        uv_transforms = target_obj.export_uv_transforms
+        uv_transforms = target.export_uv_transforms
         uv_transforms.clear()
-        for uv_transform in target_obj.animation_tracks.uv_transforms:
+        for uv_transform in target.animation_tracks.uv_transforms:
             uv_transform_copy = uv_transforms.add()
             uv_transform_copy.update_uv_transform_matrix_on_change = False
             uv_transform_copy.copy_from(uv_transform)
@@ -316,7 +314,8 @@ def animation_from_object(animation_obj):
 
     action = animation_properties.action
     target_id = animation_properties.target_id
-    sequence_items = sequence_items_from_action(action, target_id, frame_count)
+    target = animation_properties.get_target()
+    sequence_items = sequence_items_from_action(action, target_id, target, frame_count)
 
     sequence = ycdxml.Animation.SequenceList.Sequence()
     sequence.frame_count = frame_count
