@@ -7,6 +7,36 @@ from ..tools.utils import color_hash
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 
 
+class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.animations_set_target"
+    bl_label = "Set Animations Target"
+    bl_description = "Set the same target for all animations"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object is not None and
+                context.active_object.sollum_type == SollumType.ANIMATIONS and
+                context.active_object.animations_object_properties.target_id is not None)
+
+    def run(self, context):
+        animations_obj = context.active_object
+        target_id = animations_obj.animations_object_properties.target_id
+        target_id_type = animations_obj.animations_object_properties.target_id_type
+        print(animations_obj,
+              target_id,
+              target_id_type)
+
+        for animation_obj in animations_obj.children:
+            if animation_obj.sollum_type != SollumType.ANIMATION:
+                continue
+
+            animation_obj.animation_properties.target_id_type = target_id_type
+            animation_obj.animation_properties.target_id = target_id
+
+        context.active_object.animations_object_properties.target_id = None
+        return {"FINISHED"}
+
+
 class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.anim_apply_nla"
     bl_label = "Apply NLA"
@@ -145,6 +175,10 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
             ("MOVE_EVENT", "MoVE Event", "Add a MoVE event tag", 1),
             ("AUDIO", "Audio", "Add an audio trigger event tag", 2),
             ("FOOT", "Foot", "Add a foot synchronization tag", 3),
+            ("MOVER_FIXUP", "Mover Fixup", "Add a mover fixup tag", 4),
+            ("FACIAL", "Facial", "Add a facial tag", 5),
+            ("OBJECT", "Object", "Add a object tag", 6),
+            ("ARMS_IK", "Arms IK", "Add a arms IK tag", 7),
         ],
         default="EMPTY",
         name="Tag Template",
@@ -189,29 +223,80 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         if self.ignore_template or self.template == "EMPTY":
             return
 
+        name = ""
+        attrs = []
+
+        # optional attribute used with 'moveevent', 'audio', 'facial' and 'hash_A31D8F23'
+        # seems related to animation blending
+        # ("hash_368D9C33", "Float"),
+
         if self.template == "MOVE_EVENT":
-            tag.name = "moveevent"
-            moveevent_attr = tag.attributes.add()
-            moveevent_attr.name = "moveevent"
-            moveevent_attr.type = "HashString"
+            name = "moveevent"
+            attrs = [
+                ("moveevent", "HashString"),
+            ]
         elif self.template == "AUDIO":
-            tag.name = "audio"
-            id_attr = tag.attributes.add()
-            id_attr.name = "id"
-            id_attr.type = "HashString"
+            name = "audio"
+            attrs = [
+                ("id", "HashString"),
+            ]
             pass
         elif self.template == "FOOT":
-            tag.name = "foot"
-            heel_attr = tag.attributes.add()
-            heel_attr.name = "heel"
-            heel_attr.type = "Bool"
-            right_attr = tag.attributes.add()
-            right_attr.name = "right"
-            right_attr.type = "Bool"
+            name = "foot"
+            attrs = [
+                ("heel", "Bool"),
+                ("right", "Bool"),
+            ]
+        elif self.template == "MOVER_FIXUP":
+            name = "moverfixup"
+            attrs = [
+                ("translation", "Bool"),
+                ("transx", "Bool"),
+                ("transy", "Bool"),
+                ("transz", "Bool"),
+                ("rotation", "Bool"),
+            ]
+        elif self.template == "FACIAL":
+            name = "facial"
+            attrs = [
+                ("nameid", "HashString"),
+                ("hash_7DA44A49", "Bool"),
+                ("hash_0C905639", "Bool"),
+            ]
+        elif self.template == "OBJECT":
+            name = "object"
+            attrs = [
+                ("release", "Bool"),
+                ("destroy", "Bool"),
+                ("create", "Bool"),
+            ]
+        elif self.template == "ARMS_IK":
+            name = "armsik"
+            attrs = [
+                ("left", "Bool"),
+                ("right", "Bool"),
+                ("allowed", "Bool"),
+                ("blocked", "Bool"),
+            ]
         else:
             raise Exception("Invalid template")
 
+        # more tags:
+        #  hash_C261B2D3
+        #    pitchspringinput  Bool
+        #    yawspringinput    Bool
+        #
+        #  hash_1EFF20B5
+        #    allowed           Bool
+        #    blocked           Bool
+
+
+        tag.name = name
         tag.ui_timeline_color = color_hash(tag.name)
+        for attr_name, attr_type in attrs:
+            attr = tag.attributes.add()
+            attr.name = attr_name
+            attr.type = attr_type
 
 
 class SOLLUMZ_OT_clip_delete_tag(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -1059,30 +1144,31 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
 
-class SOLLUMZ_OT_timeline_clip_tags_input_handler(SOLLUMZ_OT_base, bpy.types.Operator):
-    bl_idname = "sollumz.timeline_clip_tags_input_handler"
-    bl_label = "Sollumz Timeline Clip Tags Input"
-    bl_description = "Handle mouse input to move the clip tags in the timeline"
+class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.timeline_clip_tags_drag"
+    bl_label = "Sollumz - Drag Timeline Clip Tags"
+    bl_description = "Drag clip tag markers in the timeline"
+
+
+    @classmethod
+    def poll(cls, context):
+        return (context.region is not None and
+                context.active_object is not None and
+                context.active_object.sollum_type == SollumType.CLIP)
 
     def run(self, context):
-        print("hello")
         return {"FINISHED"}
 
     def invoke(self, context, event):
-        print("invoke")
-        # make sure the operator is called under valid conditions
-        if context is None or event is None or context.region is None:
+        if event is None:
             return {'PASS_THROUGH'}
 
-        clip_obj = bpy.context.active_object
-        if clip_obj is None or clip_obj.sollum_type != SollumType.CLIP:
-            return {'PASS_THROUGH'}
+        clip_obj = context.active_object
 
-        region = bpy.context.region
+        region = context.region
 
         mouse_x = event.mouse_region_x
         mouse_y = event.mouse_region_y
-        print(mouse_x, mouse_y, region.height - 23.5)
 
         if mouse_y >= region.height - 23.5:  # ignore if mouse is on the timeline scrubber
             self.clear_hovered_state(region, clip_obj)
@@ -1097,12 +1183,29 @@ class SOLLUMZ_OT_timeline_clip_tags_input_handler(SOLLUMZ_OT_base, bpy.types.Ope
             dragging = self.update_drag_state(clip_obj)
         elif event.type == "LEFTMOUSE" and event.value == "RELEASE":
             self.clear_drag_state(clip_obj)
+        elif event.type == "LEFTMOUSE" and event.value == "DOUBLE_CLICK":
+            self.update_hovered_state(region, mouse_x, mouse_y, clip_obj)
+            self.split_hovered_tag(region, clip_obj)
 
         if dragging:
             region.tag_redraw()
             return {"FINISHED"}
         else:
             return {"PASS_THROUGH"}
+
+    def split_hovered_tag(self, region, clip_obj):
+        clip_properties = clip_obj.clip_properties
+
+        for clip_tag in clip_properties.tags:
+            if not clip_tag.ui_view_on_timeline or clip_tag.start_phase != clip_tag.end_phase or not clip_tag.ui_timeline_hovered_start:
+                continue
+
+            offset = 0.025
+            clip_tag.start_phase = max(clip_tag.start_phase - offset, 0.0)
+            clip_tag.end_phase = min(clip_tag.start_phase + offset * 2, 1.0)
+            clip_tag.start_phase = max(clip_tag.end_phase - offset * 2, 0.0)
+            region.tag_redraw()
+            break
 
     def update_hovered_state(self, region, mouse_x, mouse_y, clip_obj):
         clip_properties = clip_obj.clip_properties
@@ -1161,6 +1264,9 @@ class SOLLUMZ_OT_timeline_clip_tags_input_handler(SOLLUMZ_OT_base, bpy.types.Ope
         any_dragging = False
         clip_properties = clip_obj.clip_properties
         for clip_tag in reversed(clip_properties.tags):  # reversed so the tag drawn on top is always picked first
+            if not clip_tag.ui_view_on_timeline:
+                continue
+
             if any_dragging:
                 clip_tag.ui_timeline_drag_start = False
                 clip_tag.ui_timeline_drag_end = False
@@ -1199,19 +1305,22 @@ class SOLLUMZ_OT_timeline_clip_tags_input_handler(SOLLUMZ_OT_base, bpy.types.Ope
 
         return any_dragging
 
+
 addon_keymaps = []
+
 
 def register():
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
         km = wm.keyconfigs.addon.keymaps.new(name="Dopesheet", space_type="DOPESHEET_EDITOR", region_type="WINDOW")
-        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_input_handler.bl_idname, "MOUSEMOVE", "ANY")
+        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "MOUSEMOVE", "ANY")
 
         addon_keymaps.append((km, kmi))
-        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_input_handler.bl_idname, "LEFTMOUSE", "ANY")
+        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "LEFTMOUSE", "ANY")
 
         addon_keymaps.append((km, kmi))
+
 
 def unregister():
     for km, kmi in addon_keymaps:

@@ -30,7 +30,7 @@ animation_target_id_type_to_collection_name = {
 # https://blender.stackexchange.com/a/293222
 def template_animation_target_ID(layout: bpy.types.UILayout, data, property: str, type_property: str,
                     text: str = "", text_ctxt: str = "", translate: bool = True):
-    split = layout.split(factor=0.33)
+    split = layout.split(factor=0.33, align=True)
 
     # FIRST PART
     row = split.row()
@@ -83,6 +83,18 @@ def draw_animation_properties(self, context):
         r.use_property_decorate = False
         template_animation_target_ID(r, animation_properties, "target_id", "target_id_type")
 
+
+def draw_animations_properties(self, context):
+    # TODO: this probably should appear in the clip dictionary panel and/or the animations tools panel
+    obj = context.active_object
+    if obj and obj.sollum_type == SollumType.ANIMATIONS:
+        layout = self.layout
+
+        r = layout.row(align=True)
+        r.use_property_split = True
+        r.use_property_decorate = False
+        template_animation_target_ID(r, obj.animations_object_properties, "target_id", "target_id_type", text=" ")
+        r.operator(ycd_ops.SOLLUMZ_OT_animations_set_target.bl_idname)
 
 def draw_clip_dictionary_properties(self, context):
     obj = context.active_object
@@ -655,6 +667,7 @@ draw_tags_on_timeline_handler = None
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_animation_properties)
+    SOLLUMZ_PT_OBJECT_PANEL.append(draw_animations_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_dictionary_properties)
 
     global draw_tags_on_timeline_handler
@@ -665,6 +678,7 @@ def register():
 def unregister():
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_animation_properties)
+    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_animations_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_dictionary_properties)
 
     global draw_tags_on_timeline_handler

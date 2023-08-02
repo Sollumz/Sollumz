@@ -42,12 +42,22 @@ class ClipAttribute(bpy.types.PropertyGroup):
 
 
 class ClipTag(bpy.types.PropertyGroup):
+    def on_start_phase_changed(self, context):
+        if self.end_phase < self.start_phase:
+            self.end_phase = self.start_phase
+
+    def on_end_phase_changed(self, context):
+        if self.start_phase > self.end_phase:
+            self.start_phase = self.end_phase
+
     name: bpy.props.StringProperty(name="Name", default="")
 
     start_phase: bpy.props.FloatProperty(
-        name="Start Phase", default=0, min=0, max=1, step=1, description="Start phase of the tag")
+        name="Start Phase", description="Start phase of the tag",
+        default=0, min=0, max=1, step=1, update=on_start_phase_changed)
     end_phase: bpy.props.FloatProperty(
-        name="End Phase", default=0, min=0, max=1, step=1, description="End phase of the tag")
+        name="End Phase", description="End phase of the tag",
+        default=0, min=0, max=1, step=1, update=on_end_phase_changed)
 
     attributes: bpy.props.CollectionProperty(name="Attributes", type=ClipAttribute)
 
@@ -108,6 +118,13 @@ class ClipProperties(bpy.types.PropertyGroup):
         return round(self.duration * bpy.context.scene.render.fps)
 
 
+AnimationTargetIDTypes = [
+    ("ARMATURE", "Armature", "Armature", "ARMATURE_DATA", 0),
+    ("CAMERA", "Camera", "Camera", "CAMERA_DATA", 1),
+    ("MATERIAL", "Material", "Material", "MATERIAL_DATA", 2),
+]
+
+
 class AnimationProperties(bpy.types.PropertyGroup):
     def on_target_update(self, context):
         # print(f"Target updated: {self.target_id} (prev {self.target_id_prev})")
@@ -122,15 +139,19 @@ class AnimationProperties(bpy.types.PropertyGroup):
 
     target_id: bpy.props.PointerProperty(name="Target", type=bpy.types.ID, update=on_target_update)
     target_id_prev: bpy.props.PointerProperty(name="Target (Prev)", type=bpy.types.ID)
-    target_id_type: bpy.props.EnumProperty(name="Target Type", items=[
-        ("ARMATURE", "Armature", "Armature", "ARMATURE_DATA", 0),
-        ("CAMERA", "Camera", "Camera", "CAMERA_DATA", 1),
-        ("MATERIAL", "Material", "Material", "MATERIAL_DATA", 2),
-    ], default="ARMATURE")
+    target_id_type: bpy.props.EnumProperty(name="Target Type", items=AnimationTargetIDTypes, default="ARMATURE")
 
     def get_target(self) -> bpy.types.ID:
         """Returns the ID instance where the animation data should be created to play the animation."""
         return get_target_from_id(self.target_id)
+
+
+class AnimationsObjectProperties(bpy.types.PropertyGroup):
+    # used with operator SOLLUMZ_OT_animations_set_target
+    target_id: bpy.props.PointerProperty(name="Target", type=bpy.types.ID,
+                                         options={"HIDDEN", "SKIP_SAVE"})
+    target_id_type: bpy.props.EnumProperty(name="Target Type", items=AnimationTargetIDTypes, default="ARMATURE",
+                                           options={"HIDDEN", "SKIP_SAVE"})
 
 
 UVTransformModes = [
@@ -361,6 +382,8 @@ def register():
         type=ClipProperties)
     bpy.types.Object.animation_properties = bpy.props.PointerProperty(
         type=AnimationProperties)
+    bpy.types.Object.animations_object_properties = bpy.props.PointerProperty(
+        type=AnimationsObjectProperties)
 
     register_tracks(bpy.types.PoseBone, inline=True)
     register_tracks(bpy.types.Object)
