@@ -46,14 +46,21 @@ class ClipTag(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", default="")
 
     start_phase: bpy.props.FloatProperty(
-        name="Start Phase", default=0, min=0, max=1, description="Start phase of the tag")
+        name="Start Phase", default=0, min=0, max=1, step=1, description="Start phase of the tag")
     end_phase: bpy.props.FloatProperty(
-        name="End Phase", default=0, min=0, max=1, description="End phase of the tag")
+        name="End Phase", default=0, min=0, max=1, step=1, description="End phase of the tag")
 
     attributes: bpy.props.CollectionProperty(name="Attributes", type=ClipAttribute)
 
+    ui_view_on_timeline: bpy.props.BoolProperty(
+        name="View on Timeline", description="Show tag on the timeline",
+        default=True)
+    ui_timeline_color: bpy.props.FloatVectorProperty(
+        name="Timeline Color", description="Color of the tag on the timeline",
+        default=(1.0, 0.0, 0.0, 1.0), size=4, subtype="COLOR",)
     ui_show_expanded: bpy.props.BoolProperty(
-        name="Show Expanded", default=True, description="Show details of the tag")
+        name="Show Expanded", description="Show details of the tag",
+        default=True)
     ui_active_attribute_index: bpy.props.IntProperty()
 
 

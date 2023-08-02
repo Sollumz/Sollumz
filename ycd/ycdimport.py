@@ -4,6 +4,7 @@ from mathutils import Vector, Quaternion
 from ..cwxml.clipdictionary import YCD
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.animationhelper import TrackFormat, TrackFormatMap, get_canonical_track_data_path
+from ..tools.utils import color_hash
 from .. import logger
 
 def create_anim_obj(type):
@@ -284,8 +285,7 @@ def clip_to_obj(clip, animations_map, animations_obj_map):
     for tag in clip.tags:
         clip_tag = clip_obj.clip_properties.tags.add()
         clip_tag.name = tag.name_hash
-        # self.unk_hash = TextProperty("UnkHash", "")  # probably signature
-        # self.attributes = AttributesList()  # TODO: tag attributes
+        clip_tag.ui_timeline_color = color_hash(clip_tag.name)
         clip_tag.start_phase = tag.start_phase
         clip_tag.end_phase = tag.end_phase
         for attr in tag.attributes:

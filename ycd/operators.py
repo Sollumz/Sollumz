@@ -3,6 +3,7 @@ from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_child_by_type, get_data_obj
 from ..tools.meshhelper import flip_uv
+from ..tools.utils import color_hash
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 
 
@@ -135,7 +136,26 @@ class SOLLUMZ_OT_clip_delete_animation(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.clip_new_tag"
     bl_label = "Add a new Tag"
-    bl_description = "Add a new tag to the clip"
+    bl_description = "Add a new tag to the clip based on a template"
+
+    ignore_template: bpy.props.BoolProperty(default=False)
+    template: bpy.props.EnumProperty(
+        items=[
+            ("EMPTY", "Empty", "Add an empty tag", 0),
+            ("MOVE_EVENT", "MoVE Event", "Add a MoVE event tag", 1),
+            ("AUDIO", "Audio", "Add an audio trigger event tag", 2),
+            ("FOOT", "Foot", "Add a foot synchronization tag", 3),
+        ],
+        default="EMPTY",
+        name="Tag Template",
+    )
+
+    @classmethod
+    def description(cls, context, properties):
+        if properties.ignore_template:
+            return "Add a new empty tag to the clip"
+
+        return bpy.types.UILayout.enum_item_description(properties, "template", properties.template)
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -148,9 +168,50 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
 
         clip_properties = active_object.clip_properties
 
-        clip_properties.tags.add()
+        tag = clip_properties.tags.add()
+        self.apply_template(tag)
+
+        # place the tag at the current frame
+        phase = bpy.context.scene.frame_float / bpy.context.scene.render.fps / clip_properties.duration
+        phase = min(max(phase, 0.0), 1.0)
+        tag.start_phase = phase
+        tag.end_phase = phase
+
+        # redraw the dopesheet to show the new tag
+        for area in context.screen.areas:
+            if area.type == "DOPESHEET_EDITOR":
+                area.tag_redraw()
 
         return {"FINISHED"}
+
+    def apply_template(self, tag):
+        print(self.ignore_template, self.template)
+        if self.ignore_template or self.template == "EMPTY":
+            return
+
+        if self.template == "MOVE_EVENT":
+            tag.name = "moveevent"
+            moveevent_attr = tag.attributes.add()
+            moveevent_attr.name = "moveevent"
+            moveevent_attr.type = "HashString"
+        elif self.template == "AUDIO":
+            tag.name = "audio"
+            id_attr = tag.attributes.add()
+            id_attr.name = "id"
+            id_attr.type = "HashString"
+            pass
+        elif self.template == "FOOT":
+            tag.name = "foot"
+            heel_attr = tag.attributes.add()
+            heel_attr.name = "heel"
+            heel_attr.type = "Bool"
+            right_attr = tag.attributes.add()
+            right_attr.name = "right"
+            right_attr.type = "Bool"
+        else:
+            raise Exception("Invalid template")
+
+        tag.ui_timeline_color = color_hash(tag.name)
 
 
 class SOLLUMZ_OT_clip_delete_tag(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -172,6 +233,11 @@ class SOLLUMZ_OT_clip_delete_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         clip_properties = active_object.clip_properties
 
         clip_properties.tags.remove(self.tag_index)
+
+        # redraw the dopesheet to stop displaying the deleted tag
+        for area in context.screen.areas:
+            if area.type == "DOPESHEET_EDITOR":
+                area.tag_redraw()
 
         return {"FINISHED"}
 

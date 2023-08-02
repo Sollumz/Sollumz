@@ -225,6 +225,11 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
         channel.offset = min_value
         channel.quantum = quantum
 
+    # TODO: decide when RawFloat is needed (quantizefloat may compress values too much)
+    # else:
+    #     channel = ycdxml.ChannelsList.RawFloat()
+    #     channel.values = values
+
     return channel
 
 

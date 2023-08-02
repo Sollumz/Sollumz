@@ -104,9 +104,15 @@ def draw_range_properties(layout, obj, prop_start, prop_end, label):
     value_row.prop(obj, prop_end, text="End")
 
 
-def draw_item_box_header(layout, obj, label, delete_op_cls, show_expanded_prop="ui_show_expanded"):
+def draw_item_box_header(
+        layout, obj, label, delete_op_cls,
+        show_expanded_prop="ui_show_expanded",
+        visible_prop=None,
+        color_prop=None
+):
     """
-    Draw a box header with a 'expand' button, label and 'delete' button.
+    Draw a box header with a 'expand' button, label, optional visibility toggle, optional color picker
+    and 'delete' button.
     Returns the delete operator properties to fill in.
     """
     header = layout.row(align=True)
@@ -117,8 +123,19 @@ def draw_item_box_header(layout, obj, label, delete_op_cls, show_expanded_prop="
         header.label(text=label)
     else:
         header.label(text="Not Set")
+
+    if visible_prop is not None:
+        is_visible = getattr(obj, visible_prop)
+        visible_icon = "HIDE_OFF" if is_visible else "HIDE_ON"
+        header.prop(obj, visible_prop, text="", emboss=False, icon=visible_icon)
+
+    if color_prop is not None:
+        row = header.row()
+        row.scale_x = 0.35  # make the color picker smaller
+        row.prop(obj, color_prop, text="")
+
     delete_op = header.operator(delete_op_cls.bl_idname,
-                                text="", emboss=False, icon='X')
+                                text="", emboss=False, icon="X")
     return delete_op
 
 
@@ -428,13 +445,18 @@ class SOLLUMZ_PT_CLIP_TAGS(bpy.types.Panel):
         obj = context.active_object
         clip_properties = obj.clip_properties
 
-        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_tag.bl_idname,
-                        text="New", icon="ADD")
+        row = layout.split(factor=0.625, align=True)
+        row.operator(ycd_ops.SOLLUMZ_OT_clip_new_tag.bl_idname,
+                     text="New", icon="ADD").ignore_template = True
+        row.operator_menu_enum(ycd_ops.SOLLUMZ_OT_clip_new_tag.bl_idname, "template",
+                               text="From Template", icon="MENU_PANEL").ignore_template = False
 
         for tag_index, clip_tag in enumerate(clip_properties.tags):
             box = layout.box()
 
-            del_op = draw_item_box_header(box, clip_tag, clip_tag.name, ycd_ops.SOLLUMZ_OT_clip_delete_tag)
+            del_op = draw_item_box_header(box, clip_tag, clip_tag.name, ycd_ops.SOLLUMZ_OT_clip_delete_tag,
+                                          visible_prop="ui_view_on_timeline",
+                                          color_prop="ui_timeline_color")
             del_op.tag_index = tag_index
 
             if clip_tag.ui_show_expanded:
@@ -519,13 +541,119 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                 ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
 
 
+def draw_tags_on_timeline():
+    import gpu
+    import gpu_extras
+    import blf
+
+    clip_obj = bpy.context.active_object
+    if clip_obj is None or clip_obj.sollum_type != SollumType.CLIP:
+        return
+
+    clip_properties = clip_obj.clip_properties
+    clip_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
+
+    region = bpy.context.region
+    view = region.view2d
+    h = region.height
+
+    overlay_verts_pos = []
+    overlay_verts_color = []
+    marker_verts_pos = []
+    marker_verts_color = []
+    notch_size = 5
+    names = []
+    for tag_index, clip_tag in enumerate(clip_properties.tags):
+        if not clip_tag.ui_view_on_timeline:
+            continue
+
+        start_phase = clip_tag.start_phase
+        end_phase = clip_tag.end_phase
+
+        start_frame = clip_frame_count * start_phase
+        end_frame = clip_frame_count * end_phase
+        color = clip_tag.ui_timeline_color
+        overlay_color = (color[0], color[1], color[2], color[3] * 0.2)
+
+        start_x, y = view.view_to_region(start_frame, 0, clip=False)
+        end_x, _ = view.view_to_region(end_frame, 0, clip=False)
+
+        overlay_verts_pos.append((start_x, y, 0.0))  # top left triangle
+        overlay_verts_pos.append((start_x, y - h, 0.0))
+        overlay_verts_pos.append((end_x, y, 0.0))
+        overlay_verts_pos.append((end_x, y, 0.0))  # bottom right triangle
+        overlay_verts_pos.append((end_x, y - h, 0.0))
+        overlay_verts_pos.append((start_x, y - h, 0.0))
+        for _ in range(6):
+            overlay_verts_color.append(overlay_color)
+
+        marker_verts_pos.append((start_x, y, 0.0))  # start vertical line top
+        marker_verts_pos.append((start_x, y - h, 0.0))  # start vertical line bottom
+        marker_verts_pos.append((start_x, y, 0.0))  # start notch
+        marker_verts_pos.append((start_x - notch_size, y, 0.0))
+        marker_verts_pos.append((start_x - notch_size, y, 0.0))
+        marker_verts_pos.append((start_x, y - notch_size, 0.0))
+
+        marker_verts_pos.append((end_x, y, 0.0))  # end marker vertical line top
+        marker_verts_pos.append((end_x, y - h, 0.0))  # end marker vertical line bottom
+        marker_verts_pos.append((end_x, y, 0.0))  # end marker notch
+        marker_verts_pos.append((end_x + notch_size, y, 0.0))
+        marker_verts_pos.append((end_x + notch_size, y, 0.0))
+        marker_verts_pos.append((end_x, y - notch_size, 0.0))
+        for _ in range(12):
+            marker_verts_color.append(color)
+
+        text_offset = 30 + 25 * (tag_index % 4 + 1)
+        text_x = start_x + 5
+        text_y = y - h + text_offset
+        names.append((clip_tag.name, text_x, text_y))
+
+    gpu.state.line_width_set(3)
+    gpu.state.blend_set("ALPHA")
+
+    shader_smooth_color = gpu.shader.from_builtin("SMOOTH_COLOR")
+    batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "TRIS", {
+        "pos": overlay_verts_pos,
+        "color": overlay_verts_color
+    })
+    batch.draw(shader_smooth_color)
+
+    batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "LINES", {
+        "pos": marker_verts_pos,
+        "color": marker_verts_color
+    })
+    batch.draw(shader_smooth_color)
+
+    theme = bpy.context.preferences.themes[0]
+    text_color = theme.dopesheet_editor.space.text
+    text_color = (text_color[0], text_color[1], text_color[2], 1.0)
+    font_id = 0
+    font_size = 14 * (bpy.context.preferences.system.dpi / 72)
+    for name, x, y in names:
+        blf.position(font_id, x, y, 0)
+        blf.color(font_id, *text_color)
+        blf.size(font_id, font_size)
+        blf.draw(font_id, name)
+
+
+draw_tags_on_timeline_handler = None
+
+
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_animation_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_dictionary_properties)
+
+    global draw_tags_on_timeline_handler
+    draw_tags_on_timeline_handler = bpy.types.SpaceDopeSheetEditor.draw_handler_add(draw_tags_on_timeline, (),
+                                                                                    "WINDOW", "POST_PIXEL")
 
 
 def unregister():
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_animation_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_dictionary_properties)
+
+    global draw_tags_on_timeline_handler
+    bpy.types.SpaceDopeSheetEditor.draw_handler_remove(draw_tags_on_timeline_handler, "WINDOW")
+    draw_tags_on_timeline_handler = None
