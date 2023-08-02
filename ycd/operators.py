@@ -31,7 +31,7 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
         if target is None:
             return {"FINISHED"}
 
-        clip_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
+        clip_frame_count = clip_properties.get_frame_count()
 
         groups = {}
 
@@ -1057,3 +1057,164 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         self.render_init(context)
         self.first_run = False
         return context.window_manager.invoke_props_dialog(self)
+
+
+class SOLLUMZ_OT_timeline_clip_tags_input_handler(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.timeline_clip_tags_input_handler"
+    bl_label = "Sollumz Timeline Clip Tags Input"
+    bl_description = "Handle mouse input to move the clip tags in the timeline"
+
+    def run(self, context):
+        print("hello")
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        print("invoke")
+        # make sure the operator is called under valid conditions
+        if context is None or event is None or context.region is None:
+            return {'PASS_THROUGH'}
+
+        clip_obj = bpy.context.active_object
+        if clip_obj is None or clip_obj.sollum_type != SollumType.CLIP:
+            return {'PASS_THROUGH'}
+
+        region = bpy.context.region
+
+        mouse_x = event.mouse_region_x
+        mouse_y = event.mouse_region_y
+        print(mouse_x, mouse_y, region.height - 23.5)
+
+        if mouse_y >= region.height - 23.5:  # ignore if mouse is on the timeline scrubber
+            self.clear_hovered_state(region, clip_obj)
+            return {"PASS_THROUGH"}
+
+        dragging = False
+        if event.type == "MOUSEMOVE":
+            self.update_hovered_state(region, mouse_x, mouse_y, clip_obj)
+            dragging = self.handle_dragging(region, mouse_x, mouse_y, clip_obj)
+        elif event.type == "LEFTMOUSE" and event.value == "PRESS":
+            self.update_hovered_state(region, mouse_x, mouse_y, clip_obj)
+            dragging = self.update_drag_state(clip_obj)
+        elif event.type == "LEFTMOUSE" and event.value == "RELEASE":
+            self.clear_drag_state(clip_obj)
+
+        if dragging:
+            region.tag_redraw()
+            return {"FINISHED"}
+        else:
+            return {"PASS_THROUGH"}
+
+    def update_hovered_state(self, region, mouse_x, mouse_y, clip_obj):
+        clip_properties = clip_obj.clip_properties
+        clip_frame_count = clip_properties.get_frame_count()
+
+        view = region.view2d
+
+        any_change = False
+        for clip_tag in clip_properties.tags:
+            if not clip_tag.ui_view_on_timeline:
+                continue
+
+            start_phase = clip_tag.start_phase
+            end_phase = clip_tag.end_phase
+
+            start_frame = clip_frame_count * start_phase
+            end_frame = clip_frame_count * end_phase
+
+            start_x, _ = view.view_to_region(start_frame, 0, clip=False)
+            end_x, _ = view.view_to_region(end_frame, 0, clip=False)
+            hover_threshold = 2
+
+            old_hovered_start = clip_tag.ui_timeline_hovered_start
+            old_hovered_end = clip_tag.ui_timeline_hovered_end
+            new_hovered_start = start_x - hover_threshold <= mouse_x <= start_x + hover_threshold
+            new_hovered_end = end_x - hover_threshold <= mouse_x <= end_x + hover_threshold
+            clip_tag.ui_timeline_hovered_start = new_hovered_start
+            clip_tag.ui_timeline_hovered_end = new_hovered_end
+
+            any_change = any_change or old_hovered_start != new_hovered_start or old_hovered_end != new_hovered_end
+
+        if any_change:
+            region.tag_redraw()
+
+    def clear_hovered_state(self, region, clip_obj):
+        clip_properties = clip_obj.clip_properties
+
+        any_change = False
+        for clip_tag in clip_properties.tags:
+            if not clip_tag.ui_view_on_timeline:
+                continue
+
+            old_hovered_start = clip_tag.ui_timeline_hovered_start
+            old_hovered_end = clip_tag.ui_timeline_hovered_end
+            new_hovered_start = False
+            new_hovered_end = False
+            clip_tag.ui_timeline_hovered_start = new_hovered_start
+            clip_tag.ui_timeline_hovered_end = new_hovered_end
+
+            any_change = any_change or old_hovered_start != new_hovered_start or old_hovered_end != new_hovered_end
+
+        if any_change:
+            region.tag_redraw()
+
+    def update_drag_state(self, clip_obj):
+        any_dragging = False
+        clip_properties = clip_obj.clip_properties
+        for clip_tag in reversed(clip_properties.tags):  # reversed so the tag drawn on top is always picked first
+            if any_dragging:
+                clip_tag.ui_timeline_drag_start = False
+                clip_tag.ui_timeline_drag_end = False
+            else:
+                clip_tag.ui_timeline_drag_start = clip_tag.ui_timeline_hovered_start
+                clip_tag.ui_timeline_drag_end = clip_tag.ui_timeline_hovered_end
+                any_dragging = any_dragging or clip_tag.ui_timeline_drag_start or clip_tag.ui_timeline_drag_end
+        return any_dragging
+
+    def clear_drag_state(self, clip_obj):
+        clip_properties = clip_obj.clip_properties
+        for clip_tag in clip_properties.tags:
+            clip_tag.ui_timeline_drag_start = False
+            clip_tag.ui_timeline_drag_end = False
+
+    def handle_dragging(self, region, mouse_x, mouse_y, clip_obj):
+        clip_properties = clip_obj.clip_properties
+        clip_frame_count = clip_properties.get_frame_count()
+
+        view = region.view2d
+        curr_frame, _ = view.region_to_view(mouse_x, mouse_y)
+        curr_phase = curr_frame / clip_frame_count
+
+        any_dragging = False
+        clip_properties = clip_obj.clip_properties
+        for clip_tag in clip_properties.tags:
+            if not clip_tag.ui_timeline_drag_start and not clip_tag.ui_timeline_drag_end:
+                continue
+
+            any_dragging = True
+            if clip_tag.ui_timeline_drag_start:
+                clip_tag.start_phase = curr_phase
+
+            if clip_tag.ui_timeline_drag_end:
+                clip_tag.end_phase = curr_phase
+
+        return any_dragging
+
+addon_keymaps = []
+
+def register():
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if kc:
+        km = wm.keyconfigs.addon.keymaps.new(name="Dopesheet", space_type="DOPESHEET_EDITOR", region_type="WINDOW")
+        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_input_handler.bl_idname, "MOUSEMOVE", "ANY")
+
+        addon_keymaps.append((km, kmi))
+        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_input_handler.bl_idname, "LEFTMOUSE", "ANY")
+
+        addon_keymaps.append((km, kmi))
+
+def unregister():
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+

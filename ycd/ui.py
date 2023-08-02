@@ -551,11 +551,13 @@ def draw_tags_on_timeline():
         return
 
     clip_properties = clip_obj.clip_properties
-    clip_frame_count = round(clip_properties.duration * bpy.context.scene.render.fps)
+    clip_frame_count = clip_properties.get_frame_count()
 
     region = bpy.context.region
     view = region.view2d
+    scrubber_height = 22.5
     h = region.height
+    h -= scrubber_height
 
     overlay_verts_pos = []
     overlay_verts_color = []
@@ -573,10 +575,19 @@ def draw_tags_on_timeline():
         start_frame = clip_frame_count * start_phase
         end_frame = clip_frame_count * end_phase
         color = clip_tag.ui_timeline_color
+        color_highlight = (color[0] + (1.0 - color[0]) * 0.25,
+                           color[1] + (1.0 - color[1]) * 0.25,
+                           color[2] + (1.0 - color[2]) * 0.25,
+                           color[3])
+        highlight_start = clip_tag.ui_timeline_hovered_start or clip_tag.ui_timeline_drag_start
+        highlight_end = clip_tag.ui_timeline_hovered_end or clip_tag.ui_timeline_drag_end
+        color_start = color_highlight if highlight_start else color
+        color_end = color_highlight if highlight_end else color
         overlay_color = (color[0], color[1], color[2], color[3] * 0.2)
 
         start_x, y = view.view_to_region(start_frame, 0, clip=False)
         end_x, _ = view.view_to_region(end_frame, 0, clip=False)
+        y -= scrubber_height  # place markers below the scrubber
 
         overlay_verts_pos.append((start_x, y, 0.0))  # top left triangle
         overlay_verts_pos.append((start_x, y - h, 0.0))
@@ -593,6 +604,8 @@ def draw_tags_on_timeline():
         marker_verts_pos.append((start_x - notch_size, y, 0.0))
         marker_verts_pos.append((start_x - notch_size, y, 0.0))
         marker_verts_pos.append((start_x, y - notch_size, 0.0))
+        for _ in range(6):
+            marker_verts_color.append(color_start)
 
         marker_verts_pos.append((end_x, y, 0.0))  # end marker vertical line top
         marker_verts_pos.append((end_x, y - h, 0.0))  # end marker vertical line bottom
@@ -600,8 +613,8 @@ def draw_tags_on_timeline():
         marker_verts_pos.append((end_x + notch_size, y, 0.0))
         marker_verts_pos.append((end_x + notch_size, y, 0.0))
         marker_verts_pos.append((end_x, y - notch_size, 0.0))
-        for _ in range(12):
-            marker_verts_color.append(color)
+        for _ in range(6):
+            marker_verts_color.append(color_end)
 
         text_offset = 30 + 25 * (tag_index % 4 + 1)
         text_x = start_x + 5

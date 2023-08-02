@@ -5,7 +5,6 @@ import math
 from mathutils import Matrix, Vector
 from ..sollumz_properties import SollumType
 from ..tools.animationhelper import retarget_animation, get_target_from_id
-from ..tools.blenderhelper import get_data_obj
 
 
 def animations_filter(self, object):
@@ -52,16 +51,28 @@ class ClipTag(bpy.types.PropertyGroup):
 
     attributes: bpy.props.CollectionProperty(name="Attributes", type=ClipAttribute)
 
+    ui_active_attribute_index: bpy.props.IntProperty()
+    ui_show_expanded: bpy.props.BoolProperty(
+        name="Show Expanded", description="Show details of the tag",
+        default=True)
     ui_view_on_timeline: bpy.props.BoolProperty(
         name="View on Timeline", description="Show tag on the timeline",
         default=True)
     ui_timeline_color: bpy.props.FloatVectorProperty(
         name="Timeline Color", description="Color of the tag on the timeline",
         default=(1.0, 0.0, 0.0, 1.0), size=4, subtype="COLOR",)
-    ui_show_expanded: bpy.props.BoolProperty(
-        name="Show Expanded", description="Show details of the tag",
-        default=True)
-    ui_active_attribute_index: bpy.props.IntProperty()
+    ui_timeline_hovered_start: bpy.props.BoolProperty(
+        name="Timeline Hovered Start", description="Is the tag start marker hovered on the timeline?",
+        default=False, options={"HIDDEN", "SKIP_SAVE"})
+    ui_timeline_hovered_end: bpy.props.BoolProperty(
+        name="Timeline Hovered End", description="Is the tag end marker hovered on the timeline?",
+        default=False, options={"HIDDEN", "SKIP_SAVE"})
+    ui_timeline_drag_start: bpy.props.BoolProperty(
+        name="Timeline Drag Start", description="Is the tag start marker being dragged on the timeline?",
+        default=False, options={"HIDDEN", "SKIP_SAVE"})
+    ui_timeline_drag_end: bpy.props.BoolProperty(
+        name="Timeline Drag End", description="Is the tag end marker being dragged on the timeline?",
+        default=False, options={"HIDDEN", "SKIP_SAVE"})
 
 
 class ClipAnimation(bpy.types.PropertyGroup):
@@ -92,6 +103,9 @@ class ClipProperties(bpy.types.PropertyGroup):
     tags: bpy.props.CollectionProperty(name="Tags", type=ClipTag)
 
     properties: bpy.props.CollectionProperty(name="Properties", type=ClipAttribute)
+
+    def get_frame_count(self):
+        return round(self.duration * bpy.context.scene.render.fps)
 
 
 class AnimationProperties(bpy.types.PropertyGroup):
