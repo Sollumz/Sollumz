@@ -719,3 +719,11 @@ def get_target_from_id(target_id: bpy.types.ID) -> bpy.types.ID:
     # - armature animations need to access pose bones and delta location/rotation
     # - camera animations need to access the camera location/rotation
     return get_data_obj(target_id)
+
+
+def is_any_sollumz_animation_obj(obj):
+    return obj.sollum_type in {SollumType.CLIP_DICTIONARY,
+                               SollumType.ANIMATION,
+                               SollumType.ANIMATIONS,
+                               SollumType.CLIP,
+                               SollumType.CLIPS}

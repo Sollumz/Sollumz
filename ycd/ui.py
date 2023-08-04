@@ -1,9 +1,11 @@
 import bpy
+import numpy as np
 from ..sollumz_properties import SollumType, MaterialType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from . import operators as ycd_ops
 from .properties import AnimationTracks
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
+from ..tools.animationhelper import is_any_sollumz_animation_obj
 
 def draw_clip_properties(self, context):
     obj = context.active_object
@@ -82,19 +84,6 @@ def draw_animation_properties(self, context):
         r.use_property_split = True
         r.use_property_decorate = False
         template_animation_target_ID(r, animation_properties, "target_id", "target_id_type")
-
-
-def draw_animations_properties(self, context):
-    # TODO: this probably should appear in the clip dictionary panel and/or the animations tools panel
-    obj = context.active_object
-    if obj and obj.sollum_type == SollumType.ANIMATIONS:
-        layout = self.layout
-
-        r = layout.row(align=True)
-        r.use_property_split = True
-        r.use_property_decorate = False
-        template_animation_target_ID(r, obj.animations_object_properties, "target_id", "target_id_type", text=" ")
-        r.operator(ycd_ops.SOLLUMZ_OT_animations_set_target.bl_idname)
 
 def draw_clip_dictionary_properties(self, context):
     obj = context.active_object
@@ -536,151 +525,198 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        if len(bpy.context.selected_objects) > 0:
-            active_object = bpy.context.selected_objects[0]
+        if len(context.selected_objects) > 0:
+            active_object = context.selected_objects[0]
 
-            if active_object.sollum_type == SollumType.CLIP or active_object.sollum_type == SollumType.ANIMATION or \
-                    active_object.sollum_type == SollumType.ANIMATIONS or active_object.sollum_type == SollumType.CLIPS or \
-                    active_object.sollum_type == SollumType.CLIP_DICTIONARY:
+            if is_any_sollumz_animation_obj(active_object):
                 layout.operator(ycd_ops.SOLLUMZ_OT_create_clip.bl_idname)
                 layout.operator(ycd_ops.SOLLUMZ_OT_create_animation.bl_idname)
             else:
                 row = layout.row(align=False)
-                row.operator(
-                    ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+                row.operator(ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
+
+            row = layout.row(align=True)
+            row.use_property_split = True
+            row.use_property_decorate = False
+            template_animation_target_ID(row, context.scene,
+                                         "sollumz_animations_target_id",
+                                         "sollumz_animations_target_id_type", text=" ")
+            row.operator(ycd_ops.SOLLUMZ_OT_animations_set_target.bl_idname)
         else:
             layout.operator(
                 ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
 
 
-def draw_tags_on_timeline():
-    import gpu
-    import gpu_extras
-    import blf
+class ClipTagsOnTimelineDrawHandler:
+    """Manages drawing the tag markers for the selected clip on the timeline.
+    User input is handled by operator SOLLUMZ_OT_timeline_clip_tags_drag.
+    """
 
-    clip_obj = bpy.context.active_object
-    if clip_obj is None or clip_obj.sollum_type != SollumType.CLIP:
-        return
+    def __init__(self, cls):
+        self.cls = cls
+        self.handler = None
+        self.overlay_verts_pos = np.empty((0, 3), dtype=np.float32)
+        self.overlay_verts_color = np.empty((0, 4), dtype=np.float32)
+        self.marker_verts_pos = np.empty((0, 3), dtype=np.float32)
+        self.marker_verts_color = np.empty((0, 4), dtype=np.float32)
 
-    clip_properties = clip_obj.clip_properties
-    clip_frame_count = clip_properties.get_frame_count()
+    def register(self):
+        self.handler = self.cls.draw_handler_add(self.draw, (), "WINDOW", "POST_PIXEL")
 
-    region = bpy.context.region
-    view = region.view2d
-    scrubber_height = 22.5
-    h = region.height
-    h -= scrubber_height
+    def unregister(self):
+        self.cls.draw_handler_remove(self.handler, "WINDOW")
 
-    overlay_verts_pos = []
-    overlay_verts_color = []
-    marker_verts_pos = []
-    marker_verts_color = []
-    notch_size = 5
-    names = []
-    for tag_index, clip_tag in enumerate(clip_properties.tags):
-        if not clip_tag.ui_view_on_timeline:
-            continue
+    def draw(self):
+        import gpu
+        import gpu_extras
+        import blf
+        import time
 
-        start_phase = clip_tag.start_phase
-        end_phase = clip_tag.end_phase
+        context = bpy.context
+        clip_obj = context.active_object
+        if clip_obj is None or clip_obj.sollum_type != SollumType.CLIP:
+            return
+        # t_start = time.perf_counter_ns()
 
-        start_frame = clip_frame_count * start_phase
-        end_frame = clip_frame_count * end_phase
-        color = clip_tag.ui_timeline_color
-        color_highlight = (color[0] + (1.0 - color[0]) * 0.25,
-                           color[1] + (1.0 - color[1]) * 0.25,
-                           color[2] + (1.0 - color[2]) * 0.25,
-                           color[3])
-        highlight_start = clip_tag.ui_timeline_hovered_start or clip_tag.ui_timeline_drag_start
-        highlight_end = clip_tag.ui_timeline_hovered_end or clip_tag.ui_timeline_drag_end
-        color_start = color_highlight if highlight_start else color
-        color_end = color_highlight if highlight_end else color
-        overlay_color = (color[0], color[1], color[2], color[3] * 0.2)
+        clip_properties = clip_obj.clip_properties
 
-        start_x, y = view.view_to_region(start_frame, 0, clip=False)
-        end_x, _ = view.view_to_region(end_frame, 0, clip=False)
-        y -= scrubber_height  # place markers below the scrubber
+        num_tags = len(clip_properties.tags)
+        if num_tags == 0:
+            return
 
-        overlay_verts_pos.append((start_x, y, 0.0))  # top left triangle
-        overlay_verts_pos.append((start_x, y - h, 0.0))
-        overlay_verts_pos.append((end_x, y, 0.0))
-        overlay_verts_pos.append((end_x, y, 0.0))  # bottom right triangle
-        overlay_verts_pos.append((end_x, y - h, 0.0))
-        overlay_verts_pos.append((start_x, y - h, 0.0))
-        for _ in range(6):
-            overlay_verts_color.append(overlay_color)
+        if num_tags != len(self.overlay_verts_pos) // 6:
+            self.overlay_verts_pos = np.empty((num_tags * 6, 3), dtype=np.float32)
+            self.overlay_verts_color = np.empty((num_tags * 6, 4), dtype=np.float32)
+            self.marker_verts_pos = np.empty((num_tags * 12, 3), dtype=np.float32)
+            self.marker_verts_color = np.empty((num_tags * 12, 4), dtype=np.float32)
 
-        marker_verts_pos.append((start_x, y, 0.0))  # start vertical line top
-        marker_verts_pos.append((start_x, y - h, 0.0))  # start vertical line bottom
-        marker_verts_pos.append((start_x, y, 0.0))  # start notch
-        marker_verts_pos.append((start_x - notch_size, y, 0.0))
-        marker_verts_pos.append((start_x - notch_size, y, 0.0))
-        marker_verts_pos.append((start_x, y - notch_size, 0.0))
-        for _ in range(6):
-            marker_verts_color.append(color_start)
+        clip_frame_count = clip_properties.get_frame_count()
 
-        marker_verts_pos.append((end_x, y, 0.0))  # end marker vertical line top
-        marker_verts_pos.append((end_x, y - h, 0.0))  # end marker vertical line bottom
-        marker_verts_pos.append((end_x, y, 0.0))  # end marker notch
-        marker_verts_pos.append((end_x + notch_size, y, 0.0))
-        marker_verts_pos.append((end_x + notch_size, y, 0.0))
-        marker_verts_pos.append((end_x, y - notch_size, 0.0))
-        for _ in range(6):
-            marker_verts_color.append(color_end)
+        region = context.region
+        view = region.view2d
+        scrubber_height = 22.5
+        h = region.height
+        h -= scrubber_height  # reduce region height to place markers below the scrubber
 
-        text_offset = 30 + 25 * (tag_index % 4 + 1)
-        text_x = start_x + 5
-        text_y = y - h + text_offset
-        names.append((clip_tag.name, text_x, text_y))
+        notch_size = 5
+        names = []
+        num_visible_tags = 0
+        for clip_tag in clip_properties.tags:
+            if not clip_tag.ui_view_on_timeline:
+                continue
 
-    gpu.state.line_width_set(3)
-    gpu.state.blend_set("ALPHA")
+            i = num_visible_tags
 
-    shader_smooth_color = gpu.shader.from_builtin("SMOOTH_COLOR")
-    batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "TRIS", {
-        "pos": overlay_verts_pos,
-        "color": overlay_verts_color
-    })
-    batch.draw(shader_smooth_color)
+            start_phase = clip_tag.start_phase
+            end_phase = clip_tag.end_phase
 
-    batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "LINES", {
-        "pos": marker_verts_pos,
-        "color": marker_verts_color
-    })
-    batch.draw(shader_smooth_color)
+            start_frame = clip_frame_count * start_phase
+            end_frame = clip_frame_count * end_phase
+            color = clip_tag.ui_timeline_color
+            color_highlight = (color[0] + (1.0 - color[0]) * 0.25,
+                               color[1] + (1.0 - color[1]) * 0.25,
+                               color[2] + (1.0 - color[2]) * 0.25,
+                               color[3])
+            highlight_start = clip_tag.ui_timeline_hovered_start or clip_tag.ui_timeline_drag_start
+            highlight_end = clip_tag.ui_timeline_hovered_end or clip_tag.ui_timeline_drag_end
+            color_start = color_highlight if highlight_start else color
+            color_end = color_highlight if highlight_end else color
+            overlay_color = (color[0], color[1], color[2], color[3] * 0.2)
 
-    theme = bpy.context.preferences.themes[0]
-    text_color = theme.dopesheet_editor.space.text
-    text_color = (text_color[0], text_color[1], text_color[2], 1.0)
-    font_id = 0
-    font_size = 14 * (bpy.context.preferences.system.dpi / 72)
-    for name, x, y in names:
-        blf.position(font_id, x, y, 0)
-        blf.color(font_id, *text_color)
-        blf.size(font_id, font_size)
-        blf.draw(font_id, name)
+            start_x, _ = view.view_to_region(start_frame, 0, clip=False)
+            end_x, _ = view.view_to_region(end_frame, 0, clip=False)
+            y = h
+
+            # tag area highlight
+            o = i * 6
+            self.overlay_verts_pos[o:o + 6] = (
+                (start_x, y, 0.0),  # top left triangle
+                (start_x, y - h, 0.0),
+                (end_x, y, 0.0),
+                (end_x, y, 0.0),  # bottom right triangle
+                (end_x, y - h, 0.0),
+                (start_x, y - h, 0.0),
+            )
+            self.overlay_verts_color[o: o + 6] = overlay_color
+
+            o = i * 12
+            self.marker_verts_pos[o:o + 12] = (
+                # start marker
+                (start_x, y, 0.0),  # start vertical line top
+                (start_x, y - h, 0.0),  # start vertical line bottom
+                (start_x, y, 0.0),  # start notch
+                (start_x - notch_size, y, 0.0),
+                (start_x - notch_size, y, 0.0),
+                (start_x, y - notch_size, 0.0),
+                # end marker
+                (end_x, y, 0.0),  # end marker vertical line top
+                (end_x, y - h, 0.0),  # end marker vertical line bottom
+                (end_x, y, 0.0),  # end marker notch
+                (end_x + notch_size, y, 0.0),
+                (end_x + notch_size, y, 0.0),
+                (end_x, y - notch_size, 0.0),
+            )
+            self.marker_verts_color[o: o + 6] = color_start
+            self.marker_verts_color[o + 6: o + 12] = color_end
+
+            # tag name
+            text_offset = 30 + 25 * (i % 4 + 1)
+            text_x = start_x + 5
+            text_y = y - h + text_offset
+            names.append((clip_tag.name, text_x, text_y))
+
+            num_visible_tags += 1
+
+        gpu.state.line_width_set(3)
+        gpu.state.blend_set("ALPHA")
+
+        shader_smooth_color = gpu.shader.from_builtin("SMOOTH_COLOR")
+        batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "TRIS", {
+            "pos": self.overlay_verts_pos[:num_visible_tags * 6],
+            "color": self.overlay_verts_color[:num_visible_tags * 6]
+        })
+        batch.draw(shader_smooth_color)
+
+        batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "LINES", {
+            "pos": self.marker_verts_pos[:num_visible_tags * 12],
+            "color": self.marker_verts_color[:num_visible_tags * 12]
+        })
+        batch.draw(shader_smooth_color)
+
+        theme = context.preferences.themes[0]
+        text_color = theme.dopesheet_editor.space.text
+        text_color = (text_color[0], text_color[1], text_color[2], 1.0)
+        font_id = 0
+        font_size = 14 * (context.preferences.system.dpi / 72)
+        for name, x, y in names:
+            blf.position(font_id, x, y, 0)
+            blf.color(font_id, *text_color)
+            blf.size(font_id, font_size)
+            blf.draw(font_id, name)
+
+        # t_end = time.perf_counter_ns()
+        # print(f"draw_tags_on_timeline  {t_end - t_start} ns  ({(t_end - t_start) / 1000000} ms)")
 
 
-draw_tags_on_timeline_handler = None
+draw_handlers = []
 
 
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_animation_properties)
-    SOLLUMZ_PT_OBJECT_PANEL.append(draw_animations_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_dictionary_properties)
 
-    global draw_tags_on_timeline_handler
-    draw_tags_on_timeline_handler = bpy.types.SpaceDopeSheetEditor.draw_handler_add(draw_tags_on_timeline, (),
-                                                                                    "WINDOW", "POST_PIXEL")
+    for cls in (bpy.types.SpaceDopeSheetEditor, bpy.types.SpaceNLA):
+        handler = ClipTagsOnTimelineDrawHandler(cls)
+        handler.register()
+        draw_handlers.append(handler)
 
 
 def unregister():
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_animation_properties)
-    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_animations_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_dictionary_properties)
 
-    global draw_tags_on_timeline_handler
-    bpy.types.SpaceDopeSheetEditor.draw_handler_remove(draw_tags_on_timeline_handler, "WINDOW")
-    draw_tags_on_timeline_handler = None
+    for handler in draw_handlers:
+        handler.unregister()
+    draw_handlers.clear()

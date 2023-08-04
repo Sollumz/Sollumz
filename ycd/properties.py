@@ -70,7 +70,7 @@ class ClipTag(bpy.types.PropertyGroup):
         default=True)
     ui_timeline_color: bpy.props.FloatVectorProperty(
         name="Timeline Color", description="Color of the tag on the timeline",
-        default=(1.0, 0.0, 0.0, 1.0), size=4, subtype="COLOR",)
+        default=(1.0, 0.0, 0.0, 1.0), size=4, subtype="COLOR", min=0.0, max=1.0)
     ui_timeline_hovered_start: bpy.props.BoolProperty(
         name="Timeline Hovered Start", description="Is the tag start marker hovered on the timeline?",
         default=False, options={"HIDDEN", "SKIP_SAVE"})
@@ -144,14 +144,6 @@ class AnimationProperties(bpy.types.PropertyGroup):
     def get_target(self) -> bpy.types.ID:
         """Returns the ID instance where the animation data should be created to play the animation."""
         return get_target_from_id(self.target_id)
-
-
-class AnimationsObjectProperties(bpy.types.PropertyGroup):
-    # used with operator SOLLUMZ_OT_animations_set_target
-    target_id: bpy.props.PointerProperty(name="Target", type=bpy.types.ID,
-                                         options={"HIDDEN", "SKIP_SAVE"})
-    target_id_type: bpy.props.EnumProperty(name="Target Type", items=AnimationTargetIDTypes, default="ARMATURE",
-                                           options={"HIDDEN", "SKIP_SAVE"})
 
 
 UVTransformModes = [
@@ -382,8 +374,6 @@ def register():
         type=ClipProperties)
     bpy.types.Object.animation_properties = bpy.props.PointerProperty(
         type=AnimationProperties)
-    bpy.types.Object.animations_object_properties = bpy.props.PointerProperty(
-        type=AnimationsObjectProperties)
 
     register_tracks(bpy.types.PoseBone, inline=True)
     register_tracks(bpy.types.Object)
@@ -392,6 +382,12 @@ def register():
     # used during export to temporarily store UV transforms
     bpy.types.ID.export_uv_transforms = bpy.props.CollectionProperty(
         type=UVTransform, options={"HIDDEN", "SKIP_SAVE"})
+
+    # used with operator SOLLUMZ_OT_animations_set_target
+    bpy.types.Scene.sollumz_animations_target_id = bpy.props.PointerProperty(
+        name="Target",type=bpy.types.ID, options={"HIDDEN", "SKIP_SAVE"})
+    bpy.types.Scene.sollumz_animations_target_id_type = bpy.props.EnumProperty(
+        name="Target Type", items=AnimationTargetIDTypes, default="ARMATURE", options={"HIDDEN", "SKIP_SAVE"})
 
 
 def unregister():

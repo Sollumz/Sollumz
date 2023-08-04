@@ -4,38 +4,56 @@ from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_child_by_type, get_data_obj
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import color_hash
+from ..tools.animationhelper import is_any_sollumz_animation_obj
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 
 
 class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.animations_set_target"
     bl_label = "Set Animations Target"
-    bl_description = "Set the same target for all animations"
+    bl_description = "Set the same target for all animations in the selected clip dictionaries"
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object is not None and
-                context.active_object.sollum_type == SollumType.ANIMATIONS and
-                context.active_object.animations_object_properties.target_id is not None)
+        return (len(context.selected_objects) > 0 and
+                any(is_any_sollumz_animation_obj(obj) for obj in context.selected_objects) and
+                context.scene.sollumz_animations_target_id is not None)
 
     def run(self, context):
-        animations_obj = context.active_object
-        target_id = animations_obj.animations_object_properties.target_id
-        target_id_type = animations_obj.animations_object_properties.target_id_type
-        print(animations_obj,
-              target_id,
-              target_id_type)
+        scene = context.scene
+        animations_objects = self.collect_animations_objects(context)
+        target_id = scene.sollumz_animations_target_id
+        target_id_type = scene.sollumz_animations_target_id_type
 
-        for animation_obj in animations_obj.children:
-            if animation_obj.sollum_type != SollumType.ANIMATION:
-                continue
+        for animations_obj in animations_objects:
+            for animation_obj in animations_obj.children:
+                if animation_obj.sollum_type != SollumType.ANIMATION:
+                    continue
 
-            animation_obj.animation_properties.target_id_type = target_id_type
-            animation_obj.animation_properties.target_id = target_id
+                animation_obj.animation_properties.target_id_type = target_id_type
+                animation_obj.animation_properties.target_id = target_id
 
-        context.active_object.animations_object_properties.target_id = None
+        scene.sollumz_animations_target_id = None
         return {"FINISHED"}
 
+    def collect_animations_objects(self, context):
+        animations_objects = set()
+        for obj in context.selected_objects:
+            animations_obj = None
+            if obj.sollum_type == SollumType.ANIMATION:
+                animations_obj = obj.parent
+            elif obj.sollum_type == SollumType.ANIMATIONS:
+                animations_obj = obj
+            elif obj.sollum_type == SollumType.CLIP:
+                animations_obj = find_child_by_type(obj.parent.parent, SollumType.ANIMATIONS)
+            elif obj.sollum_type == SollumType.CLIPS:
+                animations_obj = find_child_by_type(obj.parent, SollumType.ANIMATIONS)
+            elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
+                animations_obj = find_child_by_type(obj, SollumType.ANIMATIONS)
+
+            animations_objects.add(animations_obj)
+
+        return animations_objects
 
 class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.anim_apply_nla"
@@ -211,9 +229,9 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         tag.start_phase = phase
         tag.end_phase = phase
 
-        # redraw the dopesheet to show the new tag
+        # redraw the timeline to show the new tag
         for area in context.screen.areas:
-            if area.type == "DOPESHEET_EDITOR":
+            if area.type == "DOPESHEET_EDITOR" or area.type == "NLA_EDITOR":
                 area.tag_redraw()
 
         return {"FINISHED"}
@@ -282,13 +300,33 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
             raise Exception("Invalid template")
 
         # more tags:
-        #  hash_C261B2D3
+        #  hash_C261B2D3        (first person camera related)
         #    pitchspringinput  Bool
         #    yawspringinput    Bool
         #
         #  hash_1EFF20B5
         #    allowed           Bool
         #    blocked           Bool
+        #
+        #  ik
+        #    right             Bool
+        #    on                Bool
+        #
+        #  hash_44D39D32
+        #    hash_70DB63EC     HashString
+        #    hash_0398BB95     HashString
+        #
+        #  door
+        #    start             Bool
+        #
+        #  smash                (no attributes, probably specific to veh@jacking@ animations)
+        #
+        #  hash_95955F82        (no attributes, probably specific to veh@jacking@ animations)
+        #
+        #  applyforce
+        #    force             Float
+        #
+        #
 
 
         tag.name = name
@@ -319,9 +357,9 @@ class SOLLUMZ_OT_clip_delete_tag(SOLLUMZ_OT_base, bpy.types.Operator):
 
         clip_properties.tags.remove(self.tag_index)
 
-        # redraw the dopesheet to stop displaying the deleted tag
+        # redraw the timeline to stop displaying the deleted tag
         for area in context.screen.areas:
-            if area.type == "DOPESHEET_EDITOR":
+            if area.type == "DOPESHEET_EDITOR" or area.type == "NLA_EDITOR":
                 area.tag_redraw()
 
         return {"FINISHED"}
@@ -1313,13 +1351,12 @@ def register():
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
-        km = wm.keyconfigs.addon.keymaps.new(name="Dopesheet", space_type="DOPESHEET_EDITOR", region_type="WINDOW")
-        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "MOUSEMOVE", "ANY")
-
-        addon_keymaps.append((km, kmi))
-        kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "LEFTMOUSE", "ANY")
-
-        addon_keymaps.append((km, kmi))
+        for name, space_type in (("Dopesheet", "DOPESHEET_EDITOR"), ("NLA Editor", "NLA_EDITOR")):
+            km = wm.keyconfigs.addon.keymaps.new(name=name, space_type=space_type, region_type="WINDOW")
+            kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "MOUSEMOVE", "ANY")
+            addon_keymaps.append((km, kmi))
+            kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "LEFTMOUSE", "ANY")
+            addon_keymaps.append((km, kmi))
 
 
 def unregister():
