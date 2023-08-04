@@ -1,3 +1,5 @@
+from typing import Optional
+
 import bpy
 import numpy as np
 from ..sollumz_properties import SollumType, MaterialType
@@ -28,46 +30,43 @@ animation_target_id_type_to_collection_name = {
     "MATERIAL": "materials",
 }
 
+animation_target_id_python_type_to_type = {
+    bpy.types.Armature: "ARMATURE",
+    bpy.types.Camera: "CAMERA",
+    bpy.types.Material: "MATERIAL",
+}
+
 
 # https://blender.stackexchange.com/a/293222
 def template_animation_target_ID(layout: bpy.types.UILayout, data, property: str, type_property: str,
-                    text: str = "", text_ctxt: str = "", translate: bool = True):
-    split = layout.split(factor=0.33, align=True)
-
-    # FIRST PART
-    row = split.row()
-
-    # Label - either use the provided text, or will become "ID-Block:"
-    if text != "":
-        row.label(text=text, text_ctxt=text_ctxt, translate=translate)
-    elif data.bl_rna.properties[property].name != "":
-        row.label(text=data.bl_rna.properties[property].name, text_ctxt=text_ctxt, translate=translate)
+                                 text: Optional[str] = "", text_ctxt: str = "", translate: bool = True):
+    if text is not None:
+        split = layout.split(factor=0.4, align=True)
+        row = split.row()
+        row.alignment = "RIGHT"
+        if text != "":
+            # ` + "  "` is a hack to make the text better aligned with previous prop()'s
+            row.label(text=text + "  ", text_ctxt=text_ctxt, translate=translate)
+        elif data.bl_rna.properties[property].name != "":
+            row.label(text=data.bl_rna.properties[property].name + "  ", text_ctxt=text_ctxt, translate=translate)
+        else:
+            row.label(text="ID-Block:")
+        row = split.row(align=True)
     else:
-        row.label(text="ID-Block:")
-
-    # SECOND PART
-    row = split.row(align=True)
-
-    # ID-Type Selector - just have a menu of icons
-
-    # HACK: special group just for the enum,
-    # otherwise we get ugly layout with text included too...
-    sub = row.row(align=True)
-    sub.alignment = "LEFT"
-
-    sub.prop(data, type_property, icon_only=True)
-
-    # ID-Block Selector - just use pointer widget...
-
-    # HACK: special group to counteract the effects of the previous enum,
-    # which now pushes everything too far right.
-    sub = row.row(align=True)
-    sub.alignment = "EXPAND"
+        row = layout.row(align=True)
+    row.use_property_decorate = False
+    row.prop(data, type_property, icon_only=True)
+    row.use_property_decorate = True
 
     type_name = getattr(data, type_property)
     if type_name in animation_target_id_type_to_collection_name:
-        icon = data.bl_rna.properties[type_property].enum_items[type_name].icon
-        sub.prop_search(data, property, bpy.data, animation_target_id_type_to_collection_name[type_name],
+        data_prop = getattr(data, property)
+        data_prop_type_name = animation_target_id_python_type_to_type.get(type(data_prop), None)
+        if data_prop_type_name is None:
+            icon = "NONE"
+        else:
+            icon = data.bl_rna.properties[type_property].enum_items[data_prop_type_name].icon
+        row.prop_search(data, property, bpy.data, animation_target_id_type_to_collection_name[type_name],
                         text="", icon=icon)
 
 
@@ -80,10 +79,7 @@ def draw_animation_properties(self, context):
 
         layout.prop(animation_properties, "hash")
         layout.prop(animation_properties, "action")
-        r = layout.row()
-        r.use_property_split = True
-        r.use_property_decorate = False
-        template_animation_target_ID(r, animation_properties, "target_id", "target_id_type")
+        template_animation_target_ID(layout, animation_properties, "target_id", "target_id_type")
 
 def draw_clip_dictionary_properties(self, context):
     obj = context.active_object
@@ -536,11 +532,9 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                 row.operator(ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)
 
             row = layout.row(align=True)
-            row.use_property_split = True
-            row.use_property_decorate = False
             template_animation_target_ID(row, context.scene,
                                          "sollumz_animations_target_id",
-                                         "sollumz_animations_target_id_type", text=" ")
+                                         "sollumz_animations_target_id_type", text=None)
             row.operator(ycd_ops.SOLLUMZ_OT_animations_set_target.bl_idname)
         else:
             layout.operator(
