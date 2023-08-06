@@ -6,7 +6,9 @@ By Skylumz and Colton Fox
 ## Using the plugin
 See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sure to read the wiki before posting an issue or asking questions!
 
-Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Below)
+Github issues should only be related to issues with the plugin itself, if you are having an problem/error with importing/exporting certain items you can find the community help channel in the Sollumz discord to ask for help with this. 
+
+You can also find Tutorial and Resource channels in the [Sollumz Discord](https://discord.gg/bZuWBWaQBg)
 
 ## Features ##
 
@@ -37,10 +39,10 @@ Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Be
   * Shader editing
 
 ## Requirements ##
-  * Latest Codewalker release - [https://discord.gg/codewalker](https://discord.gg/codewalker)
+  * Latest Codewalker release - [Codewalker Discord](https://discord.gg/codewalker)
   * Blender 3.5.1 or later - [blender.org](http://www.blender.org/download/)
-  * Blender MUST be in English for Sollumz to function correctly (VERY IMPORTANT!)
-  * Sollumz Community Discord - [https://discord.gg/bZuWBWaQBg] (https://discord.gg/bZuWBWaQBg)
+  * At present Blender MUST be set to English for Sollumz to function correctly (VERY IMPORTANT!)
+  * Sollumz Community Discord - [Click Here](https://discord.gg/bZuWBWaQBg)
   
 ## Installation ##
   1. Click the green code button, then "Download ZIP". Do not extract the zip.
