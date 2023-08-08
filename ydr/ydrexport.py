@@ -545,6 +545,18 @@ def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: D
 
     drawable_xml.shader_group.shaders = shaders
     drawable_xml.shader_group.texture_dictionary = texture_dictionary
+    drawable_xml.shader_group.unknown_30 = calc_shadergroup_unk30(len(shaders))
+
+
+def calc_shadergroup_unk30(num_shaders: int):
+    # Its still unknown what unk30 actually is. But for 98% of files it can be
+    # calculated like this. It follows this pattern:
+    # (ShaderCount: 1, Unk30: 8), (ShaderCount: 2, Unk30: 11), (ShaderCount: 3, Unk30: 15),
+    # (ShaderCount: 4, Unk30: 18)... Unk30 increases by 3 for odd shader counts and 4 for even shader counts
+    if num_shaders % 2 == 0:
+        return int((0.5 * num_shaders) * 7 + 4)
+
+    return int((0.5 * (num_shaders + 1)) * 7 + 1)
 
 
 def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
