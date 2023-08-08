@@ -26,20 +26,21 @@ from .properties import LODProperties, FragArchetypeProperties, GroupProperties,
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str):
     export_settings = get_export_settings()
+    frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
+                                   export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
+
+    if frag_xml is None:
+        return
 
     if export_settings.export_non_hi:
-        frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
-                                       export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
+        frag_xml.write_xml(filepath)
+        write_embedded_textures(frag_obj, filepath)
 
-        if frag_xml is not None:
-            frag_xml.write_xml(filepath)
-            write_embedded_textures(frag_obj, filepath)
-
-    if frag_xml is not None and export_settings.export_hi and has_hi_lods(frag_obj):
+    if export_settings.export_hi and has_hi_lods(frag_obj):
         hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
 
-        hi_frag_xml = create_hi_frag_xml(frag_obj, frag_xml, export_settings.auto_calculate_inertia,
-                                         export_settings.auto_calculate_volume, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
+        hi_frag_xml = create_hi_frag_xml(
+            frag_obj, frag_xml, export_settings.auto_calculate_bone_tag, export_settings.apply_transforms)
         hi_frag_xml.write_xml(hi_filepath)
 
         write_embedded_textures(frag_obj, hi_filepath)
@@ -121,7 +122,7 @@ def set_paint_layer_shader_params(materials: list[bpy.types.Material], shader_gr
             param.x, param.y, param.z, param.w = (2, value, value, 0)
 
 
-def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
+def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc_bone_tag: bool = False, apply_transforms: bool = False):
     hi_obj = frag_obj.copy()
     hi_obj.name = f"{remove_number_suffix(hi_obj.name)}_hi"
     drawable_obj = None
@@ -132,13 +133,14 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc
         if child.sollum_type == SollumType.DRAWABLE:
             drawable_obj = copy_hierarchy(child, hi_obj)
             drawable_obj.parent = hi_obj
+            break
 
     if drawable_obj is not None:
         remove_non_hi_lods(drawable_obj)
 
-    materials = get_sollumz_materials(frag_obj)
+    materials = get_sollumz_materials(hi_obj)
     hi_drawable = create_frag_drawable_xml(
-        frag_obj, auto_calc_bone_tag, materials, apply_transforms)
+        hi_obj, auto_calc_bone_tag, materials, apply_transforms)
 
     hi_frag_xml = Fragment()
     hi_frag_xml.__dict__ = frag_xml.__dict__.copy()
