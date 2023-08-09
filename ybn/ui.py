@@ -30,12 +30,17 @@ class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
             return False
 
         active_mat = aobj.active_material
-        return active_mat is not None and active_mat.sollum_type == MaterialType.COLLISION and aobj.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH]
+        return active_mat is not None and active_mat.sollum_type == MaterialType.COLLISION
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
+
+        if not self.is_valid_col_obj(context.active_object):
+            layout.label(
+                text="Only Bound Geometry or Bound Polygon objects have collision properties.", icon="INFO")
+            return
 
         mat = context.active_object.active_material
 
@@ -46,6 +51,9 @@ class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
         grid.prop(mat.collision_properties, "room_id")
         grid.prop(mat.collision_properties, "ped_density")
         grid.prop(mat.collision_properties, "material_color_index")
+
+    def is_valid_col_obj(self, obj: bpy.types.Object):
+        return obj.sollum_type in [SollumType.BOUND_GEOMETRY, *BOUND_POLYGON_TYPES]
 
 
 class SOLLUMZ_PT_BOUND_PROPERTIES_PANEL(bpy.types.Panel):
@@ -157,8 +165,9 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        mat = context.active_object.active_material
-        return mat and mat.sollum_type == MaterialType.COLLISION
+        obj = context.active_object
+        mat = obj.active_material
+        return mat and mat.sollum_type == MaterialType.COLLISION and obj.sollum_type in [SollumType.BOUND_GEOMETRY, *BOUND_POLYGON_TYPES]
 
     def draw(self, context):
         mat = context.active_object.active_material
