@@ -2,7 +2,7 @@
 
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/image (3).png" alt="" width="493"><figcaption><p>Mesh Properties > Sollmz LODs</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (3) (1).png" alt="" width="493"><figcaption><p>Mesh Properties > Sollmz LODs</p></figcaption></figure>
 
 </div>
 
