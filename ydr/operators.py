@@ -1,12 +1,14 @@
 import traceback
 import bpy
+from bpy.types import Context
+
+from ..lods import LODLevels
 from ..sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType, MaterialType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, LightType, SollumType, MaterialType
 from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
-from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, is_tint_material, obj_has_tint_mats, shadermats
+from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, is_tint_material, shadermats
 from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
-from ..cwxml.shader import ShaderManager
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space
 from ..sollumz_helper import get_sollumz_materials
 from .properties import DrawableShaderOrder
@@ -695,3 +697,74 @@ class SOLLUMZ_OT_set_correct_child_of_space(bpy.types.Operator):
         set_child_of_constraint_space(constraint)
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
+    bl_idname = "sollumz.auto_lod"
+    bl_label = "Generate LODs"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Generate Drawable Model LODs via decimate modifier. Uses object's current mesh as highest LOD level."
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def execute(self, context: Context):
+        aobj = context.active_object
+        high_mesh = context.scene.sollumz_auto_lod_high_mesh
+
+        if high_mesh is None:
+            self.report(
+                {"INFO"}, "No reference mesh specified! You must specify a mesh to use as the highest LOD level!")
+            return {"CANCELLED"}
+
+        lods = self.get_selected_lods_sorted(context)
+
+        if not lods:
+            return {"CANCELLED"}
+
+        obj_lods: LODLevels = aobj.sollumz_lods
+
+        if not self.has_sollumz_lods(aobj):
+            obj_lods.add_empty_lods()
+
+        highest_lod_level = lods[0]
+
+        obj_lods.set_lod_mesh(highest_lod_level, high_mesh)
+        high_mesh.name = self.get_lod_mesh_name(aobj.name, highest_lod_level)
+
+        decimate_step = context.scene.sollumz_auto_lod_decimate_step
+        last_mesh = high_mesh
+
+        previous_mode = aobj.mode
+
+        for lod_level in lods[1:]:
+            mesh = last_mesh.copy()
+            mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
+
+            obj_lods.set_lod_mesh(lod_level, mesh)
+            obj_lods.set_active_lod(lod_level)
+
+            bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
+            bpy.ops.object.mode_set(mode=previous_mode)
+
+            last_mesh = mesh
+
+        obj_lods.set_highest_lod_active()
+
+        return {"FINISHED"}
+
+    def has_sollumz_lods(self, obj: bpy.types.Object):
+        """Ensure obj has sollumz_lods.lods populated"""
+        obj_lod_levels = [lod.level for lod in obj.sollumz_lods.lods]
+        return all(lod_level in obj_lod_levels for lod_level in LODLevel)
+
+    def get_lod_mesh_name(self, obj_name: str, lod_level: LODLevel):
+        return f"{obj_name}.{SOLLUMZ_UI_NAMES[lod_level].lower()}"
+
+    def get_selected_lods_sorted(self, context: Context) -> tuple[LODLevel]:
+        lod_levels = [LODLevel.VERYHIGH, LODLevel.HIGH,
+                      LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]
+
+        return tuple(lod for lod in lod_levels if lod in context.scene.sollumz_auto_lod_levels)

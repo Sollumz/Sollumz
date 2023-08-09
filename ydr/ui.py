@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import Context
 from . import operators as ydr_ops
 from .shader_materials import shadermats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
@@ -251,6 +252,8 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
+    bl_order = 1
+
     def draw_header(self, context):
         self.layout.label(text="", icon="TOOL_SETTINGS")
 
@@ -296,6 +299,8 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
+    bl_order = 0
+
     def draw_header(self, context):
         self.layout.label(text="", icon="CUBE")
 
@@ -336,6 +341,8 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
 
+    bl_order = 4
+
     def draw_header(self, context):
         self.layout.label(text="", icon="LIGHT")
 
@@ -354,6 +361,8 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    bl_order = 3
 
     def draw_header(self, context):
         self.layout.label(text="", icon="BONE_DATA")
@@ -641,3 +650,46 @@ class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
         layout.prop(con, "target_space")
         layout.separator()
         layout.operator("sollumz.set_correct_child_of_space")
+
+
+class SOLLUMZ_PT_LOD_TOOLS_PANEL(bpy.types.Panel):
+    bl_label = "LOD Tools"
+    bl_idname = "SOLLUMZ_PT_LOD_TOOLS_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    bl_order = 2
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="MESH_DATA")
+
+    def draw(self, context: Context):
+        ...
+
+
+class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
+    bl_label = "Auto LOD"
+    bl_idname = "SOLLUMZ_PT_AUTO_LOD_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
+
+    bl_order = 0
+
+    def draw(self, context: Context):
+        layout = self.layout
+
+        layout.label(text="Auto LOD")
+        layout.separator(factor=0.25)
+        layout.prop(context.scene, "sollumz_auto_lod_high_mesh",
+                    text="Reference Mesh")
+
+        layout.prop(context.scene, "sollumz_auto_lod_levels")
+        layout.prop(context.scene, "sollumz_auto_lod_decimate_step")
+        layout.separator()
+        layout.operator("sollumz.auto_lod")

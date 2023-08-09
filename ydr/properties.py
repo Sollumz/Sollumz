@@ -380,6 +380,24 @@ def register():
     bpy.types.Light.time_flags = bpy.props.PointerProperty(type=TimeFlags)
     bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
+    bpy.types.Scene.sollumz_auto_lod_high_mesh = bpy.props.PointerProperty(
+        type=bpy.types.Mesh, name="High Mesh", description="The mesh to use for the highest LOD level")
+    bpy.types.Scene.sollumz_auto_lod_levels = bpy.props.EnumProperty(
+        items=(
+            (LODLevel.VERYHIGH.value,
+             SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH], SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH]),
+            (LODLevel.HIGH.value,
+             SOLLUMZ_UI_NAMES[LODLevel.HIGH], SOLLUMZ_UI_NAMES[LODLevel.HIGH]),
+            (LODLevel.MEDIUM.value,
+             SOLLUMZ_UI_NAMES[LODLevel.MEDIUM], SOLLUMZ_UI_NAMES[LODLevel.MEDIUM]),
+            (LODLevel.LOW.value,
+             SOLLUMZ_UI_NAMES[LODLevel.LOW], SOLLUMZ_UI_NAMES[LODLevel.LOW]),
+            (LODLevel.VERYLOW.value,
+             SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
+        ), options={"ENUM_FLAG"}, default={LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW})
+    bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
+        name="Decimate Step", min=0.0, max=0.99, default=0.6)
+
 
 def unregister():
     del bpy.types.ShaderNodeTexImage.sollumz_texture_name
@@ -400,5 +418,8 @@ def unregister():
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection
+    del bpy.types.Scene.sollumz_auto_lod_high_mesh
+    del bpy.types.Scene.sollumz_auto_lod_levels
+    del bpy.types.Scene.sollumz_auto_lod_decimate_step
 
     bpy.app.handlers.load_post.remove(on_file_loaded)
