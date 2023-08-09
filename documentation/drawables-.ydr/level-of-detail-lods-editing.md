@@ -14,7 +14,7 @@ The LODs for each Drawable Model can be edited in the `Mesh Properties > Sollumz
 
 </div>
 
-For each LOD level, you can select the mesh that it will use. You can also select any LOD level from the list and it will swap out the mesh that the Drawable Model uses.
+For each LOD level, you can select the mesh it will use. You can also select any LOD level from the list and it will swap out the mesh that the Drawable Model uses.
 
 <div align="left">
 
