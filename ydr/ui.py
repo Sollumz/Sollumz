@@ -689,7 +689,7 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
 
         box.prop(context.scene, "sollumz_auto_lod_levels")
         box.separator(factor=0.25)
-        box.prop(context.scene, "sollumz_auto_lod_high_mesh",
+        box.prop(context.scene, "sollumz_auto_lod_ref_mesh",
                  text="Reference Mesh")
         box.prop(context.scene, "sollumz_auto_lod_decimate_step")
         box.separator()

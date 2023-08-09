@@ -711,9 +711,9 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
 
     def execute(self, context: Context):
         aobj = context.active_object
-        high_mesh = context.scene.sollumz_auto_lod_high_mesh
+        ref_mesh = context.scene.sollumz_auto_lod_ref_mesh
 
-        if high_mesh is None:
+        if ref_mesh is None:
             self.report(
                 {"INFO"}, "No reference mesh specified! You must specify a mesh to use as the highest LOD level!")
             return {"CANCELLED"}
@@ -728,17 +728,13 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
         if not self.has_sollumz_lods(aobj):
             obj_lods.add_empty_lods()
 
-        highest_lod_level = lods[0]
-
-        obj_lods.set_lod_mesh(highest_lod_level, high_mesh)
-        high_mesh.name = self.get_lod_mesh_name(aobj.name, highest_lod_level)
-
         decimate_step = context.scene.sollumz_auto_lod_decimate_step
-        last_mesh = high_mesh
+        last_mesh = ref_mesh
 
         previous_mode = aobj.mode
+        previous_lod_level = obj_lods.active_lod.level
 
-        for lod_level in lods[1:]:
+        for lod_level in lods:
             mesh = last_mesh.copy()
             mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
 
@@ -751,7 +747,7 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
 
             last_mesh = mesh
 
-        obj_lods.set_highest_lod_active()
+        obj_lods.set_active_lod(previous_lod_level)
 
         return {"FINISHED"}
 
