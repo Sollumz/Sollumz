@@ -47,7 +47,7 @@ def set_entity_xml_transforms(entity: MloEntityProperties, entity_xml: ymapxml.E
     """Set the transforms of an entity xml based on the provided entity data-block."""
 
     entity_xml.position = Vector(entity.position)
-    entity_xml.rotation = Quaternion(entity.rotation)
+    entity_xml.rotation = Quaternion(entity.rotation.inverted())
     entity_xml.scale_xy = entity.scale_xy
     entity_xml.scale_z = entity.scale_z
 
