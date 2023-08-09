@@ -114,12 +114,6 @@ Add a YMAP to the project and add the newly created Drawable as an entity.
 Position the entity to your liking, then export the YMAP.
 
 {% hint style="warning" %}
-Don't forget to calculate YMAP flags and extents!
-{% endhint %}
-
-<figure><img src="../.gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
-
-{% hint style="warning" %}
 Don't forget to generate \_manifest.ymf for your project!
 {% endhint %}
 
