@@ -315,6 +315,23 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
     return lod.mesh.drawable_model_properties
 
 
+def lod_level_enum_flag_prop_factory():
+    """Returns an EnumProperty as a flag with all LOD levels"""
+    return bpy.props.EnumProperty(
+        items=(
+            (LODLevel.VERYHIGH.value,
+             SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH], SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH]),
+            (LODLevel.HIGH.value,
+             SOLLUMZ_UI_NAMES[LODLevel.HIGH], SOLLUMZ_UI_NAMES[LODLevel.HIGH]),
+            (LODLevel.MEDIUM.value,
+             SOLLUMZ_UI_NAMES[LODLevel.MEDIUM], SOLLUMZ_UI_NAMES[LODLevel.MEDIUM]),
+            (LODLevel.LOW.value,
+             SOLLUMZ_UI_NAMES[LODLevel.LOW], SOLLUMZ_UI_NAMES[LODLevel.LOW]),
+            (LODLevel.VERYLOW.value,
+             SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
+        ), options={"ENUM_FLAG"}, default={LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW})
+
+
 def register():
     bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
@@ -382,21 +399,16 @@ def register():
 
     bpy.types.Scene.sollumz_auto_lod_high_mesh = bpy.props.PointerProperty(
         type=bpy.types.Mesh, name="High Mesh", description="The mesh to use for the highest LOD level")
-    bpy.types.Scene.sollumz_auto_lod_levels = bpy.props.EnumProperty(
-        items=(
-            (LODLevel.VERYHIGH.value,
-             SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH], SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH]),
-            (LODLevel.HIGH.value,
-             SOLLUMZ_UI_NAMES[LODLevel.HIGH], SOLLUMZ_UI_NAMES[LODLevel.HIGH]),
-            (LODLevel.MEDIUM.value,
-             SOLLUMZ_UI_NAMES[LODLevel.MEDIUM], SOLLUMZ_UI_NAMES[LODLevel.MEDIUM]),
-            (LODLevel.LOW.value,
-             SOLLUMZ_UI_NAMES[LODLevel.LOW], SOLLUMZ_UI_NAMES[LODLevel.LOW]),
-            (LODLevel.VERYLOW.value,
-             SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
-        ), options={"ENUM_FLAG"}, default={LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW})
+    bpy.types.Scene.sollumz_auto_lod_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
         name="Decimate Step", min=0.0, max=0.99, default=0.6)
+
+    bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
+    bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(
+        ("sollumz_extract_lods_parent_type_object", "Object", "Parent to an Object"),
+        ("sollumz_extract_lods_parent_type_collection",
+         "Collection", "Parent to a Collection")
+    ), default=0)
 
 
 def unregister():
@@ -421,5 +433,7 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_high_mesh
     del bpy.types.Scene.sollumz_auto_lod_levels
     del bpy.types.Scene.sollumz_auto_lod_decimate_step
+    del bpy.types.Scene.sollumz_extract_lods_levels
+    del bpy.types.Scene.sollumz_extract_lods_parent_type
 
     bpy.app.handlers.load_post.remove(on_file_loaded)

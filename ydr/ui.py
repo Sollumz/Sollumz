@@ -685,11 +685,38 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
         layout = self.layout
 
         layout.label(text="Auto LOD")
-        layout.separator(factor=0.25)
-        layout.prop(context.scene, "sollumz_auto_lod_high_mesh",
-                    text="Reference Mesh")
+        box = layout.box()
 
-        layout.prop(context.scene, "sollumz_auto_lod_levels")
-        layout.prop(context.scene, "sollumz_auto_lod_decimate_step")
-        layout.separator()
-        layout.operator("sollumz.auto_lod")
+        box.prop(context.scene, "sollumz_auto_lod_levels")
+        box.separator(factor=0.25)
+        box.prop(context.scene, "sollumz_auto_lod_high_mesh",
+                 text="Reference Mesh")
+        box.prop(context.scene, "sollumz_auto_lod_decimate_step")
+        box.separator()
+        box.operator("sollumz.auto_lod", icon="MOD_DECIM")
+
+
+class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
+    bl_label = "Extract LODs"
+    bl_idname = "SOLLUMZ_PT_EXTRACT_LODS_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
+
+    bl_order = 1
+
+    def draw(self, context: Context):
+        layout = self.layout
+
+        layout.label(text="Extract LODs")
+        box = layout.box()
+        box.separator(factor=0.25)
+
+        box.prop(context.scene, "sollumz_extract_lods_levels")
+        box.prop(context.scene, "sollumz_extract_lods_parent_type")
+
+        box.separator()
+
+        box.operator("sollumz.extract_lods", icon="EXPORT")

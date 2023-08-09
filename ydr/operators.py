@@ -9,7 +9,7 @@ from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, is_tint_material, shadermats
 from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space
 from ..sollumz_helper import get_sollumz_materials
 from .properties import DrawableShaderOrder
 
@@ -703,7 +703,7 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
     bl_idname = "sollumz.auto_lod"
     bl_label = "Generate LODs"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Generate Drawable Model LODs via decimate modifier. Uses object's current mesh as highest LOD level."
+    bl_description = "Generate Drawable Model LODs via decimate modifier. Uses object's current mesh as highest LOD level"
 
     @classmethod
     def poll(self, context):
@@ -768,3 +768,51 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
                       LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]
 
         return tuple(lod for lod in lod_levels if lod in context.scene.sollumz_auto_lod_levels)
+
+
+class SOLLUMZ_OT_extract_lods(bpy.types.Operator):
+    bl_idname = "sollumz.extract_lods"
+    bl_label = "Extract LODs"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Extract all meshes of the selected Drawable Model into separate objects"
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def execute(self, context: Context):
+        aobj = context.active_object
+        parent = self.create_parent(context, f"{aobj.name}.LODs")
+        lod_levels = context.scene.sollumz_extract_lods_levels
+
+        for lod_level in lod_levels:
+            lod = aobj.sollumz_lods.get_lod(lod_level)
+
+            if lod is None or lod.mesh is None:
+                continue
+
+            mesh = lod.mesh
+            lod_obj = create_blender_object(SollumType.NONE, mesh.name, mesh)
+            self.parent_object(lod_obj, parent)
+
+        return {"FINISHED"}
+
+    def create_parent(self, context: Context, name: str) -> bpy.types.Object | bpy.types.Collection:
+        parent_type = context.scene.sollumz_extract_lods_parent_type
+
+        if parent_type == "sollumz_extract_lods_parent_type_collection":
+            parent = bpy.data.collections.new(name)
+            context.collection.children.link(parent)
+        else:
+            parent = create_empty_object(SollumType.NONE, name)
+
+        return parent
+
+    def parent_object(self, obj: bpy.types.Object, parent: bpy.types.Object | bpy.types.Collection):
+        if isinstance(parent, bpy.types.Object):
+            obj.parent = parent
+        elif isinstance(parent, bpy.types.Collection):
+            if obj.users_collection:
+                obj.users_collection[0].objects.unlink(obj)
+
+            parent.objects.link(obj)
