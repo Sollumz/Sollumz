@@ -667,7 +667,7 @@ class SOLLUMZ_OT_add_child_of_constraint(bpy.types.Operator):
         parent_obj = find_sollumz_parent(aobj)
         is_drawable_model = aobj.sollum_type == SollumType.DRAWABLE_MODEL
 
-        if parent_obj is not None or not is_drawable_model:
+        if parent_obj is None or not is_drawable_model:
             self.report(
                 {"INFO"}, f"{aobj.name} must be a Drawable Model and parented to a Drawable!")
             return {"CANCELLED"}
