@@ -373,6 +373,8 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
         layout.label(text="Rigging", icon="ARMATURE_DATA")
         layout.operator("sollumz.add_child_of_constraint",
                         icon="CONSTRAINT_BONE")
+        layout.operator("sollumz.add_armature_modifier",
+                        icon="MOD_ARMATURE")
         layout.separator()
 
         layout.label(text="Apply Bone Properties", icon="MODIFIER_ON")

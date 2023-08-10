@@ -9,7 +9,7 @@ from ..sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, is_tint_material, shadermats
 from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space
+from ..tools.blenderhelper import add_armature_modifier, add_child_of_bone_constraint, create_blender_object, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space
 from ..sollumz_helper import get_sollumz_materials
 from .properties import DrawableShaderOrder
 
@@ -678,6 +678,36 @@ class SOLLUMZ_OT_add_child_of_constraint(bpy.types.Operator):
             return {"CANCELLED"}
 
         add_child_of_bone_constraint(aobj, armature_obj=parent_obj)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_add_armature_modifier_constraint(bpy.types.Operator):
+    bl_idname = "sollumz.add_armature_modifier"
+    bl_label = "Add Armature Modifier"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Add armature modifier to object with first Sollumz parent as the modifier object"
+
+    @classmethod
+    def poll(self, context):
+        return len(context.selected_objects) > 0
+
+    def execute(self, context):
+        for obj in context.selected_objects:
+            parent_obj = find_sollumz_parent(obj)
+            is_drawable_model = obj.sollum_type == SollumType.DRAWABLE_MODEL
+
+            if parent_obj is None or not is_drawable_model:
+                self.report(
+                    {"INFO"}, f"{obj.name} must be a Drawable Model and parented to a Drawable!")
+                return {"CANCELLED"}
+
+            if parent_obj.type != "ARMATURE":
+                self.report(
+                    {"INFO"}, f"{obj.name} must be parented to a Drawable armature, or Drawable that is parented to a Fragment!")
+                return {"CANCELLED"}
+
+            add_armature_modifier(obj, parent_obj)
 
         return {"FINISHED"}
 
