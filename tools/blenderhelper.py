@@ -4,6 +4,8 @@ import bmesh
 from mathutils import Matrix, Vector
 from typing import Optional
 
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel
+
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 
@@ -403,3 +405,22 @@ def get_evaluated_obj(obj: bpy.types.Object) -> bpy.types.Object:
 def parent_objs(objs: list[bpy.types.Object], parent_obj: bpy.types.Object):
     for obj in objs:
         obj.parent = parent_obj
+
+
+def lod_level_enum_flag_prop_factory(default: set[LODLevel] = None):
+    """Returns an EnumProperty as a flag with all LOD levels"""
+    default = default or {LODLevel.HIGH,
+                          LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW}
+    return bpy.props.EnumProperty(
+        items=(
+            (LODLevel.VERYHIGH.value,
+             SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH], SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH]),
+            (LODLevel.HIGH.value,
+             SOLLUMZ_UI_NAMES[LODLevel.HIGH], SOLLUMZ_UI_NAMES[LODLevel.HIGH]),
+            (LODLevel.MEDIUM.value,
+             SOLLUMZ_UI_NAMES[LODLevel.MEDIUM], SOLLUMZ_UI_NAMES[LODLevel.MEDIUM]),
+            (LODLevel.LOW.value,
+             SOLLUMZ_UI_NAMES[LODLevel.LOW], SOLLUMZ_UI_NAMES[LODLevel.LOW]),
+            (LODLevel.VERYLOW.value,
+             SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
+        ), options={"ENUM_FLAG"}, default=default)

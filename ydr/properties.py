@@ -1,5 +1,7 @@
 import bpy
 import os
+
+from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, ShaderMaterial
@@ -313,23 +315,6 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
             f"Failed to get Drawable Model properties: {model_obj.name} has no {SOLLUMZ_UI_NAMES[lod_level]} LOD!")
 
     return lod.mesh.drawable_model_properties
-
-
-def lod_level_enum_flag_prop_factory():
-    """Returns an EnumProperty as a flag with all LOD levels"""
-    return bpy.props.EnumProperty(
-        items=(
-            (LODLevel.VERYHIGH.value,
-             SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH], SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH]),
-            (LODLevel.HIGH.value,
-             SOLLUMZ_UI_NAMES[LODLevel.HIGH], SOLLUMZ_UI_NAMES[LODLevel.HIGH]),
-            (LODLevel.MEDIUM.value,
-             SOLLUMZ_UI_NAMES[LODLevel.MEDIUM], SOLLUMZ_UI_NAMES[LODLevel.MEDIUM]),
-            (LODLevel.LOW.value,
-             SOLLUMZ_UI_NAMES[LODLevel.LOW], SOLLUMZ_UI_NAMES[LODLevel.LOW]),
-            (LODLevel.VERYLOW.value,
-             SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
-        ), options={"ENUM_FLAG"}, default={LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW})
 
 
 def register():

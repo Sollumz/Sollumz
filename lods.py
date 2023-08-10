@@ -2,7 +2,7 @@
 import bpy
 from typing import Callable, Optional
 from .sollumz_properties import SollumType, LODLevel, FRAGMENT_TYPES, DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, BOUND_TYPES, BOUND_POLYGON_TYPES, items_from_enums
-from .tools.blenderhelper import get_all_collections
+from .tools.blenderhelper import get_all_collections, lod_level_enum_flag_prop_factory
 from .sollumz_helper import find_sollumz_parent
 
 
@@ -221,7 +221,7 @@ class SOLLUMZ_OT_copy_lod(bpy.types.Operator):
     bl_description = "Copy the current LOD level into the specified LOD level"
     bl_options = {"REGISTER", "UNDO"}
 
-    copy_lod_level: bpy.props.EnumProperty(items=items_from_enums(LODLevel))
+    copy_lod_levels: lod_level_enum_flag_prop_factory(default={LODLevel.HIGH})
 
     @classmethod
     def poll(self, context):
@@ -230,23 +230,25 @@ class SOLLUMZ_OT_copy_lod(bpy.types.Operator):
         return aobj is not None and aobj.sollumz_lods.active_lod is not None
 
     def draw(self, context):
-        self.layout.props_enum(self, "copy_lod_level")
+        self.layout.props_enum(self, "copy_lod_levels")
 
     def execute(self, context):
         aobj = context.active_object
 
         active_lod = aobj.sollumz_lods.active_lod
-        lod = aobj.sollumz_lods.get_lod(self.copy_lod_level)
 
-        if lod is None:
-            return {"CANCELLED"}
+        for lod_level in self.copy_lod_levels:
+            lod = aobj.sollumz_lods.get_lod(lod_level)
 
-        if lod.mesh is not None:
-            self.report(
-                {"INFO"}, f"{SOLLUMZ_UI_NAMES[self.copy_lod_level]} already has a mesh!")
-            return {"CANCELLED"}
+            if lod is None:
+                return {"CANCELLED"}
 
-        lod.mesh = active_lod.mesh.copy()
+            if lod.mesh is not None:
+                self.report(
+                    {"INFO"}, f"{SOLLUMZ_UI_NAMES[lod_level]} already has a mesh!")
+                return {"CANCELLED"}
+
+            lod.mesh = active_lod.mesh.copy()
 
         return {"FINISHED"}
 
