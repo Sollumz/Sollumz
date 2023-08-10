@@ -660,24 +660,24 @@ class SOLLUMZ_OT_add_child_of_constraint(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return context.active_object is not None
+        return len(context.selected_objects) > 0
 
     def execute(self, context):
-        aobj = context.active_object
-        parent_obj = find_sollumz_parent(aobj)
-        is_drawable_model = aobj.sollum_type == SollumType.DRAWABLE_MODEL
+        for obj in context.selected_objects:
+            parent_obj = find_sollumz_parent(obj)
+            is_drawable_model = obj.sollum_type == SollumType.DRAWABLE_MODEL
 
-        if parent_obj is None or not is_drawable_model:
-            self.report(
-                {"INFO"}, f"{aobj.name} must be a Drawable Model and parented to a Drawable!")
-            return {"CANCELLED"}
+            if parent_obj is None or not is_drawable_model:
+                self.report(
+                    {"INFO"}, f"{obj.name} must be a Drawable Model and parented to a Drawable!")
+                return {"CANCELLED"}
 
-        if parent_obj.type != "ARMATURE":
-            self.report(
-                {"INFO"}, f"{aobj.name} must be parented to a Drawable armature, or Drawable that is parented to a Fragment!")
-            return {"CANCELLED"}
+            if parent_obj.type != "ARMATURE":
+                self.report(
+                    {"INFO"}, f"{obj.name} must be parented to a Drawable armature, or Drawable that is parented to a Fragment!")
+                return {"CANCELLED"}
 
-        add_child_of_bone_constraint(aobj, armature_obj=parent_obj)
+            add_child_of_bone_constraint(obj, armature_obj=parent_obj)
 
         return {"FINISHED"}
 
