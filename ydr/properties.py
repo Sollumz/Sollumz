@@ -129,7 +129,7 @@ class TextureProperties(bpy.types.PropertyGroup):
     usage: bpy.props.EnumProperty(
         items=items_from_enums(TextureUsage),
         name="Usage",
-        default=TextureUsage.DIFFUSE
+        default=TextureUsage.UNKNOWN
     )
 
     format: bpy.props.EnumProperty(
