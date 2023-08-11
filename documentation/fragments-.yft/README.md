@@ -8,8 +8,8 @@ It's recommended that you read the documentation page on Drawables and collision
 [drawables-.ydr](../drawables-.ydr/)
 {% endcontent-ref %}
 
-{% content-ref url="../static-collisions-.ybn.md" %}
-[static-collisions-.ybn.md](../static-collisions-.ybn.md)
+{% content-ref url="../collisions-.ybn.md" %}
+[collisions-.ybn.md](../collisions-.ybn.md)
 {% endcontent-ref %}
 
 ### File Layout

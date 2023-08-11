@@ -30,7 +30,7 @@
   * [Level of Detail (LODs) Editing](documentation/drawables-.ydr/level-of-detail-lods-editing.md)
   * [Rigging](documentation/drawables-.ydr/rigging.md)
 * [🗂 Drawable Dictionary (.ydd)](documentation/drawable-dictionary-.ydd.md)
-* [💥 Static Collisions (.ybn)](documentation/static-collisions-.ybn.md)
+* [💥 Collisions (.ybn)](documentation/collisions-.ybn.md)
 * [🚙 Fragments (.yft)](documentation/fragments-.yft/README.md)
   * [Bone Physics](documentation/fragments-.yft/bone-physics.md)
   * [Collision Physics](documentation/fragments-.yft/collision-physics.md)
