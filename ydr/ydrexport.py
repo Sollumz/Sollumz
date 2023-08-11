@@ -583,8 +583,6 @@ def get_embedded_texture_nodes(materials: list[bpy.types.Material]):
                 continue
 
             if not node.image:
-                logger.warning(
-                    f"Material '{mat.name}' has no embedded texture for '{node.name}'. Material will be skipped...")
                 continue
 
             nodes.append(node)
