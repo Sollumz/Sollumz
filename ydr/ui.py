@@ -498,53 +498,19 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                 row = box.row(align=True)
                 row.label(text="Texture Type: " + n.name)
                 row.label(text="Texture Name: " + n.sollumz_texture_name)
+
                 if n.image:
                     row = box.row()
                     row.prop(n.image, "filepath", text="Texture Path")
+                    row = box.row()
+                    row.prop(n.texture_properties, "embedded")
+                    row.enabled = n.image.filepath != ""
                 else:
                     row = box.row()
                     row.label(
                         text="Image Texture has no linked image.", icon="ERROR")
-                row = box.row(align=True)
-                row.prop(n.texture_properties, "embedded")
-                if n.texture_properties.embedded == False:
-                    continue
-                row.prop(n.texture_properties, "format")
-                row.prop(n.texture_properties, "usage")
-                box.label(text="Flags")
-                row = box.row()
-                row.prop(n.texture_flags, "not_half")
-                row.prop(n.texture_flags, "hd_split")
-                row.prop(n.texture_flags, "flag_full")
-                row.prop(n.texture_flags, "maps_half")
-                row = box.row()
-                row.prop(n.texture_flags, "x2")
-                row.prop(n.texture_flags, "x4")
-                row.prop(n.texture_flags, "y4")
-                row.prop(n.texture_flags, "x8")
-                row = box.row()
-                row.prop(n.texture_flags, "x16")
-                row.prop(n.texture_flags, "x32")
-                row.prop(n.texture_flags, "x64")
-                row.prop(n.texture_flags, "y64")
-                row = box.row()
-                row.prop(n.texture_flags, "x128")
-                row.prop(n.texture_flags, "x256")
-                row.prop(n.texture_flags, "x512")
-                row.prop(n.texture_flags, "y512")
-                row = box.row()
-                row.prop(n.texture_flags, "x1024")
-                row.prop(n.texture_flags, "y1024")
-                row.prop(n.texture_flags, "x2048")
-                row.prop(n.texture_flags, "y2048")
-                row = box.row()
-                row.prop(n.texture_flags, "embeddedscriptrt")
-                row.prop(n.texture_flags, "unk19")
-                row.prop(n.texture_flags, "unk20")
-                row.prop(n.texture_flags, "unk21")
-                row = box.row()
-                row.prop(n.texture_flags, "unk24")
-                row.prop(n.texture_properties, "extra_flags")
+
+                box.prop(n.texture_properties, "usage")
 
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
