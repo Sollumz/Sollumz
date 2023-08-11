@@ -23,3 +23,13 @@ Many Drawables aren't rigged using weighted vertex groups. You can instead link 
 </div>
 
 Use the "Add Bone Constraint" operator with the Drawable Model Selected to add a Child Of Constraint with the properties setup for correct previewing.
+
+<div align="left">
+
+<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption><p>Example Child Of Constraint for a Drawable Model</p></figcaption></figure>
+
+</div>
+
+{% hint style="info" %}
+By default, Blender sets the owner space and target space of the Child Of constraint to "World" (can be edited in the Sollumz sub-panel of the Child Of constraint). This can cause issues when objects are parented to both bones and other objects. Because of this, **make sure to always use the Add Bone Constraint tool when creating Child Of constraints.**
+{% endhint %}

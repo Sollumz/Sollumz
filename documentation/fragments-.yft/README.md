@@ -2,8 +2,6 @@
 
 Fragments are objects that contain separable parts and react to physics. These objects are typically used in breakable props (i.e. street lamps) and vehicles. The file contains a Drawable and a Composite (collision), and sometimes multiple of each if there is a destroyed variant such as in gas tanks. However, Sollumz does not currently support editing destroyed variants of Fragments.
 
-
-
 It's recommended that you read the documentation page on Drawables and collisions first, as Fragments are made up of these objects.
 
 {% content-ref url="../drawables-.ydr/" %}
@@ -44,7 +42,7 @@ Finally, there are `Lights`, which, just like Drawables, contain any lights that
 
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption><p>Example Fragment object</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption><p>Example Fragment object</p></figcaption></figure>
 
 </div>
 

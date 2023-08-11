@@ -27,7 +27,7 @@ You'll notice that an empty object gets created called "Drawable" and the object
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>Drawable hierarchy</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>Drawable hierarchy</p></figcaption></figure>
 
 </div>
 
@@ -35,7 +35,7 @@ If you navigate to `Mesh Properties > Sollumz LODs` you'll also notice that the 
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>Mesh Properties > Sollumz LODs</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1) (1).png" alt=""><figcaption><p>Mesh Properties > Sollumz LODs</p></figcaption></figure>
 
 </div>
 
