@@ -14,4 +14,8 @@ Enabling this will reveal a `Physics` subpanel where various physics properties 
 If you're ever not sure what physics properties to set, import a similar model from the game and copy its physics properties.
 {% endhint %}
 
-Most importantly, enabling Use Physics is what causes the bone to react to physics. If this is unticked, any geometry associated with the bone will always remain static in-game. Usually, you'd have a bone for each separable part, that way all parts of your Fragment will act independently of each other. See the [Prop Setup](prop-setup.md) page for a simple example (vehicles also have separable parts but the bone hierarchy is usually much more complex).
+Most importantly, enabling Use Physics is what causes the bone to react to physics. If this is unticked, any geometry associated with the bone will always remain static in-game. Usually, you'd have a bone for each separable part. That way, all parts of your Fragment will act independently of each other. See the [Prop Setup](prop-setup.md) page for an example (vehicles also have separable parts but the bone hierarchy is usually much more complex).
+
+{% hint style="info" %}
+Strength is what determines how easily the part can be separated. If strength is -1, the part will not separate, but will still react to physics. This can be seen in props with hinging doors such as the container prop shown in [Prop Setup](prop-setup.md#skeleton-setup).
+{% endhint %}
