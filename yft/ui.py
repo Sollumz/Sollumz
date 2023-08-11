@@ -324,7 +324,8 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        layout.prop(context.active_object, "sollumz_is_physics_child_mesh")
+        layout.prop(context.active_object,
+                    "sollumz_is_physics_child_mesh", text="Is Wheel Mesh")
 
 
 class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
