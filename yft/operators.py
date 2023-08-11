@@ -1,8 +1,11 @@
+from math import radians
 import bpy
 import bmesh
 from mathutils import Matrix, Vector
+
+from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import SollumType, VehicleLightID
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, get_child_of_bone
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
@@ -212,3 +215,54 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
                     break
 
         return face_inds
+
+
+class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
+    """
+    Generate instances of wheel mesh to preview all 4 wheels at once (has no effect on export)
+    """
+    bl_idname = "sollumz.generate_wheel_instances"
+    bl_label = "Generate Wheel Instances"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+
+        return aobj is not None and aobj.sollumz_is_physics_child_mesh and aobj.type == "MESH"
+
+    def execute(self, context):
+        aobj = context.active_object
+        frag_obj = find_sollumz_parent(aobj, SollumType.FRAGMENT)
+
+        if frag_obj is None:
+            self.report({"INFO"}, "Object must be parented to a Fragment!")
+            return {"CANCELLED"}
+
+        child_of_bone = get_child_of_bone(aobj)
+
+        if child_of_bone is None:
+            self.report(
+                {"WARNING"}, "Failed to create instances. The object has no Child Of constraint or the constraint bone is not set!")
+            return {"CANCELLED"}
+
+        wheel_bones = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
+        empty = create_empty_object(
+            SollumType.NONE, f"{frag_obj.name}.wheel_previews")
+        empty.parent = frag_obj
+
+        for bone_name in wheel_bones:
+            if bone_name == child_of_bone.name or bone_name not in frag_obj.data.bones:
+                continue
+
+            instance = create_blender_object(
+                SollumType.NONE, f"{bone_name}.preview", aobj.data)
+            add_child_of_bone_constraint(instance, frag_obj, bone_name)
+
+            # Rotate wheels on the other side
+            if ("_l" in child_of_bone.name and "_r" in bone_name) or ("_r" in child_of_bone.name and "_l" in bone_name):
+                instance.matrix_world = Matrix.Rotation(
+                    radians(180), 4, "Y") @ instance.matrix_world
+            instance.parent = empty
+
+        return {"FINISHED"}

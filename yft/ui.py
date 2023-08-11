@@ -50,6 +50,11 @@ class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(bpy.types.Panel):
         row.prop(context.scene, "create_bones_fragment")
         row.prop(context.scene, "create_bones_parent_to_selected")
 
+        layout.separator()
+        layout.label(text="Wheel Instances")
+        layout.operator("sollumz.generate_wheel_instances",
+                        icon="OUTLINER_OB_GROUP_INSTANCE")
+
 
 class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
     bl_label = "Set Mass"
