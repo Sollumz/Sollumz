@@ -10,8 +10,6 @@ The example prop used in this article is `prop_container_05a.yft`
 
 ### Fragment Hierarchy
 
-You'll notice that the hiearchy is as described earlier, a Fragment armature with a Bound Composite and Drawable parented to it.
-
 <div align="left">
 
 <figure><img src="../../.gitbook/assets/image (12).png" alt=""><figcaption><p>prop_container_05a Blender hierarchy</p></figcaption></figure>

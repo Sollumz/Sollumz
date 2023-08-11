@@ -18,7 +18,7 @@ Each collision object under a Fragment also has a Physics subpanel where you can
 
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/image (8).png" alt=""><figcaption><p>Object Properties > Sollumz > Physics</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (8) (1).png" alt=""><figcaption><p>Object Properties > Sollumz > Physics</p></figcaption></figure>
 
 </div>
 

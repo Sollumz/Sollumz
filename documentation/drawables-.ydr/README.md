@@ -27,7 +27,7 @@ Drawables consist of multiple "Drawable Models" which hold the actual mesh data.
 
 <div align="left" data-full-width="false">
 
-<figure><img src="../../.gitbook/assets/image (6).png" alt="" width="453"><figcaption><p>Example Drawable object</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (6) (1).png" alt="" width="453"><figcaption><p>Example Drawable object</p></figcaption></figure>
 
 </div>
 

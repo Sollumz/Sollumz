@@ -2,11 +2,11 @@
 
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/image (3) (1).png" alt="" width="493"><figcaption><p>Mesh Properties > Sollmz LODs</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (3) (1) (1).png" alt="" width="493"><figcaption><p>Mesh Properties > Sollmz LODs</p></figcaption></figure>
 
 </div>
 
-The LODs for each Drawable Model can be edited in the `Mesh Properties > Sollumz LODs` panel. As mentioned before, there are 4 LOD levels: **High**, **Medium**, **Low**, and **Very Low**. You will also see the "Very High" LOD level, but that is only used for YFT vehicles (more info can be found on the [Fragments](../fragments-.yft/) page).
+The LODs for each Drawable Model can be edited in the `Mesh Properties > Sollumz LODs` panel. As mentioned before, there are 4 LOD levels: **High**, **Medium**, **Low**, and **Very Low**. You will also see the "Very High" LOD level, but that is only used for YFT vehicles (see Fragments > [Vehicle Setup](../fragments-.yft/vehicle-setup/#import-with-\_hi)).
 
 <div align="left">
 

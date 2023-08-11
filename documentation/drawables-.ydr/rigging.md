@@ -26,7 +26,7 @@ Use the "Add Bone Constraint" operator with the Drawable Model Selected to add a
 
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption><p>Example Child Of Constraint for a Drawable Model</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (10).png" alt=""><figcaption><p>Example Child Of Constraint for a Drawable Model</p></figcaption></figure>
 
 </div>
 

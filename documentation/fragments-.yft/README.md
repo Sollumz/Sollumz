@@ -42,7 +42,7 @@ Finally, there are `Lights`, which, just like Drawables, contain any lights that
 
 <div align="left">
 
-<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption><p>Example Fragment object</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>Example Fragment object</p></figcaption></figure>
 
 </div>
 

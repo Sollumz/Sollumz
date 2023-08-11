@@ -27,7 +27,7 @@ You'll notice that an empty object gets created called "Drawable" and the object
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>Drawable hierarchy</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1) (1).png" alt=""><figcaption><p>Drawable hierarchy</p></figcaption></figure>
 
 </div>
 
@@ -35,7 +35,7 @@ If you navigate to `Mesh Properties > Sollumz LODs` you'll also notice that the 
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (1) (1) (1).png" alt=""><figcaption><p>Mesh Properties > Sollumz LODs</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1) (1) (1).png" alt=""><figcaption><p>Mesh Properties > Sollumz LODs</p></figcaption></figure>
 
 </div>
 
@@ -65,7 +65,7 @@ Lastly, we need to set the textures as embedded. This will embed the textures in
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (3).png" alt=""><figcaption><p>Sollumz Tools > Drawable > Shader Tools > Set All Materials Embedded</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (3) (1).png" alt=""><figcaption><p>Sollumz Tools > Drawable > Shader Tools > Set All Materials Embedded</p></figcaption></figure>
 
 </div>
 
@@ -119,7 +119,7 @@ Don't forget to generate \_manifest.ymf for your project!
 
 <div align="left">
 
-<figure><img src="../.gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (4) (1).png" alt=""><figcaption></figcaption></figure>
 
 </div>
 
