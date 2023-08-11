@@ -565,7 +565,7 @@ def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
     for node in get_embedded_texture_nodes(materials):
         texture_name = node.sollumz_texture_name
 
-        if texture_name in texture_dictionary:
+        if texture_name in texture_dictionary or not texture_name:
             continue
 
         texture = texture_from_img_node(node)
