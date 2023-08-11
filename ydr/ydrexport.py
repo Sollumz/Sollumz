@@ -921,7 +921,7 @@ def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
             # check if paths are the same because if they are no need to copy
             if texture_path != dstpath:
                 shutil.copyfile(texture_path, dstpath)
-        else:
+        elif texture_path:
             logger.warning(
                 f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
 
