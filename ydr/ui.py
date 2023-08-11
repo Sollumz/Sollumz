@@ -406,7 +406,7 @@ class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
-    bl_label = "Bone Properties"
+    bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_BONE_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
