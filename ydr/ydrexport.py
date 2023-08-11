@@ -19,7 +19,7 @@ from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_sphere_radius,
 )
-from ..tools.utils import get_max_vector_list, get_min_vector_list
+from ..tools.utils import get_filename, get_max_vector_list, get_min_vector_list
 from ..tools.blenderhelper import get_child_of_constraint, get_pose_inverse, remove_number_suffix, get_evaluated_obj
 from ..sollumz_helper import get_export_transforms_to_apply, get_sollumz_materials
 from ..sollumz_properties import (
@@ -905,10 +905,10 @@ def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Dr
 def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
     materials = get_sollumz_materials(drawable_obj)
     directory = os.path.dirname(filepath)
+    filename = get_filename(filepath)
 
     for node in get_embedded_texture_nodes(materials):
-        folder_path = os.path.join(
-            directory, remove_number_suffix(drawable_obj.name))
+        folder_path = os.path.join(directory, filename)
         texture_path = bpy.path.abspath(node.image.filepath)
 
         if os.path.isfile(texture_path):
