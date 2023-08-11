@@ -89,7 +89,7 @@ class VehicleWindowProperties(bpy.types.PropertyGroup):
     unk_float_17: bpy.props.FloatProperty(name="Unk Float 17")
     unk_float_18: bpy.props.FloatProperty(name="Unk Float 18")
     cracks_texture_tiling: bpy.props.FloatProperty(
-        name="Cracks Texture Tiling")
+        name="Cracks Texture Tiling", default=1.5)
 
 
 class FragmentProperties(bpy.types.PropertyGroup):
