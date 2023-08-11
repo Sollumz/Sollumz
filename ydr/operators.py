@@ -665,14 +665,8 @@ class SOLLUMZ_OT_add_child_of_constraint(bpy.types.Operator):
     def execute(self, context):
         for obj in context.selected_objects:
             parent_obj = find_sollumz_parent(obj)
-            is_drawable_model = obj.sollum_type == SollumType.DRAWABLE_MODEL
 
-            if parent_obj is None or not is_drawable_model:
-                self.report(
-                    {"INFO"}, f"{obj.name} must be a Drawable Model and parented to a Drawable!")
-                return {"CANCELLED"}
-
-            if parent_obj.type != "ARMATURE":
+            if parent_obj is None or parent_obj.type != "ARMATURE":
                 self.report(
                     {"INFO"}, f"{obj.name} must be parented to a Drawable armature, or Drawable that is parented to a Fragment!")
                 return {"CANCELLED"}
