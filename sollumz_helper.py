@@ -161,7 +161,7 @@ def get_export_transforms_to_apply(obj: bpy.types.Object):
     bone_inverse = get_bone_pose_matrix(obj).inverted()
 
     # Apply all transforms except any transforms from the current pose, and any parent transforms (depends on "Apply Parent Transforms" option)
-    return parent_inverse @ obj.matrix_world @ bone_inverse
+    return parent_inverse @ bone_inverse @ obj.matrix_world
 
 
 def get_parent_inverse(obj: bpy.types.Object) -> Matrix:
