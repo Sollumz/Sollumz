@@ -260,26 +260,13 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
 
 def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeometry, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound poly triangles and vertices for a ``BoundGeometry`` object."""
-    deform_ind_by_vert: dict[tuple, int] = {}
-
-    def add_deformed_vert(vert: Vector):
-        # Must be tuple since Vector is not hashable
-        vertex = tuple(vert)
-
-        if vertex in deform_ind_by_vert:
-            return
-
-        vert_ind = len(deform_ind_by_vert)
-        deform_ind_by_vert[vertex] = vert_ind
-        geom_xml.vertices_2.append(Vector(vertex))
-
     mesh = create_export_mesh(obj)
 
     transforms = get_bound_poly_transforms_to_apply(
         obj, geom_xml.composite_transform)
 
     triangles = create_poly_xml_triangles(
-        mesh, transforms, get_vert_index, get_mat_index, add_deformed_vert)
+        mesh, transforms, get_vert_index, get_mat_index)
 
     geom_xml.polygons = triangles
 
@@ -357,11 +344,9 @@ def create_xml_vertex_colors(geom_xml: BoundGeometry | BoundGeometryBVH, mesh: b
             mesh.vertex_colors[0].data[loop.index].color)
 
 
-def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int], add_deformed_vert: Optional[Callable[[Vector], None]] = None):
+def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound polygon triangle XML objects for this BoundGeometry/BVH."""
     triangles: list[PolyTriangle] = []
-
-    deformed_verts = get_deformed_verts(mesh)
 
     for tri in mesh.loop_triangles:
         triangle = PolyTriangle()
@@ -378,10 +363,6 @@ def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert
 
             tri_indices.append(vert_ind)
 
-            if deformed_verts is not None:
-                add_deformed_vert(
-                    transforms @ deformed_verts[loop.vertex_index].co)
-
         triangle.v1 = tri_indices[0]
         triangle.v2 = tri_indices[1]
         triangle.v3 = tri_indices[2]
@@ -389,20 +370,6 @@ def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert
         triangles.append(triangle)
 
     return triangles
-
-
-def get_deformed_verts(mesh: bpy.types.Mesh) -> Optional[list[bpy.types.MeshVertex]]:
-    """Get vertices from the 'Deformed' shape key of ``mesh``."""
-    if mesh.shape_keys is None:
-        return
-
-    deformed_key: bpy.types.ShapeKey = mesh.shape_keys.key_blocks.get(
-        "Deformed")
-
-    if deformed_key is None:
-        return
-
-    return deformed_key.data
 
 
 def create_poly_box_xml(obj: bpy.types.Object, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):

@@ -161,10 +161,6 @@ def create_bound_geometry(geom_xml: BoundGeometry):
         SollumType.BOUND_GEOMETRY, object_data=mesh)
     set_bound_child_properties(geom_xml, geom_obj)
 
-    if geom_xml.vertices_2:
-        create_deformed_shape_keys(
-            geom_obj, triangles, geom_xml, materials)
-
     set_bound_geometry_properties(geom_xml, geom_obj)
 
     return geom_obj
@@ -418,20 +414,6 @@ def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[PolyTriangl
         faces.append(face)
 
     return verts, faces
-
-
-def create_deformed_shape_keys(geom_obj: bpy.types.Object, triangles: list[PolyTriangle], geometry: BoundGeometry, materials: list[bpy.types.Material]):
-    geom_obj.shape_key_add(name="Basis")
-    deformed_key = geom_obj.shape_key_add(name="Deformed")
-
-    mesh_damaged = create_bound_mesh_data(
-        geometry.vertices_2, triangles, geometry, materials)
-    mesh_damaged.transform(Matrix.Translation(geometry.geometry_center))
-
-    for i, vert in enumerate(mesh_damaged.vertices):
-        deformed_key.data[i].co = vert.co
-
-    bpy.data.meshes.remove(mesh_damaged)
 
 
 def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.Object):
