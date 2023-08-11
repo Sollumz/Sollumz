@@ -6,7 +6,7 @@
 
 </div>
 
-The LODs for each Drawable Model can be edited in the `Mesh Properties > Sollumz LODs` panel. As mentioned before, there are 4 LOD levels: **High**, **Medium**, **Low**, and **Very Low**. You will also see the "Very High" LOD level, but that is only used for YFT vehicles (more info can be found on the [Fragments](../fragments-.yft.md) page).
+The LODs for each Drawable Model can be edited in the `Mesh Properties > Sollumz LODs` panel. As mentioned before, there are 4 LOD levels: **High**, **Medium**, **Low**, and **Very Low**. You will also see the "Very High" LOD level, but that is only used for YFT vehicles (more info can be found on the [Fragments](../fragments-.yft/) page).
 
 <div align="left">
 
