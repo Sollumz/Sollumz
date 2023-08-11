@@ -100,7 +100,7 @@ class ShaderManager:
     decals = ["decal.sps", "decal_tnt.sps", "decal_glue.sps", "decal_spec_only.sps", "decal_normal_only.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps",
               "decal_amb_only.sps", "normal_decal.sps", "normal_decal_pxm.sps", "normal_decal_pxm_tnt.sps", "normal_decal_tnt.sps", "normal_spec_decal.sps", "normal_spec_decal_detail.sps",
               "normal_spec_decal_nopuddle.sps", "normal_spec_decal_tnt.sps", "normal_spec_decal_pxm.sps", "spec_decal.sps", "spec_reflect_decal.sps", "reflect_decal.sps", "decal_dirt.sps",
-              "mirror_decal.sps", "distance_map.sps"]
+              "mirror_decal.sps", "distance_map.sps", "grass_batch.sps"]
     veh_cutouts = ["vehicle_cutout.sps", "vehicle_badges.sps"]
     veh_glasses = ["vehicle_vehglass.sps", "vehicle_vehglass_inner.sps"]
     veh_decals = ["vehicle_decal.sps", "vehicle_decal2.sps",
