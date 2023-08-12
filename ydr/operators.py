@@ -406,41 +406,79 @@ class SOLLUMZ_OT_apply_bone_properties_to_selected_bones(SOLLUMZ_OT_base, bpy.ty
         self.message(f"Apply bone properties to {count} bone(s)")
         return True
 
-class SOLLUMZ_OT_animation_flags(bpy.types.Operator):
-    bl_idname = "sollumz.animationflags"
-    bl_label = "Animation Flags"
-    bl_description = "Adds the proper flags for animation bones"
+class SOLLUMZ_OT_clear_bone_flags(bpy.types.Operator):
+    bl_idname = "sollumz.removeboneflags"
+    bl_label = "Remove Bone Flags"
+    bl_description = "Remove all bone flags for selected bones"
 
     def execute(self, context):
         bone = context.active_pose_bone.bone
         bone.bone_properties.flags.clear()  # Remove all the flags
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotX"  
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotY" 
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotZ" 
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransX" 
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransY" 
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransZ"       
-        self.report({'INFO'}, "Flags Added") 
+        self.report({'INFO'}, "Flags Removed")
         return {'FINISHED'}
-    
-   
-class SOLLUMZ_OT_weapon_flags(bpy.types.Operator):
-    bl_idname = "sollumz.weaponflags"
-    bl_label = "Weapon Flags"
-    bl_description = "Removes selected bone flags and adds the proper weapon flags for custom bone locations"
+
+
+class SOLLUMZ_OT_rotation_bone_flags(bpy.types.Operator):
+    bl_idname = "sollumz.rotationboneflags"
+    bl_label = "Add Rotation Flags"
+    bl_description = "Add rotation flags for selected bones"
 
     def execute(self, context):
         bone = context.active_pose_bone.bone
-        bone.bone_properties.flags.clear()  # Remove all the flags
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "LimitRotation"  
+        new_flag.name = "RotX"
         new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "LimitTranslation"  
-        self.report({'INFO'}, "Flags Cleared & Added") 
+        new_flag.name = "RotY"
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "RotZ"
+        self.report({'INFO'}, "Rotation Flags Added")
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_transform_bone_flags(bpy.types.Operator):
+    bl_idname = "sollumz.transformboneflags"
+    bl_label = "Add Transform Flags"
+    bl_description = "Add transform flags for selected bones"
+
+    def execute(self, context):
+        bone = context.active_pose_bone.bone
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "TransX"
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "TransY"
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "TransZ"
+        self.report({'INFO'}, "Transform Flags Added")
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_scale_bone_flags(bpy.types.Operator):
+    bl_idname = "sollumz.scaleboneflags"
+    bl_label = "Add Scale Flags"
+    bl_description = "Add scale flags for selected bones"
+
+    def execute(self, context):
+        bone = context.active_pose_bone.bone
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "ScaleX"
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "ScaleY"
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "ScaleZ"
+        self.report({'INFO'}, "Scale Flags Added")
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_limit_bone_flags(bpy.types.Operator):
+    bl_idname = "sollumz.limitboneflags"
+    bl_label = "Add Limit Flags"
+    bl_description = "Removes selected bone flags and adds the proper limit flags for custom bone locations"
+
+    def execute(self, context):
+        bone = context.active_pose_bone.bone
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "LimitRotation"
+        new_flag = bone.bone_properties.flags.add()
+        new_flag.name = "LimitTranslation"
+        self.report({'INFO'}, "Limit Flags Added")
         return {'FINISHED'}
