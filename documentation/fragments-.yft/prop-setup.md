@@ -91,3 +91,15 @@ Each collision also has its mass set in the `Object Properties > Sollumz > Physi
 <figure><img src="../../.gitbook/assets/image (17).png" alt=""><figcaption><p>Object Properties > Sollumz > Physics</p></figcaption></figure>
 
 </div>
+
+### Quick Note on YTYP Flags
+
+{% hint style="info" %}
+In order for physics to work for your prop in-game, make sure the YTYP archetype has the "Dynamic" flag enabled!
+{% endhint %}
+
+<div align="left">
+
+<figure><img src="../../.gitbook/assets/image (31).png" alt=""><figcaption><p>Archetype Definition > Archetypes > crate > Flags</p></figcaption></figure>
+
+</div>
