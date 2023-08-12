@@ -22,6 +22,18 @@ Each collision object under a Fragment also has a Physics subpanel where you can
 
 </div>
 
+#### Auto Mass Tool
+
+There is also a tool for automatically calculating mass based on the collision material's density and the object's volume. Navigate to `Sollumz Tools > Fragment > Set Mass`. There you will find the `Calculate Collision Mass tool`.
+
+<div align="left">
+
+<figure><img src="../../.gitbook/assets/image (32).png" alt=""><figcaption><p>Sollumz Tools > Fragment > Set Mass</p></figcaption></figure>
+
+</div>
+
+In order for this tool to work, the collision object must have a collision material added.
+
 ### Volume and Inertia
 
 Volume and Inertia are essential physics properties for collisions. You can find these options under `Object Properties > Sollumz`.
