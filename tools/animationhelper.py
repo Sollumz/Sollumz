@@ -10,6 +10,8 @@ from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from typing import Tuple
 
+from .. import logger
+
 class AnimationFlag(IntFlag):
     Default = 0
     RootMotion = 16
@@ -492,9 +494,9 @@ def get_canonical_track_data_path(track: Track, bone_id: int):
 
 
 def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, target_bone_name_map):
-    is_armature = isinstance(target_id, bpy.types.Armature)
-    is_camera = isinstance(target_id, bpy.types.Camera)
-    is_material = isinstance(target_id, bpy.types.Material)
+    is_armature = isinstance(target_id, bpy.types.Armature) or target_id is None
+    is_camera = isinstance(target_id, bpy.types.Camera) or target_id is None
+    is_material = isinstance(target_id, bpy.types.Material) or target_id is None
 
     if data_path == "delta_location":
         data_path = 'pose.bones["#0"].animation_tracks_mover_location'
@@ -593,33 +595,6 @@ def get_id_and_track_from_track_data_path(
     return id, track
 
 
-def update_uv_anim_hash(animation_obj):
-    assert False, "TODO"  # TODO: update_uv_anim_hash
-    # target = animation_obj.animation_properties.get_target()
-    # if not isinstance(target, bpy.types.Material):
-    #     raise Exception("Target is not a material")
-    #
-    # material_index = target.shader_properties.index
-    #
-    # drawable_model_name = "test"
-    #
-    # anim_hash = f"{drawable_model_name}_uv_{material_index}"
-    # clip_hash = f"hash_{jenkhash.Generate(drawable_model_name) + (material_index + 1):08X}"
-    # clip_name = anim_hash + ".clip"
-    # animation_obj.animation_properties.hash = anim_hash
-    #
-    # clip_dict = None # TODO
-    # for item in clip_dict.children:
-    #     if item.sollum_type == SollumType.CLIPS:
-    #         for clip in item.children:
-    #             clip_linked_anims = clip.clip_properties.animations
-    #             for anim in clip_linked_anims:
-    #                 if anim.animation.name == animation_obj.name:
-    #                     clip.clip_properties.hash = clip_hash
-    #                     clip.clip_properties.name = clip_name
-    #                     break
-
-
 def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types.ID, new_target_id: bpy.types.ID):
     if isinstance(old_target_id, bpy.types.Armature):
         old_bone_map = build_bone_map(get_data_obj(old_target_id))
@@ -692,11 +667,7 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         setup_camera_for_animation(new_target_id)
 
     if new_is_material:
-        print("setup_material_for_animation")
         setup_material_for_animation(new_target_id)
-
-    # TODO: may want to set the idroot of the action to the new target type
-    # TODO: maybe create animation_data of the action if it doesn't exist
 
 
 def get_frame_range_and_count(action: bpy.types.Action) -> Tuple[Vector, int]:
@@ -721,9 +692,50 @@ def get_target_from_id(target_id: bpy.types.ID) -> bpy.types.ID:
     return get_data_obj(target_id)
 
 
-def is_any_sollumz_animation_obj(obj):
+def is_any_sollumz_animation_obj(obj: bpy.types.Object) -> bool:
     return obj.sollum_type in {SollumType.CLIP_DICTIONARY,
                                SollumType.ANIMATION,
                                SollumType.ANIMATIONS,
                                SollumType.CLIP,
                                SollumType.CLIPS}
+
+
+def update_uv_clip_hash(clip_obj) -> bool:
+    if len(clip_obj.clip_properties.animations) == 0:
+        logger.error(f"Clip '{clip_obj.name}' has no animations.")
+        return False
+
+    animation_obj = clip_obj.clip_properties.animations[0].animation
+    target = animation_obj.animation_properties.get_target()
+    if not isinstance(target, bpy.types.Material):
+        logger.error(f"Animation target is not a material.")
+        return False
+
+    meshes = [obj for obj in bpy.data.meshes if obj.user_of_id(target)]
+    if len(meshes) == 0:
+        logger.error(f"Material '{target.name}' is not used by any mesh.")
+        return False
+    elif len(meshes) > 1:
+        logger.warning(f"Material is used by more than one mesh. '{meshes[0].name}' will be used.")
+
+    mesh = meshes[0]
+    drawable_models = [o for o in bpy.data.objects if o.sollum_type == SollumType.DRAWABLE_MODEL and o.data == mesh]
+    if len(drawable_models) == 0:
+        logger.error(f"Material '{target.name}' is not used by any drawable model.")
+        return False
+    elif len(drawable_models) > 1:
+        logger.warning(f"Material is used by more than one drawable model. '{drawable_models[0].name}' will be used.")
+
+    drawable_model = drawable_models[0]
+    if drawable_model.parent is None:
+        logger.error(f"Drawable model '{drawable_model.name}' has no parent.")
+        return False
+
+    drawable_model_name = drawable_model.parent.name
+    material_index = target.shader_properties.index
+
+    clip_hash = jenkhash.Generate(drawable_model_name) + (material_index + 1)
+    clip_hash_str = f"hash_{clip_hash:08X}"
+
+    clip_obj.clip_properties.hash = clip_hash_str
+    return True

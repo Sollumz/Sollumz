@@ -4,9 +4,9 @@ from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_child_by_type, get_data_obj
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import color_hash
-from ..tools.animationhelper import is_any_sollumz_animation_obj
+from ..tools.animationhelper import is_any_sollumz_animation_obj, update_uv_clip_hash
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
-
+from .. import logger
 
 class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.animations_set_target"
@@ -135,6 +135,24 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
                 nla_strip.action_frame_end = clip["end_frames"]
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_clip_recalculate_uv_hash(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.clip_recalculate_uv_hash"
+    bl_label = "Recalculate UV Clip Hash"
+    bl_description = "Recalculate hash based on the target material and model name"
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.CLIP
+
+    def run(self, context):
+        logger.set_logging_operator(self)
+        clip_obj = context.active_object
+        if update_uv_clip_hash(clip_obj):
+            return {"FINISHED"}
+        else:
+            return {"CANCELLED"}
 
 
 class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):

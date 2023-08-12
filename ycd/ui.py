@@ -15,8 +15,19 @@ def draw_clip_properties(self, context):
         layout = self.layout
 
         clip_properties = obj.clip_properties
-
-        layout.prop(clip_properties, "hash")
+        is_uv = any(a.animation is not None and a.animation.animation_properties.target_id_type == "MATERIAL"
+                    for a in clip_properties.animations)
+        if is_uv:
+            row = layout.row()
+            row.prop(clip_properties, "hash")
+            row.operator(ycd_ops.SOLLUMZ_OT_clip_recalculate_uv_hash.bl_idname, text="", icon="FILE_REFRESH")
+            split = layout.split(factor=0.4)
+            split.row()
+            row = split.row()
+            row.alignment = "RIGHT"
+            row.label(text="UV clip hash is calculated based on the target material and model name.     ", icon="INFO")
+        else:
+            layout.prop(clip_properties, "hash")
         layout.prop(clip_properties, "name")
         layout.prop(clip_properties, "duration")
 
