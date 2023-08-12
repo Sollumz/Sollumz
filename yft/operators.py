@@ -3,9 +3,12 @@ import bpy
 import bmesh
 from mathutils import Matrix, Vector
 
+from ..tools.meshhelper import calculate_volume, get_combined_bound_box
+
 from ..sollumz_helper import find_sollumz_parent
-from ..sollumz_properties import SollumType, VehicleLightID
+from ..sollumz_properties import BOUND_POLYGON_TYPES, BOUND_TYPES, MaterialType, SollumType, VehicleLightID
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, get_child_of_bone
+from ..ybn.collision_materials import collisionmats
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
@@ -266,3 +269,74 @@ class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
             instance.parent = empty
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
+    """Calculate (approximate) mass for collision based on it's volume and density"""
+    bl_idname = "sollumz.calculate_mass"
+    bl_label = "Calculate Collision Mass"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(self, context):
+        return context.selected_objects
+
+    def execute(self, context):
+        for obj in context.selected_objects:
+            if obj.sollum_type in BOUND_POLYGON_TYPES:
+                self.report(
+                    {"INFO"}, f"{obj.name} is a Bound Polygon! Select the Bound Geometry BVH instead! Skipping...")
+                continue
+
+            if obj.sollum_type not in BOUND_TYPES or obj.sollum_type == SollumType.BOUND_COMPOSITE:
+                self.report(
+                    {"INFO"}, f"{obj.name} not a Sollumz bound type! Skipping...")
+                continue
+
+            if obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
+                mass = self.calculate_bvh_mass(obj)
+                obj.child_properties.mass = mass
+                continue
+
+            mat = self.get_collision_mat(obj)
+
+            if mat is None:
+                self.report(
+                    {"INFO"}, f"{obj.name} has no collision materials! Skipping...")
+                continue
+
+            mass = self.calculate_mass(obj, mat)
+
+            obj.child_properties.mass = mass
+
+        self.report({"INFO"}, "Mass successfully calculated.")
+
+        return {"FINISHED"}
+
+    def calculate_bvh_mass(self, obj: bpy.types.Object) -> float:
+        mass = 0.0
+
+        for child in obj.children:
+            if child.sollum_type not in BOUND_POLYGON_TYPES or child.type != "MESH":
+                continue
+
+            mat = self.get_collision_mat(child)
+
+            if mat is None:
+                continue
+
+            mass += self.calculate_mass(child, mat)
+
+        return mass
+
+    def calculate_mass(self, obj: bpy.types.Object, mat: bpy.types.Material) -> float:
+        bbmin, bbmax = get_combined_bound_box(obj, use_world=True)
+        volume = calculate_volume(bbmin, bbmax)
+        density = collisionmats[mat.collision_properties.collision_index].density
+
+        return volume * density
+
+    def get_collision_mat(self, obj: bpy.types.Object):
+        for mat in obj.data.materials:
+            if mat.sollum_type == MaterialType.COLLISION:
+                return mat

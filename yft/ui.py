@@ -73,6 +73,7 @@ class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator(SOLLUMZ_OT_SET_MASS.bl_idname, icon="WORLD")
         row.prop(context.scene, "set_mass_amount", text="")
+        layout.operator("sollumz.calculate_mass", icon="SNAP_VOLUME")
 
 
 class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):
