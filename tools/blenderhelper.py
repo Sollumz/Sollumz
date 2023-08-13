@@ -424,3 +424,13 @@ def lod_level_enum_flag_prop_factory(default: set[LODLevel] = None):
             (LODLevel.VERYLOW.value,
              SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
         ), options={"ENUM_FLAG"}, default=default)
+
+
+def tag_redraw(context: bpy.types.Context, space_type: str = "PROPERTIES", region_type: str = "WINDOW"):
+    """Redraw all panels in the given space_type and region_type"""
+    for window in context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.spaces[0].type == space_type:
+                for region in area.regions:
+                    if region.type == region_type:
+                        region.tag_redraw()
