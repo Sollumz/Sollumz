@@ -3,10 +3,12 @@ Blender plugin to import, export, or create GTA V assets in the Codewalker XML f
 
 By Skylumz and Colton Fox
 
+## Join our Discord
+Join the Sollumz [discord server](https://discord.gg/bZuWBWaQBg) to ask questions and chat with community!
 ## Using the plugin
-See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sure to read the wiki before posting an issue or asking questions!
+See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sure to read the wiki before posting an issue or asking questions! Also see the Tutorials and Resources channel in the Discord server.
 
-Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Below)
+**Note:** The issue tracker should be for bug reports and feature requests only. If you are having an issue and you are not sure if it is a bug or not, ask on the discord server first!
 
 ## Features ##
 
@@ -18,6 +20,7 @@ Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Be
   * YMAP
   * YTYP
   * YNV (Partial)
+  * YFT
   
 **Supported Formats (Export)**
   * YDD
@@ -26,6 +29,7 @@ Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Be
   * YCD
   * YMAP
   * YTYP
+  * YFT
   
 **General Features**
   * Import / Export
@@ -35,12 +39,13 @@ Also see the Tutorials and Resources channels in the Sollumz Discord! (Linked Be
   * Animations
   * Custom normals
   * Shader editing
+  * Vehicle creation/editing
+  * Dynamic prop creation/editing
 
 ## Requirements ##
-  * Latest Codewalker release - [https://discord.gg/codewalker](https://discord.gg/codewalker)
-  * Blender 3.5.1 or later - [blender.org](http://www.blender.org/download/)
-  * Blender MUST be in English for Sollumz to function correctly (VERY IMPORTANT!)
-  * Sollumz Community Discord - [https://discord.gg/bZuWBWaQBg] (https://discord.gg/bZuWBWaQBg)
+  * Latest Codewalker release from [their discord](https://discord.gg/codewalker)
+  * [Blender 3.5.1 or later](http://www.blender.org/download/)
+  * Blender must be in **English** for Sollumz to function correctly
   
 ## Installation ##
   1. Click the green code button, then "Download ZIP". Do not extract the zip.
