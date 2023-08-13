@@ -19,7 +19,7 @@ def box_from_obj(obj):
 
     bbmin, bbmax = get_extents(obj)
     center = get_bound_center_from_bounds(bbmin, bbmax)
-    dimensions = Vector(get_dimensions(bbmin, bbmax))
+    dimensions = obj.dimensions
 
     box.center_x = round(center.x * 4)
     box.center_y = round(center.y * 4)
