@@ -6,8 +6,8 @@ Jump right in and create your first game asset by following one of our tutorials
 [creating-static-meshes.md](../tutorials/creating-static-meshes.md)
 {% endcontent-ref %}
 
-{% content-ref url="../tutorials/creating-static-collisions.md" %}
-[creating-static-collisions.md](../tutorials/creating-static-collisions.md)
+{% content-ref url="../tutorials/creating-static-collisions-todo.md" %}
+[creating-static-collisions-todo.md](../tutorials/creating-static-collisions-todo.md)
 {% endcontent-ref %}
 
 It's also highly recommended that you check out the documentation section. There you will find detailed information about each file type and how it is represented in Blender.

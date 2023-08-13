@@ -136,5 +136,5 @@ That's it! Load into the game and check out your creation!&#x20;
 </div>
 
 {% hint style="info" %}
-Note that your character will not collide with the Drawable as we have not created collisions for it. See [Creating Static Collisions](creating-static-collisions.md) to learn how to create collisions.
+Note that your character will not collide with the Drawable as we have not created collisions for it. See [Creating Static Collisions](creating-static-collisions-todo.md) to learn how to create collisions.
 {% endhint %}
