@@ -48,7 +48,7 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
   * Blender must be in **English** for Sollumz to function correctly
   
 ## Installation ##
-  1. Click the green code button, then "Download ZIP". Do not extract the zip.
+  1. Download the [latest release](https://github.com/Skylumz/Sollumz/releases/latest)
   2. Start Blender
   3. Ensure Blender Language is set to English
   4. Click menu _`Edit > Preferences...`_
