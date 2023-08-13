@@ -79,10 +79,11 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     frag_xml.drawable = drawable_xml
 
-    create_bone_transforms_xml(frag_xml)
+    if frag_obj.data.bones:
+        create_bone_transforms_xml(frag_xml)
 
     # Physics data doesn't do anything if no collisions are present and will cause crashes
-    if frag_has_collisions(frag_obj):
+    if frag_has_collisions(frag_obj) and frag_obj.data.bones:
         create_frag_physics_xml(
             frag_obj, frag_xml, materials, auto_calc_inertia, auto_calc_volume)
         create_vehicle_windows_xml(frag_obj, frag_xml, materials)
