@@ -384,12 +384,18 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
         row.operator(
             ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname)
         layout.separator()
-
-        layout.label(text="Apply Flag Presets", icon="BOOKMARKS")
+        layout.label(text="Apply Bone Flags", icon="BOOKMARKS")
         row = layout.row(align=True)
-        row.operator(ydr_ops.SOLLUMZ_OT_animation_flags.bl_idname,
-                     text="Animation")
-        row.operator(ydr_ops.SOLLUMZ_OT_weapon_flags.bl_idname, text="Weapon")
+        row.operator(ydr_ops.SOLLUMZ_OT_clear_bone_flags.bl_idname,
+                     text="Clear All")
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_transform_bone_flags.bl_idname, text="Transform")
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_limit_bone_flags.bl_idname, text="Limit")
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
