@@ -1,4 +1,5 @@
 from copy import copy
+from tokenize import group
 import bpy
 from typing import Optional
 from collections import defaultdict
@@ -383,7 +384,7 @@ def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
             group_ind_by_name[group_xml.name] = i
 
     def get_group_parent_index(group_bone: bpy.types.Bone):
-        if group_bone.parent is None:
+        if group_bone.parent is None or group_bone.parent.name not in group_ind_by_name:
             return 255
 
         if not group_bone.parent.sollumz_use_physics:
