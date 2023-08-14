@@ -241,11 +241,12 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         tag = clip_properties.tags.add()
         self.apply_template(tag)
 
-        # place the tag at the current frame
-        phase = bpy.context.scene.frame_float / bpy.context.scene.render.fps / clip_properties.duration
-        phase = min(max(phase, 0.0), 1.0)
-        tag.start_phase = phase
-        tag.end_phase = phase
+        if clip_properties.duration != 0.0:
+            # place the tag at the current frame
+            phase = bpy.context.scene.frame_float / bpy.context.scene.render.fps / clip_properties.duration
+            phase = min(max(phase, 0.0), 1.0)
+            tag.start_phase = phase
+            tag.end_phase = phase
 
         # redraw the timeline to show the new tag
         for area in context.screen.areas:
@@ -1217,9 +1218,15 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def invoke(self, context, event):
         if event is None:
-            return {'PASS_THROUGH'}
+            return {"PASS_THROUGH"}
 
         clip_obj = context.active_object
+        clip_properties = clip_obj.clip_properties
+
+        num_tags = len(clip_properties.tags)
+        clip_frame_count = clip_properties.get_frame_count()
+        if num_tags == 0 or clip_frame_count == 0:
+            return {"PASS_THROUGH"}
 
         region = context.region
 

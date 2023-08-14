@@ -586,7 +586,8 @@ class ClipTagsOnTimelineDrawHandler:
         clip_properties = clip_obj.clip_properties
 
         num_tags = len(clip_properties.tags)
-        if num_tags == 0:
+        clip_frame_count = clip_properties.get_frame_count()
+        if num_tags == 0 or clip_frame_count == 0:
             return
 
         if num_tags != len(self.overlay_verts_pos) // 6:
@@ -594,8 +595,6 @@ class ClipTagsOnTimelineDrawHandler:
             self.overlay_verts_color = np.empty((num_tags * 6, 4), dtype=np.float32)
             self.marker_verts_pos = np.empty((num_tags * 12, 3), dtype=np.float32)
             self.marker_verts_color = np.empty((num_tags * 12, 4), dtype=np.float32)
-
-        clip_frame_count = clip_properties.get_frame_count()
 
         region = context.region
         view = region.view2d
