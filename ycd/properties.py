@@ -123,9 +123,6 @@ class ClipProperties(bpy.types.PropertyGroup):
         name="Duration", description="Duration of the clip in seconds",
         default=0, min=0, subtype="TIME_ABSOLUTE")
 
-    start_frame: bpy.props.IntProperty(name="Start Frame", default=0, min=0)
-    end_frame: bpy.props.IntProperty(name="End Frame", default=0, min=0)
-
     animations: bpy.props.CollectionProperty(name="Animations", type=ClipAnimation)
 
     tags: bpy.props.CollectionProperty(name="Tags", type=ClipTag)
