@@ -942,9 +942,12 @@ def get_shaders_from_blender(materials):
                 # Disable extra material writing to xml
                 if param.name == "Extra":
                     continue
+                elif param.name == "DiffuseSampler":
+                    param.texture_name = node.sollumz_texture_name
+                    shader.parameters.insert(0, param)
                 else:
                     param.texture_name = node.sollumz_texture_name
-                shader.parameters.append(param)
+                    shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
                     param = VectorShaderParameter()
