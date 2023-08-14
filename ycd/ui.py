@@ -149,6 +149,8 @@ def draw_item_box_header(
 
 def draw_clip_attribute(layout, attr, delete_op_cls):
     split = layout.split(factor=0.6)
+    split.use_property_split = False
+    split.use_property_decorate = False
     left_row = split.row(align=True)
     left_row.prop(attr, "name", text="")
     left_row.prop(attr, "type", text="")
@@ -158,8 +160,8 @@ def draw_clip_attribute(layout, attr, delete_op_cls):
     elif attr.type == "Int":
         right_row.prop(attr, "value_int", text="")
     elif attr.type == "Bool":
-        right_row.alignment = "RIGHT"
-        right_row.prop(attr, "value_bool", text="")
+        bool_str = "Yes" if attr.value_bool else "No"
+        right_row.row().prop(attr, "value_bool", text=bool_str, toggle=True)
     elif attr.type == "Vector3":
         right_row.prop(attr, "value_vec3", text="")
     elif attr.type == "Vector4":
