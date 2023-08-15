@@ -9,6 +9,7 @@ from ..sollumz_properties import MaterialType, SollumType
 from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from typing import Tuple
+from ..cwxml.shader import ShaderManager
 
 from .. import logger
 
@@ -739,3 +740,15 @@ def update_uv_clip_hash(clip_obj) -> bool:
 
     clip_obj.clip_properties.hash = clip_hash_str
     return True
+
+
+def is_uv_animation_supported(material: bpy.types.Material):
+    shader_name = material.shader_properties.filename
+
+    if shader_name not in ShaderManager.shaders:
+        return False
+
+    shader = ShaderManager.shaders[shader_name]
+
+    return shader.is_uv_animation_supported
+

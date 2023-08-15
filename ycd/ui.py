@@ -7,7 +7,7 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from . import operators as ycd_ops
 from .properties import AnimationTracks
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
-from ..tools.animationhelper import is_any_sollumz_animation_obj
+from ..tools.animationhelper import is_any_sollumz_animation_obj, is_uv_animation_supported
 
 def draw_clip_properties(self, context):
     obj = context.active_object
@@ -341,9 +341,14 @@ class SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS(bpy.types.Panel):
 
         mat = context.active_object.active_material
         animation_tracks = mat.animation_tracks
+        is_supported = is_uv_animation_supported(mat)
 
         layout.label(text="UV Transformations")
+        if not is_supported:
+            layout.label(text=f"Shader '{mat.shader_properties.name}' does not support UV animations.", icon="ERROR")
+
         row = layout.row()
+        row.enabled = is_supported
         with context.temp_override(animation_tracks=animation_tracks):
             row.template_list(SOLLUMZ_UL_uv_transforms_list.bl_idname, "",
                               animation_tracks, "uv_transforms", animation_tracks, "uv_transforms_active_index")
@@ -355,7 +360,9 @@ class SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS(bpy.types.Panel):
         col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon="TRIA_UP", text="").direction = "UP"
         col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon="TRIA_DOWN", text="").direction = "DOWN"
 
-        layout.operator(ycd_ops.SOLLUMZ_OT_uv_sprite_sheet_anim.bl_idname)
+        row = layout.row()
+        row.enabled = is_supported
+        row.operator(ycd_ops.SOLLUMZ_OT_uv_sprite_sheet_anim.bl_idname)
 
         box = layout.box()
         box.use_property_split = True
