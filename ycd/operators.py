@@ -781,10 +781,10 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         name="Separation Vertical",
         description="Vertical separation between frames in the sprite sheet texture, in pixels",
         min=0, default=0, subtype="PIXEL", step=100)
-    frame_duration: bpy.props.FloatProperty(
-        name="Frame Duration",
-        description="Duration of each frame",
-        min=0.0, default=1.0, subtype="TIME_ABSOLUTE")
+    keyframe_interval: bpy.props.IntProperty(
+        name="Keyframe Interval",
+        description="Interval at which keyframes are inserted. It is recommended to use a multiple of 30 to prevent flickering in-game",
+        min=1, default=30)
     use_dst_frame: bpy.props.BoolProperty(
         name="Use Destination Frame",
         description="Specify the destination frame bounds manually instead of auto-calculating them. "
@@ -854,11 +854,11 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                     frame_x = frame_offset_x + x * frame_w + x * frame_sep_x
                     frame_y = frame_offset_y + y * frame_h + y * frame_sep_y
 
-                    frame_idx = round(frame.order * self.frame_duration * bpy.context.scene.render.fps)
+                    frame_idx = frame.order * self.keyframe_interval
                     translate_transform.translation = (frame_x, frame_y)
                     translate_transform.keyframe_insert(data_path="translation", frame=frame_idx)
 
-                    next_frame_idx = round((frame.order + 1) * self.frame_duration * bpy.context.scene.render.fps)
+                    next_frame_idx = (frame.order + 1) * self.keyframe_interval
                     if next_frame_idx > frame_end:
                         frame_end = next_frame_idx
                         frame_end_translation = (frame_x, frame_y)
@@ -912,7 +912,7 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         col.prop(self, "separation_horizontal", text="Separation Horizontal")
         col.prop(self, "separation_vertical", text="Vertical")
 
-        layout.prop(self, "frame_duration")
+        layout.prop(self, "keyframe_interval")
 
         layout.prop(self, "use_dst_frame", text="Destination Frame")
         col = layout.column(align=True)
