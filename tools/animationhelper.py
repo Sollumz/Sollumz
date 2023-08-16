@@ -474,7 +474,8 @@ def setup_material_for_animation(material: bpy.types.Material):
     if material.sollum_type == MaterialType.NONE:
         raise Exception("Material is not a Sollumz material")
 
-    add_global_anim_uv_nodes(material)
+    # nothing to do, now the nodes are added when creating the material
+    # add_global_anim_uv_nodes(material)
 
 
 def get_canonical_track_data_path(track: Track, bone_id: int):
