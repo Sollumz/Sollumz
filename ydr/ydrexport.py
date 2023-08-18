@@ -933,8 +933,11 @@ def get_shaders_from_blender(materials):
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
+        shader.parameters = list(ShaderManager.shaders[shader.filename].parameters)
 
         for node in material.node_tree.nodes:
+            param = None
+
             if isinstance(node, bpy.types.ShaderNodeTexImage):
                 param = TextureShaderParameter()
                 param.name = node.name
@@ -944,7 +947,7 @@ def get_shaders_from_blender(materials):
                     continue
                 else:
                     param.texture_name = node.sollumz_texture_name
-                shader.parameters.append(param)
+                
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
                     param = VectorShaderParameter()
@@ -961,7 +964,6 @@ def get_shaders_from_blender(materials):
                     param.z = z.outputs[0].default_value
                     param.w = w.outputs[0].default_value
 
-                    shader.parameters.append(param)
             elif isinstance(node, bpy.types.ShaderNodeGroup) and node.is_sollumz:
                 # Only perform logic if its ArrayNode
                 if node.node_tree.name == "ArrayNode" and node.name[-1] == "1":
@@ -982,7 +984,14 @@ def get_shaders_from_blender(materials):
                         all_array_values.append(Vector((x, y, z, w)))
 
                     param.values = all_array_values
+
+            if param is not None:
+                parameter_index = next((i for i, x in enumerate(shader.parameters) if x.name == param.name), None)
+                
+                if parameter_index == None:
                     shader.parameters.append(param)
+                else:
+                    shader.parameters[parameter_index] = param
 
         shaders.append(shader)
 
