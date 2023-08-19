@@ -531,11 +531,14 @@ def create_emissive_nodes(node_tree):
     links = node_tree.links
     output = node_tree.nodes["Material Output"]
     tmpn = output.inputs[0].links[0].from_node
+    mix = node_tree.nodes.new("ShaderNodeMixShader")    
     if tmpn.name == "Principled BSDF":
         em = node_tree.nodes.new("ShaderNodeEmission")
         diff = node_tree.nodes["DiffuseSampler"]
         links.new(diff.outputs[0], em.inputs[0])
-        links.new(em.outputs[0], output.inputs[0])
+        links.new(em.outputs[0], mix.inputs[1])
+        links.new(tmpn.outputs[0], mix.inputs[2])
+        links.new(mix.outputs[0], output.inputs[0])
 
 
 def link_value_shader_parameters(shader, node_tree):
