@@ -495,10 +495,10 @@ def split_geom_by_vert_count(geom_xml: Geometry):
         raise ValueError(
             "Failed to split Geometry by vertex count. Vertex buffer and index buffer cannot be None!")
 
-    MAX_VERTS = 65535
+    max_verts = int(262144 / geom_xml.vertex_buffer.data.dtype.itemsize)
 
     vert_buffers, ind_buffers = split_vert_buffers_by_count(
-        geom_xml.vertex_buffer.data, geom_xml.index_buffer.data, MAX_VERTS)
+        geom_xml.vertex_buffer.data, geom_xml.index_buffer.data, max_verts)
 
     geoms: list[Geometry] = []
 
