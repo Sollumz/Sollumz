@@ -266,7 +266,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         n.image = texture
 
                     # assign non color to normal maps
-                    if "Bump" in param.name:
+                    if "Bump" in param.name or param.name == "distanceMapSampler":
                         n.image.colorspace_settings.name = "Non-Color"
 
                     if param.texture_name and param.name == "DiffuseSampler":
@@ -304,9 +304,6 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         # Set external texture name for non-embedded textures
                         n.image.source = "FILE"
                         n.image.filepath = "//" + param.texture_name + ".dds"
-
-                    if param.name == "BumpSampler" and hasattr(n.image, "colorspace_settings"):
-                        n.image.colorspace_settings.name = "Non-Color"
 
             elif isinstance(n, bpy.types.ShaderNodeValue):
                 if param.name == n.name[:-2]:

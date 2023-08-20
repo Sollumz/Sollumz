@@ -291,7 +291,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     return gnt
 
 
-def create_image_node(node_tree, param):
+def create_image_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     imgnode.name = param.name
     imgnode.is_sollumz = True
@@ -547,6 +547,55 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
     links.new(mix.outputs["Shader"], output.inputs["Surface"])
 
 
+def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage):
+    node_tree = b.node_tree
+    output = b.material_output
+    bsdf = b.bsdf
+    links = node_tree.links
+    mix = node_tree.nodes.new("ShaderNodeMixShader")
+    trans = node_tree.nodes.new("ShaderNodeBsdfTransparent")
+    multiply_color = node_tree.nodes.new("ShaderNodeVectorMath")
+    multiply_color.operation = "MULTIPLY"
+    multiply_alpha = node_tree.nodes.new("ShaderNodeMath")
+    multiply_alpha.operation = "MULTIPLY"
+    multiply_alpha.inputs[1].default_value = 1.0  # alpha value
+    distance_greater_than = node_tree.nodes.new("ShaderNodeMath")
+    distance_greater_than.operation = "GREATER_THAN"
+    distance_greater_than.inputs[1].default_value = 0.5  # distance threshold
+    distance_separate_x = node_tree.nodes.new("ShaderNodeSeparateXYZ")
+    fill_color_combine = node_tree.nodes.new("ShaderNodeCombineXYZ")
+    fill_color_r = node_tree.nodes["fillColor_x"]
+    fill_color_g = node_tree.nodes["fillColor_y"]
+    fill_color_b = node_tree.nodes["fillColor_z"]
+
+    #distance_map_texture.image.colormapping_settings.name = "Non-Color"
+
+    # combine fillColor into a vector
+    links.new(fill_color_r.outputs["Value"], fill_color_combine.inputs["X"])
+    links.new(fill_color_g.outputs["Value"], fill_color_combine.inputs["Y"])
+    links.new(fill_color_b.outputs["Value"], fill_color_combine.inputs["Z"])
+
+    # extract distance value from texture and check > 0.5
+    links.new(distance_map_texture.outputs["Color"], distance_separate_x.inputs["Vector"])
+    links.remove(distance_map_texture.outputs["Alpha"].links[0])
+    links.new(distance_separate_x.outputs["X"], distance_greater_than.inputs["Value"])
+
+    # multiply color and alpha by distance check result
+    links.new(distance_greater_than.outputs["Value"], multiply_alpha.inputs[0])
+    links.new(distance_greater_than.outputs["Value"], multiply_color.inputs[0])
+    links.new(fill_color_combine.outputs["Vector"], multiply_color.inputs[1])
+
+    # connect output color and alpha
+    links.new(multiply_alpha.outputs["Value"], mix.inputs["Fac"])
+    links.new(multiply_color.outputs["Vector"], bsdf.inputs["Base Color"])
+
+    # connect BSDFs and material output
+    links.new(trans.outputs["BSDF"], mix.inputs[1])
+    links.remove(bsdf.outputs["BSDF"].links[0])
+    links.new(bsdf.outputs["BSDF"], mix.inputs[2])
+    links.new(mix.outputs["Shader"], output.inputs["Surface"])
+
+
 def create_emissive_nodes(b: ShaderBuilder):
     node_tree = b.node_tree
     links = node_tree.links
@@ -663,7 +712,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     bumptex = None
     spectex = None
     detltex = None
-    isdistmap = False
+    is_distance_map = False
 
     for param in shader.parameters:
         if param.type == "Texture":
@@ -680,7 +729,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
                 tintpal = imgnode
             elif param.name == "distanceMapSampler":
                 texture = imgnode
-                isdistmap = True
+                is_distance_map = True
             elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
                 texture2 = imgnode
             else:
@@ -760,6 +809,10 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     is_water = filename in ShaderManager.water_shaders
     if is_water:
         create_water_nodes(b)
+
+    if is_distance_map:
+        blend_mode = "BLEND"
+        create_distance_map_nodes(b, texture)
 
     # link value parameters
     link_value_shader_parameters(b)
