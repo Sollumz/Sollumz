@@ -1,10 +1,21 @@
-from typing import Optional
+from typing import Optional, NamedTuple
 import bpy
-from ..cwxml.shader import ShaderManager
+from ..cwxml.shader import ShaderManager, Shader
 from ..sollumz_properties import MaterialType
-from collections import namedtuple
+from ..tools.blenderhelper import find_bsdf_and_material_output
 
-ShaderMaterial = namedtuple("ShaderMaterial", "name, ui_name, value")
+class ShaderBuilder(NamedTuple):
+    shader: Shader
+    filename: str
+    material: bpy.types.Material
+    node_tree: bpy.types.ShaderNodeTree
+    bsdf: bpy.types.ShaderNodeBsdfPrincipled
+    material_output: bpy.types.ShaderNodeOutputMaterial
+
+class ShaderMaterial(NamedTuple):
+    name: str
+    ui_name: str
+    value: str
 
 shadermats = []
 
@@ -15,12 +26,20 @@ for shader in ShaderManager.shaders.values():
         name, name.replace("_", " "), shader.filename))
 
 
-def try_get_node(node_tree, name):
-    try:
-        return node_tree.nodes[name]
-    except:
-        return None
+def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types.Node]:
+    """Gets a node by its name. Returns `None` if not found.
+    Note, names are localized by Blender or can changed by the user, so
+    this should only be used for names that Sollumz sets explicitly.
+    """
+    return node_tree.nodes.get(name, None)
 
+def try_get_node_by_cls(node_tree: bpy.types.NodeTree, node_cls: type) -> Optional[bpy.types.Node]:
+    """Gets a node by its type. Returns `None` if not found."""
+    for node in node_tree.nodes:
+        if isinstance(node, node_cls):
+            return node
+
+    return None
 
 def get_child_nodes(node):
     child_nodes = []
@@ -54,12 +73,12 @@ def get_loose_nodes(node_tree):
     return loose_nodes
 
 
-def organize_node_tree(node_tree):
-    mo = try_get_node(node_tree, "Material Output")
+def organize_node_tree(b: ShaderBuilder):
+    mo = b.material_output
     mo.location.x = 0
     mo.location.y = 0
     organize_node(mo)
-    organize_loose_nodes(node_tree, 1000, 0)
+    organize_loose_nodes(b.node_tree, 1000, 0)
 
 
 def organize_node(node):
@@ -141,7 +160,8 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
 
         if palette_img is not None:
             # create texture and get texture node
-            txt_node = mod.node_group.nodes["Image Texture"]
+            txt_node = try_get_node_by_cls(mod.node_group, bpy.types.GeometryNodeImageTexture)
+            assert txt_node is not None
             # apply texture
             txt_node.inputs[0].default_value = palette_img
 
@@ -317,15 +337,17 @@ def create_array_nodes(node_tree, param):
         node.is_sollumz = True
 
 
-def link_diffuse(node_tree, imgnode):
-    bsdf = node_tree.nodes["Principled BSDF"]
+def link_diffuse(b: ShaderBuilder, imgnode):
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
     links.new(imgnode.outputs["Color"], bsdf.inputs["Base Color"])
     links.new(imgnode.outputs["Alpha"], bsdf.inputs["Alpha"])
 
 
-def link_diffuses(node_tree, tex1, tex2):
-    bsdf = node_tree.nodes["Principled BSDF"]
+def link_diffuses(b: ShaderBuilder, tex1, tex2):
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
     rgb = node_tree.nodes.new("ShaderNodeMixRGB")
     links.new(tex1.outputs["Color"], rgb.inputs["Color1"])
@@ -335,10 +357,11 @@ def link_diffuses(node_tree, tex1, tex2):
     return rgb
 
 
-def link_detailed_normal(node_tree, bumptex, dtltex, spectex):
+def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     dtltex2 = node_tree.nodes.new("ShaderNodeTexImage")
     dtltex2.name = "Extra"
-    bsdf = node_tree.nodes["Principled BSDF"]
     dsz = node_tree.nodes["detailSettings_z"]
     dsw = node_tree.nodes["detailSettings_w"]
     dsy = node_tree.nodes["detailSettings_y"]
@@ -403,16 +426,9 @@ def link_detailed_normal(node_tree, bumptex, dtltex, spectex):
     links.new(nrm.outputs[0], bsdf.inputs["Normal"])
 
 
-def link_normal(node_tree, nrmtex):
-    bsdf = node_tree.nodes["Principled BSDF"]
-    links = node_tree.links
-    normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
-    links.new(nrmtex.outputs["Color"], normalmap.inputs["Color"])
-    links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
-
-
-def link_normal(node_tree, nrmtex):
-    bsdf = node_tree.nodes["Principled BSDF"]
+def link_normal(b: ShaderBuilder, nrmtex):
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
     normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
 
@@ -435,15 +451,17 @@ def create_normal_invert_node(node_tree: bpy.types.NodeTree):
     return rgb_curves
 
 
-def link_specular(node_tree, spctex):
-    bsdf = node_tree.nodes["Principled BSDF"]
+def link_specular(b: ShaderBuilder, spctex):
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
     links.new(spctex.outputs["Color"], bsdf.inputs["Specular"])
 
 
-def create_pixel_tint_nodes(node_tree, tex, tinttex, tintflags):
+def create_pixel_tint_nodes(b: ShaderBuilder, tex, tinttex, tintflags):
     tinttex.interpolation = "Closest"
-    bsdf = node_tree.nodes["Principled BSDF"]
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
     mathns = []
     locx = 0
@@ -485,12 +503,13 @@ def create_pixel_tint_nodes(node_tree, tex, tinttex, tintflags):
     links.new(tinttex.outputs[0], bsdf.inputs["Base Color"])
 
 
-def create_tint_nodes(node_tree, tinttex, txt, tintflags):
+def create_tint_nodes(b: ShaderBuilder, tinttex, txt, tintflags):
     if tintflags == 2:
-        create_pixel_tint_nodes(node_tree, txt, tinttex, tintflags)
+        create_pixel_tint_nodes(b, txt, tinttex, tintflags)
         return
     # create shader attribute node
-    bsdf = node_tree.nodes["Principled BSDF"]
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     attr.attribute_name = "TintColor"
@@ -502,9 +521,10 @@ def create_tint_nodes(node_tree, tinttex, txt, tintflags):
     links.new(mix.outputs[0], bsdf.inputs["Base Color"])
 
 
-def create_decal_nodes(node_tree, texture, decalflag):
-    output = node_tree.nodes["Material Output"]
-    bsdf = node_tree.nodes["Principled BSDF"]
+def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
+    node_tree = b.node_tree
+    output = b.material_output
+    bsdf = b.bsdf
     links = node_tree.links
     mix = node_tree.nodes.new("ShaderNodeMixShader")
     trans = node_tree.nodes.new("ShaderNodeBsdfTransparent")
@@ -527,12 +547,13 @@ def create_decal_nodes(node_tree, texture, decalflag):
     links.new(mix.outputs["Shader"], output.inputs["Surface"])
 
 
-def create_emissive_nodes(node_tree):
+def create_emissive_nodes(b: ShaderBuilder):
+    node_tree = b.node_tree
     links = node_tree.links
-    output = node_tree.nodes["Material Output"]
+    output = b.material_output
     tmpn = output.inputs[0].links[0].from_node
     mix = node_tree.nodes.new("ShaderNodeMixShader")    
-    if tmpn.name == "Principled BSDF":
+    if tmpn == b.bsdf:
         em = node_tree.nodes.new("ShaderNodeEmission")
         diff = node_tree.nodes["DiffuseSampler"]
         links.new(diff.outputs[0], em.inputs[0])
@@ -541,9 +562,12 @@ def create_emissive_nodes(node_tree):
         links.new(mix.outputs[0], output.inputs[0])
 
 
-def link_value_shader_parameters(shader, node_tree):
+def link_value_shader_parameters(b: ShaderBuilder):
+    shader = b.shader
+    node_tree = b.node_tree
     links = node_tree.links
 
+    bsdf = b.bsdf
     bmp = None
     spec_im = None
     spec_fm = None
@@ -560,13 +584,12 @@ def link_value_shader_parameters(shader, node_tree):
             em_m = node_tree.nodes["emissiveMultiplier_x"]
 
     if bmp:
-        nm = try_get_node(node_tree, "Normal Map")
+        nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
         if nm:
             links.new(bmp.outputs[0], nm.inputs[0])
     if spec_im:
         spec = try_get_node(node_tree, "SpecSampler")
-        bsdf = try_get_node(node_tree, "Principled BSDF")
-        if spec and bsdf:
+        if spec:
             map = node_tree.nodes.new("ShaderNodeMapRange")
             map.inputs[2].default_value = 1
             map.inputs[4].default_value = 1
@@ -578,30 +601,29 @@ def link_value_shader_parameters(shader, node_tree):
             links.new(spec_im.outputs[0], map.inputs[0])
             links.new(mult.outputs[0], bsdf.inputs["Specular"])
     if spec_fm:
-        bsdf = try_get_node(node_tree, "Principled BSDF")
-        if bsdf:
-            map = node_tree.nodes.new("ShaderNodeMapRange")
-            map.inputs[2].default_value = 512
-            map.inputs[3].default_value = 1
-            map.inputs[4].default_value = 0
-            map.clamp = True
-            links.new(spec_fm.outputs[0], map.inputs[0])
-            links.new(map.outputs[0], bsdf.inputs["Roughness"])
+        map = node_tree.nodes.new("ShaderNodeMapRange")
+        map.inputs[2].default_value = 512
+        map.inputs[3].default_value = 1
+        map.inputs[4].default_value = 0
+        map.clamp = True
+        links.new(spec_fm.outputs[0], map.inputs[0])
+        links.new(map.outputs[0], bsdf.inputs["Roughness"])
     if em_m:
-        em = try_get_node(node_tree, "Emission")
+        em = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeEmission)
         if em:
             links.new(em_m.outputs[0], em.inputs[1])
 
 
-def create_water_nodes(node_tree):
+def create_water_nodes(b: ShaderBuilder):
+    node_tree = b.node_tree
     links = node_tree.links
-    output = node_tree.nodes["Material Output"]
+    bsdf = b.bsdf
+    output = b.material_output
     mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
     add_shader = node_tree.nodes.new("ShaderNodeAddShader")
     vol_absorb = node_tree.nodes.new("ShaderNodeVolumeAbsorption")
     vol_absorb.inputs[0].default_value = (0.772, 0.91, 0.882, 1.0)
     vol_absorb.inputs[1].default_value = 0.25  # Density
-    bsdf = node_tree.nodes["Principled BSDF"]
     bsdf.inputs[0].default_value = (0.588, 0.91, 0.851, 1.0)
     bsdf.inputs[19].default_value = (
         0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
@@ -628,9 +650,12 @@ def create_water_nodes(node_tree):
     links.new(bump.outputs['Normal'], glass_shader.inputs['Normal'])
 
 
-def create_basic_shader_nodes(mat, shader, filename):
-
-    node_tree = mat.node_tree
+def create_basic_shader_nodes(b: ShaderBuilder):
+    shader = b.shader
+    filename = b.filename
+    mat = b.material
+    node_tree = b.node_tree
+    bsdf = b.bsdf
 
     texture = None
     texture2 = None
@@ -711,40 +736,43 @@ def create_basic_shader_nodes(mat, shader, filename):
     if not use_decal:
         if use_diff:
             if use_diff2:
-                link_diffuses(node_tree, texture, texture2)
+                link_diffuses(b, texture, texture2)
             else:
-                link_diffuse(node_tree, texture)
+                link_diffuse(b, texture)
     else:
-        create_decal_nodes(node_tree, texture, decalflag)
+        create_decal_nodes(b, texture, decalflag)
 
     if use_bump:
         if use_detl:
-            link_detailed_normal(node_tree, bumptex, detltex, spectex)
+            link_detailed_normal(b, bumptex, detltex, spectex)
         else:
-            link_normal(node_tree, bumptex)
+            link_normal(b, bumptex)
     if use_spec:
-        link_specular(node_tree, spectex)
+        link_specular(b, spectex)
     else:
-        node_tree.nodes["Principled BSDF"].inputs["Specular"].default_value = 0
+        bsdf.inputs["Specular"].default_value = 0
     if use_tint:
-        create_tint_nodes(node_tree, tintpal, texture, tintflag)
+        create_tint_nodes(b, tintpal, texture, tintflag)
 
     if is_emissive:
-        create_emissive_nodes(node_tree)
+        create_emissive_nodes(b)
 
     is_water = filename in ShaderManager.water_shaders
     if is_water:
-        create_water_nodes(node_tree)
+        create_water_nodes(b)
 
     # link value parameters
-    link_value_shader_parameters(shader, node_tree)
+    link_value_shader_parameters(b)
 
     mat.blend_method = blend_mode
 
 
-def create_terrain_shader(mat, shader, filename):
-    node_tree = mat.node_tree
-    bsdf = node_tree.nodes["Principled BSDF"]
+def create_terrain_shader(b: ShaderBuilder):
+    shader = b.shader
+    filename = b.filename
+    mat = b.material
+    node_tree = b.node_tree
+    bsdf = b.bsdf
     links = node_tree.links
 
     ts1 = None
@@ -847,7 +875,7 @@ def create_terrain_shader(mat, shader, filename):
 
     # link value parameters
     bsdf.inputs["Specular"].default_value = 0
-    link_value_shader_parameters(shader, node_tree)
+    link_value_shader_parameters(b)
 
 
 def create_shader(filename: str):
@@ -864,11 +892,22 @@ def create_shader(filename: str):
     mat.shader_properties.filename = filename
     mat.shader_properties.renderbucket = shader.render_buckets[0]
 
-    if filename in ShaderManager.terrains:
-        create_terrain_shader(mat, shader, filename)
-    else:
-        create_basic_shader_nodes(mat, shader, filename)
+    bsdf, material_output = find_bsdf_and_material_output(mat)
+    assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"
+    assert bsdf is not None, "ShaderNodeBsdfPrincipled not found in default node_tree!"
 
-    organize_node_tree(mat.node_tree)
+    builder = ShaderBuilder(shader=shader,
+                            filename=filename,
+                            material=mat,
+                            node_tree=mat.node_tree,
+                            material_output=material_output,
+                            bsdf=bsdf)
+
+    if filename in ShaderManager.terrains:
+        create_terrain_shader(builder)
+    else:
+        create_basic_shader_nodes(builder)
+
+    organize_node_tree(builder)
 
     return mat

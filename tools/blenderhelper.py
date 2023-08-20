@@ -2,7 +2,7 @@ import re
 import bpy
 import bmesh
 from mathutils import Matrix, Vector
-from typing import Optional
+from typing import Optional, Tuple
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel
 
@@ -73,7 +73,7 @@ def material_from_image(img, name="Material", nodename="Image"):
     mat.use_nodes = True
     node_tree = mat.node_tree
     links = node_tree.links
-    bsdf = node_tree.nodes["Principled BSDF"]
+    bsdf, _ = find_bsdf_and_material_output(mat)
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     imgnode.name = nodename
     links.new(imgnode.outputs[0], bsdf.inputs[0])
@@ -434,3 +434,16 @@ def tag_redraw(context: bpy.types.Context, space_type: str = "PROPERTIES", regio
                 for region in area.regions:
                     if region.type == region_type:
                         region.tag_redraw()
+
+
+def find_bsdf_and_material_output(material: bpy.types.Material) -> Tuple[bpy.types.ShaderNodeBsdfPrincipled, bpy.types.ShaderNodeOutputMaterial]:
+    material_output = None
+    bsdf = None
+    for node in material.node_tree.nodes:
+        if isinstance(node, bpy.types.ShaderNodeOutputMaterial):
+            material_output = node
+        elif isinstance(node, bpy.types.ShaderNodeBsdfPrincipled):
+            bsdf = node
+
+    return bsdf, material_output
+

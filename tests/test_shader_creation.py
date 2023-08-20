@@ -1,0 +1,53 @@
+import pytest
+import bpy
+from Sollumz.tests.test_fixtures import *
+from Sollumz.ydr.shader_materials import create_shader
+from Sollumz.ybn.collision_materials import create_collision_material_from_index
+from Sollumz.ynv.ynvimport import get_material as ynv_get_material
+from Sollumz.tools.ymaphelper import add_occluder_material
+from Sollumz.sollumz_properties import SollumType
+from Sollumz.tools.blenderhelper import find_bsdf_and_material_output, material_from_image
+
+
+@pytest.fixture(scope="class", params=BLENDER_LANGUAGES)
+def use_every_language(request):
+    for mat in bpy.data.materials:
+        bpy.data.materials.remove(mat)
+
+    bpy.context.preferences.view.language = request.param
+    _ = bpy.context.preferences.view.language  # need to read it after changing otherwise Blender crashes (Windows fatal exception: access violation) wtf??
+    return request.param
+
+
+class TestAllLanguages:
+    @pytest.mark.parametrize("shader", SOLLUMZ_SHADERS)
+    def test_create_shader(self, shader, use_every_language):
+        mat = create_shader(shader)
+        assert mat is not None
+
+    @pytest.mark.parametrize("material_index", list(range(len(SOLLUMZ_COLLISION_MATERIALS))))
+    def test_create_collision_material(self, material_index, use_every_language):
+        mat = create_collision_material_from_index(material_index)
+        assert mat is not None
+
+    def test_create_navmesh_material(self, use_every_language):
+        mat = ynv_get_material("0 204 0 255 161 107")
+        assert mat is not None
+
+    @pytest.mark.parametrize("sollum_type", (SollumType.YMAP_MODEL_OCCLUDER, SollumType.YMAP_BOX_OCCLUDER))
+    def test_create_occluder_material(self, sollum_type, use_every_language):
+        mat = add_occluder_material(sollum_type)
+        assert mat is not None
+
+    def test_material_from_image(self, use_every_language):
+        img = bpy.data.images.new("Test", 16, 16)
+        mat = material_from_image(img)
+        assert mat is not None
+
+    def test_find_bsdf_and_material_output(self, use_every_language):
+        mat = bpy.data.materials.new("Test")
+        mat.use_nodes = True
+        bsdf, mo = find_bsdf_and_material_output(mat)
+        assert bsdf is not None
+        assert mo is not None
+
