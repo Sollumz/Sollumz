@@ -35,8 +35,11 @@ def indent(elem: ET.Element, level=0):
 def get_str_type(value: str):
     """Determine if a string is a bool, int, or float"""
     if isinstance(value, str):
-        if value.lower() == "true" or value.lower() == "false":
-            return bool(value)
+        value_lower = value.lower()
+        if value_lower == "true":
+            return True
+        elif value_lower == "false":
+            return False
 
         try:
             return int(value)
