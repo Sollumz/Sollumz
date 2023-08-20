@@ -36,7 +36,7 @@ def get_str_type(value: str):
     """Determine if a string is a bool, int, or float"""
     if isinstance(value, str):
         if value.lower() == "true" or value.lower() == "false":
-            return bool(value)
+            return False if value.lower() == "false" else True
 
         try:
             return int(value)
