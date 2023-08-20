@@ -269,13 +269,10 @@ def ymap_to_obj(ymap: CMapData):
 
     # Entities
     # TODO: find a way to retrieve ignored stuff on export
-    if import_settings.ymap_exclude_entities == False and len(ymap.entities) > 0:
-        entity_to_obj(ymap_obj, ymap)
     if ymap.entities and not import_settings.ymap_exclude_entities:
-        if import_settings.ymap_instance_entities and ymap.entities:
-            instanced_entity_to_obj(ymap_obj, ymap)
-        elif ymap.entities:
-            entity_to_obj(ymap_obj, ymap)
+        instanced_entity_to_obj(ymap_obj, ymap)
+    if import_settings.ymap_exclude_entities == False and len(ymap.entities) > 0 and not import_settings.ymap_instance_entities:
+        entity_to_obj(ymap_obj, ymap)
 
     # Box occluders
     if import_settings.ymap_box_occluders == False and len(ymap.box_occluders) > 0:
