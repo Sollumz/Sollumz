@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node, ShaderManager
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
-from ..tools.blenderhelper import create_empty_object
+from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output
 from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
 from typing import Union
 
@@ -84,7 +84,7 @@ class MaterialConverter:
         return None
 
     def _get_nodes(self):
-        self.bsdf = try_get_node(self.material.node_tree, "Principled BSDF")
+        self.bsdf, _ = find_bsdf_and_material_output(self.material)
 
         if self.bsdf is None:
             raise Exception(

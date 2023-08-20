@@ -2,6 +2,7 @@ import bpy
 from ..sollumz_properties import MaterialType
 from collections import namedtuple
 from .. import logger
+from ..tools.blenderhelper import find_bsdf_and_material_output
 
 CollisionMaterial = namedtuple(
     "CollisionMaterial", "name, ui_name, color, density")
@@ -311,10 +312,10 @@ def create_collision_material_from_index(index: int):
     mat.sollum_type = MaterialType.COLLISION
     mat.collision_properties.collision_index = index
     mat.use_nodes = True
+    bsdf, _ = find_bsdf_and_material_output(mat)
     r = matinfo.color[0] / 255
     g = matinfo.color[1] / 255
     b = matinfo.color[2] / 255
-    mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (
-        r, g, b, 1)
+    bsdf.inputs[0].default_value = (r, g, b, 1)
 
     return mat

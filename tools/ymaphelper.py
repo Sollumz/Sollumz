@@ -1,6 +1,7 @@
 import bpy
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..tools.blenderhelper import find_bsdf_and_material_output
 
 # TODO: This is not a real flag calculation, definitely need to do better
 def calculate_ymap_content_flags(selected_ymap=None, sollum_type=None):
@@ -59,11 +60,12 @@ def add_occluder_material(sollum_type=None):
     material = bpy.data.materials.get(mat_name) or bpy.data.materials.new(mat_name)
     material.blend_method = "BLEND"
     material.use_nodes = True
-    material.node_tree.nodes["Principled BSDF"].inputs['Alpha'].default_value = mat_transparency
-    material.node_tree.nodes["Principled BSDF"].inputs['Base Color'].default_value = mat_color
-    material.node_tree.nodes["Principled BSDF"].inputs['Roughness'].default_value = 0
-    material.node_tree.nodes["Principled BSDF"].inputs['Metallic'].default_value = 0
-    material.node_tree.nodes["Principled BSDF"].inputs['Emission'].default_value = emission_color
+    bsdf, _ = find_bsdf_and_material_output(material)
+    bsdf.inputs["Alpha"].default_value = mat_transparency
+    bsdf.inputs["Base Color"].default_value = mat_color
+    bsdf.inputs["Roughness"].default_value = 0
+    bsdf.inputs["Metallic"].default_value = 0
+    bsdf.inputs["Emission"].default_value = emission_color
 
 
     return material

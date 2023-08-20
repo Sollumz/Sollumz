@@ -45,16 +45,14 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
 ## Requirements ##
   * Latest Codewalker release from [their discord](https://discord.gg/codewalker)
   * [Blender 3.5.1 or later](http://www.blender.org/download/)
-  * Blender must be in **English** for Sollumz to function correctly
-  
+
 ## Installation ##
   1. Download the [latest release](https://github.com/Skylumz/Sollumz/releases/latest)
   2. Start Blender
-  3. Ensure Blender Language is set to English
-  4. Click menu _`Edit > Preferences...`_
-  5. Go to the  _`Addons`_ tab in the middle
-  6. Click _`Install...`_ button at the top
-  7. Select the Downloaded ZIP
-  8. The following entry should be shown: _`Import-Export: Sollumz`_
-  9. Enable the addon
-  10. Restart Blender
+  3. Click menu _`Edit > Preferences...`_
+  4. Go to the  _`Addons`_ tab in the middle
+  5. Click _`Install...`_ button at the top
+  6. Select the Downloaded ZIP
+  7. The following entry should be shown: _`Import-Export: Sollumz`_
+  8. Enable the addon
+  9. Restart Blender

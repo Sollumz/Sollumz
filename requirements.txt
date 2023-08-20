@@ -1,3 +1,5 @@
 fake-bpy-module-latest==20211212
 mathutils==2.81.2
 numpy==1.21.4
+pytest==7.2.0
+pytest-blender==3.0.5

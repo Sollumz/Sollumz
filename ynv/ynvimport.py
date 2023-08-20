@@ -3,6 +3,7 @@ from ..cwxml.navmesh import YNV
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 import os
 import bpy
+from ..tools.blenderhelper import find_bsdf_and_material_output
 
 
 def points_to_obj(points):
@@ -95,7 +96,8 @@ def get_material(flags):
     if flags1 & 65536 > 0:
         g = 0.2
 
-    mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (
+    bsdf, _ = find_bsdf_and_material_output(mat)
+    bsdf.inputs[0].default_value = (
         r, g, b, 0.75)
     return mat
 
