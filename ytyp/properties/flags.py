@@ -141,7 +141,7 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag6: bpy.props.BoolProperty(
         name="Static", update=FlagPropertyGroup.update_flag)
     flag7: bpy.props.BoolProperty(
-        name="Unknown 7", update=FlagPropertyGroup.update_flag)
+        name="Disable alpha sorting", update=FlagPropertyGroup.update_flag)
     flag8: bpy.props.BoolProperty(
         name="Instance", update=FlagPropertyGroup.update_flag)
     flag9: bpy.props.BoolProperty(
@@ -167,7 +167,7 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag19: bpy.props.BoolProperty(
         name="Unknown 19", update=FlagPropertyGroup.update_flag)
     flag20: bpy.props.BoolProperty(
-        name="Unknown 20", update=FlagPropertyGroup.update_flag)
+        name="Dynamic anims (YCD)", update=FlagPropertyGroup.update_flag)
     flag21: bpy.props.BoolProperty(
         name="Unknown 21", update=FlagPropertyGroup.update_flag)
     flag22: bpy.props.BoolProperty(
