@@ -798,8 +798,8 @@ def create_joints_xml(armature_obj: bpy.types.Object, auto_calc_bone_tag: bool =
     for pose_bone in armature_obj.pose.bones:
         limit_rot_constraint = get_limit_rot_constraint(pose_bone)
         limit_pos_constraint = get_limit_pos_constraint(pose_bone)
-        bone_tag = pose_bone.bone.bone_properties.tag if auto_calc_bone_tag else calculate_bone_tag(
-            pose_bone.bone.name)
+        bone_tag = calculate_bone_tag(
+            pose_bone.bone.name) if auto_calc_bone_tag else pose_bone.bone.bone_properties.tag
 
         if limit_rot_constraint is not None:
             joints.rotation_limits.append(
@@ -933,7 +933,8 @@ def get_shaders_from_blender(materials):
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
-        shader.parameters = list(ShaderManager.shaders[shader.filename].parameters)
+        shader.parameters = list(
+            ShaderManager.shaders[shader.filename].parameters)
 
         for node in material.node_tree.nodes:
             param = None
@@ -947,7 +948,7 @@ def get_shaders_from_blender(materials):
                     continue
                 else:
                     param.texture_name = node.sollumz_texture_name
-                
+
             elif isinstance(node, bpy.types.ShaderNodeValue):
                 if node.name[-1] == "x":
                     param = VectorShaderParameter()
@@ -986,8 +987,9 @@ def get_shaders_from_blender(materials):
                     param.values = all_array_values
 
             if param is not None:
-                parameter_index = next((i for i, x in enumerate(shader.parameters) if x.name == param.name), None)
-                
+                parameter_index = next((i for i, x in enumerate(
+                    shader.parameters) if x.name == param.name), None)
+
                 if parameter_index == None:
                     shader.parameters.append(param)
                 else:
