@@ -274,7 +274,13 @@ def get_bound_center_from_bounds(bbmin: Vector, bbmax: Vector):
 
 
 def get_sphere_radius(bbmax, bbcenter):
+    """Gets the radius of the sphere that encloses the bounding box."""
     return (bbmax - bbcenter).length
+
+
+def get_inner_sphere_radius(bbmax, bbcenter):
+    """Gets the radius of the sphere that fits inside the bounding box."""
+    return min(bbmax - bbcenter)
 
 
 def get_dimensions(bbmin, bbmax):

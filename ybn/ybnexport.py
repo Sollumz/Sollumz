@@ -26,7 +26,8 @@ from ..cwxml.bound import (
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (get_bound_center_from_bounds, calculate_volume,
-                                calculate_inertia, get_corners_from_extents, get_sphere_radius, get_combined_bound_box)
+                                calculate_inertia, get_corners_from_extents, get_sphere_radius, get_inner_sphere_radius,
+                                get_combined_bound_box)
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
 from ..sollumz_preferences import get_export_settings
 from .. import logger
@@ -90,7 +91,11 @@ def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, aut
         return disc_xml
 
     if obj.sollum_type == SollumType.BOUND_SPHERE:
-        return init_bound_child_xml(BoundSphere(), obj, auto_calc_inertia, auto_calc_volume)
+        sphere_xml = init_bound_child_xml(BoundSphere(), obj, auto_calc_inertia, auto_calc_volume)
+        # For bound spheres, the radius is of the sphere that fits inside the bbox, not the sphere that encloses it
+        sphere_xml.sphere_radius = get_inner_sphere_radius(sphere_xml.box_max, sphere_xml.box_center)
+        return sphere_xml
+
 
     if obj.sollum_type == SollumType.BOUND_CYLINDER:
         return init_bound_child_xml(BoundCylinder(), obj, auto_calc_inertia, auto_calc_volume)
