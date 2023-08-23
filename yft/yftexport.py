@@ -3,6 +3,7 @@ from tokenize import group
 import bpy
 from typing import Optional
 from collections import defaultdict
+from itertools import chain
 from mathutils import Matrix, Vector
 
 from ..ydr.ydrimport import shadergroup_to_materials
@@ -140,6 +141,7 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc
     if drawable_obj is not None:
         remove_non_hi_lods(drawable_obj)
 
+    non_hi_materials = get_sollumz_materials(frag_obj)
     materials = get_sollumz_materials(hi_obj)
     hi_drawable = create_frag_drawable_xml(
         hi_obj, auto_calc_bone_tag, materials, apply_transforms)
@@ -148,6 +150,24 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc
     hi_frag_xml.__dict__ = frag_xml.__dict__.copy()
     hi_frag_xml.drawable = hi_drawable
     hi_frag_xml.vehicle_glass_windows = None
+
+    # Physics children drawables are created in `create_fragment_xml` using the materials order from non-hi frag and
+    # copied over to the hi frag. Therefore, the geometries have incorrect shader_index and need to be updated to match
+    # the indices in hi frag.
+    # NOTE: we are doing a shallow copy, so we are modifying the original geometries here. This is fine because
+    # `frag_xml` is not used after this call during YFT export, but if eventually we need to use it, we should change
+    # to a deep copy.
+    non_hi_to_hi_material_idx = {non_hi_idx: i for i, mat in enumerate(materials)
+                                 if (non_hi_idx := non_hi_materials.index(mat)) != -1}
+    for phys_child in hi_frag_xml.physics.lod1.children:
+        drawable = phys_child.drawable
+        models = chain(drawable.drawable_models_high or [],
+                       drawable.drawable_models_med or [],
+                       drawable.drawable_models_low or [],
+                       drawable.drawable_models_vlow or [])
+        for model in models:
+            for geom in model.geometries:
+                geom.shader_index = non_hi_to_hi_material_idx[geom.shader_index]
 
     delete_hierarchy(hi_obj)
 
