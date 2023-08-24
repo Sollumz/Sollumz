@@ -391,7 +391,7 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
         row.operator(
             ydr_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
         row.operator(
-            ydr_ops.SOLLUMZ_OT_transform_bone_flags.bl_idname, text="Transform")
+            ydr_ops.SOLLUMZ_OT_translation_bone_flags.bl_idname, text="Translation")
         row.operator(
             ydr_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
         row.operator(

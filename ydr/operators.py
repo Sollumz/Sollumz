@@ -518,10 +518,10 @@ class SOLLUMZ_OT_rotation_bone_flags(bpy.types.Operator, BonePoseModeRestrictedH
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_transform_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
+class SOLLUMZ_OT_translation_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
     bl_idname = "sollumz.transformboneflags"
-    bl_label = "Add Transform Flags"
-    bl_description = "Add transform flags for selected bones"
+    bl_label = "Add Translation Flags"
+    bl_description = "Add translation flags for selected bones"
 
     def execute(self, context):
         selected_bones = context.selected_pose_bones
@@ -533,7 +533,7 @@ class SOLLUMZ_OT_transform_bone_flags(bpy.types.Operator, BonePoseModeRestricted
             new_flag = pBone.bone.bone_properties.flags.add()
             new_flag.name = "TransZ"
         tag_redraw(context)
-        self.report({'INFO'}, f'Transform Flags Added for {len(selected_bones)} bone(s)')
+        self.report({'INFO'}, f'Translation Flags Added for {len(selected_bones)} bone(s)')
         return {'FINISHED'}
 
 
