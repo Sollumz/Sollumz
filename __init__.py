@@ -12,6 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from . import auto_load
+from . import sollumz_debug
 
 
 bl_info = {
@@ -24,6 +25,7 @@ bl_info = {
 }
 
 
+sollumz_debug.init_debug()  # first in case we need to debug initialization code
 auto_load.init()
 
 
