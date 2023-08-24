@@ -149,6 +149,35 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, auto_calc
     hi_frag_xml.drawable = hi_drawable
     hi_frag_xml.vehicle_glass_windows = None
 
+    if hi_frag_xml.physics is not None:
+        # Physics children drawables are copied over from non-hi to the hi frag. Therefore, they have high, med and low
+        # lods but we need the very high lods in the hi frag XML. Here we remove the existing lods and recreate the
+        # drawables with the very high lods.
+        # NOTE: we are doing a shallow copy, so we are modifying the original physics children here. This is fine
+        # because`frag_xml` is not used after this call during YFT export, but if eventually we need to use it,
+        # we should change to a deep copy.
+        bones = hi_frag_xml.drawable.skeleton.bones
+        child_meshes = get_child_meshes(hi_obj)
+        for child_xml in hi_frag_xml.physics.lod1.children:
+            drawable = child_xml.drawable
+            drawable.drawable_models_high.clear()
+            drawable.drawable_models_med.clear()
+            drawable.drawable_models_low.clear()
+            drawable.drawable_models_vlow.clear()
+
+            bone_tag = child_xml.bone_tag
+            bone_name = None
+            for bone in bones:
+                if bone.tag == bone_tag:
+                    bone_name = bone.name
+                    break
+
+            mesh_objs = None
+            if bone_name in child_meshes:
+                mesh_objs = child_meshes[bone_name]
+
+            create_phys_child_drawable(child_xml, materials, mesh_objs)
+
     delete_hierarchy(hi_obj)
 
     return hi_frag_xml
