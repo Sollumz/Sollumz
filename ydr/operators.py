@@ -477,94 +477,99 @@ class SOLLUMZ_OT_apply_bone_properties_to_selected_bones(SOLLUMZ_OT_base, bpy.ty
         return True
 
 
-class ObjectPoseModeRestrictedHelper:
+class BonePoseModeRestrictedHelper:
     @classmethod
     def poll(cls, context: Context):
         cls.poll_message_set("Must be in object mode or pose mode.")
-        return context.mode == "OBJECT" or context.mode == "POSE"
+        return context.mode == "POSE" and len(context.selected_pose_bones) > 0
 
 
-class SOLLUMZ_OT_clear_bone_flags(bpy.types.Operator, ObjectPoseModeRestrictedHelper):
+class SOLLUMZ_OT_clear_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
     bl_idname = "sollumz.removeboneflags"
     bl_label = "Remove Bone Flags"
     bl_description = "Remove all bone flags for selected bones"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        bone = context.active_bone
-        bone.bone_properties.flags.clear()
+        selected_bones = context.selected_pose_bones
+        for pBone in selected_bones:
+            pBone.bone.bone_properties.flags.clear()
         tag_redraw(context)
         self.report({'INFO'}, "Flags Removed")
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_rotation_bone_flags(bpy.types.Operator, ObjectPoseModeRestrictedHelper):
+class SOLLUMZ_OT_rotation_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
     bl_idname = "sollumz.rotationboneflags"
     bl_label = "Add Rotation Flags"
     bl_description = "Add rotation flags for selected bones"
 
     def execute(self, context):
-        bone = context.active_bone
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotX"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotY"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "RotZ"
+        selected_bones = context.selected_pose_bones
+        for pBone in selected_bones:
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "RotX"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "RotY"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "RotZ"
         tag_redraw(context)
-        self.report({'INFO'}, "Rotation Flags Added")
+        self.report({'INFO'}, f'Rotation Flags Added for {len(selected_bones)} bone(s)')
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_transform_bone_flags(bpy.types.Operator, ObjectPoseModeRestrictedHelper):
+class SOLLUMZ_OT_translation_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
     bl_idname = "sollumz.transformboneflags"
-    bl_label = "Add Transform Flags"
-    bl_description = "Add transform flags for selected bones"
+    bl_label = "Add Translation Flags"
+    bl_description = "Add translation flags for selected bones"
 
     def execute(self, context):
-        bone = context.active_bone
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransX"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransY"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "TransZ"
+        selected_bones = context.selected_pose_bones
+        for pBone in selected_bones:
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "TransX"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "TransY"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "TransZ"
         tag_redraw(context)
-        self.report({'INFO'}, "Transform Flags Added")
+        self.report({'INFO'}, f'Translation Flags Added for {len(selected_bones)} bone(s)')
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_scale_bone_flags(bpy.types.Operator, ObjectPoseModeRestrictedHelper):
+class SOLLUMZ_OT_scale_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
     bl_idname = "sollumz.scaleboneflags"
     bl_label = "Add Scale Flags"
     bl_description = "Add scale flags for selected bones"
 
     def execute(self, context):
-        bone = context.active_bone
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "ScaleX"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "ScaleY"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "ScaleZ"
+        selected_bones = context.selected_pose_bones
+        for pBone in selected_bones:
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "ScaleX"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "ScaleY"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "ScaleZ"
         tag_redraw(context)
-        self.report({'INFO'}, "Scale Flags Added")
+        self.report({'INFO'}, f'Scale Flags Added for {len(selected_bones)} bone(s)')
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_limit_bone_flags(bpy.types.Operator, ObjectPoseModeRestrictedHelper):
+class SOLLUMZ_OT_limit_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
     bl_idname = "sollumz.limitboneflags"
     bl_label = "Add Limit Flags"
     bl_description = "Removes selected bone flags and adds the proper limit flags for custom bone locations"
 
     def execute(self, context):
-        bone = context.active_bone
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "LimitRotation"
-        new_flag = bone.bone_properties.flags.add()
-        new_flag.name = "LimitTranslation"
+        selected_bones = context.selected_pose_bones
+        for pBone in selected_bones:
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "LimitRotation"
+            new_flag = pBone.bone.bone_properties.flags.add()
+            new_flag.name = "LimitTranslation"
         tag_redraw(context)
-        self.report({'INFO'}, "Limit Flags Added")
+        self.report({'INFO'}, f'Limit Flags Added for {len(selected_bones)} bone(s)')
         return {'FINISHED'}
 
 
