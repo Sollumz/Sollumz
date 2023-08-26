@@ -437,8 +437,8 @@ def link_normal(b: ShaderBuilder, nrmtex):
     links.new(nrmtex.outputs["Color"], seperate_xyz.inputs[0])
     links.new(seperate_xyz.outputs[1], invert_color.inputs["Color"])
     links.new(seperate_xyz.outputs[0], combine_xyz.inputs[0])
+    links.new(seperate_xyz.outputs[2], combine_xyz.inputs[2])
     links.new(invert_color.outputs["Color"], combine_xyz.inputs[1])
-    links.new(invert_color.outputs["Color"], combine_xyz.inputs[2])
     links.new(combine_xyz.outputs[0], normalmap.inputs["Color"])
     links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
 
