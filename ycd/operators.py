@@ -896,34 +896,37 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         # instance attributes don't carry over in callbacks nor with the previous context pointer
         layout.context_pointer_set("operator_uv_sprite_sheet_anim_image", self._image)
 
-        col = layout.column(align=True)
+        split = layout.split(factor=0.55)
+        left_col = split.column()
+        col = left_col.column(align=True)
         col.prop(self, "frames_horizontal", text="Frames Horizontal")
         col.prop(self, "frames_vertical", text="Vertical")
 
-        col = layout.column(align=True)
+        col = left_col.column(align=True)
         col.prop(self, "frame_width", text="Frame Width")
         col.prop(self, "frame_height", text="Height")
 
-        col = layout.column(align=True)
+        col = left_col.column(align=True)
         col.prop(self, "offset_x", text="Offset X")
         col.prop(self, "offset_y", text="Y")
 
-        col = layout.column(align=True)
+        col = left_col.column(align=True)
         col.prop(self, "separation_horizontal", text="Separation Horizontal")
         col.prop(self, "separation_vertical", text="Vertical")
 
-        layout.prop(self, "keyframe_interval")
+        left_col.prop(self, "keyframe_interval")
 
-        layout.prop(self, "use_dst_frame", text="Destination Frame")
-        col = layout.column(align=True)
+        left_col.prop(self, "use_dst_frame", text="Destination Frame")
+        col = left_col.column(align=True)
         col.active = col.enabled = self.use_dst_frame
         col.prop(self, "dst_frame_offset_x", text="Offset X")
         col.prop(self, "dst_frame_offset_y", text="Offset Y")
         col.prop(self, "dst_frame_width", text="Width")
         col.prop(self, "dst_frame_height", text="Height")
+        left_col.separator()
 
-        layout.separator()
-        col = layout.column(align=True)
+        right_col = split.column()
+        col = right_col.column(align=True)
         col.use_property_split = False
         row = col.row()
         row.label(text="Frames to Use")
@@ -932,13 +935,16 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         row.operator(SOLLUMZ_OT_uv_sprite_sheet_anim_clear_frames.bl_idname)
         col.separator()
         row = col.row(align=True)
+        FRAME_BUTTOM_SCALE_Y = 0.825
+        row.scale_y = FRAME_BUTTOM_SCALE_Y
         for y in range(self.frames_vertical):
             for x in range(self.frames_horizontal):
                 i = y * self.frames_horizontal + x
                 frame = self.frames[i]
                 row.prop(frame, "use", text=f"{frame.order}" if frame.use else " ", toggle=True)
             row = col.row(align=True)
-        layout.separator()
+            row.scale_y = FRAME_BUTTOM_SCALE_Y
+        right_col.separator()
 
     def render_callback(self, context):
         import gpu
@@ -1198,7 +1204,7 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                 self.calc_destination_frame_size(context)
         self.render_init(context)
         self.first_run = False
-        return context.window_manager.invoke_props_dialog(self)
+        return context.window_manager.invoke_props_dialog(self, width=650)
 
 
 class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
