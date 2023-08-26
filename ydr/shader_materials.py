@@ -431,24 +431,17 @@ def link_normal(b: ShaderBuilder, nrmtex):
     bsdf = b.bsdf
     links = node_tree.links
     normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
-
-    rgb_curves = create_normal_invert_node(node_tree)
-
-    links.new(nrmtex.outputs["Color"], rgb_curves.inputs["Color"])
-    links.new(rgb_curves.outputs["Color"], normalmap.inputs["Color"])
+    seperate_xyz = node_tree.nodes.new("ShaderNodeSeparateXYZ")
+    invert_color = node_tree.nodes.new("ShaderNodeInvert")
+    combine_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+    links.new(nrmtex.outputs["Color"], seperate_xyz.inputs[0])
+    links.new(seperate_xyz.outputs[1], invert_color.inputs["Color"])
+    links.new(seperate_xyz.outputs[0], combine_xyz.inputs[0])
+    links.new(seperate_xyz.outputs[2], combine_xyz.inputs[2])
+    links.new(invert_color.outputs["Color"], combine_xyz.inputs[1])
+    links.new(combine_xyz.outputs[0], normalmap.inputs["Color"])
     links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
 
-
-def create_normal_invert_node(node_tree: bpy.types.NodeTree):
-    """Create RGB curves node that inverts that green channel of normal maps"""
-    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new(
-        "ShaderNodeRGBCurve")
-
-    green_curves = rgb_curves.mapping.curves[1]
-    green_curves.points[0].location = (0, 1)
-    green_curves.points[1].location = (1, 0)
-
-    return rgb_curves
 
 
 def link_specular(b: ShaderBuilder, spctex):
