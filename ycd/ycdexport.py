@@ -491,16 +491,15 @@ def clip_from_object(clip_obj):
     xml_clip.unknown30 = 0
 
     for tag in clip_properties.tags:
-        # TODO: tags may need to be sorted by start_phase
         xml_tag = ycdxml.Clip.TagList.Tag()
         xml_tag.name_hash = tag.name
         xml_tag.unk_hash = f"hash_{clip_tag_calc_signature(tag):08X}"
         xml_tag.start_phase = tag.start_phase
         xml_tag.end_phase = tag.end_phase
         for attr in tag.attributes:
-            # TODO: attributes may need to be sorted by name hash
             xml_tag.attributes.append(clip_attribute_to_xml(attr))
         xml_clip.tags.append(xml_tag)
+    xml_clip.tags.sort(key=lambda t: t.start_phase)
 
     for prop in clip_properties.properties:
         xml_prop = ycdxml.Property()
