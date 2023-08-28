@@ -47,7 +47,9 @@ class MaterialConverter:
         tonode_w.outputs[0].default_value = node_w.outputs[0].default_value
 
     def convert_shader_to_shader(self, shader_name):
-        shader = ShaderManager.shaders[shader_name]
+        shader = ShaderManager.find_shader(shader_name)
+        assert shader is not None
+
         # TODO: array nodes params
         for param in shader.parameters:
             if param.type == "Texture":

@@ -7,6 +7,8 @@ from .element import (
     TextProperty,
 )
 from .drawable import ParametersList, VertexLayoutList
+from ..tools import jenkhash
+from typing import Optional
 
 
 class RenderBucketProperty(ElementProperty):
@@ -75,8 +77,9 @@ class Shader(ElementTree):
 class ShaderManager:
     shaderxml = os.path.join(os.path.dirname(__file__), "Shaders.xml")
     # Map shader filenames to base shader names
-    base_shaders: dict[str, str] = {}
-    shaders: dict[str, Shader] = {}
+    _shaders_base_names: dict[Shader, str] = {}
+    _shaders: dict[str, Shader] = {}
+    _shaders_by_hash: dict[int, Shader] = {}
 
     terrains = ["terrain_cb_w_4lyr.sps", "terrain_cb_w_4lyr_lod.sps", "terrain_cb_w_4lyr_spec.sps", "terrain_cb_w_4lyr_spec_pxm.sps", "terrain_cb_w_4lyr_pxm_spm.sps",
                 "terrain_cb_w_4lyr_pxm.sps", "terrain_cb_w_4lyr_cm_pxm.sps", "terrain_cb_w_4lyr_cm_tnt.sps", "terrain_cb_w_4lyr_cm_pxm_tnt.sps", "terrain_cb_w_4lyr_cm.sps",
@@ -132,10 +135,27 @@ class ShaderManager:
                 if filename is None:
                     continue
 
+                filename_hash = jenkhash.Generate(filename)
+
                 shader = Shader.from_xml(node)
                 shader.filename = filename
-                ShaderManager.shaders[filename] = shader
-                ShaderManager.base_shaders[filename] = base_name
+                ShaderManager._shaders[filename] = shader
+                ShaderManager._shaders_by_hash[filename_hash] = shader
+                ShaderManager._shaders_base_names[shader] = base_name
 
+    @staticmethod
+    def find_shader(filename: str) -> Optional[Shader]:
+        shader = ShaderManager._shaders.get(filename, None)
+        if shader is None and filename.startswith("hash_"):
+            filename_hash = int(filename[5:], 16)
+            shader = ShaderManager._shaders_by_hash.get(filename_hash, None)
+        return shader
+
+    @staticmethod
+    def find_shader_base_name(filename: str) -> Optional[str]:
+        shader = ShaderManager.find_shader(filename)
+        if shader is None:
+            return None
+        return ShaderManager._shaders_base_names[shader]
 
 ShaderManager.load_shaders()

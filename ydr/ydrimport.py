@@ -240,7 +240,6 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
     material = create_shader(filename)
 
     material.shader_properties.renderbucket = shader.render_bucket
-    material.shader_properties.filename = shader.filename
 
     for param in shader.parameters:
         for n in material.node_tree.nodes:

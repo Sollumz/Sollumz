@@ -312,10 +312,9 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
 def get_tangent_required(material: bpy.types.Material):
     shader_name = material.shader_properties.filename
 
-    if shader_name not in ShaderManager.shaders:
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
         return False
-
-    shader = ShaderManager.shaders[shader_name]
 
     return shader.required_tangent
 
@@ -324,10 +323,9 @@ def get_used_texcoords(material: bpy.types.Material):
     """Get TexCoords that the material's shader uses"""
     shader_name = material.shader_properties.filename
 
-    if shader_name not in ShaderManager.shaders:
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
         return {"TexCoord0"}
-
-    shader = ShaderManager.shaders[shader_name]
 
     return shader.used_texcoords
 
@@ -933,8 +931,8 @@ def get_shaders_from_blender(materials):
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
-        shader.parameters = list(
-            ShaderManager.shaders[shader.filename].parameters)
+        shader_preset = ShaderManager.find_shader(shader.filename)
+        shader.parameters = list(shader_preset.parameters) if shader_preset is not None else []
 
         for node in material.node_tree.nodes:
             param = None
