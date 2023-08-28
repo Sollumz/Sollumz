@@ -1,5 +1,5 @@
 import pytest
-from Sollumz.cwxml.element import get_str_type
+from ..cwxml.element import get_str_type
 
 @pytest.mark.parametrize("string, expected", (
     ("true", True),
