@@ -188,7 +188,7 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                 if obj.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                     drawable_dictionary = obj.parent.name
             item.drawable_dictionary = drawable_dictionary
-            item.physics_dictionary = obj.name if has_collision(obj) else ""
+            item.physics_dictionary = obj.name if has_collision(obj) and obj.sollum_type != SollumType.FRAGMENT else ""
 
             if obj.sollum_type == SollumType.DRAWABLE:
                 item.asset_type = AssetType.DRAWABLE
