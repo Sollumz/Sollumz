@@ -291,8 +291,7 @@ def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, mater
             col_obj.child_properties.window_mat = window_mat
 
         if window_xml.shattermap:
-            shattermap_obj = create_shattermap_obj(
-                window_xml, window_name, window_bone.matrix_local.translation)
+            shattermap_obj = create_shattermap_obj(window_xml, window_name, window_bone.matrix_local)
             shattermap_obj.parent = col_obj
 
         set_veh_window_properties(window_xml, col_obj)
@@ -336,12 +335,11 @@ def get_window_bone(window_xml: Window, frag_xml: Fragment, bpy_bones: bpy.types
     return bpy_bones[0]
 
 
-def create_shattermap_obj(window_xml: Window, name: str, window_location: Vector):
+def create_shattermap_obj(window_xml: Window, name: str, window_matrix: Matrix):
     try:
-        mesh = create_shattermap_mesh(window_xml, name, window_location)
+        mesh = create_shattermap_mesh(window_xml, name, window_matrix)
     except:
-        logger.error(
-            f"Error during creation of vehicle window mesh:\n{format_exc()}")
+        logger.error(f"Error during creation of vehicle window mesh:\n{format_exc()}")
         return
 
     shattermap_obj = create_blender_object(SollumType.SHATTERMAP, name, mesh)
@@ -353,13 +351,13 @@ def create_shattermap_obj(window_xml: Window, name: str, window_location: Vector
     return shattermap_obj
 
 
-def create_shattermap_mesh(window_xml: Window, name: str, window_location: Vector):
+def create_shattermap_mesh(window_xml: Window, name: str, window_matrix: Matrix):
     verts = calculate_window_verts(window_xml)
     faces = [[0, 1, 2, 3]]
 
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(verts, [], faces)
-    mesh.transform(Matrix.Translation(-window_location))
+    mesh.transform(window_matrix.inverted())
 
     uvs = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 0.0],
                    [1.0, 1.0]], dtype=np.float64)

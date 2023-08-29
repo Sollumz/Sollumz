@@ -666,11 +666,8 @@ def create_window_shattermap(col_obj: bpy.types.Object, window_xml: Window):
     shattermap_img = find_shattermap_image(shattermap_obj)
 
     if shattermap_img is not None:
-        pose_matrix = get_bone_pose_matrix(col_obj)
-
         window_xml.shattermap = image_to_shattermap(shattermap_img)
-        window_xml.projection_matrix = calculate_shattermap_projection(
-            shattermap_obj, shattermap_img, pose_matrix)
+        window_xml.projection_matrix = calculate_shattermap_projection(shattermap_obj, shattermap_img)
 
 
 def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Object):
@@ -679,7 +676,7 @@ def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Obje
     window_xml.cracks_texture_tiling = window_obj.vehicle_window_properties.cracks_texture_tiling
 
 
-def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image, bone_matrix: Matrix):
+def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image):
     mesh = obj.data
 
     v1 = Vector()
@@ -711,11 +708,9 @@ def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image,
     matrix[1] = edge1.y, edge2.y, edge3.y, v1.y
     matrix[2] = edge1.z, edge2.z, edge3.z, v1.z
 
-    # Create projection matrix relative to bone
-    mat = bone_matrix.copy()
+    # Create projection matrix relative to parent
     parent_inverse = get_parent_inverse(obj)
-    mat.translation = Vector()
-    matrix = mat.inverted() @ parent_inverse @ obj.matrix_world @ matrix
+    matrix = parent_inverse @ obj.matrix_world @ matrix
 
     try:
         matrix.invert()
