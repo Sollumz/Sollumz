@@ -422,6 +422,40 @@ class MatrixProperty(ElementProperty):
         return element
 
 
+class Matrix33Property(ElementProperty):
+    value_types = (Matrix)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or Matrix.Diagonal((0, 0, 0)))
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        s_mtx = element.text.strip().replace("\n", "").split("   ")
+        s_mtx = [s for s in s_mtx if s]  # removes empty strings
+        m = Matrix.Diagonal((0, 0, 0))
+        r_idx = 0
+        for item in s_mtx:
+            v_idx = 0
+            for value in item.strip().split(" "):
+                m[r_idx][v_idx] = float(value)
+                v_idx += 1
+            r_idx += 1
+        return MatrixProperty(element.tag, m)
+
+    def to_xml(self):
+        if self.value is None:
+            return
+
+        matrix: Matrix = self.value
+
+        lines = [" ".join([str(x) for x in row]) for row in matrix]
+
+        element = ET.Element(self.tag_name)
+        element.text = "\n".join(lines)
+
+        return element
+
+
 class FlagsProperty(ElementProperty):
     value_types = (list)
 

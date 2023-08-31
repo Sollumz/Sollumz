@@ -11,13 +11,13 @@ from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, VehiclePaintLayer
 from ..sollumz_preferences import get_import_settings
-from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype
+from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype, GlassWindow
 from ..cwxml.drawable import Drawable, Bone
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, PAINT_LAYER_VALUES
+from .properties import LODProperties, FragArchetypeProperties, GlassWindowProperties, PAINT_LAYER_VALUES
 from ..tools.blenderhelper import get_child_of_bone
 
 
@@ -72,6 +72,9 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool 
 
     if frag_xml.vehicle_glass_windows:
         create_vehicle_windows(frag_xml, frag_obj, materials)
+
+    if frag_xml.glass_windows:
+        set_all_glass_window_properties(frag_xml, frag_obj)
 
     if frag_xml.lights:
         create_frag_lights(frag_xml, frag_obj)
@@ -443,6 +446,23 @@ def get_geometry_material(drawable_xml: Drawable, materials: list[bpy.types.Mate
         return materials[shader_index]
 
 
+def set_all_glass_window_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
+    """Set the glass window properties for all bones in the fragment."""
+    groups_xml: list[PhysicsGroup] = frag_xml.physics.lod1.groups
+    glass_windows_xml: list[GlassWindow] = frag_xml.glass_windows
+    armature: bpy.types.Armature = frag_obj.data
+
+    for group_xml in groups_xml:
+        if (group_xml.glass_flags & 2) == 0:  # flag 2 indicates that the group has a glass window
+            continue
+        if group_xml.name not in armature.bones:
+            continue
+
+        bone = armature.bones[group_xml.name]
+        glass_window_xml = glass_windows_xml[group_xml.glass_window_index]
+        set_glass_window_properties(glass_window_xml, bone)
+
+
 def create_frag_lights(frag_xml: Fragment, frag_obj: bpy.types.Object):
     lights_parent = create_light_objs(frag_xml.lights, frag_obj)
     lights_parent.name = f"{frag_obj.name}.lights"
@@ -486,8 +506,6 @@ def set_archetype_properties(arch_xml: Archetype, arch_props: FragArchetypePrope
 
 def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):
     bone.group_properties.name = group_xml.name
-    bone.group_properties.glass_window_index = group_xml.glass_window_index
-    bone.group_properties.glass_flags = group_xml.glass_flags
     bone.group_properties.strength = group_xml.strength
     bone.group_properties.force_transmission_scale_up = group_xml.force_transmission_scale_up
     bone.group_properties.force_transmission_scale_down = group_xml.force_transmission_scale_down
@@ -517,3 +535,18 @@ def set_veh_window_properties(window_xml: Window, window_obj: bpy.types.Object):
     window_obj.vehicle_window_properties.unk_float_17 = window_xml.unk_float_17
     window_obj.vehicle_window_properties.unk_float_18 = window_xml.unk_float_18
     window_obj.vehicle_window_properties.cracks_texture_tiling = window_xml.cracks_texture_tiling
+
+
+def set_glass_window_properties(glass_window_xml: GlassWindow, bone: bpy.types.Bone):
+    props: GlassWindowProperties = bone.group_properties.glass_window
+    props.use = True
+    props.flags = glass_window_xml.flags
+    props.projection = glass_window_xml.projection_matrix
+    props.unk_float_13 = glass_window_xml.unk_float_13
+    props.unk_float_14 = glass_window_xml.unk_float_14
+    props.unk_float_15 = glass_window_xml.unk_float_15
+    props.unk_float_16 = glass_window_xml.unk_float_16
+    props.thickness = glass_window_xml.thickness
+    props.unk_float_18 = glass_window_xml.unk_float_18
+    props.unk_float_19 = glass_window_xml.unk_float_19
+    props.tangent = glass_window_xml.tangent

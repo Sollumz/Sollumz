@@ -40,9 +40,21 @@ class LODProperties(bpy.types.PropertyGroup):
         type=FragArchetypeProperties)
 
 
+class GlassWindowProperties(bpy.types.PropertyGroup):
+    use: bpy.props.BoolProperty(name="Use")
+    flags: bpy.props.IntProperty(name="Flags")
+    projection: bpy.props.FloatVectorProperty(name="Projection", size=(3, 3))
+    unk_float_13: bpy.props.FloatProperty(name="UnkFloat13")
+    unk_float_14: bpy.props.FloatProperty(name="UnkFloat14")
+    unk_float_15: bpy.props.FloatProperty(name="UnkFloat15")
+    unk_float_16: bpy.props.FloatProperty(name="UnkFloat16")
+    thickness: bpy.props.FloatProperty(name="Thickness")
+    unk_float_18: bpy.props.FloatProperty(name="UnkFloat18")
+    unk_float_19: bpy.props.FloatProperty(name="UnkFloat19")
+    tangent: bpy.props.FloatVectorProperty(name="Tangent", size=3)
+
+
 class GroupProperties(bpy.types.PropertyGroup):
-    glass_window_index: bpy.props.IntProperty(name="Glass Window Index")
-    glass_flags: bpy.props.IntProperty(name="Glass Flags")
     strength: bpy.props.FloatProperty(name="Strength", default=100)
     force_transmission_scale_up: bpy.props.FloatProperty(
         name="Force Transmission Scale Up", default=0.25)
@@ -73,6 +85,7 @@ class GroupProperties(bpy.types.PropertyGroup):
     unk_float_74: bpy.props.FloatProperty(name="UnkFloat74", default=1)
     unk_float_78: bpy.props.FloatProperty(name="UnkFloat78", default=1)
     unk_float_a8: bpy.props.FloatProperty(name="UnkFloatA8", default=1)
+    glass_window: bpy.props.PointerProperty(name="Glass Window", type=GlassWindowProperties)
 
 
 class ChildProperties(bpy.types.PropertyGroup):

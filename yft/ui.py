@@ -4,7 +4,10 @@ from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES
 from ..sollumz_helper import find_sollumz_parent
-from .properties import GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID
+from .properties import (
+    GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
+    GlassWindowProperties,
+)
 from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID, SOLLUMZ_OT_SELECT_LIGHT_ID
 
 
@@ -240,10 +243,45 @@ class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
         bone = context.active_bone
 
         for prop in GroupProperties.__annotations__:
-            if prop == "mass":
+            if prop == "mass" or prop == "glass_window":
                 continue
 
             layout.prop(bone.group_properties, prop)
+
+
+class SOLLUMZ_PT_GLASS_WINDOW_PHYSICS_SUBPANEL(bpy.types.Panel):
+    bl_label = "Glass Window"
+    bl_idname = "SOLLUMZ_PT_GLASS_WINDOW_PHYSICS_SUBPANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "bone"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL.bl_idname
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_bone is not None and context.active_bone.sollumz_use_physics
+
+    def draw_header(self, context):
+        bone = context.active_bone
+        props = bone.group_properties.glass_window
+        self.layout.prop(props, "use", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        bone = context.active_bone
+        props = bone.group_properties.glass_window
+
+        layout.active = props.use
+        col = layout.column()
+        for prop in GlassWindowProperties.__annotations__:
+            if prop == "use":
+                continue
+
+            col.prop(props, prop)
 
 
 class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
