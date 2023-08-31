@@ -56,3 +56,8 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
   7. The following entry should be shown: _`Import-Export: Sollumz`_
   8. Enable the addon
   9. Restart Blender
+
+---
+### Supporters ❤️ ###
+- [GitBook](https://www.gitbook.com/)
+- dexyfex and the [CodeWalker](https://github.com/dexyfex/CodeWalker) team
