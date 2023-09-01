@@ -9,8 +9,11 @@ from ..ydr.ydrimport import shadergroup_to_materials
 
 from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
 from ..cwxml.bound import Bound
-from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window
-from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
+from ..cwxml.fragment import (
+    Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window,
+    GlassWindow, GlassWindows,
+)
+from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter, VertexLayoutList
 from ..tools.blenderhelper import get_bone_pose_matrix, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia
@@ -22,7 +25,10 @@ from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES
+from .properties import (
+    LODProperties, FragArchetypeProperties, GroupProperties, GlassWindowProperties, PAINT_LAYER_VALUES,
+    get_glass_type_index,
+)
 
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str):
@@ -308,9 +314,8 @@ def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, mate
     create_collision_xml(frag_obj, arch_xml,
                          auto_calc_inertia, auto_calc_volume)
 
-    create_phys_xml_groups(frag_obj, lod_xml)
-    create_phys_child_xmls(
-        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
+    create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows)
+    create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
 
     set_arch_mass_inertia(frag_obj, arch_xml,
                           lod_xml.children, auto_calc_inertia)
@@ -384,7 +389,7 @@ def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_c
         return composite_xml
 
 
-def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
+def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, glass_windows_xml: GlassWindows):
     group_ind_by_name: dict[str, int] = {}
     groups_by_bone: dict[int, list[PhysicsGroup]] = defaultdict(list)
 
@@ -403,6 +408,8 @@ def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
 
         groups_by_bone[bone_index].append(group_xml)
         set_group_xml_properties(bone.group_properties, group_xml)
+
+        add_glass_window_xml(bone.group_properties.glass_window, group_xml, glass_windows_xml)
 
     # Sort by bone index
     groups_by_bone = dict(sorted(groups_by_bone.items()))
@@ -853,8 +860,8 @@ def set_archetype_xml_properties(archetype_props: FragArchetypeProperties, arch_
 
 
 def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGroup):
-    group_xml.glass_window_index = group_props.glass_window_index
-    group_xml.glass_flags = group_props.glass_flags
+    group_xml.glass_window_index = 0
+    group_xml.glass_flags = 0  # TODO: glass flags 1 and 4
     group_xml.strength = group_props.strength
     group_xml.force_transmission_scale_up = group_props.force_transmission_scale_up
     group_xml.force_transmission_scale_down = group_props.force_transmission_scale_down
@@ -889,3 +896,29 @@ def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
     frag_xml.unknown_cc = frag_obj.fragment_properties.unk_cc
     frag_xml.gravity_factor = frag_obj.fragment_properties.gravity_factor
     frag_xml.buoyancy_factor = frag_obj.fragment_properties.buoyancy_factor
+
+
+def add_glass_window_xml(glass_window: GlassWindowProperties, group_xml: PhysicsGroup, glass_windows_xml: GlassWindows):
+    if not glass_window.use:
+        return
+
+    group_xml.glass_window_index = len(glass_windows_xml)
+    group_xml.glass_flags |= 2  # set 'use glass window' flag
+
+    glass_type_index = get_glass_type_index(glass_window.glass_type)
+    flags_hi = glass_window.flags_hi
+
+    glass_window_xml = GlassWindow()
+    glass_window_xml.flags = ((flags_hi & 0xFF) << 8) | (glass_type_index & 0xFF)
+    glass_window_xml.projection_matrix = Matrix(glass_window.projection)
+    glass_window_xml.projection_matrix.transpose()  # TODO ???
+    glass_window_xml.unk_float_13, glass_window_xml.unk_float_14 = glass_window.uv_min
+    glass_window_xml.unk_float_15, glass_window_xml.unk_float_16 = glass_window.uv_max
+    glass_window_xml.thickness = glass_window.thickness
+    glass_window_xml.unk_float_18 = glass_window.unk_float_18
+    glass_window_xml.unk_float_19 = glass_window.unk_float_19
+    glass_window_xml.tangent = Vector(glass_window.tangent)
+    glass_window_xml.layout = VertexLayoutList(type="GTAV4",
+                                               value=["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1"])
+
+    glass_windows_xml.append(glass_window_xml)

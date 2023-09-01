@@ -40,14 +40,27 @@ class LODProperties(bpy.types.PropertyGroup):
         type=FragArchetypeProperties)
 
 
+GlassTypes = [
+    ("Pane", "Pane", "Pane", 0),
+    ("Security", "Security", "Security", 1),
+    ("Pane_Weak", "Pane Weak", "Pane Weak", 2),
+]
+
+
+def get_glass_type_index(glass_type_enum: str) -> int:
+    for enum_name, _, _, index in GlassTypes:
+        if glass_type_enum == enum_name:
+            return index
+    return -1
+
+
 class GlassWindowProperties(bpy.types.PropertyGroup):
     use: bpy.props.BoolProperty(name="Use")
-    flags: bpy.props.IntProperty(name="Flags")
+    glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
+    flags_hi: bpy.props.IntProperty(name="Flags Hi")
     projection: bpy.props.FloatVectorProperty(name="Projection", size=(3, 3))
-    unk_float_13: bpy.props.FloatProperty(name="UnkFloat13")
-    unk_float_14: bpy.props.FloatProperty(name="UnkFloat14")
-    unk_float_15: bpy.props.FloatProperty(name="UnkFloat15")
-    unk_float_16: bpy.props.FloatProperty(name="UnkFloat16")
+    uv_min: bpy.props.FloatVectorProperty(name="UV Min", size=2)
+    uv_max: bpy.props.FloatVectorProperty(name="UV Max", size=2)
     thickness: bpy.props.FloatProperty(name="Thickness")
     unk_float_18: bpy.props.FloatProperty(name="UnkFloat18")
     unk_float_19: bpy.props.FloatProperty(name="UnkFloat19")

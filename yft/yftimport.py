@@ -17,7 +17,7 @@ from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_s
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GlassWindowProperties, PAINT_LAYER_VALUES
+from .properties import LODProperties, FragArchetypeProperties, GlassWindowProperties, GlassTypes, PAINT_LAYER_VALUES
 from ..tools.blenderhelper import get_child_of_bone
 
 
@@ -540,12 +540,11 @@ def set_veh_window_properties(window_xml: Window, window_obj: bpy.types.Object):
 def set_glass_window_properties(glass_window_xml: GlassWindow, bone: bpy.types.Bone):
     props: GlassWindowProperties = bone.group_properties.glass_window
     props.use = True
-    props.flags = glass_window_xml.flags
+    props.glass_type = GlassTypes[glass_window_xml.flags & 0xFF][0]
+    props.flags_hi = (glass_window_xml.flags >> 8) & 0xFF
     props.projection = glass_window_xml.projection_matrix
-    props.unk_float_13 = glass_window_xml.unk_float_13
-    props.unk_float_14 = glass_window_xml.unk_float_14
-    props.unk_float_15 = glass_window_xml.unk_float_15
-    props.unk_float_16 = glass_window_xml.unk_float_16
+    props.uv_min = glass_window_xml.unk_float_13, glass_window_xml.unk_float_14
+    props.uv_max = glass_window_xml.unk_float_15, glass_window_xml.unk_float_16
     props.thickness = glass_window_xml.thickness
     props.unk_float_18 = glass_window_xml.unk_float_18
     props.unk_float_19 = glass_window_xml.unk_float_19
