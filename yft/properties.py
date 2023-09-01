@@ -1,5 +1,6 @@
 import bpy
 import bmesh
+from enum import IntEnum
 
 from ..tools.blenderhelper import remove_number_suffix
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, VehiclePaintLayer, items_from_enums
@@ -55,7 +56,6 @@ def get_glass_type_index(glass_type_enum: str) -> int:
 
 
 class GlassWindowProperties(bpy.types.PropertyGroup):
-    use: bpy.props.BoolProperty(name="Use")
     glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
     flags_hi: bpy.props.IntProperty(name="Flags Hi")
     projection: bpy.props.FloatVectorProperty(name="Projection", size=(3, 3))
@@ -67,7 +67,17 @@ class GlassWindowProperties(bpy.types.PropertyGroup):
     tangent: bpy.props.FloatVectorProperty(name="Tangent", size=3)
 
 
+class GroupFlagBit(IntEnum):
+    DISAPPEAR_WHEN_DEAD = 0
+    USE_GLASS_WINDOW = 1
+    UNK_4 = 2
+    UNK_8 = 3
+    UNK_16 = 4
+    UNK_32 = 5
+
+
 class GroupProperties(bpy.types.PropertyGroup):
+    flags: bpy.props.BoolVectorProperty(name="Flags", size=len(GroupFlagBit))
     strength: bpy.props.FloatProperty(name="Strength", default=100)
     force_transmission_scale_up: bpy.props.FloatProperty(
         name="Force Transmission Scale Up", default=0.25)

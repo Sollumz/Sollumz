@@ -506,6 +506,8 @@ def set_archetype_properties(arch_xml: Archetype, arch_props: FragArchetypePrope
 
 def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):
     bone.group_properties.name = group_xml.name
+    for i in range(len(bone.group_properties.flags)):
+        bone.group_properties.flags[i] = (group_xml.glass_flags & (1 << i)) != 0
     bone.group_properties.strength = group_xml.strength
     bone.group_properties.force_transmission_scale_up = group_xml.force_transmission_scale_up
     bone.group_properties.force_transmission_scale_down = group_xml.force_transmission_scale_down

@@ -27,7 +27,7 @@ from ..ydr.lights import create_xml_lights
 from .. import logger
 from .properties import (
     LODProperties, FragArchetypeProperties, GroupProperties, GlassWindowProperties, PAINT_LAYER_VALUES,
-    get_glass_type_index,
+    GroupFlagBit, get_glass_type_index,
 )
 
 
@@ -409,7 +409,8 @@ def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, glas
         groups_by_bone[bone_index].append(group_xml)
         set_group_xml_properties(bone.group_properties, group_xml)
 
-        add_glass_window_xml(bone.group_properties.glass_window, group_xml, glass_windows_xml)
+        if bone.group_properties.flags[GroupFlagBit.USE_GLASS_WINDOW]:
+            add_glass_window_xml(bone.group_properties.glass_window, group_xml, glass_windows_xml)
 
     # Sort by bone index
     groups_by_bone = dict(sorted(groups_by_bone.items()))
@@ -861,7 +862,9 @@ def set_archetype_xml_properties(archetype_props: FragArchetypeProperties, arch_
 
 def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGroup):
     group_xml.glass_window_index = 0
-    group_xml.glass_flags = 0  # TODO: glass flags 1 and 4
+    group_xml.glass_flags = 0
+    for i in range(len(group_props.flags)):
+        group_xml.glass_flags |= (1 << i) if group_props.flags[i] else 0
     group_xml.strength = group_props.strength
     group_xml.force_transmission_scale_up = group_props.force_transmission_scale_up
     group_xml.force_transmission_scale_down = group_props.force_transmission_scale_down
@@ -899,11 +902,7 @@ def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
 
 
 def add_glass_window_xml(glass_window: GlassWindowProperties, group_xml: PhysicsGroup, glass_windows_xml: GlassWindows):
-    if not glass_window.use:
-        return
-
     group_xml.glass_window_index = len(glass_windows_xml)
-    group_xml.glass_flags |= 2  # set 'use glass window' flag
 
     glass_type_index = get_glass_type_index(glass_window.glass_type)
     flags_hi = glass_window.flags_hi
