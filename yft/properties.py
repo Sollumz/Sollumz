@@ -55,18 +55,6 @@ def get_glass_type_index(glass_type_enum: str) -> int:
     return -1
 
 
-class GlassWindowProperties(bpy.types.PropertyGroup):
-    glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
-    flags_hi: bpy.props.IntProperty(name="Flags Hi")
-    projection: bpy.props.FloatVectorProperty(name="Projection", size=(3, 3))
-    uv_min: bpy.props.FloatVectorProperty(name="UV Min", size=2)
-    uv_max: bpy.props.FloatVectorProperty(name="UV Max", size=2)
-    thickness: bpy.props.FloatProperty(name="Thickness")
-    unk_float_18: bpy.props.FloatProperty(name="UnkFloat18")
-    unk_float_19: bpy.props.FloatProperty(name="UnkFloat19")
-    tangent: bpy.props.FloatVectorProperty(name="Tangent", size=3)
-
-
 class GroupFlagBit(IntEnum):
     DISAPPEAR_WHEN_DEAD = 0
     USE_GLASS_WINDOW = 1
@@ -78,6 +66,7 @@ class GroupFlagBit(IntEnum):
 
 class GroupProperties(bpy.types.PropertyGroup):
     flags: bpy.props.BoolVectorProperty(name="Flags", size=len(GroupFlagBit))
+    glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
     strength: bpy.props.FloatProperty(name="Strength", default=100)
     force_transmission_scale_up: bpy.props.FloatProperty(
         name="Force Transmission Scale Up", default=0.25)
@@ -108,7 +97,6 @@ class GroupProperties(bpy.types.PropertyGroup):
     unk_float_74: bpy.props.FloatProperty(name="UnkFloat74", default=1)
     unk_float_78: bpy.props.FloatProperty(name="UnkFloat78", default=1)
     unk_float_a8: bpy.props.FloatProperty(name="UnkFloatA8", default=1)
-    glass_window: bpy.props.PointerProperty(name="Glass Window", type=GlassWindowProperties)
 
 
 class ChildProperties(bpy.types.PropertyGroup):

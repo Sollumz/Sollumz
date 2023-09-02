@@ -6,7 +6,7 @@ from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES
 from ..sollumz_helper import find_sollumz_parent
 from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
-    GroupFlagBit, GlassWindowProperties,
+    GroupFlagBit,
 )
 from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID, SOLLUMZ_OT_SELECT_LIGHT_ID
 
@@ -250,44 +250,18 @@ class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
         col.prop(props, "flags", index=GroupFlagBit.UNK_16, text="Unk 16")
         col.prop(props, "flags", index=GroupFlagBit.UNK_32, text="Unk 32")
 
+        col = layout.column(heading="Breakable Glass")
+        row = col.row(align=True)
+        row.prop(props, "flags", index=GroupFlagBit.USE_GLASS_WINDOW, text="")
+        sub = row.row(align=True)
+        sub.active = props.flags[GroupFlagBit.USE_GLASS_WINDOW]
+        sub.prop(props, "glass_type", text="")
+
         col = layout.column()
         for prop in GroupProperties.__annotations__:
-            if prop in {"flags", "glass_window"}:
+            if prop in {"flags", "glass_type"}:
                 continue
 
-            col.prop(props, prop)
-
-
-class SOLLUMZ_PT_GLASS_WINDOW_PHYSICS_SUBPANEL(bpy.types.Panel):
-    bl_label = "Glass Window"
-    bl_idname = "SOLLUMZ_PT_GLASS_WINDOW_PHYSICS_SUBPANEL"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "bone"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL.bl_idname
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_bone is not None and context.active_bone.sollumz_use_physics
-
-    def draw_header(self, context):
-        bone = context.active_bone
-        props = bone.group_properties
-        self.layout.prop(props, "flags", index=GroupFlagBit.USE_GLASS_WINDOW, text="")
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        bone = context.active_bone
-        props = bone.group_properties.glass_window
-
-        layout.active = bone.group_properties.flags[GroupFlagBit.USE_GLASS_WINDOW]
-
-        col = layout.column()
-        for prop in GlassWindowProperties.__annotations__:
             col.prop(props, prop)
 
 
