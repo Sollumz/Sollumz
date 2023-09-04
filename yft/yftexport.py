@@ -8,7 +8,7 @@ from sys import float_info
 import numpy as np
 
 from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
-from ..cwxml.bound import Bound
+from ..cwxml.bound import Bound, BoundComposite
 from ..cwxml.fragment import (
     Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window,
     GlassWindow, GlassWindows,
@@ -311,11 +311,11 @@ def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, mate
 
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
     arch_xml = create_archetype_xml(lod_xml, frag_obj)
-    create_collision_xml(frag_obj, arch_xml,
-                         auto_calc_inertia, auto_calc_volume)
+    col_obj_to_bound_index = dict()
+    create_collision_xml(frag_obj, arch_xml, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index)
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
-    create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
+    create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
 
     set_arch_mass_inertia(frag_obj, arch_xml,
                           lod_xml.children, auto_calc_inertia)
@@ -371,13 +371,18 @@ def calculate_arch_mass(phys_children: list[PhysicsChild]) -> float:
     return total_mass
 
 
-def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
+def create_collision_xml(
+    frag_obj: bpy.types.Object,
+    arch_xml: Archetype,
+    auto_calc_inertia: bool = False,
+    auto_calc_volume: bool = False,
+    col_obj_to_bound_index: dict[bpy.types.Object, int] = None
+) -> BoundComposite:
     for child in frag_obj.children:
         if child.sollum_type != SollumType.BOUND_COMPOSITE:
             continue
 
-        composite_xml = create_composite_xml(
-            child, auto_calc_inertia, auto_calc_volume)
+        composite_xml = create_composite_xml(child, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index)
         arch_xml.bounds = composite_xml
 
         composite_xml.unk_type = 2
@@ -468,13 +473,27 @@ def calculate_group_masses(lod_xml: PhysicsLOD):
         lod_xml.groups[child.group_index].mass += child.pristine_mass
 
 
-def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bones_xml: list[Bone], materials: list[bpy.types.Material]):
+def create_phys_child_xmls(
+    frag_obj: bpy.types.Object,
+    lod_xml: PhysicsLOD,
+    bones_xml: list[Bone],
+    materials: list[bpy.types.Material],
+    col_obj_to_bound_index: dict[bpy.types.Object, int]
+):
+    """Creates the physics children XML objects for each collision object and adds them to ``lod_xml.children``.
+
+    Additionally, makes sure that ``lod_xml.archetype.bounds.children`` order matches ``lod_xml.children`` order so
+    the same indices can be used with both collections.
+    """
     child_meshes = get_child_meshes(frag_obj)
     child_cols = get_child_cols(frag_obj)
 
+    bound_index_to_child_index = []
     for bone_name, objs in child_cols.items():
         for obj in objs:
             child_index = len(lod_xml.children)
+            bound_index = col_obj_to_bound_index[obj]
+            bound_index_to_child_index.append((bound_index, child_index))
 
             bone: bpy.types.Bone = frag_obj.data.bones.get(bone_name)
             bone_index = get_bone_index(frag_obj.data, bone) or 0
@@ -485,15 +504,14 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
             child_xml.damaged_mass = child_xml.pristine_mass
             child_xml.bone_tag = bones_xml[bone_index].tag
 
-            inertia_tensor = get_child_inertia(
-                lod_xml.archetype, child_xml, child_index)
+            inertia_tensor = get_child_inertia(lod_xml.archetype, child_xml, bound_index)
             child_xml.inertia_tensor = inertia_tensor
 
             mesh_objs = None
             if bone_name in child_meshes:
                 mesh_objs = child_meshes[bone_name]
 
-            bound_xml = lod_xml.archetype.bounds.children[child_index]
+            bound_xml = lod_xml.archetype.bounds.children[bound_index]
             composite_matrix = bound_xml.composite_transform
 
             create_phys_child_drawable(child_xml, materials, mesh_objs)
@@ -502,12 +520,19 @@ def create_phys_child_xmls(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD, bone
 
             lod_xml.children.append(child_xml)
 
+    # reorder bounds children based on physics children order
+    bounds_children = lod_xml.archetype.bounds.children
+    new_bounds_children = [None] * len(lod_xml.archetype.bounds.children)
+    for bound_index, child_index in bound_index_to_child_index:
+        new_bounds_children[child_index] = bounds_children[bound_index]
+    lod_xml.archetype.bounds.children = new_bounds_children
 
-def get_child_inertia(arch_xml: Archetype, child_xml: PhysicsChild, child_index: int):
-    if not arch_xml.bounds or child_index >= len(arch_xml.bounds.children):
+
+def get_child_inertia(arch_xml: Archetype, child_xml: PhysicsChild, bound_index: int):
+    if not arch_xml.bounds or bound_index >= len(arch_xml.bounds.children):
         return Vector()
 
-    bound_xml = arch_xml.bounds.children[child_index]
+    bound_xml = arch_xml.bounds.children[bound_index]
     inertia = bound_xml.inertia * child_xml.pristine_mass
     return Vector((inertia.x, inertia.y, inertia.z, bound_xml.volume * child_xml.pristine_mass))
 
