@@ -380,9 +380,9 @@ class VertexLayoutList(ElementProperty):
     value_types = (list)
     tag_name = "Layout"
 
-    def __init__(self, tag_name=None):
-        super().__init__(self.tag_name, [])
-        self.type = "GTAV1"
+    def __init__(self, type: str = "GTAV1", value: list[str] = None):
+        super().__init__(self.tag_name, value or [])
+        self.type = type
 
     @classmethod
     def from_xml(cls, element: ET.Element):

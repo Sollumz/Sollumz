@@ -1,28 +1,34 @@
-from copy import copy
-from tokenize import group
 import bpy
-from typing import Optional
+from typing import Optional, Tuple
 from collections import defaultdict
+from itertools import combinations
 from mathutils import Matrix, Vector
-
-from ..ydr.ydrimport import shadergroup_to_materials
+from bpy_extras.mesh_utils import mesh_linked_triangles
+from sys import float_info
+import numpy as np
 
 from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
 from ..cwxml.bound import Bound
-from ..cwxml.fragment import Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window
-from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter
-from ..tools.blenderhelper import get_bone_pose_matrix, remove_number_suffix, delete_hierarchy, get_child_of_bone
+from ..cwxml.fragment import (
+    Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window,
+    GlassWindow, GlassWindows,
+)
+from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter, VertexLayoutList
+from ..tools.blenderhelper import get_evaluated_obj, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
-from ..tools.meshhelper import calculate_inertia
+from ..tools.meshhelper import calculate_inertia, flip_uvs
 from ..tools.utils import prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
-from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
+from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats, get_bound_extents
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES
+from .properties import (
+    LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES,
+    GroupFlagBit, get_glass_type_index,
+)
 
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str):
@@ -308,9 +314,8 @@ def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, mate
     create_collision_xml(frag_obj, arch_xml,
                          auto_calc_inertia, auto_calc_volume)
 
-    create_phys_xml_groups(frag_obj, lod_xml)
-    create_phys_child_xmls(
-        frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
+    create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
+    create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials)
 
     set_arch_mass_inertia(frag_obj, arch_xml,
                           lod_xml.children, auto_calc_inertia)
@@ -384,7 +389,12 @@ def create_collision_xml(frag_obj: bpy.types.Object, arch_xml: Archetype, auto_c
         return composite_xml
 
 
-def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
+def create_phys_xml_groups(
+    frag_obj: bpy.types.Object,
+    lod_xml: PhysicsLOD,
+    glass_windows_xml: GlassWindows,
+    materials: list[bpy.types.Material]
+):
     group_ind_by_name: dict[str, int] = {}
     groups_by_bone: dict[int, list[PhysicsGroup]] = defaultdict(list)
 
@@ -403,6 +413,9 @@ def create_phys_xml_groups(frag_obj: bpy.types.Object, lod_xml: PhysicsLOD):
 
         groups_by_bone[bone_index].append(group_xml)
         set_group_xml_properties(bone.group_properties, group_xml)
+
+        if bone.group_properties.flags[GroupFlagBit.USE_GLASS_WINDOW]:
+            add_frag_glass_window_xml(frag_obj, bone, materials, group_xml, glass_windows_xml)
 
     # Sort by bone index
     groups_by_bone = dict(sorted(groups_by_bone.items()))
@@ -853,8 +866,10 @@ def set_archetype_xml_properties(archetype_props: FragArchetypeProperties, arch_
 
 
 def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGroup):
-    group_xml.glass_window_index = group_props.glass_window_index
-    group_xml.glass_flags = group_props.glass_flags
+    group_xml.glass_window_index = 0
+    group_xml.glass_flags = 0
+    for i in range(len(group_props.flags)):
+        group_xml.glass_flags |= (1 << i) if group_props.flags[i] else 0
     group_xml.strength = group_props.strength
     group_xml.force_transmission_scale_up = group_props.force_transmission_scale_up
     group_xml.force_transmission_scale_down = group_props.force_transmission_scale_down
@@ -889,3 +904,197 @@ def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
     frag_xml.unknown_cc = frag_obj.fragment_properties.unk_cc
     frag_xml.gravity_factor = frag_obj.fragment_properties.gravity_factor
     frag_xml.buoyancy_factor = frag_obj.fragment_properties.buoyancy_factor
+
+
+def add_frag_glass_window_xml(
+    frag_obj: bpy.types.Object,
+    glass_window_bone: bpy.types.Bone,
+    materials: list[bpy.types.Material],
+    group_xml: PhysicsGroup,
+    glass_windows_xml: GlassWindows
+):
+    mesh_obj, col_obj = get_frag_glass_window_mesh_and_col(frag_obj, glass_window_bone)
+    if mesh_obj is None or col_obj is None:
+        logger.warning(f"Glass window '{group_xml.name}' is missing the mesh and/or collision. Skipping...")
+        return
+
+
+    group_xml.glass_window_index = len(glass_windows_xml)
+
+    glass_type = glass_window_bone.group_properties.glass_type
+    glass_type_index = get_glass_type_index(glass_type)
+
+    glass_window_xml = GlassWindow()
+    glass_window_xml.flags = glass_type_index & 0xFF
+    glass_window_xml.layout = VertexLayoutList(type="GTAV4",
+                                               value=["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1"])
+
+    glass_windows_xml.append(glass_window_xml)
+
+    # calculate properties from the mesh
+    mesh_obj_eval = get_evaluated_obj(mesh_obj)
+    mesh = mesh_obj_eval.to_mesh()
+    mesh_planes = mesh_linked_triangles(mesh)
+    if len(mesh_planes) != 2:
+        logger.warning(f"Glass window '{group_xml.name}' requires 2 separate planes in mesh.")
+        if len(mesh_planes) < 2:
+            return  # need at least 2 planes to continue
+ 
+    plane_a, plane_b = mesh_planes[:2]
+    if len(plane_a) != 2 or len(plane_b) != 2:
+        logger.warning(f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each.")
+        if len(plane_a) < 2 or len(plane_b) < 2:
+            return # need at least 2 tris in each plane to continue
+
+    normals = (plane_a[0].normal, plane_a[1].normal, plane_b[0].normal, plane_b[1].normal)
+    if any(a.cross(b).length_squared > float_info.epsilon for a, b in combinations(normals, 2)):
+        logger.warning(f"Glass window '{group_xml.name}' mesh planes are not parallel.")
+
+    # calculate UV min/max (unused by the game)
+    uvs = np.empty((len(mesh.loops), 2), dtype=np.float32)
+    mesh.uv_layers[0].data.foreach_get("uv", uvs.ravel())
+    flip_uvs(uvs)
+    uv_min = uvs.min(axis=0)
+    uv_max = uvs.max(axis=0)
+
+    # calculate glass thickness
+    center_a = (plane_a[0].center + plane_a[1].center) * 0.5
+    center_b = (plane_b[0].center + plane_b[1].center) * 0.5
+    thickness = (center_a - center_b).length
+
+    # calculate tangent (unused by the game)
+    tangent = normals[0].cross(Vector((0.0, 0.0, 1.0)))
+
+    # calculate projection matrix
+    #   get plane vertices sorted by normalized UV distance to (0, 0)
+    plane_loops = {loop for tri in plane_a for loop in tri.loops}
+    plane_loops = sorted(plane_loops, key=lambda loop: np.linalg.norm((uvs[loop] - uv_min) / (uv_max - uv_min)))
+    plane_verts_and_uvs = [(mesh.loops[loop].vertex_index, uvs[loop]) for loop in plane_loops]
+
+    #   get vertices needed to build the projection (top-left, top-right and bottom-left)
+    v0_idx, v0_uv = plane_verts_and_uvs[0]  # vertex at UV min
+    v1_idx = next(vert_idx for vert_idx, uv in plane_verts_and_uvs
+                  if abs(uv[0] - v0_uv[0]) > abs(uv[1] - v0_uv[1]))  # vertex to the right of v0
+    v2_idx = next(vert_idx for vert_idx, uv in plane_verts_and_uvs
+                  if abs(uv[1] - v0_uv[1]) > abs(uv[0] - v0_uv[0]))  # vertex below v0
+    v0 = mesh.vertices[v0_idx].co
+    v1 = mesh.vertices[v1_idx].co
+    v2 = mesh.vertices[v2_idx].co
+
+    #   build projection and apply object transform
+    transform = get_parent_inverse(mesh_obj_eval) @ mesh_obj_eval.matrix_world
+    transform.invert()
+    T = v0 @ transform
+    V = (v1 - v0) @ transform
+    U = (v2 - v0) @ transform
+    projection = Matrix((T, V, U))
+
+    # calculate shader index
+    material = mesh.materials[0] if len(mesh.materials) > 0 else None
+    if material is not None:
+        shader_index = next((i for i, mat in enumerate(materials) if mat == material.original), -1)
+    else:
+        shader_index = -1
+
+    if shader_index == -1:
+        logger.warning(f"Glass window '{group_xml.name}' mesh is missing a material.")
+
+    # calculate bounds offset front/back
+    world_transform = mesh_obj_eval.matrix_world
+    center_a_world = world_transform @ center_a
+    normal_a_world = normals[0].copy()
+    normal_a_world.rotate(world_transform)
+    bounds_offset_front, bounds_offset_back = calc_frag_glass_window_bounds_offset(col_obj,
+                                                                                   center_a_world, normal_a_world)
+
+    mesh_obj_eval.to_mesh_clear()
+
+    glass_window_xml.flags |= (shader_index & 0xFF) << 8
+    glass_window_xml.projection_matrix = projection
+    glass_window_xml.unk_float_13, glass_window_xml.unk_float_14 = uv_min
+    glass_window_xml.unk_float_15, glass_window_xml.unk_float_16 = uv_max
+    glass_window_xml.thickness = thickness
+    glass_window_xml.unk_float_18 = bounds_offset_front
+    glass_window_xml.unk_float_19 = bounds_offset_back
+    glass_window_xml.tangent = tangent
+
+
+def get_frag_glass_window_mesh_and_col(
+    frag_obj: bpy.types.Object,
+    glass_window_bone: bpy.types.Bone
+) -> Tuple[Optional[bpy.types.Object], Optional[bpy.types.Object]]:
+    """Finds the mesh and collision object for the glass window bone.
+    Returns tuple (mesh_obj, col_obj)
+    """
+    mesh_obj = None
+    col_obj = None
+    for obj in frag_obj.children_recursive:
+        if obj.sollum_type != SollumType.DRAWABLE_MODEL and obj.sollum_type not in BOUND_TYPES:
+            continue
+
+        parent_bone = get_child_of_bone(obj)
+        if parent_bone != glass_window_bone:
+            continue
+
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL:
+            mesh_obj = obj
+        else:
+            col_obj = obj
+
+        if mesh_obj is not None and col_obj is not None:
+            break
+
+    return mesh_obj, col_obj
+
+
+def calc_frag_glass_window_bounds_offset(
+    col_obj: bpy.types.Object,
+    point: Vector,
+    point_normal: Vector
+) -> Tuple[float, float]:
+    """Calculates the front and back offset from ``point`` to ``col_obj`` bound box.
+    ``point`` and ``point_normal`` must be in world space.
+
+    Returns tuple (offset_front, offset_back).
+    """
+    from mathutils.geometry import distance_point_to_plane, normal
+    def _get_plane(a: Vector, b: Vector, c: Vector, d: Vector):
+        plane_no = normal((a, b, c))
+        plane_co = a
+        return plane_co, plane_no
+
+    bbs = [col_obj.matrix_world @ Vector(corner) for corner in col_obj.bound_box]
+
+    # bound box corners:
+    #  [0] = (min.x, min.y, min.z)
+    #  [1] = (min.x, min.y, max.z)
+    #  [2] = (min.x, max.y, max.z)
+    #  [3] = (min.x, max.y, min.z)
+    #  [4] = (max.x, min.y, min.z)
+    #  [5] = (max.x, min.y, max.z)
+    #  [6] = (max.x, max.y, max.z)
+    #  [7] = (max.x, max.y, min.z)
+    plane_points = (
+        (bbs[4], bbs[3], bbs[0], bbs[7]), # bottom
+        (bbs[1], bbs[2], bbs[5], bbs[7]), # top
+        (bbs[2], bbs[1], bbs[0], bbs[3]), # left
+        (bbs[4], bbs[5], bbs[6], bbs[7]), # right
+        (bbs[0], bbs[1], bbs[4], bbs[5]), # front
+        (bbs[2], bbs[3], bbs[6], bbs[7]), # back
+    )
+    planes = [_get_plane(Vector(a), Vector(b), Vector(c), Vector(d)) for a, b, c, d in plane_points]
+
+    offset_front = 0.0
+    offset_front_dot = 0.0
+    offset_back = 0.0
+    offset_back_dot = 0.0
+    for plane_co, plane_no in planes:
+        d = point_normal.dot(plane_no)
+        if d > offset_front_dot:  # positive dot product is the plane with same normal as the point (in front)
+            offset_front_dot = d
+            offset_front = distance_point_to_plane(point, plane_co, plane_no)
+        elif d < offset_back_dot:  # negative dot product is the plane with opposite normal as the point (behind)
+            offset_back_dot = d
+            offset_back = distance_point_to_plane(point, plane_co, plane_no)
+
+    return offset_front, offset_back

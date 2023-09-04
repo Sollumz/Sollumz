@@ -1,5 +1,6 @@
 import bpy
 import bmesh
+from enum import IntEnum
 
 from ..tools.blenderhelper import remove_number_suffix
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, VehiclePaintLayer, items_from_enums
@@ -40,9 +41,32 @@ class LODProperties(bpy.types.PropertyGroup):
         type=FragArchetypeProperties)
 
 
+GlassTypes = [
+    ("Pane", "Pane", "Pane", 0),
+    ("Security", "Security", "Security", 1),
+    ("Pane_Weak", "Pane Weak", "Pane Weak", 2),
+]
+
+
+def get_glass_type_index(glass_type_enum: str) -> int:
+    for enum_name, _, _, index in GlassTypes:
+        if glass_type_enum == enum_name:
+            return index
+    return -1
+
+
+class GroupFlagBit(IntEnum):
+    DISAPPEAR_WHEN_DEAD = 0
+    USE_GLASS_WINDOW = 1
+    UNK_4 = 2
+    UNK_8 = 3
+    UNK_16 = 4
+    UNK_32 = 5
+
+
 class GroupProperties(bpy.types.PropertyGroup):
-    glass_window_index: bpy.props.IntProperty(name="Glass Window Index")
-    glass_flags: bpy.props.IntProperty(name="Glass Flags")
+    flags: bpy.props.BoolVectorProperty(name="Flags", size=len(GroupFlagBit))
+    glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
     strength: bpy.props.FloatProperty(name="Strength", default=100)
     force_transmission_scale_up: bpy.props.FloatProperty(
         name="Force Transmission Scale Up", default=0.25)

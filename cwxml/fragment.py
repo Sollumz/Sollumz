@@ -7,12 +7,13 @@ from .element import (
     ElementProperty,
     ListProperty,
     MatrixProperty,
+    Matrix33Property,
     Vector4Property,
     TextProperty,
     ValueProperty,
     VectorProperty
 )
-from .drawable import Drawable, Lights
+from .drawable import Drawable, Lights, VertexLayoutList
 from .bound import BoundComposite
 
 
@@ -237,6 +238,29 @@ class VehicleGlassWindows(ListProperty):
     tag_name = "VehicleGlassWindows"
 
 
+class GlassWindow(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.flags = ValueProperty("Flags")
+        self.projection_matrix = Matrix33Property("Projection")
+        self.unk_float_13 = ValueProperty("UnkFloat13")
+        self.unk_float_14 = ValueProperty("UnkFloat14")
+        self.unk_float_15 = ValueProperty("UnkFloat15")
+        self.unk_float_16 = ValueProperty("UnkFloat16")
+        self.thickness = ValueProperty("Thickness")
+        self.unk_float_18 = ValueProperty("UnkFloat18")
+        self.unk_float_19 = ValueProperty("UnkFloat19")
+        self.tangent = VectorProperty("Tangent")
+        self.layout = VertexLayoutList()
+
+
+class GlassWindows(ListProperty):
+    list_type = GlassWindow
+    tag_name = "GlassWindows"
+
+
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
 
@@ -256,6 +280,7 @@ class Fragment(ElementTree, AbstractClass):
         self.drawable = Drawable()
         self.bones_transforms = BoneTransformsList()
         self.physics = Physics()
+        self.glass_windows = GlassWindows()
         self.lights = Lights()
         self.vehicle_glass_windows = VehicleGlassWindows()
 
