@@ -58,49 +58,62 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
     bl_label = "Convert to Drawable"
     bl_options = {"UNDO"}
 
-    def execute(self, context):
-        selected_meshes = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+    def execute(self, context: bpy.types.Context):
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
 
         if not selected_meshes:
-            self.report({"INFO"}, f"No mesh objects selected!")
+            self.report({"INFO"}, "No mesh objects selected!")
             return {"CANCELLED"}
 
         auto_embed_col = context.scene.auto_create_embedded_col
         do_center = context.scene.center_drawable_to_selection
 
         if context.scene.create_seperate_drawables or len(selected_meshes) == 1:
-            self.convert_separate_drawables(selected_meshes, auto_embed_col)
+            self.convert_separate_drawables(context, selected_meshes, auto_embed_col)
         else:
-            self.convert_to_single_drawable(
-                selected_meshes, auto_embed_col, do_center)
+            self.convert_to_single_drawable(context, selected_meshes, auto_embed_col, do_center)
 
-        self.report(
-            {"INFO"}, f"Succesfully converted all selected objects to a Drawable.")
+        self.report({"INFO"}, "Succesfully converted all selected objects to a Drawable.")
 
         return {"FINISHED"}
 
-    def convert_separate_drawables(self, selected_meshes: list[bpy.types.Object], auto_embed_col: bool = False):
+    def convert_separate_drawables(
+        self,
+        context: bpy.types.Context,
+        selected_meshes: list[bpy.types.Object],
+        auto_embed_col: bool = False
+    ):
         for obj in selected_meshes:
-            drawable_obj = convert_obj_to_drawable(obj)
+            # override selected collection to create the drawable object in the same collection as the mesh
+            with context.temp_override(collection=obj.users_collection[0]):
+                drawable_obj = convert_obj_to_drawable(obj)
+
+                if auto_embed_col:
+                    composite_obj = convert_obj_to_composite(duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                    composite_obj.parent = drawable_obj
+                    composite_obj.name = f"{drawable_obj.name}.col"
+
+    def convert_to_single_drawable(
+        self,
+        context: bpy.types.Context,
+        selected_meshes: list[bpy.types.Object],
+        auto_embed_col: bool = False,
+        do_center: bool = False
+    ):
+        # override selected collection to create the drawable object in the same collection as the selected meshes
+        # the active mesh collection has preference in case the selected meshes are in different collections
+        target_coll_obj = context.active_object if context.active_object in selected_meshes else selected_meshes[0]
+        target_coll = target_coll_obj.users_collection[0]
+        with context.temp_override(collection=target_coll):
+            drawable_obj = convert_objs_to_single_drawable(selected_meshes)
+
+            if do_center:
+                center_drawable_to_models(drawable_obj)
 
             if auto_embed_col:
-                composite_obj = convert_obj_to_composite(
-                    duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                col_objs = [duplicate_object(o) for o in selected_meshes]
+                composite_obj = convert_objs_to_single_composite(col_objs, SollumType.BOUND_GEOMETRYBVH, True)
                 composite_obj.parent = drawable_obj
-                composite_obj.name = f"{drawable_obj.name}.col"
-
-    def convert_to_single_drawable(self, selected_meshes: list[bpy.types.Object], auto_embed_col: bool = False, do_center: bool = False):
-        drawable_obj = convert_objs_to_single_drawable(selected_meshes)
-
-        if do_center:
-            center_drawable_to_models(drawable_obj)
-
-        if auto_embed_col:
-            col_objs = [duplicate_object(o) for o in selected_meshes]
-            composite_obj = convert_objs_to_single_composite(
-                col_objs, SollumType.BOUND_GEOMETRYBVH, True)
-            composite_obj.parent = drawable_obj
 
 
 class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
