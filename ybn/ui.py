@@ -145,10 +145,10 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     def draw(self, context):
         obj = context.active_object
         layout = self.layout
-        layout.label(text="Composite Flags 1")
+        layout.label(text="Type Flags")
         generate_flags(layout, obj.composite_flags1)
         layout.separator_spacer()
-        layout.label(text="Composite Flags 2")
+        layout.label(text="Include Flags")
         generate_flags(layout, obj.composite_flags2)
 
 
