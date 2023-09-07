@@ -2,7 +2,7 @@ import bpy
 from ...sollumz_helper import SOLLUMZ_OT_base
 from ..utils import get_selected_archetype, get_selected_entity, validate_dynamic_enums, validate_dynamic_enum
 from ...sollumz_operators import SearchEnumHelper
-from ..properties.mlo import get_room_items, get_entityset_items
+from ..properties.mlo import get_entityset_items_for_selected_archetype
 
 
 class SOLLUMZ_OT_search_entityset(SearchEnumHelper, bpy.types.Operator):
@@ -10,8 +10,7 @@ class SOLLUMZ_OT_search_entityset(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_entityset"
     bl_property = "attached_entity_set_id"
 
-    attached_entity_set_id: bpy.props.EnumProperty(
-        items=get_entityset_items, default=-1)
+    attached_entity_set_id: bpy.props.EnumProperty(items=get_entityset_items_for_selected_archetype, default=-1)
 
     @classmethod
     def poll(cls, context):

@@ -4,7 +4,9 @@ from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ..utils import get_selected_archetype, get_selected_entity
-from ..properties.mlo import MloEntityProperties, get_portal_items, get_room_items
+from ..properties.mlo import (
+    MloEntityProperties, get_portal_items_for_selected_archetype, get_room_items_for_selected_archetype
+)
 from ..properties.ytyp import ArchetypeProperties
 
 
@@ -132,8 +134,7 @@ class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_entity_portals"
     bl_property = "attached_portal_id"
 
-    attached_portal_id: bpy.props.EnumProperty(
-        items=get_portal_items, default=-1)
+    attached_portal_id: bpy.props.EnumProperty(items=get_portal_items_for_selected_archetype, default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -148,7 +149,7 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_entity_rooms"
     bl_property = "attached_room_id"
 
-    attached_room_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
+    attached_room_id: bpy.props.EnumProperty(items=get_room_items_for_selected_archetype, default=-1)
 
     @classmethod
     def poll(cls, context):

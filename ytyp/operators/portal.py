@@ -5,7 +5,7 @@ from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import get_selected_vertices, get_selected_edit_vertices
 from ..utils import get_selected_archetype, get_selected_portal, get_selected_room, validate_dynamic_enums, validate_dynamic_enum
 from bpy_extras.view3d_utils import location_3d_to_region_2d
-from ..properties.mlo import PortalProperties, get_room_items
+from ..properties.mlo import PortalProperties, get_room_items_for_selected_archetype
 
 
 class SOLLUMZ_OT_create_portal(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -220,7 +220,7 @@ class SOLLUMZ_OT_search_portal_room_from(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_portal_room_from"
     bl_property = "room_from_id"
 
-    room_from_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
+    room_from_id: bpy.props.EnumProperty(items=get_room_items_for_selected_archetype, default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -235,7 +235,7 @@ class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
     bl_idname = "sollumz.search_portal_room_to"
     bl_property = "room_to_id"
 
-    room_to_id: bpy.props.EnumProperty(items=get_room_items, default=-1)
+    room_to_id: bpy.props.EnumProperty(items=get_room_items_for_selected_archetype, default=-1)
 
     @classmethod
     def poll(cls, context):
