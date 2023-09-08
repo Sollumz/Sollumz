@@ -340,13 +340,14 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
         layout = self.layout
         layout.template_list(
             SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "", context.scene, "flag_presets", context.scene, "flag_preset_index"
+
         )
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname, icon='FOLDER_REDIRECT')
         row.prop(context.scene, "new_flag_preset_name", text="Name")
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname, icon='CHECKMARK') 
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname, icon='SHADERFX')
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname)
+        row.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname, icon='TRASH')

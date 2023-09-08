@@ -328,7 +328,26 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Delete Flag Preset"
     bl_action = f"{bl_label}"
 
-    preset_blacklist = ["Default"]
+    preset_blacklist = [
+        "General (Default)",
+        "General 2",
+        "Water surface",
+        "Leaves - Bush",
+        "Stair plane",
+        "Stair mesh",
+        "Deep surface",
+        ]
+
+    def invoke(self, context, event):
+        self.confirm_delete = False
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+    
+    confirm_delete = bpy.props.BoolProperty(default=False)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Are you sure you want to delete this preset?")
 
     def run(self, context):
         index = context.scene.flag_preset_index
