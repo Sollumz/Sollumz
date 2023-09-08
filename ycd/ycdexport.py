@@ -457,7 +457,7 @@ def clip_from_object(clip_obj):
         animation_properties = clip_animation_property.animation.animation_properties
         _, frame_count = get_frame_range_and_count(animation_properties.action)
 
-        animation_duration = frame_count / bpy.context.scene.render.fps
+        animation_duration = (frame_count - 1) / bpy.context.scene.render.fps
 
         xml_clip.animation_hash = animation_properties.hash
         xml_clip.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
@@ -475,7 +475,7 @@ def clip_from_object(clip_obj):
             animation_properties = clip_animation_property.animation.animation_properties
             _, frame_count = get_frame_range_and_count(animation_properties.action)
 
-            animation_duration = frame_count / bpy.context.scene.render.fps
+            animation_duration = (frame_count - 1) / bpy.context.scene.render.fps
 
             clip_animation.animation_hash = animation_properties.hash
             clip_animation.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
