@@ -336,20 +336,11 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         "Stair plane",
         "Stair mesh",
         "Deep surface",
-        ]
+    ]
 
-    def invoke(self, context, event):
-        self.confirm_delete = False
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-    
     confirm_delete = bpy.props.BoolProperty(default=False)
 
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Are you sure you want to delete this preset?")
-
-    def run(self, context):
+    def invoke(self, context, event):
         index = context.scene.flag_preset_index
         load_flag_presets()
 
@@ -357,25 +348,41 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             preset = flag_presets.presets[index]
             if preset.name in self.preset_blacklist:
                 self.message("Cannot delete a default preset!")
-                return False
+                return {'CANCELLED'}
 
+            self.confirm_delete = True
+            wm = context.window_manager
+            return wm.invoke_props_dialog(self)
+
+        except IndexError:
+            self.message(
+                f"Flag preset does not exist! Ensure the preset file is present in the '{get_flag_presets_path()}' directory.")
+            return {'CANCELLED'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Are you sure you want to delete this preset?")
+
+    def run(self, context):
+        try:
             filepath = get_flag_presets_path()
+            preset = flag_presets.presets[context.scene.flag_preset_index]
             flag_presets.presets.remove(preset)
 
             try:
                 flag_presets.write_xml(filepath)
                 load_flag_presets()
-
-                return True
+                return {'FINISHED'}
             except:
                 self.error(
                     f"Error during deletion of flag preset: {traceback.format_exc()}")
-                return False
+                return {'CANCELLED'}
 
         except IndexError:
             self.message(
                 f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-            return False
+            return {'CANCELLED'}
+
 
 
 class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
