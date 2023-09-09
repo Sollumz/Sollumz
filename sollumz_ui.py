@@ -210,7 +210,6 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_order = 1
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "auto_calculate_bone_tag")
         layout.prop(settings, "apply_transforms")
         layout.prop(settings, "export_with_ytyp")
 

@@ -15,7 +15,6 @@ from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChi
 from ..cwxml.drawable import Drawable, Bone
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
-from ..ydr.ydrexport import calculate_bone_tag
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, GlassTypes, PAINT_LAYER_VALUES
 from ..tools.blenderhelper import get_child_of_bone
@@ -329,7 +328,7 @@ def get_window_bone(window_xml: Window, frag_xml: Fragment, bpy_bones: bpy.types
     child_xml = children_xml[child_id]
 
     for bone in bpy_bones:
-        if calculate_bone_tag(bone.name) != child_xml.bone_tag:
+        if bone.bone_properties.tag != child_xml.bone_tag:
             continue
 
         return bone

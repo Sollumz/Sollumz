@@ -38,13 +38,6 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         update=_save_preferences
     )
 
-    auto_calculate_bone_tag: bpy.props.BoolProperty(
-        name="Auto Calculate Bone Tag",
-        description="Automatically calculate bone tags",
-        default=True,
-        update=_save_preferences
-    )
-
     auto_calculate_inertia: bpy.props.BoolProperty(
         name="Auto Calculate Inertia",
         description="Automatically calculate inertia for physics objects (applies to yfts and ydrs too)",

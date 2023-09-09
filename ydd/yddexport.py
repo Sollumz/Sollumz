@@ -9,15 +9,14 @@ from ..sollumz_preferences import get_export_settings
 def export_ydd(ydd_obj: bpy.types.Object, filepath: str):
     export_settings = get_export_settings()
 
-    ydd_xml = create_ydd_xml(
-        ydd_obj, export_settings.auto_calculate_bone_tag, export_settings.exclude_skeleton)
+    ydd_xml = create_ydd_xml(ydd_obj, export_settings.exclude_skeleton)
 
     write_embedded_textures(ydd_obj, filepath)
 
     ydd_xml.write_xml(filepath)
 
 
-def create_ydd_xml(ydd_obj: bpy.types.Object, auto_calc_bone_tag: bool = False, exclude_skeleton: bool = False):
+def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
     ydd_xml = DrawableDictionary()
 
     ydd_armature = find_ydd_armature(
@@ -32,8 +31,7 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, auto_calc_bone_tag: bool = False, 
         else:
             armature_obj = None
 
-        drawable_xml = create_drawable_xml(
-            child, armature_obj=armature_obj, auto_calc_bone_tag=auto_calc_bone_tag)
+        drawable_xml = create_drawable_xml(child, armature_obj=armature_obj)
 
         if exclude_skeleton or child.type != "ARMATURE":
             drawable_xml.skeleton = None

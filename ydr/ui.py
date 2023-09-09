@@ -429,7 +429,9 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
         bone = context.active_bone
 
-        layout.prop(bone.bone_properties, "tag")
+        row = layout.row(align=True)
+        row.prop(bone.bone_properties, "tag")
+        row.prop(bone.bone_properties, "use_manual_tag", toggle=True, icon="MODIFIER_ON", icon_only=True)
         layout.separator()
 
         layout.label(text="Flags")
