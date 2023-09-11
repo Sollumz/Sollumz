@@ -310,16 +310,23 @@ def transform_bone_rotation_quaternion_space(fcurves, old_pose_bone, new_pose_bo
 
     transform_mat = calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone)
 
+    prev_quat = None
     for w_kfp, x_kfp, y_kfp, z_kfp in zip(w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points):
         w_co, x_co, y_co, z_co = w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co
         assert x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0], "TODO: Handle different keyframe times"
 
         quat = Quaternion((w_co[1], x_co[1], y_co[1], z_co[1]))
         quat.rotate(transform_mat)
+        if prev_quat is not None and prev_quat.dot(quat) < 0:
+            # Blender interpolates quaternions linearly and component-wise which can cause flickering
+            # when there is a sign change. See longer rant in ycdexport.py
+            quat *= -1
 
         w_co[1], x_co[1], y_co[1], z_co[1] = quat[0], quat[1], quat[2], quat[3]
 
         w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co = w_co, x_co, y_co, z_co
+
+        prev_quat = quat
 
     w.update()
     x.update()
@@ -350,6 +357,7 @@ def transform_camera_rotation_quaternion(fcurves, old_camera, new_camera):
     angle_delta = math.radians(-90.0 if new_camera is None else 90.0)
     x_axis = Vector((1.0, 0.0, 0.0))
 
+    prev_quat = None
     for w_kfp, x_kfp, y_kfp, z_kfp in zip(w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points):
         w_co, x_co, y_co, z_co = w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co
         assert x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0], "TODO: Handle different keyframe times"
@@ -357,10 +365,16 @@ def transform_camera_rotation_quaternion(fcurves, old_camera, new_camera):
         quat = Quaternion((w_co[1], x_co[1], y_co[1], z_co[1]))
         x_axis_local = quat @ x_axis
         quat.rotate(Quaternion(x_axis_local, angle_delta))
+        if prev_quat is not None and prev_quat.dot(quat) < 0:
+            # Blender interpolates quaternions linearly and component-wise which can cause flickering
+            # when there is a sign change. See longer rant in ycdexport.py
+            quat *= -1
 
         w_co[1], x_co[1], y_co[1], z_co[1] = quat[0], quat[1], quat[2], quat[3]
 
         w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co = w_co, x_co, y_co, z_co
+
+        prev_quat = quat
 
     w.update()
     x.update()

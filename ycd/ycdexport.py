@@ -116,31 +116,6 @@ def sequence_items_from_action(
                 for i in range(0, frame_count):
                     quats[i].rotate(transform_mat)
 
-                    if i > 0:
-                        # "Flickering bug" fix - killso:
-                        # This bug is caused by interpolation algorithm used in GTA
-                        # which is not slerp, but straight interpolation of every value
-                        # and this leads to incorrect results in cases if dot(this, next) < 0
-                        # This is correct "Quaternion Lerp" algorithm:
-                        # if (Dot(start, end) >= 0f)
-                        # {
-                        #   result.X = (1 - amount) * start.X + amount * end.X
-                        #   ...
-                        # }quats[i]
-                        # else
-                        # {
-                        #   result.X = (1 - amount) * start.X - amount * end.X
-                        #   ...
-                        # }
-                        # (Statement difference is only substracting instead of adding)
-                        # But GTA algorithm doesn't have Dot check,
-                        # resulting all values that are not passing this statement to "lag" in game.
-                        # (because of incorrect interpolation direction)
-                        # So what we do is make all values to pass Dot(start, end) >= 0f statement
-                        if quats[i - 1].dot(quats[i]) < 0:
-                            quats[i] *= -1
-                        # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
-
     if target_is_camera:
         # see animationhelper.transform_camera_rotation_quaternion
         angle_delta = math.radians(-90.0)
@@ -194,6 +169,40 @@ def sequence_items_from_action(
                 uv1_sequence[frame_id][2] = mat[1][2]
 
         uv_transforms.clear()
+
+    # "Flickering bug" fix - killso:
+    # This bug is caused by interpolation algorithm used in GTA
+    # which is not slerp, but straight interpolation of every value
+    # and this leads to incorrect results in cases if dot(this, next) < 0
+    # This is correct "Quaternion Lerp" algorithm:
+    # if (Dot(start, end) >= 0f)
+    # {
+    #   result.X = (1 - amount) * start.X + amount * end.X
+    #   ...
+    # }
+    # else
+    # {
+    #   result.X = (1 - amount) * start.X - amount * end.X
+    #   ...
+    # }
+    # (Statement difference is only substracting instead of adding)
+    # But GTA algorithm doesn't have Dot check,
+    # resulting all values that are not passing this statement to "lag" in game.
+    # (because of incorrect interpolation direction)
+    # So what we do is make all values to pass Dot(start, end) >= 0f statement
+    quaternion_tracks = list(map(lambda kvp: kvp[0],
+                                 filter(lambda kvp: kvp[1] == TrackFormat.Quaternion,
+                                        TrackFormatMap.items())))
+    for bone_id, bone_sequences in sequence_items.items():
+        for track in quaternion_tracks:
+            quats = bone_sequences.get(track, None)
+            if quats is None:
+                continue
+
+            for i in range(1, frame_count):
+               if quats[i - 1].dot(quats[i]) < 0:
+                    quats[i] *= -1
+    # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
 
     return sequence_items
 
