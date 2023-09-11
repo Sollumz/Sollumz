@@ -478,6 +478,11 @@ def setup_material_for_animation(material: bpy.types.Material):
     # add_global_anim_uv_nodes(material)
 
 
+def setup_armature_for_animation(armature: bpy.types.Armature):
+    armature_obj = get_data_obj(armature)
+    armature_obj.rotation_mode = "QUATERNION"  # root rotation track uses rotation_quaternion
+
+
 def get_canonical_track_data_path(track: Track, bone_id: int):
     """
     Gets a data path for an animation track independent of the target object.
@@ -605,13 +610,14 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         old_bone_map = None
         old_bone_name_map = None
 
-    if isinstance(new_target_id, bpy.types.Armature):
+    new_is_armature = isinstance(new_target_id, bpy.types.Armature)
+    if new_is_armature:
         new_bone_map = build_bone_map(get_data_obj(new_target_id))
     else:
         new_bone_map = None
 
-    new_is_camera = new_target_id is not None and isinstance(new_target_id, bpy.types.Camera)
-    new_is_material = new_target_id is not None and isinstance(new_target_id, bpy.types.Material)
+    new_is_camera = isinstance(new_target_id, bpy.types.Camera)
+    new_is_material = isinstance(new_target_id, bpy.types.Material)
 
     # bone_id -> [fcurves]
     bone_locations_to_transform = {}
@@ -664,6 +670,9 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         old_camera = old_target_id if isinstance(old_target_id, bpy.types.Camera) else None
         new_camera = new_target_id if isinstance(new_target_id, bpy.types.Camera) else None
         transform_camera_rotation_quaternion(fcurves, old_camera, new_camera)
+
+    if new_is_armature:
+        setup_armature_for_animation(new_target_id)
 
     if new_is_camera:
         setup_camera_for_animation(new_target_id)
@@ -744,12 +753,5 @@ def update_uv_clip_hash(clip_obj) -> bool:
 
 
 def is_uv_animation_supported(material: bpy.types.Material):
-    shader_name = material.shader_properties.filename
-
-    if shader_name not in ShaderManager.shaders:
-        return False
-
-    shader = ShaderManager.shaders[shader_name]
-
-    return shader.is_uv_animation_supported
-
+    shader = ShaderManager.find_shader(material.shader_properties.filename)
+    return shader is not None and shader.is_uv_animation_supported
