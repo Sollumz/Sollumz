@@ -1,7 +1,8 @@
 import bpy
 from enum import Enum
+from mathutils import Color
 from .tools.utils import flag_list_to_int, flag_prop_to_list, int_to_bool_list
-
+from bpy.props import FloatProperty, BoolProperty, EnumProperty, FloatVectorProperty
 
 class SollumType(str, Enum):
     NONE = "sollumz_none"
@@ -417,6 +418,34 @@ SOLLUMZ_UI_NAMES = {
 }
 
 
+red_id = 'R'
+green_id = 'G'
+blue_id = 'B'
+alpha_id = 'A'
+
+type_vcol = 'VCOL'
+type_vgroup = 'VGROUP'
+type_uv = 'UV'
+type_normal = 'NORMALS'
+valid_layer_types = [type_vcol, type_vgroup, type_uv, type_normal]
+
+valid_channel_ids = 'RGBA'
+
+channel_items = ((red_id, "R", ""),
+                 (green_id, "G", ""),
+                 (blue_id, "B", ""),
+                 (alpha_id, "A", ""))
+
+channel_blend_mode_items = (('ADD', "Add", ""),
+                            ('SUB', "Subtract", ""),
+                            ('MUL', "Multiply", ""),
+                            ('DIV', "Divide", ""),
+                            ('LIGHTEN', "Lighten",  ""),
+                            ('DARKEN', "Darken", ""),
+                            ('MIX', "Mix", ""))
+
+isolate_mode_name_prefix = 'SOLLUMZ-ISO'
+
 # Generate items from provided enums
 def items_from_enums(*enums, exclude=None):
     items = []
@@ -583,6 +612,156 @@ class EntityProperties:
 class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
     pass
 
+class SollumzVertexColorProperties(bpy.types.PropertyGroup):
+
+    def update_active_channels(self, context):
+        if self.use_grayscale or not self.match_brush_to_active_channels:
+            return None
+
+        active_channels = self.active_channels
+
+        # set draw color based on mask
+        draw_color = [0.0, 0.0, 0.0]
+        if red_id in active_channels:
+            draw_color[0] = 1.0
+        if green_id in active_channels:
+            draw_color[1] = 1.0
+        if blue_id in active_channels:
+            draw_color[2] = 1.0
+
+        context.tool_settings.vertex_paint.brush.color = draw_color
+
+        return None
+
+    def update_brush_value_isolate(self, context):
+        brush = context.tool_settings.vertex_paint.brush
+        v1 = self.brush_value_isolate
+        v2 = self.brush_secondary_value_isolate
+        brush.color = Color((v1, v1, v1))
+        brush.secondary_color = Color((v2, v2, v2))
+
+        return None
+
+    def toggle_grayscale(self, context):
+        brush = context.tool_settings.vertex_paint.brush
+
+        if self.use_grayscale:
+            self.brush_color = brush.color
+            self.brush_secondary_color = brush.secondary_color
+
+            v1 = self.brush_value_isolate
+            v2 = self.brush_secondary_value_isolate
+            brush.color = Color((v1, v1, v1))
+            brush.secondary_color = Color((v2, v2, v2))
+        else:
+            brush.color = self.brush_color
+            brush.secondary_color = self.brush_secondary_color
+
+        return None
+
+    active_channels: EnumProperty(
+        name="Active Channels",
+        options={'ENUM_FLAG'},
+        items=channel_items,
+        description="Which channels to enable.",
+        default={'R', 'G', 'B'},
+        update=update_active_channels
+    )
+
+    match_brush_to_active_channels: BoolProperty(
+        name="Match Active Channels",
+        default=True,
+        description="Change the brush color to match the active channels.",
+        update=update_active_channels
+    )
+
+    use_grayscale: BoolProperty(
+        name="Use Grayscale",
+        default=False,
+        description="Show grayscale values instead of RGB colors.",
+        update=toggle_grayscale
+    )
+
+    # Used only to store the color between RGBA and isolate modes
+    brush_color: FloatVectorProperty(
+        name="Brush Color",
+        description="Brush primary color.",
+        default=(1, 0, 0)
+    )
+
+    brush_secondary_color: FloatVectorProperty(
+        name="Brush Secondary Color",
+        description="Brush secondary color.",
+        default=(1, 0, 0)
+    )
+
+    # Replacement for color in the isolate mode UIhttps://www.twitch.tv/quattroace
+    brush_value_isolate: FloatProperty(
+        name="Brush Value",
+        description="Value of the brush color.",
+        default=1.0,
+        min=0.0, max=1.0,
+        update=update_brush_value_isolate
+    )
+
+    brush_secondary_value_isolate: FloatProperty(
+        name="Brush Value",
+        description="Value of the brush secondary color.",
+        default=0.0,
+        min=0.0, max=1.0,
+        update=update_brush_value_isolate
+    )
+
+    def vcol_layer_items(self, context):
+        obj = context.active_object
+        mesh = obj.data
+
+        items = [] if mesh.vertex_colors is None else [
+            ("{0} {1}".format(type_vcol, vcol.name), 
+             vcol.name, "") for vcol in mesh.vertex_colors]
+        ext = [] if obj.vertex_groups is None else [
+            ("{0} {1}".format(type_vgroup, group.name),
+             "W: " + group.name, "") for group in obj.vertex_groups]
+        items.extend(ext)
+        ext = [] if mesh.uv_layers is None else [
+            ("{0} {1}".format(type_uv, uv.name),
+             "UV: " + uv.name, "") for uv in mesh.uv_layers]
+        items.extend(ext)
+        ext = [("{0} {1}".format(type_normal, "Normals"), "Normals", "")]
+        items.extend(ext)
+
+        return items
+
+    src_vcol_id: EnumProperty(
+        name="Source Layer",
+        items=vcol_layer_items,
+        description="Source (Src) vertex color layer.",
+    )
+
+    src_channel_id: EnumProperty(
+        name="Source Channel",
+        items=channel_items,
+        # default=red_id,
+        description="Source (Src) color channel."
+    )
+
+    dst_vcol_id: EnumProperty(
+        name="Destination Layer",
+        items=vcol_layer_items,
+        description="Destination (Dst) vertex color layer.",
+    )
+
+    dst_channel_id: EnumProperty(
+        name="Destination Channel",
+        items=channel_items,
+        description="Destination (Dst) color channel."
+    )
+
+    channel_blend_mode: bpy.props.EnumProperty(
+        name="Channel Blend Mode",
+        items=channel_blend_mode_items,
+        description="Channel blending operation.",
+    )
 
 def register():
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
@@ -681,6 +860,9 @@ def register():
         name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
 
 
+    bpy.types.Scene.sollumz_vertex_color_settings = bpy.props.PointerProperty(
+        type=SollumzVertexColorProperties)
+
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
@@ -688,4 +870,5 @@ def unregister():
     del bpy.types.Scene.vert_paint_alpha
     del bpy.types.Scene.debug_sollum_type
     del bpy.types.Scene.all_sollum_type
+    del bpy.types.Scene.sollumz_vertex_color_settings
     del bpy.types.Scene.debug_lights_only_selected

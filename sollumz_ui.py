@@ -1,4 +1,5 @@
 import bpy
+from .tools.vertexpainterhelper import get_isolated_channel_ids
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
 from .sollumz_operators import SOLLUMZ_OT_copy_all_locations, SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location
 from .tools.blenderhelper import get_armature_obj
@@ -365,7 +366,7 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Vertex Painter"
-    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
+    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANEL"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
@@ -415,7 +416,112 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
             row6 = layout.row()
             row6.prop(context.scene, "vert_paint_color6", text="")
             row6.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color6
+                "sollumz.paint_vertices").color = context.scene.vert_paint_color
+            
+
+
+class SOLLUMZ_PT_VERTEXCOLORTOOLS(bpy.types.Panel):
+    """Add-on for working with vertex color data"""
+    bl_label = 'Vertex Color Tools'
+    bl_idname = 'SOLLUMZ_PT_VERTEXCOLORTOOLS'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="BRUSH_DATA")
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        settings = context.scene.sollumz_vertex_color_settings
+        isolate = get_isolated_channel_ids(obj.data.vertex_colors.active)
+        if isolate is not None:
+            return self.draw_isolate_mode_layout(context, obj, isolate[0], isolate[1], settings)
+
+        self.draw_standard_layout(context, obj, settings)
+
+
+    def draw_standard_layout(self, context, obj, settings):
+        layout = self.layout
+        layout.separator()
+        draw_active_channel_operations(context, layout, obj, settings)
+        layout.separator()
+        layout.separator()
+        draw_misc_operations(context, layout, obj, settings)
+
+
+    def draw_isolate_mode_layout(self, context, obj, vcol_id, channel_id, settings):
+        layout = self.layout
+
+        col = layout.column()
+        row = col.row()
+        row.label(text="Isolated '{0}.{1}'".format(vcol_id, channel_id))
+
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.operator('sollumz.apply_isolated', text="Apply Changes").discard = False
+        row = col.row(align=True)
+        row.operator('sollumz.apply_isolated', text="Discard Changes").discard = True
+        layout.separator()
+        layout.separator()
+        draw_active_channel_operations(context, layout, obj, settings, mode='ISOLATE')
+        layout.separator()
+        draw_misc_operations(context, layout, obj, settings, mode='ISOLATE')
+
+
+def draw_active_channel_operations(context, layout, obj, settings, mode='STANDARD', pie=False):
+    if pie:
+        if mode == 'STANDARD':
+            return None
+        row = layout.row()
+        row.emboss = 'RADIAL_MENU'
+        row.label(text="Basic Operations")
+
+    if mode == 'STANDARD':
+        col = layout.column(align=True)
+        row = col.row()
+        row.label(text="Active Channels")
+        row = col.row(align=True)
+        row.prop(settings, 'active_channels', expand=True)
+        row = col.row(align=True)
+
+        can_isolate = len(settings.active_channels) == 1
+        iso_channel_id = 'R'
+        if can_isolate:
+            for channel_id in settings.active_channels:
+                iso_channel_id = channel_id
+                break
+
+        row.operator('sollumz.isolate_channel',
+            text="Isolate Active Channel").src_channel_id = iso_channel_id
+        row.enabled = can_isolate
+
+    col = layout.column(align=True)
+
+    row = col.row(align=True)
+    row.operator('sollumz.fill', text='Fill').value = 1.0
+    row.operator('sollumz.fill', text='Clear').value = 0.0
+    row = col.row(align=True)
+    if mode == 'STANDARD':
+        row.operator('sollumz.invert', text='Invert')
+    else:
+        # Use built-in, as it's much faster
+        row.operator('paint.vertex_color_invert', text='Invert')
+    row.operator('sollumz.posterize', text='Posterize')
+    row = col.row(align=True)
+    row.operator('sollumz.remap', text='Remap')
+    if mode == 'STANDARD':
+        row.operator('sollumz.randomize_mesh_island_colors_per_channel', text='Islands')
+
+
+def draw_misc_operations(context, layout, obj, settings, mode='STANDARD', pie=False):
+    col = layout.column(align=True)
+    row = col.row(align=True)
+    row.operator('sollumz.gradient', text="Linear Gradient").circular_gradient = False
+    row = col.row(align=True)
+    row.operator('sollumz.gradient', text="Circular Gradient").circular_gradient = True
 
 
 class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(bpy.types.Panel):

@@ -1,13 +1,19 @@
+from math import fmod
+import math
 import traceback
 import os
 from typing import Optional
+import bmesh
 import bpy
 import time
 from collections import defaultdict
 import re
 from bpy_extras.io_utils import ImportHelper
+import gpu
+from mathutils import Color, Matrix, Vector
+from .tools.vertexpainterhelper import channel_id_to_idx, copy_channel, fill_selected, get_isolated_channel_ids, invert_selected, posterize_selected, remap_selected, rgb_to_luminosity
 from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel, channel_items, isolate_mode_name_prefix
 from .sollumz_preferences import get_export_settings
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
@@ -33,8 +39,10 @@ from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose
 from .tools.ytyphelper import ytyp_from_objects
 from .ybn.properties import BoundProperties
 from .ybn.properties import BoundFlags
-
 from . import logger
+from bpy.props import FloatVectorProperty, BoolProperty, FloatProperty, EnumProperty
+from gpu_extras.batch import batch_for_shader
+from bpy_extras import view3d_utils
 
 
 class TimedOperator:
@@ -326,7 +334,573 @@ class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         get_terrain_texture_brush(5)
         return True
+    
 
+def draw_gradient_callback(self, context, line_params, line_shader, circle_shader):
+    line_batch = batch_for_shader(line_shader, 'LINES', {
+        "pos": line_params["coords"],
+        "color": line_params["colors"]})
+    line_shader.bind()
+    line_batch.draw(line_shader)
+
+    if circle_shader is not None:
+        a = line_params["coords"][0]
+        b = line_params["coords"][1]
+        radius = (b - a).length
+        steps = 50
+        circle_points = []
+        for i in range(steps+1):
+            angle = (2.0 * math.pi * i) / steps
+            point = Vector((a.x + radius * math.cos(angle), a.y + radius * math.sin(angle)))
+            circle_points.append(point)
+
+        circle_batch = batch_for_shader(circle_shader, 'LINE_LOOP', {
+            "pos": circle_points})
+        circle_shader.bind()
+        circle_shader.uniform_float("color", line_params["colors"][1])
+        circle_batch.draw(circle_shader)
+
+
+class SOLLUMZ_OT_Gradient(bpy.types.Operator):
+    """Draw a line with the mouse to paint a vertex color gradient"""
+    bl_idname = "sollumz.gradient"
+    bl_label = "Vertex Color Gradient"
+    bl_description = "Paint vertex color gradient."
+    bl_options = {"REGISTER", "UNDO"}
+
+    _handle = None
+
+    line_shader = gpu.shader.from_builtin('2D_SMOOTH_COLOR')
+    circle_shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+
+    start_color: FloatVectorProperty(
+        name="Start Color",
+        subtype='COLOR',
+        default=[1.0,0.0,0.0],
+        description="Start color of the gradient."
+    )
+
+    end_color: FloatVectorProperty(
+        name="End Color",
+        subtype='COLOR',
+        default=[0.0,1.0,0.0],
+        description="End color of the gradient."
+    )
+
+    circular_gradient: BoolProperty(
+        name="Circular Gradient",
+        description="Paint a circular gradient",
+        default=False
+    )
+
+    use_hue_blend: BoolProperty(
+        name="Use Hue Blend",
+        description="Gradually blend start and end colors using full hue range instead of simple blend",
+        default=False
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return bpy.context.object.mode == 'VERTEX_PAINT' and obj is not None and obj.type == 'MESH'
+
+    def paintVerts(self, context, start_point, end_point, start_color, end_color, circular_gradient=False, use_hue_blend=False):
+        region = context.region
+        rv3d = context.region_data
+
+        obj = context.active_object
+        mesh = obj.data
+
+        # Create a new bmesh to work with
+        bm = bmesh.new()
+        bm.from_mesh(mesh)
+        bm.verts.ensure_lookup_table()
+
+        # List of structures containing 3d vertex and project 2d position of vertex
+        vertex_data = None # Will contain vert, and vert coordinates in 2d view space
+        if mesh.use_paint_mask_vertex: # Face masking not currently supported
+            vertex_data = [(v, view3d_utils.location_3d_to_region_2d(region, rv3d, obj.matrix_world @ v.co)) for v in bm.verts if v.select]
+        else:
+            vertex_data = [(v, view3d_utils.location_3d_to_region_2d(region, rv3d, obj.matrix_world @ v.co)) for v in bm.verts]
+
+        # Vertex transformation math
+        down_vector = Vector((0, -1, 0))
+        direction_vector = Vector((end_point.x - start_point.x, end_point.y - start_point.y, 0)).normalized()
+        rotation = direction_vector.rotation_difference(down_vector)
+
+        translation_matrix = Matrix.Translation(Vector((-start_point.x, -start_point.y, 0)))
+        inverse_translation_matrix = translation_matrix.inverted()
+        rotation_matrix = rotation.to_matrix().to_4x4()
+        combinedMat = inverse_translation_matrix @ rotation_matrix @ translation_matrix
+
+        transStart = combinedMat @ start_point.to_4d() # Transform drawn line : rotate it to align to horizontal line
+        transEnd = combinedMat @ end_point.to_4d()
+        minY = transStart.y
+        maxY = transEnd.y
+        heightTrans = maxY - minY  # Get the height of transformed vector
+
+        transVector = transEnd - transStart
+        transLen = transVector.length
+
+        # Calculate hue, saturation and value shift for blending
+        if use_hue_blend:
+            start_color = Color(start_color[:3])
+            end_color = Color(end_color[:3])
+            c1_hue = start_color.h
+            c2_hue = end_color.h
+            hue_separation = c2_hue - c1_hue
+            if hue_separation > 0.5:
+                hue_separation = hue_separation - 1
+            elif hue_separation < -0.5:
+                hue_separation = hue_separation + 1
+            c1_sat = start_color.s
+            sat_separation = end_color.s - c1_sat
+            c1_val = start_color.v
+            val_separation = end_color.v - c1_val
+
+        color_layer = bm.loops.layers.color.active
+
+        for data in vertex_data:
+            vertex = data[0]
+            vertCo4d = Vector((data[1].x, data[1].y, 0))
+            transVec = combinedMat @ vertCo4d
+
+            t = 0
+
+            if circular_gradient:
+                curVector = transVec.to_4d() - transStart
+                curLen = curVector.length
+                t = abs(max(min(curLen / transLen, 1), 0))
+            else:
+                t = abs(max(min((transVec.y - minY) / heightTrans, 1), 0))
+
+            color = Color((1, 0, 0))
+            if use_hue_blend:
+                # Hue wraps, and fmod doesn't work with negative values
+                color.h = fmod(1.0 + c1_hue + hue_separation * t, 1.0) 
+                color.s = c1_sat + sat_separation * t
+                color.v = c1_val + val_separation * t
+            else:
+                color.r = start_color[0] + (end_color[0] - start_color[0]) * t
+                color.g = start_color[1] + (end_color[1] - start_color[1]) * t
+                color.b = start_color[2] + (end_color[2] - start_color[2]) * t
+
+            if mesh.use_paint_mask: # Masking by face
+                face_loops = [loop for loop in vertex.link_loops if loop.face.select] # Get only loops that belong to selected faces
+            else: # Masking by verts or no masking at all
+                face_loops = [loop for loop in vertex.link_loops] # Get remaining vert loops
+
+            for loop in face_loops:
+                new_color = loop[color_layer]
+                new_color[:3] = color
+                loop[color_layer] = new_color
+
+        bm.to_mesh(mesh)
+        bm.free()
+        bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+
+    def axis_snap(self, start, end, delta):
+        if start.x - delta < end.x < start.x + delta:
+            return Vector((start.x, end.y))
+        if start.y - delta < end.y < start.y + delta:
+            return Vector((end.x, start.y))
+        return end
+
+    def modal(self, context, event):
+        context.area.tag_redraw()
+
+        # Begin gradient line and initialize draw handler
+        if self._handle is None:
+            if event.type == 'LEFTMOUSE':
+                # Store the foreground and background color for redo
+                brush = context.tool_settings.vertex_paint.brush
+                self.start_color = brush.color
+                self.end_color = brush.secondary_color
+
+                # Create arguments to pass to the draw handler callback
+                mouse_position = Vector((event.mouse_region_x, event.mouse_region_y))
+                self.line_params = {
+                    "coords": [mouse_position, mouse_position],
+                    "colors": [brush.color[:] + (1.0,),
+                               brush.secondary_color[:] + (1.0,)],
+                    "width": 1, # currently does nothing
+                }
+                args = (self, context, self.line_params, self.line_shader,
+                    (self.circle_shader if self.circular_gradient else None))
+                self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_gradient_callback, args, 'WINDOW', 'POST_PIXEL')
+        else:
+            # Update or confirm gradient end point
+            if event.type in {'MOUSEMOVE', 'LEFTMOUSE'}:
+                line_params = self.line_params
+                delta = 20
+
+                # Update and constrain end point
+                start_point = line_params["coords"][0]
+                end_point = Vector((event.mouse_region_x, event.mouse_region_y))
+                if event.shift:
+                    end_point = self.axis_snap(start_point, end_point, delta)
+                line_params["coords"] = [start_point, end_point]
+
+                if event.type == 'LEFTMOUSE' and end_point != start_point: # Finish updating the line and paint the vertices
+                    bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
+                    self._handle = None
+
+                    # Gradient will not work if there is no delta
+                    if end_point == start_point:
+                        return {'CANCELLED'}
+
+                    # Use color gradient or force grayscale in isolate mode
+                    start_color = line_params["colors"][0]
+                    end_color = line_params["colors"][1]
+                    isolate = get_isolated_channel_ids(context.active_object.data.vertex_colors.active)
+                    use_hue_blend = self.use_hue_blend
+                    if isolate is not None:
+                        start_color = [rgb_to_luminosity(start_color)] * 3
+                        end_color = [rgb_to_luminosity(end_color)] * 3
+                        use_hue_blend = False
+
+                    self.paintVerts(context, start_point, end_point, start_color, end_color, self.circular_gradient, use_hue_blend)
+                    return {'FINISHED'}            
+
+        # Allow camera navigation
+        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return {'PASS_THROUGH'}
+
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            if self._handle is not None:
+                bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
+                self._handle = None
+            return {'CANCELLED'}
+
+        # Keep running until completed or cancelled
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        start_point = self.line_params["coords"][0]
+        end_point = self.line_params["coords"][1]
+        start_color = self.start_color
+        end_color = self.end_color
+
+        # Use color gradient or force grayscale in isolate mode
+        isolate = get_isolated_channel_ids(context.active_object.data.vertex_colors.active)
+        use_hue_blend = self.use_hue_blend
+        if isolate is not None:
+            start_color = [rgb_to_luminosity(start_color)] * 3
+            end_color = [rgb_to_luminosity(end_color)] * 3
+            use_hue_blend = False
+
+        self.paintVerts(context, start_point, end_point, start_color, end_color, self.circular_gradient, use_hue_blend)
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        if context.area.type == 'VIEW_3D':
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
+        else:
+            self.report({'WARNING'}, "View3D not found, cannot run operator")
+            return {'CANCELLED'}
+
+
+class SOLLUMZ_OT_Fill(bpy.types.Operator):
+    """Fill the active vertex color channel(s)"""
+    bl_idname = 'sollumz.fill'
+    bl_label = 'Vertex Color Fill'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    value: FloatProperty(
+        name="Value",
+        description="Value to fill active channel(s) with.",
+        default=1.0,
+        min=0.0,
+        max=1.0
+    )
+
+    fill_with_color: BoolProperty(
+        name="Fill with Color",
+        description="Ignore active channels and fill with an RGB color",
+        default=False
+    )
+
+    fill_color: FloatVectorProperty(
+        name="Fill Color",
+        subtype='COLOR',
+        default=[1.0,1.0,1.0],
+        description="Color to fill vertex color data with."
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return bpy.context.object.mode == 'VERTEX_PAINT' and obj is not None and obj.type == 'MESH'
+
+    def execute(self, context):
+        settings = context.scene.sollumz_vertex_color_settings
+
+        mesh = context.active_object.data
+        vcol = mesh.vertex_colors.active if mesh.vertex_colors else mesh.vertex_colors.new()
+
+        isolate_mode = get_isolated_channel_ids(vcol) is not None
+
+        if self.fill_with_color or isolate_mode:
+            active_channels = ['R', 'G', 'B']
+            color = [self.value] * 4 if isolate_mode else self.fill_color
+            fill_selected(mesh, vcol, color, active_channels)
+        else:
+            color = [self.value] * 4
+            fill_selected(mesh, vcol, color, settings.active_channels)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row()
+        row.prop(self, 'value', slider=True)
+        row = layout.row()
+        row.prop(self, 'fill_with_color')
+        if self.fill_with_color:
+            row = layout.row()
+            row.prop(self, 'fill_color', text="")
+
+
+class VERTEXCOLORMASTER_OT_Invert(bpy.types.Operator):
+    """Invert active vertex color channel(s)"""
+    bl_idname = 'sollumz.invert'
+    bl_label = 'Invert Vertex Colors'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return bpy.context.object.mode == 'VERTEX_PAINT' and obj is not None and obj.type == 'MESH'
+
+    def execute(self, context):
+        settings = context.scene.sollumz_vertex_color_settings
+
+        mesh = context.active_object.data
+        vcol = mesh.vertex_colors.active if mesh.vertex_colors else mesh.vertex_colors.new()
+        active_channels = settings.active_channels if get_isolated_channel_ids(vcol) is None else ['R', 'G', 'B']
+
+        invert_selected(mesh, vcol, active_channels)
+
+        return {'FINISHED'}
+
+
+class SOLLUMZ_OT_Posterize(bpy.types.Operator):
+    """Posterize active vertex color channel(s)"""
+    bl_idname = 'sollumz.posterize'
+    bl_label = 'Posterize Vertex Colors'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    steps: bpy.props.IntProperty(
+        name="Steps",
+        default=2,
+        min=2,
+        max=256,
+        description="Number of different grayscale values for posterization of active channel(s)."
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return bpy.context.object.mode == 'VERTEX_PAINT' and obj is not None and obj.type == 'MESH'
+
+    def execute(self, context):
+        settings = context.scene.sollumz_vertex_color_settings
+
+        # using posterize(), 2 steps -> 3 tones, but best to have 2 steps -> 2 tones
+        steps = self.steps - 1
+
+        mesh = context.active_object.data
+        vcol = mesh.vertex_colors.active if mesh.vertex_colors else mesh.vertex_colors.new()
+        active_channels = settings.active_channels if get_isolated_channel_ids(vcol) is None else ['R', 'G', 'B']
+
+        posterize_selected(mesh, vcol, steps, active_channels)
+
+        return {'FINISHED'}
+    
+class SOLLUMZ_OT_ApplyIsolatedChannel(bpy.types.Operator):
+    """Apply isolated channel back to the vertex color layer it came from"""
+    bl_idname = 'sollumz.apply_isolated'
+    bl_label = "Apply Isolated Channel"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    discard: BoolProperty(
+        name="Discard Changes",
+        default=False,
+        description="Discard changes to the isolated channel instead of applying them."
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj is not None and obj.type == 'MESH' and obj.data.vertex_colors is not None:
+            vcol = obj.data.vertex_colors.active
+            # operator will not work if the active vcol name doesn't match the right template
+            vcol_info = get_isolated_channel_ids(vcol)
+            return vcol_info is not None
+
+    def execute(self, context):
+        settings = context.scene.sollumz_vertex_color_settings
+        mesh = context.active_object.data
+
+        iso_vcol = mesh.vertex_colors.active
+
+        brush = context.tool_settings.vertex_paint.brush
+        brush.color = settings.brush_color
+        brush.secondary_color = settings.brush_secondary_color
+
+        if self.discard:
+            mesh.vertex_colors.remove(iso_vcol)
+            return {'FINISHED'}
+
+        vcol_info = get_isolated_channel_ids(iso_vcol)
+
+        vcol = mesh.vertex_colors[vcol_info[0]]
+        channel_idx = channel_id_to_idx(vcol_info[1])
+
+        if vcol is None:
+            error = "Mesh has no vertex color layer named '{0}'. Was it renamed or deleted?".format(vcol_info[0])
+            self.report({'ERROR'}, error)
+            return {'FINISHED'}
+
+        # assuming iso_vcol has only grayscale data, RGB are equal, so copy from R
+        copy_channel(mesh, iso_vcol, vcol, 0, channel_idx)
+        mesh.vertex_colors.active = vcol
+        mesh.vertex_colors.remove(iso_vcol)
+
+        return {'FINISHED'}
+    
+class SOLLUMZ_OT_IsolateChannel(bpy.types.Operator):
+    """Isolate a specific channel to paint in grayscale"""
+    bl_idname = 'sollumz.isolate_channel'
+    bl_label = 'Isolate Vertex Color Channel'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    src_channel_id: EnumProperty(
+        name="Source Channel",
+        items=channel_items,
+        description="Source (Src) color channel."
+    )
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return bpy.context.object.mode == 'VERTEX_PAINT' and obj is not None and obj.type == 'MESH'
+
+    def execute(self, context):
+        settings = context.scene.sollumz_vertex_color_settings
+        obj = context.active_object
+        mesh = obj.data
+
+        if mesh.vertex_colors is None:
+            self.report({'ERROR'}, "Mesh has no vertex color layer to isolate.")
+            return {'FINISHED'}
+
+        # get the vcol and channel to isolate
+        # create empty vcol using name template
+        vcol = mesh.vertex_colors.active
+        iso_vcol_id = "{0}_{1}_{2}".format(isolate_mode_name_prefix, self.src_channel_id, vcol.name)
+        if iso_vcol_id in mesh.vertex_colors:
+            error = "{0} Channel has already been isolated to {1}. Apply or Discard before isolating again.".format(self.src_channel_id, iso_vcol_id)
+            self.report({'ERROR'}, error)
+            return {'FINISHED'}
+
+        iso_vcol = mesh.vertex_colors.new()
+        iso_vcol.name = iso_vcol_id
+        channel_idx = channel_id_to_idx(self.src_channel_id)
+
+        copy_channel(mesh, vcol, iso_vcol, channel_idx, channel_idx, dst_all_channels=True, alpha_mode='FILL')
+        mesh.vertex_colors.active = iso_vcol
+        brush = context.tool_settings.vertex_paint.brush
+        settings.brush_color = brush.color
+        settings.brush_secondary_color = brush.secondary_color
+        brush.color = [settings.brush_value_isolate] * 3
+        brush.secondary_color = [settings.brush_secondary_value_isolate] * 3
+
+        return {'FINISHED'}
+    
+class SOLLUMZ_OT_Remap(bpy.types.Operator):
+    """Remap active vertex color channel(s)"""
+    bl_idname = 'sollumz.remap'
+    bl_label = 'Remap Vertex Colors'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    active_channels: EnumProperty(
+        name="Active Channels",
+        options={'ENUM_FLAG'},
+        items=channel_items,
+        description="Which channels to enable.",
+        default={'R', 'G', 'B'},
+    )
+
+    min0: FloatProperty(
+        default=0,
+        min=0,
+        max=1
+    )
+
+    max0: FloatProperty(
+        default=1,
+        min=0,
+        max=1
+    )
+
+    min1: FloatProperty(
+        default=0,
+        min=0,
+        max=1
+    )
+
+    max1: FloatProperty(
+        default=1,
+        min=0,
+        max=1
+    )
+    
+    isolate_mode: BoolProperty(
+        default=False,
+    )
+
+    def draw(self, context):
+        layout = self.layout
+
+        if not self.isolate_mode:
+            col = layout.column()
+            row = col.row(align=True)
+            row.prop(self, 'active_channels')
+
+        layout.label(text="Input Range")
+        layout.prop(self, 'min0', text="Min", slider=True)
+        layout.prop(self, 'max0', text="Max", slider=True)
+
+        layout.label(text="Output Range")
+        layout.prop(self, 'min1', text="Min", slider=True)
+        layout.prop(self, 'max1', text="Max", slider=True)
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return bpy.context.object.mode == 'VERTEX_PAINT' and obj is not None and obj.type == 'MESH'
+
+    def invoke(self, context, event):
+        settings = context.scene.sollumz_vertex_color_settings
+
+        mesh = context.active_object.data
+        vcol = mesh.vertex_colors.active if mesh.vertex_colors else mesh.vertex_colors.new()
+        self.isolate_mode = True if get_isolated_channel_ids(vcol) is not None else False
+        self.active_channels = settings.active_channels if not self.isolate_mode else {'R', 'G', 'B'}
+        
+        return self.execute(context)
+
+    def execute(self, context):
+        mesh = context.active_object.data
+        vcol = mesh.vertex_colors.active if mesh.vertex_colors else mesh.vertex_colors.new()
+
+        remap_selected(mesh, vcol, self.min0, self.max0, self.min1, self.max1, self.active_channels)
+
+        return {'FINISHED'}
 
 class SelectTimeFlagsRange(SOLLUMZ_OT_base):
     """Select range of time flags"""
