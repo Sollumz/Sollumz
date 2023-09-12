@@ -1,10 +1,11 @@
 import bpy
-from mathutils import Vector, Matrix, Quaternion
+from mathutils import Vector, Quaternion
 import math
+import struct
 from ..cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools import jenkhash
-from ..tools.blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
+from ..tools.blenderhelper import build_name_bone_map, build_bone_map
 from ..tools.animationhelper import (
     Track,
     TrackFormat,
@@ -16,10 +17,11 @@ from ..tools.animationhelper import (
     get_frame_range_and_count,
     get_target_from_id,
 )
-from .properties import calculate_final_uv_transform_matrix
+from .properties import ClipAttribute, ClipTag, calculate_final_uv_transform_matrix
 
+from .. import logger
 
-def parse_uv_transform_data_path(data_path: str):
+def parse_uv_transform_data_path(data_path: str) -> tuple[int, str]:
     # data_path = '...uv_transforms[123].property'
 
     # trim up to 'uv_transforms'
@@ -37,10 +39,13 @@ def parse_uv_transform_data_path(data_path: str):
     return index, prop
 
 
+TrackFramesData = list[Vector] | list[Quaternion] | list[float]
+SequenceItems = dict[int, dict[Track, TrackFramesData]]
+
 def sequence_items_from_action(
         action: bpy.types.Action,
         target_id: bpy.types.ID
-):
+) -> SequenceItems:
     frame_range, frame_count = get_frame_range_and_count(action)
     target = get_target_from_id(target_id)
     target_is_armature = isinstance(target_id, bpy.types.Armature)
@@ -54,12 +59,12 @@ def sequence_items_from_action(
 
     uv_transforms_fcurves = {}
 
-    sequence_items = {}
+    sequence_items: SequenceItems = {}
     for fcurve in action.fcurves:
         data_path = fcurve.data_path
         bone_id_track_pair = get_id_and_track_from_track_data_path(data_path, target_id, bone_name_map)
         if bone_id_track_pair is None:
-            # TODO: report warning
+            logger.warning(f"F-curve data-path '{data_path}' in action '{action.name}' is unsupported, skipping...")
             continue
 
         bone_id, track = bone_id_track_pair
@@ -67,7 +72,7 @@ def sequence_items_from_action(
             if bone_id not in uv_transforms_fcurves:
                 uv_transforms_fcurves[bone_id] = []
             uv_transforms_fcurves[bone_id].append(fcurve)
-            continue
+            continue  # UV transforms are handled later
 
         comp_index = fcurve.array_index
         format = TrackFormatMap[track]
@@ -207,7 +212,11 @@ def sequence_items_from_action(
     return sequence_items
 
 
-def build_values_channel(values, uniq_values, indirect_percentage=0.1):
+def build_values_channel(
+    values: list[float],
+    uniq_values: list[float],
+    indirect_percentage: float = 0.1
+) -> ycdxml.ChannelsList.Channel:
     values_len_percentage = len(uniq_values) / len(values)
 
     if len(uniq_values) == 1:
@@ -242,7 +251,10 @@ def build_values_channel(values, uniq_values, indirect_percentage=0.1):
     return channel
 
 
-def sequence_data_from_frames_data(track, frames_data):
+def sequence_data_from_frames_data(
+    track: Track,
+    frames_data: TrackFramesData
+) -> ycdxml.Animation.SequenceDataList.SequenceData:
     sequence_data = ycdxml.Animation.SequenceDataList.SequenceData()
 
     format = TrackFormatMap[track]
@@ -281,11 +293,11 @@ def sequence_data_from_frames_data(track, frames_data):
         values_z = []
         values_w = []
 
-        for vector in frames_data:
-            values_x.append(vector.x)
-            values_y.append(vector.y)
-            values_z.append(vector.z)
-            values_w.append(vector.w)
+        for quat in frames_data:
+            values_x.append(quat.x)
+            values_y.append(quat.y)
+            values_z.append(quat.z)
+            values_w.append(quat.w)
 
         uniq_x = list(set(values_x))
         len_uniq_x = len(uniq_x)
@@ -317,7 +329,7 @@ def sequence_data_from_frames_data(track, frames_data):
     return sequence_data
 
 
-def animation_from_object(animation_obj):
+def animation_from_object(animation_obj: bpy.types.Object) -> ycdxml.Animation:
     animation = ycdxml.Animation()
 
     animation_properties = animation_obj.animation_properties
@@ -367,7 +379,7 @@ def animation_from_object(animation_obj):
     return animation
 
 
-def clip_attribute_to_xml(attr) -> ycdxml.AttributesList.Attribute:
+def clip_attribute_to_xml(attr: ClipAttribute) -> ycdxml.AttributesList.Attribute:
     if attr.type == "Float":
         xml_attr = ycdxml.AttributesList.FloatAttribute()
         xml_attr.value = attr.value_float
@@ -395,16 +407,14 @@ def clip_attribute_to_xml(attr) -> ycdxml.AttributesList.Attribute:
     return xml_attr
 
 
-def name_to_hash(name):
+def name_to_hash(name: str) -> int:
     if name.startswith("hash_"):
         return int(name[5:], 16) & 0xFFFFFFFF
     else:
         return jenkhash.Generate(name)
 
 
-def clip_attribute_calc_signature(attr):
-    import struct
-
+def clip_attribute_calc_signature(attr: ClipAttribute) -> int:
     signature = name_to_hash(attr.name)
     if attr.type == "Float":
         signature = jenkhash.GenerateData(struct.pack("f", attr.value_float), seed=signature)
@@ -431,9 +441,7 @@ def clip_attribute_calc_signature(attr):
 # TODO: these calc_signature functions try to reproduce the original
 #  calculations but currently do not match the expected results, investigate.
 #  Should be good enough for now
-def clip_property_calc_signature(prop):
-    import struct
-
+def clip_property_calc_signature(prop: ClipAttribute) -> int:
     signature = name_to_hash(prop.name)
     # for attr in prop:
     attr_signature = clip_attribute_calc_signature(prop)
@@ -441,8 +449,7 @@ def clip_property_calc_signature(prop):
     return signature
 
 
-def clip_tag_calc_signature(tag):
-    import struct
+def clip_tag_calc_signature(tag: ClipTag) -> int:
     import zlib
 
     signature = name_to_hash(tag.name)
@@ -455,7 +462,7 @@ def clip_tag_calc_signature(tag):
     return signature
 
 
-def clip_from_object(clip_obj):
+def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
     clip_properties = clip_obj.clip_properties
 
     is_single_animation = len(clip_properties.animations) == 1
@@ -520,7 +527,7 @@ def clip_from_object(clip_obj):
     return xml_clip
 
 
-def clip_dictionary_from_object(obj):
+def clip_dictionary_from_object(obj: bpy.types.Object) -> ycdxml.ClipDictionary:
     clip_dictionary = ycdxml.ClipDictionary()
 
     animations_obj = None
@@ -545,5 +552,5 @@ def clip_dictionary_from_object(obj):
     return clip_dictionary
 
 
-def export_ycd(obj, filepath):
+def export_ycd(obj: bpy.types.Object, filepath: str):
     clip_dictionary_from_object(obj).write_xml(filepath)
