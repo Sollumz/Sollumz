@@ -283,14 +283,15 @@ class UVTransform(bpy.types.PropertyGroup):
             self_values[i] = other_values[i]
 
 
-
 class AnimationTracks(bpy.types.PropertyGroup):
     @staticmethod
     def Vec3Prop(name, subtype="TRANSLATION", default=(0.0, 0.0, 0.0)):
         return bpy.props.FloatVectorProperty(name=name, size=3, subtype=subtype, default=default)
+
     @staticmethod
     def QuatProp(name, default=(1.0, 0.0, 0.0, 0.0)):
         return bpy.props.FloatVectorProperty(name=name, size=4, subtype="QUATERNION", default=default)
+
     @staticmethod
     def FloatProp(name, default=0.0):
         return bpy.props.FloatProperty(name=name, default=default)
@@ -352,7 +353,7 @@ class AnimationTracks(bpy.types.PropertyGroup):
                     area.tag_redraw()
 
     uv_transforms: bpy.props.CollectionProperty(type=UVTransform,
-        name="UV Transformations")
+                                                name="UV Transformations")
     uv_transforms_active_index: bpy.props.IntProperty(name="Active UV Transformation", options=set())
 
 
@@ -400,7 +401,7 @@ def register():
 
     # used with operator SOLLUMZ_OT_animations_set_target
     bpy.types.Scene.sollumz_animations_target_id = bpy.props.PointerProperty(
-        name="Target",type=bpy.types.ID, options={"HIDDEN", "SKIP_SAVE"})
+        name="Target", type=bpy.types.ID, options={"HIDDEN", "SKIP_SAVE"})
     bpy.types.Scene.sollumz_animations_target_id_type = bpy.props.EnumProperty(
         name="Target Type", items=AnimationTargetIDTypes, default="ARMATURE", options={"HIDDEN", "SKIP_SAVE"})
 

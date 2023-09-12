@@ -270,7 +270,8 @@ def clip_to_obj(
 
             clip_animation = clip_obj.clip_properties.animations.add()
             clip_animation.animation = animations_obj_map[animation.animation_hash]
-            clip_animation.start_frame = int((animation.start_time / animation_data.duration) * animation_data.frame_count)
+            clip_animation.start_frame = int(
+                (animation.start_time / animation_data.duration) * animation_data.frame_count)
             clip_animation.end_frame = int((animation.end_time / animation_data.duration) * animation_data.frame_count)
 
     def _init_attribute(attr, xml_attr):

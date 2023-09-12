@@ -21,6 +21,7 @@ from .properties import ClipAttribute, ClipTag, calculate_final_uv_transform_mat
 
 from .. import logger
 
+
 def parse_uv_transform_data_path(data_path: str) -> tuple[int, str]:
     # data_path = '...uv_transforms[123].property'
 
@@ -41,6 +42,7 @@ def parse_uv_transform_data_path(data_path: str) -> tuple[int, str]:
 
 TrackFramesData = list[Vector] | list[Quaternion] | list[float]
 SequenceItems = dict[int, dict[Track, TrackFramesData]]
+
 
 def sequence_items_from_action(
         action: bpy.types.Action,
@@ -205,7 +207,7 @@ def sequence_items_from_action(
                 continue
 
             for i in range(1, frame_count):
-               if quats[i - 1].dot(quats[i]) < 0:
+                if quats[i - 1].dot(quats[i]) < 0:
                     quats[i] *= -1
     # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
 

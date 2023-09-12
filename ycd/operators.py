@@ -1,12 +1,13 @@
 import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..sollumz_properties import SollumType
-from ..tools.blenderhelper import find_child_by_type, get_data_obj
+from ..tools.blenderhelper import find_child_by_type
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import color_hash
 from ..tools.animationhelper import is_any_sollumz_animation_obj, update_uv_clip_hash
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 from .. import logger
+
 
 class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.animations_set_target"
@@ -55,6 +56,7 @@ class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
 
         return animations_objects
 
+
 class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.anim_apply_nla"
     bl_label = "Apply NLA"
@@ -73,7 +75,6 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
         if len(clip_properties.animations) <= 0:
             return {"FINISHED"}
 
-        clip_dictionary_obj = clip_obj.parent.parent
         # TODO: animation may be None, or not all animations have the same target/are filled in
         target = clip_properties.animations[0].animation.animation_properties.get_target()
         if target is None:
@@ -346,7 +347,6 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         #    force             Float
         #
         #
-
 
         tag.name = name
         tag.ui_timeline_color = color_hash(tag.name)
@@ -1212,7 +1212,6 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Sollumz - Drag Timeline Clip Tags"
     bl_description = "Drag clip tag markers in the timeline"
 
-
     @classmethod
     def poll(cls, context):
         return (context.region is not None and
@@ -1266,8 +1265,12 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
         clip_properties = clip_obj.clip_properties
 
         for clip_tag in clip_properties.tags:
-            if not clip_tag.ui_view_on_timeline or clip_tag.start_phase != clip_tag.end_phase or not clip_tag.ui_timeline_hovered_start:
+            if not clip_tag.ui_view_on_timeline:
                 continue
+            if clip_tag.start_phase != clip_tag.end_phase:
+                continue  # already splitted
+            if not clip_tag.ui_timeline_hovered_start:
+                continue  # not selected
 
             offset = 0.025
             clip_tag.start_phase = max(clip_tag.start_phase - offset, 0.0)
@@ -1394,4 +1397,3 @@ def unregister():
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
-

@@ -9,6 +9,7 @@ from .properties import AnimationTracks
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..tools.animationhelper import is_any_sollumz_animation_obj, is_uv_animation_supported
 
+
 def draw_clip_properties(self, context):
     obj = context.active_object
     if obj and obj.sollum_type == SollumType.CLIP:
@@ -91,13 +92,6 @@ def draw_animation_properties(self, context):
         layout.prop(animation_properties, "hash")
         layout.prop(animation_properties, "action")
         template_animation_target_ID(layout, animation_properties, "target_id", "target_id_type")
-
-def draw_clip_dictionary_properties(self, context):
-    obj = context.active_object
-    if obj and obj.sollum_type == SollumType.CLIP_DICTIONARY:
-        layout = self.layout
-
-        # nothing currently
 
 
 def draw_range_properties(layout, obj, prop_start, prop_end, label):
@@ -487,7 +481,7 @@ class SOLLUMZ_PT_CLIP_TAGS(bpy.types.Panel):
                 attr_header = attr_box.row(align=True)
                 attr_header.label(text="Attributes")
                 new_op = attr_header.operator(ycd_ops.SOLLUMZ_OT_clip_new_tag_attribute.bl_idname,
-                                      text="", icon="ADD")
+                                              text="", icon="ADD")
                 new_op.tag_index = tag_index
                 for attr_index, attr in enumerate(clip_tag.attributes):
                     del_op = draw_clip_attribute(attr_box, attr, ycd_ops.SOLLUMZ_OT_clip_delete_tag_attribute)
@@ -584,13 +578,11 @@ class ClipTagsOnTimelineDrawHandler:
         import gpu
         import gpu_extras
         import blf
-        import time
 
         context = bpy.context
         clip_obj = context.active_object
         if clip_obj is None or clip_obj.sollum_type != SollumType.CLIP:
             return
-        # t_start = time.perf_counter_ns()
 
         clip_properties = clip_obj.clip_properties
 
@@ -707,9 +699,6 @@ class ClipTagsOnTimelineDrawHandler:
             blf.size(font_id, font_size)
             blf.draw(font_id, name)
 
-        # t_end = time.perf_counter_ns()
-        # print(f"draw_tags_on_timeline  {t_end - t_start} ns  ({(t_end - t_start) / 1000000} ms)")
-
 
 draw_handlers = []
 
@@ -717,7 +706,6 @@ draw_handlers = []
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_animation_properties)
-    SOLLUMZ_PT_OBJECT_PANEL.append(draw_clip_dictionary_properties)
 
     for cls in (bpy.types.SpaceDopeSheetEditor, bpy.types.SpaceNLA):
         handler = ClipTagsOnTimelineDrawHandler(cls)
@@ -728,7 +716,6 @@ def register():
 def unregister():
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_animation_properties)
-    SOLLUMZ_PT_OBJECT_PANEL.remove(draw_clip_dictionary_properties)
 
     for handler in draw_handlers:
         handler.unregister()
