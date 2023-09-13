@@ -293,8 +293,8 @@ class AnimationTracks(bpy.types.PropertyGroup):
         return bpy.props.FloatVectorProperty(name=name, size=4, subtype="QUATERNION", default=default)
 
     @staticmethod
-    def FloatProp(name, default=0.0):
-        return bpy.props.FloatProperty(name=name, default=default)
+    def FloatProp(name, subtype="NONE", default=0.0, min=-3.402823e+38, max=3.402823e+38):
+        return bpy.props.FloatProperty(name=name, subtype=subtype, default=default, min=min, max=max)
 
     mover_location: Vec3Prop("Mover Location")  # aka root motion
     mover_rotation: QuatProp("Mover Rotation")
@@ -306,16 +306,16 @@ class AnimationTracks(bpy.types.PropertyGroup):
     unk_24: FloatProp("Unk 24")
     unk_25: Vec3Prop("Unk 25", subtype="XYZ")
     unk_26: QuatProp("Unk 26")
-    camera_fov: FloatProp("Camera FOV")  # in degrees, 1.0-130.0
+    camera_fov: FloatProp("Camera FOV", min=1.0, max=130.0)  # in degrees, 1.0-130.0
     camera_dof: Vec3Prop("Camera DOF", subtype="XYZ")  # x=near, y=far, z=unused
     unk_29: Vec3Prop("Unk 29", subtype="XYZ")
     unk_30: FloatProp("Unk 30")
     unk_31: FloatProp("Unk 31")
     unk_32: FloatProp("Unk 32")
-    unk_33: FloatProp("Unk 33")
+    unk_33: FloatProp("Unk 33") # high heels related (used on BONETAG_HIGH_HEELS, which doesn't seem to be a real bone)
     unk_34: Vec3Prop("Unk 34", subtype="XYZ")
-    camera_dof_strength: FloatProp("Camera DOF Strength")  # 0.0-1.0
-    camera_unk_39: FloatProp("Camera Unk 39")  # boolean flag, true= >0.5, false= <=0.5
+    camera_dof_strength: FloatProp("Camera DOF Strength", min=0.0, max=1.0)  # 0.0-1.0
+    camera_unk_39: FloatProp("Camera Unk 39", min=0.0, max=1.0)  # boolean flag, true= >0.5, false= <=0.5
     unk_40: FloatProp("Unk 40")
     unk_41: FloatProp("Unk 41")
     unk_42: Vec3Prop("Unk 42", subtype="XYZ")
@@ -325,7 +325,7 @@ class AnimationTracks(bpy.types.PropertyGroup):
     camera_dof_plane_far_unk: FloatProp("Camera DOF Plane Far Unk")
     camera_dof_plane_far: FloatProp("Camera DOF Plane Far")
     unk_47: FloatProp("Unk 47")
-    camera_unk_48: FloatProp("Camera Unk 48")  # boolean flag, true= >0.5, false= <=0.5
+    camera_unk_48: FloatProp("Camera Unk 48", min=0.0, max=1.0)  # boolean flag, true= >0.5, false= <=0.5
     camera_dof_unk_49: FloatProp("Camera DOF Unk 49")  # used with camera_dof_plane_* tracks
     unk_50: FloatProp("Unk 50")
     camera_dof_unk_51: FloatProp("Camera DOF Unk 51")  # used with camera_dof_plane_* tracks
@@ -373,7 +373,6 @@ def register_tracks(cls, inline=False):
             setattr(cls, f"animation_tracks_{prop}", info)
     else:
         cls.animation_tracks = bpy.props.PointerProperty(name="Animation Tracks", type=AnimationTracks)
-        cls.animation_tracks_ui_show_advanced = bpy.props.BoolProperty(name="Show Advanced", default=False)
 
 
 def unregister_tracks(cls, inline=False):
@@ -382,7 +381,6 @@ def unregister_tracks(cls, inline=False):
             delattr(cls, f"animation_tracks_{prop}")
     else:
         del cls.animation_tracks
-        del cls.animation_tracks_ui_show_advanced
 
 
 def register():

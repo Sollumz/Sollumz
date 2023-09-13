@@ -225,87 +225,6 @@ class SOLLUMZ_UL_uv_transforms_list(bpy.types.UIList):
         for i in range(3):
             row.prop(animation_tracks, "uv1", index=i, text="")
 
-# TODO: show in armature panel and camera panel
-#
-# class SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS(bpy.types.Panel):
-#     bl_label = "Animation Tracks"
-#     bl_idname = "SOLLUMZ_PT_OBJECT_ANIMATION_TRACKS"
-#     bl_space_type = "PROPERTIES"
-#     bl_region_type = "WINDOW"
-#     bl_context = "object"
-#     bl_options = {"DEFAULT_CLOSED"}
-#     bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
-#     bl_order = 9999
-#
-#     @classmethod
-#     def poll(cls, context):
-#         if context.active_object is None:
-#             return False
-#
-#         obj = context.active_object
-#         if obj and obj.sollum_type == SollumType.ANIMATION:
-#             # UV tracks are stored in the animation object instead of the geometry object to try to
-#             # future-proof for when Sollumz-yft branch is released, where geometry objects have been removed
-#             return isinstance(obj.animation_properties.target_id, bpy.types.Mesh)
-#
-#         data = obj.data
-#         return data is not None and (isinstance(data, bpy.types.Armature) or
-#                                      isinstance(data, bpy.types.Camera))
-#
-#     def draw(self, context):
-#         layout = self.layout
-#         layout.use_property_split = True
-#
-#         obj = context.active_object
-#         if obj.sollum_type == SollumType.ANIMATION:
-#             animation_tracks = obj.animation_properties.animation_tracks
-#         else:
-#             animation_tracks = obj.animation_tracks
-#             target_is_armature = isinstance(obj.data, bpy.types.Armature)
-#             target_is_camera = isinstance(obj.data, bpy.types.Camera)
-#             target_is_material = isinstance(obj.data, bpy.types.Material)
-#
-#         if target_is_armature:
-#             for prop in AnimationTracks.__annotations__:
-#                 if prop.startswith("camera_") or prop.startswith("uv"):
-#                     continue
-#
-#                 layout.prop(animation_tracks, prop)
-#         elif target_is_camera:
-#             for prop in AnimationTracks.__annotations__:
-#                 if not prop.startswith("camera_"):
-#                     continue
-#
-#                 layout.prop(animation_tracks, prop)
-#         elif target_is_mesh:
-#
-#             layout.label(text="UV Transformations")
-#             row = layout.row()
-#             row.template_list(SOLLUMZ_UL_uv_transforms_list.bl_idname, "",
-#                               animation_tracks, "uv_transforms", animation_tracks, "uv_transforms_active_index")
-#
-#             col = row.column(align=True)
-#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_add.bl_idname, icon='ADD', text="")
-#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_remove.bl_idname, icon='REMOVE', text="")
-#             col.separator()
-#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_UP', text="").direction = 'UP'
-#             col.operator(ycd_ops.SOLLUMZ_OT_uv_transform_move.bl_idname, icon='TRIA_DOWN', text="").direction = 'DOWN'
-#
-#
-#         box = layout.box()
-#         box.use_property_split = True
-#         box.use_property_decorate = False
-#         header = box.row(align=True)
-#         is_expanded = obj.animation_tracks_ui_show_advanced
-#         expanded_icon = "DISCLOSURE_TRI_DOWN" if is_expanded else "DISCLOSURE_TRI_RIGHT"
-#         header.prop(obj, "animation_tracks_ui_show_advanced", text="", emboss=False, icon=expanded_icon)
-#         header.label(text="Advanced")
-#
-#         if obj.animation_tracks_ui_show_advanced:
-#             for prop in AnimationTracks.__annotations__:
-#                 box.prop(animation_tracks, prop)
-#
-
 
 class SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS(bpy.types.Panel):
     bl_label = "Animation Tracks"
@@ -358,19 +277,6 @@ class SOLLUMZ_PT_MATERIAL_ANIMATION_TRACKS(bpy.types.Panel):
         row.enabled = is_supported
         row.operator(ycd_ops.SOLLUMZ_OT_uv_sprite_sheet_anim.bl_idname)
 
-        box = layout.box()
-        box.use_property_split = True
-        box.use_property_decorate = False
-        header = box.row(align=True)
-        is_expanded = mat.animation_tracks_ui_show_advanced
-        expanded_icon = "DISCLOSURE_TRI_DOWN" if is_expanded else "DISCLOSURE_TRI_RIGHT"
-        header.prop(mat, "animation_tracks_ui_show_advanced", text="", emboss=False, icon=expanded_icon)
-        header.label(text="Advanced")
-
-        if mat.animation_tracks_ui_show_advanced:
-            for prop in AnimationTracks.__annotations__:
-                box.prop(animation_tracks, prop)
-
 
 class SOLLUMZ_PT_POSE_BONE_ANIMATION_TRACKS(bpy.types.Panel):
     bl_label = "Animation Tracks"
@@ -383,16 +289,75 @@ class SOLLUMZ_PT_POSE_BONE_ANIMATION_TRACKS(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_pose_bone is not None
+        p_bone = context.active_pose_bone
+        return p_bone is not None and p_bone.parent is None # only root bone
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
 
         p_bone = context.active_pose_bone
-        # animation_tracks = context.active_pose_bone.animation_tracks
-        for prop in AnimationTracks.__annotations__:
-            layout.prop(p_bone, f"animation_tracks_{prop}")
+
+        col = layout.column()
+        # root bone tracks
+        for prop in [
+            "unk_134",
+            "unk_137",
+            "unk_138",
+            "unk_139",
+            "unk_140",
+        ]:
+            col.prop(p_bone, f"animation_tracks_{prop}")
+
+
+class SOLLUMZ_PT_CAMERA_ANIMATION_TRACKS(bpy.types.Panel):
+    bl_label = "Animation Tracks"
+    bl_idname = "SOLLUMZ_PT_CAMERA_ANIMATION_TRACKS"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_order = 9999
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        if obj is None:
+            return False
+
+        data = obj.data
+        return isinstance(data, bpy.types.Camera)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+
+        obj = context.active_object
+        animation_tracks = obj.animation_tracks
+
+        col = layout.column()
+        col.prop(animation_tracks, "camera_fov")
+        split = col.split(factor=0.4)
+        split.row()
+        split.row().label(text="DOF")
+        sub_col = col.column(align=True)
+        sub_col.prop(animation_tracks, "camera_dof", index=0, text="Near")
+        sub_col.prop(animation_tracks, "camera_dof", index=1, text="Far")
+        sub_col.prop(animation_tracks, "camera_dof_strength", text="Strength")
+        split = col.split(factor=0.4)
+        split.row()
+        split.row().label(text="DOF (Advanced)")
+        sub_col = col.column(align=True)
+        sub_col.prop(animation_tracks, "camera_dof_plane_near_unk", text="Near Unk")
+        sub_col.prop(animation_tracks, "camera_dof_plane_near", text="Near")
+        sub_col.prop(animation_tracks, "camera_dof_plane_far_unk", text="Far Unk")
+        sub_col.prop(animation_tracks, "camera_dof_plane_far", text="Far")
+        sub_col.prop(animation_tracks, "camera_dof_unk_49", text="Unk 49")
+        sub_col.prop(animation_tracks, "camera_dof_unk_51", text="Unk 51")
+        col.separator()
+        col.prop(animation_tracks, "camera_unk_39")
+        col.prop(animation_tracks, "camera_unk_48")
 
 
 class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
