@@ -172,20 +172,9 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
                         text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
 
 
-class SOLLUMZ_PT_import_animation(bpy.types.Panel, SollumzImportSettingsPanel):
-    bl_label = "Animation"
-    bl_order = 3
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        armature_list_box = layout.box()
-        armature_list_box.label(text="Target skeleton")
-        armature_list_box.template_list(SOLLUMZ_UL_armature_list.bl_idname, "",
-                                        bpy.data, "armatures", settings, "selected_armature")
-
-
 class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Ymap"
-    bl_order = 4
+    bl_order = 3
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "ymap_skip_missing_entities")

@@ -73,6 +73,18 @@ class Shader(ElementTree):
 
         return names
 
+    @property
+    def is_uv_animation_supported(self) -> bool:
+        has_uv0 = False
+        has_uv1 = False
+        for param in self.parameters:
+            if param.name == "globalAnimUV0":
+                has_uv0 = True
+            if param.name == "globalAnimUV1":
+                has_uv1 = True
+
+        return has_uv0 and has_uv1
+
 
 class ShaderManager:
     shaderxml = os.path.join(os.path.dirname(__file__), "Shaders.xml")

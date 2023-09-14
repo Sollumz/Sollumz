@@ -153,13 +153,6 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         update=_save_preferences
     )
 
-    selected_armature: bpy.props.IntProperty(
-        name="Armature",
-        description="Armature on which the animation will be applied",
-        default=-1,
-        update=_save_preferences
-    )
-
     ymap_skip_missing_entities: bpy.props.BoolProperty(
         name="Skip Missing Entities",
         description="If enabled, missing entities wont be created as an empty object",

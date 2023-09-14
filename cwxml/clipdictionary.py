@@ -8,7 +8,8 @@ from .element import (
     QuaternionProperty,
     TextProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
+    Vector4Property
 )
 from xml.etree import ElementTree as ET
 from inspect import isclass
@@ -21,7 +22,7 @@ class YCD:
 
     @staticmethod
     def from_xml_file(filepath):
-        return ClipsDictionary.from_xml_file(filepath)
+        return ClipDictionary.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(clips_dict, filepath):
@@ -103,7 +104,7 @@ class AttributesList(ItemTypeList):
 
         def __init__(self):
             super().__init__()
-            self.value = QuaternionProperty("Value")
+            self.value = Vector4Property("Value")
 
     class StringAttribute(Attribute):
         type = "String"
@@ -321,7 +322,7 @@ class Animation(ElementTree):
                 super().__init__()
                 self.bone_id = ValueProperty("BoneId", 0)
                 self.track = ValueProperty("Track", 0)
-                self.unk0 = ValueProperty("Unk0", 0)
+                self.format = ValueProperty("Unk0", 0)
 
         list_type = BoneId
         tag_name = "BoneIds"
@@ -383,8 +384,8 @@ class Clip(ItemTypeList.Item, AbstractClass):
 
             def __init__(self):
                 super().__init__()
-                self.unknown40 = ValueProperty("Unknown40", 0.0)
-                self.unknown44 = ValueProperty("Unknown44", 0.0)
+                self.start_phase = ValueProperty("StartPhase", 0.0)
+                self.end_phase = ValueProperty("EndPhase", 0.0)
 
         list_type = Tag
         tag_name = "Tags"
@@ -443,14 +444,14 @@ class ClipsList(ItemTypeList):
     tag_name = "Clips"
 
 
-class ClipsDictionary(ElementTree):
+class ClipDictionary(ElementTree):
     class AnimationsList(ListProperty):
         list_type = Animation
         tag_name = "Animations"
 
-    tag_name = "ClipsDictionary"
+    tag_name = "ClipDictionary"
 
     def __init__(self):
         super().__init__()
         self.clips = ClipsList()
-        self.animations = ClipsDictionary.AnimationsList()
+        self.animations = ClipDictionary.AnimationsList()
