@@ -235,6 +235,7 @@ def ymap_from_object(obj):
     return ymap
 
 
-def export_ymap(obj, filepath):
+def export_ymap(obj: bpy.types.Object, filepath: str) -> bool:
     ymap = ymap_from_object(obj)
     ymap.write_xml(filepath)
+    return True

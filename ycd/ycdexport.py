@@ -554,5 +554,6 @@ def clip_dictionary_from_object(obj: bpy.types.Object) -> ycdxml.ClipDictionary:
     return clip_dictionary
 
 
-def export_ycd(obj: bpy.types.Object, filepath: str):
+def export_ycd(obj: bpy.types.Object, filepath: str) -> bool:
     clip_dictionary_from_object(obj).write_xml(filepath)
+    return True

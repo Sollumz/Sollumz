@@ -6,7 +6,7 @@ from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_export_settings
 
 
-def export_ydd(ydd_obj: bpy.types.Object, filepath: str):
+def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
 
     ydd_xml = create_ydd_xml(ydd_obj, export_settings.exclude_skeleton)
@@ -14,6 +14,7 @@ def export_ydd(ydd_obj: bpy.types.Object, filepath: str):
     write_embedded_textures(ydd_obj, filepath)
 
     ydd_xml.write_xml(filepath)
+    return True
 
 
 def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):

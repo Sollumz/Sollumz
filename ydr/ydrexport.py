@@ -38,7 +38,7 @@ from ..cwxml.shader import ShaderManager
 from .. import logger
 
 
-def export_ydr(drawable_obj: bpy.types.Object, filepath: str):
+def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
 
     drawable_xml = create_drawable_xml(
@@ -46,6 +46,7 @@ def export_ydr(drawable_obj: bpy.types.Object, filepath: str):
     drawable_xml.write_xml(filepath)
 
     write_embedded_textures(drawable_obj, filepath)
+    return True
 
 
 def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, auto_calc_volume: bool = False, auto_calc_inertia: bool = False, apply_transforms: bool = False):

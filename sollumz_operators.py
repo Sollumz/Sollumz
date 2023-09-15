@@ -162,30 +162,30 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         for obj in objs:
             filepath = None
             try:
+                success = False
                 if obj.sollum_type == SollumType.DRAWABLE:
                     filepath = self.get_filepath(obj, YDR.file_extension)
-                    export_ydr(obj, filepath)
+                    success = export_ydr(obj, filepath)
                 elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                     filepath = self.get_filepath(obj, YDD.file_extension)
-                    export_ydd(obj, filepath)
+                    success = export_ydd(obj, filepath)
                 elif obj.sollum_type == SollumType.FRAGMENT:
                     filepath = self.get_filepath(obj, YFT.file_extension)
-                    export_yft(obj, filepath)
+                    success = export_yft(obj, filepath)
                 elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
                     filepath = self.get_filepath(obj, YCD.file_extension)
-                    export_ycd(obj, filepath)
+                    success = export_ycd(obj, filepath)
                 elif obj.sollum_type in BOUND_TYPES:
                     filepath = self.get_filepath(obj, YBN.file_extension)
-                    export_ybn(obj, filepath)
+                    success = export_ybn(obj, filepath)
                 elif obj.sollum_type == SollumType.YMAP:
                     filepath = self.get_filepath(obj, YMAP.file_extension)
-                    export_ymap(obj, filepath)
+                    success = export_ymap(obj, filepath)
                 else:
                     continue
 
-                self.report(
-                    {"INFO"}, f"Successfully exported '{filepath}'")
-
+                if success:
+                    self.report({"INFO"}, f"Successfully exported '{filepath}'")
             except:
                 self.report({"ERROR"},
                             f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")

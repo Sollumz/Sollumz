@@ -31,13 +31,13 @@ from .properties import (
 )
 
 
-def export_yft(frag_obj: bpy.types.Object, filepath: str):
+def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
     frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
                                    export_settings.auto_calculate_volume, export_settings.apply_transforms)
 
     if frag_xml is None:
-        return
+        return False
 
     if export_settings.export_non_hi:
         frag_xml.write_xml(filepath)
@@ -51,6 +51,12 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str):
 
         write_embedded_textures(frag_obj, hi_filepath)
         logger.info(f"Exported Very High LODs to '{hi_filepath}'")
+    elif export_settings.export_hi and not export_settings.export_non_hi:
+        logger.warning(f"Only Very High LODs selected to export but fragment '{frag_obj.name}' does not have Very High"
+                       " LODs. Nothing was exported.")
+        return False
+
+    return True
 
 
 def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, apply_transforms: bool = False):
