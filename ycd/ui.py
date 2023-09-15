@@ -479,6 +479,9 @@ class SOLLUMZ_PT_CLIP_PROPERTIES(bpy.types.Panel):
         layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_property.bl_idname,
                         text="New", icon="ADD")
 
+        if len(clip_properties.properties) == 0:
+            return
+
         box = layout.box()
         for prop_index, prop in enumerate(clip_properties.properties):
             del_op = draw_clip_attribute(box, prop, ycd_ops.SOLLUMZ_OT_clip_delete_property)
