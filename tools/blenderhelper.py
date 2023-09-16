@@ -250,10 +250,19 @@ def build_bone_map(armature):
     return tag_bone_map
 
 
-def get_armature_obj(armature):
+def get_data_obj(data):
+    if data is None:
+        return None
+
     for obj in bpy.data.objects:
-        if obj.data == armature:
+        if obj.data == data:
             return obj
+
+    return None
+
+
+def get_armature_obj(armature):
+    return get_data_obj(armature)
 
 
 def get_children_recursive(obj) -> list[bpy.types.Object]:

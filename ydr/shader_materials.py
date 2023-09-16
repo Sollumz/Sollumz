@@ -3,6 +3,7 @@ import bpy
 from ..cwxml.shader import ShaderManager, Shader
 from ..sollumz_properties import MaterialType
 from ..tools.blenderhelper import find_bsdf_and_material_output
+from ..tools.animationhelper import add_global_anim_uv_nodes
 
 class ShaderBuilder(NamedTuple):
     shader: Shader
@@ -961,6 +962,9 @@ def create_shader(filename: str):
         create_terrain_shader(builder)
     else:
         create_basic_shader_nodes(builder)
+
+    if shader.is_uv_animation_supported:
+        add_global_anim_uv_nodes(mat)
 
     organize_node_tree(builder)
 

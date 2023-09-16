@@ -6,6 +6,7 @@ import time
 from collections import defaultdict
 import re
 from bpy_extras.io_utils import ImportHelper
+from mathutils import Matrix, Quaternion
 from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel
 from .sollumz_preferences import get_export_settings
@@ -13,7 +14,7 @@ from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
 from .cwxml.bound import YBN
 from .cwxml.navmesh import YNV
-from .cwxml.clipsdictionary import YCD
+from .cwxml.clipdictionary import YCD
 from .cwxml.ytyp import YTYP
 from .cwxml.ymap import YMAP
 from .ydr.ydrimport import import_ydr
@@ -161,30 +162,30 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         for obj in objs:
             filepath = None
             try:
+                success = False
                 if obj.sollum_type == SollumType.DRAWABLE:
                     filepath = self.get_filepath(obj, YDR.file_extension)
-                    export_ydr(obj, filepath)
+                    success = export_ydr(obj, filepath)
                 elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                     filepath = self.get_filepath(obj, YDD.file_extension)
-                    export_ydd(obj, filepath)
+                    success = export_ydd(obj, filepath)
                 elif obj.sollum_type == SollumType.FRAGMENT:
                     filepath = self.get_filepath(obj, YFT.file_extension)
-                    export_yft(obj, filepath)
+                    success = export_yft(obj, filepath)
                 elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
                     filepath = self.get_filepath(obj, YCD.file_extension)
-                    export_ycd(obj, filepath)
+                    success = export_ycd(obj, filepath)
                 elif obj.sollum_type in BOUND_TYPES:
                     filepath = self.get_filepath(obj, YBN.file_extension)
-                    export_ybn(obj, filepath)
+                    success = export_ybn(obj, filepath)
                 elif obj.sollum_type == SollumType.YMAP:
                     filepath = self.get_filepath(obj, YMAP.file_extension)
-                    export_ymap(obj, filepath)
+                    success = export_ymap(obj, filepath)
                 else:
                     continue
 
-                self.report(
-                    {"INFO"}, f"Successfully exported '{filepath}'")
-
+                if success:
+                    self.report({"INFO"}, f"Successfully exported '{filepath}'")
             except:
                 self.report({"ERROR"},
                             f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
@@ -500,7 +501,7 @@ class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     def execute(self, context):
         bpy.context.window_manager.clipboard = self.location
         self.report(
-            {'INFO'}, "Location XDd copied to clipboard: {}".format(self.location))
+            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
         return {'FINISHED'}
 
 
@@ -518,30 +519,10 @@ class SOLLUMZ_OT_copy_rotation(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_copy_all_locations(bpy.types.Operator):
-    """Copy the locations of all selected objects to the clipboard"""
-    bl_idname = "wm.sollumz_copy_all_locations"
-    bl_label = ""
-    locations: bpy.props.StringProperty()
-
-    def execute(self, context):
-        selected_objects = bpy.context.selected_objects
-        locations_text = ""
-        for obj in selected_objects:
-            loc = obj.location
-            locations_text += "{}: {:.6f}, {:.6f}, {:.6f}\n".format(
-                obj.name, loc[0], loc[1], loc[2])
-        bpy.context.window_manager.clipboard = locations_text
-        self.report(
-            {'INFO'}, "Locations copied to clipboard:\n{}".format(locations_text))
-        return {'FINISHED'}
-
-
 class SOLLUMZ_OT_paste_location(bpy.types.Operator):
     """Paste the location of an object from the clipboard"""
     bl_idname = "wm.sollumz_paste_location"
     bl_label = ""
-    location: bpy.props.StringProperty()
 
     def execute(self, context):
         def parse_location_string(location_string):
@@ -564,6 +545,42 @@ class SOLLUMZ_OT_paste_location(bpy.types.Operator):
             self.report({'ERROR'}, "Invalid location string.")
 
         return {'FINISHED'}
+    
+class SOLLUMZ_OT_paste_rotation(bpy.types.Operator):
+    """Paste the rotation (as quaternion) of an object from the clipboard and apply it"""
+    bl_idname = "wm.sollumz_paste_rotation"
+    bl_label = "Paste Rotation"
+
+    def execute(self, context):
+
+        rotation_string = bpy.context.window_manager.clipboard
+
+        rotation_quaternion = parse_rotation_string(rotation_string)
+        if rotation_quaternion is not None:
+            selected_object = bpy.context.object
+
+            prev_rotation_mode = selected_object.rotation_mode
+            selected_object.rotation_mode = "QUATERNION"
+            selected_object.rotation_quaternion = rotation_quaternion
+            selected_object.rotation_mode = prev_rotation_mode
+
+            self.report({"INFO"}, "Rotation set successfully.")
+        else:
+            self.report({"ERROR"}, "Invalid rotation quaternion string.")
+        return {"FINISHED"}
+
+def parse_rotation_string(rotation_string):
+    values = rotation_string.split(",")
+    if len(values) == 4:
+        try:
+            x = float(values[0].strip())
+            y = float(values[1].strip())
+            z = float(values[2].strip())
+            w = float(values[3].strip())
+            return Quaternion((w, x, y, z))
+        except ValueError:
+            pass
+    return None
 
 
 class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):

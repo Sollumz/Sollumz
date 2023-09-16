@@ -1,6 +1,6 @@
 import bpy
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
-from .sollumz_operators import SOLLUMZ_OT_copy_all_locations, SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location
+from .sollumz_operators import SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location, SOLLUMZ_OT_paste_rotation
 from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import SollumType, MaterialType
 from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
@@ -172,20 +172,9 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
                         text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
 
 
-class SOLLUMZ_PT_import_animation(bpy.types.Panel, SollumzImportSettingsPanel):
-    bl_label = "Animation"
-    bl_order = 3
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        armature_list_box = layout.box()
-        armature_list_box.label(text="Target skeleton")
-        armature_list_box.template_list(SOLLUMZ_UL_armature_list.bl_idname, "",
-                                        bpy.data, "armatures", settings, "selected_armature")
-
-
 class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Ymap"
-    bl_order = 4
+    bl_order = 3
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "ymap_skip_missing_entities")
@@ -210,7 +199,6 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_order = 1
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "auto_calculate_bone_tag")
         layout.prop(settings, "apply_transforms")
         layout.prop(settings, "export_with_ytyp")
 
@@ -328,40 +316,31 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
-        # Get the locations and rotations of the selected objects
         selected_objects = bpy.context.selected_objects
-        if len(selected_objects) > 0:
-            for obj in selected_objects:
-                loc = obj.location
-                row = layout.row()
-                row.label(text="{}: {:.6f}, {:.6f}, {:.6f}".format(
-                    obj.name, loc[0], loc[1], loc[2]))
 
-                # Add a Clipboard button to copy the location to the clipboard
-                clip_button = row.operator(
-                    SOLLUMZ_OT_copy_location.bl_idname, text="", icon='COPYDOWN')
-                clip_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
-                    loc[0], loc[1], loc[2])
-
-                # Convert the object's rotation to a quaternion and copy it to the clipboard
-                rot = obj.matrix_world.to_quaternion()
-                rot_button = row.operator(
-                    SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN')
-                rot_button.rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
-                    rot.x, rot.y, rot.z, rot.w)
-                paste_button = row.operator(SOLLUMZ_OT_paste_location.bl_idname,
-                                            text="", icon='PASTEDOWN')
-                paste_button.location = "{:.6f}, {:.6f}, {:.6f}".format(
-                    loc[0], loc[1], loc[2])
-
-            # Add a button to copy all selected objects' locations to the clipboard
-            if len(selected_objects) > 1:
-                row = layout.row()
-                row.operator(SOLLUMZ_OT_copy_all_locations.bl_idname,
-                             text="Copy All Locations", icon='COPY_ID')
-        else:
+        if not selected_objects:
             layout.label(text="No objects selected")
+            return
+
+        for obj in selected_objects:
+            loc = obj.location
+            rot = obj.matrix_world.to_quaternion()
+
+            box = layout.box()
+            row = box.row(align=True)
+            row.prop(obj, "name", text="", emboss=False)
+
+            row.operator(SOLLUMZ_OT_copy_location.bl_idname, text="", icon='COPYDOWN') \
+               .location = "{:.6f}, {:.6f}, {:.6f}".format(loc[0], loc[1], loc[2])
+            
+            row.operator(SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN') \
+               .rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(rot.x, rot.y, rot.z, rot.w)
+
+            row.operator(SOLLUMZ_OT_paste_location.bl_idname, text="", icon='PASTEDOWN')
+
+            row.operator(SOLLUMZ_OT_paste_rotation.bl_idname, text="", icon='PASTEDOWN')
+
+
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):

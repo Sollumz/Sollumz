@@ -40,7 +40,7 @@ T_PolyCylCap = TypeVar("T_PolyCylCap", bound=PolyCylinder | PolyCapsule)
 MAX_VERTICES = 32767
 
 
-def export_ybn(obj: bpy.types.Object, filepath: str):
+def export_ybn(obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
 
     bounds = BoundFile()
@@ -50,6 +50,7 @@ def export_ybn(obj: bpy.types.Object, filepath: str):
     bounds.composite = composite
 
     bounds.write_xml(filepath)
+    return True
 
 
 def create_composite_xml(

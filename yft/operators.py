@@ -2,6 +2,7 @@ from math import radians
 import bpy
 import bmesh
 from mathutils import Matrix, Vector
+from itertools import chain
 
 from ..tools.meshhelper import calculate_volume, get_combined_bound_box
 
@@ -221,52 +222,79 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
-    """
-    Generate instances of wheel mesh to preview all 4 wheels at once (has no effect on export)
-    """
+    """Generate instances of wheel meshes to preview all wheels at once (has no effect on export)"""
     bl_idname = "sollumz.generate_wheel_instances"
     bl_label = "Generate Wheel Instances"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
-        aobj = context.active_object
+        obj = context.active_object
 
-        return aobj is not None and aobj.sollumz_is_physics_child_mesh and aobj.type == "MESH"
+        return obj is not None and find_sollumz_parent(obj, SollumType.FRAGMENT) is not None
 
     def execute(self, context):
-        aobj = context.active_object
-        frag_obj = find_sollumz_parent(aobj, SollumType.FRAGMENT)
+        obj = context.active_object
+        frag_obj = find_sollumz_parent(obj, SollumType.FRAGMENT)
 
-        if frag_obj is None:
-            self.report({"INFO"}, "Object must be parented to a Fragment!")
+        drawable_obj = next((obj for obj in frag_obj.children if obj.sollum_type == SollumType.DRAWABLE), None)
+        if drawable_obj is None:
+            self.report({"WARNING"}, "This fragment object is missing the drawable object!")
             return {"CANCELLED"}
 
-        child_of_bone = get_child_of_bone(aobj)
+        wheel_bones_front = {
+            "wheel_lf", "wheel_rf",
+        }
+        wheel_bones_rear = {
+            "wheel_lr", "wheel_lm1", "wheel_lm2", "wheel_lm3",
+            "wheel_rr", "wheel_rm1", "wheel_rm2", "wheel_rm3",
+        }
 
-        if child_of_bone is None:
-            self.report(
-                {"WARNING"}, "Failed to create instances. The object has no Child Of constraint or the constraint bone is not set!")
-            return {"CANCELLED"}
-
-        wheel_bones = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
-        empty = create_empty_object(
-            SollumType.NONE, f"{frag_obj.name}.wheel_previews")
-        empty.parent = frag_obj
-
-        for bone_name in wheel_bones:
-            if bone_name == child_of_bone.name or bone_name not in frag_obj.data.bones:
+        wheel_front_obj = None
+        wheel_rear_obj = None
+        for model_obj in drawable_obj.children:
+            if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
                 continue
 
-            instance = create_blender_object(
-                SollumType.NONE, f"{bone_name}.preview", aobj.data)
-            add_child_of_bone_constraint(instance, frag_obj, bone_name)
+            parent_bone = get_child_of_bone(model_obj)
+            if parent_bone.name in wheel_bones_front:
+                wheel_front_obj = model_obj
+            elif parent_bone.name in wheel_bones_rear:
+                wheel_rear_obj = model_obj
 
-            # Rotate wheels on the other side
-            if ("_l" in child_of_bone.name and "_r" in bone_name) or ("_r" in child_of_bone.name and "_l" in bone_name):
-                instance.matrix_world = Matrix.Rotation(
-                    radians(180), 4, "Y") @ instance.matrix_world
-            instance.parent = empty
+        if wheel_front_obj is None and wheel_rear_obj is None:
+            self.report({"WARNING"}, "No wheel meshes found in this fragment object!")
+            return {"CANCELLED"}
+
+        if wheel_front_obj is None:
+            wheel_front_obj = wheel_rear_obj
+        if wheel_rear_obj is None:
+            wheel_rear_obj = wheel_front_obj
+
+        # create objects in same collection as the fragment object
+        with context.temp_override(collection=frag_obj.users_collection[0]):
+            empty = create_empty_object(SollumType.NONE, f"{frag_obj.name}.wheel_previews")
+            empty.parent = frag_obj
+
+            for bone_name in chain(wheel_bones_front, wheel_bones_rear):
+                if bone_name not in frag_obj.data.bones:
+                    continue
+
+                wheel_obj = wheel_front_obj if bone_name in wheel_bones_front else wheel_rear_obj
+                wheel_obj_bone_name = get_child_of_bone(wheel_obj).name
+                if wheel_obj_bone_name == bone_name:
+                    continue
+
+                instance = create_blender_object(SollumType.NONE, f"{bone_name}.preview", wheel_obj.data)
+                add_child_of_bone_constraint(instance, frag_obj, bone_name)
+
+                # Rotate wheels on the other side
+                instance_is_left_side = "_l" in bone_name
+                wheel_is_left_side = "_l" in wheel_obj_bone_name
+                if instance_is_left_side != wheel_is_left_side:
+                    instance.matrix_world = Matrix.Rotation(radians(180), 4, "Y") @ instance.matrix_world
+
+                instance.parent = empty
 
         return {"FINISHED"}
 

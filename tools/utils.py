@@ -2,7 +2,7 @@ import os
 import numpy
 from numpy.typing import NDArray
 from math import sqrt
-from typing import Iterable
+from typing import Iterable, Tuple
 from mathutils import Vector, Quaternion, Matrix
 
 
@@ -224,3 +224,14 @@ def reshape_mat_4x3(mat_4x4: Matrix):
         mat_4x4[3][:3],
     ))
 
+
+def color_hash(data: str) -> Tuple[float, float, float, float]:
+    from hashlib import md5
+
+    m = md5(usedforsecurity=False)
+    m.update(data.encode("utf-8"))
+    data_hash = m.digest()
+    r = data_hash[0] / 255
+    g = data_hash[1] / 255
+    b = data_hash[2] / 255
+    return r, g, b, 1.0

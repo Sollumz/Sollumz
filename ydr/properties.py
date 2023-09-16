@@ -1,10 +1,10 @@
 import bpy
 import os
-
+from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
-from ..ydr.shader_materials import shadermats, ShaderMaterial
+from ..ydr.shader_materials import shadermats
 from bpy.app.handlers import persistent
 from bpy.path import basename
 
@@ -146,7 +146,62 @@ class BoneFlag(bpy.types.PropertyGroup):
 
 
 class BoneProperties(bpy.types.PropertyGroup):
-    tag: bpy.props.IntProperty(name="Tag", default=0, min=0)
+    @staticmethod
+    def calc_tag_hash(bone_name: str) -> int:
+        h = 0
+        for char in str.upper(bone_name):
+            char = ord(char)
+            h = (h << 4) + char
+            x = h & 0xF0000000
+
+            if x != 0:
+                h ^= x >> 24
+
+            h &= ~x
+
+        return h % 0xFE8F + 0x170
+
+    def get_bone(self) -> Optional[bpy.types.Bone]:
+        armature: bpy.types.Armature = self.id_data
+        if armature is None or not isinstance(armature, bpy.types.Armature):
+            return None
+
+        # no direct way to access the Bone from a PropertyGroup so iterate the armature bones until we find ourselves
+        for bone in armature.bones:
+            if bone.bone_properties == self:
+                return bone
+        return None
+
+    def calc_tag(self) -> Optional[int]:
+        bone = self.get_bone()
+        if bone is None:
+            return None
+
+        is_root = bone.parent is None
+        tag = 0 if is_root else BoneProperties.calc_tag_hash(bone.name)
+        return tag
+
+    def get_tag(self) -> int:
+        if self.use_manual_tag:
+            return self.manual_tag
+
+        tag = self.calc_tag()
+        if tag is None:
+            # fallback to manual tag if for some reason we are not in a bone
+            tag = self.manual_tag
+        return tag
+
+    def set_tag(self, value: int):
+        self.manual_tag = value
+        self.use_manual_tag = value != self.calc_tag()
+
+    tag: bpy.props.IntProperty(
+            name="Tag", description="Unique value that identifies this bone in the armature",
+            get=get_tag, set=set_tag, default=0, min=0, max=0xFFFF)
+    manual_tag: bpy.props.IntProperty(name="Manual Tag", default=0, min=0, max=0xFFFF)
+    use_manual_tag: bpy.props.BoolProperty(
+        name="Use Manual Tag", description="Specify a tag instead of auto-calculating it",
+        default=False)
     flags: bpy.props.CollectionProperty(type=BoneFlag)
     ul_index: bpy.props.IntProperty(name="UIListIndex", default=0)
 
