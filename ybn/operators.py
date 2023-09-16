@@ -328,7 +328,16 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Delete Flag Preset"
     bl_action = f"{bl_label}"
 
-    preset_blacklist = ["Default"]
+    preset_blacklist = [
+        "General (Default)",
+        "General 2",
+        "Water surface",
+        "Leaves - Bush",
+        "Stair plane",
+        "Stair mesh",
+        "Deep surface",
+    ]
+
 
     def run(self, context):
         index = context.scene.flag_preset_index
@@ -357,6 +366,7 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             self.message(
                 f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
             return False
+
 
 
 class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
