@@ -338,7 +338,8 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         "Deep surface",
     ]
 
-    def run(self, context, event):
+
+    def run(self, context):
         index = context.scene.flag_preset_index
         load_flag_presets()
 
@@ -346,36 +347,25 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             preset = flag_presets.presets[index]
             if preset.name in self.preset_blacklist:
                 self.message("Cannot delete a default preset!")
-                return {'CANCELLED'}
+                return False
 
-        except IndexError:
-            self.message(
-                f"Flag preset does not exist! Ensure the preset file is present in the '{get_flag_presets_path()}' directory.")
-            return {'CANCELLED'}
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Are you sure you want to delete this preset?")
-
-    def run(self, context):
-        try:
             filepath = get_flag_presets_path()
-            preset = flag_presets.presets[context.scene.flag_preset_index]
             flag_presets.presets.remove(preset)
 
             try:
                 flag_presets.write_xml(filepath)
                 load_flag_presets()
-                return {'FINISHED'}
+
+                return True
             except:
                 self.error(
                     f"Error during deletion of flag preset: {traceback.format_exc()}")
-                return {'CANCELLED'}
+                return False
 
         except IndexError:
             self.message(
                 f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-            return {'CANCELLED'}
+            return False
 
 
 
