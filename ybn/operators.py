@@ -338,9 +338,7 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         "Deep surface",
     ]
 
-    confirm_delete = bpy.props.BoolProperty(default=False)
-
-    def invoke(self, context, event):
+    def run(self, context, event):
         index = context.scene.flag_preset_index
         load_flag_presets()
 
@@ -349,10 +347,6 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             if preset.name in self.preset_blacklist:
                 self.message("Cannot delete a default preset!")
                 return {'CANCELLED'}
-
-            self.confirm_delete = True
-            wm = context.window_manager
-            return wm.invoke_props_dialog(self)
 
         except IndexError:
             self.message(

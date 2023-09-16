@@ -340,7 +340,6 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
         layout = self.layout
         layout.template_list(
             SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "", context.scene, "flag_presets", context.scene, "flag_preset_index"
-
         )
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname, icon='FOLDER_REDIRECT')
