@@ -278,12 +278,12 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(
             ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
+
         grid = layout.grid_flow(align=True)
         grid.operator(
             ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname, icon="TEXTURE")
         grid.operator(
             ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
-        grid = layout.grid_flow(align=True)
         grid.operator(
             ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname, icon="MATERIAL")
         grid.operator(
@@ -370,32 +370,35 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        layout.label(text="Rigging", icon="ARMATURE_DATA")
-        layout.operator("sollumz.add_child_of_constraint",
-                        icon="CONSTRAINT_BONE")
-        layout.operator("sollumz.add_armature_modifier",
-                        icon="MOD_ARMATURE")
+        box = layout.box()
+        box.label(text="Rigging", icon="ARMATURE_DATA")
+        col = box.column(align=True)
+        col.operator("sollumz.add_child_of_constraint", icon="CONSTRAINT_BONE")
+        col.operator("sollumz.add_armature_modifier", icon="MOD_ARMATURE")
+
         layout.separator()
 
-        layout.label(text="Apply Bone Properties", icon="MODIFIER_ON")
-        row = layout.row(align=True)
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname)
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname)
+        box = layout.box()
+        box.label(text="Apply Bone Properties", icon="MODIFIER_ON")
+        col = box.column(align=True)
+        col.operator(ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname)
+        col.operator(ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname)
+
         layout.separator()
-        layout.label(text="Apply Bone Flags", icon="BOOKMARKS")
-        row = layout.row(align=True)
-        row.operator(ydr_ops.SOLLUMZ_OT_clear_bone_flags.bl_idname,
-                     text="Clear All")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_translation_bone_flags.bl_idname, text="Translation")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_limit_bone_flags.bl_idname, text="Limit")
+
+        box = layout.box()
+        box.label(text="Apply Bone Flags", icon="BOOKMARKS")
+        col = box.column(align=True)
+
+        split = col.split(factor=0.5)
+        row1 = split.row(align=True)
+        row2 = split.row(align=True)
+
+        row1.operator(ydr_ops.SOLLUMZ_OT_limit_bone_flags.bl_idname, text="Limit")
+        row1.operator(ydr_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
+        row2.operator(ydr_ops.SOLLUMZ_OT_translation_bone_flags.bl_idname, text="Translation")
+        row2.operator(ydr_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
+        col.operator(ydr_ops.SOLLUMZ_OT_clear_bone_flags.bl_idname, text="Clear All")
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):

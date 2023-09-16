@@ -7,9 +7,11 @@ from . import operators as ybn_ops
 
 
 def generate_flags(layout, prop):
-    grid = layout.grid_flow(columns=4, even_columns=True, even_rows=True)
+    box = layout.box()
+    grid = box.grid_flow(columns=4, even_columns=True, even_rows=True)
+
     for prop_name in BoundFlags.__annotations__:
-        grid.prop(prop, prop_name)
+        grid.prop(prop, prop_name, toggle=True)
 
 
 class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
@@ -138,18 +140,22 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     bl_order = 1
 
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
         obj = context.active_object
         return obj is not None and obj.parent is not None and obj.parent.sollum_type == SollumType.BOUND_COMPOSITE and obj.sollum_type in BOUND_TYPES
 
     def draw(self, context):
         obj = context.active_object
         layout = self.layout
-        layout.label(text="Type Flags")
-        generate_flags(layout, obj.composite_flags1)
-        layout.separator_spacer()
-        layout.label(text="Include Flags")
-        generate_flags(layout, obj.composite_flags2)
+
+        split = layout.split(factor=0.5)
+        col = split.column()
+        col.label(text="Type Flags")
+        generate_flags(col, obj.composite_flags1)
+
+        col = split.column()
+        col.label(text="Include Flags")
+        generate_flags(col, obj.composite_flags2)
 
 
 class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
@@ -172,10 +178,15 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
     def draw(self, context):
         mat = context.active_object.active_material
         layout = self.layout
-        layout.label(text="Flags")
+
+        split = layout.split(factor=0.5)
+        col = split.column()
+        col.label(text="Flags")
+
         grid = layout.grid_flow(columns=4, even_columns=True, even_rows=True)
+
         for prop_name in CollisionMatFlags.__annotations__:
-            grid.prop(mat.collision_flags, prop_name)
+            grid.prop(mat.collision_flags, prop_name, toggle=True)
 
 
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):

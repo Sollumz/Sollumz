@@ -167,16 +167,30 @@ class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
 
         obj = context.view_layer.objects.active
         lod_props = obj.fragment_properties.lod_properties
 
-        for prop in lod_props.__annotations__:
-            if prop == "archetype_properties":
-                continue
-            layout.prop(lod_props, prop)
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        layout.prop(lod_props, "unknown_14", text="Unknown 14")
+        layout.prop(lod_props, "unknown_18", text="Unknown 18")
+        layout.prop(lod_props, "unknown_1c", text="Unknown 1C")
+        layout.prop(lod_props, "position_offset", text="Position Offset")
+
+        layout.separator()
+
+        box = layout.box()
+        box.label(text="Damping", icon="MODIFIER")
+        box.prop(lod_props, "damping_linear_c", text="Linear C")
+        box.prop(lod_props, "damping_linear_v", text="Linear V")
+        box.prop(lod_props, "damping_linear_v2", text="Linear V2")
+        box.prop(lod_props, "damping_angular_c", text="Angular C")
+        box.prop(lod_props, "damping_angular_v", text="Angular V")
+        box.prop(lod_props, "damping_angular_v2", text="Angular V2")
+
+        layout.separator()
 
 
 class SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL(bpy.types.Panel):

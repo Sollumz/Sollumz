@@ -332,15 +332,13 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
 
             row.operator(SOLLUMZ_OT_copy_location.bl_idname, text="", icon='COPYDOWN') \
                .location = "{:.6f}, {:.6f}, {:.6f}".format(loc[0], loc[1], loc[2])
-            
+
             row.operator(SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN') \
                .rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(rot.x, rot.y, rot.z, rot.w)
 
             row.operator(SOLLUMZ_OT_paste_location.bl_idname, text="", icon='PASTEDOWN')
 
             row.operator(SOLLUMZ_OT_paste_rotation.bl_idname, text="", icon='PASTEDOWN')
-
-
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):

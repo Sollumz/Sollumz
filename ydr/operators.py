@@ -141,6 +141,7 @@ class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
 class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.create_light"
     bl_label = "Create Light"
+    bl_description = "Create A Sollumz Light"
     bl_action = bl_label
 
     def run(self, context):
@@ -262,7 +263,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
 
 
 class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Sets all textures to embedded on the selected objects active material"""
+    """embeds all textures for the currently selected material on the active object."""
     bl_idname = "sollumz.setallembedded"
     bl_label = "Set all Textures Embedded"
     bl_action = "Set all Textures Embedded"
@@ -297,7 +298,7 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
 
 
 class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Sets all materials to embedded"""
+    """Sets all materials to embedded for the currently selected object."""
     bl_idname = "sollumz.setallmatembedded"
     bl_label = "Set all Materials Embedded"
     bl_action = "Set All Materials Embedded"
@@ -328,9 +329,9 @@ class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator)
 
 
 class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Remove all embeded textures on the selected objects active material"""
+    """Unembeds all textures for the currently selected material on the active object."""
     bl_idname = "sollumz.removeallembedded"
-    bl_label = "Remove all Embeded Textures"
+    bl_label = "Set All Textures Unembedded"
     bl_action = "Remove all Embeded Textures"
 
     def set_textures_unembedded(self, obj):
@@ -363,7 +364,7 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
 
 
 class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Make all materials on the selected object use non-embedded textures"""
+    """Sets all materials to unembedded for the currently selected object."""
     bl_idname = "sollumz.removeallmatembedded"
     bl_label = "Set all Materials Unembedded"
     bl_action = "Set all Materials Unembedded"
@@ -452,6 +453,7 @@ class SOLLUMZ_OT_LIGHT_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
 class SOLLUMZ_OT_apply_bone_properties_to_armature(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.apply_bone_properties_to_armature"
     bl_label = "To Armature"
+    bl_description = "Apply bone properties to all bones in the armature"
     bl_action = bl_label
 
     def run(self, context):
@@ -473,6 +475,7 @@ class SOLLUMZ_OT_apply_bone_properties_to_armature(SOLLUMZ_OT_base, bpy.types.Op
 class SOLLUMZ_OT_apply_bone_properties_to_selected_bones(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.apply_bone_properties_to_selected_bones"
     bl_label = "To Selected Bones"
+    bl_description = "Apply bone properties to selected bones"
     bl_action = bl_label
 
     def run(self, context):
