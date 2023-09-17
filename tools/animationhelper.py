@@ -756,10 +756,19 @@ def update_uv_clip_hash(clip_obj) -> bool:
         logger.error(f"Drawable model '{drawable_model.name}' has no parent.")
         return False
 
-    drawable_model_name = drawable_model.parent.name
+    parent = None
+    temp_parent_obj = drawable_model
+    while temp_parent_obj.parent:
+        temp_parent_obj = temp_parent_obj.parent
+        if temp_parent_obj.sollum_type == SollumType.DRAWABLE or temp_parent_obj.sollum_type == SollumType.FRAGMENT :
+            parent = temp_parent_obj
+        else:
+            break
+
+    model_name = parent.name
     material_index = target.shader_properties.index
 
-    clip_hash = jenkhash.Generate(drawable_model_name) + (material_index + 1)
+    clip_hash = jenkhash.Generate(model_name) + (material_index + 1)
     clip_hash_str = f"hash_{clip_hash:08X}"
 
     clip_obj.clip_properties.hash = clip_hash_str
