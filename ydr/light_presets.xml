@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<LightPresetsFile>
+  <LightPresets>
+    <Item name="Spot: Streetlight 1">
+      <Color x="1.0" y="0.40784314" z="0.0" />
+      <Energy value="16000" />
+      <CutoffDistance value="18" />
+      <ShadowSoftSize value="19.2" />
+      <VolumeFactor value="1" />
+      <ShadowBufferClipStart value="0.01" />
+      <SpotSize value="2.443461" />
+      <SpotBlend value="0.9444444" />
+      <TimeFlags value="15728703" />
+      <Flags value="1408" />
+      <Flashiness value="0" />
+      <VolumeSizeScale value="1" />
+      <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
+      <VolumeOuterIntensity value="1" />
+      <VolumeOuterExponent value="1" />
+      <LightFadeDistance value="0" />
+      <ShadowFadeDistance value="40" />
+      <SpecularFadeDistance value="40" />
+      <VolumetricFadeDistance value="0" />
+      <CullingPlaneNormal x="-0.8372506" y="0.4854814" z="-0.251633" />
+      <CullingPlaneOffset value="18" />
+      <CoronaSize value="3" />
+      <CoronaIntensity value="0.1" />
+      <CoronaZBias value="0.1" />
+      <Unknown45 value="0" />
+      <Unknown46 value="0" />
+      <ShadowBlur value="0" />
+      <ConeInnerAngle value="0" />
+      <ConeOuterAngle value="0" />
+      <Extent x="1.0" y="1.0" z="1.0" />
+    </Item>
+    <Item name="Point: Wall Light 1">
+      <Color x="1.0" y="1.0" z="1.0" />
+      <Energy value="500" />
+      <CutoffDistance value="2" />
+      <ShadowSoftSize value="12.8" />
+      <VolumeFactor value="1" />
+      <ShadowBufferClipStart value="0.01" />
+      <SpotSize value="0" />
+      <SpotBlend value="0" />
+      <TimeFlags value="15728767" />
+      <Flags value="0" />
+      <Flashiness value="0" />
+      <VolumeSizeScale value="1" />
+      <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
+      <VolumeOuterIntensity value="1" />
+      <VolumeOuterExponent value="1" />
+      <LightFadeDistance value="20" />
+      <ShadowFadeDistance value="0" />
+      <SpecularFadeDistance value="0" />
+      <VolumetricFadeDistance value="0" />
+      <CullingPlaneNormal x="0.6779036" y="0.3486788" z="-0.6472016" />
+      <CullingPlaneOffset value="2" />
+      <CoronaSize value="0" />
+      <CoronaIntensity value="1" />
+      <CoronaZBias value="0.1" />
+      <Unknown45 value="0" />
+      <Unknown46 value="0" />
+      <ShadowBlur value="0" />
+      <ConeInnerAngle value="0" />
+      <ConeOuterAngle value="0" />
+      <Extent x="1.0" y="1.0" z="1.0" />
+    </Item>
+    <Item name="Spot: Wall Light 1">
+      <Color x="1.0" y="1.0" z="1.0" />
+      <Energy value="4000" />
+      <CutoffDistance value="5" />
+      <ShadowSoftSize value="12.8" />
+      <VolumeFactor value="1" />
+      <ShadowBufferClipStart value="0.01" />
+      <SpotSize value="3.0717795" />
+      <SpotBlend value="0.9444444" />
+      <TimeFlags value="15728703" />
+      <Flags value="384" />
+      <ProjectedTextureHash>hash_A94A6095</ProjectedTextureHash>
+      <Flashiness value="0" />
+      <VolumeSizeScale value="1" />
+      <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
+      <VolumeOuterIntensity value="1" />
+      <VolumeOuterExponent value="1" />
+      <LightFadeDistance value="0" />
+      <ShadowFadeDistance value="20" />
+      <SpecularFadeDistance value="0" />
+      <VolumetricFadeDistance value="0" />
+      <CullingPlaneNormal x="0.6779035" y="0.6472016" z="0.3486789" />
+      <CullingPlaneOffset value="5" />
+      <CoronaSize value="0.3" />
+      <CoronaIntensity value="0.1" />
+      <CoronaZBias value="0.1" />
+      <Unknown45 value="0" />
+      <Unknown46 value="0" />
+      <ShadowBlur value="0" />
+      <ConeInnerAngle value="0" />
+      <ConeOuterAngle value="0" />
+      <Extent x="1.0" y="1.0" z="1.0" />
+    </Item>
+    <Item name="Point: Wall Light 2">
+      <Color x="1.0" y="1.0" z="1.0" />
+      <Energy value="250" />
+      <CutoffDistance value="2" />
+      <ShadowSoftSize value="6.4" />
+      <VolumeFactor value="1" />
+      <ShadowBufferClipStart value="0.01" />
+      <SpotSize value="0" />
+      <SpotBlend value="0" />
+      <TimeFlags value="15728767" />
+      <Flags value="2097152" />
+      <Flashiness value="0" />
+      <VolumeSizeScale value="1" />
+      <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
+      <VolumeOuterIntensity value="1" />
+      <VolumeOuterExponent value="1" />
+      <LightFadeDistance value="20" />
+      <ShadowFadeDistance value="0" />
+      <SpecularFadeDistance value="0" />
+      <VolumetricFadeDistance value="0" />
+      <CullingPlaneNormal x="0.6779034" y="-0.01043722" z="0.7350769" />
+      <CullingPlaneOffset value="2" />
+      <CoronaSize value="0" />
+      <CoronaIntensity value="1" />
+      <CoronaZBias value="0.1" />
+      <Unknown45 value="0" />
+      <Unknown46 value="0" />
+      <ShadowBlur value="0" />
+      <ConeInnerAngle value="0" />
+      <ConeOuterAngle value="0" />
+      <Extent x="1.0" y="1.0" z="1.0" />
+    </Item>
+    <Item name="Spot: Wall Light 2">
+      <Color x="1.0" y="1.0" z="1.0" />
+      <Energy value="1500" />
+      <CutoffDistance value="8" />
+      <ShadowSoftSize value="25.6" />
+      <VolumeFactor value="1" />
+      <ShadowBufferClipStart value="0.01" />
+      <SpotSize value="2.9670596" />
+      <SpotBlend value="0.5555556" />
+      <TimeFlags value="15728703" />
+      <Flags value="384" />
+      <ProjectedTextureHash>hash_249E51B0</ProjectedTextureHash>
+      <Flashiness value="0" />
+      <VolumeSizeScale value="1" />
+      <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
+      <VolumeOuterIntensity value="1" />
+      <VolumeOuterExponent value="1" />
+      <LightFadeDistance value="0" />
+      <ShadowFadeDistance value="30" />
+      <SpecularFadeDistance value="0" />
+      <VolumetricFadeDistance value="0" />
+      <CullingPlaneNormal x="0.6779034" y="-0.5698102" z="0.4645034" />
+      <CullingPlaneOffset value="8" />
+      <CoronaSize value="3" />
+      <CoronaIntensity value="0.1" />
+      <CoronaZBias value="0.1" />
+      <Unknown45 value="0" />
+      <Unknown46 value="0" />
+      <ShadowBlur value="0" />
+      <ConeInnerAngle value="0" />
+      <ConeOuterAngle value="0" />
+      <Extent x="1.0" y="1.0" z="1.0" />
+    </Item>
+  </LightPresets>
+</LightPresetsFile>
