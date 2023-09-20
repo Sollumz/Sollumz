@@ -110,6 +110,9 @@ def set_light_bpy_properties(light_xml: Light, light_data: bpy.types.Light):
         light_data.spot_blend = abs(
             (radians(light_xml.cone_inner_angle) / pi) - 1)
         light_data.spot_size = radians(light_xml.cone_outer_angle) * 2
+    elif light_data.sollum_type == LightType.CAPSULE:
+        light_data.light_properties.cone_inner_angle = light_xml.cone_inner_angle
+        light_data.light_properties.cone_outer_angle = light_xml.cone_outer_angle
 
 
 def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
@@ -227,6 +230,8 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.projected_texture_hash = light_props.projected_texture_hash
 
     if light_data.sollum_type == LightType.SPOT:
-        light_xml.cone_inner_angle = degrees(
-            abs((light_data.spot_blend * pi) - pi))
+        light_xml.cone_inner_angle = degrees(abs((light_data.spot_blend * pi) - pi))
         light_xml.cone_outer_angle = degrees(light_data.spot_size) / 2
+    elif light_data.sollum_type == LightType.CAPSULE:
+        light_xml.cone_inner_angle = light_data.light_properties.cone_inner_angle
+        light_xml.cone_outer_angle = light_data.light_properties.cone_outer_angle
