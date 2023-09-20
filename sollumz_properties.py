@@ -114,6 +114,7 @@ class TextureFormat(str, Enum):
     A1R8G8B8 = "sollumz_a1r8g8b8"
     A8R8G8B8 = "sollumz_a8r8g8b8"
     A8B8G8R8 = "sollumz_a8b8g8r8"
+    X8R8G8B8 = "sollumz_x8r8g8b8"
     A8 = "sollumz_a8"
     L8 = "sollumz_l8"
 
@@ -350,6 +351,7 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.A1R8G8B8: "D3DFMT_A1R8G8B8",
     TextureFormat.A8R8G8B8: "D3DFMT_A8R8G8B8",
     TextureFormat.A8B8G8R8: "D3DFMT_A8B8G8R8",
+    TextureFormat.X8R8G8B8: "D3DFMT_X8R8G8B8",
     TextureFormat.A8: "D3DFMT_A8",
     TextureFormat.L8: "D3DFMT_L8",
 
