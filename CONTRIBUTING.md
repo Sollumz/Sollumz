@@ -39,7 +39,7 @@ We welcome suggestions for new features, improvements, or changes to the project
 
 ### Documentation
 
-We use GitBook for our [wiki][wiki]. The source is located in the [`wiki` branch][wiki_branch]. You can edit the Markdown files and submit changes through [pull requests](#pull-requests).
+We use GitBook for our [wiki][wiki]. The source is located in the [`wiki` repository][wiki_repo]. You can edit the Markdown files and submit changes through [pull requests](#pull-requests).
 
 For bigger pieces of work, such as writing a complete tutorial, you can ask on our [Discord][discord_server] for access as editor in GitBook. Then you can use GitBook's interface to edit and submit your changes for review.
 
@@ -47,7 +47,7 @@ For bigger pieces of work, such as writing a complete tutorial, you can ask on o
 
 We encourage you to submit pull requests to contribute directly to the project. Here's how you can do it:
 
-1. Fork the repository and create your branch from `main`, or from `wiki` for documentation changes.
+1. Fork the repository and create your branch from `main`.
 2. Make your changes, following the [style guidelines](#style-guidelines).
 3. Ensure your code passes any existing tests.
 4. Write clear and concise commit messages following our [commit guidelines](#commit-guidelines).
@@ -136,4 +136,4 @@ By contributing to this project, you agree that your contributions will be licen
 [discord_server]: https://discord.gg/bZuWBWaQBg
 [issue_tracker]: https://github.com/Skylumz/Sollumz/issues
 [wiki]: https://sollumz.gitbook.io/sollumz-wiki/
-[wiki_branch]: https://github.com/Skylumz/Sollumz/tree/wiki
+[wiki_repo]: https://github.com/Sollumz/wiki
