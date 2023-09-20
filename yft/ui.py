@@ -8,8 +8,10 @@ from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
     GroupFlagBit,
 )
-from .operators import SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID, SOLLUMZ_OT_SELECT_LIGHT_ID
-
+from .operators import (
+    SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID,
+    SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS
+)
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Fragments"
@@ -77,6 +79,24 @@ class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
         row.operator(SOLLUMZ_OT_SET_MASS.bl_idname, icon="WORLD")
         row.prop(context.scene, "set_mass_amount", text="")
         layout.operator("sollumz.calculate_mass", icon="SNAP_VOLUME")
+
+
+class SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL(bpy.types.Panel):
+    bl_label = "Copy Bone Physics"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
+    bl_order = 4
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="BONE_DATA")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+        row.operator(SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS.bl_idname, icon="BONE_DATA")
 
 
 class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):

@@ -105,6 +105,58 @@ class SOLLUMZ_OT_SET_MASS(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
+    """Copy the physics properties of the active bone to all selected bones. Can only be used in Pose Mode."""
+    bl_idname = "sollumz.copy_frag_bone_physics"
+    bl_label = "Copy Bone Physics"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == "POSE" and context.active_pose_bone is not None and len(context.selected_pose_bones) > 1
+
+    def execute(self, context):
+        src_pose_bone = context.active_pose_bone
+        src_props = src_pose_bone.bone.group_properties
+        num_dst_bones = 0
+        for dst_pose_bone in context.selected_pose_bones:
+            if dst_pose_bone == src_pose_bone:
+                continue
+
+            dst_props = dst_pose_bone.bone.group_properties
+            dst_props.flags = src_props.flags
+            dst_props.glass_type = src_props.glass_type
+            dst_props.strength = src_props.strength
+            dst_props.force_transmission_scale_up = src_props.force_transmission_scale_up
+            dst_props.force_transmission_scale_down = src_props.force_transmission_scale_down
+            dst_props.joint_stiffness = src_props.joint_stiffness
+            dst_props.min_soft_angle_1 = src_props.min_soft_angle_1
+            dst_props.max_soft_angle_1 = src_props.max_soft_angle_1
+            dst_props.max_soft_angle_2 = src_props.max_soft_angle_2
+            dst_props.max_soft_angle_3 = src_props.max_soft_angle_3
+            dst_props.rotation_speed = src_props.rotation_speed
+            dst_props.rotation_strength = src_props.rotation_strength
+            dst_props.restoring_max_torque = src_props.restoring_max_torque
+            dst_props.latch_strength = src_props.latch_strength
+            dst_props.min_damage_force = src_props.min_damage_force
+            dst_props.damage_health = src_props.damage_health
+            dst_props.unk_float_5c = src_props.unk_float_5c
+            dst_props.unk_float_60 = src_props.unk_float_60
+            dst_props.unk_float_64 = src_props.unk_float_64
+            dst_props.unk_float_68 = src_props.unk_float_68
+            dst_props.unk_float_6c = src_props.unk_float_6c
+            dst_props.unk_float_70 = src_props.unk_float_70
+            dst_props.unk_float_74 = src_props.unk_float_74
+            dst_props.unk_float_78 = src_props.unk_float_78
+            dst_props.unk_float_a8 = src_props.unk_float_a8
+
+            num_dst_bones += 1
+
+        self.report({'INFO'},
+                    f"Physics properties of '{src_pose_bone.name}' copied to {num_dst_bones} bones successfully")
+        return {'FINISHED'}
+
+
 class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
     """
     Set the vehicle light ID of the selected vertices (must be in edit mode). 

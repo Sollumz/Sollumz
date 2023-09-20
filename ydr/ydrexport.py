@@ -492,10 +492,7 @@ def split_geom_by_vert_count(geom_xml: Geometry):
         raise ValueError(
             "Failed to split Geometry by vertex count. Vertex buffer and index buffer cannot be None!")
 
-    MAX_VERTS = 65535
-
-    vert_buffers, ind_buffers = split_vert_buffers_by_count(
-        geom_xml.vertex_buffer.data, geom_xml.index_buffer.data, MAX_VERTS)
+    vert_buffers, ind_buffers = split_vert_buffers(geom_xml.vertex_buffer.data, geom_xml.index_buffer.data)
 
     geoms: list[Geometry] = []
 
@@ -514,24 +511,43 @@ def split_geom_by_vert_count(geom_xml: Geometry):
     return tuple(geoms)
 
 
-def split_vert_buffers_by_count(vert_buffer: NDArray, ind_buffer: NDArray[np.uint32], count: int) -> tuple[tuple[NDArray], tuple[NDArray[np.uint32]]]:
-    """Splits vertex and index buffers by vertex count. Returns tuple of split vertex buffers and tuple of index buffers"""
-    num_splits = math.ceil(len(vert_buffer) / count)
+def split_vert_buffers(
+    vert_buffer: NDArray,
+    ind_buffer: NDArray[np.uint32]
+) -> tuple[tuple[NDArray], tuple[NDArray[np.uint32]]]:
+    """Splits vertex and index buffers on chunks that fit in 16-bit indices.
+    Returns tuple of split vertex buffers and tuple of index buffers"""
+    MAX_INDEX = 65535
 
-    if num_splits <= 1:
-        return ((vert_buffer,), (ind_buffer,))
-
-    num_tris = math.ceil(len(ind_buffer) / 3)
-    face_inds = np.arange(num_tris, dtype=np.uint32)
+    total_index = 0
+    idx_count = len(ind_buffer)
 
     split_vert_arrs = []
     split_ind_arrs = []
+    while total_index < idx_count:
+        old_index_to_new_index = {}
+        chunk_vertices_indices = []
+        chunk_indices = []
+        chunk_index = 0
+        while total_index < idx_count and len(chunk_indices) < MAX_INDEX:
+            old_index = ind_buffer[total_index]
+            existing_index = old_index_to_new_index.get(old_index, None)
+            if existing_index is not None:
+                # we already have this index vertex addedm simply remap it to new index
+                chunk_indices.append(existing_index)
+            else:
+                # We got new index unseen before, we have to add both vertex and index
+                chunk_indices.append(chunk_index)
+                chunk_vertices_indices.append(old_index)
+                old_index_to_new_index[old_index] = chunk_index
+                chunk_index += 1
 
-    for faces_split in np.array_split(face_inds, num_splits):
-        split_vert_arr, split_ind_arr = get_faces_subset(
-            vert_buffer, ind_buffer, faces_split)
-        split_vert_arrs.append(split_vert_arr)
-        split_ind_arrs.append(split_ind_arr)
+            total_index += 1
+
+        chunk_vertices_arr = vert_buffer[chunk_vertices_indices]
+        chunk_indices_arr = np.array(chunk_indices, dtype=np.uint32)
+        split_vert_arrs.append(chunk_vertices_arr)
+        split_ind_arrs.append(chunk_indices_arr)
 
     return (tuple(split_vert_arrs), tuple(split_ind_arrs))
 
