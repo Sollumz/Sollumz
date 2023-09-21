@@ -148,7 +148,7 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        return context.light and context.active_object is not None
 
     def draw(self, context):
         layout = self.layout
