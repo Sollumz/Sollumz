@@ -5,7 +5,7 @@ from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import SollumType, MaterialType
 from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
                    SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_SHATTERMAPS, SOLLUMZ_OT_HIDE_OBJECT, SOLLUMZ_OT_SHOW_COLLISIONS, SOLLUMZ_OT_SHOW_SHATTERMAPS)
-
+from .icons import icon_manager
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
     """Draw a UIList with an add and remove button on the right column. Returns the left column."""
@@ -485,6 +485,9 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
 
+    def draw_header(self, context):
+        icon_manager.icon_label("sollumz_icon", self)
+
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -544,6 +547,9 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         obj = context.active_object
 
         return obj is not None and obj.active_material is not None
+
+    def draw_header(self, context):
+        icon_manager.icon_label("sollumz_icon", self)
 
     def draw(self, context):
         layout = self.layout

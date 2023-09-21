@@ -219,6 +219,13 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         update=_save_preferences
     )
 
+    sollumz_icon_header: bpy.props.BoolProperty(
+        name="Show Sollumz icon",
+        description="Show the Sollumz icon in properties section headers",
+        default=True,
+        update=_save_preferences
+    )
+
     export_settings: bpy.props.PointerProperty(
         type=SollumzExportSettings, name="Export Settings")
     import_settings: bpy.props.PointerProperty(
@@ -229,6 +236,7 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "scale_light_intensity")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
+        layout.prop(self, "sollumz_icon_header")
 
     def register():
         _load_preferences()
