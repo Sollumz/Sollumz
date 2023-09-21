@@ -144,13 +144,24 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "data"
+    bl_options = {"DEFAULT_CLOSED"}
 
     @classmethod
     def poll(cls, context):
-        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+        return context.active_object is not None
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
+
+        aobj = context.active_object
+
+        if not aobj or aobj.sollum_type == SollumType.NONE or aobj.sollum_type != SollumType.LIGHT:
+            row = layout.row()
+            row.prop(aobj, "sollum_type")
+            layout.label(text="No Sollumz light in scene selected.", icon="ERROR")
+            return
+
         layout.use_property_split = True
         light = context.light
         row = layout.row()
@@ -206,7 +217,8 @@ class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 
     @classmethod
     def poll(self, context):
-        return context.light is not None
+        obj = context.active_object
+        return obj is not None and obj.type == "LIGHT" and obj.sollum_type not in [LightType.NONE, SollumType.NONE]
 
     def get_flags(self, context):
         light = context.light
@@ -223,7 +235,8 @@ class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 
     @classmethod
     def poll(self, context):
-        return context.light is not None
+        obj = context.active_object
+        return obj is not None and obj.type == "LIGHT" and obj.sollum_type not in [LightType.NONE, SollumType.NONE]
 
     def get_flags(self, context):
         light = context.light
