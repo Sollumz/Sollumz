@@ -156,13 +156,12 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
         aobj = context.active_object
 
-        if not aobj or aobj.sollum_type == SollumType.NONE or aobj.sollum_type != SollumType.LIGHT:
+        if aobj.sollum_type != SollumType.LIGHT:
             row = layout.row()
             row.prop(aobj, "sollum_type")
             layout.label(text="No Sollumz light in scene selected.", icon="ERROR")
             return
 
-        layout.use_property_split = True
         light = context.light
         row = layout.row()
         row.enabled = light.sollum_type != LightType.NONE
@@ -218,7 +217,7 @@ class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj is not None and obj.type == "LIGHT" and obj.sollum_type not in [LightType.NONE, SollumType.NONE]
+        return obj is not None and obj.type == "LIGHT" and obj.sollum_type == SollumType.LIGHT
 
     def get_flags(self, context):
         light = context.light
@@ -236,7 +235,7 @@ class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj is not None and obj.type == "LIGHT" and obj.sollum_type not in [LightType.NONE, SollumType.NONE]
+        return obj is not None and obj.type == "LIGHT" and obj.sollum_type == SollumType.LIGHT
 
     def get_flags(self, context):
         light = context.light
