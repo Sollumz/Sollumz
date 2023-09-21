@@ -3,6 +3,7 @@ import os
 from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
+from ..cwxml.light_preset import LightPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats
 from bpy.app.handlers import persistent
@@ -196,8 +197,8 @@ class BoneProperties(bpy.types.PropertyGroup):
         self.use_manual_tag = value != self.calc_tag()
 
     tag: bpy.props.IntProperty(
-            name="Tag", description="Unique value that identifies this bone in the armature",
-            get=get_tag, set=set_tag, default=0, min=0, max=0xFFFF)
+        name="Tag", description="Unique value that identifies this bone in the armature",
+        get=get_tag, set=set_tag, default=0, min=0, max=0xFFFF)
     manual_tag: bpy.props.IntProperty(name="Manual Tag", default=0, min=0, max=0xFFFF)
     use_manual_tag: bpy.props.BoolProperty(
         name="Use Manual Tag", description="Specify a tag instead of auto-calculating it",
@@ -251,6 +252,11 @@ class LightProperties(bpy.types.PropertyGroup):
         name="Extent", default=(1, 1, 1), subtype="XYZ")
     projected_texture_hash: bpy.props.StringProperty(
         name="Projected Texture Hash")
+
+
+class LightPresetProp(bpy.types.PropertyGroup):
+    index: bpy.props.IntProperty("Index")
+    name: bpy.props.StringProperty("Name")
 
 
 class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
@@ -329,6 +335,8 @@ def on_file_loaded(_):
         item.index = index
         item.name = mat.name
 
+    load_light_presets()
+
 
 def get_light_type(self):
     if self.type == "POINT":
@@ -349,6 +357,31 @@ def set_light_type(self, value):
     elif value == 2:
         self.type = "SPOT"
         self.is_capsule = False
+
+
+def get_light_presets_path() -> str:
+    package_name = __name__.split(".")[0]
+    presets_path = f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ydr\\light_presets.xml"
+    if os.path.exists(presets_path):
+        return presets_path
+    else:
+        raise FileNotFoundError(
+            f"light_presets.xml file not found! Please redownload this file from the github and place it in '{os.path.dirname(presets_path)}'")
+
+
+light_presets = LightPresetsFile()
+
+
+def load_light_presets():
+    bpy.context.scene.light_presets.clear()
+    path = get_light_presets_path()
+    if os.path.exists(path):
+        file = LightPresetsFile.from_xml_file(path)
+        light_presets.presets = file.presets
+        for index, preset in enumerate(light_presets.presets):
+            item = bpy.context.scene.light_presets.add()
+            item.name = str(preset.name)
+            item.index = index
 
 
 def get_texture_name(self):
@@ -443,6 +476,9 @@ def register():
     bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
         name="Decimate Step", min=0.0, max=0.99, default=0.6)
 
+    bpy.types.Scene.light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
+    bpy.types.Scene.light_presets = bpy.props.CollectionProperty(type=LightPresetProp, name="Light Presets")
+
     bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(
         ("sollumz_extract_lods_parent_type_object", "Object", "Parent to an Object"),
@@ -467,6 +503,8 @@ def unregister():
     del bpy.types.Light.time_flags
     del bpy.types.Light.light_flags
     del bpy.types.Light.is_capsule
+    del bpy.types.Scene.light_presets
+    del bpy.types.Scene.light_preset_index
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection

@@ -5,6 +5,7 @@ from ..sollumz_properties import MaterialType
 from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
 
+
 class ShaderBuilder(NamedTuple):
     shader: Shader
     filename: str
@@ -13,10 +14,12 @@ class ShaderBuilder(NamedTuple):
     bsdf: bpy.types.ShaderNodeBsdfPrincipled
     material_output: bpy.types.ShaderNodeOutputMaterial
 
+
 class ShaderMaterial(NamedTuple):
     name: str
     ui_name: str
     value: str
+
 
 shadermats = []
 
@@ -34,6 +37,7 @@ def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types
     """
     return node_tree.nodes.get(name, None)
 
+
 def try_get_node_by_cls(node_tree: bpy.types.NodeTree, node_cls: type) -> Optional[bpy.types.Node]:
     """Gets a node by its type. Returns `None` if not found."""
     for node in node_tree.nodes:
@@ -41,6 +45,7 @@ def try_get_node_by_cls(node_tree: bpy.types.NodeTree, node_cls: type) -> Option
             return node
 
     return None
+
 
 def get_child_nodes(node):
     child_nodes = []
@@ -569,7 +574,7 @@ def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.
     fill_color_g = node_tree.nodes["fillColor_y"]
     fill_color_b = node_tree.nodes["fillColor_z"]
 
-    #distance_map_texture.image.colormapping_settings.name = "Non-Color"
+    # distance_map_texture.image.colormapping_settings.name = "Non-Color"
 
     # combine fillColor into a vector
     links.new(fill_color_r.outputs["Value"], fill_color_combine.inputs["X"])
@@ -602,7 +607,7 @@ def create_emissive_nodes(b: ShaderBuilder):
     links = node_tree.links
     output = b.material_output
     tmpn = output.inputs[0].links[0].from_node
-    mix = node_tree.nodes.new("ShaderNodeMixShader")    
+    mix = node_tree.nodes.new("ShaderNodeMixShader")
     if tmpn == b.bsdf:
         em = node_tree.nodes.new("ShaderNodeEmission")
         diff = node_tree.nodes["DiffuseSampler"]
@@ -814,6 +819,11 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     if is_distance_map:
         blend_mode = "BLEND"
         create_distance_map_nodes(b, texture)
+
+    is_veh_shader = filename in ShaderManager.veh_paints
+    if is_veh_shader:
+        bsdf.inputs[6].default_value = 1.0  # Metallic
+        bsdf.inputs[14].default_value = 1.0  # Clearcoat
 
     # link value parameters
     link_value_shader_parameters(b)

@@ -337,7 +337,7 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
-    bl_label = "Create Lights"
+    bl_label = "Light Tools"
     bl_idname = "SOLLUMZ_PT_CREATE_LIGHT_PANEL"
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
@@ -352,9 +352,35 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
         row = layout.row()
+        row.template_list(SOLLUMZ_UL_LIGHT_PRESET_LIST.bl_idname, "light_presets",
+                          context.scene, "light_presets", context.scene, "light_preset_index")
+        col = row.column(align=True)
+        col.operator(ydr_ops.SOLLUMZ_OT_save_light_preset.bl_idname, text="", icon="ADD")
+        col.operator(ydr_ops.SOLLUMZ_OT_delete_light_preset.bl_idname, text="", icon="REMOVE")
+        row = layout.row()
+        row.operator(ydr_ops.SOLLUMZ_OT_load_light_preset.bl_idname, icon='CHECKMARK')
+
+        layout.separator()
+        row = layout.row(align=True)
         row.operator(ydr_ops.SOLLUMZ_OT_create_light.bl_idname)
         row.prop(context.scene, "create_light_type", text="")
+
+
+class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_LIGHT_PRESET_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon="BOOKMARKS")
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
