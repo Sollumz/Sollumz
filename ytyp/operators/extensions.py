@@ -2,6 +2,7 @@ import bpy
 from mathutils import Vector
 from ..properties.extensions import ExtensionsContainer
 from ..utils import get_selected_archetype, get_selected_entity, get_selected_ytyp, get_selected_extension
+from ...tools.blenderhelper import tag_redraw
 
 
 class SOLLUMZ_OT_add_archetype_extension(bpy.types.Operator):
@@ -17,7 +18,9 @@ class SOLLUMZ_OT_add_archetype_extension(bpy.types.Operator):
     def execute(self, context):
         selected_archetype = get_selected_archetype(context)
         selected_archetype.new_extension()
-
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_PROPS")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_HEADER")
         return {"FINISHED"}
 
 
@@ -29,19 +32,36 @@ class SOLLUMZ_OT_delete_archetype_extension(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        selected_archetype = get_selected_archetype(context)
-
-        if not selected_archetype:
-            return None
-
-        return selected_archetype.selected_extension is not None
+        selected_extension = get_selected_extension(context)
+        return selected_extension is not None
 
     def execute(self, context):
         selected_archetype = get_selected_archetype(context)
         selected_archetype.delete_selected_extension()
-
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_PROPS")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_HEADER")
         return {"FINISHED"}
 
+
+class SOLLUMZ_OT_duplicate_archetype_extension(bpy.types.Operator):
+    """Duplicate the selected extension in the archetype"""
+    bl_idname = "sollumz.duplicatearchetypeextension"
+    bl_options = {"UNDO"}
+    bl_label = "Duplicate Extension"
+
+    @classmethod
+    def poll(cls, context):
+        selected_extension = get_selected_extension(context)
+        return selected_extension is not None
+
+    def execute(self, context):
+        selected_archetype = get_selected_archetype(context)
+        selected_archetype.duplicate_selected_extension()
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_PROPS")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_HEADER")
+        return {"FINISHED"}
 
 class SOLLUMZ_OT_add_entity_extension(bpy.types.Operator):
     """Add an extension to the entity"""
@@ -80,6 +100,28 @@ class SOLLUMZ_OT_delete_entity_extension(bpy.types.Operator):
         selected_entity.delete_selected_extension()
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_duplicate_entity_extension(bpy.types.Operator):
+    """Duplicate the selected extension in the entity"""
+    bl_idname = "sollumz.duplicateentityextension"
+    bl_options = {"UNDO"}
+    bl_label = "Duplicate Extension"
+
+    @classmethod
+    def poll(cls, context):
+        selected_entity = get_selected_entity(context)
+
+        if not selected_entity:
+            return None
+
+        return selected_entity.selected_extension is not None
+
+    def execute(self, context):
+        selected_entity = get_selected_entity(context)
+        selected_entity.duplicate_selected_extension()
+        return {"FINISHED"}
+
 
 class ExtensionUpdateFromSelectionHelper:
     bl_options = {"UNDO"}

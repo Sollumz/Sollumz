@@ -60,8 +60,8 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
-                                             SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
+        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
+                                                SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
 
         filter_type = context.scene.sollumz_entity_filter_type
 
@@ -183,6 +183,7 @@ class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.ty
 
     ADD_OPERATOR_ID = "sollumz.addentityextension"
     DELETE_OPERATOR_ID = "sollumz.deleteentityextension"
+    DUPLICATE_OPERATOR_ID = "sollumz.duplicateentityextension"
     EXTENSIONS_LIST_ID = SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST.bl_idname
 
     @classmethod

@@ -34,6 +34,7 @@ class ExtensionsListHelper:
 class ExtensionsPanelHelper:
     ADD_OPERATOR_ID = ""
     DELETE_OPERATOR_ID = ""
+    DUPLICATE_OPERATOR_ID = ""
     EXTENSIONS_LIST_ID = ""
 
     @classmethod
@@ -51,8 +52,11 @@ class ExtensionsPanelHelper:
         layout.use_property_decorate = False
         extensions_container = self.get_extensions_container(context)
 
-        draw_list_with_add_remove(layout, self.ADD_OPERATOR_ID, self.DELETE_OPERATOR_ID, self.EXTENSIONS_LIST_ID,
-                                  "", extensions_container, "extensions", extensions_container, "extension_index")
+        _, side_col = draw_list_with_add_remove(layout, self.ADD_OPERATOR_ID, self.DELETE_OPERATOR_ID,
+                                             self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
+                                             extensions_container, "extension_index")
+        side_col.separator()
+        side_col.operator(self.DUPLICATE_OPERATOR_ID, text="", icon="DUPLICATE")
 
         selected_extension = extensions_container.selected_extension
         if selected_extension is not None:
@@ -86,14 +90,13 @@ class ExtensionsPanelHelper:
 
             extension_properties = selected_extension.get_properties()
 
+            row = layout.row()
+            row.prop(extension_properties, "offset_position")
             for prop_name in selected_extension.get_properties().__class__.__annotations__:
                 if prop_name in {'direction_amount', 'cornerA'}:
                     layout.separator()
                 row = layout.row()
                 row.prop(extension_properties, prop_name)
-
-            row = layout.row()
-            row.prop(extension_properties, "offset_position")
 
 
 class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
@@ -115,6 +118,7 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy
 
     ADD_OPERATOR_ID = "sollumz.addarchetypeextension"
     DELETE_OPERATOR_ID = "sollumz.deletearchetypeextension"
+    DUPLICATE_OPERATOR_ID = "sollumz.duplicatearchetypeextension"
     EXTENSIONS_LIST_ID = SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST.bl_idname
 
     @classmethod

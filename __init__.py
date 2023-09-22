@@ -13,6 +13,7 @@
 
 from . import auto_load
 from . import sollumz_debug
+from . import sollumz_tool
 
 
 bl_info = {
@@ -32,6 +33,11 @@ auto_load.init()
 def register():
     auto_load.register()
 
+    # WorkSpaceTools need to be registered after normal modules so the keymaps
+    # detect the registed operators
+    sollumz_tool.register_tools()
 
 def unregister():
+    sollumz_tool.unregister_tools()
+
     auto_load.unregister()

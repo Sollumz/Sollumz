@@ -4,7 +4,7 @@ from pathlib import Path
 from .sollumz_preferences import get_addon_preferences
 
 
-ICON_DIR = "icons"
+ICON_DIR = Path(__file__).parent / "icons"
 ICON_EXT = ".png"
 PREVIEW_COLLECTION_NAME = "main"
 
@@ -50,8 +50,9 @@ class IconManager:
 
 
 # Global icon manager instance
-icon_manager = IconManager(Path(__file__).parent / ICON_DIR)
+icon_manager = IconManager(ICON_DIR)
 
+ICON_GEOM_TOOL = str(ICON_DIR / "sollumz.tool")
 
 def register():
     pass  # Icons are already loaded during the instantiation of icon_manager

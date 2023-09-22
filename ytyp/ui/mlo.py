@@ -57,8 +57,8 @@ class SOLLUMZ_PT_ROOM_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col = draw_list_with_add_remove(self.layout, "sollumz.createroom", "sollumz.deleteroom",
-                                             SOLLUMZ_UL_ROOM_LIST.bl_idname, "", selected_archetype, "rooms", selected_archetype, "room_index")
+        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createroom", "sollumz.deleteroom",
+                                                SOLLUMZ_UL_ROOM_LIST.bl_idname, "", selected_archetype, "rooms", selected_archetype, "room_index")
 
         list_col.operator("sollumz.createlimboroom")
 
@@ -131,8 +131,8 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col = draw_list_with_add_remove(self.layout, "sollumz.createportal", "sollumz.deleteportal",
-                                             SOLLUMZ_UL_PORTAL_LIST.bl_idname, "", selected_archetype, "portals", selected_archetype, "portal_index")
+        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createportal", "sollumz.deleteportal",
+                                                SOLLUMZ_UL_PORTAL_LIST.bl_idname, "", selected_archetype, "portals", selected_archetype, "portal_index")
 
         row = list_col.row()
         row.operator("sollumz.createportalfromselection",

@@ -12,11 +12,12 @@ def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, rem
     row = layout.row()
     list_col = row.column()
     list_col.template_list(*temp_list_args, **temp_list_kwargs)
-    col = row.column(align=True)
+    side_col = row.column()
+    col = side_col.column(align=True)
     col.operator(add_operator, text="", icon="ADD")
     col.operator(remove_operator, text="", icon="REMOVE")
 
-    return list_col
+    return list_col, side_col
 
 
 class BasicListHelper:

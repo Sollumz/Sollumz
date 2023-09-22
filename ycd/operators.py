@@ -1004,6 +1004,7 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
     def render_callback(self, context):
         import gpu
         import gpu_extras
+        from gpu_extras import batch
         import blf
 
         img_w, img_h = self._image.size
