@@ -6,6 +6,7 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
+from ..icons import icon_manager
 
 
 class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
@@ -149,6 +150,9 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return context.light and context.active_object is not None
+
+    def draw_header(self, context):
+        icon_manager.icon_label("sollumz_icon", self)
 
     def draw(self, context):
         layout = self.layout
@@ -463,6 +467,9 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return context.mode != "EDIT_ARMATURE" and context.active_bone is not None
+
+    def draw_header(self, context):
+        icon_manager.icon_label("sollumz_icon", self)
 
     def draw(self, context):
         layout = self.layout

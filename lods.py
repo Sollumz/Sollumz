@@ -4,6 +4,7 @@ from typing import Callable, Optional
 from .sollumz_properties import SollumType, LODLevel, FRAGMENT_TYPES, DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, BOUND_TYPES, BOUND_POLYGON_TYPES, items_from_enums
 from .tools.blenderhelper import get_all_collections, lod_level_enum_flag_prop_factory
 from .sollumz_helper import find_sollumz_parent
+from .icons import icon_manager
 
 
 class ObjectLODProps(bpy.types.PropertyGroup):
@@ -281,6 +282,9 @@ class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
     def poll(cls, context):
         active_obj = context.view_layer.objects.active
         return active_obj is not None and active_obj.type == "MESH" and active_obj.sollum_type in [*FRAGMENT_TYPES, *DRAWABLE_TYPES]
+
+    def draw_header(self, context):
+        icon_manager.icon_label("sollumz_icon", self)
 
     def draw(self, context):
         layout = self.layout
