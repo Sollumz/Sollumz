@@ -787,9 +787,6 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             decalflag = 4
 
     is_emissive = True if filename in ShaderManager.em_shaders else False
-    is_vehicle_emissive = True if filename in ShaderManager.veh_emissives else False
-    is_water = filename in ShaderManager.water_shaders
-    is_veh_shader = filename in ShaderManager.veh_paints
 
     if not use_decal:
         if use_diff:
@@ -815,9 +812,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     if is_emissive:
         create_emissive_nodes(b)
 
-    if is_vehicle_emissive:
-        create_emissive_nodes(b)
-
+    is_water = filename in ShaderManager.water_shaders
     if is_water:
         create_water_nodes(b)
 
@@ -825,10 +820,12 @@ def create_basic_shader_nodes(b: ShaderBuilder):
         blend_mode = "BLEND"
         create_distance_map_nodes(b, texture)
 
+    is_veh_shader = filename in ShaderManager.veh_paints
     if is_veh_shader:
         bsdf.inputs[6].default_value = 1.0  # Metallic
         bsdf.inputs[14].default_value = 1.0  # Clearcoat
 
+    # link value parameters
     link_value_shader_parameters(b)
 
     mat.blend_method = blend_mode

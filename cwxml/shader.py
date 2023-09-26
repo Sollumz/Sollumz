@@ -118,8 +118,6 @@ class ShaderManager:
     veh_glasses = ["vehicle_vehglass.sps", "vehicle_vehglass_inner.sps"]
     veh_decals = ["vehicle_decal.sps", "vehicle_decal2.sps",
                   "vehicle_blurredrotor_emissive.sps"]
-    veh_emissives = ["vehicle_tire_emissive.sps", "vehicle_lightsemissive.sps", "vehicle_dash_emissive.sps", "vehicle_emissive_opaque.sps",
-                     "vehicle_dash_emissive_opaque.sps", "vehicle_track_emissive.sps", "vehicle_emissive_alpha.sps", "vehicle_track2_emissive.sps", "vehicle_blurredrotor_emissive.sps"]
     shadow_proxies = ["trees_shadow_proxy.sps"]
     tint_flag_1 = ["trees_normal_diffspec_tnt.sps",
                    "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
