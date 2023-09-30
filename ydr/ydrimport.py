@@ -484,30 +484,34 @@ def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
 
 def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     """Create drawable as an asset with all the high LODs joined together."""
-    drawable_xml.drawable_models_low = []
-    drawable_xml.drawable_models_med = []
-    drawable_xml.drawable_models_vlow = []
+    try:
+        drawable_xml.drawable_models_low = []
+        drawable_xml.drawable_models_med = []
+        drawable_xml.drawable_models_vlow = []
 
-    drawable_xml.bounds = None
-    drawable_xml.lights = None
+        drawable_xml.bounds = None
+        drawable_xml.lights = None
 
-    drawable_obj = create_drawable_obj(drawable_xml, filepath)
+        drawable_obj = create_drawable_obj(drawable_xml, filepath)
 
-    model_objs = []
+        model_objs = []
 
-    for child in drawable_obj.children:
-        if child.sollum_type == SollumType.DRAWABLE_MODEL:
-            model_objs.append(child)
-            child.parent = None
+        for child in drawable_obj.children:
+            if child.sollum_type == SollumType.DRAWABLE_MODEL:
+                model_objs.append(child)
+                child.parent = None
 
-    bpy.data.objects.remove(drawable_obj)
+        bpy.data.objects.remove(drawable_obj)
 
-    joined_obj = join_objects(model_objs)
-    joined_obj.name = name
+        joined_obj = join_objects(model_objs)
+        joined_obj.name = name
 
-    joined_obj.asset_mark()
-    joined_obj.asset_generate_preview()
+        joined_obj.asset_mark()
+        joined_obj.asset_generate_preview()
 
-    bpy.context.collection.objects.unlink(joined_obj)
+        bpy.context.collection.objects.unlink(joined_obj)
 
-    return joined_obj
+        return joined_obj
+    except Exception as e:
+        print("An error occurred:", str(e))
+        return None
