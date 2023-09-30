@@ -7,7 +7,7 @@ from ..tools.drawablehelper import get_model_xmls_by_lod
 from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, SOLLUMZ_UI_NAMES
-from ..sollumz_preferences import get_import_settings
+from ..sollumz_preferences import get_addon_preferences, get_import_settings
 from ..cwxml.drawable import YDR, BoneLimit, Joints, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import BoundChild
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
@@ -238,7 +238,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         filename = f"{shader.name}.sps"
 
     material = create_shader(filename)
-
+    material.name = shader.name
     material.shader_properties.renderbucket = shader.render_bucket
 
     for param in shader.parameters:
@@ -268,8 +268,11 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                     if "Bump" in param.name or param.name == "distanceMapSampler":
                         n.image.colorspace_settings.name = "Non-Color"
 
-                    if param.texture_name and param.name == "DiffuseSampler":
-                        material.name = param.texture_name
+                    preferences = get_addon_preferences(bpy.context)
+                    text_name = preferences.use_text_name_as_mat_name
+                    if text_name:
+                        if param.texture_name and param.name == "DiffuseSampler":
+                            material.name = param.texture_name
 
                     # Assign embedded texture dictionary properties
                     if shader_group.texture_dictionary is not None:
