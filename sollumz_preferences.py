@@ -225,6 +225,12 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         default=True,
         update=_save_preferences
     )
+    use_text_name_as_mat_name: bpy.props.BoolProperty(
+        name="Use Texture Name as Material Name",
+        description="Use the name of the texture as the material name",
+        default=True,
+        update=_save_preferences
+    )
 
     export_settings: bpy.props.PointerProperty(
         type=SollumzExportSettings, name="Export Settings")
@@ -237,6 +243,7 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")
+        layout.prop(self, "use_text_name_as_mat_name")
 
     def register():
         _load_preferences()
