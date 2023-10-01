@@ -9,28 +9,22 @@ import os
 
 
 class CollisionMatFlags(bpy.types.PropertyGroup):
-    none: bpy.props.BoolProperty(name="NONE", default=False)
     stairs: bpy.props.BoolProperty(name="STAIRS", default=False)
     not_climbable: bpy.props.BoolProperty(name="NOT CLIMBABLE", default=False)
     see_through: bpy.props.BoolProperty(name="SEE THROUGH", default=False)
     shoot_through: bpy.props.BoolProperty(name="SHOOT THROUGH", default=False)
     not_cover: bpy.props.BoolProperty(name="NOT COVER", default=False)
     walkable_path: bpy.props.BoolProperty(name="WALKABLE PATH", default=False)
-    no_cam_collision: bpy.props.BoolProperty(
-        name="NO CAM COLLISION", default=False)
-    shoot_through_fx: bpy.props.BoolProperty(
-        name="SHOOT THROUGH FX", default=False)
+    no_cam_collision: bpy.props.BoolProperty(name="NO CAM COLLISION", default=False)
+    shoot_through_fx: bpy.props.BoolProperty(name="SHOOT THROUGH FX", default=False)
     no_decal: bpy.props.BoolProperty(name="NO DECAL", default=False)
     no_navmesh: bpy.props.BoolProperty(name="NO NAVMESH", default=False)
     no_ragdoll: bpy.props.BoolProperty(name="NO RAGDOLL", default=False)
     vehicle_wheel: bpy.props.BoolProperty(name="VEHICLE WHEEL", default=False)
     no_ptfx: bpy.props.BoolProperty(name="NO PTFX", default=False)
-    too_steep_for_player: bpy.props.BoolProperty(
-        name="TOO STEEP FOR PLAYER", default=False)
-    no_network_spawn: bpy.props.BoolProperty(
-        name="NO NETWORK SPAWN", default=False)
-    no_cam_collision_allow_clipping: bpy.props.BoolProperty(
-        name="NO CAM COLLISION ALLOW CLIPPING", default=False)
+    too_steep_for_player: bpy.props.BoolProperty(name="TOO STEEP FOR PLAYER", default=False)
+    no_network_spawn: bpy.props.BoolProperty(name="NO NETWORK SPAWN", default=False)
+    no_cam_collision_allow_clipping: bpy.props.BoolProperty(name="NO CAM COLLISION ALLOW CLIPPING", default=False)
 
 
 class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
