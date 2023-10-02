@@ -182,10 +182,13 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
+def get_uv_map_name(index: int) -> str:
+    return f"UVMap {index}"
+
+
 def create_uv_attr(mesh: bpy.types.Mesh, coords: NDArray[np.float64], domain: str = "CORNER"):
     """Create a uv layer for ``mesh`` with the specified index."""
-    uv_attr = mesh.attributes.new(
-        name=f"UVMap {len(mesh.uv_layers)}", type="FLOAT2", domain=domain)
+    uv_attr = mesh.attributes.new(name=get_uv_map_name(len(mesh.uv_layers)), type="FLOAT2", domain=domain)
 
     uv_attr.data.foreach_set("vector", coords.flatten())
 

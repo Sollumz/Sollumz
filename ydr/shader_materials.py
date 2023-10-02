@@ -4,6 +4,7 @@ from ..cwxml.shader import ShaderManager, Shader
 from ..sollumz_properties import MaterialType
 from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
+from ..tools.meshhelper import get_uv_map_name
 
 
 class ShaderBuilder(NamedTuple):
@@ -372,7 +373,7 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
     dsw = node_tree.nodes["detailSettings_w"]
     dsy = node_tree.nodes["detailSettings_y"]
     links = node_tree.links
-    attr = node_tree.nodes.new("ShaderNodeAttribute")
+    uv_map0 = node_tree.nodes[get_uv_map_name(0)]
     comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
     mathns = []
     for _ in range(9):
@@ -380,8 +381,7 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
         mathns.append(math)
     nrm = node_tree.nodes.new("ShaderNodeNormalMap")
 
-    attr.attribute_name = "UVMap 0"
-    links.new(attr.outputs[1], mathns[0].inputs[0])
+    links.new(uv_map0.outputs[0], mathns[0].inputs[0])
 
     links.new(dsz.outputs[0], comxyz.inputs[0])
     links.new(dsw.outputs[0], comxyz.inputs[1])
@@ -932,14 +932,42 @@ def create_terrain_shader(b: ShaderBuilder):
 
     # assign lookup sampler last so that it overwrites any socket connections
     if tm:
-        attr_t1 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_t1.attribute_name = "UVMap 1"
-        links.new(attr_t1.outputs[1], tm.inputs[0])
+        uv_map1 = node_tree.nodes[get_uv_map_name(1)]
+        links.new(uv_map1.outputs[0], tm.inputs[0])
         links.new(tm.outputs[0], mixns[0].inputs[1])
 
     # link value parameters
     bsdf.inputs["Specular"].default_value = 0
     link_value_shader_parameters(b)
+
+
+def create_uv_map_nodes(b: ShaderBuilder):
+    """Creates a ``ShaderNodeUVMap`` node for each UV map used in the shader."""
+    shader = b.shader
+    node_tree = b.node_tree
+
+    used_uv_maps = set(shader.uv_maps.values())
+    for uv_map_index in used_uv_maps:
+        uv_map = get_uv_map_name(uv_map_index)
+        node = node_tree.nodes.new("ShaderNodeUVMap")
+        node.name = uv_map
+        node.uv_map = uv_map
+
+
+def link_uv_map_nodes_to_textures(b: ShaderBuilder):
+    """For each texture node, links the corresponding UV map to its input UV if it hasn't been linked already."""
+    shader = b.shader
+    node_tree = b.node_tree
+
+    for tex_name, uv_map_index in shader.uv_maps.items():
+        tex_node = node_tree.nodes[tex_name]
+        uv_map_node = node_tree.nodes[get_uv_map_name(uv_map_index)]
+
+        if tex_node.inputs[0].is_linked:
+            # texture already linked when creating the node tree, skip it
+            continue
+
+        node_tree.links.new(uv_map_node.outputs[0], tex_node.inputs[0])
 
 
 def create_shader(filename: str):
@@ -968,6 +996,8 @@ def create_shader(filename: str):
                             material_output=material_output,
                             bsdf=bsdf)
 
+    create_uv_map_nodes(builder)
+
     if filename in ShaderManager.terrains:
         create_terrain_shader(builder)
     else:
@@ -975,6 +1005,8 @@ def create_shader(filename: str):
 
     if shader.is_uv_animation_supported:
         add_global_anim_uv_nodes(mat)
+
+    link_uv_map_nodes_to_textures(builder)
 
     organize_node_tree(builder)
 

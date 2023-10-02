@@ -33,7 +33,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -69,11 +69,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -119,9 +119,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -154,7 +154,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -190,7 +190,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -225,8 +225,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -261,7 +261,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
@@ -295,11 +295,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -340,8 +340,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -380,10 +380,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -485,11 +485,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -542,10 +542,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="1.35" y="0" z="7.5" w="8" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -585,11 +585,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -627,10 +627,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -678,9 +678,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -721,13 +721,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="1" />
+   <Item name="SnowSampler1" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="2" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -770,8 +770,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -806,7 +806,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
@@ -837,7 +837,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -869,9 +869,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -907,19 +907,19 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.8" y="0.8" z="0.8" w="0.8" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
@@ -957,11 +957,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.8" y="0.8" z="0.8" w="0.8" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.01" y="0" z="0" w="0" />
@@ -993,10 +993,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="1.5" y="1.5" z="13" w="13" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
@@ -1039,10 +1039,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1085,11 +1085,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="1" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1138,10 +1138,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1185,7 +1185,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="0" y="0" z="0" w="0" />
@@ -1219,10 +1219,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1315,10 +1315,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1363,11 +1363,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="AnisoNoiseSpecSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="AnisoNoiseSpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="AnisotropicAlphaBias" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
@@ -1410,10 +1410,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -1443,9 +1443,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="parallaxSelfShadowAmount" type="Vector" x="0.95" y="0" z="0" w="0" />
@@ -1477,15 +1477,15 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.8" y="0.8" z="0.8" w="0.5" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
@@ -1509,7 +1509,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -1543,10 +1543,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1592,11 +1592,11 @@
   </Layout>
   <Parameters>
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="PlateBgSampler" type="Texture" />
-   <Item name="PlateBgBumpSampler" type="Texture" />
-   <Item name="FontSampler" type="Texture" />
-   <Item name="FontNormalSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="PlateBgSampler" type="Texture" uv="0" />
+   <Item name="PlateBgBumpSampler" type="Texture" uv="0" />
+   <Item name="FontSampler" type="Texture" uv="0" />
+   <Item name="FontNormalSampler" type="Texture" uv="0" />
    <Item name="DistEpsilonScaleMin" type="Vector" x="10" y="10" z="0" w="0" />
    <Item name="DistMapCenterVal" type="Vector" x="0.5" y="0" z="0" w="0" />
    <Item name="FontNormalScale" type="Vector" x="5" y="0" z="0" w="0" />
@@ -1648,9 +1648,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="0.1" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -1678,10 +1678,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="parallaxSelfShadowAmount" type="Vector" x="0.95" y="0" z="0" w="0" />
@@ -1712,10 +1712,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.3" y="0.3" z="0.3" w="0.3" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.01" y="0" z="0" w="0" />
@@ -1747,9 +1747,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.5" y="0.5" z="12" w="12" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -1783,9 +1783,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1833,10 +1833,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1878,7 +1878,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -1912,7 +1912,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -1942,9 +1942,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -1985,9 +1985,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -2018,7 +2018,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="Vector" x="3" y="0" z="0" w="0" />
@@ -2060,9 +2060,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -2098,9 +2098,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
@@ -2129,10 +2129,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -2167,7 +2167,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
   </Parameters>
  </Item>
@@ -2200,10 +2200,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -2241,9 +2241,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.5" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1.2" y="0" z="0" w="0" />
@@ -2282,9 +2282,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -2317,7 +2317,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -2350,10 +2350,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -2400,11 +2400,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="2" y="0" z="9.7" w="7.5" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -2440,8 +2440,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="1.2" y="0" z="11.6" w="10.4" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -2477,15 +2477,15 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="1" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="DirtBumpSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="2" />
+   <Item name="DirtBumpSampler" type="Texture" uv="2" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="1" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -2532,18 +2532,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.3" y="0.3" z="0.3" w="0.3" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -2585,8 +2585,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -2617,7 +2617,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
   </Parameters>
@@ -2640,18 +2640,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.5" y="0.8" z="0.5" w="0.6" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -2689,15 +2689,15 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="ComboHeightSamplerFur01" type="Texture" />
-   <Item name="ComboHeightSamplerFur23" type="Texture" />
-   <Item name="ComboHeightSamplerFur45" type="Texture" />
-   <Item name="ComboHeightSamplerFur67" type="Texture" />
-   <Item name="FurMaskSampler" type="Texture" />
-   <Item name="DiffuseHfSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur01" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur23" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur45" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur67" type="Texture" uv="0" />
+   <Item name="FurMaskSampler" type="Texture" uv="1" />
+   <Item name="DiffuseHfSampler" type="Texture" uv="2" />
    <Item name="StippleSampler" type="Texture" />
    <Item name="furShadow47" type="Vector" x="0.784314" y="0.862745" z="0.933333" w="1" />
    <Item name="furShadow03" type="Vector" x="0.352941" y="0.462745" z="0.580392" w="0.658824" />
@@ -2742,9 +2742,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -2773,18 +2773,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.55" y="0.8" z="0.9" w="0.8" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -2816,7 +2816,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
@@ -2841,13 +2841,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="ComboHeightSamplerFur01" type="Texture" />
-   <Item name="ComboHeightSamplerFur23" type="Texture" />
-   <Item name="ComboHeightSamplerFur45" type="Texture" />
-   <Item name="ComboHeightSamplerFur67" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur01" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur23" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur45" type="Texture" uv="0" />
+   <Item name="ComboHeightSamplerFur67" type="Texture" uv="0" />
    <Item name="StippleSampler" type="Texture" />
    <Item name="furShadow47" type="Vector" x="0.784314" y="0.862745" z="0.933333" w="1" />
    <Item name="furShadow03" type="Vector" x="0.352941" y="0.462745" z="0.580392" w="0.658824" />
@@ -2890,10 +2890,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -2934,8 +2934,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -2970,14 +2970,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler2" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler2" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="3" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3033,11 +3033,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="AnisoNoiseSpecSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="AnisoNoiseSpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="AnisotropicAlphaBias" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
@@ -3076,7 +3076,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
@@ -3107,7 +3107,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="Vector" x="5" y="0" z="0" w="0" />
@@ -3132,19 +3132,19 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.8" y="0.8" z="0.8" w="0.5" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
@@ -3187,11 +3187,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="DiffuseExtraSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="DiffuseExtraSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
    <Item name="detailSettings" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="paletteSelector" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3229,7 +3229,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -3261,7 +3261,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3297,10 +3297,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -3336,17 +3336,17 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="WrinkleMaskSampler_0" type="Texture" />
-   <Item name="WrinkleMaskSampler_1" type="Texture" />
-   <Item name="WrinkleMaskSampler_2" type="Texture" />
-   <Item name="WrinkleMaskSampler_3" type="Texture" />
-   <Item name="WrinkleSampler_A" type="Texture" />
-   <Item name="WrinkleSampler_B" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_0" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_1" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_2" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_3" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_A" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_B" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -3382,11 +3382,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="4" y="4" z="25" w="25" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
@@ -3432,8 +3432,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3469,10 +3469,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -3518,13 +3518,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="20" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3575,7 +3575,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
@@ -3607,10 +3607,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -3645,7 +3645,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
@@ -3683,15 +3683,15 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="2" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="DirtBumpSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="2" />
+   <Item name="DirtBumpSampler" type="Texture" uv="2" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="2" />
    <Item name="envEffTexTileUV" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3740,11 +3740,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -3772,14 +3772,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.5" y="0.7" z="0.8" w="0.6" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -3812,7 +3812,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DecalTint" type="Vector" x="1" y="1" z="1" w="1" />
    <Item name="CrackDecalBumpAlphaThreshold" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="CrackDecalBumpAmount" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3843,9 +3843,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3898,11 +3898,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -3928,7 +3928,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -3963,7 +3963,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -4012,9 +4012,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="1" y="0" z="0" w="0" />
@@ -4041,7 +4041,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="distanceMapSampler" type="Texture" />
+   <Item name="distanceMapSampler" type="Texture" uv="0" />
    <Item name="fillColor" type="Vector" x="0.917647" y="0.886275" z="0.827451" w="0" />
   </Parameters>
  </Item>
@@ -4070,8 +4070,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4105,8 +4105,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
@@ -4141,8 +4141,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="2" y="0" z="0" w="0" />
@@ -4180,11 +4180,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -4212,8 +4212,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="0.3" y="0" z="0" w="0" />
@@ -4241,10 +4241,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.3" y="0.6" z="5" w="5" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -4277,11 +4277,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4328,9 +4328,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.1" y="0" z="0" w="0" />
@@ -4366,10 +4366,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4415,7 +4415,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -4440,7 +4440,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="Vector" x="16" y="0" z="0" w="0" />
@@ -4464,9 +4464,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="DecalTint" type="Vector" x="1" y="1" z="1" w="1" />
    <Item name="CrackDecalBumpAlphaThreshold" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="CrackDecalBumpAmount" type="Vector" x="0" y="0" z="0" w="0" />
@@ -4500,9 +4500,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.5" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -4544,10 +4544,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4592,12 +4592,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="SnowSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="SnowSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.002" y="0.002" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -4624,7 +4624,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FoamSampler" type="Texture" />
+   <Item name="FoamSampler" type="Texture" uv="0" />
    <Item name="HeightOpacity" type="Vector" x="4" y="0" z="0" w="0" />
    <Item name="WaveMovement" type="Vector" x="0.4" y="0" z="0" w="0" />
    <Item name="WaterHeight" type="Vector" x="-1" y="0" z="0" w="0" />
@@ -4656,10 +4656,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4707,10 +4707,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4745,11 +4745,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -4776,8 +4776,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="TextureGrassSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="TextureGrassSampler" type="Texture" uv="0" />
    <Item name="gAlphaToCoverageScale" type="Vector" x="1.3" y="0" z="0" w="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0" y="0" z="0" w="0" />
@@ -4841,10 +4841,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -4884,8 +4884,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -4918,13 +4918,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="2" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -4972,18 +4972,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="SnowSampler" type="Texture" />
-   <Item name="WrinkleMaskSampler_0" type="Texture" />
-   <Item name="WrinkleMaskSampler_1" type="Texture" />
-   <Item name="WrinkleMaskSampler_2" type="Texture" />
-   <Item name="WrinkleMaskSampler_3" type="Texture" />
-   <Item name="WrinkleSampler_A" type="Texture" />
-   <Item name="WrinkleSampler_B" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="SnowSampler" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_0" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_1" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_2" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_3" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_A" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_B" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.002" y="0.002" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5012,12 +5012,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="DiffuseExtraSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="DiffuseExtraSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.2" y="0.2" z="10" w="5" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5046,7 +5046,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DecalTint" type="Vector" x="1" y="1" z="1" w="1" />
    <Item name="CrackDecalBumpAlphaThreshold" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="CrackDecalBumpAmount" type="Vector" x="0" y="0" z="0" w="0" />
@@ -5079,18 +5079,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -5133,8 +5133,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
@@ -5172,9 +5172,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5202,9 +5202,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5264,7 +5264,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
@@ -5297,8 +5297,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -5323,14 +5323,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5358,19 +5358,19 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="WrinkleMaskSampler_0" type="Texture" />
-   <Item name="WrinkleMaskSampler_1" type="Texture" />
-   <Item name="WrinkleMaskSampler_2" type="Texture" />
-   <Item name="WrinkleMaskSampler_3" type="Texture" />
-   <Item name="WrinkleMaskSampler_4" type="Texture" />
-   <Item name="WrinkleMaskSampler_5" type="Texture" />
-   <Item name="WrinkleSampler_A" type="Texture" />
-   <Item name="WrinkleSampler_B" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_0" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_1" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_2" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_3" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_4" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_5" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_A" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_B" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5397,7 +5397,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="gLodFadeTileScale" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="gLodFadePower" type="Vector" x="3" y="3" z="0" w="0" />
    <Item name="gLodFadeRange" type="Vector" x="0.25" y="0.05" z="0" w="0" />
@@ -5444,7 +5444,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -5471,11 +5471,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -5505,12 +5505,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler2" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler2" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -5554,8 +5554,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FlowSampler" type="Texture" />
-   <Item name="FogSampler" type="Texture" />
+   <Item name="FlowSampler" type="Texture" uv="0" />
+   <Item name="FogSampler" type="Texture" uv="0" />
    <Item name="SpecularFalloff" type="Vector" x="1600" y="0" z="0" w="0" />
    <Item name="SpecularIntensity" type="Vector" x="4.2" y="0" z="0" w="0" />
    <Item name="RippleScale" type="Vector" x="0.03" y="0" z="0" w="0" />
@@ -5591,8 +5591,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5621,10 +5621,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -5662,7 +5662,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="Vector" x="8" y="0" z="0" w="0" />
@@ -5685,8 +5685,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FlowSampler" type="Texture" />
-   <Item name="FogSampler" type="Texture" />
+   <Item name="FlowSampler" type="Texture" uv="0" />
+   <Item name="FogSampler" type="Texture" uv="0" />
    <Item name="SpecularFalloff" type="Vector" x="1600" y="0" z="0" w="0" />
    <Item name="SpecularIntensity" type="Vector" x="4.2" y="0" z="0" w="0" />
    <Item name="RippleScale" type="Vector" x="0.085" y="0" z="0" w="0" />
@@ -5712,12 +5712,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="3" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -5758,14 +5758,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="1" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="1" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.8" y="0.8" z="0.8" w="0.8" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5787,7 +5787,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -5816,13 +5816,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="1" />
+   <Item name="SnowSampler1" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -5858,12 +5858,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="SnowSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="SnowSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -5890,7 +5890,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FoamSampler" type="Texture" />
+   <Item name="FoamSampler" type="Texture" uv="0" />
    <Item name="RippleSpeed" type="Vector" x="2.25" y="0" z="0" w="0" />
   </Parameters>
  </Item>
@@ -5909,7 +5909,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
   </Parameters>
  </Item>
@@ -5929,7 +5929,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
   </Parameters>
@@ -5950,7 +5950,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="clippingPlane" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="diffuseCol" type="Vector" x="1" y="1" z="1" w="1" />
   </Parameters>
@@ -5971,7 +5971,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.5" y="0" z="0" w="0" />
@@ -6001,10 +6001,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DiffuseExtraSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DiffuseExtraSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
    <Item name="paletteSelector" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6035,8 +6035,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.6" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6070,8 +6070,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6095,8 +6095,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="gMirrorBounds" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6123,11 +6123,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6154,9 +6154,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6191,9 +6191,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="0.02" y="0" z="0" w="0" />
@@ -6221,9 +6221,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6249,7 +6249,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="Vector" x="2.5" y="0" z="0" w="0" />
@@ -6272,11 +6272,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -6302,8 +6302,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FlowSampler" type="Texture" />
-   <Item name="FogSampler" type="Texture" />
+   <Item name="FlowSampler" type="Texture" uv="0" />
+   <Item name="FogSampler" type="Texture" uv="0" />
    <Item name="SpecularFalloff" type="Vector" x="1600" y="0" z="0" w="0" />
    <Item name="SpecularIntensity" type="Vector" x="4.2" y="0" z="0" w="0" />
    <Item name="RippleScale" type="Vector" x="0.1" y="0" z="0" w="0" />
@@ -6336,11 +6336,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DiffuseExtraSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseExtraSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specular2Color" type="Vector" x="1" y="1" z="1" w="0" />
@@ -6367,7 +6367,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
   </Parameters>
  </Item>
@@ -6390,11 +6390,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6427,15 +6427,15 @@
   </Layout>
   <Parameters>
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.34" y="0.3" z="0.2" w="0.4" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6469,10 +6469,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -6507,8 +6507,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="gMirrorDebugParams" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="gMirrorBounds" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -6545,10 +6545,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -6585,11 +6585,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6616,8 +6616,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.55" y="0" z="0" w="0" />
@@ -6649,9 +6649,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.1" y="0" z="0" w="0" />
@@ -6677,7 +6677,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="25" y="0" z="0" w="0" />
@@ -6701,9 +6701,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="1" z="1" w="0" />
@@ -6729,9 +6729,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.4" y="0.2" z="1" w="2.2" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6761,10 +6761,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DiffuseExtraSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DiffuseExtraSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
    <Item name="paletteSelector" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6795,14 +6795,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.25" y="0.9" z="0.8" w="0.8" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6829,11 +6829,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="NoiseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="NoiseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="furBendParams" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="furGlobalParams" type="Vector" x="0" y="0" z="0.003921569" w="0" />
@@ -6870,8 +6870,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DensitySampler" type="Texture" />
-   <Item name="normalSampler" type="Texture" />
+   <Item name="DensitySampler" type="Texture" uv="0" />
+   <Item name="normalSampler" type="Texture" uv="0" />
    <Item name="cloudLayerAnimScale3" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale2" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale1" type="Vector" x="1" y="1" z="0" w="0" />
@@ -6925,10 +6925,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.5" y="0.5" z="12" w="12" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
@@ -6962,13 +6962,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="1" />
    <Item name="envEffTexTileUV" type="Vector" x="12" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -7010,10 +7010,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.5" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7045,12 +7045,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DensitySampler" type="Texture" />
-   <Item name="normalSampler" type="Texture" />
-   <Item name="DetailDensitySampler" type="Texture" />
-   <Item name="DetailNormalSampler" type="Texture" />
-   <Item name="DetailDensity2Sampler" type="Texture" />
-   <Item name="DetailNormal2Sampler" type="Texture" />
+   <Item name="DensitySampler" type="Texture" uv="0" />
+   <Item name="normalSampler" type="Texture" uv="0" />
+   <Item name="DetailDensitySampler" type="Texture" uv="0" />
+   <Item name="DetailNormalSampler" type="Texture" uv="0" />
+   <Item name="DetailDensity2Sampler" type="Texture" uv="0" />
+   <Item name="DetailNormal2Sampler" type="Texture" uv="0" />
    <Item name="DepthMapTexSampler" type="Texture" />
    <Item name="cloudLayerAnimScale3" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale2" type="Vector" x="1" y="1" z="0" w="0" />
@@ -7107,7 +7107,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="AmbientDecalMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7131,11 +7131,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0" y="0.5" z="20" w="15" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7166,7 +7166,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FogSampler" type="Texture" />
+   <Item name="FogSampler" type="Texture" uv="0" />
    <Item name="SpecularFalloff" type="Vector" x="1600" y="0" z="0" w="0" />
    <Item name="SpecularIntensity" type="Vector" x="4.2" y="0" z="0" w="0" />
    <Item name="RippleScale" type="Vector" x="0.05" y="0" z="0" w="0" />
@@ -7191,19 +7191,19 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.7" y="0.7" z="0.7" w="0.7" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -7237,12 +7237,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="2" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -7290,8 +7290,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -7321,19 +7321,19 @@
   </Layout>
   <Parameters>
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.3" y="0.3" z="0" w="0" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.009" y="0" z="0" w="0" />
@@ -7366,8 +7366,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="FlowSampler" type="Texture" />
-   <Item name="FogSampler" type="Texture" />
+   <Item name="FlowSampler" type="Texture" uv="0" />
+   <Item name="FogSampler" type="Texture" uv="0" />
    <Item name="SpecularFalloff" type="Vector" x="1600" y="0" z="0" w="0" />
    <Item name="SpecularIntensity" type="Vector" x="4.2" y="0" z="0" w="0" />
    <Item name="RippleScale" type="Vector" x="0.1" y="0" z="0" w="0" />
@@ -7393,13 +7393,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="SnowSampler0" type="Texture" />
-   <Item name="SnowSampler1" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="SnowSampler0" type="Texture" uv="0" />
+   <Item name="SnowSampler1" type="Texture" uv="0" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="1" />
    <Item name="envEffTexTileUV" type="Vector" x="15" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -7444,18 +7444,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="heightMapSamplerLayer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="heightMapSamplerLayer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="heightMapSamplerLayer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="heightMapSamplerLayer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="heightMapSamplerLayer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="1" />
+   <Item name="heightMapSamplerLayer1" type="Texture" uv="1" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="1" />
+   <Item name="heightMapSamplerLayer2" type="Texture" uv="1" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="1" />
+   <Item name="heightMapSamplerLayer3" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.6" y="0.6" z="0.5" w="0.6" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="heightBias3" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -7492,17 +7492,17 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="WrinkleMaskSampler_0" type="Texture" />
-   <Item name="WrinkleMaskSampler_1" type="Texture" />
-   <Item name="WrinkleMaskSampler_2" type="Texture" />
-   <Item name="WrinkleMaskSampler_3" type="Texture" />
-   <Item name="WrinkleSampler_A" type="Texture" />
-   <Item name="WrinkleSampler_B" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_0" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_1" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_2" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_3" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_A" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_B" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.0025" y="0.0025" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7538,9 +7538,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="1.2" y="0" z="0" w="0" />
@@ -7567,9 +7567,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7597,12 +7597,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.3" y="0.3" z="12" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7638,18 +7638,18 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="SnowSampler" type="Texture" />
-   <Item name="WrinkleMaskSampler_0" type="Texture" />
-   <Item name="WrinkleMaskSampler_1" type="Texture" />
-   <Item name="WrinkleMaskSampler_2" type="Texture" />
-   <Item name="WrinkleMaskSampler_3" type="Texture" />
-   <Item name="WrinkleSampler_A" type="Texture" />
-   <Item name="WrinkleSampler_B" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="SnowSampler" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_0" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_1" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_2" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_3" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_A" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_B" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.002" y="0.002" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7697,9 +7697,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="0.5" y="0" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7725,7 +7725,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.5" y="0" z="0" w="0" />
@@ -7758,7 +7758,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7784,11 +7784,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="1" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -7831,11 +7831,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="2" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -7883,10 +7883,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7927,11 +7927,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="bumpiness" type="Vector" x="0.8" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="15" y="0" z="0" w="0" />
@@ -7954,10 +7954,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="ShadowFalloff" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="AlphaTest" type="Vector" x="0.5" y="0" z="0" w="0" />
    <Item name="AlphaScale" type="Vector" x="1" y="0" z="0" w="0" />
@@ -7991,11 +7991,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -8022,9 +8022,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="gMirrorCrackSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="gMirrorCrackSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="gMirrorBounds" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="gMirrorCrackAmount" type="Vector" x="8" y="0" z="0" w="0" />
@@ -8048,9 +8048,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="displParams" type="Vector" x="16" y="16" z="6" w="0" />
@@ -8081,13 +8081,13 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="1" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.3" y="0.3" z="12" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8119,10 +8119,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8149,8 +8149,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8179,8 +8179,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
@@ -8209,10 +8209,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="heightSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="parallaxSelfShadowAmount" type="Vector" x="0.95" y="0" z="0" w="0" />
    <Item name="heightBias" type="Vector" x="0.015" y="0" z="0" w="0" />
@@ -8242,10 +8242,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8276,7 +8276,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
    <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8301,12 +8301,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DensitySampler" type="Texture" />
-   <Item name="normalSampler" type="Texture" />
-   <Item name="DetailDensitySampler" type="Texture" />
-   <Item name="DetailNormalSampler" type="Texture" />
-   <Item name="DetailDensity2Sampler" type="Texture" />
-   <Item name="DetailNormal2Sampler" type="Texture" />
+   <Item name="DensitySampler" type="Texture" uv="0" />
+   <Item name="normalSampler" type="Texture" uv="0" />
+   <Item name="DetailDensitySampler" type="Texture" uv="0" />
+   <Item name="DetailNormalSampler" type="Texture" uv="0" />
+   <Item name="DetailDensity2Sampler" type="Texture" uv="0" />
+   <Item name="DetailNormal2Sampler" type="Texture" uv="0" />
    <Item name="DepthMapTexSampler" type="Texture" />
    <Item name="cloudLayerAnimScale3" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale2" type="Vector" x="1" y="1" z="0" w="0" />
@@ -8366,11 +8366,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler3" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler3" type="Texture" uv="1" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="1" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -8412,11 +8412,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.6" y="0.6" z="15" w="15" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8448,9 +8448,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="gLodFadeTileScale" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="gLodFadePower" type="Vector" x="3" y="3" z="0" w="0" />
    <Item name="gLodFadeRange" type="Vector" x="0.25" y="0.05" z="0" w="0" />
@@ -8486,11 +8486,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="100" y="0" z="0" w="0" />
@@ -8516,12 +8516,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DensitySampler" type="Texture" />
-   <Item name="normalSampler" type="Texture" />
-   <Item name="DetailDensitySampler" type="Texture" />
-   <Item name="DetailNormalSampler" type="Texture" />
-   <Item name="DetailDensity2Sampler" type="Texture" />
-   <Item name="DetailNormal2Sampler" type="Texture" />
+   <Item name="DensitySampler" type="Texture" uv="0" />
+   <Item name="normalSampler" type="Texture" uv="0" />
+   <Item name="DetailDensitySampler" type="Texture" uv="0" />
+   <Item name="DetailNormalSampler" type="Texture" uv="0" />
+   <Item name="DetailDensity2Sampler" type="Texture" uv="0" />
+   <Item name="DetailNormal2Sampler" type="Texture" uv="0" />
    <Item name="DepthMapTexSampler" type="Texture" />
    <Item name="cloudLayerAnimScale3" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale2" type="Vector" x="1" y="1" z="0" w="0" />
@@ -8578,8 +8578,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
@@ -8606,15 +8606,15 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
-   <Item name="lookupSampler" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
+   <Item name="lookupSampler" type="Texture" uv="1" />
    <Item name="materialWetnessMultiplier" type="Vector" x="0.2" y="0.3" z="0.3" w="0.2" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8638,8 +8638,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="0.125" y="0" z="0" w="0" />
@@ -8664,10 +8664,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="4" y="0" z="0.2" w="50" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
@@ -8699,10 +8699,10 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="DetailSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="heightSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="Vector" x="0.3" y="0.3" z="15" w="15" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8732,12 +8732,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="DamageSampler" type="Texture" />
-   <Item name="DiffuseSampler2" type="Texture" />
-   <Item name="DirtSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler2" type="Texture" uv="0" />
+   <Item name="DirtSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -8775,9 +8775,9 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TintPaletteSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8805,7 +8805,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.6" y="0" z="0" w="0" />
@@ -8827,8 +8827,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DensitySampler" type="Texture" />
-   <Item name="normalSampler" type="Texture" />
+   <Item name="DensitySampler" type="Texture" uv="0" />
+   <Item name="normalSampler" type="Texture" uv="0" />
    <Item name="DepthMapTexSampler" type="Texture" />
    <Item name="cloudLayerAnimScale3" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale2" type="Vector" x="1" y="1" z="0" w="0" />
@@ -8886,11 +8886,11 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="specularFalloffMult" type="Vector" x="250" y="0" z="0" w="0" />
@@ -8918,14 +8918,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="1" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="1" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="1" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="1" />
    <Item name="wetnessMultiplier" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="0.8" y="0" z="0" w="0" />
@@ -8951,15 +8951,15 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="WrinkleMaskSampler_0" type="Texture" />
-   <Item name="WrinkleMaskSampler_1" type="Texture" />
-   <Item name="WrinkleMaskSampler_2" type="Texture" />
-   <Item name="WrinkleMaskSampler_3" type="Texture" />
-   <Item name="WrinkleSampler_A" type="Texture" />
-   <Item name="WrinkleSampler_B" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_0" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_1" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_2" type="Texture" uv="0" />
+   <Item name="WrinkleMaskSampler_3" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_A" type="Texture" uv="0" />
+   <Item name="WrinkleSampler_B" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1" y="0" z="0" w="0" />
@@ -8988,11 +8988,11 @@
   </Layout>
   <Parameters>
    <Item name="NoiseSampler" type="Texture" />
-   <Item name="perlinSampler" type="Texture" />
-   <Item name="highDetailSampler" type="Texture" />
-   <Item name="StarFieldSampler" type="Texture" />
-   <Item name="ditherSampler" type="Texture" />
-   <Item name="moonSampler" type="Texture" />
+   <Item name="perlinSampler" type="Texture" uv="0" />
+   <Item name="highDetailSampler" type="Texture" uv="0" />
+   <Item name="StarFieldSampler" type="Texture" uv="1" />
+   <Item name="ditherSampler" type="Texture" uv="1" />
+   <Item name="moonSampler" type="Texture" uv="0" />
    <Item name="noisePhase" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="noiseDensityOffset" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="noiseSoftness" type="Vector" x="0" y="0" z="0" w="0" />
@@ -9055,8 +9055,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DensitySampler" type="Texture" />
-   <Item name="normalSampler" type="Texture" />
+   <Item name="DensitySampler" type="Texture" uv="0" />
+   <Item name="normalSampler" type="Texture" uv="0" />
    <Item name="DepthMapTexSampler" type="Texture" />
    <Item name="cloudLayerAnimScale3" type="Vector" x="1" y="1" z="0" w="0" />
    <Item name="cloudLayerAnimScale2" type="Vector" x="1" y="1" z="0" w="0" />
@@ -9111,14 +9111,14 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="TextureSampler_layer0" type="Texture" />
-   <Item name="BumpSampler_layer0" type="Texture" />
-   <Item name="TextureSampler_layer1" type="Texture" />
-   <Item name="BumpSampler_layer1" type="Texture" />
-   <Item name="TextureSampler_layer2" type="Texture" />
-   <Item name="BumpSampler_layer2" type="Texture" />
-   <Item name="TextureSampler_layer3" type="Texture" />
-   <Item name="BumpSampler_layer3" type="Texture" />
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="BumpSampler_layer3" type="Texture" uv="0" />
    <Item name="wetnessMultiplier" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="bumpSelfShadowAmount" type="Vector" x="0.3" y="0" z="0" w="0" />
    <Item name="bumpiness" type="Vector" x="1.8" y="0" z="0" w="0" />
@@ -9142,8 +9142,8 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="EnvironmentSampler" type="Texture" />
    <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.8" y="0" z="0" w="0" />
@@ -9170,12 +9170,12 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DiffuseSampler" type="Texture" />
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
    <Item name="TextureSamplerDiffPal" type="Texture" />
-   <Item name="VolumeSampler" type="Texture" />
-   <Item name="BumpSampler" type="Texture" />
-   <Item name="SpecSampler" type="Texture" />
-   <Item name="SnowSampler" type="Texture" />
+   <Item name="VolumeSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="SnowSampler" type="Texture" uv="0" />
    <Item name="umGlobalParams" type="Vector" x="0.002" y="0.002" z="7" w="7" />
    <Item name="envEffFatThickness" type="Vector" x="25" y="25" z="0" w="0" />
    <Item name="specularIntensityMult" type="Vector" x="1" y="0" z="0" w="0" />

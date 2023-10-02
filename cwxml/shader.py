@@ -49,12 +49,15 @@ class LayoutList(ListProperty):
 class Shader(ElementTree):
     tag_name = "Item"
 
+    uv_maps: dict[str, int]
+
     def __init__(self):
         super().__init__()
         self.filename = TextProperty("Name", "")
         self.render_buckets = RenderBucketProperty()
         self.layouts = LayoutList()
         self.parameters = ParametersList("Parameters")
+        self.uv_maps = {}
 
     @property
     def required_tangent(self):
@@ -84,6 +87,22 @@ class Shader(ElementTree):
                 has_uv1 = True
 
         return has_uv0 and has_uv1
+
+    @classmethod
+    def from_xml(cls, element: ET.Element) -> "Shader":
+        new = super().from_xml(element)
+
+        # read texture samplers UV map indices
+        for tex_param in element.findall("./Parameters/Item[@type='Texture']"):
+            name = tex_param.get("name")
+            uv_map_index = tex_param.get("uv")
+            if uv_map_index is None:
+                continue
+
+            new.uv_maps[name] = uv_map_index
+
+        return new
+
 
 
 class ShaderManager:
