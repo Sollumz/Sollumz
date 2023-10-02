@@ -37,23 +37,13 @@ class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        if not self.is_valid_col_obj(context.active_object):
-            layout.label(
-                text="Only Bound Geometry or Bound Polygon objects have collision properties.", icon="INFO")
-            return
-
         mat = context.active_object.active_material
 
-        grid = self.layout.grid_flow(
-            columns=2, even_columns=True, even_rows=True)
-
+        grid = self.layout.grid_flow(columns=2, even_columns=True, even_rows=True)
         grid.prop(mat.collision_properties, "procedural_id")
         grid.prop(mat.collision_properties, "room_id")
         grid.prop(mat.collision_properties, "ped_density")
         grid.prop(mat.collision_properties, "material_color_index")
-
-    def is_valid_col_obj(self, obj: bpy.types.Object):
-        return obj.sollum_type in [SollumType.BOUND_GEOMETRY, *BOUND_POLYGON_TYPES]
 
 
 class SOLLUMZ_PT_BOUND_PROPERTIES_PANEL(bpy.types.Panel):
@@ -78,14 +68,8 @@ class SOLLUMZ_PT_BOUND_PROPERTIES_PANEL(bpy.types.Panel):
         obj = context.active_object
 
         grid = layout.grid_flow(columns=2, row_major=True)
-
-        grid.prop(obj.bound_properties, "procedural_id")
-        grid.prop(obj.bound_properties, "room_id")
-        grid.prop(obj.bound_properties, "ped_density")
-        grid.prop(obj.bound_properties, "poly_flags")
         grid.prop(obj.bound_properties, "inertia")
         grid.prop(obj.bound_properties, "volume")
-        grid.prop(obj.bound_properties, "unk_flags")
 
         if obj.sollum_type == SollumType.BOUND_GEOMETRY:
             grid.prop(obj.bound_properties, "unk_float_1")
@@ -167,7 +151,7 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
     def poll(cls, context):
         obj = context.active_object
         mat = obj.active_material
-        return mat and mat.sollum_type == MaterialType.COLLISION and obj.sollum_type in [SollumType.BOUND_GEOMETRY, *BOUND_POLYGON_TYPES]
+        return mat and mat.sollum_type == MaterialType.COLLISION
 
     def draw(self, context):
         mat = context.active_object.active_material
@@ -345,7 +329,7 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
         row.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname, icon='FOLDER_REDIRECT')
         row.prop(context.scene, "new_flag_preset_name", text="Name")
         row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname, icon='CHECKMARK') 
+        row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname, icon='CHECKMARK')
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname, icon='SHADERFX')
         row = layout.row()

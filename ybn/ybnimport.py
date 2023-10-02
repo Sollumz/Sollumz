@@ -79,6 +79,7 @@ def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh
     obj = create_blender_object(sollum_type, object_data=mesh)
 
     mat = create_collision_material_from_index(bound_xml.material_index)
+    set_bound_col_material_properties(bound_xml, mat)
     obj.data.materials.append(mat)
 
     set_bound_child_properties(bound_xml, obj)
@@ -194,7 +195,6 @@ def create_geometry_materials(geometry: BoundGeometryBVH):
     for mat_xml in geometry.materials:
         mat = create_collision_material_from_index(mat_xml.type)
         set_col_material_properties(mat_xml, mat)
-        set_col_mat_flags(mat_xml, mat)
 
         materials.append(mat)
 
@@ -206,14 +206,20 @@ def set_col_material_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
     mat.collision_properties.room_id = mat_xml.room_id
     mat.collision_properties.ped_density = mat_xml.ped_density
     mat.collision_properties.material_color_index = mat_xml.material_color_index
-
-
-def set_col_mat_flags(mat_xml: ColMaterial, mat: bpy.types.Material):
     for flag_name in CollisionMatFlags.__annotations__.keys():
         if f"FLAG_{flag_name.upper()}" not in mat_xml.flags:
             continue
 
         setattr(mat.collision_flags, flag_name, True)
+
+
+def set_bound_col_material_properties(bound_xml: Bound, mat: bpy.types.Material):
+    mat.collision_properties.procedural_id = bound_xml.procedural_id
+    mat.collision_properties.room_id = bound_xml.room_id
+    mat.collision_properties.ped_density = bound_xml.ped_density
+    mat.collision_properties.material_color_index = bound_xml.material_color_index
+    mat.collision_flags.set_lo_flags(bound_xml.unk_flags)
+    mat.collision_flags.set_hi_flags(bound_xml.poly_flags)
 
 
 def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
@@ -422,12 +428,7 @@ def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.O
 
 
 def set_bound_properties(bound_xml: Bound, bound_obj: bpy.types.Object):
-    bound_obj.bound_properties.procedural_id = bound_xml.procedural_id
-    bound_obj.bound_properties.room_id = bound_xml.room_id
-    bound_obj.bound_properties.ped_density = bound_xml.ped_density
-    bound_obj.bound_properties.poly_flags = bound_xml.poly_flags
     bound_obj.bound_properties.inertia = bound_xml.inertia
-    bound_obj.bound_properties.unk_flags = bound_xml.unk_flags
     bound_obj.margin = bound_xml.margin
     bound_obj.bound_properties.volume = bound_xml.volume
 

@@ -104,7 +104,6 @@ def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, aut
         sphere_xml.sphere_radius = get_inner_sphere_radius(sphere_xml.box_max, sphere_xml.box_center)
         return sphere_xml
 
-
     if obj.sollum_type == SollumType.BOUND_CYLINDER:
         return init_bound_child_xml(BoundCylinder(), obj, auto_calc_inertia, auto_calc_volume)
 
@@ -155,7 +154,7 @@ def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_ca
         bound_xml, obj, auto_calc_inertia, auto_calc_volume)
 
     set_composite_xml_flags(bound_xml, obj)
-    set_bound_xml_mat_index(bound_xml, obj)
+    set_bound_col_mat_xml_properties(bound_xml, obj.active_material)
 
     return bound_xml
 
@@ -456,19 +455,7 @@ def create_poly_cylinder_capsule_xml(poly_type: Type[T_PolyCylCap], obj: bpy.typ
 def create_col_mat_xml(mat: bpy.types.Material):
     mat_xml = Material()
     set_col_mat_xml_properties(mat_xml, mat)
-    set_col_mat_xml_flags(mat_xml, mat)
-
     return mat_xml
-
-
-def set_col_mat_xml_flags(mat_xml: Material, mat: bpy.types.Material):
-    for flag_name in CollisionMatFlags.__annotations__.keys():
-        if flag_name not in mat.collision_flags or mat.collision_flags[flag_name] == False:
-            continue
-        mat_xml.flags.append(f"FLAG_{flag_name.upper()}")
-
-    if not mat_xml.flags:
-        mat_xml.flags.append("NONE")
 
 
 def set_composite_xml_flags(bound_xml: BoundChild, obj: bpy.types.Object):
@@ -497,12 +484,17 @@ def get_composite_transforms(bound_obj: bpy.types.Object):
     return get_matrix_without_scale(export_transforms)
 
 
-def set_bound_xml_mat_index(bound_xml: BoundChild, obj: bpy.types.Object):
-    """Set ``bound_xml.material_index`` based on ``obj.active_material``."""
-    if obj.active_material is None or obj.active_material.sollum_type != MaterialType.COLLISION:
+def set_bound_col_mat_xml_properties(bound_xml: Bound, mat: bpy.types.Material):
+    if mat is None or mat.sollum_type != MaterialType.COLLISION:
         return
 
-    bound_xml.material_index = obj.active_material.collision_properties.collision_index
+    bound_xml.material_index = mat.collision_properties.collision_index
+    bound_xml.procedural_id = mat.collision_properties.procedural_id
+    bound_xml.room_id = mat.collision_properties.room_id
+    bound_xml.ped_density = mat.collision_properties.ped_density
+    bound_xml.material_color_index = mat.collision_properties.material_color_index
+    bound_xml.unk_flags = mat.collision_flags.get_lo_flags()
+    bound_xml.poly_flags = mat.collision_flags.get_hi_flags()
 
 
 def set_col_mat_xml_properties(mat_xml: Material, mat: bpy.types.Material):
@@ -511,6 +503,13 @@ def set_col_mat_xml_properties(mat_xml: Material, mat: bpy.types.Material):
     mat_xml.room_id = mat.collision_properties.room_id
     mat_xml.ped_density = mat.collision_properties.ped_density
     mat_xml.material_color_index = mat.collision_properties.material_color_index
+    for flag_name in CollisionMatFlags.__annotations__.keys():
+        if flag_name not in mat.collision_flags or not mat.collision_flags[flag_name]:
+            continue
+        mat_xml.flags.append(f"FLAG_{flag_name.upper()}")
+
+    if not mat_xml.flags:
+        mat_xml.flags.append("NONE")
 
 
 def set_bound_geom_xml_properties(geom_xml: BoundGeometry, obj: bpy.types.Object):
@@ -521,11 +520,6 @@ def set_bound_geom_xml_properties(geom_xml: BoundGeometry, obj: bpy.types.Object
 def set_bound_properties(bound_xml: Bound, obj: bpy.types.Object):
     scale = get_scale_to_apply_to_bound(obj)
 
-    bound_xml.procedural_id = obj.bound_properties.procedural_id
-    bound_xml.room_id = obj.bound_properties.room_id
-    bound_xml.ped_density = obj.bound_properties.ped_density
-    bound_xml.poly_flags = obj.bound_properties.poly_flags
-    bound_xml.unk_flags = obj.bound_properties.unk_flags
     bound_xml.margin = scale.x * obj.margin
     bound_xml.volume = obj.bound_properties.volume
     bound_xml.inertia = Vector(obj.bound_properties.inertia)

@@ -26,6 +26,58 @@ class CollisionMatFlags(bpy.types.PropertyGroup):
     no_network_spawn: bpy.props.BoolProperty(name="NO NETWORK SPAWN", default=False)
     no_cam_collision_allow_clipping: bpy.props.BoolProperty(name="NO CAM COLLISION ALLOW CLIPPING", default=False)
 
+    def set_lo_flags(self, flags: int):
+        # fmt: off
+        self.stairs           = (flags & (1 << 0)) != 0
+        self.not_climbable    = (flags & (1 << 1)) != 0
+        self.see_through      = (flags & (1 << 2)) != 0
+        self.shoot_through    = (flags & (1 << 3)) != 0
+        self.not_cover        = (flags & (1 << 4)) != 0
+        self.walkable_path    = (flags & (1 << 5)) != 0
+        self.no_cam_collision = (flags & (1 << 6)) != 0
+        self.shoot_through_fx = (flags & (1 << 7)) != 0
+        # fmt: on
+
+    def set_hi_flags(self, flags: int):
+        # fmt: off
+        self.no_decal                        = (flags & (1 << 0)) != 0
+        self.no_navmesh                      = (flags & (1 << 1)) != 0
+        self.no_ragdoll                      = (flags & (1 << 2)) != 0
+        self.vehicle_wheel                   = (flags & (1 << 3)) != 0
+        self.no_ptfx                         = (flags & (1 << 4)) != 0
+        self.too_steep_for_player            = (flags & (1 << 5)) != 0
+        self.no_network_spawn                = (flags & (1 << 6)) != 0
+        self.no_cam_collision_allow_clipping = (flags & (1 << 7)) != 0
+        # fmt: on
+
+    def get_lo_flags(self) -> int:
+        flags = 0
+        # fmt: off
+        flags |= (1 << 0) if self.stairs else 0
+        flags |= (1 << 1) if self.not_climbable else 0
+        flags |= (1 << 2) if self.see_through else 0
+        flags |= (1 << 3) if self.shoot_through else 0
+        flags |= (1 << 4) if self.not_cover else 0
+        flags |= (1 << 5) if self.walkable_path else 0
+        flags |= (1 << 6) if self.no_cam_collision else 0
+        flags |= (1 << 7) if self.shoot_through_fx else 0
+        # fmt: on
+        return flags
+
+    def get_hi_flags(self) -> int:
+        flags = 0
+        # fmt: off
+        flags |= (1 << 0) if self.no_decal else 0
+        flags |= (1 << 1) if self.no_navmesh else 0
+        flags |= (1 << 2) if self.no_ragdoll else 0
+        flags |= (1 << 3) if self.vehicle_wheel else 0
+        flags |= (1 << 4) if self.no_ptfx else 0
+        flags |= (1 << 5) if self.too_steep_for_player else 0
+        flags |= (1 << 6) if self.no_network_spawn else 0
+        flags |= (1 << 7) if self.no_cam_collision_allow_clipping else 0
+        # fmt: on
+        return flags
+
 
 class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
     collision_index: bpy.props.IntProperty(name="Collision Index", default=0)
@@ -77,13 +129,8 @@ class BoundFlags(bpy.types.PropertyGroup):
 
 
 class BoundProperties(bpy.types.PropertyGroup):
-    procedural_id: bpy.props.IntProperty(name="Procedural ID", default=0)
-    room_id: bpy.props.IntProperty(name="Room ID", default=0)
-    ped_density: bpy.props.IntProperty(name="Ped Density", default=0)
-    poly_flags: bpy.props.IntProperty(name="Poly Flags", default=0)
     inertia: bpy.props.FloatVectorProperty(name="Inertia")
     volume: bpy.props.FloatProperty(name="Volume", precision=3)
-    unk_flags: bpy.props.FloatProperty(name="UnkFlags")
     unk_float_1: bpy.props.FloatProperty(name="UnkFloat 1")
     unk_float_2: bpy.props.FloatProperty(name="UnkFloat 2")
 
