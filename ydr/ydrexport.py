@@ -235,9 +235,10 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
         vert_buffer = total_vert_buffer[loop_inds]
         used_texcoords = get_used_texcoords(material)
+        used_colors = get_used_colors(material)
 
         vert_buffer = remove_unused_uvs(vert_buffer, used_texcoords)
-        vert_buffer = remove_unused_colors(vert_buffer)
+        vert_buffer = remove_unused_colors(vert_buffer, used_colors)
 
         if not tangent_required:
             vert_buffer = remove_arr_field("Tangent", vert_buffer)
@@ -318,7 +319,7 @@ def get_tangent_required(material: bpy.types.Material):
     return shader.required_tangent
 
 
-def get_used_texcoords(material: bpy.types.Material):
+def get_used_texcoords(material: bpy.types.Material) -> set[str]:
     """Get TexCoords that the material's shader uses"""
     shader_name = material.shader_properties.filename
 
@@ -327,6 +328,17 @@ def get_used_texcoords(material: bpy.types.Material):
         return {"TexCoord0"}
 
     return shader.used_texcoords
+
+
+def get_used_colors(material: bpy.types.Material) -> set[str]:
+    """Get Colours that the material's shader uses"""
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return set()
+
+    return shader.used_colors
 
 
 def get_normal_required(material: bpy.types.Material):

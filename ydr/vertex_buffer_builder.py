@@ -20,19 +20,19 @@ def remove_arr_field(name: str, vertex_arr: NDArray):
     return vertex_arr[names]
 
 
-def remove_unused_colors(vertex_arr: NDArray):
-    """Remove color layers that are all 0s"""
+def remove_unused_colors(vertex_arr: NDArray, used_colors: set[str]) -> NDArray:
+    """Remove color layers that aren't used by the shader"""
     new_names = []
 
     for name in vertex_arr.dtype.names:
-        if "Colour" in name and np.allclose(vertex_arr[name], 0):
+        if "Colour" in name and name not in used_colors:
             continue
         new_names.append(name)
 
     return vertex_arr[new_names]
 
 
-def remove_unused_uvs(vertex_arr: NDArray, used_texcoords: set[str]):
+def remove_unused_uvs(vertex_arr: NDArray, used_texcoords: set[str]) -> NDArray:
     """Remove UV layers that aren't used by the shader"""
     new_names = []
 
@@ -177,9 +177,19 @@ class VertexBufferBuilder:
 
     def _get_colors(self) -> list[NDArray[np.uint32]]:
         num_loops = len(self.mesh.loops)
-        # Color mesh attributes (maximum of 2 for GTAV shaders)
-        color_attrs = [attr for attr in self.mesh.attributes if attr.domain == "CORNER" and attr.data_type in [
-            "FLOAT_COLOR", "BYTE_COLOR"] and "TintColor" not in attr.name][:2]
+
+        def _is_valid_color_attr(attr: bpy.types.Attribute):
+            return (attr.domain == "CORNER" and
+                    # `TintColor` only used for the tint shaders/geometry nodes
+                    not attr.name.startswith("TintColor") and
+                    # Name prefixed by `.` indicate a reserved attribute name for Blender
+                    # e.g. `.a_1234` for anonymous attributes
+                    # https://projects.blender.org/blender/blender/issues/97452
+                    not attr.name.startswith("."))
+
+        color_attrs = [attr for attr in self.mesh.color_attributes if _is_valid_color_attr(attr)]
+        # Maximum of 2 color attributes for GTAV shaders
+        color_attrs = color_attrs[:2]
 
         # Always have at least 1 color layer
         if len(color_attrs) == 0:

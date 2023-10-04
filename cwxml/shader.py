@@ -77,6 +77,16 @@ class Shader(ElementTree):
         return names
 
     @property
+    def used_colors(self) -> set[str]:
+        names = set()
+        for layout in self.layouts:
+            for field_name in layout.value:
+                if "Colour" in field_name:
+                    names.add(field_name)
+
+        return names
+
+    @property
     def is_uv_animation_supported(self) -> bool:
         has_uv0 = False
         has_uv1 = False
@@ -102,7 +112,6 @@ class Shader(ElementTree):
             new.uv_maps[name] = uv_map_index
 
         return new
-
 
 
 class ShaderManager:
