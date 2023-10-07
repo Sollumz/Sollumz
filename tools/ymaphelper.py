@@ -4,6 +4,8 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import find_bsdf_and_material_output
 
 # TODO: This is not a real flag calculation, definitely need to do better
+
+
 def calculate_ymap_content_flags(selected_ymap=None, sollum_type=None):
     content_flags = []
     if sollum_type == SollumType.YMAP_ENTITY_GROUP:
@@ -16,6 +18,7 @@ def calculate_ymap_content_flags(selected_ymap=None, sollum_type=None):
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = True
 
     return content_flags
+
 
 def create_ymap(name="ymap", sollum_type=SollumType.YMAP):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
@@ -42,20 +45,19 @@ def create_ymap_group(sollum_type=None, selected_ymap=None, empty_name=None):
     calculate_ymap_content_flags(selected_ymap, sollum_type)
     return empty
 
+
 def add_occluder_material(sollum_type=None):
     """Get occluder material or create it if not exist."""
     mat_name = ""
     mat_color = []
     mat_transparency = 0.5
-    
+
     if sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
         mat_name = "model_occluder_material"
         mat_color = (1, 0, 0, mat_transparency)
-        emission_color = (1, 0, 0, 1)
     elif sollum_type == SollumType.YMAP_BOX_OCCLUDER:
         mat_name = "box_occluder_material"
         mat_color = (0, 0, 1, mat_transparency)
-        emission_color = (0, 0, 1, 1)
 
     material = bpy.data.materials.get(mat_name) or bpy.data.materials.new(mat_name)
     material.blend_method = "BLEND"
@@ -63,10 +65,8 @@ def add_occluder_material(sollum_type=None):
     bsdf, _ = find_bsdf_and_material_output(material)
     bsdf.inputs["Alpha"].default_value = mat_transparency
     bsdf.inputs["Base Color"].default_value = mat_color
+    bsdf.inputs["Specular"].default_value = 0
     bsdf.inputs["Roughness"].default_value = 0
     bsdf.inputs["Metallic"].default_value = 0
-    bsdf.inputs["Emission"].default_value = emission_color
-
 
     return material
-        
