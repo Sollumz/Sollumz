@@ -137,12 +137,21 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         options={"HIDDEN", "SKIP_SAVE"}
     )
 
+    direct_export: bpy.props.BoolProperty(
+        name="Direct Export",
+        description="Export directly to the output directory without opening the directory selection dialog.",
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
+
     def draw(self, context):
         pass
 
     def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
+        if self.direct_export:
+            return self.execute(context)
+        else:
+            context.window_manager.fileselect_add(self)
+            return {"RUNNING_MODAL"}
 
     def execute_timed(self, context: bpy.types.Context):
         logger.set_logging_operator(self)

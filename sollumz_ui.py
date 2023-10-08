@@ -255,7 +255,13 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.operator("sollumz.import")
-        row.operator("sollumz.export")
+
+        if context.scene.sollumz_export_path != "":
+            op = row.operator("sollumz.export")
+            op.directory = context.scene.sollumz_export_path
+            op.direct_export = True
+        else:
+            row.operator("sollumz.export")
 
 
 class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
@@ -451,6 +457,23 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
             text="This will join all geometries for each LOD Level into a single object.", icon="ERROR")
         layout.operator("sollumz.migrateboundgeoms")
         layout.operator("sollumz.replace_armature_constraints")
+
+
+class SOLLUMZ_PT_EXPORT_PATH_PANEL(bpy.types.Panel):
+    bl_label = "Export path"
+    bl_idname = "SOLLUMZ_PT_EXPORT_PATH_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_order = 5
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="FILEBROWSER")
+
+    def draw(self, context):
+        self.layout.prop(context.scene, "sollumz_export_path", text="")
 
 
 class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
