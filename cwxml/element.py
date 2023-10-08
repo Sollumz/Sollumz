@@ -505,11 +505,11 @@ class ValueProperty(ElementProperty):
 
     def to_xml(self):
         value = self.value
-        if type(value) is int:
-            value = int(self.value)
-        elif type(value) is float:
-            value = int(self.value) if self.value.is_integer(
-            ) else float32(self.value)
+        if isinstance(value, float):
+            value = int(self.value) if self.value.is_integer() else float32(self.value)
+        elif isinstance(value, bool):
+            # CW expects lowercase bools in PSO/meta XMLs
+            value = str(value).lower()
         return ET.Element(self.tag_name, attrib={"value": str(value)})
 
 
