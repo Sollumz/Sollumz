@@ -505,6 +505,13 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     joined_obj = join_objects(model_objs)
     joined_obj.name = name
 
+    for modifier in joined_obj.modifiers:
+        if modifier.type == 'ARMATURE':
+            joined_obj.modifiers.remove(modifier)
+
+    for constraint in joined_obj.constraints:
+        joined_obj.constraints.remove(constraint)
+
     joined_obj.asset_mark()
     joined_obj.asset_generate_preview()
 
