@@ -134,7 +134,7 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         name="Output directory",
         description="Select export output directory",
         subtype="DIR_PATH",
-        options={"HIDDEN", "SKIP_SAVE"}
+        options={"HIDDEN"}
     )
 
     direct_export: bpy.props.BoolProperty(
