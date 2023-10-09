@@ -160,17 +160,15 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
 
-        mod = create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name)
-
-        if palette_img is not None:
-            # create texture and get texture node
-            txt_node = try_get_node_by_cls(mod.node_group, bpy.types.GeometryNodeImageTexture)
-            assert txt_node is not None
-            # apply texture
-            txt_node.inputs[0].default_value = palette_img
+        create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img)
 
 
-def create_tint_geom_modifier(obj: bpy.types.Object, tint_color_attr_name: str, input_color_attr_name: Optional[str] = None):
+def create_tint_geom_modifier(
+    obj: bpy.types.Object,
+    tint_color_attr_name: str,
+    input_color_attr_name: Optional[str],
+    palette_img: Optional[bpy.types.Image]
+) -> bpy.types.NodesModifier:
     tnt_ng = create_tinted_geometry_graph()
     mod = obj.modifiers.new("GeometryNodes", "NODES")
     mod.node_group = tnt_ng
@@ -179,6 +177,10 @@ def create_tint_geom_modifier(obj: bpy.types.Object, tint_color_attr_name: str, 
     input_id = tnt_ng.inputs[1].identifier
     mod[input_id + "_attribute_name"] = input_color_attr_name if input_color_attr_name is not None else ""
     mod[input_id + "_use_attribute"] = True
+
+    input_palette_id = tnt_ng.inputs[3].identifier
+    mod[input_palette_id] = palette_img
+
     output_id = tnt_ng.outputs[1].identifier
     mod[output_id + "_attribute_name"] = tint_color_attr_name
     mod[output_id + "_use_attribute"] = True
@@ -219,14 +221,18 @@ def link_geos(links, node1, node2):
 
 
 def create_tinted_geometry_graph():  # move to blenderhelper.py?
-    gnt = bpy.data.node_groups.new(
-        name="TintGeometry", type="GeometryNodeTree")
+    gnt = bpy.data.node_groups.new(name="TintGeometry", type="GeometryNodeTree")
     input = gnt.nodes.new("NodeGroupInput")
     output = gnt.nodes.new("NodeGroupOutput")
 
     # Create the necessary sockets for the node group
     gnt.inputs.new("NodeSocketGeometry", "Geometry")
     gnt.inputs.new("NodeSocketVector", "Vertex Colors")
+    in_palette = gnt.inputs.new("NodeSocketInt", "Palette (Preview)")
+    in_palette.description = "Index of the tint palette to preview. Has no effect on export"
+    in_palette.min_value = 0
+    in_palette_tex = gnt.inputs.new("NodeSocketImage", "Palette Texture")
+    in_palette_tex.description = "Should be the same as 'TintPaletteSampler' of the material"
     gnt.outputs.new("NodeSocketGeometry", "Geometry")
     gnt.outputs.new("NodeSocketColor", "Tint Color")
 
@@ -240,6 +246,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
     txtn.interpolation = "Closest"
+    gnt.links.new(input.outputs[3], txtn.inputs[0])
     gnt.links.new(cptn.outputs[3], txtn.inputs[1])
     gnt.links.new(txtn.outputs[0], output.inputs[1])
 
@@ -252,6 +259,8 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     for i in range(9):
         mathns.append(gnt.nodes.new("ShaderNodeMath"))
 
+    # Convert color attribute from linear to sRGB
+    # Sollumz imports it as sRGB but accessing in the node tree gives you linear color
     # c1
     mathns[0].operation = "LESS_THAN"
     gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
@@ -287,9 +296,33 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.links.new(mathns[3].outputs[0], mathns[8].inputs[0])
     gnt.links.new(mathns[7].outputs[0], mathns[8].inputs[1])
 
+    # Select palette row
+    # uv.y = (palette_preview_index + 0.5) / img.height
+    # uv.y = ((uv.y - 1) * -1)   ; flip_uv
+    pal_add = gnt.nodes.new("ShaderNodeMath")
+    pal_add.operation = "ADD"
+    pal_add.inputs[1].default_value = 0.5
+    pal_img_info = gnt.nodes.new("GeometryNodeImageInfo")
+    pal_div = gnt.nodes.new("ShaderNodeMath")
+    pal_div.operation = "DIVIDE"
+    pal_flip_uv_sub = gnt.nodes.new("ShaderNodeMath")
+    pal_flip_uv_sub.operation = "SUBTRACT"
+    pal_flip_uv_sub.inputs[1].default_value = 1.0
+    pal_flip_uv_mult = gnt.nodes.new("ShaderNodeMath")
+    pal_flip_uv_mult.operation = "MULTIPLY"
+    pal_flip_uv_mult.inputs[1].default_value = -1.0
+
+    gnt.links.new(input.outputs[3], pal_img_info.inputs[0])
+    gnt.links.new(input.outputs[2], pal_add.inputs[1])
+    gnt.links.new(pal_add.outputs[0], pal_div.inputs[0])
+    gnt.links.new(pal_img_info.outputs[1], pal_div.inputs[1])
+    gnt.links.new(pal_div.outputs[0], pal_flip_uv_sub.inputs[0])
+    gnt.links.new(pal_flip_uv_sub.outputs[0], pal_flip_uv_mult.inputs[0])
+
     # create and link vector
     comb = gnt.nodes.new("ShaderNodeCombineRGB")
     gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
+    gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
     gnt.links.new(comb.outputs[0], cptn.inputs[3])
 
     return gnt
