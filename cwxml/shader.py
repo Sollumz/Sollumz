@@ -147,10 +147,10 @@ class ShaderManager:
     veh_decals = ["vehicle_decal.sps", "vehicle_decal2.sps",
                   "vehicle_blurredrotor_emissive.sps"]
     shadow_proxies = ["trees_shadow_proxy.sps"]
-    tint_flag_1 = ["trees_normal_diffspec_tnt.sps",
-                   "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
-    tint_flag_2 = ["weapon_normal_spec_detail_tnt.sps", "weapon_normal_spec_cutout_palette.sps",
-                   "weapon_normal_spec_detail_palette.sps", "weapon_normal_spec_palette.sps"]
+    # Tint shaders that use colour1 instead of colour0 to index the tint palette
+    tint_colour1_shaders = ["trees_normal_diffspec_tnt.sps", "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
+    palette_shaders = ["ped_palette.sps", "ped_default_palette.sps", "weapon_normal_spec_cutout_palette.sps",
+                       "weapon_normal_spec_detail_palette.sps", "weapon_normal_spec_palette.sps"]
     em_shaders = ["normal_spec_emissive.sps", "normal_spec_reflect_emissivenight.sps", "emissive.sps", "emissive_speclum.sps", "emissive_tnt.sps", "emissivenight.sps",
                   "emissivenight_geomnightonly.sps", "emissivestrong_alpha.sps", "emissivestrong.sps", "glass_emissive.sps", "glass_emissivenight.sps", "glass_emissivenight_alpha.sps",
                   "glass_emissive_alpha.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps"]

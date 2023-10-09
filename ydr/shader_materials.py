@@ -123,7 +123,7 @@ def organize_loose_nodes(node_tree, start_x, start_y):
 def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderNodeTexImage]:
     nodes = mat.node_tree.nodes
     for node in nodes:
-        if node.name in ("TintPaletteSampler", "TextureSamplerDiffPal") and isinstance(node, bpy.types.ShaderNodeTexImage):
+        if node.name == "TintPaletteSampler" and isinstance(node, bpy.types.ShaderNodeTexImage):
             return node
 
     return None
@@ -143,11 +143,6 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
     if not tint_mats:
         return
 
-    if obj.data.color_attributes:
-        input_color_attr_name = obj.data.color_attributes[0].name
-    else:
-        input_color_attr_name = None
-
     for mat in tint_mats:
         tint_sampler_node = get_tint_sampler_node(mat)
         palette_img = tint_sampler_node.image
@@ -155,15 +150,17 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
         if tint_sampler_node is None:
             continue
 
+        if mat.shader_properties.filename in ShaderManager.tint_colour1_shaders:
+            input_color_attr_name = "Color 2"
+        else:
+            input_color_attr_name = "Color 1"
+
         tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
+        tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
 
-        rename_tint_attr_node(mat.node_tree, name=tint_color_attr_name)
+        rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
 
-        tint_color_attr = obj.data.attributes.new(
-            name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
-
-        mod = create_tint_geom_modifier(
-            obj, tint_color_attr.name, input_color_attr_name)
+        mod = create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name)
 
         if palette_img is not None:
             # create texture and get texture node
@@ -205,7 +202,7 @@ def get_tinted_mats(obj: bpy.types.Object) -> list[bpy.types.Material]:
     return [mat for mat in obj.data.materials if is_tint_material(mat)]
 
 
-def obj_has_tint_mats(obj: bpy.types.Object):
+def obj_has_tint_mats(obj: bpy.types.Object) -> bool:
     if not obj.data.materials:
         return False
 
@@ -213,8 +210,8 @@ def obj_has_tint_mats(obj: bpy.types.Object):
     return is_tint_material(mat)
 
 
-def is_tint_material(mat: bpy.types.Material):
-    return mat.shader_properties.filename not in ShaderManager.tint_flag_2 and get_tint_sampler_node(mat) is not None
+def is_tint_material(mat: bpy.types.Material) -> bool:
+    return get_tint_sampler_node(mat) is not None
 
 
 def link_geos(links, node1, node2):
@@ -464,8 +461,12 @@ def link_specular(b: ShaderBuilder, spctex):
     links.new(spctex.outputs["Color"], bsdf.inputs["Specular"])
 
 
-def create_pixel_tint_nodes(b: ShaderBuilder, tex, tinttex, tintflags):
-    tinttex.interpolation = "Closest"
+def create_diff_palette_nodes(
+    b: ShaderBuilder,
+    palette_tex: bpy.types.ShaderNodeTexImage,
+    diffuse_tex: bpy.types.ShaderNodeTexImage
+):
+    palette_tex.interpolation = "Closest"
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -481,7 +482,7 @@ def create_pixel_tint_nodes(b: ShaderBuilder, tex, tinttex, tintflags):
     comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
 
     mathns[0].operation = "MULTIPLY"
-    links.new(tex.outputs["Alpha"], mathns[0].inputs[0])
+    links.new(diffuse_tex.outputs["Alpha"], mathns[0].inputs[0])
     mathns[0].inputs[1].default_value = 255.009995
 
     mathns[1].operation = "ROUND"
@@ -505,15 +506,16 @@ def create_pixel_tint_nodes(b: ShaderBuilder, tex, tinttex, tintflags):
     links.new(mathns[4].outputs[0], mathns[5].inputs[1])
     links.new(mathns[5].outputs[0], comxyz.inputs[1])
 
-    links.new(comxyz.outputs[0], tinttex.inputs[0])
-    links.new(tinttex.outputs[0], bsdf.inputs["Base Color"])
+    links.new(comxyz.outputs[0], palette_tex.inputs[0])
+    links.new(palette_tex.outputs[0], bsdf.inputs["Base Color"])
 
 
-def create_tint_nodes(b: ShaderBuilder, tinttex, txt, tintflags):
-    if tintflags == 2:
-        create_pixel_tint_nodes(b, txt, tinttex, tintflags)
-        return
+def create_tint_nodes(
+    b: ShaderBuilder,
+    diffuse_tex: bpy.types.ShaderNodeTexImage
+):
     # create shader attribute node
+    # TintColor attribute is filled by tint geometry nodes
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -523,7 +525,7 @@ def create_tint_nodes(b: ShaderBuilder, tinttex, txt, tintflags):
     mix.inputs["Fac"].default_value = 0.95
     mix.blend_type = "MULTIPLY"
     links.new(attr.outputs["Color"], mix.inputs[2])
-    links.new(txt.outputs[0], mix.inputs[1])
+    links.new(diffuse_tex.outputs[0], mix.inputs[1])
     links.new(mix.outputs[0], bsdf.inputs["Base Color"])
 
 
@@ -715,6 +717,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     texture = None
     texture2 = None
     tintpal = None
+    diffpal = None
     bumptex = None
     spectex = None
     detltex = None
@@ -731,8 +734,10 @@ def create_basic_shader_nodes(b: ShaderBuilder):
                 spectex = imgnode
             elif param.name == "DetailSampler":
                 detltex = imgnode
-            elif param.name in ("TintPaletteSampler", "TextureSamplerDiffPal"):
+            elif param.name == "TintPaletteSampler":
                 tintpal = imgnode
+            elif param.name == "TextureSamplerDiffPal":
+                diffpal = imgnode
             elif param.name == "distanceMapSampler":
                 texture = imgnode
                 is_distance_map = True
@@ -757,13 +762,9 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     use_detl = True if detltex else False
     use_tint = True if tintpal else False
 
-    # get correct vertex color index to use
-    tintflag = 0
-    if use_tint:
-        if filename in ShaderManager.tint_flag_1:
-            tintflag = 1
-        elif filename in ShaderManager.tint_flag_2:
-            tintflag = 2
+    # Some shaders have TextureSamplerDiffPal but don't actually use it, so we only create palette
+    # shader nodes on the specific shaders that use it
+    use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
 
     use_decal = True if filename in ShaderManager.tinted_shaders() else False
     decalflag = 0
@@ -806,8 +807,12 @@ def create_basic_shader_nodes(b: ShaderBuilder):
         link_specular(b, spectex)
     else:
         bsdf.inputs["Specular"].default_value = 0
+
     if use_tint:
-        create_tint_nodes(b, tintpal, texture, tintflag)
+        create_tint_nodes(b, texture)
+
+    if use_palette:
+        create_diff_palette_nodes(b, diffpal, texture)
 
     if is_emissive:
         create_emissive_nodes(b)
