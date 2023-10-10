@@ -207,8 +207,14 @@ class SOLLUMZ_OT_update_light_shaft_direction(bpy.types.Operator, ExtensionUpdat
 
     @classmethod
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
+        aobj = context.active_object
+
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
-        light_shaft_props.direction = verts_location
+        start_pos = aobj.matrix_world @ light_shaft_props.offset_position
+        end_pos = aobj.matrix_world @ verts_location
+        direction = end_pos - start_pos
+        light_shaft_props.length = direction.length
+        light_shaft_props.direction = direction.normalized()
 
 class SOLLUMZ_OT_calculate_light_shaft_center_offset_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Calculates the center based on the corner coordinates"""
