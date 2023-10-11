@@ -20,8 +20,8 @@ class SOLLUMZ_MT_pie_menu(Menu):
         pie.operator("sollumz.autoconvertmaterial",
                      text="Convert Material", icon='NODE_MATERIAL')
         # Right
-        pie.operator("sollumz.addobjasentity",
-                     text="Add Objects To Room", icon='OBJECT_DATA')
+        pie.operator("sollumz.addobjasentity", icon='OBJECT_DATA')
+
         # Bottom
         pie.operator("sollumz.load_flag_preset",
                      text="Apply Flag Preset", icon='ALIGN_TOP')

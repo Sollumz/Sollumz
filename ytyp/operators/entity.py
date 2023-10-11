@@ -43,7 +43,7 @@ class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
     bl_idname = "sollumz.addobjasentity"
-    bl_label = "Add object(s) as entity"
+    bl_label = "Add Object(s) as Entity"
     bl_description = "Create Entities from selected objects (auto-sets linked object)"
 
     @classmethod
