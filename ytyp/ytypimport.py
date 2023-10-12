@@ -163,6 +163,16 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
         if isinstance(prop_value, Quaternion):
             prop_value = prop_value.to_euler()
 
+        if prop_name == "effect_hash":
+            # `effectHash` is stored as decimal value.
+            # Convert to `hash_` string or empty string for 0
+            try:
+                prop_value_int = int(prop_value)
+            except ValueError:
+                prop_value_int = 0
+            prop_value = f"hash_{prop_value_int:08X}" if prop_value_int != 0 else ""
+
+
         setattr(extension_properties, prop_name, prop_value)
 
 

@@ -4,6 +4,7 @@ from mathutils import Euler, Vector, Quaternion, Matrix
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
+from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
@@ -186,6 +187,17 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
 
         if isinstance(prop_value, Euler):
             prop_value = prop_value.to_quaternion()
+
+        if prop_name == "effect_hash":
+            # `effectHash` needs a hash as decimal value
+            prop_value = prop_value.strip()
+            if prop_value == "":
+                # Default to 0 for empty strings
+                prop_value = "0"
+            else:
+                # Otherwise, get a hash from the string
+                prop_value_hash = jenkhash.name_to_hash(prop_value)
+                prop_value = str(prop_value_hash)
 
         setattr(extension_xml, prop_name, prop_value)
 

@@ -409,15 +409,8 @@ def clip_attribute_to_xml(attr: ClipAttribute) -> ycdxml.AttributesList.Attribut
     return xml_attr
 
 
-def name_to_hash(name: str) -> int:
-    if name.startswith("hash_"):
-        return int(name[5:], 16) & 0xFFFFFFFF
-    else:
-        return jenkhash.Generate(name)
-
-
 def clip_attribute_calc_signature(attr: ClipAttribute) -> int:
-    signature = name_to_hash(attr.name)
+    signature = jenkhash.name_to_hash(attr.name)
     if attr.type == "Float":
         signature = jenkhash.GenerateData(struct.pack("f", attr.value_float), seed=signature)
     elif attr.type == "Int":
@@ -433,7 +426,7 @@ def clip_attribute_calc_signature(attr: ClipAttribute) -> int:
     elif attr.type == "String":
         signature = jenkhash.Generate(attr.value_string, seed=signature)
     elif attr.type == "HashString":
-        signature = name_to_hash(attr.value_string)
+        signature = jenkhash.name_to_hash(attr.value_string)
     else:
         assert False, f"Unknown attribute type: {attr.type}"
 
@@ -444,7 +437,7 @@ def clip_attribute_calc_signature(attr: ClipAttribute) -> int:
 #  calculations but currently do not match the expected results, investigate.
 #  Should be good enough for now
 def clip_property_calc_signature(prop: ClipAttribute) -> int:
-    signature = name_to_hash(prop.name)
+    signature = jenkhash.name_to_hash(prop.name)
     # for attr in prop:
     attr_signature = clip_attribute_calc_signature(prop)
     signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
@@ -454,12 +447,12 @@ def clip_property_calc_signature(prop: ClipAttribute) -> int:
 def clip_tag_calc_signature(tag: ClipTag) -> int:
     import zlib
 
-    signature = name_to_hash(tag.name)
+    signature = jenkhash.name_to_hash(tag.name)
     for attr in tag.attributes:
         attr_signature = clip_attribute_calc_signature(attr)
         signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
 
-    signature = zlib.crc32(struct.pack("f", tag.start_phase), name_to_hash(tag.name) ^ signature)
+    signature = zlib.crc32(struct.pack("f", tag.start_phase), jenkhash.name_to_hash(tag.name) ^ signature)
     signature = zlib.crc32(struct.pack("f", tag.end_phase), signature)
     return signature
 
