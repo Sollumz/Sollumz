@@ -31,7 +31,7 @@ from ..tools.meshhelper import (get_bound_center_from_bounds, calculate_volume,
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
 from ..sollumz_preferences import get_export_settings
 from .. import logger
-from .properties import CollisionMatFlags, BoundFlags
+from .properties import CollisionMatFlags, get_collision_mat_raw_flags, BoundFlags
 
 T_Bound = TypeVar("T_Bound", bound=Bound)
 T_BoundChild = TypeVar("T_BoundChild", bound=BoundChild)
@@ -503,8 +503,9 @@ def set_bound_col_mat_xml_properties(bound_xml: Bound, mat: bpy.types.Material):
     bound_xml.room_id = mat.collision_properties.room_id
     bound_xml.ped_density = mat.collision_properties.ped_density
     bound_xml.material_color_index = mat.collision_properties.material_color_index
-    bound_xml.unk_flags = mat.collision_flags.get_lo_flags()
-    bound_xml.poly_flags = mat.collision_flags.get_hi_flags()
+    flags_lo, flags_hi = get_collision_mat_raw_flags(mat.collision_flags)
+    bound_xml.unk_flags = flags_lo
+    bound_xml.poly_flags = flags_hi
 
 
 def set_col_mat_xml_properties(mat_xml: Material, mat: bpy.types.Material):

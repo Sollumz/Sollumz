@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
-from .properties import CollisionMatFlags
+from .properties import CollisionMatFlags, set_collision_mat_raw_flags
 from ..cwxml.bound import (
     Bound,
     BoundFile,
@@ -214,8 +214,7 @@ def set_bound_col_material_properties(bound_xml: Bound, mat: bpy.types.Material)
     mat.collision_properties.room_id = bound_xml.room_id
     mat.collision_properties.ped_density = bound_xml.ped_density
     mat.collision_properties.material_color_index = bound_xml.material_color_index
-    mat.collision_flags.set_lo_flags(bound_xml.unk_flags)
-    mat.collision_flags.set_hi_flags(bound_xml.poly_flags)
+    set_collision_mat_raw_flags(mat.collision_flags, bound_xml.unk_flags, bound_xml.poly_flags)
 
 
 def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
