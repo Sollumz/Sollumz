@@ -625,7 +625,7 @@ class SOLLUMZ_OT_LIGHT_TIME_FLAGS_select_range(SelectTimeFlagsRange, bpy.types.O
 
     @classmethod
     def poll(cls, context):
-        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+        return getattr(context, "light", None) and context.active_object.sollum_type == SollumType.LIGHT
 
     def get_flags(self, context):
         light = context.light
@@ -637,7 +637,7 @@ class SOLLUMZ_OT_LIGHT_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.light and context.active_object.sollum_type == SollumType.LIGHT
+        return getattr(context, "light", None) and context.active_object.sollum_type == SollumType.LIGHT
 
     def get_flags(self, context):
         light = context.light
