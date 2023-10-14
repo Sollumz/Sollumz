@@ -90,7 +90,7 @@ class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
 class ShaderProperties(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty(min=0)
 
-    renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0)
+    renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0, min=0, max=7)
     filename: bpy.props.StringProperty(
         name="Shader Filename", default="default.sps")
     name: bpy.props.StringProperty(name="Shader Name", default="default")

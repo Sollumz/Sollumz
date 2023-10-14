@@ -1021,7 +1021,7 @@ def create_shader(filename: str):
     mat.use_nodes = True
     mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename
-    mat.shader_properties.renderbucket = shader.render_buckets[0]
+    mat.shader_properties.renderbucket = shader.render_bucket
 
     bsdf, material_output = find_bsdf_and_material_output(mat)
     assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"

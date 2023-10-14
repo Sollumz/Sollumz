@@ -3,14 +3,12 @@
  <Item>
   <Name>default</Name>
   <FileName>
-   <Item>default.sps</Item>
-   <Item>cutout.sps</Item>
-   <Item />
-   <Item>alpha.sps</Item>
-   <Item>gta_default.sps</Item>
-   <Item>default_noedge.sps</Item>
+   <Item bucket="0">default.sps</Item>
+   <Item bucket="3">cutout.sps</Item>
+   <Item bucket="1">alpha.sps</Item>
+   <Item bucket="0">gta_default.sps</Item>
+   <Item bucket="0">default_noedge.sps</Item>
   </FileName>
-  <RenderBucket>0 3 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -45,9 +43,8 @@
  <Item>
   <Name>vehicle_mesh</Name>
   <FileName>
-   <Item>vehicle_mesh.sps</Item>
+   <Item bucket="0">vehicle_mesh.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -94,12 +91,11 @@
  <Item>
   <Name>normal_spec</Name>
   <FileName>
-   <Item>normal_spec.sps</Item>
-   <Item>normal_spec_cutout.sps</Item>
-   <Item>normal_spec_alpha.sps</Item>
-   <Item>normal_spec_screendooralpha.sps</Item>
+   <Item bucket="0">normal_spec.sps</Item>
+   <Item bucket="3">normal_spec_cutout.sps</Item>
+   <Item bucket="1">normal_spec_alpha.sps</Item>
+   <Item bucket="3">normal_spec_screendooralpha.sps</Item>
   </FileName>
-  <RenderBucket>0 3 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -135,9 +131,8 @@
  <Item>
   <Name>trees_lod</Name>
   <FileName>
-   <Item>trees_lod.sps</Item>
+   <Item bucket="3">trees_lod.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -165,9 +160,8 @@
  <Item>
   <Name>trees_lod2</Name>
   <FileName>
-   <Item>trees_lod2.sps</Item>
+   <Item bucket="3">trees_lod2.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -202,12 +196,11 @@
  <Item>
   <Name>spec</Name>
   <FileName>
-   <Item>spec.sps</Item>
-   <Item>spec_alpha.sps</Item>
-   <Item>spec_screendooralpha.sps</Item>
-   <Item>gta_spec.sps</Item>
+   <Item bucket="0">spec.sps</Item>
+   <Item bucket="1">spec_alpha.sps</Item>
+   <Item bucket="3">spec_screendooralpha.sps</Item>
+   <Item bucket="0">gta_spec.sps</Item>
   </FileName>
-  <RenderBucket>0 1 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -241,9 +234,8 @@
  <Item>
   <Name>decal</Name>
   <FileName>
-   <Item>decal.sps</Item>
+   <Item bucket="2">decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -272,10 +264,9 @@
  <Item>
   <Name>ped_default</Name>
   <FileName>
-   <Item>ped_default.sps</Item>
-   <Item>ped_default_cutout.sps</Item>
+   <Item bucket="0">ped_default.sps</Item>
+   <Item bucket="3">ped_default_cutout.sps</Item>
   </FileName>
-  <RenderBucket>0 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -313,14 +304,13 @@
  <Item>
   <Name>normal</Name>
   <FileName>
-   <Item>normal.sps</Item>
-   <Item>normal_cutout.sps</Item>
-   <Item>normal_alpha.sps</Item>
-   <Item>normal_screendooralpha.sps</Item>
-   <Item>gta_normal.sps</Item>
-   <Item>water_decal.sps</Item>
+   <Item bucket="0">normal.sps</Item>
+   <Item bucket="3">normal_cutout.sps</Item>
+   <Item bucket="1">normal_alpha.sps</Item>
+   <Item bucket="3">normal_screendooralpha.sps</Item>
+   <Item bucket="0">gta_normal.sps</Item>
+   <Item bucket="2">water_decal.sps</Item>
   </FileName>
-  <RenderBucket>0 3 1 2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -356,9 +346,8 @@
  <Item>
   <Name>vehicle_tire</Name>
   <FileName>
-   <Item>vehicle_tire.sps</Item>
+   <Item bucket="0">vehicle_tire.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -411,9 +400,8 @@
  <Item>
   <Name>vehicle_tire_emissive</Name>
   <FileName>
-   <Item>vehicle_tire_emissive.sps</Item>
+   <Item bucket="0">vehicle_tire_emissive.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -463,9 +451,8 @@
  <Item>
   <Name>vehicle_paint4</Name>
   <FileName>
-   <Item>vehicle_paint4.sps</Item>
+   <Item bucket="0">vehicle_paint4.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -520,9 +507,8 @@
  <Item>
   <Name>normal_spec_detail</Name>
   <FileName>
-   <Item>normal_spec_detail.sps</Item>
+   <Item bucket="0">normal_spec_detail.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -559,9 +545,8 @@
  <Item>
   <Name>ped</Name>
   <FileName>
-   <Item>ped.sps</Item>
+   <Item bucket="0">ped.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -603,11 +588,10 @@
  <Item>
   <Name>vehicle_paint1</Name>
   <FileName>
-   <Item>vehicle_paint1.sps</Item>
-   <Item>vehicle_nosplash.sps</Item>
-   <Item>vehicle_nowater.sps</Item>
+   <Item bucket="0">vehicle_paint1.sps</Item>
+   <Item bucket="4">vehicle_nosplash.sps</Item>
+   <Item bucket="5">vehicle_nowater.sps</Item>
   </FileName>
-  <RenderBucket>0 4 5</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -656,9 +640,8 @@
  <Item>
   <Name>normal_spec_decal</Name>
   <FileName>
-   <Item>normal_spec_decal.sps</Item>
+   <Item bucket="2">normal_spec_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -695,9 +678,8 @@
  <Item>
   <Name>vehicle_mesh2_enveff</Name>
   <FileName>
-   <Item>vehicle_mesh2_enveff.sps</Item>
+   <Item bucket="0">vehicle_mesh2_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -748,9 +730,8 @@
  <Item>
   <Name>normal_decal</Name>
   <FileName>
-   <Item>normal_decal.sps</Item>
+   <Item bucket="2">normal_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -785,10 +766,9 @@
  <Item>
   <Name>default_spec</Name>
   <FileName>
-   <Item>default_spec.sps</Item>
-   <Item>spec_const.sps</Item>
+   <Item bucket="0">default_spec.sps</Item>
+   <Item bucket="0">spec_const.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -816,10 +796,9 @@
  <Item>
   <Name>emissive</Name>
   <FileName>
-   <Item>emissive.sps</Item>
-   <Item>emissive_alpha.sps</Item>
+   <Item bucket="0">emissive.sps</Item>
+   <Item bucket="1">emissive_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -849,9 +828,8 @@
  <Item>
   <Name>vehicle_interior2</Name>
   <FileName>
-   <Item>vehicle_interior2.sps</Item>
+   <Item bucket="0">vehicle_interior2.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -891,9 +869,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_2tex_blend_pxm_spm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -943,9 +920,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_2tex_blend_lod</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_2tex_blend_lod.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_2tex_blend_lod.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -971,9 +947,8 @@
  <Item>
   <Name>vehicle_detail2</Name>
   <FileName>
-   <Item>vehicle_detail2.sps</Item>
+   <Item bucket="0">vehicle_detail2.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1017,9 +992,8 @@
  <Item>
   <Name>vehicle_shuts</Name>
   <FileName>
-   <Item>vehicle_shuts.sps</Item>
+   <Item bucket="0">vehicle_shuts.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1063,9 +1037,8 @@
  <Item>
   <Name>vehicle_paint3</Name>
   <FileName>
-   <Item>vehicle_paint3.sps</Item>
+   <Item bucket="0">vehicle_paint3.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1116,9 +1089,8 @@
  <Item>
   <Name>vehicle_badges</Name>
   <FileName>
-   <Item>vehicle_badges.sps</Item>
+   <Item bucket="1">vehicle_badges.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1164,10 +1136,9 @@
  <Item>
   <Name>default_tnt</Name>
   <FileName>
-   <Item>cutout_tnt.sps</Item>
-   <Item>default_tnt.sps</Item>
+   <Item bucket="3">cutout_tnt.sps</Item>
+   <Item bucket="0">default_tnt.sps</Item>
   </FileName>
-  <RenderBucket>3 0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1197,9 +1168,8 @@
  <Item>
   <Name>vehicle_lightsemissive</Name>
   <FileName>
-   <Item>vehicle_lightsemissive.sps</Item>
+   <Item bucket="1">vehicle_lightsemissive.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1251,9 +1221,8 @@
  <Item>
   <Name>cable</Name>
   <FileName>
-   <Item>cable.sps</Item>
+   <Item bucket="0">cable.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1290,10 +1259,9 @@
  <Item>
   <Name>vehicle_vehglass</Name>
   <FileName>
-   <Item>vehicle_vehglass.sps</Item>
-   <Item>vehicle_lights.sps</Item>
+   <Item bucket="1">vehicle_vehglass.sps</Item>
+   <Item bucket="1">vehicle_lights.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1339,9 +1307,8 @@
  <Item>
   <Name>ped_hair_spiked</Name>
   <FileName>
-   <Item>ped_hair_spiked.sps</Item>
+   <Item bucket="3">ped_hair_spiked.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1387,10 +1354,9 @@
  <Item>
   <Name>normal_spec_tnt</Name>
   <FileName>
-   <Item>normal_spec_tnt.sps</Item>
-   <Item>normal_spec_cutout_tnt.sps</Item>
+   <Item bucket="0">normal_spec_tnt.sps</Item>
+   <Item bucket="3">normal_spec_cutout_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1428,9 +1394,8 @@
  <Item>
   <Name>normal_decal_pxm</Name>
   <FileName>
-   <Item>normal_decal_pxm.sps</Item>
+   <Item bucket="2">normal_decal_pxm.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1462,9 +1427,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_2tex_blend</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_2tex_blend.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_2tex_blend.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1497,9 +1461,8 @@
  <Item>
   <Name>default_terrain_wet</Name>
   <FileName>
-   <Item>default_terrain_wet.sps</Item>
+   <Item bucket="0">default_terrain_wet.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1521,9 +1484,8 @@
  <Item>
   <Name>vehicle_vehglass_inner</Name>
   <FileName>
-   <Item>vehicle_vehglass_inner.sps</Item>
+   <Item bucket="1">vehicle_vehglass_inner.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1567,9 +1529,8 @@
  <Item>
   <Name>vehicle_licenseplate</Name>
   <FileName>
-   <Item>vehicle_licenseplate.sps</Item>
+   <Item bucket="0">vehicle_licenseplate.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1626,9 +1587,8 @@
  <Item>
   <Name>glass_env</Name>
   <FileName>
-   <Item>glass_env.sps</Item>
+   <Item bucket="1">glass_env.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1664,9 +1624,8 @@
  <Item>
   <Name>normal_spec_decal_pxm</Name>
   <FileName>
-   <Item>normal_spec_decal_pxm.sps</Item>
+   <Item bucket="2">normal_spec_decal_pxm.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1699,9 +1658,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_lod</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_lod.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_lod.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1725,9 +1683,8 @@
  <Item>
   <Name>normal_detail</Name>
   <FileName>
-   <Item>normal_detail.sps</Item>
+   <Item bucket="0">normal_detail.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1763,9 +1720,8 @@
  <Item>
   <Name>vehicle_dash_emissive</Name>
   <FileName>
-   <Item>vehicle_dash_emissive.sps</Item>
+   <Item bucket="1">vehicle_dash_emissive.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1811,9 +1767,8 @@
  <Item>
   <Name>vehicle_emissive_opaque</Name>
   <FileName>
-   <Item>vehicle_emissive_opaque.sps</Item>
+   <Item bucket="0">vehicle_emissive_opaque.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1858,9 +1813,8 @@
  <Item>
   <Name>decal_tnt</Name>
   <FileName>
-   <Item>decal_tnt.sps</Item>
+   <Item bucket="2">decal_tnt.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1891,10 +1845,9 @@
  <Item>
   <Name>emissivenight</Name>
   <FileName>
-   <Item>emissivenight.sps</Item>
-   <Item>emissivenight_alpha.sps</Item>
+   <Item bucket="0">emissivenight.sps</Item>
+   <Item bucket="1">emissivenight_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1922,9 +1875,8 @@
  <Item>
   <Name>vehicle_dash_emissive_opaque</Name>
   <FileName>
-   <Item>vehicle_dash_emissive_opaque.sps</Item>
+   <Item bucket="0">vehicle_dash_emissive_opaque.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1963,9 +1915,8 @@
  <Item>
   <Name>vehicle_decal</Name>
   <FileName>
-   <Item>vehicle_decal.sps</Item>
+   <Item bucket="1">vehicle_decal.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2006,9 +1957,8 @@
  <Item>
   <Name>emissive_additive_uv_alpha</Name>
   <FileName>
-   <Item>emissive_additive_uv_alpha.sps</Item>
+   <Item bucket="1">emissive_additive_uv_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2029,11 +1979,10 @@
  <Item>
   <Name>cloth_normal_spec</Name>
   <FileName>
-   <Item>cloth_normal_spec.sps</Item>
-   <Item>cloth_normal_spec_cutout.sps</Item>
-   <Item>cloth_normal_spec_alpha.sps</Item>
+   <Item bucket="0">cloth_normal_spec.sps</Item>
+   <Item bucket="3">cloth_normal_spec_cutout.sps</Item>
+   <Item bucket="1">cloth_normal_spec_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 3 1</RenderBucket>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -2075,10 +2024,9 @@
  <Item>
   <Name>normal_spec_reflect</Name>
   <FileName>
-   <Item>normal_spec_reflect.sps</Item>
-   <Item>normal_spec_reflect_alpha.sps</Item>
+   <Item bucket="0">normal_spec_reflect.sps</Item>
+   <Item bucket="1">normal_spec_reflect_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2114,9 +2062,8 @@
  <Item>
   <Name>normal_spec_pxm</Name>
   <FileName>
-   <Item>normal_spec_pxm.sps</Item>
+   <Item bucket="0">normal_spec_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2149,9 +2096,8 @@
  <Item>
   <Name>cloth_default</Name>
   <FileName>
-   <Item>cloth_default.sps</Item>
+   <Item bucket="0">cloth_default.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV3">
     <Position />
@@ -2174,9 +2120,8 @@
  <Item>
   <Name>ped_alpha</Name>
   <FileName>
-   <Item>ped_alpha.sps</Item>
+   <Item bucket="1">ped_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2217,9 +2162,8 @@
  <Item>
   <Name>trees_normal_spec</Name>
   <FileName>
-   <Item>trees_normal_spec.sps</Item>
+   <Item bucket="3">trees_normal_spec.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2261,10 +2205,9 @@
  <Item>
   <Name>spec_tnt</Name>
   <FileName>
-   <Item>spec_tnt.sps</Item>
-   <Item>cutout_spec_tnt.sps</Item>
+   <Item bucket="0">spec_tnt.sps</Item>
+   <Item bucket="3">cutout_spec_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2297,9 +2240,8 @@
  <Item>
   <Name>emissive_speclum</Name>
   <FileName>
-   <Item>emissive_speclum.sps</Item>
+   <Item bucket="0">emissive_speclum.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2330,9 +2272,8 @@
  <Item>
   <Name>vehicle_paint2</Name>
   <FileName>
-   <Item>vehicle_paint2.sps</Item>
+   <Item bucket="0">vehicle_paint2.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2378,9 +2319,8 @@
  <Item>
   <Name>normal_spec_detail_tnt</Name>
   <FileName>
-   <Item>normal_spec_detail_tnt.sps</Item>
+   <Item bucket="0">normal_spec_detail_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2420,9 +2360,8 @@
  <Item>
   <Name>default_detail</Name>
   <FileName>
-   <Item>default_detail.sps</Item>
+   <Item bucket="0">default_detail.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2451,9 +2390,8 @@
  <Item>
   <Name>vehicle_paint8</Name>
   <FileName>
-   <Item>vehicle_paint8.sps</Item>
+   <Item bucket="0">vehicle_paint8.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2517,9 +2455,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_pxm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_pxm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2563,9 +2500,8 @@
  <Item>
   <Name>decal_normal_only</Name>
   <FileName>
-   <Item>decal_normal_only.sps</Item>
+   <Item bucket="2">decal_normal_only.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2597,9 +2533,8 @@
  <Item>
   <Name>cutout_fence</Name>
   <FileName>
-   <Item>cutout_fence.sps</Item>
+   <Item bucket="3">cutout_fence.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2625,9 +2560,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_pxm_spm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_pxm_spm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_pxm_spm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2674,9 +2608,8 @@
  <Item>
   <Name>grass_fur_mask</Name>
   <FileName>
-   <Item>grass_fur_mask.sps</Item>
+   <Item bucket="3">grass_fur_mask.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2718,11 +2651,10 @@
  <Item>
   <Name>normal_tnt</Name>
   <FileName>
-   <Item>normal_tnt.sps</Item>
-   <Item>normal_tnt_alpha.sps</Item>
-   <Item>normal_cutout_tnt.sps</Item>
+   <Item bucket="0">normal_tnt.sps</Item>
+   <Item bucket="1">normal_tnt_alpha.sps</Item>
+   <Item bucket="3">normal_cutout_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0 1 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2758,9 +2690,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_spec_pxm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_spec_pxm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_spec_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2804,9 +2735,8 @@
  <Item>
   <Name>ptfx_model</Name>
   <FileName>
-   <Item>ptfx_model.sps</Item>
+   <Item bucket="1">ptfx_model.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2828,9 +2758,8 @@
  <Item>
   <Name>grass_fur</Name>
   <FileName>
-   <Item>grass_fur.sps</Item>
+   <Item bucket="3">grass_fur.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2868,9 +2797,8 @@
  <Item>
   <Name>vehicle_interior</Name>
   <FileName>
-   <Item>vehicle_interior.sps</Item>
+   <Item bucket="0">vehicle_interior.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2914,9 +2842,8 @@
  <Item>
   <Name>spec_decal</Name>
   <FileName>
-   <Item>spec_decal.sps</Item>
+   <Item bucket="2">spec_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2946,9 +2873,8 @@
  <Item>
   <Name>vehicle_paint6_enveff</Name>
   <FileName>
-   <Item>vehicle_paint6_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint6_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3009,9 +2935,8 @@
  <Item>
   <Name>ped_hair_cutout_alpha</Name>
   <FileName>
-   <Item>ped_hair_cutout_alpha.sps</Item>
+   <Item bucket="3">ped_hair_cutout_alpha.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3056,9 +2981,8 @@
  <Item>
   <Name>decal_dirt</Name>
   <FileName>
-   <Item>decal_dirt.sps</Item>
+   <Item bucket="2">decal_dirt.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3087,9 +3011,8 @@
  <Item>
   <Name>decal_emissive_only</Name>
   <FileName>
-   <Item>decal_emissive_only.sps</Item>
+   <Item bucket="2">decal_emissive_only.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3116,9 +3039,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_2tex_blend_pxm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_2tex_blend_pxm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_2tex_blend_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3165,9 +3087,8 @@
  <Item>
   <Name>weapon_normal_spec_detail_palette</Name>
   <FileName>
-   <Item>weapon_normal_spec_detail_palette.sps</Item>
+   <Item bucket="0">weapon_normal_spec_detail_palette.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3208,10 +3129,9 @@
  <Item>
   <Name>cloth_spec_alpha</Name>
   <FileName>
-   <Item>cloth_spec_cutout.sps</Item>
-   <Item>cloth_spec_alpha.sps</Item>
+   <Item bucket="3">cloth_spec_cutout.sps</Item>
+   <Item bucket="1">cloth_spec_alpha.sps</Item>
   </FileName>
-  <RenderBucket>3 1</RenderBucket>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -3240,10 +3160,9 @@
  <Item>
   <Name>emissivestrong</Name>
   <FileName>
-   <Item>emissivestrong.sps</Item>
-   <Item>emissivestrong_alpha.sps</Item>
+   <Item bucket="0">emissivestrong.sps</Item>
+   <Item bucket="1">emissivestrong_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3273,9 +3192,8 @@
  <Item>
   <Name>vehicle_track2</Name>
   <FileName>
-   <Item>vehicle_track2.sps</Item>
+   <Item bucket="0">vehicle_track2.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3319,9 +3237,8 @@
  <Item>
   <Name>ped_wrinkle</Name>
   <FileName>
-   <Item>ped_wrinkle.sps</Item>
+   <Item bucket="0">ped_wrinkle.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3360,9 +3277,8 @@
  <Item>
   <Name>vehicle_detail</Name>
   <FileName>
-   <Item>vehicle_detail.sps</Item>
+   <Item bucket="0">vehicle_detail.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3411,10 +3327,9 @@
  <Item>
   <Name>spec_reflect</Name>
   <FileName>
-   <Item>spec_reflect.sps</Item>
-   <Item>spec_reflect_alpha.sps</Item>
+   <Item bucket="0">spec_reflect.sps</Item>
+   <Item bucket="1">spec_reflect_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3447,9 +3362,8 @@
  <Item>
   <Name>vehicle_cutout</Name>
   <FileName>
-   <Item>vehicle_cutout.sps</Item>
+   <Item bucket="3">vehicle_cutout.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3496,9 +3410,8 @@
  <Item>
   <Name>vehicle_paint4_enveff</Name>
   <FileName>
-   <Item>vehicle_paint4_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint4_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3555,9 +3468,8 @@
  <Item>
   <Name>decal_glue</Name>
   <FileName>
-   <Item>decal_glue.sps</Item>
+   <Item bucket="2">decal_glue.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3585,9 +3497,8 @@
  <Item>
   <Name>normal_spec_decal_tnt</Name>
   <FileName>
-   <Item>normal_spec_decal_tnt.sps</Item>
+   <Item bucket="2">normal_spec_decal_tnt.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3624,10 +3535,9 @@
  <Item>
   <Name>emissive_tnt</Name>
   <FileName>
-   <Item>emissive_alpha_tnt.sps</Item>
-   <Item>emissive_tnt.sps</Item>
+   <Item bucket="1">emissive_alpha_tnt.sps</Item>
+   <Item bucket="0">emissive_tnt.sps</Item>
   </FileName>
-  <RenderBucket>1 0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3657,9 +3567,8 @@
  <Item>
   <Name>vehicle_paint9</Name>
   <FileName>
-   <Item>vehicle_paint9.sps</Item>
+   <Item bucket="0">vehicle_paint9.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3723,9 +3632,8 @@
  <Item>
   <Name>ped_nopeddamagedecals</Name>
   <FileName>
-   <Item>ped_nopeddamagedecals.sps</Item>
+   <Item bucket="0">ped_nopeddamagedecals.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3758,9 +3666,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3790,9 +3697,8 @@
  <Item>
   <Name>glass_pv_env</Name>
   <FileName>
-   <Item>glass_pv_env.sps</Item>
+   <Item bucket="1">glass_pv_env.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3830,9 +3736,8 @@
  <Item>
   <Name>normal_decal_tnt</Name>
   <FileName>
-   <Item>normal_decal_tnt.sps</Item>
+   <Item bucket="2">normal_decal_tnt.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3857,9 +3762,8 @@
  <Item>
   <Name>cpv_only</Name>
   <FileName>
-   <Item>cpv_only.sps</Item>
+   <Item bucket="0">cpv_only.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3881,9 +3785,8 @@
  <Item>
   <Name>ped_decal</Name>
   <FileName>
-   <Item>ped_decal.sps</Item>
+   <Item bucket="2">ped_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3916,9 +3819,8 @@
  <Item>
   <Name>emissive_clip</Name>
   <FileName>
-   <Item>emissive_clip.sps</Item>
+   <Item bucket="0">emissive_clip.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3940,10 +3842,9 @@
  <Item>
   <Name>default_um</Name>
   <FileName>
-   <Item>cutout_um.sps</Item>
-   <Item>default_um.sps</Item>
+   <Item bucket="3">cutout_um.sps</Item>
+   <Item bucket="0">default_um.sps</Item>
   </FileName>
-  <RenderBucket>3 0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3974,9 +3875,8 @@
  <Item>
   <Name>minimap</Name>
   <FileName>
-   <Item>minimap.sps</Item>
+   <Item bucket="0">minimap.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3990,9 +3890,8 @@
  <Item>
   <Name>glass_normal_spec_reflect</Name>
   <FileName>
-   <Item>glass_normal_spec_reflect.sps</Item>
+   <Item bucket="1">glass_normal_spec_reflect.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4028,9 +3927,8 @@
  <Item>
   <Name>distance_map</Name>
   <FileName>
-   <Item>distance_map.sps</Item>
+   <Item bucket="2">distance_map.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4048,9 +3946,8 @@
  <Item>
   <Name>vehicle_blurredrotor</Name>
   <FileName>
-   <Item>vehicle_blurredrotor.sps</Item>
+   <Item bucket="1">vehicle_blurredrotor.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4083,9 +3980,8 @@
  <Item>
   <Name>glass</Name>
   <FileName>
-   <Item>glass.sps</Item>
+   <Item bucket="1">glass.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4119,9 +4015,8 @@
  <Item>
   <Name>cutout_fence_normal</Name>
   <FileName>
-   <Item>cutout_fence_normal.sps</Item>
+   <Item bucket="3">cutout_fence_normal.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4154,9 +4049,8 @@
  <Item>
   <Name>ped_emissive</Name>
   <FileName>
-   <Item>ped_emissive.sps</Item>
+   <Item bucket="0">ped_emissive.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4199,9 +4093,8 @@
  <Item>
   <Name>normal_terrain_wet</Name>
   <FileName>
-   <Item>normal_terrain_wet.sps</Item>
+   <Item bucket="0">normal_terrain_wet.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4228,9 +4121,8 @@
  <Item>
   <Name>normal_spec_decal_detail</Name>
   <FileName>
-   <Item>normal_spec_decal_detail.sps</Item>
+   <Item bucket="2">normal_spec_decal_detail.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4257,9 +4149,8 @@
  <Item>
   <Name>vehicle_cloth</Name>
   <FileName>
-   <Item>vehicle_cloth.sps</Item>
+   <Item bucket="0">vehicle_cloth.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4304,9 +4195,8 @@
  <Item>
   <Name>normal_um_tnt</Name>
   <FileName>
-   <Item>normal_um_tnt.sps</Item>
+   <Item bucket="0">normal_um_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4344,9 +4234,8 @@
  <Item>
   <Name>vehicle_basic</Name>
   <FileName>
-   <Item>vehicle_basic.sps</Item>
+   <Item bucket="0">vehicle_basic.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4393,9 +4282,8 @@
  <Item>
   <Name>trees</Name>
   <FileName>
-   <Item>trees.sps</Item>
+   <Item bucket="3">trees.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4428,9 +4316,8 @@
  <Item>
   <Name>emissive_additive_alpha</Name>
   <FileName>
-   <Item>emissive_additive_alpha.sps</Item>
+   <Item bucket="1">emissive_additive_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4449,10 +4336,9 @@
  <Item>
   <Name>glass_breakable</Name>
   <FileName>
-   <Item>glass_breakable.sps</Item>
-   <Item>glass_breakable_screendooralpha.sps</Item>
+   <Item bucket="1">glass_breakable.sps</Item>
+   <Item bucket="3">glass_breakable_screendooralpha.sps</Item>
   </FileName>
-  <RenderBucket>1 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4486,9 +4372,8 @@
  <Item>
   <Name>trees_normal_diffspec</Name>
   <FileName>
-   <Item>trees_normal_diffspec.sps</Item>
+   <Item bucket="3">trees_normal_diffspec.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4520,9 +4405,8 @@
  <Item>
   <Name>vehicle_track</Name>
   <FileName>
-   <Item>vehicle_track.sps</Item>
+   <Item bucket="0">vehicle_track.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4566,9 +4450,8 @@
  <Item>
   <Name>ped_enveff</Name>
   <FileName>
-   <Item>ped_enveff.sps</Item>
+   <Item bucket="0">ped_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4611,9 +4494,8 @@
  <Item>
   <Name>water_terrainfoam</Name>
   <FileName>
-   <Item>water_terrainfoam.sps</Item>
+   <Item bucket="2">water_terrainfoam.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4634,9 +4516,8 @@
  <Item>
   <Name>vehicle_generic</Name>
   <FileName>
-   <Item>vehicle_generic.sps</Item>
+   <Item bucket="0">vehicle_generic.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4683,9 +4564,8 @@
  <Item>
   <Name>vehicle_track_ammo</Name>
   <FileName>
-   <Item>vehicle_track_ammo.sps</Item>
+   <Item bucket="0">vehicle_track_ammo.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4729,9 +4609,8 @@
  <Item>
   <Name>ped_default_mp</Name>
   <FileName>
-   <Item>ped_default_mp.sps</Item>
+   <Item bucket="0">ped_default_mp.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4763,9 +4642,8 @@
  <Item>
   <Name>grass</Name>
   <FileName>
-   <Item>grass.sps</Item>
+   <Item bucket="0">grass.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4817,9 +4695,8 @@
  <Item>
   <Name>vehicle_track_emissive</Name>
   <FileName>
-   <Item>vehicle_track_emissive.sps</Item>
+   <Item bucket="0">vehicle_track_emissive.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4864,9 +4741,8 @@
  <Item>
   <Name>glass_spec</Name>
   <FileName>
-   <Item>glass_spec.sps</Item>
+   <Item bucket="1">glass_spec.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4896,9 +4772,8 @@
  <Item>
   <Name>vehicle_paint5_enveff</Name>
   <FileName>
-   <Item>vehicle_paint5_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint5_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4955,9 +4830,8 @@
  <Item>
   <Name>ped_wrinkle_enveff</Name>
   <FileName>
-   <Item>ped_wrinkle_enveff.sps</Item>
+   <Item bucket="0">ped_wrinkle_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4997,9 +4871,8 @@
  <Item>
   <Name>weapon_normal_spec_detail_tnt</Name>
   <FileName>
-   <Item>weapon_normal_spec_detail_tnt.sps</Item>
+   <Item bucket="0">weapon_normal_spec_detail_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5033,9 +4906,8 @@
  <Item>
   <Name>glass_pv</Name>
   <FileName>
-   <Item>glass_pv.sps</Item>
+   <Item bucket="1">glass_pv.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5064,9 +4936,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_spec_int_pxm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_spec_int_pxm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_spec_int_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5110,10 +4981,9 @@
  <Item>
   <Name>glass_emissive</Name>
   <FileName>
-   <Item>glass_emissive.sps</Item>
-   <Item>glass_emissive_alpha.sps</Item>
+   <Item bucket="0">glass_emissive.sps</Item>
+   <Item bucket="1">glass_emissive_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5150,9 +5020,8 @@
  <Item>
   <Name>weapon_normal_spec_alpha</Name>
   <FileName>
-   <Item>weapon_normal_spec_alpha.sps</Item>
+   <Item bucket="1">weapon_normal_spec_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5187,9 +5056,8 @@
  <Item>
   <Name>normal_pxm</Name>
   <FileName>
-   <Item>normal_pxm.sps</Item>
+   <Item bucket="0">normal_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5222,9 +5090,8 @@
  <Item>
   <Name>water_fountain</Name>
   <FileName>
-   <Item>water_fountain.sps</Item>
+   <Item bucket="6">water_fountain.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5242,11 +5109,10 @@
  <Item>
   <Name>reflect</Name>
   <FileName>
-   <Item>reflect.sps</Item>
-   <Item>reflect_alpha.sps</Item>
-   <Item>gta_reflect_alpha.sps</Item>
+   <Item bucket="0">reflect.sps</Item>
+   <Item bucket="1">reflect_alpha.sps</Item>
+   <Item bucket="1">gta_reflect_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5273,11 +5139,10 @@
  <Item>
   <Name>normal_reflect</Name>
   <FileName>
-   <Item>normal_reflect.sps</Item>
-   <Item>normal_reflect_alpha.sps</Item>
-   <Item>normal_reflect_screendooralpha.sps</Item>
+   <Item bucket="0">normal_reflect.sps</Item>
+   <Item bucket="1">normal_reflect_alpha.sps</Item>
+   <Item bucket="3">normal_reflect_screendooralpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5309,9 +5174,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_spec_int</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_spec_int.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_spec_int.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5341,9 +5205,8 @@
  <Item>
   <Name>ped_wrinkle_cs</Name>
   <FileName>
-   <Item>ped_wrinkle_cs.sps</Item>
+   <Item bucket="0">ped_wrinkle_cs.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5384,9 +5247,8 @@
  <Item>
   <Name>grass_batch</Name>
   <FileName>
-   <Item>grass_batch.sps</Item>
+   <Item bucket="0">grass_batch.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5432,9 +5294,8 @@
  <Item>
   <Name>emissivenight_geomnightonly</Name>
   <FileName>
-   <Item>emissivenight_geomnightonly.sps</Item>
+   <Item bucket="0">emissivenight_geomnightonly.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5454,9 +5315,8 @@
  <Item>
   <Name>ped_decal_decoration</Name>
   <FileName>
-   <Item>ped_decal_decoration.sps</Item>
+   <Item bucket="2">ped_decal_decoration.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5489,9 +5349,8 @@
  <Item>
   <Name>vehicle_paint6</Name>
   <FileName>
-   <Item>vehicle_paint6.sps</Item>
+   <Item bucket="0">vehicle_paint6.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5542,9 +5401,8 @@
  <Item>
   <Name>water_riverlod</Name>
   <FileName>
-   <Item>water_riverlod.sps</Item>
+   <Item bucket="6">water_riverlod.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5566,10 +5424,9 @@
  <Item>
   <Name>normal_um</Name>
   <FileName>
-   <Item>normal_um.sps</Item>
-   <Item>normal_cutout_um.sps</Item>
+   <Item bucket="0">normal_um.sps</Item>
+   <Item bucket="3">normal_cutout_um.sps</Item>
   </FileName>
-  <RenderBucket>0 3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5606,9 +5463,8 @@
  <Item>
   <Name>vehicle_decal2</Name>
   <FileName>
-   <Item>vehicle_decal2.sps</Item>
+   <Item bucket="2">vehicle_decal2.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5648,9 +5504,8 @@
  <Item>
   <Name>weapon_emissivestrong_alpha</Name>
   <FileName>
-   <Item>weapon_emissivestrong_alpha.sps</Item>
+   <Item bucket="1">weapon_emissivestrong_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5673,9 +5528,8 @@
  <Item>
   <Name>water_shallow</Name>
   <FileName>
-   <Item>water_shallow.sps</Item>
+   <Item bucket="6">water_shallow.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5697,9 +5551,8 @@
  <Item>
   <Name>vehicle_paint1_enveff</Name>
   <FileName>
-   <Item>vehicle_paint1_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint1_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5743,9 +5596,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_2tex</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_2tex.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_2tex.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5776,9 +5628,8 @@
  <Item>
   <Name>trees_shadow_proxy</Name>
   <FileName>
-   <Item>trees_shadow_proxy.sps</Item>
+   <Item bucket="3">trees_shadow_proxy.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5800,9 +5651,8 @@
  <Item>
   <Name>vehicle_mesh_enveff</Name>
   <FileName>
-   <Item>vehicle_mesh_enveff.sps</Item>
+   <Item bucket="0">vehicle_mesh_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5843,9 +5693,8 @@
  <Item>
   <Name>ped_default_enveff</Name>
   <FileName>
-   <Item>ped_default_enveff.sps</Item>
+   <Item bucket="0">ped_default_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5877,9 +5726,8 @@
  <Item>
   <Name>water_riverfoam</Name>
   <FileName>
-   <Item>water_riverfoam.sps</Item>
+   <Item bucket="6">water_riverfoam.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5897,9 +5745,8 @@
  <Item>
   <Name>albedo_alpha</Name>
   <FileName>
-   <Item>albedo_alpha.sps</Item>
+   <Item bucket="1">albedo_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5916,9 +5763,8 @@
  <Item>
   <Name>decal_shadow_only</Name>
   <FileName>
-   <Item>decal_shadow_only.sps</Item>
+   <Item bucket="2">decal_shadow_only.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5937,10 +5783,9 @@
  <Item>
   <Name>radar</Name>
   <FileName>
-   <Item>radar.sps</Item>
-   <Item>gta_radar.sps</Item>
+   <Item bucket="0">radar.sps</Item>
+   <Item bucket="0">gta_radar.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5958,9 +5803,8 @@
  <Item>
   <Name>trees_tnt</Name>
   <FileName>
-   <Item>trees_tnt.sps</Item>
+   <Item bucket="3">trees_tnt.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5986,9 +5830,8 @@
  <Item>
   <Name>weapon_normal_spec_palette</Name>
   <FileName>
-   <Item>weapon_normal_spec_palette.sps</Item>
+   <Item bucket="0">weapon_normal_spec_palette.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6021,9 +5864,8 @@
  <Item>
   <Name>trees_normal</Name>
   <FileName>
-   <Item>trees_normal.sps</Item>
+   <Item bucket="3">trees_normal.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6050,9 +5892,8 @@
  <Item>
   <Name>decal_spec_only</Name>
   <FileName>
-   <Item>decal_spec_only.sps</Item>
+   <Item bucket="2">decal_spec_only.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6082,9 +5923,8 @@
  <Item>
   <Name>mirror_default</Name>
   <FileName>
-   <Item>mirror_default.sps</Item>
+   <Item bucket="0">mirror_default.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6106,9 +5946,8 @@
  <Item>
   <Name>ped_palette</Name>
   <FileName>
-   <Item>ped_palette.sps</Item>
+   <Item bucket="0">ped_palette.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6141,9 +5980,8 @@
  <Item>
   <Name>normal_spec_decal_nopuddle</Name>
   <FileName>
-   <Item>normal_spec_decal_nopuddle.sps</Item>
+   <Item bucket="2">normal_spec_decal_nopuddle.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6169,9 +6007,8 @@
  <Item>
   <Name>normal_spec_emissive</Name>
   <FileName>
-   <Item>normal_spec_emissive.sps</Item>
+   <Item bucket="0">normal_spec_emissive.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6207,9 +6044,8 @@
  <Item>
   <Name>normal_spec_um</Name>
   <FileName>
-   <Item>normal_spec_um.sps</Item>
+   <Item bucket="0">normal_spec_um.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6237,9 +6073,8 @@
  <Item>
   <Name>decal_emissivenight_only</Name>
   <FileName>
-   <Item>decal_emissivenight_only.sps</Item>
+   <Item bucket="2">decal_emissivenight_only.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6258,9 +6093,8 @@
  <Item>
   <Name>ped_default_palette</Name>
   <FileName>
-   <Item>ped_default_palette.sps</Item>
+   <Item bucket="0">ped_default_palette.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6290,9 +6124,8 @@
  <Item>
   <Name>water_river</Name>
   <FileName>
-   <Item>water_river.sps</Item>
+   <Item bucket="6">water_river.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6314,9 +6147,8 @@
  <Item>
   <Name>weapon_normal_spec_tnt</Name>
   <FileName>
-   <Item>weapon_normal_spec_tnt.sps</Item>
+   <Item bucket="0">weapon_normal_spec_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6355,9 +6187,8 @@
  <Item>
   <Name>cutout_hard</Name>
   <FileName>
-   <Item>cutout_hard.sps</Item>
+   <Item bucket="0">cutout_hard.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6374,10 +6205,9 @@
  <Item>
   <Name>normal_spec_pxm_tnt</Name>
   <FileName>
-   <Item>normal_spec_pxm_tnt.sps</Item>
-   <Item>normal_spec_tnt_pxm.sps</Item>
+   <Item bucket="0">normal_spec_pxm_tnt.sps</Item>
+   <Item bucket="0">normal_spec_tnt_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6412,9 +6242,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_cm_tnt</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_cm_tnt.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_cm_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6447,9 +6276,8 @@
  <Item>
   <Name>vehicle_emissive_alpha</Name>
   <FileName>
-   <Item>vehicle_emissive_alpha.sps</Item>
+   <Item bucket="1">vehicle_emissive_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6494,9 +6322,8 @@
  <Item>
   <Name>mirror_decal</Name>
   <FileName>
-   <Item>mirror_decal.sps</Item>
+   <Item bucket="0">mirror_decal.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6521,9 +6348,8 @@
  <Item>
   <Name>vehicle_track2_emissive</Name>
   <FileName>
-   <Item>vehicle_track2_emissive.sps</Item>
+   <Item bucket="0">vehicle_track2_emissive.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6568,9 +6394,8 @@
  <Item>
   <Name>ped_cloth</Name>
   <FileName>
-   <Item>ped_cloth.sps</Item>
+   <Item bucket="0">ped_cloth.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6603,9 +6428,8 @@
  <Item>
   <Name>normal_cubemap_reflect</Name>
   <FileName>
-   <Item>normal_cubemap_reflect.sps</Item>
+   <Item bucket="0">normal_cubemap_reflect.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6627,9 +6451,8 @@
  <Item>
   <Name>normal_spec_cubemap_reflect</Name>
   <FileName>
-   <Item>normal_spec_cubemap_reflect.sps</Item>
+   <Item bucket="0">normal_spec_cubemap_reflect.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6665,9 +6488,8 @@
  <Item>
   <Name>glass_reflect</Name>
   <FileName>
-   <Item>glass_reflect.sps</Item>
+   <Item bucket="1">glass_reflect.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6689,9 +6511,8 @@
  <Item>
   <Name>spec_twiddle_tnt</Name>
   <FileName>
-   <Item>spec_twiddle_tnt.sps</Item>
+   <Item bucket="0">spec_twiddle_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6716,9 +6537,8 @@
  <Item>
   <Name>normal_diffspec_detail</Name>
   <FileName>
-   <Item>normal_diffspec_detail.sps</Item>
+   <Item bucket="0">normal_diffspec_detail.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6746,9 +6566,8 @@
  <Item>
   <Name>weapon_normal_spec_cutout_palette</Name>
   <FileName>
-   <Item>weapon_normal_spec_cutout_palette.sps</Item>
+   <Item bucket="3">weapon_normal_spec_cutout_palette.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6781,9 +6600,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_spec</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_spec.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_spec.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6813,9 +6631,8 @@
  <Item>
   <Name>ped_fur</Name>
   <FileName>
-   <Item>ped_fur.sps</Item>
+   <Item bucket="3">ped_fur.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6857,9 +6674,8 @@
  <Item>
   <Name>clouds_fast</Name>
   <FileName>
-   <Item>clouds_fast.sps</Item>
+   <Item bucket="0">clouds_fast.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6910,9 +6726,8 @@
  <Item>
   <Name>normal_diffspec_detail_dpm</Name>
   <FileName>
-   <Item>normal_diffspec_detail_dpm.sps</Item>
+   <Item bucket="0">normal_diffspec_detail_dpm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6947,9 +6762,8 @@
  <Item>
   <Name>vehicle_paint3_enveff</Name>
   <FileName>
-   <Item>vehicle_paint3_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint3_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6996,9 +6810,8 @@
  <Item>
   <Name>trees_normal_spec_tnt</Name>
   <FileName>
-   <Item>trees_normal_spec_tnt.sps</Item>
+   <Item bucket="3">trees_normal_spec_tnt.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7032,9 +6845,8 @@
  <Item>
   <Name>clouds_animsoft</Name>
   <FileName>
-   <Item>clouds_animsoft.sps</Item>
+   <Item bucket="0">clouds_animsoft.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7095,9 +6907,8 @@
  <Item>
   <Name>decal_amb_only</Name>
   <FileName>
-   <Item>decal_amb_only.sps</Item>
+   <Item bucket="2">decal_amb_only.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7116,9 +6927,8 @@
  <Item>
   <Name>normal_diffspec_detail_dpm_tnt</Name>
   <FileName>
-   <Item>normal_diffspec_detail_dpm_tnt.sps</Item>
+   <Item bucket="0">normal_diffspec_detail_dpm_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7155,9 +6965,8 @@
  <Item>
   <Name>water_riverocean</Name>
   <FileName>
-   <Item>water_riverocean.sps</Item>
+   <Item bucket="6">water_riverocean.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7176,9 +6985,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_cm_pxm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_cm_pxm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_cm_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7223,9 +7031,8 @@
  <Item>
   <Name>vehicle_paint2_enveff</Name>
   <FileName>
-   <Item>vehicle_paint2_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint2_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7268,9 +7075,8 @@
  <Item>
   <Name>vehicle_blurredrotor_emissive</Name>
   <FileName>
-   <Item>vehicle_blurredrotor_emissive.sps</Item>
+   <Item bucket="1">vehicle_blurredrotor_emissive.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7305,9 +7111,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_cm_pxm_tnt</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_cm_pxm_tnt.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_cm_pxm_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7354,9 +7159,8 @@
  <Item>
   <Name>water_rivershallow</Name>
   <FileName>
-   <Item>water_rivershallow.sps</Item>
+   <Item bucket="6">water_rivershallow.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7378,9 +7182,8 @@
  <Item>
   <Name>vehicle_paint7_enveff</Name>
   <FileName>
-   <Item>vehicle_paint7_enveff.sps</Item>
+   <Item bucket="0">vehicle_paint7_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7428,9 +7231,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_2tex_pxm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_2tex_pxm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_2tex_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7475,9 +7277,8 @@
  <Item>
   <Name>ped_wrinkle_cloth</Name>
   <FileName>
-   <Item>ped_wrinkle_cloth.sps</Item>
+   <Item bucket="0">ped_wrinkle_cloth.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7516,9 +7317,8 @@
  <Item>
   <Name>normal_spec_reflect_decal</Name>
   <FileName>
-   <Item>normal_spec_reflect_decal.sps</Item>
+   <Item bucket="2">normal_spec_reflect_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7554,9 +7354,8 @@
  <Item>
   <Name>parallax_specmap</Name>
   <FileName>
-   <Item>parallax_specmap.sps</Item>
+   <Item bucket="0">parallax_specmap.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7582,9 +7381,8 @@
  <Item>
   <Name>normal_spec_detail_dpm_tnt</Name>
   <FileName>
-   <Item>normal_spec_detail_dpm_tnt.sps</Item>
+   <Item bucket="0">normal_spec_detail_dpm_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7621,9 +7419,8 @@
  <Item>
   <Name>ped_wrinkle_cloth_enveff</Name>
   <FileName>
-   <Item>ped_wrinkle_cloth_enveff.sps</Item>
+   <Item bucket="0">ped_wrinkle_cloth_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7663,9 +7460,8 @@
  <Item>
   <Name>water_poolenv</Name>
   <FileName>
-   <Item>water_poolenv.sps</Item>
+   <Item bucket="6">water_poolenv.sps</Item>
   </FileName>
-  <RenderBucket>6</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7683,10 +7479,9 @@
  <Item>
   <Name>normal_spec_reflect_emissivenight</Name>
   <FileName>
-   <Item>normal_spec_reflect_emissivenight.sps</Item>
-   <Item>normal_spec_reflect_emissivenight_alpha.sps</Item>
+   <Item bucket="0">normal_spec_reflect_emissivenight.sps</Item>
+   <Item bucket="1">normal_spec_reflect_emissivenight_alpha.sps</Item>
   </FileName>
-  <RenderBucket>0 1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7712,9 +7507,8 @@
  <Item>
   <Name>trees_lod_tnt</Name>
   <FileName>
-   <Item>trees_lod_tnt.sps</Item>
+   <Item bucket="3">trees_lod_tnt.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7738,9 +7532,8 @@
  <Item>
   <Name>decal_diff_only_um</Name>
   <FileName>
-   <Item>decal_diff_only_um.sps</Item>
+   <Item bucket="2">decal_diff_only_um.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7769,9 +7562,8 @@
  <Item>
   <Name>vehicle_paint7</Name>
   <FileName>
-   <Item>vehicle_paint7.sps</Item>
+   <Item bucket="0">vehicle_paint7.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7816,9 +7608,8 @@
  <Item>
   <Name>vehicle_paint4_emissive</Name>
   <FileName>
-   <Item>vehicle_paint4_emissive.sps</Item>
+   <Item bucket="0">vehicle_paint4_emissive.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7867,10 +7658,9 @@
  <Item>
   <Name>normal_pxm_tnt</Name>
   <FileName>
-   <Item>normal_pxm_tnt.sps</Item>
-   <Item>normal_tnt_pxm.sps</Item>
+   <Item bucket="0">normal_pxm_tnt.sps</Item>
+   <Item bucket="0">normal_tnt_pxm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7903,9 +7693,8 @@
  <Item>
   <Name>blend_2lyr</Name>
   <FileName>
-   <Item>blend_2lyr.sps</Item>
+   <Item bucket="0">blend_2lyr.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7940,9 +7729,8 @@
  <Item>
   <Name>trees_normal_diffspec_tnt</Name>
   <FileName>
-   <Item>trees_normal_diffspec_tnt.sps</Item>
+   <Item bucket="3">trees_normal_diffspec_tnt.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7976,9 +7764,8 @@
  <Item>
   <Name>ped_default_cloth</Name>
   <FileName>
-   <Item>ped_default_cloth.sps</Item>
+   <Item bucket="0">ped_default_cloth.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8009,9 +7796,8 @@
  <Item>
   <Name>mirror_crack</Name>
   <FileName>
-   <Item>mirror_crack.sps</Item>
+   <Item bucket="0">mirror_crack.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8035,9 +7821,8 @@
  <Item>
   <Name>glass_displacement</Name>
   <FileName>
-   <Item>glass_displacement.sps</Item>
+   <Item bucket="7">glass_displacement.sps</Item>
   </FileName>
-  <RenderBucket>7</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8065,9 +7850,8 @@
  <Item>
   <Name>normal_spec_detail_dpm_vertdecal_tnt</Name>
   <FileName>
-   <Item>normal_spec_detail_dpm_vertdecal_tnt.sps</Item>
+   <Item bucket="0">normal_spec_detail_dpm_vertdecal_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8106,9 +7890,8 @@
  <Item>
   <Name>cloth_normal_spec_tnt</Name>
   <FileName>
-   <Item>cloth_normal_spec_tnt.sps</Item>
+   <Item bucket="0">cloth_normal_spec_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -8136,9 +7919,8 @@
  <Item>
   <Name>normal_diffspec</Name>
   <FileName>
-   <Item>normal_diffspec.sps</Item>
+   <Item bucket="0">normal_diffspec.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8165,10 +7947,9 @@
  <Item>
   <Name>glass_emissivenight</Name>
   <FileName>
-   <Item>glass_emissivenight.sps</Item>
-   <Item>glass_emissivenight_alpha.sps</Item>
+   <Item bucket="1">glass_emissivenight.sps</Item>
+   <Item bucket="1">glass_emissivenight_alpha.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8194,9 +7975,8 @@
  <Item>
   <Name>normal_decal_pxm_tnt</Name>
   <FileName>
-   <Item>normal_decal_pxm_tnt.sps</Item>
+   <Item bucket="2">normal_decal_pxm_tnt.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8227,9 +8007,8 @@
  <Item>
   <Name>normal_spec_dpm</Name>
   <FileName>
-   <Item>normal_spec_dpm.sps</Item>
+   <Item bucket="0">normal_spec_dpm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8262,9 +8041,8 @@
  <Item>
   <Name>weapon_emissive_tnt</Name>
   <FileName>
-   <Item>weapon_emissive_tnt.sps</Item>
+   <Item bucket="0">weapon_emissive_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8288,9 +8066,8 @@
  <Item>
   <Name>clouds_anim</Name>
   <FileName>
-   <Item>clouds_anim.sps</Item>
+   <Item bucket="0">clouds_anim.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8351,9 +8128,8 @@
  <Item>
   <Name>vehicle_paint3_lvr</Name>
   <FileName>
-   <Item>vehicle_paint3_lvr.sps</Item>
+   <Item bucket="0">vehicle_paint3_lvr.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8397,9 +8173,8 @@
  <Item>
   <Name>normal_spec_detail_dpm</Name>
   <FileName>
-   <Item>normal_spec_detail_dpm.sps</Item>
+   <Item bucket="0">normal_spec_detail_dpm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8434,9 +8209,8 @@
  <Item>
   <Name>normal_spec_batch</Name>
   <FileName>
-   <Item>normal_spec_batch.sps</Item>
+   <Item bucket="0">normal_spec_batch.sps</Item>
   </FileName>
-  <RenderBucket>3</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8469,9 +8243,8 @@
  <Item>
   <Name>ped_decal_exp</Name>
   <FileName>
-   <Item>ped_decal_expensive.sps</Item>
+   <Item bucket="2">ped_decal_expensive.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8503,9 +8276,8 @@
  <Item>
   <Name>clouds_altitude</Name>
   <FileName>
-   <Item>clouds_altitude.sps</Item>
+   <Item bucket="0">clouds_altitude.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8566,9 +8338,8 @@
  <Item>
   <Name>spec_reflect_decal</Name>
   <FileName>
-   <Item>spec_reflect_decal.sps</Item>
+   <Item bucket="2">spec_reflect_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8592,9 +8363,8 @@
  <Item>
   <Name>terrain_cb_w_4lyr_cm</Name>
   <FileName>
-   <Item>terrain_cb_w_4lyr_cm.sps</Item>
+   <Item bucket="0">terrain_cb_w_4lyr_cm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8625,9 +8395,8 @@
  <Item>
   <Name>parallax</Name>
   <FileName>
-   <Item>parallax.sps</Item>
+   <Item bucket="0">parallax.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8651,9 +8420,8 @@
  <Item>
   <Name>normal_diffspec_detail_tnt</Name>
   <FileName>
-   <Item>normal_diffspec_detail_tnt.sps</Item>
+   <Item bucket="0">normal_diffspec_detail_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8684,9 +8452,8 @@
  <Item>
   <Name>normal_detail_dpm</Name>
   <FileName>
-   <Item>normal_detail_dpm.sps</Item>
+   <Item bucket="0">normal_detail_dpm.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8719,9 +8486,8 @@
  <Item>
   <Name>vehicle_cloth2</Name>
   <FileName>
-   <Item>vehicle_cloth2.sps</Item>
+   <Item bucket="0">vehicle_cloth2.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -8762,9 +8528,8 @@
  <Item>
   <Name>normal_diffspec_tnt</Name>
   <FileName>
-   <Item>normal_diffspec_tnt.sps</Item>
+   <Item bucket="0">normal_diffspec_tnt.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8793,9 +8558,8 @@
  <Item>
   <Name>reflect_decal</Name>
   <FileName>
-   <Item>reflect_decal.sps</Item>
+   <Item bucket="2">reflect_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8814,9 +8578,8 @@
  <Item>
   <Name>clouds_soft</Name>
   <FileName>
-   <Item>clouds_soft.sps</Item>
+   <Item bucket="0">clouds_soft.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8870,9 +8633,8 @@
  <Item>
   <Name>ped_decal_nodiff</Name>
   <FileName>
-   <Item>ped_decal_nodiff.sps</Item>
+   <Item bucket="2">ped_decal_nodiff.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8903,9 +8665,8 @@
  <Item>
   <Name>terrain_cb_4lyr_2tex</Name>
   <FileName>
-   <Item>terrain_cb_4lyr_2tex.sps</Item>
+   <Item bucket="0">terrain_cb_4lyr_2tex.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8936,9 +8697,8 @@
  <Item>
   <Name>normal_spec_wrinkle</Name>
   <FileName>
-   <Item>normal_spec_wrinkle.sps</Item>
+   <Item bucket="0">normal_spec_wrinkle.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8976,9 +8736,8 @@
  <Item>
   <Name>sky_system</Name>
   <FileName>
-   <Item>sky_system.sps</Item>
+   <Item bucket="0">sky_system.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -9042,9 +8801,8 @@
  <Item>
   <Name>clouds_fog</Name>
   <FileName>
-   <Item>clouds_fog.sps</Item>
+   <Item bucket="0">clouds_fog.sps</Item>
   </FileName>
-  <RenderBucket>1</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -9097,9 +8855,8 @@
  <Item>
   <Name>terrain_cb_4lyr</Name>
   <FileName>
-   <Item>terrain_cb_4lyr.sps</Item>
+   <Item bucket="0">terrain_cb_4lyr.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -9129,9 +8886,8 @@
  <Item>
   <Name>normal_reflect_decal</Name>
   <FileName>
-   <Item>normal_reflect_decal.sps</Item>
+   <Item bucket="2">normal_reflect_decal.sps</Item>
   </FileName>
-  <RenderBucket>2</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -9153,9 +8909,8 @@
  <Item>
   <Name>ped_cloth_enveff</Name>
   <FileName>
-   <Item>ped_cloth_enveff.sps</Item>
+   <Item bucket="0">ped_cloth_enveff.sps</Item>
   </FileName>
-  <RenderBucket>0</RenderBucket>
   <Layout>
    <Item type="GTAV1">
     <Position />
