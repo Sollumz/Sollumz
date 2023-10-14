@@ -104,6 +104,7 @@ def create_bound_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, aut
         sphere_xml.sphere_radius = get_inner_sphere_radius(sphere_xml.box_max, sphere_xml.box_center)
         return sphere_xml
 
+
     if obj.sollum_type == SollumType.BOUND_CYLINDER:
         return init_bound_child_xml(BoundCylinder(), obj, auto_calc_inertia, auto_calc_volume)
 
@@ -231,16 +232,32 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
     ind_by_vert: dict[tuple, int] = {}
     ind_by_mat: dict[bpy.types.Material, int] = {}
 
-    def get_vert_index(vert: Vector):
-        # Must be tuple since Vector is not hashable
-        vertex = tuple(vert)
+    def get_vert_index(vert: Vector, vert_color: Optional[tuple[int, int, int, int]] = None):
+        default_vert_color = (255, 255, 255, 255)
 
-        if vertex in ind_by_vert:
-            return ind_by_vert[vertex]
+        # These are safety checks in case the user mixed poly primitives and poly meshes with color attributes
+        # This doesn't occur in original .ybns, if they have vertex colors, only poly triangles (meshes) are used.
+        if vert_color is not None and len(geom_xml.vertex_colors) != len(geom_xml.vertices):
+            # This vertex has color but previous ones didn't, assign a default color to all previous vertices
+            for _ in range(len(geom_xml.vertex_colors), len(geom_xml.vertices)):
+                geom_xml.vertex_colors.append(default_vert_color)
+
+        if vert_color is None and len(geom_xml.vertex_colors) != 0:
+            # There are already vertex colors in this geometry, assign a default color
+            vert_color = default_vert_color
+
+        # Tuple to uniquely identify this vertex and remove duplicates
+        # Must be tuple since Vector is not hashable
+        vertex_id = (*vert, *(vert_color or default_vert_color))
+
+        if vertex_id in ind_by_vert:
+            return ind_by_vert[vertex_id]
 
         vert_ind = len(ind_by_vert)
-        ind_by_vert[vertex] = vert_ind
-        geom_xml.vertices.append(Vector(vertex))
+        ind_by_vert[vertex_id] = vert_ind
+        geom_xml.vertices.append(Vector(vert))
+        if vert_color is not None:
+            geom_xml.vertex_colors.append(vert_color)
 
         return vert_ind
 
@@ -258,16 +275,14 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
 
     # If the bound object is a mesh, just convert its mesh data into triangles
     if isinstance(geom_xml, BoundGeometry):
-        create_bound_geom_xml_triangles(
-            obj, geom_xml, get_vert_index, get_mat_index)
+        create_bound_geom_xml_triangles(obj, geom_xml, get_vert_index, get_mat_index)
         return
 
     # For empty bound objects with children, create the bound polygons from its children
     for child in obj.children_recursive:
         if child.sollum_type not in BOUND_POLYGON_TYPES:
             continue
-        create_bound_xml_poly_shape(
-            child, geom_xml, get_vert_index, get_mat_index)
+        create_bound_xml_poly_shape(child, geom_xml, get_vert_index, get_mat_index)
 
 
 def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeometry, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
@@ -282,18 +297,12 @@ def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeomet
 
     geom_xml.polygons = triangles
 
-    if mesh.vertex_colors:
-        create_xml_vertex_colors(geom_xml, mesh)
-
 
 def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     mesh = create_export_mesh(obj)
 
     transforms = get_bound_poly_transforms_to_apply(
         obj, geom_xml.composite_transform)
-
-    if mesh.vertex_colors:
-        create_xml_vertex_colors(geom_xml, mesh)
 
     if obj.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
         triangles = create_poly_xml_triangles(
@@ -350,28 +359,29 @@ def create_export_mesh(obj: bpy.types.Object):
     return mesh
 
 
-def create_xml_vertex_colors(geom_xml: BoundGeometry | BoundGeometryBVH, mesh: bpy.types.Mesh):
-    for loop in mesh.loops:
-        geom_xml.vertex_colors.append(
-            mesh.vertex_colors[0].data[loop.index].color)
-
-
 def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound polygon triangle XML objects for this BoundGeometry/BVH."""
     triangles: list[PolyTriangle] = []
+
+    color_attr = mesh.color_attributes[0] if len(mesh.color_attributes) > 0 else None
+    if color_attr is not None and (color_attr.domain != "CORNER" or color_attr.data_type != "BYTE_COLOR"):
+        color_attr = None
 
     for tri in mesh.loop_triangles:
         triangle = PolyTriangle()
         mat = mesh.materials[tri.material_index]
         triangle.material_index = get_mat_index(mat)
 
-        tri_indices: list[Vector] = []
+        tri_indices: list[int] = []
 
         for loop_idx in tri.loops:
             loop = mesh.loops[loop_idx]
 
             vert_pos = transforms @ mesh.vertices[loop.vertex_index].co
-            vert_ind = get_vert_index(vert_pos)
+            vert_color = color_attr.data[loop_idx].color_srgb if color_attr is not None else None
+            if vert_color is not None:
+                vert_color = (vert_color[0] * 255, vert_color[1] * 255, vert_color[2] * 255, vert_color[3] * 255)
+            vert_ind = get_vert_index(vert_pos, vert_color=vert_color)
 
             tri_indices.append(vert_ind)
 
@@ -510,6 +520,7 @@ def set_col_mat_xml_properties(mat_xml: Material, mat: bpy.types.Material):
 
     if not mat_xml.flags:
         mat_xml.flags.append("NONE")
+
 
 
 def set_bound_geom_xml_properties(geom_xml: BoundGeometry, obj: bpy.types.Object):

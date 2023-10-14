@@ -154,12 +154,10 @@ def create_bound_geometry(geom_xml: BoundGeometry):
     materials = create_geometry_materials(geom_xml)
     triangles = get_poly_triangles(geom_xml.polygons)
 
-    mesh = create_bound_mesh_data(
-        geom_xml.vertices, triangles, geom_xml, materials)
+    mesh = create_bound_mesh_data(geom_xml.vertices, triangles, geom_xml.vertex_colors, materials)
     mesh.transform(Matrix.Translation(geom_xml.geometry_center))
 
-    geom_obj = create_blender_object(
-        SollumType.BOUND_GEOMETRY, object_data=mesh)
+    geom_obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh)
     set_bound_child_properties(geom_xml, geom_obj)
 
     set_bound_geometry_properties(geom_xml, geom_obj)
@@ -178,10 +176,8 @@ def create_bvh_obj(bvh_xml: BoundGeometryBVH):
     triangles = get_poly_triangles(bvh_xml.polygons)
 
     if triangles:
-        mesh = create_bound_mesh_data(
-            bvh_xml.vertices, triangles, bvh_xml, materials)
-        bound_geom_obj = create_blender_object(
-            SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
+        mesh = create_bound_mesh_data(bvh_xml.vertices, triangles, bvh_xml.vertex_colors, materials)
+        bound_geom_obj = create_blender_object(SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
         bound_geom_obj.location = bvh_xml.geometry_center
         bound_geom_obj.parent = bvh_obj
 
@@ -359,30 +355,26 @@ def get_poly_triangles(polys: list[Polygon]):
     return [poly for poly in polys if isinstance(poly, PolyTriangle)]
 
 
-def create_bound_mesh_data(vertices: list[Vector], triangles: list[PolyTriangle], geometry: BoundGeometryBVH, materials: list[bpy.types.Material]):
-    mesh = bpy.data.meshes.new(
-        SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
+def create_bound_mesh_data(
+    vertices: list[Vector],
+    triangles: list[PolyTriangle],
+    vertex_colors: Optional[list[tuple[int, int, int, int]]],
+    materials: list[bpy.types.Material]
+) -> bpy.types.Mesh:
+    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
 
-    verts, faces = get_bound_geom_mesh_data(vertices, triangles)
+    verts, faces, colors = get_bound_geom_mesh_data(vertices, triangles, vertex_colors)
 
     mesh.from_pydata(verts, [], faces)
 
-    if geometry.vertex_colors:
-        vert_colors = get_vert_colors_as_arr(geometry.vertex_colors)
-        create_color_attr(mesh, vert_colors, domain="POINT")
+    if colors is not None:
+        create_color_attr(mesh, colors)
 
     apply_bound_geom_materials(mesh, triangles, materials)
 
     mesh.validate()
 
     return mesh
-
-
-def get_vert_colors_as_arr(vertex_colors: list[tuple]) -> NDArray[np.float64]:
-    def color_to_float(color_int: tuple[int, int, int]):
-        return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, 1)
-
-    return np.array([color_to_float(color) for color in vertex_colors], dtype=np.float64)
 
 
 def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangle], materials: list[bpy.types.Material]):
@@ -393,33 +385,46 @@ def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangl
         mesh.polygons[i].material_index = poly_xml.material_index
 
 
-def get_bound_geom_mesh_data(vertices: list[Vector], triangles: list[PolyTriangle]):
+def get_bound_geom_mesh_data(
+    vertices: list[Vector],
+    triangles: list[PolyTriangle],
+    vertex_colors: Optional[list[tuple[int, int, int, int]]]
+) -> tuple[list, list, Optional[NDArray]]:
+    def _color_to_float(color_int: tuple[int, int, int, int]):
+        return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, color_int[3] / 255)
+
     verts = []
     faces = []
+    colors = [] if vertex_colors else None
 
     for poly in triangles:
         face = []
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
         v3 = vertices[poly.v3]
-        if not v1 in verts:
+        if v1 not in verts:
             verts.append(v1)
             face.append(len(verts) - 1)
         else:
             face.append(verts.index(v1))
-        if not v2 in verts:
+        if v2 not in verts:
             verts.append(v2)
             face.append(len(verts) - 1)
         else:
             face.append(verts.index(v2))
-        if not v3 in verts:
+        if v3 not in verts:
             verts.append(v3)
             face.append(len(verts) - 1)
         else:
             face.append(verts.index(v3))
         faces.append(face)
 
-    return verts, faces
+        if colors is not None:
+            colors.append(_color_to_float(vertex_colors[poly.v1]))
+            colors.append(_color_to_float(vertex_colors[poly.v2]))
+            colors.append(_color_to_float(vertex_colors[poly.v3]))
+
+    return verts, faces, np.array(colors, dtype=np.float64) if colors is not None else None
 
 
 def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.Object):

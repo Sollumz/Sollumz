@@ -269,7 +269,7 @@ class MaterialsList(ListProperty):
 
 
 class VertexColorProperty(ElementProperty):
-    value_types = (list)
+    value_types = (list[tuple[int, int, int, int]])
 
     def __init__(self, tag_name: str = "VertexColours", value=None):
         super().__init__(tag_name, value or [])
@@ -281,11 +281,10 @@ class VertexColorProperty(ElementProperty):
         if len(text) > 0:
             for line in text:
                 colors = line.strip().split(",")
-                if not len(colors) == 4:
+                if len(colors) != 4:
                     return VertexColorProperty.read_value_error(element)
 
-                new.value.append([int(colors[0]), int(
-                    colors[1]), int(colors[2]), int(colors[3])])
+                new.value.append((int(colors[0]), int(colors[1]), int(colors[2]), int(colors[3])))
 
         return new
 
@@ -298,7 +297,7 @@ class VertexColorProperty(ElementProperty):
 
         for color in self.value:
             for index, component in enumerate(color):
-                element.text += str(int(component * 255))
+                element.text += str(int(component))
                 if index < len(color) - 1:
                     element.text += ", "
             element.text += "\n"
