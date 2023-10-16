@@ -483,6 +483,61 @@ class SOLLUMZ_OT_clip_delete_property(SOLLUMZ_OT_base, bpy.types.Operator):
         return {"FINISHED"}
 
 
+class SOLLUMZ_OT_clip_new_property_attribute(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.clip_new_property_attribute"
+    bl_label = "Add a new Property Attribute"
+    bl_description = "Add a new attribute to the property"
+
+    property_index: bpy.props.IntProperty()
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        active_object = bpy.context.selected_objects[0]
+
+        if active_object.sollum_type != SollumType.CLIP:
+            return {"FINISHED"}
+
+        clip_properties = active_object.clip_properties
+
+        prop = clip_properties.properties[self.property_index]
+        if not prop:
+            return {"FINISHED"}
+
+        prop.attributes.add()
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_clip_delete_property_attribute(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.clip_delete_property_attribute"
+    bl_label = "Delete Property Attribute"
+    bl_description = "Remove the attribute from the property"
+
+    property_index: bpy.props.IntProperty()
+    attribute_index: bpy.props.IntProperty()
+
+    def run(self, context):
+        if len(bpy.context.selected_objects) <= 0:
+            return {"FINISHED"}
+
+        active_object = bpy.context.selected_objects[0]
+
+        if active_object.sollum_type != SollumType.CLIP:
+            return {"FINISHED"}
+
+        clip_properties = active_object.clip_properties
+
+        prop = clip_properties.properties[self.property_index]
+        if not prop:
+            return {"FINISHED"}
+
+        prop.attributes.remove(self.attribute_index)
+
+        return {"FINISHED"}
+
+
 class SOLLUMZ_OT_create_clip_dictionary(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.create_clip_dictionary"
     bl_label = "Create clip dictionary template"

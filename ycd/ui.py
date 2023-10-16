@@ -476,16 +476,29 @@ class SOLLUMZ_PT_CLIP_PROPERTIES(bpy.types.Panel):
         obj = context.active_object
         clip_properties = obj.clip_properties
 
-        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_property.bl_idname,
-                        text="New", icon="ADD")
+        layout.operator(ycd_ops.SOLLUMZ_OT_clip_new_property.bl_idname, text="New", icon="ADD")
 
-        if len(clip_properties.properties) == 0:
-            return
+        for prop_index, clip_prop in enumerate(clip_properties.properties):
+            box = layout.box()
 
-        box = layout.box()
-        for prop_index, prop in enumerate(clip_properties.properties):
-            del_op = draw_clip_attribute(box, prop, ycd_ops.SOLLUMZ_OT_clip_delete_property)
+            del_op = draw_item_box_header(box, clip_prop, clip_prop.name, ycd_ops.SOLLUMZ_OT_clip_delete_property)
             del_op.property_index = prop_index
+
+            if clip_prop.ui_show_expanded:
+                box.use_property_split = True
+                box.use_property_decorate = False
+                box.prop(clip_prop, "name")
+
+                attr_box = box.box()
+                attr_header = attr_box.row(align=True)
+                attr_header.label(text="Attributes")
+                new_op = attr_header.operator(ycd_ops.SOLLUMZ_OT_clip_new_property_attribute.bl_idname,
+                                              text="", icon="ADD")
+                new_op.property_index = prop_index
+                for attr_index, attr in enumerate(clip_prop.attributes):
+                    del_op = draw_clip_attribute(attr_box, attr, ycd_ops.SOLLUMZ_OT_clip_delete_property_attribute)
+                    del_op.property_index = prop_index
+                    del_op.attribute_index = attr_index
 
 
 class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):

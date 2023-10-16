@@ -303,11 +303,11 @@ def clip_to_obj(
 
     clip_obj.clip_properties.properties.clear()
     for prop in clip.properties:
-        assert len(prop.attributes) == 1
-        assert prop.name_hash == prop.attributes[0].name_hash
-
         clip_prop = clip_obj.clip_properties.properties.add()
-        _init_attribute(clip_prop, prop.attributes[0])
+        clip_prop.name = prop.name_hash
+        for attr in prop.attributes:
+            clip_prop_attr = clip_prop.attributes.add()
+            _init_attribute(clip_prop_attr, attr)
 
     return clip_obj
 

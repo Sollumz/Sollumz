@@ -85,6 +85,14 @@ class ClipTag(bpy.types.PropertyGroup):
         default=False, options={"HIDDEN", "SKIP_SAVE"})
 
 
+class ClipProperty(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", default="")
+    attributes: bpy.props.CollectionProperty(name="Attributes", type=ClipAttribute)
+
+    ui_show_expanded: bpy.props.BoolProperty(
+        name="Show Expanded", default=True, description="Show details of the property")
+
+
 class ClipAnimation(bpy.types.PropertyGroup):
     def on_animation_changed(self, context):
         if self.animation is None:
@@ -127,7 +135,7 @@ class ClipProperties(bpy.types.PropertyGroup):
 
     tags: bpy.props.CollectionProperty(name="Tags", type=ClipTag)
 
-    properties: bpy.props.CollectionProperty(name="Properties", type=ClipAttribute)
+    properties: bpy.props.CollectionProperty(name="Properties", type=ClipProperty)
 
     def get_frame_count(self):
         return round(self.duration * bpy.context.scene.render.fps)

@@ -438,8 +438,10 @@ def clip_attribute_calc_signature(attr: ClipAttribute) -> int:
 #  Should be good enough for now
 def clip_property_calc_signature(prop: ClipAttribute) -> int:
     signature = jenkhash.name_to_hash(prop.name)
-    # for attr in prop:
-    attr_signature = clip_attribute_calc_signature(prop)
+    for attr in prop.attributes:
+        attr_signature = clip_attribute_calc_signature(attr)
+        signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
+
     signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
     return signature
 
@@ -516,7 +518,8 @@ def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
         xml_prop = ycdxml.Property()
         xml_prop.name_hash = prop.name
         xml_prop.unk_hash = f"hash_{clip_property_calc_signature(prop):08X}"
-        xml_prop.attributes.append(clip_attribute_to_xml(prop))
+        for attr in prop.attributes:
+            xml_prop.attributes.append(clip_attribute_to_xml(attr))
         xml_clip.properties.append(xml_prop)
 
     return xml_clip
