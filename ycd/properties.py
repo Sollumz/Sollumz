@@ -314,7 +314,7 @@ class AnimationTracks(bpy.types.PropertyGroup):
     unk_24: FloatProp("Unk 24")
     unk_25: Vec3Prop("Unk 25", subtype="XYZ")
     unk_26: QuatProp("Unk 26")
-    camera_fov: FloatProp("Camera FOV", min=1.0, max=130.0)  # in degrees, 1.0-130.0
+    camera_fov: FloatProp("Camera FOV", default=39.6, min=1.0, max=130.0)  # in degrees, 1.0-130.0
     camera_dof: Vec3Prop("Camera DOF", subtype="XYZ")  # x=near, y=far, z=unused
     unk_29: Vec3Prop("Unk 29", subtype="XYZ")
     unk_30: FloatProp("Unk 30")

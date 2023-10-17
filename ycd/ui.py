@@ -337,7 +337,7 @@ class SOLLUMZ_PT_CAMERA_ANIMATION_TRACKS(bpy.types.Panel):
         animation_tracks = obj.animation_tracks
 
         col = layout.column()
-        col.prop(animation_tracks, "camera_fov")
+        col.prop(animation_tracks, "camera_fov", text="FOV")
         split = col.split(factor=0.4)
         split.row()
         split.row().label(text="DOF")
@@ -356,8 +356,8 @@ class SOLLUMZ_PT_CAMERA_ANIMATION_TRACKS(bpy.types.Panel):
         sub_col.prop(animation_tracks, "camera_dof_unk_49", text="Unk 49")
         sub_col.prop(animation_tracks, "camera_dof_unk_51", text="Unk 51")
         col.separator()
-        col.prop(animation_tracks, "camera_unk_39")
-        col.prop(animation_tracks, "camera_unk_48")
+        col.prop(animation_tracks, "camera_unk_39", text="Unk 39")
+        col.prop(animation_tracks, "camera_unk_48", text="Unk 48")
 
 
 class SOLLUMZ_PT_CLIP_ANIMATIONS(bpy.types.Panel):
