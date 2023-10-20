@@ -342,8 +342,13 @@ def get_used_colors(material: bpy.types.Material) -> set[str]:
 
 
 def get_normal_required(material: bpy.types.Material):
-    # Minimap shaders dont use normals. Any other shaders like this?
-    return material.shader_properties.filename != "minimap.sps"
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return False
+
+    return shader.required_normal
 
 
 def get_geom_extents(positions: NDArray[np.float32]):

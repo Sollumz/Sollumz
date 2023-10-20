@@ -48,6 +48,13 @@ class Shader(ElementTree):
         return False
 
     @property
+    def required_normal(self):
+        for layout in self.layouts:
+            if "Normal" in layout.value:
+                return True
+        return False
+
+    @property
     def used_texcoords(self) -> set[str]:
         names = set()
         for layout in self.layouts:
