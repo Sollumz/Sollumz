@@ -442,7 +442,6 @@ def clip_property_calc_signature(prop: ClipAttribute) -> int:
         attr_signature = clip_attribute_calc_signature(attr)
         signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
 
-    signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
     return signature
 
 
