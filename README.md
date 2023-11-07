@@ -16,7 +16,7 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
   * YDD
   * YDR
   * YBN
-  * YCD (Excluding UV Animations)
+  * YCD
   * YMAP
   * YTYP
   * YNV (Partial)
@@ -44,7 +44,7 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
 
 ## Requirements ##
   * Latest Codewalker release from [their discord](https://discord.gg/codewalker)
-  * [Blender 3.5.1 or later](http://www.blender.org/download/)
+  * [Blender 4.0 or later](http://www.blender.org/download/)
 
 ## Installation ##
   1. Download the [latest release](https://github.com/Skylumz/Sollumz/releases/latest)

@@ -174,14 +174,14 @@ def create_tint_geom_modifier(
     mod.node_group = tnt_ng
 
     # set input / output variables
-    input_id = tnt_ng.inputs[1].identifier
+    input_id = tnt_ng.interface.items_tree["Color Attribute"].identifier
     mod[input_id + "_attribute_name"] = input_color_attr_name if input_color_attr_name is not None else ""
     mod[input_id + "_use_attribute"] = True
 
-    input_palette_id = tnt_ng.inputs[3].identifier
+    input_palette_id = tnt_ng.interface.items_tree["Palette Texture"].identifier
     mod[input_palette_id] = palette_img
 
-    output_id = tnt_ng.outputs[1].identifier
+    output_id = tnt_ng.interface.items_tree["Tint Color"].identifier
     mod[output_id + "_attribute_name"] = tint_color_attr_name
     mod[output_id + "_use_attribute"] = True
 
@@ -226,15 +226,16 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     output = gnt.nodes.new("NodeGroupOutput")
 
     # Create the necessary sockets for the node group
-    gnt.inputs.new("NodeSocketGeometry", "Geometry")
-    gnt.inputs.new("NodeSocketVector", "Vertex Colors")
-    in_palette = gnt.inputs.new("NodeSocketInt", "Palette (Preview)")
-    in_palette.description = "Index of the tint palette to preview. Has no effect on export"
+    gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="INPUT")
+    gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="OUTPUT")
+    gnt.interface.new_socket("Color Attribute", socket_type="NodeSocketVector", in_out="INPUT")
+    in_palette = gnt.interface.new_socket("Palette (Preview)",
+                                          description="Index of the tint palette to preview. Has no effect on export",
+                                          socket_type="NodeSocketInt", in_out="INPUT")
     in_palette.min_value = 0
-    in_palette_tex = gnt.inputs.new("NodeSocketImage", "Palette Texture")
-    in_palette_tex.description = "Should be the same as 'TintPaletteSampler' of the material"
-    gnt.outputs.new("NodeSocketGeometry", "Geometry")
-    gnt.outputs.new("NodeSocketColor", "Tint Color")
+    gnt.interface.new_socket("Palette Texture", description="Should be the same as 'TintPaletteSampler' of the material",
+                             socket_type="NodeSocketImage", in_out="INPUT")
+    gnt.interface.new_socket("Tint Color", socket_type="NodeSocketColor", in_out="OUTPUT")
 
     # link input / output node to create geometry socket
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
@@ -347,10 +348,9 @@ def create_vector_nodes(node_tree, param):
 def create_array_item_node(group_name):
     array_item_group = bpy.data.node_groups.new(group_name, "ShaderNodeTree")
     array_item_group.nodes.new("NodeGroupInput")
-    array_item_group.inputs.new("NodeSocketFloat", "X").default_value = 0
-    array_item_group.inputs.new("NodeSocketFloat", "Y").default_value = 0
-    array_item_group.inputs.new("NodeSocketFloat", "Z").default_value = 0
-    array_item_group.inputs.new("NodeSocketFloat", "W").default_value = 0
+    for comp in ("X", "Y", "Z", "W"):
+        in_socket = array_item_group.interface.new_socket(name=comp, socket_type="NodeSocketFloat", in_out="INPUT")
+        in_socket.default_value = 0
     return array_item_group
 
 
@@ -491,7 +491,7 @@ def link_specular(b: ShaderBuilder, spctex):
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
-    links.new(spctex.outputs["Color"], bsdf.inputs["Specular"])
+    links.new(spctex.outputs["Color"], bsdf.inputs["Specular IOR Level"])
 
 
 def create_diff_palette_nodes(
@@ -609,8 +609,6 @@ def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.
     fill_color_g = node_tree.nodes["fillColor_y"]
     fill_color_b = node_tree.nodes["fillColor_z"]
 
-    # distance_map_texture.image.colormapping_settings.name = "Non-Color"
-
     # combine fillColor into a vector
     links.new(fill_color_r.outputs["Value"], fill_color_combine.inputs["X"])
     links.new(fill_color_g.outputs["Value"], fill_color_combine.inputs["Y"])
@@ -689,7 +687,7 @@ def link_value_shader_parameters(b: ShaderBuilder):
             links.new(spec.outputs[0], mult.inputs[0])
             links.new(map.outputs[0], mult.inputs[1])
             links.new(spec_im.outputs[0], map.inputs[0])
-            links.new(mult.outputs[0], bsdf.inputs["Specular"])
+            links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
     if spec_fm:
         map = node_tree.nodes.new("ShaderNodeMapRange")
         map.inputs[2].default_value = 512
@@ -712,32 +710,31 @@ def create_water_nodes(b: ShaderBuilder):
     mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
     add_shader = node_tree.nodes.new("ShaderNodeAddShader")
     vol_absorb = node_tree.nodes.new("ShaderNodeVolumeAbsorption")
-    vol_absorb.inputs[0].default_value = (0.772, 0.91, 0.882, 1.0)
-    vol_absorb.inputs[1].default_value = 0.25  # Density
-    bsdf.inputs[0].default_value = (0.588, 0.91, 0.851, 1.0)
-    bsdf.inputs[19].default_value = (
-        0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
-    bsdf.inputs['Emission Strength'].default_value = 0.1
+    vol_absorb.inputs["Color"].default_value = (0.772, 0.91, 0.882, 1.0)
+    vol_absorb.inputs["Density"].default_value = 0.25
+    bsdf.inputs["Base Color"].default_value = (0.588, 0.91, 0.851, 1.0)
+    bsdf.inputs["Emission Color"].default_value = (0.49102, 0.938685, 1.0, 1.0)
+    bsdf.inputs["Emission Strength"].default_value = 0.1
     glass_shader = node_tree.nodes.new("ShaderNodeBsdfGlass")
-    glass_shader.inputs['IOR'].default_value = 1.333
+    glass_shader.inputs["IOR"].default_value = 1.333
     trans_shader = node_tree.nodes.new("ShaderNodeBsdfTransparent")
     light_path = node_tree.nodes.new("ShaderNodeLightPath")
     bump = node_tree.nodes.new("ShaderNodeBump")
-    bump.inputs['Strength'].default_value = 0.05
+    bump.inputs["Strength"].default_value = 0.05
     noise_tex = node_tree.nodes.new("ShaderNodeTexNoise")
-    noise_tex.inputs['Scale'].default_value = 12.0
-    noise_tex.inputs['Detail'].default_value = 3.0
-    noise_tex.inputs[4].default_value = 0.85  # Roughness
+    noise_tex.inputs["Scale"].default_value = 12.0
+    noise_tex.inputs["Detail"].default_value = 3.0
+    noise_tex.inputs["Roughness"].default_value = 0.85
 
     links.new(glass_shader.outputs[0], mix_shader.inputs[1])
     links.new(trans_shader.outputs[0], mix_shader.inputs[2])
     links.new(bsdf.outputs[0], add_shader.inputs[0])
     links.new(vol_absorb.outputs[0], add_shader.inputs[1])
-    links.new(add_shader.outputs[0], output.inputs['Volume'])
-    links.new(mix_shader.outputs[0], output.inputs['Surface'])
-    links.new(light_path.outputs['Is Shadow Ray'], mix_shader.inputs['Fac'])
-    links.new(noise_tex.outputs['Fac'], bump.inputs['Height'])
-    links.new(bump.outputs['Normal'], glass_shader.inputs['Normal'])
+    links.new(add_shader.outputs[0], output.inputs["Volume"])
+    links.new(mix_shader.outputs[0], output.inputs["Surface"])
+    links.new(light_path.outputs["Is Shadow Ray"], mix_shader.inputs["Fac"])
+    links.new(noise_tex.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], glass_shader.inputs["Normal"])
 
 
 def create_basic_shader_nodes(b: ShaderBuilder):
@@ -839,7 +836,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     if use_spec:
         link_specular(b, spectex)
     else:
-        bsdf.inputs["Specular"].default_value = 0
+        bsdf.inputs["Specular IOR Level"].default_value = 0
 
     if use_tint:
         create_tint_nodes(b, texture)
@@ -860,8 +857,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
 
     is_veh_shader = filename in ShaderManager.veh_paints
     if is_veh_shader:
-        bsdf.inputs[6].default_value = 1.0  # Metallic
-        bsdf.inputs[14].default_value = 1.0  # Clearcoat
+        bsdf.inputs["Metallic"].default_value = 1.0
+        bsdf.inputs["Coat Weight"].default_value = 1.0
 
     # link value parameters
     link_value_shader_parameters(b)
@@ -975,7 +972,7 @@ def create_terrain_shader(b: ShaderBuilder):
         links.new(tm.outputs[0], mixns[0].inputs[1])
 
     # link value parameters
-    bsdf.inputs["Specular"].default_value = 0
+    bsdf.inputs["Specular IOR Level"].default_value = 0
     link_value_shader_parameters(b)
 
 
