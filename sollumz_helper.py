@@ -34,12 +34,14 @@ class SOLLUMZ_OT_base:
         except:
             result = False
             self.error(
-                f"Error occured running operator : {self.bl_idname} \n {traceback.format_exc()}")
+                f"Error occured running operator : {self.bl_idname} \n {traceback.format_exc()}"
+            )
         end = time.time()
 
         if self.bl_showtime and result == True:
             self.message(
-                f"{self.bl_label} took {round(end - start, 3)} seconds to {self.bl_action}.")
+                f"{self.bl_label} took {round(end - start, 3)} seconds to {self.bl_action}."
+            )
 
         if len(self.messages) > 0:
             self.message("\n".join(self.messages))
@@ -112,12 +114,24 @@ def duplicate_object_with_children(obj):
     return new_objs[0]
 
 
-def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType] = None) -> bpy.types.Object | None:
+def find_sollumz_parent(
+    obj: bpy.types.Object, parent_type: Optional[SollumType] = None
+) -> bpy.types.Object | None:
     """Find parent Fragment or Drawable if one exists. Returns None otherwise."""
-    parent_types = [SollumType.FRAGMENT, SollumType.DRAWABLE, SollumType.DRAWABLE_DICTIONARY,
-                    SollumType.CLIP_DICTIONARY, SollumType.YMAP, *BOUND_TYPES]
+    parent_types = [
+        SollumType.FRAGMENT,
+        SollumType.DRAWABLE,
+        SollumType.DRAWABLE_DICTIONARY,
+        SollumType.CLIP_DICTIONARY,
+        SollumType.YMAP,
+        *BOUND_TYPES,
+    ]
 
-    if parent_type is not None and obj.parent is not None and obj.parent.sollum_type == parent_type:
+    if (
+        parent_type is not None
+        and obj.parent is not None
+        and obj.parent.sollum_type == parent_type
+    ):
         return obj.parent
 
     if obj.parent is None and obj.sollum_type in parent_types:

@@ -13,7 +13,8 @@ def points_to_obj(points):
     for idx, point in enumerate(points):
         mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POINT])
         obj = bpy.data.objects.new(
-            SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POINT] + " " + str(idx), mesh)
+            SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POINT] + " " + str(idx), mesh
+        )
         obj.sollum_type = SollumType.NAVMESH_POINT
         obj.parent = pobj
 
@@ -40,7 +41,8 @@ def portals_to_obj(portals):
         toobj = bpy.data.objects.new("to", tomesh)
         toobj.location = portal.position_to
         obj = bpy.data.objects.new(
-            SOLLUMZ_UI_NAMES[SollumType.NAVMESH_PORTAL] + " " + str(idx), tomesh)
+            SOLLUMZ_UI_NAMES[SollumType.NAVMESH_PORTAL] + " " + str(idx), tomesh
+        )
         obj.sollum_type = SollumType.NAVMESH_PORTAL
         fromobj.parent = obj
         toobj.parent = obj
@@ -97,8 +99,7 @@ def get_material(flags):
         g = 0.2
 
     bsdf, _ = find_bsdf_and_material_output(mat)
-    bsdf.inputs[0].default_value = (
-        r, g, b, 0.75)
+    bsdf.inputs[0].default_value = (r, g, b, 0.75)
     return mat
 
 
@@ -127,8 +128,7 @@ def polygons_to_obj(polygons):
 
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POLY_MESH])
     mesh.from_pydata(verts, [], indices)
-    obj = bpy.data.objects.new(
-        SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POLY_MESH], mesh)
+    obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POLY_MESH], mesh)
     obj.sollum_type = SollumType.NAVMESH_POLY_MESH
 
     for mat in mats:

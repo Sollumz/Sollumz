@@ -10,12 +10,11 @@ from .element import (
     ListProperty,
     MatrixProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
 )
 
 
 class YBN:
-
     file_extension = ".ybn.xml"
 
     @staticmethod
@@ -106,7 +105,7 @@ class BoundCloth(BoundChild):
 
 
 class VerticesProperty(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self, tag_name: str = "Vertices", value=None):
         super().__init__(tag_name, value or [])
@@ -122,7 +121,8 @@ class VerticesProperty(ElementProperty):
                     return VerticesProperty.read_value_error(element)
 
                 new.value.append(
-                    Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
+                    Vector((float(coords[0]), float(coords[1]), float(coords[2])))
+                )
 
         return new
 
@@ -136,7 +136,8 @@ class VerticesProperty(ElementProperty):
         for vertex in self.value:
             if not isinstance(vertex, Vector):
                 raise TypeError(
-                    f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
+                    f"VerticesProperty can only contain Vector objects, not '{type(self.value)}'!"
+                )
             for index, component in enumerate(vertex):
                 text.append(str(component))
                 if index < len(vertex) - 1:
@@ -149,7 +150,7 @@ class VerticesProperty(ElementProperty):
 
 
 class OctantsProperty(ElementProperty):
-    value_types = (dict)
+    value_types = dict
 
     def __init__(self, tag_name: str = "Octants", value=None):
         super().__init__(tag_name, value or {})
@@ -269,7 +270,7 @@ class MaterialsList(ListProperty):
 
 
 class VertexColorProperty(ElementProperty):
-    value_types = (list[tuple[int, int, int, int]])
+    value_types = list[tuple[int, int, int, int]]
 
     def __init__(self, tag_name: str = "VertexColours", value=None):
         super().__init__(tag_name, value or [])
@@ -284,7 +285,9 @@ class VertexColorProperty(ElementProperty):
                 if len(colors) != 4:
                     return VertexColorProperty.read_value_error(element)
 
-                new.value.append((int(colors[0]), int(colors[1]), int(colors[2]), int(colors[3])))
+                new.value.append(
+                    (int(colors[0]), int(colors[1]), int(colors[2]), int(colors[3]))
+                )
 
         return new
 

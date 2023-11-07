@@ -5,13 +5,21 @@ from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES
 from ..sollumz_helper import find_sollumz_parent
 from .properties import (
-    GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
+    GroupProperties,
+    FragmentProperties,
+    VehicleWindowProperties,
+    VehicleLightID,
     GroupFlagBit,
 )
 from .operators import (
-    SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID,
-    SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS
+    SOLLUMZ_OT_CREATE_FRAGMENT,
+    SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS,
+    SOLLUMZ_OT_SET_MASS,
+    SOLLUMZ_OT_SET_LIGHT_ID,
+    SOLLUMZ_OT_SELECT_LIGHT_ID,
+    SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS,
 )
+
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Fragments"
@@ -43,22 +51,21 @@ class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(SOLLUMZ_OT_CREATE_FRAGMENT.bl_idname,
-                        icon="MOD_PHYSICS")
+        layout.operator(SOLLUMZ_OT_CREATE_FRAGMENT.bl_idname, icon="MOD_PHYSICS")
 
         layout.separator()
 
         row = layout.row()
-        row.operator(SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS.bl_idname,
-                     icon="BONE_DATA")
+        row.operator(SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS.bl_idname, icon="BONE_DATA")
         row = layout.row()
         row.prop(context.scene, "create_bones_fragment")
         row.prop(context.scene, "create_bones_parent_to_selected")
 
         layout.separator()
         layout.label(text="Wheel Instances")
-        layout.operator("sollumz.generate_wheel_instances",
-                        icon="OUTLINER_OB_GROUP_INSTANCE")
+        layout.operator(
+            "sollumz.generate_wheel_instances", icon="OUTLINER_OB_GROUP_INSTANCE"
+        )
 
 
 class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
@@ -117,8 +124,7 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):
         layout.use_property_split = True
 
         row = layout.row(align=True)
-        row.operator(SOLLUMZ_OT_SET_LIGHT_ID.bl_idname,
-                     icon="OUTLINER_OB_LIGHT")
+        row.operator(SOLLUMZ_OT_SET_LIGHT_ID.bl_idname, icon="OUTLINER_OB_LIGHT")
         row.prop(context.scene, "set_vehicle_light_id", text="")
 
         if context.scene.set_vehicle_light_id == VehicleLightID.CUSTOM:
@@ -127,8 +133,7 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):
 
         row = layout.row(align=True)
 
-        row.operator(SOLLUMZ_OT_SELECT_LIGHT_ID.bl_idname,
-                     icon="GROUP_VERTEX")
+        row.operator(SOLLUMZ_OT_SELECT_LIGHT_ID.bl_idname, icon="GROUP_VERTEX")
         row.prop(context.scene, "select_vehicle_light_id", text="")
 
         if context.scene.select_vehicle_light_id == VehicleLightID.CUSTOM:
@@ -143,11 +148,9 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):
         if face_mode:
             if light_id == -1:
                 light_id = "N/A"
-            layout.label(
-                text=f"Selection Light ID: {light_id}")
+            layout.label(text=f"Selection Light ID: {light_id}")
         else:
-            layout.label(
-                text="Must be in Edit Mode > Face Selection.", icon="ERROR")
+            layout.label(text="Must be in Edit Mode > Face Selection.", icon="ERROR")
 
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
@@ -160,7 +163,10 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.FRAGMENT
+        return (
+            context.active_object is not None
+            and context.active_object.sollum_type == SollumType.FRAGMENT
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -231,7 +237,10 @@ class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_bone is not None and context.active_object.sollum_type == SollumType.FRAGMENT
+        return (
+            context.active_bone is not None
+            and context.active_object.sollum_type == SollumType.FRAGMENT
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -253,7 +262,9 @@ class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_bone is not None and context.active_bone.sollumz_use_physics
+        return (
+            context.active_bone is not None and context.active_bone.sollumz_use_physics
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -264,7 +275,12 @@ class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
         props = bone.group_properties
 
         col = layout.column(heading="Flags")
-        col.prop(props, "flags", index=GroupFlagBit.DISAPPEAR_WHEN_DEAD, text="Disappear When Dead")
+        col.prop(
+            props,
+            "flags",
+            index=GroupFlagBit.DISAPPEAR_WHEN_DEAD,
+            text="Disappear When Dead",
+        )
         col.prop(props, "flags", index=GroupFlagBit.UNK_4, text="Unk 4")
         col.prop(props, "flags", index=GroupFlagBit.UNK_8, text="Unk 8")
         col.prop(props, "flags", index=GroupFlagBit.UNK_16, text="Unk 16")
@@ -299,7 +315,12 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
-        return aobj is not None and aobj.sollum_type != SollumType.BOUND_COMPOSITE and aobj.sollum_type in BOUND_TYPES and find_sollumz_parent(aobj)
+        return (
+            aobj is not None
+            and aobj.sollum_type != SollumType.BOUND_COMPOSITE
+            and aobj.sollum_type in BOUND_TYPES
+            and find_sollumz_parent(aobj)
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -369,8 +390,9 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        layout.prop(context.active_object,
-                    "sollumz_is_physics_child_mesh", text="Is Wheel Mesh")
+        layout.prop(
+            context.active_object, "sollumz_is_physics_child_mesh", text="Is Wheel Mesh"
+        )
 
 
 class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
@@ -389,21 +411,29 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         if aobj is None or aobj.sollum_type != SollumType.DRAWABLE_MODEL:
             return False
 
-        has_frag_parent = find_sollumz_parent(
-            aobj, parent_type=SollumType.FRAGMENT) is not None
+        has_frag_parent = (
+            find_sollumz_parent(aobj, parent_type=SollumType.FRAGMENT) is not None
+        )
         mat = aobj.active_material
 
-        return mat is not None and mat.sollum_type == MaterialType.SHADER and has_frag_parent
+        return (
+            mat is not None
+            and mat.sollum_type == MaterialType.SHADER
+            and has_frag_parent
+        )
 
     def draw(self, context):
         layout = self.layout
         mat = context.active_object.active_material
 
         has_mat_diffuse_color = any(
-            "matDiffuseColor" in n.name for n in mat.node_tree.nodes)
+            "matDiffuseColor" in n.name for n in mat.node_tree.nodes
+        )
         row = layout.row()
         row.enabled = has_mat_diffuse_color
         row.prop(mat, "sollumz_paint_layer")
         if not has_mat_diffuse_color:
             layout.label(
-                text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")
+                text="Not a paint shader. Shader must have a matDiffuseColor parameter.",
+                icon="ERROR",
+            )

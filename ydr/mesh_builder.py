@@ -10,13 +10,21 @@ from .. import logger
 class MeshBuilder:
     """Builds a bpy mesh from a structured numpy vertex array"""
 
-    def __init__(self, name: str, vertex_arr: NDArray, ind_arr: NDArray[np.uint], mat_inds: NDArray[np.uint], drawable_mats: list[bpy.types.Material]):
+    def __init__(
+        self,
+        name: str,
+        vertex_arr: NDArray,
+        ind_arr: NDArray[np.uint],
+        mat_inds: NDArray[np.uint],
+        drawable_mats: list[bpy.types.Material],
+    ):
         if "Position" not in vertex_arr.dtype.names:
             raise ValueError("Vertex array have a 'Position' field!")
 
         if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
             raise ValueError(
-                "Indices array should be a 1D array in triangle order and it's size should be divisble by 3!")
+                "Indices array should be a 1D array in triangle order and it's size should be divisble by 3!"
+            )
 
         self.vertex_arr = vertex_arr
         self.ind_arr = ind_arr
@@ -26,10 +34,8 @@ class MeshBuilder:
         self.materials = drawable_mats
 
         self._has_normals = "Normal" in vertex_arr.dtype.names
-        self._has_uvs = any(
-            "TexCoord" in name for name in vertex_arr.dtype.names)
-        self._has_colors = any(
-            "Colour" in name for name in vertex_arr.dtype.names)
+        self._has_uvs = any("TexCoord" in name for name in vertex_arr.dtype.names)
+        self._has_colors = any("Colour" in name for name in vertex_arr.dtype.names)
 
     def build(self):
         mesh = bpy.data.meshes.new(self.name)
@@ -40,7 +46,8 @@ class MeshBuilder:
             mesh.from_pydata(vert_pos, [], faces)
         except Exception:
             logger.error(
-                f"Error during creation of fragment {self.name}:\n{format_exc()}\nEnsure the mesh data is not malformed.")
+                f"Error during creation of fragment {self.name}:\n{format_exc()}\nEnsure the mesh data is not malformed."
+            )
             return mesh
 
         self.create_mesh_materials(mesh)
@@ -61,8 +68,7 @@ class MeshBuilder:
     def create_mesh_materials(self, mesh: bpy.types.Mesh):
         drawable_mat_inds = np.unique(self.mat_inds)
         # Map drawable material indices to model material indices
-        model_mat_inds = np.zeros(
-            np.max(drawable_mat_inds) + 1, dtype=np.uint32)
+        model_mat_inds = np.zeros(np.max(drawable_mat_inds) + 1, dtype=np.uint32)
 
         for mat_ind in drawable_mat_inds:
             mesh.materials.append(self.materials[mat_ind])
@@ -71,20 +77,19 @@ class MeshBuilder:
         # Set material indices via attributes
         mesh.attributes.new("material_index", type="INT", domain="FACE")
         mesh.attributes["material_index"].data.foreach_set(
-            "value", model_mat_inds[self.mat_inds])
+            "value", model_mat_inds[self.mat_inds]
+        )
 
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
 
-        normals_normalized = [Vector(n).normalized()
-                              for n in self.vertex_arr["Normal"]]
+        normals_normalized = [Vector(n).normalized() for n in self.vertex_arr["Normal"]]
         mesh.normals_split_custom_set_from_vertices(normals_normalized)
 
         mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
-        uv_attrs = [
-            name for name in self.vertex_arr.dtype.names if "TexCoord" in name]
+        uv_attrs = [name for name in self.vertex_arr.dtype.names if "TexCoord" in name]
 
         for attr_name in uv_attrs:
             uvs = self.vertex_arr[attr_name]
@@ -94,8 +99,7 @@ class MeshBuilder:
             create_uv_attr(mesh, uvs[self.ind_arr])
 
     def set_mesh_vertex_colors(self, mesh: bpy.types.Mesh):
-        color_attrs = [
-            name for name in self.vertex_arr.dtype.names if "Colour" in name]
+        color_attrs = [name for name in self.vertex_arr.dtype.names if "Colour" in name]
 
         for attr_name in color_attrs:
             colors = self.vertex_arr[attr_name] / 255

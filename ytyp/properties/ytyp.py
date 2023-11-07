@@ -1,9 +1,22 @@
 from typing import Union
 import bpy
 from ...tools.blenderhelper import get_children_recursive
-from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
+from ...sollumz_properties import (
+    SollumType,
+    items_from_enums,
+    ArchetypeType,
+    AssetType,
+    TimeFlags,
+    SOLLUMZ_UI_NAMES,
+)
 from ...tools.utils import get_list_item
-from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
+from .mlo import (
+    EntitySetProperties,
+    RoomProperties,
+    PortalProperties,
+    MloEntityProperties,
+    TimecycleModifierProperties,
+)
 from .flags import ArchetypeFlags, UnknownFlags
 from .extensions import ExtensionsContainer, ExtensionProperties
 
@@ -21,7 +34,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             elif self.asset.sollum_type == SollumType.DRAWABLE:
                 self.asset_type = AssetType.DRAWABLE
                 # Check if in a drawable dictionary
-                if self.asset.parent and hasattr(self.asset.parent, "sollum_type") and self.asset.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                if (
+                    self.asset.parent
+                    and hasattr(self.asset.parent, "sollum_type")
+                    and self.asset.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY
+                ):
                     self.drawable_dictionary = self.asset.parent.name
             elif self.asset.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                 self.asset_type = AssetType.DRAWABLE_DICTIONARY
@@ -134,39 +151,38 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
     bs_center: bpy.props.FloatVectorProperty(name="Bound Center")
     bs_radius: bpy.props.FloatProperty(name="Bound Radius")
-    type: bpy.props.EnumProperty(
-        items=items_from_enums(ArchetypeType), name="Type")
+    type: bpy.props.EnumProperty(items=items_from_enums(ArchetypeType), name="Type")
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=60, min=-1)
-    flags: bpy.props.PointerProperty(
-        type=ArchetypeFlags, name="Flags")
+    flags: bpy.props.PointerProperty(type=ArchetypeFlags, name="Flags")
     special_attribute: bpy.props.IntProperty(name="Special Attribute")
     hd_texture_dist: bpy.props.FloatProperty(
-        name="HD Texture Distance", default=40, min=0)
+        name="HD Texture Distance", default=40, min=0
+    )
     name: bpy.props.StringProperty(name="Name")
     texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
     clip_dictionary: bpy.props.StringProperty(name="Clip Dictionary")
     drawable_dictionary: bpy.props.StringProperty(name="Drawable Dictionary")
-    physics_dictionary: bpy.props.StringProperty(
-        name="Physics Dictionary")
+    physics_dictionary: bpy.props.StringProperty(name="Physics Dictionary")
     asset_type: bpy.props.EnumProperty(
-        items=items_from_enums(AssetType), name="Asset Type")
+        items=items_from_enums(AssetType), name="Asset Type"
+    )
     asset: bpy.props.PointerProperty(
-        name="Asset", type=bpy.types.Object, update=update_asset)
-    asset_name: bpy.props.StringProperty(
-        name="Asset Name")
+        name="Asset", type=bpy.types.Object, update=update_asset
+    )
+    asset_name: bpy.props.StringProperty(name="Asset Name")
     # Time archetype
     time_flags: bpy.props.PointerProperty(type=TimeFlags, name="Time Flags")
     # Mlo archetype
     mlo_flags: bpy.props.PointerProperty(type=UnknownFlags, name="MLO Flags")
     rooms: bpy.props.CollectionProperty(type=RoomProperties, name="Rooms")
-    portals: bpy.props.CollectionProperty(
-        type=PortalProperties, name="Portals")
-    entities: bpy.props.CollectionProperty(
-        type=MloEntityProperties, name="Entities")
+    portals: bpy.props.CollectionProperty(type=PortalProperties, name="Portals")
+    entities: bpy.props.CollectionProperty(type=MloEntityProperties, name="Entities")
     timecycle_modifiers: bpy.props.CollectionProperty(
-        type=TimecycleModifierProperties, name="Timecycle Modifiers")
+        type=TimecycleModifierProperties, name="Timecycle Modifiers"
+    )
     entity_sets: bpy.props.CollectionProperty(
-        type=EntitySetProperties, name="EntitySets")
+        type=EntitySetProperties, name="EntitySets"
+    )
 
     # Selected room index
     room_index: bpy.props.IntProperty(name="Room")
@@ -175,11 +191,9 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected entity index
     entity_index: bpy.props.IntProperty(name="Entity")
     # Selected timecycle modifier index
-    tcm_index: bpy.props.IntProperty(
-        name="Timecycle Modifier")
+    tcm_index: bpy.props.IntProperty(name="Timecycle Modifier")
     # Selected entityset
-    entity_set_index: bpy.props.IntProperty(
-        name="Entity Set")
+    entity_set_index: bpy.props.IntProperty(name="Entity Set")
 
     all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
 
@@ -187,7 +201,9 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     @property
     def non_entity_set_entities(self) -> list[MloEntityProperties]:
-        return [entity for entity in self.entities if entity.attached_entity_set_id == "-1"]
+        return [
+            entity for entity in self.entities if entity.attached_entity_set_id == "-1"
+        ]
 
     @property
     def selected_room(self) -> Union[RoomProperties, None]:
@@ -244,17 +260,16 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
         return item
 
     name: bpy.props.StringProperty(name="Name")
-    all_texture_dictionary: bpy.props.StringProperty(
-        name="Texture Dictionary: ")
+    all_texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary: ")
     all_lod_dist: bpy.props.FloatProperty(name="Lod Distance: ")
     all_hd_tex_dist: bpy.props.FloatProperty(name="HD Texture Distance: ")
     all_flags: bpy.props.IntProperty(name="Flags: ")
     # extensions
     archetypes: bpy.props.CollectionProperty(
-        type=ArchetypeProperties, name="Archetypes")
+        type=ArchetypeProperties, name="Archetypes"
+    )
     # Selected archetype index
-    archetype_index: bpy.props.IntProperty(
-        name="Archetype Index")
+    archetype_index: bpy.props.IntProperty(name="Archetype Index")
     # Unique archetype id
     last_archetype_id: bpy.props.IntProperty()
 
@@ -265,18 +280,24 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
 
 def register():
     bpy.types.Scene.ytyps = bpy.props.CollectionProperty(
-        type=CMapTypesProperties, name="YTYPs")
+        type=CMapTypesProperties, name="YTYPs"
+    )
     bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP")
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(
-        name="Show Room Gizmo", default=True)
+        name="Show Room Gizmo", default=True
+    )
     bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(
-        name="Show Portal Gizmo", default=True)
+        name="Show Portal Gizmo", default=True
+    )
 
     bpy.types.Scene.create_archetype_type = bpy.props.EnumProperty(
-        items=items_from_enums(ArchetypeType), name="Type")
+        items=items_from_enums(ArchetypeType), name="Type"
+    )
 
     bpy.types.Scene.ytyp_apply_transforms = bpy.props.BoolProperty(
-        name="Apply Parent Transforms", description="Apply transforms to all assets when calculating Archetype extents")
+        name="Apply Parent Transforms",
+        description="Apply transforms to all assets when calculating Archetype extents",
+    )
 
 
 def unregister():

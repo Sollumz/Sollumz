@@ -20,8 +20,7 @@ def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
 def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
     ydd_xml = DrawableDictionary()
 
-    ydd_armature = find_ydd_armature(
-        ydd_obj) if ydd_obj.type != "ARMATURE" else ydd_obj
+    ydd_armature = find_ydd_armature(ydd_obj) if ydd_obj.type != "ARMATURE" else ydd_obj
 
     for child in ydd_obj.children:
         if child.sollum_type != SollumType.DRAWABLE:

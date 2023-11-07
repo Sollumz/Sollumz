@@ -37,5 +37,14 @@ class SOLLUMZ_PT_ENTITY_SETS_PANEL(TabPanel, bpy.types.Panel):
         selected_archetype = get_selected_archetype(context)
 
         layout.label(text="Entity Sets")
-        draw_list_with_add_remove(self.layout, "sollumz.createentityset", "sollumz.deleteentityset",
-                                  SOLLUMZ_UL_ENTITY_SETS_LIST.bl_idname, "", selected_archetype, "entity_sets", selected_archetype, "entity_set_index")
+        draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createentityset",
+            "sollumz.deleteentityset",
+            SOLLUMZ_UL_ENTITY_SETS_LIST.bl_idname,
+            "",
+            selected_archetype,
+            "entity_sets",
+            selected_archetype,
+            "entity_set_index",
+        )

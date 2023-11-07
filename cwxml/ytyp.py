@@ -7,14 +7,13 @@ from .element import (
     QuaternionProperty,
     TextProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
 )
 from .ymap import EntityList, ExtensionsList
 from numpy import float32
 
 
 class YTYP:
-
     file_extension = ".ytyp.xml"
 
     @staticmethod
@@ -58,7 +57,7 @@ class TimeArchetype(BaseArchetype):
 
 
 class Corner(ElementProperty):
-    value_types = (tuple)
+    value_types = tuple
     tag_name = "Item"
 
     def __init__(self, tag_name=None, value=None):
@@ -87,7 +86,7 @@ class CornersList(ListProperty):
 
 
 class AttachedObjectsBuffer(ElementProperty):
-    value_types = (int)
+    value_types = int
 
     def __init__(self):
         super().__init__(tag_name="attachedObjects", value=[])
@@ -156,8 +155,7 @@ class Room(ElementTree):
         self.flags = ValueProperty("flags")
         self.portal_count = ValueProperty("portalCount")
         self.floor_id = ValueProperty("floorId")
-        self.exterior_visibility_depth = ValueProperty(
-            "exteriorVisibiltyDepth", -1)
+        self.exterior_visibility_depth = ValueProperty("exteriorVisibiltyDepth", -1)
         self.attached_objects = AttachedObjectsBuffer()
 
 
@@ -171,7 +169,7 @@ class RoomsList(ListProperty):
 
 
 class LocationsBuffer(ElementProperty):
-    value_types = (int)
+    value_types = int
 
     def __init__(self):
         super().__init__(tag_name="locations", value=[])

@@ -18,10 +18,9 @@ def create_box_from_extents(mesh, bbmin, bbmax):
         [0, 1, 2, 3],
         [0, 1, 4, 5],
         [0, 3, 6, 5],
-
         [7, 4, 5, 6],
         [7, 2, 3, 6],
-        [7, 4, 1, 2]
+        [7, 4, 1, 2],
     ]
 
     mesh.from_pydata(vertices, [], faces)
@@ -45,11 +44,10 @@ def get_corners_from_extents(bbmin: Vector, bbmax: Vector):
         Vector((bbmin.x, bbmin.y, bbmax.z)),
         Vector((bbmin.x, bbmax.y, bbmax.z)),
         Vector((bbmin.x, bbmax.y, bbmin.z)),
-
         Vector((bbmax.x, bbmin.y, bbmax.z)),
         Vector((bbmax.x, bbmin.y, bbmin.z)),
         Vector((bbmax.x, bbmax.y, bbmin.z)),
-        bbmax
+        bbmax,
     ]
 
 
@@ -67,14 +65,15 @@ def create_sphere(mesh, radius=1):
     kwargs = {}
     kwargs["radius"] = radius
 
-    bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, **kwargs)
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, **kwargs)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
 
 
-def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
+def create_cylinder(
+    mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")
+):
     bm = bmesh.new()
 
     kwargs = {}
@@ -88,7 +87,7 @@ def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90
         segments=32,
         depth=length,
         matrix=rot_mat if rot_mat else Matrix(),
-        **kwargs
+        **kwargs,
     )
     bm.to_mesh(mesh)
     bm.free()
@@ -110,7 +109,7 @@ def create_disc(mesh, radius=1, length=0.08):
         segments=32,
         depth=length,
         matrix=rot_mat,
-        **kwargs
+        **kwargs,
     )
     bm.to_mesh(mesh)
     bm.free()
@@ -127,8 +126,7 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     kwargs = {}
     kwargs["radius"] = diameter
 
-    bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, **kwargs)
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, **kwargs)
     bm.to_mesh(mesh)
 
     center = Vector()
@@ -159,16 +157,14 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     ret = bmesh.ops.extrude_face_region(bm, geom=top_faces)
     extruded = ret["geom"]
     del ret
-    translate_verts = [
-        v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
     bmesh.ops.translate(bm, vec=vec / 2, verts=translate_verts)
 
     # Extrude bottom half
     ret = bmesh.ops.extrude_face_region(bm, geom=bottom_faces)
     extruded = ret["geom"]
     del ret
-    translate_verts = [
-        v for v in extruded if isinstance(v, bmesh.types.BMVert)]
+    translate_verts = [v for v in extruded if isinstance(v, bmesh.types.BMVert)]
     bmesh.ops.translate(bm, vec=-vec / 2, verts=translate_verts)
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -186,18 +182,25 @@ def get_uv_map_name(index: int) -> str:
     return f"UVMap {index}"
 
 
-def create_uv_attr(mesh: bpy.types.Mesh, coords: NDArray[np.float64], domain: str = "CORNER"):
+def create_uv_attr(
+    mesh: bpy.types.Mesh, coords: NDArray[np.float64], domain: str = "CORNER"
+):
     """Create a uv layer for ``mesh`` with the specified index."""
-    uv_attr = mesh.attributes.new(name=get_uv_map_name(len(mesh.uv_layers)), type="FLOAT2", domain=domain)
+    uv_attr = mesh.attributes.new(
+        name=get_uv_map_name(len(mesh.uv_layers)), type="FLOAT2", domain=domain
+    )
 
     uv_attr.data.foreach_set("vector", coords.flatten())
 
 
-def create_color_attr(mesh: bpy.types.Mesh, colors: NDArray[np.float64], domain: str = "CORNER"):
+def create_color_attr(
+    mesh: bpy.types.Mesh, colors: NDArray[np.float64], domain: str = "CORNER"
+):
     """Create a color attribute layer for ``mesh`` with the specified index."""
     layer_num = len(mesh.color_attributes) + 1
     color_attr = mesh.attributes.new(
-        name=f"Color {layer_num}", type="BYTE_COLOR", domain=domain)
+        name=f"Color {layer_num}", type="BYTE_COLOR", domain=domain
+    )
 
     color_attr.data.foreach_set("color_srgb", colors.flatten())
 
@@ -236,16 +239,20 @@ def get_total_bounds(obj):
 
         matrix = child.matrix_basis
 
-        if obj.sollum_type == SollumType.BOUND_COMPOSITE and child.parent.sollum_type != SollumType.BOUND_COMPOSITE:
+        if (
+            obj.sollum_type == SollumType.BOUND_COMPOSITE
+            and child.parent.sollum_type != SollumType.BOUND_COMPOSITE
+        ):
             matrix = child.parent.matrix_basis @ matrix
 
-        corners.extend([matrix @ Vector(pos)
-                       for pos in child.bound_box])
+        corners.extend([matrix @ Vector(pos) for pos in child.bound_box])
 
     return corners
 
 
-def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
+def get_combined_bound_box(
+    obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()
+):
     """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returhs bbmin, bbmax"""
     total_bounds: list[Vector] = []
 
@@ -254,10 +261,10 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
             continue
 
         child_matrix = matrix @ (
-            child.matrix_world if use_world else child.matrix_basis)
+            child.matrix_world if use_world else child.matrix_basis
+        )
 
-        total_bounds.extend([child_matrix @ Vector(v)
-                            for v in child.bound_box])
+        total_bounds.extend([child_matrix @ Vector(v) for v in child.bound_box])
 
     if not total_bounds:
         return Vector(), Vector()

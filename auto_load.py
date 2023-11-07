@@ -54,6 +54,7 @@ def unregister():
 # Import modules
 #################################################
 
+
 def get_all_submodules(directory):
     return list(iter_submodules(directory, directory.name))
 
@@ -78,6 +79,7 @@ def iter_submodule_names(path, root=""):
 # Find classes to register
 #################################################
 
+
 def get_ordered_classes_to_register(modules):
     return toposort(get_register_deps_dict(modules))
 
@@ -85,12 +87,14 @@ def get_ordered_classes_to_register(modules):
 def get_register_deps_dict(modules):
     my_classes = set(iter_my_classes(modules))
     my_classes_by_idname = {
-        cls.bl_idname: cls for cls in my_classes if hasattr(cls, "bl_idname")}
+        cls.bl_idname: cls for cls in my_classes if hasattr(cls, "bl_idname")
+    }
 
     deps_dict = {}
     for cls in my_classes:
-        deps_dict[cls] = set(iter_my_register_deps(
-            cls, my_classes, my_classes_by_idname))
+        deps_dict[cls] = set(
+            iter_my_register_deps(cls, my_classes, my_classes_by_idname)
+        )
     return deps_dict
 
 
@@ -150,17 +154,28 @@ def iter_classes_in_module(module):
 
 
 def get_register_base_types():
-    return set(getattr(bpy.types, name) for name in [
-        "Panel", "Operator", "PropertyGroup",
-        "Header", "Menu",
-        "Node", "NodeSocket", "NodeTree",
-        "UIList", "RenderEngine",
-        "Gizmo", "GizmoGroup",
-    ])
+    return set(
+        getattr(bpy.types, name)
+        for name in [
+            "Panel",
+            "Operator",
+            "PropertyGroup",
+            "Header",
+            "Menu",
+            "Node",
+            "NodeSocket",
+            "NodeTree",
+            "UIList",
+            "RenderEngine",
+            "Gizmo",
+            "GizmoGroup",
+        ]
+    )
 
 
 # Find order to register to solve dependencies
 #################################################
+
 
 def toposort(deps_dict):
     sorted_list = []
@@ -170,15 +185,14 @@ def toposort(deps_dict):
         # source: https://github.com/JacquesLucke/blender_vscode/pull/118/commits/f0c3a636e251a8f24f22af6f1806d338c838bcea#diff-9738ac67607466100291c17470c593209a6ad718a574d0903d9eb2e8b0a33727
         # JoseConseco forgot this code
         # https://devtalk.blender.org/t/batch-registering-multiple-classes-in-blender-2-8/3253/42
-        sorted_list_sub = []      # helper for additional sorting by bl_order - in panels
+        sorted_list_sub = []  # helper for additional sorting by bl_order - in panels
         for value, deps in deps_dict.items():
             if len(deps) == 0:
                 sorted_list_sub.append(value)
                 sorted_values.add(value)
             else:
                 unsorted.append(value)
-        deps_dict = {value: deps_dict[value] -
-                     sorted_values for value in unsorted}
-        sorted_list_sub.sort(key=lambda cls: getattr(cls, 'bl_order', 0))
+        deps_dict = {value: deps_dict[value] - sorted_values for value in unsorted}
+        sorted_list_sub.sort(key=lambda cls: getattr(cls, "bl_order", 0))
         sorted_list.extend(sorted_list_sub)
     return sorted_list

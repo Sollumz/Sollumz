@@ -1,9 +1,21 @@
 import bpy
 from mathutils import Vector
-from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node, ShaderManager
+from ..ydr.shader_materials import (
+    create_shader,
+    create_tinted_shader_graph,
+    obj_has_tint_mats,
+    try_get_node,
+    ShaderManager,
+)
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
 from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output
-from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
+from ..cwxml.drawable import (
+    BonePropertiesManager,
+    Drawable,
+    DrawableModel,
+    TextureShaderParameter,
+    VectorShaderParameter,
+)
 from typing import Union
 
 
@@ -19,9 +31,11 @@ class MaterialConverter:
 
     def _convert_texture_node(self, param: TextureShaderParameter):
         node: bpy.types.ShaderNodeTexImage = try_get_node(
-            self.material.node_tree, param.name)
+            self.material.node_tree, param.name
+        )
         tonode: bpy.types.ShaderNodeTexImage = try_get_node(
-            self.new_material.node_tree, param.name)
+            self.new_material.node_tree, param.name
+        )
 
         if not node or not tonode:
             return
@@ -90,17 +104,20 @@ class MaterialConverter:
 
         if self.bsdf is None:
             raise Exception(
-                "Failed to convert material: Node tree must contain a Princpled BSDF node.")
+                "Failed to convert material: Node tree must contain a Princpled BSDF node."
+            )
 
         self.diffuse_node = self._get_diffuse_node()
 
         if self.diffuse_node is None:
             raise Exception(
-                "Failed to convert material: Material must have an image node linked to the base color.")
+                "Failed to convert material: Material must have an image node linked to the base color."
+            )
 
         if not isinstance(self.diffuse_node, bpy.types.ShaderNodeTexImage):
             raise Exception(
-                "Failed to convert material: Base color node is not an image node.")
+                "Failed to convert material: Base color node is not an image node."
+            )
 
         self.specular_node = self._get_specular_node()
         self.normal_node = self._get_normal_node()
@@ -111,11 +128,17 @@ class MaterialConverter:
     def _set_new_node_images(self):
         if self.new_material is None:
             raise Exception(
-                "Failed to set images: Sollumz material has not been created yet!")
+                "Failed to set images: Sollumz material has not been created yet!"
+            )
 
-        for node, name in {self.diffuse_node: "DiffuseSampler", self.specular_node: "SpecSampler", self.normal_node: "BumpSampler"}.items():
+        for node, name in {
+            self.diffuse_node: "DiffuseSampler",
+            self.specular_node: "SpecSampler",
+            self.normal_node: "BumpSampler",
+        }.items():
             new_node: bpy.types.ShaderNodeTexImage = try_get_node(
-                self.new_material.node_tree, name)
+                self.new_material.node_tree, name
+            )
 
             if node is None or new_node is None:
                 continue
@@ -130,7 +153,8 @@ class MaterialConverter:
     def _replace_material(self):
         if self.new_material is None:
             raise Exception(
-                "Failed to replace material: Sollumz material has not been created yet!")
+                "Failed to replace material: Sollumz material has not been created yet!"
+            )
 
         mat_name = f"{self.material.name}_{self.new_material.name}"
 
@@ -145,13 +169,19 @@ class MaterialConverter:
         has_specular_node = self.specular_node is not None
         has_normal_node = self.normal_node is not None
 
-        if has_specular_node and not isinstance(self.specular_node, bpy.types.ShaderNodeTexImage):
+        if has_specular_node and not isinstance(
+            self.specular_node, bpy.types.ShaderNodeTexImage
+        ):
             raise Exception(
-                "Failed to convert material: Specular node is not an image node.")
+                "Failed to convert material: Specular node is not an image node."
+            )
 
-        if has_normal_node and not isinstance(self.normal_node, bpy.types.ShaderNodeTexImage):
+        if has_normal_node and not isinstance(
+            self.normal_node, bpy.types.ShaderNodeTexImage
+        ):
             raise Exception(
-                "Failed to convert material: Normal map color input is not an image node.")
+                "Failed to convert material: Normal map color input is not an image node."
+            )
         if has_normal_node and has_specular_node:
             return "normal_spec.sps"
         elif has_normal_node:
@@ -238,7 +268,10 @@ def convert_obj_to_model(obj: bpy.types.Object):
 
 def center_drawable_to_models(drawable_obj: bpy.types.Object):
     model_objs = [
-        child for child in drawable_obj.children if child.sollum_type == SollumType.DRAWABLE_MODEL]
+        child
+        for child in drawable_obj.children
+        if child.sollum_type == SollumType.DRAWABLE_MODEL
+    ]
 
     center = Vector()
 

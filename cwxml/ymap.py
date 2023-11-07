@@ -20,7 +20,6 @@ from .element import (
 
 
 class YMAP:
-
     file_extension = ".ymap.xml"
 
     @staticmethod
@@ -33,17 +32,17 @@ class YMAP:
 
 
 class HexColorProperty(ElementProperty):
-    value_types = (tuple)
+    value_types = tuple
 
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name or "color", value or (0, 0, 0, 0))
 
     def hex_to_rgb(hex: str) -> tuple:
         hex = hex.replace("0x", "")
-        return tuple(int(hex[i:i + 2], 16) / 255 for i in (0, 2, 4, 6))
+        return tuple(int(hex[i : i + 2], 16) / 255 for i in (0, 2, 4, 6))
 
     def rgb_to_hex(rgb: tuple) -> str:
-        return ('{:02X}{:02X}{:02X}{:02X}').format(*[int(x * 255) for x in rgb])
+        return ("{:02X}{:02X}{:02X}{:02X}").format(*[int(x * 255) for x in rgb])
 
     @staticmethod
     def from_xml(element: ET.Element):
@@ -204,12 +203,10 @@ class ExtensionExpression(Extension):
 
     def __init__(self):
         super().__init__()
-        self.expression_dictionary_name = TextProperty(
-            "expressionDictionaryName")
+        self.expression_dictionary_name = TextProperty("expressionDictionaryName")
         self.expression_name = TextProperty("expressionName")
         self.creature_metadata_name = TextProperty("creatureMetadataname")
-        self.intialize_on_collision = ValueProperty(
-            "initialiseOnCollision", False)
+        self.intialize_on_collision = ValueProperty("initialiseOnCollision", False)
 
 
 class ExtensionLightShaft(Extension):
@@ -239,8 +236,7 @@ class ExtensionLightShaft(Extension):
         # CExtensionDefLightShaftVolumeType
         self.volume_type = TextProperty("volumeType")
         self.softness = ValueProperty("softness")
-        self.scale_by_sun_intensity = ValueProperty(
-            "scaleBySunIntensity", False)
+        self.scale_by_sun_intensity = ValueProperty("scaleBySunIntensity", False)
 
 
 class ExtensionDoor(Extension):
@@ -333,7 +329,9 @@ class ExtensionsList(ListProperty):
     tag_name = "extensions"
 
     @staticmethod
-    def get_extension_xml_class_from_type(ext_type: str) -> Union[Type[Extension], None]:
+    def get_extension_xml_class_from_type(
+        ext_type: str,
+    ) -> Union[Type[Extension], None]:
         if ext_type == ExtensionLightEffect.type:
             return ExtensionLightEffect
         elif ext_type == ExtensionParticleEffect.type:
@@ -372,8 +370,7 @@ class ExtensionsList(ListProperty):
         for child in element.iter():
             if "type" in child.attrib:
                 ext_type = child.get("type")
-                ext_class = ExtensionsList.get_extension_xml_class_from_type(
-                    ext_type)
+                ext_class = ExtensionsList.get_extension_xml_class_from_type(ext_type)
 
                 if ext_class is None:
                     print(f"Unknown extension type '{ext_type}'! Skipping...")
@@ -405,9 +402,11 @@ class Entity(ElementTree):
         self.priority_level = TextProperty("priorityLevel")
         self.extensions = ExtensionsList()
         self.ambient_occlusion_multiplier = ValueProperty(
-            "ambientOcclusionMultiplier", 0)
+            "ambientOcclusionMultiplier", 0
+        )
         self.artificial_ambient_occlusion = ValueProperty(
-            "artificialAmbientOcclusion", 0)
+            "artificialAmbientOcclusion", 0
+        )
         self.tint_value = ValueProperty("tintValue", 0)
 
 
@@ -418,12 +417,12 @@ class EntityList(ListPropertyRequired):
 
 class ContainerLodsList(ElementTree):
     """This is not used by GTA5 but added for completion"""
+
     tag_name = "containerLods"
 
     def __init__(self):
         super().__init__()
-        self.item_type = AttributeProperty(
-            "itemType", "rage__fwContainerLodDef")
+        self.item_type = AttributeProperty("itemType", "rage__fwContainerLodDef")
 
 
 class BoxOccluder(ElementTree):
@@ -453,7 +452,8 @@ class BoxOccludersList(ListPropertyRequired):
 class OccludeModel(ElementTree):
     class VertsProperty(ElementProperty):
         """Same as a TextProperty but formats the input and output and returns an empty element rather than None"""
-        value_types = (str)
+
+        value_types = str
 
         def __init__(self, tag_name: str = "verts", value=None):
             super().__init__(tag_name, value or "")
@@ -463,7 +463,8 @@ class OccludeModel(ElementTree):
             text = element.text.replace("\n", "").replace(" ", "")
             if not text:
                 raise ValueError(
-                    f'Missing verts data on {OccludeModel.VertsProperty.__name__}')
+                    f"Missing verts data on {OccludeModel.VertsProperty.__name__}"
+                )
             return OccludeModel.VertsProperty(element.tag, text)
 
         def to_xml(self):
@@ -472,9 +473,12 @@ class OccludeModel(ElementTree):
                 return element
 
             text = []
-            for chunk in [self.value[i:i + 64] for i in range(0, len(self.value), 64)]:
-                text.append(" ".join([chunk[j:j + 2]
-                            for j in range(0, len(chunk), 2)]))
+            for chunk in [
+                self.value[i : i + 64] for i in range(0, len(self.value), 64)
+            ]:
+                text.append(
+                    " ".join([chunk[j : j + 2] for j in range(0, len(chunk), 2)])
+                )
                 text.append("\n")
             element.text = "".join(text)
 
@@ -506,6 +510,7 @@ class PhysicsDictionariesList(ListProperty):
     """
     Same as ListPropertyRequired but only accepts items of type TextProperty.
     """
+
     class PhysicsDictionarie(TextProperty):
         tag_name = "Item"
 
@@ -525,7 +530,8 @@ class PhysicsDictionariesList(ListProperty):
                     element.append(item.to_xml())
                 else:
                     raise TypeError(
-                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'"
+                    )
 
         return element
 

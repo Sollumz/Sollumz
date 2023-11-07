@@ -27,8 +27,7 @@ shadermats = []
 for shader in ShaderManager._shaders.values():
     name = shader.filename.replace(".sps", "").upper()
 
-    shadermats.append(ShaderMaterial(
-        name, name.replace("_", " "), shader.filename))
+    shadermats.append(ShaderMaterial(name, name.replace("_", " "), shader.filename))
 
 
 def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types.Node]:
@@ -39,7 +38,9 @@ def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types
     return node_tree.nodes.get(name, None)
 
 
-def try_get_node_by_cls(node_tree: bpy.types.NodeTree, node_cls: type) -> Optional[bpy.types.Node]:
+def try_get_node_by_cls(
+    node_tree: bpy.types.NodeTree, node_cls: type
+) -> Optional[bpy.types.Node]:
     """Gets a node by its type. Returns `None` if not found."""
     for node in node_tree.nodes:
         if isinstance(node, node_cls):
@@ -120,10 +121,14 @@ def organize_loose_nodes(node_tree, start_x, start_y):
         grid_x -= node.width + 25
 
 
-def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderNodeTexImage]:
+def get_tint_sampler_node(
+    mat: bpy.types.Material,
+) -> Optional[bpy.types.ShaderNodeTexImage]:
     nodes = mat.node_tree.nodes
     for node in nodes:
-        if node.name == "TintPaletteSampler" and isinstance(node, bpy.types.ShaderNodeTexImage):
+        if node.name == "TintPaletteSampler" and isinstance(
+            node, bpy.types.ShaderNodeTexImage
+        ):
             return node
 
     return None
@@ -155,19 +160,25 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
         else:
             input_color_attr_name = "Color 1"
 
-        tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
-        tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
+        tint_color_attr_name = (
+            f"TintColor ({palette_img.name})" if palette_img else "TintColor"
+        )
+        tint_color_attr = obj.data.attributes.new(
+            name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER"
+        )
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
 
-        create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img)
+        create_tint_geom_modifier(
+            obj, tint_color_attr.name, input_color_attr_name, palette_img
+        )
 
 
 def create_tint_geom_modifier(
     obj: bpy.types.Object,
     tint_color_attr_name: str,
     input_color_attr_name: Optional[str],
-    palette_img: Optional[bpy.types.Image]
+    palette_img: Optional[bpy.types.Image],
 ) -> bpy.types.NodesModifier:
     tnt_ng = create_tinted_geometry_graph()
     mod = obj.modifiers.new("GeometryNodes", "NODES")
@@ -175,7 +186,9 @@ def create_tint_geom_modifier(
 
     # set input / output variables
     input_id = tnt_ng.inputs[1].identifier
-    mod[input_id + "_attribute_name"] = input_color_attr_name if input_color_attr_name is not None else ""
+    mod[input_id + "_attribute_name"] = (
+        input_color_attr_name if input_color_attr_name is not None else ""
+    )
     mod[input_id + "_use_attribute"] = True
 
     input_palette_id = tnt_ng.inputs[3].identifier
@@ -190,7 +203,10 @@ def create_tint_geom_modifier(
 
 def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
     for node in node_tree.nodes:
-        if not isinstance(node, bpy.types.ShaderNodeAttribute) or node.attribute_name != "TintColor":
+        if (
+            not isinstance(node, bpy.types.ShaderNodeAttribute)
+            or node.attribute_name != "TintColor"
+        ):
             continue
 
         node.attribute_name = name
@@ -229,10 +245,14 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.inputs.new("NodeSocketGeometry", "Geometry")
     gnt.inputs.new("NodeSocketVector", "Vertex Colors")
     in_palette = gnt.inputs.new("NodeSocketInt", "Palette (Preview)")
-    in_palette.description = "Index of the tint palette to preview. Has no effect on export"
+    in_palette.description = (
+        "Index of the tint palette to preview. Has no effect on export"
+    )
     in_palette.min_value = 0
     in_palette_tex = gnt.inputs.new("NodeSocketImage", "Palette Texture")
-    in_palette_tex.description = "Should be the same as 'TintPaletteSampler' of the material"
+    in_palette_tex.description = (
+        "Should be the same as 'TintPaletteSampler' of the material"
+    )
     gnt.outputs.new("NodeSocketGeometry", "Geometry")
     gnt.outputs.new("NodeSocketColor", "Tint Color")
 
@@ -477,8 +497,7 @@ def link_normal(b: ShaderBuilder, nrmtex):
 
 def create_normal_invert_node(node_tree: bpy.types.NodeTree):
     """Create RGB curves node that inverts that green channel of normal maps"""
-    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new(
-        "ShaderNodeRGBCurve")
+    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new("ShaderNodeRGBCurve")
 
     green_curves = rgb_curves.mapping.curves[1]
     green_curves.points[0].location = (0, 1)
@@ -497,7 +516,7 @@ def link_specular(b: ShaderBuilder, spctex):
 def create_diff_palette_nodes(
     b: ShaderBuilder,
     palette_tex: bpy.types.ShaderNodeTexImage,
-    diffuse_tex: bpy.types.ShaderNodeTexImage
+    diffuse_tex: bpy.types.ShaderNodeTexImage,
 ):
     palette_tex.interpolation = "Closest"
     node_tree = b.node_tree
@@ -543,10 +562,7 @@ def create_diff_palette_nodes(
     links.new(palette_tex.outputs[0], bsdf.inputs["Base Color"])
 
 
-def create_tint_nodes(
-    b: ShaderBuilder,
-    diffuse_tex: bpy.types.ShaderNodeTexImage
-):
+def create_tint_nodes(b: ShaderBuilder, diffuse_tex: bpy.types.ShaderNodeTexImage):
     # create shader attribute node
     # TintColor attribute is filled by tint geometry nodes
     node_tree = b.node_tree
@@ -588,7 +604,9 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
     links.new(mix.outputs["Shader"], output.inputs["Surface"])
 
 
-def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage):
+def create_distance_map_nodes(
+    b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage
+):
     node_tree = b.node_tree
     output = b.material_output
     bsdf = b.bsdf
@@ -617,7 +635,9 @@ def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.
     links.new(fill_color_b.outputs["Value"], fill_color_combine.inputs["Z"])
 
     # extract distance value from texture and check > 0.5
-    links.new(distance_map_texture.outputs["Color"], distance_separate_x.inputs["Vector"])
+    links.new(
+        distance_map_texture.outputs["Color"], distance_separate_x.inputs["Vector"]
+    )
     links.remove(distance_map_texture.outputs["Alpha"].links[0])
     links.new(distance_separate_x.outputs["X"], distance_greater_than.inputs["Value"])
 
@@ -715,29 +735,28 @@ def create_water_nodes(b: ShaderBuilder):
     vol_absorb.inputs[0].default_value = (0.772, 0.91, 0.882, 1.0)
     vol_absorb.inputs[1].default_value = 0.25  # Density
     bsdf.inputs[0].default_value = (0.588, 0.91, 0.851, 1.0)
-    bsdf.inputs[19].default_value = (
-        0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
-    bsdf.inputs['Emission Strength'].default_value = 0.1
+    bsdf.inputs[19].default_value = (0.49102, 0.938685, 1.0, 1.0)  # Emission Colour
+    bsdf.inputs["Emission Strength"].default_value = 0.1
     glass_shader = node_tree.nodes.new("ShaderNodeBsdfGlass")
-    glass_shader.inputs['IOR'].default_value = 1.333
+    glass_shader.inputs["IOR"].default_value = 1.333
     trans_shader = node_tree.nodes.new("ShaderNodeBsdfTransparent")
     light_path = node_tree.nodes.new("ShaderNodeLightPath")
     bump = node_tree.nodes.new("ShaderNodeBump")
-    bump.inputs['Strength'].default_value = 0.05
+    bump.inputs["Strength"].default_value = 0.05
     noise_tex = node_tree.nodes.new("ShaderNodeTexNoise")
-    noise_tex.inputs['Scale'].default_value = 12.0
-    noise_tex.inputs['Detail'].default_value = 3.0
+    noise_tex.inputs["Scale"].default_value = 12.0
+    noise_tex.inputs["Detail"].default_value = 3.0
     noise_tex.inputs[4].default_value = 0.85  # Roughness
 
     links.new(glass_shader.outputs[0], mix_shader.inputs[1])
     links.new(trans_shader.outputs[0], mix_shader.inputs[2])
     links.new(bsdf.outputs[0], add_shader.inputs[0])
     links.new(vol_absorb.outputs[0], add_shader.inputs[1])
-    links.new(add_shader.outputs[0], output.inputs['Volume'])
-    links.new(mix_shader.outputs[0], output.inputs['Surface'])
-    links.new(light_path.outputs['Is Shadow Ray'], mix_shader.inputs['Fac'])
-    links.new(noise_tex.outputs['Fac'], bump.inputs['Height'])
-    links.new(bump.outputs['Normal'], glass_shader.inputs['Normal'])
+    links.new(add_shader.outputs[0], output.inputs["Volume"])
+    links.new(mix_shader.outputs[0], output.inputs["Surface"])
+    links.new(light_path.outputs["Is Shadow Ray"], mix_shader.inputs["Fac"])
+    links.new(noise_tex.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], glass_shader.inputs["Normal"])
 
 
 def create_basic_shader_nodes(b: ShaderBuilder):
@@ -785,8 +804,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
         elif param.type == "Array":
             create_array_nodes(node_tree, param)
         else:
-            raise Exception(
-                f"Unknown shader parameter! {param.type} {param.name}")
+            raise Exception(f"Unknown shader parameter! {param.type} {param.name}")
 
     use_diff = True if texture else False
     use_diff2 = True if texture2 else False
@@ -814,7 +832,11 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             # txt_alpha_mask = ?
             decalflag = 2
         # decal_normal_only.sps / mirror_decal.sps / reflect_decal.sps
-        elif filename in [ShaderManager.decals[4], ShaderManager.decals[21], ShaderManager.decals[19]]:
+        elif filename in [
+            ShaderManager.decals[4],
+            ShaderManager.decals[21],
+            ShaderManager.decals[19],
+        ]:
             decalflag = 3
         # decal_spec_only.sps / spec_decal.sps
         elif filename in [ShaderManager.decals[3], ShaderManager.decals[17]]:
@@ -913,8 +935,7 @@ def create_terrain_shader(b: ShaderBuilder):
         elif param.type == "Array":
             create_array_nodes(node_tree, param)
         else:
-            raise Exception(
-                f"Unknown shader parameter! {param.type} {param.name}")
+            raise Exception(f"Unknown shader parameter! {param.type} {param.name}")
 
     mixns = []
     for _ in range(8 if tm else 7):
@@ -1024,15 +1045,19 @@ def create_shader(filename: str):
     mat.shader_properties.renderbucket = shader.render_bucket
 
     bsdf, material_output = find_bsdf_and_material_output(mat)
-    assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"
+    assert (
+        material_output is not None
+    ), "ShaderNodeOutputMaterial not found in default node_tree!"
     assert bsdf is not None, "ShaderNodeBsdfPrincipled not found in default node_tree!"
 
-    builder = ShaderBuilder(shader=shader,
-                            filename=filename,
-                            material=mat,
-                            node_tree=mat.node_tree,
-                            material_output=material_output,
-                            bsdf=bsdf)
+    builder = ShaderBuilder(
+        shader=shader,
+        filename=filename,
+        material=mat,
+        node_tree=mat.node_tree,
+        material_output=material_output,
+        bsdf=bsdf,
+    )
 
     create_uv_map_nodes(builder)
 

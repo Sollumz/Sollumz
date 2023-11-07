@@ -12,13 +12,19 @@ from .. import logger
 class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.animations_set_target"
     bl_label = "Set Animations Target"
-    bl_description = "Set the same target for all animations in the selected clip dictionaries"
+    bl_description = (
+        "Set the same target for all animations in the selected clip dictionaries"
+    )
 
     @classmethod
     def poll(cls, context):
-        return (len(context.selected_objects) > 0 and
-                any(is_any_sollumz_animation_obj(obj) for obj in context.selected_objects) and
-                context.scene.sollumz_animations_target_id is not None)
+        return (
+            len(context.selected_objects) > 0
+            and any(
+                is_any_sollumz_animation_obj(obj) for obj in context.selected_objects
+            )
+            and context.scene.sollumz_animations_target_id is not None
+        )
 
     def run(self, context):
         scene = context.scene
@@ -46,7 +52,9 @@ class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
             elif obj.sollum_type == SollumType.ANIMATIONS:
                 animations_obj = obj
             elif obj.sollum_type == SollumType.CLIP:
-                animations_obj = find_child_by_type(obj.parent.parent, SollumType.ANIMATIONS)
+                animations_obj = find_child_by_type(
+                    obj.parent.parent, SollumType.ANIMATIONS
+                )
             elif obj.sollum_type == SollumType.CLIPS:
                 animations_obj = find_child_by_type(obj.parent, SollumType.ANIMATIONS)
             elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
@@ -76,7 +84,9 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"FINISHED"}
 
         # TODO: animation may be None, or not all animations have the same target/are filled in
-        target = clip_properties.animations[0].animation.animation_properties.get_target()
+        target = clip_properties.animations[
+            0
+        ].animation.animation_properties.get_target()
         if target is None:
             return {"FINISHED"}
 
@@ -100,12 +110,14 @@ class SOLLUMZ_OT_clip_apply_nla(SOLLUMZ_OT_base, bpy.types.Operator):
 
             group = groups[action.name]
 
-            group.append({
-                "name": clip_properties.hash,
-                "start_frames": start_frames,
-                "end_frames": end_frames,
-                "action": action,
-            })
+            group.append(
+                {
+                    "name": clip_properties.hash,
+                    "start_frames": start_frames,
+                    "end_frames": end_frames,
+                    "action": action,
+                }
+            )
 
         if target.animation_data is None:
             target.animation_data_create()
@@ -145,7 +157,10 @@ class SOLLUMZ_OT_clip_recalculate_uv_hash(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.CLIP
+        return (
+            context.active_object is not None
+            and context.active_object.sollum_type == SollumType.CLIP
+        )
 
     def run(self, context):
         logger.set_logging_operator(self)
@@ -226,7 +241,9 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
         if properties.ignore_template:
             return "Add a new empty tag to the clip"
 
-        return bpy.types.UILayout.enum_item_description(properties, "template", properties.template)
+        return bpy.types.UILayout.enum_item_description(
+            properties, "template", properties.template
+        )
 
     def run(self, context):
         if len(bpy.context.selected_objects) <= 0:
@@ -244,7 +261,11 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
 
         if clip_properties.duration != 0.0:
             # place the tag at the current frame
-            phase = bpy.context.scene.frame_float / bpy.context.scene.render.fps / clip_properties.duration
+            phase = (
+                bpy.context.scene.frame_float
+                / bpy.context.scene.render.fps
+                / clip_properties.duration
+            )
             phase = min(max(phase, 0.0), 1.0)
             tag.start_phase = phase
             tag.end_phase = phase
@@ -564,20 +585,17 @@ class SOLLUMZ_OT_create_clip(SOLLUMZ_OT_base, bpy.types.Operator):
         elif active_object.sollum_type == SollumType.ANIMATION:
             clip_dictionary_obj = active_object.parent.parent
 
-            clips_obj = find_child_by_type(
-                clip_dictionary_obj, SollumType.CLIPS)
+            clips_obj = find_child_by_type(clip_dictionary_obj, SollumType.CLIPS)
         elif active_object.sollum_type == SollumType.CLIPS:
             clips_obj = active_object
         elif active_object.sollum_type == SollumType.ANIMATIONS:
             clip_dictionary_obj = active_object.parent
 
-            clips_obj = find_child_by_type(
-                clip_dictionary_obj, SollumType.CLIPS)
+            clips_obj = find_child_by_type(clip_dictionary_obj, SollumType.CLIPS)
         elif active_object.sollum_type == SollumType.CLIP_DICTIONARY:
             clip_dictionary_obj = active_object
 
-            clips_obj = find_child_by_type(
-                clip_dictionary_obj, SollumType.CLIPS)
+            clips_obj = find_child_by_type(clip_dictionary_obj, SollumType.CLIPS)
 
         if clips_obj is not None:
             animation_obj = create_anim_obj(SollumType.CLIP)
@@ -603,21 +621,24 @@ class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
             clip_dictionary_obj = active_object.parent.parent
 
             animations_obj = find_child_by_type(
-                clip_dictionary_obj, SollumType.ANIMATIONS)
+                clip_dictionary_obj, SollumType.ANIMATIONS
+            )
         elif active_object.sollum_type == SollumType.ANIMATION:
             animations_obj = active_object.parent
         elif active_object.sollum_type == SollumType.CLIPS:
             clip_dictionary_obj = active_object.parent
 
             animations_obj = find_child_by_type(
-                clip_dictionary_obj, SollumType.ANIMATIONS)
+                clip_dictionary_obj, SollumType.ANIMATIONS
+            )
         elif active_object.sollum_type == SollumType.ANIMATIONS:
             animations_obj = active_object
         elif active_object.sollum_type == SollumType.CLIP_DICTIONARY:
             clip_dictionary_obj = active_object
 
             animations_obj = find_child_by_type(
-                clip_dictionary_obj, SollumType.ANIMATIONS)
+                clip_dictionary_obj, SollumType.ANIMATIONS
+            )
 
         if animations_obj is not None:
             animation_obj = create_anim_obj(SollumType.ANIMATION)
@@ -643,7 +664,9 @@ class SOLLUMZ_OT_uv_transform_add(SOLLUMZ_OT_base, bpy.types.Operator):
         obj = context.active_object
         animation_tracks = obj.active_material.animation_tracks
         animation_tracks.uv_transforms.add()
-        animation_tracks.uv_transforms_active_index = len(animation_tracks.uv_transforms) - 1
+        animation_tracks.uv_transforms_active_index = (
+            len(animation_tracks.uv_transforms) - 1
+        )
         animation_tracks.update_uv_transform_matrix()
         return {"FINISHED"}
 
@@ -663,7 +686,9 @@ class SOLLUMZ_OT_uv_transform_remove(SOLLUMZ_OT_base, bpy.types.Operator):
 
         obj = context.active_object
         animation_tracks = obj.active_material.animation_tracks
-        animation_tracks.uv_transforms.remove(animation_tracks.uv_transforms_active_index)
+        animation_tracks.uv_transforms.remove(
+            animation_tracks.uv_transforms_active_index
+        )
         length = len(animation_tracks.uv_transforms)
         if length > 0 and animation_tracks.uv_transforms_active_index >= length:
             animation_tracks.uv_transforms_active_index = length - 1
@@ -674,12 +699,16 @@ class SOLLUMZ_OT_uv_transform_remove(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_uv_transform_move(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.uv_transform_move"
     bl_label = "Move UV transformation"
-    bl_description = "Move the active UV transformation up/down the transformation stack"
+    bl_description = (
+        "Move the active UV transformation up/down the transformation stack"
+    )
 
-    direction: bpy.props.EnumProperty(items=[
-        ("UP", "Up", "Move up", 0),
-        ("DOWN", "Down", "Move down", 1),
-    ])
+    direction: bpy.props.EnumProperty(
+        items=[
+            ("UP", "Up", "Move up", 0),
+            ("DOWN", "Down", "Move down", 1),
+        ]
+    )
 
     @classmethod
     def poll(cls, context):
@@ -724,12 +753,19 @@ class UVSpriteSheetFrame(bpy.types.PropertyGroup):
                     frame.order -= 1
         self.prev_use = self.use
 
-    use: bpy.props.BoolProperty(name="Use", description="Use frame in animation", default=False, update=on_use_changed)
+    use: bpy.props.BoolProperty(
+        name="Use",
+        description="Use frame in animation",
+        default=False,
+        update=on_use_changed,
+    )
     prev_use: bpy.props.BoolProperty(name="Prev Use", default=False)
     order: bpy.props.IntProperty(name="Order", default=0, min=0)
 
 
-class SOLLUMZ_OT_uv_sprite_sheet_anim_select_all_frames(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_uv_sprite_sheet_anim_select_all_frames(
+    SOLLUMZ_OT_base, bpy.types.Operator
+):
     bl_idname = "sollumz.uv_sprite_sheet_anim_select_all_frames"
     bl_label = "Select All"
     bl_description = "Use all the frames in the sprite sheet texture"
@@ -759,7 +795,9 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim_clear_frames(SOLLUMZ_OT_base, bpy.types.Op
 class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.uv_sprite_sheet_anim"
     bl_label = "Create Sprite Sheet UV Animation"
-    bl_description = "Create a UV animation based on the frames of a sprite sheet texture"
+    bl_description = (
+        "Create a UV animation based on the frames of a sprite sheet texture"
+    )
 
     def on_num_frames_changed(self, context):
         total_frames = self.frames_horizontal * self.frames_vertical
@@ -780,8 +818,16 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         # cannot use self._image in callbacks, use context pointer instead
         image = context.operator_uv_sprite_sheet_anim_image
         img_w, img_h = image.size
-        max_w = img_w - self.offset_x - self.separation_horizontal * (self.frames_horizontal - 1)
-        max_h = img_h - self.offset_y - self.separation_vertical * (self.frames_vertical - 1)
+        max_w = (
+            img_w
+            - self.offset_x
+            - self.separation_horizontal * (self.frames_horizontal - 1)
+        )
+        max_h = (
+            img_h
+            - self.offset_y
+            - self.separation_vertical * (self.frames_vertical - 1)
+        )
         self.frame_width = max_w / self.frames_horizontal
         self.frame_height = max_h / self.frames_vertical
 
@@ -807,64 +853,120 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
     frames_horizontal: bpy.props.IntProperty(
         name="Frames Horizontal",
         description="Number of horizontal frames in the sprite sheet texture",
-        min=1, default=1, update=on_num_frames_changed)
+        min=1,
+        default=1,
+        update=on_num_frames_changed,
+    )
     frames_vertical: bpy.props.IntProperty(
         name="Frames Vertical",
         description="Number of vertical frames in the sprite sheet texture",
-        min=1, default=1, update=on_num_frames_changed)
+        min=1,
+        default=1,
+        update=on_num_frames_changed,
+    )
     frame_width: bpy.props.FloatProperty(
         name="Frame Width",
         description="Width of a frame in the sprite sheet texture, in pixels",
-        min=1, default=1, subtype="PIXEL", step=100)
+        min=1,
+        default=1,
+        subtype="PIXEL",
+        step=100,
+    )
     frame_height: bpy.props.FloatProperty(
         name="Frame Height",
         description="Height of a frame in the sprite sheet texture, in pixels",
-        min=1, default=1, subtype="PIXEL", step=100)
+        min=1,
+        default=1,
+        subtype="PIXEL",
+        step=100,
+    )
     offset_x: bpy.props.FloatProperty(
         name="Offset X",
         description="Offset along X-axis of the first frame in the sprite sheet texture, in pixels",
-        min=0, default=0, subtype="PIXEL", step=100)
+        min=0,
+        default=0,
+        subtype="PIXEL",
+        step=100,
+    )
     offset_y: bpy.props.FloatProperty(
         name="Offset Y",
         description="Offset along Y-axis of the first frame in the sprite sheet texture, in pixels",
-        min=0, default=0, subtype="PIXEL", step=100)
+        min=0,
+        default=0,
+        subtype="PIXEL",
+        step=100,
+    )
     separation_horizontal: bpy.props.FloatProperty(
         name="Separation Horizontal",
         description="Horizontal separation between frames in the sprite sheet texture, in pixels",
-        min=0, default=0, subtype="PIXEL", step=100)
+        min=0,
+        default=0,
+        subtype="PIXEL",
+        step=100,
+    )
     separation_vertical: bpy.props.FloatProperty(
         name="Separation Vertical",
         description="Vertical separation between frames in the sprite sheet texture, in pixels",
-        min=0, default=0, subtype="PIXEL", step=100)
+        min=0,
+        default=0,
+        subtype="PIXEL",
+        step=100,
+    )
     keyframe_interval: bpy.props.IntProperty(
         name="Keyframe Interval",
         description="Interval at which keyframes are inserted. It is recommended to use a multiple of 30 to prevent flickering in-game",
-        min=1, default=30)
+        min=1,
+        default=30,
+    )
     use_dst_frame: bpy.props.BoolProperty(
         name="Use Destination Frame",
         description="Specify the destination frame bounds manually instead of auto-calculating them. "
-                    "Useful when the UV mapped area is not rectangular",
-        default=False, update=on_use_dst_frame_changed)
+        "Useful when the UV mapped area is not rectangular",
+        default=False,
+        update=on_use_dst_frame_changed,
+    )
     dst_frame_offset_x: bpy.props.FloatProperty(
         name="Destination Frame Offset X",
         description="Offset along X-axis of the area UV mapped in the sprite sheet texture, in pixels",
-        default=0, subtype="PIXEL", step=100)
+        default=0,
+        subtype="PIXEL",
+        step=100,
+    )
     dst_frame_offset_y: bpy.props.FloatProperty(
         name="Destination Frame Offset Y",
         description="Offset along Y-axis of the area UV mapped in the sprite sheet texture, in pixels",
-        default=0, subtype="PIXEL", step=100)
+        default=0,
+        subtype="PIXEL",
+        step=100,
+    )
     dst_frame_width: bpy.props.FloatProperty(
         name="Destination Frame Width",
         description="Width of the area UV mapped in the sprite sheet texture, in pixels",
-        min=1, default=1, subtype="PIXEL", step=100)
+        min=1,
+        default=1,
+        subtype="PIXEL",
+        step=100,
+    )
     dst_frame_height: bpy.props.FloatProperty(
         name="Destination Frame Height",
         description="Height of the area UV mapped in the sprite sheet texture, in pixels",
-        min=1, default=1, subtype="PIXEL", step=100)
-    auto_dst_frame_offset_x: bpy.props.FloatProperty(default=0, subtype="PIXEL", step=100)
-    auto_dst_frame_offset_y: bpy.props.FloatProperty(default=0, subtype="PIXEL", step=100)
-    auto_dst_frame_width: bpy.props.FloatProperty(min=1, default=1, subtype="PIXEL", step=100)
-    auto_dst_frame_height: bpy.props.FloatProperty(min=1, default=1, subtype="PIXEL", step=100)
+        min=1,
+        default=1,
+        subtype="PIXEL",
+        step=100,
+    )
+    auto_dst_frame_offset_x: bpy.props.FloatProperty(
+        default=0, subtype="PIXEL", step=100
+    )
+    auto_dst_frame_offset_y: bpy.props.FloatProperty(
+        default=0, subtype="PIXEL", step=100
+    )
+    auto_dst_frame_width: bpy.props.FloatProperty(
+        min=1, default=1, subtype="PIXEL", step=100
+    )
+    auto_dst_frame_height: bpy.props.FloatProperty(
+        min=1, default=1, subtype="PIXEL", step=100
+    )
 
     def run(self, context):
         self.render_shutdown(context)
@@ -891,8 +993,12 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         frame_h = self.frame_height / img_h
         scale_x = frame_w * img_w / self.dst_frame_width
         scale_y = frame_h * img_h / self.dst_frame_height
-        frame_offset_x = self.offset_x / img_w - (self.dst_frame_offset_x / img_w) * scale_x
-        frame_offset_y = self.offset_y / img_h - (self.dst_frame_offset_y / img_h) * scale_y
+        frame_offset_x = (
+            self.offset_x / img_w - (self.dst_frame_offset_x / img_w) * scale_x
+        )
+        frame_offset_y = (
+            self.offset_y / img_h - (self.dst_frame_offset_y / img_h) * scale_y
+        )
         frame_sep_x = self.separation_horizontal / img_w
         frame_sep_y = self.separation_vertical / img_h
 
@@ -911,7 +1017,9 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
 
                     frame_idx = frame.order * self.keyframe_interval
                     translate_transform.translation = (frame_x, frame_y)
-                    translate_transform.keyframe_insert(data_path="translation", frame=frame_idx)
+                    translate_transform.keyframe_insert(
+                        data_path="translation", frame=frame_idx
+                    )
 
                     next_frame_idx = (frame.order + 1) * self.keyframe_interval
                     if next_frame_idx > frame_end:
@@ -921,7 +1029,9 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         if frame_end != 0:
             # insert one last keyframe to keep the last frame visible for the specified duration before it loops
             translate_transform.translation = frame_end_translation
-            translate_transform.keyframe_insert(data_path="translation", frame=frame_end)
+            translate_transform.keyframe_insert(
+                data_path="translation", frame=frame_end
+            )
 
         # make all keyframes constant
         action = mat.animation_data.action
@@ -933,7 +1043,7 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         bpy.context.scene.frame_start = 0
         bpy.context.scene.frame_end = frame_end
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
     def cancel(self, context):
         self.render_shutdown(context)
@@ -996,7 +1106,12 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
             for x in range(self.frames_horizontal):
                 i = y * self.frames_horizontal + x
                 frame = self.frames[i]
-                row.prop(frame, "use", text=f"{frame.order}" if frame.use else " ", toggle=True)
+                row.prop(
+                    frame,
+                    "use",
+                    text=f"{frame.order}" if frame.use else " ",
+                    toggle=True,
+                )
             row = col.row(align=True)
             row.scale_y = FRAME_BUTTOM_SCALE_Y
         right_col.separator()
@@ -1017,21 +1132,29 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
         empty_area_overlay_color = (0.05, 0.05, 0.05, 0.9)
         dst_frame_overlay_color = (0.9, 0.9, 0.9, 0.35)
         frame_bounds_color = theme.user_interface.wcol_toggle.outline
-        frame_bounds_color = (frame_bounds_color[0],
-                              frame_bounds_color[1],
-                              frame_bounds_color[2],
-                              1.0)
+        frame_bounds_color = (
+            frame_bounds_color[0],
+            frame_bounds_color[1],
+            frame_bounds_color[2],
+            1.0,
+        )
         selected_frame_bounds_color = theme.user_interface.wcol_toggle.inner_sel
-        selected_frame_overlay_color = (selected_frame_bounds_color[0],
-                                        selected_frame_bounds_color[1],
-                                        selected_frame_bounds_color[2],
-                                        0.325)
+        selected_frame_overlay_color = (
+            selected_frame_bounds_color[0],
+            selected_frame_bounds_color[1],
+            selected_frame_bounds_color[2],
+            0.325,
+        )
         selected_frame_order_number_color = theme.user_interface.wcol_toggle.text_sel
-        selected_frame_order_number_color = (selected_frame_order_number_color[0],
-                                             selected_frame_order_number_color[1],
-                                             selected_frame_order_number_color[2],
-                                             1.0)
-        selected_frame_order_number_font_size = 18 * (bpy.context.preferences.system.dpi / 72)
+        selected_frame_order_number_color = (
+            selected_frame_order_number_color[0],
+            selected_frame_order_number_color[1],
+            selected_frame_order_number_color[2],
+            1.0,
+        )
+        selected_frame_order_number_font_size = 18 * (
+            bpy.context.preferences.system.dpi / 72
+        )
         selected_frame_order_number_font_id = 0
 
         # vertex buffers
@@ -1069,15 +1192,19 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                 pos = rects_pos[i]
                 color = rects_color[i]
                 if len(pos) > 0:
-                    batch = gpu_extras.batch.batch_for_shader(self._render_color_shader, "LINES",
-                                                              {"pos": pos, "color": color})
+                    batch = gpu_extras.batch.batch_for_shader(
+                        self._render_color_shader, "LINES", {"pos": pos, "color": color}
+                    )
                     batch.draw(self._render_color_shader)
                     pos.clear()
                     color.clear()
 
             if len(filled_rects_pos) > 0:
-                batch = gpu_extras.batch.batch_for_shader(self._render_color_shader, "TRIS",
-                                                          {"pos": filled_rects_pos, "color": filled_rects_color})
+                batch = gpu_extras.batch.batch_for_shader(
+                    self._render_color_shader,
+                    "TRIS",
+                    {"pos": filled_rects_pos, "color": filled_rects_color},
+                )
                 batch.draw(self._render_color_shader)
                 filled_rects_pos.clear()
                 filled_rects_color.clear()
@@ -1097,11 +1224,13 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
 
         # destination frame bounds
         if self.use_dst_frame:
-            _fill_rect(dst_x + self.dst_frame_offset_x / img_h * dst_h,
-                       dst_y - self.dst_frame_offset_y / img_h * dst_h,
-                       self.dst_frame_width / img_w * dst_w,
-                       self.dst_frame_height / img_h * dst_h,
-                       dst_frame_overlay_color)
+            _fill_rect(
+                dst_x + self.dst_frame_offset_x / img_h * dst_h,
+                dst_y - self.dst_frame_offset_y / img_h * dst_h,
+                self.dst_frame_width / img_w * dst_w,
+                self.dst_frame_height / img_h * dst_h,
+                dst_frame_overlay_color,
+            )
 
         # calculate frame bounds rectangles
         order_numbers = []
@@ -1123,18 +1252,43 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                 rect_w = frame_w - line_width / 2
                 rect_h = frame_h - line_width / 2
                 if frame.use:
-                    _draw_rect(rect_x, rect_y, rect_w, rect_h, selected_frame_bounds_color, layer=1)
-                    _fill_rect(rect_x, rect_y, rect_w, rect_h, selected_frame_overlay_color)
+                    _draw_rect(
+                        rect_x,
+                        rect_y,
+                        rect_w,
+                        rect_h,
+                        selected_frame_bounds_color,
+                        layer=1,
+                    )
+                    _fill_rect(
+                        rect_x, rect_y, rect_w, rect_h, selected_frame_overlay_color
+                    )
 
-                    order_numbers.append(((frame_x, frame_y, frame_w, frame_h), frame.order))
+                    order_numbers.append(
+                        ((frame_x, frame_y, frame_w, frame_h), frame.order)
+                    )
                 else:
-                    _draw_rect(rect_x, rect_y, rect_w, rect_h, frame_bounds_color, layer=0)
+                    _draw_rect(
+                        rect_x, rect_y, rect_w, rect_h, frame_bounds_color, layer=0
+                    )
 
                 if frame_sep_x > 0 and x != self.frames_horizontal - 1:
-                    _fill_rect(frame_x + frame_w, frame_y, frame_sep_x, frame_h, empty_area_overlay_color)
+                    _fill_rect(
+                        frame_x + frame_w,
+                        frame_y,
+                        frame_sep_x,
+                        frame_h,
+                        empty_area_overlay_color,
+                    )
 
             if frame_sep_y > 0 and y != self.frames_vertical - 1:
-                _fill_rect(dst_x, frame_y - frame_h, dst_w, frame_sep_y, empty_area_overlay_color)
+                _fill_rect(
+                    dst_x,
+                    frame_y - frame_h,
+                    dst_w,
+                    frame_sep_y,
+                    empty_area_overlay_color,
+                )
                 # TODO: same dark overlay for offset_x/y
 
         # render frame bounds rectangles
@@ -1147,8 +1301,13 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
             x, y, w, h = bounds
             blf.position(selected_frame_order_number_font_id, x + 5, y - 25, 0)
             blf.clipping(selected_frame_order_number_font_id, x, y - h, x + w, y)
-            blf.color(selected_frame_order_number_font_id, *selected_frame_order_number_color)
-            blf.size(selected_frame_order_number_font_id, selected_frame_order_number_font_size)
+            blf.color(
+                selected_frame_order_number_font_id, *selected_frame_order_number_color
+            )
+            blf.size(
+                selected_frame_order_number_font_id,
+                selected_frame_order_number_font_size,
+            )
             blf.draw(selected_frame_order_number_font_id, f"{number}")
             k += 1
 
@@ -1169,15 +1328,19 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
 
         self._render_image_bounds = (x, y + h, w, h)
         self._render_image_batch = gpu_extras.batch.batch_for_shader(
-            self._render_image_shader, "TRI_FAN",
+            self._render_image_shader,
+            "TRI_FAN",
             {
                 "pos": ((x, y), (x + w, y), (x + w, y + h), (x, y + h)),
                 "texCoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
-            })
-        self._render_handler = self._space.draw_handler_add(self.render_callback, (context,), 'WINDOW', 'POST_PIXEL')
+            },
+        )
+        self._render_handler = self._space.draw_handler_add(
+            self.render_callback, (context,), "WINDOW", "POST_PIXEL"
+        )
 
     def render_shutdown(self, context):
-        self._space.draw_handler_remove(self._render_handler, 'WINDOW')
+        self._space.draw_handler_remove(self._render_handler, "WINDOW")
 
     def search_image(self, context):
         self._image = None
@@ -1208,6 +1371,7 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
 
         # calculate the UV bounds
         import sys
+
         uvs = mesh.uv_layers.active.uv
         min_u = sys.float_info.max
         min_v = sys.float_info.max
@@ -1228,8 +1392,12 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                 max_u = max(max_u, u)
                 max_v = max(max_v, v)
 
-        if (min_u == sys.float_info.max or min_v == sys.float_info.max or
-                max_u == sys.float_info.min or max_v == sys.float_info.min):
+        if (
+            min_u == sys.float_info.max
+            or min_v == sys.float_info.max
+            or max_u == sys.float_info.min
+            or max_v == sys.float_info.min
+        ):
             return
 
         # calculate the UV bounds in pixels
@@ -1253,8 +1421,10 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
             return {"CANCELLED"}
 
         if self.first_run:
-            with context.temp_override(operator_uv_sprite_sheet_anim=self,
-                                       operator_uv_sprite_sheet_anim_image=self._image):  # see draw()
+            with context.temp_override(
+                operator_uv_sprite_sheet_anim=self,
+                operator_uv_sprite_sheet_anim_image=self._image,
+            ):  # see draw()
                 self.frames_horizontal = 4
                 self.frames_vertical = 4
                 self.calc_destination_frame_size(context)
@@ -1270,9 +1440,11 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.region is not None and
-                context.active_object is not None and
-                context.active_object.sollum_type == SollumType.CLIP)
+        return (
+            context.region is not None
+            and context.active_object is not None
+            and context.active_object.sollum_type == SollumType.CLIP
+        )
 
     def run(self, context):
         return {"FINISHED"}
@@ -1294,7 +1466,9 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
         mouse_x = event.mouse_region_x
         mouse_y = event.mouse_region_y
 
-        if mouse_y >= region.height - 23.5:  # ignore if mouse is on the timeline scrubber
+        if (
+            mouse_y >= region.height - 23.5
+        ):  # ignore if mouse is on the timeline scrubber
             self.clear_hovered_state(region, clip_obj)
             return {"PASS_THROUGH"}
 
@@ -1358,12 +1532,20 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
 
             old_hovered_start = clip_tag.ui_timeline_hovered_start
             old_hovered_end = clip_tag.ui_timeline_hovered_end
-            new_hovered_start = start_x - hover_threshold <= mouse_x <= start_x + hover_threshold
-            new_hovered_end = end_x - hover_threshold <= mouse_x <= end_x + hover_threshold
+            new_hovered_start = (
+                start_x - hover_threshold <= mouse_x <= start_x + hover_threshold
+            )
+            new_hovered_end = (
+                end_x - hover_threshold <= mouse_x <= end_x + hover_threshold
+            )
             clip_tag.ui_timeline_hovered_start = new_hovered_start
             clip_tag.ui_timeline_hovered_end = new_hovered_end
 
-            any_change = any_change or old_hovered_start != new_hovered_start or old_hovered_end != new_hovered_end
+            any_change = (
+                any_change
+                or old_hovered_start != new_hovered_start
+                or old_hovered_end != new_hovered_end
+            )
 
         if any_change:
             region.tag_redraw()
@@ -1383,7 +1565,11 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
             clip_tag.ui_timeline_hovered_start = new_hovered_start
             clip_tag.ui_timeline_hovered_end = new_hovered_end
 
-            any_change = any_change or old_hovered_start != new_hovered_start or old_hovered_end != new_hovered_end
+            any_change = (
+                any_change
+                or old_hovered_start != new_hovered_start
+                or old_hovered_end != new_hovered_end
+            )
 
         if any_change:
             region.tag_redraw()
@@ -1391,7 +1577,9 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
     def update_drag_state(self, clip_obj):
         any_dragging = False
         clip_properties = clip_obj.clip_properties
-        for clip_tag in reversed(clip_properties.tags):  # reversed so the tag drawn on top is always picked first
+        for clip_tag in reversed(
+            clip_properties.tags
+        ):  # reversed so the tag drawn on top is always picked first
             if not clip_tag.ui_view_on_timeline:
                 continue
 
@@ -1401,7 +1589,11 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
             else:
                 clip_tag.ui_timeline_drag_start = clip_tag.ui_timeline_hovered_start
                 clip_tag.ui_timeline_drag_end = clip_tag.ui_timeline_hovered_end
-                any_dragging = any_dragging or clip_tag.ui_timeline_drag_start or clip_tag.ui_timeline_drag_end
+                any_dragging = (
+                    any_dragging
+                    or clip_tag.ui_timeline_drag_start
+                    or clip_tag.ui_timeline_drag_end
+                )
         return any_dragging
 
     def clear_drag_state(self, clip_obj):
@@ -1421,7 +1613,10 @@ class SOLLUMZ_OT_timeline_clip_tags_drag(SOLLUMZ_OT_base, bpy.types.Operator):
         any_dragging = False
         clip_properties = clip_obj.clip_properties
         for clip_tag in clip_properties.tags:
-            if not clip_tag.ui_timeline_drag_start and not clip_tag.ui_timeline_drag_end:
+            if (
+                not clip_tag.ui_timeline_drag_start
+                and not clip_tag.ui_timeline_drag_end
+            ):
                 continue
 
             any_dragging = True
@@ -1441,11 +1636,20 @@ def register():
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
-        for name, space_type in (("Dopesheet", "DOPESHEET_EDITOR"), ("NLA Editor", "NLA_EDITOR")):
-            km = wm.keyconfigs.addon.keymaps.new(name=name, space_type=space_type, region_type="WINDOW")
-            kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "MOUSEMOVE", "ANY")
+        for name, space_type in (
+            ("Dopesheet", "DOPESHEET_EDITOR"),
+            ("NLA Editor", "NLA_EDITOR"),
+        ):
+            km = wm.keyconfigs.addon.keymaps.new(
+                name=name, space_type=space_type, region_type="WINDOW"
+            )
+            kmi = km.keymap_items.new(
+                SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "MOUSEMOVE", "ANY"
+            )
             addon_keymaps.append((km, kmi))
-            kmi = km.keymap_items.new(SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "LEFTMOUSE", "ANY")
+            kmi = km.keymap_items.new(
+                SOLLUMZ_OT_timeline_clip_tags_drag.bl_idname, "LEFTMOUSE", "ANY"
+            )
             addon_keymaps.append((km, kmi))
 
 

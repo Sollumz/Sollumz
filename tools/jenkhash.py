@@ -1,4 +1,3 @@
-
 def GenerateData(bts: bytes, seed=0):
     h = seed
 

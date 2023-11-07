@@ -10,7 +10,9 @@ from .properties import LightProperties
 from .. import logger
 
 
-def create_light_objs(lights: list[Light], armature_obj: Optional[bpy.types.Object] = None):
+def create_light_objs(
+    lights: list[Light], armature_obj: Optional[bpy.types.Object] = None
+):
     lights_parent = create_empty_object(SollumType.NONE, "Lights")
 
     for light_xml in lights:
@@ -25,7 +27,8 @@ def create_light(light_xml: Light, armature_obj: Optional[bpy.types.Object] = No
 
     if light_type is None:
         logger.warning(
-            f"Encountered an unknown light type '{light_xml.type}'! Making a point light...")
+            f"Encountered an unknown light type '{light_xml.type}'! Making a point light..."
+        )
         light_type = LightType.POINT
 
     name = SOLLUMZ_UI_NAMES[light_type]
@@ -67,7 +70,9 @@ def create_light_data(light_type: LightType, name: str):
     return bpy.data.lights.new(name=name, type=bpy_light_type)
 
 
-def create_light_bone_constraint(light_xml: Light, light_obj: bpy.types.Object, armature_obj: bpy.types.Object):
+def create_light_bone_constraint(
+    light_xml: Light, light_obj: bpy.types.Object, armature_obj: bpy.types.Object
+):
     armature = armature_obj.data
 
     for bone in armature.bones:
@@ -107,8 +112,7 @@ def set_light_bpy_properties(light_xml: Light, light_data: bpy.types.Light):
     light_data.shadow_buffer_clip_start = light_xml.shadow_near_clip
 
     if light_data.sollum_type == LightType.SPOT:
-        light_data.spot_blend = abs(
-            (radians(light_xml.cone_inner_angle) / pi) - 1)
+        light_data.spot_blend = abs((radians(light_xml.cone_inner_angle) / pi) - 1)
         light_data.spot_size = radians(light_xml.cone_outer_angle) * 2
 
 
@@ -132,7 +136,8 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
     light_props.shadow_blur = light_xml.shadow_blur
     light_props.volume_size_scale = light_xml.volume_size_scale
     light_props.volume_outer_color = [
-        channel / 255 for channel in light_xml.volume_outer_color]
+        channel / 255 for channel in light_xml.volume_outer_color
+    ]
     light_props.light_hash = light_xml.light_hash
     light_props.volume_outer_intensity = light_xml.volume_outer_intensity
     light_props.corona_size = light_xml.corona_size
@@ -145,7 +150,9 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
     light_props.corona_z_bias = light_xml.corona_z_bias
 
 
-def create_xml_lights(parent_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
+def create_xml_lights(
+    parent_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None
+):
     light_xmls: list[Light] = []
 
     for child in parent_obj.children_recursive:
@@ -155,7 +162,9 @@ def create_xml_lights(parent_obj: bpy.types.Object, armature_obj: Optional[bpy.t
     return light_xmls
 
 
-def create_light_xml(light_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
+def create_light_xml(
+    light_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None
+):
     light_xml = Light()
     light_xml.position = light_obj.location
     mat = light_obj.matrix_basis
@@ -171,8 +180,7 @@ def create_light_xml(light_obj: bpy.types.Object, armature_obj: Optional[bpy.typ
 
 
 def set_light_xml_direction(light_xml: Light, mat: Matrix):
-    light_xml.direction = Vector(
-        (mat[0][2], mat[1][2], mat[2][2])).normalized()
+    light_xml.direction = Vector((mat[0][2], mat[1][2], mat[2][2])).normalized()
     light_xml.direction.negate()
 
 
@@ -180,7 +188,9 @@ def set_light_xml_tangent(light_xml: Light, mat: Matrix):
     light_xml.tangent = Vector((mat[0][0], mat[1][0], mat[2][0])).normalized()
 
 
-def set_light_xml_bone_id(light_xml: Light, armature: bpy.types.Armature, light_obj: bpy.types.Object):
+def set_light_xml_bone_id(
+    light_xml: Light, armature: bpy.types.Armature, light_obj: bpy.types.Object
+):
     for constraint in light_obj.constraints:
         if not isinstance(constraint, bpy.types.CopyTransformsConstraint):
             continue
@@ -227,6 +237,5 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.projected_texture_hash = light_props.projected_texture_hash
 
     if light_data.sollum_type == LightType.SPOT:
-        light_xml.cone_inner_angle = degrees(
-            abs((light_data.spot_blend * pi) - pi))
+        light_xml.cone_inner_angle = degrees(abs((light_data.spot_blend * pi) - pi))
         light_xml.cone_outer_angle = degrees(light_data.spot_size) / 2

@@ -12,7 +12,10 @@ def calculate_ymap_content_flags(selected_ymap=None, sollum_type=None):
         selected_ymap.ymap_properties.content_flags_toggle.has_hd = True
         selected_ymap.ymap_properties.content_flags_toggle.has_physics = True
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = False
-    elif sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP or sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
+    elif (
+        sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP
+        or sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP
+    ):
         selected_ymap.ymap_properties.content_flags_toggle.has_hd = False
         selected_ymap.ymap_properties.content_flags_toggle.has_physics = False
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = True
@@ -39,7 +42,10 @@ def create_ymap_group(sollum_type=None, selected_ymap=None, empty_name=None):
     if sollum_type == SollumType.YMAP_ENTITY_GROUP:
         selected_ymap.ymap_properties.content_flags_toggle.has_hd = True
         selected_ymap.ymap_properties.content_flags_toggle.has_physics = True
-    elif sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP or sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
+    elif (
+        sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP
+        or sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP
+    ):
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = True
     empty.parent = selected_ymap
     calculate_ymap_content_flags(selected_ymap, sollum_type)

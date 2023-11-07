@@ -19,7 +19,7 @@ from ..cwxml.bound import (
     PolyTriangle,
     YBN,
     Polygon,
-    Material as ColMaterial
+    Material as ColMaterial,
 )
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
@@ -31,8 +31,9 @@ from mathutils import Matrix, Vector
 
 def import_ybn(filepath):
     ybn_xml: BoundFile = YBN.from_xml_file(filepath)
-    create_bound_composite(ybn_xml.composite, os.path.basename(
-        filepath.replace(YBN.file_extension, "")))
+    create_bound_composite(
+        ybn_xml.composite, os.path.basename(filepath.replace(YBN.file_extension, ""))
+    )
 
 
 def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = None):
@@ -74,7 +75,11 @@ def create_bound_object(bound_xml: BoundChild | Bound):
         return create_bvh_obj(bound_xml)
 
 
-def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh: Optional[bpy.types.Mesh] = None):
+def create_bound_child_mesh(
+    bound_xml: BoundChild,
+    sollum_type: SollumType,
+    mesh: Optional[bpy.types.Mesh] = None,
+):
     """Create a bound mesh object with materials and composite properties set."""
     obj = create_blender_object(sollum_type, object_data=mesh)
 
@@ -154,7 +159,9 @@ def create_bound_geometry(geom_xml: BoundGeometry):
     materials = create_geometry_materials(geom_xml)
     triangles = get_poly_triangles(geom_xml.polygons)
 
-    mesh = create_bound_mesh_data(geom_xml.vertices, triangles, geom_xml.vertex_colors, materials)
+    mesh = create_bound_mesh_data(
+        geom_xml.vertices, triangles, geom_xml.vertex_colors, materials
+    )
     mesh.transform(Matrix.Translation(geom_xml.geometry_center))
 
     geom_obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh)
@@ -176,8 +183,12 @@ def create_bvh_obj(bvh_xml: BoundGeometryBVH):
     triangles = get_poly_triangles(bvh_xml.polygons)
 
     if triangles:
-        mesh = create_bound_mesh_data(bvh_xml.vertices, triangles, bvh_xml.vertex_colors, materials)
-        bound_geom_obj = create_blender_object(SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
+        mesh = create_bound_mesh_data(
+            bvh_xml.vertices, triangles, bvh_xml.vertex_colors, materials
+        )
+        bound_geom_obj = create_blender_object(
+            SollumType.BOUND_POLY_TRIANGLE, object_data=mesh
+        )
         bound_geom_obj.location = bvh_xml.geometry_center
         bound_geom_obj.parent = bvh_obj
 
@@ -214,10 +225,16 @@ def set_bound_col_material_properties(bound_xml: Bound, mat: bpy.types.Material)
     mat.collision_properties.room_id = bound_xml.room_id
     mat.collision_properties.ped_density = bound_xml.ped_density
     mat.collision_properties.material_color_index = bound_xml.material_color_index
-    set_collision_mat_raw_flags(mat.collision_flags, bound_xml.unk_flags, bound_xml.poly_flags)
+    set_collision_mat_raw_flags(
+        mat.collision_flags, bound_xml.unk_flags, bound_xml.poly_flags
+    )
 
 
-def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
+def create_bvh_polys(
+    bvh: BoundGeometryBVH,
+    materials: list[bpy.types.Material],
+    bvh_obj: bpy.types.Object,
+):
     for poly in bvh.polygons:
         if type(poly) is PolyTriangle:
             continue
@@ -333,8 +350,7 @@ def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
 
         return capsule
     elif type(poly) == PolyCylinder:
-        cylinder = init_poly_obj(
-            poly, SollumType.BOUND_POLY_CYLINDER, materials)
+        cylinder = init_poly_obj(poly, SollumType.BOUND_POLY_CYLINDER, materials)
         v1 = vertices[poly.v1]
         v2 = vertices[poly.v2]
 
@@ -358,7 +374,7 @@ def create_bound_mesh_data(
     vertices: list[Vector],
     triangles: list[PolyTriangle],
     vertex_colors: Optional[list[tuple[int, int, int, int]]],
-    materials: list[bpy.types.Material]
+    materials: list[bpy.types.Material],
 ) -> bpy.types.Mesh:
     mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
 
@@ -376,7 +392,11 @@ def create_bound_mesh_data(
     return mesh
 
 
-def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangle], materials: list[bpy.types.Material]):
+def apply_bound_geom_materials(
+    mesh: bpy.types.Mesh,
+    triangles: list[PolyTriangle],
+    materials: list[bpy.types.Material],
+):
     for mat in materials:
         mesh.materials.append(mat)
 
@@ -387,10 +407,15 @@ def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangl
 def get_bound_geom_mesh_data(
     vertices: list[Vector],
     triangles: list[PolyTriangle],
-    vertex_colors: Optional[list[tuple[int, int, int, int]]]
+    vertex_colors: Optional[list[tuple[int, int, int, int]]],
 ) -> tuple[list, list, Optional[NDArray]]:
     def _color_to_float(color_int: tuple[int, int, int, int]):
-        return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, color_int[3] / 255)
+        return (
+            color_int[0] / 255,
+            color_int[1] / 255,
+            color_int[2] / 255,
+            color_int[3] / 255,
+        )
 
     verts = []
     faces = []
@@ -423,7 +448,11 @@ def get_bound_geom_mesh_data(
             colors.append(_color_to_float(vertex_colors[poly.v2]))
             colors.append(_color_to_float(vertex_colors[poly.v3]))
 
-    return verts, faces, np.array(colors, dtype=np.float64) if colors is not None else None
+    return (
+        verts,
+        faces,
+        np.array(colors, dtype=np.float64) if colors is not None else None,
+    )
 
 
 def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.Object):

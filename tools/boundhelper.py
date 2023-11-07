@@ -3,7 +3,11 @@ import bpy
 from ..sollumz_properties import SollumType, BOUND_TYPES
 from ..tools.meshhelper import create_box
 from ..ybn.properties import load_flag_presets, flag_presets, BoundFlags
-from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
+from .blenderhelper import (
+    create_blender_object,
+    create_empty_object,
+    remove_number_suffix,
+)
 from mathutils import Vector
 
 
@@ -116,13 +120,21 @@ def constrain_bound(obj: bpy.types.Object):
     constraint.max_z = 1
 
 
-def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+def convert_objs_to_composites(
+    objs: list[bpy.types.Object],
+    bound_child_type: SollumType,
+    apply_default_flags: bool = False,
+):
     """Convert each object in ``objs`` to a Bound Composite."""
     for obj in objs:
         convert_obj_to_composite(obj, bound_child_type, apply_default_flags)
 
 
-def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+def convert_objs_to_single_composite(
+    objs: list[bpy.types.Object],
+    bound_child_type: SollumType,
+    apply_default_flags: bool = False,
+):
     """Create a single composite from all ``objs``."""
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
 
@@ -142,7 +154,8 @@ def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_t
 
 def center_composite_to_children(composite_obj: bpy.types.Object):
     child_objs = [
-        child for child in composite_obj.children if child.sollum_type in BOUND_TYPES]
+        child for child in composite_obj.children if child.sollum_type in BOUND_TYPES
+    ]
 
     center = Vector()
 
@@ -157,7 +170,9 @@ def center_composite_to_children(composite_obj: bpy.types.Object):
         obj.location -= center
 
 
-def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool):
+def convert_obj_to_composite(
+    obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool
+):
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
     composite_obj.location = obj.location
     composite_obj.parent = obj.parent

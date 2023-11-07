@@ -1,4 +1,11 @@
-from .element import VectorProperty, AttributeProperty, ValueProperty, TextProperty, ElementTree, ListProperty
+from .element import (
+    VectorProperty,
+    AttributeProperty,
+    ValueProperty,
+    TextProperty,
+    ElementTree,
+    ListProperty,
+)
 
 
 class LightPresetsFile(ElementTree):
@@ -25,7 +32,7 @@ class LightPreset(ElementTree):
         self.shadow_buffer_clip_start = ValueProperty("ShadowBufferClipStart")
         self.spot_size = ValueProperty("SpotSize")
         self.spot_blend = ValueProperty("SpotBlend")
- 
+
         # RAGE properties
         self.time_flags = ValueProperty("TimeFlags")
         self.flags = ValueProperty("Flags")

@@ -16,6 +16,7 @@ def get_all_frag_geoms(frag_xml: Fragment) -> list[Geometry]:
 
 class FragmentMerger:
     """Merge hi and non hi Fragments."""
+
     @property
     def phys_children(self) -> list[PhysicsChild]:
         return self.frag.physics.lod1.children
@@ -30,7 +31,8 @@ class FragmentMerger:
 
         if len(self.phys_children) != len(self.phys_children_hi):
             raise ValueError(
-                f"Cannot merge Fragments '{self.frag.name}' and '{self.hi_frag.name}': Both Fragments must have same number of children!")
+                f"Cannot merge Fragments '{self.frag.name}' and '{self.hi_frag.name}': Both Fragments must have same number of children!"
+            )
 
     def merge(self) -> Fragment:
         shaders: list[Shader] = self.frag.drawable.shader_group.shaders
@@ -143,8 +145,7 @@ class FragShaderMerger:
         self._update_hi_shader_ind()
 
     def _update_hi_shader_ind(self):
-        self.new_hi_shader_inds[self._hi_shader_ind] = len(
-            self.merged_shaders) - 1
+        self.new_hi_shader_inds[self._hi_shader_ind] = len(self.merged_shaders) - 1
         self._hi_shader_ind += 1
 
     def update_geom_shader_inds(self, frag: Fragment):

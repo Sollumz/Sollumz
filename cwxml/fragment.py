@@ -11,14 +11,13 @@ from .element import (
     Vector4Property,
     TextProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
 )
 from .drawable import Drawable, Lights, VertexLayoutList
 from .bound import BoundComposite
 
 
 class YFT:
-
     file_extension = ".yft.xml"
 
     @staticmethod
@@ -112,10 +111,8 @@ class PhysicsGroup(ElementTree):
         self.glass_window_index = ValueProperty("GlassWindowIndex")
         self.glass_flags = ValueProperty("GlassFlags")
         self.strength = ValueProperty("Strength")
-        self.force_transmission_scale_up = ValueProperty(
-            "ForceTransmissionScaleUp")
-        self.force_transmission_scale_down = ValueProperty(
-            "ForceTransmissionScaleDown")
+        self.force_transmission_scale_up = ValueProperty("ForceTransmissionScaleUp")
+        self.force_transmission_scale_down = ValueProperty("ForceTransmissionScaleDown")
         self.joint_stiffness = ValueProperty("JointStiffness")
         self.min_soft_angle_1 = ValueProperty("MinSoftAngle1")
         self.max_soft_angle_1 = ValueProperty("MaxSoftAngle1")
@@ -181,7 +178,7 @@ class Physics(ElementTree):
 
 
 class ShatterMapProperty(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self, tag_name: str = "ShatterMap", value=None):
         super().__init__(tag_name, value or "")

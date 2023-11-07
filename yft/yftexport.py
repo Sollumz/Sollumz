@@ -10,31 +10,77 @@ import numpy as np
 from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
 from ..cwxml.bound import Bound, BoundComposite
 from ..cwxml.fragment import (
-    Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window,
-    GlassWindow, GlassWindows,
+    Fragment,
+    PhysicsLOD,
+    Archetype,
+    PhysicsChild,
+    PhysicsGroup,
+    Transform,
+    Physics,
+    BoneTransform,
+    Window,
+    GlassWindow,
+    GlassWindows,
 )
-from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter, VertexLayoutList
-from ..tools.blenderhelper import get_evaluated_obj, remove_number_suffix, delete_hierarchy, get_child_of_bone
+from ..cwxml.drawable import (
+    Bone,
+    Drawable,
+    ShaderGroup,
+    VectorShaderParameter,
+    VertexLayoutList,
+)
+from ..tools.blenderhelper import (
+    get_evaluated_obj,
+    remove_number_suffix,
+    delete_hierarchy,
+    get_child_of_bone,
+)
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import calculate_inertia, flip_uvs
-from ..tools.utils import prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
+from ..tools.utils import (
+    prop_array_to_vector,
+    reshape_mat_4x3,
+    vector_inv,
+    reshape_mat_3x4,
+)
 from ..sollumz_helper import get_parent_inverse, get_sollumz_materials
-from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
+from ..sollumz_properties import (
+    BOUND_TYPES,
+    SollumType,
+    MaterialType,
+    LODLevel,
+    VehiclePaintLayer,
+)
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats, get_bound_extents
-from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
+from ..ydr.ydrexport import (
+    create_drawable_xml,
+    write_embedded_textures,
+    get_bone_index,
+    create_model_xml,
+    append_model_xml,
+    set_drawable_xml_extents,
+)
 from ..ydr.lights import create_xml_lights
 from .. import logger
 from .properties import (
-    LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES,
-    GroupFlagBit, get_glass_type_index,
+    LODProperties,
+    FragArchetypeProperties,
+    GroupProperties,
+    PAINT_LAYER_VALUES,
+    GroupFlagBit,
+    get_glass_type_index,
 )
 
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
-    frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
-                                   export_settings.auto_calculate_volume, export_settings.apply_transforms)
+    frag_xml = create_fragment_xml(
+        frag_obj,
+        export_settings.auto_calculate_inertia,
+        export_settings.auto_calculate_volume,
+        export_settings.apply_transforms,
+    )
 
     if frag_xml is None:
         return False
@@ -46,27 +92,37 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     if export_settings.export_hi and has_hi_lods(frag_obj):
         hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
 
-        hi_frag_xml = create_hi_frag_xml(frag_obj, frag_xml, export_settings.apply_transforms)
+        hi_frag_xml = create_hi_frag_xml(
+            frag_obj, frag_xml, export_settings.apply_transforms
+        )
         hi_frag_xml.write_xml(hi_filepath)
 
         write_embedded_textures(frag_obj, hi_filepath)
         logger.info(f"Exported Very High LODs to '{hi_filepath}'")
     elif export_settings.export_hi and not export_settings.export_non_hi:
-        logger.warning(f"Only Very High LODs selected to export but fragment '{frag_obj.name}' does not have Very High"
-                       " LODs. Nothing was exported.")
+        logger.warning(
+            f"Only Very High LODs selected to export but fragment '{frag_obj.name}' does not have Very High"
+            " LODs. Nothing was exported."
+        )
         return False
 
     return True
 
 
-def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, apply_transforms: bool = False):
+def create_fragment_xml(
+    frag_obj: bpy.types.Object,
+    auto_calc_inertia: bool = False,
+    auto_calc_volume: bool = False,
+    apply_transforms: bool = False,
+):
     """Create an XML parsable Fragment object. Returns the XML object and the hi XML object (if hi lods are present)."""
     frag_xml = Fragment()
     frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
 
     if frag_obj.type != "ARMATURE":
         logger.warning(
-            f"Failed to create Fragment XML: {frag_obj.name} must be an armature with a skeleton!")
+            f"Failed to create Fragment XML: {frag_obj.name} must be an armature with a skeleton!"
+        )
         return
 
     set_frag_xml_properties(frag_obj, frag_xml)
@@ -76,7 +132,8 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     if drawable_xml is None:
         logger.warning(
-            f"Failed to create Fragment XML: {frag_obj.name} has no Drawable!")
+            f"Failed to create Fragment XML: {frag_obj.name} has no Drawable!"
+        )
         return
 
     original_pose = frag_obj.data.pose_position
@@ -95,7 +152,8 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     # Physics data doesn't do anything if no collisions are present and will cause crashes
     if frag_has_collisions(frag_obj) and frag_obj.data.bones:
         create_frag_physics_xml(
-            frag_obj, frag_xml, materials, auto_calc_inertia, auto_calc_volume)
+            frag_obj, frag_xml, materials, auto_calc_inertia, auto_calc_volume
+        )
         create_vehicle_windows_xml(frag_obj, frag_xml, materials)
     else:
         frag_xml.physics = None
@@ -107,19 +165,29 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     return frag_xml
 
 
-def create_frag_drawable_xml(frag_obj: bpy.types.Object, materials: list[bpy.types.Material], apply_transforms: bool = False):
+def create_frag_drawable_xml(
+    frag_obj: bpy.types.Object,
+    materials: list[bpy.types.Material],
+    apply_transforms: bool = False,
+):
     for obj in frag_obj.children:
         if obj.sollum_type != SollumType.DRAWABLE:
             continue
 
         drawable_xml = create_drawable_xml(
-            obj, materials=materials, armature_obj=frag_obj, apply_transforms=apply_transforms)
+            obj,
+            materials=materials,
+            armature_obj=frag_obj,
+            apply_transforms=apply_transforms,
+        )
         drawable_xml.name = "skel"
 
         return drawable_xml
 
 
-def set_paint_layer_shader_params(materials: list[bpy.types.Material], shader_group: ShaderGroup):
+def set_paint_layer_shader_params(
+    materials: list[bpy.types.Material], shader_group: ShaderGroup
+):
     """Set matDiffuseColor shader params based off of paint layer selection (expects materials to be ordered by shader)"""
     for i, mat in enumerate(materials):
         paint_layer = mat.sollumz_paint_layer
@@ -127,14 +195,19 @@ def set_paint_layer_shader_params(materials: list[bpy.types.Material], shader_gr
             continue
 
         for param in shader_group.shaders[i].parameters:
-            if not isinstance(param, VectorShaderParameter) or param.name != "matDiffuseColor":
+            if (
+                not isinstance(param, VectorShaderParameter)
+                or param.name != "matDiffuseColor"
+            ):
                 continue
 
             value = PAINT_LAYER_VALUES[paint_layer]
             param.x, param.y, param.z, param.w = (2, value, value, 0)
 
 
-def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, apply_transforms: bool = False):
+def create_hi_frag_xml(
+    frag_obj: bpy.types.Object, frag_xml: Fragment, apply_transforms: bool = False
+):
     hi_obj = frag_obj.copy()
     hi_obj.name = f"{remove_number_suffix(hi_obj.name)}_hi"
     drawable_obj = None
@@ -256,7 +329,10 @@ def copy_phys_xml(phys_xml: Physics, lod_props: LODProperties):
 
 def has_hi_lods(frag_obj: bpy.types.Object):
     for child in frag_obj.children_recursive:
-        if child.sollum_type != SollumType.DRAWABLE_MODEL and not child.sollumz_is_physics_child_mesh:
+        if (
+            child.sollum_type != SollumType.DRAWABLE_MODEL
+            and not child.sollumz_is_physics_child_mesh
+        ):
             continue
 
         for lod in child.sollumz_lods.lods:
@@ -305,23 +381,38 @@ def sort_cols_and_children(lod_xml: PhysicsLOD):
 
 
 def frag_has_collisions(frag_obj: bpy.types.Object):
-    return any(child.sollum_type == SollumType.BOUND_COMPOSITE for child in frag_obj.children)
+    return any(
+        child.sollum_type == SollumType.BOUND_COMPOSITE for child in frag_obj.children
+    )
 
 
-def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material], auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
+def create_frag_physics_xml(
+    frag_obj: bpy.types.Object,
+    frag_xml: Fragment,
+    materials: list[bpy.types.Material],
+    auto_calc_inertia: bool = False,
+    auto_calc_volume: bool = False,
+):
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
     drawable_xml = frag_xml.drawable
 
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
     arch_xml = create_archetype_xml(lod_xml, frag_obj)
     col_obj_to_bound_index = dict()
-    create_collision_xml(frag_obj, arch_xml, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index)
+    create_collision_xml(
+        frag_obj, arch_xml, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index
+    )
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
-    create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
+    create_phys_child_xmls(
+        frag_obj,
+        lod_xml,
+        drawable_xml.skeleton.bones,
+        materials,
+        col_obj_to_bound_index,
+    )
 
-    set_arch_mass_inertia(frag_obj, arch_xml,
-                          lod_xml.children, auto_calc_inertia)
+    set_arch_mass_inertia(frag_obj, arch_xml, lod_xml.children, auto_calc_inertia)
     calculate_group_masses(lod_xml)
     calculate_child_drawable_matrices(frag_xml)
 
@@ -337,26 +428,37 @@ def create_phys_lod_xml(phys_xml: Physics, lod_props: LODProperties):
 
 
 def create_archetype_xml(lod_xml: PhysicsLOD, frag_obj: bpy.types.Object):
-    archetype_props: FragArchetypeProperties = frag_obj.fragment_properties.lod_properties.archetype_properties
+    archetype_props: FragArchetypeProperties = (
+        frag_obj.fragment_properties.lod_properties.archetype_properties
+    )
 
     set_archetype_xml_properties(
-        archetype_props, lod_xml.archetype, remove_number_suffix(frag_obj.name))
+        archetype_props, lod_xml.archetype, remove_number_suffix(frag_obj.name)
+    )
     lod_xml.archetype2 = None
 
     return lod_xml.archetype
 
 
-def set_arch_mass_inertia(frag_obj: bpy.types.Object, arch_xml: Archetype, phys_children: list[PhysicsChild], auto_calc_inertia: bool = False):
+def set_arch_mass_inertia(
+    frag_obj: bpy.types.Object,
+    arch_xml: Archetype,
+    phys_children: list[PhysicsChild],
+    auto_calc_inertia: bool = False,
+):
     """Set archetype mass based on children mass. Expects physics children and collisions to exist."""
     mass = calculate_arch_mass(phys_children)
     arch_xml.mass = mass
     arch_xml.mass_inv = (1 / mass) if mass != 0 else 0
 
-    archetype_props: FragArchetypeProperties = frag_obj.fragment_properties.lod_properties.archetype_properties
+    archetype_props: FragArchetypeProperties = (
+        frag_obj.fragment_properties.lod_properties.archetype_properties
+    )
 
     if auto_calc_inertia:
-        inertia = calculate_inertia(
-            arch_xml.bounds.box_min, arch_xml.bounds.box_max) * mass
+        inertia = (
+            calculate_inertia(arch_xml.bounds.box_min, arch_xml.bounds.box_max) * mass
+        )
     else:
         inertia = prop_array_to_vector(archetype_props.inertia_tensor)
 
@@ -379,13 +481,15 @@ def create_collision_xml(
     arch_xml: Archetype,
     auto_calc_inertia: bool = False,
     auto_calc_volume: bool = False,
-    col_obj_to_bound_index: dict[bpy.types.Object, int] = None
+    col_obj_to_bound_index: dict[bpy.types.Object, int] = None,
 ) -> BoundComposite:
     for child in frag_obj.children:
         if child.sollum_type != SollumType.BOUND_COMPOSITE:
             continue
 
-        composite_xml = create_composite_xml(child, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index)
+        composite_xml = create_composite_xml(
+            child, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index
+        )
         arch_xml.bounds = composite_xml
 
         composite_xml.unk_type = 2
@@ -401,7 +505,7 @@ def create_phys_xml_groups(
     frag_obj: bpy.types.Object,
     lod_xml: PhysicsLOD,
     glass_windows_xml: GlassWindows,
-    materials: list[bpy.types.Material]
+    materials: list[bpy.types.Material],
 ):
     group_ind_by_name: dict[str, int] = {}
     groups_by_bone: dict[int, list[PhysicsGroup]] = defaultdict(list)
@@ -412,7 +516,8 @@ def create_phys_xml_groups(
 
         if not does_bone_have_collision(bone.name, frag_obj):
             logger.warning(
-                f"Bone '{bone.name}' has physics enabled, but no associated collision! A collision must be linked to the bone for physics to work.")
+                f"Bone '{bone.name}' has physics enabled, but no associated collision! A collision must be linked to the bone for physics to work."
+            )
             continue
 
         group_xml = PhysicsGroup()
@@ -423,7 +528,9 @@ def create_phys_xml_groups(
         set_group_xml_properties(bone.group_properties, group_xml)
 
         if bone.group_properties.flags[GroupFlagBit.USE_GLASS_WINDOW]:
-            add_frag_glass_window_xml(frag_obj, bone, materials, group_xml, glass_windows_xml)
+            add_frag_glass_window_xml(
+                frag_obj, bone, materials, group_xml, glass_windows_xml
+            )
 
     # Sort by bone index
     groups_by_bone = dict(sorted(groups_by_bone.items()))
@@ -459,7 +566,8 @@ def create_phys_xml_groups(
 
 def does_bone_have_collision(bone_name: str, frag_obj: bpy.types.Object):
     col_objs = [
-        obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
+        obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES
+    ]
 
     for obj in col_objs:
         bone = get_child_of_bone(obj)
@@ -481,7 +589,7 @@ def create_phys_child_xmls(
     lod_xml: PhysicsLOD,
     bones_xml: list[Bone],
     materials: list[bpy.types.Material],
-    col_obj_to_bound_index: dict[bpy.types.Object, int]
+    col_obj_to_bound_index: dict[bpy.types.Object, int],
 ):
     """Creates the physics children XML objects for each collision object and adds them to ``lod_xml.children``.
 
@@ -507,7 +615,9 @@ def create_phys_child_xmls(
             child_xml.damaged_mass = child_xml.pristine_mass
             child_xml.bone_tag = bones_xml[bone_index].tag
 
-            inertia_tensor = get_child_inertia(lod_xml.archetype, child_xml, bound_index)
+            inertia_tensor = get_child_inertia(
+                lod_xml.archetype, child_xml, bound_index
+            )
             child_xml.inertia_tensor = inertia_tensor
 
             mesh_objs = None
@@ -537,7 +647,9 @@ def get_child_inertia(arch_xml: Archetype, child_xml: PhysicsChild, bound_index:
 
     bound_xml = arch_xml.bounds.children[bound_index]
     inertia = bound_xml.inertia * child_xml.pristine_mass
-    return Vector((inertia.x, inertia.y, inertia.z, bound_xml.volume * child_xml.pristine_mass))
+    return Vector(
+        (inertia.x, inertia.y, inertia.z, bound_xml.volume * child_xml.pristine_mass)
+    )
 
 
 def get_child_cols(frag_obj: bpy.types.Object):
@@ -552,7 +664,9 @@ def get_child_cols(frag_obj: bpy.types.Object):
             if not bound_obj.sollum_type in BOUND_TYPES:
                 continue
 
-            if (bound_obj.type == "MESH" and not has_col_mats(bound_obj)) or (bound_obj.type == "EMPTY" and not bound_geom_has_mats(bound_obj)):
+            if (bound_obj.type == "MESH" and not has_col_mats(bound_obj)) or (
+                bound_obj.type == "EMPTY" and not bound_geom_has_mats(bound_obj)
+            ):
                 continue
 
             bone = get_child_of_bone(bound_obj)
@@ -574,7 +688,10 @@ def get_child_meshes(frag_obj: bpy.types.Object):
             continue
 
         for model_obj in drawable_obj.children:
-            if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
+            if (
+                model_obj.sollum_type != SollumType.DRAWABLE_MODEL
+                or not model_obj.sollumz_is_physics_child_mesh
+            ):
                 continue
 
             bone = get_child_of_bone(model_obj)
@@ -598,12 +715,12 @@ def get_bone_group_index(lod_xml: PhysicsLOD, bone_name: str):
 
 def create_child_mat_arrays(children: list[PhysicsChild]):
     """Create the matrix arrays for each child. This appears to be in the first child of multiple children that
-    share the same group. Each matrix in the array is just the matrix for each child in that group."""
+    share the same group. Each matrix in the array is just the matrix for each child in that group.
+    """
     group_inds = set(child.group_index for child in children)
 
     for i in group_inds:
-        group_children = [
-            child for child in children if child.group_index == i]
+        group_children = [child for child in children if child.group_index == i]
 
         if len(group_children) <= 1:
             continue
@@ -614,7 +731,11 @@ def create_child_mat_arrays(children: list[PhysicsChild]):
             first.drawable.matrices.append(child.drawable.matrix)
 
 
-def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], mesh_objs: Optional[list[bpy.types.Object]] = None):
+def create_phys_child_drawable(
+    child_xml: PhysicsChild,
+    materials: list[bpy.types.Object],
+    mesh_objs: Optional[list[bpy.types.Object]] = None,
+):
     drawable_xml = child_xml.drawable
     drawable_xml.shader_group = None
     drawable_xml.skeleton = None
@@ -632,7 +753,8 @@ def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.type
                 continue
 
             model_xml = create_model_xml(
-                obj, lod.level, materials, transforms_to_apply=transforms_to_apply)
+                obj, lod.level, materials, transforms_to_apply=transforms_to_apply
+            )
             model_xml.bone_index = 0
             append_model_xml(drawable_xml, model_xml, lod.level)
 
@@ -641,12 +763,14 @@ def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.type
     return drawable_xml
 
 
-def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material]):
+def create_vehicle_windows_xml(
+    frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material]
+):
     """Create all the vehicle windows for ``frag_xml``. Must be ran after the drawable and physics children have been created."""
     child_id_by_bone_tag: dict[str, int] = {
-        c.bone_tag: i for i, c in enumerate(frag_xml.physics.lod1.children)}
-    mat_ind_by_name: dict[str, int] = {
-        mat.name: i for i, mat in enumerate(materials)}
+        c.bone_tag: i for i, c in enumerate(frag_xml.physics.lod1.children)
+    }
+    mat_ind_by_name: dict[str, int] = {mat.name: i for i, mat in enumerate(materials)}
     bones = frag_xml.drawable.skeleton.bones
 
     for obj in frag_obj.children_recursive:
@@ -657,7 +781,8 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
 
         if bone is None or not bone.sollumz_use_physics:
             logger.warning(
-                f"Vehicle window '{obj.name}' is not attached to a bone, or the attached bone does not have physics enabled! Attach the bone via an armature constraint.")
+                f"Vehicle window '{obj.name}' is not attached to a bone, or the attached bone does not have physics enabled! Attach the bone via an armature constraint."
+            )
             continue
 
         bone_index = get_bone_index(frag_obj.data, bone)
@@ -666,8 +791,7 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
         bone_tag = bones[bone_index].tag
 
         if bone_tag not in child_id_by_bone_tag:
-            logger.warning(
-                f"No physics child for the vehicle window '{obj.name}'!")
+            logger.warning(f"No physics child for the vehicle window '{obj.name}'!")
             continue
 
         window_xml.item_id = child_id_by_bone_tag[bone_tag]
@@ -675,12 +799,14 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
 
         if window_mat is None:
             logger.warning(
-                f"Vehicle window '{obj.name}' has no material with the vehicle_vehglass shader!")
+                f"Vehicle window '{obj.name}' has no material with the vehicle_vehglass shader!"
+            )
             continue
 
         if window_mat.name not in mat_ind_by_name:
             logger.warning(
-                f"Vehicle window '{obj.name}' is using a vehicle_vehglass material '{window_mat.name}' that is not used in the Drawable! This material should be added to the mesh object attached to the bone '{bone.name}'.")
+                f"Vehicle window '{obj.name}' is using a vehicle_vehglass material '{window_mat.name}' that is not used in the Drawable! This material should be added to the mesh object attached to the bone '{bone.name}'."
+            )
             continue
 
         set_veh_window_xml_properties(window_xml, obj)
@@ -689,12 +815,14 @@ def create_vehicle_windows_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, m
 
         shader_index = mat_ind_by_name[window_mat.name]
         window_xml.unk_ushort_1 = get_window_geometry_index(
-            frag_xml.drawable, shader_index)
+            frag_xml.drawable, shader_index
+        )
 
         frag_xml.vehicle_glass_windows.append(window_xml)
 
     frag_xml.vehicle_glass_windows = sorted(
-        frag_xml.vehicle_glass_windows, key=lambda w: w.item_id)
+        frag_xml.vehicle_glass_windows, key=lambda w: w.item_id
+    )
 
 
 def create_window_shattermap(col_obj: bpy.types.Object, window_xml: Window):
@@ -708,13 +836,17 @@ def create_window_shattermap(col_obj: bpy.types.Object, window_xml: Window):
 
     if shattermap_img is not None:
         window_xml.shattermap = image_to_shattermap(shattermap_img)
-        window_xml.projection_matrix = calculate_shattermap_projection(shattermap_obj, shattermap_img)
+        window_xml.projection_matrix = calculate_shattermap_projection(
+            shattermap_obj, shattermap_img
+        )
 
 
 def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Object):
     window_xml.unk_float_17 = window_obj.vehicle_window_properties.unk_float_17
     window_xml.unk_float_18 = window_obj.vehicle_window_properties.unk_float_18
-    window_xml.cracks_texture_tiling = window_obj.vehicle_window_properties.cracks_texture_tiling
+    window_xml.cracks_texture_tiling = (
+        window_obj.vehicle_window_properties.cracks_texture_tiling
+    )
 
 
 def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image):
@@ -757,7 +889,8 @@ def calculate_shattermap_projection(obj: bpy.types.Object, img: bpy.types.Image)
         matrix.invert()
     except ValueError:
         logger.warning(
-            f"Failed to create shattermap projection matrix for '{obj.name}'. Ensure the object is a flat plane with 4 vertices.")
+            f"Failed to create shattermap projection matrix for '{obj.name}'. Ensure the object is a flat plane with 4 vertices."
+        )
         return Matrix()
 
     return matrix
@@ -792,7 +925,7 @@ def get_window_material(obj: bpy.types.Object) -> Optional[bpy.types.Material]:
 def get_window_geometry_index(drawable_xml: Drawable, window_shader_index: int):
     """Get index of the geometry using the window material."""
     for dmodel_xml in drawable_xml.drawable_models_high:
-        for (index, geometry) in enumerate(dmodel_xml.geometries):
+        for index, geometry in enumerate(dmodel_xml.geometries):
             if geometry.shader_index != window_shader_index:
                 continue
 
@@ -825,7 +958,6 @@ def create_bone_transforms_xml(frag_xml: Fragment):
     bones: list[Bone] = frag_xml.drawable.skeleton.bones
 
     for bone in bones:
-
         transforms = get_bone_transforms(bone)
 
         if bone.parent_index != -1:
@@ -835,8 +967,7 @@ def create_bone_transforms_xml(frag_xml: Fragment):
         # Reshape to 3x4
         transforms_reshaped = reshape_mat_3x4(transforms)
 
-        frag_xml.bones_transforms.append(
-            BoneTransform("Item", transforms_reshaped))
+        frag_xml.bones_transforms.append(BoneTransform("Item", transforms_reshaped))
 
 
 def calculate_child_drawable_matrices(frag_xml: Fragment):
@@ -849,7 +980,8 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
     collisions = lod_xml.archetype.bounds.children
 
     bone_transform_by_tag: dict[str, Matrix] = {
-        b.tag: bone_transforms[i].value for i, b in enumerate(bones)}
+        b.tag: bone_transforms[i].value for i, b in enumerate(bones)
+    }
 
     for i, child in enumerate(lod_xml.children):
         bone_transform = bone_transform_by_tag[child.bone_tag]
@@ -871,21 +1003,17 @@ def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
     lod_xml.position_offset = pos_offset
     lod_xml.unknown_40 = prop_array_to_vector(lod_props.unknown_40)
     lod_xml.unknown_50 = prop_array_to_vector(lod_props.unknown_50)
-    lod_xml.damping_linear_c = prop_array_to_vector(
-        lod_props.damping_linear_c)
-    lod_xml.damping_linear_v = prop_array_to_vector(
-        lod_props.damping_linear_v)
-    lod_xml.damping_linear_v2 = prop_array_to_vector(
-        lod_props.damping_linear_v2)
-    lod_xml.damping_angular_c = prop_array_to_vector(
-        lod_props.damping_angular_c)
-    lod_xml.damping_angular_v = prop_array_to_vector(
-        lod_props.damping_angular_v)
-    lod_xml.damping_angular_v2 = prop_array_to_vector(
-        lod_props.damping_angular_v2)
+    lod_xml.damping_linear_c = prop_array_to_vector(lod_props.damping_linear_c)
+    lod_xml.damping_linear_v = prop_array_to_vector(lod_props.damping_linear_v)
+    lod_xml.damping_linear_v2 = prop_array_to_vector(lod_props.damping_linear_v2)
+    lod_xml.damping_angular_c = prop_array_to_vector(lod_props.damping_angular_c)
+    lod_xml.damping_angular_v = prop_array_to_vector(lod_props.damping_angular_v)
+    lod_xml.damping_angular_v2 = prop_array_to_vector(lod_props.damping_angular_v2)
 
 
-def set_archetype_xml_properties(archetype_props: FragArchetypeProperties, arch_xml: Archetype, frag_name: str):
+def set_archetype_xml_properties(
+    archetype_props: FragArchetypeProperties, arch_xml: Archetype, frag_name: str
+):
     arch_xml.name = frag_name
     arch_xml.unknown_48 = archetype_props.unknown_48
     arch_xml.unknown_4c = archetype_props.unknown_4c
@@ -939,13 +1067,14 @@ def add_frag_glass_window_xml(
     glass_window_bone: bpy.types.Bone,
     materials: list[bpy.types.Material],
     group_xml: PhysicsGroup,
-    glass_windows_xml: GlassWindows
+    glass_windows_xml: GlassWindows,
 ):
     mesh_obj, col_obj = get_frag_glass_window_mesh_and_col(frag_obj, glass_window_bone)
     if mesh_obj is None or col_obj is None:
-        logger.warning(f"Glass window '{group_xml.name}' is missing the mesh and/or collision. Skipping...")
+        logger.warning(
+            f"Glass window '{group_xml.name}' is missing the mesh and/or collision. Skipping..."
+        )
         return
-
 
     group_xml.glass_window_index = len(glass_windows_xml)
 
@@ -954,8 +1083,9 @@ def add_frag_glass_window_xml(
 
     glass_window_xml = GlassWindow()
     glass_window_xml.flags = glass_type_index & 0xFF
-    glass_window_xml.layout = VertexLayoutList(type="GTAV4",
-                                               value=["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1"])
+    glass_window_xml.layout = VertexLayoutList(
+        type="GTAV4", value=["Position", "Normal", "Colour0", "TexCoord0", "TexCoord1"]
+    )
 
     glass_windows_xml.append(glass_window_xml)
 
@@ -964,18 +1094,30 @@ def add_frag_glass_window_xml(
     mesh = mesh_obj_eval.to_mesh()
     mesh_planes = mesh_linked_triangles(mesh)
     if len(mesh_planes) != 2:
-        logger.warning(f"Glass window '{group_xml.name}' requires 2 separate planes in mesh.")
+        logger.warning(
+            f"Glass window '{group_xml.name}' requires 2 separate planes in mesh."
+        )
         if len(mesh_planes) < 2:
             return  # need at least 2 planes to continue
- 
+
     plane_a, plane_b = mesh_planes[:2]
     if len(plane_a) != 2 or len(plane_b) != 2:
-        logger.warning(f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each.")
+        logger.warning(
+            f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each."
+        )
         if len(plane_a) < 2 or len(plane_b) < 2:
-            return # need at least 2 tris in each plane to continue
+            return  # need at least 2 tris in each plane to continue
 
-    normals = (plane_a[0].normal, plane_a[1].normal, plane_b[0].normal, plane_b[1].normal)
-    if any(a.cross(b).length_squared > float_info.epsilon for a, b in combinations(normals, 2)):
+    normals = (
+        plane_a[0].normal,
+        plane_a[1].normal,
+        plane_b[0].normal,
+        plane_b[1].normal,
+    )
+    if any(
+        a.cross(b).length_squared > float_info.epsilon
+        for a, b in combinations(normals, 2)
+    ):
         logger.warning(f"Glass window '{group_xml.name}' mesh planes are not parallel.")
 
     # calculate UV min/max (unused by the game)
@@ -996,15 +1138,26 @@ def add_frag_glass_window_xml(
     # calculate projection matrix
     #   get plane vertices sorted by normalized UV distance to (0, 0)
     plane_loops = {loop for tri in plane_a for loop in tri.loops}
-    plane_loops = sorted(plane_loops, key=lambda loop: np.linalg.norm((uvs[loop] - uv_min) / (uv_max - uv_min)))
-    plane_verts_and_uvs = [(mesh.loops[loop].vertex_index, uvs[loop]) for loop in plane_loops]
+    plane_loops = sorted(
+        plane_loops,
+        key=lambda loop: np.linalg.norm((uvs[loop] - uv_min) / (uv_max - uv_min)),
+    )
+    plane_verts_and_uvs = [
+        (mesh.loops[loop].vertex_index, uvs[loop]) for loop in plane_loops
+    ]
 
     #   get vertices needed to build the projection (top-left, top-right and bottom-left)
     v0_idx, v0_uv = plane_verts_and_uvs[0]  # vertex at UV min
-    v1_idx = next(vert_idx for vert_idx, uv in plane_verts_and_uvs
-                  if abs(uv[0] - v0_uv[0]) > abs(uv[1] - v0_uv[1]))  # vertex to the right of v0
-    v2_idx = next(vert_idx for vert_idx, uv in plane_verts_and_uvs
-                  if abs(uv[1] - v0_uv[1]) > abs(uv[0] - v0_uv[0]))  # vertex below v0
+    v1_idx = next(
+        vert_idx
+        for vert_idx, uv in plane_verts_and_uvs
+        if abs(uv[0] - v0_uv[0]) > abs(uv[1] - v0_uv[1])
+    )  # vertex to the right of v0
+    v2_idx = next(
+        vert_idx
+        for vert_idx, uv in plane_verts_and_uvs
+        if abs(uv[1] - v0_uv[1]) > abs(uv[0] - v0_uv[0])
+    )  # vertex below v0
     v0 = mesh.vertices[v0_idx].co
     v1 = mesh.vertices[v1_idx].co
     v2 = mesh.vertices[v2_idx].co
@@ -1020,7 +1173,9 @@ def add_frag_glass_window_xml(
     # calculate shader index
     material = mesh.materials[0] if len(mesh.materials) > 0 else None
     if material is not None:
-        shader_index = next((i for i, mat in enumerate(materials) if mat == material.original), -1)
+        shader_index = next(
+            (i for i, mat in enumerate(materials) if mat == material.original), -1
+        )
     else:
         shader_index = -1
 
@@ -1032,8 +1187,9 @@ def add_frag_glass_window_xml(
     center_a_world = world_transform @ center_a
     normal_a_world = normals[0].copy()
     normal_a_world.rotate(world_transform)
-    bounds_offset_front, bounds_offset_back = calc_frag_glass_window_bounds_offset(col_obj,
-                                                                                   center_a_world, normal_a_world)
+    bounds_offset_front, bounds_offset_back = calc_frag_glass_window_bounds_offset(
+        col_obj, center_a_world, normal_a_world
+    )
 
     mesh_obj_eval.to_mesh_clear()
 
@@ -1048,8 +1204,7 @@ def add_frag_glass_window_xml(
 
 
 def get_frag_glass_window_mesh_and_col(
-    frag_obj: bpy.types.Object,
-    glass_window_bone: bpy.types.Bone
+    frag_obj: bpy.types.Object, glass_window_bone: bpy.types.Bone
 ) -> Tuple[Optional[bpy.types.Object], Optional[bpy.types.Object]]:
     """Finds the mesh and collision object for the glass window bone.
     Returns tuple (mesh_obj, col_obj)
@@ -1057,7 +1212,10 @@ def get_frag_glass_window_mesh_and_col(
     mesh_obj = None
     col_obj = None
     for obj in frag_obj.children_recursive:
-        if obj.sollum_type != SollumType.DRAWABLE_MODEL and obj.sollum_type not in BOUND_TYPES:
+        if (
+            obj.sollum_type != SollumType.DRAWABLE_MODEL
+            and obj.sollum_type not in BOUND_TYPES
+        ):
             continue
 
         parent_bone = get_child_of_bone(obj)
@@ -1076,9 +1234,7 @@ def get_frag_glass_window_mesh_and_col(
 
 
 def calc_frag_glass_window_bounds_offset(
-    col_obj: bpy.types.Object,
-    point: Vector,
-    point_normal: Vector
+    col_obj: bpy.types.Object, point: Vector, point_normal: Vector
 ) -> Tuple[float, float]:
     """Calculates the front and back offset from ``point`` to ``col_obj`` bound box.
     ``point`` and ``point_normal`` must be in world space.
@@ -1086,6 +1242,7 @@ def calc_frag_glass_window_bounds_offset(
     Returns tuple (offset_front, offset_back).
     """
     from mathutils.geometry import distance_point_to_plane, normal
+
     def _get_plane(a: Vector, b: Vector, c: Vector, d: Vector):
         plane_no = normal((a, b, c))
         plane_co = a
@@ -1103,14 +1260,17 @@ def calc_frag_glass_window_bounds_offset(
     #  [6] = (max.x, max.y, max.z)
     #  [7] = (max.x, max.y, min.z)
     plane_points = (
-        (bbs[4], bbs[3], bbs[0], bbs[7]), # bottom
-        (bbs[1], bbs[2], bbs[5], bbs[7]), # top
-        (bbs[2], bbs[1], bbs[0], bbs[3]), # left
-        (bbs[4], bbs[5], bbs[6], bbs[7]), # right
-        (bbs[0], bbs[1], bbs[4], bbs[5]), # front
-        (bbs[2], bbs[3], bbs[6], bbs[7]), # back
+        (bbs[4], bbs[3], bbs[0], bbs[7]),  # bottom
+        (bbs[1], bbs[2], bbs[5], bbs[7]),  # top
+        (bbs[2], bbs[1], bbs[0], bbs[3]),  # left
+        (bbs[4], bbs[5], bbs[6], bbs[7]),  # right
+        (bbs[0], bbs[1], bbs[4], bbs[5]),  # front
+        (bbs[2], bbs[3], bbs[6], bbs[7]),  # back
     )
-    planes = [_get_plane(Vector(a), Vector(b), Vector(c), Vector(d)) for a, b, c, d in plane_points]
+    planes = [
+        _get_plane(Vector(a), Vector(b), Vector(c), Vector(d))
+        for a, b, c, d in plane_points
+    ]
 
     offset_front = 0.0
     offset_front_dot = 0.0
@@ -1118,10 +1278,14 @@ def calc_frag_glass_window_bounds_offset(
     offset_back_dot = 0.0
     for plane_co, plane_no in planes:
         d = point_normal.dot(plane_no)
-        if d > offset_front_dot:  # positive dot product is the plane with same normal as the point (in front)
+        if (
+            d > offset_front_dot
+        ):  # positive dot product is the plane with same normal as the point (in front)
             offset_front_dot = d
             offset_front = distance_point_to_plane(point, plane_co, plane_no)
-        elif d < offset_back_dot:  # negative dot product is the plane with opposite normal as the point (behind)
+        elif (
+            d < offset_back_dot
+        ):  # negative dot product is the plane with opposite normal as the point (behind)
             offset_back_dot = d
             offset_back = distance_point_to_plane(point, plane_co, plane_no)
 

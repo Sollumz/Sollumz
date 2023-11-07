@@ -2,8 +2,7 @@ from itertools import groupby
 
 
 def longest(lst, string):
-    lst = [[*g]
-           for k, g in groupby(enumerate(lst), key=lambda x: x[1]) if k == string]
+    lst = [[*g] for k, g in groupby(enumerate(lst), key=lambda x: x[1]) if k == string]
     if len(lst) > 0:
         group = max(lst, key=len)
         return group[0][0], 1 + group[-1][0]
