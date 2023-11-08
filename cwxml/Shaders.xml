@@ -423,6 +423,10 @@
    </Item>
   </Layout>
   <Parameters>
+    <Item name="DiffuseSampler" type="Texture" uv="0" />
+    <Item name="DirtSampler" type="Texture" uv="1" />
+    <Item name="BumpSampler" type="Texture" uv="0" />
+    <Item name="SpecSampler" type="Texture" uv="0" />
     <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
     <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
     <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
@@ -3230,7 +3234,7 @@
    <Item name="specularFresnel" type="Vector" x="0.97" y="0" z="0" w="0" />
    <Item name="dirtColor" type="Vector" x="0.231372" y="0.223529" z="0.203921" w="0" />
    <Item name="dirtLevelMod" type="Vector" x="1" y="1" z="1" w="1" />
-   <Item name="3640659359" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="Track2AnimUV" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="matDiffuseColor" type="Vector" x="2" y="5" z="5" w="0" />
   </Parameters>
  </Item>
@@ -4602,7 +4606,7 @@
    <Item name="specularFresnel" type="Vector" x="0.97" y="0" z="0" w="0" />
    <Item name="dirtColor" type="Vector" x="0.231372" y="0.223529" z="0.203921" w="0" />
    <Item name="dirtLevelMod" type="Vector" x="1" y="1" z="1" w="1" />
-   <Item name="3980342766" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="TrackAmmoAnimUV" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="matDiffuseColor" type="Vector" x="2" y="5" z="5" w="0" />
   </Parameters>
  </Item>
@@ -5264,7 +5268,7 @@
    <Item name="gLodFadePower" type="Vector" x="3" y="3" z="0" w="0" />
    <Item name="gLodFadeRange" type="Vector" x="0.25" y="0.05" z="0" w="0" />
    <Item name="gLodFadeStartDist" type="Vector" x="-1" y="30" z="0" w="0" />
-   <Item name="2464666374" type="Vector" x="0" y="0" z="1" w="0" />
+   <Item name="gLodFadeInstRange" type="Vector" x="0" y="0" z="1" w="0" />
    <Item name="gAlphaToCoverageScale" type="Vector" x="1.3" y="0" z="0" w="0" />
    <Item name="gAlphaTest" type="Vector" x="0.25" y="0" z="0" w="0" />
    <Item name="gWindBendScaleVar" type="Vector" x="0" y="0" z="0" w="0" />
@@ -6386,7 +6390,7 @@
    <Item name="specularFresnel" type="Vector" x="0.97" y="0" z="0" w="0" />
    <Item name="dirtColor" type="Vector" x="0.231372" y="0.223529" z="0.203921" w="0" />
    <Item name="dirtLevelMod" type="Vector" x="1" y="1" z="1" w="1" />
-   <Item name="3640659359" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="Track2AnimUV" type="Vector" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="Vector" x="16" y="0" z="0" w="0" />
    <Item name="matDiffuseColor" type="Vector" x="2" y="5" z="5" w="0" />
   </Parameters>
@@ -8150,7 +8154,7 @@
    <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
    <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
    <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
-   <Item name="1025094733" type="Vector" x="0.8" y="0" z="0" w="0" />
+   <Item name="diffuse3SpecMod" type="Vector" x="0.8" y="0" z="0" w="0" />
    <Item name="reflectivePower" type="Vector" x="0.45" y="0" z="0" w="0" />
    <Item name="specular2Color_DirLerp" type="Vector" x="0" y="0.5" z="0" w="0" />
    <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
