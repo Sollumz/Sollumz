@@ -8,7 +8,14 @@ import re
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion
 from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel
+from .sollumz_properties import (
+    SollumType,
+    SOLLUMZ_UI_NAMES,
+    BOUND_TYPES,
+    TimeFlags,
+    ArchetypeType,
+    LODLevel,
+)
 from .sollumz_preferences import get_export_settings
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
@@ -30,7 +37,14 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
-from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
+from .tools.blenderhelper import (
+    add_child_of_bone_constraint,
+    get_child_of_pose_bone,
+    get_terrain_texture_brush,
+    remove_number_suffix,
+    create_blender_object,
+    join_objects,
+)
 from .tools.ytyphelper import ytyp_from_objects
 from .ybn.properties import BoundProperties
 from .ybn.properties import BoundFlags
@@ -57,6 +71,7 @@ class TimedOperator:
 
 class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
     """Imports xml files exported by codewalker"""
+
     bl_idname = "sollumz.import"
     bl_label = "Import Codewalker XML"
     bl_options = {"UNDO"}
@@ -64,7 +79,7 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
     files: bpy.props.CollectionProperty(
         name="File Path",
         type=bpy.types.OperatorFileListElement,
-        options={"HIDDEN", "SKIP_SAVE"}
+        options={"HIDDEN", "SKIP_SAVE"},
     )
 
     filter_glob: bpy.props.StringProperty(
@@ -88,7 +103,6 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
             filepath = os.path.join(directory, file.name)
 
             try:
-
                 if YDR.file_extension in filepath:
                     import_ydr(filepath)
                 elif YDD.file_extension in filepath:
@@ -108,19 +122,21 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
 
                 self.report({"INFO"}, f"Successfully imported '{filepath}'")
             except:
-                self.report({"ERROR"},
-                            f"Error importing: {filepath} \n {traceback.format_exc()}")
+                self.report(
+                    {"ERROR"},
+                    f"Error importing: {filepath} \n {traceback.format_exc()}",
+                )
 
                 return {"CANCELLED"}
 
-        self.report(
-            {"INFO"}, f"Imported in {self.time_elapsed} seconds")
+        self.report({"INFO"}, f"Imported in {self.time_elapsed} seconds")
 
         return {"FINISHED"}
 
 
 class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
     """Exports codewalker xml files"""
+
     bl_idname = "sollumz.export"
     bl_label = "Export Codewalker XML"
 
@@ -134,13 +150,13 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         name="Output directory",
         description="Select export output directory",
         subtype="DIR_PATH",
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
 
     direct_export: bpy.props.BoolProperty(
         name="Direct Export",
         description="Export directly to the output directory without opening the directory selection dialog.",
-        options={"HIDDEN", "SKIP_SAVE"}
+        options={"HIDDEN", "SKIP_SAVE"},
     )
 
     def draw(self, context):
@@ -160,11 +176,9 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
 
         if not objs:
             if export_settings.limit_to_selected:
-                self.report(
-                    {"INFO"}, "No Sollumz objects selected for export!")
+                self.report({"INFO"}, "No Sollumz objects selected for export!")
             else:
-                self.report(
-                    {"INFO"}, "No Sollumz objects in the scene to export!")
+                self.report({"INFO"}, "No Sollumz objects in the scene to export!")
 
             return {"CANCELLED"}
 
@@ -196,21 +210,22 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
                 if success:
                     self.report({"INFO"}, f"Successfully exported '{filepath}'")
             except:
-                self.report({"ERROR"},
-                            f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
+                self.report(
+                    {"ERROR"},
+                    f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}",
+                )
 
                 return {"CANCELLED"}
 
             if export_settings.export_with_ytyp:
                 ytyp = ytyp_from_objects(objs)
-                filepath = os.path.join(
-                    self.directory, f"{ytyp.name}.ytyp.xml")
+                filepath = os.path.join(self.directory, f"{ytyp.name}.ytyp.xml")
                 ytyp.write_xml(filepath)
                 self.report(
-                    {"INFO"}, f"Successfully exported '{filepath}' (auto-generated)")
+                    {"INFO"}, f"Successfully exported '{filepath}' (auto-generated)"
+                )
 
-        self.report(
-            {"INFO"}, f"Exported in {self.time_elapsed} seconds")
+        self.report({"INFO"}, f"Exported in {self.time_elapsed} seconds")
 
         return {"FINISHED"}
 
@@ -246,16 +261,13 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
 
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint All Vertices Of Selected Object"""
+
     bl_idname = "sollumz.paint_vertices"
     bl_label = "Paint"
     bl_action = "Paint Vertices"
 
     color: bpy.props.FloatVectorProperty(
-        subtype="COLOR_GAMMA",
-        default=(1.0, 1.0, 1.0, 1.0),
-        min=0,
-        max=1,
-        size=4
+        subtype="COLOR_GAMMA", default=(1.0, 1.0, 1.0, 1.0), min=0, max=1, size=4
     )
 
     def paint_map(self, color_attr, color):
@@ -266,7 +278,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def paint_mesh(self, mesh, color):
         if not mesh.color_attributes:
-            mesh.color_attributes.new("Color", 'BYTE_COLOR', 'CORNER')
+            mesh.color_attributes.new("Color", "BYTE_COLOR", "CORNER")
         self.paint_map(mesh.attributes.active_color, color)
 
     def run(self, context):
@@ -276,11 +288,11 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
             for obj in objs:
                 if obj.sollum_type == SollumType.DRAWABLE_MODEL:
                     self.paint_mesh(obj.data, self.color)
-                    self.messages.append(
-                        f"{obj.name} was successfully painted.")
+                    self.messages.append(f"{obj.name} was successfully painted.")
                 else:
                     self.messages.append(
-                        f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]} type.")
+                        f"{obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]} type."
+                    )
         else:
             self.message("No objects selected to paint.")
             return False
@@ -290,6 +302,7 @@ class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 1 On Selected Object"""
+
     bl_idname = "sollumz.paint_tex1"
     bl_label = "Paint Texture 1"
 
@@ -300,6 +313,7 @@ class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_paint_terrain_tex2(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 2 On Selected Object"""
+
     bl_idname = "sollumz.paint_tex2"
     bl_label = "Paint Texture 2"
 
@@ -310,6 +324,7 @@ class SOLLUMZ_OT_paint_terrain_tex2(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_paint_terrain_tex3(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 3 On Selected Object"""
+
     bl_idname = "sollumz.paint_tex3"
     bl_label = "Paint Texture 3"
 
@@ -320,6 +335,7 @@ class SOLLUMZ_OT_paint_terrain_tex3(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_paint_terrain_tex4(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Texture 4 On Selected Object"""
+
     bl_idname = "sollumz.paint_tex4"
     bl_label = "Paint Texture 4"
 
@@ -330,6 +346,7 @@ class SOLLUMZ_OT_paint_terrain_tex4(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
     """Paint Lookup Sampler Alpha On Selected Object"""
+
     bl_idname = "sollumz.paint_a"
     bl_label = "Paint Alpha"
 
@@ -340,6 +357,7 @@ class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SelectTimeFlagsRange(SOLLUMZ_OT_base):
     """Select range of time flags"""
+
     bl_label = "Select"
 
     def get_flags(self, context):
@@ -369,6 +387,7 @@ class SelectTimeFlagsRange(SOLLUMZ_OT_base):
 
 class ClearTimeFlags(SOLLUMZ_OT_base):
     """Clear all time flags"""
+
     bl_label = "Clear Selection"
 
     def get_flags(self, context):
@@ -385,17 +404,22 @@ class ClearTimeFlags(SOLLUMZ_OT_base):
 
 
 def sollumz_menu_func_import(self, context):
-    self.layout.operator(SOLLUMZ_OT_import.bl_idname,
-                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
+    self.layout.operator(
+        SOLLUMZ_OT_import.bl_idname,
+        text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})",
+    )
 
 
 def sollumz_menu_func_export(self, context):
-    self.layout.operator(SOLLUMZ_OT_export.bl_idname,
-                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
+    self.layout.operator(
+        SOLLUMZ_OT_export.bl_idname,
+        text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})",
+    )
 
 
 class SOLLUMZ_OT_debug_hierarchy(bpy.types.Operator):
     """Debug: Fix incorrect Sollum Type after update. Must set correct type for top-level object first."""
+
     bl_idname = "sollumz.debug_hierarchy"
     bl_label = "Fix Hierarchy"
     bl_options = {"UNDO"}
@@ -405,8 +429,7 @@ class SOLLUMZ_OT_debug_hierarchy(bpy.types.Operator):
         sollum_type = context.scene.debug_sollum_type
         for obj in context.selected_objects:
             if len(obj.children) < 1:
-                self.report(
-                    {"INFO"}, f"{obj.name} has no children! Skipping...")
+                self.report({"INFO"}, f"{obj.name} has no children! Skipping...")
                 continue
 
             obj.sollum_type = sollum_type
@@ -482,12 +505,19 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
         only_selected = context.scene.debug_lights_only_selected
 
         objects = context.selected_objects if only_selected else context.scene.objects
-        light_objs = [obj for obj in objects if obj.type ==
-                      "LIGHT" and obj.sollum_type == SollumType.LIGHT]
+        light_objs = [
+            obj
+            for obj in objects
+            if obj.type == "LIGHT" and obj.sollum_type == SollumType.LIGHT
+        ]
 
         if not light_objs:
             self.report(
-                {"INFO"}, "No Sollumz lights selected" if only_selected else "No Sollumz lights in the scene.")
+                {"INFO"},
+                "No Sollumz lights selected"
+                if only_selected
+                else "No Sollumz lights in the scene.",
+            )
             return {"CANCELLED"}
 
         lights: list[bpy.types.Light] = []
@@ -503,33 +533,34 @@ class SOLLUMZ_OT_debug_fix_light_intensity(bpy.types.Operator):
 
 class SOLLUMZ_OT_copy_location(bpy.types.Operator):
     """Copy the location of an object to the clipboard"""
+
     bl_idname = "wm.sollumz_copy_location"
     bl_label = ""
     location: bpy.props.StringProperty()
 
     def execute(self, context):
         bpy.context.window_manager.clipboard = self.location
-        self.report(
-            {'INFO'}, "Location copied to clipboard: {}".format(self.location))
-        return {'FINISHED'}
+        self.report({"INFO"}, "Location copied to clipboard: {}".format(self.location))
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_copy_rotation(bpy.types.Operator):
     """Copy the quaternion rotation of an object to the clipboard"""
+
     bl_idname = "wm.sollumz_copy_rotation"
     bl_label = ""
     rotation: bpy.props.StringProperty()
 
     def execute(self, context):
-        rotation = self.rotation.strip('[]')
+        rotation = self.rotation.strip("[]")
         bpy.context.window_manager.clipboard = rotation
-        self.report(
-            {'INFO'}, "Rotation copied to clipboard: {}".format(rotation))
-        return {'FINISHED'}
+        self.report({"INFO"}, "Rotation copied to clipboard: {}".format(rotation))
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_paste_location(bpy.types.Operator):
     """Paste the location of an object from the clipboard"""
+
     bl_idname = "wm.sollumz_paste_location"
     bl_label = ""
 
@@ -549,19 +580,20 @@ class SOLLUMZ_OT_paste_location(bpy.types.Operator):
             selected_object = bpy.context.object
 
             selected_object.location = location
-            self.report({'INFO'}, "Location set successfully.")
+            self.report({"INFO"}, "Location set successfully.")
         else:
-            self.report({'ERROR'}, "Invalid location string.")
+            self.report({"ERROR"}, "Invalid location string.")
 
-        return {'FINISHED'}
-    
+        return {"FINISHED"}
+
+
 class SOLLUMZ_OT_paste_rotation(bpy.types.Operator):
     """Paste the rotation (as quaternion) of an object from the clipboard and apply it"""
+
     bl_idname = "wm.sollumz_paste_rotation"
     bl_label = "Paste Rotation"
 
     def execute(self, context):
-
         rotation_string = bpy.context.window_manager.clipboard
 
         rotation_quaternion = parse_rotation_string(rotation_string)
@@ -577,6 +609,7 @@ class SOLLUMZ_OT_paste_rotation(bpy.types.Operator):
         else:
             self.report({"ERROR"}, "Invalid rotation quaternion string.")
         return {"FINISHED"}
+
 
 def parse_rotation_string(rotation_string):
     values = rotation_string.split(",")
@@ -617,13 +650,17 @@ class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):
 
 class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
     """Convert old drawable model to use new LOD system"""
+
     bl_idname = "sollumz.migratedrawable"
     bl_label = "Migrate Drawable Model(s)"
     bl_options = {"UNDO"}
 
     def execute(self, context):
         selected_models = [
-            obj for obj in context.selected_objects if obj.sollum_type == SollumType.DRAWABLE_MODEL]
+            obj
+            for obj in context.selected_objects
+            if obj.sollum_type == SollumType.DRAWABLE_MODEL
+        ]
 
         if not selected_models:
             self.report({"INFO"}, "No drawable models selected!")
@@ -631,12 +668,10 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
 
         parent = selected_models[0].parent
 
-        models_by_lod: dict[LODLevel,
-                            list[bpy.types.Object]] = defaultdict(list)
+        models_by_lod: dict[LODLevel, list[bpy.types.Object]] = defaultdict(list)
 
         for obj in selected_models:
-            models_by_lod[obj.drawable_model_properties.sollum_lod].extend(
-                obj.children)
+            models_by_lod[obj.drawable_model_properties.sollum_lod].extend(obj.children)
             bpy.data.objects.remove(obj)
 
         model_obj = create_blender_object(SollumType.DRAWABLE_MODEL)
@@ -644,7 +679,6 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
         old_mesh = model_obj.data
 
         for lod_level, geometries in models_by_lod.items():
-
             if len(geometries) > 1:
                 joined_obj = join_objects(geometries)
             else:
@@ -656,7 +690,7 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
             context.view_layer.objects.active = joined_obj
             model_obj.select_set(True)
 
-            bpy.ops.object.make_links_data(type='MODIFIERS')
+            bpy.ops.object.make_links_data(type="MODIFIERS")
             bpy.data.objects.remove(joined_obj)
 
         bpy.data.meshes.remove(old_mesh)
@@ -664,7 +698,12 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
         model_obj.parent = parent
 
         # Set highest lod level
-        for lod_level in [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]:
+        for lod_level in [
+            LODLevel.HIGH,
+            LODLevel.MEDIUM,
+            LODLevel.LOW,
+            LODLevel.VERYLOW,
+        ]:
             if model_obj.sollumz_lods.get_lod(lod_level) != None:
                 model_obj.sollumz_lods.set_active_lod(lod_level)
                 break
@@ -674,13 +713,17 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
 
 class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
     """Convert old bound geometries to new hiearchy using shape keys for damaged layers"""
+
     bl_idname = "sollumz.migrateboundgeoms"
     bl_label = "Migrate Bound Geometry(s)"
     bl_options = {"UNDO"}
 
     def execute(self, context):
         selected = [
-            obj for obj in context.selected_objects if obj.sollum_type == SollumType.BOUND_GEOMETRY]
+            obj
+            for obj in context.selected_objects
+            if obj.sollum_type == SollumType.BOUND_GEOMETRY
+        ]
 
         if not selected:
             self.report({"INFO"}, "No bound geometries selected!")
@@ -722,7 +765,9 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
 
         return {"FINISHED"}
 
-    def set_bound_geometry_properties(self, old_obj: bpy.types.Object, new_obj: bpy.types.Object):
+    def set_bound_geometry_properties(
+        self, old_obj: bpy.types.Object, new_obj: bpy.types.Object
+    ):
         for prop_name in BoundProperties.__annotations__.keys():
             value = getattr(old_obj.bound_properties, prop_name)
             setattr(new_obj.bound_properties, prop_name, value)
@@ -739,7 +784,9 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
         set_flags("composite_flags1")
         set_flags("composite_flags2")
 
-    def set_shape_keys(self, bound_obj: bpy.types.Object, damaged_obj: bpy.types.Object):
+    def set_shape_keys(
+        self, bound_obj: bpy.types.Object, damaged_obj: bpy.types.Object
+    ):
         bound_obj.shape_key_add(name="Basis")
         deformed_key = bound_obj.shape_key_add(name="Deformed")
 
@@ -749,6 +796,7 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
 
 class SOLLUMZ_OT_debug_replace_armature_constraints(bpy.types.Operator):
     """Replace the Armature constraints in all selected objects for Child Of constraints (for migrating pre version 0.3 projects)"""
+
     bl_idname = "sollumz.replace_armature_constraints"
     bl_label = "Replace Armature Constraints"
     bl_options = {"REGISTER", "UNDO"}
@@ -776,7 +824,9 @@ class SOLLUMZ_OT_debug_replace_armature_constraints(bpy.types.Operator):
         return {"FINISHED"}
 
     @staticmethod
-    def get_armature_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ArmatureConstraint]:
+    def get_armature_constraint(
+        obj: bpy.types.Object,
+    ) -> Optional[bpy.types.ArmatureConstraint]:
         for constraint in obj.constraints:
             if constraint.type == "ARMATURE":
                 return constraint
@@ -796,6 +846,7 @@ class SOLLUMZ_OT_debug_replace_armature_constraints(bpy.types.Operator):
 
 class SOLLUMZ_OT_set_sollum_type(bpy.types.Operator):
     """Set the sollum type of all selected objects"""
+
     bl_idname = "sollumz.setsollumtype"
     bl_label = "Set Sollum Type"
 
@@ -806,13 +857,15 @@ class SOLLUMZ_OT_set_sollum_type(bpy.types.Operator):
             obj.sollum_type = sollum_type
 
         self.report(
-            {"INFO"}, f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sollum_type]}.")
+            {"INFO"}, f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sollum_type]}."
+        )
 
         return {"FINISHED"}
 
 
 class SearchEnumHelper:
     """Helper class for searching and setting enums"""
+
     bl_label = "Search"
 
     def get_data_block(self, context):
@@ -826,13 +879,13 @@ class SearchEnumHelper:
 
         setattr(data_block, prop_name, enum_value)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
     def invoke(self, context, event):
         wm = context.window_manager
         wm.invoke_search_popup(self)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 def register():

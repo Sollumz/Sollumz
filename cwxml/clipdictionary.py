@@ -9,7 +9,7 @@ from .element import (
     TextProperty,
     ValueProperty,
     VectorProperty,
-    Vector4Property
+    Vector4Property,
 )
 from xml.etree import ElementTree as ET
 from inspect import isclass
@@ -17,7 +17,6 @@ from math import sqrt
 
 
 class YCD:
-
     file_extension = ".ycd.xml"
 
     @staticmethod
@@ -45,7 +44,11 @@ class ItemTypeList(ListProperty, AbstractClass):
         new = cls()
         type_map = {}
         for key, item_class in vars(cls).items():
-            if isclass(item_class) and issubclass(item_class, ItemTypeList.Item) and key == item_class.__name__:
+            if (
+                isclass(item_class)
+                and issubclass(item_class, ItemTypeList.Item)
+                and key == item_class.__name__
+            ):
                 type_map[item_class.type] = item_class
         for child in element:
             type_elem = child.find("Type")
@@ -125,7 +128,7 @@ class AttributesList(ItemTypeList):
 
 
 class ValuesBuffer(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self):
         super().__init__(tag_name="Values", value=[])
@@ -160,7 +163,7 @@ class ValuesBuffer(ElementProperty):
 
 
 class FramesBuffer(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self):
         super().__init__(tag_name="Frames", value=[])
@@ -276,7 +279,9 @@ class ChannelsList(ItemTypeList):
             self.type = "IndirectQuantizeFloat"
 
         def get_value(self, frame_id, channel_values):
-            return self.values[(self.frames[frame_id % len(self.frames)]) % len(self.values)]
+            return self.values[
+                (self.frames[frame_id % len(self.frames)]) % len(self.values)
+            ]
 
     class LinearFloat(QuantizeFloat):
         type = "LinearFloat"
@@ -297,7 +302,8 @@ class ChannelsList(ItemTypeList):
 
         def get_value(self, frame_id, channel_values):
             vec_len = Vector(
-                (channel_values[0], channel_values[1], channel_values[2])).length
+                (channel_values[0], channel_values[1], channel_values[2])
+            ).length
 
             return sqrt(max(1.0 - vec_len * vec_len, 0))
 
@@ -339,9 +345,7 @@ class Animation(ElementTree):
         tag_name = "SequenceData"
 
     class SequenceList(ListProperty):
-
         class Sequence(ElementTree):
-
             tag_name = "Item"
 
             def __init__(self):
@@ -406,7 +410,6 @@ class Clip(ItemTypeList.Item, AbstractClass):
 
 class ClipAnimationsList(ListProperty):
     class ClipAnimation(ElementTree):
-
         tag_name = "Item"
 
         def __init__(self):

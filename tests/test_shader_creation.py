@@ -1,6 +1,10 @@
 import pytest
 import bpy
-from .test_fixtures import BLENDER_LANGUAGES, SOLLUMZ_SHADERS, SOLLUMZ_COLLISION_MATERIALS
+from .test_fixtures import (
+    BLENDER_LANGUAGES,
+    SOLLUMZ_SHADERS,
+    SOLLUMZ_COLLISION_MATERIALS,
+)
 from ..ydr.shader_materials import create_shader
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..ynv.ynvimport import get_material as ynv_get_material
@@ -15,7 +19,9 @@ def use_every_language(request):
         bpy.data.materials.remove(mat)
 
     bpy.context.preferences.view.language = request.param
-    _ = bpy.context.preferences.view.language  # need to read it after changing otherwise Blender crashes (Windows fatal exception: access violation) wtf??
+    _ = (
+        bpy.context.preferences.view.language
+    )  # need to read it after changing otherwise Blender crashes (Windows fatal exception: access violation) wtf??
     return request.param
 
 
@@ -25,7 +31,9 @@ class TestAllLanguages:
         mat = create_shader(shader)
         assert mat is not None
 
-    @pytest.mark.parametrize("material_index", list(range(len(SOLLUMZ_COLLISION_MATERIALS))))
+    @pytest.mark.parametrize(
+        "material_index", list(range(len(SOLLUMZ_COLLISION_MATERIALS)))
+    )
     def test_create_collision_material(self, material_index, use_every_language):
         mat = create_collision_material_from_index(material_index)
         assert mat is not None
@@ -34,7 +42,9 @@ class TestAllLanguages:
         mat = ynv_get_material("0 204 0 255 161 107")
         assert mat is not None
 
-    @pytest.mark.parametrize("sollum_type", (SollumType.YMAP_MODEL_OCCLUDER, SollumType.YMAP_BOX_OCCLUDER))
+    @pytest.mark.parametrize(
+        "sollum_type", (SollumType.YMAP_MODEL_OCCLUDER, SollumType.YMAP_BOX_OCCLUDER)
+    )
     def test_create_occluder_material(self, sollum_type, use_every_language):
         mat = add_occluder_material(sollum_type)
         assert mat is not None
@@ -50,4 +60,3 @@ class TestAllLanguages:
         bsdf, mo = find_bsdf_and_material_output(mat)
         assert bsdf is not None
         assert mo is not None
-

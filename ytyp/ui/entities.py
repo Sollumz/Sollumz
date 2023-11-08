@@ -1,6 +1,11 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
-from ...sollumz_ui import BasicListHelper, FlagsPanel, FilterListHelper, draw_list_with_add_remove
+from ...sollumz_ui import (
+    BasicListHelper,
+    FlagsPanel,
+    FilterListHelper,
+    draw_list_with_add_remove,
+)
 from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import EntityProperties, MloEntityProperties
 from ..utils import get_selected_archetype, get_selected_entity
@@ -26,8 +31,12 @@ class SOLLUMZ_UL_ENTITIES_LIST(BasicListHelper, FilterListHelper, bpy.types.UILi
         elif filter_type == "portal":
             return scene.sollumz_entity_filter_portal == item.attached_portal_id
         elif filter_type == "entity_set":
-            in_entity_set = scene.sollumz_entity_filter_entity_set == item.attached_entity_set_id
-            in_room = scene.sollumz_entity_filter_entity_set_room == item.attached_room_id
+            in_entity_set = (
+                scene.sollumz_entity_filter_entity_set == item.attached_entity_set_id
+            )
+            in_room = (
+                scene.sollumz_entity_filter_entity_set_room == item.attached_room_id
+            )
 
             if scene.sollumz_do_entity_filter_entity_set_room:
                 return in_entity_set and in_room
@@ -60,8 +69,17 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
-                                                SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createmloentity",
+            "sollumz.deletemloentity",
+            SOLLUMZ_UL_ENTITIES_LIST.bl_idname,
+            "",
+            selected_archetype,
+            "entities",
+            selected_archetype,
+            "entity_index",
+        )
 
         filter_type = context.scene.sollumz_entity_filter_type
 
@@ -84,16 +102,14 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
             row.separator()
             col = row.column()
             col.enabled = context.scene.sollumz_do_entity_filter_entity_set_room
-            col.prop(context.scene,
-                     "sollumz_entity_filter_entity_set_room", text="")
+            col.prop(context.scene, "sollumz_entity_filter_entity_set_room", text="")
             list_col.separator()
 
         list_col.separator(factor=2)
         row = list_col.row(align=True)
         row.operator("sollumz.addobjasentity", icon="OUTLINER_OB_MESH")
 
-        list_col.operator("sollumz.setobjentitytransforms",
-                          icon="OUTLINER_DATA_EMPTY")
+        list_col.operator("sollumz.setobjentitytransforms", icon="OUTLINER_DATA_EMPTY")
 
         layout.separator()
 
@@ -169,7 +185,9 @@ class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(bpy.types.UIList, ExtensionsListHelper):
     bl_idname = "SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST"
 
 
-class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
+class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(
+    TabPanel, ExtensionsPanelHelper, bpy.types.Panel
+):
     bl_label = "Entity Extensions"
     bl_idname = "SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL"
     bl_space_type = "VIEW_3D"

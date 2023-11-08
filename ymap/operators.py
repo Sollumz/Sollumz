@@ -9,6 +9,7 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 class SOLLUMZ_OT_create_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz YMAP object"""
+
     bl_idname = "sollumz.createymap"
     bl_label = f"Create YMAP"
     bl_description = "Create a YMAP"
@@ -22,6 +23,7 @@ class SOLLUMZ_OT_create_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Entities' group object"""
+
     bl_idname = "sollumz.create_entity_group"
     bl_label = f"Entities"
     bl_description = "Create 'Entities' group.\n\nOnly 1 per YMAP maximum.\nYou can't create 'Entities' group if the current YMAP already includes occlusions"
@@ -34,18 +36,27 @@ class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
         for child in aobj.children:
             existing_groups.append(child.name)
         for group in existing_groups:
-            if group == "Entities" or group == "Box Occluders" or group == "Model Occluders":
+            if (
+                group == "Entities"
+                or group == "Box Occluders"
+                or group == "Model Occluders"
+            ):
                 return False
         return True
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_ENTITY_GROUP, selected_ymap=ymap_obj, empty_name='Entities')
+        create_ymap_group(
+            sollum_type=SollumType.YMAP_ENTITY_GROUP,
+            selected_ymap=ymap_obj,
+            empty_name="Entities",
+        )
         return True
 
 
 class SOLLUMZ_OT_create_model_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Model Occluders' group object"""
+
     bl_idname = "sollumz.create_model_occluder_group"
     bl_label = f"Model Occluders"
     bl_description = "Create 'Model Occluders' group.\n\nOnly 1 per YMAP maximum.\nYou can't create 'Model Occluders' group if the current YMAP already includes an 'Entities' group"
@@ -64,12 +75,17 @@ class SOLLUMZ_OT_create_model_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_MODEL_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Model Occluders')
+        create_ymap_group(
+            sollum_type=SollumType.YMAP_MODEL_OCCLUDER_GROUP,
+            selected_ymap=ymap_obj,
+            empty_name="Model Occluders",
+        )
         return True
 
 
 class SOLLUMZ_OT_create_box_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Box Occluders' group object"""
+
     bl_idname = "sollumz.create_box_occluder_group"
     bl_label = f"Box Occluders"
     bl_description = "Create 'Box Occluders' group.\n\nOnly 1 per YMAP maximum.\nYou can't create 'Box Occluders' group if the current YMAP already includes an 'Entities' group"
@@ -88,12 +104,17 @@ class SOLLUMZ_OT_create_box_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_BOX_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Box Occluders')
+        create_ymap_group(
+            sollum_type=SollumType.YMAP_BOX_OCCLUDER_GROUP,
+            selected_ymap=ymap_obj,
+            empty_name="Box Occluders",
+        )
         return True
 
 
 class SOLLUMZ_OT_create_car_generator_group(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Car Generators' group object"""
+
     bl_idname = "sollumz.create_car_generator_group"
     bl_label = f"Car Generators"
     bl_description = "Create 'Car Generators' group.\n\nOnly 1 per YMAP maximum"
@@ -111,12 +132,17 @@ class SOLLUMZ_OT_create_car_generator_group(SOLLUMZ_OT_base, bpy.types.Operator)
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_CAR_GENERATOR_GROUP, selected_ymap=ymap_obj, empty_name='Car Generators')
+        create_ymap_group(
+            sollum_type=SollumType.YMAP_CAR_GENERATOR_GROUP,
+            selected_ymap=ymap_obj,
+            empty_name="Car Generators",
+        )
         return True
 
 
 class SOLLUMZ_OT_create_box_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Box Occluder' object"""
+
     bl_idname = "sollumz.create_box_occluder"
     bl_label = "Create Box Occluder"
     bl_description = "Create a 'Box Occluder' object"
@@ -135,6 +161,7 @@ class SOLLUMZ_OT_create_box_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_create_model_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Model Occluder' object"""
+
     bl_idname = "sollumz.create_model_occluder"
     bl_label = "Create Model Occluder"
     bl_description = "Create a 'Model Occluder' object"
@@ -146,7 +173,9 @@ class SOLLUMZ_OT_create_model_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
         model_obj.name = "Model"
         model_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER
         model_obj.ymap_properties.flags = 0
-        model_obj.active_material = add_occluder_material(SollumType.YMAP_MODEL_OCCLUDER)
+        model_obj.active_material = add_occluder_material(
+            SollumType.YMAP_MODEL_OCCLUDER
+        )
         set_object_collection(model_obj)
         bpy.context.view_layer.objects.active = model_obj
         model_obj.parent = group_obj
@@ -156,6 +185,7 @@ class SOLLUMZ_OT_create_model_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create a sollumz 'Car Generator' object"""
+
     bl_idname = "sollumz.create_car_generator"
     bl_label = "Create Car Generator"
     bl_description = "Create a 'Car Generator' object"

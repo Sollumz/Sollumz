@@ -15,7 +15,9 @@ from ..properties.extensions import ExtensionType, ExtensionProperties
 DEBUG_DRAW = False
 
 
-def iter_archetype_extensions(context) -> Iterator[tuple[ArchetypeProperties, ExtensionProperties]]:
+def iter_archetype_extensions(
+    context,
+) -> Iterator[tuple[ArchetypeProperties, ExtensionProperties]]:
     """Iterate visible archetype extensions from the selected YTYP."""
     selected_ytyp = get_selected_ytyp(context)
     if selected_ytyp is None:
@@ -60,7 +62,9 @@ def get_extension_shapes() -> dict[ExtensionType, object]:
                     model_verts.append(verts[int(v1) - 1])
                     model_verts.append(verts[int(v2) - 1])
 
-            shapes[extension_type] = bpy.types.Gizmo.new_custom_shape("TRIS", model_verts)
+            shapes[extension_type] = bpy.types.Gizmo.new_custom_shape(
+                "TRIS", model_verts
+            )
 
     for ext_type, model_file_name in (
         (ExtensionType.AUDIO_COLLISION, "AudioCollisionSettings.obj"),
@@ -84,42 +88,68 @@ def get_extension_shapes() -> dict[ExtensionType, object]:
 @functools.cache
 def get_cube_shape() -> object:
     """A 1x1x1 cube with origin in the middle."""
-    return bpy.types.Gizmo.new_custom_shape("LINES", (
-        # bottom face
-        (-0.5, -0.5, -0.5), (-0.5, 0.5, -0.5),
-        (-0.5, -0.5, -0.5), (0.5, -0.5, -0.5),
-        (0.5, -0.5, -0.5), (0.5, 0.5, -0.5),
-        (-0.5, 0.5, -0.5), (0.5, 0.5, -0.5),
-        # top face
-        (-0.5, -0.5, 0.5), (-0.5, 0.5, 0.5),
-        (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5),
-        (0.5, -0.5, 0.5), (0.5, 0.5, 0.5),
-        (-0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
-        # connect top and bottom faces
-        (-0.5, -0.5, -0.5), (-0.5, -0.5, 0.5),
-        (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5),
-        (0.5, -0.5, -0.5), (0.5, -0.5, 0.5),
-        (0.5, 0.5, -0.5), (0.5, 0.5, 0.5),
-    ))
+    return bpy.types.Gizmo.new_custom_shape(
+        "LINES",
+        (
+            # bottom face
+            (-0.5, -0.5, -0.5),
+            (-0.5, 0.5, -0.5),
+            (-0.5, -0.5, -0.5),
+            (0.5, -0.5, -0.5),
+            (0.5, -0.5, -0.5),
+            (0.5, 0.5, -0.5),
+            (-0.5, 0.5, -0.5),
+            (0.5, 0.5, -0.5),
+            # top face
+            (-0.5, -0.5, 0.5),
+            (-0.5, 0.5, 0.5),
+            (-0.5, -0.5, 0.5),
+            (0.5, -0.5, 0.5),
+            (0.5, -0.5, 0.5),
+            (0.5, 0.5, 0.5),
+            (-0.5, 0.5, 0.5),
+            (0.5, 0.5, 0.5),
+            # connect top and bottom faces
+            (-0.5, -0.5, -0.5),
+            (-0.5, -0.5, 0.5),
+            (-0.5, 0.5, -0.5),
+            (-0.5, 0.5, 0.5),
+            (0.5, -0.5, -0.5),
+            (0.5, -0.5, 0.5),
+            (0.5, 0.5, -0.5),
+            (0.5, 0.5, 0.5),
+        ),
+    )
 
 
 @functools.cache
 def get_square_shape() -> object:
     """A 1x1 square, along XZ plane, with origin in the middle."""
-    return bpy.types.Gizmo.new_custom_shape("LINES", (
-        (-0.5, 0.0, -0.5), (0.5, 0.0, -0.5),
-        (-0.5, 0.0, -0.5), (-0.5, 0.0, 0.5),
-        (0.5, 0.0, 0.5), (0.5, 0.0, -0.5),
-        (0.5, 0.0, 0.5), (-0.5, 0.0, 0.5),
-    ))
+    return bpy.types.Gizmo.new_custom_shape(
+        "LINES",
+        (
+            (-0.5, 0.0, -0.5),
+            (0.5, 0.0, -0.5),
+            (-0.5, 0.0, -0.5),
+            (-0.5, 0.0, 0.5),
+            (0.5, 0.0, 0.5),
+            (0.5, 0.0, -0.5),
+            (0.5, 0.0, 0.5),
+            (-0.5, 0.0, 0.5),
+        ),
+    )
 
 
 @functools.cache
 def get_line_shape() -> object:
     """A unit line along Y axis, from Y=0 to Y=1."""
-    return bpy.types.Gizmo.new_custom_shape("LINES", (
-        (0.0, 0.0, 0.0), (0.0, 1.0, 0.0),
-    ))
+    return bpy.types.Gizmo.new_custom_shape(
+        "LINES",
+        (
+            (0.0, 0.0, 0.0),
+            (0.0, 1.0, 0.0),
+        ),
+    )
 
 
 @functools.cache
@@ -127,24 +157,40 @@ def get_ladder_shape() -> object:
     """Shape representing a ladder with a marker in-front to indicate its orientation.
     Origin is at the bottom and extends upwards.
     """
-    return bpy.types.Gizmo.new_custom_shape("LINES", (
-        # pillars
-        (-0.15, 0.0, -0.04), (-0.15, 0.0, 1.04),
-        (0.15, 0.0, -0.04), (0.15, 0.0, 1.04),
-        # steps
-        (-0.15, 0.0, 0.0), (0.15, 0.0, 0.0),
-        (-0.15, 0.0, 0.25), (0.15, 0.0, 0.25),
-        (-0.15, 0.0, 0.5), (0.15, 0.0, 0.5),
-        (-0.15, 0.0, 0.75), (0.15, 0.0, 0.75),
-        (-0.15, 0.0, 1.0), (0.15, 0.0, 1.0),
-        # front marker
-        (-0.2, 0.25, 0.2), (0.0, 0.1, 0.2),
-        (0.2, 0.25, 0.2), (0.0, 0.1, 0.2),
-        (-0.2, 0.25, 0.2), (0.2, 0.25, 0.2),
-        (-0.2, 0.25, 0.2), (-0.2, 0.45, 0.2),
-        (0.2, 0.25, 0.2), (0.2, 0.45, 0.2),
-        (-0.2, 0.45, 0.2), (0.2, 0.45, 0.2),
-    ))
+    return bpy.types.Gizmo.new_custom_shape(
+        "LINES",
+        (
+            # pillars
+            (-0.15, 0.0, -0.04),
+            (-0.15, 0.0, 1.04),
+            (0.15, 0.0, -0.04),
+            (0.15, 0.0, 1.04),
+            # steps
+            (-0.15, 0.0, 0.0),
+            (0.15, 0.0, 0.0),
+            (-0.15, 0.0, 0.25),
+            (0.15, 0.0, 0.25),
+            (-0.15, 0.0, 0.5),
+            (0.15, 0.0, 0.5),
+            (-0.15, 0.0, 0.75),
+            (0.15, 0.0, 0.75),
+            (-0.15, 0.0, 1.0),
+            (0.15, 0.0, 1.0),
+            # front marker
+            (-0.2, 0.25, 0.2),
+            (0.0, 0.1, 0.2),
+            (0.2, 0.25, 0.2),
+            (0.0, 0.1, 0.2),
+            (-0.2, 0.25, 0.2),
+            (0.2, 0.25, 0.2),
+            (-0.2, 0.25, 0.2),
+            (-0.2, 0.45, 0.2),
+            (0.2, 0.25, 0.2),
+            (0.2, 0.45, 0.2),
+            (-0.2, 0.45, 0.2),
+            (0.2, 0.45, 0.2),
+        ),
+    )
 
 
 def is_local_transform(context) -> bool:
@@ -215,7 +261,9 @@ def get_extension_ladder_bottom_offset_matrix(ext: ExtensionProperties) -> Matri
     return Matrix.LocRotScale(offset_pos, offset_rot, (1.0, 1.0, 1.0))
 
 
-def get_extension_world_matrix(ext: ExtensionProperties, archetype: ArchetypeProperties) -> Matrix:
+def get_extension_world_matrix(
+    ext: ExtensionProperties, archetype: ArchetypeProperties
+) -> Matrix:
     offset_mat = get_extension_offset_matrix(ext)
     if archetype.asset is None:
         return offset_mat
@@ -223,7 +271,9 @@ def get_extension_world_matrix(ext: ExtensionProperties, archetype: ArchetypePro
         return archetype.asset.matrix_world @ offset_mat
 
 
-def get_extension_ladder_bottom_world_matrix(ext: ExtensionProperties, archetype: ArchetypeProperties) -> Matrix:
+def get_extension_ladder_bottom_world_matrix(
+    ext: ExtensionProperties, archetype: ArchetypeProperties
+) -> Matrix:
     offset_mat = get_extension_ladder_bottom_offset_matrix(ext)
     if archetype.asset is None:
         return offset_mat
@@ -250,7 +300,7 @@ def get_transform_axis(
     ext: ExtensionProperties,
     archetype: ArchetypeProperties,
     axis: Literal["X", "Y", "Z"],
-    local: bool = False
+    local: bool = False,
 ) -> Vector:
     if axis == "X":
         axis_vec = Vector((1.0, 0.0, 0.0))
@@ -305,7 +355,9 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
 
         theme = context.preferences.themes[0]
 
-        self.color = theme.view_3d.object_active if is_active else theme.view_3d.object_selected
+        self.color = (
+            theme.view_3d.object_active if is_active else theme.view_3d.object_selected
+        )
         self.color_highlight = self.color
         self.alpha = 0.6
         self.alpha_highlight = 0.8
@@ -316,7 +368,11 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
         extension_shape = get_extension_shapes().get(ext.extension_type, None)
 
         if is_active and not is_light_shaft:
-            self.draw_custom_shape(get_cube_shape(), matrix=gizmo_matrix @ Matrix.Scale(0.4, 4), select_id=select_id)
+            self.draw_custom_shape(
+                get_cube_shape(),
+                matrix=gizmo_matrix @ Matrix.Scale(0.4, 4),
+                select_id=select_id,
+            )
 
         if extension_shape is not None:
             rv3d = context.space_data.region_3d
@@ -324,26 +380,43 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
             # make extension shape face the camera so it is recognizable from all view angles
             ext_shape_loc = gizmo_matrix.to_translation()
             if rv3d.is_perspective:
-                ext_shape_dir = (rv3d.view_matrix.inverted().to_translation() - ext_shape_loc)
+                ext_shape_dir = (
+                    rv3d.view_matrix.inverted().to_translation() - ext_shape_loc
+                )
                 ext_shape_dir.normalize()
                 ext_shape_rot = ext_shape_dir.to_track_quat("Z", "Y")
             else:
                 ext_shape_rot = rv3d.view_rotation
-            ext_shape_rot = ext_shape_rot @ Matrix.Rotation(math.radians(90.0), 3, "Y").to_quaternion()
+            ext_shape_rot = (
+                ext_shape_rot
+                @ Matrix.Rotation(math.radians(90.0), 3, "Y").to_quaternion()
+            )
             ext_shape_scale = 0.55, 0.55, 0.55
             if is_light_shaft:
                 # Scale based on light shaft size
-                light_shaft_width, light_shaft_height = get_extension_light_shaft_dimensions(ext)
+                (
+                    light_shaft_width,
+                    light_shaft_height,
+                ) = get_extension_light_shaft_dimensions(ext)
                 size = min(light_shaft_width, light_shaft_height)
                 scale = max(size / 2.0, 0.05)
                 ext_shape_scale = scale, scale, scale
-            ext_shape_mat = Matrix.LocRotScale(ext_shape_loc, ext_shape_rot, ext_shape_scale)
+            ext_shape_mat = Matrix.LocRotScale(
+                ext_shape_loc, ext_shape_rot, ext_shape_scale
+            )
 
-            self.draw_custom_shape(extension_shape, matrix=ext_shape_mat, select_id=select_id)
+            self.draw_custom_shape(
+                extension_shape, matrix=ext_shape_mat, select_id=select_id
+            )
 
         if hasattr(ext_props, "offset_rotation"):
-            self.draw_preset_arrow(gizmo_matrix @ Matrix.Translation((0.0, 0.25, 0.0)) @ Matrix.Scale(0.325, 4),
-                                   axis="POS_Y", select_id=-1 if select_id is None else select_id)
+            self.draw_preset_arrow(
+                gizmo_matrix
+                @ Matrix.Translation((0.0, 0.25, 0.0))
+                @ Matrix.Scale(0.325, 4),
+                axis="POS_Y",
+                select_id=-1 if select_id is None else select_id,
+            )
 
         if is_ladder:
             self.draw_ladder_gizmo(context, select_id)
@@ -361,12 +434,18 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
         normal = ext_props.normal.normalized()
         offset_rot_mat = normal.to_track_quat("Y", "Z").to_matrix().to_4x4()
 
-        bottom_matrix = asset.matrix_world @ Matrix.Translation(ext_props.bottom) @ offset_rot_mat
-        self.draw_preset_box(bottom_matrix @ Matrix.Scale(0.05, 4), select_id=select_id_int)
+        bottom_matrix = (
+            asset.matrix_world @ Matrix.Translation(ext_props.bottom) @ offset_rot_mat
+        )
+        self.draw_preset_box(
+            bottom_matrix @ Matrix.Scale(0.05, 4), select_id=select_id_int
+        )
 
         length = (ext_props.top - ext_props.bottom).length
         ladder_shape_matrix = bottom_matrix @ Matrix.Scale(length, 4, (0.0, 0.0, 1.0))
-        self.draw_custom_shape(get_ladder_shape(), matrix=ladder_shape_matrix, select_id=select_id)
+        self.draw_custom_shape(
+            get_ladder_shape(), matrix=ladder_shape_matrix, select_id=select_id
+        )
 
     def draw_light_shaft_gizmo(self, context, select_id):
         selected_archetype = get_selected_archetype(context)
@@ -391,54 +470,101 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
 
         width = (b - a).length
         height = (d - a).length
-        scale_mat = Matrix(((width, 0.0, 0.0, 0.0),
-                            (0.0, 1.0, 0.0, 0.0),
-                            (0.0, 0.0, height, 0.0),
-                            (0.0, 0.0, 0.0, 1.0)))
-        light_shaft_frame_matrix = asset.matrix_world @ translation_mat @ rotation_mat @ scale_mat
-        light_shaft_frame_end_matrix = Matrix.Translation(
-            ext_props.direction * ext_props.length) @ light_shaft_frame_matrix
+        scale_mat = Matrix(
+            (
+                (width, 0.0, 0.0, 0.0),
+                (0.0, 1.0, 0.0, 0.0),
+                (0.0, 0.0, height, 0.0),
+                (0.0, 0.0, 0.0, 1.0),
+            )
+        )
+        light_shaft_frame_matrix = (
+            asset.matrix_world @ translation_mat @ rotation_mat @ scale_mat
+        )
+        light_shaft_frame_end_matrix = (
+            Matrix.Translation(ext_props.direction * ext_props.length)
+            @ light_shaft_frame_matrix
+        )
 
         if not is_active:
-            self.draw_custom_shape(get_square_shape(), matrix=light_shaft_frame_matrix, select_id=select_id)
-            self.draw_custom_shape(get_square_shape(), matrix=light_shaft_frame_end_matrix, select_id=select_id)
+            self.draw_custom_shape(
+                get_square_shape(), matrix=light_shaft_frame_matrix, select_id=select_id
+            )
+            self.draw_custom_shape(
+                get_square_shape(),
+                matrix=light_shaft_frame_end_matrix,
+                select_id=select_id,
+            )
 
-        direction_rotation_mat = ext_props.direction.to_track_quat("Y", "Z").to_matrix().to_4x4()
+        direction_rotation_mat = (
+            ext_props.direction.to_track_quat("Y", "Z").to_matrix().to_4x4()
+        )
         direction_scale_mat = Matrix.Scale(ext_props.length, 4, (0.0, 1.0, 0.0))
 
         line_shape = get_line_shape()
 
         def _calc_line_matrix(corner: Vector) -> Matrix:
-            return asset.matrix_world @  Matrix.Translation(corner) @ direction_rotation_mat @ direction_scale_mat
-        self.draw_custom_shape(line_shape, matrix=_calc_line_matrix(a), select_id=select_id)
-        self.draw_custom_shape(line_shape, matrix=_calc_line_matrix(b), select_id=select_id)
-        self.draw_custom_shape(line_shape, matrix=_calc_line_matrix(c), select_id=select_id)
-        self.draw_custom_shape(line_shape, matrix=_calc_line_matrix(d), select_id=select_id)
+            return (
+                asset.matrix_world
+                @ Matrix.Translation(corner)
+                @ direction_rotation_mat
+                @ direction_scale_mat
+            )
+
+        self.draw_custom_shape(
+            line_shape, matrix=_calc_line_matrix(a), select_id=select_id
+        )
+        self.draw_custom_shape(
+            line_shape, matrix=_calc_line_matrix(b), select_id=select_id
+        )
+        self.draw_custom_shape(
+            line_shape, matrix=_calc_line_matrix(c), select_id=select_id
+        )
+        self.draw_custom_shape(
+            line_shape, matrix=_calc_line_matrix(d), select_id=select_id
+        )
 
         if DEBUG_DRAW:
             self.color = 1.0, 0.0, 0.0
-            self.draw_preset_box(asset.matrix_world @  Matrix.Translation(a) @ Matrix.Scale(0.015, 4),
-                                 select_id=select_id_int)
+            self.draw_preset_box(
+                asset.matrix_world @ Matrix.Translation(a) @ Matrix.Scale(0.015, 4),
+                select_id=select_id_int,
+            )
             self.color = 0.0, 1.0, 0.0
-            self.draw_preset_box(asset.matrix_world @  Matrix.Translation(b) @ Matrix.Scale(0.015, 4),
-                                 select_id=select_id_int)
+            self.draw_preset_box(
+                asset.matrix_world @ Matrix.Translation(b) @ Matrix.Scale(0.015, 4),
+                select_id=select_id_int,
+            )
             self.color = 0.0, 0.0, 1.0
-            self.draw_preset_box(asset.matrix_world @  Matrix.Translation(c) @ Matrix.Scale(0.015, 4),
-                                 select_id=select_id_int)
+            self.draw_preset_box(
+                asset.matrix_world @ Matrix.Translation(c) @ Matrix.Scale(0.015, 4),
+                select_id=select_id_int,
+            )
             self.color = 1.0, 1.0, 1.0
-            self.draw_preset_box(asset.matrix_world @  Matrix.Translation(d) @ Matrix.Scale(0.015, 4),
-                                 select_id=select_id_int)
+            self.draw_preset_box(
+                asset.matrix_world @ Matrix.Translation(d) @ Matrix.Scale(0.015, 4),
+                select_id=select_id_int,
+            )
 
             sc = Matrix.Scale(0.5, 4)
             self.color = 1.0, 0.0, 0.0
-            self.draw_preset_arrow(asset.matrix_world @ translation_mat @ rotation_mat @ sc, axis="POS_X",
-                                   select_id=select_id_int)
+            self.draw_preset_arrow(
+                asset.matrix_world @ translation_mat @ rotation_mat @ sc,
+                axis="POS_X",
+                select_id=select_id_int,
+            )
             self.color = 0.0, 1.0, 0.0
-            self.draw_preset_arrow(asset.matrix_world @ translation_mat @ rotation_mat @ sc, axis="POS_Y",
-                                   select_id=select_id_int)
+            self.draw_preset_arrow(
+                asset.matrix_world @ translation_mat @ rotation_mat @ sc,
+                axis="POS_Y",
+                select_id=select_id_int,
+            )
             self.color = 0.0, 0.0, 1.0
-            self.draw_preset_arrow(asset.matrix_world @ translation_mat @ rotation_mat @ sc, axis="POS_Z",
-                                   select_id=select_id_int)
+            self.draw_preset_arrow(
+                asset.matrix_world @ translation_mat @ rotation_mat @ sc,
+                axis="POS_Z",
+                select_id=select_id_int,
+            )
 
     def invoke(self, context, event):
         selected_ytyp = get_selected_ytyp(context)
@@ -451,9 +577,11 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
         if self.linked_extension not in extensions:
             return {"PASS_THROUGH"}
 
-        bpy.ops.sollumz.extension_select(True,
-                                         archetype_index=archetypes.index(self.linked_archetype),
-                                         extension_index=extensions.index(self.linked_extension))
+        bpy.ops.sollumz.extension_select(
+            True,
+            archetype_index=archetypes.index(self.linked_archetype),
+            extension_index=extensions.index(self.linked_extension),
+        )
         return {"PASS_THROUGH"}
 
     def modal(self, context, event, tweak):
@@ -486,7 +614,9 @@ class SOLLUMZ_OT_extension_translate(bpy.types.Operator):
     bl_description = bl_label
     bl_options = {"UNDO_GROUPED", "INTERNAL"}
 
-    delta_position: bpy.props.FloatVectorProperty(name="Delta Position", subtype="TRANSLATION", size=3)
+    delta_position: bpy.props.FloatVectorProperty(
+        name="Delta Position", subtype="TRANSLATION", size=3
+    )
 
     def execute(self, context):
         ext = get_selected_extension(context)
@@ -503,7 +633,12 @@ class SOLLUMZ_OT_extension_translate(bpy.types.Operator):
 
             if ext.extension_type == ExtensionType.LIGHT_SHAFT:
                 # move light shaft corners along with the offset_position
-                for c in (ext_props.cornerA, ext_props.cornerB, ext_props.cornerC, ext_props.cornerD):
+                for c in (
+                    ext_props.cornerA,
+                    ext_props.cornerB,
+                    ext_props.cornerC,
+                    ext_props.cornerD,
+                ):
                     c += self.delta_position
         return {"FINISHED"}
 
@@ -514,7 +649,9 @@ class SOLLUMZ_OT_extension_rotate(bpy.types.Operator):
     bl_description = bl_label
     bl_options = {"UNDO_GROUPED", "INTERNAL"}
 
-    delta_rotation: bpy.props.FloatVectorProperty(name="Delta Rotation", subtype="QUATERNION", size=4)
+    delta_rotation: bpy.props.FloatVectorProperty(
+        name="Delta Rotation", subtype="QUATERNION", size=4
+    )
 
     def execute(self, context):
         ext = get_selected_extension(context)
@@ -634,7 +771,9 @@ class SOLLUMZ_OT_extension_offset_light_shaft_end_point(bpy.types.Operator):
     bl_description = bl_label
     bl_options = {"UNDO_GROUPED", "INTERNAL"}
 
-    delta_offset: bpy.props.FloatVectorProperty(name="Delta Offset", subtype="TRANSLATION", size=2)
+    delta_offset: bpy.props.FloatVectorProperty(
+        name="Delta Offset", subtype="TRANSLATION", size=2
+    )
 
     def execute(self, context):
         ext = get_selected_extension(context)
@@ -662,6 +801,7 @@ class SOLLUMZ_OT_extension_offset_light_shaft_end_point(bpy.types.Operator):
 
 class SOLLUMZ_OT_archetype_extensions_detect_ctrl_pressed(bpy.types.Operator):
     """Operator that runs as modal in the background to detect when CTRL is pressed down."""
+
     bl_idname = "sollumz.archetype_extensions_detect_ctrl_pressed"
     bl_label = "DetectCtrlPressed"
     bl_options = {"INTERNAL"}
@@ -674,7 +814,9 @@ class SOLLUMZ_OT_archetype_extensions_detect_ctrl_pressed(bpy.types.Operator):
         tool = context.workspace.tools.from_space_view3d_mode(context.mode)
         if tool.idname != "sollumz.archetype_extension":
             return {"FINISHED"}
-        gg_props = tool.gizmo_group_properties(SOLLUMZ_GGT_archetype_extensions.bl_idname)
+        gg_props = tool.gizmo_group_properties(
+            SOLLUMZ_GGT_archetype_extensions.bl_idname
+        )
         gg_props.ctrl_pressed = event.ctrl
         return {"PASS_THROUGH"}
 
@@ -694,7 +836,9 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         This returns the struct that holds the properties."""
         context = bpy.context
         tool = context.workspace.tools.from_space_view3d_mode(context.mode)
-        gg_props = tool.gizmo_group_properties(SOLLUMZ_GGT_archetype_extensions.bl_idname)
+        gg_props = tool.gizmo_group_properties(
+            SOLLUMZ_GGT_archetype_extensions.bl_idname
+        )
         return gg_props
 
     @classmethod
@@ -702,16 +846,28 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         return can_draw_gizmos(context)
 
     def translate_extension(self, context, offset: float, axis: Literal["X", "Y", "Z"]):
-        axis_vec = get_transform_axis(get_selected_extension(context), get_selected_archetype(context), axis,
-                                      local=is_local_transform(context))
+        axis_vec = get_transform_axis(
+            get_selected_extension(context),
+            get_selected_archetype(context),
+            axis,
+            local=is_local_transform(context),
+        )
 
         bpy.ops.sollumz.extension_translate(True, delta_position=axis_vec * offset)
 
-    def rotate_extension(self, context, delta_angle: float, axis: Literal["X", "Y", "Z"]):
-        axis_vec = get_transform_axis(get_selected_extension(context), get_selected_archetype(context), axis,
-                                      local=is_local_transform(context))
+    def rotate_extension(
+        self, context, delta_angle: float, axis: Literal["X", "Y", "Z"]
+    ):
+        axis_vec = get_transform_axis(
+            get_selected_extension(context),
+            get_selected_archetype(context),
+            axis,
+            local=is_local_transform(context),
+        )
 
-        bpy.ops.sollumz.extension_rotate(True, delta_rotation=Quaternion(axis_vec, delta_angle))
+        bpy.ops.sollumz.extension_rotate(
+            True, delta_rotation=Quaternion(axis_vec, delta_angle)
+        )
 
         self.draw_prepare(context)  # refresh view to update dial rotation
 
@@ -731,19 +887,25 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
 
         bpy.ops.sollumz.extension_translate_ladder_bottom_z(True, delta_z=delta_z)
 
-    def scale_extension_light_shaft_frame(self, context, width_scale: float, height_scale: float):
+    def scale_extension_light_shaft_frame(
+        self, context, width_scale: float, height_scale: float
+    ):
         ext = get_selected_extension(context)
         if ext.extension_type != ExtensionType.LIGHT_SHAFT:
             return
 
-        bpy.ops.sollumz.extension_scale_light_shaft_frame(True, width_scale=width_scale, height_scale=height_scale)
+        bpy.ops.sollumz.extension_scale_light_shaft_frame(
+            True, width_scale=width_scale, height_scale=height_scale
+        )
 
     def offset_light_shaft_end_point(self, context, delta_offset: Vector):
         ext = get_selected_extension(context)
         if ext.extension_type != ExtensionType.LIGHT_SHAFT:
             return
 
-        bpy.ops.sollumz.extension_offset_light_shaft_end_point(True, delta_offset=delta_offset)
+        bpy.ops.sollumz.extension_offset_light_shaft_end_point(
+            True, delta_offset=delta_offset
+        )
 
     def get_extension_light_shaft_cage_world_transform(self, context) -> Matrix:
         # Matrix transform with position in the center of the light shaft frame instead
@@ -855,7 +1017,9 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         self.rotate_extension_ladder_normal(bpy.context, -delta_angle)
 
     def handler_get_light_shaft_transform(self):
-        return [v for row in self.light_shaft_cage_last_transform.transposed() for v in row]
+        return [
+            v for row in self.light_shaft_cage_last_transform.transposed() for v in row
+        ]
 
     def handler_set_light_shaft_transform(self, value):
         m = Matrix((value[0:4], value[4:8], value[8:12], value[12:16]))
@@ -864,11 +1028,19 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         delta_transform = self.light_shaft_cage_last_transform.inverted() @ m
         self.light_shaft_cage_last_transform = m
 
-        delta_width_scale, delta_height_scale, _ = delta_transform.to_3x3() @ Vector((1.0, 1.0, 0.0))
-        self.scale_extension_light_shaft_frame(bpy.context, delta_width_scale, delta_height_scale)
+        delta_width_scale, delta_height_scale, _ = delta_transform.to_3x3() @ Vector(
+            (1.0, 1.0, 0.0)
+        )
+        self.scale_extension_light_shaft_frame(
+            bpy.context, delta_width_scale, delta_height_scale
+        )
 
     def handler_get_light_shaft_end_transform(self):
-        return [v for row in self.light_shaft_cage_end_last_transform.transposed() for v in row]
+        return [
+            v
+            for row in self.light_shaft_cage_end_last_transform.transposed()
+            for v in row
+        ]
 
     def handler_set_light_shaft_end_transform(self, value):
         m = Matrix((value[0:4], value[4:8], value[8:12], value[12:16]))
@@ -905,10 +1077,14 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
 
         new_width_scale = max(min_width_scale, width_scale)
         new_height_scale = max(min_height_scale, height_scale)
-        return Matrix(((new_width_scale, 0.0, 0.0, 0.0),
-                       (0.0, new_height_scale, 0.0, 0.0),
-                       (0.0, 0.0, 1.0, 0.0),
-                       (0.0, 0.0, 0.0, 1.0)))
+        return Matrix(
+            (
+                (new_width_scale, 0.0, 0.0, 0.0),
+                (0.0, new_height_scale, 0.0, 0.0),
+                (0.0, 0.0, 1.0, 0.0),
+                (0.0, 0.0, 0.0, 1.0),
+            )
+        )
 
     def apply_light_shaft_cage_end_snapping(self, m: Matrix) -> Matrix:
         """Returns a new offset matrix with snapping applied if required."""
@@ -917,11 +1093,19 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
             if self.light_shaft_cage_end_snap_origin_transform is None:
                 self.light_shaft_cage_end_snap_origin_transform = m.copy()
 
-            snap_delta_transform = self.light_shaft_cage_end_snap_origin_transform.inverted() @ m
-            if abs(snap_delta_transform.translation.x) > abs(snap_delta_transform.translation.y):
-                m.translation.y = self.light_shaft_cage_end_snap_origin_transform.translation.y
+            snap_delta_transform = (
+                self.light_shaft_cage_end_snap_origin_transform.inverted() @ m
+            )
+            if abs(snap_delta_transform.translation.x) > abs(
+                snap_delta_transform.translation.y
+            ):
+                m.translation.y = (
+                    self.light_shaft_cage_end_snap_origin_transform.translation.y
+                )
             else:
-                m.translation.x = self.light_shaft_cage_end_snap_origin_transform.translation.x
+                m.translation.x = (
+                    self.light_shaft_cage_end_snap_origin_transform.translation.x
+                )
         else:
             self.light_shaft_cage_end_snap_origin_transform = None
 
@@ -1080,29 +1264,53 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         self.extension_gizmos = []
 
         # Assign handlers to all interaction gizmos
-        arrow_x.target_set_handler("offset", get=self.handler_get_x, set=self.handler_set_x)
-        arrow_y.target_set_handler("offset", get=self.handler_get_y, set=self.handler_set_y)
-        arrow_z.target_set_handler("offset", get=self.handler_get_z, set=self.handler_set_z)
-        dial_x.target_set_handler("offset", get=self.handler_get_rotation_x, set=self.handler_set_rotation_x)
-        dial_y.target_set_handler("offset", get=self.handler_get_rotation_y, set=self.handler_set_rotation_y)
-        dial_z.target_set_handler("offset", get=self.handler_get_rotation_z, set=self.handler_set_rotation_z)
-        ladder_bottom_arrow.target_set_handler("offset",
-                                               get=self.handler_get_ladder_bottom_z,
-                                               set=self.handler_set_ladder_bottom_z)
-        ladder_normal_dial.target_set_handler("offset",
-                                              get=self.handler_get_ladder_normal_angle,
-                                              set=self.handler_set_ladder_normal_angle)
-        light_shaft_cage.target_set_handler("matrix",
-                                            get=self.handler_get_light_shaft_transform,
-                                            set=self.handler_set_light_shaft_transform)
-        light_shaft_cage_end.target_set_handler("matrix",
-                                                get=self.handler_get_light_shaft_end_transform,
-                                                set=self.handler_set_light_shaft_end_transform)
+        arrow_x.target_set_handler(
+            "offset", get=self.handler_get_x, set=self.handler_set_x
+        )
+        arrow_y.target_set_handler(
+            "offset", get=self.handler_get_y, set=self.handler_set_y
+        )
+        arrow_z.target_set_handler(
+            "offset", get=self.handler_get_z, set=self.handler_set_z
+        )
+        dial_x.target_set_handler(
+            "offset", get=self.handler_get_rotation_x, set=self.handler_set_rotation_x
+        )
+        dial_y.target_set_handler(
+            "offset", get=self.handler_get_rotation_y, set=self.handler_set_rotation_y
+        )
+        dial_z.target_set_handler(
+            "offset", get=self.handler_get_rotation_z, set=self.handler_set_rotation_z
+        )
+        ladder_bottom_arrow.target_set_handler(
+            "offset",
+            get=self.handler_get_ladder_bottom_z,
+            set=self.handler_set_ladder_bottom_z,
+        )
+        ladder_normal_dial.target_set_handler(
+            "offset",
+            get=self.handler_get_ladder_normal_angle,
+            set=self.handler_set_ladder_normal_angle,
+        )
+        light_shaft_cage.target_set_handler(
+            "matrix",
+            get=self.handler_get_light_shaft_transform,
+            set=self.handler_set_light_shaft_transform,
+        )
+        light_shaft_cage_end.target_set_handler(
+            "matrix",
+            get=self.handler_get_light_shaft_end_transform,
+            set=self.handler_set_light_shaft_end_transform,
+        )
 
         # Cannot call operators here, use timers to call it as soon as possible
         def _invoke_archetype_extensions_detect_ctrl_pressed_operator():
             bpy.ops.sollumz.archetype_extensions_detect_ctrl_pressed("INVOKE_DEFAULT")
-        bpy.app.timers.register(_invoke_archetype_extensions_detect_ctrl_pressed_operator, first_interval=0.0)
+
+        bpy.app.timers.register(
+            _invoke_archetype_extensions_detect_ctrl_pressed_operator,
+            first_interval=0.0,
+        )
 
     def refresh(self, context):
         selected_extension = get_selected_extension(context)
@@ -1115,8 +1323,12 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         if selected_extension is not None:
             # Show necessary interaction gizmos for the current extension type
             is_ladder = selected_extension.extension_type == ExtensionType.LADDER
-            is_light_shaft = selected_extension.extension_type == ExtensionType.LIGHT_SHAFT
-            has_rotation = hasattr(selected_extension.get_properties(), "offset_rotation")
+            is_light_shaft = (
+                selected_extension.extension_type == ExtensionType.LIGHT_SHAFT
+            )
+            has_rotation = hasattr(
+                selected_extension.get_properties(), "offset_rotation"
+            )
 
             hide_translation_gizmos = False
             hide_rotation_gizmos = not has_rotation and not is_light_shaft
@@ -1217,39 +1429,54 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
 
         if not self.ladder_bottom_arrow.hide:
             top_mat = get_extension_world_matrix(selected_extension, selected_archetype)
-            bottom_mat = get_extension_ladder_bottom_world_matrix(selected_extension, selected_archetype)
+            bottom_mat = get_extension_ladder_bottom_world_matrix(
+                selected_extension, selected_archetype
+            )
 
-            bottom_arrow_mat = bottom_mat @ Matrix.Rotation(math.radians(-180), 4, 'X')
+            bottom_arrow_mat = bottom_mat @ Matrix.Rotation(math.radians(-180), 4, "X")
             _prepare_arrow(self.ladder_bottom_arrow, bottom_arrow_mat)
 
             middle = (top_mat.translation + bottom_mat.translation) / 2.0
-            normal_dial_mat = Matrix.LocRotScale(middle, top_mat.to_quaternion(), (1.0, 1.0, 1.0))
+            normal_dial_mat = Matrix.LocRotScale(
+                middle, top_mat.to_quaternion(), (1.0, 1.0, 1.0)
+            )
             _prepare_dial(self.ladder_normal_dial, normal_dial_mat, clip=False)
 
         if not self.light_shaft_cage.hide:
             selected_extension = get_selected_extension(context)
             ext_props = selected_extension.get_properties()
 
-            light_shaft_transform = (self.get_extension_light_shaft_cage_world_transform(context) @
-                                     Matrix.Rotation(math.radians(90), 4, 'X'))
+            light_shaft_transform = self.get_extension_light_shaft_cage_world_transform(
+                context
+            ) @ Matrix.Rotation(math.radians(90), 4, "X")
 
             if not self.light_shaft_cage.is_modal:
-                self.light_shaft_cage.dimensions = get_extension_light_shaft_dimensions(selected_extension)
+                self.light_shaft_cage.dimensions = get_extension_light_shaft_dimensions(
+                    selected_extension
+                )
                 self.light_shaft_cage.matrix_basis = light_shaft_transform
                 # Cage gizmo stores edited transform in `matrix_offset`, so reset it when it is not modal
                 # anymore as we update `dimensions` instead
                 self.light_shaft_cage.matrix_offset = Matrix.Identity(4)
                 self.light_shaft_cage_last_transform = Matrix.Identity(4)
             else:
-                m = self.apply_light_shaft_cage_scale_clamping(self.light_shaft_cage.matrix_offset)
+                m = self.apply_light_shaft_cage_scale_clamping(
+                    self.light_shaft_cage.matrix_offset
+                )
                 self.light_shaft_cage.matrix_offset = m
 
             if not self.light_shaft_cage_end.is_modal:
-                self.light_shaft_cage_end.dimensions = get_extension_light_shaft_dimensions(selected_extension)
-                self.light_shaft_cage_end.matrix_basis = (Matrix.Translation(ext_props.direction * ext_props.length) @
-                                                          light_shaft_transform)
+                self.light_shaft_cage_end.dimensions = (
+                    get_extension_light_shaft_dimensions(selected_extension)
+                )
+                self.light_shaft_cage_end.matrix_basis = (
+                    Matrix.Translation(ext_props.direction * ext_props.length)
+                    @ light_shaft_transform
+                )
                 self.light_shaft_cage_end.matrix_offset = Matrix.Identity(4)
                 self.light_shaft_cage_end_last_transform = Matrix.Identity(4)
             else:
-                m = self.apply_light_shaft_cage_end_snapping(self.light_shaft_cage_end.matrix_offset)
+                m = self.apply_light_shaft_cage_end_snapping(
+                    self.light_shaft_cage_end.matrix_offset
+                )
                 self.light_shaft_cage_end.matrix_offset = m

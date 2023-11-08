@@ -3,18 +3,21 @@ import bmesh
 from enum import IntEnum
 
 from ..tools.blenderhelper import remove_number_suffix
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, VehiclePaintLayer, items_from_enums
+from ..sollumz_properties import (
+    SOLLUMZ_UI_NAMES,
+    SollumType,
+    VehicleLightID,
+    VehiclePaintLayer,
+    items_from_enums,
+)
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
     unknown_48: bpy.props.FloatProperty(name="Unknown48", default=1)
-    unknown_4c: bpy.props.FloatProperty(
-        name="Unknown4c", default=150)
-    unknown_50: bpy.props.FloatProperty(
-        name="Unknown50", default=6.28)
+    unknown_4c: bpy.props.FloatProperty(name="Unknown4c", default=150)
+    unknown_50: bpy.props.FloatProperty(name="Unknown50", default=6.28)
     unknown_54: bpy.props.FloatProperty(name="Unknown54", default=1)
-    inertia_tensor: bpy.props.FloatVectorProperty(
-        name="Inertia Tensor")
+    inertia_tensor: bpy.props.FloatVectorProperty(name="Inertia Tensor")
 
 
 class LODProperties(bpy.types.PropertyGroup):
@@ -25,20 +28,25 @@ class LODProperties(bpy.types.PropertyGroup):
     unknown_40: bpy.props.FloatVectorProperty(name="Unknown40")
     unknown_50: bpy.props.FloatVectorProperty(name="Unknown50")
     damping_linear_c: bpy.props.FloatVectorProperty(
-        name="Damping Linear C", default=(0.02, 0.02, 0.02))
+        name="Damping Linear C", default=(0.02, 0.02, 0.02)
+    )
     damping_linear_v: bpy.props.FloatVectorProperty(
-        name="Damping Linear V", default=(0.02, 0.02, 0.02))
+        name="Damping Linear V", default=(0.02, 0.02, 0.02)
+    )
     damping_linear_v2: bpy.props.FloatVectorProperty(
-        name="Damping Linear V2", default=(0.01, 0.01, 0.01))
+        name="Damping Linear V2", default=(0.01, 0.01, 0.01)
+    )
     damping_angular_c: bpy.props.FloatVectorProperty(
-        name="Damping Angular C", default=(0.02, 0.02, 0.02))
+        name="Damping Angular C", default=(0.02, 0.02, 0.02)
+    )
     damping_angular_v: bpy.props.FloatVectorProperty(
-        name="Damping Angular V", default=(0.02, 0.02, 0.02))
+        name="Damping Angular V", default=(0.02, 0.02, 0.02)
+    )
     damping_angular_v2: bpy.props.FloatVectorProperty(
-        name="Damping Angular V2", default=(0.01, 0.01, 0.01))
+        name="Damping Angular V2", default=(0.01, 0.01, 0.01)
+    )
 
-    archetype_properties: bpy.props.PointerProperty(
-        type=FragArchetypeProperties)
+    archetype_properties: bpy.props.PointerProperty(type=FragArchetypeProperties)
 
 
 GlassTypes = [
@@ -69,24 +77,21 @@ class GroupProperties(bpy.types.PropertyGroup):
     glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
     strength: bpy.props.FloatProperty(name="Strength", default=100)
     force_transmission_scale_up: bpy.props.FloatProperty(
-        name="Force Transmission Scale Up", default=0.25)
+        name="Force Transmission Scale Up", default=0.25
+    )
     force_transmission_scale_down: bpy.props.FloatProperty(
-        name="Force Transmission Scale Down", default=0.25)
+        name="Force Transmission Scale Down", default=0.25
+    )
     joint_stiffness: bpy.props.FloatProperty(name="Joint Stiffness")
-    min_soft_angle_1: bpy.props.FloatProperty(
-        name="Min Soft Angle 1", default=-1)
-    max_soft_angle_1: bpy.props.FloatProperty(
-        name="Max Soft Angle 1", default=1)
-    max_soft_angle_2: bpy.props.FloatProperty(
-        name="Max Soft Angle 2", default=1)
-    max_soft_angle_3: bpy.props.FloatProperty(
-        name="Max Soft Angle 3", default=1)
+    min_soft_angle_1: bpy.props.FloatProperty(name="Min Soft Angle 1", default=-1)
+    max_soft_angle_1: bpy.props.FloatProperty(name="Max Soft Angle 1", default=1)
+    max_soft_angle_2: bpy.props.FloatProperty(name="Max Soft Angle 2", default=1)
+    max_soft_angle_3: bpy.props.FloatProperty(name="Max Soft Angle 3", default=1)
     rotation_speed: bpy.props.FloatProperty(name="Rotation Speed")
     rotation_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
-    min_damage_force: bpy.props.FloatProperty(
-        name="Min Damage Force", default=100)
+    min_damage_force: bpy.props.FloatProperty(name="Min Damage Force", default=100)
     damage_health: bpy.props.FloatProperty(name="Damage Health", default=1000)
     unk_float_5c: bpy.props.FloatProperty(name="Weapon Health")
     unk_float_60: bpy.props.FloatProperty(name="Weapon Scale", default=1)
@@ -104,16 +109,19 @@ class ChildProperties(bpy.types.PropertyGroup):
     damaged: bpy.props.BoolProperty(name="Damaged")
 
     window_mat: bpy.props.PointerProperty(
-        type=bpy.types.Material, name="Window Material", description="The material of the window mesh (usually a vehglass shader)")
-    is_veh_window: bpy.props.BoolProperty(
-        name="Is Glass Window")
+        type=bpy.types.Material,
+        name="Window Material",
+        description="The material of the window mesh (usually a vehglass shader)",
+    )
+    is_veh_window: bpy.props.BoolProperty(name="Is Glass Window")
 
 
 class VehicleWindowProperties(bpy.types.PropertyGroup):
     unk_float_17: bpy.props.FloatProperty(name="Unk Float 17")
     unk_float_18: bpy.props.FloatProperty(name="Unk Float 18")
     cracks_texture_tiling: bpy.props.FloatProperty(
-        name="Cracks Texture Tiling", default=1.5)
+        name="Cracks Texture Tiling", default=1.5
+    )
 
 
 class FragmentProperties(bpy.types.PropertyGroup):
@@ -124,8 +132,7 @@ class FragmentProperties(bpy.types.PropertyGroup):
     unk_c4: bpy.props.FloatProperty(name="UnknownC4", default=1.0)
     unk_cc: bpy.props.FloatProperty(name="UnknownCC")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
-    buoyancy_factor: bpy.props.FloatProperty(
-        name="Buoyancy Factor", default=1.0)
+    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1.0)
 
     lod_properties: bpy.props.PointerProperty(type=LODProperties)
 
@@ -137,7 +144,8 @@ def get_light_id_of_selection(self):
         return -1
 
     selected_mesh_objs = [
-        obj for obj in bpy.context.selected_objects if obj.type == "MESH"]
+        obj for obj in bpy.context.selected_objects if obj.type == "MESH"
+    ]
 
     if not selected_mesh_objs:
         return -1
@@ -180,6 +188,7 @@ PAINT_LAYER_VALUES = {
 
 def update_mat_paint_name(mat: bpy.types.Material):
     """Update material name to have [PAINT_LAYER] extension at the end."""
+
     def get_paint_layer_name(_paint_layer: VehiclePaintLayer):
         if _paint_layer == VehiclePaintLayer.NOT_PAINTABLE:
             return ""
@@ -202,71 +211,122 @@ def update_mat_paint_name(mat: bpy.types.Material):
 
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
-        type=FragmentProperties)
-    bpy.types.Object.child_properties = bpy.props.PointerProperty(
-        type=ChildProperties)
+        type=FragmentProperties
+    )
+    bpy.types.Object.child_properties = bpy.props.PointerProperty(type=ChildProperties)
     bpy.types.Object.vehicle_window_properties = bpy.props.PointerProperty(
-        type=VehicleWindowProperties)
+        type=VehicleWindowProperties
+    )
     bpy.types.Object.sollumz_is_physics_child_mesh = bpy.props.BoolProperty(
-        name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children")
+        name="Is Physics Child",
+        description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children",
+    )
 
     bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
-        name="Thickness", default=0.1)
+        name="Thickness", default=0.1
+    )
 
     bpy.types.Scene.create_fragment_type = bpy.props.EnumProperty(
         items=[
-            (SollumType.FRAGMENT.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGMENT], "Create a fragment object"),
-            (SollumType.FRAGLOD.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGLOD], "Create a fragment LOD object"),
-            (SollumType.FRAGGROUP.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGGROUP], "Create a fragment group object"),
-            (SollumType.FRAGCHILD.value,
-             SOLLUMZ_UI_NAMES[SollumType.FRAGCHILD], "Create a fragment child object"),
+            (
+                SollumType.FRAGMENT.value,
+                SOLLUMZ_UI_NAMES[SollumType.FRAGMENT],
+                "Create a fragment object",
+            ),
+            (
+                SollumType.FRAGLOD.value,
+                SOLLUMZ_UI_NAMES[SollumType.FRAGLOD],
+                "Create a fragment LOD object",
+            ),
+            (
+                SollumType.FRAGGROUP.value,
+                SOLLUMZ_UI_NAMES[SollumType.FRAGGROUP],
+                "Create a fragment group object",
+            ),
+            (
+                SollumType.FRAGCHILD.value,
+                SOLLUMZ_UI_NAMES[SollumType.FRAGCHILD],
+                "Create a fragment child object",
+            ),
         ],
         name="Type",
-        default=SollumType.FRAGMENT.value
+        default=SollumType.FRAGMENT.value,
     )
 
-    bpy.types.Bone.group_properties = bpy.props.PointerProperty(
-        type=GroupProperties)
+    bpy.types.Bone.group_properties = bpy.props.PointerProperty(type=GroupProperties)
     bpy.types.Bone.sollumz_use_physics = bpy.props.BoolProperty(
-        name="Use Physics", description="Whether or not to use physics for this fragment bone")
+        name="Use Physics",
+        description="Whether or not to use physics for this fragment bone",
+    )
 
-    bpy.types.Scene.create_bones_fragment = bpy.props.PointerProperty(type=bpy.types.Object,
-                                                                      name="Fragment", description="The Fragment to add the bones to")
+    bpy.types.Scene.create_bones_fragment = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Fragment",
+        description="The Fragment to add the bones to",
+    )
     bpy.types.Scene.create_bones_parent_to_selected = bpy.props.BoolProperty(
-        name="Parent to selected bone", description="Parent all bones to the currently selected bone")
+        name="Parent to selected bone",
+        description="Parent all bones to the currently selected bone",
+    )
     bpy.types.Scene.set_mass_amount = bpy.props.FloatProperty(
-        name="Mass", description="Mass", min=0)
+        name="Mass", description="Mass", min=0
+    )
 
-    bpy.types.Scene.set_vehicle_light_id = bpy.props.EnumProperty(items=items_from_enums(
-        VehicleLightID, exclude=VehicleLightID.NONE), name="Vehicle Light ID", description="Determines which action causes the emissive shader to activate (this is stored in the alpha channel of the vertex colors)")
-    bpy.types.Scene.select_vehicle_light_id = bpy.props.EnumProperty(items=items_from_enums(
-        VehicleLightID, exclude=VehicleLightID.NONE), name="Vehicle Light ID", description="Determines which action causes the emissive shader to activate (this is stored in the alpha channel of the vertex colors)")
-    bpy.types.Scene.set_custom_vehicle_light_id = bpy.props.IntProperty(
-        name="Custom")
+    bpy.types.Scene.set_vehicle_light_id = bpy.props.EnumProperty(
+        items=items_from_enums(VehicleLightID, exclude=VehicleLightID.NONE),
+        name="Vehicle Light ID",
+        description="Determines which action causes the emissive shader to activate (this is stored in the alpha channel of the vertex colors)",
+    )
+    bpy.types.Scene.select_vehicle_light_id = bpy.props.EnumProperty(
+        items=items_from_enums(VehicleLightID, exclude=VehicleLightID.NONE),
+        name="Vehicle Light ID",
+        description="Determines which action causes the emissive shader to activate (this is stored in the alpha channel of the vertex colors)",
+    )
+    bpy.types.Scene.set_custom_vehicle_light_id = bpy.props.IntProperty(name="Custom")
     bpy.types.Scene.select_custom_vehicle_light_id = bpy.props.IntProperty(
-        name="Custom")
+        name="Custom"
+    )
     bpy.types.Scene.selected_vehicle_light_id = bpy.props.IntProperty(
-        name="Light ID", get=get_light_id_of_selection)
+        name="Light ID", get=get_light_id_of_selection
+    )
 
     bpy.types.Material.sollumz_paint_layer = bpy.props.EnumProperty(
         items=(
-            (VehiclePaintLayer.NOT_PAINTABLE.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.NOT_PAINTABLE],
-             "Material cannot be painted at mod shops"),
-            (VehiclePaintLayer.PRIMARY.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.PRIMARY],
-             "Primary paint color will use this material"),
-            (VehiclePaintLayer.SECONDARY.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.SECONDARY],
-             "Secondary paint color will use this material"),
-            (VehiclePaintLayer.WHEEL.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.WHEEL],
-             "Wheel color will use this material"),
-            (VehiclePaintLayer.INTERIOR_TRIM.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_TRIM],
-             "Interior trim color will use this material"),
-            (VehiclePaintLayer.INTERIOR_DASH.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_DASH],
-             "Interior dash color will use this material"),
+            (
+                VehiclePaintLayer.NOT_PAINTABLE.value,
+                SOLLUMZ_UI_NAMES[VehiclePaintLayer.NOT_PAINTABLE],
+                "Material cannot be painted at mod shops",
+            ),
+            (
+                VehiclePaintLayer.PRIMARY.value,
+                SOLLUMZ_UI_NAMES[VehiclePaintLayer.PRIMARY],
+                "Primary paint color will use this material",
+            ),
+            (
+                VehiclePaintLayer.SECONDARY.value,
+                SOLLUMZ_UI_NAMES[VehiclePaintLayer.SECONDARY],
+                "Secondary paint color will use this material",
+            ),
+            (
+                VehiclePaintLayer.WHEEL.value,
+                SOLLUMZ_UI_NAMES[VehiclePaintLayer.WHEEL],
+                "Wheel color will use this material",
+            ),
+            (
+                VehiclePaintLayer.INTERIOR_TRIM.value,
+                SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_TRIM],
+                "Interior trim color will use this material",
+            ),
+            (
+                VehiclePaintLayer.INTERIOR_DASH.value,
+                SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_DASH],
+                "Interior dash color will use this material",
+            ),
         ),
-        name="Paint Layer", default=VehiclePaintLayer.NOT_PAINTABLE, update=lambda mat, context: update_mat_paint_name(mat))
+        name="Paint Layer",
+        default=VehiclePaintLayer.NOT_PAINTABLE,
+        update=lambda mat, context: update_mat_paint_name(mat),
+    )
 
 
 def unregister():

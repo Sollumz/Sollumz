@@ -14,6 +14,7 @@ from ..ytypexport import selected_ytyp_to_xml
 
 class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add a ytyp to the project"""
+
     bl_idname = "sollumz.createytyp"
     bl_label = "Create YTYP"
 
@@ -28,6 +29,7 @@ class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_delete_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete a ytyp from the project"""
+
     bl_idname = "sollumz.deleteytyp"
     bl_label = "Delete YTYP"
 
@@ -46,6 +48,7 @@ class SOLLUMZ_OT_delete_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add an archetype to the selected ytyp"""
+
     bl_idname = "sollumz.createarchetype"
     bl_label = "Create Archetype"
 
@@ -60,8 +63,11 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(
+    SOLLUMZ_OT_base, bpy.types.Operator
+):
     """Sets texture dictionary for all archetypes within the selected ytyp"""
+
     bl_idname = "sollumz.settexturedictionaryallarchs"
     bl_label = "Set to All Archetypes"
 
@@ -75,11 +81,12 @@ class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.t
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.texture_dictionary = selected_ytyp.all_texture_dictionary
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_set_loddist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets lod dist for all archetypes within the selected ytyp"""
+
     bl_idname = "sollumz.setloddistallarchs"
     bl_label = "Set to All Archetypes"
 
@@ -93,29 +100,37 @@ class SOLLUMZ_OT_set_loddist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Opera
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.lod_dist = selected_ytyp.all_lod_dist
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_set_entity_loddist_for_all_archetypes(bpy.types.Operator):
     """Sets entity lod dist for all entities in all within the selected MLO archetype"""
+
     bl_idname = "sollumz.setentityloddistallarchs"
     bl_label = "Set to All Entities"
 
     @classmethod
     def poll(cls, context):
         selected_archetype = get_selected_archetype(context)
-        return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO and len(selected_archetype.entities) > 0
+        return (
+            selected_archetype is not None
+            and selected_archetype.type == ArchetypeType.MLO
+            and len(selected_archetype.entities) > 0
+        )
 
     def execute(self, context):
         selected_archetype = get_selected_archetype(context)
         for entity in selected_archetype.entities:
             entity.lod_dist = selected_archetype.all_entity_lod_dist
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
-class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
+class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(
+    SOLLUMZ_OT_base, bpy.types.Operator
+):
     """Sets HD textures distance for all archetypes within the selected ytyp"""
+
     bl_idname = "sollumz.sethdtexturedistallarchs"
     bl_label = "Set to All Archetypes"
 
@@ -129,11 +144,12 @@ class SOLLUMZ_OT_set_hdtexturedist_for_all_archetypes(SOLLUMZ_OT_base, bpy.types
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.hd_texture_dist = selected_ytyp.all_hd_tex_dist
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_set_flag_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets flags for all archetypes within the selected ytyp"""
+
     bl_idname = "sollumz.setflagsallarchs"
     bl_label = "Set to All Archetypes"
 
@@ -147,16 +163,21 @@ class SOLLUMZ_OT_set_flag_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator
             if archetype.asset_type != AssetType.ASSETLESS:
                 archetype.flags.total = str(selected_ytyp.all_flags)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create archetype from selected"""
+
     bl_idname = "sollumz.createarchetypefromselected"
     bl_label = "Auto-Create From Selected"
 
-    allowed_types = [SollumType.DRAWABLE,
-                     SollumType.BOUND_COMPOSITE, SollumType.FRAGMENT, SollumType.DRAWABLE_DICTIONARY]
+    allowed_types = [
+        SollumType.DRAWABLE,
+        SollumType.BOUND_COMPOSITE,
+        SollumType.FRAGMENT,
+        SollumType.DRAWABLE_DICTIONARY,
+    ]
 
     @classmethod
     def poll(cls, context):
@@ -172,7 +193,8 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
             if archetype_type == ArchetypeType.MLO:
                 if obj.sollum_type != SollumType.BOUND_COMPOSITE:
                     self.message(
-                        f"MLO asset '{obj.name}' must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
+                        f"MLO asset '{obj.name}' must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!"
+                    )
                     continue
             found = True
             selected_ytyp = get_selected_ytyp(context)
@@ -181,14 +203,17 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
             item.name = obj.name
             item.asset = obj
             item.type = archetype_type
-            item.texture_dictionary = obj.name if has_embedded_textures(
-                obj) else ""
+            item.texture_dictionary = obj.name if has_embedded_textures(obj) else ""
             drawable_dictionary = ""
             if obj.parent:
                 if obj.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                     drawable_dictionary = obj.parent.name
             item.drawable_dictionary = drawable_dictionary
-            item.physics_dictionary = obj.name if has_collision(obj) and obj.sollum_type != SollumType.FRAGMENT else ""
+            item.physics_dictionary = (
+                obj.name
+                if has_collision(obj) and obj.sollum_type != SollumType.FRAGMENT
+                else ""
+            )
 
             if obj.sollum_type == SollumType.DRAWABLE:
                 item.asset_type = AssetType.DRAWABLE
@@ -200,13 +225,15 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                 item.asset_type = AssetType.FRAGMENT
         if not found:
             self.message(
-                f"No asset of type '{','.join([SOLLUMZ_UI_NAMES[type] for type in self.allowed_types])}' found!")
+                f"No asset of type '{','.join([SOLLUMZ_UI_NAMES[type] for type in self.allowed_types])}' found!"
+            )
             return False
         return True
 
 
 class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete archetype from selected ytyp"""
+
     bl_idname = "sollumz.deletearchetype"
     bl_label = "Delete Archetype"
 
@@ -218,8 +245,7 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_ytyp = get_selected_ytyp(context)
         selected_ytyp.archetypes.remove(selected_ytyp.archetype_index)
-        selected_ytyp.archetype_index = max(
-            selected_ytyp.archetype_index - 1, 0)
+        selected_ytyp.archetype_index = max(selected_ytyp.archetype_index - 1, 0)
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
 
@@ -228,6 +254,7 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_create_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add a timecycle modifier to the selected archetype"""
+
     bl_idname = "sollumz.createtimecyclemodifier"
     bl_label = "Create Timecycle Modifier"
 
@@ -244,6 +271,7 @@ class SOLLUMZ_OT_create_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
 
 class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete timecycle modifier from selected archetype"""
+
     bl_idname = "sollumz.deletetimecyclemodifier"
     bl_label = "Delete Timecycle Modifier"
 
@@ -254,8 +282,7 @@ class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.timecycle_modifiers.remove(
-            selected_archetype.tcm_index)
+        selected_archetype.timecycle_modifiers.remove(selected_archetype.tcm_index)
         selected_archetype.tcm_index = max(selected_archetype.tcm_index - 1, 0)
         return True
 
@@ -284,6 +311,7 @@ class SOLLUMZ_OT_YTYP_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
 
 class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     """Import a ytyp.xml"""
+
     bl_idname = "sollumz.importytyp"
     bl_label = "Import ytyp.xml"
     bl_action = "Import a YTYP"
@@ -308,6 +336,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
 class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     """Export the selected YTYP."""
+
     bl_idname = "sollumz.exportytyp"
     bl_label = "Export ytyp.xml"
     bl_action = "Export a YTYP"

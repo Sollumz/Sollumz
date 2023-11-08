@@ -6,7 +6,9 @@ from bpy.types import Operator
 from typing import Optional
 
 _logging_operator: Optional[Operator] = None
-_NO_LOGGING_OPERATOR_WARNING = "LOGGER WARNING: No active logging operator has been set!"
+_NO_LOGGING_OPERATOR_WARNING = (
+    "LOGGER WARNING: No active logging operator has been set!"
+)
 
 
 def _log(msg: str, level: str):

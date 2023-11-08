@@ -1,6 +1,9 @@
 import bpy
 from ..gizmos.extensions import SOLLUMZ_GGT_archetype_extensions
-from ..operators.extensions import SOLLUMZ_OT_delete_archetype_extension, SOLLUMZ_OT_duplicate_archetype_extension
+from ..operators.extensions import (
+    SOLLUMZ_OT_delete_archetype_extension,
+    SOLLUMZ_OT_duplicate_archetype_extension,
+)
 from ..utils import get_selected_extension
 from ...icons import ICON_GEOM_TOOL
 
@@ -16,10 +19,16 @@ class ArchetypeExtensionTool(bpy.types.WorkSpaceTool):
 
     bl_widget = SOLLUMZ_GGT_archetype_extensions.bl_idname
     bl_keymap = (
-        (SOLLUMZ_OT_delete_archetype_extension.bl_idname,
-         {"type": "DEL", "value": "PRESS"}, {"properties": []}),
-        (SOLLUMZ_OT_duplicate_archetype_extension.bl_idname,
-         {"type": "D", "value": "PRESS", "shift": True}, {"properties": []}),
+        (
+            SOLLUMZ_OT_delete_archetype_extension.bl_idname,
+            {"type": "DEL", "value": "PRESS"},
+            {"properties": []},
+        ),
+        (
+            SOLLUMZ_OT_duplicate_archetype_extension.bl_idname,
+            {"type": "D", "value": "PRESS", "shift": True},
+            {"properties": []},
+        ),
     )
 
     def draw_settings(context, layout, tool):

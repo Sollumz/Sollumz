@@ -22,7 +22,7 @@ bl_info = {
     "description": "This plugins allows you to import/export codewalker xml files.",
     "blender": (3, 5, 1),
     "version": (2, 2, 0),
-    "category": "Import-Export"
+    "category": "Import-Export",
 }
 
 
@@ -36,6 +36,7 @@ def register():
     # WorkSpaceTools need to be registered after normal modules so the keymaps
     # detect the registed operators
     sollumz_tool.register_tools()
+
 
 def unregister():
     sollumz_tool.unregister_tools()

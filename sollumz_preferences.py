@@ -35,63 +35,63 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         name="Limit to Selected",
         description="Export selected and visible objects only",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     auto_calculate_inertia: bpy.props.BoolProperty(
         name="Auto Calculate Inertia",
         description="Automatically calculate inertia for physics objects (applies to yfts and ydrs too)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     auto_calculate_volume: bpy.props.BoolProperty(
         name="Auto Calculate Volume",
         description="Automatically calculate volume for physics objects (applies to yfts and ydrs too)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     exclude_skeleton: bpy.props.BoolProperty(
         name="Exclude Skeleton",
         description="Exclude skeleton from export. Usually done with mp ped components",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     export_with_ytyp: bpy.props.BoolProperty(
         name="Export with ytyp",
         description="Exports a .ytyp.xml with an archetype for every drawable or drawable dictionary being exported",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_exclude_entities: bpy.props.BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all Entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_box_occluders: bpy.props.BoolProperty(
         name="Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_model_occluders: bpy.props.BoolProperty(
         name="Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_car_generators: bpy.props.BoolProperty(
         name="Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     export_lods: bpy.props.EnumProperty(
@@ -100,19 +100,25 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         options={"ENUM_FLAG"},
         default=({"sollumz_export_very_high", "sollumz_export_main_lods"}),
         items=(
-            ("sollumz_export_very_high", "Very High",
-             "Export Very High LODs into a _hi.yft"),
-            ("sollumz_export_main_lods", "High - Very Low",
-             "Export all LODs except Very High")
+            (
+                "sollumz_export_very_high",
+                "Very High",
+                "Export Very High LODs into a _hi.yft",
+            ),
+            (
+                "sollumz_export_main_lods",
+                "High - Very Low",
+                "Export all LODs except Very High",
+            ),
         ),
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     apply_transforms: bpy.props.BoolProperty(
         name="Apply Parent Transforms",
         description="Apply Drawable/Fragment scale and rotation",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     @property
@@ -129,63 +135,63 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         name="Import as asset",
         description="Create an asset from the .ydr/.yft high LOD",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     import_with_hi: bpy.props.BoolProperty(
         name="Import with _hi",
         description="Import the selected .yft.xml with the <name>_hi.yft.xml placed in the very high LOD (must be in the same directory)",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     split_by_group: bpy.props.BoolProperty(
         name="Split Mesh by Group",
         description="Splits the mesh by vertex groups",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     import_ext_skeleton: bpy.props.BoolProperty(
         name="Import External Skeleton",
         description="Imports the first found yft skeleton in the same folder as the selected file",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_skip_missing_entities: bpy.props.BoolProperty(
         name="Skip Missing Entities",
         description="If enabled, missing entities wont be created as an empty object",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_exclude_entities: bpy.props.BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_box_occluders: bpy.props.BoolProperty(
         name="Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_model_occluders: bpy.props.BoolProperty(
         name="Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_car_generators: bpy.props.BoolProperty(
         name="Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     ymap_instance_entities: bpy.props.BoolProperty(
@@ -202,40 +208,42 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         name="Scale Light Intensity",
         description="Scale light intensity by 500 on import/export",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter",
         description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     extra_color_swatches: bpy.props.BoolProperty(
         name="Extra Vertex Color Swatches",
         description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     sollumz_icon_header: bpy.props.BoolProperty(
         name="Show Sollumz icon",
         description="Show the Sollumz icon in properties section headers",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
     use_text_name_as_mat_name: bpy.props.BoolProperty(
         name="Use Texture Name as Material Name",
         description="Use the name of the texture as the material name",
         default=True,
-        update=_save_preferences
+        update=_save_preferences,
     )
 
     export_settings: bpy.props.PointerProperty(
-        type=SollumzExportSettings, name="Export Settings")
+        type=SollumzExportSettings, name="Export Settings"
+    )
     import_settings: bpy.props.PointerProperty(
-        type=SollumzImportSettings, name="Import Settings")
+        type=SollumzImportSettings, name="Import Settings"
+    )
 
     def draw(self, context):
         layout = self.layout
@@ -249,15 +257,21 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         _load_preferences()
 
 
-def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> SollumzAddonPreferences:
+def get_addon_preferences(
+    context: Optional[bpy.types.Context] = None,
+) -> SollumzAddonPreferences:
     return context.preferences.addons[__package__.split(".")[0]].preferences
 
 
-def get_import_settings(context: Optional[bpy.types.Context] = None) -> SollumzImportSettings:
+def get_import_settings(
+    context: Optional[bpy.types.Context] = None,
+) -> SollumzImportSettings:
     return get_addon_preferences(context or bpy.context).import_settings
 
 
-def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzExportSettings:
+def get_export_settings(
+    context: Optional[bpy.types.Context] = None,
+) -> SollumzExportSettings:
     return get_addon_preferences(context or bpy.context).export_settings
 
 
@@ -285,8 +299,7 @@ def _load_preferences():
             continue
 
         if not hasattr(addon_prefs, section):
-            print(
-                f"Unknown preferences pointer property '{section}'! Skipping...")
+            print(f"Unknown preferences pointer property '{section}'! Skipping...")
             continue
 
         prop_group = getattr(addon_prefs, section)
@@ -319,7 +332,9 @@ def _get_data_block_as_dict(data_block: bpy.types.ID):
 
 
 def get_prefs_path():
-    return os.path.join(bpy.utils.user_resource(resource_type='CONFIG'), PREFS_FILE_NAME)
+    return os.path.join(
+        bpy.utils.user_resource(resource_type="CONFIG"), PREFS_FILE_NAME
+    )
 
 
 def register():

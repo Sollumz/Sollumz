@@ -20,7 +20,7 @@ def remove_number_suffix(string: str):
     if match is None:
         return string
 
-    return string[:match.start()]
+    return string[: match.start()]
 
 
 def create_brush(name):
@@ -130,6 +130,7 @@ def remove_unused_materials(obj):
     obj.select_set(True)
     bpy.ops.object.material_slot_remove_unused()
 
+
 # MIT License
 
 # Copyright (c) 2017 GiveMeAllYourCats
@@ -180,8 +181,11 @@ def get_selected_vertices(obj):
     if obj.mode != "OBJECT":
         bpy.ops.object.mode_set(mode="OBJECT")
     # We need to switch from Edit mode to Object mode so the vertex selection gets updated (disgusting!)
-    verts = [obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
-             for v in obj.data.vertices if v.select]
+    verts = [
+        obj.matrix_world @ Vector((v.co.x, v.co.y, v.co.z))
+        for v in obj.data.vertices
+        if v.select
+    ]
     bpy.ops.object.mode_set(mode=mode)
     return verts
 
@@ -290,7 +294,11 @@ def get_object_with_children(obj):
     return objs
 
 
-def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, object_data: Optional[bpy.types.Mesh] = None) -> bpy.types.Object:
+def create_blender_object(
+    sollum_type: SollumType,
+    name: Optional[str] = None,
+    object_data: Optional[bpy.types.Mesh] = None,
+) -> bpy.types.Object:
     """Create a bpy object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
     object_data = object_data or bpy.data.meshes.new(name)
@@ -301,7 +309,9 @@ def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, o
     return obj
 
 
-def create_empty_object(sollum_type: SollumType, name: Optional[str] = None) -> bpy.types.Object:
+def create_empty_object(
+    sollum_type: SollumType, name: Optional[str] = None
+) -> bpy.types.Object:
     """Create a bpy empty object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
     obj = bpy.data.objects.new(name, None)
@@ -326,7 +336,11 @@ def add_armature_modifier(obj: bpy.types.Object, armature_obj: bpy.types.Object)
     return mod
 
 
-def add_child_of_bone_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: Optional[str] = None):
+def add_child_of_bone_constraint(
+    obj: bpy.types.Object,
+    armature_obj: bpy.types.Object,
+    target_bone: Optional[str] = None,
+):
     """Add Child Of constraint and set bone. Also sets bone target space and owner space so that parenting evaluated properly."""
     constraint: bpy.types.ChildOfConstraint = obj.constraints.new("CHILD_OF")
     constraint.target = armature_obj
@@ -393,13 +407,19 @@ def get_child_of_pose_bone(obj: bpy.types.Object) -> Optional[bpy.types.PoseBone
     return armature.pose.bones.get(constraint.subtarget)
 
 
-def get_child_of_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ChildOfConstraint]:
+def get_child_of_constraint(
+    obj: bpy.types.Object,
+) -> Optional[bpy.types.ChildOfConstraint]:
     """Get first child of constraint with armature target and bone subtarget set. Returns None if not found."""
     for constraint in obj.constraints:
         if constraint.type != "CHILD_OF":
             continue
 
-        if constraint.target and constraint.target.type == "ARMATURE" and constraint.subtarget:
+        if (
+            constraint.target
+            and constraint.target.type == "ARMATURE"
+            and constraint.subtarget
+        ):
             return constraint
 
 
@@ -418,24 +438,50 @@ def parent_objs(objs: list[bpy.types.Object], parent_obj: bpy.types.Object):
 
 def lod_level_enum_flag_prop_factory(default: set[LODLevel] = None):
     """Returns an EnumProperty as a flag with all LOD levels"""
-    default = default or {LODLevel.HIGH,
-                          LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW}
+    default = default or {
+        LODLevel.HIGH,
+        LODLevel.MEDIUM,
+        LODLevel.LOW,
+        LODLevel.VERYLOW,
+    }
     return bpy.props.EnumProperty(
         items=(
-            (LODLevel.VERYHIGH.value,
-             SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH], SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH]),
-            (LODLevel.HIGH.value,
-             SOLLUMZ_UI_NAMES[LODLevel.HIGH], SOLLUMZ_UI_NAMES[LODLevel.HIGH]),
-            (LODLevel.MEDIUM.value,
-             SOLLUMZ_UI_NAMES[LODLevel.MEDIUM], SOLLUMZ_UI_NAMES[LODLevel.MEDIUM]),
-            (LODLevel.LOW.value,
-             SOLLUMZ_UI_NAMES[LODLevel.LOW], SOLLUMZ_UI_NAMES[LODLevel.LOW]),
-            (LODLevel.VERYLOW.value,
-             SOLLUMZ_UI_NAMES[LODLevel.VERYLOW], SOLLUMZ_UI_NAMES[LODLevel.VERYLOW]),
-        ), options={"ENUM_FLAG"}, default=default)
+            (
+                LODLevel.VERYHIGH.value,
+                SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH],
+                SOLLUMZ_UI_NAMES[LODLevel.VERYHIGH],
+            ),
+            (
+                LODLevel.HIGH.value,
+                SOLLUMZ_UI_NAMES[LODLevel.HIGH],
+                SOLLUMZ_UI_NAMES[LODLevel.HIGH],
+            ),
+            (
+                LODLevel.MEDIUM.value,
+                SOLLUMZ_UI_NAMES[LODLevel.MEDIUM],
+                SOLLUMZ_UI_NAMES[LODLevel.MEDIUM],
+            ),
+            (
+                LODLevel.LOW.value,
+                SOLLUMZ_UI_NAMES[LODLevel.LOW],
+                SOLLUMZ_UI_NAMES[LODLevel.LOW],
+            ),
+            (
+                LODLevel.VERYLOW.value,
+                SOLLUMZ_UI_NAMES[LODLevel.VERYLOW],
+                SOLLUMZ_UI_NAMES[LODLevel.VERYLOW],
+            ),
+        ),
+        options={"ENUM_FLAG"},
+        default=default,
+    )
 
 
-def tag_redraw(context: bpy.types.Context, space_type: str = "PROPERTIES", region_type: str = "WINDOW"):
+def tag_redraw(
+    context: bpy.types.Context,
+    space_type: str = "PROPERTIES",
+    region_type: str = "WINDOW",
+):
     """Redraw all panels in the given space_type and region_type"""
     for window in context.window_manager.windows:
         for area in window.screen.areas:
@@ -445,7 +491,9 @@ def tag_redraw(context: bpy.types.Context, space_type: str = "PROPERTIES", regio
                         region.tag_redraw()
 
 
-def find_bsdf_and_material_output(material: bpy.types.Material) -> Tuple[bpy.types.ShaderNodeBsdfPrincipled, bpy.types.ShaderNodeOutputMaterial]:
+def find_bsdf_and_material_output(
+    material: bpy.types.Material,
+) -> Tuple[bpy.types.ShaderNodeBsdfPrincipled, bpy.types.ShaderNodeOutputMaterial]:
     material_output = None
     bsdf = None
     for node in material.node_tree.nodes:
@@ -455,4 +503,3 @@ def find_bsdf_and_material_output(material: bpy.types.Material) -> Tuple[bpy.typ
             bsdf = node
 
     return bsdf, material_output
-

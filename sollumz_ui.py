@@ -1,13 +1,41 @@
 import bpy
-from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
-from .sollumz_operators import SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location, SOLLUMZ_OT_paste_rotation
+from .sollumz_preferences import (
+    get_addon_preferences,
+    get_export_settings,
+    get_import_settings,
+    SollumzImportSettings,
+    SollumzExportSettings,
+)
+from .sollumz_operators import (
+    SOLLUMZ_OT_copy_location,
+    SOLLUMZ_OT_copy_rotation,
+    SOLLUMZ_OT_paste_location,
+    SOLLUMZ_OT_paste_rotation,
+)
 from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import SollumType, MaterialType
-from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
-                   SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_SHATTERMAPS, SOLLUMZ_OT_HIDE_OBJECT, SOLLUMZ_OT_SHOW_COLLISIONS, SOLLUMZ_OT_SHOW_SHATTERMAPS)
+from .lods import (
+    SOLLUMZ_OT_SET_LOD_HIGH,
+    SOLLUMZ_OT_SET_LOD_MED,
+    SOLLUMZ_OT_SET_LOD_LOW,
+    SOLLUMZ_OT_SET_LOD_VLOW,
+    SOLLUMZ_OT_SET_LOD_VERY_HIGH,
+    SOLLUMZ_OT_HIDE_COLLISIONS,
+    SOLLUMZ_OT_HIDE_SHATTERMAPS,
+    SOLLUMZ_OT_HIDE_OBJECT,
+    SOLLUMZ_OT_SHOW_COLLISIONS,
+    SOLLUMZ_OT_SHOW_SHATTERMAPS,
+)
 from .icons import icon_manager
 
-def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
+
+def draw_list_with_add_remove(
+    layout: bpy.types.UILayout,
+    add_operator: str,
+    remove_operator: str,
+    *temp_list_args,
+    **temp_list_kwargs,
+):
     """Draw a UIList with an add and remove button on the right column. Returns the left column."""
     row = layout.row()
     list_col = row.column()
@@ -22,6 +50,7 @@ def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, rem
 
 class BasicListHelper:
     """Provides functionality for drawing simple lists where each item has a name and icon"""
+
     name_prop: str = "name"
     item_icon: str = "NONE"
     name_editable: bool = True
@@ -30,12 +59,10 @@ class BasicListHelper:
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         if not self.name_editable:
-            layout.label(text=getattr(item, self.name_prop),
-                         icon=self.item_icon)
+            layout.label(text=getattr(item, self.name_prop), icon=self.item_icon)
             return
 
-        layout.prop(item, self.name_prop, text="",
-                    emboss=False, icon=self.item_icon)
+        layout.prop(item, self.name_prop, text="", emboss=False, icon=self.item_icon)
 
 
 class FilterListHelper:
@@ -69,7 +96,8 @@ class FilterListHelper:
             name = getattr(item, self.order_by_name_key)
         except:
             AttributeError(
-                f"Invalid order_by_name_key for {self.__class__.__name__}! This should be the 'name' attribute for the list item.")
+                f"Invalid order_by_name_key for {self.__class__.__name__}! This should be the 'name' attribute for the list item."
+            )
 
         return not self.filter_name or self.filter_name.lower() in name.lower()
 
@@ -112,7 +140,9 @@ class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
     def get_settings(self, context: bpy.types.Context):
         return get_import_settings(context)
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzImportSettings
+    ):
         ...
 
 
@@ -122,7 +152,9 @@ class SollumzExportSettingsPanel(SollumzFileSettingsPanel):
     def get_settings(self, context: bpy.types.Context):
         return get_export_settings(context)
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         ...
 
 
@@ -130,7 +162,9 @@ class SOLLUMZ_PT_import_asset(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Import Asset"
     bl_order = 0
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzImportSettings
+    ):
         layout.prop(settings, "import_as_asset")
 
 
@@ -138,7 +172,9 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Fragment"
     bl_order = 1
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzImportSettings
+    ):
         layout.prop(settings, "split_by_group")
         layout.prop(settings, "import_with_hi")
 
@@ -147,7 +183,9 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Drawable Dictionary"
     bl_order = 2
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzImportSettings
+    ):
         layout.prop(settings, "import_ext_skeleton")
 
 
@@ -165,19 +203,30 @@ class SOLLUMZ_UL_armature_list(bpy.types.UIList):
             if armature_obj is not None:
                 armature_parent = armature_obj.parent
 
-                row.label(text=item.name if armature_parent is None else f"{armature_parent.name} - {item.name}",
-                          icon="OUTLINER_DATA_ARMATURE")
+                row.label(
+                    text=item.name
+                    if armature_parent is None
+                    else f"{armature_parent.name} - {item.name}",
+                    icon="OUTLINER_DATA_ARMATURE",
+                )
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
+            layout.prop(
+                item,
+                "name",
+                text=item.name,
+                emboss=False,
+                icon="OUTLINER_DATA_ARMATURE",
+            )
 
 
 class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Ymap"
     bl_order = 3
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzImportSettings
+    ):
         layout.prop(settings, "ymap_skip_missing_entities")
         layout.prop(settings, "ymap_exclude_entities")
         layout.prop(settings, "ymap_instance_entities")
@@ -190,7 +239,9 @@ class SOLLUMZ_PT_export_include(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Include"
     bl_order = 0
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         row = layout.row(heading="Limit To")
         row.prop(settings, "limit_to_selected", text="Selected Objects")
 
@@ -199,7 +250,9 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Drawable"
     bl_order = 1
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         layout.prop(settings, "apply_transforms")
         layout.prop(settings, "export_with_ytyp")
 
@@ -208,7 +261,9 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Fragment"
     bl_order = 2
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         layout.column().prop(settings, "export_lods")
 
 
@@ -216,7 +271,9 @@ class SOLLUMZ_PT_export_collision(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Collisions"
     bl_order = 3
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         layout.prop(settings, "auto_calculate_inertia")
         layout.prop(settings, "auto_calculate_volume")
 
@@ -225,7 +282,9 @@ class SOLLUMZ_PT_export_ydd(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Drawable Dictionary"
     bl_order = 4
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         layout.prop(settings, "exclude_skeleton")
 
 
@@ -233,7 +292,9 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Ymap"
     bl_order = 5
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         layout.prop(settings, "ymap_exclude_entities")
         layout.prop(settings, "ymap_box_occluders")
         layout.prop(settings, "ymap_model_occluders")
@@ -305,7 +366,10 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
         grid.operator(SOLLUMZ_OT_SET_LOD_VLOW.bl_idname)
         grid.operator(SOLLUMZ_OT_HIDE_OBJECT.bl_idname)
 
-        grid.enabled = context.view_layer.objects.active is not None and context.view_layer.objects.active.mode == "OBJECT"
+        grid.enabled = (
+            context.view_layer.objects.active is not None
+            and context.view_layer.objects.active.mode == "OBJECT"
+        )
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
@@ -337,17 +401,19 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
             row = box.row(align=True)
             row.prop(obj, "name", text="", emboss=False)
 
-            row.operator(SOLLUMZ_OT_copy_location.bl_idname, text="", icon='COPYDOWN') \
-               .location = "{:.6f}, {:.6f}, {:.6f}".format(loc[0], loc[1], loc[2])
-            
-            row.operator(SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN') \
-               .rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(rot.x, rot.y, rot.z, rot.w)
+            row.operator(
+                SOLLUMZ_OT_copy_location.bl_idname, text="", icon="COPYDOWN"
+            ).location = "{:.6f}, {:.6f}, {:.6f}".format(loc[0], loc[1], loc[2])
 
-            row.operator(SOLLUMZ_OT_paste_location.bl_idname, text="", icon='PASTEDOWN')
+            row.operator(
+                SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon="COPYDOWN"
+            ).rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
+                rot.x, rot.y, rot.z, rot.w
+            )
 
-            row.operator(SOLLUMZ_OT_paste_rotation.bl_idname, text="", icon='PASTEDOWN')
+            row.operator(SOLLUMZ_OT_paste_location.bl_idname, text="", icon="PASTEDOWN")
 
-
+            row.operator(SOLLUMZ_OT_paste_rotation.bl_idname, text="", icon="PASTEDOWN")
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
@@ -373,18 +439,15 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
 
         row = layout.row()
         row.prop(context.scene, "vert_paint_color1", text="")
-        row.operator(
-            "sollumz.paint_vertices").color = context.scene.vert_paint_color1
+        row.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color1
 
         row2 = layout.row()
         row2.prop(context.scene, "vert_paint_color2", text="")
-        row2.operator(
-            "sollumz.paint_vertices").color = context.scene.vert_paint_color2
+        row2.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color2
 
         row3 = layout.row()
         row3.prop(context.scene, "vert_paint_color3", text="")
-        row3.operator(
-            "sollumz.paint_vertices").color = context.scene.vert_paint_color3
+        row3.operator("sollumz.paint_vertices").color = context.scene.vert_paint_color3
 
         preferences = get_addon_preferences(bpy.context)
         extra = preferences.extra_color_swatches
@@ -392,17 +455,20 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
             row4 = layout.row()
             row4.prop(context.scene, "vert_paint_color4", text="")
             row4.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color4
+                "sollumz.paint_vertices"
+            ).color = context.scene.vert_paint_color4
 
             row5 = layout.row()
             row5.prop(context.scene, "vert_paint_color5", text="")
             row5.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color5
+                "sollumz.paint_vertices"
+            ).color = context.scene.vert_paint_color5
 
             row6 = layout.row()
             row6.prop(context.scene, "vert_paint_color6", text="")
             row6.operator(
-                "sollumz.paint_vertices").color = context.scene.vert_paint_color6
+                "sollumz.paint_vertices"
+            ).color = context.scene.vert_paint_color6
 
 
 class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(bpy.types.Panel):
@@ -455,7 +521,9 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         layout.label(text="Migration")
         layout.operator("sollumz.migratedrawable")
         layout.label(
-            text="This will join all geometries for each LOD Level into a single object.", icon="ERROR")
+            text="This will join all geometries for each LOD Level into a single object.",
+            icon="ERROR",
+        )
         layout.operator("sollumz.migrateboundgeoms")
         layout.operator("sollumz.replace_armature_constraints")
 
@@ -521,8 +589,7 @@ class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
         row.prop(obj, "sollum_type")
 
         if not obj or obj.sollum_type == SollumType.NONE:
-            layout.label(
-                text="No sollumz objects in scene selected.", icon="ERROR")
+            layout.label(text="No sollumz objects in scene selected.", icon="ERROR")
 
 
 class SOLLUMZ_PT_ENTITY_PANEL(bpy.types.Panel):
@@ -592,7 +659,8 @@ class FlagsPanel:
 
     def get_flags(self, context):
         raise NotImplementedError(
-            f"Failed to display flags. '{self.__class__.__name__}.get_flags()' method not defined.")
+            f"Failed to display flags. '{self.__class__.__name__}.get_flags()' method not defined."
+        )
 
     def draw(self, context):
         data_block = self.get_flags(context)
@@ -614,7 +682,8 @@ class TimeFlagsPanel(FlagsPanel):
         super().draw(context)
         if self.select_operator is None or self.clear_operator is None:
             raise NotImplementedError(
-                f"'select_operator' and 'clear_operator' bl_idnames must be defined for {self.__class__.__name__}!")
+                f"'select_operator' and 'clear_operator' bl_idnames must be defined for {self.__class__.__name__}!"
+            )
         flags = self.get_flags(context)
         row = self.layout.row()
         row.operator(self.select_operator)

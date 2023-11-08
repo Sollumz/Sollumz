@@ -7,22 +7,33 @@ from itertools import chain
 from ..tools.meshhelper import calculate_volume, get_combined_bound_box
 
 from ..sollumz_helper import find_sollumz_parent
-from ..sollumz_properties import BOUND_POLYGON_TYPES, BOUND_TYPES, MaterialType, SollumType, VehicleLightID
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, get_child_of_bone
+from ..sollumz_properties import (
+    BOUND_POLYGON_TYPES,
+    BOUND_TYPES,
+    MaterialType,
+    SollumType,
+    VehicleLightID,
+)
+from ..tools.blenderhelper import (
+    add_child_of_bone_constraint,
+    create_blender_object,
+    create_empty_object,
+    get_child_of_bone,
+)
 from ..ybn.collision_materials import collisionmats
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
     """Create a Fragment object. If a Drawable or Bound Composite is selected,
     they will be parented to the Fragment."""
+
     bl_idname = "sollumz.createfragment"
     bl_label = "Create Fragment"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         armature = bpy.data.armatures.new(name="skel")
-        frag_obj = create_blender_object(
-            SollumType.FRAGMENT, object_data=armature)
+        frag_obj = create_blender_object(SollumType.FRAGMENT, object_data=armature)
 
         self.parent_selected_objs(frag_obj, context)
 
@@ -38,14 +49,14 @@ class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
 
 class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
     """Create bones with physics enabled for all selected objects. Bones are positioned at the location of each object"""
+
     bl_idname = "sollumz.createbonesatobjects"
     bl_label = "Create Physics Bones at Object(s)"
     bl_options = {"UNDO"}
 
     def execute(self, context):
         armature_obj: bpy.types.Object = context.scene.create_bones_fragment
-        selected = [
-            obj for obj in context.selected_objects if obj != armature_obj]
+        selected = [obj for obj in context.selected_objects if obj != armature_obj]
         parent_to_selected = context.scene.create_bones_parent_to_selected
         # parent_bone: bpy.types.Bone | None = context.scene.create_bones_parent_bone
 
@@ -92,6 +103,7 @@ class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
 
 class SOLLUMZ_OT_SET_MASS(bpy.types.Operator):
     """Set the mass of all selected objects"""
+
     bl_idname = "sollumz.setmass"
     bl_label = "Set Mass"
     bl_options = {"UNDO"}
@@ -107,13 +119,18 @@ class SOLLUMZ_OT_SET_MASS(bpy.types.Operator):
 
 class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
     """Copy the physics properties of the active bone to all selected bones. Can only be used in Pose Mode."""
+
     bl_idname = "sollumz.copy_frag_bone_physics"
     bl_label = "Copy Bone Physics"
     bl_options = {"UNDO"}
 
     @classmethod
     def poll(cls, context):
-        return context.mode == "POSE" and context.active_pose_bone is not None and len(context.selected_pose_bones) > 1
+        return (
+            context.mode == "POSE"
+            and context.active_pose_bone is not None
+            and len(context.selected_pose_bones) > 1
+        )
 
     def execute(self, context):
         src_pose_bone = context.active_pose_bone
@@ -127,8 +144,12 @@ class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
             dst_props.flags = src_props.flags
             dst_props.glass_type = src_props.glass_type
             dst_props.strength = src_props.strength
-            dst_props.force_transmission_scale_up = src_props.force_transmission_scale_up
-            dst_props.force_transmission_scale_down = src_props.force_transmission_scale_down
+            dst_props.force_transmission_scale_up = (
+                src_props.force_transmission_scale_up
+            )
+            dst_props.force_transmission_scale_down = (
+                src_props.force_transmission_scale_down
+            )
             dst_props.joint_stiffness = src_props.joint_stiffness
             dst_props.min_soft_angle_1 = src_props.min_soft_angle_1
             dst_props.max_soft_angle_1 = src_props.max_soft_angle_1
@@ -152,16 +173,19 @@ class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
 
             num_dst_bones += 1
 
-        self.report({'INFO'},
-                    f"Physics properties of '{src_pose_bone.name}' copied to {num_dst_bones} bones successfully")
-        return {'FINISHED'}
+        self.report(
+            {"INFO"},
+            f"Physics properties of '{src_pose_bone.name}' copied to {num_dst_bones} bones successfully",
+        )
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
     """
-    Set the vehicle light ID of the selected vertices (must be in edit mode). 
+    Set the vehicle light ID of the selected vertices (must be in edit mode).
     This determines which action causes the emissive shader to activate, and is stored in the alpha channel of the vertex colors
     """
+
     bl_idname = "sollumz.setlightid"
     bl_label = "Set Light ID"
     bl_options = {"UNDO"}
@@ -169,7 +193,8 @@ class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         selected_mesh_objs = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+            obj for obj in context.selected_objects if obj.type == "MESH"
+        ]
 
         face_mode = context.scene.tool_settings.mesh_select_mode[2]
 
@@ -177,7 +202,8 @@ class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
 
     def execute(self, context):
         selected_mesh_objs = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+            obj for obj in context.selected_objects if obj.type == "MESH"
+        ]
 
         set_light_id = context.scene.set_vehicle_light_id
 
@@ -193,7 +219,9 @@ class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
 
             if not bm.loops.layers.color:
                 self.report(
-                    {"INFO"}, f"'{obj.name}' has no 'Face Corner > Byte Color' color attribute layers! Skipping...")
+                    {"INFO"},
+                    f"'{obj.name}' has no 'Face Corner > Byte Color' color attribute layers! Skipping...",
+                )
                 continue
 
             color_layer = bm.loops.layers.color[0]
@@ -212,6 +240,7 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
     """
     Select vertices that have this light ID
     """
+
     bl_idname = "sollumz.selectlightid"
     bl_label = "Select Light ID"
     bl_options = {"UNDO"}
@@ -219,7 +248,8 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         selected_mesh_objs = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+            obj for obj in context.selected_objects if obj.type == "MESH"
+        ]
 
         face_mode = context.scene.tool_settings.mesh_select_mode[2]
 
@@ -227,7 +257,8 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
 
     def execute(self, context):
         selected_mesh_objs = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+            obj for obj in context.selected_objects if obj.type == "MESH"
+        ]
 
         select_light_id = context.scene.select_vehicle_light_id
 
@@ -258,7 +289,12 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
 
         return {"FINISHED"}
 
-    def get_light_id_faces(self, bm: bmesh.types.BMesh, color_layer: bmesh.types.BMLayerCollection, light_id: int):
+    def get_light_id_faces(
+        self,
+        bm: bmesh.types.BMesh,
+        color_layer: bmesh.types.BMLayerCollection,
+        light_id: int,
+    ):
         """Get light id of the given selection of ``mesh``. Returns -1 if not found or vertices contain different light IDs"""
         face_inds: list[int] = []
 
@@ -275,6 +311,7 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
 
 class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
     """Generate instances of wheel meshes to preview all wheels at once (has no effect on export)"""
+
     bl_idname = "sollumz.generate_wheel_instances"
     bl_label = "Generate Wheel Instances"
     bl_options = {"REGISTER", "UNDO"}
@@ -283,29 +320,51 @@ class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
     def poll(cls, context):
         obj = context.active_object
 
-        return obj is not None and find_sollumz_parent(obj, SollumType.FRAGMENT) is not None
+        return (
+            obj is not None
+            and find_sollumz_parent(obj, SollumType.FRAGMENT) is not None
+        )
 
     def execute(self, context):
         obj = context.active_object
         frag_obj = find_sollumz_parent(obj, SollumType.FRAGMENT)
 
-        drawable_obj = next((obj for obj in frag_obj.children if obj.sollum_type == SollumType.DRAWABLE), None)
+        drawable_obj = next(
+            (
+                obj
+                for obj in frag_obj.children
+                if obj.sollum_type == SollumType.DRAWABLE
+            ),
+            None,
+        )
         if drawable_obj is None:
-            self.report({"WARNING"}, "This fragment object is missing the drawable object!")
+            self.report(
+                {"WARNING"}, "This fragment object is missing the drawable object!"
+            )
             return {"CANCELLED"}
 
         wheel_bones_front = {
-            "wheel_lf", "wheel_rf",
+            "wheel_lf",
+            "wheel_rf",
         }
         wheel_bones_rear = {
-            "wheel_lr", "wheel_lm1", "wheel_lm2", "wheel_lm3",
-            "wheel_rr", "wheel_rm1", "wheel_rm2", "wheel_rm3",
+            "wheel_lr",
+            "wheel_lm1",
+            "wheel_lm2",
+            "wheel_lm3",
+            "wheel_rr",
+            "wheel_rm1",
+            "wheel_rm2",
+            "wheel_rm3",
         }
 
         wheel_front_obj = None
         wheel_rear_obj = None
         for model_obj in drawable_obj.children:
-            if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
+            if (
+                model_obj.sollum_type != SollumType.DRAWABLE_MODEL
+                or not model_obj.sollumz_is_physics_child_mesh
+            ):
                 continue
 
             parent_bone = get_child_of_bone(model_obj)
@@ -325,26 +384,36 @@ class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
 
         # create objects in same collection as the fragment object
         with context.temp_override(collection=frag_obj.users_collection[0]):
-            empty = create_empty_object(SollumType.NONE, f"{frag_obj.name}.wheel_previews")
+            empty = create_empty_object(
+                SollumType.NONE, f"{frag_obj.name}.wheel_previews"
+            )
             empty.parent = frag_obj
 
             for bone_name in chain(wheel_bones_front, wheel_bones_rear):
                 if bone_name not in frag_obj.data.bones:
                     continue
 
-                wheel_obj = wheel_front_obj if bone_name in wheel_bones_front else wheel_rear_obj
+                wheel_obj = (
+                    wheel_front_obj
+                    if bone_name in wheel_bones_front
+                    else wheel_rear_obj
+                )
                 wheel_obj_bone_name = get_child_of_bone(wheel_obj).name
                 if wheel_obj_bone_name == bone_name:
                     continue
 
-                instance = create_blender_object(SollumType.NONE, f"{bone_name}.preview", wheel_obj.data)
+                instance = create_blender_object(
+                    SollumType.NONE, f"{bone_name}.preview", wheel_obj.data
+                )
                 add_child_of_bone_constraint(instance, frag_obj, bone_name)
 
                 # Rotate wheels on the other side
                 instance_is_left_side = "_l" in bone_name
                 wheel_is_left_side = "_l" in wheel_obj_bone_name
                 if instance_is_left_side != wheel_is_left_side:
-                    instance.matrix_world = Matrix.Rotation(radians(180), 4, "Y") @ instance.matrix_world
+                    instance.matrix_world = (
+                        Matrix.Rotation(radians(180), 4, "Y") @ instance.matrix_world
+                    )
 
                 instance.parent = empty
 
@@ -353,6 +422,7 @@ class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
 
 class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
     """Calculate (approximate) mass for collision based on it's volume and density"""
+
     bl_idname = "sollumz.calculate_mass"
     bl_label = "Calculate Collision Mass"
     bl_options = {"REGISTER", "UNDO"}
@@ -365,12 +435,18 @@ class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
         for obj in context.selected_objects:
             if obj.sollum_type in BOUND_POLYGON_TYPES:
                 self.report(
-                    {"INFO"}, f"{obj.name} is a Bound Polygon! Select the Bound Geometry BVH instead! Skipping...")
+                    {"INFO"},
+                    f"{obj.name} is a Bound Polygon! Select the Bound Geometry BVH instead! Skipping...",
+                )
                 continue
 
-            if obj.sollum_type not in BOUND_TYPES or obj.sollum_type == SollumType.BOUND_COMPOSITE:
+            if (
+                obj.sollum_type not in BOUND_TYPES
+                or obj.sollum_type == SollumType.BOUND_COMPOSITE
+            ):
                 self.report(
-                    {"INFO"}, f"{obj.name} not a Sollumz bound type! Skipping...")
+                    {"INFO"}, f"{obj.name} not a Sollumz bound type! Skipping..."
+                )
                 continue
 
             if obj.sollum_type == SollumType.BOUND_GEOMETRYBVH:
@@ -382,7 +458,8 @@ class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
 
             if mat is None:
                 self.report(
-                    {"INFO"}, f"{obj.name} has no collision materials! Skipping...")
+                    {"INFO"}, f"{obj.name} has no collision materials! Skipping..."
+                )
                 continue
 
             mass = self.calculate_mass(obj, mat)

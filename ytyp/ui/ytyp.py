@@ -1,12 +1,13 @@
 import bpy
-from ...sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
+from ...sollumz_ui import (
+    BasicListHelper,
+    SollumzFileSettingsPanel,
+    draw_list_with_add_remove,
+)
 from ...sollumz_properties import ArchetypeType
 from ...sollumz_preferences import get_export_settings, SollumzExportSettings
 
-from ..utils import (
-    get_selected_ytyp,
-    get_selected_archetype
-)
+from ..utils import get_selected_ytyp, get_selected_archetype
 
 
 class SOLLUMZ_UL_YTYP_LIST(BasicListHelper, bpy.types.UIList):
@@ -41,8 +42,18 @@ class SOLLUMZ_PT_YTYP_LIST_PANEL(bpy.types.Panel):
     bl_order = 0
 
     def draw(self, context):
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createytyp", "sollumz.deleteytyp",
-                                                SOLLUMZ_UL_YTYP_LIST.bl_idname, "", context.scene, "ytyps", context.scene, "ytyp_index", rows=3)
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createytyp",
+            "sollumz.deleteytyp",
+            SOLLUMZ_UL_YTYP_LIST.bl_idname,
+            "",
+            context.scene,
+            "ytyps",
+            context.scene,
+            "ytyp_index",
+            rows=3,
+        )
         row = list_col.row()
         row.operator("sollumz.importytyp", icon="IMPORT")
         row.operator("sollumz.exportytyp", icon="EXPORT")
@@ -55,7 +66,9 @@ class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
     def get_settings(self, context: bpy.types.Context) -> SollumzExportSettings:
         return get_export_settings(context)
 
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+    def draw_settings(
+        self, layout: bpy.types.UILayout, settings: SollumzExportSettings
+    ):
         layout.use_property_split = False
         layout.prop(settings, "apply_transforms")
 
@@ -91,11 +104,20 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createarchetype", "sollumz.deletearchetype", SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "", selected_ytyp, "archetypes",
-                                                selected_ytyp, "archetype_index", rows=3)
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createarchetype",
+            "sollumz.deletearchetype",
+            SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname,
+            "",
+            selected_ytyp,
+            "archetypes",
+            selected_ytyp,
+            "archetype_index",
+            rows=3,
+        )
         row = list_col.row()
-        row.operator("sollumz.createarchetypefromselected",
-                     icon="FILE_REFRESH")
+        row.operator("sollumz.createarchetypefromselected", icon="FILE_REFRESH")
         row.prop(context.scene, "create_archetype_type", text="")
 
 

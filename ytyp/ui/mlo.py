@@ -2,8 +2,17 @@ import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ...sollumz_ui import BasicListHelper, FlagsPanel, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
-from ..properties.mlo import RoomProperties, PortalProperties, TimecycleModifierProperties
-from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_tcm
+from ..properties.mlo import (
+    RoomProperties,
+    PortalProperties,
+    TimecycleModifierProperties,
+)
+from ..utils import (
+    get_selected_archetype,
+    get_selected_room,
+    get_selected_portal,
+    get_selected_tcm,
+)
 from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
 
 
@@ -22,7 +31,10 @@ class SOLLUMZ_PT_MLO_PANEL(TabbedPanelHelper, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         selected_archetype = get_selected_archetype(context)
-        return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO
+        return (
+            selected_archetype is not None
+            and selected_archetype.type == ArchetypeType.MLO
+        )
 
     def draw_before(self, context: bpy.types.Context):
         self.layout.label(text="MLO")
@@ -57,8 +69,17 @@ class SOLLUMZ_PT_ROOM_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createroom", "sollumz.deleteroom",
-                                                SOLLUMZ_UL_ROOM_LIST.bl_idname, "", selected_archetype, "rooms", selected_archetype, "room_index")
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createroom",
+            "sollumz.deleteroom",
+            SOLLUMZ_UL_ROOM_LIST.bl_idname,
+            "",
+            selected_archetype,
+            "rooms",
+            selected_archetype,
+            "room_index",
+        )
 
         list_col.operator("sollumz.createlimboroom")
 
@@ -69,8 +90,7 @@ class SOLLUMZ_PT_ROOM_PANEL(TabPanel, bpy.types.Panel):
         if not selected_archetype.asset and context.scene.show_room_gizmo:
             row = layout.row()
             row.alert = True
-            row.label(
-                text="Gizmo will not appear when no object is linked.")
+            row.label(text="Gizmo will not appear when no object is linked.")
 
         selected_room = get_selected_room(context)
         if not selected_room:
@@ -82,8 +102,7 @@ class SOLLUMZ_PT_ROOM_PANEL(TabPanel, bpy.types.Panel):
                 continue
             layout.prop(selected_room, prop_name)
 
-        list_col.operator(
-            "sollumz.setroomboundsfromselection", icon="GROUP_VERTEX")
+        list_col.operator("sollumz.setroomboundsfromselection", icon="GROUP_VERTEX")
 
 
 class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
@@ -131,27 +150,39 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createportal", "sollumz.deleteportal",
-                                                SOLLUMZ_UL_PORTAL_LIST.bl_idname, "", selected_archetype, "portals", selected_archetype, "portal_index")
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createportal",
+            "sollumz.deleteportal",
+            SOLLUMZ_UL_PORTAL_LIST.bl_idname,
+            "",
+            selected_archetype,
+            "portals",
+            selected_archetype,
+            "portal_index",
+        )
 
         row = list_col.row()
-        row.operator("sollumz.createportalfromselection",
-                     text="Create From Vertices", icon="GROUP_VERTEX")
-        row.prop(context.scene, "sollumz_add_portal_room_from",
-                 icon="CUBE", text="")
+        row.operator(
+            "sollumz.createportalfromselection",
+            text="Create From Vertices",
+            icon="GROUP_VERTEX",
+        )
+        row.prop(context.scene, "sollumz_add_portal_room_from", icon="CUBE", text="")
 
         row.label(text="", icon="FORWARD")
 
-        row.prop(context.scene, "sollumz_add_portal_room_to",
-                 icon="CUBE", text="")
+        row.prop(context.scene, "sollumz_add_portal_room_to", icon="CUBE", text="")
 
         list_col.separator(factor=2)
 
         row = list_col.row(align=True)
-        row.operator("sollumz.updateportalfromselection",
-                     text="Update From Vertices", icon="GROUP_VERTEX")
-        row.operator("sollumz.flipportal",
-                     text="Flip Direction", icon="LOOP_FORWARDS")
+        row.operator(
+            "sollumz.updateportalfromselection",
+            text="Update From Vertices",
+            icon="GROUP_VERTEX",
+        )
+        row.operator("sollumz.flipportal", text="Flip Direction", icon="LOOP_FORWARDS")
 
         row = layout.row()
         row.use_property_split = False
@@ -178,8 +209,7 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
 
         row = layout.row()
         row.prop(selected_portal, "room_from_id")
-        row.operator("sollumz.search_portal_room_from",
-                     text="", icon="VIEWZOOM")
+        row.operator("sollumz.search_portal_room_from", text="", icon="VIEWZOOM")
         row = layout.row()
         row.prop(selected_portal, "room_to_id")
         row.operator("sollumz.search_portal_room_to", text="", icon="VIEWZOOM")
@@ -248,8 +278,17 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        draw_list_with_add_remove(self.layout, "sollumz.createtimecyclemodifier", "sollumz.deletetimecyclemodifier",
-                                  SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST.bl_idname, "", selected_archetype, "timecycle_modifiers", selected_archetype, "tcm_index")
+        draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createtimecyclemodifier",
+            "sollumz.deletetimecyclemodifier",
+            SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST.bl_idname,
+            "",
+            selected_archetype,
+            "timecycle_modifiers",
+            selected_archetype,
+            "tcm_index",
+        )
 
         selected_tcm = get_selected_tcm(context)
 

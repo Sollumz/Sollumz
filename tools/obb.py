@@ -40,7 +40,6 @@ def bbox_orient(bme_verts, mx):
 
 
 def bbox_vol(box):
-
     V = (box[1] - box[0]) * (box[3] - box[2]) * (box[5] - box[4])
 
     return V
@@ -51,15 +50,16 @@ def box_coords(box):
     returns vertices in same configuration as default cube in blender
     easy to asign v.co of a cube primitive
     """
-    coords = [Vector((box[0], box[2], box[4])),
-              Vector((box[0], box[2], box[5])),
-              Vector((box[0], box[3], box[4])),
-              Vector((box[0], box[3], box[5])),
-              Vector((box[1], box[2], box[4])),
-              Vector((box[1], box[2], box[5])),
-              Vector((box[1], box[3], box[4])),
-              Vector((box[1], box[3], box[5])),
-              ]
+    coords = [
+        Vector((box[0], box[2], box[4])),
+        Vector((box[0], box[2], box[5])),
+        Vector((box[0], box[3], box[4])),
+        Vector((box[0], box[3], box[5])),
+        Vector((box[1], box[2], box[4])),
+        Vector((box[1], box[2], box[5])),
+        Vector((box[1], box[3], box[4])),
+        Vector((box[1], box[3], box[5])),
+    ]
 
     return coords
 
@@ -88,8 +88,7 @@ def get_obb(verts):
     for vert in verts:
         bme.verts.new(vert)
 
-    convex_hull = bmesh.ops.convex_hull(
-        bme, input=bme.verts, use_existing_faces=True)
+    convex_hull = bmesh.ops.convex_hull(bme, input=bme.verts, use_existing_faces=True)
     total_hull = convex_hull["geom"]
 
     hull_verts = [item for item in total_hull if hasattr(item, "co")]
@@ -101,7 +100,7 @@ def get_obb(verts):
     # Iterate through all degrees to obtain a more predictable result
     for i in range(0, 360):
         theta = math.radians(i)
-        phi = (1 + 5 ** 0.5) / 2
+        phi = (1 + 5**0.5) / 2
 
         x = math.cos(theta) * math.sin(phi)
         y = math.sin(theta) * math.sin(phi)

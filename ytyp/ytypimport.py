@@ -4,12 +4,31 @@ from typing import Union
 from mathutils import Vector, Quaternion
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
-from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
-from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
+from ..sollumz_properties import (
+    ArchetypeType,
+    AssetType,
+    EntityLodLevel,
+    EntityPriorityLevel,
+)
+from .properties.ytyp import (
+    CMapTypesProperties,
+    ArchetypeProperties,
+    TimecycleModifierProperties,
+    RoomProperties,
+    PortalProperties,
+    MloEntityProperties,
+    EntitySetProperties,
+)
+from .properties.extensions import (
+    ExtensionProperties,
+    ExtensionType,
+    ExtensionsContainer,
+)
 
 
-def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties):
+def create_mlo_entity_set(
+    entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties
+):
     """Create an mlo entity sets from an xml for the provided archetype data-block."""
 
     entity_set: EntitySetProperties = archetype.new_entity_set()
@@ -25,7 +44,9 @@ def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: Archetyp
         entity.attached_room_id = str(entity_room.id)
 
 
-def create_entity_set_entity(entity_xml: ymapxml.Entity, entity_set: EntitySetProperties):
+def create_entity_set_entity(
+    entity_xml: ymapxml.Entity, entity_set: EntitySetProperties
+):
     """Create an mlo entity from an xml for the provided archetype data-block."""
 
     entity: MloEntityProperties = entity_set.new_entity_set_entity()
@@ -76,8 +97,7 @@ def create_mlo_portal(portal_xml: ytypxml.Portal, archetype: ArchetypeProperties
     portal.flags.total = str(portal_xml.flags)
     portal.mirror_priority = portal_xml.mirror_priority
     portal.opacity = portal_xml.opacity
-    portal.audio_occlusion = str(
-        portal_xml.audio_occlusion)
+    portal.audio_occlusion = str(portal_xml.audio_occlusion)
     for index in portal_xml.attached_objects:
         archetype.entities[index].attached_portal_id = str(portal.id)
 
@@ -99,16 +119,20 @@ def create_mlo_room(room_xml: ytypxml.Room, archetype: ArchetypeProperties):
         archetype.entities[index].attached_room_id = str(room.id)
 
 
-def find_and_link_entity_object(entity_xml: ymapxml.Entity, entity: MloEntityProperties):
+def find_and_link_entity_object(
+    entity_xml: ymapxml.Entity, entity: MloEntityProperties
+):
     """Atempt to find an existing entity object in the scene and link it to the entity data-block."""
 
     for obj in bpy.context.collection.all_objects:
-        if entity_xml.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
+        if (
+            entity_xml.archetype_name == obj.name
+            and obj.name in bpy.context.view_layer.objects
+        ):
             entity.linked_object = obj
             obj.location = entity.position
             obj.rotation_euler = entity.rotation.to_euler()
-            obj.scale = Vector(
-                (entity.scale_xy, entity.scale_xy, entity.scale_z))
+            obj.scale = Vector((entity.scale_xy, entity.scale_xy, entity.scale_z))
 
 
 def create_mlo_entity(entity_xml: ymapxml.Entity, archetype: ArchetypeProperties):
@@ -141,7 +165,9 @@ def create_mlo_entity(entity_xml: ymapxml.Entity, archetype: ArchetypeProperties
     return entity
 
 
-def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionProperties):
+def set_extension_props(
+    extension_xml: ymapxml.Extension, extension: ExtensionProperties
+):
     """Set extension data-block properties to the provided extension xml props."""
     extension.name = extension_xml.name
     extension_properties = extension.get_properties()
@@ -151,8 +177,7 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
     for prop_name in extension_properties.__class__.__annotations__:
         if not hasattr(extension_xml, prop_name):
             # Unknown prop name. Need warning
-            print(
-                f"Unknown {extension.extension_type} prop name '{prop_name}'.")
+            print(f"Unknown {extension.extension_type} prop name '{prop_name}'.")
             continue
 
         prop_value = getattr(extension_xml, prop_name)
@@ -172,11 +197,12 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
                 prop_value_int = 0
             prop_value = f"hash_{prop_value_int:08X}" if prop_value_int != 0 else ""
 
-
         setattr(extension_properties, prop_name, prop_value)
 
 
-def create_extension(extension_xml: ymapxml.Extension, extensions_container: ExtensionsContainer) -> Union[ExtensionProperties, None]:
+def create_extension(
+    extension_xml: ymapxml.Extension, extensions_container: ExtensionsContainer
+) -> Union[ExtensionProperties, None]:
     """Create an entity extension from the given extension xml."""
 
     extension_type = extension_xml.type
@@ -192,7 +218,9 @@ def create_extension(extension_xml: ymapxml.Extension, extensions_container: Ext
     return extension
 
 
-def create_mlo_archetype_children(archetype_xml: ytypxml.MloArchetype, archetype: ArchetypeProperties):
+def create_mlo_archetype_children(
+    archetype_xml: ytypxml.MloArchetype, archetype: ArchetypeProperties
+):
     """Create entities, rooms, portals, and timecylce modifiers for an mlo archetype."""
 
     for entity_xml in archetype_xml.entities:

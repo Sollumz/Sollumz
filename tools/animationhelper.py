@@ -13,6 +13,7 @@ from ..cwxml.shader import ShaderManager
 
 from .. import logger
 
+
 class AnimationFlag(IntFlag):
     Default = 0
     RootMotion = 16
@@ -20,6 +21,7 @@ class AnimationFlag(IntFlag):
 
 class Track(IntEnum):
     """An enumeration of Animation Tracks supported by GTA."""
+
     BonePosition = 0
     BoneRotation = 1
     BoneScale = 2
@@ -194,7 +196,7 @@ def get_quantum_and_min_val(nums):
 
 
 def decompose_uv_affine_matrix(
-        uv0: Vector, uv1: Vector
+    uv0: Vector, uv1: Vector
 ) -> Tuple[Tuple[float, float], float, Tuple[float, float], float]:
     """
     Decompose the UV affine matrix into translation, rotation in radians, scale, and shear along X axis.
@@ -242,6 +244,7 @@ def decompose_uv_affine_matrix(
 #     self.uv0[2] = translation[0]
 #     self.uv1[2] = translation[1]
 
+
 def calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone):
     if old_pose_bone is None:
         old_mat = Matrix.Identity(4)
@@ -274,13 +277,21 @@ def transform_bone_location_space(fcurves, old_pose_bone, new_pose_bone):
     if x is None:
         return
 
-    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+    assert len(x.keyframe_points) == len(y.keyframe_points) and len(
+        x.keyframe_points
+    ) == len(
+        z.keyframe_points
+    ), "TODO: Handle different number of keyframes for each axis"
 
     transform_mat = calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone)
 
-    for x_kfp, y_kfp, z_kfp in zip(x.keyframe_points, y.keyframe_points, z.keyframe_points):
+    for x_kfp, y_kfp, z_kfp in zip(
+        x.keyframe_points, y.keyframe_points, z.keyframe_points
+    ):
         x_co, y_co, z_co = x_kfp.co, y_kfp.co, z_kfp.co
-        assert x_co[0] == y_co[0] and x_co[0] == z_co[0], "TODO: Handle different keyframe times"
+        assert (
+            x_co[0] == y_co[0] and x_co[0] == z_co[0]
+        ), "TODO: Handle different keyframe times"
 
         old_vec = Vector((x_co[1], y_co[1], z_co[1]))
         new_vec = transform_mat @ old_vec
@@ -306,14 +317,22 @@ def transform_bone_rotation_quaternion_space(fcurves, old_pose_bone, new_pose_bo
     if w is None:
         return
 
-    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+    assert (
+        len(x.keyframe_points) == len(y.keyframe_points)
+        and len(x.keyframe_points) == len(z.keyframe_points)
+        and len(x.keyframe_points) == len(w.keyframe_points)
+    ), "TODO: Handle different number of keyframes for each axis"
 
     transform_mat = calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone)
 
     prev_quat = None
-    for w_kfp, x_kfp, y_kfp, z_kfp in zip(w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points):
+    for w_kfp, x_kfp, y_kfp, z_kfp in zip(
+        w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points
+    ):
         w_co, x_co, y_co, z_co = w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co
-        assert x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0], "TODO: Handle different keyframe times"
+        assert (
+            x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0]
+        ), "TODO: Handle different keyframe times"
 
         quat = Quaternion((w_co[1], x_co[1], y_co[1], z_co[1]))
         quat.rotate(transform_mat)
@@ -348,19 +367,29 @@ def transform_camera_rotation_quaternion(fcurves, old_camera, new_camera):
         return
 
     # changing between blender cameras or non-camera targets, doesn't need to be converted
-    if (old_camera is not None and new_camera is not None) or (old_camera is None and new_camera is None):
+    if (old_camera is not None and new_camera is not None) or (
+        old_camera is None and new_camera is None
+    ):
         return
 
-    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+    assert (
+        len(x.keyframe_points) == len(y.keyframe_points)
+        and len(x.keyframe_points) == len(z.keyframe_points)
+        and len(x.keyframe_points) == len(w.keyframe_points)
+    ), "TODO: Handle different number of keyframes for each axis"
 
     # if new camera is None, we convert from Blender to RAGE; otherwise from RAGE to Blender
     angle_delta = math.radians(-90.0 if new_camera is None else 90.0)
     x_axis = Vector((1.0, 0.0, 0.0))
 
     prev_quat = None
-    for w_kfp, x_kfp, y_kfp, z_kfp in zip(w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points):
+    for w_kfp, x_kfp, y_kfp, z_kfp in zip(
+        w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points
+    ):
         w_co, x_co, y_co, z_co = w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co
-        assert x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0], "TODO: Handle different keyframe times"
+        assert (
+            x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0]
+        ), "TODO: Handle different keyframe times"
 
         quat = Quaternion((w_co[1], x_co[1], y_co[1], z_co[1]))
         x_axis_local = quat @ x_axis
@@ -395,14 +424,20 @@ def add_driver_variable_obj_prop(fcurve, name, obj, obj_type, prop_data_path):
 
 def setup_camera_for_animation(camera: bpy.types.Camera):
     camera_obj = get_data_obj(camera)
-    camera_obj.rotation_mode = "QUATERNION"  # camera rotation track uses rotation_quaternion
+    camera_obj.rotation_mode = (
+        "QUATERNION"  # camera rotation track uses rotation_quaternion
+    )
 
     # connect camera_fov track to blender camera
     # NOTE: seems to report a dependency cycle, but works fine, blender bug?
     camera.driver_remove("lens")
     fcurve_lens = camera.driver_add("lens")
-    add_driver_variable_obj_prop(fcurve_lens, "fov", camera_obj, "OBJECT", "animation_tracks.camera_fov")
-    add_driver_variable_obj_prop(fcurve_lens, "sensor", camera, "CAMERA", "sensor_width")
+    add_driver_variable_obj_prop(
+        fcurve_lens, "fov", camera_obj, "OBJECT", "animation_tracks.camera_fov"
+    )
+    add_driver_variable_obj_prop(
+        fcurve_lens, "sensor", camera, "CAMERA", "sensor_width"
+    )
     fcurve_lens.driver.expression = "(sensor * 0.5) / tan(radians(fov) * 0.5)"
     fcurve_lens.update()
 
@@ -416,7 +451,9 @@ def add_global_anim_uv_drivers(material, x_dot_node, y_dot_node):
         for i in range(3):
             fcurve = fcurves[i]
             comp = components[i]
-            add_driver_variable_obj_prop(fcurve, comp, material, "MATERIAL", f"animation_tracks.{track}.{comp}")
+            add_driver_variable_obj_prop(
+                fcurve, comp, material, "MATERIAL", f"animation_tracks.{track}.{comp}"
+            )
             fcurve.driver.expression = comp
             fcurve.update()
 
@@ -494,7 +531,9 @@ def setup_material_for_animation(material: bpy.types.Material):
 
 def setup_armature_for_animation(armature: bpy.types.Armature):
     armature_obj = get_data_obj(armature)
-    armature_obj.rotation_mode = "QUATERNION"  # root rotation track uses rotation_quaternion
+    armature_obj.rotation_mode = (
+        "QUATERNION"  # root rotation track uses rotation_quaternion
+    )
 
 
 def get_canonical_track_data_path(track: Track, bone_id: int):
@@ -505,16 +544,18 @@ def get_canonical_track_data_path(track: Track, bone_id: int):
     base = f'pose.bones["#{bone_id}"].'
 
     if track == Track.BonePosition:
-        return f'{base}location'
+        return f"{base}location"
     elif track == Track.BoneRotation:
-        return f'{base}rotation_quaternion'
+        return f"{base}rotation_quaternion"
     elif track == Track.BoneScale:
-        return f'{base}scale'
+        return f"{base}scale"
     else:
-        return f'{base}animation_tracks_{TrackToPropertyNameMap[track]}'
+        return f"{base}animation_tracks_{TrackToPropertyNameMap[track]}"
 
 
-def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, target_bone_name_map):
+def track_data_path_to_canonical_form(
+    data_path: str, target_id: bpy.types.ID, target_bone_name_map
+):
     is_armature = isinstance(target_id, bpy.types.Armature) or target_id is None
     is_camera = isinstance(target_id, bpy.types.Camera) or target_id is None
     is_material = isinstance(target_id, bpy.types.Material) or target_id is None
@@ -528,16 +569,22 @@ def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, t
     elif is_camera and data_path == "rotation_quaternion":
         data_path = 'pose.bones["#0"].animation_tracks_camera_rotation'
     elif is_camera and data_path.startswith("animation_tracks.camera_"):
-        data_path = data_path.replace("animation_tracks.", 'pose.bones["#0"].animation_tracks_')
+        data_path = data_path.replace(
+            "animation_tracks.", 'pose.bones["#0"].animation_tracks_'
+        )
     elif is_material and data_path.startswith("animation_tracks.uv"):
-        data_path = data_path.replace("animation_tracks.", 'pose.bones["#0"].animation_tracks_')
+        data_path = data_path.replace(
+            "animation_tracks.", 'pose.bones["#0"].animation_tracks_'
+        )
     elif is_armature and data_path.startswith('pose.bones["'):  # bone properties
         data_path_parts = data_path.split('"')
         bone_name = data_path_parts[1]
         if bone_name.startswith("#"):
             pass  # already a bone ID (canonical form)
         else:
-            assert target_bone_name_map is not None, "The armature bone-map is required at this point"
+            assert (
+                target_bone_name_map is not None
+            ), "The armature bone-map is required at this point"
             bone_id = target_bone_name_map[bone_name]
             data_path_parts[1] = f"#{bone_id}"
             data_path = '"'.join(data_path_parts)
@@ -545,7 +592,9 @@ def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, t
     return data_path
 
 
-def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, target_bone_map):
+def track_data_path_to_target_form(
+    data_path: str, target_id: bpy.types.ID, target_bone_map
+):
     """
     Converts a data path from the canonical form to the target form, data path specific to the target.
     For example, inserting the bone name into the data path with armature targets.
@@ -562,16 +611,24 @@ def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, targ
         data_path = "delta_location"
     elif data_path == 'pose.bones["#0"].animation_tracks_mover_rotation':
         data_path = "delta_rotation_quaternion"
-    elif is_camera and data_path.startswith('pose.bones["#0"].animation_tracks_camera_'):  # camera properties
+    elif is_camera and data_path.startswith(
+        'pose.bones["#0"].animation_tracks_camera_'
+    ):  # camera properties
         # modify the actual camera object instead of a pose bone
-        data_path = data_path.replace('pose.bones["#0"].animation_tracks_', "animation_tracks.")
+        data_path = data_path.replace(
+            'pose.bones["#0"].animation_tracks_', "animation_tracks."
+        )
         if data_path == "animation_tracks.camera_location":
             data_path = "location"  # use the object location property
         elif data_path == "animation_tracks.camera_rotation":
             data_path = "rotation_quaternion"  # use the object rotation property
-    elif is_material and data_path.startswith('pose.bones["#0"].animation_tracks_uv'):  # uv properties
+    elif is_material and data_path.startswith(
+        'pose.bones["#0"].animation_tracks_uv'
+    ):  # uv properties
         # modify the actual drawable geometry object instead of a pose bone
-        data_path = data_path.replace('pose.bones["#0"].animation_tracks_', "animation_tracks.")
+        data_path = data_path.replace(
+            'pose.bones["#0"].animation_tracks_', "animation_tracks."
+        )
     elif is_armature and data_path.startswith('pose.bones["'):  # bone properties
         # insert bone names in data paths
         data_path_parts = data_path.split('"')
@@ -588,10 +645,12 @@ def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, targ
 
 
 def get_id_and_track_from_track_data_path(
-        data_path: str, target_id: bpy.types.ID, target_bone_name_map
+    data_path: str, target_id: bpy.types.ID, target_bone_name_map
 ) -> Tuple[int, Track] | None:
     """Gets the bone ID and track from a data path."""
-    canon_data_path = track_data_path_to_canonical_form(data_path, target_id, target_bone_name_map)
+    canon_data_path = track_data_path_to_canonical_form(
+        data_path, target_id, target_bone_name_map
+    )
     canon_data_path_parts = canon_data_path.split('"')
     if len(canon_data_path_parts) != 3:
         return None
@@ -605,7 +664,9 @@ def get_id_and_track_from_track_data_path(
         track = Track.BoneRotation
     elif track_str == "scale":
         track = Track.BoneScale
-    elif track_str.startswith("animation_tracks_uv_transforms["):  # special case for UV transforms collection
+    elif track_str.startswith(
+        "animation_tracks_uv_transforms["
+    ):  # special case for UV transforms collection
         track = Track.UVTransforms
     else:
         prop_name = track_str.removeprefix("animation_tracks_")
@@ -616,7 +677,11 @@ def get_id_and_track_from_track_data_path(
     return id, track
 
 
-def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types.ID, new_target_id: bpy.types.ID):
+def retarget_animation(
+    animation_obj: bpy.types.Object,
+    old_target_id: bpy.types.ID,
+    new_target_id: bpy.types.ID,
+):
     if isinstance(old_target_id, bpy.types.Armature):
         old_bone_map = build_bone_map(get_data_obj(old_target_id))
         old_bone_name_map = build_name_bone_map(get_data_obj(old_target_id))
@@ -643,9 +708,13 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         # TODO: can we somehow store the track ID in the F-Curve to avoid parsing the data paths?
         data_path = fcurve.data_path
 
-        canon_data_path = track_data_path_to_canonical_form(data_path, old_target_id, old_bone_name_map)
+        canon_data_path = track_data_path_to_canonical_form(
+            data_path, old_target_id, old_bone_name_map
+        )
 
-        data_path = track_data_path_to_target_form(canon_data_path, new_target_id, new_bone_map)
+        data_path = track_data_path_to_target_form(
+            canon_data_path, new_target_id, new_bone_map
+        )
 
         # check if track needs to be transformed
         data_path_parts = canon_data_path.split('"')
@@ -681,8 +750,12 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         transform_bone_rotation_quaternion_space(fcurves, old_bone, new_bone)
 
     for bone_id, fcurves in camera_rotations_to_transform.items():
-        old_camera = old_target_id if isinstance(old_target_id, bpy.types.Camera) else None
-        new_camera = new_target_id if isinstance(new_target_id, bpy.types.Camera) else None
+        old_camera = (
+            old_target_id if isinstance(old_target_id, bpy.types.Camera) else None
+        )
+        new_camera = (
+            new_target_id if isinstance(new_target_id, bpy.types.Camera) else None
+        )
         transform_camera_rotation_quaternion(fcurves, old_camera, new_camera)
 
     if new_is_armature:
@@ -718,11 +791,13 @@ def get_target_from_id(target_id: bpy.types.ID) -> bpy.types.ID:
 
 
 def is_any_sollumz_animation_obj(obj: bpy.types.Object) -> bool:
-    return obj.sollum_type in {SollumType.CLIP_DICTIONARY,
-                               SollumType.ANIMATION,
-                               SollumType.ANIMATIONS,
-                               SollumType.CLIP,
-                               SollumType.CLIPS}
+    return obj.sollum_type in {
+        SollumType.CLIP_DICTIONARY,
+        SollumType.ANIMATION,
+        SollumType.ANIMATIONS,
+        SollumType.CLIP,
+        SollumType.CLIPS,
+    }
 
 
 def update_uv_clip_hash(clip_obj) -> bool:
@@ -741,15 +816,23 @@ def update_uv_clip_hash(clip_obj) -> bool:
         logger.error(f"Material '{target.name}' is not used by any mesh.")
         return False
     elif len(meshes) > 1:
-        logger.warning(f"Material is used by more than one mesh. '{meshes[0].name}' will be used.")
+        logger.warning(
+            f"Material is used by more than one mesh. '{meshes[0].name}' will be used."
+        )
 
     mesh = meshes[0]
-    drawable_models = [o for o in bpy.data.objects if o.sollum_type == SollumType.DRAWABLE_MODEL and o.data == mesh]
+    drawable_models = [
+        o
+        for o in bpy.data.objects
+        if o.sollum_type == SollumType.DRAWABLE_MODEL and o.data == mesh
+    ]
     if len(drawable_models) == 0:
         logger.error(f"Material '{target.name}' is not used by any drawable model.")
         return False
     elif len(drawable_models) > 1:
-        logger.warning(f"Material is used by more than one drawable model. '{drawable_models[0].name}' will be used.")
+        logger.warning(
+            f"Material is used by more than one drawable model. '{drawable_models[0].name}' will be used."
+        )
 
     drawable_model = drawable_models[0]
     if drawable_model.parent is None:
@@ -760,7 +843,10 @@ def update_uv_clip_hash(clip_obj) -> bool:
     temp_parent_obj = drawable_model
     while temp_parent_obj.parent:
         temp_parent_obj = temp_parent_obj.parent
-        if temp_parent_obj.sollum_type == SollumType.DRAWABLE or temp_parent_obj.sollum_type == SollumType.FRAGMENT :
+        if (
+            temp_parent_obj.sollum_type == SollumType.DRAWABLE
+            or temp_parent_obj.sollum_type == SollumType.FRAGMENT
+        ):
             parent = temp_parent_obj
         else:
             break

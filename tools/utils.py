@@ -18,7 +18,7 @@ def flag_list_to_int(flag_list):
     flags = 0
     for i, enabled in enumerate(flag_list):
         if enabled == True:
-            flags += (1 << i)
+            flags += 1 << i
     return flags
 
 
@@ -163,7 +163,8 @@ def get_direction_of_vectors(a, b):
 
 def multiply_homogeneous(m: Matrix, v: Vector):
     """Multiply a 4x4 matrix by a 3d vector and get a 3d vector out. Takes the
-    resulting 4d vector and divides by the homogeneous coordinate 'w' to get a 3d vector."""
+    resulting 4d vector and divides by the homogeneous coordinate 'w' to get a 3d vector.
+    """
     x = (((m[0][0] * v.x) + (m[1][0] * v.y)) + (m[2][0] * v.z)) + m[3][0]
     y = (((m[0][1] * v.x) + (m[1][1] * v.y)) + (m[2][1] * v.z)) + m[3][1]
     z = (((m[0][2] * v.x) + (m[1][2] * v.y)) + (m[2][2] * v.z)) + m[3][2]
@@ -189,15 +190,15 @@ def get_filename(filepath: str):
 
 def np_arr_to_str(arr: NDArray, fmt: str):
     """Convert numpy array to formatted string (faster than np.savetxt)"""
-    n_fmt_chars = fmt.count('%')
+    n_fmt_chars = fmt.count("%")
 
     if arr.ndim == 1 and n_fmt_chars == 1:
-        fmt = ' '.join([fmt] * arr.size)
+        fmt = " ".join([fmt] * arr.size)
     else:
         if n_fmt_chars == 1:
-            fmt = ' '.join([fmt] * arr.shape[1])
+            fmt = " ".join([fmt] * arr.shape[1])
 
-        fmt = '\n'.join([fmt] * arr.shape[0])
+        fmt = "\n".join([fmt] * arr.shape[0])
 
     return fmt % tuple(arr.ravel())
 
@@ -209,20 +210,24 @@ def get_matrix_without_scale(matrix: Matrix) -> Matrix:
 
 
 def reshape_mat_3x4(mat_4x4: Matrix):
-    return Matrix((
-        mat_4x4[0],
-        mat_4x4[1],
-        mat_4x4[2],
-    ))
+    return Matrix(
+        (
+            mat_4x4[0],
+            mat_4x4[1],
+            mat_4x4[2],
+        )
+    )
 
 
 def reshape_mat_4x3(mat_4x4: Matrix):
-    return Matrix((
-        mat_4x4[0][:3],
-        mat_4x4[1][:3],
-        mat_4x4[2][:3],
-        mat_4x4[3][:3],
-    ))
+    return Matrix(
+        (
+            mat_4x4[0][:3],
+            mat_4x4[1][:3],
+            mat_4x4[2][:3],
+            mat_4x4[3][:3],
+        )
+    )
 
 
 def color_hash(data: str) -> Tuple[float, float, float, float]:

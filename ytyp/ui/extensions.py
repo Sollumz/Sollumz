@@ -27,8 +27,7 @@ class ExtensionsListHelper:
             row.label(text=item.name, icon="CON_TRACKTO")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="CON_TRACKTO")
+            layout.prop(item, "name", text=item.name, emboss=False, icon="CON_TRACKTO")
 
 
 class ExtensionsPanelHelper:
@@ -52,15 +51,22 @@ class ExtensionsPanelHelper:
         layout.use_property_decorate = False
         extensions_container = self.get_extensions_container(context)
 
-        _, side_col = draw_list_with_add_remove(layout, self.ADD_OPERATOR_ID, self.DELETE_OPERATOR_ID,
-                                             self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
-                                             extensions_container, "extension_index")
+        _, side_col = draw_list_with_add_remove(
+            layout,
+            self.ADD_OPERATOR_ID,
+            self.DELETE_OPERATOR_ID,
+            self.EXTENSIONS_LIST_ID,
+            "",
+            extensions_container,
+            "extensions",
+            extensions_container,
+            "extension_index",
+        )
         side_col.separator()
         side_col.operator(self.DUPLICATE_OPERATOR_ID, text="", icon="DUPLICATE")
 
         selected_extension = extensions_container.selected_extension
         if selected_extension is not None:
-
             layout.separator()
 
             row = layout.row()
@@ -72,8 +78,7 @@ class ExtensionsPanelHelper:
 
             if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
                 row = layout.row()
-                row.operator(
-                    SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
+                row.operator(SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
                 row = layout.row()
                 row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
                 row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
@@ -85,15 +90,18 @@ class ExtensionsPanelHelper:
                 layout.separator()
                 row = layout.row()
                 row.operator(
-                    SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname)
+                    SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname
+                )
                 layout.separator()
 
             extension_properties = selected_extension.get_properties()
 
             row = layout.row()
             row.prop(extension_properties, "offset_position")
-            for prop_name in selected_extension.get_properties().__class__.__annotations__:
-                if prop_name in {'direction_amount', 'cornerA'}:
+            for (
+                prop_name
+            ) in selected_extension.get_properties().__class__.__annotations__:
+                if prop_name in {"direction_amount", "cornerA"}:
                     layout.separator()
                 row = layout.row()
                 row.prop(extension_properties, prop_name)
@@ -104,7 +112,9 @@ class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
     icon = "CON_TRACKTO"
 
 
-class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
+class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(
+    TabPanel, ExtensionsPanelHelper, bpy.types.Panel
+):
     bl_label = "Extensions"
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL"
     bl_space_type = "VIEW_3D"
@@ -138,8 +148,7 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy
 
         if selected_extension.extension_type == ExtensionType.LADDER:
             row = layout.row()
-            row.operator(
-                SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
+            row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
             row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
 
         if selected_extension.extension_type == ExtensionType.PARTICLE:

@@ -55,6 +55,7 @@ def get_str_type(value: str):
 
 class Element(AbstractClass):
     """Abstract XML element to base all other XML elements off of"""
+
     @property
     @abstractmethod
     def tag_name(self):
@@ -63,7 +64,8 @@ class Element(AbstractClass):
     @classmethod
     def read_value_error(cls, element):
         raise ValueError(
-            f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!")
+            f"Invalid XML element '<{element.tag} />' for type '{cls.__name__}'!"
+        )
 
     @abstractclassmethod
     def from_xml(cls, element: ET.Element):
@@ -141,7 +143,11 @@ class ElementTree(Element):
     def __setattr__(self, name: str, value) -> None:
         # Get the full object
         obj = self.__getattribute__(name, False)
-        if obj is not None and isinstance(obj, (ElementProperty, AttributeProperty)) and not isinstance(value, (ElementProperty, AttributeProperty)):
+        if (
+            obj is not None
+            and isinstance(obj, (ElementProperty, AttributeProperty))
+            and not isinstance(value, (ElementProperty, AttributeProperty))
+        ):
             # If the object is an ElementProperty or AttributeProperty, set it's value
             obj.value = value
             super().__setattr__(name, obj)
@@ -182,14 +188,15 @@ class ElementProperty(Element, AbstractClass):
         self.tag_name = tag_name
         if value and not isinstance(value, self.value_types):
             raise TypeError(
-                f"Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!")
+                f"Value of {type(self).__name__} must be one of {self.value_types}, not {type(value)}!"
+            )
         self.value = value
 
 
 class ListProperty(ElementProperty, AbstractClass):
     """Holds a list value. List can only contain values of one type."""
 
-    value_types = (list)
+    value_types = list
 
     @property
     @abstractmethod
@@ -227,7 +234,8 @@ class ListProperty(ElementProperty, AbstractClass):
                     element.append(item.to_xml())
                 else:
                     raise TypeError(
-                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'"
+                    )
 
             return element
 
@@ -253,13 +261,14 @@ class ListPropertyRequired(ListProperty):
                     element.append(item.to_xml())
                 else:
                     raise TypeError(
-                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'"
+                    )
 
         return element
 
 
 class TextProperty(ElementProperty):
-    value_types = (str)
+    value_types = str
 
     def __init__(self, tag_name: str = "Name", value=None):
         super().__init__(tag_name, value or "")
@@ -279,7 +288,8 @@ class TextProperty(ElementProperty):
 
 class TextPropertyRequired(ElementProperty):
     """Same as TextProperty but returns an empty element rather then None in case the passed element's value is empty or None"""
-    value_types = (str)
+
+    value_types = str
 
     def __init__(self, tag_name: str = "Name", value=None):
         super().__init__(tag_name, value or "")
@@ -297,14 +307,21 @@ class TextPropertyRequired(ElementProperty):
 
 
 class ColorProperty(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or [0, 0, 0])
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return ColorProperty(element.tag, [float(element.get("r", default=0)), float(element.get("g", default=0)), float(element.get("b", default=0))])
+        return ColorProperty(
+            element.tag,
+            [
+                float(element.get("r", default=0)),
+                float(element.get("g", default=0)),
+                float(element.get("b", default=0)),
+            ],
+        )
 
     def to_xml(self):
         r = str(int(self.value.r))
@@ -314,7 +331,7 @@ class ColorProperty(ElementProperty):
 
 
 class Vector2Property(ElementProperty):
-    value_types = (Vector)
+    value_types = Vector
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0)))
@@ -324,7 +341,12 @@ class Vector2Property(ElementProperty):
         if not all(x in element.attrib.keys() for x in ["x", "y"]):
             return Vector2Property.read_value_error(element)
 
-        return Vector2Property(element.tag, Vector((float(element.get("x", default=0)), float(element.get("y", default=0)))))
+        return Vector2Property(
+            element.tag,
+            Vector(
+                (float(element.get("x", default=0)), float(element.get("y", default=0)))
+            ),
+        )
 
     def to_xml(self):
         x = str(float32(self.value.x))
@@ -333,14 +355,23 @@ class Vector2Property(ElementProperty):
 
 
 class VectorProperty(ElementProperty):
-    value_types = (Vector)
+    value_types = Vector
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0, 0)))
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return VectorProperty(element.tag, Vector((float(element.get("x", default=0)), float(element.get("y", default=0)), float(element.get("z", default=0)))))
+        return VectorProperty(
+            element.tag,
+            Vector(
+                (
+                    float(element.get("x", default=0)),
+                    float(element.get("y", default=0)),
+                    float(element.get("z", default=0)),
+                )
+            ),
+        )
 
     def to_xml(self):
         x = str(float32(self.value.x))
@@ -350,14 +381,24 @@ class VectorProperty(ElementProperty):
 
 
 class Vector4Property(ElementProperty):
-    value_types = (Vector)
+    value_types = Vector
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Vector((0, 0, 0, 0)))
 
     @staticmethod
     def from_xml(element: ET.Element):
-        return Vector4Property(element.tag, Vector((float(element.get("x", default=0)), float(element.get("y", default=0)), float(element.get("z", default=0)), float(element.get("w", default=0)))))
+        return Vector4Property(
+            element.tag,
+            Vector(
+                (
+                    float(element.get("x", default=0)),
+                    float(element.get("y", default=0)),
+                    float(element.get("z", default=0)),
+                    float(element.get("w", default=0)),
+                )
+            ),
+        )
 
     def to_xml(self):
         x = str(float32(self.value.x))
@@ -368,7 +409,7 @@ class Vector4Property(ElementProperty):
 
 
 class QuaternionProperty(ElementProperty):
-    value_types = (Quaternion)
+    value_types = Quaternion
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Quaternion())
@@ -378,7 +419,17 @@ class QuaternionProperty(ElementProperty):
         if not all(x in element.attrib.keys() for x in ["x", "y", "z", "w"]):
             QuaternionProperty.read_value_error(element)
 
-        return QuaternionProperty(element.tag, Quaternion((float(element.get("w")), float(element.get("x")), float(element.get("y")), float(element.get("z")))))
+        return QuaternionProperty(
+            element.tag,
+            Quaternion(
+                (
+                    float(element.get("w")),
+                    float(element.get("x")),
+                    float(element.get("y")),
+                    float(element.get("z")),
+                )
+            ),
+        )
 
     def to_xml(self):
         x = str(float32(self.value.x))
@@ -389,7 +440,7 @@ class QuaternionProperty(ElementProperty):
 
 
 class MatrixProperty(ElementProperty):
-    value_types = (Matrix)
+    value_types = Matrix
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Matrix())
@@ -423,7 +474,7 @@ class MatrixProperty(ElementProperty):
 
 
 class Matrix33Property(ElementProperty):
-    value_types = (Matrix)
+    value_types = Matrix
 
     def __init__(self, tag_name: str, value=None):
         super().__init__(tag_name, value or Matrix.Diagonal((0, 0, 0)))
@@ -457,7 +508,7 @@ class Matrix33Property(ElementProperty):
 
 
 class FlagsProperty(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self, tag_name: str = "Flags", value=None):
         super().__init__(tag_name, value or [])
@@ -514,7 +565,7 @@ class ValueProperty(ElementProperty):
 
 
 class StringValueProperty(ElementProperty):
-    value_types = (str)
+    value_types = str
 
     def __init__(self, tag_name: str, value=""):
         super().__init__(tag_name, value)
@@ -532,7 +583,8 @@ class StringValueProperty(ElementProperty):
 
 class TextListProperty(ElementProperty):
     """Separates each word of an element's text into a list"""
-    value_types = (list)
+
+    value_types = list
 
     def __init__(self, tag_name, value=None):
         super().__init__(tag_name, value or [])

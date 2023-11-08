@@ -4,7 +4,17 @@ from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
+from ..sollumz_properties import (
+    SOLLUMZ_UI_NAMES,
+    items_from_enums,
+    TextureUsage,
+    TextureFormat,
+    LODLevel,
+    SollumType,
+    LightType,
+    FlagPropertyGroup,
+    TimeFlags,
+)
 from ..ydr.shader_materials import shadermats
 from bpy.app.handlers import persistent
 from bpy.path import basename
@@ -42,15 +52,20 @@ class DrawableShaderOrder(bpy.types.PropertyGroup):
 
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high: bpy.props.FloatProperty(
-        min=0, max=10000, default=9998, name="Lod Distance High")
+        min=0, max=10000, default=9998, name="Lod Distance High"
+    )
     lod_dist_med: bpy.props.FloatProperty(
-        min=0, max=10000, default=9998, name="Lod Distance Med")
+        min=0, max=10000, default=9998, name="Lod Distance Med"
+    )
     lod_dist_low: bpy.props.FloatProperty(
-        min=0, max=10000, default=9998, name="Lod Distance Low")
+        min=0, max=10000, default=9998, name="Lod Distance Low"
+    )
     lod_dist_vlow: bpy.props.FloatProperty(
-        min=0, max=10000, default=9998, name="Lod Distance Vlow")
+        min=0, max=10000, default=9998, name="Lod Distance Vlow"
+    )
     unknown_9A: bpy.props.FloatProperty(
-        min=0, max=10000, default=9998, name="Unknown 9A")
+        min=0, max=10000, default=9998, name="Unknown 9A"
+    )
 
     shader_order: bpy.props.PointerProperty(type=DrawableShaderOrder)
 
@@ -61,9 +76,10 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
     unknown_1: bpy.props.IntProperty(name="Unknown 1", default=0)
     sollum_lod: bpy.props.EnumProperty(
         items=items_from_enums(
-            [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]),
+            [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]
+        ),
         name="LOD Level",
-        default="sollumz_high"
+        default="sollumz_high",
     )
 
 
@@ -91,8 +107,7 @@ class ShaderProperties(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty(min=0)
 
     renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0, min=0, max=7)
-    filename: bpy.props.StringProperty(
-        name="Shader Filename", default="default.sps")
+    filename: bpy.props.StringProperty(name="Shader Filename", default="default.sps")
     name: bpy.props.StringProperty(name="Shader Name", default="default")
 
 
@@ -115,8 +130,7 @@ class TextureFlags(bpy.types.PropertyGroup):
     y1024: bpy.props.BoolProperty(name="Y1024", default=False)
     x2048: bpy.props.BoolProperty(name="X2048", default=False)
     y2048: bpy.props.BoolProperty(name="Y2048", default=False)
-    embeddedscriptrt: bpy.props.BoolProperty(
-        name="EMBEDDEDSCRIPTRT", default=False)
+    embeddedscriptrt: bpy.props.BoolProperty(name="EMBEDDEDSCRIPTRT", default=False)
     unk19: bpy.props.BoolProperty(name="UNK19", default=False)
     unk20: bpy.props.BoolProperty(name="UNK20", default=False)
     unk21: bpy.props.BoolProperty(name="UNK21", default=False)
@@ -128,15 +142,11 @@ class TextureFlags(bpy.types.PropertyGroup):
 class TextureProperties(bpy.types.PropertyGroup):
     embedded: bpy.props.BoolProperty(name="Embedded", default=False)
     usage: bpy.props.EnumProperty(
-        items=items_from_enums(TextureUsage),
-        name="Usage",
-        default=TextureUsage.UNKNOWN
+        items=items_from_enums(TextureUsage), name="Usage", default=TextureUsage.UNKNOWN
     )
 
     format: bpy.props.EnumProperty(
-        items=items_from_enums(TextureFormat),
-        name="Format",
-        default=TextureFormat.DXT1
+        items=items_from_enums(TextureFormat), name="Format", default=TextureFormat.DXT1
     )
 
     extra_flags: bpy.props.IntProperty(name="Extra Flags", default=0)
@@ -197,12 +207,20 @@ class BoneProperties(bpy.types.PropertyGroup):
         self.use_manual_tag = value != self.calc_tag()
 
     tag: bpy.props.IntProperty(
-        name="Tag", description="Unique value that identifies this bone in the armature",
-        get=get_tag, set=set_tag, default=0, min=0, max=0xFFFF)
+        name="Tag",
+        description="Unique value that identifies this bone in the armature",
+        get=get_tag,
+        set=set_tag,
+        default=0,
+        min=0,
+        max=0xFFFF,
+    )
     manual_tag: bpy.props.IntProperty(name="Manual Tag", default=0, min=0, max=0xFFFF)
     use_manual_tag: bpy.props.BoolProperty(
-        name="Use Manual Tag", description="Specify a tag instead of auto-calculating it",
-        default=False)
+        name="Use Manual Tag",
+        description="Specify a tag instead of auto-calculating it",
+        default=False,
+    )
     flags: bpy.props.CollectionProperty(type=BoneFlag)
     ul_index: bpy.props.IntProperty(name="UIListIndex", default=0)
 
@@ -217,41 +235,42 @@ class LightProperties(bpy.types.PropertyGroup):
     group_id: bpy.props.IntProperty(name="Group ID")
     falloff: bpy.props.FloatProperty(name="Falloff")
     falloff_exponent: bpy.props.FloatProperty(name="Falloff Exponent")
-    culling_plane_normal: bpy.props.FloatVectorProperty(
-        name="Culling Plane Normal")
+    culling_plane_normal: bpy.props.FloatVectorProperty(name="Culling Plane Normal")
     culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
     unknown_45: bpy.props.FloatProperty(name="Unknown 45")
     unknown_46: bpy.props.FloatProperty(name="Unknown 46")
-    volume_intensity: bpy.props.FloatProperty(
-        name="Volume Intensity", default=1.0)
+    volume_intensity: bpy.props.FloatProperty(name="Volume Intensity", default=1.0)
     shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")
-    volume_size_scale: bpy.props.FloatProperty(
-        name="Volume Size Scale", default=1.0)
+    volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale", default=1.0)
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0, default=(1.0, 1.0, 1.0))
+        name="Volume Outer Color",
+        subtype="COLOR",
+        min=0.0,
+        max=1.0,
+        default=(1.0, 1.0, 1.0),
+    )
     light_hash: bpy.props.IntProperty(name="Light Hash")
     volume_outer_intensity: bpy.props.FloatProperty(
-        name="Volume Outer Intensity", default=1.0)
+        name="Volume Outer Intensity", default=1.0
+    )
     corona_size: bpy.props.FloatProperty(name="Corona Size")
     volume_outer_exponent: bpy.props.FloatProperty(
-        name="Volume Outer Exponent", default=1.0)
+        name="Volume Outer Exponent", default=1.0
+    )
     light_fade_distance: bpy.props.FloatProperty(name="Light Fade Distance")
     shadow_fade_distance: bpy.props.FloatProperty(name="Shadow Fade Distance")
-    specular_fade_distance: bpy.props.FloatProperty(
-        name="Specular Fade Distance")
-    volumetric_fade_distance: bpy.props.FloatProperty(
-        name="Volumetric Fade Distance")
+    specular_fade_distance: bpy.props.FloatProperty(name="Specular Fade Distance")
+    volumetric_fade_distance: bpy.props.FloatProperty(name="Volumetric Fade Distance")
     shadow_near_clip: bpy.props.FloatProperty(name="Shadow Near Clip")
-    corona_intensity: bpy.props.FloatProperty(
-        name="Corona Intensity", default=1.0)
+    corona_intensity: bpy.props.FloatProperty(name="Corona Intensity", default=1.0)
     corona_z_bias: bpy.props.FloatProperty(name="Corona Z Bias", default=0.1)
     tangent: bpy.props.FloatVectorProperty(name="Tangent")
     cone_inner_angle: bpy.props.FloatProperty(name="Cone Inner Angle")
     cone_outer_angle: bpy.props.FloatProperty(name="Cone Outer Angle")
     extent: bpy.props.FloatVectorProperty(
-        name="Extent", default=(1, 1, 1), subtype="XYZ")
-    projected_texture_hash: bpy.props.StringProperty(
-        name="Projected Texture Hash")
+        name="Extent", default=(1, 1, 1), subtype="XYZ"
+    )
+    projected_texture_hash: bpy.props.StringProperty(name="Projected Texture Hash")
 
 
 class LightPresetProp(bpy.types.PropertyGroup):
@@ -260,70 +279,54 @@ class LightPresetProp(bpy.types.PropertyGroup):
 
 
 class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
-    unk1: bpy.props.BoolProperty(
-        name="Unk1", update=FlagPropertyGroup.update_flag)
-    unk2: bpy.props.BoolProperty(
-        name="Unk2", update=FlagPropertyGroup.update_flag)
-    unk3: bpy.props.BoolProperty(
-        name="Unk3", update=FlagPropertyGroup.update_flag)
-    unk4: bpy.props.BoolProperty(
-        name="Unk4", update=FlagPropertyGroup.update_flag)
-    unk5: bpy.props.BoolProperty(
-        name="Unk5", update=FlagPropertyGroup.update_flag)
-    unk6: bpy.props.BoolProperty(
-        name="Unk6", update=FlagPropertyGroup.update_flag)
-    unk7: bpy.props.BoolProperty(
-        name="Unk7", update=FlagPropertyGroup.update_flag)
+    unk1: bpy.props.BoolProperty(name="Unk1", update=FlagPropertyGroup.update_flag)
+    unk2: bpy.props.BoolProperty(name="Unk2", update=FlagPropertyGroup.update_flag)
+    unk3: bpy.props.BoolProperty(name="Unk3", update=FlagPropertyGroup.update_flag)
+    unk4: bpy.props.BoolProperty(name="Unk4", update=FlagPropertyGroup.update_flag)
+    unk5: bpy.props.BoolProperty(name="Unk5", update=FlagPropertyGroup.update_flag)
+    unk6: bpy.props.BoolProperty(name="Unk6", update=FlagPropertyGroup.update_flag)
+    unk7: bpy.props.BoolProperty(name="Unk7", update=FlagPropertyGroup.update_flag)
     shadows: bpy.props.BoolProperty(
-        name="ShadowS", update=FlagPropertyGroup.update_flag)
+        name="ShadowS", update=FlagPropertyGroup.update_flag
+    )
     shadowd: bpy.props.BoolProperty(
-        name="ShadowD", update=FlagPropertyGroup.update_flag)
+        name="ShadowD", update=FlagPropertyGroup.update_flag
+    )
     sunlight: bpy.props.BoolProperty(
-        name="Sunlight", update=FlagPropertyGroup.update_flag)
-    unk11: bpy.props.BoolProperty(
-        name="Unk11", update=FlagPropertyGroup.update_flag)
+        name="Sunlight", update=FlagPropertyGroup.update_flag
+    )
+    unk11: bpy.props.BoolProperty(name="Unk11", update=FlagPropertyGroup.update_flag)
     electric: bpy.props.BoolProperty(
-        name="Electric", update=FlagPropertyGroup.update_flag)
-    volume: bpy.props.BoolProperty(
-        name="Volume", update=FlagPropertyGroup.update_flag)
+        name="Electric", update=FlagPropertyGroup.update_flag
+    )
+    volume: bpy.props.BoolProperty(name="Volume", update=FlagPropertyGroup.update_flag)
     specoff: bpy.props.BoolProperty(
-        name="SpecOff", update=FlagPropertyGroup.update_flag)
-    unk15: bpy.props.BoolProperty(
-        name="Unk15", update=FlagPropertyGroup.update_flag)
+        name="SpecOff", update=FlagPropertyGroup.update_flag
+    )
+    unk15: bpy.props.BoolProperty(name="Unk15", update=FlagPropertyGroup.update_flag)
     lightoff: bpy.props.BoolProperty(
-        name="LightOff", update=FlagPropertyGroup.update_flag)
-    prxoff: bpy.props.BoolProperty(
-        name="PrxOff", update=FlagPropertyGroup.update_flag)
-    unk18: bpy.props.BoolProperty(
-        name="Unk18", update=FlagPropertyGroup.update_flag)
+        name="LightOff", update=FlagPropertyGroup.update_flag
+    )
+    prxoff: bpy.props.BoolProperty(name="PrxOff", update=FlagPropertyGroup.update_flag)
+    unk18: bpy.props.BoolProperty(name="Unk18", update=FlagPropertyGroup.update_flag)
     culling: bpy.props.BoolProperty(
-        name="Culling", update=FlagPropertyGroup.update_flag)
-    unk20: bpy.props.BoolProperty(
-        name="Unk20", update=FlagPropertyGroup.update_flag)
-    unk21: bpy.props.BoolProperty(
-        name="Unk21", update=FlagPropertyGroup.update_flag)
-    unk22: bpy.props.BoolProperty(
-        name="Unk22", update=FlagPropertyGroup.update_flag)
-    unk23: bpy.props.BoolProperty(
-        name="Unk23", update=FlagPropertyGroup.update_flag)
+        name="Culling", update=FlagPropertyGroup.update_flag
+    )
+    unk20: bpy.props.BoolProperty(name="Unk20", update=FlagPropertyGroup.update_flag)
+    unk21: bpy.props.BoolProperty(name="Unk21", update=FlagPropertyGroup.update_flag)
+    unk22: bpy.props.BoolProperty(name="Unk22", update=FlagPropertyGroup.update_flag)
+    unk23: bpy.props.BoolProperty(name="Unk23", update=FlagPropertyGroup.update_flag)
     glassoff: bpy.props.BoolProperty(
-        name="GlassOff", update=FlagPropertyGroup.update_flag)
-    unk25: bpy.props.BoolProperty(
-        name="Unk25", update=FlagPropertyGroup.update_flag)
-    unk26: bpy.props.BoolProperty(
-        name="Unk26", update=FlagPropertyGroup.update_flag)
-    unk27: bpy.props.BoolProperty(
-        name="Unk27", update=FlagPropertyGroup.update_flag)
-    unk28: bpy.props.BoolProperty(
-        name="Unk28", update=FlagPropertyGroup.update_flag)
-    unk29: bpy.props.BoolProperty(
-        name="Unk29", update=FlagPropertyGroup.update_flag)
-    unk30: bpy.props.BoolProperty(
-        name="Unk30", update=FlagPropertyGroup.update_flag)
-    unk31: bpy.props.BoolProperty(
-        name="Unk31", update=FlagPropertyGroup.update_flag)
-    unk32: bpy.props.BoolProperty(
-        name="Unk32", update=FlagPropertyGroup.update_flag)
+        name="GlassOff", update=FlagPropertyGroup.update_flag
+    )
+    unk25: bpy.props.BoolProperty(name="Unk25", update=FlagPropertyGroup.update_flag)
+    unk26: bpy.props.BoolProperty(name="Unk26", update=FlagPropertyGroup.update_flag)
+    unk27: bpy.props.BoolProperty(name="Unk27", update=FlagPropertyGroup.update_flag)
+    unk28: bpy.props.BoolProperty(name="Unk28", update=FlagPropertyGroup.update_flag)
+    unk29: bpy.props.BoolProperty(name="Unk29", update=FlagPropertyGroup.update_flag)
+    unk30: bpy.props.BoolProperty(name="Unk30", update=FlagPropertyGroup.update_flag)
+    unk31: bpy.props.BoolProperty(name="Unk31", update=FlagPropertyGroup.update_flag)
+    unk32: bpy.props.BoolProperty(name="Unk32", update=FlagPropertyGroup.update_flag)
 
 
 @persistent
@@ -366,7 +369,8 @@ def get_light_presets_path() -> str:
         return presets_path
     else:
         raise FileNotFoundError(
-            f"light_presets.xml file not found! Please redownload this file from the github and place it in '{os.path.dirname(presets_path)}'")
+            f"light_presets.xml file not found! Please redownload this file from the github and place it in '{os.path.dirname(presets_path)}'"
+        )
 
 
 light_presets = LightPresetsFile()
@@ -390,7 +394,9 @@ def get_texture_name(self):
     return "None"
 
 
-def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> DrawableModelProperties:
+def get_model_properties(
+    model_obj: bpy.types.Object, lod_level: LODLevel
+) -> DrawableModelProperties:
     drawable_obj = find_sollumz_parent(model_obj, SollumType.DRAWABLE)
 
     if drawable_obj is not None and model_obj.vertex_groups:
@@ -400,91 +406,135 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
 
     if lod is None or lod.mesh is None:
         raise ValueError(
-            f"Failed to get Drawable Model properties: {model_obj.name} has no {SOLLUMZ_UI_NAMES[lod_level]} LOD!")
+            f"Failed to get Drawable Model properties: {model_obj.name} has no {SOLLUMZ_UI_NAMES[lod_level]} LOD!"
+        )
 
     return lod.mesh.drawable_model_properties
 
 
 def register():
     bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
-        name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
+        name="Shader Material Index"
+    )  # MAKE ENUM WITH THE MATERIALS NAMES
     bpy.types.Scene.shader_materials = bpy.props.CollectionProperty(
-        type=ShaderMaterial, name="Shader Materials")
+        type=ShaderMaterial, name="Shader Materials"
+    )
     bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
-        type=DrawableProperties)
+        type=DrawableProperties
+    )
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(
-        type=ShaderProperties)
+        type=ShaderProperties
+    )
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(
-        type=TextureProperties)
+        type=TextureProperties
+    )
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(
-        type=TextureFlags)
+        type=TextureFlags
+    )
     bpy.types.ShaderNodeTexImage.sollumz_texture_name = bpy.props.StringProperty(
-        name="Texture Name", description="Name of texture.", get=get_texture_name)
+        name="Texture Name", description="Name of texture.", get=get_texture_name
+    )
 
     # Store properties for the DrawableModel with HasSkin=1. This is so all skinned objects share
     # the same drawable model properties even when split by group. It seems there is only ever 1
     # DrawableModel with HasSkin=1 in any given Drawable.
     bpy.types.Object.skinned_model_properties = bpy.props.PointerProperty(
-        type=SkinnedDrawableModelProperties)
+        type=SkinnedDrawableModelProperties
+    )
     # DrawableModel properties stored per mesh for LOD system
     bpy.types.Mesh.drawable_model_properties = bpy.props.PointerProperty(
-        type=DrawableModelProperties)
+        type=DrawableModelProperties
+    )
     # For backwards compatibility
     bpy.types.Object.drawable_model_properties = bpy.props.PointerProperty(
-        type=DrawableModelProperties)
+        type=DrawableModelProperties
+    )
 
     bpy.types.Scene.create_seperate_drawables = bpy.props.BoolProperty(
-        name="Separate Objects", description="Create a separate Drawable for each selected object")
+        name="Separate Objects",
+        description="Create a separate Drawable for each selected object",
+    )
     bpy.types.Scene.auto_create_embedded_col = bpy.props.BoolProperty(
-        name="Auto-Embed Collision", description="Automatically create embedded static collision")
+        name="Auto-Embed Collision",
+        description="Automatically create embedded static collision",
+    )
     bpy.types.Scene.center_drawable_to_selection = bpy.props.BoolProperty(
-        name="Center to Selection", description="Center Drawable(s) to selection", default=True)
+        name="Center to Selection",
+        description="Center Drawable(s) to selection",
+        default=True,
+    )
 
-    bpy.types.Bone.bone_properties = bpy.props.PointerProperty(
-        type=BoneProperties)
+    bpy.types.Bone.bone_properties = bpy.props.PointerProperty(type=BoneProperties)
     bpy.types.Light.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(LightType),
         name="Light Type",
         default=LightType.POINT,
         options={"HIDDEN"},
         get=get_light_type,
-        set=set_light_type
+        set=set_light_type,
     )
     bpy.types.Light.is_capsule = bpy.props.BoolProperty()
-    bpy.types.Light.light_properties = bpy.props.PointerProperty(
-        type=LightProperties)
+    bpy.types.Light.light_properties = bpy.props.PointerProperty(type=LightProperties)
     bpy.types.Scene.create_light_type = bpy.props.EnumProperty(
         items=[
-            (LightType.POINT.value,
-             SOLLUMZ_UI_NAMES[LightType.POINT], SOLLUMZ_UI_NAMES[LightType.POINT]),
-            (LightType.SPOT.value,
-             SOLLUMZ_UI_NAMES[LightType.SPOT], SOLLUMZ_UI_NAMES[LightType.SPOT]),
-            (LightType.CAPSULE.value,
-             SOLLUMZ_UI_NAMES[LightType.CAPSULE], SOLLUMZ_UI_NAMES[LightType.CAPSULE]),
+            (
+                LightType.POINT.value,
+                SOLLUMZ_UI_NAMES[LightType.POINT],
+                SOLLUMZ_UI_NAMES[LightType.POINT],
+            ),
+            (
+                LightType.SPOT.value,
+                SOLLUMZ_UI_NAMES[LightType.SPOT],
+                SOLLUMZ_UI_NAMES[LightType.SPOT],
+            ),
+            (
+                LightType.CAPSULE.value,
+                SOLLUMZ_UI_NAMES[LightType.CAPSULE],
+                SOLLUMZ_UI_NAMES[LightType.CAPSULE],
+            ),
         ],
         name="Light Type",
         default=LightType.POINT,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
     bpy.types.Light.time_flags = bpy.props.PointerProperty(type=TimeFlags)
     bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
     bpy.types.Scene.sollumz_auto_lod_ref_mesh = bpy.props.PointerProperty(
-        type=bpy.types.Mesh, name="Reference Mesh", description="The mesh to copy and decimate for each LOD level. You'd usually want to set this as the highest LOD then run the tool for all lower LODs")
+        type=bpy.types.Mesh,
+        name="Reference Mesh",
+        description="The mesh to copy and decimate for each LOD level. You'd usually want to set this as the highest LOD then run the tool for all lower LODs",
+    )
     bpy.types.Scene.sollumz_auto_lod_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
-        name="Decimate Step", min=0.0, max=0.99, default=0.6)
+        name="Decimate Step", min=0.0, max=0.99, default=0.6
+    )
 
-    bpy.types.Scene.light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
-    bpy.types.Scene.light_presets = bpy.props.CollectionProperty(type=LightPresetProp, name="Light Presets")
+    bpy.types.Scene.light_preset_index = bpy.props.IntProperty(
+        name="Light Preset Index"
+    )
+    bpy.types.Scene.light_presets = bpy.props.CollectionProperty(
+        type=LightPresetProp, name="Light Presets"
+    )
 
     bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
-    bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(
-        ("sollumz_extract_lods_parent_type_object", "Object", "Parent to an Object"),
-        ("sollumz_extract_lods_parent_type_collection",
-         "Collection", "Parent to a Collection")
-    ), default=0)
+    bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(
+        name="Parent Type",
+        items=(
+            (
+                "sollumz_extract_lods_parent_type_object",
+                "Object",
+                "Parent to an Object",
+            ),
+            (
+                "sollumz_extract_lods_parent_type_collection",
+                "Collection",
+                "Parent to a Collection",
+            ),
+        ),
+        default=0,
+    )
 
 
 def unregister():

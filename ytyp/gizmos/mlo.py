@@ -16,7 +16,8 @@ def can_draw_gizmos(context):
         if not selected_archetype.asset.visible_get():
             return False
         return aobj == selected_archetype.asset or find_parent(
-            aobj, selected_archetype.asset.name)
+            aobj, selected_archetype.asset.name
+        )
     return False
 
 
@@ -32,42 +33,30 @@ class RoomGizmo(bpy.types.Gizmo):
         return [
             bbmin,
             Vector((bbmin.x, bbmin.y, bbmax.z)),
-
             bbmin,
             Vector((bbmax.x, bbmin.y, bbmin.z)),
-
             bbmin,
             Vector((bbmin.x, bbmax.y, bbmin.z)),
-
             Vector((bbmax.x, bbmin.y, bbmax.z)),
             Vector((bbmax.x, bbmin.y, bbmin.z)),
-
             Vector((bbmin.x, bbmin.y, bbmax.z)),
             Vector((bbmin.x, bbmax.y, bbmax.z)),
-
             Vector((bbmin.x, bbmax.y, bbmin.z)),
             Vector((bbmin.x, bbmax.y, bbmax.z)),
-
             Vector((bbmax.x, bbmin.y, bbmax.z)),
             Vector((bbmax.x, bbmin.y, bbmax.z)),
-
             Vector((bbmax.x, bbmin.y, bbmax.z)),
             Vector((bbmin.x, bbmin.y, bbmax.z)),
-
             Vector((bbmax.x, bbmin.y, bbmin.z)),
             Vector((bbmax.x, bbmax.y, bbmin.z)),
-
             Vector((bbmin.x, bbmax.y, bbmin.z)),
             Vector((bbmax.x, bbmax.y, bbmin.z)),
-
             Vector((bbmax.x, bbmin.y, bbmax.z)),
             bbmax,
-
             Vector((bbmin.x, bbmax.y, bbmax.z)),
             bbmax,
-
             Vector((bbmax.x, bbmax.y, bbmin.z)),
-            bbmax
+            bbmax,
         ]
 
     def draw(self, context):
@@ -87,9 +76,9 @@ class RoomGizmo(bpy.types.Gizmo):
         asset = selected_archetype.asset
         if asset and room:
             self.custom_shape = self.new_custom_shape(
-                "LINES", RoomGizmo.get_verts(room.bb_min, room.bb_max))
-            self.draw_custom_shape(
-                self.custom_shape, matrix=asset.matrix_world)
+                "LINES", RoomGizmo.get_verts(room.bb_min, room.bb_max)
+            )
+            self.draw_custom_shape(self.custom_shape, matrix=asset.matrix_world)
 
 
 class RoomGizmoGroup(bpy.types.GizmoGroup):
@@ -134,7 +123,6 @@ class PortalGizmo(bpy.types.Gizmo):
             corners[0],
             corners[1],
             corners[3],
-
             corners[2],
             corners[3],
             corners[1],
@@ -160,14 +148,15 @@ class PortalGizmo(bpy.types.Gizmo):
         self.alpha_highlight = self.alpha
 
         if portal and asset:
-            corners = [portal.corner1, portal.corner2,
-                       portal.corner3, portal.corner4]
+            corners = [portal.corner1, portal.corner2, portal.corner3, portal.corner4]
 
             self.portal_poly = self.new_custom_shape(
-                "TRIS", PortalGizmo.get_verts(corners))
+                "TRIS", PortalGizmo.get_verts(corners)
+            )
 
             self.draw_custom_shape(
-                self.portal_poly, matrix=asset.matrix_world, select_id=select_id)
+                self.portal_poly, matrix=asset.matrix_world, select_id=select_id
+            )
 
     def invoke(self, context, event):
         selected_archetype = get_selected_archetype(context)
@@ -178,10 +167,10 @@ class PortalGizmo(bpy.types.Gizmo):
 
         selected_archetype.portal_index = portals.index(self.linked_portal)
 
-        return {'PASS_THROUGH'}
+        return {"PASS_THROUGH"}
 
     def modal(self, context, event, tweak):
-        return {'PASS_THROUGH'}
+        return {"PASS_THROUGH"}
 
 
 class PortalNormalGizmo(bpy.types.Gizmo):
@@ -206,21 +195,31 @@ class PortalNormalGizmo(bpy.types.Gizmo):
             self.alpha = 0.3
 
             if portal and asset:
-                corners = [portal.corner1, portal.corner2,
-                           portal.corner3, portal.corner4]
+                corners = [
+                    portal.corner1,
+                    portal.corner2,
+                    portal.corner3,
+                    portal.corner4,
+                ]
                 x = [p[0] for p in corners]
                 y = [p[1] for p in corners]
                 z = [p[2] for p in corners]
                 centroid = Vector(
-                    (sum(x) / len(corners), sum(y) / len(corners), sum(z) / len(corners)))
-                normal = -(corners[2] - corners[0]
-                           ).cross(corners[1] - corners[0]).normalized()
+                    (
+                        sum(x) / len(corners),
+                        sum(y) / len(corners),
+                        sum(z) / len(corners),
+                    )
+                )
+                normal = (
+                    -(corners[2] - corners[0])
+                    .cross(corners[1] - corners[0])
+                    .normalized()
+                )
                 default_axis = Vector((0, 0, 1))
                 rot = default_axis.rotation_difference(normal)
-                arrow_mat = Matrix.LocRotScale(
-                    centroid, rot, Vector((0.3, 0.3, 0.3)))
-                self.draw_preset_arrow(
-                    matrix=asset.matrix_world @ arrow_mat)
+                arrow_mat = Matrix.LocRotScale(centroid, rot, Vector((0.3, 0.3, 0.3)))
+                self.draw_preset_arrow(matrix=asset.matrix_world @ arrow_mat)
 
 
 class PortalGizmoGroup(bpy.types.GizmoGroup):

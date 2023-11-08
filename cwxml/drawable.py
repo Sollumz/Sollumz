@@ -20,7 +20,7 @@ from .element import (
     ValueProperty,
     VectorProperty,
     Vector4Property,
-    MatrixProperty
+    MatrixProperty,
 )
 from .bound import (
     BoundBox,
@@ -31,13 +31,12 @@ from .bound import (
     BoundDisc,
     BoundGeometry,
     BoundGeometryBVH,
-    BoundSphere
+    BoundSphere,
 )
 from collections.abc import MutableSequence
 
 
 class YDD:
-
     file_extension = ".ydd.xml"
 
     @staticmethod
@@ -50,7 +49,6 @@ class YDD:
 
 
 class YDR:
-
     file_extension = ".ydr.xml"
 
     @staticmethod
@@ -132,8 +130,7 @@ class ArrayShaderParameter(ShaderParameter):
 
     @staticmethod
     def from_xml(element: ET.Element):
-        new = super(ArrayShaderParameter,
-                    ArrayShaderParameter).from_xml(element)
+        new = super(ArrayShaderParameter, ArrayShaderParameter).from_xml(element)
 
         for item in element:
             new.values.append(Vector4Property.from_xml(item).value)
@@ -150,8 +147,11 @@ class ArrayShaderParameter(ShaderParameter):
         return element
 
     def __hash__(self) -> int:
-        values_unpacked = [x for vector in self.values for x in [
-            vector.x, vector.y, vector.z, vector.w]]
+        values_unpacked = [
+            x
+            for vector in self.values
+            for x in [vector.x, vector.y, vector.z, vector.w]
+        ]
         return hash((self.name, self.type, *values_unpacked))
 
 
@@ -171,8 +171,7 @@ class ParametersList(ListProperty):
                 if param_type == VectorShaderParameter.type:
                     new.value.append(VectorShaderParameter.from_xml(child))
                 if param_type == ArrayShaderParameter.type:
-                    new.value.append(
-                        ArrayShaderParameter.from_xml(child))
+                    new.value.append(ArrayShaderParameter.from_xml(child))
 
         return new
 
@@ -192,7 +191,14 @@ class Shader(ElementTree):
 
     def __hash__(self) -> int:
         params_elem = self.get_element("parameters")
-        return hash((hash(self.name), hash(self.filename), hash(self.render_bucket), hash(params_elem)))
+        return hash(
+            (
+                hash(self.name),
+                hash(self.filename),
+                hash(self.render_bucket),
+                hash(params_elem),
+            )
+        )
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Shader):
@@ -217,7 +223,7 @@ class ShaderGroup(ElementTree):
 
 
 class BoneIDProperty(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self, tag_name: str = "BoneIDs", value=None):
         super().__init__(tag_name, value or [])
@@ -377,7 +383,7 @@ class Lights(ListProperty):
 
 
 class VertexLayoutList(ElementProperty):
-    value_types = (list)
+    value_types = list
     tag_name = "Layout"
 
     def __init__(self, type: str = "GTAV1", value: list[str] = None):
@@ -462,8 +468,9 @@ class VertexBuffer(ElementTree):
         return element
 
     def _load_data_from_str(self, _str: str):
-        struct_dtype = np.dtype([self.VERT_ATTR_DTYPES[attr_name]
-                                 for attr_name in self.layout])
+        struct_dtype = np.dtype(
+            [self.VERT_ATTR_DTYPES[attr_name] for attr_name in self.layout]
+        )
 
         self.data = np.loadtxt(io.StringIO(_str), dtype=struct_dtype)
 
@@ -484,8 +491,7 @@ class VertexBuffer(ElementTree):
             formats.append(" ".join([attr_fmt] * column.shape[1]))
 
         fmt = ATTR_SEP.join(formats)
-        vert_arr_2d = np.column_stack(
-            [vert_arr[name] for name in vert_arr.dtype.names])
+        vert_arr_2d = np.column_stack([vert_arr[name] for name in vert_arr.dtype.names])
 
         return np_arr_to_str(vert_arr_2d, fmt)
 
@@ -531,13 +537,11 @@ class IndexBuffer(ElementTree):
         num_divisble_inds = num_inds - (num_inds % 24)
         num_rows = int(num_divisble_inds / 24)
 
-        indices_arr_2d = indices_arr[:num_divisble_inds].reshape(
-            (num_rows, 24))
+        indices_arr_2d = indices_arr[:num_divisble_inds].reshape((num_rows, 24))
 
         index_buffer_str = np_arr_to_str(indices_arr_2d, fmt="%.0u")
         # Add the last row
-        last_row_str = np_arr_to_str(
-            indices_arr[num_divisble_inds:], fmt="%.0u")
+        last_row_str = np_arr_to_str(indices_arr[num_divisble_inds:], fmt="%.0u")
 
         return f"{index_buffer_str}\n{last_row_str}"
 
@@ -591,7 +595,12 @@ class Drawable(ElementTree, AbstractClass):
 
     @property
     def all_models(self) -> list[DrawableModel]:
-        return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
+        return (
+            self.drawable_models_high
+            + self.drawable_models_med
+            + self.drawable_models_low
+            + self.drawable_models_vlow
+        )
 
     def __init__(self):
         super().__init__()
@@ -617,14 +626,10 @@ class Drawable(ElementTree, AbstractClass):
         self.shader_group = ShaderGroup()
         self.skeleton = Skeleton()
         self.joints = Joints()
-        self.drawable_models_high = DrawableModelList(
-            "DrawableModelsHigh")
-        self.drawable_models_med = DrawableModelList(
-            "DrawableModelsMedium")
-        self.drawable_models_low = DrawableModelList(
-            "DrawableModelsLow")
-        self.drawable_models_vlow = DrawableModelList(
-            "DrawableModelsVeryLow")
+        self.drawable_models_high = DrawableModelList("DrawableModelsHigh")
+        self.drawable_models_med = DrawableModelList("DrawableModelsMedium")
+        self.drawable_models_low = DrawableModelList("DrawableModelsLow")
+        self.drawable_models_vlow = DrawableModelList("DrawableModelsVeryLow")
         self.lights = Lights()
         self.bounds = []
 
@@ -719,13 +724,14 @@ class DrawableDictionary(MutableSequence, Element):
                 element.append(drawable.to_xml())
             else:
                 raise TypeError(
-                    f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!")
+                    f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!"
+                )
 
         return element
 
 
 class DrawableMatrices(ElementProperty):
-    value_types = (list)
+    value_types = list
 
     def __init__(self, tag_name: str = "Matrices", value: list[Matrix] = None):
         super().__init__(tag_name, value)
@@ -753,8 +759,7 @@ class DrawableMatrices(ElementProperty):
 
 
 class BonePropertiesManager:
-    dictionary_xml = os.path.join(
-        os.path.dirname(__file__), "BoneProperties.xml")
+    dictionary_xml = os.path.join(os.path.dirname(__file__), "BoneProperties.xml")
     bones = {}
 
     @staticmethod

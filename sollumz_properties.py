@@ -65,8 +65,8 @@ class LightType(str, Enum):
 
 
 class MaterialType(str, Enum):
-    NONE = "sollumz_material_none",
-    SHADER = "sollumz_material_shader",
+    NONE = ("sollumz_material_none",)
+    SHADER = ("sollumz_material_shader",)
     COLLISION = "sollumz_material_collision"
     SHATTER_MAP = "sollumz_material_shard"
 
@@ -264,20 +264,17 @@ SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_GEOMETRY: "Bound Geometry",
     SollumType.BOUND_GEOMETRYBVH: "Bound GeometryBVH",
     SollumType.BOUND_COMPOSITE: "Bound Composite",
-
     SollumType.BOUND_POLY_BOX: "Bound Poly Box",
     SollumType.BOUND_POLY_SPHERE: "Bound Poly Sphere",
     SollumType.BOUND_POLY_CAPSULE: "Bound Poly Capsule",
     SollumType.BOUND_POLY_CYLINDER: "Bound Poly Cylinder",
     SollumType.BOUND_POLY_TRIANGLE: "Bound Poly Mesh",
     SollumType.BOUND_POLY_TRIANGLE2: "Bound Poly Mesh Damaged",
-
     SollumType.FRAGMENT: "Fragment",
     SollumType.FRAGGROUP: "Fragment Group",
     SollumType.FRAGCHILD: "Fragment Child",
     SollumType.FRAGLOD: "Fragment LOD",
     SollumType.SHATTERMAP: "Shattermap",
-
     SollumType.NONE: "None",
     SollumType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
     SollumType.DRAWABLE: "Drawable",
@@ -285,18 +282,15 @@ SOLLUMZ_UI_NAMES = {
     SollumType.DRAWABLE_GEOMETRY: "Drawable Geometry",
     SollumType.SKELETON: "Skeleton",
     SollumType.LIGHT: "Light",
-
     SollumType.NAVMESH: "NavMesh",
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
     SollumType.NAVMESH_PORTAL: "NavMesh Portal",
     SollumType.NAVMESH_POINT: "NavMesh Point",
-
     SollumType.CLIP_DICTIONARY: "Clip Dictionary",
     SollumType.CLIPS: "Clips",
     SollumType.CLIP: "Clip",
     SollumType.ANIMATIONS: "Animations",
     SollumType.ANIMATION: "Animation",
-
     SollumType.YMAP: "Ymap",
     SollumType.YMAP_ENTITY_GROUP: "Entity Group",
     SollumType.YMAP_BOX_OCCLUDER_GROUP: "Box Occluder Group",
@@ -305,12 +299,10 @@ SOLLUMZ_UI_NAMES = {
     SollumType.YMAP_BOX_OCCLUDER: "Box Occluder",
     SollumType.YMAP_MODEL_OCCLUDER: "Model Occluder",
     SollumType.YMAP_CAR_GENERATOR: "Car Generator",
-
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
     MaterialType.COLLISION: "Sollumz Collision Material",
     MaterialType.SHATTER_MAP: "Sollumz Shatter Map",
-
     TextureUsage.UNKNOWN: "UNKNOWN",
     TextureUsage.TINTPALETTE: "TINTPALETTE",
     TextureUsage.DEFAULT: "DEFAULT",
@@ -340,7 +332,6 @@ SOLLUMZ_UI_NAMES = {
     TextureUsage.TEST: "TEST",
     TextureUsage.COUNT: "COUNT",
     TextureUsage.DIFFUSE: "DIFFUSE",
-
     TextureFormat.DXT1: "D3DFMT_DXT1",
     TextureFormat.DXT3: "D3DFMT_DXT3",
     TextureFormat.DXT5: "D3DFMT_DXT5",
@@ -354,13 +345,11 @@ SOLLUMZ_UI_NAMES = {
     TextureFormat.X8R8G8B8: "D3DFMT_X8R8G8B8",
     TextureFormat.A8: "D3DFMT_A8",
     TextureFormat.L8: "D3DFMT_L8",
-
     LODLevel.VERYHIGH: "Very High",
     LODLevel.HIGH: "High",
     LODLevel.MEDIUM: "Med",
     LODLevel.LOW: "Low",
     LODLevel.VERYLOW: "Very Low",
-
     EntityLodLevel.LODTYPES_DEPTH_HD: "DEPTH HD",
     EntityLodLevel.LODTYPES_DEPTH_LOD: "DEPTH LOD",
     EntityLodLevel.LODTYPES_DEPTH_SLOD1: "DEPTH SLOD1",
@@ -368,27 +357,22 @@ SOLLUMZ_UI_NAMES = {
     EntityLodLevel.LODTYPES_DEPTH_SLOD3: "DEPTH SLOD3",
     EntityLodLevel.LODTYPES_DEPTH_SLOD4: "DEPTH SLOD4",
     EntityLodLevel.LODTYPES_DEPTH_ORPHANHD: "DEPTH ORPHAN HD",
-
     EntityPriorityLevel.PRI_REQUIRED: "REQUIRED",
     EntityPriorityLevel.PRI_OPTIONAL_HIGH: "OPTIONAL HIGH",
     EntityPriorityLevel.PRI_OPTIONAL_MEDIUM: "OPTIONAL MEDIUM",
     EntityPriorityLevel.PRI_OPTIONAL_LOW: "OPTIONAL LOW",
-
     LightType.NONE: "None",
     LightType.POINT: "Point",
     LightType.SPOT: "Spot",
     LightType.CAPSULE: "Capsule",
-
     ArchetypeType.BASE: "Base",
     ArchetypeType.TIME: "Time",
     ArchetypeType.MLO: "MLO",
-
     AssetType.UNITIALIZED: "Uninitialized",
     AssetType.FRAGMENT: "Fragment",
     AssetType.DRAWABLE: "Drawable",
     AssetType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
     AssetType.ASSETLESS: "Assetless",
-
     VehicleLightID.NONE: "None",
     VehicleLightID.CUSTOM: "Custom",
     VehicleLightID.ALWAYS_ON: "Always On",
@@ -409,13 +393,12 @@ SOLLUMZ_UI_NAMES = {
     VehicleLightID.EXTRA_FRONT_RIGHT: "Extra Front Right (extralight_2)",
     VehicleLightID.EXTRA_REAR_LEFT: "Extra Rear Left (extralight_3)",
     VehicleLightID.EXTRA_REAR_RIGHT: "Extra Rear Right (extralight_4)",
-
     VehiclePaintLayer.NOT_PAINTABLE: "Not Paintable",
     VehiclePaintLayer.PRIMARY: "Primary",
     VehiclePaintLayer.SECONDARY: "Secondary",
     VehiclePaintLayer.WHEEL: "Wheel",
     VehiclePaintLayer.INTERIOR_DASH: "Dashboard",
-    VehiclePaintLayer.INTERIOR_TRIM: "Interior Trim"
+    VehiclePaintLayer.INTERIOR_TRIM: "Interior Trim",
 }
 
 
@@ -427,10 +410,8 @@ def items_from_enums(*enums, exclude=None):
             if exclude is not None and item in exclude:
                 continue
             if item not in SOLLUMZ_UI_NAMES:
-                raise KeyError(
-                    f"UI name mapping not found for key {item} of {enum}.")
-            items.append(
-                (item.value, SOLLUMZ_UI_NAMES[item], ""))
+                raise KeyError(f"UI name mapping not found for key {item} of {enum}.")
+            items.append((item.value, SOLLUMZ_UI_NAMES[item], ""))
     return items
 
 
@@ -454,105 +435,122 @@ class FlagPropertyGroup:
 
     size = 32
     total: bpy.props.StringProperty(
-        name="Flags", update=update_flags_total, default="0")
+        name="Flags", update=update_flags_total, default="0"
+    )
 
 
-time_items = [("0", "12:00 AM", ""),
-              ("1", "1:00 AM", ""),
-              ("2", "2:00 AM", ""),
-              ("3", "3:00 AM", ""),
-              ("4", "4:00 AM", ""),
-              ("5", "5:00 AM", ""),
-              ("6", "6:00 AM", ""),
-              ("7", "7:00 AM", ""),
-              ("8", "8:00 AM", ""),
-              ("9", "9:00 AM", ""),
-              ("10", "10:00 AM", ""),
-              ("11", "11:00 AM", ""),
-              ("12", "12:00 PM", ""),
-              ("13", "1:00 PM", ""),
-              ("14", "2:00 PM", ""),
-              ("15", "3:00 PM", ""),
-              ("16", "4:00 PM", ""),
-              ("17", "5:00 PM", ""),
-              ("18", "6:00 PM", ""),
-              ("19", "7:00 PM", ""),
-              ("20", "8:00 PM", ""),
-              ("21", "9:00 PM", ""),
-              ("22", "10:00 PM", ""),
-              ("23", "11:00 PM", "")]
+time_items = [
+    ("0", "12:00 AM", ""),
+    ("1", "1:00 AM", ""),
+    ("2", "2:00 AM", ""),
+    ("3", "3:00 AM", ""),
+    ("4", "4:00 AM", ""),
+    ("5", "5:00 AM", ""),
+    ("6", "6:00 AM", ""),
+    ("7", "7:00 AM", ""),
+    ("8", "8:00 AM", ""),
+    ("9", "9:00 AM", ""),
+    ("10", "10:00 AM", ""),
+    ("11", "11:00 AM", ""),
+    ("12", "12:00 PM", ""),
+    ("13", "1:00 PM", ""),
+    ("14", "2:00 PM", ""),
+    ("15", "3:00 PM", ""),
+    ("16", "4:00 PM", ""),
+    ("17", "5:00 PM", ""),
+    ("18", "6:00 PM", ""),
+    ("19", "7:00 PM", ""),
+    ("20", "8:00 PM", ""),
+    ("21", "9:00 PM", ""),
+    ("22", "10:00 PM", ""),
+    ("23", "11:00 PM", ""),
+]
 
 
 class TimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     hour1: bpy.props.BoolProperty(
-        name="12:00 AM - 1:00 AM", update=FlagPropertyGroup.update_flag)
+        name="12:00 AM - 1:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour2: bpy.props.BoolProperty(
-        name="1:00 AM - 2:00 AM", update=FlagPropertyGroup.update_flag)
+        name="1:00 AM - 2:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour3: bpy.props.BoolProperty(
-        name="2:00 AM - 3:00 AM", update=FlagPropertyGroup.update_flag)
+        name="2:00 AM - 3:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour4: bpy.props.BoolProperty(
-        name="3:00 AM - 4:00 AM", update=FlagPropertyGroup.update_flag)
+        name="3:00 AM - 4:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour5: bpy.props.BoolProperty(
-        name="4:00 AM - 5:00 AM", update=FlagPropertyGroup.update_flag)
+        name="4:00 AM - 5:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour6: bpy.props.BoolProperty(
-        name="5:00 AM - 6:00 AM", update=FlagPropertyGroup.update_flag)
+        name="5:00 AM - 6:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour7: bpy.props.BoolProperty(
-        name="6:00 AM - 7:00 AM", update=FlagPropertyGroup.update_flag)
+        name="6:00 AM - 7:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour8: bpy.props.BoolProperty(
-        name="7:00 AM - 8:00 AM", update=FlagPropertyGroup.update_flag)
+        name="7:00 AM - 8:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour9: bpy.props.BoolProperty(
-        name="8:00 AM - 9:00 AM", update=FlagPropertyGroup.update_flag)
+        name="8:00 AM - 9:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour10: bpy.props.BoolProperty(
-        name="9:00 AM - 10:00 AM", update=FlagPropertyGroup.update_flag)
+        name="9:00 AM - 10:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour11: bpy.props.BoolProperty(
-        name="10:00 AM - 11:00 AM", update=FlagPropertyGroup.update_flag)
+        name="10:00 AM - 11:00 AM", update=FlagPropertyGroup.update_flag
+    )
     hour12: bpy.props.BoolProperty(
-        name="11:00 AM - 12:00 PM", update=FlagPropertyGroup.update_flag)
+        name="11:00 AM - 12:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour13: bpy.props.BoolProperty(
-        name="12:00 PM - 1:00 PM", update=FlagPropertyGroup.update_flag)
+        name="12:00 PM - 1:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour14: bpy.props.BoolProperty(
-        name="1:00 PM - 2:00 PM", update=FlagPropertyGroup.update_flag)
+        name="1:00 PM - 2:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour15: bpy.props.BoolProperty(
-        name="2:00 PM - 3:00 PM", update=FlagPropertyGroup.update_flag)
+        name="2:00 PM - 3:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour16: bpy.props.BoolProperty(
-        name="3:00 PM - 4:00 PM", update=FlagPropertyGroup.update_flag)
+        name="3:00 PM - 4:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour17: bpy.props.BoolProperty(
-        name="4:00 PM - 5:00 PM", update=FlagPropertyGroup.update_flag)
+        name="4:00 PM - 5:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour18: bpy.props.BoolProperty(
-        name="5:00 PM - 6:00 PM", update=FlagPropertyGroup.update_flag)
+        name="5:00 PM - 6:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour19: bpy.props.BoolProperty(
-        name="6:00 PM - 7:00 PM", update=FlagPropertyGroup.update_flag)
+        name="6:00 PM - 7:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour20: bpy.props.BoolProperty(
-        name="7:00 PM - 8:00 PM", update=FlagPropertyGroup.update_flag)
+        name="7:00 PM - 8:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour21: bpy.props.BoolProperty(
-        name="8:00 PM - 9:00 PM", update=FlagPropertyGroup.update_flag)
+        name="8:00 PM - 9:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour22: bpy.props.BoolProperty(
-        name="9:00 PM - 10:00 PM", update=FlagPropertyGroup.update_flag)
+        name="9:00 PM - 10:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour23: bpy.props.BoolProperty(
-        name="10:00 PM - 11:00 PM", update=FlagPropertyGroup.update_flag)
+        name="10:00 PM - 11:00 PM", update=FlagPropertyGroup.update_flag
+    )
     hour24: bpy.props.BoolProperty(
-        name="11:00 PM - 12:00 AM", update=FlagPropertyGroup.update_flag)
-    unk1: bpy.props.BoolProperty(
-        name="Unknown 1", update=FlagPropertyGroup.update_flag)
-    unk2: bpy.props.BoolProperty(
-        name="Unknown 2", update=FlagPropertyGroup.update_flag)
-    unk3: bpy.props.BoolProperty(
-        name="Unknown 3", update=FlagPropertyGroup.update_flag)
-    unk4: bpy.props.BoolProperty(
-        name="Unknown 4", update=FlagPropertyGroup.update_flag)
-    unk5: bpy.props.BoolProperty(
-        name="Unknown 5", update=FlagPropertyGroup.update_flag)
-    unk6: bpy.props.BoolProperty(
-        name="Unknown 6", update=FlagPropertyGroup.update_flag)
-    unk7: bpy.props.BoolProperty(
-        name="Unknown 7", update=FlagPropertyGroup.update_flag)
-    unk8: bpy.props.BoolProperty(
-        name="Unknown 8", update=FlagPropertyGroup.update_flag)
+        name="11:00 PM - 12:00 AM", update=FlagPropertyGroup.update_flag
+    )
+    unk1: bpy.props.BoolProperty(name="Unknown 1", update=FlagPropertyGroup.update_flag)
+    unk2: bpy.props.BoolProperty(name="Unknown 2", update=FlagPropertyGroup.update_flag)
+    unk3: bpy.props.BoolProperty(name="Unknown 3", update=FlagPropertyGroup.update_flag)
+    unk4: bpy.props.BoolProperty(name="Unknown 4", update=FlagPropertyGroup.update_flag)
+    unk5: bpy.props.BoolProperty(name="Unknown 5", update=FlagPropertyGroup.update_flag)
+    unk6: bpy.props.BoolProperty(name="Unknown 6", update=FlagPropertyGroup.update_flag)
+    unk7: bpy.props.BoolProperty(name="Unknown 7", update=FlagPropertyGroup.update_flag)
+    unk8: bpy.props.BoolProperty(name="Unknown 8", update=FlagPropertyGroup.update_flag)
 
-    time_flags_start: bpy.props.EnumProperty(
-        items=time_items, name="Time Start")
-    time_flags_end: bpy.props.EnumProperty(
-        items=time_items, name="Time End")
+    time_flags_start: bpy.props.EnumProperty(items=time_items, name="Time Start")
+    time_flags_end: bpy.props.EnumProperty(items=time_items, name="Time End")
 
 
 class EntityProperties:
@@ -566,19 +564,21 @@ class EntityProperties:
         items=items_from_enums(EntityLodLevel),
         name="LOD Level",
         default=EntityLodLevel.LODTYPES_DEPTH_ORPHANHD,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
     num_children: bpy.props.IntProperty(name="Number of Children")
     priority_level: bpy.props.EnumProperty(
         items=items_from_enums(EntityPriorityLevel),
         name="Priority Level",
         default=EntityPriorityLevel.PRI_REQUIRED,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
     ambient_occlusion_multiplier: bpy.props.FloatProperty(
-        name="Ambient Occlusion Multiplier", default=255)
+        name="Ambient Occlusion Multiplier", default=255
+    )
     artificial_ambient_occlusion: bpy.props.FloatProperty(
-        name="Artificial Ambient Occlusion", default=255)
+        name="Artificial Ambient Occlusion", default=255
+    )
     tint_value: bpy.props.FloatProperty(name="Tint Value")
 
 
@@ -591,20 +591,21 @@ def register():
         items=items_from_enums(SollumType),
         name="Sollumz Type",
         default=SollumType.NONE,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
 
     bpy.types.Material.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(MaterialType),
         name="Sollumz Material Type",
         default=MaterialType.NONE,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
 
     bpy.types.ShaderNode.is_sollumz = bpy.props.BoolProperty(default=False)
 
     bpy.types.Object.entity_properties = bpy.props.PointerProperty(
-        type=ObjectEntityProperties)
+        type=ObjectEntityProperties
+    )
 
     bpy.types.Scene.vert_paint_color1 = bpy.props.FloatVectorProperty(
         name="Vert Color 1",
@@ -612,7 +613,7 @@ def register():
         default=(1.0, 1.0, 1.0, 1.0),
         min=0,
         max=1,
-        size=4
+        size=4,
     )
 
     bpy.types.Scene.vert_paint_color2 = bpy.props.FloatVectorProperty(
@@ -621,7 +622,7 @@ def register():
         default=(0.0, 0.0, 1.0, 1.0),
         min=0,
         max=1,
-        size=4
+        size=4,
     )
 
     bpy.types.Scene.vert_paint_color3 = bpy.props.FloatVectorProperty(
@@ -630,7 +631,7 @@ def register():
         default=(0.0, 1.0, 0.0, 1.0),
         min=0,
         max=1,
-        size=4
+        size=4,
     )
 
     bpy.types.Scene.vert_paint_color4 = bpy.props.FloatVectorProperty(
@@ -639,7 +640,7 @@ def register():
         default=(1.0, 0.0, 0.0, 1.0),
         min=0,
         max=1,
-        size=4
+        size=4,
     )
 
     bpy.types.Scene.vert_paint_color5 = bpy.props.FloatVectorProperty(
@@ -648,7 +649,7 @@ def register():
         default=(0.0, 1.0, 0.0, 1.0),
         min=0,
         max=1,
-        size=4
+        size=4,
     )
 
     bpy.types.Scene.vert_paint_color6 = bpy.props.FloatVectorProperty(
@@ -657,30 +658,46 @@ def register():
         default=(1.0, 0.0, 0.0, 1.0),
         min=0,
         max=1,
-        size=4
+        size=4,
     )
 
     bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
-        name="Alpha", min=-1, max=1)
+        name="Alpha", min=-1, max=1
+    )
 
     bpy.types.Scene.debug_sollum_type = bpy.props.EnumProperty(
-        items=[(SollumType.DRAWABLE.value, SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]),
-               (SollumType.DRAWABLE_DICTIONARY.value,
-                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY]),
-               (SollumType.BOUND_COMPOSITE.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE])],
+        items=[
+            (
+                SollumType.DRAWABLE.value,
+                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE],
+                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE],
+            ),
+            (
+                SollumType.DRAWABLE_DICTIONARY.value,
+                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY],
+                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY],
+            ),
+            (
+                SollumType.BOUND_COMPOSITE.value,
+                SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE],
+                SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE],
+            ),
+        ],
         name="Hierarchy Type",
         default=SollumType.DRAWABLE,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
 
     bpy.types.Scene.all_sollum_type = bpy.props.EnumProperty(
         items=sorted(items_from_enums(SollumType), key=lambda i: i[0]),
         name="Sollum Types",
-        options={"HIDDEN"}
+        options={"HIDDEN"},
     )
 
     bpy.types.Scene.debug_lights_only_selected = bpy.props.BoolProperty(
-        name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
+        name="Limit to Selected",
+        description="Only set intensity of the selected lights. (All instances will be affected)",
+    )
 
     bpy.types.Scene.sollumz_export_path = bpy.props.StringProperty(
         name="Export Path",

@@ -3,14 +3,13 @@ from .element import (
     ListProperty,
     TextProperty,
     ValueProperty,
-    VectorProperty
+    VectorProperty,
 )
 from xml.etree import ElementTree as ET
 from mathutils import Vector
 
 
 class YNV:
-
     file_extension = ".ynv.xml"
 
     @staticmethod

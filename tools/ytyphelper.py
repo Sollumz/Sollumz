@@ -38,8 +38,11 @@ def base_archetype_from_object(obj):
 
 def ytyp_from_objects(objs):
     ytyp = CMapTypes()
-    ytyp.name = os.path.basename(
-        bpy.data.filepath).replace(".blend", "") if bpy.data.filepath is not "" else "untitled"
+    ytyp.name = (
+        os.path.basename(bpy.data.filepath).replace(".blend", "")
+        if bpy.data.filepath is not ""
+        else "untitled"
+    )
     for obj in objs:
         ytyp.archetypes.append(base_archetype_from_object(obj))
     return ytyp

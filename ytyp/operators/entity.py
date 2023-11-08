@@ -5,12 +5,16 @@ from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ..utils import get_selected_archetype, get_selected_entity
 from ..properties.mlo import (
-    MloEntityProperties, get_portal_items_for_selected_archetype, get_room_items_for_selected_archetype
+    MloEntityProperties,
+    get_portal_items_for_selected_archetype,
+    get_room_items_for_selected_archetype,
 )
 from ..properties.ytyp import ArchetypeProperties
 
 
-def set_entity_properties_from_filter(entity: MloEntityProperties, context: bpy.types.Context):
+def set_entity_properties_from_filter(
+    entity: MloEntityProperties, context: bpy.types.Context
+):
     scene = context.scene
     filter_type = scene.sollumz_entity_filter_type
 
@@ -26,6 +30,7 @@ def set_entity_properties_from_filter(entity: MloEntityProperties, context: bpy.
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add an entity to the selected mlo archetype"""
+
     bl_idname = "sollumz.createmloentity"
     bl_label = "Create Entity"
 
@@ -48,18 +53,22 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_archetype(context) is not None and len(context.selected_objects) > 0
+        return (
+            get_selected_archetype(context) is not None
+            and len(context.selected_objects) > 0
+        )
 
     def execute(self, context: bpy.types.Context):
         selected_archetype = get_selected_archetype(context)
 
         for obj in context.selected_objects:
-            existing_entity = self.get_entity_using_obj(
-                obj, selected_archetype)
+            existing_entity = self.get_entity_using_obj(obj, selected_archetype)
 
             if existing_entity is not None:
                 self.report(
-                    {"INFO"}, f"Object '{obj.name}' already linked to entity '{existing_entity.archetype_name}'! Skipping...")
+                    {"INFO"},
+                    f"Object '{obj.name}' already linked to entity '{existing_entity.archetype_name}'! Skipping...",
+                )
                 continue
 
             entity = selected_archetype.new_entity()
@@ -70,7 +79,9 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
         return {"FINISHED"}
 
-    def get_entity_using_obj(self, obj: bpy.types.Object, archetype: ArchetypeProperties) -> Optional[MloEntityProperties]:
+    def get_entity_using_obj(
+        self, obj: bpy.types.Object, archetype: ArchetypeProperties
+    ) -> Optional[MloEntityProperties]:
         for entity in archetype.entities:
             if entity.linked_object == obj:
                 return entity
@@ -80,6 +91,7 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
 class SOLLUMZ_OT_set_obj_entity_transforms(bpy.types.Operator):
     """Set the transforms of the selected object(s) to that of the Entity"""
+
     bl_idname = "sollumz.setobjentitytransforms"
     bl_label = "Set Object Transforms to Entity"
 
@@ -87,7 +99,10 @@ class SOLLUMZ_OT_set_obj_entity_transforms(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_entity(context) is not None and len(context.selected_objects) > 0
+        return (
+            get_selected_entity(context) is not None
+            and len(context.selected_objects) > 0
+        )
 
     def execute(self, context):
         entity = get_selected_entity(context)
@@ -112,6 +127,7 @@ class SOLLUMZ_OT_set_obj_entity_transforms(bpy.types.Operator):
 
 class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete an entity from the selected mlo archetype"""
+
     bl_idname = "sollumz.deletemloentity"
     bl_label = "Delete Entity"
 
@@ -121,20 +137,21 @@ class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.entities.remove(
-            selected_archetype.entity_index)
-        selected_archetype.entity_index = max(
-            selected_archetype.entity_index - 1, 0)
+        selected_archetype.entities.remove(selected_archetype.entity_index)
+        selected_archetype.entity_index = max(selected_archetype.entity_index - 1, 0)
 
         return True
 
 
 class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
     """Search for portal"""
+
     bl_idname = "sollumz.search_entity_portals"
     bl_property = "attached_portal_id"
 
-    attached_portal_id: bpy.props.EnumProperty(items=get_portal_items_for_selected_archetype, default=-1)
+    attached_portal_id: bpy.props.EnumProperty(
+        items=get_portal_items_for_selected_archetype, default=-1
+    )
 
     @classmethod
     def poll(cls, context):
@@ -146,10 +163,13 @@ class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
 
 class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
     """Search for room"""
+
     bl_idname = "sollumz.search_entity_rooms"
     bl_property = "attached_room_id"
 
-    attached_room_id: bpy.props.EnumProperty(items=get_room_items_for_selected_archetype, default=-1)
+    attached_room_id: bpy.props.EnumProperty(
+        items=get_room_items_for_selected_archetype, default=-1
+    )
 
     @classmethod
     def poll(cls, context):

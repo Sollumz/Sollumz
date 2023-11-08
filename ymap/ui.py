@@ -26,32 +26,28 @@ def draw_ymap_properties(self, context):
         row.prop(obj.ymap_properties.content_flags_toggle, "has_hd", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_lod", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle,
-                 "has_slod2", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle, "has_slod2", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_int", toggle=1)
         row = layout.row()
         row.prop(obj.ymap_properties.content_flags_toggle, "has_slod", toggle=1)
         row.prop(obj.ymap_properties.content_flags_toggle, "has_occl", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle,
-                 "has_physics", toggle=1)
-        row.prop(obj.ymap_properties.content_flags_toggle,
-                 "has_lod_lights", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle, "has_physics", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle, "has_lod_lights", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle,
-                 "has_dis_lod_lights", toggle=1)
-        row.prop(obj.ymap_properties.content_flags_toggle,
-                 "has_critical", toggle=1)
+        row.prop(
+            obj.ymap_properties.content_flags_toggle, "has_dis_lod_lights", toggle=1
+        )
+        row.prop(obj.ymap_properties.content_flags_toggle, "has_critical", toggle=1)
         row = layout.row()
-        row.prop(obj.ymap_properties.content_flags_toggle,
-                 "has_grass", toggle=1)
+        row.prop(obj.ymap_properties.content_flags_toggle, "has_grass", toggle=1)
 
 
 def draw_ymap_model_occluder_properties(self, context):
     obj = context.active_object
     if obj and obj.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
         layout = self.layout
-        layout.prop(obj.ymap_model_occl_properties, 'model_occl_flags')
+        layout.prop(obj.ymap_model_occl_properties, "model_occl_flags")
 
 
 def draw_ymap_car_generator_properties(self, context):
@@ -59,15 +55,15 @@ def draw_ymap_car_generator_properties(self, context):
     if obj and obj.sollum_type == SollumType.YMAP_CAR_GENERATOR:
         layout = self.layout
         layout.separator()
-        layout.prop(obj.ymap_cargen_properties, 'car_model')
-        layout.prop(obj.ymap_cargen_properties, 'cargen_flags')
-        layout.prop(obj.ymap_cargen_properties, 'pop_group')
-        layout.prop(obj.ymap_cargen_properties, 'perpendicular_length')
-        layout.prop(obj.ymap_cargen_properties, 'body_color_remap_1')
-        layout.prop(obj.ymap_cargen_properties, 'body_color_remap_2')
-        layout.prop(obj.ymap_cargen_properties, 'body_color_remap_3')
-        layout.prop(obj.ymap_cargen_properties, 'body_color_remap_4')
-        layout.prop(obj.ymap_cargen_properties, 'livery')
+        layout.prop(obj.ymap_cargen_properties, "car_model")
+        layout.prop(obj.ymap_cargen_properties, "cargen_flags")
+        layout.prop(obj.ymap_cargen_properties, "pop_group")
+        layout.prop(obj.ymap_cargen_properties, "perpendicular_length")
+        layout.prop(obj.ymap_cargen_properties, "body_color_remap_1")
+        layout.prop(obj.ymap_cargen_properties, "body_color_remap_2")
+        layout.prop(obj.ymap_cargen_properties, "body_color_remap_3")
+        layout.prop(obj.ymap_cargen_properties, "body_color_remap_4")
+        layout.prop(obj.ymap_cargen_properties, "livery")
 
 
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
@@ -87,7 +83,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.createymap")
 
-        if (len(bpy.context.selected_objects) > 0):
+        if len(bpy.context.selected_objects) > 0:
             active_object = bpy.context.selected_objects[0]
 
             if active_object.sollum_type == SollumType.YMAP:

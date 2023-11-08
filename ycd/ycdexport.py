@@ -26,7 +26,7 @@ def parse_uv_transform_data_path(data_path: str) -> tuple[int, str]:
     # data_path = '...uv_transforms[123].property'
 
     # trim up to 'uv_transforms'
-    data_path = data_path[data_path.index("uv_transforms") + len("uv_transforms"):]
+    data_path = data_path[data_path.index("uv_transforms") + len("uv_transforms") :]
 
     # extract transform index
     index_start = data_path.index("[") + 1
@@ -45,8 +45,7 @@ SequenceItems = dict[int, dict[Track, TrackFramesData]]
 
 
 def sequence_items_from_action(
-        action: bpy.types.Action,
-        target_id: bpy.types.ID
+    action: bpy.types.Action, target_id: bpy.types.ID
 ) -> SequenceItems:
     frame_range, frame_count = get_frame_range_and_count(action)
     target = get_target_from_id(target_id)
@@ -64,9 +63,13 @@ def sequence_items_from_action(
     sequence_items: SequenceItems = {}
     for fcurve in action.fcurves:
         data_path = fcurve.data_path
-        bone_id_track_pair = get_id_and_track_from_track_data_path(data_path, target_id, bone_name_map)
+        bone_id_track_pair = get_id_and_track_from_track_data_path(
+            data_path, target_id, bone_name_map
+        )
         if bone_id_track_pair is None:
-            logger.warning(f"F-curve data-path '{data_path}' in action '{action.name}' is unsupported, skipping...")
+            logger.warning(
+                f"F-curve data-path '{data_path}' in action '{action.name}' is unsupported, skipping..."
+            )
             continue
 
         bone_id, track = bone_id_track_pair
@@ -94,9 +97,13 @@ def sequence_items_from_action(
                     default_vec = (0.0, 1.0, 0.0)
                 else:
                     default_vec = (0.0, 0.0, 0.0)
-                bone_sequences[track] = [Vector(default_vec) for _ in range(0, frame_count)]
+                bone_sequences[track] = [
+                    Vector(default_vec) for _ in range(0, frame_count)
+                ]
             elif format == TrackFormat.Quaternion:
-                bone_sequences[track] = [Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+                bone_sequences[track] = [
+                    Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(0, frame_count)
+                ]
             elif format == TrackFormat.Float:
                 bone_sequences[track] = [0.0] * frame_count
 
@@ -111,7 +118,9 @@ def sequence_items_from_action(
     if target_is_armature:
         # transform bones from pose space to local space
         for bone_id, bone_sequences in sequence_items.items():
-            transform_mat = calculate_bone_space_transform_matrix(bone_map.get(bone_id, None), None)
+            transform_mat = calculate_bone_space_transform_matrix(
+                bone_map.get(bone_id, None), None
+            )
 
             if Track.BonePosition in bone_sequences:
                 vecs = bone_sequences[Track.BonePosition]
@@ -150,15 +159,21 @@ def sequence_items_from_action(
             bone_sequences = sequence_items[bone_id]
 
             # compute uv0/uv1 from uv_transforms
-            bone_sequences[Track.UV0] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
-            bone_sequences[Track.UV1] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+            bone_sequences[Track.UV0] = [
+                Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)
+            ]
+            bone_sequences[Track.UV1] = [
+                Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)
+            ]
             uv0_sequence = bone_sequences[Track.UV0]
             uv1_sequence = bone_sequences[Track.UV1]
             for frame_id in range(0, frame_count):
                 # apply f-curves to UV transforms
                 for fcurve in fcurves:
                     value = fcurve.evaluate(frame_range[0] + frame_id)
-                    transform_index, prop_name = parse_uv_transform_data_path(fcurve.data_path)
+                    transform_index, prop_name = parse_uv_transform_data_path(
+                        fcurve.data_path
+                    )
 
                     prop = getattr(uv_transforms[transform_index], prop_name)
                     if isinstance(prop, float):
@@ -197,9 +212,14 @@ def sequence_items_from_action(
     # resulting all values that are not passing this statement to "lag" in game.
     # (because of incorrect interpolation direction)
     # So what we do is make all values to pass Dot(start, end) >= 0f statement
-    quaternion_tracks = list(map(lambda kvp: kvp[0],
-                                 filter(lambda kvp: kvp[1] == TrackFormat.Quaternion,
-                                        TrackFormatMap.items())))
+    quaternion_tracks = list(
+        map(
+            lambda kvp: kvp[0],
+            filter(
+                lambda kvp: kvp[1] == TrackFormat.Quaternion, TrackFormatMap.items()
+            ),
+        )
+    )
     for bone_id, bone_sequences in sequence_items.items():
         for track in quaternion_tracks:
             quats = bone_sequences.get(track, None)
@@ -215,9 +235,7 @@ def sequence_items_from_action(
 
 
 def build_values_channel(
-    values: list[float],
-    uniq_values: list[float],
-    indirect_percentage: float = 0.1
+    values: list[float], uniq_values: list[float], indirect_percentage: float = 0.1
 ) -> ycdxml.ChannelsList.Channel:
     values_len_percentage = len(uniq_values) / len(values)
 
@@ -254,8 +272,7 @@ def build_values_channel(
 
 
 def sequence_data_from_frames_data(
-    track: Track,
-    frames_data: TrackFramesData
+    track: Track, frames_data: TrackFramesData
 ) -> ycdxml.Animation.SequenceDataList.SequenceData:
     sequence_data = ycdxml.Animation.SequenceDataList.SequenceData()
 
@@ -355,9 +372,11 @@ def animation_from_object(animation_obj: bpy.types.Object) -> ycdxml.Animation:
     sequence.frame_count = frame_count
     sequence.hash = "hash_00000000"  # TODO: calculate signature
 
-    sequence_datas = [(bone_id, track, frames_data)
-                      for bone_id, bones_data in sequence_items.items()
-                      for track, frames_data in bones_data.items()]
+    sequence_datas = [
+        (bone_id, track, frames_data)
+        for bone_id, bones_data in sequence_items.items()
+        for track, frames_data in bones_data.items()
+    ]
     sequence_datas.sort(key=lambda x: x[0] | (x[1].value << 16))
     for bone_id, track, frames_data in sequence_datas:
         if track == Track.MoverPosition or track == Track.MoverRotation:
@@ -412,17 +431,27 @@ def clip_attribute_to_xml(attr: ClipAttribute) -> ycdxml.AttributesList.Attribut
 def clip_attribute_calc_signature(attr: ClipAttribute) -> int:
     signature = jenkhash.name_to_hash(attr.name)
     if attr.type == "Float":
-        signature = jenkhash.GenerateData(struct.pack("f", attr.value_float), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("f", attr.value_float), seed=signature
+        )
     elif attr.type == "Int":
-        signature = jenkhash.GenerateData(struct.pack("i", attr.value_int), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("i", attr.value_int), seed=signature
+        )
     elif attr.type == "Bool":
-        signature = jenkhash.GenerateData(struct.pack("?", attr.value_bool), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("?", attr.value_bool), seed=signature
+        )
     elif attr.type == "Vector3":
         vec3 = attr.value_vec3
-        signature = jenkhash.GenerateData(struct.pack("3f", vec3[0], vec3[1], vec3[2]), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("3f", vec3[0], vec3[1], vec3[2]), seed=signature
+        )
     elif attr.type == "Vector4":
         vec4 = attr.value_vec4
-        signature = jenkhash.GenerateData(struct.pack("4f", vec4[0], vec4[1], vec4[2], vec4[3]), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("4f", vec4[0], vec4[1], vec4[2], vec4[3]), seed=signature
+        )
     elif attr.type == "String":
         signature = jenkhash.Generate(attr.value_string, seed=signature)
     elif attr.type == "HashString":
@@ -440,7 +469,9 @@ def clip_property_calc_signature(prop: ClipAttribute) -> int:
     signature = jenkhash.name_to_hash(prop.name)
     for attr in prop.attributes:
         attr_signature = clip_attribute_calc_signature(attr)
-        signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("I", attr_signature), seed=signature
+        )
 
     return signature
 
@@ -451,9 +482,13 @@ def clip_tag_calc_signature(tag: ClipTag) -> int:
     signature = jenkhash.name_to_hash(tag.name)
     for attr in tag.attributes:
         attr_signature = clip_attribute_calc_signature(attr)
-        signature = jenkhash.GenerateData(struct.pack("I", attr_signature), seed=signature)
+        signature = jenkhash.GenerateData(
+            struct.pack("I", attr_signature), seed=signature
+        )
 
-    signature = zlib.crc32(struct.pack("f", tag.start_phase), jenkhash.name_to_hash(tag.name) ^ signature)
+    signature = zlib.crc32(
+        struct.pack("f", tag.start_phase), jenkhash.name_to_hash(tag.name) ^ signature
+    )
     signature = zlib.crc32(struct.pack("f", tag.end_phase), signature)
     return signature
 
@@ -472,8 +507,12 @@ def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
         animation_duration = (frame_count - 1) / bpy.context.scene.render.fps
 
         xml_clip.animation_hash = animation_properties.hash
-        xml_clip.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
-        xml_clip.end_time = (clip_animation_property.end_frame / frame_count) * animation_duration
+        xml_clip.start_time = (
+            clip_animation_property.start_frame / frame_count
+        ) * animation_duration
+        xml_clip.end_time = (
+            clip_animation_property.end_frame / frame_count
+        ) * animation_duration
 
         clip_animation_duration = xml_clip.end_time - xml_clip.start_time
         xml_clip.rate = clip_animation_duration / clip_properties.duration
@@ -484,16 +523,24 @@ def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
         for clip_animation_property in clip_properties.animations:
             clip_animation = ycdxml.ClipAnimationsList.ClipAnimation()
 
-            animation_properties = clip_animation_property.animation.animation_properties
+            animation_properties = (
+                clip_animation_property.animation.animation_properties
+            )
             _, frame_count = get_frame_range_and_count(animation_properties.action)
 
             animation_duration = (frame_count - 1) / bpy.context.scene.render.fps
 
             clip_animation.animation_hash = animation_properties.hash
-            clip_animation.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
-            clip_animation.end_time = (clip_animation_property.end_frame / frame_count) * animation_duration
+            clip_animation.start_time = (
+                clip_animation_property.start_frame / frame_count
+            ) * animation_duration
+            clip_animation.end_time = (
+                clip_animation_property.end_frame / frame_count
+            ) * animation_duration
 
-            clip_animation_duration = clip_animation.end_time - clip_animation.start_time
+            clip_animation_duration = (
+                clip_animation.end_time - clip_animation.start_time
+            )
             clip_animation.rate = clip_animation_duration / clip_properties.duration
 
             xml_clip.animations.append(clip_animation)

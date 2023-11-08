@@ -23,8 +23,11 @@ class TabbedPanelHelper:
         ...
 
     def _draw_toggle_buttons(self, context: bpy.types.Context):
-        layout = self.layout.grid_flow(
-            align=True, row_major=True, columns=4) if self.use_grid else self.layout.row(align=True)
+        layout = (
+            self.layout.grid_flow(align=True, row_major=True, columns=4)
+            if self.use_grid
+            else self.layout.row(align=True)
+        )
 
         for tab_id, op_cls in self._panel_toggle_ops.items():
             if tab_id not in self._tab_panels:
@@ -37,8 +40,12 @@ class TabbedPanelHelper:
 
             is_active = tab_panel._get_active_tab() == op_cls.tab_id
 
-            layout.operator(op_cls.bl_idname, text=tab_panel.bl_label,
-                            icon=tab_panel.icon, depress=is_active)
+            layout.operator(
+                op_cls.bl_idname,
+                text=tab_panel.bl_label,
+                icon=tab_panel.icon,
+                depress=is_active,
+            )
 
     @classmethod
     def register(cls):
@@ -76,7 +83,10 @@ class TabPanel:
         if active_tab:
             return active_tab
 
-        if tabbed_panel.default_tab is not None and tabbed_panel.default_tab in tabbed_panel._tab_panels:
+        if (
+            tabbed_panel.default_tab is not None
+            and tabbed_panel.default_tab in tabbed_panel._tab_panels
+        ):
             return tabbed_panel.default_tab
 
     @classmethod
@@ -92,17 +102,14 @@ class TabPanel:
     def register(cls):
         if not hasattr(cls, "parent_tab_panel"):
             raise NotImplementedError(
-                f"Panel tab '{cls.__name__}' has no ``parent_tab_panel`` defined!")
+                f"Panel tab '{cls.__name__}' has no ``parent_tab_panel`` defined!"
+            )
 
         tabbed_panel = cls.parent_tab_panel
         active_tab_prop_name = cls._get_active_tab_propname()
 
         if not hasattr(bpy.types.Scene, active_tab_prop_name):
-            setattr(
-                bpy.types.Scene,
-                active_tab_prop_name,
-                bpy.props.StringProperty()
-            )
+            setattr(bpy.types.Scene, active_tab_prop_name, bpy.props.StringProperty())
 
         toggle_op = cls._tab_toggle_op_factory(cls.bl_idname)
         tabbed_panel._panel_toggle_ops[cls.bl_idname] = toggle_op
@@ -120,6 +127,7 @@ class TabPanel:
     @classmethod
     def _tab_toggle_op_factory(cls, _tab_id: str):
         """Dynamically create a tab toggle operator class"""
+
         class SOLLUMZ_OT_toggle_tab(bpy.types.Operator):
             bl_idname = f"sollumz.toggletab_{_tab_id.lower()}"
             bl_description = f"Toggle the {cls.bl_label} tab"

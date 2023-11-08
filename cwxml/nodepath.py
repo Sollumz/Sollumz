@@ -5,12 +5,11 @@ from .element import (
     TextProperty,
     ValueProperty,
     VectorProperty,
-    Vector2Property
+    Vector2Property,
 )
 
 
 class YND:
-
     file_extension = ".ynd.xml"
 
     @staticmethod

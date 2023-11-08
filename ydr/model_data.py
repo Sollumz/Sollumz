@@ -30,12 +30,13 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
     for model_lods, bone_ind in zip(model_xmls, bone_inds):
         model_data = ModelData(
             mesh_data_lods={
-                lod_level: mesh_data_from_xml(model_xml) for lod_level, model_xml in model_lods.items()
+                lod_level: mesh_data_from_xml(model_xml)
+                for lod_level, model_xml in model_lods.items()
             },
             xml_lods={
                 lod_level: model_xml for lod_level, model_xml in model_lods.items()
             },
-            bone_index=bone_ind
+            bone_index=bone_ind,
         )
 
         model_datas.append(model_data)
@@ -46,7 +47,11 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
 def get_model_data_split_by_group(drawable_xml: Drawable) -> list[ModelData]:
     model_datas = get_model_data(drawable_xml)
 
-    return [split_data for model_data in model_datas for split_data in split_model_by_group(model_data, drawable_xml.skeleton.bones)]
+    return [
+        split_data
+        for model_data in model_datas
+        for split_data in split_model_by_group(model_data, drawable_xml.skeleton.bones)
+    ]
 
 
 def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[ModelData]:
@@ -63,22 +68,21 @@ def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[Model
 
         for i, face_inds in get_group_face_inds(mesh_data, bones).items():
             vert_arr, ind_arr = get_faces_subset(
-                mesh_data.vert_arr, mesh_data.ind_arr, face_inds)
-
-            group_mesh_data = MeshData(
-                vert_arr,
-                ind_arr,
-                mesh_data.mat_inds[face_inds]
+                mesh_data.vert_arr, mesh_data.ind_arr, face_inds
             )
+
+            group_mesh_data = MeshData(vert_arr, ind_arr, mesh_data.mat_inds[face_inds])
 
             mesh_data_by_bone[i][lod_level] = group_mesh_data
 
     for i, mesh_data_lods in mesh_data_by_bone.items():
-        model_datas.append(ModelData(
-            mesh_data_lods=mesh_data_lods,
-            xml_lods=model_data.xml_lods,
-            bone_index=i
-        ))
+        model_datas.append(
+            ModelData(
+                mesh_data_lods=mesh_data_lods,
+                xml_lods=model_data.xml_lods,
+                bone_index=i,
+            )
+        )
 
     return model_datas
 
@@ -117,10 +121,14 @@ def get_group_face_inds(mesh_data: MeshData, bones: list[Bone]):
 
         group_inds[group_ind].append(i)
 
-    return {i: np.array(face_inds, dtype=np.uint32) for i, face_inds in group_inds.items()}
+    return {
+        i: np.array(face_inds, dtype=np.uint32) for i, face_inds in group_inds.items()
+    }
 
 
-def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone]) -> dict[int, set]:
+def get_group_parent_map(
+    face_blend_inds: NDArray[np.uint32], bones: list[Bone]
+) -> dict[int, set]:
     """Get a mapping of each blend index to the blend index of the object they should be parented to."""
     # Mapping of each blend index to blend indices with overlapping faces
     group_relations: dict[int, set[int]] = defaultdict(set)
@@ -132,7 +140,8 @@ def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone])
         related_groups = np.unique(face_blend_inds[occurences].flatten())
         # Ignore 0 group because all vertex groups are a part of group 0
         group_relations[group_ind] = [
-            i for i in related_groups if i != 0 and i != group_ind]
+            i for i in related_groups if i != 0 and i != group_ind
+        ]
 
     for blend_ind, blend_inds in group_relations.items():
         # blend_ind does not overlap with any other vertex groups, so it can be created as its own object
@@ -148,8 +157,9 @@ def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone])
 
 
 def find_common_bone_parent(bone_inds: list[int], bones: list[Bone]) -> int:
-    bone_parents = [get_all_bone_parents(
-        i, bones) for i in bone_inds if bones[i].parent_index > 0]
+    bone_parents = [
+        get_all_bone_parents(i, bones) for i in bone_inds if bones[i].parent_index > 0
+    ]
 
     if not bone_parents:
         return 0
@@ -177,7 +187,9 @@ def get_all_bone_parents(bone_ind: int, bones: list[Bone]):
     return parent_inds
 
 
-def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: NDArray[np.uint32]) -> MeshData:
+def get_faces_subset(
+    vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: NDArray[np.uint32]
+) -> MeshData:
     """Get subset of vertex array and index array by face."""
     # First get valid faces in the subset in case the new subset of indices is not divisble by 3.
     num_tris = int(len(ind_arr) / 3)
@@ -206,7 +218,9 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
     return new_vert_arr, new_ind_arr
 
 
-def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, DrawableModel]], list[int]]:
+def get_lod_model_xmls(
+    drawable_xml: Drawable,
+) -> Tuple[list[dict[LODLevel, DrawableModel]], list[int]]:
     """Gets mapping of LOD levels for each DrawableModel. Also returns a list of bone indices for each model."""
     model_xmls: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
     bone_inds: list[int] = []
@@ -228,7 +242,7 @@ def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:
     return MeshData(
         ind_arr=get_model_joined_ind_arr(geoms),
         vert_arr=get_model_joined_vert_arr(geoms),
-        mat_inds=get_model_poly_mat_inds(geoms)
+        mat_inds=get_model_poly_mat_inds(geoms),
     )
 
 
@@ -275,7 +289,8 @@ def get_model_joined_vert_arr(geoms: list[Geometry]) -> NDArray:
 def get_model_vert_buffer_dtype(geoms: list[Geometry]) -> np.dtype:
     """Get the dtype of the structured array of the joined geometry vertex buffers."""
     used_attrs: set[Tuple] = set(
-        name for geom in geoms for name in geom.vertex_buffer.data.dtype.names)
+        name for geom in geoms for name in geom.vertex_buffer.data.dtype.names
+    )
     arr_dtype = []
 
     for attr_name, attr_dtype in VertexBuffer.VERT_ATTR_DTYPES.items():
@@ -308,4 +323,8 @@ def get_model_poly_mat_inds(geoms: list[Geometry]):
 
 def get_valid_geoms(model_xml: DrawableModel) -> list[Geometry]:
     """Get geometries with mesh data in model_xml."""
-    return [geom for geom in model_xml.geometries if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+    return [
+        geom
+        for geom in model_xml.geometries
+        if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None
+    ]

@@ -23,7 +23,7 @@ class IconManager:
         pcoll = bpy.utils.previews.new()
         for icon_name in self._icons:
             icon_path = path / f"{icon_name}{ICON_EXT}"
-            pcoll.load(icon_name, str(icon_path), 'IMAGE')
+            pcoll.load(icon_name, str(icon_path), "IMAGE")
         self._preview_collections[PREVIEW_COLLECTION_NAME] = pcoll
 
     def load_icon(self, name: str) -> int:
@@ -53,6 +53,7 @@ class IconManager:
 icon_manager = IconManager(ICON_DIR)
 
 ICON_GEOM_TOOL = str(ICON_DIR / "sollumz.tool")
+
 
 def register():
     pass  # Icons are already loaded during the instantiation of icon_manager

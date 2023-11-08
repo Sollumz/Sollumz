@@ -9,10 +9,12 @@ from ..cwxml.drawable import VertexBuffer
 
 
 def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bone]):
-    bone_ind_by_name: dict[str, int] = {
-        b.name: i for i, b in enumerate(bones)}
+    bone_ind_by_name: dict[str, int] = {b.name: i for i, b in enumerate(bones)}
 
-    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else 0 for i, group in enumerate(vgroups)}
+    return {
+        i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else 0
+        for i, group in enumerate(vgroups)
+    }
 
 
 def remove_arr_field(name: str, vertex_arr: NDArray):
@@ -47,7 +49,8 @@ def remove_unused_uvs(vertex_arr: NDArray, used_texcoords: set[str]) -> NDArray:
 def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uint32]]:
     """Remove duplicate vertices from the buffer and get the new vertex indices in triangle order (used for IndexBuffer). Returns vertices, indices."""
     vertex_arr, unique_indices, inverse_indices = np.unique(
-        vertex_arr, axis=0, return_index=True, return_inverse=True)
+        vertex_arr, axis=0, return_index=True, return_inverse=True
+    )
 
     return vertex_arr, np.arange(len(unique_indices), dtype=np.uint32)[inverse_indices]
 
@@ -55,7 +58,9 @@ def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uin
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
 
-    def __init__(self, mesh: bpy.types.Mesh, bone_by_vgroup: Optional[dict[int, int]] = None):
+    def __init__(
+        self, mesh: bpy.types.Mesh, bone_by_vgroup: Optional[dict[int, int]] = None
+    ):
         self.mesh = mesh
 
         self._bone_by_vgroup = bone_by_vgroup
@@ -106,8 +111,9 @@ class VertexBufferBuilder:
     def _structured_array_from_attrs(self, mesh_attrs: dict[str, NDArray]):
         """Combine ``mesh_attrs`` into single structured array."""
         # Data type for vertex data structured array
-        struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES[attr_name]
-                        for attr_name in mesh_attrs]
+        struct_dtype = [
+            VertexBuffer.VERT_ATTR_DTYPES[attr_name] for attr_name in mesh_attrs
+        ]
 
         vertex_arr = np.empty(len(self._vert_inds), dtype=struct_dtype)
 
@@ -152,7 +158,9 @@ class VertexBufferBuilder:
         # Return on loop domain
         return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
 
-    def _sort_weights_inds(self, weights_arr: NDArray[np.float32], ind_arr: NDArray[np.uint32]):
+    def _sort_weights_inds(
+        self, weights_arr: NDArray[np.float32], ind_arr: NDArray[np.uint32]
+    ):
         """Sort BlendWeights and BlendIndices."""
         # Blend weights and indices are sorted by weights in ascending order starting from the 3rd index and continues to the left
         # Why? I dont know :/
@@ -165,11 +173,14 @@ class VertexBufferBuilder:
         # Return with index shifted by 3
         return np.roll(weights_sorted, 3, axis=1), np.roll(ind_sorted, 3, axis=1)
 
-    def _normalize_weights(self, weights_arr: NDArray[np.float32]) -> NDArray[np.float32]:
+    def _normalize_weights(
+        self, weights_arr: NDArray[np.float32]
+    ) -> NDArray[np.float32]:
         """Normalize weights such that their sum is 1."""
         row_sums = weights_arr.sum(axis=1, keepdims=True)
-        return np.divide(weights_arr, row_sums, out=np.zeros_like(
-            weights_arr), where=row_sums != 0)
+        return np.divide(
+            weights_arr, row_sums, out=np.zeros_like(weights_arr), where=row_sums != 0
+        )
 
     def _convert_to_int_range(self, arr: NDArray[np.float32]) -> NDArray[np.uint32]:
         """Convert float array from range 0-1 to range 0-255"""
@@ -179,15 +190,21 @@ class VertexBufferBuilder:
         num_loops = len(self.mesh.loops)
 
         def _is_valid_color_attr(attr: bpy.types.Attribute):
-            return (attr.domain == "CORNER" and
-                    # `TintColor` only used for the tint shaders/geometry nodes
-                    not attr.name.startswith("TintColor") and
-                    # Name prefixed by `.` indicate a reserved attribute name for Blender
-                    # e.g. `.a_1234` for anonymous attributes
-                    # https://projects.blender.org/blender/blender/issues/97452
-                    not attr.name.startswith("."))
+            return (
+                attr.domain == "CORNER"
+                and
+                # `TintColor` only used for the tint shaders/geometry nodes
+                not attr.name.startswith("TintColor")
+                and
+                # Name prefixed by `.` indicate a reserved attribute name for Blender
+                # e.g. `.a_1234` for anonymous attributes
+                # https://projects.blender.org/blender/blender/issues/97452
+                not attr.name.startswith(".")
+            )
 
-        color_attrs = [attr for attr in self.mesh.color_attributes if _is_valid_color_attr(attr)]
+        color_attrs = [
+            attr for attr in self.mesh.color_attributes if _is_valid_color_attr(attr)
+        ]
         # Maximum of 2 color attributes for GTAV shaders
         color_attrs = color_attrs[:2]
 
@@ -210,8 +227,11 @@ class VertexBufferBuilder:
     def _get_uvs(self) -> list[NDArray[np.float32]]:
         num_loops = len(self.mesh.loops)
         # UV mesh attributes (maximum of 8 for GTAV shaders)
-        uv_attrs = [attr for attr in self.mesh.attributes if attr.data_type ==
-                    'FLOAT2' and attr.domain == 'CORNER'][:8]
+        uv_attrs = [
+            attr
+            for attr in self.mesh.attributes
+            if attr.data_type == "FLOAT2" and attr.domain == "CORNER"
+        ][:8]
         uv_layers: list[NDArray[np.float32]] = []
 
         for uv_attr in uv_attrs:

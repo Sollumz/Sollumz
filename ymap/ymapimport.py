@@ -18,18 +18,18 @@ from .. import logger
 def get_mesh_data(model: OccludeModel):
     result = ([], [])
     for i in range(int(model.num_verts_in_bytes / 12)):
-        pos_data: str = model.verts[i * 24:(i * 24) + 24]
-        x = struct.unpack('<f', binascii.a2b_hex(pos_data[:8]))[0]
-        y = struct.unpack('<f', binascii.a2b_hex(pos_data[8:16]))[0]
-        z = struct.unpack('<f', binascii.a2b_hex(pos_data[16:24]))[0]
+        pos_data: str = model.verts[i * 24 : (i * 24) + 24]
+        x = struct.unpack("<f", binascii.a2b_hex(pos_data[:8]))[0]
+        y = struct.unpack("<f", binascii.a2b_hex(pos_data[8:16]))[0]
+        z = struct.unpack("<f", binascii.a2b_hex(pos_data[16:24]))[0]
         result[0].append((x, y, z))
 
-    indicies: str = model.verts[int(model.num_verts_in_bytes * 2):]
+    indicies: str = model.verts[int(model.num_verts_in_bytes * 2) :]
     for i in range(int(model.num_tris - 32768)):
         j = i * 6
-        i0 = int.from_bytes(binascii.a2b_hex(indicies[j:j + 2]), 'little')
-        i1 = int.from_bytes(binascii.a2b_hex(indicies[j + 2:j + 4]), 'little')
-        i2 = int.from_bytes(binascii.a2b_hex(indicies[j + 4:j + 6]), 'little')
+        i0 = int.from_bytes(binascii.a2b_hex(indicies[j : j + 2]), "little")
+        i1 = int.from_bytes(binascii.a2b_hex(indicies[j + 2 : j + 4]), "little")
+        i2 = int.from_bytes(binascii.a2b_hex(indicies[j + 4 : j + 6]), "little")
         result[1].append((i0, i1, i2))
 
     return result
@@ -45,8 +45,12 @@ def apply_entity_properties(obj, entity):
     obj.entity_properties.lod_level = "sollumz_" + entity.lod_level.lower()
     obj.entity_properties.num_children = entity.num_children
     obj.entity_properties.priority_level = "sollumz_" + entity.priority_level.lower()
-    obj.entity_properties.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
-    obj.entity_properties.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
+    obj.entity_properties.ambient_occlusion_multiplier = (
+        entity.ambient_occlusion_multiplier
+    )
+    obj.entity_properties.artificial_ambient_occlusion = (
+        entity.artificial_ambient_occlusion
+    )
     obj.entity_properties.tint_value = entity.tint_value
     if entity.type != "CMloInstanceDef":
         # Entities in YMAPs need rotation inverted
@@ -70,15 +74,17 @@ def entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
     if ymap.entities:
         for obj in bpy.context.collection.all_objects:
             for entity in ymap.entities:
-                if entity.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
+                if (
+                    entity.archetype_name == obj.name
+                    and obj.name in bpy.context.view_layer.objects
+                ):
                     found = True
                     apply_entity_properties(obj, entity)
         if found:
             logger.info(f"Succesfully imported: {ymap.name}.ymap")
             return True
         else:
-            logger.info(
-                f"No entities from '{ymap.name}.ymap' exist in the view layer!")
+            logger.info(f"No entities from '{ymap.name}.ymap' exist in the view layer!")
             return False
     else:
         logger.error(f"{ymap.name}.ymap contains no entities to import!")
@@ -106,7 +112,10 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
         for obj in existing_objects:
             for entity in ymap.entities:
                 if entity.archetype_name == obj.name:
-                    if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
+                    if (
+                        obj.sollum_type == SollumType.DRAWABLE
+                        or obj.sollum_type == SollumType.FRAGMENT
+                    ):
                         new_obj = duplicate_object_with_children(obj)
                         apply_entity_properties(new_obj, entity)
                         new_obj.parent = group_obj
@@ -114,7 +123,8 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
                         entity.found = True
                     else:
                         logger.error(
-                            f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
+                            f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!"
+                        )
 
         # Creating empty entity if no object was found for reference, and notify user
         import_settings = get_import_settings()
@@ -123,19 +133,23 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
             for entity in ymap.entities:
                 if entity.found is None:
                     empty_obj = bpy.data.objects.new(
-                        entity.archetype_name + " (not found)", None)
+                        entity.archetype_name + " (not found)", None
+                    )
                     empty_obj.parent = group_obj
                     apply_entity_properties(empty_obj, entity)
                     empty_obj.sollum_type = SollumType.DRAWABLE
                     logger.error(
-                        f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
+                        f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead."
+                    )
         if count > 0:
             logger.info(
-                f"Succesfully placed {count}/{entities_amount} entities from scene!")
+                f"Succesfully placed {count}/{entities_amount} entities from scene!"
+            )
             return group_obj
         else:
             logger.info(
-                f"No entity from '{ymap_obj.name}.ymap' exist in the view layer!")
+                f"No entity from '{ymap_obj.name}.ymap' exist in the view layer!"
+            )
             return False
     else:
         logger.error(f"{ymap_obj.name}.ymap doesn't contains any entity!")
@@ -159,10 +173,8 @@ def box_to_obj(obj, ymap: CMapData):
         box_obj = bpy.context.view_layer.objects.active
         box_obj.sollum_type = SollumType.YMAP_BOX_OCCLUDER
         box_obj.name = "Box"
-        box_obj.active_material = add_occluder_material(
-            SollumType.YMAP_BOX_OCCLUDER)
-        box_obj.location = Vector(
-            [box.center_x, box.center_y, box.center_z]) / 4
+        box_obj.active_material = add_occluder_material(SollumType.YMAP_BOX_OCCLUDER)
+        box_obj.location = Vector([box.center_x, box.center_y, box.center_z]) / 4
         box_obj.rotation_euler[2] = math.atan2(box.cos_z, box.sin_z)
         box_obj.scale = Vector([box.length, box.width, box.height]) / 4
         box_obj.parent = group_obj
@@ -171,7 +183,7 @@ def box_to_obj(obj, ymap: CMapData):
 
 
 def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
-    group_obj = bpy.data.objects.new('Model Occluders', None)
+    group_obj = bpy.data.objects.new("Model Occluders", None)
     group_obj.parent = obj
     group_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER_GROUP
     group_obj.lock_location = (True, True, True)
@@ -190,7 +202,8 @@ def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
         model_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER
         model_obj.ymap_properties.flags = model.flags
         model_obj.active_material = add_occluder_material(
-            SollumType.YMAP_MODEL_OCCLUDER)
+            SollumType.YMAP_MODEL_OCCLUDER
+        )
         bpy.context.collection.objects.link(model_obj)
         bpy.context.view_layer.objects.active = model_obj
         mesh.from_pydata(verts, [], faces)
@@ -213,11 +226,12 @@ def cargen_to_obj(obj: bpy.types.Object, ymap: CMapData):
     cargen_ref_mesh = import_cargen_mesh()
 
     for cargen in ymap.car_generators:
-        cargen_obj = bpy.data.objects.new(
-            "Car Generator", object_data=cargen_ref_mesh)
+        cargen_obj = bpy.data.objects.new("Car Generator", object_data=cargen_ref_mesh)
         cargen_obj.ymap_cargen_properties.orient_x = cargen.orient_x
         cargen_obj.ymap_cargen_properties.orient_y = cargen.orient_y
-        cargen_obj.ymap_cargen_properties.perpendicular_length = cargen.perpendicular_length
+        cargen_obj.ymap_cargen_properties.perpendicular_length = (
+            cargen.perpendicular_length
+        )
         cargen_obj.ymap_cargen_properties.car_model = cargen.car_model
         cargen_obj.ymap_cargen_properties.flags = cargen.flags
         cargen_obj.ymap_cargen_properties.body_color_remap_1 = cargen.body_color_remap_1
@@ -313,8 +327,7 @@ def import_ymap(filepath):
     found = False
     for obj in bpy.context.scene.objects:
         if obj.sollum_type == SollumType.YMAP and obj.name == ymap_xml.name:
-            logger.error(
-                f"{ymap_xml.name} is already existing in the scene. Aborting.")
+            logger.error(f"{ymap_xml.name} is already existing in the scene. Aborting.")
             found = True
             break
     if not found:

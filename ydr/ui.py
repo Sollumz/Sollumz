@@ -19,7 +19,10 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE
+        return (
+            context.active_object is not None
+            and context.active_object.sollum_type == SollumType.DRAWABLE
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -80,10 +83,14 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
             return False
 
         active_lod = obj.sollumz_lods.active_lod
-        sollumz_parent = find_sollumz_parent(
-            obj, parent_type=SollumType.DRAWABLE)
+        sollumz_parent = find_sollumz_parent(obj, parent_type=SollumType.DRAWABLE)
 
-        return active_lod is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH" and sollumz_parent is not None
+        return (
+            active_lod is not None
+            and obj.sollum_type == SollumType.DRAWABLE_MODEL
+            and obj.type == "MESH"
+            and sollumz_parent is not None
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -93,8 +100,7 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         obj = context.active_object
         active_lod_level = obj.sollumz_lods.active_lod.level
         mesh = obj.data
-        sollumz_parent = find_sollumz_parent(
-            obj, parent_type=SollumType.DRAWABLE)
+        sollumz_parent = find_sollumz_parent(obj, parent_type=SollumType.DRAWABLE)
 
         model_props = mesh.drawable_model_properties
 
@@ -102,18 +108,23 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         col.alignment = "RIGHT"
         col.enabled = False
 
-        is_skinned_model = obj.vertex_groups and sollumz_parent is not None and not obj.sollumz_is_physics_child_mesh
+        is_skinned_model = (
+            obj.vertex_groups
+            and sollumz_parent is not None
+            and not obj.sollumz_is_physics_child_mesh
+        )
 
         # All skinned objects (objects with vertex groups) go in the same drawable model
         if is_skinned_model:
             model_props = sollumz_parent.skinned_model_properties.get_lod(
-                active_lod_level)
+                active_lod_level
+            )
 
             col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
+                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)"
+            )
         else:
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
+            col.label(text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
 
         col.separator()
 
@@ -135,8 +146,7 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
             row.label(text=name, icon="SHADING_TEXTURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=name, emboss=False, icon="SHADING_TEXTURE")
+            layout.prop(item, "name", text=name, emboss=False, icon="SHADING_TEXTURE")
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
@@ -217,7 +227,11 @@ class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj is not None and obj.type == "LIGHT" and obj.sollum_type == SollumType.LIGHT
+        return (
+            obj is not None
+            and obj.type == "LIGHT"
+            and obj.sollum_type == SollumType.LIGHT
+        )
 
     def get_flags(self, context):
         light = context.light
@@ -235,7 +249,11 @@ class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj is not None and obj.type == "LIGHT" and obj.sollum_type == SollumType.LIGHT
+        return (
+            obj is not None
+            and obj.type == "LIGHT"
+            and obj.sollum_type == SollumType.LIGHT
+        )
 
     def get_flags(self, context):
         light = context.light
@@ -277,33 +295,48 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
         layout = self.layout
         layout.label(text="Create")
         layout.template_list(
-            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
+            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname,
+            "",
+            context.scene,
+            "shader_materials",
+            context.scene,
+            "shader_material_index",
         )
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname, text="Create Shader Material")
+            ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname,
+            text="Create Shader Material",
+        )
         grid = layout.grid_flow(align=True)
-        grid.operator(ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname,
-                      text="Convert Active Material", icon="FILE_REFRESH")
         grid.operator(
-            ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname, text="Convert All Materials")
+            ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname,
+            text="Convert Active Material",
+            icon="FILE_REFRESH",
+        )
+        grid.operator(
+            ydr_ops.SOLLUMZ_OT_convert_allmaterials_to_selected.bl_idname,
+            text="Convert All Materials",
+        )
 
         layout.separator()
         layout.label(text="Tools")
 
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
+            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname,
+            text="Auto Convert",
+            icon="FILE_REFRESH",
+        )
         grid = layout.grid_flow(align=True)
         grid.operator(
-            ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname, icon="TEXTURE")
-        grid.operator(
-            ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
+            ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname, icon="TEXTURE"
+        )
+        grid.operator(ydr_ops.SOLLUMZ_OT_remove_all_textures_embedded.bl_idname)
         grid = layout.grid_flow(align=True)
         grid.operator(
-            ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname, icon="MATERIAL")
-        grid.operator(
-            ydr_ops.SOLLUMZ_OT_unset_all_materials_embedded.bl_idname)
+            ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname, icon="MATERIAL"
+        )
+        grid.operator(ydr_ops.SOLLUMZ_OT_unset_all_materials_embedded.bl_idname)
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
@@ -327,11 +360,13 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
 
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_convert_to_drawable_model.bl_idname, icon="MESH_DATA")
+            ydr_ops.SOLLUMZ_OT_convert_to_drawable_model.bl_idname, icon="MESH_DATA"
+        )
 
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_convert_to_drawable.bl_idname, icon="OUTLINER_OB_MESH")
+            ydr_ops.SOLLUMZ_OT_convert_to_drawable.bl_idname, icon="OUTLINER_OB_MESH"
+        )
         row = layout.row()
         row.prop(context.scene, "create_seperate_drawables")
         row.prop(context.scene, "auto_create_embedded_col")
@@ -342,10 +377,10 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
         layout.label(text="Create", icon="ADD")
 
         row = layout.row(align=True)
-        row.operator(ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname,
-                     icon="OUTLINER_OB_MESH")
         row.operator(
-            ydr_ops.SOLLUMZ_OT_create_drawable_dict.bl_idname, icon="TEXT")
+            ydr_ops.SOLLUMZ_OT_create_drawable.bl_idname, icon="OUTLINER_OB_MESH"
+        )
+        row.operator(ydr_ops.SOLLUMZ_OT_create_drawable_dict.bl_idname, icon="TEXT")
 
 
 class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
@@ -366,13 +401,23 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
         layout = self.layout
 
         row = layout.row()
-        row.template_list(SOLLUMZ_UL_LIGHT_PRESET_LIST.bl_idname, "light_presets",
-                          context.scene, "light_presets", context.scene, "light_preset_index")
+        row.template_list(
+            SOLLUMZ_UL_LIGHT_PRESET_LIST.bl_idname,
+            "light_presets",
+            context.scene,
+            "light_presets",
+            context.scene,
+            "light_preset_index",
+        )
         col = row.column(align=True)
-        col.operator(ydr_ops.SOLLUMZ_OT_save_light_preset.bl_idname, text="", icon="ADD")
-        col.operator(ydr_ops.SOLLUMZ_OT_delete_light_preset.bl_idname, text="", icon="REMOVE")
+        col.operator(
+            ydr_ops.SOLLUMZ_OT_save_light_preset.bl_idname, text="", icon="ADD"
+        )
+        col.operator(
+            ydr_ops.SOLLUMZ_OT_delete_light_preset.bl_idname, text="", icon="REMOVE"
+        )
         row = layout.row()
-        row.operator(ydr_ops.SOLLUMZ_OT_load_light_preset.bl_idname, icon='CHECKMARK')
+        row.operator(ydr_ops.SOLLUMZ_OT_load_light_preset.bl_idname, icon="CHECKMARK")
 
         layout.separator()
         row = layout.row(align=True)
@@ -391,8 +436,7 @@ class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
             row.label(text=item.name, icon="BOOKMARKS")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="BOOKMARKS")
+            layout.prop(item, "name", text=item.name, emboss=False, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
@@ -413,44 +457,43 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
         layout = self.layout
 
         layout.label(text="Rigging", icon="ARMATURE_DATA")
-        layout.operator("sollumz.add_child_of_constraint",
-                        icon="CONSTRAINT_BONE")
-        layout.operator("sollumz.add_armature_modifier",
-                        icon="MOD_ARMATURE")
+        layout.operator("sollumz.add_child_of_constraint", icon="CONSTRAINT_BONE")
+        layout.operator("sollumz.add_armature_modifier", icon="MOD_ARMATURE")
         layout.separator()
 
         layout.label(text="Apply Bone Properties", icon="MODIFIER_ON")
         row = layout.row(align=True)
+        row.operator(ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname)
         row.operator(
-            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_armature.bl_idname)
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname)
+            ydr_ops.SOLLUMZ_OT_apply_bone_properties_to_selected_bones.bl_idname
+        )
         layout.separator()
         layout.label(text="Apply Bone Flags", icon="BOOKMARKS")
         row = layout.row(align=True)
-        row.operator(ydr_ops.SOLLUMZ_OT_clear_bone_flags.bl_idname,
-                     text="Clear All")
+        row.operator(ydr_ops.SOLLUMZ_OT_clear_bone_flags.bl_idname, text="Clear All")
+        row.operator(ydr_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
         row.operator(
-            ydr_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_translation_bone_flags.bl_idname, text="Translation")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
-        row.operator(
-            ydr_ops.SOLLUMZ_OT_limit_bone_flags.bl_idname, text="Limit")
+            ydr_ops.SOLLUMZ_OT_translation_bone_flags.bl_idname, text="Translation"
+        )
+        row.operator(ydr_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
+        row.operator(ydr_ops.SOLLUMZ_OT_limit_bone_flags.bl_idname, text="Limit")
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
         custom_icon = "FILE"
 
         if self.layout_type in {"DEFAULT", "COMPACT"}:
-            layout.prop(item, "name", text="", icon=custom_icon,
-                        emboss=False, translate=False)
+            layout.prop(
+                item, "name", text="", icon=custom_icon, emboss=False, translate=False
+            )
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
-            layout.prop(item, "name", text="", icon=custom_icon,
-                        emboss=False, translate=False)
+            layout.prop(
+                item, "name", text="", icon=custom_icon, emboss=False, translate=False
+            )
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
@@ -476,13 +519,25 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(bone.bone_properties, "tag")
-        row.prop(bone.bone_properties, "use_manual_tag", toggle=True, icon="MODIFIER_ON", icon_only=True)
+        row.prop(
+            bone.bone_properties,
+            "use_manual_tag",
+            toggle=True,
+            icon="MODIFIER_ON",
+            icon_only=True,
+        )
         layout.separator()
 
         layout.label(text="Flags")
         row = layout.row()
-        row.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags",
-                          bone.bone_properties, "flags", bone.bone_properties, "ul_index")
+        row.template_list(
+            "SOLLUMZ_UL_BONE_FLAGS",
+            "Flags",
+            bone.bone_properties,
+            "flags",
+            bone.bone_properties,
+            "ul_index",
+        )
         col = row.column(align=True)
         col.operator("sollumz.bone_flags_new_item", text="", icon="ADD")
         col.operator("sollumz.bone_flags_delete_item", text="", icon="REMOVE")
@@ -531,7 +586,11 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.active_material is not None and context.active_object.active_material.sollum_type == MaterialType.SHADER
+        return (
+            context.active_object is not None
+            and context.active_object.active_material is not None
+            and context.active_object.active_material.sollum_type == MaterialType.SHADER
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -560,8 +619,7 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                     row.enabled = n.image.filepath != ""
                 else:
                     row = box.row()
-                    row.label(
-                        text="Image Texture has no linked image.", icon="ERROR")
+                    row.label(text="Image Texture has no linked image.", icon="ERROR")
 
                 box.prop(n.texture_properties, "usage")
 
@@ -577,7 +635,11 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.active_material is not None and context.active_object.active_material.sollum_type == MaterialType.SHADER
+        return (
+            context.active_object is not None
+            and context.active_object.active_material is not None
+            and context.active_object.active_material.sollum_type == MaterialType.SHADER
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -710,8 +772,7 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
 
         box.prop(context.scene, "sollumz_auto_lod_levels")
         box.separator(factor=0.25)
-        box.prop(context.scene, "sollumz_auto_lod_ref_mesh",
-                 text="Reference Mesh")
+        box.prop(context.scene, "sollumz_auto_lod_ref_mesh", text="Reference Mesh")
         box.prop(context.scene, "sollumz_auto_lod_decimate_step")
         box.separator()
         box.operator("sollumz.auto_lod", icon="MOD_DECIM")

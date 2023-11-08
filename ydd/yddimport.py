@@ -3,7 +3,11 @@ import os
 from typing import Optional
 from ..cwxml.drawable import YDD, DrawableDictionary, Skeleton
 from ..cwxml.fragment import YFT, Fragment
-from ..ydr.ydrimport import create_drawable_obj, create_drawable_skel, apply_rotation_limits
+from ..ydr.ydrimport import (
+    create_drawable_obj,
+    create_drawable_skel,
+    apply_rotation_limits,
+)
 from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_import_settings
 from ..tools.blenderhelper import create_empty_object, create_blender_object
@@ -34,7 +38,8 @@ def load_external_skeleton(ydd_filepath: str) -> Optional[Fragment]:
 
     if yft_filepath is None:
         logger.warning(
-            f"Could not find external skeleton yft in directory '{directory}'.")
+            f"Could not find external skeleton yft in directory '{directory}'."
+        )
         return
 
     logger.info(f"Using '{yft_filepath}' as external skeleton...")
@@ -48,7 +53,9 @@ def get_first_yft_path(directory: str):
             return os.path.join(directory, filepath)
 
 
-def create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, external_skel: Fragment):
+def create_ydd_obj_ext_skel(
+    ydd_xml: DrawableDictionary, filepath: str, external_skel: Fragment
+):
     """Create ydd object with an external skeleton."""
     name = get_filename(filepath)
     dict_obj = create_armature_parent(name, external_skel)
@@ -64,14 +71,17 @@ def create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, external
             external_armature = dict_obj
 
         drawable_obj = create_drawable_obj(
-            drawable_xml, filepath, external_armature=external_armature, external_bones=external_bones)
+            drawable_xml,
+            filepath,
+            external_armature=external_armature,
+            external_bones=external_bones,
+        )
         drawable_obj.parent = dict_obj
 
     return dict_obj
 
 
 def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str):
-
     name = get_filename(filepath)
     dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
 
@@ -84,7 +94,8 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str):
             external_bones = None
 
         drawable_obj = create_drawable_obj(
-            drawable_xml, filepath, external_bones=external_bones)
+            drawable_xml, filepath, external_bones=external_bones
+        )
         drawable_obj.parent = dict_obj
 
     return dict_obj
@@ -92,8 +103,7 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str):
 
 def create_armature_parent(name: str, skel_yft: Fragment):
     armature = bpy.data.armatures.new(f"{name}.skel")
-    dict_obj = create_blender_object(
-        SollumType.DRAWABLE_DICTIONARY, name, armature)
+    dict_obj = create_blender_object(SollumType.DRAWABLE_DICTIONARY, name, armature)
 
     create_drawable_skel(skel_yft.drawable.skeleton, dict_obj)
 
