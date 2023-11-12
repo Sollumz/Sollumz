@@ -8945,4 +8945,57 @@
    <Item name="StubbleControl" type="Vector" x="2" y="0.6" z="0" w="0" />
   </Parameters>
  </Item>
+ <Item>
+  <Name>vehicle_lightsemissive_siren</Name>
+  <FileName>
+   <Item bucket="1">vehicle_lightsemissive_siren.sps</Item>
+  </FileName>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <TexCoord1 />
+   </Item>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <TexCoord1 />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DamageSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="envEffTexTileUV" type="Vector" x="8" y="0" z="0" w="0" />
+   <Item name="envEffScale" type="Vector" x="1" y="0.001" z="0" w="0" />
+   <Item name="envEffThickness" type="Vector" x="25" y="0" z="0" w="0" />
+   <Item name="reflectivePower" type="Vector" x="0.5" y="0" z="0" w="0" />
+   <Item name="specMapIntMask" type="Vector" x="1" y="0" z="0" w="0" />
+   <Item name="dirtColor" type="Vector" x="0.231372" y="0.223529" z="0.203921" w="0" />
+   <Item name="dirtLevelMod" type="Vector" x="1" y="1" z="1" w="1" />
+   <Item name="emissiveMultiplier" type="Vector" x="3.5" y="0" z="0" w="0" />
+   <Item name="matDiffuseColor" type="Vector" x="1" y="1" z="1" w="0" />
+   <Item name="DamageTextureOffset" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="DamageMultiplier" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="BoundRadius" type="Vector" x="0" y="0" z="0" w="0" />
+   <Item name="dimmerSetPacked" type="Array">
+    <Value x="0" y="0" z="0" w="0" />
+    <Value x="0" y="0" z="0" w="0" />
+    <Value x="0" y="0" z="0" w="0" />
+    <Value x="0" y="0" z="0" w="0" />
+    <Value x="0" y="0" z="0" w="0" />
+   </Item>
+   <Item name="DamagedWheelOffsets" type="Array">
+    <Value x="0" y="0" z="0" w="0" />
+    <Value x="0" y="0" z="0" w="0" />
+   </Item>
+  </Parameters>
+ </Item>
 </Shaders>
