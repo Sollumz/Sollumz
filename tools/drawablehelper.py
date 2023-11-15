@@ -68,7 +68,7 @@ class MaterialConverter:
         return None
 
     def _get_specular_node(self):
-        specular_input = self.bsdf.inputs["Specular"]
+        specular_input = self.bsdf.inputs["Specular IOR Level"]
 
         if specular_input.is_linked:
             return specular_input.links[0].from_node
