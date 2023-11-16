@@ -332,6 +332,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 def create_image_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     imgnode.name = param.name
+    imgnode.label = param.name
     imgnode.is_sollumz = True
     return imgnode
 
@@ -341,6 +342,7 @@ def create_vector_nodes(node_tree, param):
         if attr.name != "name" and attr.name != "type":
             node = node_tree.nodes.new("ShaderNodeValue")
             node.name = f"{param.name}_{attr.name}"
+            node.label = node.name
             node.is_sollumz = True
             node.outputs[0].default_value = float(attr.value)
 
@@ -362,10 +364,9 @@ def create_array_nodes(node_tree, param):
         array_item_group = bpy.data.node_groups["ArrayNode"]
 
     for i, value in enumerate(param.values):
-        nodename = f"{param.name} {i + 1}"
         node = node_tree.nodes.new("ShaderNodeGroup")
-        node.name = nodename
-        node.label = nodename
+        node.name = f"{param.name} {i + 1}"
+        node.label = node.name
         node.node_tree = array_item_group
 
         for index in range(0, len(node.inputs)):
@@ -399,6 +400,7 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
     bsdf = b.bsdf
     dtltex2 = node_tree.nodes.new("ShaderNodeTexImage")
     dtltex2.name = "Extra"
+    dtltex2.label = dtltex2.name
     dsz = node_tree.nodes["detailSettings_z"]
     dsw = node_tree.nodes["detailSettings_w"]
     dsy = node_tree.nodes["detailSettings_y"]
@@ -986,6 +988,7 @@ def create_uv_map_nodes(b: ShaderBuilder):
         uv_map = get_uv_map_name(uv_map_index)
         node = node_tree.nodes.new("ShaderNodeUVMap")
         node.name = uv_map
+        node.label = uv_map
         node.uv_map = uv_map
 
 
