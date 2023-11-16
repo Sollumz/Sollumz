@@ -1,3 +1,4 @@
+import math
 from typing import Optional, NamedTuple
 import bpy
 from ..cwxml.shader import ShaderManager, Shader
@@ -27,8 +28,7 @@ shadermats = []
 for shader in ShaderManager._shaders.values():
     name = shader.filename.replace(".sps", "").upper()
 
-    shadermats.append(ShaderMaterial(
-        name, name.replace("_", " "), shader.filename))
+    shadermats.append(ShaderMaterial(name, name.replace("_", " "), shader.filename))
 
 
 def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types.Node]:
@@ -39,7 +39,9 @@ def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types
     return node_tree.nodes.get(name, None)
 
 
-def try_get_node_by_cls(node_tree: bpy.types.NodeTree, node_cls: type) -> Optional[bpy.types.Node]:
+def try_get_node_by_cls(
+    node_tree: bpy.types.NodeTree, node_cls: type
+) -> Optional[bpy.types.Node]:
     """Gets a node by its type. Returns `None` if not found."""
     for node in node_tree.nodes:
         if isinstance(node, node_cls):
@@ -58,6 +60,31 @@ def get_child_nodes(node):
             else:
                 child_nodes.append(child)
     return child_nodes
+
+
+def group_image_texture_nodes(node_tree):
+    image_texture_nodes = [node for node in node_tree.nodes if node.type == "TEX_IMAGE"]
+
+    if not image_texture_nodes:
+        return
+
+    image_texture_nodes.sort(key=lambda node: node.location.y)
+
+    avg_x = min([node.location.x for node in image_texture_nodes])
+
+    # adjust margin to change gap in between img nodes
+    margin = 275
+    current_y = min([node.location.y for node in image_texture_nodes]) - margin
+    for node in image_texture_nodes:
+        current_y += margin
+        node.location.x = avg_x
+        node.location.y = current_y
+
+    # how far to the left the img nodes are
+    group_offset = 400
+    for node in image_texture_nodes:
+        node.location.x -= group_offset
+        node.location.y += group_offset
 
 
 def get_loose_nodes(node_tree):
@@ -86,6 +113,7 @@ def organize_node_tree(b: ShaderBuilder):
     mo.location.y = 0
     organize_node(mo)
     organize_loose_nodes(b.node_tree, 1000, 0)
+    group_image_texture_nodes(b.node_tree)
 
 
 def organize_node(node):
@@ -114,16 +142,20 @@ def organize_loose_nodes(node_tree, start_x, start_y):
             grid_x = start_x
             grid_y -= 150
 
-        node.location.x = grid_x
-        node.location.y = grid_y
+        node.location.x = grid_x + node.width / 2
+        node.location.y = grid_y - node.height / 2
 
-        grid_x -= node.width + 25
+        grid_x += node.width + 25
 
 
-def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderNodeTexImage]:
+def get_tint_sampler_node(
+    mat: bpy.types.Material,
+) -> Optional[bpy.types.ShaderNodeTexImage]:
     nodes = mat.node_tree.nodes
     for node in nodes:
-        if node.name == "TintPaletteSampler" and isinstance(node, bpy.types.ShaderNodeTexImage):
+        if node.name == "TintPaletteSampler" and isinstance(
+            node, bpy.types.ShaderNodeTexImage
+        ):
             return node
 
     return None
@@ -155,19 +187,25 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
         else:
             input_color_attr_name = "Color 1"
 
-        tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
-        tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
+        tint_color_attr_name = (
+            f"TintColor ({palette_img.name})" if palette_img else "TintColor"
+        )
+        tint_color_attr = obj.data.attributes.new(
+            name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER"
+        )
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
 
-        create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img)
+        create_tint_geom_modifier(
+            obj, tint_color_attr.name, input_color_attr_name, palette_img
+        )
 
 
 def create_tint_geom_modifier(
     obj: bpy.types.Object,
     tint_color_attr_name: str,
     input_color_attr_name: Optional[str],
-    palette_img: Optional[bpy.types.Image]
+    palette_img: Optional[bpy.types.Image],
 ) -> bpy.types.NodesModifier:
     tnt_ng = create_tinted_geometry_graph()
     mod = obj.modifiers.new("GeometryNodes", "NODES")
@@ -175,7 +213,9 @@ def create_tint_geom_modifier(
 
     # set input / output variables
     input_id = tnt_ng.interface.items_tree["Color Attribute"].identifier
-    mod[input_id + "_attribute_name"] = input_color_attr_name if input_color_attr_name is not None else ""
+    mod[input_id + "_attribute_name"] = (
+        input_color_attr_name if input_color_attr_name is not None else ""
+    )
     mod[input_id + "_use_attribute"] = True
 
     input_palette_id = tnt_ng.interface.items_tree["Palette Texture"].identifier
@@ -190,7 +230,10 @@ def create_tint_geom_modifier(
 
 def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
     for node in node_tree.nodes:
-        if not isinstance(node, bpy.types.ShaderNodeAttribute) or node.attribute_name != "TintColor":
+        if (
+            not isinstance(node, bpy.types.ShaderNodeAttribute)
+            or node.attribute_name != "TintColor"
+        ):
             continue
 
         node.attribute_name = name
@@ -226,16 +269,31 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     output = gnt.nodes.new("NodeGroupOutput")
 
     # Create the necessary sockets for the node group
-    gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="INPUT")
-    gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="OUTPUT")
-    gnt.interface.new_socket("Color Attribute", socket_type="NodeSocketVector", in_out="INPUT")
-    in_palette = gnt.interface.new_socket("Palette (Preview)",
-                                          description="Index of the tint palette to preview. Has no effect on export",
-                                          socket_type="NodeSocketInt", in_out="INPUT")
+    gnt.interface.new_socket(
+        "Geometry", socket_type="NodeSocketGeometry", in_out="INPUT"
+    )
+    gnt.interface.new_socket(
+        "Geometry", socket_type="NodeSocketGeometry", in_out="OUTPUT"
+    )
+    gnt.interface.new_socket(
+        "Color Attribute", socket_type="NodeSocketVector", in_out="INPUT"
+    )
+    in_palette = gnt.interface.new_socket(
+        "Palette (Preview)",
+        description="Index of the tint palette to preview. Has no effect on export",
+        socket_type="NodeSocketInt",
+        in_out="INPUT",
+    )
     in_palette.min_value = 0
-    gnt.interface.new_socket("Palette Texture", description="Should be the same as 'TintPaletteSampler' of the material",
-                             socket_type="NodeSocketImage", in_out="INPUT")
-    gnt.interface.new_socket("Tint Color", socket_type="NodeSocketColor", in_out="OUTPUT")
+    gnt.interface.new_socket(
+        "Palette Texture",
+        description="Should be the same as 'TintPaletteSampler' of the material",
+        socket_type="NodeSocketImage",
+        in_out="INPUT",
+    )
+    gnt.interface.new_socket(
+        "Tint Color", socket_type="NodeSocketColor", in_out="OUTPUT"
+    )
 
     # link input / output node to create geometry socket
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
@@ -349,7 +407,9 @@ def create_array_item_node(group_name):
     array_item_group = bpy.data.node_groups.new(group_name, "ShaderNodeTree")
     array_item_group.nodes.new("NodeGroupInput")
     for comp in ("X", "Y", "Z", "W"):
-        in_socket = array_item_group.interface.new_socket(name=comp, socket_type="NodeSocketFloat", in_out="INPUT")
+        in_socket = array_item_group.interface.new_socket(
+            name=comp, socket_type="NodeSocketFloat", in_out="INPUT"
+        )
         in_socket.default_value = 0
     return array_item_group
 
@@ -477,8 +537,7 @@ def link_normal(b: ShaderBuilder, nrmtex):
 
 def create_normal_invert_node(node_tree: bpy.types.NodeTree):
     """Create RGB curves node that inverts that green channel of normal maps"""
-    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new(
-        "ShaderNodeRGBCurve")
+    rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new("ShaderNodeRGBCurve")
 
     green_curves = rgb_curves.mapping.curves[1]
     green_curves.points[0].location = (0, 1)
@@ -497,7 +556,7 @@ def link_specular(b: ShaderBuilder, spctex):
 def create_diff_palette_nodes(
     b: ShaderBuilder,
     palette_tex: bpy.types.ShaderNodeTexImage,
-    diffuse_tex: bpy.types.ShaderNodeTexImage
+    diffuse_tex: bpy.types.ShaderNodeTexImage,
 ):
     palette_tex.interpolation = "Closest"
     node_tree = b.node_tree
@@ -543,10 +602,7 @@ def create_diff_palette_nodes(
     links.new(palette_tex.outputs[0], bsdf.inputs["Base Color"])
 
 
-def create_tint_nodes(
-    b: ShaderBuilder,
-    diffuse_tex: bpy.types.ShaderNodeTexImage
-):
+def create_tint_nodes(b: ShaderBuilder, diffuse_tex: bpy.types.ShaderNodeTexImage):
     # create shader attribute node
     # TintColor attribute is filled by tint geometry nodes
     node_tree = b.node_tree
@@ -588,7 +644,9 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
     links.new(mix.outputs["Shader"], output.inputs["Surface"])
 
 
-def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage):
+def create_distance_map_nodes(
+    b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage
+):
     node_tree = b.node_tree
     output = b.material_output
     bsdf = b.bsdf
@@ -615,7 +673,9 @@ def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.
     links.new(fill_color_b.outputs["Value"], fill_color_combine.inputs["Z"])
 
     # extract distance value from texture and check > 0.5
-    links.new(distance_map_texture.outputs["Color"], distance_separate_x.inputs["Vector"])
+    links.new(
+        distance_map_texture.outputs["Color"], distance_separate_x.inputs["Vector"]
+    )
     links.remove(distance_map_texture.outputs["Alpha"].links[0])
     links.new(distance_separate_x.outputs["X"], distance_greater_than.inputs["Value"])
 
@@ -782,8 +842,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
         elif param.type == "Array":
             create_array_nodes(node_tree, param)
         else:
-            raise Exception(
-                f"Unknown shader parameter! {param.type} {param.name}")
+            raise Exception(f"Unknown shader parameter! {param.type} {param.name}")
 
     use_diff = True if texture else False
     use_diff2 = True if texture2 else False
@@ -811,7 +870,11 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             # txt_alpha_mask = ?
             decalflag = 2
         # decal_normal_only.sps / mirror_decal.sps / reflect_decal.sps
-        elif filename in [ShaderManager.decals[4], ShaderManager.decals[21], ShaderManager.decals[19]]:
+        elif filename in [
+            ShaderManager.decals[4],
+            ShaderManager.decals[21],
+            ShaderManager.decals[19],
+        ]:
             decalflag = 3
         # decal_spec_only.sps / spec_decal.sps
         elif filename in [ShaderManager.decals[3], ShaderManager.decals[17]]:
@@ -910,8 +973,7 @@ def create_terrain_shader(b: ShaderBuilder):
         elif param.type == "Array":
             create_array_nodes(node_tree, param)
         else:
-            raise Exception(
-                f"Unknown shader parameter! {param.type} {param.name}")
+            raise Exception(f"Unknown shader parameter! {param.type} {param.name}")
 
     mixns = []
     for _ in range(8 if tm else 7):
@@ -1021,15 +1083,19 @@ def create_shader(filename: str):
     mat.shader_properties.renderbucket = shader.render_bucket
 
     bsdf, material_output = find_bsdf_and_material_output(mat)
-    assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"
+    assert (
+        material_output is not None
+    ), "ShaderNodeOutputMaterial not found in default node_tree!"
     assert bsdf is not None, "ShaderNodeBsdfPrincipled not found in default node_tree!"
 
-    builder = ShaderBuilder(shader=shader,
-                            filename=filename,
-                            material=mat,
-                            node_tree=mat.node_tree,
-                            material_output=material_output,
-                            bsdf=bsdf)
+    builder = ShaderBuilder(
+        shader=shader,
+        filename=filename,
+        material=mat,
+        node_tree=mat.node_tree,
+        material_output=material_output,
+        bsdf=bsdf,
+    )
 
     create_uv_map_nodes(builder)
 
