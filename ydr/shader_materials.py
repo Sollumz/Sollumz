@@ -60,6 +60,31 @@ def get_child_nodes(node):
     return child_nodes
 
 
+def group_image_texture_nodes(node_tree):
+    image_texture_nodes = [node for node in node_tree.nodes if node.type == "TEX_IMAGE"]
+
+    if not image_texture_nodes:
+        return
+
+    image_texture_nodes.sort(key=lambda node: node.location.y)
+
+    avg_x = min([node.location.x for node in image_texture_nodes])
+
+    # adjust margin to change gap in between img nodes
+    margin = 275
+    current_y = min([node.location.y for node in image_texture_nodes]) - margin
+    for node in image_texture_nodes:
+        current_y += margin
+        node.location.x = avg_x
+        node.location.y = current_y
+
+    # how far to the left the img nodes are
+    group_offset = 400
+    for node in image_texture_nodes:
+        node.location.x -= group_offset
+        node.location.y += group_offset
+
+
 def get_loose_nodes(node_tree):
     loose_nodes = []
     for node in node_tree.nodes:
@@ -86,6 +111,7 @@ def organize_node_tree(b: ShaderBuilder):
     mo.location.y = 0
     organize_node(mo)
     organize_loose_nodes(b.node_tree, 1000, 0)
+    group_image_texture_nodes(b.node_tree)
 
 
 def organize_node(node):
@@ -114,10 +140,10 @@ def organize_loose_nodes(node_tree, start_x, start_y):
             grid_x = start_x
             grid_y -= 150
 
-        node.location.x = grid_x
-        node.location.y = grid_y
+        node.location.x = grid_x + node.width / 2
+        node.location.y = grid_y - node.height / 2
 
-        grid_x -= node.width + 25
+        grid_x += node.width + 25
 
 
 def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderNodeTexImage]:
