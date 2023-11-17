@@ -13,13 +13,30 @@ from mathutils import Quaternion, Vector, Matrix
 from ..lods import operates_on_lod_level
 from .model_data import get_faces_subset
 
-from ..cwxml.drawable import BoneLimit, Drawable, Texture, Skeleton, Bone, Joints, RotationLimit, DrawableModel, Geometry, ArrayShaderParameter, VectorShaderParameter, TextureShaderParameter, Shader, VertexBuffer
+from ..cwxml.drawable import (
+    BoneLimit,
+    Drawable,
+    Texture,
+    Skeleton,
+    Bone,
+    Joints,
+    RotationLimit,
+    DrawableModel,
+    Geometry,
+    Shader,
+    ShaderParameter,
+    ArrayShaderParameter,
+    VectorShaderParameter,
+    TextureShaderParameter,
+    VertexBuffer,
+)
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_sphere_radius,
 )
 from ..tools.utils import get_filename, get_max_vector_list, get_min_vector_list
+from ..shared.shader_nodes import SzShaderNodeParameter
 from ..tools.blenderhelper import get_child_of_constraint, get_pose_inverse, remove_number_suffix, get_evaluated_obj
 from ..sollumz_helper import get_export_transforms_to_apply, get_sollumz_materials
 from ..sollumz_properties import (
@@ -33,7 +50,7 @@ from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
 from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .lights import create_xml_lights
-from ..cwxml.shader import ShaderManager
+from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
 
 from .. import logger
 
@@ -930,73 +947,89 @@ def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
                 f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
 
 
+def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> list[ShaderParameter]:
+    """Creates a list of shader parameters ordered as defined in the ``ShaderDef`` parameters list.
+    This order is only required to prevent some crashes when previewing the drawable in OpenIV, which expects
+    parameters to be in the same order as vanilla files. This is not a problem for CodeWalker or the game.
+    """
+    if shader_def is None:
+        return []
+
+    parameters = []
+    for param_def in shader_def.parameters:
+        match param_def.type:
+            case ShaderParameterType.TEXTURE:
+                param = TextureShaderParameter()
+            case (ShaderParameterType.FLOAT |
+                  ShaderParameterType.FLOAT2 |
+                  ShaderParameterType.FLOAT3 |
+                  ShaderParameterType.FLOAT4):
+                if param_def.is_array:
+                    param = ArrayShaderParameter()
+                    param.values = [Vector() for _ in range(param_def.count)]
+                else:
+                    param = VectorShaderParameter()
+            case ShaderParameterType.FLOAT4X4:
+                param = ArrayShaderParameter()
+                param.values = [Vector(), Vector(), Vector(), Vector()]
+            case _:
+                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+
+        param.name = param_def.name
+        parameters.append(param)
+
+    return parameters
+
+
 def get_shaders_from_blender(materials):
     shaders = []
 
     for material in materials:
         shader = Shader()
-        # Maybe make this a property?
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
         shader.render_bucket = material.shader_properties.renderbucket
-        shader_preset = ShaderManager.find_shader(shader.filename)
-        shader.parameters = list(shader_preset.parameters) if shader_preset is not None else []
+        shader_def = ShaderManager.find_shader(shader.filename)
+        shader.parameters = create_shader_parameters_list_template(shader_def)
 
         for node in material.node_tree.nodes:
             param = None
 
             if isinstance(node, bpy.types.ShaderNodeTexImage):
-                param = TextureShaderParameter()
-                param.name = node.name
-                param.type = "Texture"
-                # Disable extra material writing to xml
-                if param.name == "Extra":
+                if node.name == "Extra":
+                    # Don't write extra material to xml
                     continue
-                else:
-                    param.texture_name = node.sollumz_texture_name
 
-            elif isinstance(node, bpy.types.ShaderNodeValue):
-                if node.name[-1] == "x":
+                param = TextureShaderParameter()
+                param.texture_name = node.sollumz_texture_name
+            elif isinstance(node, SzShaderNodeParameter):
+                param_def = shader_def.parameter_map.get(node.name)
+                is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
+                if is_vector:
                     param = VectorShaderParameter()
-                    param.name = node.name[:-2]
-                    param.type = "Vector"
-
-                    x = node
-                    y = material.node_tree.nodes[node.name[:-1] + "y"]
-                    z = material.node_tree.nodes[node.name[:-1] + "z"]
-                    w = material.node_tree.nodes[node.name[:-1] + "w"]
-
-                    param.x = x.outputs[0].default_value
-                    param.y = y.outputs[0].default_value
-                    param.z = z.outputs[0].default_value
-                    param.w = w.outputs[0].default_value
-
-            elif isinstance(node, bpy.types.ShaderNodeGroup) and node.is_sollumz:
-                # Only perform logic if its ArrayNode
-                if node.node_tree.name == "ArrayNode" and node.name[-1] == "1":
-                    node_name = node.name[:-2]
+                    param.x = node.get(0)
+                    param.y = node.get(1) if node.num_cols > 1 else 0.0
+                    param.z = node.get(2) if node.num_cols > 2 else 0.0
+                    param.w = node.get(3) if node.num_cols > 3 else 0.0
+                else:
                     param = ArrayShaderParameter()
-                    param.name = node_name
-                    param.type = "Array"
+                    array_values = []
+                    for row in range(node.num_rows):
+                        i = row * node.num_cols
+                        x = node.get(i)
+                        y = node.get(i + 1) if node.num_cols > 1 else 0.0
+                        z = node.get(i + 2) if node.num_cols > 2 else 0.0
+                        w = node.get(i + 3) if node.num_cols > 3 else 0.0
 
-                    all_array_nodes = [
-                        x for x in material.node_tree.nodes if node_name in x.name]
-                    all_array_values = []
-                    for item_node in all_array_nodes:
-                        x = item_node.inputs[0].default_value
-                        y = item_node.inputs[1].default_value
-                        z = item_node.inputs[2].default_value
-                        w = item_node.inputs[3].default_value
+                        array_values.append(Vector((x, y, z, w)))
 
-                        all_array_values.append(Vector((x, y, z, w)))
-
-                    param.values = all_array_values
+                    param.values = array_values
 
             if param is not None:
-                parameter_index = next((i for i, x in enumerate(
-                    shader.parameters) if x.name == param.name), None)
+                param.name = node.name
+                parameter_index = next((i for i, x in enumerate(shader.parameters) if x.name == param.name), None)
 
-                if parameter_index == None:
+                if parameter_index is None:
                     shader.parameters.append(param)
                 else:
                     shader.parameters[parameter_index] = param

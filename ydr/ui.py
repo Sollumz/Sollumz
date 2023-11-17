@@ -7,6 +7,7 @@ from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
 from ..icons import icon_manager
+from ..shared.shader_nodes import SzShaderNodeParameter
 
 
 class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
@@ -592,67 +593,8 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
 
         nodes = mat.node_tree.nodes
         for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-            if isinstance(n, bpy.types.ShaderNodeValue) and n.is_sollumz:
-                if n.name[-1] == "x":
-                    row = layout.row()
-                    row.label(text=n.name[:-2])
-
-                    x = n
-                    y = mat.node_tree.nodes[n.name[:-1] + "y"]
-                    z = mat.node_tree.nodes[n.name[:-1] + "z"]
-                    w = mat.node_tree.nodes[n.name[:-1] + "w"]
-
-                    row.prop(x.outputs[0], "default_value", text="X:")
-                    row.prop(y.outputs[0], "default_value", text="Y:")
-                    row.prop(z.outputs[0], "default_value", text="Z:")
-                    row.prop(w.outputs[0], "default_value", text="W:")
-
-
-class SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL(bpy.types.Panel):
-    bl_label = "Array Parameters"
-    bl_idname = "SOLLUMZ_PT_VALUEPARAMS_ARRAYS_PANEL"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_MAT_PANEL.bl_idname
-    bl_order = 3
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-
-        if not obj:
-            return False
-
-        mat = obj.active_material
-
-        if mat is None or (mat is not None and mat.sollum_type != MaterialType.SHADER):
-            return False
-
-        for n in mat.node_tree.nodes:
-            if isinstance(n, bpy.types.ShaderNodeGroup) and n.is_sollumz:
-                return True
-
-    def draw(self, context):
-        layout = self.layout
-        mat = context.active_object.active_material
-
-        for n in mat.node_tree.nodes:
-            if not isinstance(n, bpy.types.ShaderNodeGroup) or not n.is_sollumz:
-                continue
-
-            row = layout.row()
-            row.label(text=n.name)
-
-            x = n.inputs[0]
-            y = n.inputs[1]
-            z = n.inputs[2]
-            w = n.inputs[3]
-
-            row.prop(x, "default_value", text="X:")
-            row.prop(y, "default_value", text="Y:")
-            row.prop(z, "default_value", text="Z:")
-            row.prop(w, "default_value", text="W:")
+            if isinstance(n, SzShaderNodeParameter):
+                n.draw(context, layout, label=n.name, compact=True)
 
 
 class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
