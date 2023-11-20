@@ -6,38 +6,38 @@ class RoomFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     size = 10
 
     flag1: bpy.props.BoolProperty(
-        name="Unknown 1", update=FlagPropertyGroup.update_flag)
+        name="Freeze Vehicles", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
         name="Disables wanted level", update=FlagPropertyGroup.update_flag)
     flag3: bpy.props.BoolProperty(
         name="Disable exterior shadows", update=FlagPropertyGroup.update_flag)
     flag4: bpy.props.BoolProperty(
-        name="Unknown 4", update=FlagPropertyGroup.update_flag)
+        name="No Exterior Lights", update=FlagPropertyGroup.update_flag)
     flag5: bpy.props.BoolProperty(
-        name="Unknown 5", update=FlagPropertyGroup.update_flag)
+        name="Force Freeze", update=FlagPropertyGroup.update_flag)
     flag6: bpy.props.BoolProperty(
         name="Reduces vehicle population", update=FlagPropertyGroup.update_flag)
     flag7: bpy.props.BoolProperty(
         name="Reduces ped population", update=FlagPropertyGroup.update_flag)
     flag8: bpy.props.BoolProperty(
-        name="Unknown 8", update=FlagPropertyGroup.update_flag)
+        name="Force Directional Light On", update=FlagPropertyGroup.update_flag)
     flag9: bpy.props.BoolProperty(
         name="Disable limbo portals", update=FlagPropertyGroup.update_flag)
     flag10: bpy.props.BoolProperty(
-        name="Unknown 10", update=FlagPropertyGroup.update_flag)
+        name="Mirror Potentially Visible", update=FlagPropertyGroup.update_flag)
 
 
 class PortalFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     size = 14
 
     flag1: bpy.props.BoolProperty(
-        name="Disables exterior rendering", update=FlagPropertyGroup.update_flag)
+        name="One-Way", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
-        name="Disables interior rendering", update=FlagPropertyGroup.update_flag)
+        name="Link Interiors together", update=FlagPropertyGroup.update_flag)
     flag3: bpy.props.BoolProperty(
         name="Mirror", update=FlagPropertyGroup.update_flag)
     flag4: bpy.props.BoolProperty(
-        name="Extra bloom", update=FlagPropertyGroup.update_flag)
+        name="Disable Tinmecycle modifier", update=FlagPropertyGroup.update_flag)
     flag5: bpy.props.BoolProperty(
         name="Unknown 5", update=FlagPropertyGroup.update_flag)
     flag6: bpy.props.BoolProperty(
@@ -45,32 +45,32 @@ class PortalFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag7: bpy.props.BoolProperty(
         name="Hide when door closed", update=FlagPropertyGroup.update_flag)
     flag8: bpy.props.BoolProperty(
-        name="Unknown 8", update=FlagPropertyGroup.update_flag)
+        name="Mirror Directional Light", update=FlagPropertyGroup.update_flag)
     flag9: bpy.props.BoolProperty(
         name="Mirror exterior portals", update=FlagPropertyGroup.update_flag)
     flag10: bpy.props.BoolProperty(
-        name="Unknown 10", update=FlagPropertyGroup.update_flag)
+        name="Mirror Portal Traversal", update=FlagPropertyGroup.update_flag)
     flag11: bpy.props.BoolProperty(
         name="Mirror limbo entities", update=FlagPropertyGroup.update_flag)
     flag12: bpy.props.BoolProperty(
-        name="Unknown 12", update=FlagPropertyGroup.update_flag)
+        name="Water surface", update=FlagPropertyGroup.update_flag)
     flag13: bpy.props.BoolProperty(
-        name="Unknown 13", update=FlagPropertyGroup.update_flag)
+        name="Water surface extend", update=FlagPropertyGroup.update_flag)
     flag14: bpy.props.BoolProperty(
-        name="Disable farclipping", update=FlagPropertyGroup.update_flag)
+        name="Water extent to horizon", update=FlagPropertyGroup.update_flag)
 
 
 class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag1: bpy.props.BoolProperty(
         name="Allow full rotation", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
-        name="Unknown 2", update=FlagPropertyGroup.update_flag)
+        name="Interactive prop", update=FlagPropertyGroup.update_flag)
     flag3: bpy.props.BoolProperty(
         name="Disable embedded collisions", update=FlagPropertyGroup.update_flag)
     flag4: bpy.props.BoolProperty(
-        name="Unknown 4", update=FlagPropertyGroup.update_flag)
+        name="Interactive prop tree", update=FlagPropertyGroup.update_flag)
     flag5: bpy.props.BoolProperty(
-        name="Unknown 5", update=FlagPropertyGroup.update_flag)
+        name="LOD", update=FlagPropertyGroup.update_flag)
     flag6: bpy.props.BoolProperty(
         name="Static entity", update=FlagPropertyGroup.update_flag)
     flag7: bpy.props.BoolProperty(
@@ -97,8 +97,8 @@ class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
         name="Unknown 17", update=FlagPropertyGroup.update_flag)
     flag18: bpy.props.BoolProperty(
         name="Unknown 18", update=FlagPropertyGroup.update_flag)
-    flag19: bpy.props.BoolProperty(name="Disable archetype extensions",
-                                   update=FlagPropertyGroup.update_flag)
+    flag19: bpy.props.BoolProperty(
+        name="Disable archetype extensions", update=FlagPropertyGroup.update_flag)
     flag20: bpy.props.BoolProperty(
         name="Unknown 20", update=FlagPropertyGroup.update_flag)
     flag21: bpy.props.BoolProperty(
@@ -129,15 +129,15 @@ class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag1: bpy.props.BoolProperty(
-        name="Unknown 1", update=FlagPropertyGroup.update_flag)
+        name="Wet road reflection", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
-        name="Unknown 2", update=FlagPropertyGroup.update_flag)
+        name="Don't Fade", update=FlagPropertyGroup.update_flag)
     flag3: bpy.props.BoolProperty(
-        name="Unknown 3", update=FlagPropertyGroup.update_flag)
+        name="Draw Last", update=FlagPropertyGroup.update_flag)
     flag4: bpy.props.BoolProperty(
-        name="Unknown 4", update=FlagPropertyGroup.update_flag)
+        name="Climbable by AI", update=FlagPropertyGroup.update_flag)
     flag5: bpy.props.BoolProperty(
-        name="Unknown 5", update=FlagPropertyGroup.update_flag)
+        name="Suppress HD Textures", update=FlagPropertyGroup.update_flag)
     flag6: bpy.props.BoolProperty(
         name="Static", update=FlagPropertyGroup.update_flag)
     flag7: bpy.props.BoolProperty(
@@ -157,9 +157,9 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag14: bpy.props.BoolProperty(
         name="Object won't cast shadow", update=FlagPropertyGroup.update_flag)
     flag15: bpy.props.BoolProperty(
-        name="Unknown 15", update=FlagPropertyGroup.update_flag)
+        name="Object cast texture shadows", update=FlagPropertyGroup.update_flag)
     flag16: bpy.props.BoolProperty(
-        name="Unknown 16", update=FlagPropertyGroup.update_flag)
+        name="Object don't collide with flyer", update=FlagPropertyGroup.update_flag)
     flag17: bpy.props.BoolProperty(
         name="Double-sided rendering", update=FlagPropertyGroup.update_flag)
     flag18: bpy.props.BoolProperty(
@@ -169,9 +169,9 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag20: bpy.props.BoolProperty(
         name="Dynamic anims (YCD)", update=FlagPropertyGroup.update_flag)
     flag21: bpy.props.BoolProperty(
-        name="Unknown 21", update=FlagPropertyGroup.update_flag)
+        name="Disable AI cover", update=FlagPropertyGroup.update_flag)
     flag22: bpy.props.BoolProperty(
-        name="Unknown 22", update=FlagPropertyGroup.update_flag)
+        name="Disable player cover", update=FlagPropertyGroup.update_flag)
     flag23: bpy.props.BoolProperty(
         name="Unknown 23", update=FlagPropertyGroup.update_flag)
     flag24: bpy.props.BoolProperty(
