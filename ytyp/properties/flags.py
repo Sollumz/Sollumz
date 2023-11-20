@@ -194,7 +194,7 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
         name="Disable alpha vertex channel", update=FlagPropertyGroup.update_flag)
 
 
-class UnknownFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+class MloInteriorFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag1: bpy.props.BoolProperty(
         name="Unknown 1", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
@@ -212,21 +212,21 @@ class UnknownFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag8: bpy.props.BoolProperty(
         name="Unknown 8", update=FlagPropertyGroup.update_flag)
     flag9: bpy.props.BoolProperty(
-        name="Unknown 9", update=FlagPropertyGroup.update_flag)
+        name="Is subway", update=FlagPropertyGroup.update_flag)
     flag10: bpy.props.BoolProperty(
-        name="Unknown 10", update=FlagPropertyGroup.update_flag)
+        name="Is office", update=FlagPropertyGroup.update_flag)
     flag11: bpy.props.BoolProperty(
-        name="Unknown 11", update=FlagPropertyGroup.update_flag)
+        name="Allow run", update=FlagPropertyGroup.update_flag)
     flag12: bpy.props.BoolProperty(
-        name="Unknown 12", update=FlagPropertyGroup.update_flag)
+        name="Cutscene only", update=FlagPropertyGroup.update_flag)
     flag13: bpy.props.BoolProperty(
-        name="Unknown 13", update=FlagPropertyGroup.update_flag)
+        name="LOD when locked", update=FlagPropertyGroup.update_flag)
     flag14: bpy.props.BoolProperty(
-        name="Unknown 14", update=FlagPropertyGroup.update_flag)
+        name="No Water Reflection", update=FlagPropertyGroup.update_flag)
     flag15: bpy.props.BoolProperty(
         name="Unknown 15", update=FlagPropertyGroup.update_flag)
     flag16: bpy.props.BoolProperty(
-        name="Unknown 16", update=FlagPropertyGroup.update_flag)
+        name="Has low LOD Portals", update=FlagPropertyGroup.update_flag)
     flag17: bpy.props.BoolProperty(
         name="Unknown 17", update=FlagPropertyGroup.update_flag)
     flag18: bpy.props.BoolProperty(
