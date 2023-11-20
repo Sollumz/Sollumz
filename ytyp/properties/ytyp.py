@@ -4,7 +4,7 @@ from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
-from .flags import ArchetypeFlags, UnknownFlags
+from .flags import ArchetypeFlags, MloFlags
 from .extensions import ExtensionsContainer, ExtensionProperties
 
 
@@ -157,7 +157,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Time archetype
     time_flags: bpy.props.PointerProperty(type=TimeFlags, name="Time Flags")
     # Mlo archetype
-    mlo_flags: bpy.props.PointerProperty(type=UnknownFlags, name="MLO Flags")
+    mlo_flags: bpy.props.PointerProperty(type=MloFlags, name="MLO Flags")
     rooms: bpy.props.CollectionProperty(type=RoomProperties, name="Rooms")
     portals: bpy.props.CollectionProperty(
         type=PortalProperties, name="Portals")

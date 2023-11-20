@@ -864,13 +864,13 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
-    lod_xml.unknown_14 = lod_props.unknown_14
-    lod_xml.unknown_18 = lod_props.unknown_18
-    lod_xml.unknown_1c = lod_props.unknown_1c
+    lod_xml.smallest_ang_inertia = lod_props.smallest_ang_inertia
+    lod_xml.largest_ang_inertia = lod_props.largest_ang_inertia
+    lod_xml.min_move_force = lod_props.min_move_force
     pos_offset = prop_array_to_vector(lod_props.position_offset)
     lod_xml.position_offset = pos_offset
-    lod_xml.unknown_40 = prop_array_to_vector(lod_props.unknown_40)
-    lod_xml.unknown_50 = prop_array_to_vector(lod_props.unknown_50)
+    lod_xml.original_root_cg_offset = prop_array_to_vector(lod_props.original_root_cg_offset)
+    lod_xml.unbroken_cg_offset = prop_array_to_vector(lod_props.unbroken_cg_offset)
     lod_xml.damping_linear_c = prop_array_to_vector(
         lod_props.damping_linear_c)
     lod_xml.damping_linear_v = prop_array_to_vector(
@@ -910,17 +910,17 @@ def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGro
     group_xml.rotation_strength = group_props.rotation_strength
     group_xml.restoring_max_torque = group_props.restoring_max_torque
     group_xml.latch_strength = group_props.latch_strength
-    group_xml.min_damage_force = group_props.min_damage_force
+    group_xml.total_undamaged_mass = group_props.total_undamaged_mass
     group_xml.damage_health = group_props.damage_health
-    group_xml.unk_float_5c = group_props.unk_float_5c
-    group_xml.unk_float_60 = group_props.unk_float_60
-    group_xml.unk_float_64 = group_props.unk_float_64
-    group_xml.unk_float_68 = group_props.unk_float_68
-    group_xml.unk_float_6c = group_props.unk_float_6c
-    group_xml.unk_float_70 = group_props.unk_float_70
-    group_xml.unk_float_74 = group_props.unk_float_74
-    group_xml.unk_float_78 = group_props.unk_float_78
-    group_xml.unk_float_a8 = group_props.unk_float_a8
+    group_xml.weapon_health = group_props.weapon_health
+    group_xml.weapon_scale = group_props.weapon_scale
+    group_xml.vehicle_scale = group_props.vehicle_scale
+    group_xml.ped_scale = group_props.ped_scale
+    group_xml.ragdoll_scale = group_props.ragdoll_scale
+    group_xml.explosion_scale = group_props.explosion_scale
+    group_xml.object_scale = group_props.object_scale
+    group_xml.ped_inv_mass_scale = group_props.ped_inv_mass_scale
+    group_xml.melee_scale = group_props.melee_scale
 
 
 def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
@@ -946,7 +946,6 @@ def add_frag_glass_window_xml(
         logger.warning(f"Glass window '{group_xml.name}' is missing the mesh and/or collision. Skipping...")
         return
 
-
     group_xml.glass_window_index = len(glass_windows_xml)
 
     glass_type = glass_window_bone.group_properties.glass_type
@@ -967,12 +966,12 @@ def add_frag_glass_window_xml(
         logger.warning(f"Glass window '{group_xml.name}' requires 2 separate planes in mesh.")
         if len(mesh_planes) < 2:
             return  # need at least 2 planes to continue
- 
+
     plane_a, plane_b = mesh_planes[:2]
     if len(plane_a) != 2 or len(plane_b) != 2:
         logger.warning(f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each.")
         if len(plane_a) < 2 or len(plane_b) < 2:
-            return # need at least 2 tris in each plane to continue
+            return  # need at least 2 tris in each plane to continue
 
     normals = (plane_a[0].normal, plane_a[1].normal, plane_b[0].normal, plane_b[1].normal)
     if any(a.cross(b).length_squared > float_info.epsilon for a, b in combinations(normals, 2)):
@@ -1086,6 +1085,7 @@ def calc_frag_glass_window_bounds_offset(
     Returns tuple (offset_front, offset_back).
     """
     from mathutils.geometry import distance_point_to_plane, normal
+
     def _get_plane(a: Vector, b: Vector, c: Vector, d: Vector):
         plane_no = normal((a, b, c))
         plane_co = a
@@ -1103,12 +1103,12 @@ def calc_frag_glass_window_bounds_offset(
     #  [6] = (max.x, max.y, max.z)
     #  [7] = (max.x, max.y, min.z)
     plane_points = (
-        (bbs[4], bbs[3], bbs[0], bbs[7]), # bottom
-        (bbs[1], bbs[2], bbs[5], bbs[7]), # top
-        (bbs[2], bbs[1], bbs[0], bbs[3]), # left
-        (bbs[4], bbs[5], bbs[6], bbs[7]), # right
-        (bbs[0], bbs[1], bbs[4], bbs[5]), # front
-        (bbs[2], bbs[3], bbs[6], bbs[7]), # back
+        (bbs[4], bbs[3], bbs[0], bbs[7]),  # bottom
+        (bbs[1], bbs[2], bbs[5], bbs[7]),  # top
+        (bbs[2], bbs[1], bbs[0], bbs[3]),  # left
+        (bbs[4], bbs[5], bbs[6], bbs[7]),  # right
+        (bbs[0], bbs[1], bbs[4], bbs[5]),  # front
+        (bbs[2], bbs[3], bbs[6], bbs[7]),  # back
     )
     planes = [_get_plane(Vector(a), Vector(b), Vector(c), Vector(d)) for a, b, c, d in plane_points]
 

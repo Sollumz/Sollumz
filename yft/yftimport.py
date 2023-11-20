@@ -484,12 +484,12 @@ def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
 
 
 def set_lod_properties(lod_xml: PhysicsLOD, lod_props: LODProperties):
-    lod_props.unknown_14 = lod_xml.unknown_14
-    lod_props.unknown_18 = lod_xml.unknown_18
-    lod_props.unknown_1c = lod_xml.unknown_1c
+    lod_props.smallest_ang_inertia = lod_xml.smallest_ang_inertia
+    lod_props.largest_ang_inertia = lod_xml.largest_ang_inertia
+    lod_props.min_move_force = lod_xml.min_move_force
     lod_props.position_offset = lod_xml.position_offset
-    lod_props.unknown_40 = lod_xml.unknown_40
-    lod_props.unknown_50 = lod_xml.unknown_50
+    lod_props.original_root_cg_offset = lod_xml.original_root_cg_offset
+    lod_props.unbroken_cg_offset = lod_xml.unbroken_cg_offset
     lod_props.damping_linear_c = lod_xml.damping_linear_c
     lod_props.damping_linear_v = lod_xml.damping_linear_v
     lod_props.damping_linear_v2 = lod_xml.damping_linear_v2
@@ -523,17 +523,17 @@ def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):
     bone.group_properties.rotation_strength = group_xml.rotation_strength
     bone.group_properties.restoring_max_torque = group_xml.restoring_max_torque
     bone.group_properties.latch_strength = group_xml.latch_strength
-    bone.group_properties.min_damage_force = group_xml.min_damage_force
+    bone.group_properties.total_undamaged_mass = group_xml.total_undamaged_mass
     bone.group_properties.damage_health = group_xml.damage_health
-    bone.group_properties.unk_float_5c = group_xml.unk_float_5c
-    bone.group_properties.unk_float_60 = group_xml.unk_float_60
-    bone.group_properties.unk_float_64 = group_xml.unk_float_64
-    bone.group_properties.unk_float_68 = group_xml.unk_float_68
-    bone.group_properties.unk_float_6c = group_xml.unk_float_6c
-    bone.group_properties.unk_float_70 = group_xml.unk_float_70
-    bone.group_properties.unk_float_74 = group_xml.unk_float_74
-    bone.group_properties.unk_float_78 = group_xml.unk_float_78
-    bone.group_properties.unk_float_a8 = group_xml.unk_float_a8
+    bone.group_properties.weapon_health = group_xml.weapon_health
+    bone.group_properties.weapon_scale = group_xml.weapon_scale
+    bone.group_properties.vehicle_scale = group_xml.vehicle_scale
+    bone.group_properties.ped_scale = group_xml.ped_scale
+    bone.group_properties.ragdoll_scale = group_xml.ragdoll_scale
+    bone.group_properties.explosion_scale = group_xml.explosion_scale
+    bone.group_properties.object_scale = group_xml.object_scale
+    bone.group_properties.ped_inv_mass_scale = group_xml.ped_inv_mass_scale
+    bone.group_properties.melee_scale = group_xml.melee_scale
 
 
 def set_veh_window_properties(window_xml: Window, window_obj: bpy.types.Object):
