@@ -18,12 +18,12 @@ class FragArchetypeProperties(bpy.types.PropertyGroup):
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    smallest_ang_inertia: bpy.props.FloatProperty(name="SmallestAngInertia")
-    largest_ang_inertia: bpy.props.FloatProperty(name="LargestAngInertia")
-    min_move_force: bpy.props.FloatProperty(name="MinMoveForce")
+    unknown_14: bpy.props.FloatProperty(name="Smallest Angle Interia")
+    unknown_18: bpy.props.FloatProperty(name="Largest Angle Interia")
+    unknown_1c: bpy.props.FloatProperty(name="Min Move Force")
     position_offset: bpy.props.FloatVectorProperty(name="Position Offset")
-    original_root_cg_offset: bpy.props.FloatVectorProperty(name="OriginalRootCGOffset")
-    unbroken_cg_offset: bpy.props.FloatVectorProperty(name="UnbrokenCGOffset")
+    unknown_40: bpy.props.FloatVectorProperty(name="Original Root CG Offset")
+    unknown_50: bpy.props.FloatVectorProperty(name="Unbroken CG Offset")
     damping_linear_c: bpy.props.FloatVectorProperty(
         name="Damping Linear C", default=(0.02, 0.02, 0.02))
     damping_linear_v: bpy.props.FloatVectorProperty(
@@ -85,18 +85,18 @@ class GroupProperties(bpy.types.PropertyGroup):
     rotation_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
-    total_undamaged_mass: bpy.props.FloatProperty(
+    min_damage_force: bpy.props.FloatProperty(
         name="Total Undamaged Mass", default=100)
     damage_health: bpy.props.FloatProperty(name="Damage Health", default=1000)
-    weapon_health: bpy.props.FloatProperty(name="Weapon Health")
-    weapon_scale: bpy.props.FloatProperty(name="Weapon Scale", default=1)
-    vehicle_scale: bpy.props.FloatProperty(name="Vehicle Scale", default=1)
-    ped_scale: bpy.props.FloatProperty(name="Ped Scale", default=1)
-    ragdoll_scale: bpy.props.FloatProperty(name="Ragdoll Scale", default=1)
-    explosion_scale: bpy.props.FloatProperty(name="Explosion Scale", default=1)
-    object_scale: bpy.props.FloatProperty(name="Object Scale", default=1)
-    ped_inv_mass_scale: bpy.props.FloatProperty(name="Ped Inv Mass Scale", default=1)
-    melee_scale: bpy.props.FloatProperty(name="Melee Scale", default=1)
+    unk_float_5c: bpy.props.FloatProperty(name="Weapon Health")
+    unk_float_60: bpy.props.FloatProperty(name="Weapon Scale", default=1)
+    unk_float_64: bpy.props.FloatProperty(name="Vehicle Scale", default=1)
+    unk_float_68: bpy.props.FloatProperty(name="Ped Scale", default=1)
+    unk_float_6c: bpy.props.FloatProperty(name="Ragdoll Scale", default=1)
+    unk_float_70: bpy.props.FloatProperty(name="Explosion Scale", default=1)
+    unk_float_74: bpy.props.FloatProperty(name="Object Scale", default=1)
+    unk_float_78: bpy.props.FloatProperty(name="Ped Inv Mass Scale", default=1)
+    unk_float_a8: bpy.props.FloatProperty(name="Melee Scale", default=1)
 
 
 class ChildProperties(bpy.types.PropertyGroup):
