@@ -946,6 +946,7 @@ def add_frag_glass_window_xml(
         logger.warning(f"Glass window '{group_xml.name}' is missing the mesh and/or collision. Skipping...")
         return
 
+
     group_xml.glass_window_index = len(glass_windows_xml)
 
     glass_type = glass_window_bone.group_properties.glass_type
@@ -966,12 +967,12 @@ def add_frag_glass_window_xml(
         logger.warning(f"Glass window '{group_xml.name}' requires 2 separate planes in mesh.")
         if len(mesh_planes) < 2:
             return  # need at least 2 planes to continue
-
+ 
     plane_a, plane_b = mesh_planes[:2]
     if len(plane_a) != 2 or len(plane_b) != 2:
         logger.warning(f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each.")
         if len(plane_a) < 2 or len(plane_b) < 2:
-            return  # need at least 2 tris in each plane to continue
+            return # need at least 2 tris in each plane to continue
 
     normals = (plane_a[0].normal, plane_a[1].normal, plane_b[0].normal, plane_b[1].normal)
     if any(a.cross(b).length_squared > float_info.epsilon for a, b in combinations(normals, 2)):
@@ -1085,7 +1086,6 @@ def calc_frag_glass_window_bounds_offset(
     Returns tuple (offset_front, offset_back).
     """
     from mathutils.geometry import distance_point_to_plane, normal
-
     def _get_plane(a: Vector, b: Vector, c: Vector, d: Vector):
         plane_no = normal((a, b, c))
         plane_co = a
@@ -1103,12 +1103,12 @@ def calc_frag_glass_window_bounds_offset(
     #  [6] = (max.x, max.y, max.z)
     #  [7] = (max.x, max.y, min.z)
     plane_points = (
-        (bbs[4], bbs[3], bbs[0], bbs[7]),  # bottom
-        (bbs[1], bbs[2], bbs[5], bbs[7]),  # top
-        (bbs[2], bbs[1], bbs[0], bbs[3]),  # left
-        (bbs[4], bbs[5], bbs[6], bbs[7]),  # right
-        (bbs[0], bbs[1], bbs[4], bbs[5]),  # front
-        (bbs[2], bbs[3], bbs[6], bbs[7]),  # back
+        (bbs[4], bbs[3], bbs[0], bbs[7]), # bottom
+        (bbs[1], bbs[2], bbs[5], bbs[7]), # top
+        (bbs[2], bbs[1], bbs[0], bbs[3]), # left
+        (bbs[4], bbs[5], bbs[6], bbs[7]), # right
+        (bbs[0], bbs[1], bbs[4], bbs[5]), # front
+        (bbs[2], bbs[3], bbs[6], bbs[7]), # back
     )
     planes = [_get_plane(Vector(a), Vector(b), Vector(c), Vector(d)) for a, b, c, d in plane_points]
 
