@@ -195,6 +195,8 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 
 class MloFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    size = 15
+
     flag1: bpy.props.BoolProperty(
         name="Unused", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
