@@ -38,26 +38,39 @@ class HexColorProperty(ElementProperty):
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name or "color", value or (0, 0, 0, 0))
 
-    def hex_to_rgb(hex: str) -> tuple:
-        hex = hex.replace("0x", "")
-        return tuple(int(hex[i:i + 2], 16) / 255 for i in (0, 2, 4, 6))
+    @staticmethod
+    def argb_hex_to_rgba(argb_hex: str) -> tuple[float, float, float, float]:
+        argb = int(argb_hex, base=16)
+        return (
+            ((argb >> 16) & 0xFF) / 0xFF,
+            ((argb >> 8) & 0xFF) / 0xFF,
+            (argb & 0xFF) / 0xFF,
+            ((argb >> 24) & 0xFF) / 0xFF
+        )
 
-    def rgb_to_hex(rgb: tuple) -> str:
-        return ('{:02X}{:02X}{:02X}{:02X}').format(*[int(x * 255) for x in rgb])
+    @staticmethod
+    def rgba_to_argb_hex(rgba: tuple[float, float, float, float]) -> str:
+        argb = (
+            (int(rgba[3] * 0xFF) & 0xFF) << 24 |
+            (int(rgba[0] * 0xFF) & 0xFF) << 16 |
+            (int(rgba[1] * 0xFF) & 0xFF) << 8 |
+            (int(rgba[2] * 0xFF) & 0xFF)
+        )
+        return f"0x{argb:08X}"
 
     @staticmethod
     def from_xml(element: ET.Element):
-        if not "value" in element.attrib:
+        if "value" not in element.attrib:
             ValueProperty.read_value_error(element)
 
-        rgb = HexColorProperty.hex_to_rgb(element.get("value"))
+        rgba = HexColorProperty.argb_hex_to_rgba(element.get("value"))
 
-        return HexColorProperty(element.tag, rgb)
+        return HexColorProperty(element.tag, rgba)
 
     def to_xml(self):
-        hex = HexColorProperty.rgb_to_hex(self.value)
+        argb_hex = HexColorProperty.rgba_to_argb_hex(self.value)
 
-        return ET.Element(self.tag_name, attrib={"value": "0x" + hex})
+        return ET.Element(self.tag_name, attrib={"value": argb_hex})
 
 
 class Extension(ElementTree, AbstractClass):
