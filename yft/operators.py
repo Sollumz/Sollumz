@@ -136,6 +136,7 @@ class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
             dst_props.max_soft_angle_3 = src_props.max_soft_angle_3
             dst_props.rotation_speed = src_props.rotation_speed
             dst_props.rotation_strength = src_props.rotation_strength
+            dst_props.restoring_strength = src_props.restoring_strength
             dst_props.restoring_max_torque = src_props.restoring_max_torque
             dst_props.latch_strength = src_props.latch_strength
             dst_props.min_damage_force = src_props.min_damage_force

@@ -908,6 +908,7 @@ def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGro
     group_xml.max_soft_angle_3 = group_props.max_soft_angle_3
     group_xml.rotation_speed = group_props.rotation_speed
     group_xml.rotation_strength = group_props.rotation_strength
+    group_xml.restoring_strength = group_props.restoring_strength
     group_xml.restoring_max_torque = group_props.restoring_max_torque
     group_xml.latch_strength = group_props.latch_strength
     group_xml.min_damage_force = group_props.min_damage_force

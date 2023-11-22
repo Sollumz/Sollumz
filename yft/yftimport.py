@@ -521,6 +521,7 @@ def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):
     bone.group_properties.max_soft_angle_3 = group_xml.max_soft_angle_3
     bone.group_properties.rotation_speed = group_xml.rotation_speed
     bone.group_properties.rotation_strength = group_xml.rotation_strength
+    bone.group_properties.restoring_strength = group_xml.restoring_strength
     bone.group_properties.restoring_max_torque = group_xml.restoring_max_torque
     bone.group_properties.latch_strength = group_xml.latch_strength
     bone.group_properties.min_damage_force = group_xml.min_damage_force

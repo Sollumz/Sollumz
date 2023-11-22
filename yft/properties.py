@@ -82,7 +82,8 @@ class GroupProperties(bpy.types.PropertyGroup):
     max_soft_angle_3: bpy.props.FloatProperty(
         name="Max Soft Angle 3", default=1)
     rotation_speed: bpy.props.FloatProperty(name="Rotation Speed")
-    rotation_strength: bpy.props.FloatProperty(name="Restoring Strength")
+    rotation_strength: bpy.props.FloatProperty(name="Rotation Strength")
+    restoring_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
     min_damage_force: bpy.props.FloatProperty(
