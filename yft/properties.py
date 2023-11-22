@@ -86,7 +86,7 @@ class GroupProperties(bpy.types.PropertyGroup):
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
     min_damage_force: bpy.props.FloatProperty(
-        name="Total Undamaged Mass", default=100)
+        name="Min Damage Force", default=100)
     damage_health: bpy.props.FloatProperty(name="Damage Health", default=1000)
     unk_float_5c: bpy.props.FloatProperty(name="Weapon Health")
     unk_float_60: bpy.props.FloatProperty(name="Weapon Scale", default=1)

@@ -195,19 +195,33 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 
 class MloFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
-    size = 7
-
     flag1: bpy.props.BoolProperty(
-        name="Subway", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
-        name="Office", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag3: bpy.props.BoolProperty(
-        name="Allow Run", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag4: bpy.props.BoolProperty(
-        name="Cutscene Only", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag5: bpy.props.BoolProperty(
-        name="LOD When Locked", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag6: bpy.props.BoolProperty(
-        name="No Water Reflection", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag7: bpy.props.BoolProperty(
+        name="Unused", update=FlagPropertyGroup.update_flag)
+    flag8: bpy.props.BoolProperty(
+        name="Unused", update=FlagPropertyGroup.update_flag)
+    flag9: bpy.props.BoolProperty(
+        name="Subway", update=FlagPropertyGroup.update_flag)
+    flag10: bpy.props.BoolProperty(
+        name="Office", update=FlagPropertyGroup.update_flag)
+    flag11: bpy.props.BoolProperty(
+        name="Allow Run", update=FlagPropertyGroup.update_flag)
+    flag12: bpy.props.BoolProperty(
+        name="Cutscene Only", update=FlagPropertyGroup.update_flag)
+    flag13: bpy.props.BoolProperty(
+        name="LOD When Locked", update=FlagPropertyGroup.update_flag)
+    flag14: bpy.props.BoolProperty(
+        name="No Water Reflection", update=FlagPropertyGroup.update_flag)
+    flag15: bpy.props.BoolProperty(
         name="Has Low LOD Portals", update=FlagPropertyGroup.update_flag)
