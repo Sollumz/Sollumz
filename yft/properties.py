@@ -18,12 +18,12 @@ class FragArchetypeProperties(bpy.types.PropertyGroup):
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    unknown_14: bpy.props.FloatProperty(name="Unknown14")
-    unknown_18: bpy.props.FloatProperty(name="Unknown18")
-    unknown_1c: bpy.props.FloatProperty(name="Unknown1C")
+    unknown_14: bpy.props.FloatProperty(name="Smallest Angle Interia")
+    unknown_18: bpy.props.FloatProperty(name="Largest Angle Interia")
+    unknown_1c: bpy.props.FloatProperty(name="Min Move Force")
     position_offset: bpy.props.FloatVectorProperty(name="Position Offset")
-    unknown_40: bpy.props.FloatVectorProperty(name="Unknown40")
-    unknown_50: bpy.props.FloatVectorProperty(name="Unknown50")
+    unknown_40: bpy.props.FloatVectorProperty(name="Original Root CG Offset")
+    unknown_50: bpy.props.FloatVectorProperty(name="Unbroken CG Offset")
     damping_linear_c: bpy.props.FloatVectorProperty(
         name="Damping Linear C", default=(0.02, 0.02, 0.02))
     damping_linear_v: bpy.props.FloatVectorProperty(
@@ -96,8 +96,8 @@ class GroupProperties(bpy.types.PropertyGroup):
     unk_float_6c: bpy.props.FloatProperty(name="Ragdoll Scale", default=1)
     unk_float_70: bpy.props.FloatProperty(name="Explosion Scale", default=1)
     unk_float_74: bpy.props.FloatProperty(name="Object Scale", default=1)
-    unk_float_78: bpy.props.FloatProperty(name="UnkFloat78", default=1)
-    unk_float_a8: bpy.props.FloatProperty(name="UnkFloatA8", default=1)
+    unk_float_78: bpy.props.FloatProperty(name="Ped Inv Mass Scale", default=1)
+    unk_float_a8: bpy.props.FloatProperty(name="Melee Scale", default=1)
 
 
 class ChildProperties(bpy.types.PropertyGroup):
