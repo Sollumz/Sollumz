@@ -74,13 +74,13 @@ class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag6: bpy.props.BoolProperty(
         name="Static entity", update=FlagPropertyGroup.update_flag)
     flag7: bpy.props.BoolProperty(
-        name="Object isn't dark at night", update=FlagPropertyGroup.update_flag)
+        name="Interior LOD", update=FlagPropertyGroup.update_flag)
     flag8: bpy.props.BoolProperty(
         name="Unknown 8", update=FlagPropertyGroup.update_flag)
     flag9: bpy.props.BoolProperty(
         name="Unknown 9", update=FlagPropertyGroup.update_flag)
     flag10: bpy.props.BoolProperty(
-        name="Ignore Day Night Light Settings", update=FlagPropertyGroup.update_flag)
+        name="Unknown 10", update=FlagPropertyGroup.update_flag)
     flag11: bpy.props.BoolProperty(
         name="Unknown 11", update=FlagPropertyGroup.update_flag)
     flag12: bpy.props.BoolProperty(
@@ -92,19 +92,19 @@ class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag15: bpy.props.BoolProperty(
         name="Unknown 15", update=FlagPropertyGroup.update_flag)
     flag16: bpy.props.BoolProperty(
-        name="Unknown 16", update=FlagPropertyGroup.update_flag)
+        name="LOD Use Alt Fade", update=FlagPropertyGroup.update_flag)
     flag17: bpy.props.BoolProperty(
-        name="Unknown 17", update=FlagPropertyGroup.update_flag)
+        name="Unused", update=FlagPropertyGroup.update_flag)
     flag18: bpy.props.BoolProperty(
-        name="Unknown 18", update=FlagPropertyGroup.update_flag)
+        name="Does Not Touch Water", update=FlagPropertyGroup.update_flag)
     flag19: bpy.props.BoolProperty(name="Does Not Spawn Peds",
                                    update=FlagPropertyGroup.update_flag)
     flag20: bpy.props.BoolProperty(
-        name="Unknown 20", update=FlagPropertyGroup.update_flag)
+        name="Cast Static Shadows", update=FlagPropertyGroup.update_flag)
     flag21: bpy.props.BoolProperty(
-        name="Unknown 21", update=FlagPropertyGroup.update_flag)
+        name="Cast Dynamic Shadows", update=FlagPropertyGroup.update_flag)
     flag22: bpy.props.BoolProperty(
-        name="Unknown 22", update=FlagPropertyGroup.update_flag)
+        name="Ignore Day Night Settings", update=FlagPropertyGroup.update_flag)
     flag23: bpy.props.BoolProperty(
         name="Disable shadow for entity", update=FlagPropertyGroup.update_flag)
     flag24: bpy.props.BoolProperty(
@@ -195,6 +195,8 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 
 class MloFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    size = 7
+
     flag1: bpy.props.BoolProperty(
         name="Subway", update=FlagPropertyGroup.update_flag)
     flag2: bpy.props.BoolProperty(
