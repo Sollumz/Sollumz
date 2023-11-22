@@ -195,7 +195,7 @@ class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 
 class MloFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
-    size = 15
+    size = 16
 
     flag1: bpy.props.BoolProperty(
         name="Unused", update=FlagPropertyGroup.update_flag)
@@ -226,4 +226,6 @@ class MloFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag14: bpy.props.BoolProperty(
         name="No Water Reflection", update=FlagPropertyGroup.update_flag)
     flag15: bpy.props.BoolProperty(
+        name="Unused", update=FlagPropertyGroup.update_flag)
+    flag16: bpy.props.BoolProperty(
         name="Has Low LOD Portals", update=FlagPropertyGroup.update_flag)
