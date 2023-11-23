@@ -5927,7 +5927,7 @@
  <Item>
   <Name>mirror_default</Name>
   <FileName>
-   <Item bucket="0">mirror_default.sps</Item>
+   <Item bucket="1">mirror_default.sps</Item>
   </FileName>
   <Layout>
    <Item type="GTAV1">
@@ -6326,7 +6326,7 @@
  <Item>
   <Name>mirror_decal</Name>
   <FileName>
-   <Item bucket="0">mirror_decal.sps</Item>
+   <Item bucket="1">mirror_decal.sps</Item>
   </FileName>
   <Layout>
    <Item type="GTAV1">
@@ -7800,7 +7800,7 @@
  <Item>
   <Name>mirror_crack</Name>
   <FileName>
-   <Item bucket="0">mirror_crack.sps</Item>
+   <Item bucket="1">mirror_crack.sps</Item>
   </FileName>
   <Layout>
    <Item type="GTAV1">
