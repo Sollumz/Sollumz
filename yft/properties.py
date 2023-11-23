@@ -7,12 +7,12 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, V
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
-    unknown_48: bpy.props.FloatProperty(name="Unknown48", default=1)
+    unknown_48: bpy.props.FloatProperty(name="Gravity Factor", default=1)
     unknown_4c: bpy.props.FloatProperty(
-        name="Unknown4c", default=150)
+        name="Max Speed", default=150)
     unknown_50: bpy.props.FloatProperty(
-        name="Unknown50", default=6.28)
-    unknown_54: bpy.props.FloatProperty(name="Unknown54", default=1)
+        name="Max Ang Speed", default=6.28)
+    unknown_54: bpy.props.FloatProperty(name="Buoyancy Factor", default=1)
     inertia_tensor: bpy.props.FloatVectorProperty(
         name="Inertia Tensor")
 
@@ -118,12 +118,12 @@ class VehicleWindowProperties(bpy.types.PropertyGroup):
 
 
 class FragmentProperties(bpy.types.PropertyGroup):
-    unk_b0: bpy.props.FloatProperty(name="UnknownB0")
-    unk_b8: bpy.props.FloatProperty(name="UnknownB8")
-    unk_bc: bpy.props.FloatProperty(name="UnknownBC")
-    unk_c0: bpy.props.FloatProperty(name="UnknownC0", default=65280)
-    unk_c4: bpy.props.FloatProperty(name="UnknownC4", default=1.0)
-    unk_cc: bpy.props.FloatProperty(name="UnknownCC")
+    unk_b0: bpy.props.FloatProperty(name="Estimated Cache Size")
+    unk_b8: bpy.props.FloatProperty(name="Estimated Articulated Cache Size")
+    unk_c4_byte0: bpy.props.IntProperty(name="Entity Class")
+    unk_C4_byte1: bpy.props.IntProperty(name="Art Asset ID")
+    unk_C4_byte2: bpy.props.BoolProperty(name="Attach Bottom End")
+    unk_cc: bpy.props.FloatProperty(name="Unbroken Elasticity")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
     buoyancy_factor: bpy.props.FloatProperty(
         name="Buoyancy Factor", default=1.0)
