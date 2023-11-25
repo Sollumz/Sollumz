@@ -12,6 +12,7 @@ from ..cwxml.drawable import YDR, BoneLimit, Joints, Shader, ShaderGroup, Drawab
 from ..cwxml.bound import BoundChild
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..tools.utils import get_filename
+from ..shared.shader_nodes import SzShaderNodeParameter
 from .model_data import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
 from ..lods import LODLevels
@@ -229,8 +230,7 @@ def shadergroup_to_materials(shader_group: ShaderGroup, filepath: str):
 
 
 def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath: str):
-    texture_folder = os.path.dirname(
-        filepath) + "\\" + os.path.basename(filepath)[:-8]
+    texture_folder = os.path.dirname(filepath) + "\\" + os.path.basename(filepath)[:-8]
 
     filename = shader.filename
 
@@ -280,19 +280,16 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                             if texture.name == param.texture_name:
                                 n.texture_properties.embedded = True
                                 try:
-                                    format = TextureFormat[texture.format.replace(
-                                        "D3DFMT_", "")]
+                                    format = TextureFormat[texture.format.replace("D3DFMT_", "")]
                                     n.texture_properties.format = format
                                 except AttributeError:
-                                    print(
-                                        f"Failed to set texture format: format '{texture.format}' unknown.")
+                                    print(f"Failed to set texture format: format '{texture.format}' unknown.")
 
                                 try:
                                     usage = TextureUsage[texture.usage]
                                     n.texture_properties.usage = usage
                                 except AttributeError:
-                                    print(
-                                        f"Failed to set texture usage: usage '{texture.usage}' unknown.")
+                                    print(f"Failed to set texture usage: usage '{texture.usage}' unknown.")
 
                                 n.texture_properties.extra_flags = texture.extra_flags
 
@@ -307,17 +304,15 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         n.image.source = "FILE"
                         n.image.filepath = "//" + param.texture_name + ".dds"
 
-            elif isinstance(n, bpy.types.ShaderNodeValue):
-                if param.name == n.name[:-2]:
-                    key = n.name[-1]
-                    if key == "x":
-                        n.outputs[0].default_value = param.x
-                    if key == "y":
-                        n.outputs[0].default_value = param.y
-                    if key == "z":
-                        n.outputs[0].default_value = param.z
-                    if key == "w":
-                        n.outputs[0].default_value = param.w
+            elif isinstance(n, SzShaderNodeParameter):
+                if param.name == n.name and n.num_rows == 1:
+                    n.set("X", param.x)
+                    if n.num_cols > 1:
+                        n.set("Y", param.y)
+                    if n.num_cols > 2:
+                        n.set("Z", param.z)
+                    if n.num_cols > 3:
+                        n.set("W", param.w)
 
     # assign extra detail node image for viewing
     dtl_ext = get_detail_extra_sampler(material)

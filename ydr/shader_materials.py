@@ -1,14 +1,25 @@
 from typing import Optional, NamedTuple
 import bpy
-from ..cwxml.shader import ShaderManager, Shader
+from ..cwxml.shader import (
+    ShaderManager,
+    ShaderDef,
+    ShaderParameterType,
+    ShaderParameterSubtype,
+    ShaderParameterFloatDef,
+    ShaderParameterFloat2Def,
+    ShaderParameterFloat3Def,
+    ShaderParameterFloat4Def,
+    ShaderParameterFloat4x4Def,
+)
 from ..sollumz_properties import MaterialType
 from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
 from ..tools.meshhelper import get_uv_map_name
+from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 
 
 class ShaderBuilder(NamedTuple):
-    shader: Shader
+    shader: ShaderDef
     filename: str
     material: bpy.types.Material
     node_tree: bpy.types.ShaderNodeTree
@@ -363,42 +374,51 @@ def create_image_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
     return imgnode
 
 
-def create_vector_nodes(node_tree, param):
-    for attr in vars(param).values():
-        if attr.name != "name" and attr.name != "type":
-            node = node_tree.nodes.new("ShaderNodeValue")
-            node.name = f"{param.name}_{attr.name}"
-            node.label = node.name
-            node.is_sollumz = True
-            node.outputs[0].default_value = float(attr.value)
+def create_parameter_node(
+    node_tree: bpy.types.NodeTree,
+    param: (
+        ShaderParameterFloatDef | ShaderParameterFloat2Def | ShaderParameterFloat3Def | ShaderParameterFloat4Def |
+        ShaderParameterFloat4x4Def
+    )
+) -> SzShaderNodeParameter:
+    node: SzShaderNodeParameter = node_tree.nodes.new(SzShaderNodeParameter.bl_idname)
+    node.name = param.name
+    node.label = node.name
 
+    display_type = SzShaderNodeParameterDisplayType.DEFAULT
+    match param.type:
+        case ShaderParameterType.FLOAT:
+            cols, rows = 1, max(1, param.count)
+            if param.count == 0 and param.subtype == ShaderParameterSubtype.BOOL:
+                display_type = SzShaderNodeParameterDisplayType.BOOL
+        case ShaderParameterType.FLOAT2:
+            cols, rows = 2, max(1, param.count)
+        case ShaderParameterType.FLOAT3:
+            cols, rows = 3, max(1, param.count)
+            if param.count == 0 and param.subtype == ShaderParameterSubtype.RGB:
+                display_type = SzShaderNodeParameterDisplayType.RGB
+        case ShaderParameterType.FLOAT4:
+            cols, rows = 4, max(1, param.count)
+            if param.count == 0 and param.subtype == ShaderParameterSubtype.RGBA:
+                display_type = SzShaderNodeParameterDisplayType.RGBA
+        case ShaderParameterType.FLOAT4X4:
+            cols, rows = 4, 4
 
-def create_array_item_node(group_name):
-    array_item_group = bpy.data.node_groups.new(group_name, "ShaderNodeTree")
-    array_item_group.nodes.new("NodeGroupInput")
-    for comp in ("X", "Y", "Z", "W"):
-        in_socket = array_item_group.interface.new_socket(name=comp, socket_type="NodeSocketFloat", in_out="INPUT")
-        in_socket.default_value = 0
-    return array_item_group
+    if param.hidden:
+        display_type = SzShaderNodeParameterDisplayType.HIDDEN_IN_UI
 
+    node.set_size(cols, rows)
+    node.set_display_type(display_type)
 
-def create_array_nodes(node_tree, param):
-    array_item_group = None
-    if "ArrayNode" not in bpy.data.node_groups:
-        array_item_group = create_array_item_node("ArrayNode")
-    else:
-        array_item_group = bpy.data.node_groups["ArrayNode"]
-
-    for i, value in enumerate(param.values):
-        node = node_tree.nodes.new("ShaderNodeGroup")
-        node.name = f"{param.name} {i + 1}"
-        node.label = node.name
-        node.node_tree = array_item_group
-
-        for index in range(0, len(node.inputs)):
-            node.inputs[index].default_value = value[index]
-
-        node.is_sollumz = True
+    if rows == 1 and param.type in {ShaderParameterType.FLOAT, ShaderParameterType.FLOAT2,
+                                    ShaderParameterType.FLOAT3, ShaderParameterType.FLOAT4}:
+        node.set("X", param.x)
+        if cols > 1:
+            node.set("Y", param.y)
+        if cols > 2:
+            node.set("Z", param.z)
+        if cols > 3:
+            node.set("W", param.w)
 
 
 def link_diffuse(b: ShaderBuilder, imgnode):
@@ -427,9 +447,7 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
     dtltex2 = node_tree.nodes.new("ShaderNodeTexImage")
     dtltex2.name = "Extra"
     dtltex2.label = dtltex2.name
-    dsz = node_tree.nodes["detailSettings_z"]
-    dsw = node_tree.nodes["detailSettings_w"]
-    dsy = node_tree.nodes["detailSettings_y"]
+    ds = node_tree.nodes["detailSettings"]
     links = node_tree.links
     uv_map0 = node_tree.nodes[get_uv_map_name(0)]
     comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
@@ -441,8 +459,8 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
 
     links.new(uv_map0.outputs[0], mathns[0].inputs[0])
 
-    links.new(dsz.outputs[0], comxyz.inputs[0])
-    links.new(dsw.outputs[0], comxyz.inputs[1])
+    links.new(ds.outputs["Z"], comxyz.inputs[0])
+    links.new(ds.outputs["W"], comxyz.inputs[1])
 
     mathns[0].operation = "MULTIPLY"
     links.new(comxyz.outputs[0], mathns[0].inputs[1])
@@ -470,7 +488,7 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
 
     mathns[5].operation = "MULTIPLY"
     links.new(mathns[4].outputs[0], mathns[5].inputs[0])
-    links.new(dsy.outputs[0], mathns[5].inputs[1])
+    links.new(ds.outputs["Y"], mathns[5].inputs[1])
 
     mathns[6].operation = "MULTIPLY"
     if spectex:
@@ -633,14 +651,12 @@ def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.
     distance_greater_than.inputs[1].default_value = 0.5  # distance threshold
     distance_separate_x = node_tree.nodes.new("ShaderNodeSeparateXYZ")
     fill_color_combine = node_tree.nodes.new("ShaderNodeCombineXYZ")
-    fill_color_r = node_tree.nodes["fillColor_x"]
-    fill_color_g = node_tree.nodes["fillColor_y"]
-    fill_color_b = node_tree.nodes["fillColor_z"]
+    fill_color = node_tree.nodes["fillColor"]
 
     # combine fillColor into a vector
-    links.new(fill_color_r.outputs["Value"], fill_color_combine.inputs["X"])
-    links.new(fill_color_g.outputs["Value"], fill_color_combine.inputs["Y"])
-    links.new(fill_color_b.outputs["Value"], fill_color_combine.inputs["Z"])
+    links.new(fill_color.outputs["X"], fill_color_combine.inputs["X"])
+    links.new(fill_color.outputs["Y"], fill_color_combine.inputs["Y"])
+    links.new(fill_color.outputs["Z"], fill_color_combine.inputs["Z"])
 
     # extract distance value from texture and check > 0.5
     links.new(distance_map_texture.outputs["Color"], distance_separate_x.inputs["Vector"])
@@ -691,18 +707,18 @@ def link_value_shader_parameters(b: ShaderBuilder):
 
     for param in shader.parameters:
         if param.name == "bumpiness":
-            bmp = node_tree.nodes["bumpiness_x"]
+            bmp = node_tree.nodes["bumpiness"]
         elif param.name == "specularIntensityMult":
-            spec_im = node_tree.nodes["specularIntensityMult_x"]
+            spec_im = node_tree.nodes["specularIntensityMult"]
         elif param.name == "specularFalloffMult":
-            spec_fm = node_tree.nodes["specularFalloffMult_x"]
+            spec_fm = node_tree.nodes["specularFalloffMult"]
         elif param.name == "emissiveMultiplier":
-            em_m = node_tree.nodes["emissiveMultiplier_x"]
+            em_m = node_tree.nodes["emissiveMultiplier"]
 
     if bmp:
         nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
         if nm:
-            links.new(bmp.outputs[0], nm.inputs[0])
+            links.new(bmp.outputs["X"], nm.inputs[0])
     if spec_im:
         spec = try_get_node(node_tree, "SpecSampler")
         if spec:
@@ -714,7 +730,7 @@ def link_value_shader_parameters(b: ShaderBuilder):
             mult.operation = "MULTIPLY"
             links.new(spec.outputs[0], mult.inputs[0])
             links.new(map.outputs[0], mult.inputs[1])
-            links.new(spec_im.outputs[0], map.inputs[0])
+            links.new(spec_im.outputs["X"], map.inputs[0])
             links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
     if spec_fm:
         map = node_tree.nodes.new("ShaderNodeMapRange")
@@ -722,12 +738,12 @@ def link_value_shader_parameters(b: ShaderBuilder):
         map.inputs[3].default_value = 1
         map.inputs[4].default_value = 0
         map.clamp = True
-        links.new(spec_fm.outputs[0], map.inputs[0])
+        links.new(spec_fm.outputs["X"], map.inputs[0])
         links.new(map.outputs[0], bsdf.inputs["Roughness"])
     if em_m:
         em = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeEmission)
         if em:
-            links.new(em_m.outputs[0], em.inputs[1])
+            links.new(em_m.outputs["X"], em.inputs[1])
 
 
 def create_water_nodes(b: ShaderBuilder):
@@ -782,36 +798,37 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     is_distance_map = False
 
     for param in shader.parameters:
-        if param.type == "Texture":
-            imgnode = create_image_node(node_tree, param)
-            if param.name in ("DiffuseSampler", "PlateBgSampler"):
-                texture = imgnode
-            elif param.name in ("BumpSampler", "PlateBgBumpSampler"):
-                bumptex = imgnode
-            elif param.name == "SpecSampler":
-                spectex = imgnode
-            elif param.name == "DetailSampler":
-                detltex = imgnode
-            elif param.name == "TintPaletteSampler":
-                tintpal = imgnode
-            elif param.name == "TextureSamplerDiffPal":
-                diffpal = imgnode
-            elif param.name == "distanceMapSampler":
-                texture = imgnode
-                is_distance_map = True
-            elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
-                texture2 = imgnode
-            else:
-                if not texture:
+        match param.type:
+            case ShaderParameterType.TEXTURE:
+                imgnode = create_image_node(node_tree, param)
+                if param.name in ("DiffuseSampler", "PlateBgSampler"):
                     texture = imgnode
-
-        elif param.type == "Vector":
-            create_vector_nodes(node_tree, param)
-        elif param.type == "Array":
-            create_array_nodes(node_tree, param)
-        else:
-            raise Exception(
-                f"Unknown shader parameter! {param.type} {param.name}")
+                elif param.name in ("BumpSampler", "PlateBgBumpSampler"):
+                    bumptex = imgnode
+                elif param.name == "SpecSampler":
+                    spectex = imgnode
+                elif param.name == "DetailSampler":
+                    detltex = imgnode
+                elif param.name == "TintPaletteSampler":
+                    tintpal = imgnode
+                elif param.name == "TextureSamplerDiffPal":
+                    diffpal = imgnode
+                elif param.name == "distanceMapSampler":
+                    texture = imgnode
+                    is_distance_map = True
+                elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
+                    texture2 = imgnode
+                else:
+                    if not texture:
+                        texture = imgnode
+            case (ShaderParameterType.FLOAT |
+                  ShaderParameterType.FLOAT2 |
+                  ShaderParameterType.FLOAT3 |
+                  ShaderParameterType.FLOAT4 |
+                  ShaderParameterType.FLOAT4X4):
+                create_parameter_node(node_tree, param)
+            case _:
+                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
 
     use_diff = True if texture else False
     use_diff2 = True if texture2 else False
@@ -913,33 +930,35 @@ def create_terrain_shader(b: ShaderBuilder):
     tm = None
 
     for param in shader.parameters:
-        if param.type == "Texture":
-            imgnode = create_image_node(node_tree, param)
-            if param.name == "TextureSampler_layer0":
-                ts1 = imgnode
-            elif param.name == "TextureSampler_layer1":
-                ts2 = imgnode
-            elif param.name == "TextureSampler_layer2":
-                ts3 = imgnode
-            elif param.name == "TextureSampler_layer3":
-                ts4 = imgnode
-            elif param.name == "BumpSampler_layer0":
-                bs1 = imgnode
-            elif param.name == "BumpSampler_layer1":
-                bs2 = imgnode
-            elif param.name == "BumpSampler_layer2":
-                bs3 = imgnode
-            elif param.name == "BumpSampler_layer3":
-                bs4 = imgnode
-            elif param.name == "lookupSampler":
-                tm = imgnode
-        elif param.type == "Vector":
-            create_vector_nodes(node_tree, param)
-        elif param.type == "Array":
-            create_array_nodes(node_tree, param)
-        else:
-            raise Exception(
-                f"Unknown shader parameter! {param.type} {param.name}")
+        match param.type:
+            case ShaderParameterType.TEXTURE:
+                imgnode = create_image_node(node_tree, param)
+                if param.name == "TextureSampler_layer0":
+                    ts1 = imgnode
+                elif param.name == "TextureSampler_layer1":
+                    ts2 = imgnode
+                elif param.name == "TextureSampler_layer2":
+                    ts3 = imgnode
+                elif param.name == "TextureSampler_layer3":
+                    ts4 = imgnode
+                elif param.name == "BumpSampler_layer0":
+                    bs1 = imgnode
+                elif param.name == "BumpSampler_layer1":
+                    bs2 = imgnode
+                elif param.name == "BumpSampler_layer2":
+                    bs3 = imgnode
+                elif param.name == "BumpSampler_layer3":
+                    bs4 = imgnode
+                elif param.name == "lookupSampler":
+                    tm = imgnode
+            case (ShaderParameterType.FLOAT |
+                  ShaderParameterType.FLOAT2 |
+                  ShaderParameterType.FLOAT3 |
+                  ShaderParameterType.FLOAT4 |
+                  ShaderParameterType.FLOAT4X4):
+                create_parameter_node(node_tree, param)
+            case _:
+                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
 
     mixns = []
     for _ in range(8 if tm else 7):

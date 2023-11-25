@@ -31,8 +31,7 @@ from mathutils import Matrix, Vector
 
 def import_ybn(filepath):
     ybn_xml: BoundFile = YBN.from_xml_file(filepath)
-    create_bound_composite(ybn_xml.composite, os.path.basename(
-        filepath.replace(YBN.file_extension, "")))
+    return create_bound_composite(ybn_xml.composite, os.path.basename(filepath.replace(YBN.file_extension, "")))
 
 
 def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = None):

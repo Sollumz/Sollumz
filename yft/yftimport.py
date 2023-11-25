@@ -9,6 +9,7 @@ from .fragment_merger import FragmentMerger
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
+from ..shared.shader_nodes import SzShaderNodeParameter
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, VehiclePaintLayer
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype, GlassWindow
@@ -127,21 +128,16 @@ def get_mat_paint_layer(mat: bpy.types.Material):
     x = -1
     y = -1
     z = -1
-    w = -1
 
     for node in mat.node_tree.nodes:
-        if isinstance(node, bpy.types.ShaderNodeValue) and node.is_sollumz and "matDiffuseColor" in node.name:
-            if "x" in node.name:
-                x = node.outputs[0].default_value
-            elif "y" in node.name:
-                y = node.outputs[0].default_value
-            elif "z" in node.name:
-                z = node.outputs[0].default_value
-            elif "w" in node.name:
-                w = node.outputs[0].default_value
+        if isinstance(node, SzShaderNodeParameter) and node.name == "matDiffuseColor":
+            x = node.get("X")
+            y = node.get("Y")
+            z = node.get("Z")
+            break
 
     for paint_layer, value in PAINT_LAYER_VALUES.items():
-        if x == 2 and y == value and z == value and w == 0:
+        if x == 2 and y == value and z == value:
             return paint_layer
 
     return VehiclePaintLayer.NOT_PAINTABLE
