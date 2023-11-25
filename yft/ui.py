@@ -13,6 +13,7 @@ from .operators import (
     SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS
 )
 
+
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Fragments"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_TOOL_PANEL"

@@ -472,7 +472,9 @@ def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
     frag_obj.fragment_properties.unk_b0 = frag_xml.unknown_b0
     frag_obj.fragment_properties.unk_b8 = frag_xml.unknown_b8
     frag_obj.fragment_properties.unk_bc = frag_xml.unknown_bc
-    frag_obj.fragment_properties.unk_c0 = frag_xml.unknown_c0
+    frag_obj.fragment_properties.unk_c0_byte0 = frag_xml.unknown_c0 & 0xFF
+    frag_obj.fragment_properties.unk_c0_byte1 = (frag_xml.unknown_c0 >> 8) & 0xFF
+    frag_obj.fragment_properties.unk_c0_byte2 = (frag_xml.unknown_c0 >> 16) & 0xFF
     frag_obj.fragment_properties.unk_c4 = frag_xml.unknown_c4
     frag_obj.fragment_properties.unk_cc = frag_xml.unknown_cc
     frag_obj.fragment_properties.gravity_factor = frag_xml.gravity_factor
