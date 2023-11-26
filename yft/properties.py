@@ -7,45 +7,35 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, V
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
-    unknown_48: bpy.props.FloatProperty(name="Unknown48", default=1)
-    unknown_4c: bpy.props.FloatProperty(
-        name="Unknown4c", default=150)
-    unknown_50: bpy.props.FloatProperty(
-        name="Unknown50", default=6.28)
-    unknown_54: bpy.props.FloatProperty(name="Unknown54", default=1)
-    inertia_tensor: bpy.props.FloatVectorProperty(
-        name="Inertia Tensor")
+    max_speed: bpy.props.FloatProperty(name="Max Speed", default=150)
+    max_ang_speed: bpy.props.FloatProperty(name="Max Angular Speed", default=6.2831855)
+    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1)
+    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1)
+    inertia_tensor: bpy.props.FloatVectorProperty(name="Inertia Tensor")
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    unknown_14: bpy.props.FloatProperty(name="Smallest Angle Interia")
-    unknown_18: bpy.props.FloatProperty(name="Largest Angle Interia")
-    unknown_1c: bpy.props.FloatProperty(name="Min Move Force")
+    smallest_ang_inertia: bpy.props.FloatProperty(name="Smallest Angular Inertia")
+    largest_ang_inertia: bpy.props.FloatProperty(name="Largest Angular Inertia")
+    min_move_force: bpy.props.FloatProperty(name="Min Move Force")
     position_offset: bpy.props.FloatVectorProperty(name="Position Offset")
-    unknown_40: bpy.props.FloatVectorProperty(name="Original Root CG Offset")
-    unknown_50: bpy.props.FloatVectorProperty(name="Unbroken CG Offset")
-    damping_linear_c: bpy.props.FloatVectorProperty(
-        name="Damping Linear C", default=(0.02, 0.02, 0.02))
-    damping_linear_v: bpy.props.FloatVectorProperty(
-        name="Damping Linear V", default=(0.02, 0.02, 0.02))
-    damping_linear_v2: bpy.props.FloatVectorProperty(
-        name="Damping Linear V2", default=(0.01, 0.01, 0.01))
-    damping_angular_c: bpy.props.FloatVectorProperty(
-        name="Damping Angular C", default=(0.02, 0.02, 0.02))
-    damping_angular_v: bpy.props.FloatVectorProperty(
-        name="Damping Angular V", default=(0.02, 0.02, 0.02))
-    damping_angular_v2: bpy.props.FloatVectorProperty(
-        name="Damping Angular V2", default=(0.01, 0.01, 0.01))
+    original_root_cg_offset: bpy.props.FloatVectorProperty(name="Original Root CG Offset")
+    unbroken_cg_offset: bpy.props.FloatVectorProperty(name="Unbroken CG Offset")
+    damping_linear_c: bpy.props.FloatVectorProperty(name="Damping Linear C", default=(0.02, 0.02, 0.02))
+    damping_linear_v: bpy.props.FloatVectorProperty(name="Damping Linear V", default=(0.02, 0.02, 0.02))
+    damping_linear_v2: bpy.props.FloatVectorProperty(name="Damping Linear V2", default=(0.01, 0.01, 0.01))
+    damping_angular_c: bpy.props.FloatVectorProperty(name="Damping Angular C", default=(0.02, 0.02, 0.02))
+    damping_angular_v: bpy.props.FloatVectorProperty(name="Damping Angular V", default=(0.02, 0.02, 0.02))
+    damping_angular_v2: bpy.props.FloatVectorProperty(name="Damping Angular V2", default=(0.01, 0.01, 0.01))
 
-    archetype_properties: bpy.props.PointerProperty(
-        type=FragArchetypeProperties)
+    archetype_properties: bpy.props.PointerProperty(type=FragArchetypeProperties)
 
 
-GlassTypes = [
+GlassTypes = (
     ("Pane", "Pane", "Pane", 0),
     ("Security", "Security", "Security", 1),
     ("Pane_Weak", "Pane Weak", "Pane Weak", 2),
-]
+)
 
 
 def get_glass_type_index(glass_type_enum: str) -> int:
@@ -58,46 +48,39 @@ def get_glass_type_index(glass_type_enum: str) -> int:
 class GroupFlagBit(IntEnum):
     DISAPPEAR_WHEN_DEAD = 0
     USE_GLASS_WINDOW = 1
-    UNK_4 = 2
-    UNK_8 = 3
-    UNK_16 = 4
-    UNK_32 = 5
+    DAMAGE_WHEN_BROKEN = 2
+    DOESNT_AFFECT_VEHICLES = 3
+    DOESNT_PUSH_VEHICLES_DOWN = 4
+    HAS_CLOTH = 5
 
 
 class GroupProperties(bpy.types.PropertyGroup):
     flags: bpy.props.BoolVectorProperty(name="Flags", size=len(GroupFlagBit))
     glass_type: bpy.props.EnumProperty(name="Glass Type", items=GlassTypes)
     strength: bpy.props.FloatProperty(name="Strength", default=100)
-    force_transmission_scale_up: bpy.props.FloatProperty(
-        name="Force Transmission Scale Up", default=0.25)
-    force_transmission_scale_down: bpy.props.FloatProperty(
-        name="Force Transmission Scale Down", default=0.25)
+    force_transmission_scale_up: bpy.props.FloatProperty(name="Force Transmission Scale Up", default=0.25)
+    force_transmission_scale_down: bpy.props.FloatProperty(name="Force Transmission Scale Down", default=0.25)
     joint_stiffness: bpy.props.FloatProperty(name="Joint Stiffness")
-    min_soft_angle_1: bpy.props.FloatProperty(
-        name="Min Soft Angle 1", default=-1)
-    max_soft_angle_1: bpy.props.FloatProperty(
-        name="Max Soft Angle 1", default=1)
-    max_soft_angle_2: bpy.props.FloatProperty(
-        name="Max Soft Angle 2", default=1)
-    max_soft_angle_3: bpy.props.FloatProperty(
-        name="Max Soft Angle 3", default=1)
+    min_soft_angle_1: bpy.props.FloatProperty(name="Min Soft Angle 1", default=-1)
+    max_soft_angle_1: bpy.props.FloatProperty(name="Max Soft Angle 1", default=1)
+    max_soft_angle_2: bpy.props.FloatProperty(name="Max Soft Angle 2", default=1)
+    max_soft_angle_3: bpy.props.FloatProperty(name="Max Soft Angle 3", default=1)
     rotation_speed: bpy.props.FloatProperty(name="Rotation Speed")
     rotation_strength: bpy.props.FloatProperty(name="Rotation Strength")
     restoring_strength: bpy.props.FloatProperty(name="Restoring Strength")
     restoring_max_torque: bpy.props.FloatProperty(name="Restoring Max Torque")
     latch_strength: bpy.props.FloatProperty(name="Latch Strength")
-    min_damage_force: bpy.props.FloatProperty(
-        name="Min Damage Force", default=100)
+    min_damage_force: bpy.props.FloatProperty(name="Min Damage Force", default=100)
     damage_health: bpy.props.FloatProperty(name="Damage Health", default=1000)
-    unk_float_5c: bpy.props.FloatProperty(name="Weapon Health")
-    unk_float_60: bpy.props.FloatProperty(name="Weapon Scale", default=1)
-    unk_float_64: bpy.props.FloatProperty(name="Vehicle Scale", default=1)
-    unk_float_68: bpy.props.FloatProperty(name="Ped Scale", default=1)
-    unk_float_6c: bpy.props.FloatProperty(name="Ragdoll Scale", default=1)
-    unk_float_70: bpy.props.FloatProperty(name="Explosion Scale", default=1)
-    unk_float_74: bpy.props.FloatProperty(name="Object Scale", default=1)
-    unk_float_78: bpy.props.FloatProperty(name="Ped Inv Mass Scale", default=1)
-    unk_float_a8: bpy.props.FloatProperty(name="Melee Scale", default=1)
+    weapon_health: bpy.props.FloatProperty(name="Weapon Health")
+    weapon_scale: bpy.props.FloatProperty(name="Weapon Scale", default=1)
+    vehicle_scale: bpy.props.FloatProperty(name="Vehicle Scale", default=1)
+    ped_scale: bpy.props.FloatProperty(name="Ped Scale", default=1)
+    ragdoll_scale: bpy.props.FloatProperty(name="Ragdoll Scale", default=1)
+    explosion_scale: bpy.props.FloatProperty(name="Explosion Scale", default=1)
+    object_scale: bpy.props.FloatProperty(name="Object Scale", default=1)
+    ped_inv_mass_scale: bpy.props.FloatProperty(name="Ped Inverse Mass Scale", default=1)
+    melee_scale: bpy.props.FloatProperty(name="Melee Scale", default=1)
 
 
 class ChildProperties(bpy.types.PropertyGroup):
@@ -111,22 +94,39 @@ class ChildProperties(bpy.types.PropertyGroup):
 
 
 class VehicleWindowProperties(bpy.types.PropertyGroup):
-    unk_float_17: bpy.props.FloatProperty(name="Unk Float 17")
-    unk_float_18: bpy.props.FloatProperty(name="Unk Float 18")
-    cracks_texture_tiling: bpy.props.FloatProperty(
-        name="Cracks Texture Tiling", default=1.5)
+    data_min: bpy.props.FloatProperty(name="Data Min")
+    data_max: bpy.props.FloatProperty(name="Data Max")
+    cracks_texture_tiling: bpy.props.FloatProperty(name="Cracks Texture Tiling", default=1.5)
+
+
+class FragmentTemplateAsset(IntEnum):
+    NONE = 0xFF
+    FRED = 0
+    WILMA = 1
+    FRED_LARGE = 2
+    WILMA_LARGE = 3
+    ALIEN = 4
+
+
+FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for enum, label, desc in (
+    (FragmentTemplateAsset.NONE, "None", "Use physics defined in this fragment"),
+    (FragmentTemplateAsset.FRED, "Fred", "Use 'z_z_fred' physics"),
+    (FragmentTemplateAsset.WILMA, "Wilma", "Use 'z_z_wilma' physics"),
+    (FragmentTemplateAsset.FRED_LARGE, "Fred (Large)", "Use 'z_z_fred_large' physics"),
+    (FragmentTemplateAsset.WILMA_LARGE, "Wilma (Large)", "Use 'z_z_wilma_large' physics"),
+    (FragmentTemplateAsset.ALIEN, "Alien", "Use 'z_z_alien' physics"),
+))
 
 
 class FragmentProperties(bpy.types.PropertyGroup):
-    unk_b0: bpy.props.FloatProperty(name="UnknownB0")
-    unk_b8: bpy.props.FloatProperty(name="UnknownB8")
-    unk_bc: bpy.props.FloatProperty(name="UnknownBC")
-    unk_c0: bpy.props.FloatProperty(name="UnknownC0", default=65280)
-    unk_c4: bpy.props.FloatProperty(name="UnknownC4", default=1.0)
-    unk_cc: bpy.props.FloatProperty(name="UnknownCC")
+    flags: bpy.props.IntProperty(name="Flags", default=1)  # TODO: rage::fragType::m_Flags
+    unbroken_elasticity: bpy.props.FloatProperty(name="Unbroken Elasticity")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
-    buoyancy_factor: bpy.props.FloatProperty(
-        name="Buoyancy Factor", default=1.0)
+    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1.0)
+    template_asset: bpy.props.EnumProperty(
+        name="Physics Template (Peds Only)", items=FragmentTemplateAssetEnumItems,
+        default=FragmentTemplateAsset.NONE.name
+    )
 
     lod_properties: bpy.props.PointerProperty(type=LODProperties)
 
@@ -210,9 +210,6 @@ def register():
         type=VehicleWindowProperties)
     bpy.types.Object.sollumz_is_physics_child_mesh = bpy.props.BoolProperty(
         name="Is Physics Child", description="Whether or not this fragment mesh is a physics child. Usually wheels meshes are physics children")
-
-    bpy.types.Object.glass_thickness = bpy.props.FloatProperty(
-        name="Thickness", default=0.1)
 
     bpy.types.Scene.create_fragment_type = bpy.props.EnumProperty(
         items=[

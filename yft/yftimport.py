@@ -17,7 +17,7 @@ from ..cwxml.drawable import Drawable, Bone
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, set_bound_properties
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GlassTypes, PAINT_LAYER_VALUES
+from .properties import LODProperties, FragArchetypeProperties, GlassTypes, PAINT_LAYER_VALUES, FragmentTemplateAsset
 from ..tools.blenderhelper import get_child_of_bone
 
 
@@ -469,23 +469,21 @@ def create_frag_lights(frag_xml: Fragment, frag_obj: bpy.types.Object):
 
 
 def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
-    frag_obj.fragment_properties.unk_b0 = frag_xml.unknown_b0
-    frag_obj.fragment_properties.unk_b8 = frag_xml.unknown_b8
-    frag_obj.fragment_properties.unk_bc = frag_xml.unknown_bc
-    frag_obj.fragment_properties.unk_c0 = frag_xml.unknown_c0
-    frag_obj.fragment_properties.unk_c4 = frag_xml.unknown_c4
-    frag_obj.fragment_properties.unk_cc = frag_xml.unknown_cc
+    # unknown_c0 include "entity class" and "attach bottom end" but those are always 0 in game assets and seem unused
+    frag_obj.fragment_properties.template_asset = FragmentTemplateAsset((frag_xml.unknown_c0 >> 8) & 0xFF).name
+    frag_obj.fragment_properties.flags = frag_xml.unknown_c4
+    frag_obj.fragment_properties.unbroken_elasticity = frag_xml.unknown_cc
     frag_obj.fragment_properties.gravity_factor = frag_xml.gravity_factor
     frag_obj.fragment_properties.buoyancy_factor = frag_xml.buoyancy_factor
 
 
 def set_lod_properties(lod_xml: PhysicsLOD, lod_props: LODProperties):
-    lod_props.unknown_14 = lod_xml.unknown_14
-    lod_props.unknown_18 = lod_xml.unknown_18
-    lod_props.unknown_1c = lod_xml.unknown_1c
+    lod_props.smallest_ang_inertia = lod_xml.unknown_14
+    lod_props.largest_ang_inertia = lod_xml.unknown_18
+    lod_props.min_move_force = lod_xml.unknown_1c
     lod_props.position_offset = lod_xml.position_offset
-    lod_props.unknown_40 = lod_xml.unknown_40
-    lod_props.unknown_50 = lod_xml.unknown_50
+    lod_props.original_root_cg_offset = lod_xml.unknown_40
+    lod_props.unbroken_cg_offset = lod_xml.unknown_50
     lod_props.damping_linear_c = lod_xml.damping_linear_c
     lod_props.damping_linear_v = lod_xml.damping_linear_v
     lod_props.damping_linear_v2 = lod_xml.damping_linear_v2
@@ -496,10 +494,10 @@ def set_lod_properties(lod_xml: PhysicsLOD, lod_props: LODProperties):
 
 def set_archetype_properties(arch_xml: Archetype, arch_props: FragArchetypeProperties):
     arch_props.name = arch_xml.name
-    arch_props.unknown_48 = arch_xml.unknown_48
-    arch_props.unknown_4c = arch_xml.unknown_4c
-    arch_props.unknown_50 = arch_xml.unknown_50
-    arch_props.unknown_54 = arch_xml.unknown_54
+    arch_props.gravity_factor = arch_xml.unknown_48
+    arch_props.max_speed = arch_xml.unknown_4c
+    arch_props.max_ang_speed = arch_xml.unknown_50
+    arch_props.buoyancy_factor = arch_xml.unknown_54
     arch_props.inertia_tensor = arch_xml.inertia_tensor
 
 
@@ -522,18 +520,18 @@ def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):
     bone.group_properties.latch_strength = group_xml.latch_strength
     bone.group_properties.min_damage_force = group_xml.min_damage_force
     bone.group_properties.damage_health = group_xml.damage_health
-    bone.group_properties.unk_float_5c = group_xml.unk_float_5c
-    bone.group_properties.unk_float_60 = group_xml.unk_float_60
-    bone.group_properties.unk_float_64 = group_xml.unk_float_64
-    bone.group_properties.unk_float_68 = group_xml.unk_float_68
-    bone.group_properties.unk_float_6c = group_xml.unk_float_6c
-    bone.group_properties.unk_float_70 = group_xml.unk_float_70
-    bone.group_properties.unk_float_74 = group_xml.unk_float_74
-    bone.group_properties.unk_float_78 = group_xml.unk_float_78
-    bone.group_properties.unk_float_a8 = group_xml.unk_float_a8
+    bone.group_properties.weapon_health = group_xml.unk_float_5c
+    bone.group_properties.weapon_scale = group_xml.unk_float_60
+    bone.group_properties.vehicle_scale = group_xml.unk_float_64
+    bone.group_properties.ped_scale = group_xml.unk_float_68
+    bone.group_properties.ragdoll_scale = group_xml.unk_float_6c
+    bone.group_properties.explosion_scale = group_xml.unk_float_70
+    bone.group_properties.object_scale = group_xml.unk_float_74
+    bone.group_properties.ped_inv_mass_scale = group_xml.unk_float_78
+    bone.group_properties.melee_scale = group_xml.unk_float_a8
 
 
 def set_veh_window_properties(window_xml: Window, window_obj: bpy.types.Object):
-    window_obj.vehicle_window_properties.unk_float_17 = window_xml.unk_float_17
-    window_obj.vehicle_window_properties.unk_float_18 = window_xml.unk_float_18
+    window_obj.vehicle_window_properties.data_min = window_xml.unk_float_17
+    window_obj.vehicle_window_properties.data_max = window_xml.unk_float_18
     window_obj.vehicle_window_properties.cracks_texture_tiling = window_xml.cracks_texture_tiling

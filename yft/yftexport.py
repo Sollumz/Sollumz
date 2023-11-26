@@ -28,6 +28,7 @@ from .. import logger
 from .properties import (
     LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES,
     GroupFlagBit, get_glass_type_index,
+    FragmentTemplateAsset,
 )
 
 
@@ -712,8 +713,8 @@ def create_window_shattermap(col_obj: bpy.types.Object, window_xml: Window):
 
 
 def set_veh_window_xml_properties(window_xml: Window, window_obj: bpy.types.Object):
-    window_xml.unk_float_17 = window_obj.vehicle_window_properties.unk_float_17
-    window_xml.unk_float_18 = window_obj.vehicle_window_properties.unk_float_18
+    window_xml.unk_float_17 = window_obj.vehicle_window_properties.data_min
+    window_xml.unk_float_18 = window_obj.vehicle_window_properties.data_max
     window_xml.cracks_texture_tiling = window_obj.vehicle_window_properties.cracks_texture_tiling
 
 
@@ -864,33 +865,26 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
-    lod_xml.unknown_14 = lod_props.unknown_14
-    lod_xml.unknown_18 = lod_props.unknown_18
-    lod_xml.unknown_1c = lod_props.unknown_1c
-    pos_offset = prop_array_to_vector(lod_props.position_offset)
-    lod_xml.position_offset = pos_offset
-    lod_xml.unknown_40 = prop_array_to_vector(lod_props.unknown_40)
-    lod_xml.unknown_50 = prop_array_to_vector(lod_props.unknown_50)
-    lod_xml.damping_linear_c = prop_array_to_vector(
-        lod_props.damping_linear_c)
-    lod_xml.damping_linear_v = prop_array_to_vector(
-        lod_props.damping_linear_v)
-    lod_xml.damping_linear_v2 = prop_array_to_vector(
-        lod_props.damping_linear_v2)
-    lod_xml.damping_angular_c = prop_array_to_vector(
-        lod_props.damping_angular_c)
-    lod_xml.damping_angular_v = prop_array_to_vector(
-        lod_props.damping_angular_v)
-    lod_xml.damping_angular_v2 = prop_array_to_vector(
-        lod_props.damping_angular_v2)
+    lod_xml.unknown_14 = lod_props.smallest_ang_inertia
+    lod_xml.unknown_18 = lod_props.largest_ang_inertia
+    lod_xml.unknown_1c = lod_props.min_move_force
+    lod_xml.position_offset = prop_array_to_vector(lod_props.position_offset)
+    lod_xml.unknown_40 = prop_array_to_vector(lod_props.original_root_cg_offset)
+    lod_xml.unknown_50 = prop_array_to_vector(lod_props.unbroken_cg_offset)
+    lod_xml.damping_linear_c = prop_array_to_vector(lod_props.damping_linear_c)
+    lod_xml.damping_linear_v = prop_array_to_vector(lod_props.damping_linear_v)
+    lod_xml.damping_linear_v2 = prop_array_to_vector(lod_props.damping_linear_v2)
+    lod_xml.damping_angular_c = prop_array_to_vector(lod_props.damping_angular_c)
+    lod_xml.damping_angular_v = prop_array_to_vector(lod_props.damping_angular_v)
+    lod_xml.damping_angular_v2 = prop_array_to_vector(lod_props.damping_angular_v2)
 
 
 def set_archetype_xml_properties(archetype_props: FragArchetypeProperties, arch_xml: Archetype, frag_name: str):
     arch_xml.name = frag_name
-    arch_xml.unknown_48 = archetype_props.unknown_48
-    arch_xml.unknown_4c = archetype_props.unknown_4c
-    arch_xml.unknown_50 = archetype_props.unknown_50
-    arch_xml.unknown_54 = archetype_props.unknown_54
+    arch_xml.unknown_48 = archetype_props.gravity_factor
+    arch_xml.unknown_4c = archetype_props.max_speed
+    arch_xml.unknown_50 = archetype_props.max_ang_speed
+    arch_xml.unknown_54 = archetype_props.buoyancy_factor
 
 
 def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGroup):
@@ -913,24 +907,24 @@ def set_group_xml_properties(group_props: GroupProperties, group_xml: PhysicsGro
     group_xml.latch_strength = group_props.latch_strength
     group_xml.min_damage_force = group_props.min_damage_force
     group_xml.damage_health = group_props.damage_health
-    group_xml.unk_float_5c = group_props.unk_float_5c
-    group_xml.unk_float_60 = group_props.unk_float_60
-    group_xml.unk_float_64 = group_props.unk_float_64
-    group_xml.unk_float_68 = group_props.unk_float_68
-    group_xml.unk_float_6c = group_props.unk_float_6c
-    group_xml.unk_float_70 = group_props.unk_float_70
-    group_xml.unk_float_74 = group_props.unk_float_74
-    group_xml.unk_float_78 = group_props.unk_float_78
-    group_xml.unk_float_a8 = group_props.unk_float_a8
+    group_xml.unk_float_5c = group_props.weapon_health
+    group_xml.unk_float_60 = group_props.weapon_scale
+    group_xml.unk_float_64 = group_props.vehicle_scale
+    group_xml.unk_float_68 = group_props.ped_scale
+    group_xml.unk_float_6c = group_props.ragdoll_scale
+    group_xml.unk_float_70 = group_props.explosion_scale
+    group_xml.unk_float_74 = group_props.object_scale
+    group_xml.unk_float_78 = group_props.ped_inv_mass_scale
+    group_xml.unk_float_a8 = group_props.melee_scale
 
 
 def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
-    frag_xml.unknown_b0 = frag_obj.fragment_properties.unk_b0
-    frag_xml.unknown_b8 = frag_obj.fragment_properties.unk_b8
-    frag_xml.unknown_bc = frag_obj.fragment_properties.unk_bc
-    frag_xml.unknown_c0 = frag_obj.fragment_properties.unk_c0
-    frag_xml.unknown_c4 = frag_obj.fragment_properties.unk_c4
-    frag_xml.unknown_cc = frag_obj.fragment_properties.unk_cc
+    frag_xml.unknown_b0 = 0  # estimated cache sizes, these are set by the game when the fragCacheEntry is initialized
+    frag_xml.unknown_b8 = 0
+    frag_xml.unknown_bc = 0
+    frag_xml.unknown_c0 = (FragmentTemplateAsset[frag_obj.fragment_properties.template_asset] & 0xFF) << 8
+    frag_xml.unknown_c4 = frag_obj.fragment_properties.flags
+    frag_xml.unknown_cc = frag_obj.fragment_properties.unbroken_elasticity
     frag_xml.gravity_factor = frag_obj.fragment_properties.gravity_factor
     frag_xml.buoyancy_factor = frag_obj.fragment_properties.buoyancy_factor
 

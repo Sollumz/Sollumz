@@ -172,6 +172,9 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
         for prop in FragmentProperties.__annotations__:
             if prop == "lod_properties":
                 continue
+            # skip flags because these don't look like they should be user-editable
+            if prop == "flags":
+                continue
 
             self.layout.prop(obj.fragment_properties, prop)
 
@@ -265,10 +268,10 @@ class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
 
         col = layout.column(heading="Flags")
         col.prop(props, "flags", index=GroupFlagBit.DISAPPEAR_WHEN_DEAD, text="Disappear When Dead")
-        col.prop(props, "flags", index=GroupFlagBit.UNK_4, text="Unk 4")
-        col.prop(props, "flags", index=GroupFlagBit.UNK_8, text="Unk 8")
-        col.prop(props, "flags", index=GroupFlagBit.UNK_16, text="Unk 16")
-        col.prop(props, "flags", index=GroupFlagBit.UNK_32, text="Unk 32")
+        col.prop(props, "flags", index=GroupFlagBit.DAMAGE_WHEN_BROKEN, text="Damage When Broken")
+        col.prop(props, "flags", index=GroupFlagBit.DOESNT_AFFECT_VEHICLES, text="Doesn't Affect Vehicles")
+        col.prop(props, "flags", index=GroupFlagBit.DOESNT_PUSH_VEHICLES_DOWN, text="Doesn't Push Vehicles Down")
+        col.prop(props, "flags", index=GroupFlagBit.HAS_CLOTH, text="Has Cloth")
 
         col = layout.column(heading="Breakable Glass")
         row = col.row(align=True)

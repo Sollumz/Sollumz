@@ -141,15 +141,15 @@ class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
             dst_props.latch_strength = src_props.latch_strength
             dst_props.min_damage_force = src_props.min_damage_force
             dst_props.damage_health = src_props.damage_health
-            dst_props.unk_float_5c = src_props.unk_float_5c
-            dst_props.unk_float_60 = src_props.unk_float_60
-            dst_props.unk_float_64 = src_props.unk_float_64
-            dst_props.unk_float_68 = src_props.unk_float_68
-            dst_props.unk_float_6c = src_props.unk_float_6c
-            dst_props.unk_float_70 = src_props.unk_float_70
-            dst_props.unk_float_74 = src_props.unk_float_74
-            dst_props.unk_float_78 = src_props.unk_float_78
-            dst_props.unk_float_a8 = src_props.unk_float_a8
+            dst_props.weapon_health = src_props.weapon_health
+            dst_props.weapon_scale = src_props.weapon_scale
+            dst_props.vehicle_scale = src_props.vehicle_scale
+            dst_props.ped_scale = src_props.ped_scale
+            dst_props.ragdoll_scale = src_props.ragdoll_scale
+            dst_props.explosion_scale = src_props.explosion_scale
+            dst_props.object_scale = src_props.object_scale
+            dst_props.ped_inv_mass_scale = src_props.ped_inv_mass_scale
+            dst_props.melee_scale = src_props.melee_scale
 
             num_dst_bones += 1
 
