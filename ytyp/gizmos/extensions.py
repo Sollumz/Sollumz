@@ -1,13 +1,14 @@
 import bpy
 import math
-import os
 import functools
+from pathlib import Path
 from mathutils import Matrix, Vector, Quaternion
 from typing import Literal
 from collections.abc import Iterator
 from ..utils import get_selected_archetype, get_selected_extension, get_selected_ytyp
 from ...tools.blenderhelper import tag_redraw
 from ...sollumz_properties import ArchetypeType
+from ...shared.obj_reader import obj_read_from_file
 from ..properties.ytyp import ArchetypeProperties
 from ..properties.extensions import ExtensionType, ExtensionProperties
 
@@ -46,21 +47,9 @@ def get_extension_shapes() -> dict[ExtensionType, object]:
     shapes = {}
 
     def _load_extension_model(extension_type: ExtensionType, file_name: str):
-        file_loc = os.path.join(os.path.dirname(__file__), "models", file_name)
-        with open(file_loc, "r") as f:
-            verts = []
-            model_verts = []
-            for line in f.readlines():
-                if line.startswith("v"):
-                    x, y, z = line.strip("v ").split(" ")
-                    verts.append((float(x), float(y), float(z)))
-                elif line.startswith("f"):
-                    v0, v1, v2 = line.strip("f ").split(" ")
-                    model_verts.append(verts[int(v0) - 1])
-                    model_verts.append(verts[int(v1) - 1])
-                    model_verts.append(verts[int(v2) - 1])
-
-            shapes[extension_type] = bpy.types.Gizmo.new_custom_shape("TRIS", model_verts)
+        file_path = Path(__file__).parent.joinpath("models", file_name)
+        obj_mesh = obj_read_from_file(file_path)
+        shapes[extension_type] = bpy.types.Gizmo.new_custom_shape("TRIS", obj_mesh.as_vertices_only())
 
     for ext_type, model_file_name in (
         (ExtensionType.AUDIO_COLLISION, "AudioCollisionSettings.obj"),

@@ -1,7 +1,8 @@
 import bpy
-
+from pathlib import Path
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import find_bsdf_and_material_output
+from ..shared.obj_reader import obj_read_from_file
 
 # TODO: This is not a real flag calculation, definitely need to do better
 
@@ -70,3 +71,16 @@ def add_occluder_material(sollum_type=None):
     bsdf.inputs["Metallic"].default_value = 0
 
     return material
+
+
+CARGEN_MESH_NAME = ".sollumz.cargen_mesh"
+
+
+def get_cargen_mesh() -> bpy.types.Mesh:
+    mesh = bpy.data.meshes.get(CARGEN_MESH_NAME, None)
+    if mesh is None:
+        file_path = Path(__file__).parent.joinpath("car_model.obj")
+        cargen_obj_mesh = obj_read_from_file(file_path)
+        mesh = cargen_obj_mesh.as_bpy_mesh(CARGEN_MESH_NAME)
+
+    return mesh

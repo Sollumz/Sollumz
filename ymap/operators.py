@@ -1,10 +1,7 @@
 import bpy
-import os
-
-from mathutils import Vector
 from ..sollumz_helper import SOLLUMZ_OT_base, set_object_collection
-from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group, get_cargen_mesh
+from ..sollumz_properties import SollumType
 
 
 class SOLLUMZ_OT_create_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -162,10 +159,8 @@ class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         group_obj = context.active_object
-        file_loc = os.path.join(os.path.dirname(__file__), "car_model.obj")
-        bpy.ops.import_scene.obj(filepath=file_loc)
-        cargen_obj = bpy.context.selected_objects[0]
-        cargen_obj.name = "Car Generator"
+        cargen_ref_mesh = get_cargen_mesh()
+        cargen_obj = bpy.data.objects.new("Car Generator", object_data=cargen_ref_mesh)
         cargen_obj.sollum_type = SollumType.YMAP_CAR_GENERATOR
         cargen_obj.ymap_cargen_properties.orient_x = 0.0
         cargen_obj.ymap_cargen_properties.orient_y = 0.0
@@ -178,6 +173,7 @@ class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
         cargen_obj.ymap_cargen_properties.body_color_remap_4 = -1
         cargen_obj.ymap_cargen_properties.pop_group = ""
         cargen_obj.ymap_cargen_properties.livery = -1
+        bpy.context.collection.objects.link(cargen_obj)
         bpy.context.view_layer.objects.active = cargen_obj
         cargen_obj.parent = group_obj
 

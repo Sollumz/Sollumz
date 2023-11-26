@@ -1,12 +1,10 @@
 import binascii
 import struct
 import math
-import os
 import bpy
-
 from mathutils import Vector, Euler
 from ..sollumz_helper import duplicate_object_with_children, set_object_collection
-from ..tools.ymaphelper import add_occluder_material
+from ..tools.ymaphelper import add_occluder_material, get_cargen_mesh
 from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.ymap import CMapData, OccludeModel, YMAP
@@ -210,11 +208,10 @@ def cargen_to_obj(obj: bpy.types.Object, ymap: CMapData):
     bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
-    cargen_ref_mesh = import_cargen_mesh()
+    cargen_ref_mesh = get_cargen_mesh()
 
     for cargen in ymap.car_generators:
-        cargen_obj = bpy.data.objects.new(
-            "Car Generator", object_data=cargen_ref_mesh)
+        cargen_obj = bpy.data.objects.new("Car Generator", object_data=cargen_ref_mesh)
         cargen_obj.ymap_cargen_properties.orient_x = cargen.orient_x
         cargen_obj.ymap_cargen_properties.orient_y = cargen.orient_y
         cargen_obj.ymap_cargen_properties.perpendicular_length = cargen.perpendicular_length
@@ -233,17 +230,6 @@ def cargen_to_obj(obj: bpy.types.Object, ymap: CMapData):
         cargen_obj.location = cargen.position
         cargen_obj.sollum_type = SollumType.YMAP_CAR_GENERATOR
         cargen_obj.parent = group_obj
-
-
-def import_cargen_mesh() -> bpy.types.Mesh:
-    file_loc = os.path.join(os.path.dirname(__file__), "car_model.obj")
-    bpy.ops.import_scene.obj(filepath=file_loc)
-    cargen_ref_obj = bpy.context.selected_objects[0]
-    mesh = cargen_ref_obj.data
-
-    bpy.data.objects.remove(cargen_ref_obj)
-
-    return mesh
 
 
 def ymap_to_obj(ymap: CMapData):
