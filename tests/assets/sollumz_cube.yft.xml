@@ -1,0 +1,490 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Fragment>
+  <Name>pack:/sollumz_cube</Name>
+  <BoundingSphereCenter x="0.0" y="0.0" z="0.0" />
+  <BoundingSphereRadius value="1.7320508" />
+  <UnknownB0 value="0" />
+  <UnknownB8 value="0" />
+  <UnknownBC value="0" />
+  <UnknownC0 value="65280" />
+  <UnknownC4 value="1" />
+  <UnknownCC value="0" />
+  <GravityFactor value="1" />
+  <BuoyancyFactor value="1" />
+  <Drawable>
+    <Name>skel</Name>
+    <BoundingSphereCenter x="0.0" y="0.0" z="0.0" />
+    <BoundingSphereRadius value="1.7320508" />
+    <BoundingBoxMin x="-1.0" y="-1.0" z="-1.0" />
+    <BoundingBoxMax x="1.0" y="1.0" z="1.0" />
+    <LodDistHigh value="9998" />
+    <LodDistMed value="9998" />
+    <LodDistLow value="9998" />
+    <LodDistVlow value="9998" />
+    <FlagsHigh value="2" />
+    <FlagsMed value="0" />
+    <FlagsLow value="0" />
+    <FlagsVlow value="0" />
+    <Unknown9A value="9998" />
+    <ShaderGroup>
+      <Unknown30 value="8" />
+      <TextureDictionary>
+        <Item>
+          <Name>sollumz_icon</Name>
+          <Unk32 value="0" />
+          <Usage>UNKNOWN</Usage>
+          <ExtraFlags value="0" />
+          <Width value="64" />
+          <Height value="64" />
+          <MipLevels value="0" />
+          <Format>D3DFMT_DXT1</Format>
+          <FileName>sollumz_icon.dds</FileName>
+        </Item>
+      </TextureDictionary>
+      <Shaders>
+        <Item>
+          <Name>default</Name>
+          <FileName>alpha.sps</FileName>
+          <RenderBucket value="1" />
+          <Parameters>
+            <Item name="DiffuseSampler" type="Texture">
+              <Name>sollumz_icon</Name>
+            </Item>
+            <Item name="matMaterialColorScale" type="Vector" x="1.0" y="0.0" z="0.0" w="1.0" />
+            <Item name="HardAlphaBlend" type="Vector" x="1.0" y="0.0" z="0.0" w="0.0" />
+            <Item name="useTessellation" type="Vector" x="0.0" y="0.0" z="0.0" w="0.0" />
+            <Item name="wetnessMultiplier" type="Vector" x="1.0" y="0.0" z="0.0" w="0.0" />
+            <Item name="globalAnimUV1" type="Vector" x="0.0" y="1.0" z="0.0" w="0.0" />
+            <Item name="globalAnimUV0" type="Vector" x="1.0" y="0.0" z="0.0" w="0.0" />
+          </Parameters>
+        </Item>
+      </Shaders>
+    </ShaderGroup>
+    <Skeleton>
+      <Unknown1C value="16777216" />
+      <Unknown50 value="3039864552" />
+      <Unknown54 value="2434254070" />
+      <Unknown58 value="1214498167" />
+      <Bones>
+        <Item>
+          <Name>root_sollumz_cube</Name>
+          <Tag value="0" />
+          <Index value="0" />
+          <ParentIndex value="-1" />
+          <SiblingIndex value="-1" />
+          <Flags>RotX, RotY, RotZ, TransX, TransY, TransZ, Unk0</Flags>
+          <Translation x="0.0" y="0.0" z="0.0" />
+          <Rotation x="0.0" y="0.0" z="0.0" w="1.0" />
+          <Scale x="1.0" y="1.0" z="1.0" />
+          <TransformUnk x="0.0" y="4.0" z="-3.0" w="0.0" />
+        </Item>
+        <Item>
+          <Name>main_sollumz_cube</Name>
+          <Tag value="51247" />
+          <Index value="1" />
+          <ParentIndex value="0" />
+          <SiblingIndex value="-1" />
+          <Flags>RotX, RotY, RotZ, Unk0</Flags>
+          <Translation x="0.0" y="0.0" z="0.0" />
+          <Rotation x="0.0" y="0.0" z="0.0" w="1.0" />
+          <Scale x="1.0" y="1.0" z="1.0" />
+          <TransformUnk x="0.0" y="4.0" z="-3.0" w="0.0" />
+        </Item>
+        <Item>
+          <Name>sollumz_cube_01</Name>
+          <Tag value="49835" />
+          <Index value="2" />
+          <ParentIndex value="1" />
+          <SiblingIndex value="3" />
+          <Flags>RotX, RotY, RotZ, TransX, TransY, TransZ</Flags>
+          <Translation x="0.0" y="0.0" z="0.0" />
+          <Rotation x="0.0" y="0.0" z="0.0" w="1.0" />
+          <Scale x="1.0" y="1.0" z="1.0" />
+          <TransformUnk x="0.0" y="4.0" z="-3.0" w="0.0" />
+        </Item>
+        <Item>
+          <Name>sollumz_cube_02</Name>
+          <Tag value="49836" />
+          <Index value="3" />
+          <ParentIndex value="1" />
+          <SiblingIndex value="-1" />
+          <Flags>RotX, RotY, RotZ, TransX, TransY, TransZ</Flags>
+          <Translation x="4.967054e-09" y="-3.7252903e-09" z="1.6773148" />
+          <Rotation x="0.0" y="0.0" z="0.0" w="1.0" />
+          <Scale x="1.0" y="1.0" z="1.0" />
+          <TransformUnk x="0.0" y="4.0" z="-3.0" w="0.0" />
+        </Item>
+      </Bones>
+    </Skeleton>
+    <Joints />
+    <DrawableModelsHigh>
+      <Item>
+        <RenderMask value="255" />
+        <Flags value="0" />
+        <HasSkin value="0" />
+        <BoneIndex value="2" />
+        <Unknown1 value="0" />
+        <Geometries>
+          <Item>
+            <ShaderIndex value="0" />
+            <BoundingBoxMin x="-1.0" y="-1.0" z="-1.0" />
+            <BoundingBoxMax x="1.0" y="1.0" z="1.0" />
+            <VertexBuffer>
+              <Flags value="0" />
+              <Layout type="GTAV1">
+                <Position />
+                <Normal />
+                <Colour0 />
+                <TexCoord0 />
+              </Layout>
+              <Data>
+                -1.0000000 -1.0000000 1.0000000   -1.0000000 0.0000000 0.0000000   255 11 26 255   0.0000000 -0.0000000
+                -1.0000000 1.0000000 -1.0000000   -1.0000000 0.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                -1.0000000 -1.0000000 -1.0000000   -1.0000000 0.0000000 0.0000000   255 38 45 255   0.0000000 1.0000000
+                -1.0000000 1.0000000 1.0000000   0.0000000 1.0000000 0.0000000   255 8 25 255   0.0000000 -0.0000000
+                1.0000000 1.0000000 -1.0000000   0.0000000 1.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                -1.0000000 1.0000000 -1.0000000   0.0000000 1.0000000 0.0000000   255 8 25 255   0.0000000 1.0000000
+                1.0000000 1.0000000 1.0000000   1.0000000 0.0000000 0.0000000   255 8 25 255   1.0000000 -0.0000000
+                1.0000000 -1.0000000 -1.0000000   1.0000000 0.0000000 0.0000000   255 8 25 255   0.0000000 1.0000000
+                1.0000000 1.0000000 -1.0000000   1.0000000 0.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                1.0000000 -1.0000000 1.0000000   0.0000000 -1.0000000 0.0000000   255 13 28 255   1.0000000 -0.0000000
+                -1.0000000 -1.0000000 -1.0000000   0.0000000 -1.0000000 0.0000000   255 38 45 255   0.0000000 1.0000000
+                1.0000000 -1.0000000 -1.0000000   0.0000000 -1.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                1.0000000 1.0000000 -1.0000000   0.0000000 0.0000000 -1.0000000   255 8 25 255   1.0000000 -0.0000000
+                -1.0000000 -1.0000000 -1.0000000   0.0000000 0.0000000 -1.0000000   255 38 45 255   0.0000000 1.0000000
+                -1.0000000 1.0000000 -1.0000000   0.0000000 0.0000000 -1.0000000   255 8 25 255   0.0000000 -0.0000000
+                -1.0000000 1.0000000 1.0000000   0.0000000 0.0000000 1.0000000   255 8 25 255   0.0000000 -0.0000000
+                1.0000000 -1.0000000 1.0000000   0.0000000 0.0000000 1.0000000   255 13 28 255   1.0000000 1.0000000
+                1.0000000 1.0000000 1.0000000   0.0000000 0.0000000 1.0000000   255 8 25 255   1.0000000 -0.0000000
+                -1.0000000 1.0000000 1.0000000   -1.0000000 0.0000000 0.0000000   255 8 25 255   1.0000000 -0.0000000
+                1.0000000 1.0000000 1.0000000   0.0000000 1.0000000 0.0000000   255 8 25 255   1.0000000 -0.0000000
+                1.0000000 -1.0000000 1.0000000   1.0000000 0.0000000 0.0000000   255 13 28 255   0.0000000 -0.0000000
+                -1.0000000 -1.0000000 1.0000000   0.0000000 -1.0000000 0.0000000   255 11 26 255   0.0000000 -0.0000000
+                1.0000000 -1.0000000 -1.0000000   0.0000000 0.0000000 -1.0000000   255 8 25 255   1.0000000 1.0000000
+                -1.0000000 -1.0000000 1.0000000   0.0000000 0.0000000 1.0000000   255 11 26 255   0.0000000 1.0000000
+              </Data>
+            </VertexBuffer>
+            <IndexBuffer>
+              <Data>
+                0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 0 18 1 3 19 4
+                6 20 7 9 21 10 12 22 13 15 23 16
+              </Data>
+            </IndexBuffer>
+          </Item>
+        </Geometries>
+      </Item>
+      <Item>
+        <RenderMask value="255" />
+        <Flags value="0" />
+        <HasSkin value="0" />
+        <BoneIndex value="3" />
+        <Unknown1 value="0" />
+        <Geometries>
+          <Item>
+            <ShaderIndex value="0" />
+            <BoundingBoxMin x="-0.6773147" y="-0.6773147" z="-0.67731476" />
+            <BoundingBoxMax x="0.6773147" y="0.6773147" z="0.67731476" />
+            <VertexBuffer>
+              <Flags value="0" />
+              <Layout type="GTAV1">
+                <Position />
+                <Normal />
+                <Colour0 />
+                <TexCoord0 />
+              </Layout>
+              <Data>
+                -0.6773147 -0.6773147 0.6773148   -1.0000000 0.0000000 0.0000000   255 11 26 255   0.0000000 -0.0000000
+                -0.6773147 0.6773147 -0.6773148   -1.0000000 0.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                -0.6773147 -0.6773147 -0.6773148   -0.9999999 0.0000000 0.0000000   255 38 45 255   0.0000000 1.0000000
+                -0.6773147 0.6773147 0.6773148   0.0000000 1.0000000 0.0000000   255 8 25 255   0.0000000 -0.0000000
+                0.6773147 0.6773147 -0.6773148   0.0000000 1.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                -0.6773147 0.6773147 -0.6773148   0.0000000 0.9999999 0.0000000   255 8 25 255   0.0000000 1.0000000
+                0.6773147 0.6773147 0.6773148   1.0000000 0.0000000 0.0000000   255 8 25 255   1.0000000 -0.0000000
+                0.6773147 -0.6773147 -0.6773148   1.0000000 0.0000000 0.0000000   255 8 25 255   0.0000000 1.0000000
+                0.6773147 0.6773147 -0.6773148   0.9999999 0.0000000 0.0000000   255 8 25 255   1.0000000 1.0000000
+                0.6773147 -0.6773147 0.6773148   0.0000000 -1.0000000 0.0000000   255 13 28 255   1.0000000 -0.0000000
+                -0.6773147 -0.6773147 -0.6773148   0.0000000 -1.0000000 0.0000000   255 38 45 255   0.0000000 1.0000000
+                0.6773147 -0.6773147 -0.6773148   0.0000000 -0.9999999 0.0000000   255 8 25 255   1.0000000 1.0000000
+                0.6773147 0.6773147 -0.6773148   0.0000000 0.0000000 -1.0000000   255 8 25 255   1.0000000 -0.0000000
+                -0.6773147 -0.6773147 -0.6773148   0.0000000 0.0000000 -1.0000000   255 38 45 255   0.0000000 1.0000000
+                -0.6773147 0.6773147 -0.6773148   0.0000000 0.0000000 -0.9999999   255 8 25 255   0.0000000 -0.0000000
+                -0.6773147 0.6773147 0.6773148   0.0000000 0.0000000 1.0000000   255 8 25 255   0.0000000 -0.0000000
+                0.6773147 -0.6773147 0.6773148   0.0000000 0.0000000 1.0000000   255 13 28 255   1.0000000 1.0000000
+                0.6773147 0.6773147 0.6773148   0.0000000 0.0000000 0.9999999   255 8 25 255   1.0000000 -0.0000000
+                -0.6773147 0.6773147 0.6773148   -0.9999999 0.0000000 0.0000000   255 8 25 255   1.0000000 -0.0000000
+                0.6773147 0.6773147 0.6773148   0.0000000 0.9999999 0.0000000   255 8 25 255   1.0000000 -0.0000000
+                0.6773147 -0.6773147 0.6773148   0.9999999 0.0000000 0.0000000   255 13 28 255   0.0000000 -0.0000000
+                -0.6773147 -0.6773147 0.6773148   0.0000000 -0.9999999 0.0000000   255 11 26 255   0.0000000 -0.0000000
+                0.6773147 -0.6773147 -0.6773148   0.0000000 0.0000000 -0.9999999   255 8 25 255   1.0000000 1.0000000
+                -0.6773147 -0.6773147 0.6773148   0.0000000 0.0000000 0.9999999   255 11 26 255   0.0000000 1.0000000
+              </Data>
+            </VertexBuffer>
+            <IndexBuffer>
+              <Data>
+                0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 0 18 1 3 19 4
+                6 20 7 9 21 10 12 22 13 15 23 16
+              </Data>
+            </IndexBuffer>
+          </Item>
+        </Geometries>
+      </Item>
+    </DrawableModelsHigh>
+  </Drawable>
+  <BoneTransforms unk="1">
+    <Item>
+      1.0 0.0 0.0 0.0
+      0.0 1.0 0.0 0.0
+      0.0 0.0 1.0 0.0
+    </Item>
+    <Item>
+      1.0 0.0 0.0 0.0
+      0.0 1.0 0.0 0.0
+      0.0 0.0 1.0 0.0
+    </Item>
+    <Item>
+      1.0 0.0 0.0 0.0
+      0.0 1.0 0.0 0.0
+      0.0 0.0 1.0 0.0
+    </Item>
+    <Item>
+      1.0 0.0 0.0 4.967053879312289e-09
+      0.0 1.0 0.0 -3.725290298461914e-09
+      0.0 0.0 1.0 1.6773147583007812
+    </Item>
+  </BoneTransforms>
+  <Physics>
+    <LOD1>
+      <Unknown14 value="0.55" />
+      <Unknown18 value="550" />
+      <Unknown1C value="-1" />
+      <PositionOffset x="0.0" y="0.0" z="0.0" />
+      <Unknown40 x="0.0" y="0.0" z="0.0" />
+      <Unknown50 x="0.0" y="0.0" z="0.0" />
+      <DampingLinearC x="0.02" y="0.02" z="0.02" />
+      <DampingLinearV x="0.02" y="0.02" z="0.02" />
+      <DampingLinearV2 x="0.01" y="0.01" z="0.01" />
+      <DampingAngularC x="0.02" y="0.02" z="0.02" />
+      <DampingAngularV x="0.02" y="0.02" z="0.02" />
+      <DampingAngularV2 x="0.01" y="0.01" z="0.01" />
+      <Archetype>
+        <Name>sollumz_cube</Name>
+        <Mass value="200" />
+        <MassInv value="0.005" />
+        <Unknown48 value="1" />
+        <Unknown4C value="150" />
+        <Unknown50 value="6.28" />
+        <Unknown54 value="1" />
+        <InertiaTensor x="254.22566" y="254.22566" z="133.33334" />
+        <InertiaTensorInv x="0.003933513" y="0.003933513" z="0.0074999994" />
+        <Bounds type="Composite">
+          <BoxMin x="-1.0" y="-1.0" z="-1.0" />
+          <BoxMax x="1.0" y="1.0" z="2.3546295" />
+          <BoxCenter x="0.0" y="0.0" z="0.67731476" />
+          <SphereCenter x="0.0" y="0.0" z="0.67731476" />
+          <SphereRadius value="2.1939428" />
+          <Margin value="0.04" />
+          <Volume value="13.418518" />
+          <Inertia x="1.0" y="1.0" z="1.0" />
+          <MaterialIndex value="0" />
+          <MaterialColourIndex value="0" />
+          <ProceduralID value="0" />
+          <RoomID value="0" />
+          <PedDensity value="0" />
+          <UnkFlags value="0" />
+          <PolyFlags value="0" />
+          <UnkType value="2" />
+          <Children>
+            <Item type="Box">
+              <BoxMin x="-1.0" y="-1.0" z="-1.0" />
+              <BoxMax x="1.0" y="1.0" z="1.0" />
+              <BoxCenter x="0.0" y="0.0" z="0.0" />
+              <SphereCenter x="0.0" y="0.0" z="0.0" />
+              <SphereRadius value="1.7320508" />
+              <Margin value="0.04" />
+              <Volume value="8" />
+              <Inertia x="0.6666667" y="0.6666667" z="0.6666667" />
+              <MaterialIndex value="0" />
+              <MaterialColourIndex value="0" />
+              <ProceduralID value="0" />
+              <RoomID value="0" />
+              <PedDensity value="0" />
+              <UnkFlags value="0" />
+              <PolyFlags value="0" />
+              <UnkType value="2" />
+              <CompositeTransform>
+                1.0 0.0 0.0 0.0
+                0.0 1.0 0.0 0.0
+                0.0 0.0 1.0 0.0
+                0.0 0.0 0.0 1.0
+              </CompositeTransform>
+            </Item>
+            <Item type="Box">
+              <BoxMin x="-0.6773147" y="-0.6773147" z="-0.67731476" />
+              <BoxMax x="0.6773147" y="0.6773147" z="0.67731476" />
+              <BoxCenter x="0.0" y="0.0" z="0.0" />
+              <SphereCenter x="0.0" y="0.0" z="0.0" />
+              <SphereRadius value="1.1731435" />
+              <Margin value="0.04" />
+              <Volume value="2.4857733" />
+              <Inertia x="0.30583683" y="0.30583683" z="0.3058368" />
+              <MaterialIndex value="0" />
+              <MaterialColourIndex value="0" />
+              <ProceduralID value="0" />
+              <RoomID value="0" />
+              <PedDensity value="0" />
+              <UnkFlags value="0" />
+              <PolyFlags value="0" />
+              <UnkType value="2" />
+              <CompositeTransform>
+                1.0 0.0 0.0 0.0
+                0.0 1.0 0.0 0.0
+                0.0 0.0 1.0 0.0
+                9.934107758624577e-09 -8.692344621863413e-09 1.6773147583007812 1.0
+              </CompositeTransform>
+            </Item>
+          </Children>
+        </Bounds>
+      </Archetype>
+      <Transforms>
+        <Item>
+          1.0 0.0 0.0 0.0
+          0.0 1.0 0.0 0.0
+          0.0 0.0 1.0 0.0
+          0.0 0.0 0.0 1.0
+        </Item>
+        <Item>
+          1.0 0.0 0.0 0.0
+          0.0 1.0 0.0 0.0
+          0.0 0.0 1.0 0.0
+          9.934107758624577e-09 -8.692344621863413e-09 1.6773147583007812 1.0
+        </Item>
+      </Transforms>
+      <Groups>
+        <Item>
+          <Name>sollumz_cube_01</Name>
+          <ParentIndex value="255" />
+          <GlassWindowIndex value="0" />
+          <GlassFlags value="0" />
+          <Strength value="100" />
+          <ForceTransmissionScaleUp value="0.25" />
+          <ForceTransmissionScaleDown value="0.25" />
+          <JointStiffness value="0" />
+          <MinSoftAngle1 value="-1" />
+          <MaxSoftAngle1 value="1" />
+          <MaxSoftAngle2 value="1" />
+          <MaxSoftAngle3 value="1" />
+          <RotationSpeed value="0" />
+          <RotationStrength value="0" />
+          <RestoringStrength value="0" />
+          <RestoringMaxTorque value="0" />
+          <LatchStrength value="0" />
+          <Mass value="100" />
+          <MinDamageForce value="100" />
+          <DamageHealth value="1000" />
+          <UnkFloat5C value="0" />
+          <UnkFloat60 value="1" />
+          <UnkFloat64 value="1" />
+          <UnkFloat68 value="1" />
+          <UnkFloat6C value="1" />
+          <UnkFloat70 value="1" />
+          <UnkFloat74 value="1" />
+          <UnkFloat78 value="1" />
+          <UnkFloatA8 value="1" />
+        </Item>
+        <Item>
+          <Name>sollumz_cube_02</Name>
+          <ParentIndex value="255" />
+          <GlassWindowIndex value="0" />
+          <GlassFlags value="0" />
+          <Strength value="100" />
+          <ForceTransmissionScaleUp value="0.25" />
+          <ForceTransmissionScaleDown value="0.25" />
+          <JointStiffness value="0" />
+          <MinSoftAngle1 value="-1" />
+          <MaxSoftAngle1 value="1" />
+          <MaxSoftAngle2 value="1" />
+          <MaxSoftAngle3 value="1" />
+          <RotationSpeed value="0" />
+          <RotationStrength value="0" />
+          <RestoringStrength value="0" />
+          <RestoringMaxTorque value="0" />
+          <LatchStrength value="0" />
+          <Mass value="100" />
+          <MinDamageForce value="100" />
+          <DamageHealth value="1000" />
+          <UnkFloat5C value="0" />
+          <UnkFloat60 value="1" />
+          <UnkFloat64 value="1" />
+          <UnkFloat68 value="1" />
+          <UnkFloat6C value="1" />
+          <UnkFloat70 value="1" />
+          <UnkFloat74 value="1" />
+          <UnkFloat78 value="1" />
+          <UnkFloatA8 value="1" />
+        </Item>
+      </Groups>
+      <Children>
+        <Item>
+          <GroupIndex value="0" />
+          <BoneTag value="49835" />
+          <PristineMass value="100" />
+          <DamagedMass value="100" />
+          <UnkFloat value="0" />
+          <UnkVec x="0.0" y="0.0" z="0.0" w="0.0" />
+          <InertiaTensor x="66.66667" y="66.66667" z="66.66667" w="800.0" />
+          <Drawable>
+            <Matrix>
+              1.0 0.0 0.0
+              0.0 1.0 0.0
+              0.0 0.0 1.0
+              0.0 0.0 0.0
+            </Matrix>
+            <BoundingSphereCenter x="0.0" y="0.0" z="0.0" />
+            <BoundingSphereRadius value="0" />
+            <BoundingBoxMin x="0.0" y="0.0" z="0.0" />
+            <BoundingBoxMax x="0.0" y="0.0" z="0.0" />
+            <LodDistHigh value="0" />
+            <LodDistMed value="0" />
+            <LodDistLow value="0" />
+            <LodDistVlow value="0" />
+            <FlagsHigh value="0" />
+            <FlagsMed value="0" />
+            <FlagsLow value="0" />
+            <FlagsVlow value="0" />
+            <Unknown9A value="0" />
+          </Drawable>
+        </Item>
+        <Item>
+          <GroupIndex value="1" />
+          <BoneTag value="49836" />
+          <PristineMass value="100" />
+          <DamagedMass value="100" />
+          <UnkFloat value="0" />
+          <UnkVec x="0.0" y="0.0" z="0.0" w="0.0" />
+          <InertiaTensor x="30.583683" y="30.583683" z="30.58368" w="248.57733" />
+          <Drawable>
+            <Matrix>
+              1.0 0.0 0.0
+              0.0 1.0 0.0
+              0.0 0.0 1.0
+              4.967053879312289e-09 -4.9670543234014986e-09 0.0
+            </Matrix>
+            <BoundingSphereCenter x="0.0" y="0.0" z="0.0" />
+            <BoundingSphereRadius value="0" />
+            <BoundingBoxMin x="0.0" y="0.0" z="0.0" />
+            <BoundingBoxMax x="0.0" y="0.0" z="0.0" />
+            <LodDistHigh value="0" />
+            <LodDistMed value="0" />
+            <LodDistLow value="0" />
+            <LodDistVlow value="0" />
+            <FlagsHigh value="0" />
+            <FlagsMed value="0" />
+            <FlagsLow value="0" />
+            <FlagsVlow value="0" />
+            <Unknown9A value="0" />
+          </Drawable>
+        </Item>
+      </Children>
+    </LOD1>
+  </Physics>
+</Fragment>
