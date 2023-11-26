@@ -269,37 +269,40 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     unk4: bpy.props.BoolProperty(
         name="Unk4", update=FlagPropertyGroup.update_flag)
     unk5: bpy.props.BoolProperty(
-        name="Unk5", update=FlagPropertyGroup.update_flag)
+        name="Ignore Artificial Lights State",
+        description="Light will ignore SET_ARTIFICIAL_LIGHTS_STATE(FALSE) from scripts and keep rendering",
+        update=FlagPropertyGroup.update_flag)
     unk6: bpy.props.BoolProperty(
         name="Unk6", update=FlagPropertyGroup.update_flag)
     unk7: bpy.props.BoolProperty(
         name="Unk7", update=FlagPropertyGroup.update_flag)
     shadows: bpy.props.BoolProperty(
-        name="ShadowS", update=FlagPropertyGroup.update_flag)
+        name="Cast Static Shadows", update=FlagPropertyGroup.update_flag)
     shadowd: bpy.props.BoolProperty(
-        name="ShadowD", update=FlagPropertyGroup.update_flag)
+        name="Cast Dynamic Shadows", update=FlagPropertyGroup.update_flag)
     sunlight: bpy.props.BoolProperty(
-        name="Sunlight", update=FlagPropertyGroup.update_flag)
+        name="Calculate From Sun", update=FlagPropertyGroup.update_flag)
     unk11: bpy.props.BoolProperty(
-        name="Unk11", update=FlagPropertyGroup.update_flag)
+        name="Enable Buzzing", update=FlagPropertyGroup.update_flag)
     electric: bpy.props.BoolProperty(
-        name="Electric", update=FlagPropertyGroup.update_flag)
+        name="Force Buzzing", update=FlagPropertyGroup.update_flag)
     volume: bpy.props.BoolProperty(
-        name="Volume", update=FlagPropertyGroup.update_flag)
+        name="Draw Volume", description="Force enable volume rendering, ignoring timecycle",
+        update=FlagPropertyGroup.update_flag)
     specoff: bpy.props.BoolProperty(
-        name="SpecOff", update=FlagPropertyGroup.update_flag)
+        name="No Specular", update=FlagPropertyGroup.update_flag)
     unk15: bpy.props.BoolProperty(
-        name="Unk15", update=FlagPropertyGroup.update_flag)
+        name="Both Interior And Exterior", update=FlagPropertyGroup.update_flag)
     lightoff: bpy.props.BoolProperty(
-        name="LightOff", update=FlagPropertyGroup.update_flag)
+        name="Corona Only", update=FlagPropertyGroup.update_flag)
     prxoff: bpy.props.BoolProperty(
-        name="PrxOff", update=FlagPropertyGroup.update_flag)
+        name="Not In Reflection", update=FlagPropertyGroup.update_flag)
     unk18: bpy.props.BoolProperty(
-        name="Unk18", update=FlagPropertyGroup.update_flag)
+        name="Only In Reflection", update=FlagPropertyGroup.update_flag)
     culling: bpy.props.BoolProperty(
-        name="Culling", update=FlagPropertyGroup.update_flag)
+        name="Enable Culling Plane", update=FlagPropertyGroup.update_flag)
     unk20: bpy.props.BoolProperty(
-        name="Unk20", update=FlagPropertyGroup.update_flag)
+        name="Enable Volume Outer Color", update=FlagPropertyGroup.update_flag)
     unk21: bpy.props.BoolProperty(
         name="Unk21", update=FlagPropertyGroup.update_flag)
     unk22: bpy.props.BoolProperty(
@@ -307,7 +310,8 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     unk23: bpy.props.BoolProperty(
         name="Unk23", update=FlagPropertyGroup.update_flag)
     glassoff: bpy.props.BoolProperty(
-        name="GlassOff", update=FlagPropertyGroup.update_flag)
+        name="Don't Light Alpha", description="Light won't affect transparent geometry, such as glass panes",
+        update=FlagPropertyGroup.update_flag)
     unk25: bpy.props.BoolProperty(
         name="Unk25", update=FlagPropertyGroup.update_flag)
     unk26: bpy.props.BoolProperty(
@@ -321,7 +325,8 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     unk30: bpy.props.BoolProperty(
         name="Unk30", update=FlagPropertyGroup.update_flag)
     unk31: bpy.props.BoolProperty(
-        name="Unk31", update=FlagPropertyGroup.update_flag)
+        name="Disable Light", description="Only volume will be rendered",
+        update=FlagPropertyGroup.update_flag)
     unk32: bpy.props.BoolProperty(
         name="Unk32", update=FlagPropertyGroup.update_flag)
 
