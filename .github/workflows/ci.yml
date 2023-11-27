@@ -17,8 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - blender-major-version: '4.0'
-            blender-version: '4.0.1'
+          - blender-version: '4.0.1'
             python-version: '3.10'
             pytest-version: '7.2.0'
             pytest-blender-version: '3.0.5'
@@ -67,8 +66,9 @@ jobs:
       - name: Install Sollumz
         run: |
           $BLENDER = get-content _blender-executable-path.txt
-          New-Item -ItemType Directory -Path "$env:APPDATA\Blender Foundation\Blender\${{ matrix.blender-major-version }}\scripts\addons" -Force
-          New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Blender Foundation\Blender\${{ matrix.blender-major-version }}\scripts\addons" -Name Sollumz -Target $(Get-Location)
+          $BLENDER_RELEASE_VERSION = python -c "print('.'.join('${{ matrix.blender-version }}'.split('.')[:2]))" # extract first two version numbers
+          New-Item -ItemType Directory -Path "$env:APPDATA\Blender Foundation\Blender\$BLENDER_RELEASE_VERSION\scripts\addons" -Force
+          New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Blender Foundation\Blender\$BLENDER_RELEASE_VERSION\scripts\addons" -Name Sollumz -Target $(Get-Location)
           & "$BLENDER" -b --python-expr "import bpy; bpy.ops.preferences.addon_enable(module='Sollumz'); bpy.ops.wm.save_userpref()"
 
       - name: Run Tests
