@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClipDictionary>
+ <Clips>
+  <Item>
+   <Hash>test_clip</Hash>
+   <Name>pack:/test_clip.clip</Name>
+   <Type value="Animation" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <AnimationHash>test_anim</AnimationHash>
+   <StartTime value="0" />
+   <EndTime value="1" />
+   <Rate value="1" />
+  </Item>
+ </Clips>
+ <Animations>
+  <Item>
+   <Hash>test_anim</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="30" />
+   <SequenceFrameLimit value="31" />
+   <Duration value="1" />
+   <Unknown1C>hash_1234ABCD</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="0" />
+     <Track value="0" />
+     <Unk0 value="0" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_ABCD1234</Hash>
+     <FrameCount value="30" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="QuantizeFloat" />
+         <Quantum value="0.000892638" />
+         <Offset value="0.148164883" />
+         <Values>
+          0.153520718 0.1624471 0.19993788 0.172266111 0.153520718 0.1508428 0.154413342 0.159769177 0.204401076 0.174051389
+          0.159769177 0.156198621 0.155305982 0.156198621 0.193689421 0.1695882 0.149950162 0.152628079 0.148164883 0.176729292
+          0.199045241 0.1624471 0.15173544 0.15173544 0.15173544 0.163339734 0.181192487 0.166910276 0.153520718 0.153520718
+         </Values>
+        </Item>
+        <Item>
+         <Type value="StaticFloat" />
+         <Value value="2.0" />
+        </Item>
+        <Item>
+         <Type value="StaticFloat" />
+         <Value value="3.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+ </Animations>
+</ClipDictionary>

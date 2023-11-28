@@ -568,8 +568,8 @@ class ClipTagsOnTimelineDrawHandler:
         clip_properties = clip_obj.clip_properties
 
         num_tags = len(clip_properties.tags)
-        clip_frame_count = clip_properties.get_frame_count()
-        if num_tags == 0 or clip_frame_count == 0:
+        clip_frame_duration = clip_properties.get_duration_in_frames()
+        if num_tags == 0 or clip_frame_duration == 0:
             return
 
         if num_tags != len(self.overlay_verts_pos) // 6:
@@ -596,8 +596,8 @@ class ClipTagsOnTimelineDrawHandler:
             start_phase = clip_tag.start_phase
             end_phase = clip_tag.end_phase
 
-            start_frame = clip_frame_count * start_phase
-            end_frame = clip_frame_count * end_phase
+            start_frame = clip_frame_duration * start_phase
+            end_frame = clip_frame_duration * end_phase
             color = clip_tag.ui_timeline_color
             color_highlight = (color[0] + (1.0 - color[0]) * 0.25,
                                color[1] + (1.0 - color[1]) * 0.25,

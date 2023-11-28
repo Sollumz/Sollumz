@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClipDictionary>
+ <Clips>
+  <Item>
+   <Hash>test_clip1</Hash>
+   <Name>pack:/test_clip1.clip</Name>
+   <Type value="Animation" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <AnimationHash>test_anim</AnimationHash>
+   <StartTime value="0" />
+   <EndTime value="13.3" />
+   <Rate value="1" />
+  </Item>
+  <Item>
+   <Hash>test_clip2</Hash>
+   <Name>pack:/test_clip2.clip</Name>
+   <Type value="Animation" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <AnimationHash>test_anim</AnimationHash>
+   <StartTime value="13.333334" />
+   <EndTime value="16.6333332" />
+   <Rate value="1" />
+  </Item>
+ </Clips>
+ <Animations>
+  <Item>
+   <Hash>test_anim</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="501" />
+   <SequenceFrameLimit value="511" />
+   <Duration value="16.6666679" />
+   <Unknown1C>hash_1234ABCD</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="0" />
+     <Track value="0" />
+     <Unk0 value="0" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_ABCD1234</Hash>
+     <FrameCount value="501" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticVector3" />
+         <Value x="1.0" y="2.0" z="3.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+ </Animations>
+</ClipDictionary>

@@ -3,7 +3,14 @@ import bpy
 from mathutils import Vector, Quaternion
 from ..cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-from ..tools.animationhelper import Track, TrackFormat, TrackFormatMap, get_canonical_track_data_path
+from ..tools.animationhelper import (
+    Track,
+    TrackFormat,
+    TrackFormatMap,
+    get_canonical_track_data_path,
+    get_action_duration_frames,
+    get_scene_fps
+)
 from ..tools.utils import color_hash
 
 
@@ -142,15 +149,24 @@ def combine_sequences_and_build_action_data(animation: ycdxml.Animation) -> Acti
     return action_data
 
 
-def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Action, frame_count: int):
-    frames_ids = [*range(frame_count)]
+def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Action, frame_count: int, duration_secs: float):
+    # Scale frame IDs to match the animation duration specified in the XML in Blender
+    # -1 because the anim finishes when it reaches the last frame
+    unscaled_duration_secs = (frame_count - 1) / get_scene_fps()
+    scale_factor = duration_secs / unscaled_duration_secs
+    scaled_frame_ids = [frame_id * scale_factor for frame_id in range(frame_count)]
+
+    def _interleave_frame_ids(track_data: list[float]) -> list[float]:
+        """Converts [data0, data1, ..., dataN] to [frameId0, data0, frameId1, data1, ..., frameIdN, dataN]"""
+        assert len(track_data) == len(scaled_frame_ids)
+        return [value for co in zip(scaled_frame_ids, track_data) for value in co]
 
     for bone_id, bones_data in action_data.items():
         group_item = action.groups.new(f"#{bone_id}")
         for track, frames_data in bones_data.items():
-            format = TrackFormatMap[track]
+            track_format = TrackFormatMap[track]
             data_path = get_canonical_track_data_path(track, bone_id)
-            if format == TrackFormat.Vector3:
+            if track_format == TrackFormat.Vector3:
                 vec_tracks_x = list(map(lambda vec: vec.x, frames_data))
                 vec_tracks_y = list(map(lambda vec: vec.y, frames_data))
                 vec_tracks_z = list(map(lambda vec: vec.z, frames_data))
@@ -167,17 +183,14 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
                 vec_curve_y.keyframe_points.add(len(frames_data))
                 vec_curve_z.keyframe_points.add(len(frames_data))
 
-                vec_curve_x.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, vec_tracks_x) for x in co])
-                vec_curve_y.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, vec_tracks_y) for x in co])
-                vec_curve_z.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, vec_tracks_z) for x in co])
+                vec_curve_x.keyframe_points.foreach_set("co", _interleave_frame_ids(vec_tracks_x))
+                vec_curve_y.keyframe_points.foreach_set("co", _interleave_frame_ids(vec_tracks_y))
+                vec_curve_z.keyframe_points.foreach_set("co", _interleave_frame_ids(vec_tracks_z))
 
                 vec_curve_x.update()
                 vec_curve_y.update()
                 vec_curve_z.update()
-            elif format == TrackFormat.Quaternion:
+            elif track_format == TrackFormat.Quaternion:
                 quat_tracks_x = list(map(lambda rotation: rotation.x, frames_data))
                 quat_tracks_y = list(map(lambda rotation: rotation.y, frames_data))
                 quat_tracks_z = list(map(lambda rotation: rotation.z, frames_data))
@@ -198,32 +211,28 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
                 quat_curve_y.keyframe_points.add(len(frames_data))
                 quat_curve_z.keyframe_points.add(len(frames_data))
 
-                quat_curve_w.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, quat_tracks_w) for x in co])
-                quat_curve_x.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, quat_tracks_x) for x in co])
-                quat_curve_y.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, quat_tracks_y) for x in co])
-                quat_curve_z.keyframe_points.foreach_set(
-                    "co", [x for co in zip(frames_ids, quat_tracks_z) for x in co])
+                quat_curve_w.keyframe_points.foreach_set("co", _interleave_frame_ids(quat_tracks_w))
+                quat_curve_x.keyframe_points.foreach_set("co", _interleave_frame_ids(quat_tracks_x))
+                quat_curve_y.keyframe_points.foreach_set("co", _interleave_frame_ids(quat_tracks_y))
+                quat_curve_z.keyframe_points.foreach_set("co", _interleave_frame_ids(quat_tracks_z))
 
                 quat_curve_w.update()
                 quat_curve_x.update()
                 quat_curve_y.update()
                 quat_curve_z.update()
-            elif format == TrackFormat.Float:
+            elif track_format == TrackFormat.Float:
                 value_curve = action.fcurves.new(data_path=data_path)
                 value_curve.group = group_item
 
                 value_curve.keyframe_points.add(len(frames_data))
-                value_curve.keyframe_points.foreach_set("co", [x for co in zip(frames_ids, frames_data) for x in co])
+                value_curve.keyframe_points.foreach_set("co", _interleave_frame_ids(frames_data))
 
                 value_curve.update()
 
 
-def action_data_to_action(action_name: str, action_data, frame_count: int) -> bpy.types.Action:
+def action_data_to_action(action_name: str, action_data, frame_count: int, duration_secs: float) -> bpy.types.Action:
     action = bpy.data.actions.new(f"{action_name}_action")
-    apply_action_data_to_action(action_data, action, frame_count)
+    apply_action_data_to_action(action_data, action, frame_count, duration_secs)
     return action
 
 
@@ -232,11 +241,10 @@ def animation_to_obj(animation: ycdxml.Animation) -> bpy.types.Object:
 
     animation_obj.name = animation.hash
     animation_obj.animation_properties.hash = animation.hash
-    animation_obj.animation_properties.frame_count = animation.frame_count
 
     action_data = combine_sequences_and_build_action_data(animation)
     animation_obj.animation_properties.action = action_data_to_action(animation.hash, action_data,
-                                                                      animation.frame_count)
+                                                                      animation.frame_count, animation.duration)
 
     return animation_obj
 
@@ -253,26 +261,35 @@ def clip_to_obj(
     clip_obj.clip_properties.name = clip.name
     clip_obj.clip_properties.animations.clear()
 
-    if clip.type == "Animation":
+    if clip.type == ycdxml.ClipType.ANIMATION:
         animation_data = animations_map[clip.animation_hash]
+        animation_obj = animations_obj_map[clip.animation_hash]
+        duration_secs = animation_data.duration
+        duration_frames = get_action_duration_frames(animation_obj.animation_properties.action)
 
-        clip_obj.clip_properties.duration = clip.end_time - clip.start_time
+        clip_obj.clip_properties.duration = (clip.end_time - clip.start_time) / clip.rate
 
         clip_animation = clip_obj.clip_properties.animations.add()
-        clip_animation.animation = animations_obj_map[clip.animation_hash]
-        clip_animation.start_frame = int((clip.start_time / animation_data.duration) * animation_data.frame_count)
-        clip_animation.end_frame = int((clip.end_time / animation_data.duration) * animation_data.frame_count)
-    elif clip.type == "AnimationList":
+        clip_animation.animation = animation_obj
+        clip_animation.start_frame = (clip.start_time / duration_secs) * duration_frames
+        clip_animation.end_frame = (clip.end_time / duration_secs) * duration_frames
+    elif clip.type == ycdxml.ClipType.ANIMATION_LIST:
         clip_obj.clip_properties.duration = clip.duration
 
         for animation in clip.animations:
             animation_data = animations_map[animation.animation_hash]
+            animation_obj = animations_obj_map[animation.animation_hash]
+            duration_secs = animation_data.duration
+            duration_frames = get_action_duration_frames(animation_obj.animation_properties.action)
 
             clip_animation = clip_obj.clip_properties.animations.add()
-            clip_animation.animation = animations_obj_map[animation.animation_hash]
-            clip_animation.start_frame = int(
-                (animation.start_time / animation_data.duration) * animation_data.frame_count)
-            clip_animation.end_frame = int((animation.end_time / animation_data.duration) * animation_data.frame_count)
+            clip_animation.animation = animation_obj
+            clip_animation.start_frame = (animation.start_time / duration_secs) * duration_frames
+            clip_animation.end_frame = (animation.end_time / duration_secs) * duration_frames
+
+             # NOTE: we can ignore animation.rate because all anims in the list play in parallel,
+             # so `(animation.end_time - animation.start_time) / animation.rate` should equal `clip.duration`,
+             # which we already set in the clip_properties
 
     def _init_attribute(attr, xml_attr):
         attr.name = xml_attr.name_hash
@@ -325,8 +342,8 @@ def create_clip_dictionary_template(name: str) -> tuple[bpy.types.Object, bpy.ty
     return clip_dictionary_obj, clips_obj, animations_obj
 
 
-def clip_dictionary_to_obj(clip_dictionary: ycdxml.ClipDictionary, name: str):
-    _, clips_obj, animations_obj = create_clip_dictionary_template(name)
+def clip_dictionary_to_obj(clip_dictionary: ycdxml.ClipDictionary, name: str) -> bpy.types.Object:
+    clip_dict_obj, clips_obj, animations_obj = create_clip_dictionary_template(name)
 
     animations_map = {}
     animations_obj_map = {}
@@ -344,11 +361,13 @@ def clip_dictionary_to_obj(clip_dictionary: ycdxml.ClipDictionary, name: str):
         clip_obj = clip_to_obj(clip, animations_map, animations_obj_map)
         clip_obj.parent = clips_obj
 
+    return clip_dict_obj
 
-def import_ycd(filepath: str):
+
+def import_ycd(filepath: str) -> bpy.types.Object:
     ycd_xml = ycdxml.YCD.from_xml_file(filepath)
 
-    clip_dictionary_to_obj(
+    return clip_dictionary_to_obj(
         ycd_xml,
         os.path.basename(filepath.replace(ycdxml.YCD.file_extension, ""))
     )

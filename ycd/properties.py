@@ -4,7 +4,7 @@ import bpy
 import math
 from mathutils import Matrix, Vector
 from ..sollumz_properties import SollumType
-from ..tools.animationhelper import retarget_animation, get_target_from_id, get_frame_range_and_count, update_uv_clip_hash
+from ..tools.animationhelper import retarget_animation, get_target_from_id, update_uv_clip_hash, get_scene_fps
 
 
 def animations_filter(self, object):
@@ -102,19 +102,19 @@ class ClipAnimation(bpy.types.PropertyGroup):
         action = animation_properties.action
         if action is not None:
             # set frame range to the full action frame range by default
-            frame_range, _ = get_frame_range_and_count(action)
-            self.start_frame = math.floor(frame_range[0])
-            self.end_frame = math.ceil(frame_range[1])
+            frame_range = action.frame_range
+            self.start_frame = frame_range[0]
+            self.end_frame = frame_range[1]
 
         if isinstance(animation_properties.get_target(), bpy.types.Material):
             # if UV animation, automatically calculate clip hash
             clip_obj = self.id_data
             update_uv_clip_hash(clip_obj)
 
-    start_frame: bpy.props.IntProperty(
-        name="Start Frame", default=0, min=0, description="First frame of the playback area")
-    end_frame: bpy.props.IntProperty(
-        name="End Frame", default=0, min=0, description="Last frame (inclusive) of the playback area")
+    start_frame: bpy.props.FloatProperty(
+        name="Start Frame", default=0, min=0, step=100, description="First frame of the playback area")
+    end_frame: bpy.props.FloatProperty(
+        name="End Frame", default=0, min=0, step=100, description="Last frame (inclusive) of the playback area")
 
     animation: bpy.props.PointerProperty(
         name="Animation", type=bpy.types.Object, poll=animations_filter, update=on_animation_changed)
@@ -137,8 +137,9 @@ class ClipProperties(bpy.types.PropertyGroup):
 
     properties: bpy.props.CollectionProperty(name="Properties", type=ClipProperty)
 
-    def get_frame_count(self):
-        return round(self.duration * bpy.context.scene.render.fps)
+    def get_duration_in_frames(self) -> float:
+        """Number of frames this clip lasts. Includes subframes."""
+        return self.duration * get_scene_fps()
 
 
 AnimationTargetIDTypes = [

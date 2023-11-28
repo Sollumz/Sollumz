@@ -1,5 +1,6 @@
 # from .element import *
 from abc import ABC as AbstractClass, abstractmethod
+from enum import Enum
 from mathutils import Vector
 from .element import (
     ElementTree,
@@ -377,6 +378,11 @@ class Property(ElementTree):
         self.attributes = AttributesList()
 
 
+class ClipType(str, Enum):
+    ANIMATION = "Animation"
+    ANIMATION_LIST = "AnimationList"
+
+
 class Clip(ItemTypeList.Item, AbstractClass):
     class TagList(ListProperty):
         class Tag(Property):
@@ -422,7 +428,7 @@ class ClipAnimationsList(ListProperty):
 
 class ClipsList(ItemTypeList):
     class ClipAnimation(Clip):
-        type = "Animation"
+        type = ClipType.ANIMATION
 
         def __init__(self):
             super().__init__()
@@ -432,7 +438,7 @@ class ClipsList(ItemTypeList):
             self.rate = ValueProperty("Rate", 0.0)
 
     class ClipAnimationList(Clip):
-        type = "AnimationList"
+        type = ClipType.ANIMATION_LIST
 
         def __init__(self):
             super().__init__()

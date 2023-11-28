@@ -13,6 +13,7 @@ from ..cwxml.shader import ShaderManager
 
 from .. import logger
 
+
 class AnimationFlag(IntFlag):
     Default = 0
     RootMotion = 16
@@ -695,12 +696,6 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         setup_material_for_animation(new_target_id)
 
 
-def get_frame_range_and_count(action: bpy.types.Action) -> Tuple[Vector, int]:
-    frame_range = action.frame_range
-    frame_count = math.ceil(frame_range[1] - frame_range[0] + 1)
-    return frame_range, frame_count
-
-
 def get_target_from_id(target_id: bpy.types.ID) -> bpy.types.ID:
     """Returns the ID instance where the animation data should be created to play the animation."""
     if target_id is None:
@@ -760,7 +755,7 @@ def update_uv_clip_hash(clip_obj) -> bool:
     temp_parent_obj = drawable_model
     while temp_parent_obj.parent:
         temp_parent_obj = temp_parent_obj.parent
-        if temp_parent_obj.sollum_type == SollumType.DRAWABLE or temp_parent_obj.sollum_type == SollumType.FRAGMENT :
+        if temp_parent_obj.sollum_type == SollumType.DRAWABLE or temp_parent_obj.sollum_type == SollumType.FRAGMENT:
             parent = temp_parent_obj
         else:
             break
@@ -778,3 +773,24 @@ def update_uv_clip_hash(clip_obj) -> bool:
 def is_uv_animation_supported(material: bpy.types.Material):
     shader = ShaderManager.find_shader(material.shader_properties.filename)
     return shader is not None and shader.is_uv_animation_supported
+
+def get_scene_fps() -> float:
+    render = bpy.context.scene.render
+    return render.fps / render.fps_base
+
+def get_action_duration_frames(action: bpy.types.Action) -> float:
+    """Gets the action duration in frames, including subframes."""
+    action_frame_range = action.frame_range
+    return action_frame_range[1] - action_frame_range[0]
+
+
+def get_action_duration_secs(action: bpy.types.Action) -> float:
+    """Gets the action duration in seconds, based on the current FPS setting."""
+    return get_action_duration_frames(action) / get_scene_fps()
+
+
+def get_action_export_frame_count(action: bpy.types.Action) -> int:
+    """Gets how many frames should be exported for the given action."""
+    max_num_keyframes = max(len(fc.keyframe_points) for fc in action.fcurves)
+    num_frames = math.ceil(get_action_duration_frames(action) + 1)
+    return max(max_num_keyframes, num_frames)

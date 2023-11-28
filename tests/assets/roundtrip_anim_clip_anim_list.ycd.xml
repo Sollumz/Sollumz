@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClipDictionary>
+ <Clips>
+  <Item>
+   <Hash>test_clip_anim_list</Hash>
+   <Name>pack:/test_clip_anim_list.clip</Name>
+   <Type value="AnimationList" />
+   <Unknown30 value="0" />
+   <Tags />
+   <Properties />
+   <Duration value="1.333333" />
+   <Animations>
+    <Item>
+     <AnimationHash>test_anim1</AnimationHash>
+     <StartTime value="9.966667" />
+     <EndTime value="11.3" />
+     <Rate value="1" />
+    </Item>
+    <Item>
+     <AnimationHash>test_anim2</AnimationHash>
+     <StartTime value="7.3" />
+     <EndTime value="8.7" />
+     <Rate value="1.05" />
+    </Item>
+   </Animations>
+  </Item>
+ </Clips>
+ <Animations>
+  <Item>
+   <Hash>test_anim1</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="709" />
+   <SequenceFrameLimit value="191" />
+   <Duration value="23.6" />
+   <Unknown1C>hash_1234ABCD</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="0" />
+     <Track value="0" />
+     <Unk0 value="0" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_ABCD1234</Hash>
+     <FrameCount value="192" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticVector3" />
+         <Value x="1.0" y="2.0" z="3.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+    <Item>
+     <Hash>hash_ABCD1235</Hash>
+     <FrameCount value="192" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticVector3" />
+         <Value x="1.0" y="2.0" z="3.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+    <Item>
+     <Hash>hash_ABCD1236</Hash>
+     <FrameCount value="192" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticVector3" />
+         <Value x="1.0" y="2.0" z="3.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+    <Item>
+     <Hash>hash_ABCD1237</Hash>
+     <FrameCount value="136" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticVector3" />
+         <Value x="1.0" y="2.0" z="3.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+  <Item>
+   <Hash>test_anim2</Hash>
+   <Unknown10 value="0" />
+   <FrameCount value="551" />
+   <SequenceFrameLimit value="553" />
+   <Duration value="22" />
+   <Unknown1C>hash_2234ABCD</Unknown1C>
+   <BoneIds>
+    <Item>
+     <BoneId value="0" />
+     <Track value="0" />
+     <Unk0 value="0" />
+    </Item>
+   </BoneIds>
+   <Sequences>
+    <Item>
+     <Hash>hash_ABCD2234</Hash>
+     <FrameCount value="221" />
+     <SequenceData>
+      <Item>
+       <Channels>
+        <Item>
+         <Type value="StaticVector3" />
+         <Value x="4.0" y="5.0" z="6.0" />
+        </Item>
+       </Channels>
+      </Item>
+     </SequenceData>
+    </Item>
+   </Sequences>
+  </Item>
+ </Animations>
+</ClipDictionary>

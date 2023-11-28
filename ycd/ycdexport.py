@@ -14,8 +14,10 @@ from ..tools.animationhelper import (
     get_quantum_and_min_val,
     get_id_and_track_from_track_data_path,
     calculate_bone_space_transform_matrix,
-    get_frame_range_and_count,
     get_target_from_id,
+    get_action_duration_frames,
+    get_action_duration_secs,
+    get_action_export_frame_count,
 )
 from .properties import ClipAttribute, ClipTag, calculate_final_uv_transform_matrix
 
@@ -48,7 +50,12 @@ def sequence_items_from_action(
         action: bpy.types.Action,
         target_id: bpy.types.ID
 ) -> SequenceItems:
-    frame_range, frame_count = get_frame_range_and_count(action)
+    action_frame_range = action.frame_range
+    export_frame_count = get_action_export_frame_count(action)
+    def _export_frame_to_action_frame(frame_index: int) -> float:
+        export_last_frame_index = export_frame_count - 1
+        return action_frame_range[0] + (frame_index / export_last_frame_index) * (action_frame_range[1] - action_frame_range[0])
+
     target = get_target_from_id(target_id)
     target_is_armature = isinstance(target_id, bpy.types.Armature)
     target_is_camera = isinstance(target_id, bpy.types.Camera)
@@ -77,7 +84,7 @@ def sequence_items_from_action(
             continue  # UV transforms are handled later
 
         comp_index = fcurve.array_index
-        format = TrackFormatMap[track]
+        track_format = TrackFormatMap[track]
 
         if bone_id not in sequence_items:
             sequence_items[bone_id] = {}
@@ -85,7 +92,7 @@ def sequence_items_from_action(
         bone_sequences = sequence_items[bone_id]
 
         if track not in bone_sequences:
-            if format == TrackFormat.Vector3:
+            if track_format == TrackFormat.Vector3:
                 # TODO: defaults should be kept in-sync with the properties defaults in AnimationTracks, refactor this
                 #  once we add more defaults to avoid duplication
                 if track == Track.UV0:
@@ -94,16 +101,16 @@ def sequence_items_from_action(
                     default_vec = (0.0, 1.0, 0.0)
                 else:
                     default_vec = (0.0, 0.0, 0.0)
-                bone_sequences[track] = [Vector(default_vec) for _ in range(0, frame_count)]
-            elif format == TrackFormat.Quaternion:
-                bone_sequences[track] = [Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
-            elif format == TrackFormat.Float:
-                bone_sequences[track] = [0.0] * frame_count
+                bone_sequences[track] = [Vector(default_vec) for _ in range(export_frame_count)]
+            elif track_format == TrackFormat.Quaternion:
+                bone_sequences[track] = [Quaternion((1.0, 0.0, 0.0, 0.0)) for _ in range(export_frame_count)]
+            elif track_format == TrackFormat.Float:
+                bone_sequences[track] = [0.0] * export_frame_count
 
         track_sequence = bone_sequences[track]
-        for frame_id in range(0, frame_count):
-            value = fcurve.evaluate(frame_range[0] + frame_id)
-            if format == TrackFormat.Float:
+        for frame_id in range(export_frame_count):
+            value = fcurve.evaluate(_export_frame_to_action_frame(frame_id))
+            if track_format == TrackFormat.Float:
                 track_sequence[frame_id] = value
             else:
                 track_sequence[frame_id][comp_index] = value
@@ -115,12 +122,12 @@ def sequence_items_from_action(
 
             if Track.BonePosition in bone_sequences:
                 vecs = bone_sequences[Track.BonePosition]
-                for i in range(0, frame_count):
+                for i in range(export_frame_count):
                     vecs[i] = transform_mat @ vecs[i]
 
             if Track.BoneRotation in bone_sequences:
                 quats = bone_sequences[Track.BoneRotation]
-                for i in range(0, frame_count):
+                for i in range(export_frame_count):
                     quats[i].rotate(transform_mat)
 
     if target_is_camera:
@@ -130,7 +137,7 @@ def sequence_items_from_action(
         for bone_id, bone_sequences in sequence_items.items():
             if Track.CameraRotation in bone_sequences:
                 quats = bone_sequences[Track.CameraRotation]
-                for i in range(0, frame_count):
+                for i in range(export_frame_count):
                     x_axis_local = quats[i] @ x_axis
                     quats[i].rotate(Quaternion(x_axis_local, angle_delta))
 
@@ -149,15 +156,15 @@ def sequence_items_from_action(
 
             bone_sequences = sequence_items[bone_id]
 
-            # compute uv0/uv1 from uv_transforms
-            bone_sequences[Track.UV0] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
-            bone_sequences[Track.UV1] = [Vector((0.0, 0.0, 0.0)) for _ in range(0, frame_count)]
+            # compute uv0/uv1 from uv_transform
+            bone_sequences[Track.UV0] = [Vector((0.0, 0.0, 0.0)) for _ in range(export_frame_count)]
+            bone_sequences[Track.UV1] = [Vector((0.0, 0.0, 0.0)) for _ in range(export_frame_count)]
             uv0_sequence = bone_sequences[Track.UV0]
             uv1_sequence = bone_sequences[Track.UV1]
-            for frame_id in range(0, frame_count):
+            for frame_id in range(export_frame_count):
                 # apply f-curves to UV transforms
                 for fcurve in fcurves:
-                    value = fcurve.evaluate(frame_range[0] + frame_id)
+                    value = fcurve.evaluate(_export_frame_to_action_frame(frame_id))
                     transform_index, prop_name = parse_uv_transform_data_path(fcurve.data_path)
 
                     prop = getattr(uv_transforms[transform_index], prop_name)
@@ -206,7 +213,7 @@ def sequence_items_from_action(
             if quats is None:
                 continue
 
-            for i in range(1, frame_count):
+            for i in range(1, export_frame_count):
                 if quats[i - 1].dot(quats[i]) < 0:
                     quats[i] *= -1
     # WARNING: ANY OPERATION WITH ROTATION WILL CAUSE SIGN CHANGE. PROCEED ANYTHING BEFORE FIX.
@@ -259,9 +266,9 @@ def sequence_data_from_frames_data(
 ) -> ycdxml.Animation.SequenceDataList.SequenceData:
     sequence_data = ycdxml.Animation.SequenceDataList.SequenceData()
 
-    format = TrackFormatMap[track]
+    track_format = TrackFormatMap[track]
 
-    if format == TrackFormat.Vector3:
+    if track_format == TrackFormat.Vector3:
         values_x = []
         values_y = []
         values_z = []
@@ -289,7 +296,7 @@ def sequence_data_from_frames_data(
             sequence_data.channels.append(build_values_channel(values_x, uniq_x))
             sequence_data.channels.append(build_values_channel(values_y, uniq_y))
             sequence_data.channels.append(build_values_channel(values_z, uniq_z))
-    elif format == TrackFormat.Quaternion:
+    elif track_format == TrackFormat.Quaternion:
         values_x = []
         values_y = []
         values_z = []
@@ -323,7 +330,7 @@ def sequence_data_from_frames_data(
             sequence_data.channels.append(build_values_channel(values_y, uniq_y))
             sequence_data.channels.append(build_values_channel(values_z, uniq_z))
             sequence_data.channels.append(build_values_channel(values_w, uniq_w))
-    elif format == TrackFormat.Float:
+    elif track_format == TrackFormat.Float:
         values = frames_data
         uniq = list(set(values))
         sequence_data.channels.append(build_values_channel(values, uniq))
@@ -336,12 +343,12 @@ def animation_from_object(animation_obj: bpy.types.Object) -> ycdxml.Animation:
 
     animation_properties = animation_obj.animation_properties
     action = animation_properties.action
-    frame_range, frame_count = get_frame_range_and_count(action)
+    export_frame_count = get_action_export_frame_count(action)
 
     animation.hash = animation_properties.hash
-    animation.frame_count = frame_count
-    animation.sequence_frame_limit = frame_count + 30
-    animation.duration = (frame_count - 1) / bpy.context.scene.render.fps
+    animation.frame_count = export_frame_count
+    animation.sequence_frame_limit = export_frame_count + 30
+    animation.duration = get_action_duration_secs(action)
     animation.unknown10 = AnimationFlag.Default
 
     # signature: this value must be unique (used internally for animation caching)
@@ -352,7 +359,7 @@ def animation_from_object(animation_obj: bpy.types.Object) -> ycdxml.Animation:
     sequence_items = sequence_items_from_action(action, target_id)
 
     sequence = ycdxml.Animation.SequenceList.Sequence()
-    sequence.frame_count = frame_count
+    sequence.frame_count = export_frame_count
     sequence.hash = "hash_00000000"  # TODO: calculate signature
 
     sequence_datas = [(bone_id, track, frames_data)
@@ -467,16 +474,15 @@ def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
         xml_clip = ycdxml.ClipsList.ClipAnimation()
         clip_animation_property = clip_properties.animations[0]
         animation_properties = clip_animation_property.animation.animation_properties
-        _, frame_count = get_frame_range_and_count(animation_properties.action)
-
-        animation_duration = (frame_count - 1) / bpy.context.scene.render.fps
+        duration_frames = get_action_duration_frames(animation_properties.action)
+        duration_secs = get_action_duration_secs(animation_properties.action)
 
         xml_clip.animation_hash = animation_properties.hash
-        xml_clip.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
-        xml_clip.end_time = (clip_animation_property.end_frame / frame_count) * animation_duration
+        xml_clip.start_time = (clip_animation_property.start_frame / duration_frames) * duration_secs
+        xml_clip.end_time = (clip_animation_property.end_frame / duration_frames) * duration_secs
 
         clip_animation_duration = xml_clip.end_time - xml_clip.start_time
-        xml_clip.rate = clip_animation_duration / clip_properties.duration
+        xml_clip.rate =  clip_animation_duration / clip_properties.duration
     else:
         xml_clip = ycdxml.ClipsList.ClipAnimationList()
         xml_clip.duration = clip_properties.duration
@@ -485,13 +491,12 @@ def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
             clip_animation = ycdxml.ClipAnimationsList.ClipAnimation()
 
             animation_properties = clip_animation_property.animation.animation_properties
-            _, frame_count = get_frame_range_and_count(animation_properties.action)
-
-            animation_duration = (frame_count - 1) / bpy.context.scene.render.fps
+            duration_frames = get_action_duration_frames(animation_properties.action)
+            duration_secs = get_action_duration_secs(animation_properties.action)
 
             clip_animation.animation_hash = animation_properties.hash
-            clip_animation.start_time = (clip_animation_property.start_frame / frame_count) * animation_duration
-            clip_animation.end_time = (clip_animation_property.end_frame / frame_count) * animation_duration
+            clip_animation.start_time = (clip_animation_property.start_frame / duration_frames) * duration_secs
+            clip_animation.end_time = (clip_animation_property.end_frame / duration_frames) * duration_secs
 
             clip_animation_duration = clip_animation.end_time - clip_animation.start_time
             clip_animation.rate = clip_animation_duration / clip_properties.duration
