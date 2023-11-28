@@ -548,23 +548,22 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         nodes = mat.node_tree.nodes
         for n in nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz:
-                box = layout.box()
-                row = box.row(align=True)
-                row.label(text="Texture Type: " + n.name)
-                row.label(text="Texture Name: " + n.sollumz_texture_name)
+                SPLIT_FACTOR = 0.2
+                split = layout.split(factor=SPLIT_FACTOR)
+                split.alignment = "RIGHT"
+                split.label(text=n.name)
+                split.template_ID(n, "image", open="image.open")
 
-                if n.image:
-                    row = box.row()
-                    row.prop(n.image, "filepath", text="Texture Path")
-                    row = box.row()
-                    row.prop(n.texture_properties, "embedded")
+                if n.image is not None:
+                    split = layout.split(factor=SPLIT_FACTOR)  # split to align the props with the image selector
+                    _ = split.row()
+                    row = split.row()
                     row.enabled = n.image.filepath != ""
-                else:
-                    row = box.row()
-                    row.label(
-                        text="Image Texture has no linked image.", icon="ERROR")
+                    row.prop(n.texture_properties, "embedded")
+                    row.prop(n.image.colorspace_settings, "name", text="Color Space")
 
-                box.prop(n.texture_properties, "usage")
+                # TODO: verify if Usage can be completely removed
+                # box.prop(n.texture_properties, "usage")
 
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
