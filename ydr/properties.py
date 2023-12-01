@@ -6,6 +6,7 @@ from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats
+from .render_bucket import RenderBucket, RenderBucketEnumItems
 from bpy.app.handlers import persistent
 from bpy.path import basename
 
@@ -90,7 +91,10 @@ class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
 class ShaderProperties(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty(min=0)
 
-    renderbucket: bpy.props.IntProperty(name="Render Bucket", default=0, min=0, max=7)
+    renderbucket: bpy.props.EnumProperty(
+        name="Render Bucket", items=RenderBucketEnumItems,
+        default=RenderBucket.OPAQUE.name
+    )
     filename: bpy.props.StringProperty(
         name="Shader Filename", default="default.sps")
     name: bpy.props.StringProperty(name="Shader Name", default="default")

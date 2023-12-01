@@ -48,6 +48,7 @@ from ..sollumz_properties import (
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
+from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
@@ -988,7 +989,7 @@ def get_shaders_from_blender(materials):
         shader = Shader()
         shader.name = material.shader_properties.name
         shader.filename = material.shader_properties.filename
-        shader.render_bucket = material.shader_properties.renderbucket
+        shader.render_bucket = RenderBucket[material.shader_properties.renderbucket].value
         shader_def = ShaderManager.find_shader(shader.filename)
         shader.parameters = create_shader_parameters_list_template(shader_def)
 
