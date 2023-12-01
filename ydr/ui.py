@@ -24,19 +24,21 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.use_property_decorate = False
-        layout.use_property_split = True
-
         obj = context.active_object
+        drawable_props = obj.drawable_properties
 
-        layout.prop(obj.drawable_properties, "lod_dist_high")
-        layout.prop(obj.drawable_properties, "lod_dist_med")
-        layout.prop(obj.drawable_properties, "lod_dist_low")
-        layout.prop(obj.drawable_properties, "lod_dist_vlow")
+        col = layout.column(align=True)
+        col.use_property_decorate = False
+        col.use_property_split = True
 
-        layout.separator()
+        col.prop(drawable_props, "lod_dist_high", text="Lod Distance High")
+        col.prop(drawable_props, "lod_dist_med", text="Med")
+        col.prop(drawable_props, "lod_dist_low", text="Low")
+        col.prop(drawable_props, "lod_dist_vlow", text="Vlow")
 
-        layout.operator("sollumz.order_shaders", icon="MATERIAL")
+        col.separator()
+
+        col.operator("sollumz.order_shaders", icon="MATERIAL")
 
 
 class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
