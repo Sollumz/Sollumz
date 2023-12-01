@@ -62,6 +62,26 @@ def get_capsule_cap_shape() -> object:
     return bpy.types.Gizmo.new_custom_shape("LINES", all_verts)
 
 
+class SOLLUMZ_OT_capsule_light_set_size(bpy.types.Operator):
+    bl_idname = "sollumz.capsule_light_set_size"
+    bl_label = "Capsule Light Scale"
+    bl_description = bl_label
+    bl_options = {"UNDO_GROUPED", "INTERNAL"}
+
+    length: bpy.props.FloatProperty(name="Length")
+    radius: bpy.props.FloatProperty(name="Radius")
+
+    def execute(self, context):
+        light_obj = context.view_layer.objects.active
+        if light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
+            return {"CANCELLED"}
+
+        light = light_obj.data
+        light.light_properties.extent[0] = self.length
+        light.cutoff_distance = self.radius
+        return {"FINISHED"}
+
+
 class SOLLUMZ_GT_capsule(bpy.types.Gizmo):
     bl_idname = "SOLLUMZ_GT_capsule"
 
@@ -101,7 +121,20 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
         return context.space_data.show_object_viewport_light and len(bpy.data.lights) > 0
 
     def setup(self, context):
-        pass
+        cage = self.gizmos.new("GIZMO_GT_cage_2d")
+        cage.draw_style = "BOX_TRANSFORM"
+        cage.transform = {"SCALE"}
+        cage.use_draw_hover = True
+        cage.use_draw_modal = True
+        cage.use_draw_value = True
+        cage.use_draw_offset_scale = True
+        cage.hide = False
+        cage.target_set_handler("matrix", get=self.handler_get_cage_transform, set=self.handler_set_cage_transform)
+
+        self.cage = cage
+        self.cage_last_transform = Matrix.Identity(4)
+
+        self.active_light_obj = None
 
     def refresh(self, context):
         pass
@@ -109,11 +142,13 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
     def draw_prepare(self, context):
         theme = context.preferences.themes[0]
         color_default = theme.view_3d.light[0:3]
-        # color_selected = theme.view_3d.object_selected
+        color_selected = theme.view_3d.object_selected
         color_active = theme.view_3d.object_active
 
-        gz_idx = 0
-        for light_obj in bpy.data.objects:
+        active_obj = context.view_layer.objects.active
+        self.active_light_obj = None
+        gz_idx = 1  # gizmo at index 0 is the cage
+        for light_obj in context.view_layer.objects:
             if light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
                 continue
 
@@ -124,8 +159,13 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
             if light.sollum_type != LightType.CAPSULE:
                 continue
 
+            light_selected = light_obj.select_get()
+            light_active = light_obj == active_obj
             length = light.light_properties.extent[0]
             radius = light.cutoff_distance  # falloff
+
+            if light_active:
+                self.active_light_obj = light_obj
 
             if gz_idx < len(self.gizmos):
                 gz = self.gizmos[gz_idx]
@@ -135,7 +175,11 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
             gz.matrix_basis = light_obj.matrix_world.normalized()
             gz.length = length
             gz.radius = radius
-            gz.color = color_active if light_obj.select_get() else color_default
+            gz.color = (
+                color_active if light_active and light_selected else
+                color_selected if light_selected else
+                color_default
+            )
             gz.alpha = 0.9
 
             gz_idx += 1
@@ -143,3 +187,71 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
         # Remove unused gizmos
         for i in range(gz_idx, len(self.gizmos)):
             self.gizmos.remove(self.gizmos[-1])
+
+        self.draw_prepare_cage(context)
+
+    def draw_prepare_cage(self, context):
+        cage = self.cage
+        light_obj = self.active_light_obj
+        if light_obj is None:
+            cage.hide = True
+            return
+
+        cage.hide = False
+        theme_ui = context.preferences.themes[0].user_interface
+        cage.color = theme_ui.gizmo_primary
+        cage.color_highlight = theme_ui.gizmo_hi
+
+        cage.matrix_offset = self.apply_cage_clamping(cage.matrix_offset)
+
+        rv3d = context.space_data.region_3d
+        view_dir = (light_obj.matrix_world.translation - rv3d.view_matrix.inverted().translation)
+        view_dir.normalize()
+        view_rot = view_dir.to_track_quat("Y", "Z")
+
+        mat1 = light_obj.matrix_world @ Matrix.Rotation(math.pi / 2, 4, "Y")
+        mat2 = mat1 @ Matrix.Rotation(math.pi / 2, 4, "X")
+        dot_product1 = view_rot.dot(mat1.to_quaternion())
+        dot_product2 = view_rot.dot(mat2.to_quaternion())
+        if dot_product1 < dot_product2:  # TODO: this "facing camera" check is not really correct
+            cage.matrix_basis = mat1
+        else:
+            cage.matrix_basis = mat2
+
+    def apply_cage_clamping(self, m: Matrix) -> Matrix:
+        """Returns a new scale matrix clamped to avoid dimensions of size 0 on the capsule cage."""
+        radius = m.row[1].length
+        length = m.row[0].length - radius
+        length = max(0.001, length)
+        radius = max(0.001, radius)
+        return Matrix(((length + radius, 0.0, 0.0, 0.0),
+                       (0.0, radius, 0.0, 0.0),
+                       (0.0, 0.0, 1.0, 0.0),
+                       (0.0, 0.0, 0.0, 1.0)))
+
+    def get_capsule_light_size_matrix(self, light_obj: bpy.types.Object) -> Matrix:
+        light = light_obj.data
+        length = light.light_properties.extent[0]
+        radius = light.cutoff_distance  # falloff
+        m = Matrix((((length + radius), 0.0, 0.0, 0.0),
+                    (0.0, radius, 0.0, 0.0),
+                    (0.0, 0.0, 1.0, 0.0),
+                    (0.0, 0.0, 0.0, 1.0)))
+        return m
+
+    def handler_get_cage_transform(self):
+        light_obj = bpy.context.view_layer.objects.active
+        if light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
+            m = Matrix.Identity(4)
+        else:
+            m = self.get_capsule_light_size_matrix(light_obj)
+
+        return [v for row in m.transposed() for v in row]
+
+    def handler_set_cage_transform(self, value):
+        m = Matrix((value[0:4], value[4:8], value[8:12], value[12:16]))
+        m.transpose()
+        m = self.apply_cage_clamping(m)
+        radius = m.row[1].length
+        length = m.row[0].length - radius
+        bpy.ops.sollumz.capsule_light_set_size(True, length=length, radius=radius)
