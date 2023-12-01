@@ -92,17 +92,18 @@ class SOLLUMZ_GT_capsule(bpy.types.Gizmo):
 
     def draw(self, context):
         mat = self.matrix_world
+        diameter = self.radius * 2.0
         cylinder_mat = (mat @
-                        Matrix.Scale(self.radius, 4, (1.0, 0.0, 0.0)) @
-                        Matrix.Scale(self.radius, 4, (0.0, 1.0, 0.0)) @
+                        Matrix.Scale(diameter, 4, (1.0, 0.0, 0.0)) @
+                        Matrix.Scale(diameter, 4, (0.0, 1.0, 0.0)) @
                         Matrix.Scale(self.length, 4, (0.0, 0.0, 1.0)))
         cap_mat = (mat @
                    Matrix.Translation((0.0, 0.0, -self.length * 0.5)) @
-                   Matrix.Scale(self.radius, 4) @
+                   Matrix.Scale(diameter, 4) @
                    Matrix.Scale(-1.0, 4))
         cap2_mat = (mat @
                     Matrix.Translation((0.0, 0.0, self.length * 0.5)) @
-                    Matrix.Scale(self.radius, 4))
+                    Matrix.Scale(diameter, 4))
 
         self.draw_custom_shape(get_cylinder_shape(), matrix=cylinder_mat)
         self.draw_custom_shape(get_capsule_cap_shape(), matrix=cap_mat)
@@ -171,6 +172,7 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
                 gz = self.gizmos[gz_idx]
             else:
                 gz = self.gizmos.new(SOLLUMZ_GT_capsule.bl_idname)
+                gz.alpha = 0.9
 
             gz.matrix_basis = light_obj.matrix_world.normalized()
             gz.length = length
@@ -180,7 +182,6 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
                 color_selected if light_selected else
                 color_default
             )
-            gz.alpha = 0.9
 
             gz_idx += 1
 
@@ -220,12 +221,12 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
 
     def apply_cage_clamping(self, m: Matrix) -> Matrix:
         """Returns a new scale matrix clamped to avoid dimensions of size 0 on the capsule cage."""
-        radius = m.row[1].length
-        length = m.row[0].length - radius
+        diameter = m.row[1].length
+        length = m.row[0].length - diameter
         length = max(0.001, length)
-        radius = max(0.001, radius)
-        return Matrix(((length + radius, 0.0, 0.0, 0.0),
-                       (0.0, radius, 0.0, 0.0),
+        diameter = max(0.001, diameter)
+        return Matrix(((length + diameter, 0.0, 0.0, 0.0),
+                       (0.0, diameter, 0.0, 0.0),
                        (0.0, 0.0, 1.0, 0.0),
                        (0.0, 0.0, 0.0, 1.0)))
 
@@ -233,8 +234,9 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
         light = light_obj.data
         length = light.light_properties.extent[0]
         radius = light.cutoff_distance  # falloff
-        m = Matrix((((length + radius), 0.0, 0.0, 0.0),
-                    (0.0, radius, 0.0, 0.0),
+        diameter = radius * 2.0
+        m = Matrix(((length + diameter, 0.0, 0.0, 0.0),
+                    (0.0, diameter, 0.0, 0.0),
                     (0.0, 0.0, 1.0, 0.0),
                     (0.0, 0.0, 0.0, 1.0)))
         return m
@@ -252,6 +254,7 @@ class SOLLUMZ_GGT_capsule_light(bpy.types.GizmoGroup):
         m = Matrix((value[0:4], value[4:8], value[8:12], value[12:16]))
         m.transpose()
         m = self.apply_cage_clamping(m)
-        radius = m.row[1].length
-        length = m.row[0].length - radius
+        diameter = m.row[1].length
+        radius = diameter * 0.5
+        length = m.row[0].length - diameter
         bpy.ops.sollumz.capsule_light_set_size(True, length=length, radius=radius)
