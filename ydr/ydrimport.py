@@ -18,6 +18,7 @@ from .mesh_builder import MeshBuilder
 from ..lods import LODLevels
 from .lights import create_light_objs
 from .properties import DrawableModelProperties
+from .render_bucket import RenderBucket
 from .. import logger
 
 
@@ -239,7 +240,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
 
     material = create_shader(filename)
     material.name = shader.name
-    material.shader_properties.renderbucket = shader.render_bucket
+    material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
 
     for param in shader.parameters:
         for n in material.node_tree.nodes:

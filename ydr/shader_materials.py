@@ -16,7 +16,7 @@ from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
 from ..tools.meshhelper import get_uv_map_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
-
+from .render_bucket import RenderBucket
 
 class ShaderBuilder(NamedTuple):
     shader: ShaderDef
@@ -1066,7 +1066,7 @@ def create_shader(filename: str):
     mat.use_nodes = True
     mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename
-    mat.shader_properties.renderbucket = shader.render_bucket
+    mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
 
     bsdf, material_output = find_bsdf_and_material_output(mat)
     assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"
