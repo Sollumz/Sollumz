@@ -121,7 +121,7 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         col.separator()
 
         layout.prop(model_props, "render_mask")
-        layout.prop(model_props, "unknown_1")
+        layout.prop(model_props, "matrix_count")
         layout.prop(model_props, "flags")
 
 

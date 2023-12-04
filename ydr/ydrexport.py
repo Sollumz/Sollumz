@@ -222,7 +222,7 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, m
 
     model_xml.render_mask = model_props.render_mask
     model_xml.flags = model_props.flags
-    model_xml.unknown_1 = model_props.unknown_1
+    model_xml.matrix_count = model_props.matrix_count
     model_xml.has_skin = 1 if model_obj.vertex_groups else 0
 
 
@@ -415,7 +415,7 @@ def join_skinned_models(model_xmls: list[DrawableModel]):
     skinned_model = DrawableModel()
     skinned_model.has_skin = 1
     skinned_model.render_mask = skinned_models[0].render_mask
-    skinned_model.unknown_1 = skinned_models[0].unknown_1
+    skinned_model.matrix_count = skinned_models[0].matrix_count
     skinned_model.flags = skinned_models[0].flags
 
     geoms_by_shader: dict[int, list[Geometry]] = defaultdict(list)
@@ -923,7 +923,6 @@ def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Dr
     drawable_xml.lod_dist_med = drawable_obj.drawable_properties.lod_dist_med
     drawable_xml.lod_dist_low = drawable_obj.drawable_properties.lod_dist_low
     drawable_xml.lod_dist_vlow = drawable_obj.drawable_properties.lod_dist_vlow
-    drawable_xml.unknown_9A = drawable_obj.drawable_properties.unknown_9A
 
 
 def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
