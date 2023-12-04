@@ -181,7 +181,7 @@ def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: D
 
 def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
     model_props.render_mask = model_xml.render_mask
-    model_props.unknown_1 = model_xml.unknown_1
+    model_props.matrix_count = model_xml.matrix_count
     model_props.flags = model_xml.flags
 
 
@@ -475,7 +475,6 @@ def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
     obj.drawable_properties.lod_dist_med = drawable_xml.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable_xml.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable_xml.lod_dist_vlow
-    obj.drawable_properties.unknown_9A = drawable_xml.unknown_9A
 
 
 def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):

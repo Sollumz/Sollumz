@@ -50,8 +50,6 @@ class DrawableProperties(bpy.types.PropertyGroup):
         min=0, max=10000, default=9998, name="Lod Distance Low")
     lod_dist_vlow: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Lod Distance Vlow")
-    unknown_9A: bpy.props.FloatProperty(
-        min=0, max=10000, default=9998, name="Unknown 9A")
 
     shader_order: bpy.props.PointerProperty(type=DrawableShaderOrder)
 
@@ -59,7 +57,7 @@ class DrawableProperties(bpy.types.PropertyGroup):
 class DrawableModelProperties(bpy.types.PropertyGroup):
     render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
     flags: bpy.props.IntProperty(name="Flags", default=0)
-    unknown_1: bpy.props.IntProperty(name="Unknown 1", default=0)
+    matrix_count: bpy.props.IntProperty(name="Matrix Count", default=0)
     sollum_lod: bpy.props.EnumProperty(
         items=items_from_enums(
             [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]),
