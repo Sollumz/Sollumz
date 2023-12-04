@@ -415,7 +415,7 @@ def join_skinned_models(model_xmls: list[DrawableModel]):
     skinned_model = DrawableModel()
     skinned_model.has_skin = 1
     skinned_model.render_mask = skinned_models[0].render_mask
-    skinned_model.unknown_1 = skinned_models[0].unknown_1
+    skinned_model.matrix_count = skinned_models[0].matrix_count
     skinned_model.flags = skinned_models[0].flags
 
     geoms_by_shader: dict[int, list[Geometry]] = defaultdict(list)
