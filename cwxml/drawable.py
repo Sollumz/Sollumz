@@ -211,7 +211,6 @@ class ShaderGroup(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.unknown_30 = ValueProperty("Unknown30", 0)
         self.texture_dictionary = TextureDictionaryList()
         self.shaders = ShadersList()
 
