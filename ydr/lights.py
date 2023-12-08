@@ -2,6 +2,7 @@ import bpy
 from math import radians, pi, degrees
 from typing import Optional
 from mathutils import Matrix, Vector
+from .light_flashiness import Flashiness
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LightType
 from ..tools.blenderhelper import create_empty_object, create_blender_object
 from ..sollumz_preferences import get_addon_preferences
@@ -119,7 +120,7 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
 
     light_props: LightProperties = light_data.light_properties
 
-    light_props.flashiness = str(light_xml.flashiness)
+    light_props.flashiness = Flashiness(light_xml.flashiness).name
     light_props.flags = light_xml.flags
     light_props.group_id = light_xml.group_id
     light_props.time_flags = light_xml.time_flags
@@ -200,7 +201,7 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.color = light_data.color * 255
     light_xml.intensity = light_data.energy / 500
 
-    light_xml.flashiness = light_props.flashiness
+    light_xml.flashiness = Flashiness[light_props.flashiness].value
     light_xml.group_id = light_props.group_id
     light_xml.falloff = light_data.cutoff_distance
     light_xml.falloff_exponent = light_data.shadow_soft_size * 5

@@ -7,6 +7,7 @@ from ..cwxml.light_preset import LightPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats
 from .render_bucket import RenderBucket, RenderBucketEnumItems
+from .light_flashiness import Flashiness, LightFlashinessEnumItems
 from bpy.app.handlers import persistent
 from bpy.path import basename
 
@@ -215,32 +216,8 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
 
 class LightProperties(bpy.types.PropertyGroup):
-    flashiness: bpy.props.EnumProperty(
-        name="Flashiness",
-        items=[
-            ("0", "Constant (0)", ""),
-            ("1", "Random (1)", ""),
-            ("2", "Random Override If Wet (2)", ""),
-            ("3", "Once Per Second (3)", ""),
-            ("4", "Twice Per Second (4)", ""),
-            ("5", "Five Per Second (5)", ""),
-            ("6", "Off (6)", ""),
-            ("7", "Unused (7)", ""),
-            ("8", "Alarm (8)", ""),
-            ("9", "On When Raining (9)", ""),
-            ("10", "Cycle 1 (10)", ""),
-            ("11", "Cycle 2 (11)", ""),
-            ("12", "Cycle 3 (12)", ""),
-            ("13", "Disco (13)", ""),
-            ("14", "Candle (14)", ""),
-            ("15", "Plane (15)", ""),
-            ("16", "Fire (16)", ""),
-            ("17", "Threshold (17)", ""),
-            ("18", "Electric (18)", ""),
-            ("19", "Strobe (19)", ""),
-            ("20", "Count (20)", ""),
-        ]
-    )
+    flashiness: bpy.props.EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
+                                        default=Flashiness.CONSTANT.name)
     group_id: bpy.props.IntProperty(name="Group ID")
     falloff: bpy.props.FloatProperty(name="Falloff")
     falloff_exponent: bpy.props.FloatProperty(name="Falloff Exponent")
