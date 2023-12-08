@@ -7,21 +7,21 @@ class Flashiness(IntEnum):
     ONCE_PER_SECOND = 3
     TWICE_PER_SECOND = 4
     FIVE_PER_SECOND = 5
-    OFF = 6
-    UNUSED = 7
-    ALARM = 8
-    ON_WHEN_RAINING = 9
-    CYCLE_1 = 10
-    CYCLE_2 = 11
-    CYCLE_3 = 12
-    DISCO = 13
-    CANDLE = 14
-    PLANE = 15
-    FIRE = 16
-    THRESHOLD = 17
-    ELECTRIC = 18
-    STROBE = 19
-    COUNT = 20
+    RANDOM_FLASHINESS = 6
+    OFF = 7
+    UNUSED = 8
+    ALARM = 9
+    ON_WHEN_RAINING = 10
+    CYCLE_1 = 11
+    CYCLE_2 = 12
+    CYCLE_3 = 13
+    DISCO = 14
+    CANDLE = 15
+    PLANE = 16
+    FIRE = 17
+    THRESHOLD = 18
+    ELECTRIC = 19
+    STROBE = 20
 
 LightFlashinessEnumItems = tuple((enum.name, f"{label} ({enum.value})", desc, enum.value) for enum, label, desc in (
     (Flashiness.CONSTANT, "Constant", "Constant lighting without flashing"),
@@ -30,6 +30,7 @@ LightFlashinessEnumItems = tuple((enum.name, f"{label} ({enum.value})", desc, en
     (Flashiness.ONCE_PER_SECOND, "Once Per Second", "Flash once per second"),
     (Flashiness.TWICE_PER_SECOND, "Twice Per Second", "Flash twice per second"),
     (Flashiness.FIVE_PER_SECOND, "Five Per Second", "Flash five times per second"),
+    (Flashiness.RANDOM_FLASHINESS, "Random Flashiness", "Flashes Randomly"),
     (Flashiness.OFF, "Off", "Turns Light Off"),
     (Flashiness.UNUSED, "Unused", "Unused"),
     (Flashiness.ALARM, "Alarm", "Flash like an alarm siren"),
@@ -43,6 +44,5 @@ LightFlashinessEnumItems = tuple((enum.name, f"{label} ({enum.value})", desc, en
     (Flashiness.FIRE, "Fire", "Flash like a flame"),
     (Flashiness.THRESHOLD, "Threshold", "Threshold"),
     (Flashiness.ELECTRIC, "Electric", "Electric"),
-    (Flashiness.STROBE, "Strobe", "Flash like a strobe light"),
-    (Flashiness.COUNT, "Count", "Count")
+    (Flashiness.STROBE, "Strobe", "Flash like a strobe light")
 ))

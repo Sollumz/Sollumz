@@ -178,11 +178,28 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
         if light.sollum_type != LightType.NONE:
             layout.separator()
 
-            # Basic properties
-            layout.prop(light.light_properties, "light_hash")
-            layout.prop(light.light_properties, "group_id")
-            layout.prop(light.light_properties, "projected_texture_hash")
-            layout.prop(light.light_properties, "flashiness")
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="General Properties")
+            box.prop(light, "color")
+            box.prop(light, "energy")
+            box.prop(light, "shadow_soft_size")
+
+            if light.sollum_type == LightType.SPOT:
+                box = layout.box()
+                box.separator(factor=0.1)
+                box.label(text="Spot Properties")
+                box.prop(light, "spot_size")
+                box.prop(light, "spot_blend")
+
+            # Misc Properties
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="Misc Properties")
+            box.prop(light.light_properties, "light_hash")
+            box.prop(light.light_properties, "group_id")
+            box.prop(light.light_properties, "projected_texture_hash")
+            box.prop(light.light_properties, "flashiness")
 
             if light.sollum_type == LightType.CAPSULE:
                 layout.prop(light.light_properties, "extent")
