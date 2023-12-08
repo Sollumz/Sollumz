@@ -215,7 +215,32 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
 
 class LightProperties(bpy.types.PropertyGroup):
-    flashiness: bpy.props.IntProperty(name="Flashiness")
+    flashiness: bpy.props.EnumProperty(
+        name="Flashiness",
+        items=[
+            ("CONSTANT", "Constant", ""),
+            ("RANDOM", "Random", ""),
+            ("RANDOM_OVERRIDE_IF_WET", "Random Override If Wet", ""),
+            ("ONCE_SECOND", "Once Per Second", ""),
+            ("TWICE_SECOND", "Twice Per Second", ""),
+            ("FIVE_SECOND", "Five Per Second", ""),
+            ("OFF", "Off", ""),
+            ("UNUSED", "Unused", ""),
+            ("ALARM", "Alarm", ""),
+            ("ON_WHEN_RAINING", "On When Raining", ""),
+            ("CYCLE_1", "Cycle 1", ""),
+            ("CYCLE_2", "Cycle 2", ""),
+            ("CYCLE_3", "Cycle 3", ""),
+            ("DISCO", "Disco", ""),
+            ("CANDLE", "Candle", ""),
+            ("PLANE", "Plane", ""),
+            ("FIRE", "Fire", ""),
+            ("THRESHOLD", "Threshold", ""),
+            ("ELECTRIC", "Electric", ""),
+            ("STROBE", "Strobe", ""),
+            ("COUNT", "Count", ""),
+        ]
+    )
     group_id: bpy.props.IntProperty(name="Group ID")
     falloff: bpy.props.FloatProperty(name="Falloff")
     falloff_exponent: bpy.props.FloatProperty(name="Falloff Exponent")

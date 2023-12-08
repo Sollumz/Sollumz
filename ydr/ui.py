@@ -166,46 +166,67 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
         if aobj.sollum_type != SollumType.LIGHT:
             row = layout.row()
             row.prop(aobj, "sollum_type")
-            layout.label(text="No Sollumz light in scene selected.", icon="ERROR")
+            layout.label(text="No Sollumz light in the scene selected.", icon="ERROR")
             return
 
         light = context.light
+
         row = layout.row()
         row.enabled = light.sollum_type != LightType.NONE
         row.prop(light, "sollum_type")
-        if light.sollum_type == LightType.NONE:
-            return
-        layout.separator()
-        layout.prop(light.light_properties, "light_hash")
-        layout.prop(light.light_properties, "group_id")
-        layout.prop(light.light_properties, "projected_texture_hash")
-        layout.separator()
-        layout.prop(light.light_properties, "flashiness")
-        if light.sollum_type == LightType.CAPSULE:
+
+        if light.sollum_type != LightType.NONE:
             layout.separator()
-            layout.prop(light.light_properties, "extent")
-        layout.separator()
-        layout.prop(light.light_properties, "volume_size_scale")
-        layout.prop(light.light_properties, "volume_outer_color")
-        layout.prop(light.light_properties, "volume_outer_intensity")
-        layout.prop(light.light_properties, "volume_outer_exponent")
-        layout.separator()
-        layout.prop(light.light_properties, "light_fade_distance")
-        layout.prop(light.light_properties, "shadow_fade_distance")
-        layout.prop(light.light_properties, "specular_fade_distance")
-        layout.prop(light.light_properties, "volumetric_fade_distance")
-        layout.separator()
-        layout.prop(light.light_properties, "culling_plane_normal")
-        layout.prop(light.light_properties, "culling_plane_offset")
-        layout.separator()
-        layout.prop(light.light_properties, "corona_size")
-        layout.prop(light.light_properties, "corona_intensity")
-        layout.prop(light.light_properties, "corona_z_bias")
-        layout.separator()
-        layout.prop(light.light_properties, "unknown_45")
-        layout.prop(light.light_properties, "unknown_46")
-        layout.separator()
-        layout.prop(light.light_properties, "shadow_blur")
+
+            # Basic properties
+            layout.prop(light.light_properties, "light_hash")
+            layout.prop(light.light_properties, "group_id")
+            layout.prop(light.light_properties, "projected_texture_hash")
+            layout.prop(light.light_properties, "flashiness")
+
+            if light.sollum_type == LightType.CAPSULE:
+                layout.prop(light.light_properties, "extent")
+
+            # Volume properties
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="Volume Properties", icon="MOD_EXPLODE")
+            box.prop(light.light_properties, "volume_size_scale")
+            box.prop(light.light_properties, "volume_outer_color")
+            box.prop(light.light_properties, "volume_outer_intensity")
+            box.prop(light.light_properties, "volume_outer_exponent")
+
+            # Distance properties
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="Distance Properties", icon="DRIVER_DISTANCE")
+            box.prop(light.light_properties, "light_fade_distance")
+            box.prop(light.light_properties, "shadow_fade_distance")
+            box.prop(light.light_properties, "specular_fade_distance")
+            box.prop(light.light_properties, "volumetric_fade_distance")
+
+            # Culling Plane
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="Culling Plane", icon="MESH_PLANE")
+            box.prop(light.light_properties, "culling_plane_normal")
+            box.prop(light.light_properties, "culling_plane_offset")
+
+            # Corona Properties
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="Corona Properties", icon="LIGHT_SUN")
+            box.prop(light.light_properties, "corona_size")
+            box.prop(light.light_properties, "corona_intensity")
+            box.prop(light.light_properties, "corona_z_bias")
+
+            # Advanced Properties
+            box = layout.box()
+            box.separator(factor=0.1)
+            box.label(text="Advanced Properties", icon="TOOL_SETTINGS")
+            box.prop(light.light_properties, "unknown_45")
+            box.prop(light.light_properties, "unknown_46")
+            box.prop(light.light_properties, "shadow_blur")
 
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
