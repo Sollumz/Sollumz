@@ -119,7 +119,7 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
 
     light_props: LightProperties = light_data.light_properties
 
-    light_props.flashiness = light_xml.flashiness
+    light_props.flashiness = str(light_xml.flashiness)
     light_props.flags = light_xml.flags
     light_props.group_id = light_xml.group_id
     light_props.time_flags = light_xml.time_flags
