@@ -7,6 +7,7 @@ from ..cwxml.light_preset import LightPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats
 from .render_bucket import RenderBucket, RenderBucketEnumItems
+from .light_flashiness import Flashiness, LightFlashinessEnumItems
 from bpy.app.handlers import persistent
 from bpy.path import basename
 
@@ -215,20 +216,13 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
 
 class LightProperties(bpy.types.PropertyGroup):
-    flashiness: bpy.props.IntProperty(name="Flashiness")
+    flashiness: bpy.props.EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
+                                       default=Flashiness.CONSTANT.name)
     group_id: bpy.props.IntProperty(name="Group ID")
-    falloff: bpy.props.FloatProperty(name="Falloff")
-    falloff_exponent: bpy.props.FloatProperty(name="Falloff Exponent")
-    culling_plane_normal: bpy.props.FloatVectorProperty(
-        name="Culling Plane Normal")
+    culling_plane_normal: bpy.props.FloatVectorProperty(name="Culling Plane Normal")
     culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
-    unknown_45: bpy.props.FloatProperty(name="Unknown 45")
-    unknown_46: bpy.props.FloatProperty(name="Unknown 46")
-    volume_intensity: bpy.props.FloatProperty(
-        name="Volume Intensity", default=1.0)
-    shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")
-    volume_size_scale: bpy.props.FloatProperty(
-        name="Volume Size Scale", default=1.0)
+    shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")  # TODO: normalize 0-255 -> 0.0-1.0
+    volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale", default=1.0)
     volume_outer_color: bpy.props.FloatVectorProperty(
         name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0, default=(1.0, 1.0, 1.0))
     light_hash: bpy.props.IntProperty(name="Light Hash")
@@ -239,21 +233,12 @@ class LightProperties(bpy.types.PropertyGroup):
         name="Volume Outer Exponent", default=1.0)
     light_fade_distance: bpy.props.FloatProperty(name="Light Fade Distance")
     shadow_fade_distance: bpy.props.FloatProperty(name="Shadow Fade Distance")
-    specular_fade_distance: bpy.props.FloatProperty(
-        name="Specular Fade Distance")
-    volumetric_fade_distance: bpy.props.FloatProperty(
-        name="Volumetric Fade Distance")
-    shadow_near_clip: bpy.props.FloatProperty(name="Shadow Near Clip")
-    corona_intensity: bpy.props.FloatProperty(
-        name="Corona Intensity", default=1.0)
+    specular_fade_distance: bpy.props.FloatProperty(name="Specular Fade Distance")
+    volumetric_fade_distance: bpy.props.FloatProperty(name="Volumetric Fade Distance")
+    corona_intensity: bpy.props.FloatProperty(name="Corona Intensity", default=1.0)
     corona_z_bias: bpy.props.FloatProperty(name="Corona Z Bias", default=0.1)
-    tangent: bpy.props.FloatVectorProperty(name="Tangent")
-    cone_inner_angle: bpy.props.FloatProperty(name="Cone Inner Angle")
-    cone_outer_angle: bpy.props.FloatProperty(name="Cone Outer Angle")
-    extent: bpy.props.FloatVectorProperty(
-        name="Extent", default=(1, 1, 1), subtype="XYZ")
-    projected_texture_hash: bpy.props.StringProperty(
-        name="Projected Texture Hash")
+    extent: bpy.props.FloatVectorProperty(name="Extent", default=(1, 1, 1), subtype="XYZ", soft_min=0.01, unit="LENGTH")
+    projected_texture_hash: bpy.props.StringProperty(name="Projected Texture Hash")
 
 
 class LightPresetProp(bpy.types.PropertyGroup):

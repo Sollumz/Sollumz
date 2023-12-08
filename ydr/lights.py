@@ -2,6 +2,7 @@ import bpy
 from math import radians, pi, degrees
 from typing import Optional
 from mathutils import Matrix, Vector
+from .light_flashiness import Flashiness
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LightType
 from ..tools.blenderhelper import create_empty_object, create_blender_object
 from ..sollumz_preferences import get_addon_preferences
@@ -119,7 +120,7 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
 
     light_props: LightProperties = light_data.light_properties
 
-    light_props.flashiness = light_xml.flashiness
+    light_props.flashiness = Flashiness(light_xml.flashiness).name
     light_props.flags = light_xml.flags
     light_props.group_id = light_xml.group_id
     light_props.time_flags = light_xml.time_flags
@@ -127,8 +128,6 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
     light_props.projected_texture_hash = light_xml.projected_texture_hash
     light_props.culling_plane_normal = light_xml.culling_plane_normal
     light_props.culling_plane_offset = light_xml.culling_plane_offset
-    light_props.unknown_45 = light_xml.unknown_45
-    light_props.unknown_46 = light_xml.unknown_46
     light_props.shadow_blur = light_xml.shadow_blur
     light_props.volume_size_scale = light_xml.volume_size_scale
     light_props.volume_outer_color = [
@@ -200,14 +199,12 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.color = light_data.color * 255
     light_xml.intensity = light_data.energy / 500
 
-    light_xml.flashiness = light_props.flashiness
+    light_xml.flashiness = Flashiness[light_props.flashiness].value
     light_xml.group_id = light_props.group_id
     light_xml.falloff = light_data.cutoff_distance
     light_xml.falloff_exponent = light_data.shadow_soft_size * 5
     light_xml.culling_plane_normal = Vector(light_props.culling_plane_normal)
     light_xml.culling_plane_offset = light_props.culling_plane_offset
-    light_xml.unknown_45 = light_props.unknown_45
-    light_xml.unknown_46 = light_props.unknown_46
     light_xml.volume_intensity = light_data.volume_factor
     light_xml.shadow_blur = light_props.shadow_blur
     light_xml.volume_size_scale = light_props.volume_size_scale

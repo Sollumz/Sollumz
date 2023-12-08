@@ -30,7 +30,7 @@ class LightPreset(ElementTree):
         self.time_flags = ValueProperty("TimeFlags")
         self.flags = ValueProperty("Flags")
         self.projected_texture_hash = TextProperty("ProjectedTextureHash")
-        self.flashiness = ValueProperty("Flashiness")
+        self.flashiness = TextProperty("Flashiness")
         self.volume_size_scale = ValueProperty("VolumeSizeScale")
         self.volume_outer_color = VectorProperty("VolumeOuterColor")
         self.volume_outer_intensity = ValueProperty("VolumeOuterIntensity")
@@ -44,12 +44,7 @@ class LightPreset(ElementTree):
         self.corona_size = ValueProperty("CoronaSize")
         self.corona_intensity = ValueProperty("CoronaIntensity")
         self.corona_z_bias = ValueProperty("CoronaZBias")
-        self.unknown_45 = ValueProperty("Unknown45")
-        self.unknown_46 = ValueProperty("Unknown46")
         self.shadow_blur = ValueProperty("ShadowBlur")
-
-        self.cone_inner_angle = ValueProperty("ConeInnerAngle")
-        self.cone_outer_angle = ValueProperty("ConeOuterAngle")
         self.extent = VectorProperty("Extent")
 
 
