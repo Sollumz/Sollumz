@@ -184,6 +184,7 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
             box.prop(light, "color")
             box.prop(light, "energy", text="Intensity")
             box.prop(light, "shadow_soft_size", text="Falloff Exponent")
+            box.prop(light, "shadow_buffer_clip_start", text="Shadow Clip Start")
 
             if light.sollum_type == LightType.SPOT:
                 box = layout.box()
