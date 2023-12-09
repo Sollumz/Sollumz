@@ -182,15 +182,15 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
             box.separator(factor=0.1)
             box.label(text="General Properties")
             box.prop(light, "color")
-            box.prop(light, "energy")
-            box.prop(light, "shadow_soft_size")
+            box.prop(light, "energy", text="Intensity")
+            box.prop(light, "shadow_soft_size", text="Falloff Exponent")
 
             if light.sollum_type == LightType.SPOT:
                 box = layout.box()
                 box.separator(factor=0.1)
                 box.label(text="Spot Properties")
-                box.prop(light, "spot_size")
-                box.prop(light, "spot_blend")
+                box.prop(light, "spot_size", text="Cone Outer Angle")
+                box.prop(light, "spot_blend",text="Cone Inner Angle")
 
             # Misc Properties
             box = layout.box()
