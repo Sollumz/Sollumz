@@ -242,8 +242,6 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
             box = layout.box()
             box.separator(factor=0.1)
             box.label(text="Advanced Properties", icon="TOOL_SETTINGS")
-            box.prop(light.light_properties, "unknown_45")
-            box.prop(light.light_properties, "unknown_46")
             box.prop(light.light_properties, "shadow_blur")
 
 

@@ -231,8 +231,6 @@ class SOLLUMZ_OT_save_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         light_preset.corona_size = light_props.corona_size
         light_preset.corona_intensity = light_props.corona_intensity
         light_preset.corona_z_bias = light_props.corona_z_bias
-        light_preset.unknown_45 = light_props.unknown_45
-        light_preset.unknown_46 = light_props.unknown_46
         light_preset.shadow_blur = light_props.shadow_blur
         light_preset.cone_inner_angle = light_props.cone_inner_angle
         light_preset.cone_outer_angle = light_props.cone_outer_angle
@@ -300,8 +298,6 @@ class SOLLUMZ_OT_load_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             light_props.corona_size = preset.corona_size
             light_props.corona_intensity = preset.corona_intensity
             light_props.corona_z_bias = preset.corona_z_bias
-            light_props.unknown_45 = preset.unknown_45
-            light_props.unknown_46 = preset.unknown_46
             light_props.shadow_blur = preset.shadow_blur
             light_props.cone_inner_angle = preset.cone_inner_angle
             light_props.cone_outer_angle = preset.cone_outer_angle

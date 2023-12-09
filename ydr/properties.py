@@ -224,8 +224,6 @@ class LightProperties(bpy.types.PropertyGroup):
     culling_plane_normal: bpy.props.FloatVectorProperty(
         name="Culling Plane Normal")
     culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
-    unknown_45: bpy.props.FloatProperty(name="Unknown 45")
-    unknown_46: bpy.props.FloatProperty(name="Unknown 46")
     volume_intensity: bpy.props.FloatProperty(
         name="Volume Intensity", default=1.0)
     shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")

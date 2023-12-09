@@ -345,8 +345,6 @@ class Light(ElementTree):
         self.falloff_exponent = ValueProperty("FalloffExponent")
         self.culling_plane_normal = VectorProperty("CullingPlaneNormal")
         self.culling_plane_offset = ValueProperty("CullingPlaneOffset")
-        self.unknown_45 = ValueProperty("Unknown45")
-        self.unknown_46 = ValueProperty("Unknown46")
         self.volume_intensity = ValueProperty("VolumeIntensity")
         self.volume_size_scale = ValueProperty("VolumeSizeScale")
         self.volume_outer_color = ColorProperty("VolumeOuterColour")

@@ -44,10 +44,7 @@ class LightPreset(ElementTree):
         self.corona_size = ValueProperty("CoronaSize")
         self.corona_intensity = ValueProperty("CoronaIntensity")
         self.corona_z_bias = ValueProperty("CoronaZBias")
-        self.unknown_45 = ValueProperty("Unknown45")
-        self.unknown_46 = ValueProperty("Unknown46")
         self.shadow_blur = ValueProperty("ShadowBlur")
-
         self.cone_inner_angle = ValueProperty("ConeInnerAngle")
         self.cone_outer_angle = ValueProperty("ConeOuterAngle")
         self.extent = VectorProperty("Extent")

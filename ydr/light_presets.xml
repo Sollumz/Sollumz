@@ -26,8 +26,6 @@
       <CoronaSize value="3" />
       <CoronaIntensity value="0.1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
       <ConeInnerAngle value="0" />
       <ConeOuterAngle value="0" />
@@ -58,8 +56,6 @@
       <CoronaSize value="0" />
       <CoronaIntensity value="1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
       <ConeInnerAngle value="0" />
       <ConeOuterAngle value="0" />
@@ -91,8 +87,6 @@
       <CoronaSize value="0.3" />
       <CoronaIntensity value="0.1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
       <ConeInnerAngle value="0" />
       <ConeOuterAngle value="0" />
@@ -123,8 +117,6 @@
       <CoronaSize value="0" />
       <CoronaIntensity value="1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
       <ConeInnerAngle value="0" />
       <ConeOuterAngle value="0" />
@@ -156,8 +148,6 @@
       <CoronaSize value="3" />
       <CoronaIntensity value="0.1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
       <ConeInnerAngle value="0" />
       <ConeOuterAngle value="0" />
