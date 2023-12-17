@@ -2,8 +2,6 @@ __pycache__
 *.pyc
 .cache
 tmp
-*.blend
-*.blend1
 .vscode
 .venv
 load_submodules

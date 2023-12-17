@@ -420,6 +420,8 @@ def create_parameter_node(
         if cols > 3:
             node.set("W", param.w)
 
+    return node
+
 
 def link_diffuse(b: ShaderBuilder, imgnode):
     node_tree = b.node_tree

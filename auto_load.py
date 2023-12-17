@@ -65,14 +65,13 @@ def iter_submodules(path, package_name):
 
 def iter_submodule_names(path, root=""):
     for _, module_name, is_package in pkgutil.iter_modules([str(path)]):
+        yield root + module_name
         if is_package:
             if module_name == "tests":
                 continue  # avoid importing `tests/` directory
             sub_path = path / module_name
             sub_root = root + module_name + "."
             yield from iter_submodule_names(sub_path, sub_root)
-        else:
-            yield root + module_name
 
 
 # Find classes to register

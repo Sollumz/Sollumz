@@ -18,3 +18,4 @@ def get_env_path(name: str) -> Optional[Path]:
 SOLLUMZ_TEST_TMP_DIR = get_env_path("SOLLUMZ_TEST_TMP_DIR")
 SOLLUMZ_TEST_GAME_ASSETS_DIR = get_env_path("SOLLUMZ_TEST_GAME_ASSETS_DIR")
 SOLLUMZ_TEST_ASSETS_DIR = Path(__file__).parent.joinpath("assets/")
+SOLLUMZ_TEST_VERSIONING_DATA_DIR = Path(__file__).parent.joinpath("versioning/data/")
