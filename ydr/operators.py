@@ -2,6 +2,7 @@ import traceback
 import bpy
 from mathutils import Vector, Color
 from bpy.types import Context
+from .light_flashiness import Flashiness
 from ..cwxml.light_preset import LightPreset
 from ..lods import LODLevels
 from ..sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent

@@ -30,7 +30,7 @@ class LightPreset(ElementTree):
         self.time_flags = ValueProperty("TimeFlags")
         self.flags = ValueProperty("Flags")
         self.projected_texture_hash = TextProperty("ProjectedTextureHash")
-        self.flashiness = ValueProperty("Flashiness")
+        self.flashiness = TextProperty("Flashiness")
         self.volume_size_scale = ValueProperty("VolumeSizeScale")
         self.volume_outer_color = VectorProperty("VolumeOuterColor")
         self.volume_outer_intensity = ValueProperty("VolumeOuterIntensity")
