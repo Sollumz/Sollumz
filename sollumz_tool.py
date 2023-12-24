@@ -1,6 +1,7 @@
 import bpy
 from typing import NamedTuple, Optional
 from .ytyp.tools import ArchetypeExtensionTool
+from .ydr.gizmos.light_manipulators.culling_plane import LightCullingPlaneTool
 
 class SollumzToolDef(NamedTuple):
     cls: type
@@ -10,6 +11,7 @@ class SollumzToolDef(NamedTuple):
 
 tools = (
     SollumzToolDef(ArchetypeExtensionTool, separator=True, group=True),
+    SollumzToolDef(LightCullingPlaneTool, after=ArchetypeExtensionTool.bl_idname),
 )
 
 def register_tools():

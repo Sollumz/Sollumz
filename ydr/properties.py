@@ -256,8 +256,8 @@ class LightProperties(bpy.types.PropertyGroup):
     flashiness: bpy.props.EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
                                        default=Flashiness.CONSTANT.name)
     group_id: bpy.props.IntProperty(name="Group ID")
-    culling_plane_normal: bpy.props.FloatVectorProperty(name="Culling Plane Normal")
-    culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset")
+    culling_plane_normal: bpy.props.FloatVectorProperty(name="Culling Plane Normal", subtype="XYZ")
+    culling_plane_offset: bpy.props.FloatProperty(name="Culling Plane Offset", subtype="DISTANCE")
     shadow_blur: bpy.props.FloatProperty(name="Shadow Blur", min=0.0, max=1.0, subtype="FACTOR")
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale", default=1.0)
     volume_outer_color: bpy.props.FloatVectorProperty(

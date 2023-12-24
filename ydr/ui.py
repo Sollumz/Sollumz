@@ -224,9 +224,15 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
             # Culling Plane
             box = layout.box()
-            box.label(text="Culling Plane", icon="MESH_PLANE")
-            box.prop(light.light_properties, "culling_plane_normal")
-            box.prop(light.light_properties, "culling_plane_offset")
+            row = box.row()
+            row.use_property_split = False
+            row.use_property_decorate = False
+            row.prop(light.light_flags, "enable_culling_plane", text="")
+            row.label(text="Culling Plane")
+            col = box.column()
+            col.active = light.light_flags.enable_culling_plane
+            col.prop(light.light_properties, "culling_plane_normal", text="Normal")
+            col.prop(light.light_properties, "culling_plane_offset", text="Offset")
 
             # Corona Properties
             box = layout.box()
