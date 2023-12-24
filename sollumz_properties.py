@@ -444,8 +444,10 @@ class FlagPropertyGroup:
 
         flags = int_to_bool_list(int(self.total), size=self.size)
         for index, flag_name in enumerate(self.__annotations__):
-            if index < 32:
-                self[flag_name] = flags[index]
+            if index >= self.size:
+                break
+
+            self[flag_name] = flags[index]
 
     def update_flag(self, context):
         flags = flag_prop_to_list(self.__class__, self, size=self.size)
