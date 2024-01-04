@@ -224,13 +224,16 @@ class LightProperties(bpy.types.PropertyGroup):
     shadow_blur: bpy.props.FloatProperty(name="Shadow Blur")  # TODO: normalize 0-255 -> 0.0-1.0
     volume_size_scale: bpy.props.FloatProperty(name="Volume Size Scale", default=1.0)
     volume_outer_color: bpy.props.FloatVectorProperty(
-        name="Volume Outer Color", subtype="COLOR", min=0.0, max=1.0, default=(1.0, 1.0, 1.0))
+        name="Volume Outer Color",
+        subtype="COLOR",
+        min=0.0,
+        max=1.0,
+        default=(1.0, 1.0, 1.0)
+    )
     light_hash: bpy.props.IntProperty(name="Light Hash")
-    volume_outer_intensity: bpy.props.FloatProperty(
-        name="Volume Outer Intensity", default=1.0)
+    volume_outer_intensity: bpy.props.FloatProperty(name="Volume Outer Intensity", default=1.0)
     corona_size: bpy.props.FloatProperty(name="Corona Size")
-    volume_outer_exponent: bpy.props.FloatProperty(
-        name="Volume Outer Exponent", default=1.0)
+    volume_outer_exponent: bpy.props.FloatProperty(name="Volume Outer Exponent", default=1.0)
     light_fade_distance: bpy.props.FloatProperty(name="Light Fade Distance")
     shadow_fade_distance: bpy.props.FloatProperty(name="Shadow Fade Distance")
     specular_fade_distance: bpy.props.FloatProperty(name="Specular Fade Distance")
@@ -247,75 +250,165 @@ class LightPresetProp(bpy.types.PropertyGroup):
 
 
 class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
-    unk1: bpy.props.BoolProperty(
-        name="Unk1", update=FlagPropertyGroup.update_flag)
-    unk2: bpy.props.BoolProperty(
-        name="Unk2", update=FlagPropertyGroup.update_flag)
-    unk3: bpy.props.BoolProperty(
-        name="Unk3", update=FlagPropertyGroup.update_flag)
-    unk4: bpy.props.BoolProperty(
-        name="Unk4", update=FlagPropertyGroup.update_flag)
-    unk5: bpy.props.BoolProperty(
+    interior_only: bpy.props.BoolProperty(
+        name="Interior Only",
+        description="Light will only be rendered when inside an interior",
+        update=FlagPropertyGroup.update_flag)
+
+    exterior_only: bpy.props.BoolProperty(
+        name="Exterior Only",
+        description="Light will only be rendered when not inside an interior",
+        update=FlagPropertyGroup.update_flag)
+
+    dont_use_in_cutscene: bpy.props.BoolProperty(
+        name="Dont Use In Cutscene",
+        description="Light will not be rendered in cutscenes",
+        update=FlagPropertyGroup.update_flag)
+
+    vehicle: bpy.props.BoolProperty(
+        name="Vehicle",
+        description="Light will be rendered on vehicles",
+        update=FlagPropertyGroup.update_flag)
+
+    ignore_light_state: bpy.props.BoolProperty(
         name="Ignore Artificial Lights State",
         description="Light will ignore SET_ARTIFICIAL_LIGHTS_STATE(FALSE) from scripts and keep rendering",
         update=FlagPropertyGroup.update_flag)
-    unk6: bpy.props.BoolProperty(
-        name="Unk6", update=FlagPropertyGroup.update_flag)
-    unk7: bpy.props.BoolProperty(
-        name="Unk7", update=FlagPropertyGroup.update_flag)
-    shadows: bpy.props.BoolProperty(
-        name="Cast Static Shadows", update=FlagPropertyGroup.update_flag)
-    shadowd: bpy.props.BoolProperty(
-        name="Cast Dynamic Shadows", update=FlagPropertyGroup.update_flag)
-    sunlight: bpy.props.BoolProperty(
-        name="Calculate From Sun", update=FlagPropertyGroup.update_flag)
-    unk11: bpy.props.BoolProperty(
-        name="Enable Buzzing", update=FlagPropertyGroup.update_flag)
-    electric: bpy.props.BoolProperty(
-        name="Force Buzzing", update=FlagPropertyGroup.update_flag)
-    volume: bpy.props.BoolProperty(
-        name="Draw Volume", description="Force enable volume rendering, ignoring timecycle",
+
+    texture_projection: bpy.props.BoolProperty(
+        name="Texture Projection",
+        description="Enable texture projection",
         update=FlagPropertyGroup.update_flag)
-    specoff: bpy.props.BoolProperty(
-        name="No Specular", update=FlagPropertyGroup.update_flag)
-    unk15: bpy.props.BoolProperty(
-        name="Both Interior And Exterior", update=FlagPropertyGroup.update_flag)
-    lightoff: bpy.props.BoolProperty(
-        name="Corona Only", update=FlagPropertyGroup.update_flag)
-    prxoff: bpy.props.BoolProperty(
-        name="Not In Reflection", update=FlagPropertyGroup.update_flag)
-    unk18: bpy.props.BoolProperty(
-        name="Only In Reflection", update=FlagPropertyGroup.update_flag)
-    culling: bpy.props.BoolProperty(
-        name="Enable Culling Plane", update=FlagPropertyGroup.update_flag)
-    unk20: bpy.props.BoolProperty(
-        name="Enable Volume Outer Color", update=FlagPropertyGroup.update_flag)
-    unk21: bpy.props.BoolProperty(
-        name="Unk21", update=FlagPropertyGroup.update_flag)
-    unk22: bpy.props.BoolProperty(
-        name="Unk22", update=FlagPropertyGroup.update_flag)
-    unk23: bpy.props.BoolProperty(
-        name="Unk23", update=FlagPropertyGroup.update_flag)
-    glassoff: bpy.props.BoolProperty(
-        name="Don't Light Alpha", description="Light won't affect transparent geometry, such as glass panes",
+
+    cast_shadows: bpy.props.BoolProperty(
+        name="Cast Shadows",
+        description="Light will cast shadows",
         update=FlagPropertyGroup.update_flag)
-    unk25: bpy.props.BoolProperty(
-        name="Unk25", update=FlagPropertyGroup.update_flag)
-    unk26: bpy.props.BoolProperty(
-        name="Unk26", update=FlagPropertyGroup.update_flag)
-    unk27: bpy.props.BoolProperty(
-        name="Unk27", update=FlagPropertyGroup.update_flag)
-    unk28: bpy.props.BoolProperty(
-        name="Unk28", update=FlagPropertyGroup.update_flag)
-    unk29: bpy.props.BoolProperty(
-        name="Unk29", update=FlagPropertyGroup.update_flag)
-    unk30: bpy.props.BoolProperty(
-        name="Unk30", update=FlagPropertyGroup.update_flag)
-    unk31: bpy.props.BoolProperty(
-        name="Disable Light", description="Only volume will be rendered",
+
+    static_shadows: bpy.props.BoolProperty(
+        name="Cast Static Shadows",
+        description="Light will cast static shadows",
         update=FlagPropertyGroup.update_flag)
-    unk32: bpy.props.BoolProperty(
-        name="Unk32", update=FlagPropertyGroup.update_flag)
+
+    dynamic_shadows: bpy.props.BoolProperty(
+        name="Cast Dynamic Shadows",
+        description="Light will cast dynamic shadows",
+        update=FlagPropertyGroup.update_flag)
+
+    calc_from_sun: bpy.props.BoolProperty(
+        name="Calculate From Sun",
+        description="Light will be calculated from sun position",
+        update=FlagPropertyGroup.update_flag)
+
+    enable_buzzing: bpy.props.BoolProperty(
+        name="Enable Buzzing",
+        description="Light will be enabled when buzzing",
+        update=FlagPropertyGroup.update_flag)
+
+    force_buzzing: bpy.props.BoolProperty(
+        name="Force Buzzing",
+        description="Light will be forced to buzz",
+        update=FlagPropertyGroup.update_flag)
+
+    draw_volume: bpy.props.BoolProperty(
+        name="Draw Volume",
+        description="Force enable volume rendering, ignoring timecycle",
+        update=FlagPropertyGroup.update_flag)
+
+    no_specular: bpy.props.BoolProperty(
+        name="No Specular",
+        description="Light will not reflect on specular materials",
+        update=FlagPropertyGroup.update_flag)
+
+    both_int_and_ext: bpy.props.BoolProperty(
+        name="Both Interior And Exterior",
+        description="Light will be rendered both inside and outside",
+        update=FlagPropertyGroup.update_flag)
+
+    corona_only: bpy.props.BoolProperty(
+        name="Corona Only",
+        description="Light will only render the corona",
+        update=FlagPropertyGroup.update_flag)
+
+    not_in_reflection: bpy.props.BoolProperty(
+        name="Not In Reflection",
+        description="Light will not be rendered in reflections",
+        update=FlagPropertyGroup.update_flag)
+
+    only_in_reflection: bpy.props.BoolProperty(
+        name="Only In Reflection",
+        description="Light will only be rendered in reflections",
+        update=FlagPropertyGroup.update_flag)
+
+    enable_culling_plane: bpy.props.BoolProperty(
+        name="Enable Culling Plane",
+        description="Enable the culling plane",
+        update=FlagPropertyGroup.update_flag)
+
+    enable_vol_outer_color: bpy.props.BoolProperty(
+        name="Enable Volume Outer Color",
+        description="Enable the volume outer color",
+        update=FlagPropertyGroup.update_flag)
+
+    higher_res_shadows: bpy.props.BoolProperty(
+        name="Higher Res Shadows",
+        description="Light will render higher resolution shadows",
+        update=FlagPropertyGroup.update_flag)
+
+    only_low_res_shadows: bpy.props.BoolProperty(
+        name="Only Low Res Shadows",
+        description="Light will only render low resolution shadows",
+        update=FlagPropertyGroup.update_flag)
+
+    far_lod_light: bpy.props.BoolProperty(
+        name="Far Lod Light",
+        description="Light will be rendered as a far LOD Light",
+        update=FlagPropertyGroup.update_flag)
+
+    dont_light_alpha: bpy.props.BoolProperty(
+        name="Don't Light Alpha",
+        description="Light won't affect transparent geometry, such as glass panes",
+        update=FlagPropertyGroup.update_flag)
+
+    cast_shadows_if_possible: bpy.props.BoolProperty(
+        name="Cast Shadows If Possible",
+        description="Light will cast shadows if possible",
+        update=FlagPropertyGroup.update_flag)
+
+    cutscene: bpy.props.BoolProperty(
+        name="Cutscene",
+        description="Light will be rendered in cutscenes",
+        update=FlagPropertyGroup.update_flag)
+
+    moving_light_source: bpy.props.BoolProperty(
+        name="Moving light Source",
+        description="Light will be rendered as a moving light source",
+        update=FlagPropertyGroup.update_flag)
+
+    use_vehicle_twin: bpy.props.BoolProperty(
+        name="Use Vehicle Twin",
+        description="Light will use the vehicle twin",
+        update=FlagPropertyGroup.update_flag)
+
+    force_medium_lod_light: bpy.props.BoolProperty(
+        name="Force Medium LOD Light",
+        description="Light will be rendered as a medium LOD Light",
+        update=FlagPropertyGroup.update_flag)
+
+    corona_only_lod_light: bpy.props.BoolProperty(
+        name="Corona Only LOD Light",
+        description="Light will be rendered as a corona only LOD Light",
+        update=FlagPropertyGroup.update_flag)
+
+    delayed_render: bpy.props.BoolProperty(
+        name="Delay Render",
+        description="Create Shadow casting light early in the frame to avoid visible shadow pop-in",
+        update=FlagPropertyGroup.update_flag)
+
+    already_tested_for_occlusion: bpy.props.BoolProperty(
+        name="Already Tested For Occlusion",
+        description="Light has already been tested for occlusion",
+        update=FlagPropertyGroup.update_flag)
 
 
 @persistent
