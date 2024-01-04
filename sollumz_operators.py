@@ -582,9 +582,9 @@ def parse_rotation_string(rotation_string):
     values = rotation_string.split(",")
     if len(values) == 4:
         try:
-            x = float(values[0].strip())
-            y = float(values[1].strip())
-            z = float(values[2].strip())
+            x = -float(values[0].strip())
+            y = -float(values[1].strip())
+            z = -float(values[2].strip())
             w = float(values[3].strip())
             return Quaternion((w, x, y, z))
         except ValueError:
