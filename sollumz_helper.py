@@ -4,6 +4,9 @@ import time
 from typing import Optional
 from abc import abstractmethod
 from mathutils import Matrix
+import cProfile
+import pstats
+import io
 
 from .sollumz_properties import SollumType
 from .tools.blenderhelper import get_bone_pose_matrix
@@ -178,3 +181,19 @@ def get_parent_inverse(obj: bpy.types.Object) -> Matrix:
         return Matrix.Translation(parent_obj.matrix_world.translation).inverted()
 
     return parent_obj.matrix_world.inverted()
+
+
+def profiled_func(func):
+    def inner(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+        retval = func(*args, **kwargs)
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        return retval
+
+    return inner

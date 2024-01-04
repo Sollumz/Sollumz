@@ -205,6 +205,7 @@ def set_recommended_bone_properties(bone):
 def convert_obj_to_drawable(obj: bpy.types.Object):
     drawable_obj = create_empty_object(SollumType.DRAWABLE)
     drawable_obj.location = obj.location
+    drawable_obj.rotation_euler = obj.rotation_euler
 
     obj_name = obj.name
 
@@ -216,6 +217,7 @@ def convert_obj_to_drawable(obj: bpy.types.Object):
     drawable_obj.parent = obj.parent
     obj.parent = drawable_obj
     obj.location = Vector()
+    obj.rotation_euler = (0, 0, 0)
 
     return drawable_obj
 
