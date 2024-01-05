@@ -12,6 +12,16 @@ from .. import logger
 
 
 def create_light_objs(lights: list[Light], armature_obj: Optional[bpy.types.Object] = None):
+    """
+    Create light objects based on the given list of lights.
+
+    Parameters:
+        lights (list[Light]): A list of lights to create objects for.
+        armature_obj (Optional[bpy.types.Object]): An optional armature object to associate with the lights.
+
+    Returns:
+        bpy.types.Object: The parent object that contains all the created light objects.
+    """
     lights_parent = create_empty_object(SollumType.NONE, "Lights")
 
     for light_xml in lights:
@@ -22,6 +32,16 @@ def create_light_objs(lights: list[Light], armature_obj: Optional[bpy.types.Obje
 
 
 def create_light(light_xml: Light, armature_obj: Optional[bpy.types.Object] = None):
+    """
+    Creates a light object in Blender based on the given light_xml.
+
+    Parameters:
+        light_xml (Light): The light XML data.
+        armature_obj (Optional[bpy.types.Object]): The armature object to which the light is attached.
+
+    Returns:
+        bpy.types.Object: The created light object.
+    """
     light_type = get_light_type(light_xml)
 
     if light_type is None:
@@ -51,6 +71,16 @@ def create_light(light_xml: Light, armature_obj: Optional[bpy.types.Object] = No
 
 
 def get_light_type(light_xml: Light):
+    """
+    Get the light type based on the type attribute of the given Light XML object.
+
+    Parameters:
+        light_xml (Light): The Light XML object.
+
+    Returns:
+        LightType: The corresponding light type.
+
+    """
     if light_xml.type == "Point":
         return LightType.POINT
     if light_xml.type == "Spot":
@@ -60,6 +90,16 @@ def get_light_type(light_xml: Light):
 
 
 def create_light_data(light_type: LightType, name: str):
+    """
+    Create a new light data object based on the given light type and name.
+
+    Parameters:
+        light_type (LightType): The type of the light (SPOT or CAPSULE).
+        name (str): The name of the light data object.
+
+    Returns:
+        bpy.types.Light: The newly created light data object.
+    """
     if light_type in [LightType.SPOT, LightType.CAPSULE]:
         bpy_light_type = "SPOT"
     else:
@@ -69,6 +109,17 @@ def create_light_data(light_type: LightType, name: str):
 
 
 def create_light_bone_constraint(light_xml: Light, light_obj: bpy.types.Object, armature_obj: bpy.types.Object):
+    """
+    Creates a bone constraint for a light object to follow a specific bone in an armature.
+
+    Parameters:
+        light_xml (Light): The XML representation of the light.
+        light_obj (bpy.types.Object): The light object.
+        armature_obj (bpy.types.Object): The armature object.
+
+    Returns:
+        None
+    """
     armature = armature_obj.data
 
     for bone in armature.bones:
@@ -84,6 +135,13 @@ def create_light_bone_constraint(light_xml: Light, light_obj: bpy.types.Object, 
 
 
 def set_light_rotation(light_xml: Light, light_obj: bpy.types.Object):
+    """
+    Sets the rotation of a light object based on the provided light XML data.
+
+    Parameters:
+        light_xml (Light): The light XML data containing the rotation information.
+        light_obj (bpy.types.Object): The light object to set the rotation for.
+    """
     light_xml.direction.negate()
     bitangent = light_xml.direction.cross(light_xml.tangent).normalized()
     mat = Matrix().to_3x3()
@@ -94,7 +152,15 @@ def set_light_rotation(light_xml: Light, light_obj: bpy.types.Object):
 
 
 def set_light_bpy_properties(light_xml: Light, light_data: bpy.types.Light):
-    """Set Blender light properties of ``light_data`` based on ``light_xml``."""
+    """Set Blender light properties of ``light_data`` based on ``light_xml``.
+
+    Parameters:
+        light_xml (Light): The XML representation of the light.
+        light_data (bpy.types.Light): The Blender light data object.
+
+    Returns:
+        None
+    """
     preferences = get_addon_preferences(bpy.context)
     intensity_factor = 500 if preferences.scale_light_intensity else 1
 
@@ -114,7 +180,14 @@ def set_light_bpy_properties(light_xml: Light, light_data: bpy.types.Light):
 
 
 def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
-    """Set the game properties of ``light_data`` based on ``light_xml``. These properties do not affect how the light appears in the scene."""
+    """
+    Set the game properties of ``light_data`` based on ``light_xml``.
+    These properties do not affect how the light appears in the scene.
+
+    Parameters:
+        light_xml (Light): The XML representation of the light.
+        light_data (bpy.types.Light): The Blender light data to be modified.
+    """
     light_data.time_flags.total = str(light_xml.time_flags)
     light_data.light_flags.total = str(light_xml.flags)
 
@@ -145,6 +218,16 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
 
 
 def create_xml_lights(parent_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
+    """
+    Creates XML representations of lights in the scene.
+
+    Parameters:
+        parent_obj (bpy.types.Object): The parent object to search for lights.
+        armature_obj (Optional[bpy.types.Object]): The armature object associated with the lights.
+
+    Returns:
+        list[Light]: A list of Light objects representing the lights in the scene.
+    """
     light_xmls: list[Light] = []
 
     for child in parent_obj.children_recursive:
@@ -155,6 +238,16 @@ def create_xml_lights(parent_obj: bpy.types.Object, armature_obj: Optional[bpy.t
 
 
 def create_light_xml(light_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
+    """
+    Creates an XML representation of a light object.
+
+    Parameters:
+        light_obj (bpy.types.Object): The light object to create XML for.
+        armature_obj (Optional[bpy.types.Object]): The armature object associated with the light object.
+
+    Returns:
+        Light: The XML representation of the light object.
+    """
     light_xml = Light()
     light_xml.position = light_obj.location
     mat = light_obj.matrix_basis
@@ -170,16 +263,47 @@ def create_light_xml(light_obj: bpy.types.Object, armature_obj: Optional[bpy.typ
 
 
 def set_light_xml_direction(light_xml: Light, mat: Matrix):
+    """
+    Sets the direction of a light XML object based on a given matrix.
+
+    Parameters:
+        light_xml (Light): The light XML object to set the direction for.
+        mat (Matrix): The matrix containing the direction values.
+
+    Returns:
+        None
+    """
     light_xml.direction = Vector(
         (mat[0][2], mat[1][2], mat[2][2])).normalized()
     light_xml.direction.negate()
 
 
 def set_light_xml_tangent(light_xml: Light, mat: Matrix):
+    """
+    Sets the tangent of a light XML object based on the given matrix.
+
+    Parameters:
+        light_xml (Light): The light XML object to set the tangent for.
+        mat (Matrix): The matrix used to calculate the tangent.
+
+    Returns:
+        None
+    """
     light_xml.tangent = Vector((mat[0][0], mat[1][0], mat[2][0])).normalized()
 
 
 def set_light_xml_bone_id(light_xml: Light, armature: bpy.types.Armature, light_obj: bpy.types.Object):
+    """
+    Sets the bone ID of a light XML based on the subtarget bone of a CopyTransformsConstraint.
+
+    Parameters:
+        light_xml (Light): The light XML object to set the bone ID for.
+        armature (bpy.types.Armature): The armature object containing the bones.
+        light_obj (bpy.types.Object): The light object containing the CopyTransformsConstraint.
+
+    Returns:
+        None
+    """
     for constraint in light_obj.constraints:
         if not isinstance(constraint, bpy.types.CopyTransformsConstraint):
             continue
@@ -189,6 +313,16 @@ def set_light_xml_bone_id(light_xml: Light, armature: bpy.types.Armature, light_
 
 
 def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
+    """
+    Sets the properties of a Light XML object based on the properties of a LightData object.
+
+    Parameters:
+        light_xml (Light): The Light XML object to set the properties on.
+        light_data (bpy.types.Light): The LightData object containing the properties to set.
+
+    Returns:
+        None
+    """
     light_props: LightProperties = light_data.light_properties
 
     light_xml.type = SOLLUMZ_UI_NAMES[light_data.sollum_type]

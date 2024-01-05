@@ -11,27 +11,47 @@ class MeshBuilder:
     """Builds a bpy mesh from a structured numpy vertex array"""
 
     def __init__(self, name: str, vertex_arr: NDArray, ind_arr: NDArray[np.uint], mat_inds: NDArray[np.uint], drawable_mats: list[bpy.types.Material]):
-        if "Position" not in vertex_arr.dtype.names:
-            raise ValueError("Vertex array have a 'Position' field!")
+            """
+            Initializes a MeshBuilder object.
 
-        if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
-            raise ValueError(
-                "Indices array should be a 1D array in triangle order and it's size should be divisble by 3!")
+            Parameters:
+                name (str): The name of the mesh.
+                vertex_arr (numpy.ndarray): The vertex array containing the vertex positions.
+                ind_arr (numpy.ndarray): The index array containing the triangle indices.
+                mat_inds (numpy.ndarray): The material indices for each triangle.
+                drawable_mats (list[bpy.types.Material]): The list of materials that can be applied to the mesh.
 
-        self.vertex_arr = vertex_arr
-        self.ind_arr = ind_arr
-        self.mat_inds = mat_inds
+            Raises:
+                ValueError: If the vertex array does not have a 'Position' field.
+                ValueError: If the index array is not a 1D array in triangle order or its size is not divisible by 3.
+            """
+            if "Position" not in vertex_arr.dtype.names:
+                raise ValueError("Vertex array must have a 'Position' field!")
 
-        self.name = name
-        self.materials = drawable_mats
+            if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
+                raise ValueError(
+                    "Indices array should be a 1D array in triangle order and its size should be divisible by 3!")
 
-        self._has_normals = "Normal" in vertex_arr.dtype.names
-        self._has_uvs = any(
-            "TexCoord" in name for name in vertex_arr.dtype.names)
-        self._has_colors = any(
-            "Colour" in name for name in vertex_arr.dtype.names)
+            self.vertex_arr = vertex_arr
+            self.ind_arr = ind_arr
+            self.mat_inds = mat_inds
+
+            self.name = name
+            self.materials = drawable_mats
+
+            self._has_normals = "Normal" in vertex_arr.dtype.names
+            self._has_uvs = any(
+                "TexCoord" in name for name in vertex_arr.dtype.names)
+            self._has_colors = any(
+                "Colour" in name for name in vertex_arr.dtype.names)
 
     def build(self):
+        """
+        Builds a mesh using the vertex and index data.
+
+        Returns:
+            bpy.types.Mesh: The created mesh object.
+        """
         mesh = bpy.data.meshes.new(self.name)
         vert_pos = self.vertex_arr["Position"]
         faces = self.ind_arr.reshape((int(self.ind_arr.size / 3), 3))
@@ -59,6 +79,15 @@ class MeshBuilder:
         return mesh
 
     def create_mesh_materials(self, mesh: bpy.types.Mesh):
+        """
+        Creates materials for the given mesh based on the material indices.
+
+        Parameters:
+            mesh (bpy.types.Mesh): The mesh to create materials for.
+
+        Returns:
+            None
+        """
         drawable_mat_inds = np.unique(self.mat_inds)
         # Map drawable material indices to model material indices
         model_mat_inds = np.zeros(
@@ -74,15 +103,27 @@ class MeshBuilder:
             "value", model_mat_inds[self.mat_inds])
 
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
+        """
+        Sets the normals of the given mesh to be smooth and normalized.
+
+        Parameters:
+        - mesh: The mesh object to set the normals for.
+        """
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
 
         normals_normalized = [Vector(n).normalized()
-                              for n in self.vertex_arr["Normal"]]
+                      for n in self.vertex_arr["Normal"]]
         mesh.normals_split_custom_set_from_vertices(normals_normalized)
 
         mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
+        """
+        Sets the UV coordinates for the given mesh.
+
+        Parameters:
+            mesh (bpy.types.Mesh): The mesh to set UV coordinates for.
+        """
         uv_attrs = [
             name for name in self.vertex_arr.dtype.names if "TexCoord" in name]
 
@@ -94,6 +135,15 @@ class MeshBuilder:
             create_uv_attr(mesh, uvs[self.ind_arr])
 
     def set_mesh_vertex_colors(self, mesh: bpy.types.Mesh):
+        """
+        Sets the vertex colors of the given mesh based on the color attributes in the vertex array.
+
+        Parameters:
+            mesh (bpy.types.Mesh): The mesh to set the vertex colors for.
+
+        Returns:
+            None
+        """
         color_attrs = [
             name for name in self.vertex_arr.dtype.names if "Colour" in name]
 
@@ -103,6 +153,16 @@ class MeshBuilder:
             create_color_attr(mesh, colors[self.ind_arr])
 
     def create_vertex_groups(self, obj: bpy.types.Object, bones: list[bpy.types.Bone]):
+        """
+        Creates vertex groups for the given object based on the blend weights and blend indices.
+
+        Parameters:
+            obj (bpy.types.Object): The object to create vertex groups for.
+            bones (list[bpy.types.Bone]): The list of bones to use for naming the vertex groups.
+
+        Returns:
+            None
+        """
         weights = self.vertex_arr["BlendWeights"] / 255
         indices = self.vertex_arr["BlendIndices"]
 

@@ -16,14 +16,24 @@ class MeshData(NamedTuple):
 
 
 class ModelData(NamedTuple):
+    """
+    Represents the data of a model.
+    """
     mesh_data_lods: dict[LODLevel, MeshData]
-    # Used for storing drawable model properties
     xml_lods: dict[LODLevel, DrawableModel]
     bone_index: int
 
 
 def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
-    """Get ModelData for each DrawableModel."""
+    """Get ModelData for each DrawableModel.
+
+    Parameters:
+        drawable_xml (Drawable): The Drawable object containing the XML data.
+
+    Returns:
+        list[ModelData]: A list of ModelData objects.
+
+    """
     model_datas: list[ModelData] = []
     model_xmls, bone_inds = get_lod_model_xmls(drawable_xml)
 
@@ -44,13 +54,31 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
 
 
 def get_model_data_split_by_group(drawable_xml: Drawable) -> list[ModelData]:
+    """
+    Splits the model data by group based on the provided drawable XML.
+
+    Parameters:
+        drawable_xml (Drawable): The drawable XML object.
+
+    Returns:
+        list[ModelData]: A list of model data split by group.
+    """
     model_datas = get_model_data(drawable_xml)
 
     return [split_data for model_data in model_datas for split_data in split_model_by_group(model_data, drawable_xml.skeleton.bones)]
 
 
 def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[ModelData]:
-    """Split ModelData by vertex group"""
+    """Split ModelData by vertex group
+
+    Parameters:
+        model_data (ModelData): The input ModelData object to be split.
+        bones (list[Bone]): The list of bones used for splitting.
+
+    Returns:
+        list[ModelData]: The list of split ModelData objects.
+
+    """
     model_datas: list[ModelData] = []
     mesh_data_by_bone: dict[int, dict[LODLevel, MeshData]] = defaultdict(dict)
 
@@ -85,7 +113,15 @@ def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[Model
 
 def get_group_face_inds(mesh_data: MeshData, bones: list[Bone]):
     """Get face indices split by vertex group. Overlapping vertex groups are merged
-    based on bone parenting."""
+    based on bone parenting.
+
+    Parameters:
+        mesh_data (MeshData): The mesh data containing vertex and index arrays.
+        bones (list[Bone]): The list of bones used for bone parenting.
+
+    Returns:
+        dict[int, np.ndarray]: A dictionary mapping group indices to arrays of face indices.
+    """
     group_inds: dict[int, set] = defaultdict(list)
 
     blend_inds = mesh_data.vert_arr["BlendIndices"]
@@ -121,7 +157,15 @@ def get_group_face_inds(mesh_data: MeshData, bones: list[Bone]):
 
 
 def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone]) -> dict[int, set]:
-    """Get a mapping of each blend index to the blend index of the object they should be parented to."""
+    """Get a mapping of each blend index to the blend index of the object they should be parented to.
+
+    Parameters:
+        face_blend_inds (NDArray[np.uint32]): The blend indices of the faces.
+        bones (list[Bone]): The list of bones.
+
+    Returns:
+        dict[int, set]: A dictionary mapping each blend index to the blend index of the object they should be parented to.
+    """
     # Mapping of each blend index to blend indices with overlapping faces
     group_relations: dict[int, set[int]] = defaultdict(set)
     parent_map: dict[int, int] = {}
@@ -148,6 +192,17 @@ def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone])
 
 
 def find_common_bone_parent(bone_inds: list[int], bones: list[Bone]) -> int:
+    """
+    Finds the common parent bone index among a list of bone indices.
+
+    Parameters:
+        bone_inds (list[int]): List of bone indices.
+        bones (list[Bone]): List of Bone objects.
+
+    Returns:
+        int: Index of the common parent bone.
+
+    """
     bone_parents = [get_all_bone_parents(
         i, bones) for i in bone_inds if bones[i].parent_index > 0]
 
@@ -167,6 +222,16 @@ def find_common_bone_parent(bone_inds: list[int], bones: list[Bone]) -> int:
 
 
 def get_all_bone_parents(bone_ind: int, bones: list[Bone]):
+    """
+    Returns a list of parent indices for a given bone index.
+
+    Parameters:
+    bone_ind (int): The index of the bone.
+    bones (list[Bone]): The list of bones.
+
+    Returns:
+    list[int]: A list of parent indices.
+    """
     parent_inds = []
     current_bone_ind = bone_ind
 
@@ -178,8 +243,18 @@ def get_all_bone_parents(bone_ind: int, bones: list[Bone]):
 
 
 def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: NDArray[np.uint32]) -> MeshData:
-    """Get subset of vertex array and index array by face."""
-    # First get valid faces in the subset in case the new subset of indices is not divisble by 3.
+    """Get a subset of the vertex array and index array based on the specified face indices.
+
+    Parameters:
+        vert_arr (NDArray): The vertex array.
+        ind_arr (NDArray[np.uint32]): The index array.
+        face_inds (NDArray[np.uint32]): The indices of the faces to include in the subset.
+
+    Returns:
+        MeshData: The subset of the vertex array and index array.
+
+    """
+    # First get valid faces in the subset in case the new subset of indices is not divisible by 3.
     num_tris = int(len(ind_arr) / 3)
     faces = ind_arr.reshape((num_tris, 3))
 
@@ -207,7 +282,16 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
 
 
 def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, DrawableModel]], list[int]]:
-    """Gets mapping of LOD levels for each DrawableModel. Also returns a list of bone indices for each model."""
+    """
+    Gets mapping of LOD levels for each DrawableModel.
+    Also returns a list of bone indices for each model.
+
+    Parameters:
+    - drawable_xml (Drawable): The Drawable object.
+
+    Returns:
+    - Tuple[list[dict[LODLevel, DrawableModel]], list[int]]: A tuple containing the mapping of LOD levels for each DrawableModel and a list of bone indices for each model.
+    """
     model_xmls: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
     bone_inds: list[int] = []
 
@@ -223,6 +307,15 @@ def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, Draw
 
 
 def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:
+    """
+    Converts a model XML into MeshData.
+
+    Parameters:
+        model_xml (DrawableModel): The model XML to convert.
+
+    Returns:
+        MeshData: The converted MeshData object.
+    """
     geoms = get_valid_geoms(model_xml)
 
     return MeshData(
@@ -233,7 +326,15 @@ def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:
 
 
 def get_model_joined_ind_arr(geoms: list[Geometry]) -> NDArray[np.uint32]:
-    """Get joined indices array for the model."""
+    """
+    Get joined indices array for the model.
+
+    Parameters:
+    geoms (list[Geometry]): List of Geometry objects.
+
+    Returns:
+    NDArray[np.uint32]: Joined indices array for the model.
+    """
     ind_arrs: list[NDArray[np.uint32]] = []
     num_verts = 0
 
@@ -250,6 +351,16 @@ def get_model_joined_ind_arr(geoms: list[Geometry]) -> NDArray[np.uint32]:
 
 
 def get_model_joined_vert_arr(geoms: list[Geometry]) -> NDArray:
+    """
+    Concatenates the vertex arrays of multiple geometries into a single array.
+
+    Parameters:
+        geoms (list[Geometry]): A list of Geometry objects.
+
+    Returns:
+        NDArray: The concatenated vertex array.
+
+    """
     arr_dtype = get_model_vert_buffer_dtype(geoms)
     vert_arrs: list[NDArray] = []
 
@@ -273,7 +384,15 @@ def get_model_joined_vert_arr(geoms: list[Geometry]) -> NDArray:
 
 
 def get_model_vert_buffer_dtype(geoms: list[Geometry]) -> np.dtype:
-    """Get the dtype of the structured array of the joined geometry vertex buffers."""
+    """
+    Get the dtype of the structured array of the joined geometry vertex buffers.
+
+    Parameters:
+    geoms (list[Geometry]): A list of Geometry objects.
+
+    Returns:
+    np.dtype: The dtype of the structured array of the joined geometry vertex buffers.
+    """
     used_attrs: set[Tuple] = set(
         name for geom in geoms for name in geom.vertex_buffer.data.dtype.names)
     arr_dtype = []
@@ -288,6 +407,16 @@ def get_model_vert_buffer_dtype(geoms: list[Geometry]) -> np.dtype:
 
 
 def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
+    """
+    Applies bone IDs to the vertex array.
+
+    Parameters:
+        vert_arr (numpy.ndarray): The vertex array.
+        bone_ids (numpy.ndarray): The bone IDs.
+
+    Returns:
+        numpy.ndarray: The updated vertex array.
+    """
     if "BlendIndices" not in vert_arr.dtype.names:
         return vert_arr
 
@@ -295,6 +424,15 @@ def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
 
 
 def get_model_poly_mat_inds(geoms: list[Geometry]):
+    """
+    Returns an array of material indices for each polygon in the given list of geometries.
+
+    Parameters:
+        geoms (list[Geometry]): A list of geometries.
+
+    Returns:
+        np.ndarray: An array of material indices for each polygon.
+    """
     mat_ind_arrs = []
 
     for geom in geoms:
@@ -307,5 +445,13 @@ def get_model_poly_mat_inds(geoms: list[Geometry]):
 
 
 def get_valid_geoms(model_xml: DrawableModel) -> list[Geometry]:
-    """Get geometries with mesh data in model_xml."""
+    """
+    Get geometries with mesh data in model_xml.
+
+    Parameters:
+        model_xml (DrawableModel): The model XML containing geometries.
+
+    Returns:
+        list[Geometry]: A list of geometries with mesh data.
+    """
     return [geom for geom in model_xml.geometries if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]

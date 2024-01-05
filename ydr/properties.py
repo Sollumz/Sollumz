@@ -13,13 +13,18 @@ from bpy.path import basename
 
 
 class ShaderOrderItem(bpy.types.PropertyGroup):
-    # For drawable shader order list
+    """Represents an item in the shader order list."""
+    
     index: bpy.props.IntProperty(min=0)
     name: bpy.props.StringProperty()
     filename: bpy.props.StringProperty()
 
 
 class DrawableShaderOrder(bpy.types.PropertyGroup):
+    """
+    Represents the order of drawable shaders.
+    """
+
     items: bpy.props.CollectionProperty(type=ShaderOrderItem)
     active_index: bpy.props.IntProperty(min=0)
 
@@ -43,6 +48,10 @@ class DrawableShaderOrder(bpy.types.PropertyGroup):
 
 
 class DrawableProperties(bpy.types.PropertyGroup):
+    """
+    Represents the properties of a drawable object.
+    """
+
     lod_dist_high: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Lod Distance High")
     lod_dist_med: bpy.props.FloatProperty(
@@ -56,6 +65,9 @@ class DrawableProperties(bpy.types.PropertyGroup):
 
 
 class DrawableModelProperties(bpy.types.PropertyGroup):
+    """
+    Represents the properties of a drawable model.
+    """
     render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
     flags: bpy.props.IntProperty(name="Flags", default=0)
     matrix_count: bpy.props.IntProperty(name="Matrix Count", default=0)
@@ -68,6 +80,10 @@ class DrawableModelProperties(bpy.types.PropertyGroup):
 
 
 class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
+    """
+    Represents the properties of a skinned drawable model.
+    """
+
     very_high: bpy.props.PointerProperty(type=DrawableModelProperties)
     high: bpy.props.PointerProperty(type=DrawableModelProperties)
     medium: bpy.props.PointerProperty(type=DrawableModelProperties)
@@ -75,6 +91,15 @@ class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
     very_low: bpy.props.PointerProperty(type=DrawableModelProperties)
 
     def get_lod(self, lod_level: LODLevel) -> DrawableModelProperties:
+        """
+        Retrieves the drawable model properties for the specified LOD level.
+
+        Parameters:
+            lod_level (LODLevel): The LOD level.
+
+        Returns:
+            DrawableModelProperties: The drawable model properties for the specified LOD level.
+        """
         if lod_level == LODLevel.VERYHIGH:
             return self.very_high
         elif lod_level == LODLevel.HIGH:
@@ -88,6 +113,8 @@ class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
 
 
 class ShaderProperties(bpy.types.PropertyGroup):
+    """A class representing the properties of a shader."""
+    
     index: bpy.props.IntProperty(min=0)
 
     renderbucket: bpy.props.EnumProperty(
@@ -100,6 +127,9 @@ class ShaderProperties(bpy.types.PropertyGroup):
 
 
 class TextureFlags(bpy.types.PropertyGroup):
+    """
+    represents the texture flags.
+    """
     not_half: bpy.props.BoolProperty(name="NOT_HALF", default=False)
     hd_split: bpy.props.BoolProperty(name="HD_SPLIT", default=False)
     x2: bpy.props.BoolProperty(name="X2", default=False)
@@ -129,6 +159,8 @@ class TextureFlags(bpy.types.PropertyGroup):
 
 
 class TextureProperties(bpy.types.PropertyGroup):
+    """Represents the properties of a texture."""
+    
     embedded: bpy.props.BoolProperty(name="Embedded", default=False)
     usage: bpy.props.EnumProperty(
         items=items_from_enums(TextureUsage),
@@ -146,12 +178,27 @@ class TextureProperties(bpy.types.PropertyGroup):
 
 
 class BoneFlag(bpy.types.PropertyGroup):
+    """Represents a bone flag."""
     name: bpy.props.StringProperty(default="")
 
 
 class BoneProperties(bpy.types.PropertyGroup):
+    """A class representing the properties of a bone in an armature.
+
+    This class provides methods for calculating a unique tag for the bone,
+    retrieving the bone object from the armature, and setting and getting the tag value.
+    """
+
     @staticmethod
     def calc_tag_hash(bone_name: str) -> int:
+        """Calculate the tag hash for a given bone name.
+
+        Parameters:
+            bone_name (str): The name of the bone.
+
+        Returns:
+            int: The calculated tag hash.
+        """
         h = 0
         for char in str.upper(bone_name):
             char = ord(char)
@@ -166,6 +213,11 @@ class BoneProperties(bpy.types.PropertyGroup):
         return h % 0xFE8F + 0x170
 
     def get_bone(self) -> Optional[bpy.types.Bone]:
+        """Get the bone object associated with this BoneProperties.
+
+        Returns:
+            Optional[bpy.types.Bone]: The bone object, or None if not found.
+        """
         armature: bpy.types.Armature = self.id_data
         if armature is None or not isinstance(armature, bpy.types.Armature):
             return None
@@ -177,6 +229,11 @@ class BoneProperties(bpy.types.PropertyGroup):
         return None
 
     def calc_tag(self) -> Optional[int]:
+        """Calculate the tag for the associated bone.
+
+        Returns:
+            Optional[int]: The calculated tag, or None if the bone is not found.
+        """
         bone = self.get_bone()
         if bone is None:
             return None
@@ -186,6 +243,11 @@ class BoneProperties(bpy.types.PropertyGroup):
         return tag
 
     def get_tag(self) -> int:
+        """Get the tag value for the bone.
+
+        Returns:
+            int: The tag value.
+        """
         if self.use_manual_tag:
             return self.manual_tag
 
@@ -196,6 +258,11 @@ class BoneProperties(bpy.types.PropertyGroup):
         return tag
 
     def set_tag(self, value: int):
+        """Set the tag value for the bone.
+
+        Parameters:
+            value (int): The tag value to set.
+        """
         self.manual_tag = value
         self.use_manual_tag = value != self.calc_tag()
 
@@ -211,11 +278,17 @@ class BoneProperties(bpy.types.PropertyGroup):
 
 
 class ShaderMaterial(bpy.types.PropertyGroup):
+    """Represents a shader material."""
+    
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
 
 
 class LightProperties(bpy.types.PropertyGroup):
+    """
+    Represents the properties of a Sollumz light.
+    """
+
     flashiness: bpy.props.EnumProperty(
         name="Flashiness",
         items=LightFlashinessEnumItems,
@@ -255,11 +328,14 @@ class LightProperties(bpy.types.PropertyGroup):
 
 
 class LightPresetProp(bpy.types.PropertyGroup):
+    """Represents a light preset property."""
+    
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
 
 
 class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    """Represents the light flags."""
     interior_only: bpy.props.BoolProperty(
         name="Interior Only",
         description="Light will only be rendered when inside an interior",
@@ -423,7 +499,10 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 @persistent
 def on_file_loaded(_):
-    # Handler sets the default value of the ShaderMaterials collection on blend file load
+    """
+    Handler function that is called when a blend file is loaded.
+    It sets the default value of the ShaderMaterials collection and loads light presets.
+    """
     bpy.context.scene.shader_materials.clear()
     for index, mat in enumerate(shadermats):
         item = bpy.context.scene.shader_materials.add()
@@ -455,6 +534,15 @@ def set_light_type(self, value):
 
 
 def get_light_presets_path() -> str:
+    """
+    Returns the path to the light_presets.xml file.
+
+    The path is constructed based on the package name and the user resource directory.
+    If the file does not exist, a FileNotFoundError is raised.
+
+    Returns:
+        str: The path to the light_presets.xml file.
+    """
     package_name = __name__.split(".")[0]
     presets_path = f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ydr\\light_presets.xml"
     if os.path.exists(presets_path):
@@ -468,6 +556,9 @@ light_presets = LightPresetsFile()
 
 
 def load_light_presets():
+    """
+    Loads light presets from a file and adds them to the scene's light presets collection.
+    """
     bpy.context.scene.light_presets.clear()
     path = get_light_presets_path()
     if os.path.exists(path):
@@ -480,12 +571,32 @@ def load_light_presets():
 
 
 def get_texture_name(self):
+    """
+    Returns the name of the texture file without the extension.
+    
+    If the image is available, it extracts the base name of the file
+    without the extension using the `os.path` module. Otherwise, it
+    returns "None".
+    """
     if self.image:
         return os.path.splitext(basename(self.image.filepath))[0]
     return "None"
 
 
 def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> DrawableModelProperties:
+    """
+    Retrieves the properties of a drawable model based on the LOD level.
+
+    Parameters:
+        model_obj (bpy.types.Object): The model object.
+        lod_level (LODLevel): The level of detail.
+
+    Returns:
+        DrawableModelProperties: The properties of the drawable model.
+
+    Raises:
+        ValueError: If the model object has no LOD or the LOD mesh is missing.
+    """
     drawable_obj = find_sollumz_parent(model_obj, SollumType.DRAWABLE)
 
     if drawable_obj is not None and model_obj.vertex_groups:

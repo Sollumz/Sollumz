@@ -6,10 +6,11 @@ import bpy
 import zlib
 import numpy as np
 from numpy.typing import NDArray
-from typing import Callable, Optional
+from typing import Callable, Optional, NDArray, Tuple
+import numpy as np
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
-
+from typing import List
 from ..lods import operates_on_lod_level
 from .model_data import get_faces_subset
 
@@ -52,11 +53,20 @@ from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
-
 from .. import logger
 
 
 def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
+    """
+    Export the given drawable object to a xml file format.
+
+    Parameters:
+        drawable_obj (bpy.types.Object): The drawable object to export.
+        filepath (str): The file path to save the exported XML file.
+
+    Returns:
+        bool: True if the export is successful, False otherwise.
+    """
     export_settings = get_export_settings()
 
     drawable_xml = create_drawable_xml(
@@ -68,7 +78,20 @@ def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
 
 
 def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, auto_calc_volume: bool = False, auto_calc_inertia: bool = False, apply_transforms: bool = False):
-    """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
+    """
+    Create a ``Drawable`` cwxml object.
+
+    Parameters:
+        drawable_obj (bpy.types.Object): The object to create the drawable XML for.
+        armature_obj (Optional[bpy.types.Object], optional): An optional external armature object if drawable_obj is not an armature. Defaults to None.
+        materials (Optional[list[bpy.types.Material]], optional): An optional list of materials to use for the drawable. Defaults to None.
+        auto_calc_volume (bool, optional): Whether to automatically calculate the volume of the drawable. Defaults to False.
+        auto_calc_inertia (bool, optional): Whether to automatically calculate the inertia of the drawable. Defaults to False.
+        apply_transforms (bool, optional): Whether to apply transforms to the drawable. Defaults to False.
+
+    Returns:
+        Drawable: The created drawable XML object.
+    """
     drawable_xml = Drawable()
     drawable_xml.matrix = None
 
@@ -118,6 +141,18 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
 
 
 def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+    """
+    Creates XML models for each LOD level of a drawable object.
+
+    Parameters:
+        drawable_xml (Drawable): The XML representation of the drawable object.
+        drawable_obj (bpy.types.Object): The Blender object representing the drawable.
+        materials (list[bpy.types.Material]): The list of materials used by the drawable.
+        bones (Optional[list[bpy.types.Bone]]): The list of bones used for skinning (default: None).
+
+    Returns:
+        None
+    """
     model_objs = get_model_objs(drawable_obj)
 
     if bones is not None:
@@ -145,13 +180,29 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
 
 
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
-    """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
+    """
+    Get all non-skinned Drawable Model objects under ``drawable_obj``.
+
+    Parameters:
+        drawable_obj (bpy.types.Object): The parent object to search for Drawable Model objects.
+
+    Returns:
+        list[bpy.types.Object]: A list of non-skinned Drawable Model objects found under ``drawable_obj``.
+    """
     return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh]
 
 
 def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[bpy.types.Bone]):
     """Sort all models with vertex groups by bone index. If a model has multiple vertex group uses the vertex group
-    with the lowest bone index."""
+    with the lowest bone index.
+
+    Parameters:
+        model_objs (list[bpy.types.Object]): List of model objects with vertex groups.
+        bones (list[bpy.types.Bone]): List of bones used for sorting.
+
+    Returns:
+        list[bpy.types.Object]: Sorted list of model objects based on bone index.
+    """
     # This is necessary to ensure proper render order of each vertex group. With many vertex groups on a single object
     # you can just change the order, but if the object is split by group there is no way of manually sorting the vertex groups.
     def get_model_bone_ind(obj: bpy.types.Object):
@@ -172,6 +223,19 @@ def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[
 
 @operates_on_lod_level
 def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
+    """
+    Creates an XML representation of a model.
+
+    Parameters:
+        model_obj (bpy.types.Object): The Blender object representing the model.
+        lod_level (LODLevel): The level of detail for the model.
+        materials (list[bpy.types.Material]): The list of materials used by the model.
+        bones (Optional[list[bpy.types.Bone]], optional): The list of bones used by the model. Defaults to None.
+        transforms_to_apply (Optional[Matrix], optional): The transformation matrix to apply to the model. Defaults to None.
+
+    Returns:
+        DrawableModel: The XML representation of the model.
+    """
     model_xml = DrawableModel()
 
     set_model_xml_properties(model_obj, lod_level, model_xml)
@@ -193,6 +257,15 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
 
 
 def triangulate_mesh(mesh: bpy.types.Mesh):
+    """
+    Triangulates the given mesh by converting all its faces into triangles.
+
+    Parameters:
+        mesh (bpy.types.Mesh): The mesh to be triangulated.
+
+    Returns:
+        bpy.types.Mesh: The triangulated mesh.
+    """
     temp_mesh = bmesh.new()
     temp_mesh.from_mesh(mesh)
 
@@ -205,6 +278,15 @@ def triangulate_mesh(mesh: bpy.types.Mesh):
 
 
 def get_model_bone_index(model_obj: bpy.types.Object):
+    """
+    Get the index of the bone associated with the given model object.
+
+    Parameters:
+        model_obj (bpy.types.Object): The model object.
+
+    Returns:
+        int: The index of the bone. Returns 0 if no bone is found.
+    """
     constraint = get_child_of_constraint(model_obj)
 
     if constraint is None:
@@ -217,7 +299,14 @@ def get_model_bone_index(model_obj: bpy.types.Object):
 
 
 def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, model_xml: DrawableModel):
-    """Set ``DrawableModel`` properties for each lod in ``model_obj``"""
+    """Set ``DrawableModel`` properties for each lod in ``model_obj``.
+
+    Parameters:
+        model_obj (bpy.types.Object): The Blender object representing the model.
+        lod_level (LODLevel): The level of detail for the model.
+        model_xml (DrawableModel): The XML representation of the model.
+
+    """
     model_props = get_model_properties(model_obj, lod_level)
 
     model_xml.render_mask = model_props.render_mask
@@ -227,6 +316,18 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, m
 
 
 def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
+    """
+    Creates XML geometries based on the given mesh, materials, bones, and vertex groups.
+
+    Parameters:
+        mesh_eval (bpy.types.Mesh): The evaluated mesh object.
+        materials (list[bpy.types.Material]): The list of materials associated with the mesh.
+        bones (Optional[list[bpy.types.Bone]]): The list of bones to be used for skinning. Defaults to None.
+        vertex_groups (Optional[list[bpy.types.VertexGroup]]): The list of vertex groups associated with the mesh. Defaults to None.
+
+    Returns:
+        list[Geometry]: The list of created geometries in XML format.
+    """
     if len(mesh_eval.loops) == 0:
         logger.warning(
             f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
@@ -286,10 +387,30 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
 
 def sort_geoms_by_shader(geometries: list[Geometry]):
+    """
+    Sorts a list of geometries based on their shader index.
+
+    Parameters:
+        geometries (list[Geometry]): The list of geometries to be sorted.
+
+    Returns:
+        list[Geometry]: The sorted list of geometries.
+    """
     return sorted(geometries, key=lambda g: g.shader_index)
 
 
 def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.types.Material]):
+    """
+    Retrieves loop indices grouped by material.
+
+    Parameters:
+        mesh (bpy.types.Mesh): The mesh object.
+        drawable_mats (list[bpy.types.Material]): The list of drawable materials.
+
+    Returns:
+        dict[int, NDArray[np.uint32]]: A dictionary where the keys are the shader indices and the values are the loop indices.
+    """
+
     loop_inds_by_mat: dict[int, NDArray[np.uint32]] = {}
 
     if not mesh.loop_triangles:
@@ -328,6 +449,15 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
 
 
 def get_tangent_required(material: bpy.types.Material):
+    """
+    Retrieves the value of 'required_tangent' property from the shader associated with the given material.
+
+    Parameters:
+        material (bpy.types.Material): The material to retrieve the required tangent from.
+
+    Returns:
+        bool: The value of 'required_tangent' property from the shader, or False if the shader is not found.
+    """
     shader_name = material.shader_properties.filename
 
     shader = ShaderManager.find_shader(shader_name)
@@ -338,7 +468,15 @@ def get_tangent_required(material: bpy.types.Material):
 
 
 def get_used_texcoords(material: bpy.types.Material) -> set[str]:
-    """Get TexCoords that the material's shader uses"""
+    """
+    Get the set of TexCoords that the material's shader uses.
+
+    Parameters:
+        material (bpy.types.Material): The material to retrieve the used TexCoords for.
+
+    Returns:
+        set[str]: The set of TexCoords used by the material's shader.
+    """
     shader_name = material.shader_properties.filename
 
     shader = ShaderManager.find_shader(shader_name)
@@ -349,7 +487,15 @@ def get_used_texcoords(material: bpy.types.Material) -> set[str]:
 
 
 def get_used_colors(material: bpy.types.Material) -> set[str]:
-    """Get Colours that the material's shader uses"""
+    """
+    Get the colors used by the material's shader.
+
+    Parameters:
+        material (bpy.types.Material): The material to retrieve the used colors from.
+
+    Returns:
+        set[str]: A set of colors used by the material's shader.
+    """
     shader_name = material.shader_properties.filename
 
     shader = ShaderManager.find_shader(shader_name)
@@ -360,6 +506,15 @@ def get_used_colors(material: bpy.types.Material) -> set[str]:
 
 
 def get_normal_required(material: bpy.types.Material):
+    """
+    Returns whether the specified material requires a normal map.
+
+    Parameters:
+        material (bpy.types.Material): The material to check.
+
+    Returns:
+        bool: True if the material requires a normal map, False otherwise.
+    """
     shader_name = material.shader_properties.filename
 
     shader = ShaderManager.find_shader(shader_name)
@@ -370,14 +525,43 @@ def get_normal_required(material: bpy.types.Material):
 
 
 def get_geom_extents(positions: NDArray[np.float32]):
+    """
+    Calculate the maximum and minimum extents of a geometry based on its positions.
+
+    Parameters:
+        positions (NDArray[np.float32]): An array of positions representing the geometry.
+
+    Returns:
+        Tuple[Vector, Vector]: A tuple containing the maximum and minimum extents of the geometry.
+    """
     return Vector(np.max(positions, axis=0)), Vector(np.min(positions, axis=0))
 
 
 def get_bone_ids(bones: list[bpy.types.Bone]):
+    """
+    Returns a list of bone IDs based on the given list of bones.
+
+    Parameters:
+        bones (list[bpy.types.Bone]): The list of bones.
+
+    Returns:
+        list[int]: The list of bone IDs.
+    """
     return [i for i in range(len(bones))]
 
 
 def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level: LODLevel):
+    """
+    Appends a model XML to the appropriate list based on the LOD level.
+
+    Parameters:
+        drawable_xml (Drawable): The XML object to append the model to.
+        model_xml (DrawableModel): The model XML to be appended.
+        lod_level (LODLevel): The level of detail for the model.
+
+    Returns:
+        None
+    """
     if lod_level == LODLevel.HIGH:
         drawable_xml.drawable_models_high.append(model_xml)
 
@@ -392,6 +576,15 @@ def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level
 
 
 def join_skinned_models_for_each_lod(drawable_xml: Drawable):
+    """
+    Joins skinned models for each level of detail (LOD) in the given Drawable object.
+
+    Parameters:
+        drawable_xml (Drawable): The Drawable object containing the skinned models.
+
+    Returns:
+        None
+    """
     drawable_xml.drawable_models_high = join_skinned_models(
         drawable_xml.drawable_models_high)
     drawable_xml.drawable_models_med = join_skinned_models(
@@ -403,6 +596,15 @@ def join_skinned_models_for_each_lod(drawable_xml: Drawable):
 
 
 def join_skinned_models(model_xmls: list[DrawableModel]):
+    """
+    Joins skinned models with non-skinned models and returns a list of DrawableModels.
+
+    Parameters:
+        model_xmls (list[DrawableModel]): A list of DrawableModel objects.
+
+    Returns:
+        list[DrawableModel]: A list of DrawableModel objects, where skinned models are joined and placed at the beginning of the list.
+    """
     non_skinned_models = [model for model in model_xmls if model.has_skin == 0]
     skinned_models = [model for model in model_xmls if model.has_skin == 1]
 
@@ -431,6 +633,17 @@ def join_skinned_models(model_xmls: list[DrawableModel]):
 
 
 def join_geometries(geometry_xmls: list[Geometry], shader_index: int):
+    """
+    Joins multiple geometries into a single geometry.
+
+    Parameters:
+        geometry_xmls (list[Geometry]): A list of Geometry objects to be joined.
+        shader_index (int): The shader index for the new geometry.
+
+    Returns:
+        Geometry: The joined geometry.
+
+    """
     new_geom = Geometry()
     new_geom.shader_index = shader_index
 
@@ -452,15 +665,47 @@ def join_geometries(geometry_xmls: list[Geometry], shader_index: int):
 
 
 def get_valid_vert_arrs(geometry_xmls: list[Geometry]):
+    """
+    Returns a list of vertex buffer data from the given list of Geometry objects,
+    excluding any objects that have None values for vertex buffer data or index buffer data.
+
+    Parameters:
+        geometry_xmls (list[Geometry]): A list of Geometry objects.
+
+    Returns:
+        list: A list of vertex buffer data.
+
+    """
     return [geom.vertex_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
 
 
 def get_valid_ind_arrs(geometry_xmls: list[Geometry]):
+    """
+    Returns a list of index buffer data from the given list of Geometry objects,
+    excluding any objects that have None values for vertex buffer data or index buffer data.
+
+    Parameters:
+        geometry_xmls (list[Geometry]): A list of Geometry objects.
+
+    Returns:
+        list: A list of index buffer data.
+
+    """
     return [geom.index_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
 
 
 def join_vert_arrs(vert_arrs: list[NDArray]):
-    """Join vertex buffer structured arrays. Works with arrays that have different layouts."""
+    """
+    Join vertex buffer structured arrays.
+
+    This function works with arrays that have different layouts.
+    
+    Parameters:
+        vert_arrs (list[NDArray]): A list of structured arrays representing vertex buffers.
+
+    Returns:
+        NDArray: The joined structured array containing all the vertex data.
+    """
     num_verts = sum(len(vert_arr) for vert_arr in vert_arrs)
     struct_dtype = get_joined_vert_arr_dtype(vert_arrs)
     joined_arr = np.zeros(num_verts, dtype=struct_dtype)
@@ -484,7 +729,14 @@ def join_vert_arrs(vert_arrs: list[NDArray]):
 
 
 def get_joined_vert_arr_dtype(vert_arrs: list[NDArray]):
-    """Create a new structured dtype containing all vertex attrs present in all vert_arrs"""
+    """Create a new structured dtype containing all vertex attrs present in all vert_arrs.
+
+    Parameters:
+        vert_arrs (list[NDArray]): A list of numpy arrays representing vertex arrays.
+
+    Returns:
+        list: A list of dtypes representing the joined vertex attributes.
+    """
     attr_names = []
 
     for vert_arr in vert_arrs:
@@ -495,7 +747,15 @@ def get_joined_vert_arr_dtype(vert_arrs: list[NDArray]):
 
 
 def join_ind_arrs(ind_arrs: list[NDArray[np.uint32]], vert_counts: list[int]) -> NDArray[np.uint32]:
-    """Join vertex index arrays by simply concatenating and offsetting indices based on vertex counts"""
+    """Join vertex index arrays by simply concatenating and offsetting indices based on vertex counts
+
+    Parameters:
+        ind_arrs (list[NDArray[np.uint32]]): List of vertex index arrays to be joined
+        vert_counts (list[int]): List of vertex counts for each index array
+
+    Returns:
+        NDArray[np.uint32]: Joined vertex index array
+    """
     def get_vert_ind_offset(arr_ind: int) -> int:
         if arr_ind == 0:
             return 0
@@ -509,6 +769,15 @@ def join_ind_arrs(ind_arrs: list[NDArray[np.uint32]], vert_counts: list[int]) ->
 
 
 def split_drawable_by_vert_count(drawable_xml: Drawable):
+    """
+    Splits the given drawable into multiple models based on vertex count.
+
+    Parameters:
+        drawable_xml (Drawable): The drawable XML object to be split.
+
+    Returns:
+        None
+    """
     split_models_by_vert_count(drawable_xml.drawable_models_high)
     split_models_by_vert_count(drawable_xml.drawable_models_med)
     split_models_by_vert_count(drawable_xml.drawable_models_low)
@@ -516,6 +785,15 @@ def split_drawable_by_vert_count(drawable_xml: Drawable):
 
 
 def split_models_by_vert_count(model_xmls: list[DrawableModel]):
+    """
+    Splits the models in the given list by vertex count.
+
+    Parameters:
+        model_xmls (list[DrawableModel]): A list of DrawableModel objects.
+
+    Returns:
+        None
+    """
     for model_xml in model_xmls:
         geoms_split = [
             geom_split for geom in model_xml.geometries for geom_split in split_geom_by_vert_count(geom)]
@@ -523,6 +801,15 @@ def split_models_by_vert_count(model_xmls: list[DrawableModel]):
 
 
 def split_geom_by_vert_count(geom_xml: Geometry):
+    """
+    Splits a Geometry object by vertex count.
+
+    Parameters:
+        geom_xml (Geometry): The Geometry object to be split.
+
+    Returns:
+        tuple: A tuple of Geometry objects, each containing a subset of the original vertex and index buffers.
+    """
     if geom_xml.vertex_buffer.data is None or geom_xml.index_buffer.data is None:
         raise ValueError(
             "Failed to split Geometry by vertex count. Vertex buffer and index buffer cannot be None!")
@@ -549,9 +836,16 @@ def split_geom_by_vert_count(geom_xml: Geometry):
 def split_vert_buffers(
     vert_buffer: NDArray,
     ind_buffer: NDArray[np.uint32]
-) -> tuple[tuple[NDArray], tuple[NDArray[np.uint32]]]:
+) -> Tuple[Tuple[NDArray], Tuple[NDArray[np.uint32]]]:
     """Splits vertex and index buffers on chunks that fit in 16-bit indices.
-    Returns tuple of split vertex buffers and tuple of index buffers"""
+    
+    Parameters:
+        vert_buffer (NDArray): The vertex buffer.
+        ind_buffer (NDArray[np.uint32]): The index buffer.
+    
+    Returns:
+        Tuple[Tuple[NDArray], Tuple[NDArray[np.uint32]]]: A tuple of split vertex buffers and a tuple of index buffers.
+    """
     MAX_INDEX = 65535
 
     total_index = 0
@@ -568,7 +862,7 @@ def split_vert_buffers(
             old_index = ind_buffer[total_index]
             existing_index = old_index_to_new_index.get(old_index, None)
             if existing_index is not None:
-                # we already have this index vertex addedm simply remap it to new index
+                # we already have this index vertex added, simply remap it to new index
                 chunk_indices.append(existing_index)
             else:
                 # We got new index unseen before, we have to add both vertex and index
@@ -588,6 +882,13 @@ def split_vert_buffers(
 
 
 def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: Drawable):
+    """
+    Creates a shader group XML based on the given list of materials and a Drawable XML object.
+
+    Parameters:
+        materials (list[bpy.types.Material]): The list of materials to extract shaders from.
+        drawable_xml (Drawable): The Drawable XML object to update with the shader group information.
+    """
     shaders = get_shaders_from_blender(materials)
     texture_dictionary = texture_dictionary_from_materials(materials)
 
@@ -596,6 +897,15 @@ def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: D
 
 
 def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
+    """
+    Creates a dictionary of textures from a list of materials.
+
+    Parameters:
+        materials (list[bpy.types.Material]): A list of materials.
+
+    Returns:
+        list[Texture]: A list of textures extracted from the materials.
+    """
     texture_dictionary: dict[str, Texture] = {}
 
     for node in get_embedded_texture_nodes(materials):
@@ -611,6 +921,15 @@ def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
 
 
 def get_embedded_texture_nodes(materials: list[bpy.types.Material]):
+    """
+    Retrieves a list of embedded texture nodes from the given list of materials.
+
+    Parameters:
+        materials (list[bpy.types.Material]): A list of materials to search for embedded texture nodes.
+
+    Returns:
+        list[bpy.types.ShaderNodeTexImage]: A list of embedded texture nodes found in the materials.
+    """
     nodes: list[bpy.types.ShaderNodeTexImage] = []
 
     for mat in materials:
@@ -627,6 +946,15 @@ def get_embedded_texture_nodes(materials: list[bpy.types.Material]):
 
 
 def texture_from_img_node(node: bpy.types.ShaderNodeTexImage):
+    """
+    Creates a Texture object from a ShaderNodeTexImage.
+
+    Parameters:
+        node (bpy.types.ShaderNodeTexImage): The ShaderNodeTexImage to create the texture from.
+
+    Returns:
+        Texture: The created Texture object.
+    """
     texture = Texture()
 
     texture.name = node.sollumz_texture_name
@@ -645,7 +973,16 @@ def texture_from_img_node(node: bpy.types.ShaderNodeTexImage):
 
 
 def set_texture_flags(node: bpy.types.ShaderNodeTexImage, texture: Texture):
-    """Set the texture flags of ``texture`` from ``node.texture_flags``."""
+    """
+    Set the texture flags of ``texture`` from ``node.texture_flags``.
+
+    Parameters:
+        node (bpy.types.ShaderNodeTexImage): The shader node containing the texture flags.
+        texture (Texture): The texture object to set the flags on.
+
+    Returns:
+        Texture: The updated texture object.
+    """
     for prop in dir(node.texture_flags):
         value = getattr(node.texture_flags, prop)
 
@@ -656,6 +993,16 @@ def set_texture_flags(node: bpy.types.ShaderNodeTexImage, texture: Texture):
 
 
 def create_skeleton_xml(armature_obj: bpy.types.Object, apply_transforms: bool = False):
+    """
+    Creates a skeleton XML representation based on the given armature object.
+
+    Parameters:
+        armature_obj (bpy.types.Object): The armature object to create the skeleton from.
+        apply_transforms (bool, optional): Whether to apply transforms to the skeleton. Defaults to False.
+
+    Returns:
+        Skeleton: The skeleton XML representation.
+    """
     if armature_obj.type != "ARMATURE" or not armature_obj.pose.bones:
         return None
 
@@ -680,6 +1027,18 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, apply_transforms: bool =
 
 
 def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, armature_matrix: Matrix):
+    """
+    Creates a Bone XML object based on the given pose bone.
+
+    Parameters:
+        pose_bone (bpy.types.PoseBone): The pose bone to create the XML for.
+        bone_index (int): The index of the bone.
+        armature (bpy.types.Armature): The armature object.
+        armature_matrix (Matrix): The matrix representing the armature's transformation.
+
+    Returns:
+        Bone: The created Bone XML object.
+    """
     bone = pose_bone.bone
 
     bone_xml = Bone()
@@ -697,6 +1056,17 @@ def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bp
 
 
 def get_bone_parent_index(bone: bpy.types.Bone, armature: bpy.types.Armature):
+    """
+    Returns the index of the parent bone of the given bone in the armature.
+    If the bone has no parent, returns -1.
+
+    Parameters:
+    - bone: The bone for which to find the parent index.
+    - armature: The armature containing the bone.
+
+    Returns:
+    - The index of the parent bone, or -1 if the bone has no parent.
+    """
     if bone.parent is None:
         return -1
 
@@ -704,6 +1074,16 @@ def get_bone_parent_index(bone: bpy.types.Bone, armature: bpy.types.Armature):
 
 
 def get_bone_sibling_index(bone: bpy.types.Bone, armature: bpy.types.Armature):
+    """
+    Returns the index of the sibling bone of the given bone in the armature.
+
+    Parameters:
+        bone (bpy.types.Bone): The bone for which to find the sibling index.
+        armature (bpy.types.Armature): The armature containing the bone.
+
+    Returns:
+        int: The index of the sibling bone, or -1 if the bone has no sibling.
+    """
     sibling_index = -1
 
     if bone.parent is None:
@@ -722,6 +1102,16 @@ def get_bone_sibling_index(bone: bpy.types.Bone, armature: bpy.types.Armature):
 
 
 def set_bone_xml_flags(bone_xml: Bone, pose_bone: bpy.types.PoseBone):
+    """
+    Sets the XML flags for a bone based on its properties and constraints.
+
+    Parameters:
+        bone_xml (Bone): The XML representation of the bone.
+        pose_bone (bpy.types.PoseBone): The pose bone object.
+
+    Returns:
+        None
+    """
     bone = pose_bone.bone
 
     for flag in bone.bone_properties.flags:
@@ -740,6 +1130,17 @@ def set_bone_xml_flags(bone_xml: Bone, pose_bone: bpy.types.PoseBone):
 
 
 def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matrix: Matrix):
+    """
+    Sets the XML transforms for a bone.
+
+    Parameters:
+    bone_xml (Bone): The XML representation of the bone.
+    bone (bpy.types.Bone): The Blender bone object.
+    armature_matrix (Matrix): The armature matrix.
+
+    Returns:
+    None
+    """
     pos = armature_matrix @ bone.matrix_local.translation
 
     if bone.parent is not None:
@@ -756,11 +1157,22 @@ def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matri
 
 
 def calculate_skeleton_unks(skeleton_xml: Skeleton):
+    """
+    Calculates the unknown values (Unknown50, Unknown54, Unknown58) for a given Skeleton object.
+
+    Parameters:
+        skeleton_xml (Skeleton): The Skeleton object for which to calculate the unknown values.
+
+    Returns:
+        None
+    """
+
     # from what oiv calcs Unknown50 and Unknown54 are related to BoneTag and Flags, and obviously the hierarchy of bones
     # assuming those hashes/flags are all based on joaat
     # Unknown58 is related to BoneTag, Flags, Rotation, Location and Scale. Named as DataCRC so we stick to CRC-32 as a hack, since we and possibly oiv don't know how R* calc them
     # hopefully this doesn't break in game!
     # hacky solution with inaccurate results, the implementation here is only to ensure they are unique regardless the correctness, further investigation is required
+
     if not skeleton_xml.bones:
         return
 
@@ -793,7 +1205,16 @@ def calculate_skeleton_unks(skeleton_xml: Skeleton):
 
 
 def get_bone_index(armature: bpy.types.Armature, bone: bpy.types.Bone) -> Optional[int]:
-    """Get bone index on armature. Returns None if not found."""
+    """
+    Get the index of a bone in an armature.
+
+    Parameters:
+        armature (bpy.types.Armature): The armature object.
+        bone (bpy.types.Bone): The bone object.
+
+    Returns:
+        Optional[int]: The index of the bone if found, None otherwise.
+    """
     index = armature.bones.find(bone.name)
 
     if index == -1:
@@ -803,6 +1224,15 @@ def get_bone_index(armature: bpy.types.Armature, bone: bpy.types.Bone) -> Option
 
 
 def create_joints_xml(armature_obj: bpy.types.Object):
+    """
+    Creates an XML representation of the joints in the given armature object.
+
+    Parameters:
+        armature_obj (bpy.types.Object): The armature object.
+
+    Returns:
+        Joints: The XML representation of the joints.
+    """
     if armature_obj.pose is None:
         return None
 
@@ -825,18 +1255,46 @@ def create_joints_xml(armature_obj: bpy.types.Object):
 
 
 def get_limit_rot_constraint(pose_bone: bpy.types.PoseBone) -> bpy.types.LimitRotationConstraint:
+    """
+    Retrieves the LimitRotationConstraint from the given PoseBone.
+
+    Parameters:
+        pose_bone (bpy.types.PoseBone): The PoseBone to retrieve the constraint from.
+
+    Returns:
+        bpy.types.LimitRotationConstraint: The LimitRotationConstraint of the PoseBone, or None if not found.
+    """
     for constraint in pose_bone.constraints:
         if constraint.type == "LIMIT_ROTATION":
             return constraint
 
 
 def get_limit_pos_constraint(pose_bone: bpy.types.PoseBone) -> bpy.types.LimitLocationConstraint:
+    """
+    Retrieves the limit position constraint from the given pose bone.
+
+    Parameters:
+        pose_bone (bpy.types.PoseBone): The pose bone to search for the constraint.
+
+    Returns:
+        bpy.types.LimitLocationConstraint: The limit position constraint, if found. None otherwise.
+    """
     for constraint in pose_bone.constraints:
         if constraint.type == "LIMIT_LOCATION":
             return constraint
 
 
 def create_rotation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bone_tag: int):
+    """
+    Creates an XML representation of a rotation limit constraint.
+
+    Parameters:
+        constraint (bpy.types.LimitRotationConstraint): The rotation constraint to create XML for.
+        bone_tag (int): The tag of the bone associated with the constraint.
+
+    Returns:
+        RotationLimit: The XML representation of the rotation limit constraint.
+    """
     joint = RotationLimit()
     set_joint_properties(joint, constraint, bone_tag)
 
@@ -844,6 +1302,16 @@ def create_rotation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bon
 
 
 def create_translation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bone_tag: int):
+    """
+    Creates an XML representation of a translation limit for a bone.
+
+    Parameters:
+        constraint (bpy.types.LimitRotationConstraint): The rotation constraint to create the translation limit for.
+        bone_tag (int): The tag of the bone.
+
+    Returns:
+        BoneLimit: The XML representation of the translation limit.
+    """
     joint = BoneLimit()
     set_joint_properties(joint, constraint, bone_tag)
 
@@ -851,6 +1319,17 @@ def create_translation_limit_xml(constraint: bpy.types.LimitRotationConstraint, 
 
 
 def set_joint_properties(joint: BoneLimit, constraint: bpy.types.LimitRotationConstraint | bpy.types.LimitLocationConstraint, bone_tag: int):
+    """
+    Sets the properties of a joint.
+
+    Parameters:
+        joint (BoneLimit): The joint to set the properties for.
+        constraint (bpy.types.LimitRotationConstraint | bpy.types.LimitLocationConstraint): The constraint to get the property values from.
+        bone_tag (int): The ID of the bone.
+
+    Returns:
+        BoneLimit: The joint with the updated properties.
+    """
     joint.bone_id = bone_tag
     joint.min = Vector(
         (constraint.min_x, constraint.min_y, constraint.min_z))
@@ -861,6 +1340,15 @@ def set_joint_properties(joint: BoneLimit, constraint: bpy.types.LimitRotationCo
 
 
 def set_drawable_xml_flags(drawable_xml: Drawable):
+    """
+    Sets the flags of a Drawable XML object based on the number of drawable models in different quality levels.
+
+    Parameters:
+        drawable_xml (Drawable): The Drawable XML object to set the flags for.
+
+    Returns:
+        None
+    """
     drawable_xml.flags_high = len(drawable_xml.drawable_models_high)
     drawable_xml.flags_med = len(drawable_xml.drawable_models_med)
     drawable_xml.flags_low = len(drawable_xml.drawable_models_low)
@@ -868,8 +1356,18 @@ def set_drawable_xml_flags(drawable_xml: Drawable):
 
 
 def set_drawable_xml_extents(drawable_xml: Drawable):
-    mins: list[Vector] = []
-    maxes: list[Vector] = []
+    """
+    Sets the extents of the given `drawable_xml` by calculating the bounding sphere
+    center, bounding sphere radius, bounding box minimum, and bounding box maximum.
+
+    Parameters:
+        drawable_xml (Drawable): The drawable XML object.
+
+    Returns:
+        None
+    """
+    mins: List[Vector] = []
+    maxes: List[Vector] = []
 
     for model_xml in drawable_xml.drawable_models_high:
         for geometry in model_xml.geometries:
@@ -888,6 +1386,15 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
 
 
 def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
+    """
+    Creates embedded collision XMLs for a given drawable object.
+
+    Parameters:
+        drawable_obj (bpy.types.Object): The drawable object.
+        drawable_xml (Drawable): The XML representation of the drawable.
+        auto_calc_volume (bool, optional): Flag to automatically calculate volume. Defaults to False.
+        auto_calc_inertia (bool, optional): Flag to automatically calculate inertia. Defaults to False.
+    """
     for child in drawable_obj.children:
         bound_xml = None
 
@@ -907,6 +1414,16 @@ def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml:
 
 
 def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
+    """
+    Sets the properties of a Drawable object in an XML file based on the properties of a Blender object.
+
+    Parameters:
+        drawable_obj (bpy.types.Object): The Blender object whose properties will be used.
+        drawable_xml (Drawable): The XML object to update with the properties.
+
+    Returns:
+        None
+    """
     drawable_xml.lod_dist_high = drawable_obj.drawable_properties.lod_dist_high
     drawable_xml.lod_dist_med = drawable_obj.drawable_properties.lod_dist_med
     drawable_xml.lod_dist_low = drawable_obj.drawable_properties.lod_dist_low
@@ -914,6 +1431,16 @@ def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Dr
 
 
 def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
+    """
+    Writes the embedded textures used by the materials of the given drawable object to the specified filepath.
+
+    Parameters:
+        drawable_obj (bpy.types.Object): The drawable object containing the materials.
+        filepath (str): The filepath where the embedded textures will be written.
+
+    Returns:
+        None
+    """
     materials = get_sollumz_materials(drawable_obj)
     directory = os.path.dirname(filepath)
     filename = get_filename(filepath)
@@ -936,9 +1463,16 @@ def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
 
 
 def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> list[ShaderParameter]:
-    """Creates a list of shader parameters ordered as defined in the ``ShaderDef`` parameters list.
+    """
+    Creates a list of shader parameters ordered as defined in the ``ShaderDef`` parameters list.
     This order is only required to prevent some crashes when previewing the drawable in OpenIV, which expects
     parameters to be in the same order as vanilla files. This is not a problem for CodeWalker or the game.
+
+    Parameters:
+        shader_def (Optional[ShaderDef]): The shader definition.
+
+    Returns:
+        list[ShaderParameter]: The list of shader parameters.
     """
     if shader_def is None:
         return []
@@ -970,6 +1504,15 @@ def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> l
 
 
 def get_shaders_from_blender(materials):
+    """
+    Retrieves shaders from Blender materials and creates a list of Shader objects.
+
+    Parameters:
+        materials (list): List of Blender materials.
+
+    Returns:
+        list: List of Shader objects.
+    """
     shaders = []
 
     for material in materials:

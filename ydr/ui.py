@@ -11,6 +11,9 @@ from ..shared.shader_nodes import SzShaderNodeParameter
 
 
 class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
+    """
+    Panel class for displaying drawable properties in the properties editor.
+    """
     bl_label = "Drawable Properties"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_PANEL"
     bl_space_type = "PROPERTIES"
@@ -42,6 +45,10 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
+    """
+    Custom UIList class for managing shader order list.
+    """
+
     bl_idname = "SOLLUMZ_UL_SHADER_ORDER_LIST"
 
     def draw_item(
@@ -68,6 +75,10 @@ class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
+    """
+    Panel class for displaying LOD properties of a drawable model object.
+    """
+
     bl_label = "LOD Properties"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_MODEL_PANEL"
     bl_space_type = "PROPERTIES"
@@ -126,6 +137,10 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
+    """
+    Custom UIList class for displaying shader materials.
+    """
+
     bl_idname = "SOLLUMZ_UL_SHADER_MATERIALS_LIST"
 
     def draw_item(
@@ -143,6 +158,10 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Sollumz light properties in the Blender UI.
+    """
+
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_LIGHT_PANEL"
     bl_space_type = "PROPERTIES"
@@ -246,6 +265,10 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
+    """
+    Panel for controlling time flags of a light object.
+    """
+
     bl_idname = "SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -265,6 +288,9 @@ class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
 
 
 class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
+    """
+    Panel for managing flags of the Sollumz light.
+    """
     bl_label = "Flags"
     bl_idname = "SOLLUMZ_PT_LIGHT_FLAGS_PANEL"
     bl_space_type = "PROPERTIES"
@@ -283,6 +309,9 @@ class SOLLUMZ_PT_LIGHT_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 
 
 class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
+    """
+    This panel represents the drawable tool panel in Sollumz Tools.
+    """
     bl_label = "Drawables"
     bl_idname = "SOLLUMZ_PT_DRAWABLE_TOOL_PANEL"
     bl_category = "Sollumz Tools"
@@ -300,6 +329,9 @@ class SOLLUMZ_PT_DRAWABLE_TOOL_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Shader Tools panel in the Sollumz Tools category.
+    """
     bl_label = "Shader Tools"
     bl_idname = "SOLLUMZ_PT_SHADER_TOOLS_PANEL"
     bl_category = "Sollumz Tools"
@@ -347,6 +379,9 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
+    """
+    Panel for creating drawable objects.
+    """
     bl_label = "Create Drawable Objects"
     bl_idname = "SOLLUMZ_PT_CREATE_DRAWABLE_PANEL"
     bl_category = "Sollumz Tools"
@@ -389,6 +424,10 @@ class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Light Tools in the Sollumz Tools category.
+    """
+
     bl_label = "Light Tools"
     bl_idname = "SOLLUMZ_PT_CREATE_LIGHT_PANEL"
     bl_category = "Sollumz Tools"
@@ -421,6 +460,10 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
+    """
+    Custom UIList class for displaying a list of light presets.
+    """
+
     bl_idname = "SOLLUMZ_UL_LIGHT_PRESET_LIST"
 
     def draw_item(
@@ -436,6 +479,10 @@ class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Bone Tools panel in the Sollumz Tools category.
+    """
+
     bl_label = "Bone Tools"
     bl_idname = "SOLLUMZ_PT_BONE_TOOLS_PANEL"
     bl_category = "Sollumz Tools"
@@ -481,6 +528,10 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
+    """
+    Custom UIList class for displaying bone flags.
+    """
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         custom_icon = "FILE"
 
@@ -494,6 +545,10 @@ class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Sollumz bone properties panel.
+    """
+
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_BONE_PANEL"
     bl_space_type = "PROPERTIES"
@@ -529,6 +584,10 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Shader properties for a Sollumz material.
+    """
+
     bl_label = "Shader"
     bl_idname = "SOLLUMZ_PT_SHADER_PANEL"
     bl_space_type = "PROPERTIES"
@@ -561,6 +620,9 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
+    """
+    Panel class for Texture Parameters.
+    """
     bl_label = "Texture Parameters"
     bl_idname = "SOLLUMZ_PT_TXTPARAMS_PANEL"
     bl_space_type = "PROPERTIES"
@@ -606,6 +668,10 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
+    """
+    Panel for displaying value parameters of the active material.
+    """
+
     bl_label = "Value Parameters"
     bl_idname = "SOLLUMZ_PT_VALUEPARAMS_PANEL"
     bl_space_type = "PROPERTIES"
@@ -636,6 +702,10 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
+    """
+    This panel represents the Sollumz child-of constraint subpanel.
+    """
+
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_label = "Sollumz"
@@ -654,6 +724,9 @@ class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_LOD_TOOLS_PANEL(bpy.types.Panel):
+    """
+    This panel represents the LOD Tools panel in the Sollumz Tools category.
+    """
     bl_label = "LOD Tools"
     bl_idname = "SOLLUMZ_PT_LOD_TOOLS_PANEL"
     bl_category = "Sollumz Tools"
@@ -672,6 +745,10 @@ class SOLLUMZ_PT_LOD_TOOLS_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
+    """
+    This panel represents the Auto LOD panel in the Sollumz Tools category.
+    """
+
     bl_label = "Auto LOD"
     bl_idname = "SOLLUMZ_PT_AUTO_LOD_PANEL"
     bl_category = "Sollumz Tools"
@@ -698,6 +775,10 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
+    """
+    Panel class for the 'Extract LODs' panel in Sollumz Tools.
+    """
+
     bl_label = "Extract LODs"
     bl_idname = "SOLLUMZ_PT_EXTRACT_LODS_PANEL"
     bl_category = "Sollumz Tools"

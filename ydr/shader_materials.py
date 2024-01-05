@@ -72,6 +72,15 @@ def get_child_nodes(node):
 
 
 def group_image_texture_nodes(node_tree):
+    """
+    Groups the image texture nodes in the given node tree by adjusting their positions.
+
+    Parameters:
+        node_tree (bpy.types.NodeTree): The node tree containing the image texture nodes.
+
+    Returns:
+        None
+    """
     image_texture_nodes = [node for node in node_tree.nodes if node.type == "TEX_IMAGE"]
 
     if not image_texture_nodes:
@@ -97,6 +106,15 @@ def group_image_texture_nodes(node_tree):
 
 
 def get_loose_nodes(node_tree):
+    """
+    Retrieves the loose nodes from the given node tree.
+
+    Parameters:
+        node_tree (NodeTree): The node tree to search for loose nodes.
+
+    Returns:
+        list: A list of loose nodes found in the node tree.
+    """
     loose_nodes = []
     for node in node_tree.nodes:
         no = False
@@ -117,6 +135,15 @@ def get_loose_nodes(node_tree):
 
 
 def organize_node_tree(b: ShaderBuilder):
+    """
+    Organizes the node tree of a ShaderBuilder object.
+
+    Parameters:
+    - b (ShaderBuilder): The ShaderBuilder object whose node tree needs to be organized.
+
+    Returns:
+    - None
+    """
     mo = b.material_output
     mo.location.x = 0
     mo.location.y = 0
@@ -126,6 +153,15 @@ def organize_node_tree(b: ShaderBuilder):
 
 
 def organize_node(node):
+    """
+    Recursively organizes the child nodes of a given node in a vertical layout.
+
+    Parameters:
+        node: The node to organize.
+
+    Returns:
+        None
+    """
     child_nodes = get_child_nodes(node)
     if len(child_nodes) < 0:
         return
@@ -139,6 +175,17 @@ def organize_node(node):
 
 
 def organize_loose_nodes(node_tree, start_x, start_y):
+    """
+    Organizes loose nodes in a node tree by arranging them in a grid-like pattern.
+
+    Parameters:
+        node_tree (NodeTree): The node tree containing the loose nodes.
+        start_x (float): The starting x-coordinate for the grid.
+        start_y (float): The starting y-coordinate for the grid.
+
+    Returns:
+        None
+    """
     loose_nodes = get_loose_nodes(node_tree)
     if len(loose_nodes) == 0:
         return
@@ -158,6 +205,15 @@ def organize_loose_nodes(node_tree, start_x, start_y):
 
 
 def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderNodeTexImage]:
+    """
+    Retrieves the TintPaletteSampler node from the material's node tree.
+
+    Parameters:
+    mat (bpy.types.Material): The material to search for the node in.
+
+    Returns:
+    Optional[bpy.types.ShaderNodeTexImage]: The TintPaletteSampler node if found, None otherwise.
+    """
     nodes = mat.node_tree.nodes
     for node in nodes:
         if node.name == "TintPaletteSampler" and isinstance(node, bpy.types.ShaderNodeTexImage):
@@ -166,7 +222,16 @@ def get_tint_sampler_node(mat: bpy.types.Material) -> Optional[bpy.types.ShaderN
     return None
 
 
-def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
+def get_detail_extra_sampler(mat):
+    """
+    Retrieves the 'Extra' node from the material's node tree.
+
+    Parameters:
+        mat (bpy.types.Material): The material to search in.
+
+    Returns:
+        bpy.types.Node or None: The 'Extra' node if found, None otherwise.
+    """
     nodes = mat.node_tree.nodes
     for node in nodes:
         if node.name == "Extra":
@@ -175,6 +240,15 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
 
 
 def create_tinted_shader_graph(obj: bpy.types.Object):
+    """
+    Creates a tinted shader graph for the given object.
+
+    Parameters:
+        obj (bpy.types.Object): The object to create the shader graph for.
+
+    Returns:
+        None: If no tinted materials are found for the object.
+    """
     tint_mats = get_tinted_mats(obj)
 
     if not tint_mats:
@@ -206,6 +280,18 @@ def create_tint_geom_modifier(
     input_color_attr_name: Optional[str],
     palette_img: Optional[bpy.types.Image]
 ) -> bpy.types.NodesModifier:
+    """
+    Creates a geometry Nodes modifier that applies tinting to the object.
+
+    Parameters:
+        obj (bpy.types.Object): The object to apply the modifier to.
+        tint_color_attr_name (str): The name of the attribute to store the tint color.
+        input_color_attr_name (Optional[str]): The name of the attribute to use as the input color. If None, no input color attribute will be used.
+        palette_img (Optional[bpy.types.Image]): The palette image to use for tinting. If None, no palette image will be used.
+
+    Returns:
+        bpy.types.NodesModifier: The created geometry modifier.
+    """
     tnt_ng = create_tinted_geometry_graph()
     mod = obj.modifiers.new("GeometryNodes", "NODES")
     mod.node_group = tnt_ng
@@ -226,6 +312,16 @@ def create_tint_geom_modifier(
 
 
 def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
+    """
+    Renames the TintColor attribute node in the given node tree.
+
+    Parameters:
+        node_tree (bpy.types.NodeTree): The node tree containing the attribute node.
+        name (str): The new name for the attribute.
+
+    Returns:
+        None
+    """
     for node in node_tree.nodes:
         if not isinstance(node, bpy.types.ShaderNodeAttribute) or node.attribute_name != "TintColor":
             continue
@@ -235,6 +331,15 @@ def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
 
 
 def get_tinted_mats(obj: bpy.types.Object) -> list[bpy.types.Material]:
+    """
+    Returns a list of tinted materials associated with the given object.
+
+    Parameters:
+        obj (bpy.types.Object): The object to retrieve the materials from.
+
+    Returns:
+        list[bpy.types.Material]: A list of tinted materials.
+    """
     if obj.data is None or not obj.data.materials:
         return []
 
@@ -242,6 +347,15 @@ def get_tinted_mats(obj: bpy.types.Object) -> list[bpy.types.Material]:
 
 
 def obj_has_tint_mats(obj: bpy.types.Object) -> bool:
+    """
+    Check if the given object has tint materials.
+
+    Parameters:
+        obj (bpy.types.Object): The object to check.
+
+    Returns:
+        bool: True if the object has tint materials, False otherwise.
+    """
     if not obj.data.materials:
         return False
 
@@ -250,14 +364,37 @@ def obj_has_tint_mats(obj: bpy.types.Object) -> bool:
 
 
 def is_tint_material(mat: bpy.types.Material) -> bool:
+    """
+    Check if the given material has a tint sampler node.
+
+    Parameters:
+        mat (bpy.types.Material): The material to check.
+
+    Returns:
+        bool: True if the material has a tint sampler node, False otherwise.
+    """
     return get_tint_sampler_node(mat) is not None
 
 
 def link_geos(links, node1, node2):
+    """
+    Links the geometry output of node1 to the geometry input of node2.
+
+    Parameters:
+        links (bpy.types.Links): The links collection to add the new link to.
+        node1 (bpy.types.Node): The node with the geometry output.
+        node2 (bpy.types.Node): The node with the geometry input.
+    """
     links.new(node1.inputs["Geometry"], node2.outputs["Geometry"])
 
 
-def create_tinted_geometry_graph():  # move to blenderhelper.py?
+def create_tinted_geometry_graph():
+    """
+    Creates a geometry node tree for tinting geometry.
+
+    Returns:
+    bpy.types.NodeTree: The created geometry node tree.
+    """
     gnt = bpy.data.node_groups.new(name="TintGeometry", type="GeometryNodeTree")
     input = gnt.nodes.new("NodeGroupInput")
     output = gnt.nodes.new("NodeGroupOutput")
@@ -367,6 +504,16 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
 
 def create_image_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
+    """
+    Creates a new ShaderNodeTexImage in the given node tree.
+
+    Parameters:
+        node_tree (bpy.types.NodeTree): The node tree to add the image node to.
+        param: The parameter used to set the name and label of the image node.
+
+    Returns:
+        bpy.types.ShaderNodeTexImage: The created image node.
+    """
     imgnode = node_tree.nodes.new("ShaderNodeTexImage")
     imgnode.name = param.name
     imgnode.label = param.name
@@ -381,6 +528,17 @@ def create_parameter_node(
         ShaderParameterFloat4x4Def
     )
 ) -> SzShaderNodeParameter:
+    """
+    Creates a parameter node in the given node tree based on the provided parameter definition.
+
+    Parameters:
+        node_tree (bpy.types.NodeTree): The node tree in which to create the parameter node.
+        param (Union[ShaderParameterFloatDef, ShaderParameterFloat2Def, ShaderParameterFloat3Def,
+                     ShaderParameterFloat4Def, ShaderParameterFloat4x4Def]): The parameter definition.
+
+    Returns:
+        SzShaderNodeParameter: The created parameter node.
+    """
     node: SzShaderNodeParameter = node_tree.nodes.new(SzShaderNodeParameter.bl_idname)
     node.name = param.name
     node.label = node.name
@@ -422,6 +580,16 @@ def create_parameter_node(
 
 
 def link_diffuse(b: ShaderBuilder, imgnode):
+    """
+    Links the output of an image node to the base color and alpha inputs of a shader's BSDF node.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        imgnode: The image node whose outputs will be linked.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -430,6 +598,17 @@ def link_diffuse(b: ShaderBuilder, imgnode):
 
 
 def link_diffuses(b: ShaderBuilder, tex1, tex2):
+    """
+    Links the diffuse textures to the shader builder.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        tex1: The first diffuse texture.
+        tex2: The second diffuse texture.
+
+    Returns:
+        ShaderNodeMixRGB: The mix RGB node that links the diffuse textures.
+    """
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -442,6 +621,18 @@ def link_diffuses(b: ShaderBuilder, tex1, tex2):
 
 
 def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
+    """
+    Links the nodes in the shader builder to create a detailed normal map.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        bumptex: The bump texture node.
+        dtltex: The detail texture node.
+        spectex: The specular texture node.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     bsdf = b.bsdf
     dtltex2 = node_tree.nodes.new("ShaderNodeTexImage")
@@ -509,6 +700,16 @@ def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
 
 
 def link_normal(b: ShaderBuilder, nrmtex):
+    """
+    Links the normal map texture to the shader's normal input.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        nrmtex: The normal map texture.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -522,7 +723,15 @@ def link_normal(b: ShaderBuilder, nrmtex):
 
 
 def create_normal_invert_node(node_tree: bpy.types.NodeTree):
-    """Create RGB curves node that inverts that green channel of normal maps"""
+    """
+    Create RGB curves node that inverts the green channel of normal maps.
+
+    Parameters:
+        node_tree (bpy.types.NodeTree): The node tree to add the RGB curves node to.
+
+    Returns:
+        bpy.types.ShaderNodeRGBCurve: The created RGB curves node.
+    """
     rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new(
         "ShaderNodeRGBCurve")
 
@@ -534,6 +743,16 @@ def create_normal_invert_node(node_tree: bpy.types.NodeTree):
 
 
 def link_specular(b: ShaderBuilder, spctex):
+    """
+    Links the output color of the spctex node to the Specular IOR Level input of the bsdf node.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        spctex: The spctex node.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -545,6 +764,14 @@ def create_diff_palette_nodes(
     palette_tex: bpy.types.ShaderNodeTexImage,
     diffuse_tex: bpy.types.ShaderNodeTexImage
 ):
+    """
+    Creates a set of shader nodes to generate a diffuse palette for a material.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        palette_tex (bpy.types.ShaderNodeTexImage): The texture node for the palette.
+        diffuse_tex (bpy.types.ShaderNodeTexImage): The texture node for the diffuse texture.
+    """
     palette_tex.interpolation = "Closest"
     node_tree = b.node_tree
     bsdf = b.bsdf
@@ -593,6 +820,16 @@ def create_tint_nodes(
     b: ShaderBuilder,
     diffuse_tex: bpy.types.ShaderNodeTexImage
 ):
+    """
+    Creates shader nodes for applying tint to a material.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        diffuse_tex (bpy.types.ShaderNodeTexImage): The diffuse texture node.
+
+    Returns:
+        None
+    """
     # create shader attribute node
     # TintColor attribute is filled by tint geometry nodes
     node_tree = b.node_tree
@@ -609,6 +846,17 @@ def create_tint_nodes(
 
 
 def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
+    """
+    Creates decal nodes in the shader material.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        texture: The texture to be used for the decal.
+        decalflag (int): The flag indicating the type of decal.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     output = b.material_output
     bsdf = b.bsdf
@@ -635,6 +883,16 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
 
 
 def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage):
+    """
+    Creates and connects shader nodes to generate a distance map effect based on a given texture.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+        distance_map_texture (bpy.types.ShaderNodeTexImage): The texture node representing the distance map.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     output = b.material_output
     bsdf = b.bsdf
@@ -680,6 +938,15 @@ def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.
 
 
 def create_emissive_nodes(b: ShaderBuilder):
+    """
+    Creates emissive nodes in the shader builder.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+
+    Returns:
+        None
+    """
     node_tree = b.node_tree
     links = node_tree.links
     output = b.material_output
@@ -695,6 +962,15 @@ def create_emissive_nodes(b: ShaderBuilder):
 
 
 def link_value_shader_parameters(b: ShaderBuilder):
+    """
+    Links value shader parameters to corresponding nodes in the shader node tree.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+
+    Returns:
+        None
+    """
     shader = b.shader
     node_tree = b.node_tree
     links = node_tree.links
@@ -747,6 +1023,12 @@ def link_value_shader_parameters(b: ShaderBuilder):
 
 
 def create_water_nodes(b: ShaderBuilder):
+    """
+    Creates water shader nodes in the given ShaderBuilder object.
+
+    Parameters:
+        b (ShaderBuilder): The ShaderBuilder object to create the nodes in.
+    """
     node_tree = b.node_tree
     links = node_tree.links
     bsdf = b.bsdf
@@ -782,6 +1064,15 @@ def create_water_nodes(b: ShaderBuilder):
 
 
 def create_basic_shader_nodes(b: ShaderBuilder):
+    """
+    Creates the basic shader nodes for a given ShaderBuilder object.
+
+    Parameters:
+        b (ShaderBuilder): The ShaderBuilder object containing the necessary information.
+
+    Returns:
+        None
+    """
     shader = b.shader
     filename = b.filename
     mat = b.material
@@ -912,6 +1203,15 @@ def create_basic_shader_nodes(b: ShaderBuilder):
 
 
 def create_terrain_shader(b: ShaderBuilder):
+    """
+    Creates a terrain shader using the provided ShaderBuilder object.
+
+    Parameters:
+        b (ShaderBuilder): The ShaderBuilder object containing the necessary parameters.
+
+    Returns:
+        None
+    """
     shader = b.shader
     filename = b.filename
     mat = b.material
@@ -1024,7 +1324,15 @@ def create_terrain_shader(b: ShaderBuilder):
 
 
 def create_uv_map_nodes(b: ShaderBuilder):
-    """Creates a ``ShaderNodeUVMap`` node for each UV map used in the shader."""
+    """
+    Creates a ``ShaderNodeUVMap`` node for each UV map used in the shader.
+
+    Parameters:
+        b (ShaderBuilder): The shader builder object.
+
+    Returns:
+        None
+    """
     shader = b.shader
     node_tree = b.node_tree
 
@@ -1038,7 +1346,15 @@ def create_uv_map_nodes(b: ShaderBuilder):
 
 
 def link_uv_map_nodes_to_textures(b: ShaderBuilder):
-    """For each texture node, links the corresponding UV map to its input UV if it hasn't been linked already."""
+    """
+    For each texture node, links the corresponding UV map to its input UV if it hasn't been linked already.
+
+    Parameters:
+        b (ShaderBuilder): The ShaderBuilder object containing the shader and node tree.
+
+    Returns:
+        None
+    """
     shader = b.shader
     node_tree = b.node_tree
 
@@ -1054,6 +1370,18 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
 
 
 def create_shader(filename: str):
+    """
+    Creates a shader material based on the given filename.
+
+    Parameters:
+        filename (str): The name of the shader file.
+
+    Returns:
+        bpy.types.Material: The created shader material.
+
+    Raises:
+        AttributeError: If the shader does not exist.
+    """
     shader = ShaderManager.find_shader(filename)
     if shader is None:
         raise AttributeError(f"Shader '{filename}' does not exist!")
