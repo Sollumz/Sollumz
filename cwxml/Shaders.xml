@@ -6246,6 +6246,44 @@
   </Parameters>
  </Item>
  <Item>
+  <Name>vehicle_track_siren</Name>
+  <FileName>
+   <Item bucket="1">vehicle_track_siren.sps</Item>
+  </FileName>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <TexCoord0 />
+    <TexCoord1 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="DamageSampler" type="Texture" />
+   <Item name="DirtSampler" type="Texture" uv="1" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="envEffTexTileUV" type="float" x="8" />
+   <Item name="envEffScale" type="float2" x="1" y="0.001" />
+   <Item name="envEffThickness" type="float" x="25" />
+   <Item name="reflectivePower" type="float" x="0.45" />
+   <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
+   <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
+   <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
+   <Item name="Track2AnimUV" type="float4" x="0" y="0" z="0" w="0" />
+   <Item name="emissiveMultiplier" type="float" x="16" />
+   <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
+   <Item name="DamageMultiplier" type="float" x="0" />
+   <Item name="BoundRadius" type="float" x="0" />
+  </Parameters>
+ </Item>
+ <Item>
   <Name>ped_cloth</Name>
   <FileName>
    <Item bucket="0">ped_cloth.sps</Item>
