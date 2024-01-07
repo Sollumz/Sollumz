@@ -240,113 +240,122 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
+def create_poly_box(poly, materials, vertices):
+    obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
+
+    v1 = vertices[poly.v1]
+    v2 = vertices[poly.v2]
+    v3 = vertices[poly.v3]
+    v4 = vertices[poly.v4]
+    center = (v1 + v2 + v3 + v4) * 0.25
+
+    # Get edges from the 4 opposing corners of the box
+    a1 = ((v3 + v4) - (v1 + v2)) * 0.5
+    v2 = v1 + a1
+    v3 = v3 - a1
+    v4 = v4 - a1
+
+    minedge = Vector((0.0001, 0.0001, 0.0001))
+    edge1 = max(v2 - v1, minedge)
+    edge2 = max(v3 - v1, minedge)
+    edge3 = max((v4 - v1), minedge)
+
+    # Order edges
+    s1 = False
+    s2 = False
+    s3 = False
+    if edge2.length > edge1.length:
+        t1 = edge1
+        edge1 = edge2
+        edge2 = t1
+        s1 = True
+    if edge3.length > edge1.length:
+        t1 = edge1
+        edge1 = edge3
+        edge3 = t1
+        s2 = True
+    if edge3.length > edge2.length:
+        t1 = edge2
+        edge2 = edge3
+        edge3 = t1
+        s3 = True
+
+    # Ensure all edge vectors are perpendicular to each other
+    b1 = edge1.normalized()
+    b2 = edge2.normalized()
+    b3 = b1.cross(b2).normalized()
+    b2 = b1.cross(b3).normalized()
+    edge2 = b2 * edge2.dot(b2)
+    edge3 = b3 * edge3.dot(b3)
+
+    # Unswap edges
+    if s3 == True:
+        t1 = edge2
+        edge2 = edge3
+        edge3 = t1
+    if s2 == True:
+        t1 = edge1
+        edge1 = edge3
+        edge3 = t1
+    if s1 == True:
+        t1 = edge1
+        edge1 = edge2
+        edge2 = t1
+
+    mat = Matrix()
+    mat[0] = edge1.x, edge2.x, edge3.x, center.x
+    mat[1] = edge1.y, edge2.y, edge3.y, center.y
+    mat[2] = edge1.z, edge2.z, edge3.z, center.z
+
+    create_box(obj.data, size=1)
+    obj.matrix_basis = mat
+
+    return obj
+
+def create_poly_sphere(poly, materials, vertices):
+    sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
+    sphere.bound_radius = poly.radius
+    sphere.location = vertices[poly.v]
+    return sphere
+
+def create_poly_capsule(poly, materials, vertices):
+    capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
+    v1 = vertices[poly.v1]
+    v2 = vertices[poly.v2]
+    rot = get_direction_of_vectors(v1, v2)
+    capsule.bound_radius = poly.radius * 2
+    capsule.bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
+
+    capsule.location = (v1 + v2) / 2
+    capsule.rotation_euler = rot
+
+    return capsule
+
+def create_poly_cylinder(poly, materials, vertices):
+    cylinder = init_poly_obj(poly, SollumType.BOUND_POLY_CYLINDER, materials)
+    v1 = vertices[poly.v1]
+    v2 = vertices[poly.v2]
+
+    rot = get_direction_of_vectors(v1, v2)
+
+    cylinder.bound_radius = poly.radius
+    cylinder.bound_length = get_distance_of_vectors(v1, v2)
+    cylinder.matrix_world = Matrix()
+
+    cylinder.location = (v1 + v2) / 2
+    cylinder.rotation_euler = rot
+
+    return cylinder
+
+POLY_TO_OBJ_MAP = {
+    PolyBox: create_poly_box,
+    PolySphere: create_poly_sphere,
+    PolyCapsule: create_poly_capsule,
+    PolyCylinder: create_poly_cylinder,
+}
+
 def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
-    if type(poly) == PolyBox:
-        obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
-
-        v1 = vertices[poly.v1]
-        v2 = vertices[poly.v2]
-        v3 = vertices[poly.v3]
-        v4 = vertices[poly.v4]
-        center = (v1 + v2 + v3 + v4) * 0.25
-
-        # Get edges from the 4 opposing corners of the box
-        a1 = ((v3 + v4) - (v1 + v2)) * 0.5
-        v2 = v1 + a1
-        v3 = v3 - a1
-        v4 = v4 - a1
-
-        minedge = Vector((0.0001, 0.0001, 0.0001))
-        edge1 = max(v2 - v1, minedge)
-        edge2 = max(v3 - v1, minedge)
-        edge3 = max((v4 - v1), minedge)
-
-        # Order edges
-        s1 = False
-        s2 = False
-        s3 = False
-        if edge2.length > edge1.length:
-            t1 = edge1
-            edge1 = edge2
-            edge2 = t1
-            s1 = True
-        if edge3.length > edge1.length:
-            t1 = edge1
-            edge1 = edge3
-            edge3 = t1
-            s2 = True
-        if edge3.length > edge2.length:
-            t1 = edge2
-            edge2 = edge3
-            edge3 = t1
-            s3 = True
-
-        # Ensure all edge vectors are perpendicular to each other
-        b1 = edge1.normalized()
-        b2 = edge2.normalized()
-        b3 = b1.cross(b2).normalized()
-        b2 = b1.cross(b3).normalized()
-        edge2 = b2 * edge2.dot(b2)
-        edge3 = b3 * edge3.dot(b3)
-
-        # Unswap edges
-        if s3 == True:
-            t1 = edge2
-            edge2 = edge3
-            edge3 = t1
-        if s2 == True:
-            t1 = edge1
-            edge1 = edge3
-            edge3 = t1
-        if s1 == True:
-            t1 = edge1
-            edge1 = edge2
-            edge2 = t1
-
-        mat = Matrix()
-        mat[0] = edge1.x, edge2.x, edge3.x, center.x
-        mat[1] = edge1.y, edge2.y, edge3.y, center.y
-        mat[2] = edge1.z, edge2.z, edge3.z, center.z
-
-        create_box(obj.data, size=1)
-        obj.matrix_basis = mat
-
-        return obj
-    elif type(poly) == PolySphere:
-        sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
-        sphere.bound_radius = poly.radius
-
-        sphere.location = vertices[poly.v]
-
-        return sphere
-    elif type(poly) == PolyCapsule:
-        capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
-        v1 = vertices[poly.v1]
-        v2 = vertices[poly.v2]
-        rot = get_direction_of_vectors(v1, v2)
-        capsule.bound_radius = poly.radius * 2
-        capsule.bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
-
-        capsule.location = (v1 + v2) / 2
-        capsule.rotation_euler = rot
-
-        return capsule
-    elif type(poly) == PolyCylinder:
-        cylinder = init_poly_obj(
-            poly, SollumType.BOUND_POLY_CYLINDER, materials)
-        v1 = vertices[poly.v1]
-        v2 = vertices[poly.v2]
-
-        rot = get_direction_of_vectors(v1, v2)
-
-        cylinder.bound_radius = poly.radius
-        cylinder.bound_length = get_distance_of_vectors(v1, v2)
-        cylinder.matrix_world = Matrix()
-
-        cylinder.location = (v1 + v2) / 2
-        cylinder.rotation_euler = rot
-
-        return cylinder
+    return POLY_TO_OBJ_MAP[type(poly)](poly, materials, vertices)
 
 
 def get_poly_triangles(polys: list[Polygon]):
@@ -392,35 +401,22 @@ def get_bound_geom_mesh_data(
         return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, color_int[3] / 255)
 
     verts = []
+    verts_dict = {}
     faces = []
     colors = [] if vertex_colors else None
 
     for poly in triangles:
         face = []
-        v1 = vertices[poly.v1]
-        v2 = vertices[poly.v2]
-        v3 = vertices[poly.v3]
-        if v1 not in verts:
-            verts.append(v1)
-            face.append(len(verts) - 1)
-        else:
-            face.append(verts.index(v1))
-        if v2 not in verts:
-            verts.append(v2)
-            face.append(len(verts) - 1)
-        else:
-            face.append(verts.index(v2))
-        if v3 not in verts:
-            verts.append(v3)
-            face.append(len(verts) - 1)
-        else:
-            face.append(verts.index(v3))
+        for v in [vertices[poly.v1], vertices[poly.v2], vertices[poly.v3]]:
+            v_tuple = tuple(v)
+            if v_tuple not in verts_dict:
+                verts_dict[v_tuple] = len(verts)
+                verts.append(v)
+            face.append(verts_dict[v_tuple])
         faces.append(face)
 
         if colors is not None:
-            colors.append(_color_to_float(vertex_colors[poly.v1]))
-            colors.append(_color_to_float(vertex_colors[poly.v2]))
-            colors.append(_color_to_float(vertex_colors[poly.v3]))
+            colors.extend(_color_to_float(vertex_colors[v]) for v in [poly.v1, poly.v2, poly.v3])
 
     return verts, faces, np.array(colors, dtype=np.float64) if colors is not None else None
 
