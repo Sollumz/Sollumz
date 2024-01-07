@@ -6,7 +6,7 @@ import bpy
 import zlib
 import numpy as np
 from numpy.typing import NDArray
-from typing import Callable, Optional, NDArray, Tuple
+from typing import Callable, Optional, Tuple
 import numpy as np
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
