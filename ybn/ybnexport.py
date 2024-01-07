@@ -250,8 +250,9 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
         # Must be tuple since Vector is not hashable
         vertex_id = (*vert, *(vert_color or default_vert_color))
 
-        if vertex_id in ind_by_vert:
-            return ind_by_vert[vertex_id]
+        vert_ind = ind_by_vert.get(vertex_id)
+        if vert_ind is not None:
+            return vert_ind
 
         vert_ind = len(ind_by_vert)
         ind_by_vert[vertex_id] = vert_ind
@@ -262,8 +263,9 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
         return vert_ind
 
     def get_mat_index(mat: bpy.types.Material):
-        if mat in ind_by_mat:
-            return ind_by_mat[mat]
+        mat_ind = ind_by_mat.get(mat)
+        if mat_ind is not None:
+            return mat_ind
 
         mat_xml = create_col_mat_xml(mat)
         mat_ind = len(geom_xml.materials)
@@ -279,8 +281,9 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
         return
 
     # For empty bound objects with children, create the bound polygons from its children
+    bound_polygon_types_set = set(BOUND_POLYGON_TYPES)
     for child in obj.children_recursive:
-        if child.sollum_type not in BOUND_POLYGON_TYPES:
+        if child.sollum_type not in bound_polygon_types_set:
             continue
         create_bound_xml_poly_shape(child, geom_xml, get_vert_index, get_mat_index)
 
