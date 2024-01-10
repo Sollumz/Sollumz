@@ -128,10 +128,9 @@ def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
     light_props.projected_texture_hash = light_xml.projected_texture_hash
     light_props.culling_plane_normal = light_xml.culling_plane_normal
     light_props.culling_plane_offset = light_xml.culling_plane_offset
-    light_props.shadow_blur = light_xml.shadow_blur
+    light_props.shadow_blur = light_xml.shadow_blur / 255
     light_props.volume_size_scale = light_xml.volume_size_scale
-    light_props.volume_outer_color = [
-        channel / 255 for channel in light_xml.volume_outer_color]
+    light_props.volume_outer_color = [channel / 255 for channel in light_xml.volume_outer_color]
     light_props.light_hash = light_xml.light_hash
     light_props.volume_outer_intensity = light_xml.volume_outer_intensity
     light_props.corona_size = light_xml.corona_size
@@ -206,7 +205,7 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.culling_plane_normal = Vector(light_props.culling_plane_normal)
     light_xml.culling_plane_offset = light_props.culling_plane_offset
     light_xml.volume_intensity = light_data.volume_factor
-    light_xml.shadow_blur = light_props.shadow_blur
+    light_xml.shadow_blur = int(light_props.shadow_blur * 255)
     light_xml.volume_size_scale = light_props.volume_size_scale
     light_xml.volume_outer_color = light_props.volume_outer_color * 255
     light_xml.light_hash = light_props.light_hash

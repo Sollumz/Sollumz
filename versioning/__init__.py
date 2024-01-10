@@ -22,7 +22,7 @@ added to keep backwards compatibility when loading old .blend files.
 Version History:
  == v2.3.1 ==
   - 0: changes between 2.3.1 and 2.4.0, until the introduction of versioning system.
-  - 1: renamed LightFlags
+  - 1: renamed LightFlags, light shadow_blur normalized to 0.0-1.0 range
   - <next>: <describe changes>
  == v2.4.0 ==
 """

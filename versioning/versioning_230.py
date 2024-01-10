@@ -291,6 +291,18 @@ def upgrade_light_flags(light: Light):
         move_renamed_prop(light_flags, old_prop, new_prop)
 
 
+def upgrade_light_shadow_blur(light: Light):
+    light_props = light.get("light_properties", None)
+    if light_props is None:
+        return
+
+    shadow_blur_val = light_props.get("shadow_blur", None)
+    if shadow_blur_val is None:
+        return
+
+    light_props["shadow_blur"] = max(0.0, min(1.0, shadow_blur_val / 255))
+
+
 def do_versions(data_version: int, data: BlendData):
     if data_version < 0:
         # commit a588b5a (feat(shader): typed shader parameters)
@@ -320,3 +332,5 @@ def do_versions(data_version: int, data: BlendData):
         for light in data.lights:
             # commit bc37e25 (feat(ydr): update light flags to correct names)
             upgrade_light_flags(light)
+            # normalize shadow_blur property
+            upgrade_light_shadow_blur(light)
