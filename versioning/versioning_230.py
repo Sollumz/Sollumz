@@ -9,6 +9,7 @@ from bpy.types import (
     Object,
     Bone,
     Mesh,
+    Light,
 )
 from idprop.types import IDPropertyGroup
 from typing import Optional, NamedTuple, Callable, Any
@@ -248,6 +249,48 @@ def upgrade_mesh_drawable_model_properties(mesh: Mesh):
         move_renamed_prop(model_props, old_prop, new_prop)
 
 
+def upgrade_light_flags(light: Light):
+    light_flags = light.get("light_flags", None)
+    if light_flags is None:
+        return
+
+    for old_prop, new_prop in (
+        ("unk1", "interior_only"),
+        ("unk2", "exterior_only"),
+        ("unk3", "dont_use_in_cutscene"),
+        ("unk4", "vehicle"),
+        ("unk5", "ignore_light_state"),
+        ("unk6", "texture_projection"),
+        ("unk7", "cast_shadows"),
+        ("shadows", "static_shadows"),
+        ("shadowd", "dynamic_shadows"),
+        ("sunlight", "calc_from_sun"),
+        ("unk11", "enable_buzzing"),
+        ("electric", "force_buzzing"),
+        ("volume", "draw_volume"),
+        ("specoff", "no_specular"),
+        ("unk15", "both_int_and_ext"),
+        ("lightoff", "corona_only"),
+        ("prxoff", "not_in_reflection"),
+        ("unk18", "only_in_reflection"),
+        ("culling", "enable_culling_plane"),
+        ("unk20", "enable_vol_outer_color"),
+        ("unk21", "higher_res_shadows"),
+        ("unk22", "only_low_res_shadows"),
+        ("unk23", "far_lod_light"),
+        ("glassoff", "dont_light_alpha"),
+        ("unk25", "cast_shadows_if_possible"),
+        ("unk26", "cutscene"),
+        ("unk27", "moving_light_source"),
+        ("unk28", "use_vehicle_twin"),
+        ("unk29", "force_medium_lod_light"),
+        ("unk30", "corona_only_lod_light"),
+        ("unk31", "delayed_render"),
+        ("unk32", "already_tested_for_occlusion"),
+    ):
+        move_renamed_prop(light_flags, old_prop, new_prop)
+
+
 def do_versions(data_version: int, data: BlendData):
     if data_version < 0:
         # commit a588b5a (feat(shader): typed shader parameters)
@@ -272,3 +315,8 @@ def do_versions(data_version: int, data: BlendData):
 
                 # commit 268453b (tweak(yft): update fragment properties names)
                 upgrade_bone_group_properties(bone)
+
+    if data_version < 1:
+        for light in data.lights:
+            # commit bc37e25 (feat(ydr): update light flags to correct names)
+            upgrade_light_flags(light)
