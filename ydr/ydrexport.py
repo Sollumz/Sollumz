@@ -925,14 +925,12 @@ def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
         if os.path.isfile(texture_path):
             if not os.path.isdir(folder_path):
                 os.mkdir(folder_path)
-            dstpath = folder_path + "\\" + \
-                os.path.basename(texture_path)
-            # check if paths are the same because if they are no need to copy
-            if texture_path != dstpath:
+            dstpath = os.path.join(folder_path, os.path.basename(texture_path))
+            # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
+            if not os.path.exists(dstpath) or not os.path.samefile(texture_path, dstpath):
                 shutil.copyfile(texture_path, dstpath)
         elif texture_path:
-            logger.warning(
-                f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
+            logger.warning(f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
 
 
 def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> list[ShaderParameter]:
