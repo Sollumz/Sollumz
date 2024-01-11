@@ -6,7 +6,7 @@ from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
-from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
+from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
 
 
@@ -311,7 +311,7 @@ def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool 
 
     archetype_xml.lod_dist = archetype.lod_dist
     archetype_xml.flags = archetype.flags.total
-    archetype_xml.special_attribute = archetype.special_attribute
+    archetype_xml.special_attribute = SpecialAttribute[archetype.special_attribute].value
     archetype_xml.hd_texture_dist = archetype.hd_texture_dist
     archetype_xml.name = archetype.name.lower()
     archetype_xml.texture_dictionary = archetype.texture_dictionary.lower()
