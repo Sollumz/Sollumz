@@ -8,6 +8,7 @@ from enum import IntFlag, IntEnum
 from ..sollumz_properties import MaterialType, SollumType
 from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
+from .meshhelper import get_uv_map_name
 from typing import Tuple
 from ..cwxml.shader import ShaderManager
 
@@ -426,7 +427,10 @@ def add_global_anim_uv_drivers(material, x_dot_node, y_dot_node):
 
 
 def add_global_anim_uv_nodes(material: bpy.types.Materia):
-    # TODO: don't create more nodes if they already exist
+    shader_name = material.shader_properties.filename
+    shader = ShaderManager.find_shader(shader_name)
+    assert shader is not None
+
     tree = material.node_tree
     nodes = tree.nodes
     base_tex_node = None
@@ -435,15 +439,17 @@ def add_global_anim_uv_nodes(material: bpy.types.Materia):
             base_tex_node = node.inputs[0].links[0].from_node
             break
 
-    if base_tex_node is None:
-        raise Exception("Could not find base texture node")
+    assert base_tex_node is not None
+
+    uv_map_index = shader.uv_maps[base_tex_node.name]
+    uv_map_node = nodes.get(get_uv_map_name(uv_map_index), None)
 
     # operation to perform:
     #   vec uv = ...
     #   vec uvw = vec(uv, 1);
     #   uv.x = dot(uvw, globalAnimUV0.xyz);
     #   uv.y = dot(uvw, globalAnimUV1.xyz);
-    uv = nodes.new("ShaderNodeUVMap")
+    uv = nodes.new("ShaderNodeUVMap") if uv_map_node is None else uv_map_node
     flip_v_subtract = nodes.new("ShaderNodeMath")
     flip_v_subtract.operation = "SUBTRACT"
     flip_v_subtract.inputs[1].default_value = 1.0
@@ -774,9 +780,11 @@ def is_uv_animation_supported(material: bpy.types.Material):
     shader = ShaderManager.find_shader(material.shader_properties.filename)
     return shader is not None and shader.is_uv_animation_supported
 
+
 def get_scene_fps() -> float:
     render = bpy.context.scene.render
     return render.fps / render.fps_base
+
 
 def get_action_duration_frames(action: bpy.types.Action) -> float:
     """Gets the action duration in frames, including subframes."""
