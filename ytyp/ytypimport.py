@@ -1,11 +1,9 @@
 import bpy
 from typing import Union
-
 from mathutils import Vector, Quaternion
-
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
+from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
 
 
@@ -241,7 +239,7 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
 
     archetype.name = archetype_xml.name
     archetype.flags.total = str(archetype_xml.flags)
-    archetype.special_attribute = archetype_xml.special_attribute
+    archetype.special_attribute = SpecialAttribute(archetype_xml.special_attribute).name
     archetype.hd_texture_dist = archetype_xml.hd_texture_dist
     archetype.texture_dictionary = archetype_xml.texture_dictionary
     archetype.clip_dictionary = archetype_xml.clip_dictionary

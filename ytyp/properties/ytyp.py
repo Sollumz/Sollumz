@@ -1,11 +1,72 @@
 from typing import Union
 import bpy
+from enum import IntEnum
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, MloFlags
 from .extensions import ExtensionsContainer, ExtensionProperties
+
+
+class SpecialAttribute(IntEnum):
+    NOTHING_SPECIAL = 0
+    IS_TRAFFIC_LIGHT = 3
+    IS_GARAGE_DOOR = 5
+    MLO_WATER_LEVEL = 6
+    IS_NORMAL_DOOR = 7
+    IS_SLIDING_DOOR = 8
+    IS_BARRIER_DOOR = 9
+    IS_SLIDING_DOOR_VERTICAL = 10
+    NOISY_BUSH = 11
+    IS_RAIL_CROSSING_DOOR = 12
+    NOISY_AND_DEFORMABLE_BUSH = 13
+    SINGLE_AXIS_ROTATION = 14
+    HAS_DYNAMIC_COVER_BOUND = 15
+    RUMBLE_ON_LIGHT_COLLISION_WITH_VEHICLE = 16
+    IS_RAIL_CROSSING_LIGHT = 17
+    CLOCK = 30
+    IS_STREET_LIGHT = 32
+
+    # These don't need to be set by the user but some game files still have them, define them to prevent import errors
+    UNUSED1 = 1,
+    IS_LADDER = 2, # set by the ladder extension at runtime
+    IS_TREE_DEPRECATED = 31, # same as double-sided rendering flag
+
+
+SpecialAttributeEnumItems = tuple(None if enum is None else (enum.name, f"{label} ({enum.value})", desc, enum.value)
+                                  for enum, label, desc in (
+    (SpecialAttribute.NOTHING_SPECIAL, "None", ""),
+    (None, "", ""),
+    (SpecialAttribute.IS_NORMAL_DOOR, "Normal Door", ""),
+    (SpecialAttribute.IS_GARAGE_DOOR, "Garage Door", ""),
+    (SpecialAttribute.IS_SLIDING_DOOR, "Sliding Door", ""),
+    (SpecialAttribute.IS_SLIDING_DOOR_VERTICAL, "Sliding Vertical Door", ""),
+    (SpecialAttribute.IS_BARRIER_DOOR, "Barrier Door", ""),
+    (SpecialAttribute.IS_RAIL_CROSSING_DOOR, "Rail Crossing Barrier Door", ""),
+    (None, "", ""),
+    (SpecialAttribute.IS_TRAFFIC_LIGHT, "Traffic Light", ""),
+    (SpecialAttribute.IS_RAIL_CROSSING_LIGHT, "Rail Crossing Light", ""),
+    (SpecialAttribute.IS_STREET_LIGHT, "Street Light", ""),
+    (None, "", ""),
+    (SpecialAttribute.NOISY_BUSH, "Bush", ""),
+    (SpecialAttribute.NOISY_AND_DEFORMABLE_BUSH, "Deformable Bush", ""),
+    (None, "", ""),
+    (SpecialAttribute.SINGLE_AXIS_ROTATION, "Single Axis Rotation", "Enable single axis rotation procedural animation"),
+    (SpecialAttribute.CLOCK, "Clock", "Enable animated clock hands"),
+    (None, "", ""),
+    (SpecialAttribute.MLO_WATER_LEVEL, "MLO Water Level", "Defines water level for a MLO"),
+    (SpecialAttribute.HAS_DYNAMIC_COVER_BOUND, "Dynamic Cover Bound", "Has dynamic cover bounds"),
+    (SpecialAttribute.RUMBLE_ON_LIGHT_COLLISION_WITH_VEHICLE, "Rumble On Vehicle Collision", ""),
+    (None, "", ""),
+    (SpecialAttribute.UNUSED1, "Deprecated - Unused",
+     "Does nothing. Here for compatibility with original game files"),
+    (SpecialAttribute.IS_LADDER, "Deprecated - Ladder",
+     "Add a Ladder extension instead. Here for compatibility with original game files"),
+    (SpecialAttribute.IS_TREE_DEPRECATED, "Deprecated - Tree",
+     "Set 'Double-sided rendering' flag instead. Here for compatibility with original game files"),
+
+))
 
 
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
@@ -139,7 +200,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=60, min=-1)
     flags: bpy.props.PointerProperty(
         type=ArchetypeFlags, name="Flags")
-    special_attribute: bpy.props.IntProperty(name="Special Attribute")
+    special_attribute: bpy.props.EnumProperty(
+        name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
     hd_texture_dist: bpy.props.FloatProperty(
         name="HD Texture Distance", default=40, min=0)
     name: bpy.props.StringProperty(name="Name")
