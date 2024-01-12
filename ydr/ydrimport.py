@@ -181,8 +181,6 @@ def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: D
 
 def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
     model_props.render_mask = model_xml.render_mask
-    model_props.matrix_count = model_xml.matrix_count
-    model_props.flags = model_xml.flags
 
 
 def create_drawable_armature(drawable_xml: Drawable, name: str):

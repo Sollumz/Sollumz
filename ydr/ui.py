@@ -121,8 +121,6 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         col.separator()
 
         layout.prop(model_props, "render_mask")
-        layout.prop(model_props, "matrix_count")
-        layout.prop(model_props, "flags")
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):

@@ -57,8 +57,6 @@ class DrawableProperties(bpy.types.PropertyGroup):
 
 class DrawableModelProperties(bpy.types.PropertyGroup):
     render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
-    flags: bpy.props.IntProperty(name="Flags", default=0)
-    matrix_count: bpy.props.IntProperty(name="Matrix Count", default=0)
     sollum_lod: bpy.props.EnumProperty(
         items=items_from_enums(
             [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]),

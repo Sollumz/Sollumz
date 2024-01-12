@@ -174,7 +174,7 @@ def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[
 def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
     model_xml = DrawableModel()
 
-    set_model_xml_properties(model_obj, lod_level, model_xml)
+    set_model_xml_properties(model_obj, lod_level, bones, model_xml)
 
     obj_eval = get_evaluated_obj(model_obj)
     mesh_eval = obj_eval.to_mesh()
@@ -216,14 +216,18 @@ def get_model_bone_index(model_obj: bpy.types.Object):
     return bone_index if bone_index != -1 else 0
 
 
-def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, model_xml: DrawableModel):
+def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, bones: Optional[list[bpy.types.Bone]], model_xml: DrawableModel):
     """Set ``DrawableModel`` properties for each lod in ``model_obj``"""
     model_props = get_model_properties(model_obj, lod_level)
 
     model_xml.render_mask = model_props.render_mask
-    model_xml.flags = model_props.flags
-    model_xml.matrix_count = model_props.matrix_count
-    model_xml.has_skin = 1 if model_obj.vertex_groups else 0
+    model_xml.flags = 0
+    model_xml.matrix_count = 0
+    model_xml.has_skin = 1 if bones and model_obj.vertex_groups else 0
+
+    if model_xml.has_skin:
+        model_xml.flags = 1  # skin flag, same meaning as has_skin
+        model_xml.matrix_count = len(bones)
 
 
 def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
