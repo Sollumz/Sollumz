@@ -224,47 +224,30 @@ class SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):
-    bl_label = "Physics"
+    bl_label = "Fragment Physics"
     bl_idname = "SOLLUMZ_PT_BONE_PHYSICS_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "bone"
-    bl_options = {"HIDE_HEADER", "DEFAULT_CLOSED"}
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_BONE_PANEL.bl_idname
 
     @classmethod
     def poll(cls, context):
         return context.active_bone is not None and context.active_object.sollum_type == SollumType.FRAGMENT
 
-    def draw(self, context):
-        layout = self.layout
-
+    def draw_header(self, context):
         bone = context.active_bone
-        layout.separator()
-        layout.label(text="Fragment")
-        layout.prop(bone, "sollumz_use_physics")
-
-
-class SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL(bpy.types.Panel):
-    bl_label = "Physics"
-    bl_idname = "SOLLUMZ_PT_BONE_PHYSICS_SUBPANEL"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "bone"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_BONE_PHYSICS_PANEL.bl_idname
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_bone is not None and context.active_bone.sollumz_use_physics
+        self.layout.prop(bone, "sollumz_use_physics", text="")
 
     def draw(self, context):
+        bone = context.active_bone
+        props = bone.group_properties
+
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
-
-        bone = context.active_bone
-        props = bone.group_properties
+        layout.active = bone.sollumz_use_physics
 
         col = layout.column(heading="Flags")
         col.prop(props, "flags", index=GroupFlagBit.DISAPPEAR_WHEN_DEAD, text="Disappear When Dead")
