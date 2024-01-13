@@ -435,14 +435,17 @@ def create_phys_xml_groups(
 
             group_ind_by_name[group_xml.name] = i
 
-    def get_group_parent_index(group_bone: bpy.types.Bone):
-        if group_bone.parent is None or group_bone.parent.name not in group_ind_by_name:
+    def get_group_parent_index(group_bone: bpy.types.Bone) -> int:
+        """Returns parent group index or 255 if there is no parent."""
+        parent_bone = group_bone.parent
+        if parent_bone is None:
             return 255
 
-        if not group_bone.parent.sollumz_use_physics:
-            return get_group_parent_index(group_bone.parent)
+        if not parent_bone.sollumz_use_physics or parent_bone.name not in group_ind_by_name:
+            # Parent has no frag group, try with grandparent
+            return get_group_parent_index(parent_bone)
 
-        return group_ind_by_name[group_bone.parent.name]
+        return group_ind_by_name[parent_bone.name]
 
     # Set group parent indices
     for bone_index, groups in groups_by_bone.items():
