@@ -774,10 +774,8 @@ class SOLLUMZ_OT_limit_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelp
         return {'FINISHED'}
 
 
-class SOLLUMZ_OT_move_shader_up(bpy.types.Operator):
-    bl_idname = "sollumz.move_shader_up"
-    bl_label = "Up"
-    bl_description = "Move shader up in the rendering order"
+class OperatorMoveShaderUpBase:
+    move_to_top = False
 
     @classmethod
     def poll(self, context):
@@ -797,16 +795,16 @@ class SOLLUMZ_OT_move_shader_up(bpy.types.Operator):
         drawable_props = aobj.drawable_properties
         shader_ind = drawable_props.shader_order.get_active_shader_item_index()
 
-        drawable_props.shader_order.change_shader_index(
-            shader_ind, shader_ind - 1)
+        if self.move_to_top:
+            drawable_props.shader_order.move_shader_to_top(shader_ind)
+        else:
+            drawable_props.shader_order.move_shader_up(shader_ind)
 
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_move_shader_down(bpy.types.Operator):
-    bl_idname = "sollumz.move_shader_down"
-    bl_label = "Down"
-    bl_description = "Move shader down in the rendering order"
+class OperatorMoveShaderDownBase:
+    move_to_bottom = False
 
     @classmethod
     def poll(self, context):
@@ -826,10 +824,40 @@ class SOLLUMZ_OT_move_shader_down(bpy.types.Operator):
         drawable_props = aobj.drawable_properties
         shader_ind = drawable_props.shader_order.get_active_shader_item_index()
 
-        drawable_props.shader_order.change_shader_index(
-            shader_ind, shader_ind + 1)
+        if self.move_to_bottom:
+            drawable_props.shader_order.move_shader_to_bottom(shader_ind)
+        else:
+            drawable_props.shader_order.move_shader_down(shader_ind)
 
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_move_shader_up(OperatorMoveShaderUpBase, bpy.types.Operator):
+    bl_idname = "sollumz.move_shader_up"
+    bl_label = "Up"
+    bl_description = "Move shader up in the rendering order"
+
+
+class SOLLUMZ_OT_move_shader_to_top(OperatorMoveShaderUpBase, bpy.types.Operator):
+    bl_idname = "sollumz.move_shader_to_top"
+    bl_label = "Move To Top"
+    bl_description = "Move shader to the top in the rendering order"
+
+    move_to_top = True
+
+
+class SOLLUMZ_OT_move_shader_down(OperatorMoveShaderDownBase, bpy.types.Operator):
+    bl_idname = "sollumz.move_shader_down"
+    bl_label = "Down"
+    bl_description = "Move shader down in the rendering order"
+
+
+class SOLLUMZ_OT_move_shader_to_bottom(OperatorMoveShaderDownBase, bpy.types.Operator):
+    bl_idname = "sollumz.move_shader_to_bottom"
+    bl_label = "Move To Bottom"
+    bl_description = "Move shader to the bottom in the rendering order"
+
+    move_to_bottom = True
 
 
 class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
@@ -848,9 +876,12 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         col.template_list("SOLLUMZ_UL_SHADER_ORDER_LIST", "", shader_order, "items",
                           shader_order, "active_index", maxrows=40)
 
-        col = row.column(align=True)
-        col.operator("sollumz.move_shader_up", text="", icon="TRIA_UP")
-        col.operator("sollumz.move_shader_down", text="", icon="TRIA_DOWN")
+        col = row.column()
+        col.operator(SOLLUMZ_OT_move_shader_to_top.bl_idname, text="", icon="TRIA_UP")
+        subcol = col.column(align=True)
+        subcol.operator(SOLLUMZ_OT_move_shader_up.bl_idname, text="", icon="TRIA_UP")
+        subcol.operator(SOLLUMZ_OT_move_shader_down.bl_idname, text="", icon="TRIA_DOWN")
+        col.operator(SOLLUMZ_OT_move_shader_to_bottom.bl_idname, text="", icon="TRIA_DOWN")
 
     def execute(self, context):
         aobj = context.active_object
