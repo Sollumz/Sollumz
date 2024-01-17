@@ -70,7 +70,8 @@ class ExtensionsPanelHelper:
 
             layout.separator()
 
-            if selected_extension.extension_type == ExtensionType.LIGHT_SHAFT:
+            is_light_shaft = selected_extension.extension_type == ExtensionType.LIGHT_SHAFT
+            if is_light_shaft:
                 row = layout.row()
                 row.operator(
                     SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
@@ -92,11 +93,24 @@ class ExtensionsPanelHelper:
 
             row = layout.row()
             row.prop(extension_properties, "offset_position")
-            for prop_name in selected_extension.get_properties().__class__.__annotations__:
-                if prop_name in {'direction_amount', 'cornerA'}:
-                    layout.separator()
-                row = layout.row()
-                row.prop(extension_properties, prop_name)
+            for prop_name in extension_properties.__class__.__annotations__:
+                if is_light_shaft and prop_name == "flags":
+                    # draw individual checkboxes for the bits instead of the flags IntProperty
+                    col = layout.column(heading="Flags")
+                    col.prop(extension_properties, "flag_0")
+                    col.prop(extension_properties, "flag_1")
+                    col.prop(extension_properties, "flag_4")
+                    col.prop(extension_properties, "flag_5")
+                    col.prop(extension_properties, "flag_6")
+                elif is_light_shaft and (prop_name.startswith("flag_") or prop_name == "scale_by_sun_intensity"):
+                    # skip light shaft flag props, drawn above
+                    # and skip scale_by_sun_intensity because it is the same as flag_5
+                   continue
+                else:
+                    if prop_name in {'direction_amount', 'cornerA'}:
+                        layout.separator()
+                    row = layout.row()
+                    row.prop(extension_properties, prop_name)
 
 
 class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):

@@ -178,6 +178,49 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     direction: bpy.props.FloatVectorProperty(
         name="Direction", subtype="XYZ")
 
+    # HACK: import/export iterates the annotations matching properties here with properties in the XML class,
+    # if they don't match it prints a warning. This is not really flexible when we need a different layout
+    # is the property group than in the XML. Often needed if we need some custom UI elements, like checkboxes
+    # for the flags. For now, properties in this set will be skipped during import/export.
+    # TODO: refactor extensions import/export/UI to be manually defined instead of depending on the property
+    # group layout? More code but would give use more flexibility.
+    ignored_in_import_export = {"flag_0", "flag_1", "flag_4", "flag_5", "flag_6"}
+
+    def is_flag_set(self, bit: int) -> bool:
+        return (self.flags & (1 << bit)) != 0
+
+    def set_flag(self, bit: int, enable: bool):
+        if enable:
+            self.flags |= 1 << bit
+        else:
+            self.flags &= ~(1 << bit)
+
+    def flag_get(bit: int):
+        if bit == 5:
+            # This flag has the same meaning as scale_by_sun_intensity bool, use the getter an setter
+            # to keep them in sync. Ideally we would keep only the flag, but we need the same layout
+            # as the XML for export (see above)
+            return lambda s: s.is_flag_set(bit) or s.scale_by_sun_intensity
+        else:
+            return lambda s: s.is_flag_set(bit)
+
+    def flag_set(bit: int):
+        if bit == 5:
+            def f(s, v):
+                s.set_flag(bit, v)
+                s.scale_by_sun_intensity = v
+            return f
+        else:
+            return lambda s, v: s.set_flag(bit, v)
+
+    # Using getters and setters because there isn't a nice way to have a list of checkboxes with EnumProperty and ENUM_FLAG option :(
+    # BoolVectorProperty isn't a good option either because there are unused bits.
+    flag_0: bpy.props.BoolProperty(name="Use Sun Direction", description="", get=flag_get(0), set=flag_set(0))
+    flag_1: bpy.props.BoolProperty(name="Use Sun Color", description="", get=flag_get(1), set=flag_set(1))
+    flag_4: bpy.props.BoolProperty(name="Scale By Sun Color", description="", get=flag_get(4), set=flag_set(4))
+    flag_5: bpy.props.BoolProperty(name="Scale By Sun Intensity", description="", get=flag_get(5), set=flag_set(5))
+    flag_6: bpy.props.BoolProperty(name="Draw In Front And Behind", description="", get=flag_get(6), set=flag_set(6))
+
 
 class SpawnPointExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
     offset_rotation: bpy.props.FloatVectorProperty(

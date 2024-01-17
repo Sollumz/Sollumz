@@ -147,7 +147,13 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
 
     extension_properties.offset_position = extension_xml.offset_position
 
+    ignored_props = getattr(extension_properties.__class__, "ignored_in_import_export", None) # see LightShaftExtensionProperties
+
     for prop_name in extension_properties.__class__.__annotations__:
+        if ignored_props is not None and prop_name in ignored_props:
+            continue
+
+        # TODO: this check doesn't work as intended, `hasattr` with XML classes always returns true for some reason
         if not hasattr(extension_xml, prop_name):
             # Unknown prop name. Need warning
             print(
