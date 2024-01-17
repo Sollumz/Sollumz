@@ -8,6 +8,7 @@ from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
+from ..ydr.light_flashiness import Flashiness
 
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
@@ -188,7 +189,7 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
         if isinstance(prop_value, Euler):
             prop_value = prop_value.to_quaternion()
 
-        if prop_name == "effect_hash":
+        elif prop_name == "effect_hash":
             # `effectHash` needs a hash as decimal value
             prop_value = prop_value.strip()
             if prop_value == "":
@@ -198,6 +199,10 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
                 # Otherwise, get a hash from the string
                 prop_value_hash = jenkhash.name_to_hash(prop_value)
                 prop_value = str(prop_value_hash)
+
+        elif prop_name == "flashiness":
+            # convert enum back to int
+            prop_value = Flashiness[prop_value].value
 
         setattr(extension_xml, prop_name, prop_value)
 

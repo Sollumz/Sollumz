@@ -2,6 +2,7 @@ import bpy
 from typing import Union
 from enum import Enum
 from ...tools.utils import get_list_item
+from ...ydr.light_flashiness import Flashiness, LightFlashinessEnumItems
 
 
 class ExtensionType(str, Enum):
@@ -156,11 +157,11 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     color: bpy.props.FloatVectorProperty(
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
     intensity: bpy.props.FloatProperty(name="Intensity")
-    flashiness: bpy.props.IntProperty(name="Flashiness")
+    flashiness: bpy.props.EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
+                                       default=Flashiness.CONSTANT.name)
     flags: bpy.props.IntProperty(name="Flags")
     fade_in_time_start: bpy.props.FloatProperty(name="Fade In Time Start")
     fade_in_time_end: bpy.props.FloatProperty(name="Fade In Time End")
-    flashiness: bpy.props.IntProperty(name="Flashiness")
     fade_out_time_start: bpy.props.FloatProperty(name="Fade Out Time Start")
     fade_out_time_end: bpy.props.FloatProperty(name="Fade Out Time End")
     fade_distance_start: bpy.props.FloatProperty(name="Fade Distance Start")
