@@ -1077,6 +1077,12 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
 
 
 def create_shader(filename: str):
+    from ..sollumz_preferences import get_addon_preferences
+    preferences = get_addon_preferences(bpy.context)
+    if preferences.experimental_shader_expressions:
+        from .shader_materials_v2 import create_shader
+        return create_shader(filename)
+
     shader = ShaderManager.find_shader(filename)
     if shader is None:
         raise AttributeError(f"Shader '{filename}' does not exist!")

@@ -1,5 +1,5 @@
 from typing import Optional, TypeAlias
-from enum import IntEnum
+from enum import IntEnum, Enum
 from abc import ABC
 
 
@@ -172,6 +172,44 @@ class FloatBinaryExpr(FloatExpr):
         return var_id
 
 
+class FloatMapRangeExpr(FloatExpr):
+    """Remap a float value from a range to a target range."""
+
+    value: FloatExpr
+    from_min: FloatExpr
+    from_max: FloatExpr
+    to_min: FloatExpr
+    to_max: FloatExpr
+    clamp: bool
+
+    def __init__(
+        self, value: Floaty,
+        from_min: Floaty, from_max: Floaty,
+        to_min: Floaty, to_max: Floaty,
+        clamp: bool = False
+    ):
+        self.value = floaty(value)
+        self.from_min = floaty(from_min)
+        self.from_max = floaty(from_max)
+        self.to_min = floaty(to_min)
+        self.to_max = floaty(to_max)
+        self.clamp = clamp
+
+    def __str__(self):
+        return f"map_range({self.value}, {self.from_min}, {self.from_max}, {self.to_min}, {self.to_max}, {self.clamp})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            value_id = self.value.dump(ctx)
+            from_min_id = self.from_min.dump(ctx)
+            from_max_id = self.from_max.dump(ctx)
+            to_min_id = self.to_min.dump(ctx)
+            to_max_id = self.to_max.dump(ctx)
+            return f"map_range({value_id}, {from_min_id}, {from_max_id}, {to_min_id}, {to_max_id}, {self.clamp})"
+        var_id = ctx.get_var_id(self, g)
+        return var_id
+
+
 class VectorComponent(IntEnum):
     X = 0
     Y = 1
@@ -245,6 +283,11 @@ class VectorExpr(Expr, ABC):
     @property
     def z(self) -> VectorComponentExpr:
         return VectorComponentExpr(self, VectorComponent.Z)
+
+    # Aliases
+    r = x
+    g = y
+    b = z
 
     def dot(self, other: 'VectorExpr') -> 'VectorDotExpr':
         return VectorDotExpr(self, other)
@@ -344,6 +387,55 @@ class VectorDotExpr(FloatExpr):
         return var_id
 
 
+class ColorBlend(str, Enum):
+    MIX = "MIX",
+    DARKEN = "DARKEN",
+    MULTIPLY = "MULTIPLY",
+    BURN = "BURN",
+    LIGHTEN = "LIGHTEN",
+    SCREEN = "SCREEN",
+    DODGE = "DODGE",
+    ADD = "ADD",
+    OVERLAY = "OVERLAY",
+    SOFT_LIGHT = "SOFT_LIGHT",
+    LINEAR_LIGHT = "LINEAR_LIGHT",
+    DIFFERENCE = "DIFFERENCE",
+    EXCLUSION = "EXCLUSION",
+    SUBTRACT = "SUBTRACT",
+    DIVIDE = "DIVIDE",
+    HUE = "HUE",
+    SATURATION = "SATURATION",
+    COLOR = "COLOR",
+    VALUE = "VALUE",
+
+
+class VectorMixColorExpr(FloatExpr):
+    """Mix two input colors (as vectors) by a factor."""
+
+    a: VectorExpr
+    b: VectorExpr
+    factor: FloatExpr
+    blend: ColorBlend
+
+    def __init__(self, a: VectorExpr, b: VectorExpr, factor: Floaty, blend: ColorBlend = ColorBlend.MIX):
+        self.a = a
+        self.b = b
+        self.factor = floaty(factor)
+        self.blend = blend
+
+    def __str__(self):
+        return f"mix_color({self.a}, {self.b}, {self.factor}, {self.blend.value})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            a_id = self.a.dump(ctx)
+            b_id = self.b.dump(ctx)
+            factor_id = self.factor.dump(ctx)
+            return f"mix_color({a_id}, {b_id}, {factor_id}, {self.blend.value})"
+        var_id = ctx.get_var_id(self, g)
+        return var_id
+
+
 class ConstructVectorExpr(VectorExpr):
     """A vector created from three floats."""
 
@@ -382,6 +474,64 @@ class UVMapVectorExpr(VectorExpr):
 
     def dump(self, ctx: ExprDumpContext) -> str:
         return f"uv({self.uv_map_index})"
+
+
+class ParameterComponentExpr(FloatExpr):
+    """Access a float component of a parameter."""
+
+    parameter: 'ParameterExpr'
+    component_index: int
+
+    def __init__(self, parameter: 'ParameterExpr', component_index: int):
+        self.parameter = parameter
+        self.component_index = component_index
+
+    def __str__(self):
+        return f"{self.source}[{self.component_index}]"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        source_id = self.source.dump(ctx)
+        return f"{source_id}[{self.component_index}]"
+
+
+class ParameterExpr(Expr):
+    """Access a parameter."""
+
+    parameter_name: str
+
+    def __init__(self, parameter_name: str):
+        self.parameter_name = parameter_name
+
+    def get(self, component_index: int) -> ParameterComponentExpr:
+        if not isinstance(component_index, int):
+            raise TypeError("component_index must be int")
+
+        return ParameterComponentExpr(self, component_index)
+
+    def __getitem__(self, component_index: int) -> ParameterComponentExpr:
+        return self.get(component_index)
+
+    @property
+    def x(self) -> ParameterComponentExpr:
+        return self.get(0)
+
+    @property
+    def y(self) -> ParameterComponentExpr:
+        return self.get(1)
+
+    @property
+    def z(self) -> ParameterComponentExpr:
+        return self.get(2)
+
+    @property
+    def w(self) -> ParameterComponentExpr:
+        return self.get(3)
+
+    def __str__(self):
+        return f"param('{self.parameter_name}')"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"param('{self.parameter_name}')"
 
 
 class TextureExpr(Expr):
@@ -452,52 +602,133 @@ class ShaderExpr(Expr, ABC):
 class BsdfPrincipledExpr(ShaderExpr):
     """A Principled BSDF shader expression."""
 
-    base_color: VectorExpr
+    base_color: Optional[VectorExpr]
     alpha: Optional[FloatExpr]
     metallic: Optional[FloatExpr]
     roughness: Optional[FloatExpr]
+    specular_ior_level: Optional[FloatExpr]
+    coat_weight: Optional[FloatExpr]
+    normal: Optional[VectorExpr]
 
     def __init__(
         self,
-        base_color: VectorExpr,
+        base_color: Optional[VectorExpr] = None,
         alpha: Optional[Floaty] = None,
         metallic: Optional[Floaty] = None,
-        roughness: Optional[Floaty] = None
+        roughness: Optional[Floaty] = None,
+        specular_ior_level: Optional[Floaty] = None,
+        coat_weight: Optional[Floaty] = None,
+        normal: Optional[VectorExpr] = None,
     ):
         self.base_color = base_color
         self.alpha = optional_floaty(alpha)
         self.metallic = optional_floaty(metallic)
         self.roughness = optional_floaty(roughness)
+        self.specular_ior_level = optional_floaty(specular_ior_level)
+        self.coat_weight = optional_floaty(coat_weight)
+        self.normal = normal
 
     def __str__(self):
         s = f"bsdf_principled({self.base_color}"
-        if self.alpha is not None:
-            s += f", alpha={self.alpha}"
-        if self.metallic is not None:
-            s += f", metallic={self.metallic}"
-        if self.roughness is not None:
-            s += f", roughness={self.roughness}"
+        first_arg = True
+
+        def _arg(name: str):
+            nonlocal s, first_arg
+            expr = getattr(self, name, None)
+            if expr is None:
+                return
+
+            if not first_arg:
+                s += ", "
+            s += f"{name}={expr}"
+            first_arg = False
+
+        _arg("base_color")
+        _arg("alpha")
+        _arg("metallic")
+        _arg("roughness")
+        _arg("specular_ior_level")
+        _arg("coat_weight")
+        _arg("normal")
+
         s += ")"
         return s
 
     def dump(self, ctx: ExprDumpContext) -> str:
         def g():
-            base_color_id = self.base_color.dump(ctx)
-            s = f"bsdf_principled({base_color_id}"
-            if self.alpha is not None:
-                alpha_id = self.alpha.dump(ctx)
-                s += f", alpha={alpha_id}"
-            if self.metallic is not None:
-                metallic_id = self.metallic.dump(ctx)
-                s += f", metallic={metallic_id}"
-            if self.roughness is not None:
-                roughness_id = self.roughness.dump(ctx)
-                s += f", roughness={roughness_id}"
+            s = "bsdf_principled("
+            first_arg = True
+
+            def _arg(name: str):
+                nonlocal s, first_arg
+                expr = getattr(self, name, None)
+                if expr is None:
+                    return
+
+                expr_id = expr.dump(ctx)
+                if not first_arg:
+                    s += ", "
+                s += f"{name}={expr_id}"
+                first_arg = False
+
+            _arg("base_color")
+            _arg("alpha")
+            _arg("metallic")
+            _arg("roughness")
+            _arg("specular_ior_level")
+            _arg("coat_weight")
+            _arg("normal")
+
             s += ")"
             return s
         var_id = ctx.get_var_id(self, g)
         return var_id
 
+
+class EmissionExpr(ShaderExpr):
+    """A emission shader expression."""
+
+    color: VectorExpr
+    strength: FloatExpr
+
+    def __init__(self, color: VectorExpr, strength: Floaty):
+        self.color = color
+        self.strength = floaty(strength)
+
+    def __str__(self):
+        return f"emission({self.color}, {self.strength})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            color_id = self.color.dump(ctx)
+            strength_id = self.strength.dump(ctx)
+            return f"emission({color_id}, {strength_id})"
+        var_id = ctx.get_var_id(self, g)
+        return var_id
+
+class ShaderMixExpr(ShaderExpr):
+    """Mix two input shaders by a factor."""
+
+    a: ShaderExpr
+    b: ShaderExpr
+    factor: FloatExpr
+
+    def __init__(self, a: ShaderExpr, b: ShaderExpr, factor: Floaty):
+        self.a = a
+        self.b = b
+        self.factor = floaty(factor)
+
+    def __str__(self):
+        return f"mix_shader({self.a}, {self.b}, {self.factor})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            a_id = self.a.dump(ctx)
+            b_id = self.b.dump(ctx)
+            factor_id = self.factor.dump(ctx)
+            return f"mix_shader({a_id}, {b_id}, {factor_id})"
+        var_id = ctx.get_var_id(self, g)
+        return var_id
 
 def dump(expr: Expr) -> str:
     """Dump the expression to a string."""
