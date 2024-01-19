@@ -4,7 +4,14 @@ from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_child_by_type
 from ..tools.meshhelper import flip_uv
 from ..tools.utils import color_hash
-from ..tools.animationhelper import is_any_sollumz_animation_obj, update_uv_clip_hash, get_scene_fps
+from ..tools.animationhelper import (
+    is_any_sollumz_animation_obj,
+    update_uv_clip_hash,
+    get_scene_fps,
+    has_mover_bone,
+    add_mover_bone,
+    remove_mover_bone,
+)
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 from .. import logger
 
@@ -622,6 +629,47 @@ class SOLLUMZ_OT_create_animation(SOLLUMZ_OT_base, bpy.types.Operator):
             animation_obj = create_anim_obj(SollumType.ANIMATION)
 
             animation_obj.parent = animations_obj
+
+        return {"FINISHED"}
+
+
+# FIXME: these operators don't work well if already in in Edit Mode
+class SOLLUMZ_OT_add_mover_bone(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.add_mover_bone"
+    bl_label = "Add Mover"
+    bl_description = "Add a bone that controls the root motion to selected armatures"
+
+    @classmethod
+    def poll(cls, context):
+        return (len(context.selected_objects) > 0 and
+                any(obj.type == "ARMATURE" and not has_mover_bone(obj.data) for obj in context.selected_objects))
+
+    def run(self, context):
+        for obj in context.selected_objects:
+            if obj.type != "ARMATURE":
+                continue
+
+            add_mover_bone(obj.data)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_remove_mover_bone(SOLLUMZ_OT_base, bpy.types.Operator):
+    bl_idname = "sollumz.remove_mover_bone"
+    bl_label = "Remove Mover"
+    bl_description = "Removes the mover bone from the selected armatures"
+
+    @classmethod
+    def poll(cls, context):
+        return (len(context.selected_objects) > 0 and
+                any(obj.type == "ARMATURE" and has_mover_bone(obj.data) for obj in context.selected_objects))
+
+    def run(self, context):
+        for obj in context.selected_objects:
+            if obj.type != "ARMATURE":
+                continue
+
+            remove_mover_bone(obj.data)
 
         return {"FINISHED"}
 

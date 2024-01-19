@@ -531,6 +531,10 @@ class SOLLUMZ_PT_ANIMATIONS_TOOL_PANEL(bpy.types.Panel):
                                          "sollumz_animations_target_id",
                                          "sollumz_animations_target_id_type", text=None)
             row.operator(ycd_ops.SOLLUMZ_OT_animations_set_target.bl_idname)
+
+            row = layout.row(align=True)
+            row.operator(ycd_ops.SOLLUMZ_OT_add_mover_bone.bl_idname)
+            row.operator(ycd_ops.SOLLUMZ_OT_remove_mover_bone.bl_idname)
         else:
             layout.operator(
                 ycd_ops.SOLLUMZ_OT_create_clip_dictionary.bl_idname)

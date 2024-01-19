@@ -185,7 +185,9 @@ class BoneProperties(bpy.types.PropertyGroup):
         if bone is None:
             return None
 
-        is_root = bone.parent is None
+        from ..tools.animationhelper import is_bone_exported
+
+        is_root = bone.parent is None or not is_bone_exported(bone.parent)
         tag = 0 if is_root else BoneProperties.calc_tag_hash(bone.name)
         return tag
 

@@ -9,7 +9,7 @@ from ..sollumz_properties import MaterialType, SollumType
 from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from .meshhelper import get_uv_map_name
-from typing import Tuple
+from typing import Tuple, Optional
 from ..cwxml.shader import ShaderManager
 
 from .. import logger
@@ -276,7 +276,8 @@ def transform_bone_location_space(fcurves, old_pose_bone, new_pose_bone):
     if x is None:
         return
 
-    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(
+        z.keyframe_points), "TODO: Handle different number of keyframes for each axis"
 
     transform_mat = calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone)
 
@@ -308,7 +309,8 @@ def transform_bone_rotation_quaternion_space(fcurves, old_pose_bone, new_pose_bo
     if w is None:
         return
 
-    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(
+        x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
 
     transform_mat = calculate_bone_space_transform_matrix(old_pose_bone, new_pose_bone)
 
@@ -319,6 +321,79 @@ def transform_bone_rotation_quaternion_space(fcurves, old_pose_bone, new_pose_bo
 
         quat = Quaternion((w_co[1], x_co[1], y_co[1], z_co[1]))
         quat.rotate(transform_mat)
+        if prev_quat is not None and prev_quat.dot(quat) < 0:
+            # Blender interpolates quaternions linearly and component-wise which can cause flickering
+            # when there is a sign change. See longer rant in ycdexport.py
+            quat *= -1
+
+        w_co[1], x_co[1], y_co[1], z_co[1] = quat[0], quat[1], quat[2], quat[3]
+
+        w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co = w_co, x_co, y_co, z_co
+
+        prev_quat = quat
+
+    w.update()
+    x.update()
+    y.update()
+    z.update()
+
+
+def transform_mover_location_space(fcurves):
+    return  # no transform for now
+
+    # TODO: do not rotate again
+    x = fcurves[0]
+    y = fcurves[1]
+    z = fcurves[2]
+
+    if x is None:
+        return
+
+    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(
+        z.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+
+    transform_rot = Quaternion((0.0, 0.0, 0.0, 1.0))
+    # transform_rot = Quaternion((1.0, 0.0, 0.0, 0.0)) # identity
+
+    for x_kfp, y_kfp, z_kfp in zip(x.keyframe_points, y.keyframe_points, z.keyframe_points):
+        x_co, y_co, z_co = x_kfp.co, y_kfp.co, z_kfp.co
+        assert x_co[0] == y_co[0] and x_co[0] == z_co[0], "TODO: Handle different keyframe times"
+
+        vec = Vector((x_co[1], y_co[1], z_co[1]))
+        vec.rotate(transform_rot)
+        x_co[1], y_co[1], z_co[1] = vec[0], vec[1], vec[2]
+
+        x_kfp.co, y_kfp.co, z_kfp.co = x_co, y_co, z_co
+
+    x.update()
+    y.update()
+    z.update()
+
+
+def transform_mover_rotation_quaternion_space(fcurves):
+    return  # no transform for now
+
+    w = fcurves[0]
+    x = fcurves[1]
+    y = fcurves[2]
+    z = fcurves[3]
+
+    if w is None:
+        return
+
+    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(
+        x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+
+    transform_rot = Quaternion((0.0, 0.0, 0.0, 1.0))
+    # transform_rot = Quaternion((1.0, 0.0, 0.0, 0.0)) # identity
+
+    prev_quat = None
+    for w_kfp, x_kfp, y_kfp, z_kfp in zip(w.keyframe_points, x.keyframe_points, y.keyframe_points, z.keyframe_points):
+        w_co, x_co, y_co, z_co = w_kfp.co, x_kfp.co, y_kfp.co, z_kfp.co
+        assert x_co[0] == y_co[0] and x_co[0] == z_co[0] and x_co[0] == w_co[0], "TODO: Handle different keyframe times"
+
+        quat = Quaternion((w_co[1], x_co[1], y_co[1], z_co[1]))
+        quat.rotate(transform_rot)
         if prev_quat is not None and prev_quat.dot(quat) < 0:
             # Blender interpolates quaternions linearly and component-wise which can cause flickering
             # when there is a sign change. See longer rant in ycdexport.py
@@ -353,7 +428,8 @@ def transform_camera_rotation_quaternion(fcurves, old_camera, new_camera):
     if (old_camera is not None and new_camera is not None) or (old_camera is None and new_camera is None):
         return
 
-    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
+    assert len(x.keyframe_points) == len(y.keyframe_points) and len(x.keyframe_points) == len(z.keyframe_points) and len(
+        x.keyframe_points) == len(w.keyframe_points), "TODO: Handle different number of keyframes for each axis"
 
     # if new camera is None, we convert from Blender to RAGE; otherwise from RAGE to Blender
     angle_delta = math.radians(-90.0 if new_camera is None else 90.0)
@@ -552,9 +628,9 @@ def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, t
     is_camera = isinstance(target_id, bpy.types.Camera) or target_id is None
     is_material = isinstance(target_id, bpy.types.Material) or target_id is None
 
-    if data_path == "delta_location":
+    if data_path == f'pose.bones["{MOVER_BONE_NAME}"].location':
         data_path = 'pose.bones["#0"].animation_tracks_mover_location'
-    elif data_path == "delta_rotation_quaternion":
+    elif data_path == f'pose.bones["{MOVER_BONE_NAME}"].rotation_quaternion':
         data_path = 'pose.bones["#0"].animation_tracks_mover_rotation'
     elif is_camera and data_path == "location":
         data_path = 'pose.bones["#0"].animation_tracks_camera_location'
@@ -569,6 +645,8 @@ def track_data_path_to_canonical_form(data_path: str, target_id: bpy.types.ID, t
         bone_name = data_path_parts[1]
         if bone_name.startswith("#"):
             pass  # already a bone ID (canonical form)
+        elif bone_name == MOVER_BONE_NAME:
+            pass  # track on mover bone different from location or rotation, ignore it
         else:
             assert target_bone_name_map is not None, "The armature bone-map is required at this point"
             bone_id = target_bone_name_map[bone_name]
@@ -592,9 +670,9 @@ def track_data_path_to_target_form(data_path: str, target_id: bpy.types.ID, targ
     is_material = isinstance(target_id, bpy.types.Material)
 
     if data_path == 'pose.bones["#0"].animation_tracks_mover_location':
-        data_path = "delta_location"
+        data_path = f'pose.bones["{MOVER_BONE_NAME}"].location'
     elif data_path == 'pose.bones["#0"].animation_tracks_mover_rotation':
-        data_path = "delta_rotation_quaternion"
+        data_path = f'pose.bones["{MOVER_BONE_NAME}"].rotation_quaternion'
     elif is_camera and data_path.startswith('pose.bones["#0"].animation_tracks_camera_'):  # camera properties
         # modify the actual camera object instead of a pose bone
         data_path = data_path.replace('pose.bones["#0"].animation_tracks_', "animation_tracks.")
@@ -676,6 +754,8 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
     # bone_id -> [fcurves]
     bone_locations_to_transform = {}
     bone_rotations_to_transform = {}
+    mover_location_to_transform = None
+    mover_rotation_to_transform = None
     camera_rotations_to_transform = {}
 
     action = animation_obj.animation_properties.action
@@ -716,6 +796,14 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
             if bone_id not in bone_rotations_to_transform:
                 bone_rotations_to_transform[bone_id] = [None, None, None, None]
             bone_rotations_to_transform[bone_id][fcurve.array_index] = fcurve
+        elif prop_path == "].animation_tracks_mover_location":
+            if mover_location_to_transform is None:
+                mover_location_to_transform = [None, None, None]
+            mover_location_to_transform[fcurve.array_index] = fcurve
+        elif prop_path == "].animation_tracks_mover_rotation":  # TODO: Handle rotation_euler
+            if mover_rotation_to_transform is None:
+                mover_rotation_to_transform = [None, None, None, None]
+            mover_rotation_to_transform[fcurve.array_index] = fcurve
         elif prop_path == "].animation_tracks_camera_rotation":
             if bone_id not in camera_rotations_to_transform:
                 camera_rotations_to_transform[bone_id] = [None, None, None, None]
@@ -734,6 +822,12 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
         old_bone = old_bone_map.get(bone_id, None) if old_bone_map is not None else None
         new_bone = new_bone_map.get(bone_id, None) if new_bone_map is not None else None
         transform_bone_rotation_quaternion_space(fcurves, old_bone, new_bone)
+
+    if mover_location_to_transform is not None:
+        transform_mover_location_space(mover_location_to_transform)
+
+    if mover_rotation_to_transform is not None:
+        transform_mover_rotation_quaternion_space(mover_rotation_to_transform)
 
     for bone_id, fcurves in camera_rotations_to_transform.items():
         old_camera = old_target_id if isinstance(old_target_id, bpy.types.Camera) else None
@@ -853,3 +947,54 @@ def get_action_export_frame_count(action: bpy.types.Action) -> int:
         return 0
     num_frames = math.ceil(duration_in_frames + 1)
     return max(max_num_keyframes, num_frames)
+
+
+MOVER_BONE_NAME = ".mover"
+
+
+def is_bone_exported(bone: bpy.types.Bone) -> bool:
+    return bone.name != MOVER_BONE_NAME
+
+
+def get_root_bone(armature: bpy.types.Armature) -> Optional[bpy.types.Bone]:
+    """Gets the RAGE skeleton root bone. This bone may have a parent in Blender, the 'mover' bone."""
+    return next((b for b in armature.bones if b.bone_properties.tag == 0), None)
+
+
+def get_root_edit_bone(armature: bpy.types.Armature) -> Optional[bpy.types.EditBone]:
+    """Gets the RAGE skeleton root bone, as ``bpy.types.EditBone``."""
+    root_bone = get_root_bone(armature)
+    return armature.edit_bones[root_bone.name] if root_bone is not None else None
+
+
+def get_mover_bone(armature: bpy.type.Armature) -> Optional[bpy.types.Bone]:
+    """Gets the bone that controls the root motion animation."""
+    return armature.bones.get(MOVER_BONE_NAME, None)
+
+
+def has_mover_bone(armature: bpy.types.Armature) -> bool:
+    """Gets whether the bone that controls the root motion animation exists."""
+    return MOVER_BONE_NAME in armature.bones
+
+
+def add_mover_bone(armature: bpy.types.Armature):
+    old_mode = bpy.context.object.mode
+    bpy.ops.object.mode_set(mode="EDIT")
+
+    root_bone = get_root_edit_bone(armature)
+    mover_bone = armature.edit_bones.new(MOVER_BONE_NAME)
+    mover_bone.head = (0, 0, 0)
+    mover_bone.tail = (0, -0.05, 0)  # pointing -Y (forward)
+    root_bone.parent = mover_bone
+
+    bpy.ops.object.mode_set(mode=old_mode)
+
+
+def remove_mover_bone(armature: bpy.types.Armature):
+    old_mode = bpy.context.object.mode
+    bpy.ops.object.mode_set(mode="EDIT")
+
+    mover_bone = armature.edit_bones[MOVER_BONE_NAME]
+    armature.edit_bones.remove(mover_bone)
+
+    bpy.ops.object.mode_set(mode=old_mode)

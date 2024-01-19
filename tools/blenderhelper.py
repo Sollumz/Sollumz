@@ -217,8 +217,13 @@ def build_tag_bone_map(armature):
     if armature.pose is None:
         return None
 
+    from .animationhelper import is_bone_exported
+
     tag_bone_map = {}
     for pose_bone in armature.pose.bones:
+        if not is_bone_exported(pose_bone.bone):
+            continue
+
         tag_bone_map[pose_bone.bone.bone_properties.tag] = pose_bone.name
 
     return tag_bone_map
@@ -231,8 +236,13 @@ def build_name_bone_map(armature):
     if armature.pose is None:
         return None
 
+    from .animationhelper import is_bone_exported
+
     tag_bone_map = {}
     for pose_bone in armature.pose.bones:
+        if not is_bone_exported(pose_bone.bone):
+            continue
+
         tag_bone_map[pose_bone.name] = pose_bone.bone.bone_properties.tag
 
     return tag_bone_map
@@ -245,8 +255,13 @@ def build_bone_map(armature):
     if armature.pose is None:
         return None
 
+    from .animationhelper import is_bone_exported
+
     tag_bone_map = {}
     for pose_bone in armature.pose.bones:
+        if not is_bone_exported(pose_bone.bone):
+            continue
+
         tag_bone_map[pose_bone.bone.bone_properties.tag] = pose_bone
 
     return tag_bone_map
