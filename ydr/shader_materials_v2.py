@@ -12,37 +12,88 @@ from ..cwxml.shader import (
     ShaderParameterFloat4x4Def,
 )
 from ..sollumz_properties import MaterialType
-from ..tools.meshhelper import get_uv_map_name
-from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from .render_bucket import RenderBucket
-from ..shared.shader_expr.builtins import vec, bsdf_principled, uv, tex, map_range, param, float_param, mix_color, emission, mix_shader
+from ..shared.shader_expr.builtins import (
+    vec,
+    bsdf_principled,
+    uv,
+    tex,
+    map_range,
+    param,
+    float_param,
+    mix_color,
+    emission,
+    mix_shader,
+    color_attribute,
+    normal_map
+)
 from ..shared.shader_expr import expr, compile_to_material
 
 
-def flip_v(v: expr.FloatExpr) -> expr.FloatExpr:
-    return ((v - 1) * -1)
+class LegacyShaderConfig(NamedTuple):
+    shader: ShaderDef
+    is_distance_map: bool
+    diffuse: str
+    diffuse2: str
+    tintpal: str
+    diffpal: str
+    bumptex: str
+    spectex: str
+    detltex: str
+    decalflag: int
+    blend_mode: str
+
+    @property
+    def use_uv_anim(self) -> bool:
+        return self.shader.is_uv_animation_supported
+
+    @property
+    def use_diff(self) -> bool:
+        return True if self.diffuse else False
+
+    @property
+    def use_diff2(self) -> bool:
+        return True if self.diffuse2 else False
+
+    @property
+    def use_bump(self) -> bool:
+        return True if self.bumptex else False
+
+    @property
+    def use_spec(self) -> bool:
+        return True if self.spectex else False
+
+    @property
+    def use_detl(self) -> bool:
+        return True if self.detltex else False
+
+    @property
+    def use_tint(self) -> bool:
+        return True if self.tintpal else False
+
+    @property
+    def use_palette(self) -> bool:
+        # Some shaders have TextureSamplerDiffPal but don't actually use it, so we only create palette
+        # shader nodes on the specific shaders that use it
+        return self.diffpal and self.shader.filename in ShaderManager.palette_shaders
+
+    @property
+    def use_decal(self) -> bool:
+        return self.shader.filename in ShaderManager.tinted_shaders()
+
+    @property
+    def is_emissive(self) -> bool:
+        return self.shader.filename in ShaderManager.em_shaders
+
+    @property
+    def is_veh_shader(self) -> bool:
+        return self.shader.filename in ShaderManager.veh_paints
 
 
-def apply_global_anim_uv(uv: expr.VectorExpr) -> expr.VectorExpr:
-    globalAnimUV0 = vec(1.0, 0.0, 0.0)  # TODO: drivers for animation
-    globalAnimUV1 = vec(0.0, 1.0, 0.0)
-
-    uvw = vec(uv.x, flip_v(uv.y), 1)
-    new_u = uvw.dot(globalAnimUV0)
-    new_v = uvw.dot(globalAnimUV1)
-    return vec(new_u, flip_v(new_v), 0)
-
-
-def basic_shader(
-    shader: ShaderDef,
-) -> expr.ShaderExpr:
-
-    ### BEGIN CONFIG DETECTION ###
+def get_shader_config(shader: ShaderDef) -> LegacyShaderConfig:
     # TODO: clean up this, some stuff can probably be moved to shaders.xml
-    use_uv_anim = shader.is_uv_animation_supported
-
-    texture = None
-    texture2 = None
+    diffuse = None
+    diffuse2 = None
     tintpal = None
     diffpal = None
     bumptex = None
@@ -55,7 +106,7 @@ def basic_shader(
             continue
 
         if p.name in ("DiffuseSampler", "PlateBgSampler"):
-            texture = p.name
+            diffuse = p.name
         elif p.name in ("BumpSampler", "PlateBgBumpSampler"):
             bumptex = p.name
         elif p.name == "SpecSampler":
@@ -70,21 +121,10 @@ def basic_shader(
             texture = p.name
             is_distance_map = True
         elif p.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
-            texture2 = p.name
+            diffuse2 = p.name
         else:
             if not texture:
                 texture = p.name
-
-    use_diff = True if texture else False
-    use_diff2 = True if texture2 else False
-    use_bump = True if bumptex else False
-    use_spec = True if spectex else False
-    use_detl = True if detltex else False
-    use_tint = True if tintpal else False
-
-    # Some shaders have TextureSamplerDiffPal but don't actually use it, so we only create palette
-    # shader nodes on the specific shaders that use it
-    use_palette = diffpal is not None and shader.filename in ShaderManager.palette_shaders
 
     use_decal = True if shader.filename in ShaderManager.tinted_shaders() else False
     decalflag = 0
@@ -107,11 +147,48 @@ def basic_shader(
         elif shader.filename in [ShaderManager.decals[3], ShaderManager.decals[17]]:
             decalflag = 4
 
-    is_emissive = True if shader.filename in ShaderManager.em_shaders else False
+    if is_distance_map:
+        blend_mode = "BLEND"
 
-    ### END CONFIG DETECTION ###
+    return LegacyShaderConfig(
+        shader=shader,
+        is_distance_map=is_distance_map,
+        diffuse=diffuse,
+        diffuse2=diffuse2,
+        tintpal=tintpal,
+        diffpal=diffpal,
+        bumptex=bumptex,
+        spectex=spectex,
+        detltex=detltex,
+        blend_mode=blend_mode,
+        decalflag=decalflag,
+    )
 
-    ### BEGIN SHADER ###
+
+def flip_v(v: expr.FloatExpr) -> expr.FloatExpr:
+    return ((v - 1) * -1)
+
+
+def apply_global_anim_uv(uv: expr.VectorExpr) -> expr.VectorExpr:
+    globalAnimUV0 = vec(1.0, 0.0, 0.0)  # TODO: drivers for animation
+    globalAnimUV1 = vec(0.0, 1.0, 0.0)
+
+    uvw = vec(uv.x, flip_v(uv.y), 1)
+    new_u = uvw.dot(globalAnimUV0)
+    new_v = uvw.dot(globalAnimUV1)
+    return vec(new_u, flip_v(new_v), 0)
+
+
+def basic_shader(
+    shader: ShaderDef,
+) -> expr.ShaderExpr:
+    def _float_param_or_default(name: str, default_value: expr.Floaty) -> expr.Floaty:
+        if name in shader.parameter_map:
+            return float_param(name)
+        else:
+            return default_value
+
+    cfg = get_shader_config(shader)
 
     base_color = vec(1.0, 1.0, 1.0)
     alpha = 1.0
@@ -121,19 +198,19 @@ def basic_shader(
     metallic = None
     coat_weight = None
 
-    if use_diff:
-        diffuse_uv_map_index = shader.uv_maps.get(texture, 0)
+    if cfg.use_diff:
+        diffuse_uv_map_index = shader.uv_maps.get(cfg.diffuse, 0)
         diffuse_uv = uv(diffuse_uv_map_index)
-        if use_uv_anim:
+        if cfg.use_uv_anim:
             diffuse_uv = apply_global_anim_uv(diffuse_uv)
     else:
         diffuse_uv_map_index = None
         diffuse_uv = None
 
-    if use_spec:
-        spec_uv_map_index = shader.uv_maps.get(spectex, 0)
+    if cfg.use_spec:
+        spec_uv_map_index = shader.uv_maps.get(cfg.spectex, 0)
         spec_uv = diffuse_uv if diffuse_uv_map_index == spec_uv_map_index else uv(spec_uv_map_index)
-        spec = tex(spectex, spec_uv).color
+        spec = tex(cfg.spectex, spec_uv).color
         spec = spec.x  # TODO: original takes the average of R,G,B channels, why?
 
     if "specularIntensityMult" in shader.parameter_map:
@@ -144,45 +221,39 @@ def basic_shader(
         specular_falloff_mult = float_param("specularFalloffMult")
         roughness = map_range(specular_falloff_mult, 0.0, 512.0, 1.0, 0.0, clamp=True)
 
-    if use_bump:
-        normal_uv_map_index = shader.uv_maps.get(spectex, 0)
+    if cfg.use_bump:
+        normal_uv_map_index = shader.uv_maps.get(cfg.spectex, 0)
         normal_uv = diffuse_uv if diffuse_uv_map_index == normal_uv_map_index else uv(normal_uv_map_index)
-        normal = tex(bumptex, normal_uv).color
+        normal = tex(cfg.bumptex, normal_uv).color
 
         # invert green channel of normal map
         normal = vec(normal.x, 1.0 - normal.y, normal.z)
 
-        bumpiness = 1.0
-        if "bumpiness" in shader.parameter_map:
-            bumpiness = float_param("bumpiness")
+        bumpiness = _float_param_or_default("bumpiness", 1.0)
 
-        # normal = normal_map(normal, bumpiness)  # TODO: ShaderNodeNormalMap, the UV map name should probably be included now too
+        normal = normal_map(normal, bumpiness, normal_uv_map_index)
 
-    if use_diff:
-        diffuse = tex(texture, diffuse_uv)
+    if cfg.use_diff:
+        diffuse = tex(cfg.diffuse, diffuse_uv)
         base_color = diffuse.color
         alpha = diffuse.alpha
 
-    if use_diff2:
-        diffuse2_uv_map_index = shader.uv_maps.get(texture2, 0)
+    if cfg.use_diff2:
+        diffuse2_uv_map_index = shader.uv_maps.get(cfg.diffuse2, 0)
         diffuse2_uv = diffuse_uv if diffuse_uv_map_index == diffuse2_uv_map_index else uv(diffuse2_uv_map_index)
-        diffuse2 = tex(texture2, diffuse2_uv)
+        diffuse2 = tex(cfg.diffuse2, diffuse2_uv)
 
         base_color = mix_color(base_color, diffuse2.color, diffuse2.alpha)
 
     em_shader = None
-    if is_emissive:
-        em_strength = 1.0
-        if "emissiveMultiplier" in shader.parameter_map:
-            em_strength = float_param("emissiveMultiplier")
+    if cfg.is_emissive:
+        em_strength = _float_param_or_default("emissiveMultiplier", 1.0)
         em_shader = emission(base_color, em_strength)
 
-    is_veh_shader = shader.filename in ShaderManager.veh_paints
-    if is_veh_shader:
+    if cfg.is_veh_shader:
         metallic = 1.0
         coat_weight = 1.0
 
-    ### END SHADER ###
     main_shader = bsdf_principled(
         base_color,
         alpha=alpha,
@@ -199,10 +270,78 @@ def basic_shader(
     return main_shader
 
 
-def get_shader_expr(shader: ShaderDef) -> expr.ShaderExpr:
+def terrain_shader(shader: ShaderDef) -> expr.ShaderExpr:
+    def _float_param_or_default(name: str, default_value: expr.Floaty) -> expr.Floaty:
+        if name in shader.parameter_map:
+            return float_param(name)
+        else:
+            return default_value
 
+    tex_names = ("TextureSampler_layer0", "TextureSampler_layer1", "TextureSampler_layer2", "TextureSampler_layer3")
+    bump_names = ("BumpSampler_layer0", "BumpSampler_layer1", "BumpSampler_layer2", "BumpSampler_layer3")
+    lookup_name = "lookupSampler"
+
+    tex_uvs = [uv(shader.uv_maps.get(n, 0)) for n in tex_names]
+    bump_uvs = [uv(shader.uv_maps.get(n, 0)) for n in bump_names]
+    tex0, tex1, tex2, tex3 = [tex(n, tex_uvs[i]) for i, n in enumerate(tex_names)]
+    bump0, bump1, bump2, bump3 = [tex(n, bump_uvs[i]) for i, n in enumerate(bump_names)]
+
+    lookup_uv = uv(shader.uv_maps.get(lookup_name, 0))
+    lookup_tex = tex(lookup_name, lookup_uv)
+
+    if shader.filename in ShaderManager.mask_only_terrains:
+        lookup = lookup_tex.color
+    else:
+        attr_c0 = color_attribute("Color 1")
+        attr_c1 = color_attribute("Color 2")
+
+        if lookup_name in shader.parameter_map:
+            lookup = mix_color(lookup_tex.color, attr_c1.color, attr_c0.alpha)
+        else:
+            lookup = attr_c1.color
+
+    color01 = mix_color(tex0.color, tex1.color, lookup.b)
+    color23 = mix_color(tex2.color, tex3.color, lookup.b)
+    color = mix_color(color01, color23, lookup.g)
+
+    normal = None
+    if bump0.texture_name in shader.parameter_map:
+        bumpiness = _float_param_or_default("bumpiness", 1.0)
+
+        normal0 = normal_map(bump0.color, bumpiness, bump_uvs[0].uv_map_index)
+        normal1 = normal_map(bump1.color, bumpiness, bump_uvs[1].uv_map_index)
+        normal2 = normal_map(bump2.color, bumpiness, bump_uvs[2].uv_map_index)
+        normal3 = normal_map(bump3.color, bumpiness, bump_uvs[3].uv_map_index)
+
+        normal01 = mix_color(normal0, normal1, lookup.b)
+        normal23 = mix_color(normal2, normal3, lookup.b)
+        normal = mix_color(normal01, normal23, lookup.g)
+
+        # TODO: original doesn't invert the normal in terrain shaders? why? bug?
+        normal = vec(normal.x, 1.0 - normal.y, normal.z)  # invert green channel of normal map
+
+    spec = 0.0
+    if "specularIntensityMult" in shader.parameter_map:
+        specular_intensity_mult = float_param("specularIntensityMult")
+        specular_intensity_mult = map_range(specular_intensity_mult, 0.0, 1.0, 0.0, 1.0, clamp=True)
+        spec = specular_intensity_mult * specular_intensity_mult
+
+    roughness = None
+    if "specularFalloffMult" in shader.parameter_map:
+        specular_falloff_mult = float_param("specularFalloffMult")
+        roughness = map_range(specular_falloff_mult, 0.0, 512.0, 1.0, 0.0, clamp=True)
+
+    return bsdf_principled(
+        base_color=color,
+        normal=normal,
+        specular_ior_level=spec,
+        roughness=roughness,
+    )
+
+
+def get_shader_expr(shader: ShaderDef) -> expr.ShaderExpr:
     if shader.filename in ShaderManager.terrains:
-        raise NotImplementedError("terrain shaders not implemented")
+        return terrain_shader(shader)
     else:
         return basic_shader(shader)
 
@@ -228,7 +367,7 @@ def create_shader(filename: str):
 
     shader_expr = get_shader_expr(shader)
     mat = compile_to_material(filename.replace(".sps", ""), shader_expr, shader_def=shader)
-    # TODO: set mat.blend_method
+    mat.blend_method = get_shader_config(shader).blend_mode  # TODO: don't recompute ShaderConfig
     mat.sollum_type = MaterialType.SHADER
     mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename

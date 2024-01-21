@@ -7,10 +7,12 @@ from .expr import (
     VectorExpr,
     VectorConstantExpr,
     VectorMixColorExpr,
+    VectorNormalMapExpr,
     UVMapVectorExpr,
     ConstructVectorExpr,
     ParameterExpr,
     TextureExpr,
+    ColorAttributeExpr,
     ShaderExpr,
     BsdfPrincipledExpr,
     EmissionExpr,
@@ -28,6 +30,12 @@ def tex(texture_name: str, uv: VectorExpr) -> TextureExpr:
     """Sample a texture at the specified UV."""
     assert isinstance(texture_name, str)
     return TextureExpr(texture_name, uv)
+
+
+def color_attribute(name: str) -> ColorAttributeExpr:
+    """Access a color attribute."""
+    assert isinstance(name, str)
+    return ColorAttributeExpr(name)
 
 
 def param(parameter_name: str) -> ParameterExpr:
@@ -69,6 +77,11 @@ def map_range(*args, **kwargs) -> FloatExpr:
 def mix_color(*args, **kwargs) -> VectorExpr:
     """Mix two input colors (as vectors) by a factor. See ``VectorMixColorExpr`` for parameters."""
     return VectorMixColorExpr(*args, **kwargs)
+
+
+def normal_map(*args, **kwargs) -> VectorExpr:
+    """Calculate normal from an RGB normal map image, in tangent space. See ``VectorNormalMapExpr`` for parameters."""
+    return VectorNormalMapExpr(*args, **kwargs)
 
 
 def bsdf_principled(*args, **kwargs) -> ShaderExpr:

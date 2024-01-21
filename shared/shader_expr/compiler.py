@@ -16,6 +16,7 @@ from ...cwxml.shader import (
     ShaderParameterFloat3Def,
     ShaderParameterFloat4Def,
     ShaderParameterFloat4x4Def,
+    ShaderParameterTextureDef,
 )
 from ..shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from ...tools.meshhelper import get_uv_map_name
@@ -95,13 +96,13 @@ class Compiler:
         mix = self.node_tree.nodes.new("ShaderNodeMix")
         mix.data_type = "RGBA"
         mix.blend_type = e.blend.value
-        self.connect_vector_input(e.a, mix, "A")
-        self.connect_vector_input(e.b, mix, "B")
+        self.connect_vector_input(e.in_a, mix, "A")
+        self.connect_vector_input(e.in_b, mix, "B")
         self.connect_float_input(e.factor, mix, "Factor")
         return CompiledExpr(mix, "Result")
 
     def visit_VectorDotExpr(self, e: expr.VectorDotExpr) -> CompiledExpr:
-        return self.compile_vector_math("DOT_PRODUCT", e.a, e.b, output_socket=1)
+        return self.compile_vector_math("DOT_PRODUCT", e.in_a, e.in_b, output_socket=1)
 
     def visit_VectorBinaryExpr(self, e: expr.VectorBinaryExpr) -> CompiledExpr:
         match e.op:
@@ -148,6 +149,14 @@ class Compiler:
 
         return CompiledExpr(xyz, 0)
 
+    def visit_VectorNormalMapExpr(self, e: expr.VectorNormalMapExpr) -> CompiledExpr:
+        normal_map = self.node_tree.nodes.new("ShaderNodeNormalMap")
+        normal_map.space = "TANGENT"
+        normal_map.uv_map = get_uv_map_name(e.uv_map_index)
+        self.connect_vector_input(e.color, normal_map, "Color")
+        self.connect_float_input(e.strength, normal_map, "Strength")
+        return CompiledExpr(normal_map, 0)
+
     def visit_UVMapVectorExpr(self, e: expr.UVMapVectorExpr) -> CompiledExpr:
         from ...tools.meshhelper import get_uv_map_name
 
@@ -193,6 +202,19 @@ class Compiler:
         tex_expr = self.visit(e.texture)
         return CompiledExpr(tex_expr.node, 1)
 
+    def visit_ColorAttributeExpr(self, e: expr.ColorAttributeExpr) -> CompiledExpr:
+        color_attr = self.node_tree.nodes.new("ShaderNodeVertexColor")
+        color_attr.layer_name = e.attribute_name
+        return CompiledExpr(color_attr, None)
+
+    def visit_ColorAttributeColorExpr(self, e: expr.ColorAttributeColorExpr) -> CompiledExpr:
+        color_attr_expr = self.visit(e.color_attribute)
+        return CompiledExpr(color_attr_expr.node, 0)
+
+    def visit_ColorAttributeAlphaExpr(self, e: expr.ColorAttributeAlphaExpr) -> CompiledExpr:
+        color_attr_expr = self.visit(e.color_attribute)
+        return CompiledExpr(color_attr_expr.node, 1)
+
     def visit_BsdfPrincipledExpr(self, e: expr.BsdfPrincipledExpr) -> CompiledExpr:
         bsdf = self.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
 
@@ -224,8 +246,8 @@ class Compiler:
     def visit_ShaderMixExpr(self, e: expr.ShaderMixExpr) -> CompiledExpr:
         mix = self.node_tree.nodes.new("ShaderNodeMixShader")
         self.connect_float_input(e.factor, mix, "Fac")
-        self.connect_shader_input(e.a, mix, 1)
-        self.connect_shader_input(e.b, mix, 2)
+        self.connect_shader_input(e.in_a, mix, 1)
+        self.connect_shader_input(e.in_b, mix, 2)
         return CompiledExpr(mix, 0)
 
     def compile_vector_math(self, op: str, a: expr.VectorExpr, b: expr.VectorExpr, output_socket: int = 0) -> CompiledExpr:
@@ -272,12 +294,16 @@ class Compiler:
 
 
 # TODO: a bit ugly to have this stuff to create parameters here and depend on cwxml.shader
-def create_shader_texture_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
-    imgnode = node_tree.nodes.new("ShaderNodeTexImage")
-    imgnode.name = param.name
-    imgnode.label = param.name
-    imgnode.is_sollumz = True
-    return imgnode
+def create_shader_texture_node(node_tree: bpy.types.NodeTree, param: ShaderParameterTextureDef) -> bpy.types.ShaderNodeTexImage:
+    tex_node = node_tree.nodes.new("ShaderNodeTexImage")
+    tex_node.name = param.name
+    tex_node.label = param.name
+    tex_node.is_sollumz = True
+    # link default UV
+    if param.uv is not None:
+        uv_map_node = node_tree.nodes[get_uv_map_name(param.uv)]
+        node_tree.links.new(uv_map_node.outputs[0], tex_node.inputs[0])
+    return tex_node
 
 
 def create_shader_parameter_node(
@@ -371,6 +397,7 @@ def compile_to_material(name: str, shader_expr: expr.ShaderExpr, shader_def: Opt
     mat.node_tree.nodes.clear()
 
     if shader_def is not None:
+        create_shader_uv_maps(mat.node_tree, shader_def)
         create_shader_parameters(mat.node_tree, shader_def)
 
     compiled_shader_expr = compile_expr(mat.node_tree, shader_expr)

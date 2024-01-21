@@ -368,20 +368,20 @@ class VectorBinaryExpr(VectorExpr):
 class VectorDotExpr(FloatExpr):
     """Dot product of two vectors, producing a float."""
 
-    a: VectorExpr
-    b: VectorExpr
+    in_a: VectorExpr
+    in_b: VectorExpr
 
     def __init__(self, a: VectorExpr, b: VectorExpr):
-        self.a = a
-        self.b = b
+        self.in_a = a
+        self.in_b = b
 
     def __str__(self):
-        return f"dot({self.a}, {self.b})"
+        return f"dot({self.in_a}, {self.in_b})"
 
     def dump(self, ctx: ExprDumpContext) -> str:
         def g():
-            a_id = self.a.dump(ctx)
-            b_id = self.b.dump(ctx)
+            a_id = self.in_a.dump(ctx)
+            b_id = self.in_b.dump(ctx)
             return f"dot({a_id}, {b_id})"
         var_id = ctx.get_var_id(self, g)
         return var_id
@@ -409,29 +409,53 @@ class ColorBlend(str, Enum):
     VALUE = "VALUE",
 
 
-class VectorMixColorExpr(FloatExpr):
+class VectorMixColorExpr(VectorExpr):
     """Mix two input colors (as vectors) by a factor."""
 
-    a: VectorExpr
-    b: VectorExpr
+    in_a: VectorExpr
+    in_b: VectorExpr
     factor: FloatExpr
     blend: ColorBlend
 
     def __init__(self, a: VectorExpr, b: VectorExpr, factor: Floaty, blend: ColorBlend = ColorBlend.MIX):
-        self.a = a
-        self.b = b
+        self.in_a = a
+        self.in_b = b
         self.factor = floaty(factor)
         self.blend = blend
 
     def __str__(self):
-        return f"mix_color({self.a}, {self.b}, {self.factor}, {self.blend.value})"
+        return f"mix_color({self.in_a}, {self.in_b}, {self.factor}, {self.blend.value})"
 
     def dump(self, ctx: ExprDumpContext) -> str:
         def g():
-            a_id = self.a.dump(ctx)
-            b_id = self.b.dump(ctx)
+            a_id = self.in_a.dump(ctx)
+            b_id = self.in_b.dump(ctx)
             factor_id = self.factor.dump(ctx)
             return f"mix_color({a_id}, {b_id}, {factor_id}, {self.blend.value})"
+        var_id = ctx.get_var_id(self, g)
+        return var_id
+
+
+class VectorNormalMapExpr(VectorExpr):
+    """Calculate normal from an RGB normal map image, in tangent space."""
+
+    color: VectorExpr
+    strength: FloatExpr
+    uv_map_index: int
+
+    def __init__(self, color: VectorExpr, strength: Floaty, uv_map_index: int):
+        self.color = color
+        self.strength = floaty(strength)
+        self.uv_map_index = uv_map_index
+
+    def __str__(self):
+        return f"normal_map({self.color}, {self.strength}, {self.uv_map_index})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            color_id = self.color.dump(ctx)
+            strength_id = self.strength.dump(ctx)
+            return f"normal_map({color_id}, {strength_id}, {self.uv_map_index})"
         var_id = ctx.get_var_id(self, g)
         return var_id
 
@@ -595,6 +619,83 @@ class TextureAlphaExpr(FloatExpr):
         return f"{texture_id}.alpha"
 
 
+class ColorAttributeExpr(Expr):
+    """Access a color attribute."""
+
+    attribute_name: str
+
+    def __init__(self, attribute_name: str):
+        self.attribute_name = attribute_name
+
+    def __str__(self):
+        return f"color_attribute('{self.attribute_name}')"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"color_attribute('{self.attribute_name}')"
+
+    @property
+    def color(self) -> 'ColorAttributeColorExpr':
+        return ColorAttributeColorExpr(self)
+
+    @property
+    def alpha(self) -> 'ColorAttributeAlphaExpr':
+        return ColorAttributeAlphaExpr(self)
+
+    @property
+    def x(self) -> FloatExpr:
+        return self.color.x
+
+    @property
+    def y(self) -> FloatExpr:
+        return self.color.y
+
+    @property
+    def z(self) -> FloatExpr:
+        return self.color.z
+
+    @property
+    def w(self) -> FloatExpr:
+        return self.alpha
+
+    # Aliases
+    r = x
+    g = y
+    b = z
+    a = w
+
+
+class ColorAttributeColorExpr(VectorExpr):
+    """Read the color component of a color attribute."""
+
+    color_attribute: ColorAttributeExpr
+
+    def __init__(self, color_attribute: ColorAttributeExpr):
+        self.color_attribute = color_attribute
+
+    def __str__(self):
+        return f"{self.color_attribute}.color"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        color_attribute_id = self.color_attribute.dump(ctx)
+        return f"{color_attribute_id}.color"
+
+
+class ColorAttributeAlphaExpr(FloatExpr):
+    """Read the alpha component of a texture."""
+
+    color_attribute: ColorAttributeExpr
+
+    def __init__(self, color_attribute: ColorAttributeExpr):
+        self.color_attribute = color_attribute
+
+    def __str__(self):
+        return f"{self.color_attribute}.alpha"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        color_attribute_id = self.color_attribute.dump(ctx)
+        return f"{color_attribute_id}.alpha"
+
+
 class ShaderExpr(Expr, ABC):
     """Base class for expressions that produce a shader."""
 
@@ -706,29 +807,31 @@ class EmissionExpr(ShaderExpr):
         var_id = ctx.get_var_id(self, g)
         return var_id
 
+
 class ShaderMixExpr(ShaderExpr):
     """Mix two input shaders by a factor."""
 
-    a: ShaderExpr
-    b: ShaderExpr
+    in_a: ShaderExpr
+    in_b: ShaderExpr
     factor: FloatExpr
 
     def __init__(self, a: ShaderExpr, b: ShaderExpr, factor: Floaty):
-        self.a = a
-        self.b = b
+        self.in_a = a
+        self.in_b = b
         self.factor = floaty(factor)
 
     def __str__(self):
-        return f"mix_shader({self.a}, {self.b}, {self.factor})"
+        return f"mix_shader({self.in_a}, {self.in_b}, {self.factor})"
 
     def dump(self, ctx: ExprDumpContext) -> str:
         def g():
-            a_id = self.a.dump(ctx)
-            b_id = self.b.dump(ctx)
+            a_id = self.in_a.dump(ctx)
+            b_id = self.in_b.dump(ctx)
             factor_id = self.factor.dump(ctx)
             return f"mix_shader({a_id}, {b_id}, {factor_id})"
         var_id = ctx.get_var_id(self, g)
         return var_id
+
 
 def dump(expr: Expr) -> str:
     """Dump the expression to a string."""
