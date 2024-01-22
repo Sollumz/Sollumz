@@ -482,13 +482,13 @@ def set_light_type(self, value):
 
 
 def get_light_presets_path() -> str:
+    from ..sollumz_preferences import get_config_directory_path
+    return os.path.join(get_config_directory_path(), "light_presets.xml")
+
+
+def get_defaut_light_presets_path() -> str:
     package_name = __name__.split(".")[0]
-    presets_path = f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ydr\\light_presets.xml"
-    if os.path.exists(presets_path):
-        return presets_path
-    else:
-        raise FileNotFoundError(
-            f"light_presets.xml file not found! Please redownload this file from the github and place it in '{os.path.dirname(presets_path)}'")
+    return f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ydr\\light_presets.xml"
 
 
 light_presets = LightPresetsFile()
@@ -496,14 +496,19 @@ light_presets = LightPresetsFile()
 
 def load_light_presets():
     bpy.context.scene.light_presets.clear()
+
     path = get_light_presets_path()
-    if os.path.exists(path):
-        file = LightPresetsFile.from_xml_file(path)
-        light_presets.presets = file.presets
-        for index, preset in enumerate(light_presets.presets):
-            item = bpy.context.scene.light_presets.add()
-            item.name = str(preset.name)
-            item.index = index
+    if not os.path.exists(path):
+        path = get_defaut_light_presets_path()
+        if not os.path.exists(path):
+            return
+
+    file = LightPresetsFile.from_xml_file(path)
+    light_presets.presets = file.presets
+    for index, preset in enumerate(light_presets.presets):
+        item = bpy.context.scene.light_presets.add()
+        item.name = str(preset.name)
+        item.index = index
 
 
 def get_texture_name(self):

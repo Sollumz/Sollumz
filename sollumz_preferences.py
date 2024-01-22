@@ -322,6 +322,10 @@ def get_prefs_path():
     return os.path.join(bpy.utils.user_resource(resource_type='CONFIG'), PREFS_FILE_NAME)
 
 
+def get_config_directory_path() -> str:
+    return bpy.utils.user_resource(resource_type='CONFIG', path="sollumz", create=True)
+
+
 def register():
     bpy.utils.register_class(SollumzAddonPreferences)
 
