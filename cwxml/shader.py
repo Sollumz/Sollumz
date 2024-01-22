@@ -161,6 +161,7 @@ class ShaderDef(ElementTree):
     render_bucket: int
     uv_maps: dict[str, int]
     parameter_map: dict[str, ShaderParameterDef]
+    parameter_ui_order: dict[str, int]
 
     def __init__(self):
         super().__init__()
@@ -170,6 +171,7 @@ class ShaderDef(ElementTree):
         self.render_bucket = 0
         self.uv_maps = {}
         self.parameter_map = {}
+        self.parameter_ui_order = {}
 
     @property
     def required_tangent(self):
@@ -216,6 +218,7 @@ class ShaderDef(ElementTree):
             p.name: p.uv for p in new.parameters if p.type == ShaderParameterType.TEXTURE and p.uv is not None
         }
         new.parameter_map = {p.name: p for p in new.parameters}
+        new.parameter_ui_order = {p.name: i for i, p in enumerate(new.parameters)}
         return new
 
 

@@ -2,6 +2,7 @@ import bpy
 from bpy.types import Context
 from . import operators as ydr_ops
 from .shader_materials import shadermats
+from ..cwxml.shader import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
@@ -203,7 +204,6 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
             box.prop(light.light_properties, "group_id")
             box.prop(light.light_properties, "projected_texture_hash")
             box.prop(light.light_properties, "flashiness")
-
 
             # Volume properties
             box = layout.box()
@@ -556,6 +556,18 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
         row.prop(mat.shader_properties, "name")
 
 
+def collect_parameter_nodes(mat: bpy.types.Material, filter_func) -> list[bpy.types.Node]:
+    """Filters nodes from ``mat`` and sorts them based on ``ShaderDef.parameter_ui_order``."""
+    shader = ShaderManager.find_shader(mat.shader_properties.filename)
+
+    nodes = [n for n in mat.node_tree.nodes if filter_func(n)]
+    if shader is not None:
+        # order changes when the active node changes, sort so the UI stays stable
+        nodes = sorted(nodes, key=lambda n: shader.parameter_ui_order.get(n.name, -1))
+
+    return nodes
+
+
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Texture Parameters"
     bl_idname = "SOLLUMZ_PT_TXTPARAMS_PANEL"
@@ -580,25 +592,21 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         if mat is None:
             return
 
-        nodes = mat.node_tree.nodes
+        nodes = collect_parameter_nodes(mat, lambda n: isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz)
         for n in nodes:
-            if isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz:
-                SPLIT_FACTOR = 0.2
-                split = layout.split(factor=SPLIT_FACTOR)
-                split.alignment = "RIGHT"
-                split.label(text=n.name)
-                split.template_ID(n, "image", open="image.open")
+            SPLIT_FACTOR = 0.2
+            split = layout.split(factor=SPLIT_FACTOR)
+            split.alignment = "RIGHT"
+            split.label(text=n.name)
+            split.template_ID(n, "image", open="image.open")
 
-                if n.image is not None:
-                    split = layout.split(factor=SPLIT_FACTOR)  # split to align the props with the image selector
-                    _ = split.row()
-                    row = split.row()
-                    row.enabled = n.image.filepath != ""
-                    row.prop(n.texture_properties, "embedded")
-                    row.prop(n.image.colorspace_settings, "name", text="Color Space")
-
-                # TODO: verify if Usage can be completely removed
-                # box.prop(n.texture_properties, "usage")
+            if n.image is not None:
+                split = layout.split(factor=SPLIT_FACTOR)  # split to align the props with the image selector
+                _ = split.row()
+                row = split.row()
+                row.enabled = n.image.filepath != ""
+                row.prop(n.texture_properties, "embedded")
+                row.prop(n.image.colorspace_settings, "name", text="Color Space")
 
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
@@ -625,10 +633,9 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         if mat is None:
             return
 
-        nodes = mat.node_tree.nodes
-        for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-            if isinstance(n, SzShaderNodeParameter):
-                n.draw(context, layout, label=n.name, compact=True)
+        nodes = collect_parameter_nodes(mat, lambda n: isinstance(n, SzShaderNodeParameter))
+        for n in nodes:
+            n.draw(context, layout, label=n.name, compact=True)
 
 
 class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
