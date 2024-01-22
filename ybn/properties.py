@@ -235,8 +235,6 @@ def register():
         type=CollisionMaterial, name="Collision Materials")
     bpy.app.handlers.load_post.append(on_file_loaded)
 
-    bpy.types.Scene.new_flag_preset_name = bpy.props.StringProperty(
-        name="Flag Preset Name")
     bpy.types.Scene.flag_preset_index = bpy.props.IntProperty(
         name="Flag Preset Index")
     bpy.types.Scene.flag_presets = bpy.props.CollectionProperty(
@@ -329,7 +327,6 @@ def unregister():
     del bpy.types.Scene.collision_materials
     del bpy.types.Material.collision_properties
     del bpy.types.Material.collision_flags
-    del bpy.types.Scene.new_flag_preset_name
     del bpy.types.Scene.flag_presets
     del bpy.types.Scene.flag_preset_index
     del bpy.types.Scene.create_poly_bound_type

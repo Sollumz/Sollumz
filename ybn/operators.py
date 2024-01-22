@@ -8,7 +8,7 @@ from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, 
 from ..tools.meshhelper import create_box_from_extents
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, MaterialType, BOUND_POLYGON_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
-from ..tools.blenderhelper import get_selected_vertices, get_children_recursive, create_blender_object, create_empty_object
+from ..tools.blenderhelper import get_selected_vertices, get_children_recursive, create_blender_object, create_empty_object, tag_redraw
 import bpy
 from mathutils import Vector
 
@@ -373,54 +373,65 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Save Flag Preset"
     bl_action = f"{bl_label}"
 
-    def run(self, context):
+    name: bpy.props.StringProperty(name="Name")
+
+    @classmethod
+    def poll(cls, context):
         obj = context.active_object
-        load_flag_presets()
+        return obj is not None and obj.sollum_type in BOUND_TYPES
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def run(self, context):
+        self.name = self.name.strip()
+        if len(self.name) == 0:
+            self.warning("Please specify a name for the new flag preset.")
+            return False
+
+        obj = context.active_object
 
         if not obj:
             self.message("No object selected!")
             return False
 
-        if obj.sollum_type and not (obj.sollum_type == SollumType.BOUND_GEOMETRY or obj.sollum_type == SollumType.BOUND_GEOMETRYBVH):
-            self.message(
-                f"Selected object must be either a {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]} or {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}!")
+        if obj.sollum_type not in BOUND_TYPES:
+            self.message("Selected object must be a Sollumz bound!")
             return False
 
-        name = context.scene.new_flag_preset_name
-        if len(name) < 1:
-            self.message("Please specify a name for the new flag preset.")
-            return False
+        load_flag_presets()
+
+        for preset in flag_presets.presets:
+            if preset.name == self.name:
+                self.warning(
+                    "A preset with that name already exists! If you wish to overwrite this preset, delete the original.")
+                return False
 
         flag_preset = FlagPreset()
-        flag_preset.name = name
+        flag_preset.name = self.name
 
         for prop in dir(obj.composite_flags1):
             value = getattr(obj.composite_flags1, prop)
-            if value == True:
+            if value is True:
                 flag_preset.flags1.append(prop)
 
         for prop in dir(obj.composite_flags2):
             value = getattr(obj.composite_flags2, prop)
-            if value == True:
+            if value is True:
                 flag_preset.flags2.append(prop)
 
-        filepath = get_flag_presets_path()
-
-        for preset in flag_presets.presets:
-            if preset.name == name:
-                self.message(
-                    "A preset with that name already exists! If you wish to overwrite this preset, delete the original.")
-                return False
-
         flag_presets.presets.append(flag_preset)
+
+        filepath = get_flag_presets_path()
         flag_presets.write_xml(filepath)
         load_flag_presets()
 
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
         return True
 
 
 class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Load a flag preset to the selected Geometry bounds"""
+    """Load a flag preset to the selected bounds"""
     bl_idname = "sollumz.load_flag_preset"
     bl_label = "Apply Flags Preset"
     bl_context = "object"
@@ -451,10 +462,9 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
                     else:
                         obj.composite_flags2[flag_name] = False
 
-                # Hacky way to force the UI to redraw. For some reason setting custom properties will not cause the object properties panel to redraw, so we have to do this.
-                obj.location = obj.location
-                self.message(
-                    f"Applied preset '{preset.name}' to: {obj.name}")
+                tag_redraw(context)
+
+                self.message(f"Applied preset '{preset.name}' to: {obj.name}")
             except IndexError:
                 filepath = get_flag_presets_path()
                 self.error(
@@ -482,11 +492,7 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
                 aobj.composite_flags1[flag_name] = False
                 aobj.composite_flags2[flag_name] = False
 
+            tag_redraw(context)
+
+
         return True
-
-
-# def handle_load_flag_presets(operator: bpy.types.Operator):
-#     try:
-#         load_flag_presets()
-#     except FileNotFoundError:
-#         operator.report({"ERROR"}, traceback.format_exc())
