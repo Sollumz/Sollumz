@@ -295,14 +295,11 @@ def sort_cols_and_children(lod_xml: PhysicsLOD):
     lod_xml.children = sorted_children
     # Apply sorting to collisions
     sorted_collisions: list[Bound] = [None] * len(indices)
-    sorted_transforms: list[Transform] = [None] * len(indices)
 
     for old_index, new_index in indices.items():
         sorted_collisions[new_index] = bounds[old_index]
-        sorted_transforms[new_index] = lod_xml.transforms[old_index]
 
     lod_xml.archetype.bounds.children = sorted_collisions
-    lod_xml.transforms = sorted_transforms
 
 
 def frag_has_collisions(frag_obj: bpy.types.Object):
@@ -327,6 +324,8 @@ def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, mate
     calculate_child_drawable_matrices(frag_xml)
 
     sort_cols_and_children(lod_xml)
+
+    calculate_physics_lod_transforms(frag_xml)
 
 
 def create_phys_lod_xml(phys_xml: Physics, lod_props: LODProperties):
@@ -394,7 +393,6 @@ def create_collision_xml(
 
         for bound_xml in composite_xml.children:
             bound_xml.unk_type = 2
-
         return composite_xml
 
 
@@ -480,6 +478,81 @@ def calculate_group_masses(lod_xml: PhysicsLOD):
         lod_xml.groups[child.group_index].mass += child.pristine_mass
 
 
+def calculate_physics_lod_transforms(frag_xml: Fragment):
+    """Calculate ``frag_xml.physics.lod1.transforms``. A transformation matrix per physics child that represents
+    the offset from the child collision bound to its link center of gravity (aka "link attachment"). A link is
+    formed by physics groups that act as a rigid body together, a group with a joint creates a new link.
+    """
+
+    lod_xml = frag_xml.physics.lod1
+    bones_xml = frag_xml.drawable.skeleton.bones
+    rotation_limits = frag_xml.drawable.joints.rotation_limits
+    translation_limits = frag_xml.drawable.joints.translation_limits
+
+    children_by_group: dict[PhysicsGroup, list[tuple[int, PhysicsChild]]] = defaultdict(list)
+    for child_index, child in enumerate(lod_xml.children):
+        group = lod_xml.groups[child.group_index]
+        children_by_group[group].append((child_index, child))
+
+    # Array of links (i.e. array of arrays of groups)
+    links = [[]] # the root link is at index 0
+    link_index_by_group = [-1] * len(lod_xml.groups)
+
+    # Determine the groups that form each link
+    for group_index, group in enumerate(lod_xml.groups):
+        link_index = 0  # by default add to root link
+
+        if group.parent_index != 255:
+            _, first_child = children_by_group[group][0]
+            bone = next(b for b in bones_xml if b.tag == first_child.bone_tag)
+            creates_new_link = (
+                ("LimitRotation" in bone.flags and any(rl.bone_id == bone.tag for rl in rotation_limits)) or
+                ("LimitTranslation" in bone.flags and any(tl.bone_id == bone.tag for tl in translation_limits))
+            )
+            if creates_new_link:
+                # There is a joint, create a new link
+                link_index = len(links)
+                links.append([])
+            else:
+                # Add to link of parent group
+                link_index = link_index_by_group[group.parent_index]
+
+        links[link_index].append(group)
+        link_index_by_group[group_index] = link_index
+
+    # Calculate center of gravity of each link. This is the weighted mean of the center of gravity of all physics
+    # children that form the link.
+    # TODO: we can reuse these calculations to automatically set lod_xml.position_offset, lod_xml.unknown_40 and
+    # lod_xml.unknown_50
+    links_center_of_gravity = [Vector((0.0, 0.0, 0.0)) for _ in range(len(links))]
+    for link_index, groups in enumerate(links):
+        link_total_mass = 0.0
+        for group in groups:
+            for child_index, child in children_by_group[group]:
+                bound = lod_xml.archetype.bounds.children[child_index]
+                if bound is not None:
+                    # sphere_center is the center of gravity
+                    center = bound.composite_transform.transposed() @ bound.sphere_center
+                else:
+                    center = Vector((0.0, 0.0, 0.0))
+                child_mass = child.pristine_mass
+                links_center_of_gravity[link_index] += center * child_mass
+                link_total_mass += child_mass
+
+        links_center_of_gravity[link_index] /= link_total_mass
+
+    # Calculate child transforms (aka "link attachments", offset from bound to link CG)
+    for child_index, child in enumerate(lod_xml.children):
+        link_center = links_center_of_gravity[link_index_by_group[child.group_index]]
+        bound = lod_xml.archetype.bounds.children[child_index]
+        if bound is not None:
+            offset = Matrix.Translation(-link_center) @ bound.composite_transform.transposed()
+            offset.transpose()
+        else:
+            offset = Matrix.Identity(4)
+        lod_xml.transforms.append(Transform("Item", offset))
+
+
 def create_phys_child_xmls(
     frag_obj: bpy.types.Object,
     lod_xml: PhysicsLOD,
@@ -518,12 +591,7 @@ def create_phys_child_xmls(
             if bone_name in child_meshes:
                 mesh_objs = child_meshes[bone_name]
 
-            bound_xml = lod_xml.archetype.bounds.children[bound_index]
-            composite_matrix = bound_xml.composite_transform
-
             create_phys_child_drawable(child_xml, materials, mesh_objs)
-
-            create_child_transforms_xml(composite_matrix, lod_xml)
 
             lod_xml.children.append(child_xml)
 
@@ -805,23 +873,6 @@ def get_window_geometry_index(drawable_xml: Drawable, window_shader_index: int):
     return 0
 
 
-def create_child_transforms_xml(child_matrix: Matrix, lod_xml: PhysicsLOD):
-    offset = lod_xml.position_offset
-
-    matrix = child_matrix.copy()
-    a = matrix[3][0] - offset.x
-    b = matrix[3][1] - offset.y
-    c = matrix[3][2] - offset.z
-    matrix[3][0] = a
-    matrix[3][1] = b
-    matrix[3][2] = c
-
-    transform_xml = Transform("Item", matrix)
-    lod_xml.transforms.append(transform_xml)
-
-    return transform_xml
-
-
 def create_bone_transforms_xml(frag_xml: Fragment):
     def get_bone_transforms(bone: Bone):
         return Matrix.LocRotScale(bone.translation, bone.rotation, bone.scale)
@@ -944,7 +995,6 @@ def add_frag_glass_window_xml(
         logger.warning(f"Glass window '{group_xml.name}' is missing the mesh and/or collision. Skipping...")
         return
 
-
     group_xml.glass_window_index = len(glass_windows_xml)
 
     glass_type = glass_window_bone.group_properties.glass_type
@@ -965,7 +1015,7 @@ def add_frag_glass_window_xml(
         logger.warning(f"Glass window '{group_xml.name}' requires 2 separate planes in mesh.")
         if len(mesh_planes) < 2:
             return  # need at least 2 planes to continue
- 
+
     plane_a, plane_b = mesh_planes[:2]
     if len(plane_a) != 2 or len(plane_b) != 2:
         logger.warning(f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each.")
@@ -1084,6 +1134,7 @@ def calc_frag_glass_window_bounds_offset(
     Returns tuple (offset_front, offset_back).
     """
     from mathutils.geometry import distance_point_to_plane, normal
+
     def _get_plane(a: Vector, b: Vector, c: Vector, d: Vector):
         plane_no = normal((a, b, c))
         plane_co = a
