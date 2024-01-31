@@ -8,7 +8,7 @@ from bpy.types import (
 )
 import math
 from typing import Optional
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from ....sollumz_properties import SollumType, LightType
 
 
@@ -38,6 +38,7 @@ class CapsuleLightManipulator:
 
     def __init__(self, gg: GizmoGroup):
         cage = gg.gizmos.new("GIZMO_GT_cage_2d")
+        cage.select_bias = 1.0
         cage.draw_style = "BOX_TRANSFORM"
         cage.transform = {"SCALE"}
         cage.use_draw_hover = True
@@ -63,19 +64,30 @@ class CapsuleLightManipulator:
 
         cage.matrix_offset = self.apply_cage_clamping(cage.matrix_offset)
 
+        # Determine in which direction the cage should be facing
+        # The cage is a 2D plane, so as we rotate the camera around the capsule, at one point it will become a "line".
+        # To avoid that, we have to rotate it 90° so it is facing the camera again.
+        # We consider the two possible plane rotations (normal along X and normal along Y) and calculate which one is
+        # facing the camera more.
+        # Note: we only care about left/right and front/back views. If we would want the cage to be editable from
+        # the top and bottom views (a plane with normal along Z) we would have to modify the handlers to take this into
+        # account, as from that view only the radius would be editable.
         rv3d = context.space_data.region_3d
         view_dir = (active_light_obj.matrix_world.translation - rv3d.view_matrix.inverted().translation)
         view_dir.normalize()
-        view_rot = view_dir.to_track_quat("Y", "Z")
 
-        mat1 = active_light_obj.matrix_world @ Matrix.Rotation(math.pi / 2, 4, "Y")
-        mat2 = mat1 @ Matrix.Rotation(math.pi / 2, 4, "X")
-        dot_product1 = view_rot.dot(mat1.to_quaternion())
-        dot_product2 = view_rot.dot(mat2.to_quaternion())
-        if dot_product1 < dot_product2:  # TODO: this "facing camera" check is not really correct
-            cage.matrix_basis = mat1
+        plane_mat = active_light_obj.matrix_world
+        plane_dir1 = plane_mat.col[0]  # right
+        plane_dir2 = plane_mat.col[1]  # forward
+
+        dot1 = view_dir.dot(plane_dir1)
+        dot2 = view_dir.dot(plane_dir2)
+
+        half_pi = math.pi / 2
+        if abs(dot1) > abs(dot2):
+            cage.matrix_basis = plane_mat @ Matrix.Rotation(half_pi, 4, "Y")
         else:
-            cage.matrix_basis = mat2
+            cage.matrix_basis = plane_mat @ Matrix.Rotation(half_pi, 4, "Z") @ Matrix.Rotation(half_pi, 4, "Y")
 
     def apply_cage_clamping(self, m: Matrix) -> Matrix:
         """Returns a new scale matrix clamped to avoid dimensions of size 0 on the capsule cage."""
