@@ -123,7 +123,7 @@ class VertexBufferBuilder:
         return positions[self._vert_inds]
 
     def _get_normals(self):
-        normals = np.empty(len(self.mesh.loops) * 3, dtype=np.float32)
+        normals = np.empty(len(self.mesh.loops) * 3, dtype=np.float16)
         self.mesh.loops.foreach_get("normal", normals)
         return np.reshape(normals, (len(self.mesh.loops), 3))
 
