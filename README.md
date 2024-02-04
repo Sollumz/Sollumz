@@ -1,7 +1,7 @@
 # Sollumz
 Blender plugin to import, export, or create GTA V assets in the Codewalker XML format.
 
-By Skylumz and Colton Fox
+By Skylumz, Colton Fox and alexguirre.
 
 ## Join our Discord
 Join the Sollumz [discord server](https://discord.gg/bZuWBWaQBg) to ask questions and chat with community!
