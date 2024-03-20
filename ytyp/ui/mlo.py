@@ -190,19 +190,6 @@ class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
         layout.prop(selected_portal, "audio_occlusion")
 
 
-class SOLLUMZ_PT_CREATE_PORTAL_OPTIONS(bpy.types.Panel):
-    bl_idname = "SOLLUMZ_PT_CREATE_PORTAL_OPTIONS"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_label = "Options"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Creation Options")
-        layout.prop(context.scene, "sollumz_add_portal_room_from", text="From")
-        layout.prop(context.scene, "sollumz_add_portal_room_to", text="To")
-
-
 class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_PORTAL_FLAGS_PANEL"
     bl_label = "Portal Flags"
