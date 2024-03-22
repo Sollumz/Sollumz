@@ -299,7 +299,7 @@ def clip_to_obj(
         elif attr.type == "Int":
             attr.value_int = xml_attr.value
         elif attr.type == "Bool":
-            attr.value_bool = xml_attr.value
+            attr.value_bool = xml_attr.value != 0
         elif attr.type == "Vector3":
             attr.value_vec3 = xml_attr.value
         elif attr.type == "Vector4":
