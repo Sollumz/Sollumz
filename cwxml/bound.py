@@ -148,74 +148,27 @@ class VerticesProperty(ElementProperty):
         return element
 
 
-class OctantsProperty(ElementProperty):
-    value_types = (dict)
-
-    def __init__(self, tag_name: str = "Octants", value=None):
-        super().__init__(tag_name, value or {})
-
-    @staticmethod
-    def from_xml(element: ET.Element):
-        new = OctantsProperty(element.tag, {})
-
-        if not element.text:
-            return new
-
-        octants = defaultdict(list)
-        lines = element.text.strip().split("\n")
-
-        for i, line in enumerate(lines):
-            for vert_ind in line.strip().replace(" ", "").split(","):
-                if not vert_ind:
-                    continue
-
-                octants[i].append(int(vert_ind))
-
-        new.value = octants
-
-        return new
-
-    def to_xml(self):
-        element = ET.Element(self.tag_name)
-
-        element.text = "\n"
-        lines: list[str] = []
-
-        for indices in self.value.values():
-            if not indices:
-                continue
-
-            str_indices = [str(i) for i in indices]
-
-            lines.append(",".join(str_indices))
-
-        element.text = "\n".join(lines)
-
-        return element
-
-
-class BoundGeometryBVH(BoundChild):
-    type = "GeometryBVH"
-
-    def __init__(self):
-        super().__init__()
-        self.geometry_center = VectorProperty("GeometryCenter")
-        self.materials = MaterialsList()
-        self.vertices = VerticesProperty("Vertices")
-        self.vertex_colors = VertexColorProperty("VertexColours")
-        self.polygons = Polygons()
-
-
-class BoundGeometry(BoundGeometryBVH):
+class BoundGeometry(BoundChild):
     type = "Geometry"
 
     def __init__(self):
         super().__init__()
-        self.unk_float_1 = ValueProperty("UnkFloat1")
-        self.unk_float_2 = ValueProperty("UnkFloat2")
-        # Placeholder: Currently not implemented by CodeWalker
-        self.vertices_2 = VerticesProperty("Vertices2")
-        self.octants = OctantsProperty("Octants")
+        self.geometry_center = VectorProperty("GeometryCenter")
+        # These unks are just padding, we can ignore them
+        # self.unk_float_1 = ValueProperty("UnkFloat1")
+        # self.unk_float_2 = ValueProperty("UnkFloat2")
+        self.materials = MaterialsList()
+        self.vertices = VerticesProperty("Vertices")
+        # self.vertices_shrunk = VerticesProperty("VerticesShrunk") # not in official CW, for debugging with custom CW
+        self.vertex_colors = VertexColorProperty("VertexColours")
+        self.polygons = Polygons()
+
+
+class BoundGeometryBVH(BoundGeometry):
+    type = "GeometryBVH"
+
+    def __init__(self):
+        super().__init__()
 
 
 class BoundList(ListProperty):

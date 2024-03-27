@@ -4,6 +4,7 @@ from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
 from ..cwxml.flag_preset import FlagPresetsFile
 from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
+from ..tools.blenderhelper import tag_redraw
 from mathutils import Vector, Matrix
 import os
 
@@ -79,8 +80,7 @@ class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
     procedural_id: bpy.props.IntProperty(name="Procedural ID", default=0)
     room_id: bpy.props.IntProperty(name="Room ID", default=0)
     ped_density: bpy.props.IntProperty(name="Ped Density", default=0)
-    material_color_index: bpy.props.IntProperty(
-        name="Material Color Index", default=0)
+    material_color_index: bpy.props.IntProperty(name="Material Color Index", default=0)
 
 
 class BoundFlags(bpy.types.PropertyGroup):
@@ -90,44 +90,199 @@ class BoundFlags(bpy.types.PropertyGroup):
     map_animal: bpy.props.BoolProperty(name="MAP ANIMAL", default=False)
     map_cover: bpy.props.BoolProperty(name="MAP COVER", default=False)
     map_vehicle: bpy.props.BoolProperty(name="MAP VEHICLE", default=False)
-    vehicle_not_bvh: bpy.props.BoolProperty(
-        name="VEHICLE NOT BVH", default=False)
+    vehicle_not_bvh: bpy.props.BoolProperty(name="VEHICLE NOT BVH", default=False)
     vehicle_bvh: bpy.props.BoolProperty(name="VEHICLE BVH", default=False)
     ped: bpy.props.BoolProperty(name="PED", default=False)
     ragdoll: bpy.props.BoolProperty(name="RAGDOLL", default=False)
     animal: bpy.props.BoolProperty(name="ANIMAL", default=False)
-    animal_ragdoll: bpy.props.BoolProperty(
-        name="ANIMAL RAGDOLL", default=False)
+    animal_ragdoll: bpy.props.BoolProperty(name="ANIMAL RAGDOLL", default=False)
     object: bpy.props.BoolProperty(name="OBJECT", default=False)
-    object_env_cloth: bpy.props.BoolProperty(
-        name="OBJECT_ENV_CLOTH", default=False)
+    object_env_cloth: bpy.props.BoolProperty(name="OBJECT_ENV_CLOTH", default=False)
     plant: bpy.props.BoolProperty(name="PLANT", default=False)
     projectile: bpy.props.BoolProperty(name="PROJECTILE", default=False)
     explosion: bpy.props.BoolProperty(name="EXPLOSION", default=False)
     pickup: bpy.props.BoolProperty(name="PICKUP", default=False)
     foliage: bpy.props.BoolProperty(name="FOLIAGE", default=False)
-    forklift_forks: bpy.props.BoolProperty(
-        name="FORKLIFT FORKS", default=False)
+    forklift_forks: bpy.props.BoolProperty(name="FORKLIFT FORKS", default=False)
     test_weapon: bpy.props.BoolProperty(name="TEST WEAPON", default=False)
     test_camera: bpy.props.BoolProperty(name="TEST CAMERA", default=False)
     test_ai: bpy.props.BoolProperty(name="TEST AI", default=False)
     test_script: bpy.props.BoolProperty(name="TEST SCRIPT", default=False)
-    test_vehicle_wheel: bpy.props.BoolProperty(
-        name="TEST VEHICLE WHEEL", default=False)
+    test_vehicle_wheel: bpy.props.BoolProperty(name="TEST VEHICLE WHEEL", default=False)
     glass: bpy.props.BoolProperty(name="GLASS", default=False)
     map_river: bpy.props.BoolProperty(name="MAP RIVER", default=False)
     smoke: bpy.props.BoolProperty(name="SMOKE", default=False)
     unsmashed: bpy.props.BoolProperty(name="UNSMASHED", default=False)
     map_stairs: bpy.props.BoolProperty(name="MAP STAIRS", default=False)
-    map_deep_surface: bpy.props.BoolProperty(
-        name="MAP DEEP SURFACE", default=False)
+    map_deep_surface: bpy.props.BoolProperty(name="MAP DEEP SURFACE", default=False)
 
 
-class BoundProperties(bpy.types.PropertyGroup):
-    inertia: bpy.props.FloatVectorProperty(name="Inertia")
-    volume: bpy.props.FloatProperty(name="Volume", precision=3)
-    unk_float_1: bpy.props.FloatProperty(name="UnkFloat 1")
-    unk_float_2: bpy.props.FloatProperty(name="UnkFloat 2")
+class BoundShapeProps(bpy.types.PropertyGroup):
+    """Provides properties to modify a bound shape mesh. These properties are calculated from the object bounding box,
+    instead of storing the values. By doing so, if the user modifies the mesh by scaling it, the properties don't end
+    up out of sync.
+    """
+
+    def box_extents_getter(self) -> Vector:
+        from .ybnexport import get_bound_extents
+
+        obj = self.id_data
+        bbmin, bbmax = get_bound_extents(obj)
+        return bbmax - bbmin
+
+    def box_extents_setter(self, value: Vector):
+        obj = self.id_data
+        create_box(obj.data, 1, Matrix.Diagonal(value))
+        tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
+
+    box_extents: bpy.props.FloatVectorProperty(
+        name="Extents",
+        size=3,
+        get=box_extents_getter,
+        set=box_extents_setter,
+        subtype="XYZ_LENGTH",
+        unit="LENGTH",
+        min=0.01,
+    )
+
+
+    def sphere_radius_getter(self) -> float:
+        from .ybnexport import get_bound_extents
+        from ..tools.meshhelper import get_inner_sphere_radius
+
+        obj = self.id_data
+        bbmin, bbmax = get_bound_extents(obj)
+        radius = get_inner_sphere_radius(bbmin, bbmax)
+        return radius
+
+    def sphere_radius_setter(self, value: float):
+        obj = self.id_data
+        create_sphere(obj.data, value)
+        tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
+
+    sphere_radius: bpy.props.FloatProperty(
+        name="Radius",
+        get=sphere_radius_getter,
+        set=sphere_radius_setter,
+        subtype="DISTANCE",
+        unit="LENGTH",
+        min=0.01,
+    )
+
+
+    def capsule_radius_getter(self) -> float:
+        from .ybnexport import get_bound_extents
+
+        obj = self.id_data
+        bbmin, bbmax = get_bound_extents(obj)
+        extents = bbmax - bbmin
+        radius = extents.x * 0.5
+        return radius
+
+    def capsule_length_getter(self) -> float:
+        from .ybnexport import get_bound_extents
+
+        obj = self.id_data
+        align_z_axis = obj.sollum_type == SollumType.BOUND_POLY_CAPSULE
+        bbmin, bbmax = get_bound_extents(obj)
+        extents = bbmax - bbmin
+        radius = extents.x * 0.5
+        length = extents.z if align_z_axis else extents.y
+        length = max(0.0, length - radius * 2.0) # Remove capsule caps from length
+        return length
+
+    def capsule_radius_setter(self, value: float):
+        self.capsule_update(value, self.capsule_length_getter())
+
+    def capsule_length_setter(self, value: float):
+        self.capsule_update(self.capsule_radius_getter(), value)
+
+    def capsule_update(self, radius: float, length: float):
+        obj = self.id_data
+        align_z_axis = obj.sollum_type == SollumType.BOUND_POLY_CAPSULE
+        create_capsule(obj.data, radius=radius, length=(length + radius * 2.0) * 0.5, use_rot=not align_z_axis)
+        tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
+
+    capsule_radius: bpy.props.FloatProperty(
+        name="Radius",
+        get=capsule_radius_getter,
+        set=capsule_radius_setter,
+        subtype="DISTANCE",
+        unit="LENGTH",
+        min=0.01,
+    )
+    capsule_length: bpy.props.FloatProperty(
+        name="Length",
+        get=capsule_length_getter,
+        set=capsule_length_setter,
+        subtype="DISTANCE",
+        unit="LENGTH",
+        min=0.0,
+    )
+
+
+    def cylinder_axis(self):
+        obj = self.id_data
+        match obj.sollum_type:
+            case SollumType.BOUND_POLY_CYLINDER:
+                return "Z"
+            case SollumType.BOUND_DISC:
+                return "X"
+            case _:
+                return "Y"
+
+    def cylinder_radius_getter(self) -> float:
+        from .ybnexport import get_bound_extents
+
+        obj = self.id_data
+        bbmin, bbmax = get_bound_extents(obj)
+        extents = bbmax - bbmin
+        diameter = extents.x if self.cylinder_axis() != "X" else extents.y
+        radius = diameter * 0.5
+        return radius
+
+    def cylinder_length_getter(self) -> float:
+        from .ybnexport import get_bound_extents
+
+        obj = self.id_data
+        bbmin, bbmax = get_bound_extents(obj)
+        extents = bbmax - bbmin
+        match self.cylinder_axis():
+            case "X":
+                length = extents.x
+            case "Y":
+                length = extents.y
+            case "Z":
+                length = extents.z
+        return length
+
+    def cylinder_radius_setter(self, value: float):
+        self.cylinder_update(value, self.cylinder_length_getter())
+
+    def cylinder_length_setter(self, value: float):
+        self.cylinder_update(self.cylinder_radius_getter(), value)
+
+    def cylinder_update(self, radius: float, length: float):
+        obj = self.id_data
+        create_cylinder(obj.data, radius=radius, length=length, axis=self.cylinder_axis())
+        tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
+
+    cylinder_radius: bpy.props.FloatProperty(
+        name="Radius",
+        get=cylinder_radius_getter,
+        set=cylinder_radius_setter,
+        subtype="DISTANCE",
+        unit="LENGTH",
+        min=0.01,
+    )
+    cylinder_length: bpy.props.FloatProperty(
+        name="Length",
+        get=cylinder_length_getter,
+        set=cylinder_length_setter,
+        subtype="DISTANCE",
+        unit="LENGTH",
+        min=0.01,
+    )
 
 
 class CollisionMaterial(bpy.types.PropertyGroup):
@@ -145,7 +300,7 @@ def get_flag_presets_path() -> str:
     return os.path.join(get_config_directory_path(), "flag_presets.xml")
 
 
-def get_defaut_flag_presets_path() -> str:
+def get_default_flag_presets_path() -> str:
     package_name = __name__.split(".")[0]
     return f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ybn\\flag_presets.xml"
 
@@ -158,7 +313,7 @@ def load_flag_presets():
 
     path = get_flag_presets_path()
     if not os.path.exists(path):
-        path = get_defaut_flag_presets_path()
+        path = get_default_flag_presets_path()
         if not os.path.exists(path):
             return
 
@@ -178,32 +333,6 @@ def load_collision_materials():
         item.name = mat.name
 
 
-def update_bounds(self, context):
-    if self.sollum_type == SollumType.BOUND_BOX:
-        create_box(self.data, 1, Matrix.Diagonal(
-            Vector(self.bound_dimensions)))
-    elif self.sollum_type == SollumType.BOUND_SPHERE or self.sollum_type == SollumType.BOUND_POLY_SPHERE:
-        create_sphere(mesh=self.data, radius=self.bound_radius)
-
-    elif self.sollum_type == SollumType.BOUND_CYLINDER:
-        create_cylinder(mesh=self.data, radius=self.bound_radius,
-                        length=self.bound_length)
-    elif self.sollum_type == SollumType.BOUND_POLY_CYLINDER:
-        create_cylinder(mesh=self.data, radius=self.bound_radius,
-                        length=self.bound_length, rot_mat=Matrix())
-
-    elif self.sollum_type == SollumType.BOUND_DISC:
-        create_disc(mesh=self.data, radius=self.bound_radius,
-                    length=self.margin * 2)
-
-    elif self.sollum_type == SollumType.BOUND_CAPSULE:
-        create_capsule(mesh=self.data, diameter=self.margin,
-                       length=self.bound_radius, use_rot=True)
-    elif self.sollum_type == SollumType.BOUND_POLY_CAPSULE:
-        create_capsule(mesh=self.data, diameter=self.bound_radius / 2,
-                       length=self.bound_length)
-
-
 def refresh_ui_collections():
     load_collision_materials()
     load_flag_presets()
@@ -215,22 +344,9 @@ def on_blend_file_loaded(_):
 
 
 def register():
-    bpy.types.Object.bound_properties = bpy.props.PointerProperty(
-        type=BoundProperties)
-    bpy.types.Object.margin = bpy.props.FloatProperty(
-        name="Margin", precision=3, update=update_bounds, min=0, default=0.04)
-    bpy.types.Object.bound_radius = bpy.props.FloatProperty(
-        name="Radius", precision=3, update=update_bounds, min=0)
-    bpy.types.Object.bound_length = bpy.props.FloatProperty(
-        name="Length", precision=3, update=update_bounds, min=0)
-    bpy.types.Object.bound_dimensions = bpy.props.FloatVectorProperty(
-        name="Extents", precision=3, min=0, update=update_bounds, subtype="XYZ")
-
-    # nest these in object.bound_properties ? is it possible#
-    bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(
-        type=BoundFlags)
-    bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(
-        type=BoundFlags)
+    bpy.types.Object.sz_bound_shape = bpy.props.PointerProperty(type=BoundShapeProps)
+    bpy.types.Object.composite_flags1 = bpy.props.PointerProperty(type=BoundFlags)
+    bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type=BoundFlags)
 
     bpy.types.WindowManager.sz_collision_material_index = bpy.props.IntProperty(name="Material Index")
     bpy.types.WindowManager.sz_collision_materials = bpy.props.CollectionProperty(type=CollisionMaterial, name="Collision Materials")
@@ -321,11 +437,6 @@ def register():
 
 
 def unregister():
-    del bpy.types.Object.bound_properties
-    del bpy.types.Object.margin
-    del bpy.types.Object.bound_radius
-    del bpy.types.Object.bound_length
-    del bpy.types.Object.bound_dimensions
     del bpy.types.Object.composite_flags1
     del bpy.types.Object.composite_flags2
     del bpy.types.WindowManager.sz_collision_material_index

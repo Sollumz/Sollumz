@@ -48,20 +48,6 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         update=_save_preferences
     )
 
-    auto_calculate_inertia: bpy.props.BoolProperty(
-        name="Auto Calculate Inertia",
-        description="Automatically calculate inertia for physics objects (applies to yfts and ydrs too)",
-        default=False,
-        update=_save_preferences
-    )
-
-    auto_calculate_volume: bpy.props.BoolProperty(
-        name="Auto Calculate Volume",
-        description="Automatically calculate volume for physics objects (applies to yfts and ydrs too)",
-        default=False,
-        update=_save_preferences
-    )
-
     exclude_skeleton: bpy.props.BoolProperty(
         name="Exclude Skeleton",
         description="Exclude skeleton from export. Usually done with mp ped components",

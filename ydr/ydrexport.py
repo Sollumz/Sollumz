@@ -65,15 +65,14 @@ from .. import logger
 def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
 
-    drawable_xml = create_drawable_xml(
-        drawable_obj, auto_calc_inertia=export_settings.auto_calculate_inertia, auto_calc_volume=export_settings.auto_calculate_volume, apply_transforms=export_settings.apply_transforms)
+    drawable_xml = create_drawable_xml(drawable_obj, apply_transforms=export_settings.apply_transforms)
     drawable_xml.write_xml(filepath)
 
     write_embedded_textures(drawable_obj, filepath)
     return True
 
 
-def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, auto_calc_volume: bool = False, auto_calc_inertia: bool = False, apply_transforms: bool = False):
+def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, apply_transforms: bool = False):
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
     drawable_xml = Drawable()
     drawable_xml.matrix = None
@@ -114,8 +113,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     set_drawable_xml_flags(drawable_xml)
     set_drawable_xml_extents(drawable_xml)
 
-    create_embedded_collision_xmls(
-        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
+    create_embedded_collision_xmls(drawable_obj, drawable_xml)
 
     if armature_obj is not None:
         armature_obj.data.pose_position = original_pose
@@ -869,24 +867,20 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
     bbmin = get_min_vector_list(mins)
     bbmax = get_max_vector_list(maxes)
 
-    drawable_xml.bounding_sphere_center = get_bound_center_from_bounds(
-        bbmin, bbmax)
-    drawable_xml.bounding_sphere_radius = get_sphere_radius(
-        bbmax, drawable_xml.bounding_sphere_center)
+    drawable_xml.bounding_sphere_center = get_bound_center_from_bounds(bbmin, bbmax)
+    drawable_xml.bounding_sphere_radius = get_sphere_radius(bbmin, bbmax)
     drawable_xml.bounding_box_min = bbmin
     drawable_xml.bounding_box_max = bbmax
 
 
-def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
+def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
     for child in drawable_obj.children:
         bound_xml = None
 
         if child.sollum_type == SollumType.BOUND_COMPOSITE:
-            bound_xml = create_composite_xml(
-                child, auto_calc_inertia, auto_calc_volume)
+            bound_xml = create_composite_xml(child)
         elif child.sollum_type in BOUND_TYPES:
-            bound_xml = create_bound_xml(
-                child, auto_calc_inertia, auto_calc_volume)
+            bound_xml = create_bound_xml(child)
 
             if not bound_xml.composite_transform.is_identity:
                 logger.warning(

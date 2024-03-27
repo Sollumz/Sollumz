@@ -25,7 +25,7 @@ def base_archetype_from_object(obj):
     arch.bb_min = bbmin
     arch.bb_max = bbmax
     arch.bs_center = get_bound_center(obj)
-    arch.bs_radius = get_sphere_radius(bbmax, arch.bs_center)
+    arch.bs_radius = get_sphere_radius(bbmin, bbmax)
     arch.asset_name = obj.name
     if obj.sollum_type == SollumType.FRAGMENT:
         arch.asset_type = "ASSET_TYPE_FRAGMENT"

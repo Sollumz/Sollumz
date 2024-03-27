@@ -32,7 +32,6 @@ from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
 from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
-from .ybn.properties import BoundProperties
 from .ybn.properties import BoundFlags
 
 from . import logger
@@ -719,7 +718,6 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
 
         for obj in selected:
             bound_meshes = []
-            damaged_meshes = []
 
             for child in obj.children:
                 if child.type != "MESH":
@@ -730,33 +728,19 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
 
                 if child.sollum_type == SollumType.BOUND_POLY_TRIANGLE:
                     bound_meshes.append(child)
-                elif child.sollum_type == SollumType.BOUND_POLY_TRIANGLE2:
-                    damaged_meshes.append(child)
 
             joined_obj = join_objects(bound_meshes)
             joined_obj.sollum_type = SollumType.BOUND_GEOMETRY
             joined_obj.name = obj.name
             joined_obj.parent = obj.parent
 
-            self.set_bound_geometry_properties(obj, joined_obj)
             self.set_composite_flags(obj, joined_obj)
 
             joined_obj.matrix_basis = obj.matrix_basis
 
-            if damaged_meshes:
-                joined_damaged_obj = join_objects(damaged_meshes)
-                self.set_shape_keys(joined_obj, joined_damaged_obj)
-
-                bpy.data.meshes.remove(joined_damaged_obj.data)
-
             bpy.data.objects.remove(obj)
 
         return {"FINISHED"}
-
-    def set_bound_geometry_properties(self, old_obj: bpy.types.Object, new_obj: bpy.types.Object):
-        for prop_name in BoundProperties.__annotations__.keys():
-            value = getattr(old_obj.bound_properties, prop_name)
-            setattr(new_obj.bound_properties, prop_name, value)
 
     def set_composite_flags(self, old_obj: bpy.types.Object, new_obj: bpy.types.Object):
         def set_flags(prop_name: str):
@@ -769,13 +753,6 @@ class SOLLUMZ_OT_debug_migrate_bound_geometries(bpy.types.Operator):
 
         set_flags("composite_flags1")
         set_flags("composite_flags2")
-
-    def set_shape_keys(self, bound_obj: bpy.types.Object, damaged_obj: bpy.types.Object):
-        bound_obj.shape_key_add(name="Basis")
-        deformed_key = bound_obj.shape_key_add(name="Deformed")
-
-        for i, vert in enumerate(damaged_obj.data.vertices):
-            deformed_key.data[i].co = vert.co
 
 
 class SOLLUMZ_OT_debug_replace_armature_constraints(bpy.types.Operator):

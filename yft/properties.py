@@ -11,16 +11,11 @@ class FragArchetypeProperties(bpy.types.PropertyGroup):
     max_ang_speed: bpy.props.FloatProperty(name="Max Angular Speed", default=6.2831855)
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1)
     buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1)
-    inertia_tensor: bpy.props.FloatVectorProperty(name="Inertia Tensor")
 
 
 class LODProperties(bpy.types.PropertyGroup):
-    smallest_ang_inertia: bpy.props.FloatProperty(name="Smallest Angular Inertia")
-    largest_ang_inertia: bpy.props.FloatProperty(name="Largest Angular Inertia")
     min_move_force: bpy.props.FloatProperty(name="Min Move Force")
-    position_offset: bpy.props.FloatVectorProperty(name="Position Offset")
-    original_root_cg_offset: bpy.props.FloatVectorProperty(name="Original Root CG Offset")
-    unbroken_cg_offset: bpy.props.FloatVectorProperty(name="Unbroken CG Offset")
+    unbroken_cg_offset: bpy.props.FloatVectorProperty(name="Unbroken CG Offset", subtype="XYZ")
     damping_linear_c: bpy.props.FloatVectorProperty(name="Damping Linear C", default=(0.02, 0.02, 0.02))
     damping_linear_v: bpy.props.FloatVectorProperty(name="Damping Linear V", default=(0.02, 0.02, 0.02))
     damping_linear_v2: bpy.props.FloatVectorProperty(name="Damping Linear V2", default=(0.01, 0.01, 0.01))

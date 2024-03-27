@@ -1,7 +1,6 @@
 import os
 import bpy
 from typing import Optional
-
 import numpy as np
 from numpy.typing import NDArray
 from .properties import CollisionMatFlags, set_collision_mat_raw_flags
@@ -23,7 +22,14 @@ from ..cwxml.bound import (
 )
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index
-from ..tools.meshhelper import create_box, create_color_attr, create_disc
+from ..tools.meshhelper import (
+    create_box,
+    create_sphere,
+    create_cylinder,
+    create_capsule,
+    create_disc,
+    create_color_attr,
+)
 from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
 from ..tools.blenderhelper import create_blender_object, create_empty_object
 from mathutils import Matrix, Vector
@@ -36,7 +42,6 @@ def import_ybn(filepath):
 
 def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = None):
     obj = create_empty_object(SollumType.BOUND_COMPOSITE, name)
-    set_bound_properties(composite_xml, obj)
 
     for child in composite_xml.children:
         child_obj = create_bound_object(child)
@@ -104,48 +109,38 @@ def set_composite_flags(bound_xml: BoundChild, bound_obj: bpy.types.Object):
 
 def create_bound_box(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_BOX)
-
-    obj.bound_dimensions = abs_vector(bound_xml.box_max - bound_xml.box_min)
-    obj.data.transform(Matrix.Translation(bound_xml.box_center))
-
+    bound_dimensions = abs_vector(bound_xml.box_max - bound_xml.box_min)
+    create_box(obj.data, 1, Matrix.Diagonal(bound_dimensions))
     return obj
 
 
 def create_bound_sphere(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_SPHERE)
-
-    obj.bound_radius = bound_xml.sphere_radius
-
+    create_sphere(obj.data, bound_xml.sphere_radius)
     return obj
 
 
 def create_bound_capsule(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CAPSULE)
-
     bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-    obj.bound_length = bbmax.z - bbmin.z
-    obj.bound_radius = bound_xml.sphere_radius
-
+    bound_length = bbmax.z - bbmin.z
+    create_capsule(obj.data, radius=bound_xml.margin, length=bound_length, use_rot=True)
     return obj
 
 
 def create_bound_cylinder(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CYLINDER)
-
     bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
     extent = bbmax - bbmin
-    obj.bound_length = extent.y
-    obj.bound_radius = extent.x * 0.5
-
+    bound_length = extent.y
+    bound_radius = extent.x * 0.5
+    create_cylinder(obj.data, radius=bound_radius, length=bound_length, axis="Y")
     return obj
 
 
 def create_bound_disc(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_DISC)
-
-    obj.bound_radius = bound_xml.sphere_radius
     create_disc(obj.data, bound_xml.sphere_radius, bound_xml.margin * 2)
-
     return obj
 
 
@@ -158,8 +153,6 @@ def create_bound_geometry(geom_xml: BoundGeometry):
 
     geom_obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh)
     set_bound_child_properties(geom_xml, geom_obj)
-
-    set_bound_geometry_properties(geom_xml, geom_obj)
 
     return geom_obj
 
@@ -312,9 +305,10 @@ def create_poly_box(poly, materials, vertices):
 
     return obj
 
+
 def create_poly_sphere(poly, materials, vertices):
     sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
-    sphere.bound_radius = poly.radius
+    create_sphere(sphere.data, poly.radius)
     sphere.location = vertices[poly.v]
     return sphere
 
@@ -323,8 +317,8 @@ def create_poly_capsule(poly, materials, vertices):
     v1 = vertices[poly.v1]
     v2 = vertices[poly.v2]
     rot = get_direction_of_vectors(v1, v2)
-    capsule.bound_radius = poly.radius * 2
-    capsule.bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
+    bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
+    create_capsule(capsule.data, radius=poly.radius, length=bound_length)
 
     capsule.location = (v1 + v2) / 2
     capsule.rotation_euler = rot
@@ -338,8 +332,10 @@ def create_poly_cylinder(poly, materials, vertices):
 
     rot = get_direction_of_vectors(v1, v2)
 
-    cylinder.bound_radius = poly.radius
-    cylinder.bound_length = get_distance_of_vectors(v1, v2)
+    bound_radius = poly.radius
+    bound_length = get_distance_of_vectors(v1, v2)
+    create_cylinder(cylinder.data, radius=bound_radius, length=bound_length, axis="Z")
+
     cylinder.matrix_world = Matrix()
 
     cylinder.location = (v1 + v2) / 2
@@ -421,18 +417,6 @@ def get_bound_geom_mesh_data(
     return verts, faces, np.array(colors, dtype=np.float64) if colors is not None else None
 
 
-def set_bound_geometry_properties(geom_xml: BoundGeometry, geom_obj: bpy.types.Object):
-    geom_obj.bound_properties.unk_float_1 = geom_xml.unk_float_1
-    geom_obj.bound_properties.unk_float_2 = geom_xml.unk_float_2
-
-
-def set_bound_properties(bound_xml: Bound, bound_obj: bpy.types.Object):
-    bound_obj.bound_properties.inertia = bound_xml.inertia
-    bound_obj.margin = bound_xml.margin
-    bound_obj.bound_properties.volume = bound_xml.volume
-
-
 def set_bound_child_properties(bound_xml: BoundChild, bound_obj: bpy.types.Object):
-    set_bound_properties(bound_xml, bound_obj)
     set_composite_flags(bound_xml, bound_obj)
     set_composite_transforms(bound_xml.composite_transform, bound_obj)

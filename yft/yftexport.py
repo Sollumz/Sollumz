@@ -16,12 +16,12 @@ from ..cwxml.fragment import (
 from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter, VertexLayoutList
 from ..tools.blenderhelper import get_evaluated_obj, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
-from ..tools.meshhelper import calculate_inertia, flip_uvs
+from ..tools.meshhelper import flip_uvs
 from ..tools.utils import prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
 from ..sollumz_preferences import get_export_settings
-from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats, get_bound_extents
+from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
 from .. import logger
@@ -34,8 +34,7 @@ from .properties import (
 
 def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
-    frag_xml = create_fragment_xml(frag_obj, export_settings.auto_calculate_inertia,
-                                   export_settings.auto_calculate_volume, export_settings.apply_transforms)
+    frag_xml = create_fragment_xml(frag_obj, export_settings.apply_transforms)
 
     if frag_xml is None:
         return False
@@ -60,7 +59,7 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     return True
 
 
-def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False, apply_transforms: bool = False):
+def create_fragment_xml(frag_obj: bpy.types.Object, apply_transforms: bool = False):
     """Create an XML parsable Fragment object. Returns the XML object and the hi XML object (if hi lods are present)."""
     frag_xml = Fragment()
     frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
@@ -95,8 +94,7 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
 
     # Physics data doesn't do anything if no collisions are present and will cause crashes
     if frag_has_collisions(frag_obj) and frag_obj.data.bones:
-        create_frag_physics_xml(
-            frag_obj, frag_xml, materials, auto_calc_inertia, auto_calc_volume)
+        create_frag_physics_xml(frag_obj, frag_xml, materials)
         create_vehicle_windows_xml(frag_obj, frag_xml, materials)
     else:
         frag_xml.physics = None
@@ -308,26 +306,26 @@ def frag_has_collisions(frag_obj: bpy.types.Object):
     return any(child.sollum_type == SollumType.BOUND_COMPOSITE for child in frag_obj.children)
 
 
-def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material], auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
+def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material]):
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
     drawable_xml = frag_xml.drawable
 
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
     arch_xml = create_archetype_xml(lod_xml, frag_obj)
     col_obj_to_bound_index = dict()
-    create_collision_xml(frag_obj, arch_xml, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index)
+    create_collision_xml(frag_obj, arch_xml, col_obj_to_bound_index)
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
     create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
 
-    set_arch_mass_inertia(frag_obj, arch_xml,
-                          lod_xml.children, auto_calc_inertia)
     calculate_group_masses(lod_xml)
     calculate_child_drawable_matrices(frag_xml)
 
     sort_cols_and_children(lod_xml)
 
     calculate_physics_lod_transforms(frag_xml)
+    calculate_archetype_mass_inertia(lod_xml)
+    calculate_physics_lod_inertia_limits(lod_xml)
 
 
 def create_phys_lod_xml(phys_xml: Physics, lod_props: LODProperties):
@@ -338,60 +336,62 @@ def create_phys_lod_xml(phys_xml: Physics, lod_props: LODProperties):
     return phys_xml.lod1
 
 
+def calculate_physics_lod_inertia_limits(lod_xml: PhysicsLOD):
+    """Calculates the physics LOD smallest and largest angular inertia from its children."""
+    phys_children = lod_xml.children
+    inertia_values = [value for c in phys_children for value in c.inertia_tensor.xyz]
+    largest_inertia = max(inertia_values)
+    smallest_inertia = largest_inertia / 10000.0  # game assets always have same value as largest divided by 10000
+
+    # unknown_14 = smallest angular inertia
+    # unknown_18 = largest angular inertia
+    lod_xml.unknown_14 = smallest_inertia
+    lod_xml.unknown_18 = largest_inertia
+
+
 def create_archetype_xml(lod_xml: PhysicsLOD, frag_obj: bpy.types.Object):
     archetype_props: FragArchetypeProperties = frag_obj.fragment_properties.lod_properties.archetype_properties
 
-    set_archetype_xml_properties(
-        archetype_props, lod_xml.archetype, remove_number_suffix(frag_obj.name))
+    set_archetype_xml_properties(archetype_props, lod_xml.archetype, remove_number_suffix(frag_obj.name))
     lod_xml.archetype2 = None
 
     return lod_xml.archetype
 
 
-def set_arch_mass_inertia(frag_obj: bpy.types.Object, arch_xml: Archetype, phys_children: list[PhysicsChild], auto_calc_inertia: bool = False):
-    """Set archetype mass based on children mass. Expects physics children and collisions to exist."""
-    mass = calculate_arch_mass(phys_children)
+def calculate_archetype_mass_inertia(lod_xml: PhysicsLOD):
+    """Set archetype mass and inertia based on children mass and bounds. Expects physics children and collisions to
+    exist, and the physics LOD root CG to have already been calculted.
+    """
+
+    from ..shared.geometry import calculate_composite_inertia
+    phys_children = lod_xml.children
+    bounds = lod_xml.archetype.bounds.children
+    masses = [child_xml.pristine_mass for child_xml in phys_children]
+    inertias = [child_xml.inertia_tensor.xyz for child_xml in phys_children]
+    cgs = [bound_xml.composite_transform.transposed() @ bound_xml.sphere_center for bound_xml in bounds]
+    mass = sum(masses)
+    inertia = calculate_composite_inertia(lod_xml.position_offset, cgs, masses, inertias)
+
+    arch_xml = lod_xml.archetype
     arch_xml.mass = mass
     arch_xml.mass_inv = (1 / mass) if mass != 0 else 0
-
-    archetype_props: FragArchetypeProperties = frag_obj.fragment_properties.lod_properties.archetype_properties
-
-    if auto_calc_inertia:
-        inertia = calculate_inertia(
-            arch_xml.bounds.box_min, arch_xml.bounds.box_max) * mass
-    else:
-        inertia = prop_array_to_vector(archetype_props.inertia_tensor)
-
     arch_xml.inertia_tensor = inertia
     arch_xml.inertia_tensor_inv = vector_inv(inertia)
-
-
-def calculate_arch_mass(phys_children: list[PhysicsChild]) -> float:
-    """Calculate archetype mass based on mass of physics children."""
-    total_mass = 0
-
-    for child_xml in phys_children:
-        total_mass += child_xml.pristine_mass
-
-    return total_mass
 
 
 def create_collision_xml(
     frag_obj: bpy.types.Object,
     arch_xml: Archetype,
-    auto_calc_inertia: bool = False,
-    auto_calc_volume: bool = False,
     col_obj_to_bound_index: dict[bpy.types.Object, int] = None
 ) -> BoundComposite:
     for child in frag_obj.children:
         if child.sollum_type != SollumType.BOUND_COMPOSITE:
             continue
 
-        composite_xml = create_composite_xml(child, auto_calc_inertia, auto_calc_volume, col_obj_to_bound_index)
+        composite_xml = create_composite_xml(child, col_obj_to_bound_index)
         arch_xml.bounds = composite_xml
 
         composite_xml.unk_type = 2
-        composite_xml.inertia = Vector((1, 1, 1))
 
         for bound_xml in composite_xml.children:
             bound_xml.unk_type = 2
@@ -484,6 +484,7 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
     """Calculate ``frag_xml.physics.lod1.transforms``. A transformation matrix per physics child that represents
     the offset from the child collision bound to its link center of gravity (aka "link attachment"). A link is
     formed by physics groups that act as a rigid body together, a group with a joint creates a new link.
+    Also calculates the physics LOD root CG offset.
     """
 
     lod_xml = frag_xml.physics.lod1
@@ -497,7 +498,7 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
         children_by_group[group].append((child_index, child))
 
     # Array of links (i.e. array of arrays of groups)
-    links = [[]] # the root link is at index 0
+    links = [[]]  # the root link is at index 0
     link_index_by_group = [-1] * len(lod_xml.groups)
 
     # Determine the groups that form each link
@@ -524,27 +525,33 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
 
     # Calculate center of gravity of each link. This is the weighted mean of the center of gravity of all physics
     # children that form the link.
-    # TODO: we can reuse these calculations to automatically set lod_xml.position_offset, lod_xml.unknown_40 and
-    # lod_xml.unknown_50
     links_center_of_gravity = [Vector((0.0, 0.0, 0.0)) for _ in range(len(links))]
     for link_index, groups in enumerate(links):
         link_total_mass = 0.0
-        for group in groups:
-            for child_index, child in children_by_group[group]:
+        for group_index, group in enumerate(groups):
+            for child_index_rel, (child_index, child) in enumerate(children_by_group[group]):
                 bound = lod_xml.archetype.bounds.children[child_index]
                 if bound is not None:
                     # sphere_center is the center of gravity
                     center = bound.composite_transform.transposed() @ bound.sphere_center
                 else:
                     center = Vector((0.0, 0.0, 0.0))
+
                 child_mass = child.pristine_mass
                 links_center_of_gravity[link_index] += center * child_mass
                 link_total_mass += child_mass
 
         links_center_of_gravity[link_index] /= link_total_mass
 
+    # add the user-defined unbroken CG offset to the root CG offset
+    links_center_of_gravity[0] += lod_xml.unknown_50
+
+    lod_xml.position_offset = links_center_of_gravity[0]  # aka "root CG offset"
+    lod_xml.unknown_40 = lod_xml.position_offset  # aka "original root CG offset", same as root CG offset in all game .yfts
+
     # Calculate child transforms (aka "link attachments", offset from bound to link CG)
     for child_index, child in enumerate(lod_xml.children):
+        # print(f"#{child_index} ({child.bone_tag}) link_index={link_index_by_group[child.group_index]}")
         link_center = links_center_of_gravity[link_index_by_group[child.group_index]]
         bound = lod_xml.archetype.bounds.children[child_index]
         if bound is not None:
@@ -552,6 +559,11 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
             offset.transpose()
         else:
             offset = Matrix.Identity(4)
+
+        # It is a 3x4 matrix, so zero out the 4th column to be consistent with original matrices
+        # (doesn't really matter but helps with equality checks in our tests)
+        offset.col[3].zero()
+
         lod_xml.transforms.append(Transform("Item", offset))
 
 
@@ -585,9 +597,7 @@ def create_phys_child_xmls(
             child_xml.pristine_mass = obj.child_properties.mass
             child_xml.damaged_mass = child_xml.pristine_mass
             child_xml.bone_tag = bones_xml[bone_index].tag
-
-            inertia_tensor = get_child_inertia(lod_xml.archetype, child_xml, bound_index)
-            child_xml.inertia_tensor = inertia_tensor
+            child_xml.inertia_tensor = get_child_inertia(lod_xml.archetype, child_xml, bound_index)
 
             mesh_objs = None
             if bone_name in child_meshes:
@@ -924,11 +934,7 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):
-    lod_xml.unknown_14 = lod_props.smallest_ang_inertia
-    lod_xml.unknown_18 = lod_props.largest_ang_inertia
     lod_xml.unknown_1c = lod_props.min_move_force
-    lod_xml.position_offset = prop_array_to_vector(lod_props.position_offset)
-    lod_xml.unknown_40 = prop_array_to_vector(lod_props.original_root_cg_offset)
     lod_xml.unknown_50 = prop_array_to_vector(lod_props.unbroken_cg_offset)
     lod_xml.damping_linear_c = prop_array_to_vector(lod_props.damping_linear_c)
     lod_xml.damping_linear_v = prop_array_to_vector(lod_props.damping_linear_v)
@@ -1025,7 +1031,7 @@ def add_frag_glass_window_xml(
     if len(plane_a) != 2 or len(plane_b) != 2:
         logger.warning(f"Glass window '{group_xml.name}' mesh planes need to be made up of 2 triangles each.")
         if len(plane_a) < 2 or len(plane_b) < 2:
-            return # need at least 2 tris in each plane to continue
+            return  # need at least 2 tris in each plane to continue
 
     normals = (plane_a[0].normal, plane_a[1].normal, plane_b[0].normal, plane_b[1].normal)
     if any(a.cross(b).length_squared > float_info.epsilon for a, b in combinations(normals, 2)):
@@ -1157,12 +1163,12 @@ def calc_frag_glass_window_bounds_offset(
     #  [6] = (max.x, max.y, max.z)
     #  [7] = (max.x, max.y, min.z)
     plane_points = (
-        (bbs[4], bbs[3], bbs[0], bbs[7]), # bottom
-        (bbs[1], bbs[2], bbs[5], bbs[7]), # top
-        (bbs[2], bbs[1], bbs[0], bbs[3]), # left
-        (bbs[4], bbs[5], bbs[6], bbs[7]), # right
-        (bbs[0], bbs[1], bbs[4], bbs[5]), # front
-        (bbs[2], bbs[3], bbs[6], bbs[7]), # back
+        (bbs[4], bbs[3], bbs[0], bbs[7]),  # bottom
+        (bbs[1], bbs[2], bbs[5], bbs[7]),  # top
+        (bbs[2], bbs[1], bbs[0], bbs[3]),  # left
+        (bbs[4], bbs[5], bbs[6], bbs[7]),  # right
+        (bbs[0], bbs[1], bbs[4], bbs[5]),  # front
+        (bbs[2], bbs[3], bbs[6], bbs[7]),  # back
     )
     planes = [_get_plane(Vector(a), Vector(b), Vector(c), Vector(d)) for a, b, c, d in plane_points]
 

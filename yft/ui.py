@@ -192,7 +192,9 @@ class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
         for prop in lod_props.__annotations__:
             if prop == "archetype_properties":
                 continue
+
             layout.prop(lod_props, prop)
+
 
 
 class SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL(bpy.types.Panel):
@@ -386,3 +388,74 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         if not has_mat_diffuse_color:
             layout.label(
                 text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")
+
+
+import os
+SOLLUMZ_DEBUG = os.environ.get("SOLLUMZ_DEBUG", "false") == "true"
+if SOLLUMZ_DEBUG:
+    import bpy
+    from xml.etree import ElementTree as ET
+    import gpu
+    from gpu_extras.batch import batch_for_shader
+    from mathutils import Matrix, Vector
+    import numpy as np
+
+
+    batch1 = None
+    batch2 = None
+    def debug_init():
+        path = "D:\\re\\gta5\\sollumz\\TESTS\\TMP\\adder.yft_debug.xml"
+        tree = ET.ElementTree()
+        tree.parse(path)
+        root = tree.getroot()
+
+        coords1 = []
+        for item in root.findall("./InputLinkAttachments/Item"):
+            mat_values = np.fromstring(item.text, dtype=np.float32, sep=" ").reshape((4, 4))
+            mat = Matrix(mat_values)
+            mat.transpose()
+
+            s = 0.05
+            pos = mat @ Vector((0.0, 0.0, 0.0))
+            pos = mat.translation
+            coords1.append(pos + Vector((s, 0.0, 0.0)))
+            coords1.append(pos - Vector((s, 0.0, 0.0)))
+            coords1.append(pos + Vector((0.0, s, 0.0)))
+            coords1.append(pos - Vector((0.0, s, 0.0)))
+            coords1.append(pos + Vector((0.0, 0.0, s)))
+            coords1.append(pos - Vector((0.0, 0.0, s)))
+
+        coords2 = []
+        for item in root.findall("./OutputLinkAttachments/Item"):
+            mat_values = np.fromstring(item.text, dtype=np.float32, sep=" ").reshape((4, 4))
+            mat = Matrix(mat_values)
+            mat.transpose()
+
+            s = 0.05
+            pos = mat @ Vector((0.0, 0.0, 0.0))
+            pos = mat.translation
+            coords2.append(pos + Vector((s, 0.0, 0.0)))
+            coords2.append(pos - Vector((s, 0.0, 0.0)))
+            coords2.append(pos + Vector((0.0, s, 0.0)))
+            coords2.append(pos - Vector((0.0, s, 0.0)))
+            coords2.append(pos + Vector((0.0, 0.0, s)))
+            coords2.append(pos - Vector((0.0, 0.0, s)))
+
+        shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+        global batch1, batch2
+        batch1 = batch_for_shader(shader, 'LINES', {"pos": coords1})
+        batch2 = batch_for_shader(shader, 'LINES', {"pos": coords2})
+
+
+    def debug_draw():
+        if batch1 is None:
+            debug_init()
+        shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+        shader.uniform_float("color", (1, 0, 0, 1))
+        batch1.draw(shader)
+        shader.uniform_float("color", (0, 1, 0, 1))
+        batch2.draw(shader)
+
+
+    def register():
+        bpy.types.SpaceView3D.draw_handler_add(debug_draw, (), 'WINDOW', 'POST_VIEW')

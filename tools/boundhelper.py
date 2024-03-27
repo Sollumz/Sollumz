@@ -1,10 +1,15 @@
 import bpy
-
 from ..sollumz_properties import SollumType, BOUND_TYPES
-from ..tools.meshhelper import create_box
+from ..tools.meshhelper import (
+    create_box,
+    create_sphere,
+    create_cylinder,
+    create_capsule,
+    create_disc,
+)
 from ..ybn.properties import load_flag_presets, flag_presets, BoundFlags
 from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 
 def create_bound_shape(bound_type: SollumType):
@@ -30,90 +35,56 @@ def create_bound_shape(bound_type: SollumType):
 
 def create_bound_box():
     bound_obj = create_blender_object(SollumType.BOUND_BOX)
-    bound_obj.bound_dimensions = Vector((1, 1, 1))
-
+    create_box(bound_obj.data, 1, Matrix.Identity(3))
     return bound_obj
 
 
 def create_bound_poly_box():
     bound_obj = create_blender_object(SollumType.BOUND_POLY_BOX)
     create_box(bound_obj.data)
-
     return bound_obj
 
 
 def create_bound_sphere():
     bound_obj = create_blender_object(SollumType.BOUND_SPHERE)
-    bound_obj.bound_radius = 1
-
+    create_sphere(bound_obj.data, radius=1.0)
     return bound_obj
 
 
 def create_bound_poly_sphere():
     bound_obj = create_blender_object(SollumType.BOUND_POLY_SPHERE)
-    bound_obj.bound_radius = 1
-    constrain_bound(bound_obj)
-
+    create_sphere(bound_obj.data, radius=1.0)
     return bound_obj
 
 
 def create_bound_capsule():
     bound_obj = create_blender_object(SollumType.BOUND_CAPSULE)
-    bound_obj.bound_radius = 1
-    bound_obj.margin = 0.5
-
+    create_capsule(bound_obj.data, radius=0.5, length=1.0, use_rot=True)
     return bound_obj
 
 
 def create_bound_poly_capsule():
     bound_obj = create_blender_object(SollumType.BOUND_POLY_CAPSULE)
-    bound_obj.bound_radius = 1
-    bound_obj.bound_length = 1
-    constrain_bound(bound_obj)
-
+    create_capsule(bound_obj.data, radius=0.5, length=1.0)
     return bound_obj
 
 
 def create_bound_cylinder():
     bound_obj = create_blender_object(SollumType.BOUND_CYLINDER)
-    bound_obj.bound_length = 2
-    bound_obj.bound_radius = 1
-
+    create_cylinder(bound_obj.data, radius=1.0, length=2.0, axis="Y")
     return bound_obj
 
 
 def create_bound_poly_cylinder():
     bound_obj = create_blender_object(SollumType.BOUND_POLY_CYLINDER)
-    bound_obj.bound_length = 2
-    bound_obj.bound_radius = 1
-    constrain_bound(bound_obj)
-
+    create_cylinder(bound_obj.data, radius=1.0, length=2.0, axis="Z")
     return bound_obj
 
 
 def create_bound_disc():
     bound_obj = create_blender_object(SollumType.BOUND_DISC)
-    bound_obj.margin = 0.04
-    bound_obj.bound_radius = 1
-
+    create_disc(bound_obj.data, radius=1.0, length=0.04 * 2)
     return bound_obj
-
-
-def constrain_bound(obj: bpy.types.Object):
-    constraint = obj.constraints.new(type="LIMIT_SCALE")
-    constraint.use_transform_limit = True
-    constraint.use_min_x = True
-    constraint.use_min_y = True
-    constraint.use_min_z = True
-    constraint.use_max_x = True
-    constraint.use_max_y = True
-    constraint.use_max_z = True
-    constraint.min_x = 1
-    constraint.min_y = 1
-    constraint.min_z = 1
-    constraint.max_x = 1
-    constraint.max_y = 1
-    constraint.max_z = 1
 
 
 def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
@@ -215,4 +186,3 @@ def apply_default_flag_preset(obj: bpy.types.Object):
             obj.composite_flags2[flag_name] = True
         else:
             obj.composite_flags2[flag_name] = False
-    obj.margin = 0.005

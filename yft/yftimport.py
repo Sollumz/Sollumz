@@ -15,7 +15,7 @@ from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype, GlassWindow
 from ..cwxml.drawable import Drawable, Bone
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
-from ..ybn.ybnimport import create_bound_object, set_bound_properties
+from ..ybn.ybnimport import create_bound_object
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, GlassTypes, PAINT_LAYER_VALUES, FragmentTemplateAsset
 from ..tools.blenderhelper import get_child_of_bone
@@ -201,9 +201,7 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bp
     if bounds_xml is None or not bounds_xml.children:
         return None
 
-    composite_obj = create_empty_object(
-        SollumType.BOUND_COMPOSITE, name=f"{frag_obj.name}.col")
-    set_bound_properties(bounds_xml, composite_obj)
+    composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE, name=f"{frag_obj.name}.col")
     composite_obj.parent = frag_obj
 
     for i, bound_xml in enumerate(bounds_xml.children):
@@ -516,11 +514,7 @@ def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
 
 
 def set_lod_properties(lod_xml: PhysicsLOD, lod_props: LODProperties):
-    lod_props.smallest_ang_inertia = lod_xml.unknown_14
-    lod_props.largest_ang_inertia = lod_xml.unknown_18
     lod_props.min_move_force = lod_xml.unknown_1c
-    lod_props.position_offset = lod_xml.position_offset
-    lod_props.original_root_cg_offset = lod_xml.unknown_40
     lod_props.unbroken_cg_offset = lod_xml.unknown_50
     lod_props.damping_linear_c = lod_xml.damping_linear_c
     lod_props.damping_linear_v = lod_xml.damping_linear_v
@@ -536,7 +530,6 @@ def set_archetype_properties(arch_xml: Archetype, arch_props: FragArchetypePrope
     arch_props.max_speed = arch_xml.unknown_4c
     arch_props.max_ang_speed = arch_xml.unknown_50
     arch_props.buoyancy_factor = arch_xml.unknown_54
-    arch_props.inertia_tensor = arch_xml.inertia_tensor
 
 
 def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):

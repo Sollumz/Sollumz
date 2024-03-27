@@ -4,8 +4,8 @@ import bmesh
 from mathutils import Matrix, Vector
 from itertools import chain
 
-from ..tools.meshhelper import calculate_volume, get_combined_bound_box
-
+from ..tools.meshhelper import get_combined_bound_box
+from ..shared.geometry import get_mass_properties_of_box
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import BOUND_POLYGON_TYPES, BOUND_TYPES, MaterialType, SollumType, VehicleLightID
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, get_child_of_bone
@@ -411,7 +411,8 @@ class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
 
     def calculate_mass(self, obj: bpy.types.Object, mat: bpy.types.Material) -> float:
         bbmin, bbmax = get_combined_bound_box(obj, use_world=True)
-        volume = calculate_volume(bbmin, bbmax)
+        # TODO: here we could calculate the volume based on shape like we do on ybnexport for more accurate results
+        volume = get_mass_properties_of_box(bbmin, bbmax).volume
         density = collisionmats[mat.collision_properties.collision_index].density
 
         return volume * density

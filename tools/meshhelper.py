@@ -65,46 +65,23 @@ def create_box(mesh, size=2, matrix=None):
 
 def create_sphere(mesh, radius=1):
     bm = bmesh.new()
-
-    kwargs = {}
-    kwargs["radius"] = radius
-
-    bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, **kwargs)
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, radius=radius)
     bm.to_mesh(mesh)
     bm.free()
     return mesh
 
 
-def create_cylinder(mesh, radius=1, length=2, rot_mat=Matrix.Rotation(radians(90.0), 4, "X")):
+def create_cylinder(mesh, radius=1, length=2, axis="Y"):
+    match axis:
+        case "X":
+            rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
+        case "Y":
+            rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
+        case "Z":
+            rot_mat = Matrix()
+        case _:
+            raise ValueError(f"Invalid axis '{axis}'")
     bm = bmesh.new()
-
-    kwargs = {}
-    kwargs["radius1"] = radius
-    kwargs["radius2"] = radius
-
-    bmesh.ops.create_cone(
-        bm,
-        cap_ends=True,
-        cap_tris=True,
-        segments=32,
-        depth=length,
-        matrix=rot_mat if rot_mat else Matrix(),
-        **kwargs
-    )
-    bm.to_mesh(mesh)
-    bm.free()
-    return mesh
-
-
-def create_disc(mesh, radius=1, length=0.08):
-    bm = bmesh.new()
-    rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
-
-    kwargs = {}
-    kwargs["radius1"] = radius
-    kwargs["radius2"] = radius
-
     bmesh.ops.create_cone(
         bm,
         cap_ends=True,
@@ -112,25 +89,25 @@ def create_disc(mesh, radius=1, length=0.08):
         segments=32,
         depth=length,
         matrix=rot_mat,
-        **kwargs
+        radius1=radius,
+        radius2=radius,
     )
     bm.to_mesh(mesh)
     bm.free()
     return mesh
 
 
-def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
-    length = length if diameter < length else diameter
-    if diameter < 0:
-        raise ValueError("Cannot create capsule with a diameter less than 0!")
+def create_disc(mesh, radius=1, length=0.08):
+    return create_cylinder(mesh, radius, length, axis="X")
+
+
+def create_capsule(mesh, radius=0.5, length=2, use_rot=False):
+    length = length if radius < length else radius
+    if radius < 0:
+        raise ValueError("Cannot create capsule with a radius less than 0!")
 
     bm = bmesh.new()
-
-    kwargs = {}
-    kwargs["radius"] = diameter
-
-    bmesh.ops.create_uvsphere(
-        bm, u_segments=32, v_segments=16, **kwargs)
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, radius=radius)
     bm.to_mesh(mesh)
 
     center = Vector()
@@ -142,19 +119,19 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     bottom = []
     bottom_faces = []
 
-    amount = (length - diameter) * 2
+    amount = (length - radius) * 2
     vec = Vector((0, 0, amount))
 
     for v in bm.verts:
         if distance_point_to_plane(v.co, center, axis) >= 0:
             top.append(v.co)
             for face in v.link_faces:
-                if not face in top_faces:
+                if face not in top_faces:
                     top_faces.append(face)
         elif distance_point_to_plane(v.co, center, axis) <= 0:
             bottom.append(v.co)
             for face in v.link_faces:
-                if not face in bottom_faces and face not in top_faces:
+                if face not in bottom_faces and face not in top_faces:
                     bottom_faces.append(face)
 
     # Extrude top half
@@ -377,41 +354,20 @@ def get_bound_center_from_bounds(bbmin: Vector, bbmax: Vector):
     return (bbmin + bbmax) * 0.5
 
 
-def get_sphere_radius(bbmax, bbcenter):
+def get_sphere_radius(bbmin: Vector, bbmax: Vector) -> float:
     """Gets the radius of the sphere that encloses the bounding box."""
+    bbcenter = get_bound_center_from_bounds(bbmin, bbmax)
     return (bbmax - bbcenter).length
 
 
-def get_inner_sphere_radius(bbmax, bbcenter):
+def get_inner_sphere_radius(bbmin: Vector, bbmax: Vector) -> float:
     """Gets the radius of the sphere that fits inside the bounding box."""
+    bbcenter = get_bound_center_from_bounds(bbmin, bbmax)
     return min(bbmax - bbcenter)
 
 
-def get_dimensions(bbmin, bbmax):
-    x = bbmax.x - bbmin.x
-    y = bbmax.y - bbmin.y
-    z = bbmax.z - bbmin.z
-
-    return x, y, z
-
-
-def calculate_volume(bbmin: Vector, bbmax: Vector):
-    """Calculates volume using box min and max. (Very rough approximation)"""
-    x, y, z = get_dimensions(bbmin, bbmax)
-
-    return x * y * z
-
-
-def calculate_inertia(bbmin: Vector, bbmax: Vector):
-    """Calculate moment of inertia of a solid cuboid. Returns a Vector
-    representing the diagonal of the inertia tensor matrix."""
-    x, y, z = get_dimensions(bbmin, bbmax)
-
-    I_h = (1 / 12) * (pow(y, 2) + pow(z, 2))
-    I_w = (1 / 12) * (pow(z, 2) + pow(x, 2))
-    I_d = (1 / 12) * (pow(y, 2) + pow(x, 2))
-
-    return Vector((I_h, I_w, I_d))
+def get_dimensions(bbmin: Vector, bbmax: Vector) -> Vector:
+    return bbmax - bbmin
 
 
 def flip_uvs(uvs: NDArray[np.float32]):

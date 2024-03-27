@@ -1,5 +1,5 @@
 import bpy
-from .properties import BoundFlags, CollisionProperties, CollisionMatFlags, BoundProperties
+from .properties import BoundFlags, CollisionProperties, CollisionMatFlags
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
@@ -58,22 +58,12 @@ class SOLLUMZ_PT_BOUND_PROPERTIES_PANEL(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None and context.active_object.sollum_type in BOUND_TYPES
+        obj = context.active_object
+        return obj and (obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES)
 
     def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        obj = context.active_object
-
-        grid = layout.grid_flow(columns=2, row_major=True)
-        grid.prop(obj.bound_properties, "inertia")
-        grid.prop(obj.bound_properties, "volume")
-
-        if obj.sollum_type == SollumType.BOUND_GEOMETRY:
-            grid.prop(obj.bound_properties, "unk_float_1")
-            grid.prop(obj.bound_properties, "unk_float_2")
+        # nothing here currently
+        pass
 
 
 class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
@@ -90,25 +80,30 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and ((obj.sollum_type in BOUND_TYPES or obj.sollum_type in BOUND_POLYGON_TYPES) and obj.sollum_type != SollumType.BOUND_COMPOSITE and obj.sollum_type != SollumType.BOUND_POLY_BOX and obj.sollum_type != SollumType.BOUND_POLY_TRIANGLE)
+        return obj and (obj.sollum_type != SollumType.BOUND_COMPOSITE and obj.sollum_type != SollumType.BOUND_POLY_TRIANGLE)
 
     def draw(self, context):
         obj = context.active_object
+        shape = obj.sz_bound_shape
 
         self.layout.use_property_split = True
         self.layout.use_property_decorate = False
 
         grid = self.layout.grid_flow(columns=2, row_major=True)
 
-        if not obj.sollum_type in [SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH, SollumType.BOUND_BOX, SollumType.BOUND_POLY_BOX, SollumType.BOUND_POLY_TRIANGLE]:
-            grid.prop(obj, "bound_radius")
-        if obj.sollum_type == SollumType.BOUND_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CYLINDER or obj.sollum_type == SollumType.BOUND_POLY_CAPSULE:
-            grid.prop(obj, "bound_length")
-        if obj.sollum_type == SollumType.BOUND_BOX:
-            grid.prop(obj, "bound_dimensions")
-        if obj.sollum_type in BOUND_TYPES:
-            grid.prop(obj, "margin")
-
+        match obj.sollum_type:
+            case SollumType.BOUND_BOX | SollumType.BOUND_POLY_BOX:
+                grid.prop(shape, "box_extents")
+            case SollumType.BOUND_SPHERE | SollumType.BOUND_POLY_SPHERE:
+                grid.prop(shape, "sphere_radius")
+            case SollumType.BOUND_CAPSULE | SollumType.BOUND_POLY_CAPSULE:
+                grid.prop(shape, "capsule_radius")
+                grid.prop(shape, "capsule_length")
+            case SollumType.BOUND_CYLINDER | SollumType.BOUND_POLY_CYLINDER | SollumType.BOUND_DISC:
+                grid.prop(shape, "cylinder_radius")
+                grid.prop(shape, "cylinder_length")
+            case _:
+                pass
 
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     bl_label = "Composite Flags"

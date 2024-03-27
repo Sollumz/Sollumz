@@ -7,6 +7,7 @@ from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_S
                    SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_SHATTERMAPS, SOLLUMZ_OT_HIDE_OBJECT, SOLLUMZ_OT_SHOW_COLLISIONS, SOLLUMZ_OT_SHOW_SHATTERMAPS)
 from .icons import icon_manager
 
+
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
     """Draw a UIList with an add and remove button on the right column. Returns the left column."""
     row = layout.row()
@@ -211,13 +212,13 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
         layout.column().prop(settings, "export_lods")
 
 
-class SOLLUMZ_PT_export_collision(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Collisions"
-    bl_order = 3
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "auto_calculate_inertia")
-        layout.prop(settings, "auto_calculate_volume")
+# Empty for now
+# class SOLLUMZ_PT_export_collision(bpy.types.Panel, SollumzExportSettingsPanel):
+#     bl_label = "Collisions"
+#     bl_order = 3
+#
+#     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+#         pass
 
 
 class SOLLUMZ_PT_export_ydd(bpy.types.Panel, SollumzExportSettingsPanel):
@@ -338,15 +339,13 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(GeneralToolChildPanel, bpy.types.Panel):
 
             row.operator(SOLLUMZ_OT_copy_location.bl_idname, text="", icon='COPYDOWN') \
                .location = "{:.6f}, {:.6f}, {:.6f}".format(loc[0], loc[1], loc[2])
-            
+
             row.operator(SOLLUMZ_OT_copy_rotation.bl_idname, text="", icon='COPYDOWN') \
                .rotation = "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(rot.x, rot.y, rot.z, rot.w)
 
             row.operator(SOLLUMZ_OT_paste_location.bl_idname, text="", icon='PASTEDOWN')
 
             row.operator(SOLLUMZ_OT_paste_rotation.bl_idname, text="", icon='PASTEDOWN')
-
-
 
 
 class SOLLUMZ_PT_VERTEX_TOOL_PANEL(GeneralToolChildPanel, bpy.types.Panel):

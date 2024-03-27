@@ -259,7 +259,7 @@ def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetyp
     archetype_xml.bb_min = bbmin
     archetype_xml.bb_max = bbmax
     archetype_xml.bs_center = get_bound_center_from_bounds(bbmin, bbmax)
-    archetype_xml.bs_radius = get_sphere_radius(bbmax, archetype_xml.bs_center)
+    archetype_xml.bs_radius = get_sphere_radius(bbmin, bbmax)
 
 
 def set_archetype_xml_bounds(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype, apply_transforms: bool = False):

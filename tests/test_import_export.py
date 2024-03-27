@@ -1,11 +1,10 @@
 import pytest
-import itertools
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from pathlib import Path
 from xml.etree import ElementTree as ET
 from .test_fixtures import fps_dependent
-from .shared import SOLLUMZ_TEST_TMP_DIR, SOLLUMZ_TEST_GAME_ASSETS_DIR, SOLLUMZ_TEST_ASSETS_DIR
+from .shared import is_tmp_dir_available, tmp_path as tmp_path_with_subdir, glob_assets, asset_path
 from ..ydr.ydrimport import import_ydr
 from ..ydr.ydrexport import export_ydr
 from ..yft.yftimport import import_yft
@@ -16,24 +15,9 @@ from ..ycd.ycdimport import import_ycd
 from ..ycd.ycdexport import export_ycd
 
 
-if SOLLUMZ_TEST_TMP_DIR is not None:
-    def asset_path(file_name: str) -> Path:
-        path = SOLLUMZ_TEST_ASSETS_DIR.joinpath(file_name)
-        assert path.exists()
-        return path
-
+if is_tmp_dir_available():
     def tmp_path(file_name: str) -> Path:
-        path = SOLLUMZ_TEST_TMP_DIR.joinpath(file_name)
-        return path
-
-    def glob_assets(ext: str) -> list[tuple[Path, str]]:
-        glob_pattern = f"*.{ext}.xml"
-        assets = SOLLUMZ_TEST_ASSETS_DIR.rglob(glob_pattern)
-        if SOLLUMZ_TEST_GAME_ASSETS_DIR is not None:
-            game_assets = SOLLUMZ_TEST_GAME_ASSETS_DIR.rglob(glob_pattern)
-            assets = itertools.chain(assets, game_assets)
-
-        return list(map(lambda p: (p, str(p)), assets))
+        return tmp_path_with_subdir(file_name, "import_export")
 
     @pytest.mark.parametrize("ydr_path, ydr_path_str", glob_assets("ydr"))
     def test_import_export_ydr(ydr_path: Path, ydr_path_str: str):
@@ -205,3 +189,4 @@ if SOLLUMZ_TEST_TMP_DIR is not None:
             _check_exported_ycd(out_path)
 
             curr_input_path = out_path
+
