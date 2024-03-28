@@ -353,7 +353,8 @@ def create_export_mesh(obj: bpy.types.Object):
     """Get an evaluated mesh from ``obj`` with normals and loop triangles calculated.
     Original mesh is not affected."""
     mesh = obj.to_mesh()
-    mesh.calc_normals_split()
+    if bpy.app.version < (4, 1, 0):
+        mesh.calc_normals_split()
     mesh.calc_loop_triangles()
 
     return mesh
