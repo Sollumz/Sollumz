@@ -2,7 +2,6 @@ import bpy
 
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
-from ..ymap.operators import SOLLUMZ_OT_create_ymap
 
 
 def draw_ymap_properties(self, context):

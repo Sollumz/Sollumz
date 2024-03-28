@@ -147,6 +147,10 @@ class SOLLUMZ_OT_create_box_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
         box_obj.active_material = add_occluder_material(SollumType.YMAP_BOX_OCCLUDER)
         box_obj.parent = group_obj
 
+        # Prevent rotation on X and Y axis, since only Z axis is supported on Box Occluders
+        box_obj.lock_rotation[0] = True
+        box_obj.lock_rotation[1] = True
+
         return True
 
 
@@ -196,6 +200,10 @@ class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
         bpy.context.collection.objects.link(cargen_obj)
         bpy.context.view_layer.objects.active = cargen_obj
         cargen_obj.parent = group_obj
+
+        # Prevent rotation on X and Y axis, since only Z axis is supported on Box Occluders
+        cargen_obj.lock_rotation[0] = True
+        cargen_obj.lock_rotation[1] = True
 
         # Select the cargen object
         bpy.ops.object.select_all(action='DESELECT')
