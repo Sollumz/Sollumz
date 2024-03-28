@@ -12,9 +12,11 @@ class SOLLUMZ_OT_create_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         ymap_obj = create_ymap()
-        context.view_layer.objects.active = bpy.data.objects[ymap_obj.name]
-        ymap_obj.select_set(True)
-        return True
+        if ymap_obj:
+            bpy.ops.object.select_all(action='DESELECT')
+            ymap_obj.select_set(True)
+            context.view_layer.objects.active = ymap_obj
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -37,7 +39,13 @@ class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_ENTITY_GROUP, selected_ymap=ymap_obj, empty_name='Entities')
+        ymap_group = create_ymap_group(sollum_type=SollumType.YMAP_ENTITY_GROUP, selected_ymap=ymap_obj, empty_name='Entities')
+        if ymap_group:
+            bpy.ops.object.select_all(action='DESELECT')
+            ymap_group.select_set(True)
+            context.view_layer.objects.active = ymap_group
+            # TODO: Find a way to use "bpy.ops.outliner.show_active()" to show the new object in outliner. But we are in wrong context here.
+
         return True
 
 
@@ -61,7 +69,11 @@ class SOLLUMZ_OT_create_model_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_MODEL_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Model Occluders')
+        ymap_group = create_ymap_group(sollum_type=SollumType.YMAP_MODEL_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Model Occluders')
+        if ymap_group:
+            bpy.ops.object.select_all(action='DESELECT')
+            ymap_group.select_set(True)
+            context.view_layer.objects.active = ymap_group
         return True
 
 
@@ -85,7 +97,11 @@ class SOLLUMZ_OT_create_box_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_BOX_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Box Occluders')
+        ymap_group = create_ymap_group(sollum_type=SollumType.YMAP_BOX_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Box Occluders')
+        if ymap_group:
+            bpy.ops.object.select_all(action='DESELECT')
+            ymap_group.select_set(True)
+            context.view_layer.objects.active = ymap_group
         return True
 
 
@@ -108,7 +124,11 @@ class SOLLUMZ_OT_create_car_generator_group(SOLLUMZ_OT_base, bpy.types.Operator)
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_CAR_GENERATOR_GROUP, selected_ymap=ymap_obj, empty_name='Car Generators')
+        ymap_group = create_ymap_group(sollum_type=SollumType.YMAP_CAR_GENERATOR_GROUP, selected_ymap=ymap_obj, empty_name='Car Generators')
+        if ymap_group:
+            bpy.ops.object.select_all(action='DESELECT')
+            ymap_group.select_set(True)
+            context.view_layer.objects.active = ymap_group
         return True
 
 
@@ -176,5 +196,10 @@ class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
         bpy.context.collection.objects.link(cargen_obj)
         bpy.context.view_layer.objects.active = cargen_obj
         cargen_obj.parent = group_obj
+
+        # Select the cargen object
+        bpy.ops.object.select_all(action='DESELECT')
+        cargen_obj.select_set(True)
+        context.view_layer.objects.active = cargen_obj
 
         return True
