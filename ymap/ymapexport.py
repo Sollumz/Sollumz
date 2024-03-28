@@ -177,7 +177,7 @@ def ymap_from_object(obj):
 
             for box_obj in child.children:
                 rotation = box_obj.rotation_euler
-                if rotation.x > 0.01 or rotation.y > 0.01:
+                if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
                     logger.error(
                         f"Box occluders only support Z-axis rotation. Skipping {box_obj.name} due to X/Y rotation.")
                     continue
@@ -215,7 +215,7 @@ def ymap_from_object(obj):
         if export_settings.ymap_car_generators == False and child.sollum_type == SollumType.YMAP_CAR_GENERATOR_GROUP:
             for cargen_obj in child.children:
                 rotation = cargen_obj.rotation_euler
-                if rotation.x > 0.01 or rotation.y > 0.01:
+                if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
                     logger.error(
                         f"Car generators only support Z-axis rotation. Skipping {cargen_obj.name} due to X/Y rotation.")
                     continue
