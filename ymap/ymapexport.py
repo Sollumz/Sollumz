@@ -50,7 +50,7 @@ def triangulate_obj(obj):
 def get_verts_from_obj(obj):
     """
     For each vertex get its coordinates in global space (this way we don't need to apply transfroms)
-    then get their bytes hex representation and append. After that for each face get its indices, 
+    then get their bytes hex representation and append. After that for each face get its indices,
     get their bytes hex representation and append.
 
     :return verts: String if vertex coordinates and face indices in hex representation
@@ -164,42 +164,48 @@ def ymap_from_object(obj):
     for child in obj.children:
         # Entities
         if export_settings.ymap_exclude_entities == False and child.sollum_type == SollumType.YMAP_ENTITY_GROUP:
-            for entity in child.children:
-                if entity.sollum_type == SollumType.DRAWABLE:
-                    ymap.entities.append(entity_from_obj(entity))
+            for entity_obj in child.children:
+                if entity_obj.sollum_type == SollumType.DRAWABLE:
+                    ymap.entities.append(entity_from_obj(entity_obj))
                 else:
                     logger.warning(
-                        f"Object {entity.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]} type.")
+                        f"Object {entity_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]} type.")
 
         # Box occluders
         if export_settings.ymap_box_occluders == False and child.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
 
-            for cargen in child.children:
-                if cargen.sollum_type == SollumType.YMAP_BOX_OCCLUDER:
-                    ymap.box_occluders.append(box_from_obj(cargen))
-                    calculate_extents(ymap, cargen)
+            for box_obj in child.children:
+                rotation = box_obj.rotation_euler
+                if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
+                    logger.error(
+                        f"Box occluders only support Z-axis rotation. Skipping {box_obj.name} due to X/Y rotation.")
+                    continue
+
+                if box_obj.sollum_type == SollumType.YMAP_BOX_OCCLUDER:
+                    ymap.box_occluders.append(box_from_obj(box_obj))
+                    calculate_extents(ymap, box_obj)
                 else:
                     logger.warning(
-                        f"Object {cargen.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_BOX_OCCLUDER]} type.")
+                        f"Object {box_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_BOX_OCCLUDER]} type.")
 
         # Model occluders
         if export_settings.ymap_model_occluders == False and child.sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
 
-            for model in child.children:
-                if model.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
-                    if len(model.data.vertices) > 256:
+            for model_obj in child.children:
+                if model_obj.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
+                    if len(model_obj.data.vertices) > 256:
                         logger.warning(
-                            f"Object {model.name} has too many vertices and will be skipped. It can not have more than 256 vertices.")
+                            f"Object {model_obj.name} has too many vertices and will be skipped. It can not have more than 256 vertices.")
                         continue
 
                     ymap.occlude_models.append(
-                        model_from_obj(model))
-                    calculate_extents(ymap, model)
+                        model_from_obj(model_obj))
+                    calculate_extents(ymap, model_obj)
                 else:
                     logger.warning(
-                        f"Object {model.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_MODEL_OCCLUDER]} type.")
+                        f"Object {model_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_MODEL_OCCLUDER]} type.")
 
         # TODO: physics_dictionaries
 
@@ -207,18 +213,23 @@ def ymap_from_object(obj):
 
         # Car generators
         if export_settings.ymap_car_generators == False and child.sollum_type == SollumType.YMAP_CAR_GENERATOR_GROUP:
-            for cargen in child.children:
-                if cargen.sollum_type == SollumType.YMAP_CAR_GENERATOR:
-                    ymap.car_generators.append(cargen_from_obj(cargen))
+            for cargen_obj in child.children:
+                rotation = cargen_obj.rotation_euler
+                if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
+                    logger.error(
+                        f"Car generators only support Z-axis rotation. Skipping {cargen_obj.name} due to X/Y rotation.")
+                    continue
+                if cargen_obj.sollum_type == SollumType.YMAP_CAR_GENERATOR:
+                    ymap.car_generators.append(cargen_from_obj(cargen_obj))
                 else:
                     logger.warning(
-                        f"Object {cargen.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_CAR_GENERATOR]} type.")
+                        f"Object {cargen_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_CAR_GENERATOR]} type.")
 
         # TODO: lod ligths
 
         # TODO: distant lod lights
 
-    ymap.name = obj.name if not "." in obj.name else obj.name.split(".")[0]
+    ymap.name = remove_number_suffix(obj.name)
     ymap.parent = obj.ymap_properties.parent
     ymap.flags = obj.ymap_properties.flags
     ymap.content_flags = obj.ymap_properties.content_flags
