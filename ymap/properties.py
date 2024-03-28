@@ -96,7 +96,6 @@ class YmapBlockProperties(bpy.types.PropertyGroup):
 
 
 class YmapProperties(bpy.types.PropertyGroup):
-    name: StringProperty(name="Name", default="untitled_ymap")
     parent: StringProperty(name="Parent", default="")
     flags: IntProperty(name="Flags", default=0, min=0, max=3,
                        update=FlagPropertyGroup.update_flags_total)

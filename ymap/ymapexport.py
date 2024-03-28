@@ -218,7 +218,7 @@ def ymap_from_object(obj):
 
         # TODO: distant lod lights
 
-    ymap.name = obj.name if not "." in obj.name else obj.name.split(".")[0]
+    ymap.name = remove_number_suffix(obj.name)
     ymap.parent = obj.ymap_properties.parent
     ymap.flags = obj.ymap_properties.flags
     ymap.content_flags = obj.ymap_properties.content_flags

@@ -26,7 +26,6 @@ def create_ymap(name="ymap", sollum_type=SollumType.YMAP):
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
     empty.name = name
-    empty.ymap_properties.name = name
     bpy.context.collection.objects.link(empty)
     return empty
 

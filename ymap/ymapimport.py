@@ -241,7 +241,6 @@ def ymap_to_obj(ymap: CMapData):
     bpy.context.collection.objects.link(ymap_obj)
     bpy.context.view_layer.objects.active = ymap_obj
 
-    ymap_obj.ymap_properties.name = ymap.name
     ymap_obj.ymap_properties.parent = ymap.parent
     ymap_obj.ymap_properties.flags = ymap.flags
     ymap_obj.ymap_properties.content_flags = ymap.content_flags

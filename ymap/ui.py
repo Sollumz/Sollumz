@@ -11,7 +11,6 @@ def draw_ymap_properties(self, context):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
-        layout.prop(obj.ymap_properties, "name")
         layout.prop(obj.ymap_properties, "parent")
 
         layout.label(text="Map Flags")
