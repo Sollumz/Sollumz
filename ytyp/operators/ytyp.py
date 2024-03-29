@@ -296,6 +296,9 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         maxlen=255,
     )
 
+    def draw(self, context):
+        pass
+
     def run(self, context):
         try:
             ytyp_to_obj(YTYP.from_xml_file(self.filepath))

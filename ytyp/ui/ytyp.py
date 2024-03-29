@@ -1,8 +1,12 @@
 import bpy
 from ...sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
 from ...sollumz_properties import ArchetypeType
-from ...sollumz_preferences import get_export_settings, SollumzExportSettings
-
+from ...sollumz_preferences import (
+    get_import_settings,
+    get_export_settings,
+    SollumzImportSettings,
+    SollumzExportSettings
+)
 from ..utils import (
     get_selected_ytyp,
     get_selected_archetype
@@ -46,6 +50,18 @@ class SOLLUMZ_PT_YTYP_LIST_PANEL(bpy.types.Panel):
         row = list_col.row()
         row.operator("sollumz.importytyp", icon="IMPORT")
         row.operator("sollumz.exportytyp", icon="EXPORT")
+
+
+class SOLLUMZ_PT_import_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
+    bl_options = {"HIDE_HEADER"}
+    operator_id = "SOLLUMZ_OT_importytyp"
+
+    def get_settings(self, context: bpy.types.Context) -> SollumzImportSettings:
+        return get_import_settings(context)
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+        layout.use_property_split = False
+        layout.prop(settings, "ytyp_mlo_instance_entities")
 
 
 class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
