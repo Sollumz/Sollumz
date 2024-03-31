@@ -21,7 +21,7 @@ bl_info = {
     "author": "Skylumz, Colton and alexguirre",
     "description": "This plugins allows you to import/export CodeWalker XML files.",
     "blender": (4, 0, 0),
-    "version": (2, 4, 0),
+    "version": (2, 4, 1),
     "category": "Import-Export",
     "doc_url": "https://sollumz.gitbook.io/sollumz-wiki/",
     "tracker_url": "https://github.com/Skylumz/Sollumz/issues",

@@ -69,7 +69,9 @@ class VertexBufferBuilder:
         if not self.mesh.loop_triangles:
             self.mesh.calc_loop_triangles()
 
-        self.mesh.calc_normals_split()
+        if bpy.app.version < (4, 1, 0):
+            # needed to fill mesh loops normals with custom split normals pre-4.1
+            self.mesh.calc_normals_split()
 
         mesh_attrs = self._collect_attrs()
         return self._structured_array_from_attrs(mesh_attrs)

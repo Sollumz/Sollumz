@@ -26,12 +26,11 @@ def create_ymap(name="ymap", sollum_type=SollumType.YMAP):
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
     empty.name = name
-    empty.ymap_properties.name = name
     bpy.context.collection.objects.link(empty)
     return empty
 
 
-def create_ymap_group(sollum_type=None, selected_ymap=None, empty_name=None):
+def create_ymap_group(sollum_type=None, selected_ymap=None, empty_name=None, select=True):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
@@ -44,6 +43,12 @@ def create_ymap_group(sollum_type=None, selected_ymap=None, empty_name=None):
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = True
     empty.parent = selected_ymap
     calculate_ymap_content_flags(selected_ymap, sollum_type)
+
+    if select:
+        bpy.ops.object.select_all(action='DESELECT')
+        empty.select_set(True)
+        bpy.context.view_layer.objects.active = empty
+
     return empty
 
 

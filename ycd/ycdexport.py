@@ -397,7 +397,7 @@ def clip_attribute_to_xml(attr: ClipAttribute) -> ycdxml.AttributesList.Attribut
         xml_attr.value = attr.value_int
     elif attr.type == "Bool":
         xml_attr = ycdxml.AttributesList.BoolAttribute()
-        xml_attr.value = attr.value_bool
+        xml_attr.value = 1 if attr.value_bool else 0
     elif attr.type == "Vector3":
         xml_attr = ycdxml.AttributesList.Vector3Attribute()
         xml_attr.value = Vector(attr.value_vec3)

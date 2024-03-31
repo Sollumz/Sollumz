@@ -25,9 +25,9 @@ class ModelData(NamedTuple):
 def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
     """Get ModelData for each DrawableModel."""
     model_datas: list[ModelData] = []
-    model_xmls, bone_inds = get_lod_model_xmls(drawable_xml)
+    model_xmls = get_lod_model_xmls(drawable_xml)
 
-    for model_lods, bone_ind in zip(model_xmls, bone_inds):
+    for bone_index, model_lods in model_xmls.items():
         model_data = ModelData(
             mesh_data_lods={
                 lod_level: mesh_data_from_xml(model_xml) for lod_level, model_xml in model_lods.items()
@@ -35,7 +35,7 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
             xml_lods={
                 lod_level: model_xml for lod_level, model_xml in model_lods.items()
             },
-            bone_index=bone_ind
+            bone_index=bone_index
         )
 
         model_datas.append(model_data)
@@ -206,20 +206,15 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
     return new_vert_arr, new_ind_arr
 
 
-def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, DrawableModel]], list[int]]:
-    """Gets mapping of LOD levels for each DrawableModel. Also returns a list of bone indices for each model."""
-    model_xmls: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
-    bone_inds: list[int] = []
+def get_lod_model_xmls(drawable_xml: Drawable) -> dict[int, dict[LODLevel, DrawableModel]]:
+    """Gets mapping of LOD levels for each DrawableModel, keyed by bone index."""
+    model_xmls_by_bone_index: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
 
     for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
-        for i, model_xml in enumerate(models):
-            if i not in model_xmls:
-                # Each corresponding DrawableModel will always have the same bone index across all LODs (verified with CodeWalker)
-                bone_inds.append(model_xml.bone_index)
+        for model_xml in models:
+            model_xmls_by_bone_index[model_xml.bone_index][lod_level] = model_xml
 
-            model_xmls[i][lod_level] = model_xml
-
-    return list(model_xmls.values()), bone_inds
+    return model_xmls_by_bone_index
 
 
 def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:

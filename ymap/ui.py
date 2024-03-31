@@ -2,7 +2,6 @@ import bpy
 
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
-from ..ymap.operators import SOLLUMZ_OT_create_ymap
 
 
 def draw_ymap_properties(self, context):
@@ -11,7 +10,6 @@ def draw_ymap_properties(self, context):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
-        layout.prop(obj.ymap_properties, "name")
         layout.prop(obj.ymap_properties, "parent")
 
         layout.label(text="Map Flags")

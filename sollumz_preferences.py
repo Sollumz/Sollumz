@@ -194,6 +194,15 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         default=False,
     )
 
+    ytyp_mlo_instance_entities: bpy.props.BoolProperty(
+        name="Instance MLO Entities",
+        description=(
+            "If enabled, MLO entities will be linked to a copy of the object matching the archetype name, instead of"
+            "the object itself."
+        ),
+        default=True,
+    )
+
 
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
