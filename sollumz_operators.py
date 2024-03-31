@@ -61,6 +61,7 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
     bl_label = "Import Codewalker XML"
     bl_options = {"UNDO"}
 
+    directory: bpy.props.StringProperty(subtype="FILE_PATH", options={"HIDDEN", "SKIP_SAVE"})
     files: bpy.props.CollectionProperty(
         name="File Path",
         type=bpy.types.OperatorFileListElement,
@@ -79,13 +80,12 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
     def execute_timed(self, context):
         logger.set_logging_operator(self)
 
-        if not self.filepath or self.files[0].name == "":
+        if not self.directory or len(self.files) == 0 or self.files[0].name == "":
             self.report({"INFO"}, "No file selected for import!")
             return {"CANCELLED"}
 
         for file in self.files:
-            directory = os.path.dirname(self.filepath)
-            filepath = os.path.join(directory, file.name)
+            filepath = os.path.join(self.directory, file.name)
 
             try:
 
@@ -108,15 +108,38 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
 
                 self.report({"INFO"}, f"Successfully imported '{filepath}'")
             except:
-                self.report({"ERROR"},
-                            f"Error importing: {filepath} \n {traceback.format_exc()}")
+                self.report({"ERROR"}, f"Error importing: {filepath} \n {traceback.format_exc()}")
 
                 return {"CANCELLED"}
 
-        self.report(
-            {"INFO"}, f"Imported in {self.time_elapsed} seconds")
+        self.report({"INFO"}, f"Imported in {self.time_elapsed} seconds")
 
         return {"FINISHED"}
+
+    def invoke(self, context, event):
+        if self.directory and len(self.files) > 0 and self.files[0].name != "":
+            # Already have a list of files, don't open the import window and do the import directly.
+            # Invoked by the FileHandler below (or a manual operator call, but we don't currently do that).
+            return self.execute(context)
+
+        return super().invoke(context, event)
+
+
+if bpy.app.version >= (4, 1, 0):
+    class SOLLUMZ_FH_import(bpy.types.FileHandler):
+        # TODO: needs a new operator if we want to support .ytyp import as well (or also allow the normal import to
+        # import .ytyps)
+        bl_idname = "SOLLUMZ_FH_import"
+        bl_label = "File handler for CodeWalker XML import"
+        bl_import_operator = SOLLUMZ_OT_import.bl_idname
+        # Supports handling multiple extensions, but doesn't support multi-dot extensions like .yft.xml. Should be fine
+        # because the operator checks the extension, but it is a bit broad.
+        bl_file_extensions = ".xml"
+
+        @classmethod
+        def poll_drop(cls, context):
+            a = context.area
+            return a is not None and (a.type == "VIEW_3D" or a.type == "OUTLINER")
 
 
 class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):

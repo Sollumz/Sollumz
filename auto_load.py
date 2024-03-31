@@ -149,13 +149,17 @@ def iter_classes_in_module(module):
 
 
 def get_register_base_types():
-    return set(getattr(bpy.types, name) for name in [
+    type_names = [
         "Panel", "Operator", "PropertyGroup",
         "Header", "Menu",
         "Node", "NodeSocket", "NodeTree",
         "UIList", "RenderEngine",
         "Gizmo", "GizmoGroup",
-    ])
+    ]
+    if bpy.app.version >= (4, 1, 0):
+        type_names.append("FileHandler")
+
+    return set(getattr(bpy.types, name) for name in type_names)
 
 
 # Find order to register to solve dependencies
