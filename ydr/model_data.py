@@ -320,7 +320,11 @@ def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
     if "BlendIndices" not in vert_arr.dtype.names:
         return vert_arr
 
-    vert_arr["BlendIndices"] = bone_ids[vert_arr["BlendIndices"]]
+    # TODO: assign cloth vertices to their vertex group instead of root bone
+    is_cloth = vert_arr['BlendIndices'][:, 2] == 255
+    vert_arr["BlendIndices"][is_cloth] = 99999, 99999, 99999, 99999
+
+    vert_arr["BlendIndices"][~is_cloth] = bone_ids[vert_arr["BlendIndices"][~is_cloth]]
 
 
 def get_model_poly_mat_inds(geoms: list[Geometry]):
