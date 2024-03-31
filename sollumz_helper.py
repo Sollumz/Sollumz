@@ -110,7 +110,7 @@ def duplicate_object_with_children(obj):
     for new_obj in new_objs:
         bpy.context.scene.collection.objects.link(new_obj)
         for constraint in new_obj.constraints:
-            if constraint.target in objs:
+            if hasattr(constraint, "target") and constraint.target in objs:
                 constraint.target = new_objs[objs.index(constraint.target)]
     return new_objs[0]
 
