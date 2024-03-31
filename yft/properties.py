@@ -350,6 +350,18 @@ def register():
     )
 
 
+    from .cloth import ClothAttr
+    bpy.types.Scene.sollumz_cloth_set_vertex_weight = bpy.props.FloatProperty(
+        name=ClothAttr.VERTEX_WEIGHT.label, description=ClothAttr.VERTEX_WEIGHT.description,
+        min=0.00001, max=1.0, default=ClothAttr.VERTEX_WEIGHT.default_value,
+        precision=6, step=1
+    )
+    bpy.types.Scene.sollumz_cloth_set_inflation_scale = bpy.props.FloatProperty(
+        name=ClothAttr.INFLATION_SCALE.label, description=ClothAttr.INFLATION_SCALE.description,
+        min=0.0, max=1.0, default=ClothAttr.INFLATION_SCALE.default_value
+    )
+
+
 def unregister():
     del bpy.types.Object.fragment_properties
     del bpy.types.Object.child_properties
@@ -368,3 +380,6 @@ def unregister():
     del bpy.types.Scene.select_custom_vehicle_light_id
     del bpy.types.Scene.selected_vehicle_light_id
     del bpy.types.Material.sz_paint_layer
+
+    del bpy.types.Scene.sollumz_cloth_set_vertex_weight
+    del bpy.types.Scene.sollumz_cloth_set_inflation_scale

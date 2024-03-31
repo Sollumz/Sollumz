@@ -2,7 +2,7 @@ import os
 import bpy
 import numpy as np
 from traceback import format_exc
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Vector, Quaternion
 from typing import Optional
 
 from .fragment_merger import FragmentMerger
@@ -80,6 +80,11 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
     if hi_xml is not None:
         frag_xml = merge_hi_fragment(frag_xml, hi_xml)
 
+    shader_group = frag_xml.drawable.shader_group
+    cloth_shader_group = frag_xml.cloths[0].drawable.shader_group if len(frag_xml.cloths) > 0 else None
+    if len(shader_group.shaders) == 0 and cloth_shader_group is not None:
+        shader_group = cloth_shader_group
+
     materials = shadergroup_to_materials(frag_xml.drawable.shader_group, filepath)
 
     # Need to append [PAINT_LAYER] extension at the end of the material names
@@ -87,6 +92,21 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
         if "matDiffuseColor" in mat.node_tree.nodes:
             from .properties import _update_mat_paint_name
             _update_mat_paint_name(mat)
+
+    # if frag_xml.cloths:
+    #     print(f"{frag_xml.cloths=}")
+    #     from ..cwxml.cloth import EnvironmentCloth
+    #     for c in frag_xml.cloths:
+    #         c: EnvironmentCloth = c
+    #         print(f"{c=}")
+    #         print(f"{c.controller.bridge.vertex_count_high=}")
+    #         print(f"{c.controller.bridge.pin_radius_high=}")
+    #         print(f"{c.controller.bridge.vertex_weights_high=}")
+    #         print(f"{c.controller.bridge.inflation_scale_high=}")
+    #         print(f"{c.controller.bridge.display_map_high=}")
+    #         print(f"{c.controller.bridge.pinnable_list=}")
+    # else:
+    #     print("no cloths")
 
     drawable_obj = create_fragment_drawable(
         frag_xml, frag_obj, filepath, materials, split_by_group)
@@ -97,6 +117,8 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
     set_all_bone_physics_properties(frag_obj.data, frag_xml)
 
     create_phys_child_meshes(frag_xml, frag_obj, drawable_obj, materials)
+
+    create_env_cloth_meshes(frag_xml, frag_obj, drawable_obj, materials)
 
     if frag_xml.vehicle_glass_windows:
         create_vehicle_windows(frag_xml, frag_obj, materials)
@@ -234,8 +256,6 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
     bone_name_by_tag: dict[str, Bone] = {
         bone.tag: bone.name for bone in bones}
 
-    child_meshes: list[bpy.types.Object] = []
-
     for child_xml in children_xml:
         if child_xml.drawable.is_empty:
             continue
@@ -249,8 +269,6 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
 
         create_phys_child_models(
             child_xml.drawable, frag_obj, materials, bone_name, drawable_obj)
-
-    return child_meshes
 
 
 def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, drawable_obj: bpy.types.Object):
@@ -266,6 +284,73 @@ def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object,
         child_obj.parent = drawable_obj
 
     return child_objs
+
+
+def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
+    if len(frag_xml.cloths) == 0:
+        return
+
+    from ..cwxml.cloth import EnvironmentCloth
+    from .cloth import ClothAttr, mesh_add_cloth_attribute
+
+    # bones = frag_xml.drawable.skeleton.bones
+
+    cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment
+    if cloth.drawable.is_empty:
+        return
+
+    # bone_name = bones[0].name # TODO: attach to bone
+
+    model_objs, model_datas = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth", return_model_data=True)
+
+    mesh_obj = None
+    for model_obj in model_objs:
+        # add_child_of_bone_constraint(child_obj, frag_obj, bone_name)
+
+        model_obj.parent = drawable_obj
+        mesh_obj = model_obj
+
+    # LOD specific data
+    # TODO: handle LODs
+    vertex_weights = cloth.controller.bridge.vertex_weights_high
+    inflation_scale = cloth.controller.bridge.inflation_scale_high
+    display_map = np.array(cloth.controller.bridge.display_map_high)
+    pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
+    # TODO: store switch distances somewhere or maybe on export can be derived from existing LOD distances
+    # switch_distance_up = cloth.controller.cloth_high.switch_distance_up
+    # switch_distance_down = cloth.controller.cloth_high.switch_distance_down
+    # TODO: store cloth weight somewhere
+    # cloth_weight = cloth.controller.cloth_high.cloth_weight
+
+    # TODO: pin radius
+    #       There can be multiple pin radius per vertex, find a model with pin radius set
+    #       Check if pin radius is only used with character cloth
+    has_pin_radius = False
+    has_vertex_weights = len(vertex_weights) > 0
+    has_inflation_scale = len(inflation_scale) > 0
+
+    mesh = mesh_obj.data
+    mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
+    if has_pin_radius:
+        mesh_add_cloth_attribute(mesh, ClothAttr.PIN_RADIUS)
+    if has_vertex_weights:
+        mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
+    if has_inflation_scale:
+        mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
+
+    for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+        if has_vertex_weights:
+            vertex_weight = vertex_weights[cloth_vert_index]
+            mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = vertex_weight
+
+        if has_inflation_scale:
+            vertex_inflation_scale = inflation_scale[cloth_vert_index]
+            mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = vertex_inflation_scale
+
+        pinned = cloth_vert_index < pinned_vertices_count
+        mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
+
+    # TODO: find a cloth with custom edges and see what needs to be imported
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):

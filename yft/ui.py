@@ -142,6 +142,63 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
             layout.label(
                 text="Must be in Edit Mode > Face Selection.", icon="ERROR")
 
+class SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL(bpy.types.Panel):
+    bl_label = "Cloth Tools"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
+    bl_order = 5
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="MATCLOTH")
+
+    def draw(self, context):
+        from .cloth import is_cloth_mesh_object
+        from . import cloth_operators as cloth_ops
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        is_cloth = is_cloth_mesh_object(context.active_object)
+        if not is_cloth:
+            layout.label(text="Select a drawable model with a cloth material to access cloth tools")
+            return
+
+        layout.operator(cloth_ops.SOLLUMZ_OT_CLOTH_TEST.bl_idname)
+        if context.mode == "EDIT_MESH":
+            layout.label(text="In edit mode")
+
+            row = layout.row(align=True)
+            row.prop(context.scene, "sollumz_cloth_set_vertex_weight", text="Vertex Weight")
+            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT.bl_idname, text="Selection")
+            op.selection = True
+            op.vertex_weight = context.scene.sollumz_cloth_set_vertex_weight
+            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT.bl_idname, text="All")
+            op.selection = False
+            op.vertex_weight = context.scene.sollumz_cloth_set_vertex_weight
+
+            row = layout.row(align=True)
+            row.prop(context.scene, "sollumz_cloth_set_inflation_scale", text="Inflation Scale")
+            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE.bl_idname, text="Selection")
+            op.selection = True
+            op.inflation_scale = context.scene.sollumz_cloth_set_inflation_scale
+            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE.bl_idname, text="All")
+            op.selection = False
+            op.inflation_scale = context.scene.sollumz_cloth_set_inflation_scale
+
+            row = layout.row(align=True)
+            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_PINNED.bl_idname, text="Pin")
+            op.selection = True
+            op.pin = True
+            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_PINNED.bl_idname, text="Unpin")
+            op.selection = True
+            op.pin = False
+        else:
+            layout.label(text="Go to edit mode")
+
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
     bl_label = "Fragment"
@@ -383,3 +440,4 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         row.prop(mat, "sz_paint_layer")
         if not has_mat_diffuse_color:
             layout.label(text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")
+
