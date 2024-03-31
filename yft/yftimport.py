@@ -2,9 +2,8 @@ import os
 import bpy
 import numpy as np
 from traceback import format_exc
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Vector, Quaternion
 from typing import Optional
-
 from .fragment_merger import FragmentMerger
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
@@ -75,18 +74,37 @@ def make_non_hi_yft_filepath(yft_filepath: str) -> str:
 
 
 def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] = None, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
-    frag_obj = create_frag_armature(frag_xml, name)
-
     if hi_xml is not None:
         frag_xml = merge_hi_fragment(frag_xml, hi_xml)
 
-    materials = shadergroup_to_materials(frag_xml.drawable.shader_group, filepath)
+    drawable_xml = frag_xml.drawable
+    if drawable_xml.is_empty and frag_xml.cloths and not frag_xml.cloths[0].drawable.is_empty:
+        # We have a fragment without a main drawable, only the cloth drawable. So shallow-copy properties we may need
+        # from the cloth drawable, except the drawable models. Creating the cloth drawable model will be handled by
+        # `create_env_cloth_meshes`
+        cloth_drawable_xml = frag_xml.cloths[0].drawable
+        drawable_xml.name = cloth_drawable_xml.name
+        drawable_xml.bounding_sphere_center = cloth_drawable_xml.bounding_sphere_center
+        drawable_xml.bounding_sphere_radius = cloth_drawable_xml.bounding_sphere_radius
+        drawable_xml.bounding_box_min = cloth_drawable_xml.bounding_box_min
+        drawable_xml.bounding_box_max = cloth_drawable_xml.bounding_box_max
+        drawable_xml.lod_dist_high = cloth_drawable_xml.lod_dist_high
+        drawable_xml.lod_dist_med = cloth_drawable_xml.lod_dist_med
+        drawable_xml.lod_dist_low = cloth_drawable_xml.lod_dist_low
+        drawable_xml.lod_dist_vlow = cloth_drawable_xml.lod_dist_vlow
+        drawable_xml.shader_group = cloth_drawable_xml.shader_group
+        drawable_xml.skeleton = cloth_drawable_xml.skeleton
+        drawable_xml.joints = cloth_drawable_xml.joints
+
+    materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
 
     # Need to append [PAINT_LAYER] extension at the end of the material names
     for mat in materials:
         if "matDiffuseColor" in mat.node_tree.nodes:
             from .properties import _update_mat_paint_name
             _update_mat_paint_name(mat)
+
+    frag_obj = create_frag_armature(frag_xml, name)
 
     drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
     damaged_drawable_obj = create_fragment_drawable(
@@ -111,6 +129,8 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
 
     create_phys_child_meshes(frag_xml, frag_obj, drawable_obj, materials)
 
+    create_env_cloth_meshes(frag_xml, frag_obj, drawable_obj, materials)
+
     if frag_xml.vehicle_glass_windows:
         create_vehicle_windows(frag_xml, frag_obj, materials)
 
@@ -127,8 +147,7 @@ def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
     """Create the fragment armature along with the bones and rotation limits."""
     name = name or frag_xml.name.replace("pack:/", "")
     drawable_xml = frag_xml.drawable
-    frag_obj = create_armature_obj_from_skel(
-        drawable_xml.skeleton, name, SollumType.FRAGMENT)
+    frag_obj = create_armature_obj_from_skel(drawable_xml.skeleton, name, SollumType.FRAGMENT)
     create_joint_constraints(frag_obj, drawable_xml.joints)
 
     set_fragment_properties(frag_xml, frag_obj)
@@ -193,11 +212,20 @@ def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Frag
 
     for group_xml in groups_xml:
         if group_xml.name not in armature.bones:
-            logger.warning(
-                f"No bone exists for the physics group {group_xml.name}! Skipping...")
-            continue
+            # Bone not found, try a case-insensitive search
+            group_name_lower = group_xml.name.lower()
+            for armature_bone in armature.bones:
+                if group_name_lower == armature_bone.name.lower():
+                    group_xml.name = armature_bone.name # update group name to match actual bone name
+                    bone = armature_bone
+                    break
+            else:
+                # Still no bone found
+                logger.warning(f"No bone exists for the physics group {group_xml.name}! Skipping...")
+                continue
+        else:
+            bone = armature.bones[group_xml.name]
 
-        bone = armature.bones[group_xml.name]
         bone.sollumz_use_physics = True
         set_group_properties(group_xml, bone)
 
@@ -264,8 +292,6 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
     bone_name_by_tag: dict[str, Bone] = {
         bone.tag: bone.name for bone in bones}
 
-    child_meshes: list[bpy.types.Object] = []
-
     for child_xml in children_xml:
         if child_xml.drawable.is_empty:
             continue
@@ -279,8 +305,6 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
 
         create_phys_child_models(
             child_xml.drawable, frag_obj, materials, bone_name, drawable_obj)
-
-    return child_meshes
 
 
 def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, drawable_obj: bpy.types.Object):
@@ -298,10 +322,82 @@ def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object,
     return child_objs
 
 
+def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
+    if not frag_xml.cloths:
+        return
+
+    from ..cwxml.cloth import EnvironmentCloth
+    from .cloth import ClothAttr, mesh_add_cloth_attribute
+
+
+    cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment
+    if cloth.drawable.is_empty:
+        return
+
+    model_objs = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth")
+    assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
+
+    model_obj = model_objs[0]
+    model_obj.parent = drawable_obj
+
+    bones = cloth.drawable.skeleton.bones
+    bone_index = cloth.drawable.drawable_models_high[0].bone_index
+    bone_name = bones[bone_index].name
+    add_child_of_bone_constraint(model_obj, frag_obj, bone_name)
+
+
+    mesh = model_obj.data
+
+    # LOD specific data
+    # TODO: handle LODs
+    pin_radius = cloth.controller.bridge.pin_radius_high
+    weights = cloth.controller.bridge.vertex_weights_high
+    inflation_scale = cloth.controller.bridge.inflation_scale_high
+    display_map = np.array(cloth.controller.bridge.display_map_high)
+    pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
+    # TODO: store switch distances somewhere or maybe on export can be derived from existing LOD distances
+    # switch_distance_up = cloth.controller.cloth_high.switch_distance_up
+    # switch_distance_down = cloth.controller.cloth_high.switch_distance_down
+    # TODO: store cloth weight somewhere
+    # cloth_weight = cloth.controller.cloth_high.cloth_weight
+
+    # TODO: pin radius
+    #       There can be multiple pin radius per vertex, find a model with pin radius set
+    #       Check if pin radius is only used with character cloth
+    has_pinned = pinned_vertices_count > 0
+    has_pin_radius = len(pin_radius) > 0
+    has_weights = len(weights) > 0
+    has_inflation_scale = len(inflation_scale) > 0
+
+    if has_pinned:
+        mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
+    if has_pin_radius:
+        mesh_add_cloth_attribute(mesh, ClothAttr.PIN_RADIUS)
+    if has_weights:
+        mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
+    if has_inflation_scale:
+        mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
+
+    for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+        if has_pinned:
+            pinned = cloth_vert_index < pinned_vertices_count
+            mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
+
+        if has_pin_radius:
+            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].value = pin_radius[cloth_vert_index]
+
+        if has_weights:
+            mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = weights[cloth_vert_index]
+
+        if has_inflation_scale:
+            mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = inflation_scale[cloth_vert_index]
+
+    # TODO: find a cloth with custom edges and see what needs to be imported
+
+
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):
     for window_xml in frag_xml.vehicle_glass_windows:
-        window_bone = get_window_bone(
-            window_xml, frag_xml, frag_obj.data.bones)
+        window_bone = get_window_bone(window_xml, frag_xml, frag_obj.data.bones)
         col_obj = get_window_col(frag_obj, window_bone.name)
 
         window_name = f"{window_bone.name}_shattermap"
@@ -313,8 +409,7 @@ def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, mater
 
         col_obj.child_properties.is_veh_window = True
 
-        window_mat = get_veh_window_material(
-            window_xml, frag_xml.drawable, materials)
+        window_mat = get_veh_window_material(window_xml, frag_xml.drawable, materials)
 
         if window_mat is not None:
             col_obj.child_properties.window_mat = window_mat

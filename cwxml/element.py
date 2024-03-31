@@ -558,3 +558,69 @@ class TextListProperty(ElementProperty):
         elem = ET.Element(self.tag_name)
         elem.text = " ".join(self.value)
         return elem
+
+
+class InlineValueListProperty(ElementProperty):
+    """A list of values inside the text of the element, separated by spaces."""
+    value_types = (list)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or [])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        if element.text:
+            values_strings = element.text.strip().replace("\n", " ").split(" ")
+            values = [get_str_type(s) for s in values_strings if s]  # removes empty strings
+        else:
+            values = []
+        return InlineValueListProperty(element.tag, values)
+
+    def to_xml(self):
+        if self.value is None:
+            return
+
+        element = ET.Element(self.tag_name)
+        element.text = " ".join([str(x) for x in self.value])
+        return element
+
+
+class Vector4ListProperty(ElementProperty):
+    value_types = (list)
+
+    def __init__(self, tag_name: str, value=None):
+        super().__init__(tag_name, value or [])
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = Vector4ListProperty(element.tag, [])
+        text = element.text.strip().split("\n")
+        if len(text) > 0:
+            for line in text:
+                coords = line.strip().split(",")
+                if not len(coords) == 4:
+                    return Vector4ListProperty.read_value_error(element)
+
+                new.value.append(Vector((float(coords[0]), float(coords[1]), float(coords[2]), float(coords[3]))))
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        text = ["\n"]
+
+        if not self.value:
+            return
+
+        for vec in self.value:
+            if not isinstance(vec, Vector):
+                raise TypeError(f"Vector4ListProperty can only contain Vector objects, not '{type(vec)}'!")
+            for index, component in enumerate(vec):
+                text.append(str(component))
+                if index < len(vec) - 1:
+                    text.append(", ")
+            text.append("\n")
+
+        element.text = "".join(text)
+
+        return element

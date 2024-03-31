@@ -121,7 +121,9 @@ class MeshBuilder:
         def create_group(bone_index: int):
             bone_name = f"UNKNOWN_BONE.{bone_index}"
 
-            if bones and bone_index < len(bones):
+            if bone_index == 99999:
+                bone_name = "CLOTH"
+            elif bones and bone_index < len(bones):
                 bone_name = bones[bone_index].name
 
             return obj.vertex_groups.new(name=bone_name)

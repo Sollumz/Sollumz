@@ -71,16 +71,15 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     return drawable_obj
 
 
-def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], model_names: Optional[str] = None):
+def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], model_names: Optional[str] = None, return_model_data = False):
     model_datas = get_model_data(drawable_xml)
     model_names = model_names or SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]
-
-    return [create_model_obj(model_data, materials, name=model_names) for model_data in model_datas]
+    model_objs = [create_model_obj(model_data, materials, name=model_names) for model_data in model_datas]
+    return (model_objs, model_datas) if return_model_data else model_objs
 
 
 def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object, armature_obj: bpy.types.Object, split_by_group: bool = False):
-    model_datas = get_model_data(
-        drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
+    model_datas = get_model_data(drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
 
     set_skinned_model_properties(drawable_obj, drawable_xml)
 
