@@ -74,7 +74,13 @@ def create_entity_set_xml(entityset: EntitySetProperties, entities: list[MloEnti
             continue
 
         entity_set.entities.append(create_entity_xml(entity))
-        entity_set.locations.append(entity.room_index)
+
+        location = entity.room_index
+        if location == -1:
+            # If not attached to a room, it should be attached to a portal. Set MSB to indicate this is a portal index
+            location = entity.portal_index | (1 << 31)
+
+        entity_set.locations.append(location)
 
     return entity_set
 
