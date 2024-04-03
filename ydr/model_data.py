@@ -27,7 +27,7 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
     model_datas: list[ModelData] = []
     model_xmls = get_lod_model_xmls(drawable_xml)
 
-    for bone_index, model_lods in model_xmls.items():
+    for (bone_index, _), model_lods in model_xmls.items():
         model_data = ModelData(
             mesh_data_lods={
                 lod_level: mesh_data_from_xml(model_xml) for lod_level, model_xml in model_lods.items()
@@ -206,15 +206,49 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
     return new_vert_arr, new_ind_arr
 
 
-def get_lod_model_xmls(drawable_xml: Drawable) -> dict[int, dict[LODLevel, DrawableModel]]:
-    """Gets mapping of LOD levels for each DrawableModel, keyed by bone index."""
-    model_xmls_by_bone_index: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
+def get_lod_model_xmls(drawable_xml: Drawable) -> dict[(int, int), dict[LODLevel, DrawableModel]]:
+    """Gets mapping of LOD levels for each DrawableModel, keyed by a (bone index, model per-bone ID) tuple."""
+    #
+    # NOTE: we assumme that models attached to the same bone appear in the same order at different LODs. This doesn't
+    #       quite work when not all models have the same number of LOD levels.
+    #
+    # For example:
+    #   A model could have the following hierarchy in Blender:
+    #     Drawable
+    #       Dr. Model #0 -> LODs High = A, Med = D
+    #       Dr. Model #1 -> LODs High = B, Med = -
+    #       Dr. Model #2 -> LODs High = C, Med = E
+    #   When exported the XML will have something like this:
+    #     DrawableModelsHigh = [A, B, C]
+    #     DrawableModelsMedium = [D, E]
+    #   If we import back that XML, we have to decide how to connect the models in the different LOD arrays. There is
+    #   nothing in the XML that connects different LOD models to form a full "model", the game doesn't need it, the game
+    #   just switches between which LOD array to render.
+    #
+    #   With our approach, the imported drawable will look like this in Blender. Notice that now model #1 has the medium
+    #   LOD of model #2.
+    #     Drawable
+    #       Dr. Model #0 -> LODs High = A, Med = D
+    #       Dr. Model #1 -> LODs High = B, Med = E
+    #       Dr. Model #2 -> LODs High = C, Med = -
+    #
+    #   This shouldn't be much of an issue as it doesn't affect how it looks in-game when exported again. Just may
+    #   confuse the user a bit at first.
+    #   This would only be an issue if the LODs where attached to different bones but ended placed in the same drawable
+    #   model when imported, but we handle this case.
+    #
+    model_xmls_map: dict[(int, int), dict[LODLevel, DrawableModel]] = defaultdict(dict)
 
     for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
+        model_count_per_bone = defaultdict(int)
         for model_xml in models:
-            model_xmls_by_bone_index[model_xml.bone_index][lod_level] = model_xml
+            bone_index = model_xml.bone_index
+            # We use `model_per_bone_id` to differentiate multiple models attached to the same bone
+            model_per_bone_id = model_count_per_bone[bone_index]
+            model_count_per_bone[bone_index] += 1
+            model_xmls_map[(bone_index, model_per_bone_id)][lod_level] = model_xml
 
-    return model_xmls_by_bone_index
+    return model_xmls_map
 
 
 def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:
