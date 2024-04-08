@@ -6281,6 +6281,7 @@
    <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
    <Item name="DamageMultiplier" type="float" x="0" />
    <Item name="BoundRadius" type="float" x="0" />
+   <Item name="dimmerSetPacked" type="float4" count="5" />
   </Parameters>
  </Item>
  <Item>
