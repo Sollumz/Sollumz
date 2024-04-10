@@ -45,10 +45,25 @@ def remove_unused_uvs(vertex_arr: NDArray, used_texcoords: set[str]) -> NDArray:
 
 def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uint32]]:
     """Remove duplicate vertices from the buffer and get the new vertex indices in triangle order (used for IndexBuffer). Returns vertices, indices."""
-    vertex_arr, unique_indices, inverse_indices = np.unique(
-        vertex_arr, axis=0, return_index=True, return_inverse=True)
 
-    return vertex_arr, np.arange(len(unique_indices), dtype=np.uint32)[inverse_indices]
+    # Cannot use np.unique directly on the vertex array because it doesn't have a tolerance parameter, only checks exact
+    # equality, so floating-point values that are only different due to rounding errors would not be deduplicated.
+    # For example, normals calculated by Blender for the same vertex in different loops end up slightly different from
+    # rounding errors, causing this vertex to appear multiple times on export.
+    # So we first round the values in the vertex array and then pass it to np.unique.
+
+    # Convert vertex array to a 2D unstructured array of float64 to be able to use np.round, it doesn't work on the
+    # structured array.
+    # Each vertex is converted to a float64 array by concatenating the struct fields: [x, y, z, nx, ny, nz, r, g, b, a, ...]
+    vertex_arr_flatten = np.concatenate([vertex_arr[name] for name in vertex_arr.dtype.names], axis=1, dtype=np.float64)
+    np.round(vertex_arr_flatten, out=vertex_arr_flatten, decimals=6)
+
+    _, unique_indices, inverse_indices = np.unique(vertex_arr_flatten, axis=0, return_index=True, return_inverse=True)
+
+    # Lookup the vertices in the original structured and un-rounded array
+    vertex_arr = vertex_arr[unique_indices]
+    index_arr = np.asarray(inverse_indices, dtype=np.uint32)
+    return vertex_arr, index_arr
 
 
 class VertexBufferBuilder:
