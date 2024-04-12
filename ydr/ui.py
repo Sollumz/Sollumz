@@ -725,3 +725,82 @@ class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
         box.separator()
 
         box.operator("sollumz.extract_lods", icon="EXPORT")
+
+
+class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
+    bl_label = "Cable Tools"
+    bl_idname = "SOLLUMZ_PT_CABLE_TOOLS_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    bl_order = 5
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="OUTLINER_DATA_GREASEPENCIL")
+
+    def draw(self, context):
+        from . import cable_operators as cable_ops
+        from .cable import CableAttr
+
+        scene = context.scene
+
+        layout = self.layout
+
+        def _visible_icon_prop(layout, obj, prop_name):
+            visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
+            layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
+
+        row = layout.row(align=True)
+        row.label(text=CableAttr.RADIUS.label)
+        _visible_icon_prop(row, scene, "sz_ui_cable_radius_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_radius.bl_idname, text="Set")
+        op.value = scene.sz_ui_cable_radius
+        row.prop(scene, "sz_ui_cable_radius", text="")
+
+
+        row = layout.row(align=True)
+        row.label(text=CableAttr.DIFFUSE_FACTOR.label)
+        _visible_icon_prop(row, scene, "sz_ui_cable_diffuse_factor_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_diffuse_factor.bl_idname, text="Set")
+        op.value = scene.sz_ui_cable_diffuse_factor
+        row.prop(scene, "sz_ui_cable_diffuse_factor", text="")
+
+
+        row = layout.row(align=True)
+        row.label(text=CableAttr.UM_SCALE.label)
+        _visible_icon_prop(row, scene, "sz_ui_cable_um_scale_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="Set")
+        op.value = scene.sz_ui_cable_um_scale
+        row.prop(scene, "sz_ui_cable_um_scale", text="")
+
+
+        row = layout.row(align=True)
+        row.label(text=CableAttr.PHASE_OFFSET.label)
+        _visible_icon_prop(row, scene, "sz_ui_cable_phase_offset_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_phase_offset.bl_idname, text="Set")
+        op.value = scene.sz_ui_cable_phase_offset
+        row.prop(scene, "sz_ui_cable_phase_offset", text="")
+
+        row = layout.row(align=True)
+        op = row.operator(cable_ops.SOLLUMZ_OT_cable_randomize_phase_offset.bl_idname, text="Randomize")
+
+        row = layout.row(align=True)
+        row.label(text=CableAttr.MATERIAL_INDEX.label)
+        _visible_icon_prop(row, scene, "sz_ui_cable_material_index_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_material_index.bl_idname, text="Set")
+        op.value = scene.sz_ui_cable_material_index
+        row.prop(scene, "sz_ui_cable_material_index", text="")
+

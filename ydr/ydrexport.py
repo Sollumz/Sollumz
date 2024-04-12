@@ -50,6 +50,8 @@ from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
 from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
+from .cable_vertex_buffer_builder import CableVertexBufferBuilder
+from .cable import is_cable_mesh
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
 
@@ -234,15 +236,34 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, b
 
 
 def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
-    if len(mesh_eval.loops) == 0:
-        logger.warning(
-            f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
+    is_cable = is_cable_mesh(mesh_eval)
+    if len(mesh_eval.loops) == 0 and not is_cable: # cable mesh don't have faces, so no loops either
+        logger.warning(f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
         return []
 
     if not mesh_eval.materials:
         logger.warning(
             f"Could not create geometries for Drawable Model '{mesh_eval.original.name}': Mesh has no Sollumz materials!")
         return []
+
+    if is_cable:
+        cable_total_vert_buffer, cable_vert_materials = CableVertexBufferBuilder(mesh_eval).build()
+        cable_geometries = []
+        for cable_material_index in range(len(mesh_eval.materials)):
+            cable_vert_buffer = cable_total_vert_buffer[cable_vert_materials == cable_material_index]
+            cable_vert_buffer, cable_ind_buffer = dedupe_and_get_indices(cable_vert_buffer)
+
+            cable_material = mesh_eval.materials[cable_material_index].original
+            cable_material_index_in_drawable = materials.index(cable_material)
+
+            geom_xml = Geometry()
+            geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(cable_vert_buffer["Position"])
+            geom_xml.shader_index = cable_material_index_in_drawable
+            geom_xml.vertex_buffer.data = cable_vert_buffer
+            geom_xml.index_buffer.data = cable_ind_buffer
+            cable_geometries.append(geom_xml)
+
+        return cable_geometries
 
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
