@@ -1169,7 +1169,7 @@
  <Item>
   <Name>cable</Name>
   <FileName>
-   <Item bucket="0">cable.sps</Item>
+   <Item bucket="1">cable.sps</Item>
   </FileName>
   <Layout>
    <Item type="GTAV1">
@@ -1181,16 +1181,16 @@
   </Layout>
   <Parameters>
    <Item name="textureSamp" type="Texture" />
-   <Item name="alphaTestValue" type="float" x="0" />
+   <Item name="alphaTestValue" type="float" x="0" hidden="true" />
    <Item name="shader_cableEmissive" type="float" x="0" />
    <Item name="shader_cableAmbient" type="float2" x="0.4" y="0.4" />
-   <Item name="shader_cableDiffuse2" type="float3" x="0" y="0" z="0" />
-   <Item name="shader_cableDiffuse" type="float3" x="0" y="0" z="0" />
+   <Item name="shader_cableDiffuse2" type="float3" subtype="rgb" x="0" y="0" z="0" />
+   <Item name="shader_cableDiffuse" type="float3" subtype="rgb" x="0" y="0" z="0" />
    <Item name="shader_windAmount" type="float" x="1" />
    <Item name="shader_fadeExponent" type="float" x="1" />
    <Item name="shader_radiusScale" type="float" x="1" />
-   <Item name="gCableParams" type="float4" count="5" />
-   <Item name="gViewProj" type="float4x4" />
+   <Item name="gCableParams" type="float4" count="5" hidden="true" />
+   <Item name="gViewProj" type="float4x4" hidden="true" />
   </Parameters>
  </Item>
  <Item>
