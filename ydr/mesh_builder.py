@@ -12,7 +12,7 @@ class MeshBuilder:
 
     def __init__(self, name: str, vertex_arr: NDArray, ind_arr: NDArray[np.uint], mat_inds: NDArray[np.uint], drawable_mats: list[bpy.types.Material]):
         if "Position" not in vertex_arr.dtype.names:
-            raise ValueError("Vertex array must have a 'Position' field!")
+            raise ValueError("Vertex array have a 'Position' field!")
 
         if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
             raise ValueError(
@@ -26,54 +26,15 @@ class MeshBuilder:
         self.materials = drawable_mats
 
         self._has_normals = "Normal" in vertex_arr.dtype.names
-        self._has_uvs = any("TexCoord" in name for name in vertex_arr.dtype.names)
-        self._has_colors = any("Colour" in name for name in vertex_arr.dtype.names)
-
-        self._vertex_unique_index = None
+        self._has_uvs = any(
+            "TexCoord" in name for name in vertex_arr.dtype.names)
+        self._has_colors = any(
+            "Colour" in name for name in vertex_arr.dtype.names)
 
     def build(self):
         mesh = bpy.data.meshes.new(self.name)
         vert_pos = self.vertex_arr["Position"]
-
-        # Game meshes store vertex positions and their attributes combined, so the same position can appear multiple
-        # times in the array, with different attribute values. In Blender, the vertex position can be stored separated
-        # from the attributes (i.e. positions in `mesh.vertices` and attributes stored in mesh loops).
-        #
-        # If we create a Blender-vertex per game-vertex, vertices in the same position but belonging to different faces
-        # won't be connected (i.e. you move the vertex and a gap appears, instead of moving all faces). Therefore, we
-        # find the unique vertex positions and only create those vertices, then assign attributes in the loops.
-        #
-        # To access vertex attributes use:
-        #   self.vertex_arr["<field>"][self.ind_arr]              -> per loop values/'CORNER' domain
-        #   self.vertex_arr["<field>"][self._vertex_unique_index] -> per vertex values/'POINT' domain
-
-        # Need to check if there is any triangle with the vertex position repeated in its vertices. Blender cannot
-        # create triangle faces that use the same vertex twice, so we cannot merge these vertex positions and need to
-        # fallback to the old behaviour of one Blender-vertex per game-vertex.
-        # This happens at least with cable meshes.
-        tri_vert_pos = vert_pos[self.ind_arr].reshape((int(self.ind_arr.size / 3), 3, 3))
-        v0 = tri_vert_pos[:, 0, :]
-        v1 = tri_vert_pos[:, 1, :]
-        v2 = tri_vert_pos[:, 2, :]
-        any_vertex_repeated_in_same_triangle = (np.isclose(v0, v1).prod(axis=1).any() or
-                                                np.isclose(v0, v2).prod(axis=1).any() or
-                                                np.isclose(v1, v2).prod(axis=1).any())
-        if any_vertex_repeated_in_same_triangle:
-            vert_pos = vert_pos
-            self._vertex_unique_index = np.arange(len(vert_pos))
-            faces = self.ind_arr.reshape((int(self.ind_arr.size / 3), 3))
-        else:
-            # Merge vertices in the same position
-            # NOTE: np.unique checks exact equality, so floating-point rounding errors can affect the result. This shouldn't
-            # be an issue here because the vertices values come from the parsed XML, which has a limited precision normally
-            # (normally only 5-6 decimal places are printed)
-            vert_pos, uniq_index, uniq_inverse_index = np.unique(vert_pos, return_index=True, return_inverse=True, axis=0)
-            self._vertex_unique_index = uniq_index
-
-            # Remap index array to indices in the unique vertex positions array
-            ind_arr = uniq_inverse_index[self.ind_arr]
-            faces = ind_arr.reshape((int(ind_arr.size / 3), 3))
-
+        faces = self.ind_arr.reshape((int(self.ind_arr.size / 3), 3))
 
         try:
             mesh.from_pydata(vert_pos, [], faces)
@@ -100,7 +61,8 @@ class MeshBuilder:
     def create_mesh_materials(self, mesh: bpy.types.Mesh):
         drawable_mat_inds = np.unique(self.mat_inds)
         # Map drawable material indices to model material indices
-        model_mat_inds = np.zeros(np.max(drawable_mat_inds) + 1, dtype=np.uint32)
+        model_mat_inds = np.zeros(
+            np.max(drawable_mat_inds) + 1, dtype=np.uint32)
 
         for mat_ind in drawable_mat_inds:
             mesh.materials.append(self.materials[mat_ind])
@@ -108,19 +70,22 @@ class MeshBuilder:
 
         # Set material indices via attributes
         mesh.attributes.new("material_index", type="INT", domain="FACE")
-        mesh.attributes["material_index"].data.foreach_set("value", model_mat_inds[self.mat_inds])
+        mesh.attributes["material_index"].data.foreach_set(
+            "value", model_mat_inds[self.mat_inds])
 
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
-        normals_normalized = [Vector(n).normalized() for n in self.vertex_arr["Normal"][self.ind_arr]]
-        mesh.normals_split_custom_set(normals_normalized)
+
+        normals_normalized = [Vector(n).normalized() for n in self.vertex_arr["Normal"]]
+        mesh.normals_split_custom_set_from_vertices(normals_normalized)
 
         if bpy.app.version < (4, 1, 0):
             # needed to use custom split normals pre-4.1
             mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
-        uv_attrs = [name for name in self.vertex_arr.dtype.names if "TexCoord" in name]
+        uv_attrs = [
+            name for name in self.vertex_arr.dtype.names if "TexCoord" in name]
 
         for attr_name in uv_attrs:
             uvs = self.vertex_arr[attr_name]
@@ -130,7 +95,8 @@ class MeshBuilder:
             create_uv_attr(mesh, uvs[self.ind_arr])
 
     def set_mesh_vertex_colors(self, mesh: bpy.types.Mesh):
-        color_attrs = [name for name in self.vertex_arr.dtype.names if "Colour" in name]
+        color_attrs = [
+            name for name in self.vertex_arr.dtype.names if "Colour" in name]
 
         for attr_name in color_attrs:
             colors = self.vertex_arr[attr_name] / 255
@@ -138,8 +104,8 @@ class MeshBuilder:
             create_color_attr(mesh, colors[self.ind_arr])
 
     def create_vertex_groups(self, obj: bpy.types.Object, bones: list[bpy.types.Bone]):
-        weights = self.vertex_arr["BlendWeights"][self._vertex_unique_index] / 255
-        indices = self.vertex_arr["BlendIndices"][self._vertex_unique_index]
+        weights = self.vertex_arr["BlendWeights"] / 255
+        indices = self.vertex_arr["BlendIndices"]
 
         vertex_groups: dict[int, bpy.types.VertexGroup] = {}
 
