@@ -113,9 +113,18 @@ class TabPanel:
 
     @classmethod
     def unregister(cls):
+        tabbed_panel = cls.parent_tab_panel
         active_tab_prop_name = cls._get_active_tab_propname()
+
         if hasattr(bpy.types.Scene, active_tab_prop_name):
             delattr(bpy.types.Scene, active_tab_prop_name)
+
+        if cls.bl_idname in tabbed_panel._panel_toggle_ops:
+            bpy.utils.unregister_class(tabbed_panel._panel_toggle_ops[cls.bl_idname])
+            del tabbed_panel._panel_toggle_ops[cls.bl_idname]
+
+        if cls.bl_idname in tabbed_panel._tab_panels:
+            del tabbed_panel._tab_panels[cls.bl_idname]
 
     @classmethod
     def _tab_toggle_op_factory(cls, _tab_id: str):
