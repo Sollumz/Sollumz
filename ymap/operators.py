@@ -28,6 +28,9 @@ class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
+        if aobj is None:
+            return False
+
         existing_groups = []
         # Do not let user create Entities Group if there is already one, and if there is any kind of Occlusion Group
         for child in aobj.children:
@@ -53,6 +56,9 @@ class SOLLUMZ_OT_create_model_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
+        if aobj is None:
+            return False
+
         existing_groups = []
         # Do not let user create Model Occluders Group if there is already one, and if there is already Entities Group
         for child in aobj.children:
@@ -77,6 +83,9 @@ class SOLLUMZ_OT_create_box_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
+        if aobj is None:
+            return False
+
         existing_groups = []
         # Do not let user create Box Occluders Group if there is already one, and if there is already Entities Group
         for child in aobj.children:
@@ -101,6 +110,9 @@ class SOLLUMZ_OT_create_car_generator_group(SOLLUMZ_OT_base, bpy.types.Operator)
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
+        if aobj is None:
+            return False
+
         existing_groups = []
         for child in aobj.children:
             existing_groups.append(child.name)
