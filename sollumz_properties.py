@@ -127,6 +127,15 @@ class LODLevel(str, Enum):
     VERYHIGH = "sollumz_veryhigh"
 
 
+LODLevelEnumItems = (
+    (LODLevel.HIGH, "High", "", 0),
+    (LODLevel.MEDIUM, "Medium", "", 1),
+    (LODLevel.LOW, "Low", "", 2),
+    (LODLevel.VERYLOW, "Very Low", "", 3),
+    (LODLevel.VERYHIGH, "Very High", "", 4),
+)
+
+
 class EntityLodLevel(str, Enum):
     LODTYPES_DEPTH_HD = "sollumz_lodtypes_depth_hd"
     LODTYPES_DEPTH_LOD = "sollumz_lodtypes_depth_lod"
@@ -357,7 +366,7 @@ SOLLUMZ_UI_NAMES = {
 
     LODLevel.VERYHIGH: "Very High",
     LODLevel.HIGH: "High",
-    LODLevel.MEDIUM: "Med",
+    LODLevel.MEDIUM: "Medium",
     LODLevel.LOW: "Low",
     LODLevel.VERYLOW: "Very Low",
 

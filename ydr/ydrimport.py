@@ -110,10 +110,8 @@ def create_rigged_model_obj(model_data: ModelData, materials: list[bpy.types.Mat
 
 
 def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
-    lod_levels: LODLevels = model_obj.sollumz_lods
+    lods: LODLevels = model_obj.sz_lods
     original_mesh = model_obj.data
-
-    lod_levels.add_empty_lods()
 
     for lod_level, mesh_data in model_data.mesh_data_lods.items():
         mesh_name = f"{model_obj.name}_{SOLLUMZ_UI_NAMES[lod_level].lower().replace(' ', '_')}"
@@ -133,18 +131,17 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
                 f"Error occured during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
             continue
 
-        lod_levels.set_lod_mesh(lod_level, lod_mesh)
-        lod_levels.set_active_lod(lod_level)
+        lods.get_lod(lod_level).mesh = lod_mesh
+        lods.active_lod_level = lod_level
 
-        set_drawable_model_properties(
-            lod_mesh.drawable_model_properties, model_data.xml_lods[lod_level])
+        set_drawable_model_properties(lod_mesh.drawable_model_properties, model_data.xml_lods[lod_level])
 
         is_skinned = "BlendWeights" in mesh_data.vert_arr.dtype.names
 
         if is_skinned and bones is not None:
             mesh_builder.create_vertex_groups(model_obj, bones)
 
-    lod_levels.set_highest_lod_active()
+    lods.set_highest_lod_active()
 
     # Original mesh no longer used since the obj is managed by LODs, so delete it
     if model_obj.data != original_mesh:
@@ -169,14 +166,13 @@ def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: D
     for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
         for i, model_xml in enumerate(models):
             obj = model_objs[i]
-            obj_lods: LODLevels = obj.sollumz_lods
+            obj_lods: LODLevels = obj.sz_lods
             lod = obj_lods.get_lod(lod_level)
-
-            if lod.mesh is None:
+            lod_mesh = lod.mesh
+            if lod_mesh is None:
                 continue
 
-            set_drawable_model_properties(
-                lod.mesh.drawable_model_properties, model_xml[lod.level])
+            set_drawable_model_properties(lod_mesh.drawable_model_properties, model_xml[lod.level])
 
 
 def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):

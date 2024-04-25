@@ -141,11 +141,14 @@ def get_sollumz_materials(obj: bpy.types.Object):
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
-        for lod in child.sollumz_lods.lods:
-            if lod.mesh is None:
+        lods = child.sz_lods
+        for lod_level in LODLevel:
+            lod = lods.get_lod(lod_level)
+            lod_mesh = lod.mesh
+            if lod_mesh is None:
                 continue
 
-            mats = lod.mesh.materials
+            mats = lod_mesh.materials
 
             for mat in mats:
                 if mat.sollum_type != MaterialType.SHADER:

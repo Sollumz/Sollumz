@@ -1035,23 +1035,20 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
         if not lods:
             return {"CANCELLED"}
 
-        obj_lods: LODLevels = aobj.sollumz_lods
-
-        if not self.has_sollumz_lods(aobj):
-            obj_lods.add_empty_lods()
+        obj_lods: LODLevels = aobj.sz_lods
 
         decimate_step = context.scene.sollumz_auto_lod_decimate_step
         last_mesh = ref_mesh
 
         previous_mode = aobj.mode
-        previous_lod_level = obj_lods.active_lod.level
+        previous_lod_level = obj_lods.active_lod_level
 
         for lod_level in lods:
             mesh = last_mesh.copy()
             mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
 
-            obj_lods.set_lod_mesh(lod_level, mesh)
-            obj_lods.set_active_lod(lod_level)
+            obj_lods.get_lod(lod_level).mesh = mesh
+            obj_lods.active_lod_level = lod_level
 
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
@@ -1059,14 +1056,9 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
 
             last_mesh = mesh
 
-        obj_lods.set_active_lod(previous_lod_level)
+        obj_lods.active_lod_level = previous_lod_level
 
         return {"FINISHED"}
-
-    def has_sollumz_lods(self, obj: bpy.types.Object):
-        """Ensure obj has sollumz_lods.lods populated"""
-        obj_lod_levels = [lod.level for lod in obj.sollumz_lods.lods]
-        return all(lod_level in obj_lod_levels for lod_level in LODLevel)
 
     def get_lod_mesh_name(self, obj_name: str, lod_level: LODLevel):
         return f"{obj_name}.{SOLLUMZ_UI_NAMES[lod_level].lower()}"
@@ -1093,14 +1085,14 @@ class SOLLUMZ_OT_extract_lods(bpy.types.Operator):
         parent = self.create_parent(context, f"{aobj.name}.LODs")
         lod_levels = context.scene.sollumz_extract_lods_levels
 
+        lods = aobj.sz_lods
         for lod_level in lod_levels:
-            lod = aobj.sollumz_lods.get_lod(lod_level)
-
-            if lod is None or lod.mesh is None:
+            lod = lods.get_lod(lod_level)
+            lod_mesh = lod.mesh
+            if lod_mesh is None:
                 continue
 
-            mesh = lod.mesh
-            lod_obj = create_blender_object(SollumType.NONE, mesh.name, mesh)
+            lod_obj = create_blender_object(SollumType.NONE, lod_mesh.name, lod_mesh)
             self.parent_object(lod_obj, parent)
 
         return {"FINISHED"}

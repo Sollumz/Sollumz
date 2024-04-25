@@ -663,7 +663,7 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
             bpy.data.objects.remove(obj)
 
         model_obj = create_blender_object(SollumType.DRAWABLE_MODEL)
-        model_obj.sollumz_lods.add_empty_lods()
+        model_lods = model_obj.sz_lods
         old_mesh = model_obj.data
 
         for lod_level, geometries in models_by_lod.items():
@@ -673,8 +673,8 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
             else:
                 joined_obj = geometries[0]
 
-            model_obj.sollumz_lods.set_lod_mesh(lod_level, joined_obj.data)
-            model_obj.sollumz_lods.set_active_lod(lod_level)
+            model_lods.get_lod(lod_level).mesh = joined_obj.data
+            model_lods.active_lod_level = lod_level
 
             context.view_layer.objects.active = joined_obj
             model_obj.select_set(True)
@@ -688,8 +688,8 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
 
         # Set highest lod level
         for lod_level in [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]:
-            if model_obj.sollumz_lods.get_lod(lod_level) != None:
-                model_obj.sollumz_lods.set_active_lod(lod_level)
+            if model_lods.get_lod(lod_level).mesh is not None:
+                model_lods.active_lod_level = lod_level
                 break
 
         return {"FINISHED"}

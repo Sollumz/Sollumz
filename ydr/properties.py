@@ -523,13 +523,14 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
     if drawable_obj is not None and model_obj.vertex_groups:
         return drawable_obj.skinned_model_properties.get_lod(lod_level)
 
-    lod = model_obj.sollumz_lods.get_lod(lod_level)
+    lod = model_obj.sz_lods.get_lod(lod_level)
+    lod_mesh = lod.mesh
 
-    if lod is None or lod.mesh is None:
+    if lod_mesh is None:
         raise ValueError(
             f"Failed to get Drawable Model properties: {model_obj.name} has no {SOLLUMZ_UI_NAMES[lod_level]} LOD!")
 
-    return lod.mesh.drawable_model_properties
+    return lod_mesh.drawable_model_properties
 
 
 def register():

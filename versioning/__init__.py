@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 1
+SOLLUMZ_INTERNAL_VERSION = 2
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
@@ -22,9 +22,10 @@ added to keep backwards compatibility when loading old .blend files.
 Version History:
  == v2.3.1 ==
   - 0: changes between 2.3.1 and 2.4.0, until the introduction of versioning system.
-  - 1: renamed LightFlags, light shadow_blur normalized to 0.0-1.0 range
-  - <next>: <describe changes>
+  - 1: renamed LightFlags, light shadow_blur normalized to 0.0-1.0 range.
  == v2.4.0 ==
+  - 2: LOD system fixes.
+  - <next>: <describe changes>
 """
 
 
@@ -65,8 +66,9 @@ def do_versions(data: bpy.types.BlendData):
 
     log(f"Upgrading Sollumz data from version {data_version} to version {SOLLUMZ_INTERNAL_VERSION}")
 
-    from . import versioning_230
+    from . import versioning_230, versioning_240
     versioning_230.do_versions(data_version, data)
+    versioning_240.do_versions(data_version, data)
 
 
 def register():

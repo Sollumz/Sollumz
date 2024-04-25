@@ -83,11 +83,9 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         if obj is None:
             return False
 
-        active_lod = obj.sollumz_lods.active_lod
-        sollumz_parent = find_sollumz_parent(
-            obj, parent_type=SollumType.DRAWABLE)
+        sollumz_parent = find_sollumz_parent(obj, parent_type=SollumType.DRAWABLE)
 
-        return active_lod is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH" and sollumz_parent is not None
+        return obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH" and sollumz_parent is not None
 
     def draw(self, context):
         layout = self.layout
@@ -95,10 +93,9 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         layout.use_property_split = True
 
         obj = context.active_object
-        active_lod_level = obj.sollumz_lods.active_lod.level
+        active_lod_level = obj.sz_lods.active_lod_level
         mesh = obj.data
-        sollumz_parent = find_sollumz_parent(
-            obj, parent_type=SollumType.DRAWABLE)
+        sollumz_parent = find_sollumz_parent(obj, parent_type=SollumType.DRAWABLE)
 
         model_props = mesh.drawable_model_properties
 
@@ -110,14 +107,11 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
 
         # All skinned objects (objects with vertex groups) go in the same drawable model
         if is_skinned_model:
-            model_props = sollumz_parent.skinned_model_properties.get_lod(
-                active_lod_level)
+            model_props = sollumz_parent.skinned_model_properties.get_lod(active_lod_level)
 
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
+            col.label(text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
         else:
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
+            col.label(text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
 
         col.separator()
 

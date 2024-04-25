@@ -1,94 +1,163 @@
 """LOD Management system."""
 import bpy
+from bpy.types import (
+    Context,
+    Mesh,
+    PropertyGroup,
+    Object,
+)
+from bpy.props import (
+    EnumProperty,
+    PointerProperty,
+    StringProperty,
+    BoolProperty,
+)
 from typing import Callable, Optional
-from .sollumz_properties import SollumType, LODLevel, FRAGMENT_TYPES, DRAWABLE_TYPES, SOLLUMZ_UI_NAMES, BOUND_TYPES, BOUND_POLYGON_TYPES, items_from_enums
-from .tools.blenderhelper import get_all_collections, lod_level_enum_flag_prop_factory
+from .sollumz_properties import (
+    SollumType,
+    LODLevel,
+    LODLevelEnumItems,
+    FRAGMENT_TYPES,
+    DRAWABLE_TYPES,
+    SOLLUMZ_UI_NAMES,
+    BOUND_TYPES,
+    BOUND_POLYGON_TYPES,
+)
+from .tools.blenderhelper import lod_level_enum_flag_prop_factory
 from .sollumz_helper import find_sollumz_parent
 from .icons import icon_manager
 
 
-class ObjectLODProps(bpy.types.PropertyGroup):
-    def update_mesh(self, context: bpy.types.Context):
-        obj: bpy.types.Object = self.id_data
+class LODLevelProps(PropertyGroup):
+    def on_lod_level_enter(self):
+        """Called when the LOD level switches to this level."""
+        obj: Object = self.id_data
 
-        active_obj_lod = obj.sollumz_lods.active_lod
+        if self.has_mesh:
+            # Update the object current mesh to this LOD mesh
+            obj.data = self.mesh_ref
+            self.mesh_ref = None  # keep a single ref to the mesh, in Object.data
 
-        if active_obj_lod == self and self.mesh is not None:
-            obj.data = self.mesh
-            if obj.name in context.view_layer.objects:
-                obj.hide_set(False)
-        elif self.mesh is None:
-            if obj.name in context.view_layer.objects:
-                obj.hide_set(True)
+        if obj.name in bpy.context.view_layer.objects:
+            obj.hide_set(not self.has_mesh)
 
-    level: bpy.props.EnumProperty(
-        items=items_from_enums(LODLevel))
-    mesh: bpy.props.PointerProperty(
-        type=bpy.types.Mesh, update=update_mesh)
+    def on_lod_level_exit(self):
+        """Called when the LOD level switches aways from this level."""
+        obj: Object = self.id_data
 
+        # Store a reference to the mesh
+        self.mesh_ref = obj.data if self.has_mesh else None
 
-class LODLevels(bpy.types.PropertyGroup):
-    def get_lod(self, lod_level: str) -> ObjectLODProps | None:
-        for lod in self.lods:
-            if lod.level == lod_level:
-                return lod
+    def _get_mesh_name(self) -> str:
+        m = self.mesh
+        return m.name if m is not None else ""
 
-    def set_lod_mesh(self, lod_level: str, mesh: bpy.types.Mesh) -> ObjectLODProps | None:
-        for lod in self.lods:
-            if lod.level == lod_level:
-                lod.mesh = mesh
-                return lod
+    def _set_mesh_name(self, value: str) -> str:
+        self.mesh = bpy.data.meshes.get(value, None)
 
-    def add_lod(self, lod_level: str, mesh: Optional[bpy.types.Mesh] = None) -> ObjectLODProps | None:
-        # Can't have multiple lods with the same type
-        if self.get_lod(lod_level):
-            return None
+    # Wrapper property so we can modify the LOD meshes from the UI without keeping a reference to the mesh of the
+    # active LOD.
+    mesh_name: StringProperty(get=_get_mesh_name, set=_set_mesh_name)
 
-        self.lods.add()
-        i = len(self.lods) - 1
-        obj_lod = self.lods[i]
-        obj_lod.level = lod_level
+    # Only set on non-active LOD levels, used to keep a reference to the mesh data-block so Blender doesn't remove it
+    # during garbage collection. For the active LOD, the mesh is the current object.data mesh.
+    # Blender expects a single reference to the mesh (in object.data) for many operations, otherwise asks
+    # the user to duplicate the mesh and then object.data becomes out-of-sync with Sollumz LODs.
+    mesh_ref: PointerProperty(type=Mesh)  # DO NOT MODIFY DIRECTLY OUTSIDE THIS CLASS, use .mesh or .mesh_name
 
-        if mesh is not None:
-            obj_lod.mesh = mesh
-
-        return obj_lod
-
-    def set_highest_lod_active(self):
-        lod_levels = [LODLevel.VERYHIGH, LODLevel.HIGH,
-                      LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]
-
-        for lod_level in lod_levels:
-            lod = self.get_lod(lod_level)
-            if lod.mesh is not None:
-                self.set_active_lod(lod_level)
-                return
-
-    def set_active_lod(self, lod_level: str):
-        for i, lod in enumerate(self.lods):
-            if lod.level == lod_level:
-                self.active_lod_index = i
-                return
-
-    def update_active_lod(self, context):
-        self.active_lod.update_mesh(context)
-
-    def add_empty_lods(self):
-        """Add all LOD lods with no meshes assigned."""
-        self.add_lod(LODLevel.VERYHIGH)
-        self.add_lod(LODLevel.HIGH)
-        self.add_lod(LODLevel.MEDIUM)
-        self.add_lod(LODLevel.LOW)
-        self.add_lod(LODLevel.VERYLOW)
+    # Whether this LOD actually has a mesh. Needed because when a level that doesn't have a mesh becomes the active LOD,
+    # object.data keeps the previous mesh and instead the object is hidden, so when switching away we wouldn't know if
+    # object.data is actually our mesh or not.
+    has_mesh: BoolProperty(default=False)  # DO NOT MODIFY DIRECTLY OUTSIDE THIS CLASS, use .mesh or .mesh_name
 
     @property
-    def active_lod(self) -> ObjectLODProps | None:
-        if self.active_lod_index < len(self.lods):
-            return self.lods[self.active_lod_index]
+    def mesh(self) -> Optional[Mesh]:
+        """Gets the mesh of this LOD level, or ``None`` if there is no mesh."""
+        if not self.has_mesh:
+            return None
 
-    lods: bpy.props.CollectionProperty(type=ObjectLODProps)
-    active_lod_index: bpy.props.IntProperty(
-        min=0, update=update_active_lod)
+        obj: Object = self.id_data
+        lods: LODLevels = obj.sz_lods
+        if lods.active_lod_level == self.level:
+            return obj.data
+        else:
+            return self.mesh_ref
+
+    @mesh.setter
+    def mesh(self, value: Optional[Mesh]):
+        """Sets the mesh of this LOD level. Set to ``None`` to remove the mesh."""
+        obj: Object = self.id_data
+        lods: LODLevels = obj.sz_lods
+        self.has_mesh = value is not None
+        if lods.active_lod_level == self.level:
+            self.mesh_ref = None
+            if self.has_mesh:
+                obj.data = value
+
+            if obj.name in bpy.context.view_layer.objects:
+                obj.hide_set(not self.has_mesh)
+        else:
+            self.mesh_ref = value
+
+    @property
+    def level(self) -> LODLevel:
+        obj: Object = self.id_data
+        lods: LODLevels = obj.sz_lods
+        if lods.very_high == self:
+            return LODLevel.VERYHIGH
+        if lods.high == self:
+            return LODLevel.HIGH
+        if lods.medium == self:
+            return LODLevel.MEDIUM
+        if lods.low == self:
+            return LODLevel.LOW
+        if lods.very_low == self:
+            return LODLevel.VERYLOW
+
+        assert False, "LODLevelProps for unknown LOD level"
+
+
+class LODLevels(PropertyGroup):
+    def on_lod_level_update(self, context: Context):
+        prev_lod = self.get_lod(self.active_lod_level_prev)
+        curr_lod = self.get_lod(self.active_lod_level)
+        prev_lod.on_lod_level_exit()
+        curr_lod.on_lod_level_enter()
+        self.active_lod_level_prev = self.active_lod_level
+
+    active_lod_level: EnumProperty(items=LODLevelEnumItems, update=on_lod_level_update)
+    active_lod_level_prev: EnumProperty(items=LODLevelEnumItems)
+    very_high: PointerProperty(type=LODLevelProps)
+    high: PointerProperty(type=LODLevelProps)
+    medium: PointerProperty(type=LODLevelProps)
+    low: PointerProperty(type=LODLevelProps)
+    very_low: PointerProperty(type=LODLevelProps)
+
+    @property
+    def active_lod(self) -> LODLevelProps:
+        return self.get_lod(self.active_lod_level)
+
+    def get_lod(self, lod_level: LODLevel) -> LODLevelProps:
+        match lod_level:
+            case LODLevel.VERYHIGH:
+                return self.very_high
+            case LODLevel.HIGH:
+                return self.high
+            case LODLevel.MEDIUM:
+                return self.medium
+            case LODLevel.LOW:
+                return self.low
+            case LODLevel.VERYLOW:
+                return self.very_low
+            case _:
+                assert False, f"Unknown LOD level '{lod_level}'"
+
+    def set_highest_lod_active(self):
+        for lod_level in LODLevel:
+            lod = self.get_lod(lod_level)
+            if lod.mesh is not None:
+                self.active_lod_level = lod_level
+                return
 
 
 class SetLodLevelHelper:
@@ -159,8 +228,8 @@ class SOLLUMZ_OT_HIDE_OBJECT(bpy.types.Operator, SetLodLevelHelper):
         obj.hide_set(do_hide)
 
         for child in obj.children_recursive:
-            active_lod = child.sollumz_lods.active_lod
-            if child.sollum_type != SollumType.DRAWABLE_MODEL or not active_lod or active_lod.mesh is None:
+            active_lod = child.sz_lods.active_lod
+            if child.sollum_type != SollumType.DRAWABLE_MODEL or active_lod.mesh is None:
                 continue
 
             child.hide_set(do_hide)
@@ -228,47 +297,34 @@ class SOLLUMZ_OT_copy_lod(bpy.types.Operator):
     def poll(self, context):
         aobj = context.active_object
 
-        return aobj is not None and aobj.sollumz_lods.active_lod is not None
+        return aobj is not None and aobj.sz_lods.active_lod.mesh is not None
 
     def draw(self, context):
         self.layout.props_enum(self, "copy_lod_levels")
 
     def execute(self, context):
         aobj = context.active_object
+        lods = aobj.sz_lods
 
-        active_lod = aobj.sollumz_lods.active_lod
+        active_lod = lods.active_lod
+        active_lod_mesh = active_lod.mesh
 
         for lod_level in self.copy_lod_levels:
-            lod = aobj.sollumz_lods.get_lod(lod_level)
+            lod = lods.get_lod(lod_level)
 
             if lod is None:
                 return {"CANCELLED"}
 
             if lod.mesh is not None:
-                self.report(
-                    {"INFO"}, f"{SOLLUMZ_UI_NAMES[lod_level]} already has a mesh!")
+                self.report({"INFO"}, f"{SOLLUMZ_UI_NAMES[lod_level]} already has a mesh!")
                 return {"CANCELLED"}
 
-            lod.mesh = active_lod.mesh.copy()
+            lod.mesh = active_lod_mesh.copy()
 
         return {"FINISHED"}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-
-
-class SOLLUMZ_UL_OBJ_LODS_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_OBJ_LODS_LIST"
-
-    def draw_item(
-        self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_propname, index
-    ):
-        col = layout.column()
-        col.scale_x = 0.35
-        col.label(text=SOLLUMZ_UI_NAMES[item.level])
-        col = layout.column()
-        col.scale_x = 0.65
-        col.prop(item, "mesh", text="")
 
 
 class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
@@ -289,15 +345,24 @@ class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         active_obj = context.view_layer.objects.active
+        lods = active_obj.sz_lods
 
         layout.enabled = active_obj.mode == "OBJECT"
-
         row = layout.row()
-        row.template_list(
-            SOLLUMZ_UL_OBJ_LODS_LIST.bl_idname, "", active_obj.sollumz_lods, "lods", active_obj.sollumz_lods, "active_lod_index"
-        )
+        col = row.column(align=True)
+        for lod_level in (
+            LODLevel.VERYHIGH,
+            LODLevel.HIGH,
+            LODLevel.MEDIUM,
+            LODLevel.LOW,
+            LODLevel.VERYLOW,
+        ):
+            lod = lods.get_lod(lod_level)
+            lod_split = col.split(align=True, factor=0.3)
+            lod_split.prop_enum(lods, "active_lod_level", lod_level)
+            lod_split.prop_search(lod, "mesh_name", bpy.data, "meshes", text="")
 
-        row.operator("sollumz.copy_lod", icon="COPYDOWN", text="")
+        row.operator(SOLLUMZ_OT_copy_lod.bl_idname, icon="COPYDOWN", text="")
 
 
 def set_collision_visibility(is_visible: bool):
@@ -327,7 +392,7 @@ def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
 
     for child in obj.children_recursive:
         if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
-            child.sollumz_lods.set_active_lod(lod_level)
+            child.sz_lods.active_lod_level = lod_level
             continue
 
 
@@ -336,15 +401,15 @@ def operates_on_lod_level(func: Callable):
     Will automatically set the LOD level to ``lod_level`` at the beginning of execution
     and will set it back to the original LOD level at the end."""
     def wrapper(model_obj: bpy.types.Object, lod_level: LODLevel, *args, **kwargs):
-        current_lod_level = model_obj.sollumz_lods.active_lod.level
+        current_lod_level = model_obj.sz_lods.active_lod_level
 
         was_hidden = model_obj.hide_get()
-        model_obj.sollumz_lods.set_active_lod(lod_level)
+        model_obj.sz_lods.active_lod_level = lod_level
 
         res = func(model_obj, lod_level, *args, **kwargs)
 
         # Set the lod level back to what it was
-        model_obj.sollumz_lods.set_active_lod(current_lod_level)
+        model_obj.sz_lods.active_lod_level = current_lod_level
         model_obj.hide_set(was_hidden)
 
         return res
@@ -353,19 +418,15 @@ def operates_on_lod_level(func: Callable):
 
 
 def register():
-    bpy.types.Object.sollumz_lods = bpy.props.PointerProperty(
-        type=LODLevels)
+    bpy.types.Object.sz_lods = bpy.props.PointerProperty(type=LODLevels)
     bpy.types.Object.sollumz_obj_is_hidden = bpy.props.BoolProperty()
-    bpy.types.Scene.sollumz_show_collisions = bpy.props.BoolProperty(
-        default=True)
-    bpy.types.Scene.sollumz_show_shattermaps = bpy.props.BoolProperty(
-        default=True)
-    bpy.types.Scene.sollumz_copy_lod_level = bpy.props.EnumProperty(
-        items=items_from_enums(LODLevel))
+    bpy.types.Scene.sollumz_show_collisions = bpy.props.BoolProperty(default=True)
+    bpy.types.Scene.sollumz_show_shattermaps = bpy.props.BoolProperty(default=True)
+    bpy.types.Scene.sollumz_copy_lod_level = bpy.props.EnumProperty(items=LODLevelEnumItems)
 
 
 def unregister():
-    del bpy.types.Object.sollumz_lods
+    del bpy.types.Object.sz_lods
     del bpy.types.Object.sollumz_obj_is_hidden
     del bpy.types.Scene.sollumz_show_collisions
     del bpy.types.Scene.sollumz_show_shattermaps

@@ -223,19 +223,21 @@ def remove_non_hi_lods(drawable_obj: bpy.types.Object):
         if model_obj.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
-        very_high_lod = model_obj.sollumz_lods.get_lod(LODLevel.VERYHIGH)
+        lods = model_obj.sz_lods
+        very_high_lod = lods.get_lod(LODLevel.VERYHIGH)
 
-        if very_high_lod is None or very_high_lod.mesh is None:
+        if very_high_lod.mesh is None:
             bpy.data.objects.remove(model_obj)
             continue
 
-        lod_props = model_obj.sollumz_lods
+        lods.get_lod(LODLevel.HIGH).mesh = very_high_lod.mesh
+        lods.active_lod_level = LODLevel.HIGH
 
-        lod_props.set_lod_mesh(LODLevel.HIGH, very_high_lod.mesh)
-        lod_props.set_active_lod(LODLevel.HIGH)
-
-        for lod in lod_props.lods:
-            if lod.level != LODLevel.HIGH and lod.mesh is not None:
+        for lod_level in LODLevel:
+            if lod_level == LODLevel.HIGH:
+                continue
+            lod = lods.get_lod(lod_level)
+            if lod.mesh is not None:
                 lod.mesh = None
 
 
@@ -260,9 +262,9 @@ def has_hi_lods(frag_obj: bpy.types.Object):
         if child.sollum_type != SollumType.DRAWABLE_MODEL and not child.sollumz_is_physics_child_mesh:
             continue
 
-        for lod in child.sollumz_lods.lods:
-            if lod.level == LODLevel.VERYHIGH and lod.mesh is not None:
-                return True
+        very_high_lod = child.sz_lods.get_lod(LODLevel.VERYHIGH)
+        if very_high_lod.mesh is not None:
+            return True
 
     return False
 
@@ -699,14 +701,17 @@ def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.type
         scale = get_scale_to_apply_to_bound(obj)
         transforms_to_apply = Matrix.Diagonal(scale).to_4x4()
 
-        for lod in obj.sollumz_lods.lods:
-            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
+        lods = obj.sz_lods
+        for lod_level in LODLevel:
+            if lod_level == LODLevel.VERYHIGH:
+                continue
+            lod_mesh = lods.get_lod(lod_level).mesh
+            if lod_mesh is None:
                 continue
 
-            model_xml = create_model_xml(
-                obj, lod.level, materials, transforms_to_apply=transforms_to_apply)
+            model_xml = create_model_xml(obj, lod_level, materials, transforms_to_apply=transforms_to_apply)
             model_xml.bone_index = 0
-            append_model_xml(drawable_xml, model_xml, lod.level)
+            append_model_xml(drawable_xml, model_xml, lod_level)
 
     set_drawable_xml_extents(drawable_xml)
 

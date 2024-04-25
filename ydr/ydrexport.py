@@ -126,17 +126,20 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
     for model_obj in model_objs:
         transforms_to_apply = get_export_transforms_to_apply(model_obj)
 
-        for lod in model_obj.sollumz_lods.lods:
-            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
+        lods = model_obj.sz_lods
+        for lod_level in LODLevel:
+            if lod_level == LODLevel.VERYHIGH:
                 continue
 
-            model_xml = create_model_xml(
-                model_obj, lod.level, materials, bones, transforms_to_apply)
+            lod = lods.get_lod(lod_level)
+            if lod.mesh is None:
+                continue
 
+            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply)
             if not model_xml.geometries:
                 continue
 
-            append_model_xml(drawable_xml, model_xml, lod.level)
+            append_model_xml(drawable_xml, model_xml, lod_level)
 
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
     # drawable can be split by vertex group, we have to join each separate part into a single object.
