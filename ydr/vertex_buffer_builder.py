@@ -164,6 +164,7 @@ class VertexBufferBuilder:
         weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
 
         weights_arr = self._convert_to_int_range(weights_arr)
+        weights_arr = self._renormalize_converted_weights(weights_arr)
 
         # Return on loop domain
         return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
@@ -190,6 +191,18 @@ class VertexBufferBuilder:
     def _convert_to_int_range(self, arr: NDArray[np.float32]) -> NDArray[np.uint32]:
         """Convert float array from range 0-1 to range 0-255"""
         return (np.rint(arr * 255)).astype(np.uint32)
+
+    def _renormalize_converted_weights(self, weights_arr: NDArray[np.uint32]) -> NDArray[np.uint32]:
+        """Re-normalize converted weights to ensure their sum to be 255."""
+        row_sums = weights_arr.sum(axis=1, keepdims=True)
+        to_be_subtracted = np.full_like(row_sums, 255, dtype=np.int32)
+        deltas = np.subtract(to_be_subtracted, row_sums)
+        max_indices = weights_arr.argmax(axis=1, keepdims=True)
+        max_values = weights_arr.max(axis=1, keepdims=True)
+        normalized_max_values = np.add(max_values, deltas)
+        result = np.copy(weights_arr)
+        np.put_along_axis(result, max_indices, normalized_max_values, axis=1)
+        return result
 
     def _get_colors(self) -> list[NDArray[np.uint32]]:
         num_loops = len(self.mesh.loops)
