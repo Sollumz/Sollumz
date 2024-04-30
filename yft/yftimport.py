@@ -24,15 +24,15 @@ from ..tools.blenderhelper import get_child_of_bone
 def import_yft(filepath: str):
     import_settings = get_import_settings()
 
+    name = get_filename(filepath)
     yft_xml = YFT.from_xml_file(filepath)
 
     if import_settings.import_as_asset:
-        return create_drawable_as_asset(yft_xml.drawable, yft_xml.name.replace("pack:/", ""), filepath)
+        return create_drawable_as_asset(yft_xml.drawable, name, filepath)
 
-    hi_xml = parse_hi_yft(
-        filepath) if import_settings.import_with_hi else None
+    hi_xml = parse_hi_yft(filepath) if import_settings.import_with_hi else None
 
-    return create_fragment_obj(yft_xml, filepath,
+    return create_fragment_obj(yft_xml, filepath, name,
                                split_by_group=import_settings.split_by_group, hi_xml=hi_xml)
 
 
@@ -50,8 +50,8 @@ def parse_hi_yft(yft_filepath: str) -> Fragment | None:
             f"Could not find _hi yft for {os.path.basename(yft_filepath)}! Make sure there is a file named '{os.path.basename(hi_path)}' in the same directory!")
 
 
-def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
-    frag_obj = create_frag_armature(frag_xml)
+def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] = None, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
+    frag_obj = create_frag_armature(frag_xml, name)
 
     if hi_xml is not None:
         frag_xml = merge_hi_fragment(frag_xml, hi_xml)
@@ -82,9 +82,9 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, split_by_group: bool 
     return frag_obj
 
 
-def create_frag_armature(frag_xml: Fragment):
+def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
     """Create the fragment armature along with the bones and rotation limits."""
-    name = frag_xml.name.replace("pack:/", "")
+    name = name or frag_xml.name.replace("pack:/", "")
     drawable_xml = frag_xml.drawable
     frag_obj = create_armature_obj_from_skel(
         drawable_xml.skeleton, name, SollumType.FRAGMENT)
