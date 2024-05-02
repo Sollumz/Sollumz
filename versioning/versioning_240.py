@@ -3,6 +3,7 @@
 from bpy.types import (
     BlendData,
     Object,
+    Mesh,
 )
 
 
@@ -26,7 +27,8 @@ def update_lods(obj: Object):
             continue
 
         mesh = lod_props.get("mesh", None)
-        if mesh is None:
+        # In some cases 'mesh' can end up with an empty bpy id prop, ensure that it is a Mesh
+        if mesh is None or not isinstance(mesh, Mesh):
             continue
 
         new_lods[lod_level_int] = mesh
