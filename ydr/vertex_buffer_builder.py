@@ -11,7 +11,7 @@ def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bo
     bone_ind_by_name: dict[str, int] = {
         b.name: i for i, b in enumerate(bones)}
 
-    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else 0 for i, group in enumerate(vgroups)}
+    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else -1 for i, group in enumerate(vgroups)}
 
 
 def remove_arr_field(name: str, vertex_arr: NDArray):
@@ -69,11 +69,12 @@ def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uin
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
 
-    def __init__(self, mesh: bpy.types.Mesh, bone_by_vgroup: Optional[dict[int, int]] = None):
+    def __init__(self, mesh: bpy.types.Mesh, bone_by_vgroup: Optional[dict[int, int]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None):
         self.mesh = mesh
 
         self._bone_by_vgroup = bone_by_vgroup
         self._has_weights = bone_by_vgroup is not None
+        self._vertex_groups = vertex_groups
 
         vert_inds = np.empty(len(mesh.loops), dtype=np.uint32)
         self.mesh.loops.foreach_get("vertex_index", vert_inds)
@@ -153,7 +154,8 @@ class VertexBufferBuilder:
         weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
 
         for i, vert in enumerate(self.mesh.vertices):
-            for j, grp in enumerate(vert.groups):
+            groups = self._get_processed_vertex_group_elements(vert)
+            for j, grp in enumerate(groups):
                 if j > 3:
                     break
 
@@ -168,6 +170,35 @@ class VertexBufferBuilder:
 
         # Return on loop domain
         return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
+
+    def _get_processed_vertex_group_elements(self, vertex: bpy.types.MeshVertex) -> list[bpy.types.VertexGroupElement]:
+        processed = []
+        bone_by_vgroup = self._bone_by_vgroup
+        vgroups = self._vertex_groups
+        for element in vertex.groups:
+            # in some rare cases there are some unknown data pointing to non-existing group indices, filter out
+            if element.group >= len(vgroups):
+                continue
+
+            vertex_group = vgroups[element.group]
+            bone_index = bone_by_vgroup[element.group]
+
+            # skip the locked vertex group
+            if vertex_group.lock_weight is True:
+                continue
+
+            # skip the group that doesn't have a corresponding bone
+            if bone_index == -1:
+                continue
+
+            processed.append(element)
+
+        def _get_weight(element):
+            return element.weight
+        
+        # sort by weight so the groups with less influence are to be ignored
+        processed = sorted(processed, reverse=True, key=_get_weight)
+        return processed
 
     def _sort_weights_inds(self, weights_arr: NDArray[np.float32], ind_arr: NDArray[np.uint32]):
         """Sort BlendWeights and BlendIndices."""
