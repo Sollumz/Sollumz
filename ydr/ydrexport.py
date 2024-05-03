@@ -251,7 +251,7 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
     bone_by_vgroup = get_bone_by_vgroup(
         vertex_groups, bones) if bones and vertex_groups else None
 
-    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup, vertex_groups).build()
+    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup).build()
 
     for mat_index, loop_inds in loop_inds_by_mat.items():
         material = materials[mat_index]
