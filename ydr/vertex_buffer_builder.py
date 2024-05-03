@@ -183,10 +183,6 @@ class VertexBufferBuilder:
             vertex_group = vgroups[element.group]
             bone_index = bone_by_vgroup[element.group]
 
-            # skip the locked vertex group
-            if vertex_group.lock_weight is True:
-                continue
-
             # skip the group that doesn't have a corresponding bone
             if bone_index == -1:
                 continue
