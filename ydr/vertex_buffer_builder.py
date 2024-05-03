@@ -8,10 +8,9 @@ from ..cwxml.drawable import VertexBuffer
 
 
 def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bone]):
-    bone_ind_by_name: dict[str, int] = {
-        b.name: i for i, b in enumerate(bones)}
+    bone_ind_by_name: dict[str, int] = {b.name: i for i, b in enumerate(bones)}
 
-    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else 0 for i, group in enumerate(vgroups)}
+    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else -1 for i, group in enumerate(vgroups)}
 
 
 def remove_arr_field(name: str, vertex_arr: NDArray):
@@ -153,7 +152,8 @@ class VertexBufferBuilder:
         weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
 
         for i, vert in enumerate(self.mesh.vertices):
-            for j, grp in enumerate(vert.groups):
+            groups = self._get_sorted_vertex_group_elements(vert)
+            for j, grp in enumerate(groups):
                 if j > 3:
                     break
 
@@ -168,6 +168,22 @@ class VertexBufferBuilder:
 
         # Return on loop domain
         return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
+
+    def _get_sorted_vertex_group_elements(self, vertex: bpy.types.MeshVertex) -> list[bpy.types.VertexGroupElement]:
+        elements = []
+        bone_by_vgroup = self._bone_by_vgroup
+        for element in vertex.groups:
+            bone_index = bone_by_vgroup.get(element.group, -1)
+
+            # skip the group that doesn't have a corresponding bone
+            if bone_index == -1:
+                continue
+
+            elements.append(element)
+
+        # sort by weight so the groups with less influence are to be ignored
+        elements = sorted(elements, reverse=True, key=lambda e: e.weight)
+        return elements
 
     def _sort_weights_inds(self, weights_arr: NDArray[np.float32], ind_arr: NDArray[np.uint32]):
         """Sort BlendWeights and BlendIndices."""
