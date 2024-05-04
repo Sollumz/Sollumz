@@ -3,6 +3,7 @@ import traceback
 import bpy
 from typing import Optional
 from mathutils import Matrix
+from pathlib import Path
 from ..tools.drawablehelper import get_model_xmls_by_lod
 from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
@@ -224,8 +225,49 @@ def shadergroup_to_materials(shader_group: ShaderGroup, filepath: str):
     return materials
 
 
+def lookup_texture_file(texture_name: str, model_textures_directory: Path) -> Optional[Path]:
+    """Searches for a DDS file with the given ``texture_name``.
+    The search order is as follows:
+      1. Check if file exists in ``model_textures_directory``.
+      2. Check the shared textures directories defined by the user in the add-on preferences.
+        2.1. These are searched in the priority order set by the user.
+        2.2. The user can also set whether the search is recursive or not.
+      3. If not found, returns ``None``.
+    """
+    texture_filename = f"{texture_name}.dds"
+
+    def _lookup_in_directory(directory: Path, recursive: bool) -> Optional[Path]:
+        if not directory.is_dir():
+            return None
+
+        if recursive:
+            # NOTE: rglob returns files in arbitrary order. We are just taking whatever is the first one it returns.
+            #       Maybe we should enforce some kind of sort (i.e. alphabetical), but really only makes sense to have
+            #       a single texture with this the name in the directory tree.
+            texture_path = next(directory.rglob(texture_filename), None)
+        else:
+            texture_path = directory.joinpath(texture_filename)
+
+        return texture_path if texture_path is not None and texture_path.is_file() else None
+
+    # First, check the textures directory next to the model we imported
+    found_texture_path = _lookup_in_directory(model_textures_directory, False)
+    if found_texture_path is not None:
+        return found_texture_path
+
+    # Texture not found, search the shared textures directories listed in preferences
+    prefs = get_addon_preferences(bpy.context)
+    for d in prefs.shared_textures_directories:
+        found_texture_path = _lookup_in_directory(Path(d.path), d.recursive)
+        if found_texture_path is not None:
+            return found_texture_path
+
+    # Texture still not found
+    return None
+
+
 def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath: str):
-    texture_folder = os.path.dirname(filepath) + "\\" + os.path.basename(filepath)[:-8]
+    texture_folder = Path(os.path.dirname(filepath) + "\\" + os.path.basename(filepath)[:-8])
 
     filename = shader.filename
 
@@ -240,12 +282,11 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         for n in material.node_tree.nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage):
                 if param.name == n.name:
-                    texture_path = os.path.join(
-                        texture_folder, param.texture_name + ".dds")
-                    if os.path.isfile(texture_path):
-                        img = bpy.data.images.load(
-                            texture_path, check_existing=True)
+                    texture_path = lookup_texture_file(param.texture_name, texture_folder)
+                    if texture_path is not None:
+                        img = bpy.data.images.load(str(texture_path), check_existing=True)
                         n.image = img
+
                     if not n.image:
                         # for texture shader parameters with no name
                         if not param.texture_name:

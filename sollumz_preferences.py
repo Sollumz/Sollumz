@@ -1,4 +1,10 @@
 import bpy
+from bpy.props import (
+    StringProperty,
+    IntProperty,
+    BoolProperty,
+    CollectionProperty,
+)
 import os
 import ast
 from typing import Any
@@ -21,6 +27,10 @@ def _save_preferences(self, context):
         if isinstance(value, bpy.types.PropertyGroup):
             config[key] = _get_data_block_as_dict(value)
             continue
+
+        if isinstance(value, bpy.types.bpy_prop_collection):
+            # Convert CollectionProperty to a list of tuples
+            value = list(map(lambda d: (d.path, d.recursive), value))
 
         main_prefs[key] = value
 
@@ -204,6 +214,118 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
     )
 
 
+class SzSharedTexturesDirectory(bpy.types.PropertyGroup):
+    path: StringProperty(
+        name="Path",
+        description="Path to a directory with textures",
+        subtype="DIR_PATH",
+        update=_save_preferences,
+    )
+    recursive: BoolProperty(
+        name="Recursive",
+        description="Search this directory recursively",
+        default=True,
+        update=_save_preferences,
+    )
+
+
+class SOLLUMZ_UL_prefs_shared_textures_directories(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_prefs_shared_textures_directories"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "path", text="", emboss=False)
+        layout.prop(item, "recursive", text="", icon="OUTLINER")
+
+
+class SOLLUMZ_OT_prefs_shared_textures_directory_add(bpy.types.Operator):
+    bl_idname = "sollumz.prefs_shared_textures_directory_add"
+    bl_label = "Add Shared Textures Directory"
+    bl_description = "Add a new directory to search textures in"
+
+    path: StringProperty(
+        name="Path",
+        description="Path to a directory with textures",
+        subtype="DIR_PATH",
+    )
+    recursive: BoolProperty(
+        name="Recursive",
+        description="Search this directory recursively",
+        default=True,
+    )
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        d = prefs.shared_textures_directories.add()
+        d.path = self.path
+        d.recursive = self.recursive
+        prefs.shared_textures_directories_index = len(prefs.shared_textures_directories) - 1
+        _save_preferences(None, context)
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+class SOLLUMZ_OT_prefs_shared_textures_directory_remove(bpy.types.Operator):
+    bl_idname = "sollumz.prefs_shared_textures_directory_remove"
+    bl_label = "Remove Shared Textures Directory"
+    bl_description = "Remove the selected directory"
+
+    @classmethod
+    def poll(cls, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.shared_textures_directories_index < len(prefs.shared_textures_directories)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.shared_textures_directories.remove(prefs.shared_textures_directories_index)
+        context.scene.ytyps.remove(context.scene.ytyp_index)
+        prefs.shared_textures_directories_index = max(prefs.shared_textures_directories_index - 1, 0)
+        _save_preferences(None, context)
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_shared_textures_directory_move_up(bpy.types.Operator):
+    bl_idname = "sollumz.prefs_shared_textures_directory_move_up"
+    bl_label = "Increase Shared Texture Directory Priority"
+    bl_description = "Increase search priority of this directory"
+
+    @classmethod
+    def poll(self, context):
+        prefs = get_addon_preferences(context)
+        return 0 < prefs.shared_textures_directories_index < len(prefs.shared_textures_directories)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        indexA = prefs.shared_textures_directories_index
+        indexB = prefs.shared_textures_directories_index - 1
+        prefs.swap_shared_textures_directories(indexA, indexB)
+        prefs.shared_textures_directories_index -= 1
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(bpy.types.Operator):
+    bl_idname = "sollumz.prefs_shared_textures_directory_move_down"
+    bl_label = "Decrease Shared Texture Directory Priority"
+    bl_description = "Decrease search priority of this directory"
+
+    @classmethod
+    def poll(self, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.shared_textures_directories_index < (len(prefs.shared_textures_directories) - 1)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        indexA = prefs.shared_textures_directories_index
+        indexB = prefs.shared_textures_directories_index + 1
+        prefs.swap_shared_textures_directories(indexA, indexB)
+        prefs.shared_textures_directories_index += 1
+        return {"FINISHED"}
+
+
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
 
@@ -241,10 +363,25 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         update=_save_preferences
     )
 
-    export_settings: bpy.props.PointerProperty(
-        type=SollumzExportSettings, name="Export Settings")
-    import_settings: bpy.props.PointerProperty(
-        type=SollumzImportSettings, name="Import Settings")
+    shared_textures_directories: CollectionProperty(
+        name="Shared Textures",
+        type=SzSharedTexturesDirectory,
+    )
+    shared_textures_directories_index: IntProperty(
+        name="Selected Shared Textures Directory",
+        min=0
+    )
+
+    export_settings: bpy.props.PointerProperty(type=SollumzExportSettings, name="Export Settings")
+    import_settings: bpy.props.PointerProperty(type=SollumzImportSettings, name="Import Settings")
+
+    def swap_shared_textures_directories(self, indexA: int, indexB: int):
+        a = self.shared_textures_directories[indexA]
+        b = self.shared_textures_directories[indexB]
+        pathA, recA = a.path, a.recursive
+        pathB, recB = b.path, b.recursive
+        a.path, a.recursive = pathB, recB
+        b.path, b.recursive = pathA, recA
 
     def draw(self, context):
         layout = self.layout
@@ -253,6 +390,23 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")
         layout.prop(self, "use_text_name_as_mat_name")
+
+        from .sollumz_ui import draw_list_with_add_remove
+        layout.separator()
+        layout.label(text="Shared Textures")
+        _, side_col = draw_list_with_add_remove(
+            self.layout,
+            SOLLUMZ_OT_prefs_shared_textures_directory_add.bl_idname,
+            SOLLUMZ_OT_prefs_shared_textures_directory_remove.bl_idname,
+            SOLLUMZ_UL_prefs_shared_textures_directories.bl_idname, "",
+            self, "shared_textures_directories",
+            self, "shared_textures_directories_index",
+            rows=4
+        )
+        side_col.separator()
+        subcol = side_col.column(align=True)
+        subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_up.bl_idname, text="", icon="TRIA_UP")
+        subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
 
     def register():
         _load_preferences()
@@ -311,7 +465,15 @@ def _apply_preferences(data_block: bpy.types.ID, config: ConfigParser, section: 
         value_str = config.get(section, key)
         value = ast.literal_eval(value_str)
 
-        setattr(data_block, key, value)
+        if key == "shared_textures_directories":
+            # Special case to handle CollectionProperty
+            data_block.shared_textures_directories.clear()
+            for path, recursive in value:
+                d = data_block.shared_textures_directories.add()
+                d.path = path
+                d.recursive = recursive
+        else:
+            setattr(data_block, key, value)
 
 
 def _get_data_block_as_dict(data_block: bpy.types.ID):
@@ -328,11 +490,11 @@ def _get_data_block_as_dict(data_block: bpy.types.ID):
 
 
 def get_prefs_path():
-    return os.path.join(bpy.utils.user_resource(resource_type='CONFIG'), PREFS_FILE_NAME)
+    return os.path.join(bpy.utils.user_resource(resource_type="CONFIG"), PREFS_FILE_NAME)
 
 
 def get_config_directory_path() -> str:
-    return bpy.utils.user_resource(resource_type='CONFIG', path="sollumz", create=True)
+    return bpy.utils.user_resource(resource_type="CONFIG", path="sollumz", create=True)
 
 
 def register():
