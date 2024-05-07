@@ -43,3 +43,15 @@ def test_versioning_lods():
                 assert lod.mesh_ref == temp_data.meshes[mesh_name]
             assert lod.mesh == temp_data.meshes[mesh_name]
             assert lod.mesh_name == mesh_name
+
+
+def test_versioning_tcmod_percentage():
+    with bpy.data.temp_data() as temp_data:
+        load_blend_data(temp_data, "v240_tcmod_percentage.blend")
+
+        do_versions(temp_data)
+
+        ytyp = temp_data.scenes[0].ytyps[0]
+        mlo = ytyp.archetypes[0]
+        tcmod = mlo.timecycle_modifiers[0]
+        assert tcmod.percentage == 75.0

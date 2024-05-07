@@ -213,9 +213,8 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     name: bpy.props.StringProperty(name="Name")
-    sphere: bpy.props.FloatVectorProperty(
-        name="Sphere", subtype="QUATERNION", size=4)
-    percentage: bpy.props.IntProperty(name="Percentage")
+    sphere: bpy.props.FloatVectorProperty(name="Sphere", subtype="QUATERNION", size=4)
+    percentage: bpy.props.FloatProperty(name="Percentage", min=0.0, max=100.0, step=100)
     range: bpy.props.FloatProperty(name="Range")
     start_hour: bpy.props.IntProperty(name="Start Hour")
     end_hour: bpy.props.IntProperty(name="End Hour")

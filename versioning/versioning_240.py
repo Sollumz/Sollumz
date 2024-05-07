@@ -5,6 +5,9 @@ from bpy.types import (
     Object,
     Mesh,
 )
+from ..ytyp.properties.ytyp import (
+    CMapTypesProperties
+)
 
 
 def update_lods(obj: Object):
@@ -63,7 +66,25 @@ def update_lods(obj: Object):
             new_lod_props["mesh_ref"] = new_lod_mesh
 
 
+def update_mlo_tcmods_percentage(ytyp: CMapTypesProperties):
+    for arch in ytyp.archetypes:
+        for tcmod in arch.timecycle_modifiers:
+            old_percentage = tcmod.get("percentage", None)
+            if old_percentage is None:
+                continue
+
+            # convert to float
+            new_percentage = float(old_percentage)
+            new_percentage = max(0.0, min(100.0, new_percentage))
+            tcmod["percentage"] = new_percentage
+
+
 def do_versions(data_version: int, data: BlendData):
     if data_version < 2:
         for obj in data.objects:
             update_lods(obj)
+
+    if data_version < 3:
+        for scene in data.scenes:
+            for ytyp in scene.ytyps:
+                update_mlo_tcmods_percentage(ytyp)

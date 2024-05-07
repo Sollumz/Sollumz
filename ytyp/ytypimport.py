@@ -66,7 +66,7 @@ def create_mlo_tcm(tcm_xml: ytypxml.TimeCycleModifier, archetype: ArchetypePrope
     tcm: TimecycleModifierProperties = archetype.new_tcm()
     tcm.name = tcm_xml.name
     tcm.sphere = tcm_xml.sphere
-    tcm.percentage = tcm_xml.percentage
+    tcm.percentage = max(0.0, min(100.0, tcm_xml.percentage))
     tcm.range = tcm_xml.range
     tcm.start_hour = tcm_xml.start_hour
     tcm.end_hour = tcm_xml.end_hour
