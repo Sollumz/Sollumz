@@ -12,6 +12,7 @@ from .extensions import ExtensionsContainer, ExtensionProperties
 class SpecialAttribute(IntEnum):
     NOTHING_SPECIAL = 0
     IS_TRAFFIC_LIGHT = 3
+    UNKNOWN4 = 4
     IS_GARAGE_DOOR = 5
     MLO_WATER_LEVEL = 6
     IS_NORMAL_DOOR = 7
@@ -61,6 +62,7 @@ SpecialAttributeEnumItems = tuple(None if enum is None else (enum.name, f"{label
     (None, "", ""),
     (SpecialAttribute.UNUSED1, "Deprecated - Unused",
      "Does nothing. Here for compatibility with original game files"),
+    (SpecialAttribute.UNKNOWN4, "Unknown 4", ""),
     (SpecialAttribute.IS_LADDER, "Deprecated - Ladder",
      "Add a Ladder extension instead. Here for compatibility with original game files"),
     (SpecialAttribute.IS_TREE_DEPRECATED, "Deprecated - Tree",
