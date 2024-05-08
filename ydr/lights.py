@@ -148,15 +148,15 @@ def create_xml_lights(parent_obj: bpy.types.Object, armature_obj: Optional[bpy.t
 
     for child in parent_obj.children_recursive:
         if child.type == "LIGHT" and child.data.sollum_type != LightType.NONE:
-            light_xmls.append(create_light_xml(child, armature_obj))
+            light_xmls.append(create_light_xml(child, parent_obj, armature_obj))
 
     return light_xmls
 
 
-def create_light_xml(light_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
+def create_light_xml(light_obj: bpy.types.Object, parent_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
     light_xml = Light()
-    light_xml.position = light_obj.location
-    mat = light_obj.matrix_basis
+    mat = parent_obj.matrix_world.inverted() @ light_obj.matrix_world
+    light_xml.position = mat.to_translation()
     set_light_xml_direction(light_xml, mat)
     set_light_xml_tangent(light_xml, mat)
 
