@@ -2,12 +2,14 @@ import bpy
 import bmesh
 import numpy as np
 from numpy.typing import NDArray
+from typing import Optional
 from mathutils import Vector, Matrix
 from mathutils.geometry import distance_point_to_plane
 from math import radians
-from ..sollumz_properties import SollumType
-from .utils import divide_list, get_min_vector_list, get_max_vector_list
+from ..sollumz_properties import SollumType, MaterialType
+from .utils import get_min_vector_list, get_max_vector_list
 from .blenderhelper import get_children_recursive
+from ..cwxml.shader import ShaderManager
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):
@@ -182,24 +184,123 @@ def create_capsule(mesh, diameter=0.5, length=2, use_rot=False):
     return mesh
 
 
+def get_tangent_required(material: bpy.types.Material):
+    if material.sollum_type != MaterialType.SHADER:
+        return False
+
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return False
+
+    return shader.required_tangent
+
+
+def get_used_texcoords(material: bpy.types.Material) -> set[str]:
+    """Get TexCoords that the material's shader uses"""
+    if material.sollum_type != MaterialType.SHADER:
+        return set()
+
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return set()
+
+    return shader.used_texcoords
+
+
+def get_used_texcoords_indices(material: bpy.types.Material) -> set[int]:
+    """Get TexCoords that the material's shader uses"""
+    if material.sollum_type != MaterialType.SHADER:
+        return set()
+
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return set()
+
+    return shader.used_texcoords_indices
+
+
+def get_mesh_used_texcoords_indices(mesh: bpy.types.Mesh) -> set[int]:
+    texcoords = set()
+    texcoords = texcoords.union(*(get_used_texcoords_indices(mat) for mat in mesh.materials if mat is not None))
+    return texcoords
+
+
+def get_used_colors(material: bpy.types.Material) -> set[str]:
+    """Get Colours that the material's shader uses"""
+    if material.sollum_type != MaterialType.SHADER:
+        return set()
+
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return set()
+
+    return shader.used_colors
+
+
+def get_used_colors_indices(material: bpy.types.Material) -> set[int]:
+    """Get Colours that the material's shader uses"""
+    if material.sollum_type != MaterialType.SHADER:
+        return set()
+
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return set()
+
+    return shader.used_colors_indices
+
+
+def get_mesh_used_colors_indices(mesh: bpy.types.Mesh) -> set[int]:
+    colors = set()
+    colors = colors.union(*(get_used_colors_indices(mat) for mat in mesh.materials if mat is not None))
+    return colors
+
+
+def get_normal_required(material: bpy.types.Material):
+    if material.sollum_type != MaterialType.SHADER:
+        return False
+
+    shader_name = material.shader_properties.filename
+
+    shader = ShaderManager.find_shader(shader_name)
+    if shader is None:
+        return False
+
+    return shader.required_normal
+
+
 def get_uv_map_name(index: int) -> str:
     return f"UVMap {index}"
 
 
-def create_uv_attr(mesh: bpy.types.Mesh, coords: NDArray[np.float64], domain: str = "CORNER"):
-    """Create a uv layer for ``mesh`` with the specified index."""
-    uv_attr = mesh.attributes.new(name=get_uv_map_name(len(mesh.uv_layers)), type="FLOAT2", domain=domain)
-
-    uv_attr.data.foreach_set("vector", coords.flatten())
+def get_color_attr_name(index: int) -> str:
+    num = index + 1  # uh...
+    return f"Color {num}"
 
 
-def create_color_attr(mesh: bpy.types.Mesh, colors: NDArray[np.float64], domain: str = "CORNER"):
-    """Create a color attribute layer for ``mesh`` with the specified index."""
-    layer_num = len(mesh.color_attributes) + 1
-    color_attr = mesh.attributes.new(
-        name=f"Color {layer_num}", type="BYTE_COLOR", domain=domain)
+def create_uv_attr(mesh: bpy.types.Mesh, uvmap_index: int, initial_values: Optional[NDArray[np.float64]] = None):
+    """Create a UV map for ``mesh`` with the specified index."""
+    attr = mesh.attributes.new(name=get_uv_map_name(uvmap_index), type="FLOAT2", domain="CORNER")
 
-    color_attr.data.foreach_set("color_srgb", colors.flatten())
+    if initial_values is not None:
+        attr.data.foreach_set("vector", initial_values.flatten())
+
+
+def create_color_attr(mesh: bpy.types.Mesh, color_index: int, initial_values: Optional[NDArray[np.float64]] = None):
+    """Create a color attribute for ``mesh`` with the specified index."""
+    attr = mesh.attributes.new(name=get_color_attr_name(color_index), type="BYTE_COLOR", domain="CORNER")
+
+    if initial_values is not None:
+        attr.data.foreach_set("color_srgb", initial_values.flatten())
 
 
 def get_extents_from_points(points: list[tuple]):

@@ -3,7 +3,13 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple, Optional
 
-from ..tools.meshhelper import flip_uvs
+from ..tools.meshhelper import (
+    flip_uvs,
+    get_mesh_used_colors_indices,
+    get_mesh_used_texcoords_indices,
+    get_color_attr_name,
+    get_uv_map_name,
+)
 from ..cwxml.drawable import VertexBuffer
 
 
@@ -105,14 +111,10 @@ class VertexBufferBuilder:
         mesh_attrs["Normal"] = self._get_normals()
 
         colors = self._get_colors()
-
-        for i, color in enumerate(colors):
-            mesh_attrs[f"Colour{i}"] = color
+        mesh_attrs.update(colors)
 
         uvs = self._get_uvs()
-
-        for i, uv in enumerate(uvs):
-            mesh_attrs[f"TexCoord{i}"] = uv
+        mesh_attrs.update(uvs)
 
         mesh_attrs["Tangent"] = self._get_tangents()
 
@@ -220,53 +222,49 @@ class VertexBufferBuilder:
         np.put_along_axis(result, max_indices, normalized_max_values, axis=1)
         return result
 
-    def _get_colors(self) -> list[NDArray[np.uint32]]:
+    def _get_colors(self) -> dict[str, NDArray[np.uint32]]:
         num_loops = len(self.mesh.loops)
+        color_layers = {}
+        for color_idx in get_mesh_used_colors_indices(self.mesh):
+            color_attr_name = get_color_attr_name(color_idx)
+            color_attr = self.mesh.color_attributes.get(color_attr_name, None)
+            if color_attr is None:
+                continue
 
-        def _is_valid_color_attr(attr: bpy.types.Attribute):
-            return (attr.domain == "CORNER" and
-                    # `TintColor` only used for the tint shaders/geometry nodes
-                    not attr.name.startswith("TintColor") and
-                    # Name prefixed by `.` indicate a reserved attribute name for Blender
-                    # e.g. `.a_1234` for anonymous attributes
-                    # https://projects.blender.org/blender/blender/issues/97452
-                    not attr.name.startswith("."))
+            if color_attr.domain != "CORNER" or color_attr.data_type != "BYTE_COLOR":
+                # Not in the correct format, ignore it
+                continue
 
-        color_attrs = [attr for attr in self.mesh.color_attributes if _is_valid_color_attr(attr)]
-        # Maximum of 2 color attributes for GTAV shaders
-        color_attrs = color_attrs[:2]
-
-        # Always have at least 1 color layer
-        if len(color_attrs) == 0:
-            return [np.full((len(self._vert_inds), 4), 255, dtype=np.uint32)]
-
-        color_layers = []
-
-        for color_attr in color_attrs:
             colors = np.empty(num_loops * 4, dtype=np.float32)
             color_attr.data.foreach_get("color_srgb", colors)
 
             colors = self._convert_to_int_range(colors)
+            colors = np.reshape(colors, (num_loops, 4))
 
-            color_layers.append(np.reshape(colors, (num_loops, 4)))
+            color_layers[f"Colour{color_idx}"] = colors
 
         return color_layers
 
-    def _get_uvs(self) -> list[NDArray[np.float32]]:
+    def _get_uvs(self) -> dict[str, NDArray[np.float32]]:
         num_loops = len(self.mesh.loops)
-        # UV mesh attributes (maximum of 8 for GTAV shaders)
-        uv_attrs = [attr for attr in self.mesh.attributes if attr.data_type ==
-                    'FLOAT2' and attr.domain == 'CORNER'][:8]
-        uv_layers: list[NDArray[np.float32]] = []
+        uv_layers = {}
+        for uvmap_idx in get_mesh_used_texcoords_indices(self.mesh):
+            uvmap_attr_name = get_color_attr_name(uvmap_idx)
+            uvmap_attr = self.mesh.uv_layers.get(uvmap_attr_name, None)
+            if uvmap_attr is None:
+                continue
 
-        for uv_attr in uv_attrs:
+            if uvmap_attr.domain != "CORNER" or uvmap_attr.data_type != "FLOAT2":
+                # Not in the correct format, ignore it
+                continue
+
             uvs = np.empty(num_loops * 2, dtype=np.float32)
-            uv_attr.data.foreach_get("vector", uvs)
+            uvmap_attr.data.foreach_get("vector", uvs)
             uvs = np.reshape(uvs, (num_loops, 2))
 
             flip_uvs(uvs)
 
-            uv_layers.append(uvs)
+            uv_layers[f"TexCoord{uvmap_idx}"] = uvs
 
         return uv_layers
 

@@ -34,6 +34,10 @@ from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_sphere_radius,
+    get_used_colors,
+    get_used_texcoords,
+    get_normal_required,
+    get_tangent_required,
 )
 from ..tools.utils import get_filename, get_max_vector_list, get_min_vector_list
 from ..shared.shader_nodes import SzShaderNodeParameter
@@ -353,48 +357,6 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
         loop_inds_by_mat[shader_index] = loop_indices
 
     return loop_inds_by_mat
-
-
-def get_tangent_required(material: bpy.types.Material):
-    shader_name = material.shader_properties.filename
-
-    shader = ShaderManager.find_shader(shader_name)
-    if shader is None:
-        return False
-
-    return shader.required_tangent
-
-
-def get_used_texcoords(material: bpy.types.Material) -> set[str]:
-    """Get TexCoords that the material's shader uses"""
-    shader_name = material.shader_properties.filename
-
-    shader = ShaderManager.find_shader(shader_name)
-    if shader is None:
-        return {"TexCoord0"}
-
-    return shader.used_texcoords
-
-
-def get_used_colors(material: bpy.types.Material) -> set[str]:
-    """Get Colours that the material's shader uses"""
-    shader_name = material.shader_properties.filename
-
-    shader = ShaderManager.find_shader(shader_name)
-    if shader is None:
-        return set()
-
-    return shader.used_colors
-
-
-def get_normal_required(material: bpy.types.Material):
-    shader_name = material.shader_properties.filename
-
-    shader = ShaderManager.find_shader(shader_name)
-    if shader is None:
-        return False
-
-    return shader.required_normal
 
 
 def get_geom_extents(positions: NDArray[np.float32]):

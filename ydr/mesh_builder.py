@@ -2,7 +2,11 @@ import bpy
 import numpy as np
 from numpy.typing import NDArray
 from traceback import format_exc
-from ..tools.meshhelper import create_uv_attr, create_color_attr, flip_uvs
+from ..tools.meshhelper import (
+    create_uv_attr,
+    create_color_attr,
+    flip_uvs,
+)
 from mathutils import Vector
 from .. import logger
 
@@ -90,24 +94,23 @@ class MeshBuilder:
             mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
-        uv_attrs = [
-            name for name in self.vertex_arr.dtype.names if "TexCoord" in name]
+        uv_attrs = [name for name in self.vertex_arr.dtype.names if name.startswith("TexCoord")]
 
         for attr_name in uv_attrs:
+            uvmap_idx = int(attr_name[8:])
             uvs = self.vertex_arr[attr_name]
-
             flip_uvs(uvs)
 
-            create_uv_attr(mesh, uvs[self.ind_arr])
+            create_uv_attr(mesh, uvmap_idx, initial_values=uvs[self.ind_arr])
 
     def set_mesh_vertex_colors(self, mesh: bpy.types.Mesh):
-        color_attrs = [
-            name for name in self.vertex_arr.dtype.names if "Colour" in name]
+        color_attrs = [name for name in self.vertex_arr.dtype.names if name.startswith("Colour")]
 
         for attr_name in color_attrs:
+            color_idx = int(attr_name[6:])
             colors = self.vertex_arr[attr_name] / 255
 
-            create_color_attr(mesh, colors[self.ind_arr])
+            create_color_attr(mesh, color_idx, initial_values=colors[self.ind_arr])
 
     def create_vertex_groups(self, obj: bpy.types.Object, bones: list[bpy.types.Bone]):
         weights = self.vertex_arr["BlendWeights"] / 255

@@ -198,6 +198,16 @@ class ShaderDef(ElementTree):
         return names
 
     @property
+    def used_texcoords_indices(self) -> set[int]:
+        indices = set()
+        for layout in self.layouts:
+            for field_name in layout.value:
+                if "TexCoord" in field_name:
+                    indices.add(int(field_name[8:]))
+
+        return indices
+
+    @property
     def used_colors(self) -> set[str]:
         names = set()
         for layout in self.layouts:
@@ -206,6 +216,16 @@ class ShaderDef(ElementTree):
                     names.add(field_name)
 
         return names
+
+    @property
+    def used_colors_indices(self) -> set[int]:
+        indices = set()
+        for layout in self.layouts:
+            for field_name in layout.value:
+                if "Colour" in field_name:
+                    indices.add(int(field_name[6:]))
+
+        return indices
 
     @property
     def is_uv_animation_supported(self) -> bool:

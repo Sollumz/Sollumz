@@ -27,7 +27,7 @@ from ..cwxml.bound import (
 from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (get_bound_center_from_bounds, calculate_volume,
                                 calculate_inertia, get_corners_from_extents, get_sphere_radius, get_inner_sphere_radius,
-                                get_combined_bound_box)
+                                get_combined_bound_box, get_color_attr_name)
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
 from ..sollumz_preferences import get_export_settings
 from .. import logger
@@ -364,7 +364,8 @@ def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert
     """Create all bound polygon triangle XML objects for this BoundGeometry/BVH."""
     triangles: list[PolyTriangle] = []
 
-    color_attr = mesh.color_attributes[0] if len(mesh.color_attributes) > 0 else None
+    color_attr_name = get_color_attr_name(0)
+    color_attr = mesh.color_attributes.get(color_attr_name, None)
     if color_attr is not None and (color_attr.domain != "CORNER" or color_attr.data_type != "BYTE_COLOR"):
         color_attr = None
 

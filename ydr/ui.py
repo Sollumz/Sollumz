@@ -9,6 +9,12 @@ from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
 from ..icons import icon_manager
 from ..shared.shader_nodes import SzShaderNodeParameter
+from ..tools.meshhelper import (
+    get_uv_map_name,
+    get_color_attr_name,
+    get_mesh_used_texcoords_indices,
+    get_mesh_used_colors_indices,
+)
 
 
 class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
@@ -185,7 +191,7 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
                     box = layout.box()
                     box.label(text="Spot Properties")
                     box.prop(light, "spot_size", text="Cone Outer Angle")
-                    box.prop(light, "spot_blend",text="Cone Inner Angle")
+                    box.prop(light, "spot_blend", text="Cone Inner Angle")
                 case LightType.CAPSULE:
                     box = layout.box()
                     box.label(text="Capsule Properties")
@@ -797,3 +803,58 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         op.value = scene.sz_ui_cable_material_index
         row.prop(scene, "sz_ui_cable_material_index", text="")
 
+
+def uv_maps_panel_draw(self, context):
+    me = context.mesh
+
+    texcoords = get_mesh_used_texcoords_indices(me)
+    texcoords_names = [get_uv_map_name(t) for t in texcoords]
+    if all(n in me.uv_layers for n in texcoords_names):
+        return
+
+    layout = self.layout
+    layout.label(text="Missing UV maps used by Sollumz shaders:", icon="ERROR")
+    split = layout.split(factor=0.5, align=True)
+    split.operator(ydr_ops.SOLLUMZ_OT_uv_maps_rename_by_order.bl_idname, text="Rename by Order")
+    split.operator(ydr_ops.SOLLUMZ_OT_uv_maps_add_missing.bl_idname, text="Add Missing")
+    for texcoord, name in zip(texcoords, texcoords_names):
+        exists = name in me.uv_layers
+        layout.label(text=name, icon="CHECKMARK" if exists else "X")
+
+
+def color_attributes_panel_draw(self, context):
+    me = context.mesh
+
+    colors = get_mesh_used_colors_indices(me)
+    colors_names = [get_color_attr_name(c) for c in colors]
+    if all(n in me.color_attributes and
+           me.color_attributes[n].domain == "CORNER" and
+           me.color_attributes[n].data_type == "BYTE_COLOR"
+           for n in colors_names):
+        return
+
+    layout = self.layout
+    layout.label(text="Missing color attributes used by Sollumz shaders:", icon="ERROR")
+    split = layout.split(factor=0.5, align=True)
+    split.operator(ydr_ops.SOLLUMZ_OT_color_attrs_rename_by_order.bl_idname, text="Rename by Order")
+    split.operator(ydr_ops.SOLLUMZ_OT_color_attrs_add_missing.bl_idname, text="Add Missing")
+    for color, name in zip(colors, colors_names):
+        exists = name in me.color_attributes
+        if exists:
+            attr = me.color_attributes[name]
+            has_correct_format = attr.domain == "CORNER" and attr.data_type == "BYTE_COLOR"
+
+        msg = name
+        if exists and not has_correct_format:
+            msg += "    (Incorrect format, must be 'Face Corner ▶ Byte Color')"
+        layout.label(text=msg, icon="CHECKMARK" if exists and has_correct_format else "X")
+
+
+def register():
+    bpy.types.DATA_PT_uv_texture.append(uv_maps_panel_draw)
+    bpy.types.DATA_PT_vertex_colors.append(color_attributes_panel_draw)
+
+
+def unregister():
+    bpy.types.DATA_PT_uv_texture.remove(uv_maps_panel_draw)
+    bpy.types.DATA_PT_vertex_colors.remove(color_attributes_panel_draw)

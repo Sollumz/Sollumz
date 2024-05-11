@@ -382,9 +382,8 @@ def create_shattermap_mesh(window_xml: Window, name: str, window_matrix: Matrix)
     mesh.from_pydata(verts, [], faces)
     mesh.transform(window_matrix.inverted())
 
-    uvs = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 0.0],
-                   [1.0, 1.0]], dtype=np.float64)
-    create_uv_attr(mesh, uvs)
+    uvs = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]], dtype=np.float64)
+    create_uv_attr(mesh, 0, initial_values=uvs)
 
     return mesh
 

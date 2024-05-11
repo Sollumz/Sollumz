@@ -14,7 +14,7 @@ from ..cwxml.shader import (
 from ..sollumz_properties import MaterialType
 from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
-from ..tools.meshhelper import get_uv_map_name
+from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from .render_bucket import RenderBucket
 
@@ -188,9 +188,9 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
             continue
 
         if mat.shader_properties.filename in ShaderManager.tint_colour1_shaders:
-            input_color_attr_name = "Color 2"
+            input_color_attr_name = get_color_attr_name(1)
         else:
-            input_color_attr_name = "Color 1"
+            input_color_attr_name = get_color_attr_name(0)
 
         tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
         tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
@@ -627,7 +627,7 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(texture.outputs["Alpha"], mix.inputs["Fac"])
     if decalflag == 1:
         vcs = node_tree.nodes.new("ShaderNodeVertexColor")
-        vcs.layer_name = "Color 1"  # set in create shader???
+        vcs.layer_name = get_color_attr_name(0)
         multi = node_tree.nodes.new("ShaderNodeMath")
         multi.operation = "MULTIPLY"
         links.new(vcs.outputs["Alpha"], multi.inputs[0])
@@ -976,12 +976,12 @@ def create_terrain_shader(b: ShaderBuilder):
         links.new(tm.outputs[0], seprgb.inputs[0])
     else:
         attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_c1.attribute_name = "Color 2"
+        attr_c1.attribute_name = get_color_attr_name(1)
         links.new(attr_c1.outputs[0], mixns[0].inputs[1])
         links.new(attr_c1.outputs[0], mixns[0].inputs[2])
 
         attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
-        attr_c0.attribute_name = "Color 1"
+        attr_c0.attribute_name = get_color_attr_name(0)
         links.new(attr_c0.outputs[3], mixns[0].inputs[0])
         links.new(mixns[0].outputs[0], seprgb.inputs[0])
 

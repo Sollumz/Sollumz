@@ -14,6 +14,14 @@ from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single
 from ..tools.blenderhelper import add_armature_modifier, add_child_of_bone_constraint, create_blender_object, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space, tag_redraw
 from ..sollumz_helper import get_sollumz_materials
 from .properties import DrawableShaderOrder, LightProperties, get_light_presets_path, load_light_presets, light_presets
+from ..tools.meshhelper import (
+    get_uv_map_name,
+    get_color_attr_name,
+    get_mesh_used_texcoords_indices,
+    get_mesh_used_colors_indices,
+    create_uv_attr,
+    create_color_attr,
+)
 
 
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
@@ -1130,3 +1138,165 @@ class SOLLUMZ_OT_extract_lods(bpy.types.Operator):
                 obj.users_collection[0].objects.unlink(obj)
 
             parent.objects.link(obj)
+
+
+class SOLLUMZ_OT_uv_maps_rename_by_order(bpy.types.Operator):
+    """Rename UV maps based on their order in the list. Does not affect UV maps already in use"""
+    bl_idname = "sollumz.uv_maps_rename_by_order"
+    bl_label = "Rename UV Maps by Order"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def execute(self, context: bpy.types.Context):
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if context.active_object.type == "MESH":
+            selected_meshes.append(context.active_object)
+
+        if not selected_meshes:
+            self.report({"INFO"}, "No mesh objects selected!")
+            return {"CANCELLED"}
+
+        for mesh_obj in selected_meshes:
+            mesh = mesh_obj.data
+            uvmaps = get_mesh_used_texcoords_indices(mesh)
+            missing_uvmaps = set(uvmaps)
+            attrs_in_use = set()
+            for uvmap in uvmaps:
+                name = get_uv_map_name(uvmap)
+                if name in mesh.uv_layers:
+                    missing_uvmaps.remove(uvmap)
+                    attrs_in_use.add(name)
+
+            missing_uvmaps = list(missing_uvmaps)
+            missing_uvmaps.sort()
+
+            for attr in mesh.uv_layers:
+                if len(missing_uvmaps) == 0:
+                    break
+
+                if attr.name in attrs_in_use:
+                    continue
+
+                attr.name = get_uv_map_name(missing_uvmaps.pop(0))
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_uv_maps_add_missing(bpy.types.Operator):
+    """Add the missing UV maps used by the Sollumz shaders of the mesh"""
+    bl_idname = "sollumz.uv_maps_add_missing"
+    bl_label = "Add Missing UV Maps"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def execute(self, context: bpy.types.Context):
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if context.active_object.type == "MESH":
+            selected_meshes.append(context.active_object)
+
+        if not selected_meshes:
+            self.report({"INFO"}, "No mesh objects selected!")
+            return {"CANCELLED"}
+
+        for mesh_obj in selected_meshes:
+            mesh = mesh_obj.data
+            uvmaps = get_mesh_used_texcoords_indices(mesh)
+            for uvmap in uvmaps:
+                name = get_uv_map_name(uvmap)
+                if name in mesh.uv_layers:
+                    continue
+
+                create_uv_attr(mesh, uvmap)
+
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_color_attrs_rename_by_order(bpy.types.Operator):
+    """Rename colors attributes based on their order in the list. Does not affect color attributes already in use"""
+    bl_idname = "sollumz.color_attrs_rename_by_order"
+    bl_label = "Rename Color Attributes by Order"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def execute(self, context: bpy.types.Context):
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if context.active_object.type == "MESH":
+            selected_meshes.append(context.active_object)
+
+        if not selected_meshes:
+            self.report({"INFO"}, "No mesh objects selected!")
+            return {"CANCELLED"}
+
+        for mesh_obj in selected_meshes:
+            mesh = mesh_obj.data
+            colors = get_mesh_used_colors_indices(mesh)
+            missing_colors = set(colors)
+            attrs_in_use = set()
+            for color in colors:
+                name = get_color_attr_name(color)
+                if name in mesh.color_attributes:
+                    missing_colors.remove(color)
+                    attrs_in_use.add(name)
+
+            missing_colors = list(missing_colors)
+            missing_colors.sort()
+
+            for attr in mesh.color_attributes:
+                if len(missing_colors) == 0:
+                    break
+
+                if attr.name in attrs_in_use or not self._is_valid_color_attr(attr):
+                    continue
+
+                attr.name = get_color_attr_name(missing_colors.pop(0))
+
+        return {"FINISHED"}
+
+    def _is_valid_color_attr(self, attr: bpy.types.Attribute) -> bool:
+        return (# `TintColor` only used for the tint shaders/geometry nodes
+                not attr.name.startswith("TintColor") and
+                # Name prefixed by `.` indicate a reserved attribute name for Blender
+                # e.g. `.a_1234` for anonymous attributes
+                # https://projects.blender.org/blender/blender/issues/97452
+                not attr.name.startswith("."))
+
+
+class SOLLUMZ_OT_color_attrs_add_missing(bpy.types.Operator):
+    """Add the missing color attributes used by the Sollumz shaders of the mesh"""
+    bl_idname = "sollumz.color_attrs_add_missing"
+    bl_label = "Add Missing Color Attributes"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(self, context):
+        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+
+    def execute(self, context: bpy.types.Context):
+        selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if context.active_object.type == "MESH":
+            selected_meshes.append(context.active_object)
+
+        if not selected_meshes:
+            self.report({"INFO"}, "No mesh objects selected!")
+            return {"CANCELLED"}
+
+        for mesh_obj in selected_meshes:
+            mesh = mesh_obj.data
+            colors = get_mesh_used_colors_indices(mesh)
+            for color in colors:
+                name = get_color_attr_name(color)
+                if name in mesh.color_attributes:
+                    continue
+
+                create_color_attr(mesh, color)
+
+        return {"FINISHED"}

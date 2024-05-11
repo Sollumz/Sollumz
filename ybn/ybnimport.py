@@ -375,7 +375,7 @@ def create_bound_mesh_data(
     mesh.from_pydata(verts, [], faces)
 
     if colors is not None:
-        create_color_attr(mesh, colors)
+        create_color_attr(mesh, 0, initial_values=colors)
 
     apply_bound_geom_materials(mesh, triangles, materials)
 
