@@ -155,13 +155,17 @@ def create_xml_lights(parent_obj: bpy.types.Object, armature_obj: Optional[bpy.t
 
 def create_light_xml(light_obj: bpy.types.Object, parent_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
     light_xml = Light()
-    mat = parent_obj.matrix_world.inverted() @ light_obj.matrix_world
+
+    root_mat = parent_obj.matrix_world
+    if armature_obj is not None:
+        bone = set_light_xml_bone_id(light_xml, armature_obj.data, light_obj)
+        if bone is not None:
+            root_mat = root_mat @ bone.matrix_local
+
+    mat = root_mat.inverted() @ light_obj.matrix_world
     light_xml.position = mat.to_translation()
     set_light_xml_direction(light_xml, mat)
     set_light_xml_tangent(light_xml, mat)
-
-    if armature_obj is not None:
-        set_light_xml_bone_id(light_xml, armature_obj.data, light_obj)
 
     set_light_xml_properties(light_xml, light_obj.data)
 
@@ -183,8 +187,12 @@ def set_light_xml_bone_id(light_xml: Light, armature: bpy.types.Armature, light_
         if not isinstance(constraint, bpy.types.CopyTransformsConstraint):
             continue
 
-        bone = constraint.subtarget
-        light_xml.bone_id = armature.bones[bone].bone_properties.tag
+        bone_name = constraint.subtarget
+        bone = armature.bones[bone_name]
+        light_xml.bone_id = bone.bone_properties.tag
+        return bone
+
+    return None
 
 
 def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
