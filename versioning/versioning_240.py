@@ -79,6 +79,42 @@ def update_mlo_tcmods_percentage(ytyp: CMapTypesProperties):
             tcmod["percentage"] = new_percentage
 
 
+def add_new_default_light_preset():
+    """Adds the new "Default" light preset. Not really part of the .blend data, but this is probably the best place to
+    check for this.
+    """
+    import os
+    from ..ydr.properties import get_light_presets_path, get_defaut_light_presets_path, load_light_presets
+    from ..cwxml.light_preset import LightPresetsFile
+
+    user_path = get_light_presets_path()
+    if not os.path.exists(user_path):
+        # No custom light presets, don't need to do anything, the default light presets file will be loaded
+        return
+
+    default_path = get_defaut_light_presets_path()
+    if not os.path.exists(default_path):
+        # The default light presets file doesn't exist, worrying but can't do anything about it
+        return
+
+    user_presets = LightPresetsFile.from_xml_file(user_path)
+    if any(p.name == "Default" for p in user_presets.presets):
+        # Already have the "Default" preset
+        return
+
+    default_presets = LightPresetsFile.from_xml_file(default_path)
+    preset = next((p for p in default_presets.presets if p.name == "Default"), None)
+    if preset is None:
+        # "Default" preset missing
+        return
+
+    user_presets.presets.insert(0, preset)
+    user_presets.write_xml(user_path)
+
+    # Refresh presets UI
+    load_light_presets()
+
+
 def do_versions(data_version: int, data: BlendData):
     if data_version < 2:
         for obj in data.objects:
@@ -88,3 +124,6 @@ def do_versions(data_version: int, data: BlendData):
         for scene in data.scenes:
             for ytyp in scene.ytyps:
                 update_mlo_tcmods_percentage(ytyp)
+
+    if data_version < 4:
+        add_new_default_light_preset()

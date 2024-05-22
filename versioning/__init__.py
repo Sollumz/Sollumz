@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 3
+SOLLUMZ_INTERNAL_VERSION = 4
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
@@ -26,6 +26,7 @@ Version History:
  == v2.4.0 ==
   - 2: LOD system fixes.
   - 3: TimecycleModifierProperties.percentage IntProperty -> FloatProperty
+  - 4: added "Default" light preset.
   - <next>: <describe changes>
 """
 

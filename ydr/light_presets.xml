@@ -1,6 +1,34 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <LightPresetsFile>
   <LightPresets>
+    <Item name="Default">
+      <Color x="1.0" y="1.0" z="1.0" />
+      <Energy value="10" />
+      <CutoffDistance value="40" />
+      <ShadowSoftSize value="0" />
+      <VolumeFactor value="1" />
+      <ShadowBufferClipStart value="0.05" />
+      <SpotSize value="0" />
+      <SpotBlend value="0" />
+      <TimeFlags value="0" />
+      <Flags value="0" />
+      <Flashiness>CONSTANT</Flashiness>
+      <VolumeSizeScale value="1" />
+      <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
+      <VolumeOuterIntensity value="1" />
+      <VolumeOuterExponent value="1" />
+      <LightFadeDistance value="0" />
+      <ShadowFadeDistance value="0" />
+      <SpecularFadeDistance value="0" />
+      <VolumetricFadeDistance value="0" />
+      <CullingPlaneNormal x="0.0" y="0.0" z="0.0" />
+      <CullingPlaneOffset value="0" />
+      <CoronaSize value="0" />
+      <CoronaIntensity value="1" />
+      <CoronaZBias value="0.1" />
+      <ShadowBlur value="0" />
+      <Extent x="1.0" y="1.0" z="1.0" />
+    </Item>
     <Item name="Spot: Streetlight 1">
       <Color x="1.0" y="0.40784314" z="0.0" />
       <Energy value="16000" />

@@ -141,21 +141,37 @@ class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Creates a light. Applies the selected preset to the new light."""
     bl_idname = "sollumz.create_light"
     bl_label = "Create Light"
     bl_action = bl_label
 
     def run(self, context):
-        light_type = context.scene.create_light_type
+        scene = context.scene
+        cursor_loc = scene.cursor.location
+        light_type = scene.create_light_type
+        active_obj = context.active_object
         blender_light_type = "POINT"
         if light_type == LightType.SPOT:
             blender_light_type = "SPOT"
 
         light_data = bpy.data.lights.new(name=SOLLUMZ_UI_NAMES[light_type], type=blender_light_type)
         light_data.sollum_type = light_type
-        obj = bpy.data.objects.new(name=SOLLUMZ_UI_NAMES[light_type], object_data=light_data)
-        obj.sollum_type = SollumType.LIGHT
-        bpy.context.collection.objects.link(obj)
+        light_obj = bpy.data.objects.new(name=SOLLUMZ_UI_NAMES[light_type], object_data=light_data)
+        light_obj.sollum_type = SollumType.LIGHT
+        context.collection.objects.link(light_obj)
+        context.view_layer.objects.active = light_obj
+
+        if active_obj and active_obj.sollum_type in [SollumType.DRAWABLE_MODEL, SollumType.DRAWABLE]:
+            light_obj.parent = active_obj.parent if active_obj.sollum_type == SollumType.DRAWABLE_MODEL else active_obj
+            light_obj.matrix_world.translation = cursor_loc
+        else:
+            light_obj.location = cursor_loc
+
+        # Apply light preset
+        bpy.ops.object.select_all(action="DESELECT") # Deselect everything to avoid applying the preset to other lights
+        light_obj.select_set(True)
+        bpy.ops.sollumz.load_light_preset()
 
 
 class SOLLUMZ_OT_save_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -248,7 +264,7 @@ class SOLLUMZ_OT_save_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
 class SOLLUMZ_OT_load_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     """Apply a light preset to the selected light(s)"""
     bl_idname = "sollumz.load_light_preset"
-    bl_label = "Apply Light Preset"
+    bl_label = "Apply Light Preset to Selected"
     bl_context = "object"
     bl_options = {"REGISTER", "UNDO"}
     bl_action = f"{bl_label}"
@@ -311,6 +327,7 @@ class SOLLUMZ_OT_delete_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"{bl_label}"
 
     preset_blacklist = [
+        "Default",
         "Point: Wall Light 1",
         "Spot: Wall Light 1",
         "Point: Wall Light 2",
