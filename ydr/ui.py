@@ -1,5 +1,9 @@
 import bpy
 from bpy.types import Context
+
+from ..ydr.properties import light_presets, load_light_presets
+
+from ..cwxml.light_preset import LightPreset
 from . import operators as ydr_ops
 from .shader_materials import shadermats
 from ..cwxml.shader import ShaderManager
@@ -414,6 +418,9 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator(ydr_ops.SOLLUMZ_OT_create_light.bl_idname)
         row.prop(context.scene, "create_light_type", text="")
+        row = layout.row()
+        row.prop(context.scene, "create_light_with_selected_preset")
+        row.prop(context.scene, "ignore_light_preset_color")
 
 
 class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):

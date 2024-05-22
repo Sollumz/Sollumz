@@ -595,6 +595,10 @@ def register():
         default=LightType.POINT,
         options={"HIDDEN"}
     )
+    bpy.types.Scene.create_light_with_selected_preset = bpy.props.BoolProperty(
+        name="Use Selected Preset", description="Applies the selected preset when creating a light", default=False)
+    bpy.types.Scene.ignore_light_preset_color = bpy.props.BoolProperty(
+        name="Ignore Preset Color", description="Ignores the color from the selected preset", default=False)
     bpy.types.Light.time_flags = bpy.props.PointerProperty(type=TimeFlags)
     bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
@@ -628,6 +632,8 @@ def unregister():
     del bpy.types.Bone.bone_properties
     del bpy.types.Light.light_properties
     del bpy.types.Scene.create_light_type
+    del bpy.types.Scene.create_light_with_selected_preset
+    del bpy.types.Scene.ignore_light_preset_color
     del bpy.types.Light.time_flags
     del bpy.types.Light.light_flags
     del bpy.types.Light.is_capsule
