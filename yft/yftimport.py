@@ -407,12 +407,25 @@ def shattermap_to_image(shattermap, name):
     i = 0
     for row in reversed(shattermap):
         frow = [row[x:x + 2] for x in range(0, len(row), 2)]
+        # Need to check for malformed shattermaps. ZModeler shattermaps seem to be missing a value of "--" when "--" appears in a row. We check for this specific case and insert a "--" to the row.
+        # We don't handle other malformed data, an error will be logged in the try/except below.
+        if len(frow) == (width - 1):
+            try:
+                idx = frow.index("--")
+            except ValueError:
+                idx = None
+            if idx is not None:
+                frow.insert(idx, "--")
         for value in frow:
             pixels.append(get_rgb(value))
             i += 1
 
     pixels = [chan for px in pixels for chan in px]
-    img.pixels = pixels
+    try:
+        img.pixels = pixels
+    except ValueError:
+        logger.error("Cannot create shattermap, shattermap data is malformed")
+
     return img
 
 
