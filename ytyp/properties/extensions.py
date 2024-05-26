@@ -392,6 +392,9 @@ class ExtensionsContainer:
             return None
 
         new_ext: ExtensionProperties = self.extensions.add()
+        # NOTE: we get the selected extension again because modifying a parent collection can re-allocate its property
+        # groups, so their references become invalid and might cause use-after-free crashes.
+        src_ext = self.selected_extension
         _copy_property_group(new_ext, src_ext)
         self.extension_index = len(self.extensions) - 1
         return new_ext

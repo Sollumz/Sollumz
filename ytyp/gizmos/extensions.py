@@ -3,7 +3,7 @@ import math
 import functools
 from pathlib import Path
 from mathutils import Matrix, Vector, Quaternion
-from typing import Literal
+from typing import Literal, Optional
 from collections.abc import Iterator
 from ..utils import get_selected_archetype, get_selected_extension, get_selected_ytyp
 from ...tools.blenderhelper import tag_redraw
@@ -16,21 +16,23 @@ from ..properties.extensions import ExtensionType, ExtensionProperties
 DEBUG_DRAW = False
 
 
-def iter_archetype_extensions(context) -> Iterator[tuple[ArchetypeProperties, ExtensionProperties]]:
-    """Iterate visible archetype extensions from the selected YTYP."""
+def iter_archetype_extensions(context) -> Iterator[tuple[int, int]]:
+    """Iterate visible archetype extensions from the selected YTYP. Yields a tuple with archetype index and extension
+    index.
+    """
     selected_ytyp = get_selected_ytyp(context)
     if selected_ytyp is None:
         return
 
-    for archetype in selected_ytyp.archetypes:
+    for archetype_idx, archetype in enumerate(selected_ytyp.archetypes):
         if not archetype.asset or archetype.type == ArchetypeType.MLO:
             continue
 
         if not archetype.asset.visible_get():
             continue
 
-        for ext in archetype.extensions:
-            yield (archetype, ext)
+        for ext_idx in range(len(archetype.extensions)):
+            yield (archetype_idx, ext_idx)
 
 
 def can_draw_gizmos(context):
@@ -267,8 +269,8 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
 
     def __init__(self):
         super().__init__()
-        self.linked_archetype = None
-        self.linked_extension = None
+        self.linked_archetype_index = -1
+        self.linked_extension_index = -1
 
     def setup(self):
         self.use_event_handle_all = True  # prevent clicks on gizmo from passing through
@@ -277,15 +279,34 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
     def draw(self, context):
         self.draw_select(context)
 
+    @property
+    def linked_archetype_and_extension(self) -> Optional[tuple[ArchetypeProperties, ExtensionProperties]]:
+        if self.linked_archetype_index <= -1 or self.linked_extension_index <= -1:
+            return None
+
+        ytyp = get_selected_ytyp(bpy.context)
+        if not ytyp or self.linked_archetype_index >= len(ytyp.archetypes):
+            return None
+
+        archetype = ytyp.archetypes[self.linked_archetype_index]
+        if self.linked_extension_index >= len(archetype.extensions):
+            return None
+
+        extension = archetype.extensions[self.linked_extension_index]
+        return archetype, extension
+
     def draw_select(self, context, select_id=None):
+        archetype_extension_pair = self.linked_archetype_and_extension
+        if archetype_extension_pair is None:
+            return
+
+        archetype, ext = archetype_extension_pair
         selected_archetype = get_selected_archetype(context)
         selected_extension = get_selected_extension(context)
-        archetype = self.linked_archetype
-        ext = self.linked_extension
         ext_props = ext.get_properties()
         asset = archetype.asset
 
-        if not archetype or not ext or not asset:
+        if not asset:
             return
 
         is_active = selected_archetype == archetype and selected_extension == ext
@@ -340,8 +361,11 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
             self.draw_light_shaft_gizmo(context, select_id)
 
     def draw_ladder_gizmo(self, context, select_id):
-        archetype = self.linked_archetype
-        ext = self.linked_extension
+        archetype_extension_pair = self.linked_archetype_and_extension
+        if archetype_extension_pair is None:
+            return
+
+        archetype, ext = archetype_extension_pair
         ext_props = ext.get_properties()
         asset = archetype.asset
 
@@ -358,10 +382,13 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
         self.draw_custom_shape(get_ladder_shape(), matrix=ladder_shape_matrix, select_id=select_id)
 
     def draw_light_shaft_gizmo(self, context, select_id):
+        archetype_extension_pair = self.linked_archetype_and_extension
+        if archetype_extension_pair is None:
+            return
+
+        archetype, ext = archetype_extension_pair
         selected_archetype = get_selected_archetype(context)
         selected_extension = get_selected_extension(context)
-        archetype = self.linked_archetype
-        ext = self.linked_extension
         ext_props = ext.get_properties()
         asset = archetype.asset
 
@@ -430,19 +457,13 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
                                    select_id=select_id_int)
 
     def invoke(self, context, event):
-        selected_ytyp = get_selected_ytyp(context)
-
-        archetypes = list(selected_ytyp.archetypes)
-        if self.linked_archetype not in archetypes:
-            return {"PASS_THROUGH"}
-
-        extensions = list(self.linked_archetype.extensions)
-        if self.linked_extension not in extensions:
+        archetype_extension_pair = self.linked_archetype_and_extension
+        if archetype_extension_pair is None:
             return {"PASS_THROUGH"}
 
         bpy.ops.sollumz.extension_select(True,
-                                         archetype_index=archetypes.index(self.linked_archetype),
-                                         extension_index=extensions.index(self.linked_extension))
+                                         archetype_index=self.linked_archetype_index,
+                                         extension_index=self.linked_extension_index)
         return {"PASS_THROUGH"}
 
     def modal(self, context, event, tweak):
@@ -1128,10 +1149,13 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
         self.light_shaft_cage.hide = hide_light_shaft_gizmos
         self.light_shaft_cage_end.hide = hide_light_shaft_gizmos
 
-        # Update linked extensions, do it always to prevent old references to
-        # deleted PropertyGroups. It could cause Blender to crash.
+        # Update linked extensions, do it always to prevent old references to deleted PropertyGroups. It could cause
+        # Blender to crash.
+        # Also use indices instead of references to PropertyGroups. In between this update and when the gizmo is drawn
+        # there could be changes that free the property groups, causing use-after-free crashes in the drawing code.
+        # This way, we always access the collection before using the property group, ensuring it isn't an old reference.
         last_used_gizmo = -1
-        for i, (archetype, ext) in enumerate(iter_archetype_extensions(context)):
+        for i, (archetype_idx, ext_idx) in enumerate(iter_archetype_extensions(context)):
             if i < len(self.extension_gizmos):
                 gz = self.extension_gizmos[i]
             else:
@@ -1139,8 +1163,8 @@ class SOLLUMZ_GGT_archetype_extensions(bpy.types.GizmoGroup):
                 gz.use_draw_scale = True
                 self.extension_gizmos.append(gz)
 
-            gz.linked_archetype = archetype
-            gz.linked_extension = ext
+            gz.linked_archetype_index = archetype_idx
+            gz.linked_extension_index = ext_idx
             gz.hide = False
             last_used_gizmo = i
 
