@@ -200,7 +200,7 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
 
     ymap_instance_entities: bpy.props.BoolProperty(
         name="Instance Entities",
-        description="If enabled, instance all entities from the selected ymap(s).",
+        description="If enabled, instance all entities from the selected ymap(s)",
         default=False,
     )
 
@@ -208,7 +208,7 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         name="Instance MLO Entities",
         description=(
             "If enabled, MLO entities will be linked to a copy of the object matching the archetype name, instead of"
-            "the object itself."
+            "the object itself"
         ),
         default=True,
     )

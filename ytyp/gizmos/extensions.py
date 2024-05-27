@@ -671,7 +671,7 @@ class SOLLUMZ_OT_extension_offset_light_shaft_end_point(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_archetype_extensions_detect_ctrl_pressed(bpy.types.Operator):
-    """Operator that runs as modal in the background to detect when CTRL is pressed down."""
+    """Operator that runs as modal in the background to detect when CTRL is pressed down"""
     bl_idname = "sollumz.archetype_extensions_detect_ctrl_pressed"
     bl_label = "DetectCtrlPressed"
     bl_options = {"INTERNAL"}

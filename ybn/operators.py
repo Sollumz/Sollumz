@@ -179,7 +179,7 @@ class SOLLUMZ_OT_create_collision_material(CreateCollisionMatHelper, bpy.types.O
 
 
 class SOLLUMZ_OT_clear_and_create_collision_material(CreateCollisionMatHelper, bpy.types.Operator):
-    """Delete all materials on selected object(s) and add selected collision material."""
+    """Delete all materials on selected object(s) and add selected collision material"""
     bl_idname = "sollumz.clearandcreatecollisionmaterial"
     bl_label = "Clear and Create Collision Material"
 
@@ -189,7 +189,7 @@ class SOLLUMZ_OT_clear_and_create_collision_material(CreateCollisionMatHelper, b
 
 
 class SOLLUMZ_OT_convert_non_collision_materials_to_selected(CreateCollisionMatHelper, bpy.types.Operator):
-    """Convert all non-collision materials to the selected collision material."""
+    """Convert all non-collision materials to the selected collision material"""
     bl_idname = "sollumz.convertnoncollisionmaterialstoselected"
     bl_label = "Convert Non-Collision Materials To Selected"
 

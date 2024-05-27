@@ -24,7 +24,7 @@ class SOLLUMZ_OT_create_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
 
 class SOLLUMZ_OT_create_limbo_room(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Automatically create a limbo room for the selected archetype (requires linked object to be specified)."""
+    """Automatically create a limbo room for the selected archetype (requires linked object to be specified)"""
     bl_idname = "sollumz.createlimboroom"
     bl_label = "Create Limbo Room"
 

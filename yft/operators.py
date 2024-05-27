@@ -13,8 +13,7 @@ from ..ybn.collision_materials import collisionmats
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
-    """Create a Fragment object. If a Drawable or Bound Composite is selected,
-    they will be parented to the Fragment."""
+    """Create a Fragment object. If a Drawable or Bound Composite is selected, they will be parented to the Fragment"""
     bl_idname = "sollumz.createfragment"
     bl_label = "Create Fragment"
     bl_options = {"REGISTER", "UNDO"}
@@ -106,7 +105,7 @@ class SOLLUMZ_OT_SET_MASS(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
-    """Copy the physics properties of the active bone to all selected bones. Can only be used in Pose Mode."""
+    """Copy the physics properties of the active bone to all selected bones. Can only be used in Pose Mode"""
     bl_idname = "sollumz.copy_frag_bone_physics"
     bl_label = "Copy Bone Physics"
     bl_options = {"UNDO"}

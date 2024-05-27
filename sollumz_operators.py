@@ -162,7 +162,7 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
 
     direct_export: bpy.props.BoolProperty(
         name="Direct Export",
-        description="Export directly to the output directory without opening the directory selection dialog.",
+        description="Export directly to the output directory without opening the directory selection dialog",
         options={"HIDDEN", "SKIP_SAVE"}
     )
 
@@ -418,7 +418,7 @@ def sollumz_menu_func_export(self, context):
 
 
 class SOLLUMZ_OT_debug_hierarchy(bpy.types.Operator):
-    """Debug: Fix incorrect Sollum Type after update. Must set correct type for top-level object first."""
+    """Debug: Fix incorrect Sollum Type after update. Must set correct type for top-level object first"""
     bl_idname = "sollumz.debug_hierarchy"
     bl_label = "Fix Hierarchy"
     bl_options = {"UNDO"}
@@ -618,7 +618,7 @@ def parse_rotation_string(rotation_string):
 class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):
     bl_idname = "sollumz.debug_reload_entity_sets"
     bl_label = "Reload Entity Sets"
-    bl_description = "Reload old entity set entities."
+    bl_description = "Reload old entity set entities"
     bl_options = {"UNDO"}
 
     def execute(self, context):

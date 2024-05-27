@@ -548,7 +548,7 @@ def register():
     bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(
         type=TextureFlags)
     bpy.types.ShaderNodeTexImage.sollumz_texture_name = bpy.props.StringProperty(
-        name="Texture Name", description="Name of texture.", get=get_texture_name)
+        name="Texture Name", description="Name of texture", get=get_texture_name)
 
     # Store properties for the DrawableModel with HasSkin=1. This is so all skinned objects share
     # the same drawable model properties even when split by group. It seems there is only ever 1

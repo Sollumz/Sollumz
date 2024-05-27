@@ -399,7 +399,7 @@ class SOLLUMZ_OT_convert_material_to_selected(bpy.types.Operator, MaterialConver
 
 
 class SOLLUMZ_OT_auto_convert_material(bpy.types.Operator, MaterialConverterHelper):
-    """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material."""
+    """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material"""
     bl_idname = "sollumz.autoconvertmaterial"
     bl_label = "Convert Material To Shader Material"
 
