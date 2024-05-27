@@ -13,6 +13,7 @@ from .operators import (
     SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS
 )
 
+
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Fragments"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_TOOL_PANEL"
@@ -29,13 +30,17 @@ class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
         pass
 
 
-class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(bpy.types.Panel):
-    bl_label = "Create Fragment Objects"
-    bl_idname = "SOLLUMZ_PT_FRAGMENT_CREATE_PANEL"
+class FragmentToolChildPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_category
+
+
+class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(FragmentToolChildPanel, bpy.types.Panel):
+    bl_label = "Create Fragment Objects"
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_CREATE_PANEL"
     bl_order = 1
 
     def draw_header(self, context):
@@ -61,13 +66,9 @@ class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(bpy.types.Panel):
                         icon="OUTLINER_OB_GROUP_INSTANCE")
 
 
-class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(FragmentToolChildPanel, bpy.types.Panel):
     bl_label = "Set Mass"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
     bl_order = 2
 
     def draw_header(self, context):
@@ -81,13 +82,9 @@ class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(bpy.types.Panel):
         layout.operator("sollumz.calculate_mass", icon="SNAP_VOLUME")
 
 
-class SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL(FragmentToolChildPanel, bpy.types.Panel):
     bl_label = "Copy Bone Physics"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
     bl_order = 4
 
     def draw_header(self, context):
@@ -99,13 +96,9 @@ class SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL(bpy.types.Panel):
         row.operator(SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS.bl_idname, icon="BONE_DATA")
 
 
-class SOLLUMZ_PT_LIGHT_ID_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
     bl_label = "Vehicle Light IDs"
     bl_idname = "SOLLUMZ_PT_LIGHT_ID_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
     bl_order = 3
 
     def draw_header(self, context):

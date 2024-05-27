@@ -3,7 +3,7 @@ from ...tabbed_panels import TabPanel
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..utils import get_selected_archetype
-from .mlo import SOLLUMZ_PT_MLO_PANEL
+from .mlo import MloChildTabPanel
 
 
 class SOLLUMZ_UL_ENTITY_SETS_LIST(BasicListHelper, bpy.types.UIList):
@@ -11,15 +11,10 @@ class SOLLUMZ_UL_ENTITY_SETS_LIST(BasicListHelper, bpy.types.UIList):
     item_icon = "ASSET_MANAGER"
 
 
-class SOLLUMZ_PT_ENTITY_SETS_PANEL(TabPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ENTITY_SETS_PANEL(MloChildTabPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ENTITY_SETS_PANEL"
     bl_label = "Entity Sets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"HIDE_HEADER"}
-    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
     icon = "ASSET_MANAGER"
 
     bl_order = 5

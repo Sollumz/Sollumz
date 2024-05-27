@@ -2,17 +2,14 @@ import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ...sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ...sollumz_properties import AssetType, ArchetypeType
-from ..utils import get_selected_archetype, get_selected_ytyp
-from .ytyp import SOLLUMZ_PT_YTYP_TOOL_PANEL
+from ..utils import get_selected_archetype
+from .ytyp import YtypToolChildPanel
 
 
-class SOLLUMZ_PT_ARCHETYPE_TABS_PANEL(TabbedPanelHelper, bpy.types.Panel):
+class SOLLUMZ_PT_ARCHETYPE_TABS_PANEL(YtypToolChildPanel, TabbedPanelHelper, bpy.types.Panel):
     bl_label = "Archetype"
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_TABS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
     bl_options = {"HIDE_HEADER"}
-    bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname
 
     default_tab = "SOLLUMZ_PT_ARCHETYPE_PANEL"
 
@@ -26,14 +23,27 @@ class SOLLUMZ_PT_ARCHETYPE_TABS_PANEL(TabbedPanelHelper, bpy.types.Panel):
         self.layout.separator()
 
 
-class SOLLUMZ_PT_ARCHETYPE_PANEL(TabPanel, bpy.types.Panel):
-    bl_label = "Archetype"
-    bl_idname = "SOLLUMZ_PT_ARCHETYPE_PANEL"
+class ArchetypeChildTabPanel(TabPanel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_category
+
+    parent_tab_panel = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
+
+
+class ArchetypeChildPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_category
 
-    parent_tab_panel = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
+
+class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
+    bl_label = "Archetype"
+    bl_idname = "SOLLUMZ_PT_ARCHETYPE_PANEL"
+
     icon = "SEQ_STRIP_META"
 
     bl_order = 0
@@ -60,13 +70,8 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(TabPanel, bpy.types.Panel):
         layout.prop(selected_archetype, "asset", text="Linked Object")
 
 
-class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(TabPanel, FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
-
-    parent_tab_panel = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
     icon = "BOOKMARKS"
 
     bl_order = 2
@@ -76,12 +81,9 @@ class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(TabPanel, FlagsPanel, bpy.types.Panel):
         return selected_archetype.flags
 
 
-class SOLLUMZ_PT_TIME_FlAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_TIME_FlAGS_PANEL(ArchetypeChildPanel, TimeFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_TIME_FLAGS_PANEL"
     bl_label = "Time Flags"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
     select_operator = "sollumz.ytyp_time_flags_select_range"
     clear_operator = "sollumz.ytyp_time_flags_clear"
 

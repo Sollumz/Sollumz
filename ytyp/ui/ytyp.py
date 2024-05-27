@@ -35,13 +35,16 @@ class SOLLUMZ_PT_YTYP_TOOL_PANEL(bpy.types.Panel):
         ...
 
 
-class SOLLUMZ_PT_YTYP_LIST_PANEL(bpy.types.Panel):
-    bl_label = "YTYPS"
-    bl_idname = "SOLLUMZ_PT_YTYP_LIST_PANEL"
+class YtypToolChildPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_category
 
+
+class SOLLUMZ_PT_YTYP_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
+    bl_label = "YTYPS"
+    bl_idname = "SOLLUMZ_PT_YTYP_LIST_PANEL"
     bl_order = 0
 
     def draw(self, context):
@@ -91,13 +94,9 @@ class SOLLUMZ_UL_ARCHETYPE_LIST(bpy.types.UIList):
         layout.prop(item, "name", text="", emboss=False, icon=icon)
 
 
-class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     bl_label = "Archetypes"
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_LIST_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname
-
     bl_order = 1
 
     @classmethod
@@ -122,6 +121,7 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_category
 
     @classmethod
     def poll(cls, context):

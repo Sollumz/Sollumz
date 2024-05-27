@@ -265,13 +265,18 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
             row.operator("sollumz.export")
 
 
-class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
-    bl_label = "View"
-    bl_idname = "SOLLUMZ_PT_VIEW_PANEL"
-    bl_category = "Sollumz Tools"
+class GeneralToolChildPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_TOOL_PANEL.bl_category
+
+
+class SOLLUMZ_PT_VIEW_PANEL(GeneralToolChildPanel, bpy.types.Panel):
+    bl_label = "View"
+    bl_idname = "SOLLUMZ_PT_VIEW_PANEL"
+    bl_options = set()
     bl_order = 0
 
     def draw_header(self, context):
@@ -308,14 +313,9 @@ class SOLLUMZ_PT_VIEW_PANEL(bpy.types.Panel):
         grid.enabled = context.view_layer.objects.active is not None and context.view_layer.objects.active.mode == "OBJECT"
 
 
-class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
+class SOLLUMZ_PT_OBJ_YMAP_LOCATION(GeneralToolChildPanel, bpy.types.Panel):
     bl_label = "Object Location & Rotation Tools"
     bl_idname = "SOLLUMZ_PT_OBJ_YMAP_LOCATION"
-    bl_category = "Sollumz Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
     bl_order = 3
 
     def draw_header(self, context):
@@ -350,13 +350,9 @@ class SOLLUMZ_PT_OBJ_YMAP_LOCATION(bpy.types.Panel):
 
 
 
-class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_VERTEX_TOOL_PANEL(GeneralToolChildPanel, bpy.types.Panel):
     bl_label = "Vertex Painter"
-    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANELL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
+    bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANEL"
     bl_order = 1
 
     @classmethod
@@ -405,14 +401,9 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(bpy.types.Panel):
                 "sollumz.paint_vertices").color = context.scene.vert_paint_color6
 
 
-class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(GeneralToolChildPanel, bpy.types.Panel):
     bl_label = "Set Sollum Type"
     bl_idname = "SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL"
-    bl_category = "Sollumz Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
     bl_order = 2
 
     def draw_header(self, context):
@@ -425,14 +416,9 @@ class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(bpy.types.Panel):
         row.prop(context.scene, "all_sollum_type", text="")
 
 
-class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_DEBUG_PANEL(GeneralToolChildPanel, bpy.types.Panel):
     bl_label = "Debug"
     bl_idname = "SOLLUMZ_PT_DEBUG_PANEL"
-    bl_category = "Sollumz Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
     bl_order = 4
 
     def draw_header(self, context):
@@ -460,14 +446,9 @@ class SOLLUMZ_PT_DEBUG_PANEL(bpy.types.Panel):
         layout.operator("sollumz.replace_armature_constraints")
 
 
-class SOLLUMZ_PT_EXPORT_PATH_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_EXPORT_PATH_PANEL(GeneralToolChildPanel, bpy.types.Panel):
     bl_label = "Export path"
     bl_idname = "SOLLUMZ_PT_EXPORT_PATH_PANEL"
-    bl_category = "Sollumz Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_TOOL_PANEL.bl_idname
     bl_order = 5
 
     def draw_header(self, context):
@@ -477,12 +458,9 @@ class SOLLUMZ_PT_EXPORT_PATH_PANEL(bpy.types.Panel):
         self.layout.prop(context.scene, "sollumz_export_path", text="")
 
 
-class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(GeneralToolChildPanel, bpy.types.Panel):
     bl_label = "Terrain Painter"
     bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
 
     def draw_header(self, context):

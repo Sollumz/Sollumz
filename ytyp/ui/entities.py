@@ -5,7 +5,7 @@ from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import EntityProperties, MloEntityProperties
 from ..utils import get_selected_archetype, get_selected_entity
 from .extensions import ExtensionsListHelper, ExtensionsPanelHelper
-from .mlo import SOLLUMZ_PT_MLO_PANEL
+from .mlo import MloChildTabPanel
 
 
 class SOLLUMZ_UL_ENTITIES_LIST(BasicListHelper, FilterListHelper, bpy.types.UIList):
@@ -37,14 +37,10 @@ class SOLLUMZ_UL_ENTITIES_LIST(BasicListHelper, FilterListHelper, bpy.types.UILi
         return True
 
 
-class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(TabPanel, bpy.types.Panel):
+class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(MloChildTabPanel, bpy.types.Panel):
     bl_label = "Entities"
     bl_idname = "SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
     icon = "OUTLINER"
 
     bl_order = 2
@@ -105,6 +101,7 @@ class SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL(TabbedPanelHelper, bpy.types.Panel):
     bl_region_type = "UI"
     bl_options = {"HIDE_HEADER"}
     bl_parent_id = SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL.bl_category
 
     default_tab = "SOLLUMZ_PT_MLO_ENTITY_PANEL"
 
@@ -115,14 +112,20 @@ class SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL(TabbedPanelHelper, bpy.types.Panel):
         return get_selected_entity(context) is not None
 
 
-class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
-    bl_label = "Entity"
-    bl_idname = "SOLLUMZ_PT_MLO_ENTITY_PANEL"
+class MloEntityChildTabPanel(TabPanel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
     bl_parent_id = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL.bl_category
 
     parent_tab_panel = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL
+
+
+class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
+    bl_label = "Entity"
+    bl_idname = "SOLLUMZ_PT_MLO_ENTITY_PANEL"
+
     icon = "OBJECT_DATA"
 
     bl_order = 0
@@ -169,14 +172,10 @@ class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(bpy.types.UIList, ExtensionsListHelper):
     bl_idname = "SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST"
 
 
-class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
+class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(MloEntityChildTabPanel, ExtensionsPanelHelper, bpy.types.Panel):
     bl_label = "Entity Extensions"
     bl_idname = "SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL
     icon = "CON_TRACKTO"
 
     bl_order = 1
@@ -191,14 +190,10 @@ class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.ty
         return get_selected_entity(context)
 
 
-class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(TabPanel, FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(MloEntityChildTabPanel, FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ENTITY_FLAGS_PANEL"
     bl_label = "Entity Flags"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_ENTITY_TAB_PANEL
     icon = "BOOKMARKS"
 
     bl_order = 2

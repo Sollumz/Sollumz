@@ -15,7 +15,7 @@ from ..operators.extensions import (
     SOLLUMZ_OT_update_light_shaft_direction,
 )
 from ..utils import get_selected_archetype, get_selected_extension
-from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
+from .archetype import ArchetypeChildTabPanel
 
 
 class ExtensionsListHelper:
@@ -118,16 +118,12 @@ class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
     icon = "CON_TRACKTO"
 
 
-class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(TabPanel, ExtensionsPanelHelper, bpy.types.Panel):
+class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(ArchetypeChildTabPanel, ExtensionsPanelHelper, bpy.types.Panel):
     bl_label = "Extensions"
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
 
     bl_order = 1
 
-    parent_tab_panel = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
     icon = "CON_TRACKTO"
 
     ADD_OPERATOR_ID = "sollumz.addarchetypeextension"

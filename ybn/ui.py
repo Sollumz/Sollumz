@@ -210,15 +210,18 @@ class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
         pass
 
 
-class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(bpy.types.Panel):
-    bl_label = "Split Collision"
-    bl_idname = "SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL"
-    bl_category = "Sollumz Tools"
+class CollisionToolChildPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 0
     bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_category
+
+
+class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
+    bl_label = "Split Collision"
+    bl_idname = "SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL"
+    bl_order = 0
 
     def draw_header(self, context):
         self.layout.label(text="", icon="SCULPTMODE_HLT")
@@ -231,13 +234,9 @@ class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(bpy.types.Panel):
         row.prop(context.scene, "split_collision_count")
 
 
-class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Create Bounds"
     bl_idname = "SOLLUMZ_PT_CREATE_BOUND_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 1
 
     def draw_header(self, context):
@@ -276,13 +275,9 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         row.prop(context.scene, "poly_bound_type_verts", text="")
 
 
-class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Create Collision Material"
     bl_idname = "SOLLUMZ_PT_CREATE_MATERIAL_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 2
 
     def draw_header(self, context):
@@ -306,14 +301,9 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(bpy.types.Panel):
             ybn_ops.SOLLUMZ_OT_convert_non_collision_materials_to_selected.bl_idname)
 
 
-class SOLLUMZ_PT_FLAG_PRESETS_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_FLAG_PRESETS_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Flag Presets"
     bl_idname = "SOLLUMZ_PT_FLAG_PRESETS_PANEL"
-    bl_category = "Sollumz Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_idname
     bl_order = 3
 
     def draw_header(self, context):

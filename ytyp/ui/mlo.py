@@ -4,16 +4,13 @@ from ...sollumz_ui import BasicListHelper, FlagsPanel, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import RoomProperties, PortalProperties, TimecycleModifierProperties
 from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_tcm
-from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
+from .archetype import ArchetypeChildPanel
 
 
-class SOLLUMZ_PT_MLO_PANEL(TabbedPanelHelper, bpy.types.Panel):
+class SOLLUMZ_PT_MLO_PANEL(ArchetypeChildPanel, TabbedPanelHelper, bpy.types.Panel):
     bl_label = "MLO"
     bl_idname = "SOLLUMZ_PT_MLO_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
     bl_options = {"HIDE_HEADER"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_TABS_PANEL.bl_idname
 
     default_tab = "SOLLUMZ_PT_ROOM_PANEL"
 
@@ -28,19 +25,25 @@ class SOLLUMZ_PT_MLO_PANEL(TabbedPanelHelper, bpy.types.Panel):
         self.layout.label(text="MLO")
 
 
+class MloChildTabPanel(TabPanel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_MLO_PANEL.bl_category
+
+    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
+
+
 class SOLLUMZ_UL_ROOM_LIST(BasicListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ROOM_LIST"
     item_icon = "CUBE"
 
 
-class SOLLUMZ_PT_ROOM_PANEL(TabPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
     bl_label = "Rooms"
     bl_idname = "SOLLUMZ_PT_ROOM_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
     icon = "CUBE"
 
     bl_order = 0
@@ -92,6 +95,7 @@ class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_ROOM_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_ROOM_PANEL.bl_category
 
     @classmethod
     def poll(cls, context):
@@ -108,14 +112,10 @@ class SOLLUMZ_UL_PORTAL_LIST(BasicListHelper, bpy.types.UIList):
     name_editable = False
 
 
-class SOLLUMZ_PT_PORTAL_PANEL(TabPanel, bpy.types.Panel):
+class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
     bl_label = "Portals"
     bl_idname = "SOLLUMZ_PT_PORTAL_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
     icon = "OUTLINER_OB_LIGHTPROBE"
 
     bl_order = 1
@@ -196,6 +196,7 @@ class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_PORTAL_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_PORTAL_PANEL.bl_category
 
     @classmethod
     def poll(cls, context):
@@ -211,14 +212,10 @@ class SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST(BasicListHelper, bpy.types.UIList):
     item_icon = "MOD_TIME"
 
 
-class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(TabPanel, bpy.types.Panel):
+class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
     bl_label = "Timecycle Modifiers"
     bl_idname = "SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
     icon = "MOD_TIME"
 
     bl_order = 3
@@ -249,15 +246,10 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(TabPanel, bpy.types.Panel):
             layout.prop(selected_tcm, prop_name)
 
 
-class SOLLUMZ_PT_MLO_FLAGS_PANEL(TabPanel, FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_MLO_FLAGS_PANEL(MloChildTabPanel, FlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_MLO_FLAGS_PANEL"
     bl_label = "MLO Flags"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"HIDE_HEADER"}
-    bl_parent_id = SOLLUMZ_PT_MLO_PANEL.bl_idname
 
-    parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
     icon = "BOOKMARKS"
 
     bl_order = 4
