@@ -785,7 +785,7 @@ class OperatorMoveShaderUpBase:
             return False
 
         drawable_props = aobj.drawable_properties
-        num_shaders = len(drawable_props.shader_order.items)
+        num_shaders = len(drawable_props.shader_order.order_items)
         shader_ind = drawable_props.shader_order.get_active_shader_item_index()
 
         return shader_ind < num_shaders and shader_ind != 0
@@ -814,7 +814,7 @@ class OperatorMoveShaderDownBase:
             return False
 
         drawable_props = aobj.drawable_properties
-        num_shaders = len(drawable_props.shader_order.items)
+        num_shaders = len(drawable_props.shader_order.order_items)
         shader_ind = drawable_props.shader_order.get_active_shader_item_index()
 
         return shader_ind < num_shaders - 1 and num_shaders > 1
@@ -903,10 +903,10 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         mats = get_sollumz_materials(drawable_obj)
         self.validate_indices(mats)
 
-        shader_order.items.clear()
+        shader_order.order_items.clear()
 
         for mat in mats:
-            item = shader_order.items.add()
+            item = shader_order.order_items.add()
             item.index = mat.shader_properties.index
             item.name = mat.name
             item.filename = mat.shader_properties.filename
@@ -929,13 +929,13 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         shader_order: DrawableShaderOrder = drawable_obj.drawable_properties.shader_order
         mats = get_sollumz_materials(drawable_obj)
 
-        if len(shader_order.items) != len(mats):
+        if len(shader_order.order_items) != len(mats):
             self.report(
                 {"ERROR"}, "Failed to apply order, shader collection size mismatch!")
             return {"CANCELLED"}
 
         for i, mat in enumerate(mats):
-            mat.shader_properties.index = shader_order.items[i].index
+            mat.shader_properties.index = shader_order.order_items[i].index
 
         return {"FINISHED"}
 

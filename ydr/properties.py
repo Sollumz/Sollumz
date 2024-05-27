@@ -20,22 +20,22 @@ class ShaderOrderItem(bpy.types.PropertyGroup):
 
 
 class DrawableShaderOrder(bpy.types.PropertyGroup):
-    items: bpy.props.CollectionProperty(type=ShaderOrderItem)
+    order_items: bpy.props.CollectionProperty(type=ShaderOrderItem)
     active_index: bpy.props.IntProperty(min=0)
 
     def get_active_shader_item_index(self) -> int:
-        return self.items[self.active_index].index
+        return self.order_items[self.active_index].index
 
     def swap_shaders(self, old: int, new: int) -> int:
         """Swaps two shaders. Shader at ``old`` index is placed at ``new`` index, and shader at ``new``
         is placed at ``old``.
         """
-        if new >= len(self.items):
+        if new >= len(self.order_items):
             return
 
         list_ind = self.active_index
 
-        for i, item in enumerate(self.items):
+        for i, item in enumerate(self.order_items):
             if item.index == new:
                 item.index = old
             elif item.index == old:
@@ -54,7 +54,7 @@ class DrawableShaderOrder(bpy.types.PropertyGroup):
         """Moves the shader at ``index`` to the top. All previous shaders are moved down."""
         list_ind = self.active_index
 
-        for i, item in enumerate(self.items):
+        for i, item in enumerate(self.order_items):
             if item.index < index:
                 # move previous shaders down
                 item.index += 1
@@ -69,13 +69,13 @@ class DrawableShaderOrder(bpy.types.PropertyGroup):
         """Moves the shader at ``index`` to the bottom. All subsequent shaders are moved up."""
         list_ind = self.active_index
 
-        for i, item in enumerate(self.items):
+        for i, item in enumerate(self.order_items):
             if item.index > index:
                 # move subsequent shaders up
                 item.index -= 1
             elif item.index == index:
                 # move our shader to the bottom
-                item.index = len(self.items) - 1
+                item.index = len(self.order_items) - 1
                 list_ind = i
 
         self.active_index = list_ind
