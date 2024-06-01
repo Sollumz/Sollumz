@@ -287,7 +287,8 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel)
     def draw(self, context):
         layout = self.layout
         layout.template_list(
-            SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "", context.scene, "collision_materials", context.scene, "collision_material_index"
+            SOLLUMZ_UL_COLLISION_MATERIALS_LIST.bl_idname, "",
+            context.window_manager, "sz_collision_materials", context.window_manager, "sz_collision_material_index"
         )
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_create_collision_material.bl_idname)
@@ -315,7 +316,7 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(CollisionToolChildPanel, bpy.types.Panel):
 
         row = layout.row()
         row.template_list(SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "flag_presets",
-                          context.scene, "flag_presets", context.scene, "flag_preset_index")
+                          context.window_manager, "sz_flag_presets", context.window_manager, "sz_flag_preset_index")
         col = row.column(align=True)
         col.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname, text="", icon="ADD")
         col.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname, text="", icon="REMOVE")

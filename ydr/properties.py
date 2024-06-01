@@ -448,11 +448,6 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
         update=FlagPropertyGroup.update_flag)
 
 
-@persistent
-def on_file_loaded(_):
-    load_light_presets()
-
-
 def get_light_type(self):
     if self.type == "POINT":
         return 1 if not self.is_capsule else 3
@@ -488,7 +483,7 @@ light_presets = LightPresetsFile()
 
 
 def load_light_presets():
-    bpy.context.scene.light_presets.clear()
+    bpy.context.window_manager.sz_light_presets.clear()
 
     path = get_light_presets_path()
     if not os.path.exists(path):
@@ -499,7 +494,7 @@ def load_light_presets():
     file = LightPresetsFile.from_xml_file(path)
     light_presets.presets = file.presets
     for index, preset in enumerate(light_presets.presets):
-        item = bpy.context.scene.light_presets.add()
+        item = bpy.context.window_manager.sz_light_presets.add()
         item.name = str(preset.name)
         item.index = index
 
@@ -529,7 +524,6 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
 def register():
     bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index")
     bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(type=ShaderMaterial, name="Shader Materials")
-    bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
         type=DrawableProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(
@@ -595,8 +589,8 @@ def register():
     bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
         name="Decimate Step", min=0.0, max=0.99, default=0.6)
 
-    bpy.types.Scene.light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
-    bpy.types.Scene.light_presets = bpy.props.CollectionProperty(type=LightPresetProp, name="Light Presets")
+    bpy.types.WindowManager.sz_light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
+    bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=LightPresetProp, name="Light Presets")
 
     bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(
@@ -613,6 +607,8 @@ def register():
         item = bpy.context.window_manager.sz_shader_materials.add()
         item.index = index
         item.name = mat.name
+
+    load_light_presets()
 
 
 def unregister():
@@ -631,8 +627,8 @@ def unregister():
     del bpy.types.Light.time_flags
     del bpy.types.Light.light_flags
     del bpy.types.Light.is_capsule
-    del bpy.types.Scene.light_presets
-    del bpy.types.Scene.light_preset_index
+    del bpy.types.WindowManager.sz_light_presets
+    del bpy.types.WindowManager.sz_light_preset_index
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection
@@ -641,5 +637,3 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_decimate_step
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
-
-    bpy.app.handlers.load_post.remove(on_file_loaded)

@@ -404,7 +404,7 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
 
         row = layout.row()
         row.template_list(SOLLUMZ_UL_LIGHT_PRESET_LIST.bl_idname, "light_presets",
-                          context.scene, "light_presets", context.scene, "light_preset_index")
+                          context.window_manager, "sz_light_presets", context.window_manager, "sz_light_preset_index")
         col = row.column(align=True)
         col.operator(ydr_ops.SOLLUMZ_OT_save_light_preset.bl_idname, text="", icon="ADD")
         col.operator(ydr_ops.SOLLUMZ_OT_delete_light_preset.bl_idname, text="", icon="REMOVE")

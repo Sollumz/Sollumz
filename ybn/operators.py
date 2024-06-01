@@ -164,7 +164,7 @@ class CreateCollisionMatHelper:
 
             return {"CANCELLED"}
 
-        mat_index = context.scene.collision_material_index
+        mat_index = context.window_manager.sz_collision_material_index
 
         for obj in selected:
             self.create_material(mat_index, obj)
@@ -220,8 +220,7 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
             self.message("No material selected!")
             return False
 
-        mat = create_collision_material_from_index(
-            context.scene.collision_material_index)
+        mat = create_collision_material_from_index(context.window_manager.sz_collision_material_index)
         active_mat_index = aobj.active_material_index
         aobj.data.materials[active_mat_index] = mat
 
@@ -339,7 +338,7 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     ]
 
     def run(self, context):
-        index = context.scene.flag_preset_index
+        index = context.window_manager.sz_flag_preset_index
         load_flag_presets()
 
         try:
@@ -439,7 +438,7 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"{bl_label}"
 
     def run(self, context):
-        index = context.scene.flag_preset_index
+        index = context.window_manager.sz_flag_preset_index
         selected = context.selected_objects
         if len(selected) < 1:
             self.message("No objects selected!")

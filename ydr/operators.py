@@ -254,7 +254,7 @@ class SOLLUMZ_OT_load_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = f"{bl_label}"
 
     def run(self, context):
-        index = context.scene.light_preset_index
+        index = context.window_manager.sz_light_preset_index
         selected_lights = []
         for obj in bpy.context.selected_objects:
             if obj.type == 'LIGHT':
@@ -319,7 +319,7 @@ class SOLLUMZ_OT_delete_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     ]
 
     def run(self, context):
-        index = context.scene.light_preset_index
+        index = context.window_manager.sz_light_preset_index
         load_light_presets()
         filepath = get_light_presets_path()
 

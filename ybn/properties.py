@@ -154,7 +154,7 @@ flag_presets = FlagPresetsFile()
 
 
 def load_flag_presets():
-    bpy.context.scene.flag_presets.clear()
+    bpy.context.window_manager.sz_flag_presets.clear()
 
     path = get_flag_presets_path()
     if not os.path.exists(path):
@@ -165,24 +165,17 @@ def load_flag_presets():
     file = FlagPresetsFile.from_xml_file(path)
     flag_presets.presets = file.presets
     for index, preset in enumerate(flag_presets.presets):
-        item = bpy.context.scene.flag_presets.add()
+        item = bpy.context.window_manager.sz_flag_presets.add()
         item.name = str(preset.name)
         item.index = index
 
 
 def load_collision_materials():
-    bpy.context.scene.collision_materials.clear()
+    bpy.context.window_manager.sz_collision_materials.clear()
     for index, mat in enumerate(collisionmats):
-        item = bpy.context.scene.collision_materials.add()
+        item = bpy.context.window_manager.sz_collision_materials.add()
         item.index = index
         item.name = mat.name
-
-
-# Handler sets the default value of the CollisionMaterials collection on blend file load
-@persistent
-def on_file_loaded(_):
-    load_collision_materials()
-    load_flag_presets()
 
 
 def update_bounds(self, context):
@@ -229,16 +222,11 @@ def register():
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(
         type=BoundFlags)
 
-    bpy.types.Scene.collision_material_index = bpy.props.IntProperty(
-        name="Material Index")
-    bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(
-        type=CollisionMaterial, name="Collision Materials")
-    bpy.app.handlers.load_post.append(on_file_loaded)
+    bpy.types.WindowManager.sz_collision_material_index = bpy.props.IntProperty(name="Material Index")
+    bpy.types.WindowManager.sz_collision_materials = bpy.props.CollectionProperty(type=CollisionMaterial, name="Collision Materials")
 
-    bpy.types.Scene.flag_preset_index = bpy.props.IntProperty(
-        name="Flag Preset Index")
-    bpy.types.Scene.flag_presets = bpy.props.CollectionProperty(
-        type=FlagPresetProp, name="Flag Presets")
+    bpy.types.WindowManager.sz_flag_preset_index = bpy.props.IntProperty(name="Flag Preset Index")
+    bpy.types.WindowManager.sz_flag_presets = bpy.props.CollectionProperty(type=FlagPresetProp, name="Flag Presets")
 
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(
         type=CollisionProperties)
@@ -315,6 +303,10 @@ def register():
         name="Center to Selection", description="Center the Bound Composite to all selected objects", default=True)
 
 
+    load_collision_materials()
+    load_flag_presets()
+
+
 def unregister():
     del bpy.types.Object.bound_properties
     del bpy.types.Object.margin
@@ -323,12 +315,12 @@ def unregister():
     del bpy.types.Object.bound_dimensions
     del bpy.types.Object.composite_flags1
     del bpy.types.Object.composite_flags2
-    del bpy.types.Scene.collision_material_index
-    del bpy.types.Scene.collision_materials
+    del bpy.types.WindowManager.sz_collision_material_index
+    del bpy.types.WindowManager.sz_collision_materials
     del bpy.types.Material.collision_properties
     del bpy.types.Material.collision_flags
-    del bpy.types.Scene.flag_presets
-    del bpy.types.Scene.flag_preset_index
+    del bpy.types.WindowManager.sz_flag_presets
+    del bpy.types.WindowManager.sz_flag_preset_index
     del bpy.types.Scene.create_poly_bound_type
     del bpy.types.Scene.create_seperate_composites
     del bpy.types.Scene.create_bound_type
@@ -336,5 +328,3 @@ def unregister():
     del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.composite_apply_default_flag_preset
     del bpy.types.Scene.center_composite_to_selection
-
-    bpy.app.handlers.load_post.remove(on_file_loaded)
