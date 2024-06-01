@@ -313,7 +313,8 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
         layout = self.layout
         layout.label(text="Create")
         layout.template_list(
-            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "", context.scene, "shader_materials", context.scene, "shader_material_index"
+            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
+            context.window_manager, "sz_shader_materials", context.window_manager, "sz_shader_material_index"
         )
         row = layout.row()
         row.operator(

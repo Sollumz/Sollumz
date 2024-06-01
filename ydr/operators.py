@@ -358,7 +358,7 @@ class MaterialConverterHelper:
         return materials
 
     def get_shader_name(self):
-        return shadermats[bpy.context.scene.shader_material_index].value
+        return shadermats[bpy.context.window_manager.sz_shader_material_index].value
 
     def convert_material(self, obj: bpy.types.Object, material: bpy.types.Material) -> bpy.types.Material | None:
         return MaterialConverter(obj, material).convert(self.get_shader_name())
@@ -438,7 +438,7 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
 
         for obj in objs:
-            shader = shadermats[context.scene.shader_material_index].value
+            shader = shadermats[context.window_manager.sz_shader_material_index].value
             try:
                 self.create_material(context, obj, shader)
                 self.message(f"Added a {shader} shader to {obj.name}.")

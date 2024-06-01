@@ -450,13 +450,6 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 @persistent
 def on_file_loaded(_):
-    # Handler sets the default value of the ShaderMaterials collection on blend file load
-    bpy.context.scene.shader_materials.clear()
-    for index, mat in enumerate(shadermats):
-        item = bpy.context.scene.shader_materials.add()
-        item.index = index
-        item.name = mat.name
-
     load_light_presets()
 
 
@@ -534,10 +527,8 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
 
 
 def register():
-    bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
-        name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
-    bpy.types.Scene.shader_materials = bpy.props.CollectionProperty(
-        type=ShaderMaterial, name="Shader Materials")
+    bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index")
+    bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(type=ShaderMaterial, name="Shader Materials")
     bpy.app.handlers.load_post.append(on_file_loaded)
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
         type=DrawableProperties)
@@ -615,10 +606,19 @@ def register():
     ), default=0)
 
 
+    # Initialize shader materials collection with an entry per shader
+    # We need the shader list as a collection property to be able to display it on the UI
+    bpy.context.window_manager.sz_shader_materials.clear()
+    for index, mat in enumerate(shadermats):
+        item = bpy.context.window_manager.sz_shader_materials.add()
+        item.index = index
+        item.name = mat.name
+
+
 def unregister():
     del bpy.types.ShaderNodeTexImage.sollumz_texture_name
-    del bpy.types.Scene.shader_material_index
-    del bpy.types.Scene.shader_materials
+    del bpy.types.WindowManager.sz_shader_material_index
+    del bpy.types.WindowManager.sz_shader_materials
     del bpy.types.Object.drawable_properties
     del bpy.types.Mesh.drawable_model_properties
     del bpy.types.Object.skinned_model_properties
