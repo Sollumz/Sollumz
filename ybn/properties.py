@@ -204,6 +204,16 @@ def update_bounds(self, context):
                        length=self.bound_length)
 
 
+def refresh_ui_collections():
+    load_collision_materials()
+    load_flag_presets()
+
+
+@persistent
+def on_blend_file_loaded(_):
+    refresh_ui_collections()
+
+
 def register():
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(
         type=BoundProperties)
@@ -303,8 +313,7 @@ def register():
         name="Center to Selection", description="Center the Bound Composite to all selected objects", default=True)
 
 
-    load_collision_materials()
-    load_flag_presets()
+    bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
 
 def unregister():
@@ -328,3 +337,5 @@ def unregister():
     del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.composite_apply_default_flag_preset
     del bpy.types.Scene.center_composite_to_selection
+
+    bpy.app.handlers.load_post.remove(on_blend_file_loaded)

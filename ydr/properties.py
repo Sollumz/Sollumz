@@ -521,6 +521,23 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
     return lod_mesh.drawable_model_properties
 
 
+def refresh_ui_collections():
+    # Initialize shader materials collection with an entry per shader
+    # We need the shader list as a collection property to be able to display it on the UI
+    bpy.context.window_manager.sz_shader_materials.clear()
+    for index, mat in enumerate(shadermats):
+        item = bpy.context.window_manager.sz_shader_materials.add()
+        item.index = index
+        item.name = mat.name
+
+    load_light_presets()
+
+
+@persistent
+def on_blend_file_loaded(_):
+    refresh_ui_collections()
+
+
 def register():
     bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index")
     bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(type=ShaderMaterial, name="Shader Materials")
@@ -600,15 +617,7 @@ def register():
     ), default=0)
 
 
-    # Initialize shader materials collection with an entry per shader
-    # We need the shader list as a collection property to be able to display it on the UI
-    bpy.context.window_manager.sz_shader_materials.clear()
-    for index, mat in enumerate(shadermats):
-        item = bpy.context.window_manager.sz_shader_materials.add()
-        item.index = index
-        item.name = mat.name
-
-    load_light_presets()
+    bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
 
 def unregister():
@@ -637,3 +646,5 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_decimate_step
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
+
+    bpy.app.handlers.load_post.remove(on_blend_file_loaded)
