@@ -431,6 +431,7 @@ def shattermap_to_image(shattermap, name):
 
 def shattermap_to_material(shattermap, name):
     img = shattermap_to_image(shattermap, name)
+    img.pack()
     mat = material_from_image(img, name, "ShatterMap")
     mat.sollum_type = MaterialType.SHATTER_MAP
 
