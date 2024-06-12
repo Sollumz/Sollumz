@@ -6,7 +6,7 @@ from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, A
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, MloFlags
-from .extensions import ExtensionsContainer, ExtensionProperties
+from .extensions import ExtensionsContainer, ExtensionType
 
 
 class SpecialAttribute(IntEnum):
@@ -72,6 +72,9 @@ SpecialAttributeEnumItems = tuple(None if enum is None else (enum.name, f"{label
 
 
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
+    IS_ARCHETYPE = True
+    DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
+
     def update_asset(self, context):
         if self.asset:
             self.asset_name = self.asset.name

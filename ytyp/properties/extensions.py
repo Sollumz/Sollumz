@@ -37,6 +37,28 @@ ExtensionTypeEnumItems = (
     (ExtensionType.EXPRESSION, "Expression", "", 12),
 )
 
+ExtensionTypeForArchetypesEnumItems = tuple(e for e in ExtensionTypeEnumItems if e[0] in {
+    ExtensionType.PARTICLE,
+    ExtensionType.AUDIO_COLLISION,
+    ExtensionType.AUDIO_EMITTER,
+    ExtensionType.EXPLOSION_EFFECT,
+    ExtensionType.LADDER,
+    ExtensionType.BUOYANCY,
+    ExtensionType.LIGHT_SHAFT,
+    ExtensionType.SPAWN_POINT,
+    ExtensionType.WIND_DISTURBANCE,
+    ExtensionType.PROC_OBJECT,
+    ExtensionType.EXPRESSION,
+})
+
+ExtensionTypeForEntitiesEnumItems = tuple(e for e in ExtensionTypeEnumItems if e[0] in {
+    ExtensionType.DOOR,
+    ExtensionType.SPAWN_POINT_OVERRIDE,
+    # TODO
+    # ExtensionType.LIGHT_EFFECT,
+    # ExtensionType.VERLET_CLOTH_CUSTOM_BOUNDS,
+})
+
 
 class LightShaftDensityType(str, Enum):
     CONSTANT = "LIGHTSHAFT_DENSITYTYPE_CONSTANT"
@@ -311,7 +333,22 @@ class ExtensionProperties(bpy.types.PropertyGroup):
         elif self.extension_type == ExtensionType.WIND_DISTURBANCE:
             return self.wind_disturbance_properties
 
+    def _get_extension_type_int(self) -> int:
+        return self["extension_type"] # using indexer to get the integer value instead of a string
+
+    def _set_extension_type_int(self, value: int):
+        self["extension_type"] = value # using indexer to set the integer value directly
+
     extension_type: bpy.props.EnumProperty(name="Type", items=ExtensionTypeEnumItems)
+    extension_type_for_archetypes: bpy.props.EnumProperty(
+        name="Type", items=ExtensionTypeForArchetypesEnumItems,
+        get=_get_extension_type_int, set=_set_extension_type_int,
+    )
+    extension_type_for_entities: bpy.props.EnumProperty(
+        name="Type", items=ExtensionTypeForEntitiesEnumItems,
+        get=_get_extension_type_int, set=_set_extension_type_int,
+    )
+
     name: bpy.props.StringProperty(name="Name", default="Extension")
 
     door_extension_properties: bpy.props.PointerProperty(
@@ -343,10 +380,14 @@ class ExtensionProperties(bpy.types.PropertyGroup):
 
 
 class ExtensionsContainer:
+    IS_ARCHETYPE = None  # True = archetype, False = entity
+    DEFAULT_EXTENSION_TYPE = None
+
     def new_extension(self, ext_type=None) -> ExtensionProperties:
         # Fallback type if no type is provided or invalid
         if ext_type is None or ext_type not in ExtensionType._value2member_map_:
-            ext_type = ExtensionType.DOOR
+            assert self.DEFAULT_EXTENSION_TYPE is not None
+            ext_type = self.DEFAULT_EXTENSION_TYPE
 
         item: ExtensionProperties = self.extensions.add()
         item.extension_type = ext_type
@@ -381,6 +422,10 @@ class ExtensionsContainer:
                 setattr(dst, "offset_position", getattr(src, "offset_position"))
 
             for prop_name in src.__annotations__.keys():
+                if prop_name in {"extension_type_for_archetypes", "extension_type_for_entities"}:
+                    # wrappers around "extension_type", skip them
+                    continue
+
                 src_value = getattr(src, prop_name)
                 if isinstance(src_value, bpy.types.PropertyGroup):
                     _copy_property_group(getattr(dst, prop_name), src_value)

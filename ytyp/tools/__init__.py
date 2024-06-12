@@ -25,4 +25,4 @@ class ArchetypeExtensionTool(bpy.types.WorkSpaceTool):
     def draw_settings(context, layout, tool):
         selected_extension = get_selected_extension(context)
         if selected_extension is not None:
-            layout.prop(selected_extension, "extension_type")
+            layout.prop(selected_extension, "extension_type_for_archetypes")

@@ -8,7 +8,7 @@ from ...sollumz_properties import EntityProperties
 from ...tools.utils import get_list_item
 from ..utils import get_selected_ytyp, get_selected_archetype
 from .flags import EntityFlags, RoomFlags, PortalFlags
-from .extensions import ExtensionsContainer
+from .extensions import ExtensionsContainer, ExtensionType
 
 
 def get_portal_items_for_archetype(archetype: Optional["ArchetypeProperties"]):
@@ -221,6 +221,9 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 
 class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):
+    IS_ARCHETYPE = False
+    DEFAULT_EXTENSION_TYPE = ExtensionType.DOOR
+
     def get_portal_index(self):
         selected_archetype = self.get_mlo_archetype()
         attached_portal_id = self.attached_portal_id

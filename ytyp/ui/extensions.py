@@ -64,7 +64,10 @@ class ExtensionsPanelHelper:
             layout.separator()
 
             row = layout.row()
-            row.prop(selected_extension, "extension_type")
+            if extensions_container.IS_ARCHETYPE:
+                row.prop(selected_extension, "extension_type_for_archetypes")
+            else:
+                row.prop(selected_extension, "extension_type_for_entities")
             row = layout.row()
             row.prop(selected_extension, "name")
 
