@@ -686,11 +686,7 @@ class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
 
         model_obj.parent = parent
 
-        # Set highest lod level
-        for lod_level in [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]:
-            if model_lods.get_lod(lod_level).mesh is not None:
-                model_lods.active_lod_level = lod_level
-                break
+        model_lods.set_highest_lod_active()
 
         return {"FINISHED"}
 

@@ -1064,10 +1064,7 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
         return f"{obj_name}.{SOLLUMZ_UI_NAMES[lod_level].lower()}"
 
     def get_selected_lods_sorted(self, context: Context) -> tuple[LODLevel]:
-        lod_levels = [LODLevel.VERYHIGH, LODLevel.HIGH,
-                      LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]
-
-        return tuple(lod for lod in lod_levels if lod in context.scene.sollumz_auto_lod_levels)
+        return tuple(lod for lod in LODLevel if lod in context.scene.sollumz_auto_lod_levels)
 
 
 class SOLLUMZ_OT_extract_lods(bpy.types.Operator):

@@ -350,13 +350,7 @@ class SOLLUMZ_PT_LOD_LEVEL_PANEL(bpy.types.Panel):
         layout.enabled = active_obj.mode == "OBJECT"
         row = layout.row()
         col = row.column(align=True)
-        for lod_level in (
-            LODLevel.VERYHIGH,
-            LODLevel.HIGH,
-            LODLevel.MEDIUM,
-            LODLevel.LOW,
-            LODLevel.VERYLOW,
-        ):
+        for lod_level in LODLevel:
             lod = lods.get_lod(lod_level)
             lod_split = col.split(align=True, factor=0.3)
             lod_split.prop_enum(lods, "active_lod_level", lod_level)

@@ -120,11 +120,11 @@ class TextureFormat(str, Enum):
 
 
 class LODLevel(str, Enum):
+    VERYHIGH = "sollumz_veryhigh"
     HIGH = "sollumz_high"
     MEDIUM = "sollumz_medium"
     LOW = "sollumz_low"
     VERYLOW = "sollumz_verylow"
-    VERYHIGH = "sollumz_veryhigh"
 
 
 LODLevelEnumItems = (
