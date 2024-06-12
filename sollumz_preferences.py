@@ -142,13 +142,6 @@ class SollumzImportSettings(bpy.types.PropertyGroup):
         update=_save_preferences
     )
 
-    import_with_hi: bpy.props.BoolProperty(
-        name="Import with _hi",
-        description="Import the selected .yft.xml with the <name>_hi.yft.xml placed in the very high LOD (must be in the same directory)",
-        default=True,
-        update=_save_preferences
-    )
-
     split_by_group: bpy.props.BoolProperty(
         name="Split Mesh by Group",
         description="Splits the mesh by vertex groups",

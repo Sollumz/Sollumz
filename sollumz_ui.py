@@ -140,7 +140,6 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel, SollumzImportSettingsPanel):
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "split_by_group")
-        layout.prop(settings, "import_with_hi")
 
 
 class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):

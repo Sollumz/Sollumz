@@ -84,8 +84,10 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
             self.report({"INFO"}, "No file selected for import!")
             return {"CANCELLED"}
 
-        for file in self.files:
-            filepath = os.path.join(self.directory, file.name)
+        filenames = self.dedupe_hi_yft_filenames([f.name for f in self.files])
+
+        for filename in filenames:
+            filepath = os.path.join(self.directory, filename)
 
             try:
 
@@ -123,6 +125,12 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
             return self.execute(context)
 
         return super().invoke(context, event)
+
+    def dedupe_hi_yft_filenames(self, filenames: list[str]) -> list[str]:
+        """If the user selected both a non-hi .yft.xml and its _hi.yft.xml, remove the _hi.yft.xml one to prevent
+        importing the same model twice.
+        """
+        return [f for f in filenames if not f.endswith("_hi.yft.xml") or f"{f[:-11]}.yft.xml" not in filenames]
 
 
 if bpy.app.version >= (4, 1, 0):

@@ -24,30 +24,55 @@ from ..tools.blenderhelper import get_child_of_bone
 def import_yft(filepath: str):
     import_settings = get_import_settings()
 
-    name = get_filename(filepath)
-    yft_xml = YFT.from_xml_file(filepath)
+    if is_hi_yft_filepath(filepath):
+        # User selected a _hi.yft.xml, look for the base .yft.xml file
+        non_hi_filepath = make_non_hi_yft_filepath(filepath)
+        hi_filepath = filepath
+
+        if not os.path.exists(non_hi_filepath):
+            logger.error("Trying to import a _hi.yft.xml without its base .yft.xml! Please, make sure the non-hi "
+                         f"{os.path.basename(non_hi_filepath)} is in the same folder as {os.path.basename(hi_filepath)}.")
+            return None
+    else:
+        # User selected the base .yft.xml, optionally look for the _hi.yft.xml
+        non_hi_filepath = filepath
+        hi_filepath = make_hi_yft_filepath(filepath)
+    name = get_filename(non_hi_filepath)
+    yft_xml = YFT.from_xml_file(non_hi_filepath)
 
     if import_settings.import_as_asset:
-        return create_drawable_as_asset(yft_xml.drawable, name, filepath)
+        return create_drawable_as_asset(yft_xml.drawable, name, non_hi_filepath)
 
-    hi_xml = parse_hi_yft(filepath) if import_settings.import_with_hi else None
+    # Import the _hi.yft.xml if it exists
+    hi_xml = YFT.from_xml_file(hi_filepath) if os.path.exists(hi_filepath) else None
 
-    return create_fragment_obj(yft_xml, filepath, name,
+    return create_fragment_obj(yft_xml, non_hi_filepath, name,
                                split_by_group=import_settings.split_by_group, hi_xml=hi_xml)
 
 
-def parse_hi_yft(yft_filepath: str) -> Fragment | None:
-    """Parse hi_yft at the provided non_hi yft filepath (if it exists)."""
+def is_hi_yft_filepath(yft_filepath: str):
+    """Is this a _hi.yft.xml file?"""
+    return os.path.basename(yft_filepath).endswith("_hi.yft.xml")
+
+
+def make_hi_yft_filepath(yft_filepath: str) -> str:
+    """Get the _hi.yft.xml filepath at the provided non-hi yft filepath."""
     yft_dir = os.path.dirname(yft_filepath)
     yft_name = get_filename(yft_filepath)
 
     hi_path = os.path.join(yft_dir, f"{yft_name}_hi.yft.xml")
+    return hi_path
 
-    if os.path.exists(hi_path):
-        return YFT.from_xml_file(hi_path)
-    else:
-        logger.warning(
-            f"Could not find _hi yft for {os.path.basename(yft_filepath)}! Make sure there is a file named '{os.path.basename(hi_path)}' in the same directory!")
+
+def make_non_hi_yft_filepath(yft_filepath: str) -> str:
+    """Get the base .yft.xml filepath at the provided hi yft filepath."""
+    yft_dir = os.path.dirname(yft_filepath)
+    yft_name = get_filename(yft_filepath)
+    if yft_name.endswith("_hi"):
+        yft_name = yft_name[:-3] # trim '_hi'
+
+    non_hi_path = os.path.join(yft_dir, f"{yft_name}.yft.xml")
+    return non_hi_path
 
 
 def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] = None, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
