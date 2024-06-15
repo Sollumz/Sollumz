@@ -101,7 +101,7 @@ def create_fragment_xml(frag_obj: bpy.types.Object, auto_calc_inertia: bool = Fa
     else:
         frag_xml.physics = None
 
-    frag_xml.lights = create_xml_lights(frag_obj, frag_obj)
+    frag_xml.lights = create_xml_lights(frag_obj)
 
     frag_obj.data.pose_position = original_pose
 

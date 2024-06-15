@@ -215,6 +215,22 @@ def create_extension(extension_xml: ymapxml.Extension, extensions_container: Ext
     extension = extensions_container.new_extension(extension_type)
     set_extension_props(extension_xml, extension)
 
+    if extension_type == ExtensionType.LIGHT_EFFECT and not extensions_container.IS_ARCHETYPE:
+        # Create the light objects from this light effect extension
+        obj = extensions_container.linked_object
+
+        from ..ydr.lights import create_light_instance_objs
+        lights_parent_obj = create_light_instance_objs(extension_xml.instances, obj)
+        lights_parent_obj.name = f"{extensions_container.archetype_name}.light_effect"
+        if obj is not None:
+            # Constraint instead of parenting for a simpler hierarchy
+            # Also this way we don't need to distinguish between original lights and light effect lights.
+            # Original ones will always be the lights children of the object.
+            constraint = lights_parent_obj.constraints.new("COPY_TRANSFORMS")
+            constraint.target = obj
+
+        extension.light_effect_properties.linked_lights_object = lights_parent_obj
+
     return extension
 
 
@@ -254,7 +270,19 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
             c.objects.unlink(obj)
         coll.objects.link(obj)
 
+    def _link_to_collection_recursive(obj, coll):
+        _link_to_collection(obj, coll)
+        for child_obj in obj.children_recursive: # could be slow with lots of entities, O(len(bpy.data.objects)) time
+            _link_to_collection(child_obj, coll)
+
+    light_effect_objs = []
     for entity in archetype.entities:
+        for ext in entity.extensions:
+            if ext.extension_type == ExtensionType.LIGHT_EFFECT:
+                props = ext.get_properties()
+                if props.linked_lights_object is not None:
+                    light_effect_objs.append(props.linked_lights_object)
+
         obj = entity.linked_object
         if obj is None:
             continue
@@ -271,9 +299,15 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
             base_collection.children.link(entity_collection)
             mlo_collections[entity_collection_name] = entity_collection
 
-        _link_to_collection(obj, entity_collection)
-        for child_obj in obj.children_recursive: # could be slow with lots of entities, O(len(bpy.data.objects)) time
-            _link_to_collection(child_obj, entity_collection)
+        _link_to_collection_recursive(obj, entity_collection)
+
+    if light_effect_objs:
+        # Place all light effect objects in their own collection
+        light_effect_collection_name = f"{archetype.asset_name}.light_effects"
+        light_effect_collection = bpy.data.collections.new(light_effect_collection_name)
+        bpy.context.collection.children.link(light_effect_collection)
+        for lights_parent_obj in light_effect_objs:
+            _link_to_collection_recursive(lights_parent_obj, light_effect_collection)
 
 
 def find_and_set_archetype_asset(archetype: ArchetypeProperties):

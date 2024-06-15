@@ -7,7 +7,7 @@ from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, Entit
 from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
-from .properties.extensions import ExtensionProperties
+from .properties.extensions import ExtensionProperties, ExtensionType
 from ..ydr.light_flashiness import Flashiness
 
 
@@ -180,8 +180,7 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
     extension_xml.name = extension.name
     extension_properties = extension.get_properties()
 
-    extension_xml.offset_position = Vector(
-        extension_properties.offset_position)
+    extension_xml.offset_position = Vector(extension_properties.offset_position)
 
     ignored_props = getattr(extension_properties.__class__, "ignored_in_import_export", None) # see LightShaftExtensionProperties
 
@@ -223,8 +222,7 @@ def create_extension_xml(extension: ExtensionProperties):
     """Create an entity extension from the given extension xml."""
 
     extension_type = extension.extension_type
-    extension_xml_class = ymapxml.ExtensionsList.get_extension_xml_class_from_type(
-        extension_type)
+    extension_xml_class = ymapxml.ExtensionsList.get_extension_xml_class_from_type(extension_type)
 
     if extension_xml_class is None:
         # Warning needed here. Unknown extension type
@@ -234,6 +232,13 @@ def create_extension_xml(extension: ExtensionProperties):
     extension_xml = extension_xml_class()
 
     set_extension_xml_props(extension, extension_xml)
+
+    if extension_type == ExtensionType.LIGHT_EFFECT and extension.get_properties().linked_lights_object is not None:
+        # Get the light objects and add them to the extension
+        lights_obj = extension.get_properties().linked_lights_object
+
+        from ..ydr.lights import create_xml_light_instances
+        extension_xml.instances = create_xml_light_instances(lights_obj)
 
     return extension_xml
 

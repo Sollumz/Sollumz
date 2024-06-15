@@ -103,7 +103,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
 
     create_model_xmls(drawable_xml, drawable_obj, materials, bones)
 
-    drawable_xml.lights = create_xml_lights(drawable_obj, armature_obj)
+    drawable_xml.lights = create_xml_lights(drawable_obj)
 
     set_drawable_xml_flags(drawable_xml)
     set_drawable_xml_extents(drawable_xml)

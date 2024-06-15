@@ -195,7 +195,7 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
             box = layout.box()
             box.label(text="Misc Properties")
             box.prop(light.light_properties, "light_hash")
-            box.prop(light.light_properties, "group_id")
+            # box.prop(light.light_properties, "group_id") # this property is unused
             box.prop(light.light_properties, "projected_texture_hash")
             box.prop(light.light_properties, "flashiness")
 

@@ -60,6 +60,12 @@ def get_selected_extension(context) -> Union[ExtensionProperties, None]:
         return archetype.selected_extension
 
 
+def get_selected_entity_extension(context) -> Union[ExtensionProperties, None]:
+    entity = get_selected_entity(context)
+    if entity:
+        return entity.selected_extension
+
+
 def get_selected_entity_set(context) -> Union[EntitySetProperties, None]:
     ytyp = get_selected_ytyp(context)
     if ytyp:

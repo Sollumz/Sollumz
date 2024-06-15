@@ -267,7 +267,14 @@ class LightProperties(bpy.types.PropertyGroup):
         max=1.0,
         default=(1.0, 1.0, 1.0)
     )
-    light_hash: bpy.props.IntProperty(name="Light Hash")
+    light_hash: bpy.props.IntProperty(
+        name="Light ID",
+        description=(
+            "Identifier used to link the light in the base model with the correct light in a Light Effect entity "
+            "extension"
+        ),
+        min=0, max=255,
+    )
     volume_outer_intensity: bpy.props.FloatProperty(name="Volume Outer Intensity", default=1.0)
     corona_size: bpy.props.FloatProperty(name="Corona Size")
     volume_outer_exponent: bpy.props.FloatProperty(name="Volume Outer Exponent", default=1.0)

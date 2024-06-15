@@ -1,7 +1,13 @@
 import bpy
 from mathutils import Vector
-from ..properties.extensions import ExtensionsContainer
-from ..utils import get_selected_archetype, get_selected_entity, get_selected_ytyp, get_selected_extension
+from ..properties.extensions import ExtensionsContainer, ExtensionType
+from ..utils import (
+    get_selected_archetype,
+    get_selected_entity,
+    get_selected_ytyp,
+    get_selected_extension,
+    get_selected_entity_extension,
+)
 from ...tools.blenderhelper import tag_redraw
 
 
@@ -32,8 +38,7 @@ class SOLLUMZ_OT_delete_archetype_extension(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        selected_extension = get_selected_extension(context)
-        return selected_extension is not None
+        return get_selected_extension(context) is not None
 
     def execute(self, context):
         selected_archetype = get_selected_archetype(context)
@@ -52,8 +57,7 @@ class SOLLUMZ_OT_duplicate_archetype_extension(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        selected_extension = get_selected_extension(context)
-        return selected_extension is not None
+        return get_selected_extension(context) is not None
 
     def execute(self, context):
         selected_archetype = get_selected_archetype(context)
@@ -88,12 +92,7 @@ class SOLLUMZ_OT_delete_entity_extension(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        selected_entity = get_selected_entity(context)
-
-        if not selected_entity:
-            return None
-
-        return selected_entity.selected_extension is not None
+        return get_selected_entity_extension(context) is not None
 
     def execute(self, context):
         selected_entity = get_selected_entity(context)
@@ -110,12 +109,7 @@ class SOLLUMZ_OT_duplicate_entity_extension(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        selected_entity = get_selected_entity(context)
-
-        if not selected_entity:
-            return None
-
-        return selected_entity.selected_extension is not None
+        return get_selected_entity_extension(context) is not None
 
     def execute(self, context):
         selected_entity = get_selected_entity(context)
@@ -280,3 +274,39 @@ class SOLLUMZ_OT_calculate_light_shaft_center_offset_location(bpy.types.Operator
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.offset_position = verts_location
+
+
+class SOLLUMZ_OT_light_effect_create_lights_from_entity(bpy.types.Operator):
+    """Duplicates the lights found in the entity linked object and links them to this light effect extension"""
+    bl_idname = "sollumz.light_effect_create_lights_from_entity"
+    bl_options = {"UNDO"}
+    bl_label = "Create Lights"
+
+    @classmethod
+    def poll(cls, context):
+        selected_extension = get_selected_entity_extension(context)
+        if selected_extension is None:
+            return False
+
+        if selected_extension.extension_type != ExtensionType.LIGHT_EFFECT:
+            return False
+
+        selected_entity = get_selected_entity(context)
+        if selected_entity.linked_object is None:
+            cls.poll_message_set("Selected entity has no linked object")
+            return False
+
+        return True
+
+    def execute(self, context):
+        selected_entity = get_selected_entity(context)
+        selected_extension = get_selected_entity_extension(context)
+
+        from ...ydr.lights import duplicate_lights_for_light_effect
+        obj = duplicate_lights_for_light_effect(selected_entity.linked_object)
+        obj.name = f"{selected_entity.archetype_name}.light_effect"
+        constraint = obj.constraints.new("COPY_TRANSFORMS")
+        constraint.target = selected_entity.linked_object
+        selected_extension.get_properties().linked_lights_object = obj
+
+        return {"FINISHED"}
