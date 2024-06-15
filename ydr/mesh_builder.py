@@ -18,6 +18,14 @@ class MeshBuilder:
             raise ValueError(
                 "Indices array should be a 1D array in triangle order and it's size should be divisble by 3!")
 
+        # Triangles using the same vertex 2+ times are not valid topology for Blender and can potentially crash/hang
+        # Blender before we have a chance to call `Mesh.validate()`. Some vanilla models and, often, modded models have
+        # some of these degenerate triangles, so remove them.
+        faces = ind_arr.reshape((int(ind_arr.size / 3), 3))
+        invalid_faces_mask = (faces[:,0] == faces[:,1]) | (faces[:,0] == faces[:,2]) | (faces[:,1] == faces[:,2])
+        ind_arr = faces[~invalid_faces_mask].reshape((-1,))
+        mat_inds = mat_inds[~invalid_faces_mask]
+
         self.vertex_arr = vertex_arr
         self.ind_arr = ind_arr
         self.mat_inds = mat_inds
@@ -26,10 +34,8 @@ class MeshBuilder:
         self.materials = drawable_mats
 
         self._has_normals = "Normal" in vertex_arr.dtype.names
-        self._has_uvs = any(
-            "TexCoord" in name for name in vertex_arr.dtype.names)
-        self._has_colors = any(
-            "Colour" in name for name in vertex_arr.dtype.names)
+        self._has_uvs = any("TexCoord" in name for name in vertex_arr.dtype.names)
+        self._has_colors = any("Colour" in name for name in vertex_arr.dtype.names)
 
     def build(self):
         mesh = bpy.data.meshes.new(self.name)
