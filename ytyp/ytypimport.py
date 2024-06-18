@@ -218,9 +218,10 @@ def create_extension(extension_xml: ymapxml.Extension, extensions_container: Ext
     if extension_type == ExtensionType.LIGHT_EFFECT and not extensions_container.IS_ARCHETYPE:
         # Create the light objects from this light effect extension
         obj = extensions_container.linked_object
+        armature_obj = obj if obj is not None and obj.type == "ARMATURE" else None
 
         from ..ydr.lights import create_light_instance_objs
-        lights_parent_obj = create_light_instance_objs(extension_xml.instances, obj)
+        lights_parent_obj = create_light_instance_objs(extension_xml.instances, armature_obj)
         lights_parent_obj.name = f"{extensions_container.archetype_name}.light_effect"
         if obj is not None:
             # Constraint instead of parenting for a simpler hierarchy
