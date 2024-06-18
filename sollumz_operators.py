@@ -84,6 +84,8 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
             self.report({"INFO"}, "No file selected for import!")
             return {"CANCELLED"}
 
+        self.directory = bpy.path.abspath(self.directory)
+
         filenames = self.dedupe_hi_yft_filenames([f.name for f in self.files])
 
         for filename in filenames:
@@ -188,6 +190,8 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
         logger.set_logging_operator(self)
         objs = self.collect_objects(context)
         export_settings = get_export_settings()
+
+        self.directory = bpy.path.abspath(self.directory)
 
         if not objs:
             if export_settings.limit_to_selected:
