@@ -417,7 +417,7 @@ def create_phys_xml_groups(
             continue
 
         group_xml = PhysicsGroup()
-        group_xml.name = remove_number_suffix(bone.name)
+        group_xml.name = bone.name
         bone_index = get_bone_index(frag_obj.data, bone)
 
         groups_by_bone[bone_index].append(group_xml)
