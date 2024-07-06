@@ -59,13 +59,13 @@ def create_bound_poly_sphere():
 
 def create_bound_capsule():
     bound_obj = create_blender_object(SollumType.BOUND_CAPSULE)
-    create_capsule(bound_obj.data, radius=0.5, length=1.0, use_rot=True)
+    create_capsule(bound_obj.data, radius=0.5, length=1.0, axis="Y")
     return bound_obj
 
 
 def create_bound_poly_capsule():
     bound_obj = create_blender_object(SollumType.BOUND_POLY_CAPSULE)
-    create_capsule(bound_obj.data, radius=0.5, length=1.0)
+    create_capsule(bound_obj.data, radius=0.5, length=1.0, axis="Z")
     return bound_obj
 
 

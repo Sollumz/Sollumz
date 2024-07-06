@@ -101,62 +101,86 @@ def create_disc(mesh, radius=1, length=0.08):
     return create_cylinder(mesh, radius, length, axis="X")
 
 
-def create_capsule(mesh, radius=0.5, length=2, use_rot=False):
-    length = length if radius < length else radius
-    if radius < 0:
-        raise ValueError("Cannot create capsule with a radius less than 0!")
+def create_capsule(mesh, radius=0.5, length=2, axis="Y"):
+    if radius <= 0:
+        raise ValueError("Cannot create capsule with a radius of 0 or negative!")
+    if length < 0:
+        raise ValueError("Cannot create capsule with a negative length!")
 
-    bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, radius=radius)
-    bm.to_mesh(mesh)
+    match axis:
+        case "X":
+            rot_mat = Matrix.Rotation(radians(90.0), 4, "Y")
+        case "Y":
+            rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
+        case "Z":
+            rot_mat = Matrix()
+        case _:
+            raise ValueError(f"Invalid axis '{axis}'")
 
-    center = Vector()
-    axis = Vector((0, 0, 1))
+    def _hemisphere_section(radius, z_offset, segments, start_theta, end_theta):
+        theta = np.linspace(start_theta, end_theta, segments // 4 + 1)
+        phi = np.linspace(0, 2 * np.pi, segments + 1)
 
-    # Get top and bottom halves of vertices
-    top = []
-    top_faces = []
-    bottom = []
-    bottom_faces = []
+        phi, theta = np.meshgrid(phi, theta)
+        x = radius * np.sin(theta) * np.cos(phi)
+        y = radius * np.sin(theta) * np.sin(phi)
+        z = radius * np.cos(theta) + z_offset
 
-    amount = (length - radius) * 2
-    vec = Vector((0, 0, amount))
+        vertices = np.stack((x, y, z), axis=-1).reshape(-1, 3)
 
-    for v in bm.verts:
-        if distance_point_to_plane(v.co, center, axis) >= 0:
-            top.append(v.co)
-            for face in v.link_faces:
-                if face not in top_faces:
-                    top_faces.append(face)
-        elif distance_point_to_plane(v.co, center, axis) <= 0:
-            bottom.append(v.co)
-            for face in v.link_faces:
-                if face not in bottom_faces and face not in top_faces:
-                    bottom_faces.append(face)
+        i = np.arange(segments // 4)
+        j = np.arange(segments)
+        i, j = np.meshgrid(i, j)
+        idx1 = i * (segments + 1) + j
+        idx2 = idx1 + 1
+        idx3 = idx1 + (segments + 1)
+        idx4 = idx3 + 1
 
-    # Extrude top half
-    ret = bmesh.ops.extrude_face_region(bm, geom=top_faces)
-    extruded = ret["geom"]
-    del ret
-    translate_verts = [
-        v for v in extruded if isinstance(v, bmesh.types.BMVert)]
-    bmesh.ops.translate(bm, vec=vec / 2, verts=translate_verts)
+        indices = np.stack((idx1, idx3, idx4, idx2), axis=-1).reshape(-1, 4)
 
-    # Extrude bottom half
-    ret = bmesh.ops.extrude_face_region(bm, geom=bottom_faces)
-    extruded = ret["geom"]
-    del ret
-    translate_verts = [
-        v for v in extruded if isinstance(v, bmesh.types.BMVert)]
-    bmesh.ops.translate(bm, vec=-vec / 2, verts=translate_verts)
+        return vertices, indices
 
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    def _cylinder_section(radius, length, segments):
+        half_length = length / 2.0
 
-    bm.to_mesh(mesh)
-    bm.free()
+        theta = np.linspace(0, 2 * np.pi, segments + 1)
+        z = np.array([-half_length, half_length])
 
-    if use_rot:
-        mesh.transform(Matrix.Rotation(radians(90.0), 4, "X"))
+        theta, z = np.meshgrid(theta, z)
+        x = radius * np.cos(theta)
+        y = radius * np.sin(theta)
+
+        vertices = np.stack((x, y, z), axis=-1).reshape(-1, 3)
+
+        j = np.arange(segments)
+        idx1 = j
+        idx2 = (j + 1) % (segments + 1)
+        idx3 = idx1 + (segments + 1)
+        idx4 = idx2 + (segments + 1)
+
+        indices = np.stack((idx1, idx3, idx4, idx2), axis=-1).reshape(-1, 4)
+
+        return vertices, indices
+
+    segments = 32
+    top_vertices, top_indices = _hemisphere_section(radius, length / 2.0, segments, 0, np.pi / 2)
+    bottom_vertices, bottom_indices = _hemisphere_section(radius, -length / 2.0, segments, np.pi / 2, np.pi)
+    cylinder_vertices, cylinder_indices = _cylinder_section(radius, length, segments)
+
+    offset_top = 0
+    offset_bottom = len(top_vertices)
+    offset_cylinder = offset_bottom + len(bottom_vertices)
+
+    top_indices += offset_top
+    bottom_indices += offset_bottom
+    cylinder_indices += offset_cylinder
+
+    vertices = np.vstack((top_vertices, bottom_vertices, cylinder_vertices))
+    indices = np.vstack((top_indices, bottom_indices, cylinder_indices))
+
+    mesh.clear_geometry()
+    mesh.from_pydata(vertices, [], indices)
+    mesh.transform(rot_mat)
 
     return mesh
 

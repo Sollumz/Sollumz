@@ -123,8 +123,10 @@ def create_bound_sphere(bound_xml: BoundChild):
 def create_bound_capsule(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CAPSULE)
     bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-    bound_length = bbmax.z - bbmin.z
-    create_capsule(obj.data, radius=bound_xml.margin, length=bound_length, use_rot=True)
+    extent = bbmax - bbmin
+    radius = extent.x * 0.5
+    length = extent.y - (radius * 2.0)
+    create_capsule(obj.data, radius=radius, length=length, axis="Y")
     return obj
 
 
@@ -132,9 +134,9 @@ def create_bound_cylinder(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CYLINDER)
     bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
     extent = bbmax - bbmin
-    bound_length = extent.y
-    bound_radius = extent.x * 0.5
-    create_cylinder(obj.data, radius=bound_radius, length=bound_length, axis="Y")
+    radius = extent.x * 0.5
+    length = extent.y
+    create_cylinder(obj.data, radius=radius, length=length, axis="Y")
     return obj
 
 
@@ -317,8 +319,8 @@ def create_poly_capsule(poly, materials, vertices):
     v1 = vertices[poly.v1]
     v2 = vertices[poly.v2]
     rot = get_direction_of_vectors(v1, v2)
-    bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
-    create_capsule(capsule.data, radius=poly.radius, length=bound_length)
+    length = (v1 - v2).length
+    create_capsule(capsule.data, radius=poly.radius, length=length, axis="Z")
 
     capsule.location = (v1 + v2) / 2
     capsule.rotation_euler = rot
@@ -332,9 +334,9 @@ def create_poly_cylinder(poly, materials, vertices):
 
     rot = get_direction_of_vectors(v1, v2)
 
-    bound_radius = poly.radius
-    bound_length = get_distance_of_vectors(v1, v2)
-    create_cylinder(cylinder.data, radius=bound_radius, length=bound_length, axis="Z")
+    radius = poly.radius
+    length = get_distance_of_vectors(v1, v2)
+    create_cylinder(cylinder.data, radius=radius, length=length, axis="Z")
 
     cylinder.matrix_world = Matrix()
 

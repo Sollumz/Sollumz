@@ -170,6 +170,14 @@ class BoundShapeProps(bpy.types.PropertyGroup):
     )
 
 
+    def capsule_axis(self):
+        obj = self.id_data
+        match obj.sollum_type:
+            case SollumType.BOUND_POLY_CAPSULE:
+                return "Z"
+            case _:
+                return "Y"
+
     def capsule_radius_getter(self) -> float:
         from .ybnexport import get_bound_extents
 
@@ -183,11 +191,10 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         from .ybnexport import get_bound_extents
 
         obj = self.id_data
-        align_z_axis = obj.sollum_type == SollumType.BOUND_POLY_CAPSULE
         bbmin, bbmax = get_bound_extents(obj)
         extents = bbmax - bbmin
         radius = extents.x * 0.5
-        length = extents.z if align_z_axis else extents.y
+        length = extents.z if self.capsule_axis() == "Z" else extents.y
         length = max(0.0, length - radius * 2.0) # Remove capsule caps from length
         return length
 
@@ -199,8 +206,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
 
     def capsule_update(self, radius: float, length: float):
         obj = self.id_data
-        align_z_axis = obj.sollum_type == SollumType.BOUND_POLY_CAPSULE
-        create_capsule(obj.data, radius=radius, length=(length + radius * 2.0) * 0.5, use_rot=not align_z_axis)
+        create_capsule(obj.data, radius=radius, length=length, axis=self.capsule_axis())
         tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
 
     capsule_radius: bpy.props.FloatProperty(
