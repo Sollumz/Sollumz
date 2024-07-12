@@ -3,6 +3,7 @@
 from bpy.types import (
     Object,
     Mesh,
+    Attribute,
 )
 from bmesh.types import (
     BMesh
@@ -18,7 +19,7 @@ CLOTH_MAX_VERTICES = 1000
 class ClothAttr(str, Enum):
     PINNED = ".cloth.pinned"
     PIN_RADIUS = ".cloth.pin_radius"
-    VERTEX_WEIGHT = ".cloth.vertex_weight"
+    VERTEX_WEIGHT = ".cloth.weight"
     INFLATION_SCALE = ".cloth.inflation_scale"
 
     @property
@@ -64,7 +65,7 @@ class ClothAttr(str, Enum):
             case ClothAttr.PINNED:
                 return "Pinned"
             case ClothAttr.VERTEX_WEIGHT:
-                return "Vertex Weight"
+                return "Weight"
             case ClothAttr.INFLATION_SCALE:
                 return "Inflation Scale"
             case _:
@@ -83,8 +84,9 @@ class ClothAttr(str, Enum):
                 assert False, f"Label not set for cloth attribute '{self}'"
 
 
-def mesh_add_cloth_attribute(mesh: Mesh, attr: ClothAttr):
-    mesh.attributes.new(attr, attr.type, attr.domain)
+def mesh_add_cloth_attribute(mesh: Mesh, attr: ClothAttr) -> Attribute:
+    mesh_attr = mesh.attributes.get(attr, None)
+    return mesh.attributes.new(attr, attr.type, attr.domain) if mesh_attr is None else mesh_attr
 
 
 def mesh_has_cloth_attribute(mesh: Mesh, attr: ClothAttr) -> bool:

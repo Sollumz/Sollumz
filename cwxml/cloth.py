@@ -1,9 +1,11 @@
 
 from abc import ABC as AbstractClass, abstractmethod
+from collections.abc import MutableSequence
 from collections import defaultdict
 from mathutils import Vector
 from xml.etree import ElementTree as ET
 from .element import (
+    Element,
     AttributeProperty,
     ElementTree,
     ElementProperty,
@@ -12,32 +14,75 @@ from .element import (
     MatrixProperty,
     ValueProperty,
     VectorProperty,
+    Vector4Property,
     TextProperty,
     TextListProperty,
     InlineValueListProperty,
     Vector4ListProperty,
 )
 from .drawable import Drawable
+from .bound import BoundComposite
 
 
-# class YLD:
-#
-#     file_extension = ".yld.xml"
-#
-#     @staticmethod
-#     def from_xml_file(filepath):
-#         return ClothDictionaryFile.from_xml_file(filepath)
-#
-#     @staticmethod
-#     def write_xml(cloth_dict_file, filepath):
-#         return cloth_dict_file.write_xml(filepath)
+class YLD:
+
+    file_extension = ".yld.xml"
+
+    @staticmethod
+    def from_xml_file(filepath):
+        return ClothDictionary.from_xml_file(filepath)
+
+    @staticmethod
+    def write_xml(cloth_dict_file, filepath):
+        return cloth_dict_file.write_xml(filepath)
 
 
-# class ClothDictionaryFile(ElementTree):
-#     tag_name = "ClothDictionary"
-#
-#     def __init__(self):
-#         super().__init__()
+class ClothDictionary(MutableSequence, Element):
+    tag_name = "ClothDictionary"
+
+    def __init__(self, value=None):
+        super().__init__()
+        self._value = value or []
+
+    def __getitem__(self, key):
+        return self._value[key]
+
+    def __setitem__(self, key, value):
+        self._value[key] = value
+
+    def __delitem__(self, key):
+        del self._value[key]
+
+    def __iter__(self):
+        return iter(self._value)
+
+    def __len__(self):
+        return len(self._value)
+
+    def insert(self, index, value):
+        self._value.insert(index, value)
+
+    def sort(self, key):
+        self._value.sort(key=key)
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        for child in element.findall("Item"):
+            cloth = CharacterCloth.from_xml(child)
+            new.append(cloth)
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        for cloth in self._value:
+            assert isinstance(cloth, CharacterCloth)
+            cloth.tag_name = "Item"
+            element.append(cloth.to_xml())
+
+        return element
+
 
 class ClothBridgeSimGfx(ElementTree):
     tag_name = "BridgeSimGfx"
@@ -249,3 +294,52 @@ class EnvironmentCloth(ElementTree):
 class EnvironmentClothList(ListProperty):
     list_type = EnvironmentCloth
     tag_name = "Cloths"
+
+
+class CharacterClothBinding(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.weights = Vector4Property("Weights")
+        self.index0 = ValueProperty("Index0") # indices into bone_ids/bone_indices arrays
+        self.index1 = ValueProperty("Index1")
+        self.index2 = ValueProperty("Index2")
+        self.index3 = ValueProperty("Index3")
+
+    @property
+    def indices(self):
+        return self.index0, self.index1, self.index2, self.index3
+
+
+class CharacterClothBindingList(ListProperty):
+    list_type = CharacterClothBinding
+    tag_name = "BoneWeightsIndices"
+
+
+class CharacterClothController(ClothController):
+    tag_name = "Controller"
+
+    def __init__(self):
+        super().__init__()
+        self.pin_radius_set_threshold = ValueProperty("UnknownA0")
+        self.wind_scale = ValueProperty("UnknownDC")
+        self.vertices = VerletClothVerticesProperty("Vertices")
+        self.indices = InlineValueListProperty("Indices")
+        self.bone_indices = InlineValueListProperty("UnknownB0")
+        self.bone_ids = InlineValueListProperty("BoneIDs")
+        self.bindings = CharacterClothBindingList()
+
+
+class CharacterCloth(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.name = TextProperty("Name")
+        self.parent_matrix = MatrixProperty("Transform")
+        self.poses = Vector4ListProperty("Unknown10")
+        self.bounds_bone_ids = InlineValueListProperty("Unknown30")
+        self.bounds_bone_indices = InlineValueListProperty("Unknown90")
+        self.controller = CharacterClothController()
+        self.bounds = BoundComposite()

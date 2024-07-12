@@ -4,7 +4,6 @@ import numpy as np
 from traceback import format_exc
 from mathutils import Matrix, Vector, Quaternion
 from typing import Optional
-
 from .fragment_merger import FragmentMerger
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
