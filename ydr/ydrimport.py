@@ -119,29 +119,29 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
     for lod_level, mesh_data in model_data.mesh_data_lods.items():
         mesh_name = f"{model_obj.name}_{SOLLUMZ_UI_NAMES[lod_level].lower().replace(' ', '_')}"
 
-        # try:
-        if all(m.shader_properties.filename == CABLE_SHADER_NAME for m in materials):
-            mesh_builder = CableMeshBuilder(
-                mesh_name,
-                mesh_data.vert_arr,
-                mesh_data.ind_arr,
-                mesh_data.mat_inds,
-                materials
-            )
-        else:
-            mesh_builder = MeshBuilder(
-                mesh_name,
-                mesh_data.vert_arr,
-                mesh_data.ind_arr,
-                mesh_data.mat_inds,
-                materials
-            )
+        try:
+            if all(m.shader_properties.filename == CABLE_SHADER_NAME for m in materials):
+                mesh_builder = CableMeshBuilder(
+                    mesh_name,
+                    mesh_data.vert_arr,
+                    mesh_data.ind_arr,
+                    mesh_data.mat_inds,
+                    materials
+                )
+            else:
+                mesh_builder = MeshBuilder(
+                    mesh_name,
+                    mesh_data.vert_arr,
+                    mesh_data.ind_arr,
+                    mesh_data.mat_inds,
+                    materials
+                )
 
-        lod_mesh = mesh_builder.build()
-        # except:
-        #     logger.error(
-        #         f"Error occured during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
-        #     continue
+            lod_mesh = mesh_builder.build()
+        except:
+            logger.error(
+                f"Error occured during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
+            continue
 
         lods.get_lod(lod_level).mesh = lod_mesh
         lods.active_lod_level = lod_level
