@@ -309,9 +309,12 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
         model_obj.parent = drawable_obj
         mesh_obj = model_obj
 
+    mesh = mesh_obj.data
+
     # LOD specific data
     # TODO: handle LODs
-    vertex_weights = cloth.controller.bridge.vertex_weights_high
+    pin_radius = cloth.controller.bridge.pin_radius_high
+    weights = cloth.controller.bridge.vertex_weights_high
     inflation_scale = cloth.controller.bridge.inflation_scale_high
     display_map = np.array(cloth.controller.bridge.display_map_high)
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
@@ -324,30 +327,33 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     # TODO: pin radius
     #       There can be multiple pin radius per vertex, find a model with pin radius set
     #       Check if pin radius is only used with character cloth
-    has_pin_radius = False
-    has_vertex_weights = len(vertex_weights) > 0
+    has_pinned = pinned_vertices_count > 0
+    has_pin_radius = len(pin_radius) > 0
+    has_weights = len(weights) > 0
     has_inflation_scale = len(inflation_scale) > 0
 
-    mesh = mesh_obj.data
-    mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
+    if has_pinned:
+        mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
     if has_pin_radius:
         mesh_add_cloth_attribute(mesh, ClothAttr.PIN_RADIUS)
-    if has_vertex_weights:
+    if has_weights:
         mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
     if has_inflation_scale:
         mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
 
     for mesh_vert_index, cloth_vert_index in enumerate(display_map):
-        if has_vertex_weights:
-            vertex_weight = vertex_weights[cloth_vert_index]
-            mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = vertex_weight
+        if has_pinned:
+            pinned = cloth_vert_index < pinned_vertices_count
+            mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
+
+        if has_pin_radius:
+            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].value = pin_radius[cloth_vert_index]
+
+        if has_weights:
+            mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = weights[cloth_vert_index]
 
         if has_inflation_scale:
-            vertex_inflation_scale = inflation_scale[cloth_vert_index]
-            mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = vertex_inflation_scale
-
-        pinned = cloth_vert_index < pinned_vertices_count
-        mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
+            mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = inflation_scale[cloth_vert_index]
 
     # TODO: find a cloth with custom edges and see what needs to be imported
 
