@@ -115,6 +115,24 @@ def add_new_default_light_preset():
     load_light_presets()
 
 
+def convert_constraint_child_of_to_copy_transform(obj: Object):
+    from ..tools.blenderhelper import add_child_of_bone_constraint
+
+    child_of_constraints = [
+        con for con in obj.constraints
+        if (con.type == "CHILD_OF" and
+            con.target_space == "POSE" and
+            con.owner_space == "LOCAL" and
+            con.target is not None and
+            con.target.type == "ARMATURE")
+    ]
+    for con in child_of_constraints:
+        armature_obj = con.target
+        bone_name = con.subtarget
+        obj.constraints.remove(con)
+        add_child_of_bone_constraint(obj, armature_obj, bone_name)
+
+
 def do_versions(data_version: int, data: BlendData):
     if data_version < 2:
         for obj in data.objects:
@@ -127,3 +145,7 @@ def do_versions(data_version: int, data: BlendData):
 
     if data_version < 4:
         add_new_default_light_preset()
+
+    if data_version < 5:
+        for obj in data.objects:
+            convert_constraint_child_of_to_copy_transform(obj)

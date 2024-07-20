@@ -639,21 +639,14 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
             n.draw(context, layout, label=n.name, compact=True)
 
 
-class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):
+class SOLLUMZ_PT_COPY_TRANSFORMS_SUBPANEL(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_label = "Sollumz"
-    bl_parent_id = "OBJECT_PT_bChildOfConstraint"
+    bl_parent_id = "OBJECT_PT_bTransLikeConstraint"
 
     def draw(self, context):
         layout = self.layout
-        con = self.custom_data
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-
-        layout.prop(con, "owner_space")
-        layout.prop(con, "target_space")
-        layout.separator()
         layout.operator("sollumz.set_correct_child_of_space")
 
 

@@ -327,25 +327,28 @@ def add_armature_modifier(obj: bpy.types.Object, armature_obj: bpy.types.Object)
 
 
 def add_child_of_bone_constraint(obj: bpy.types.Object, armature_obj: bpy.types.Object, target_bone: Optional[str] = None):
-    """Add Child Of constraint and set bone. Also sets bone target space and owner space so that parenting evaluated properly."""
-    constraint: bpy.types.ChildOfConstraint = obj.constraints.new("CHILD_OF")
-    constraint.target = armature_obj
+    """Add constraint to parent the object to a bone. Also sets target space and owner space so that parenting is evaluated properly.
 
+    Note: we are using COPY_TRANSFORMS instead of CHILD_OF constraint because CHILD_OF does not behave as expected when
+    ``obj`` is a child of the ``armature_obj`` hierarchy. It applies the parent transform and then the offset transform
+    coming from the CHILD_OF constraint. Instead, we just want ``obj`` to use the bone transform directly.
+    In previous versions, Sollumz used CHILD_OF but changing the target/owner space, which seemed to work but was
+    possibly undefined behaviour as the target/owner space properties are not shown in the UI, unlike with other
+    constraints. After Blender 4.2, this approach broke and we had to change to COPY_TRANSFORMS.
+    """
+    constraint = obj.constraints.new("COPY_TRANSFORMS")
+    constraint.target = armature_obj
     if target_bone is not None:
         constraint.subtarget = target_bone
-
     set_child_of_constraint_space(constraint)
-
-    constraint.inverse_matrix = Matrix()
-
     return constraint
 
 
-def set_child_of_constraint_space(constraint: bpy.types.ChildOfConstraint):
-    """Set Child Of constraing target space and owner space such that it matches the behavior of bone parenting
-    (owner_space = 'LOCAL', target_space = 'POSE')"""
-    constraint.owner_space = "LOCAL"
+def set_child_of_constraint_space(constraint: bpy.types.CopyTransformsConstraint):
+    """Set constraint target space and owner space such that it matches the behavior of bone parenting."""
+    constraint.mix_mode = "BEFORE_FULL"
     constraint.target_space = "POSE"
+    constraint.owner_space = "LOCAL"
 
 
 def get_bone_pose_matrix(obj: bpy.types.Object) -> Matrix:
@@ -393,10 +396,10 @@ def get_child_of_pose_bone(obj: bpy.types.Object) -> Optional[bpy.types.PoseBone
     return armature.pose.bones.get(constraint.subtarget)
 
 
-def get_child_of_constraint(obj: bpy.types.Object) -> Optional[bpy.types.ChildOfConstraint]:
+def get_child_of_constraint(obj: bpy.types.Object) -> Optional[bpy.types.CopyTransformsConstraint]:
     """Get first child of constraint with armature target and bone subtarget set. Returns None if not found."""
     for constraint in obj.constraints:
-        if constraint.type != "CHILD_OF":
+        if constraint.type != "COPY_TRANSFORMS":
             continue
 
         if constraint.target and constraint.target.type == "ARMATURE" and constraint.subtarget:

@@ -4,7 +4,7 @@ from typing import Optional
 from mathutils import Matrix, Vector
 from .light_flashiness import Flashiness
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LightType
-from ..tools.blenderhelper import create_empty_object, create_blender_object
+from ..tools.blenderhelper import create_empty_object, create_blender_object, add_child_of_bone_constraint
 from ..sollumz_preferences import get_addon_preferences
 from ..cwxml.drawable import Light
 from ..cwxml.ymap import LightInstance
@@ -80,12 +80,7 @@ def create_light_bone_constraint(light_xml: Light, light_obj: bpy.types.Object, 
         if bone.bone_properties.tag != light_xml.bone_id:
             continue
 
-        constraint = light_obj.constraints.new("COPY_TRANSFORMS")
-        constraint.target = armature_obj
-        constraint.subtarget = bone.name
-        constraint.mix_mode = "BEFORE_FULL"
-        constraint.target_space = "POSE"
-        constraint.owner_space = "LOCAL"
+        add_child_of_bone_constraint(light_obj, armature_obj, bone.name)
 
 
 def set_light_rotation(light_xml: Light, light_obj: bpy.types.Object):

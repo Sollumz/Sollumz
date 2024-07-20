@@ -55,3 +55,31 @@ def test_versioning_tcmod_percentage():
         mlo = ytyp.archetypes[0]
         tcmod = mlo.timecycle_modifiers[0]
         assert tcmod.percentage == 75.0
+
+
+def test_versioning_convert_child_of_to_copy_transform():
+    # NOTE: cannot use temp_data() here, constraints don't accept temporary IDs
+    # >       constraint.target = armature_obj
+    # E       TypeError: bpy_struct: item.attr = val: CopyTransformsConstraint.target ID type assignment is temporary, can't assign
+    data = bpy.data
+    load_blend_data(data, "v240_child_of_to_copy_transform.blend")
+
+    do_versions(data)
+
+
+    armature_obj = data.objects["dummy_prop"]
+    objs_to_check = (
+        # object name, target bone name
+        ("the_root_mesh", "the_root"),
+        ("the_bone_mesh", "the_bone"),
+        ("the_root_mesh.col", "the_root"),
+        ("the_root_mesh.col.001", "the_root"),
+        ("the_bone_mesh.col", "the_bone"),
+    )
+    for obj_name, target_bone_name in objs_to_check:
+        obj = data.objects[obj_name]
+        assert len(obj.constraints) == 1
+        con = obj.constraints[0]
+        assert con.type == "COPY_TRANSFORMS"
+        assert con.target == armature_obj
+        assert con.subtarget == target_bone_name

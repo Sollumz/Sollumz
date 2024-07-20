@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 4
+SOLLUMZ_INTERNAL_VERSION = 5
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
@@ -27,6 +27,7 @@ Version History:
   - 2: LOD system fixes.
   - 3: TimecycleModifierProperties.percentage IntProperty -> FloatProperty
   - 4: added "Default" light preset.
+  - 5: use COPY_TRANSFORM constraint for bone parent instead of CHILD_OF (broke in Blender 4.2)
   - <next>: <describe changes>
 """
 
