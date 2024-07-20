@@ -22,7 +22,12 @@ jobs:
             pytest-version: '7.2.0'
             pytest-blender-version: '3.0.5'
 
-          - blender-version: '4.1.0'
+          - blender-version: '4.1.1'
+            python-version: '3.11'
+            pytest-version: '7.2.0'
+            pytest-blender-version: '3.0.5'
+
+          - blender-version: '4.2.0'
             python-version: '3.11'
             pytest-version: '7.2.0'
             pytest-blender-version: '3.0.5'
