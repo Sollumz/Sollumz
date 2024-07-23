@@ -2,6 +2,7 @@ import bpy
 from bpy.types import Context
 from . import operators as ydr_ops
 from .shader_materials import shadermats
+from .cable import is_cable_mesh
 from ..cwxml.shader import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
@@ -807,6 +808,10 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
 def uv_maps_panel_draw(self, context):
     me = context.mesh
 
+    if is_cable_mesh(me):
+        # We don't use UVs with cable meshes
+        return
+
     texcoords = get_mesh_used_texcoords_indices(me)
     texcoords_names = [get_uv_map_name(t) for t in texcoords]
     if all(n in me.uv_layers for n in texcoords_names):
@@ -824,6 +829,10 @@ def uv_maps_panel_draw(self, context):
 
 def color_attributes_panel_draw(self, context):
     me = context.mesh
+
+    if is_cable_mesh(me):
+        # We don't use color attributes with cable meshes
+        return
 
     colors = get_mesh_used_colors_indices(me)
     colors_names = [get_color_attr_name(c) for c in colors]
