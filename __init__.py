@@ -19,7 +19,7 @@ bl_info = {
     "blender": (4, 0, 0),
     "version": (2, 4, 2),
     "category": "Import-Export",
-    "doc_url": "https://sollumz.gitbook.io/sollumz-wiki/",
+    "doc_url": "https://docs.sollumz.org/",
     "tracker_url": "https://github.com/Skylumz/Sollumz/issues",
 }
 
