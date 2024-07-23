@@ -322,13 +322,6 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(bpy.types.Operator):
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__.split(".")[0]
 
-    scale_light_intensity: bpy.props.BoolProperty(
-        name="Scale Light Intensity",
-        description="Scale light intensity by 500 on import/export",
-        default=True,
-        update=_save_preferences
-    )
-
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter",
         description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)",
@@ -378,7 +371,6 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "scale_light_intensity")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")

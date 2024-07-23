@@ -5,11 +5,12 @@ from mathutils import Matrix, Vector
 from .light_flashiness import Flashiness
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LightType
 from ..tools.blenderhelper import create_empty_object, create_blender_object, add_child_of_bone_constraint
-from ..sollumz_preferences import get_addon_preferences
 from ..cwxml.drawable import Light
 from ..cwxml.ymap import LightInstance
 from .properties import LightProperties
 from .. import logger
+
+INTENSITY_SCALE_FACTOR = 500
 
 
 def create_light_objs(lights: list[Light], armature_obj: Optional[bpy.types.Object] = None):
@@ -20,6 +21,7 @@ def create_light_objs(lights: list[Light], armature_obj: Optional[bpy.types.Obje
         lobj.parent = lights_parent
 
     return lights_parent
+
 
 def create_light_instance_objs(lights: list[LightInstance], armature_obj: Optional[bpy.types.Object] = None):
     lights = [convert_light_instance_to_light_xml(li) for li in lights]
@@ -95,11 +97,8 @@ def set_light_rotation(light_xml: Light, light_obj: bpy.types.Object):
 
 def set_light_bpy_properties(light_xml: Light, light_data: bpy.types.Light):
     """Set Blender light properties of ``light_data`` based on ``light_xml``."""
-    preferences = get_addon_preferences(bpy.context)
-    intensity_factor = 500 if preferences.scale_light_intensity else 1
-
     light_data.color = [channel / 255 for channel in light_xml.color]
-    light_data.energy = light_xml.intensity * intensity_factor
+    light_data.energy = light_xml.intensity * INTENSITY_SCALE_FACTOR
     light_data.use_custom_distance = True
     light_data.cutoff_distance = light_xml.falloff
     light_data.shadow_soft_size = light_xml.falloff_exponent / 5
@@ -212,7 +211,7 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.flags = light_data.light_flags.total
 
     light_xml.color = light_data.color * 255
-    light_xml.intensity = light_data.energy / 500
+    light_xml.intensity = light_data.energy / INTENSITY_SCALE_FACTOR
 
     light_xml.flashiness = Flashiness[light_props.flashiness].value
     light_xml.group_id = light_props.group_id
@@ -261,12 +260,13 @@ def convert_light_instance_to_light_xml(li: LightInstance) -> Light:
     """Converts a ``LightInstance`` XML object (used in meta files, i.e. ymaps and ytyps, in light effect extensions) to a ``Light`` XML object (used in drawables)."""
     def _text_list_to_vec(tl):
         return Vector([float(v) for v in tl])
+
     def _text_list_to_color(tl):
         return [int(v) for v in tl]
 
     light = Light()
     light.position = _text_list_to_vec(li.position)
-    light.color =_text_list_to_color(li.color)
+    light.color = _text_list_to_color(li.color)
     light.flashiness = li.flashiness
     light.intensity = li.intensity
     light.flags = li.flags
@@ -311,12 +311,13 @@ def convert_light_to_light_instance_xml(light: Light) -> LightInstance:
     """Converts a ``Light`` XML object (used in drawables) to a ``LightInstance`` XML object (used in meta files, i.e. ymaps and ytyps, in light effect extensions)."""
     def _vec_to_text_list(vec):
         return [str(v) for v in vec]
+
     def _color_to_text_list(color):
         return [str(int(v)) for v in color]
 
     li = LightInstance()
     li.position = _vec_to_text_list(light.position)
-    li.color =_color_to_text_list(light.color)
+    li.color = _color_to_text_list(light.color)
     li.flashiness = light.flashiness
     li.intensity = light.intensity
     li.flags = light.flags
