@@ -603,7 +603,14 @@ def get_id_and_track_from_track_data_path(
     if len(canon_data_path_parts) != 3:
         return None
 
-    id = int(canon_data_path_parts[1].removeprefix("#"))
+    if not canon_data_path_parts[1].startswith("#") or not canon_data_path_parts[2].startswith("]."):
+        return None
+
+    id_str = canon_data_path_parts[1].removeprefix("#")
+    if not id_str.isdecimal():
+        return None
+
+    id = int(id_str)
 
     track_str = canon_data_path_parts[2].removeprefix("].")
     if track_str == "location":
