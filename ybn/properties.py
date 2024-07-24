@@ -312,6 +312,10 @@ def register():
     bpy.types.Scene.center_composite_to_selection = bpy.props.BoolProperty(
         name="Center to Selection", description="Center the Bound Composite to all selected objects", default=True)
 
+    bpy.types.WindowManager.sz_create_bound_box_parent = bpy.props.PointerProperty(
+        name="Parent", description="Parent for the new box object. If not set, the parent of the active object is used.",
+        type=bpy.types.Object
+    )
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
@@ -337,5 +341,6 @@ def unregister():
     del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.composite_apply_default_flag_preset
     del bpy.types.Scene.center_composite_to_selection
+    del bpy.types.WindowManager.sz_create_bound_box_parent
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)

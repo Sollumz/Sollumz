@@ -228,9 +228,8 @@ class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(CollisionToolChildPanel, bpy.types.P
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname,
-                     icon="SCULPTMODE_HLT")
+        row = layout.row(align=True)
+        row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname, icon="SCULPTMODE_HLT")
         row.prop(context.scene, "split_collision_count")
 
 
@@ -258,21 +257,27 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
 
         layout.separator()
 
-        row = layout.row()
+        row = layout.row(align=True)
         row.operator(ybn_ops.SOLLUMZ_OT_create_bound.bl_idname, icon="CUBE")
         row.prop(context.scene, "create_bound_type", text="")
 
-        row = layout.row()
+        row = layout.row(align=True)
         row.operator(
             ybn_ops.SOLLUMZ_OT_create_polygon_bound.bl_idname, icon="MESH_CAPSULE")
         row.prop(context.scene, "create_poly_bound_type", text="")
 
         layout.separator()
 
-        row = layout.row()
-        row.operator(
-            ybn_ops.SOLLUMZ_OT_create_polygon_box_from_verts.bl_idname, icon="GROUP_VERTEX")
-        row.prop(context.scene, "poly_bound_type_verts", text="")
+        split = layout.split(factor=0.5, align=True)
+        row = split.row(align=True)
+        box_from_verts_op = row.operator(
+            ybn_ops.SOLLUMZ_OT_create_polygon_box_from_verts.bl_idname, icon="GROUP_VERTEX"
+        )
+        subrow = split.row(align=True)
+        subrow.prop(context.scene, "poly_bound_type_verts", text="")
+        subrow.prop(context.window_manager, "sz_create_bound_box_parent", text="", placeholder="Parent")
+        box_parent = context.window_manager.sz_create_bound_box_parent
+        box_from_verts_op.parent_name = box_parent.name if box_parent else ""
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel):

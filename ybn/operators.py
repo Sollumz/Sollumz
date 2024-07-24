@@ -35,31 +35,34 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
-    """Create a Bound Polygon Box from the selected vertices (must be in edit mode)"""
+    """Creates a Bound Box or Bound Poly Box from the selected vertices"""
     bl_idname = "sollumz.createpolyboxfromverts"
-    bl_label = "Create Box From Selection"
+    bl_label = "Create Box from Selection"
     bl_options = {"UNDO"}
+
+    parent_name: bpy.props.StringProperty(name="Parent")
 
     @classmethod
     def poll(self, context):
-        return context.active_object is not None and context.active_object.mode == "EDIT"
+        self.poll_message_set("Must be in Edit Mode.")
+        return context.mode == "EDIT_MESH"
 
     def execute(self, context):
         sollum_type = context.scene.poly_bound_type_verts
 
-        selected = context.selected_objects
-
-        if len(selected) < 1 and context.active_object:
-            selected = [context.active_object]
-
+        objects = context.objects_in_mode
         verts = []
-        for obj in selected:
+        for obj in objects:
             verts.extend(get_selected_vertices(obj))
 
-        if selected and len(selected) == 1:
-            parent = selected[0].parent
-        else:
-            parent = None
+        parent = None
+        if self.parent_name:
+            parent = bpy.data.objects.get(self.parent_name, None)
+
+        if not parent and objects:
+            # If no explicit parent chosen by the user, place it as sibling of the active object
+            # First object in objects_in_mode is the active object
+            parent = objects[0].parent
 
         if len(verts) < 3:
             self.report({"INFO"}, "Please select at least three vertices.")
@@ -73,8 +76,7 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
         center = world_matrix @ (bbmin + bbmax) / 2
         local_center = (bbmin + bbmax) / 2
 
-        create_box_from_extents(
-            pobj.data, bbmin - local_center, bbmax - local_center)
+        create_box_from_extents(pobj.data, bbmin - local_center, bbmax - local_center)
 
         pobj.matrix_world = world_matrix
         pobj.location = center
