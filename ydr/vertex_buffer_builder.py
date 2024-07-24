@@ -249,17 +249,13 @@ class VertexBufferBuilder:
         num_loops = len(self.mesh.loops)
         uv_layers = {}
         for uvmap_idx in get_mesh_used_texcoords_indices(self.mesh):
-            uvmap_attr_name = get_color_attr_name(uvmap_idx)
+            uvmap_attr_name = get_uv_map_name(uvmap_idx)
             uvmap_attr = self.mesh.uv_layers.get(uvmap_attr_name, None)
             if uvmap_attr is None:
                 continue
 
-            if uvmap_attr.domain != "CORNER" or uvmap_attr.data_type != "FLOAT2":
-                # Not in the correct format, ignore it
-                continue
-
             uvs = np.empty(num_loops * 2, dtype=np.float32)
-            uvmap_attr.data.foreach_get("vector", uvs)
+            uvmap_attr.uv.foreach_get("vector", uvs)
             uvs = np.reshape(uvs, (num_loops, 2))
 
             flip_uvs(uvs)
