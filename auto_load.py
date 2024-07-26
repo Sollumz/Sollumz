@@ -19,7 +19,7 @@ def init():
     global modules
     global ordered_classes
 
-    modules = get_all_submodules(Path(__file__).parent)
+    modules = get_all_submodules(Path(__file__).parent, __package__)
     ordered_classes = get_ordered_classes_to_register(modules)
 
 
@@ -52,8 +52,8 @@ def unregister():
 # Import modules
 #################################################
 
-def get_all_submodules(directory):
-    return list(iter_submodules(directory, directory.name))
+def get_all_submodules(directory, package_name):
+    return list(iter_submodules(directory, package_name))
 
 
 def iter_submodules(path, package_name):

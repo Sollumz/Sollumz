@@ -83,6 +83,6 @@ topo_order = false
 sort_commits = "oldest"
 
 [remote.github]
-owner = "Skylumz"
+owner = "Sollumz"
 repo = "Sollumz"
 

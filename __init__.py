@@ -15,12 +15,12 @@
 bl_info = {
     "name": "Sollumz",
     "author": "Skylumz, Colton and alexguirre",
-    "description": "This plugins allows you to import/export CodeWalker XML files.",
+    "description": "Grand Theft Auto V modding suite for Blender",
     "blender": (4, 0, 0),
     "version": (2, 4, 2),
     "category": "Import-Export",
     "doc_url": "https://docs.sollumz.org/",
-    "tracker_url": "https://github.com/Skylumz/Sollumz/issues",
+    "tracker_url": "https://github.com/Sollumz/Sollumz/issues",
 }
 
 

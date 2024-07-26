@@ -306,7 +306,7 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(bpy.types.Operator):
 
 
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
-    bl_idname = __package__.split(".")[0]
+    bl_idname = __package__
 
     show_vertex_painter: bpy.props.BoolProperty(
         name="Show Vertex Painter",
@@ -384,7 +384,7 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
 
 
 def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> SollumzAddonPreferences:
-    return context.preferences.addons[__package__.split(".")[0]].preferences
+    return context.preferences.addons[__package__].preferences
 
 
 def get_import_settings(context: Optional[bpy.types.Context] = None) -> SollumzImportSettings:

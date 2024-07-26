@@ -22,15 +22,25 @@ $minor = $versionComponents[1]
 $patch = $versionComponents[2]
 
 # Update version in __init__.py
-(Get-Content -Raw __init__.py) -replace "`"version`": \(\d+, \d+, \d+\)", "`"version`": ($major, $minor, $patch)" |
+(Get-Content -Raw __init__.py) `
+  -replace "`"version`": \(\d+, \d+, \d+\)", "`"version`": ($major, $minor, $patch)" |
 Set-Content -NoNewline __init__.py
 
-# Create commit and tag
-& git add __init__.py
-& git commit -m "chore: bump version to $Version"
+# Update version in blender_manifest.toml and set the extension ID used for releases
+(Get-Content -Raw blender_manifest.toml) `
+  -replace "version = .*", "version = `"$major.$minor.$patch`"" `
+  -replace "id = .*",      "id = `"sollumz`"" `
+  -replace "name = .*",    "name = `"Sollumz`"" |
+Set-Content -NoNewline blender_manifest.toml
+
+
+# Create commit and tag as a release
+& git add __init__.py blender_manifest.toml
+& git commit -m "chore: prepare release v$Version"
 & git tag "v$Version"
 
 Write-Host "Add-on version updated and commited. When ready, push with ``git push && git push --tags``"
+
 
 # Generate release notes from commit messages with git-cliff
 if ((Get-Command "git-cliff" -ErrorAction SilentlyContinue) -eq $null)
@@ -43,6 +53,19 @@ else
   Write-Host "Release notes written to 'RELEASE_NOTES.md'. Might need some clean up before publishing the GitHub release."
 }
 
-# Create archive
+
+# Add the commit placeholder and dev extension ID back to differentiate development commits from the release
+(Get-Content -Raw blender_manifest.toml) `
+  -replace "version = .*", "version = `"$major.$minor.$patch-dev+`$Format:%h`$`"" `
+  -replace "id = .*",      "id = `"sollumz_dev`"" `
+  -replace "name = .*",    "name = `"Sollumz (Development)`"" |
+Set-Content -NoNewline blender_manifest.toml
+
+
+& git add blender_manifest.toml
+& git commit -m "chore: prepare development manifest"
+
+
+# Create archive (note: not using 'blender --command extension build' because we want git to write the commit hash to the blender_manifest.toml placeholder)
 & git archive --prefix Sollumz/ -o Sollumz.zip "v$Version"
 Write-Host "Archive created in 'Sollumz.zip'."

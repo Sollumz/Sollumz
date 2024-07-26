@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "sollumz_dev"
+version = "2.4.2-dev+$Format:%h$"
+name = "Sollumz (Development)"
+tagline = "Grand Theft Auto V modding suite for Blender"
+maintainer = "alexguirre <alexguirre.aa@gmail.com>"
+type = "add-on"
+
+website = "https://docs.sollumz.org"
+
+tags = ["Import-Export"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:MIT"]
+copyright = ["2020-2024 Skylumz, Colton and alexguirre"]
+
+[permissions]
+files = "Import/export CodeWalker XML files. Save/load presets."
+clipboard = "Copy/paste location and rotation of objects."
+
