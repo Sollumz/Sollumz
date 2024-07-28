@@ -481,9 +481,11 @@ def get_light_presets_path() -> str:
     return os.path.join(get_config_directory_path(), "light_presets.xml")
 
 
-def get_defaut_light_presets_path() -> str:
-    package_name = __name__.split(".")[0]
-    return f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ydr\\light_presets.xml"
+_default_light_presets_path = os.path.join(os.path.dirname(__file__), "light_presets.xml")
+
+
+def get_default_light_presets_path() -> str:
+    return _default_light_presets_path
 
 
 light_presets = LightPresetsFile()
@@ -494,7 +496,7 @@ def load_light_presets():
 
     path = get_light_presets_path()
     if not os.path.exists(path):
-        path = get_defaut_light_presets_path()
+        path = get_default_light_presets_path()
         if not os.path.exists(path):
             return
 

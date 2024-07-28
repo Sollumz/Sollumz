@@ -84,7 +84,7 @@ def add_new_default_light_preset():
     check for this.
     """
     import os
-    from ..ydr.properties import get_light_presets_path, get_defaut_light_presets_path, load_light_presets
+    from ..ydr.properties import get_light_presets_path, get_default_light_presets_path, load_light_presets
     from ..cwxml.light_preset import LightPresetsFile
 
     user_path = get_light_presets_path()
@@ -92,7 +92,7 @@ def add_new_default_light_preset():
         # No custom light presets, don't need to do anything, the default light presets file will be loaded
         return
 
-    default_path = get_defaut_light_presets_path()
+    default_path = get_default_light_presets_path()
     if not os.path.exists(default_path):
         # The default light presets file doesn't exist, worrying but can't do anything about it
         return
