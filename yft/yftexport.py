@@ -1456,7 +1456,18 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
 
     # TODO: lods
     model_xml = create_model_xml(cloth_obj, LODLevel.HIGH, materials, transforms_to_apply=transforms_to_apply)
-    model_xml.bone_index = 1  # TODO: drawable model bone index
+
+
+    bone = get_child_of_bone(cloth_obj)
+    if bone is None:
+        logger.error(
+            f"Fragment cloth '{cloth_obj.name}' is not attached to a bone! "
+            "Attach to the bone via an Copy Transforms constraint."
+        )
+        return None
+
+    model_xml.bone_index = get_bone_index(frag_obj.data, bone)
+
     append_model_xml(cloth_drawable_xml, model_xml, LODLevel.HIGH)
 
     set_drawable_xml_extents(cloth_drawable_xml)

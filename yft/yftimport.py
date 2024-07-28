@@ -292,24 +292,24 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     from ..cwxml.cloth import EnvironmentCloth
     from .cloth import ClothAttr, mesh_add_cloth_attribute
 
-    # bones = frag_xml.drawable.skeleton.bones
 
     cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment
     if cloth.drawable.is_empty:
         return
 
-    # bone_name = bones[0].name # TODO: attach to bone
-
     model_objs, model_datas = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth", return_model_data=True)
+    assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
 
-    mesh_obj = None
-    for model_obj in model_objs:
-        # add_child_of_bone_constraint(child_obj, frag_obj, bone_name)
+    model_obj = model_objs[0]
+    model_obj.parent = drawable_obj
 
-        model_obj.parent = drawable_obj
-        mesh_obj = model_obj
+    bones = cloth.drawable.skeleton.bones
+    bone_index = cloth.drawable.drawable_models_high[0].bone_index
+    bone_name = bones[bone_index].name
+    add_child_of_bone_constraint(model_obj, frag_obj, bone_name)
 
-    mesh = mesh_obj.data
+
+    mesh = model_obj.data
 
     # LOD specific data
     # TODO: handle LODs
