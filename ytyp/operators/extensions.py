@@ -67,6 +67,7 @@ class SOLLUMZ_OT_duplicate_archetype_extension(bpy.types.Operator):
         tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_HEADER")
         return {"FINISHED"}
 
+
 class SOLLUMZ_OT_add_entity_extension(bpy.types.Operator):
     """Add an extension to the entity"""
     bl_idname = "sollumz.addentityextension"
@@ -123,7 +124,7 @@ class ExtensionUpdateFromSelectionHelper:
     @classmethod
     def poll(cls, context):
         return get_selected_extension(context) is not None
-    
+
     @classmethod
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
         raise NotImplementedError
@@ -137,21 +138,22 @@ class ExtensionUpdateFromSelectionHelper:
         verts_location = sum(selected_vertices, Vector()) / len(selected_vertices)
 
         self.set_extension_props(context, verts_location)
-        
+
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_update_offset_and_top_from_selected(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
-    """Update ladder offest and top from selection"""
-    bl_idname = "sollumz.updateoffsetandtopfromselection"
+class SOLLUMZ_OT_extension_update_location_from_selected(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
+    """Update extension offset from selection"""
+    bl_idname = "sollumz.extension_update_location_from_selected"
     bl_options = {"UNDO"}
-    bl_label = "Update Offset and Top"
+    bl_label = "Update Location"
 
     @classmethod
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
-        ladder_props = get_selected_extension(context).ladder_extension_properties
-        ladder_props.offset_position = verts_location
-        ladder_props.top = verts_location
+        ext = get_selected_extension(context)
+        props = ext.get_properties()
+        offset = verts_location - props.offset_position
+        ext.translate(offset)
 
 
 class SOLLUMZ_OT_update_bottom_from_selected(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
@@ -166,31 +168,6 @@ class SOLLUMZ_OT_update_bottom_from_selected(bpy.types.Operator, ExtensionUpdate
         ladder_props.bottom = verts_location
 
 
-class SOLLUMZ_OT_update_particle_effect_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
-    """Update particle effect offset from selection"""
-    bl_idname = "sollumz.updateptfxoffsetfromselection"
-    bl_options = {"UNDO"}
-    bl_label = "Update Offset location"
-
-    @classmethod
-    def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
-        particle_props = get_selected_extension(context).particle_extension_properties
-        particle_props.offset_position = verts_location
-
-
-class SOLLUMZ_OT_update_light_shaft_offeset_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
-    """Update light shaft offset from selection"""
-    bl_idname = "sollumz.updatelightshaftoffsetfromselection"
-    bl_options = {"UNDO"}
-    bl_label = "Update Offset location"
-
-
-    @classmethod
-    def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
-        light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
-        light_shaft_props.offset_position = verts_location
-
-
 class SOLLUMZ_OT_update_corner_a_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Update light shaft corner A location from selection"""
     bl_idname = "sollumz.updatecornerafromselection"
@@ -201,6 +178,7 @@ class SOLLUMZ_OT_update_corner_a_location(bpy.types.Operator, ExtensionUpdateFro
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.cornerA = verts_location
+
 
 class SOLLUMZ_OT_update_corner_b_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Update light shaft corner B location from selection"""
@@ -213,6 +191,7 @@ class SOLLUMZ_OT_update_corner_b_location(bpy.types.Operator, ExtensionUpdateFro
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.cornerB = verts_location
 
+
 class SOLLUMZ_OT_update_corner_c_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Update light shaft corner C location from selection"""
     bl_idname = "sollumz.updatecornercfromselection"
@@ -224,6 +203,7 @@ class SOLLUMZ_OT_update_corner_c_location(bpy.types.Operator, ExtensionUpdateFro
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.cornerC = verts_location
 
+
 class SOLLUMZ_OT_update_corner_d_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Update light shaft corner D location from selection"""
     bl_idname = "sollumz.updatecornerdfromselection"
@@ -234,6 +214,7 @@ class SOLLUMZ_OT_update_corner_d_location(bpy.types.Operator, ExtensionUpdateFro
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.cornerD = verts_location
+
 
 class SOLLUMZ_OT_update_light_shaft_direction(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Update light shaft direction from selection"""
@@ -252,12 +233,12 @@ class SOLLUMZ_OT_update_light_shaft_direction(bpy.types.Operator, ExtensionUpdat
         light_shaft_props.length = direction.length
         light_shaft_props.direction = direction.normalized()
 
+
 class SOLLUMZ_OT_calculate_light_shaft_center_offset_location(bpy.types.Operator, ExtensionUpdateFromSelectionHelper):
     """Calculates the center based on the corner coordinates"""
     bl_idname = "sollumz.calculatelightshaftoffsetlocation"
     bl_options = {"UNDO"}
     bl_label = "Calculate Center Offset location"
-
 
     def execute(self, context):
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties

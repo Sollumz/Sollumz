@@ -500,21 +500,7 @@ class SOLLUMZ_OT_extension_translate(bpy.types.Operator):
 
     def execute(self, context):
         ext = get_selected_extension(context)
-        ext_props = ext.get_properties()
-
-        if ext.extension_type == ExtensionType.LADDER:
-            ext_props.top += self.delta_position
-            ext_props.bottom.xy = ext_props.top.xy
-            ext_props.bottom.z = min(ext_props.bottom.z, ext_props.top.z)
-
-            ext_props.offset_position = ext_props.top
-        else:
-            ext_props.offset_position += self.delta_position
-
-            if ext.extension_type == ExtensionType.LIGHT_SHAFT:
-                # move light shaft corners along with the offset_position
-                for c in (ext_props.cornerA, ext_props.cornerB, ext_props.cornerC, ext_props.cornerD):
-                    c += self.delta_position
+        ext.translate(self.delta_position)
         return {"FINISHED"}
 
 

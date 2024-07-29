@@ -2,6 +2,7 @@ import bpy
 from bpy.types import (
     UILayout
 )
+from mathutils import Vector
 from typing import Union
 from enum import Enum
 from ...tools.utils import get_list_item
@@ -99,8 +100,7 @@ LightShaftVolumeTypeEnumItems = (
 
 
 class BaseExtensionProperties:
-    offset_position: bpy.props.FloatVectorProperty(
-        name="Offset Position", subtype="TRANSLATION")
+    offset_position: bpy.props.FloatVectorProperty(name="Offset Position", subtype="TRANSLATION")
 
     def draw_props(self, layout: UILayout):
         row = layout.row()
@@ -108,6 +108,11 @@ class BaseExtensionProperties:
         for prop_name in self.__class__.__annotations__:
             row = layout.row()
             row.prop(self, prop_name)
+
+        from ..operators.extensions import SOLLUMZ_OT_extension_update_location_from_selected
+        layout.separator()
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_extension_update_location_from_selected.bl_idname)
 
 
 class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
@@ -120,24 +125,14 @@ class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
 
 
 class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(
-        name="Offset Rotation", subtype="EULER")
+    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     fx_name: bpy.props.StringProperty(name="FX Name")
     fx_type: bpy.props.IntProperty(name="FX Type")
     bone_tag: bpy.props.IntProperty(name="Bone Tag")
     scale: bpy.props.FloatProperty(name="Scale")
     probability: bpy.props.IntProperty(name="Probability")
     flags: bpy.props.IntProperty(name="Flags")
-    color: bpy.props.FloatVectorProperty(
-        name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
-
-    def draw_props(self, layout: UILayout):
-        super().draw_props(layout)
-
-        from ..operators.extensions import SOLLUMZ_OT_update_particle_effect_location
-        layout.separator()
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_update_particle_effect_location.bl_idname)
+    color: bpy.props.FloatVectorProperty(name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
 
 
 class AudioCollisionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
@@ -145,14 +140,12 @@ class AudioCollisionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionPr
 
 
 class AudioEmitterExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(
-        name="Offset Rotation", subtype="EULER")
+    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     effect_hash: bpy.props.StringProperty(name="Effect Hash")
 
 
 class ExplosionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(
-        name="Offset Rotation", subtype="EULER")
+    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     explosion_name: bpy.props.StringProperty(name="Explosion Name")
     bone_tag: bpy.props.IntProperty(name="Bone Tag")
     explosion_tag: bpy.props.IntProperty(name="Explosion Tag")
@@ -164,40 +157,29 @@ class LadderExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties
     bottom: bpy.props.FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
     top: bpy.props.FloatVectorProperty(name="Top", subtype="TRANSLATION")
     normal: bpy.props.FloatVectorProperty(name="Normal", subtype="TRANSLATION")
-    material_type: bpy.props.StringProperty(
-        name="Material Type", default="METAL_SOLID_LADDER")
+    material_type: bpy.props.StringProperty(name="Material Type", default="METAL_SOLID_LADDER")
     template: bpy.props.StringProperty(name="Template", default="default")
-    can_get_off_at_top: bpy.props.BoolProperty(
-        name="Can Get Off At Top", default=True)
-    can_get_off_at_bottom: bpy.props.BoolProperty(
-        name="Can Get Off At Bottom", default=True)
+    can_get_off_at_top: bpy.props.BoolProperty(name="Can Get Off At Top", default=True)
+    can_get_off_at_bottom: bpy.props.BoolProperty(name="Can Get Off At Bottom", default=True)
 
     def draw_props(self, layout: UILayout):
         super().draw_props(layout)
 
-        from ..operators.extensions import (
-            SOLLUMZ_OT_update_offset_and_top_from_selected,
-            SOLLUMZ_OT_update_bottom_from_selected,
-        )
-        layout.separator()
+        from ..operators.extensions import SOLLUMZ_OT_update_bottom_from_selected
         row = layout.row()
-        row.operator(SOLLUMZ_OT_update_offset_and_top_from_selected.bl_idname)
         row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
 
 
 class BuoyancyExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    # No other properties?
+    # No additional properties
     pass
 
 
 class ExpressionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    expression_dictionary_name: bpy.props.StringProperty(
-        name="Expression Dictionary Name")
+    expression_dictionary_name: bpy.props.StringProperty(name="Expression Dictionary Name")
     expression_name: bpy.props.StringProperty(name="Expression Name")
-    creature_metadata_name: bpy.props.StringProperty(
-        name="Creature Metadata Name")
-    initialize_on_collision: bpy.props.BoolProperty(
-        name="Initialize on Collision")
+    creature_metadata_name: bpy.props.StringProperty(name="Creature Metadata Name")
+    initialize_on_collision: bpy.props.BoolProperty(name="Initialize on Collision")
 
 
 class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
@@ -279,12 +261,12 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
             SOLLUMZ_OT_update_corner_b_location,
             SOLLUMZ_OT_update_corner_c_location,
             SOLLUMZ_OT_update_corner_d_location,
-            SOLLUMZ_OT_update_light_shaft_offeset_location,
+            SOLLUMZ_OT_extension_update_location_from_selected,
             SOLLUMZ_OT_calculate_light_shaft_center_offset_location,
             SOLLUMZ_OT_update_light_shaft_direction,
         )
         row = layout.row()
-        row.operator(SOLLUMZ_OT_update_light_shaft_offeset_location.bl_idname)
+        row.operator(SOLLUMZ_OT_extension_update_location_from_selected.bl_idname)
         row = layout.row()
         row.operator(SOLLUMZ_OT_update_corner_a_location.bl_idname)
         row.operator(SOLLUMZ_OT_update_corner_b_location.bl_idname)
@@ -322,8 +304,7 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
 
 
 class SpawnPointExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(
-        name="Offset Rotation", subtype="EULER")
+    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     spawn_type: bpy.props.StringProperty(name="Spawn Type")
     ped_type: bpy.props.StringProperty(name="Ped Type")
     group: bpy.props.StringProperty(name="Group")
@@ -358,8 +339,7 @@ class SpawnPointOverrideProperties(bpy.types.PropertyGroup, BaseExtensionPropert
 
 
 class WindDisturbanceExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(
-        name="Offset Rotation", subtype="EULER")
+    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     disturbance_type: bpy.props.IntProperty(name="Disturbance Type")
     bone_tag: bpy.props.IntProperty(name="Bone Tag")
     size: bpy.props.FloatVectorProperty(name="Size", size=4, subtype="XYZ")
@@ -426,6 +406,23 @@ class ExtensionProperties(bpy.types.PropertyGroup):
             return self.wind_disturbance_properties
         elif self.extension_type == ExtensionType.LIGHT_EFFECT:
             return self.light_effect_properties
+
+    def translate(self, offset: Vector):
+        props = self.get_properties()
+
+        if self.extension_type == ExtensionType.LADDER:
+            props.top += offset
+            props.bottom.xy = props.top.xy
+            props.bottom.z = min(props.bottom.z, props.top.z)
+
+            props.offset_position = props.top
+        else:
+            props.offset_position += offset
+
+            if self.extension_type == ExtensionType.LIGHT_SHAFT:
+                # move light shaft corners along with the offset_position
+                for c in (props.cornerA, props.cornerB, props.cornerC, props.cornerD):
+                    c += offset
 
     def _get_extension_type_int(self) -> int:
         return self["extension_type"] # using indexer to get the integer value instead of a string
