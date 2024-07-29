@@ -87,3 +87,17 @@ jobs:
           $BLENDER_PYTHON = get-content _blender-python-executable-path.txt
           $env:SOLLUMZ_TEST_TMP_DIR = $(mkdir _test_tmp)
           & "$BLENDER_PYTHON" -m pytest -svv --ignore _blender --ignore _test_tmp --blender-executable "$BLENDER"
+
+  trigger-extensions-repo-deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - name: Trigger Extensions Repo Deploy
+        env:
+          EXTENSIONS_REPO_TRIGGER_DEPLOY_PAT: ${{ secrets.EXTENSIONS_REPO_TRIGGER_DEPLOY_PAT }}
+        run: |
+          curl -L -X POST https://api.github.com/repos/Sollumz/extensions-repo/dispatches `
+            -H "Accept: application/vnd.github+json" `
+            -H "Authorization: Bearer $env:EXTENSIONS_REPO_TRIGGER_DEPLOY_PAT" `
+            -d '{"event_type":"trigger_deploy"}'
