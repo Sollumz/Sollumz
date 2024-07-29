@@ -92,23 +92,7 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
             from .properties import _update_mat_paint_name
             _update_mat_paint_name(mat)
 
-    # if frag_xml.cloths:
-    #     print(f"{frag_xml.cloths=}")
-    #     from ..cwxml.cloth import EnvironmentCloth
-    #     for c in frag_xml.cloths:
-    #         c: EnvironmentCloth = c
-    #         print(f"{c=}")
-    #         print(f"{c.controller.bridge.vertex_count_high=}")
-    #         print(f"{c.controller.bridge.pin_radius_high=}")
-    #         print(f"{c.controller.bridge.vertex_weights_high=}")
-    #         print(f"{c.controller.bridge.inflation_scale_high=}")
-    #         print(f"{c.controller.bridge.display_map_high=}")
-    #         print(f"{c.controller.bridge.pinnable_list=}")
-    # else:
-    #     print("no cloths")
-
-    drawable_obj = create_fragment_drawable(
-        frag_xml, frag_obj, filepath, materials, split_by_group)
+    drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
 
     create_frag_collisions(frag_xml, frag_obj)
 
@@ -286,7 +270,7 @@ def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object,
 
 
 def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
-    if len(frag_xml.cloths) == 0:
+    if not frag_xml.cloths:
         return
 
     from ..cwxml.cloth import EnvironmentCloth
@@ -297,7 +281,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     if cloth.drawable.is_empty:
         return
 
-    model_objs, model_datas = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth", return_model_data=True)
+    model_objs = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth")
     assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
 
     model_obj = model_objs[0]
@@ -360,8 +344,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):
     for window_xml in frag_xml.vehicle_glass_windows:
-        window_bone = get_window_bone(
-            window_xml, frag_xml, frag_obj.data.bones)
+        window_bone = get_window_bone(window_xml, frag_xml, frag_obj.data.bones)
         col_obj = get_window_col(frag_obj, window_bone.name)
 
         window_name = f"{window_bone.name}_shattermap"
@@ -373,8 +356,7 @@ def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, mater
 
         col_obj.child_properties.is_veh_window = True
 
-        window_mat = get_veh_window_material(
-            window_xml, frag_xml.drawable, materials)
+        window_mat = get_veh_window_material(window_xml, frag_xml.drawable, materials)
 
         if window_mat is not None:
             col_obj.child_properties.window_mat = window_mat

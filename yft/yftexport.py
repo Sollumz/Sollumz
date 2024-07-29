@@ -1224,7 +1224,7 @@ def get_frag_env_cloth_mesh_objects(frag_obj: bpy.types.Object) -> list[bpy.type
 
 def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, materials: list[bpy.types.Material]) -> Optional[EnvironmentCloth]:
     cloth_objs = get_frag_env_cloth_mesh_objects(frag_obj)
-    if len(cloth_objs) == 0:
+    if not cloth_objs:
         return None
 
     cloth_obj = cloth_objs[0]
@@ -1289,9 +1289,10 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     controller.flags = 3  # owns morph controller + owns bridge
     bridge = controller.bridge
     bridge.vertex_count_high = num_vertices
-    bridge.pin_radius_high = None  # TODO: pin radius
+    pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
     vertex_weights = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.VERTEX_WEIGHT)
     inflation_scale = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.INFLATION_SCALE)
+    bridge.pin_radius_high = [pin_radius[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.vertex_weights_high = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.inflation_scale_high = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.display_map_high = [-1] * num_vertices
@@ -1318,6 +1319,8 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
             verlet_edge.compression_weight = 0.25 # TODO: compression_weight
             edges.append(verlet_edge)
             edges_added.add((edge_v0, edge_v1))
+
+    del edges_added
 
 
     # sort edges such that no vertex is repeated within chunks of 8 edges
@@ -1363,6 +1366,9 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
 
     edges = new_edges
 
+    del edge_buckets
+    del last_bucket_index
+    del new_edges
 
 
     verlet = controller.cloth_high  # TODO: other lods
@@ -1379,20 +1385,17 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     verlet.pinned_vertices_count = num_pinned  # TODO: pinned vertices
     # verlet.custom_edges = ...  # TODO: custom edges
 
-    print(f"{len(verlet.vertex_positions)=}")
-    print(f"{len(verlet.edges)=}")
-
-    eds = []
-    for e in verlet.edges:
-        v0 = verlet.vertex_positions[e.vertex0]
-        v1 = verlet.vertex_positions[e.vertex1]
-        if v1.length < v0.length:
-            v0, v1 = v1, v0
-        eds.append((v0, v1))
-
-    eds.sort(key=lambda v: (v[0] + v[1]).length)
-    for v0, v1 in eds:
-        print(f"{v0.x:.3f}, {v0.y:.3f}, {v0.z:.3f} -- {v1.x:.3f}, {v1.y:.3f}, {v1.z:.3f}")
+    # eds = []
+    # for e in verlet.edges:
+    #     v0 = verlet.vertex_positions[e.vertex0]
+    #     v1 = verlet.vertex_positions[e.vertex1]
+    #     if v1.length < v0.length:
+    #         v0, v1 = v1, v0
+    #     eds.append((v0, v1))
+    #
+    # eds.sort(key=lambda v: (v[0] + v[1]).length)
+    # for v0, v1 in eds:
+    #     print(f"{v0.x:.3f}, {v0.y:.3f}, {v0.z:.3f} -- {v1.x:.3f}, {v1.y:.3f}, {v1.z:.3f}")
 
     # Remove elements for other LODs for now
     controller.cloth_med = None
@@ -1462,7 +1465,7 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     if bone is None:
         logger.error(
             f"Fragment cloth '{cloth_obj.name}' is not attached to a bone! "
-            "Attach to the bone via an Copy Transforms constraint."
+            "Attach to the bone via a Copy Transforms constraint."
         )
         return None
 
@@ -1472,6 +1475,8 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
 
     set_drawable_xml_extents(cloth_drawable_xml)
 
+    # TODO: make vertexlayout is chosen correctly
+    # some cases need to be GTAV2 (e.g. monster)
     # model_xml.geometries[0].vertex_buffer.layout.type = "GTAV3"  # NOTE: vertex layout import, game checks that its stride is 32 bytes
     model_xml.geometries[0].vertex_buffer.layout = VertexLayoutList(type="GTAV3", value=["Position", "Normal", "Colour0", "TexCoord0"])
 
@@ -1492,8 +1497,6 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
         assert matching_cloth_vertex_index is not None
 
         bridge.display_map_high[mesh_vertex_index] = matching_cloth_vertex_index
-
-
 
     cloth_obj_eval.to_mesh_clear()
 

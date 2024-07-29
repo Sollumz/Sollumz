@@ -79,8 +79,7 @@ def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Mat
 
 
 def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object, armature_obj: bpy.types.Object, split_by_group: bool = False):
-    model_datas = get_model_data(
-        drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
+    model_datas = get_model_data(drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
 
     set_skinned_model_properties(drawable_obj, drawable_xml)
 
