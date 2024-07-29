@@ -10,7 +10,7 @@ from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_addon_preferences, get_import_settings
 from ..cwxml.drawable import YDR, BoneLimit, Joints, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
-from ..cwxml.bound import BoundChild
+from ..cwxml.bound import Bound
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..tools.utils import get_filename
 from ..shared.shader_nodes import SzShaderNodeParameter
@@ -40,11 +40,9 @@ def import_ydr(filepath: str):
 def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[str] = None, split_by_group: bool = False, external_armature: Optional[bpy.types.Object] = None, external_bones: Optional[list[Bone]] = None, materials: Optional[list[bpy.types.Material]] = None):
     """Create a drawable object. ``split_by_group`` will split each Drawable Model by vertex group. ``external_armature`` allows for bones to be rigged to an armature object that is not the parent drawable."""
     name = name or drawable_xml.name
-    materials = materials or shadergroup_to_materials(
-        drawable_xml.shader_group, filepath)
+    materials = materials or shadergroup_to_materials(drawable_xml.shader_group, filepath)
 
-    has_skeleton = len(
-        drawable_xml.skeleton.bones) > 0
+    has_skeleton = len(drawable_xml.skeleton.bones) > 0
 
     if external_bones:
         drawable_xml.skeleton.bones = external_bones
@@ -54,7 +52,7 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     else:
         drawable_obj = create_drawable_empty(name, drawable_xml)
 
-    if drawable_xml.bounds:
+    if drawable_xml.bounds is not None:
         create_embedded_collisions(drawable_xml.bounds, drawable_obj)
 
     armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else external_armature
@@ -490,25 +488,14 @@ def create_limit_pos_bone_constraint(trans_limit: BoneLimit, pose_bone: bpy.type
     constraint.min_z = trans_limit.min.z
 
 
-def create_embedded_collisions(bounds_xml: list[BoundChild], drawable_obj: bpy.types.Object):
-    col_name = f"{drawable_obj.name}.col"
-    bound_objs: list[bpy.types.Object] = []
-    composite_objs: list[bpy.types.Object] = []
+def create_embedded_collisions(bounds_xml: Bound, drawable_obj: bpy.types.Object):
+    if bounds_xml.type == "Composite":
+        bound_obj = create_bound_composite(bounds_xml)
+        bound_obj.name = f"{drawable_obj.name}.col"
+    else:
+        bound_obj = create_bound_object(bounds_xml)
 
-    for bound_xml in bounds_xml:
-        if bound_xml.type == "Composite":
-            bound_obj = create_bound_composite(bound_xml)
-            composite_objs.append(bound_obj)
-        else:
-            bound_obj = create_bound_object(bound_xml)
-            bound_objs.append(bound_obj)
-
-    for obj in composite_objs:
-        obj.name = col_name
-        obj.parent = drawable_obj
-
-    for bound_obj in bound_objs:
-        bound_obj.parent = drawable_obj
+    bound_obj.parent = drawable_obj
 
 
 def create_drawable_lights(drawable_xml: Drawable, drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):

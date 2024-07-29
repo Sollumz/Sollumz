@@ -874,20 +874,38 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
 
 
 def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
-    for child in drawable_obj.children:
-        bound_xml = None
+    drawable_xml.bounds = None
+    bound_objs = [
+        child for child in drawable_obj.children
+        if child.sollum_type == SollumType.BOUND_COMPOSITE or child.sollum_type in BOUND_TYPES
+    ]
+    if not bound_objs:
+        return
 
-        if child.sollum_type == SollumType.BOUND_COMPOSITE:
-            bound_xml = create_composite_xml(child)
-        elif child.sollum_type in BOUND_TYPES:
-            bound_xml = create_bound_xml(child, is_root=True)
+    bound_obj = bound_objs[0]
+    if len(bound_objs) > 1:
+        other_bound_objs = bound_objs[1:]
+        other_bound_objs_names = [f"'{o.name}'" for o in other_bound_objs]
+        other_bound_objs_names = ", ".join(other_bound_objs_names)
+        logger.warning(
+            f"Drawable '{drawable_obj.name}' has multiple root embedded bounds! "
+            f"Only a single root bound is supported. Use a Bound Composite if you need multiple bounds.\n"
+            f"Only '{bound_obj.name}' will be exported. The following bounds will be ignored: {other_bound_objs_names}."
+        )
 
-            if not bound_xml.composite_transform.is_identity:
-                logger.warning(
-                    f"Embedded bound '{child.name}' has transforms (rotation, scale) but is not parented to a Bound Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game.")
+    bound_xml = None
+    if bound_obj.sollum_type == SollumType.BOUND_COMPOSITE:
+        bound_xml = create_composite_xml(bound_obj)
+    elif bound_obj.sollum_type in BOUND_TYPES:
+        bound_xml = create_bound_xml(bound_obj, is_root=True)
 
-        if bound_xml is not None:
-            drawable_xml.bounds.append(bound_xml)
+        if not bound_xml.composite_transform.is_identity:
+            logger.warning(
+                f"Embedded bound '{bound_obj.name}' has transforms (rotation, scale) but is not parented to a Bound "
+                f"Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game."
+            )
+
+    drawable_xml.bounds = bound_xml
 
 
 def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):

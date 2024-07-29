@@ -622,7 +622,7 @@ class Drawable(ElementTree, AbstractClass):
         self.drawable_models_vlow = DrawableModelList(
             "DrawableModelsVeryLow")
         self.lights = Lights()
-        self.bounds = []
+        self.bounds = None
 
         # For merging hi Drawables after import
         self.hi_models: list[DrawableModel] = []
@@ -630,41 +630,39 @@ class Drawable(ElementTree, AbstractClass):
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = super().from_xml(element)
-        bounds = element.findall("Bounds")
-        for child in bounds:
-            bound_type = child.get("type")
+        bounds_elem = element.find("Bounds")
+        if bounds_elem is not None:
+            bound_type = bounds_elem.get("type")
             bound = None
             if bound_type == "Composite":
-                bound = BoundComposite.from_xml(child)
+                bound = BoundComposite.from_xml(bounds_elem)
             elif bound_type == "Box":
-                bound = BoundBox.from_xml(child)
+                bound = BoundBox.from_xml(bounds_elem)
             elif bound_type == "Sphere":
-                bound = BoundSphere.from_xml(child)
+                bound = BoundSphere.from_xml(bounds_elem)
             elif bound_type == "Capsule":
-                bound = BoundCapsule.from_xml(child)
+                bound = BoundCapsule.from_xml(bounds_elem)
             elif bound_type == "Cylinder":
-                bound = BoundCylinder.from_xml(child)
+                bound = BoundCylinder.from_xml(bounds_elem)
             elif bound_type == "Disc":
-                bound = BoundDisc.from_xml(child)
+                bound = BoundDisc.from_xml(bounds_elem)
             elif bound_type == "Cloth":
-                bound = BoundCloth.from_xml(child)
+                bound = BoundCloth.from_xml(bounds_elem)
             elif bound_type == "Geometry":
-                bound = BoundGeometry.from_xml(child)
+                bound = BoundGeometry.from_xml(bounds_elem)
             elif bound_type == "GeometryBVH":
-                bound = BoundGeometryBVH.from_xml(child)
+                bound = BoundGeometryBVH.from_xml(bounds_elem)
 
             if bound:
                 bound.tag_name = "Bounds"
-                new.bounds.append(bound)
+                new.bounds = bound
 
         return new
 
     def to_xml(self):
-        element = super().to_xml()
-        for bound in self.bounds:
-            bound.tag_name = "Bounds"
-            element.append(bound.to_xml())
-        return element
+        if self.bounds:
+            self.bounds.tag_name = "Bounds"
+        return super().to_xml()
 
 
 class DrawableDictionary(MutableSequence, Element):
