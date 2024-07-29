@@ -60,9 +60,6 @@ def create_composite_xml(
     cg = Vector()
     volume = 0.0
     for child in obj.children:
-        if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
-            # REMOVEME: tmp debugging
-            continue
         child_xml = create_bound_xml(child)
 
         if child_xml is None:
@@ -98,7 +95,7 @@ def create_composite_xml(
     return composite_xml
 
 
-def create_bound_xml(obj: bpy.types.Object) -> BoundChild:
+def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild:
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
     if (obj.type == "MESH" and not has_col_mats(obj)) or (obj.type == "EMPTY" and not bound_geom_has_mats(obj)):
         logger.warning(f"'{obj.name}' has no collision materials! Skipping...")
@@ -245,6 +242,27 @@ def create_bound_xml(obj: bpy.types.Object) -> BoundChild:
 
         case _:
             assert False, f"Unknown bound type '{obj.sollum_type}'"
+
+
+    if is_root and obj.sollum_type in {
+        SollumType.BOUND_BOX,
+        SollumType.BOUND_SPHERE,
+        SollumType.BOUND_CYLINDER,
+        SollumType.BOUND_CAPSULE,
+        SollumType.BOUND_DISC,
+    }:
+        # When root, the bound can be positioned not in 0,0,0 without a composite parent.
+        # So take the composite transform we calculated and apply it to this bound. Only
+        # translation, rotation still requires the composite parent.
+        transform = bound_xml.composite_transform.transposed()
+        offset = transform.translation
+        centroid = Vector(offset)
+        cg = Vector(offset)
+
+        # Clear the composite transform translation so it doesn't show a warning if this
+        # is the only transform (no rotation, no scale)
+        transform.translation = Vector((0.0, 0.0, 0.0))
+        bound_xml.composite_transform = transform.transposed()
 
     set_bound_centroid(bound_xml, centroid, radius_around_centroid)
     set_bound_mass_properties(bound_xml, volume, cg, inertia)

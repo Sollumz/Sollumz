@@ -111,12 +111,14 @@ def create_bound_box(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_BOX)
     bound_dimensions = abs_vector(bound_xml.box_max - bound_xml.box_min)
     create_box(obj.data, 1, Matrix.Diagonal(bound_dimensions))
+    obj.location = bound_xml.box_center
     return obj
 
 
 def create_bound_sphere(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_SPHERE)
     create_sphere(obj.data, bound_xml.sphere_radius)
+    obj.location = bound_xml.box_center
     return obj
 
 
@@ -127,6 +129,7 @@ def create_bound_capsule(bound_xml: BoundChild):
     radius = extent.x * 0.5
     length = extent.y - (radius * 2.0)
     create_capsule(obj.data, radius=radius, length=length, axis="Y")
+    obj.location = bound_xml.box_center
     return obj
 
 
@@ -137,12 +140,14 @@ def create_bound_cylinder(bound_xml: BoundChild):
     radius = extent.x * 0.5
     length = extent.y
     create_cylinder(obj.data, radius=radius, length=length, axis="Y")
+    obj.location = bound_xml.box_center
     return obj
 
 
 def create_bound_disc(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_DISC)
     create_disc(obj.data, bound_xml.sphere_radius, bound_xml.margin * 2)
+    obj.location = bound_xml.box_center
     return obj
 
 
@@ -155,7 +160,6 @@ def create_bound_geometry(geom_xml: BoundGeometry):
 
     geom_obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh)
     set_bound_child_properties(geom_xml, geom_obj)
-
     return geom_obj
 
 

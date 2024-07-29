@@ -880,11 +880,11 @@ def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml:
         if child.sollum_type == SollumType.BOUND_COMPOSITE:
             bound_xml = create_composite_xml(child)
         elif child.sollum_type in BOUND_TYPES:
-            bound_xml = create_bound_xml(child)
+            bound_xml = create_bound_xml(child, is_root=True)
 
             if not bound_xml.composite_transform.is_identity:
                 logger.warning(
-                    f"Embedded bound '{child.name}' has transforms (location, rotation, scale) but is not parented to a Bound Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game.")
+                    f"Embedded bound '{child.name}' has transforms (rotation, scale) but is not parented to a Bound Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game.")
 
         if bound_xml is not None:
             drawable_xml.bounds.append(bound_xml)
