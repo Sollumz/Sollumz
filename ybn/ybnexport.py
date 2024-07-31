@@ -258,6 +258,8 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild
         offset = transform.translation
         centroid = Vector(offset)
         cg = Vector(offset)
+        bound_xml.box_min += offset
+        bound_xml.box_max += offset
 
         # Clear the composite transform translation so it doesn't show a warning if this
         # is the only transform (no rotation, no scale)
