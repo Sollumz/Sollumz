@@ -20,7 +20,7 @@ from ..cwxml.cloth import (
 from ..cwxml.shader import ShaderManager
 from ..tools.blenderhelper import get_evaluated_obj, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
-from ..tools.meshhelper import flip_uvs
+from ..tools.meshhelper import flip_uvs, get_tangent_required
 from ..tools.utils import prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_parent_inverse, get_sollumz_materials
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
@@ -1475,10 +1475,8 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
 
     set_drawable_xml_extents(cloth_drawable_xml)
 
-    # TODO: make vertexlayout is chosen correctly
-    # some cases need to be GTAV2 (e.g. monster)
-    # model_xml.geometries[0].vertex_buffer.layout.type = "GTAV3"  # NOTE: vertex layout import, game checks that its stride is 32 bytes
-    model_xml.geometries[0].vertex_buffer.layout = VertexLayoutList(type="GTAV3", value=["Position", "Normal", "Colour0", "TexCoord0"])
+    # Cloth require a different FVF than the default one
+    model_xml.geometries[0].vertex_buffer.get_element("layout").type = "GTAV2" if get_tangent_required(cloth_obj_eval.data.materials[0]) else "GTAV3"
 
     from ..ydr.ydrexport import set_drawable_xml_flags, set_drawable_xml_properties
     set_drawable_xml_flags(cloth_drawable_xml)

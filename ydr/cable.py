@@ -2,7 +2,6 @@ from bpy.types import (
     Object,
     Mesh,
 )
-from bmesh.types import BMesh
 from enum import Enum
 from typing import Optional
 import numpy as np
@@ -91,9 +90,6 @@ def mesh_add_cable_attribute(mesh: Mesh, attr: CableAttr):
 def mesh_has_cable_attribute(mesh: Mesh, attr: CableAttr) -> bool:
     return attr in mesh.attributes
 
-# def mesh_set_cloth_attribute_value(mesh, attr: ClothAttr, index: int, value: object):
-#     mesh.attributes[attr].data[index].value = value
-
 
 def mesh_get_cable_attribute_values(mesh: Mesh, attr: CableAttr) -> np.ndarray:
     num = 0
@@ -111,15 +107,6 @@ def mesh_get_cable_attribute_values(mesh: Mesh, attr: CableAttr) -> np.ndarray:
         mesh_attr.data.foreach_get(field, values.ravel())
 
     return values
-
-
-def bmesh_get_cable_attribute_values(mesh: BMesh, attr: CableAttr) -> np.ndarray:
-            #
-            # attr_layers = [(edit_mesh.verts.layers.float_vector if attr.type == "FLOAT_VECTOR" else edit_mesh.verts.layers.int if attr.type == "INT" else edit_mesh.verts.layers.float).get(attr, None) for attr in attrs]
-            # for v in edit_mesh.verts:
-            #     attr_values = [attr.default_value if attr_layers[i] is None else v[attr_layers[i]]
-            #                    for i, attr in enumerate(attrs)]
-    pass
 
 
 def is_cable_mesh_object(mesh_obj: Optional[Object]) -> bool:

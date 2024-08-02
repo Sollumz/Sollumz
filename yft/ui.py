@@ -155,8 +155,10 @@ class SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="MATCLOTH")
 
     def draw(self, context):
-        from .cloth import is_cloth_mesh_object
+        from .cloth import ClothAttr, is_cloth_mesh_object
         from . import cloth_operators as cloth_ops
+
+        scene = context.scene
 
         layout = self.layout
         layout.use_property_split = True
@@ -172,22 +174,31 @@ class SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL(bpy.types.Panel):
             layout.label(text="In edit mode")
 
             row = layout.row(align=True)
-            row.prop(context.scene, "sollumz_cloth_set_vertex_weight", text="Vertex Weight")
+            row.prop(context.scene, "sz_ui_cloth_set_vertex_weight", text="Vertex Weight")
             op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT.bl_idname, text="Selection")
             op.selection = True
-            op.vertex_weight = context.scene.sollumz_cloth_set_vertex_weight
+            op.vertex_weight = context.scene.sz_ui_cloth_set_vertex_weight
             op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT.bl_idname, text="All")
             op.selection = False
-            op.vertex_weight = context.scene.sollumz_cloth_set_vertex_weight
+            op.vertex_weight = context.scene.sz_ui_cloth_set_vertex_weight
 
             row = layout.row(align=True)
-            row.prop(context.scene, "sollumz_cloth_set_inflation_scale", text="Inflation Scale")
+            row.prop(context.scene, "sz_ui_cloth_set_inflation_scale", text="Inflation Scale")
             op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE.bl_idname, text="Selection")
             op.selection = True
-            op.inflation_scale = context.scene.sollumz_cloth_set_inflation_scale
+            op.inflation_scale = context.scene.sz_ui_cloth_set_inflation_scale
             op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE.bl_idname, text="All")
             op.selection = False
-            op.inflation_scale = context.scene.sollumz_cloth_set_inflation_scale
+            op.inflation_scale = context.scene.sz_ui_cloth_set_inflation_scale
+
+
+            def _visible_icon_prop(layout, obj, prop_name):
+                visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
+                layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
+
+            row = layout.row(align=True)
+            row.label(text=ClothAttr.PINNED.label)
+            _visible_icon_prop(row, scene, "sz_ui_cloth_pinned_visualize")
 
             row = layout.row(align=True)
             op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_PINNED.bl_idname, text="Pin")

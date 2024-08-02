@@ -5,11 +5,9 @@ from bpy.types import (
     Mesh,
     Attribute,
 )
-from bmesh.types import (
-    BMesh
-)
 from enum import Enum
 from typing import Optional
+import numpy as np
 from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import SollumType
 
@@ -92,11 +90,8 @@ def mesh_add_cloth_attribute(mesh: Mesh, attr: ClothAttr) -> Attribute:
 def mesh_has_cloth_attribute(mesh: Mesh, attr: ClothAttr) -> bool:
     return attr in mesh.attributes
 
-# def mesh_set_cloth_attribute_value(mesh, attr: ClothAttr, index: int, value: object):
-#     mesh.attributes[attr].data[index].value = value
 
-
-def mesh_get_cloth_attribute_values(mesh: Mesh, attr: ClothAttr) -> list:
+def mesh_get_cloth_attribute_values(mesh: Mesh, attr: ClothAttr) -> np.ndarray:
     num = 0
     match attr.domain:
         case "EDGE":
@@ -106,7 +101,7 @@ def mesh_get_cloth_attribute_values(mesh: Mesh, attr: ClothAttr) -> list:
         case _:
             assert False, f"Domain '{attr.domain}' not handled"
 
-    values = [attr.default_value] * num
+    values = np.array([attr.default_value] * num)
     mesh_attr = mesh.attributes.get(attr, None)
     if mesh_attr is not None:
         mesh_attr.data.foreach_get("value", values)
@@ -123,6 +118,14 @@ def is_cloth_mesh_object(mesh_obj: Optional[Object]) -> bool:
         return False
 
     mesh = mesh_obj.data
+    return is_cloth_mesh(mesh)
+
+
+def is_cloth_mesh(mesh: Optional[Mesh]) -> bool:
+    """Gets whether the mesh is valid cloth mesh."""
+    if mesh is None:
+        return False
+
     num_cloth_materials = 0
     num_other_materials = 0
     for material in mesh.materials:
