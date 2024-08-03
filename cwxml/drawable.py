@@ -459,13 +459,46 @@ class VertexBuffer(ElementTree):
         return element
 
     def _load_data_from_str(self, _str: str):
-        struct_dtype = np.dtype([self.VERT_ATTR_DTYPES[attr_name]
-                                 for attr_name in self.layout])
+        layout = self.get_element("layout")
+        struct_dtype = np.dtype([self.VERT_ATTR_DTYPES[attr_name] for attr_name in layout.value])
+        if layout.type == "GTAV2":
+            # FVF with value GTAV2 (used for cloth) has Normal with format RGBA8 (though A is unused), which CW now
+            # exports as 4 floats. Other code assumes that Normal always has 3 floats.
+            # This is the only case (given vanilla assets at least) where a vertex element can have a different number
+            # of components depending on FVF so just hack it in here. Read the 4 floats and drop the last float.
+            normal_fmt = ("Normal", np.float32, 4)
+            raw_struct_dtype = np.dtype([normal_fmt if attr_name == "Normal" else self.VERT_ATTR_DTYPES[attr_name]
+                                         for attr_name in layout.value])
 
-        self.data = np.loadtxt(io.StringIO(_str), dtype=struct_dtype)
+            raw_data = np.loadtxt(io.StringIO(_str), dtype=raw_struct_dtype)
+
+            data = np.empty_like(raw_data, dtype=struct_dtype)
+            for comp in layout.value:
+                if comp == "Normal":
+                    data["Normal"] = raw_data["Normal"][:,:3]
+                else:
+                    data[comp] = raw_data[comp]
+
+            self.data = data
+        else:
+            self.data = np.loadtxt(io.StringIO(_str), dtype=struct_dtype)
 
     def _data_to_str(self):
+        layout = self.get_element("layout")
         vert_arr = self.data
+
+        if layout.type == "GTAV2":
+            # Add back the 4th float of Normal element required by FVF GTAV2
+            new_struct_dtype = np.dtype([(name, dtype if name != "Normal" else (np.float32, 4))
+                                         for name, (dtype, _) in vert_arr.dtype.fields.items()])
+            new_vert_arr = np.empty_like(vert_arr, dtype=new_struct_dtype)
+            for comp in vert_arr.dtype.fields.keys():
+                if comp == "Normal":
+                    new_vert_arr["Normal"] = np.c_[vert_arr["Normal"], np.zeros(len(vert_arr))]
+                else:
+                    new_vert_arr[comp] = vert_arr[comp]
+
+            vert_arr = new_vert_arr
 
         FLOAT_FMT = "%.7f"
         INT_FMT = "%.0u"
@@ -481,8 +514,7 @@ class VertexBuffer(ElementTree):
             formats.append(" ".join([attr_fmt] * column.shape[1]))
 
         fmt = ATTR_SEP.join(formats)
-        vert_arr_2d = np.column_stack(
-            [vert_arr[name] for name in vert_arr.dtype.names])
+        vert_arr_2d = np.column_stack([vert_arr[name] for name in vert_arr.dtype.names])
 
         return np_arr_to_str(vert_arr_2d, fmt)
 
