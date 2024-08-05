@@ -37,9 +37,9 @@ Set-Content -NoNewline blender_manifest.toml
 # Create commit and tag as a release
 & git add __init__.py blender_manifest.toml
 & git commit -m "chore: prepare release v$Version"
-& git tag "v$Version"
+& git tag -a -m "Release v$Version" "v$Version"
 
-Write-Host "Add-on version updated and commited. When ready, push with ``git push && git push --tags``"
+Write-Host "Add-on version updated and commited. When ready, push with ``git push --follow-tags``"
 
 
 # Generate release notes from commit messages with git-cliff
@@ -66,6 +66,6 @@ Set-Content -NoNewline blender_manifest.toml
 & git commit -m "chore: prepare development manifest"
 
 
-# Create archive (note: not using 'blender --command extension build' because we want git to write the commit hash to the blender_manifest.toml placeholder)
+# Create archive
 & git archive --prefix Sollumz/ -o Sollumz.zip "v$Version"
 Write-Host "Archive created in 'Sollumz.zip'."
