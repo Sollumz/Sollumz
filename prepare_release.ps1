@@ -28,9 +28,9 @@ Set-Content -NoNewline __init__.py
 
 # Update version in blender_manifest.toml and set the extension ID used for releases
 (Get-Content -Raw blender_manifest.toml) `
-  -replace "version = .*", "version = `"$major.$minor.$patch`"" `
-  -replace "id = .*",      "id = `"sollumz`"" `
-  -replace "name = .*",    "name = `"Sollumz`"" |
+  -replace "`nversion = .*", "`nversion = `"$major.$minor.$patch`"" `
+  -replace "`nid = .*",      "`nid = `"sollumz`"" `
+  -replace "`nname = .*",    "`nname = `"Sollumz`"" |
 Set-Content -NoNewline blender_manifest.toml
 
 
@@ -56,9 +56,9 @@ else
 
 # Add the commit placeholder and dev extension ID back to differentiate development commits from the release
 (Get-Content -Raw blender_manifest.toml) `
-  -replace "version = .*", "version = `"$major.$minor.$patch-dev+`$Format:%h`$`"" `
-  -replace "id = .*",      "id = `"sollumz_dev`"" `
-  -replace "name = .*",    "name = `"Sollumz (Development)`"" |
+  -replace "`nversion = .*", "`nversion = `"$major.$minor.$patch-dev+`$Format:%h`$`"" `
+  -replace "`nid = .*",      "`nid = `"sollumz_dev`"" `
+  -replace "`nname = .*",    "`nname = `"Sollumz (Development)`"" |
 Set-Content -NoNewline blender_manifest.toml
 
 
