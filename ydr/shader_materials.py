@@ -1070,6 +1070,7 @@ def create_shader(filename: str):
     mat = bpy.data.materials.new(filename.replace(".sps", ""))
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
+    mat.use_backface_culling = True
     mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename
     mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
