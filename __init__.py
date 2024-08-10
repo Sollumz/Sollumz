@@ -11,6 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import bpy
 
 bl_info = {
     "name": "Sollumz",
@@ -23,6 +24,21 @@ bl_info = {
     "tracker_url": "https://github.com/Sollumz/Sollumz/issues",
 }
 
+def check_blender_version():
+    try:
+        required_version = bl_info.get("blender", (0, 0, 0))
+    except NameError:
+        # If bl_info is not accessible, fall back to a default version.
+        # Unexpected behavior in 4.2, might also occur in lower versions.
+        required_version = (4, 0, 0)
+
+    if bpy.app.version < required_version:
+        message = f"Sollumz requires Blender {'.'.join(map(str, required_version))} or newer. Please update your Blender version."
+        def draw(self, context):
+            self.layout.label(text=message)
+        bpy.context.window_manager.popup_menu(draw, title="Incompatible Blender Version", icon='ERROR')
+        return False
+    return True
 
 def reload_sollumz_modules():
     import sys
@@ -60,6 +76,9 @@ auto_load.init()
 
 
 def register():
+    if not check_blender_version():
+        raise ImportError("Incompatible Blender version")
+
     auto_load.register()
 
     # WorkSpaceTools need to be registered after normal modules so the keymaps
