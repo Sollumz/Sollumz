@@ -1584,6 +1584,31 @@
   </Parameters>
  </Item>
  <Item>
+  <Name>terrain_cb_4lyr_lod</Name>
+  <FileName>
+   <Item bucket="0">terrain_cb_4lyr_lod.sps</Item>
+  </FileName>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <Colour1 />
+    <TexCoord0 />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="TextureSampler_layer0" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer1" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer2" type="Texture" uv="0" />
+   <Item name="TextureSampler_layer3" type="Texture" uv="0" />
+   <Item name="wetnessMultiplier" type="float" x="0.3" />
+   <Item name="bumpSelfShadowAmount" type="float" x="0.3" />
+   <Item name="specularIntensityMult" type="float" x="0.01" />
+   <Item name="specularFalloffMult" type="float" x="32" />
+  </Parameters>
+ </Item>
+ <Item>
   <Name>terrain_cb_w_4lyr_lod</Name>
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_lod.sps</Item>
