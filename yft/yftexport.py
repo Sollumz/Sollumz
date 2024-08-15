@@ -106,6 +106,14 @@ def create_fragment_xml(frag_obj: bpy.types.Object, apply_transforms: bool = Fal
     env_cloth = create_frag_env_cloth(frag_obj, drawable_xml, materials)
     if env_cloth is not None:
         frag_xml.cloths = [env_cloth]  # cloths is an array but game only supports 1 cloth
+        if frag_xml.drawable.is_empty:
+            # If it doesn't have other drawable models other than the cloth one, we can remove the main drawable
+            frag_xml.drawable = None
+            frag_xml.bounding_sphere_center = env_cloth.drawable.bounding_sphere_center
+            frag_xml.bounding_sphere_radius = env_cloth.drawable.bounding_sphere_radius
+
+        if frag_xml.physics is None:
+            frag_xml.physics = create_dummy_frag_physics_xml_for_cloth(frag_obj, frag_xml, materials)
 
     frag_obj.data.pose_position = original_pose
 
@@ -402,7 +410,7 @@ def create_phys_xml_groups(
         if not bone.sollumz_use_physics:
             continue
 
-        if not does_bone_have_collision(bone.name, frag_obj):
+        if not does_bone_have_collision(bone.name, frag_obj) and not does_bone_have_cloth(bone.name, frag_obj):
             logger.warning(
                 f"Bone '{bone.name}' has physics enabled, but no associated collision! A collision must be linked to the bone for physics to work.")
             continue
@@ -452,11 +460,23 @@ def create_phys_xml_groups(
     return lod_xml.groups
 
 
-def does_bone_have_collision(bone_name: str, frag_obj: bpy.types.Object):
+def does_bone_have_collision(bone_name: str, frag_obj: bpy.types.Object) -> bool:
     col_objs = [
         obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
 
     for obj in col_objs:
+        bone = get_child_of_bone(obj)
+
+        if bone is not None and bone.name == bone_name:
+            return True
+
+    return False
+
+
+def does_bone_have_cloth(bone_name: str, frag_obj: bpy.types.Object) -> bool:
+    cloth_objs = get_frag_env_cloth_mesh_objects(frag_obj, silent=True)
+
+    for obj in cloth_objs:
         bone = get_child_of_bone(obj)
 
         if bone is not None and bone.name == bone_name:
@@ -1179,7 +1199,7 @@ def calc_frag_glass_window_bounds_offset(
     return offset_front, offset_back
 
 
-def get_frag_env_cloth_mesh_objects(frag_obj: bpy.types.Object) -> list[bpy.types.Object]:
+def get_frag_env_cloth_mesh_objects(frag_obj: bpy.types.Object, silent: bool = False) -> list[bpy.types.Object]:
     """Returns a list of mesh objects that use a cloth material in the fragment. Warns the user if a mesh has a cloth
     material but also other materials or multiple cloth materials.
     """
@@ -1208,16 +1228,18 @@ def get_frag_env_cloth_mesh_objects(frag_obj: bpy.types.Object) -> list[bpy.type
                 pass
             case (_, 0):
                 # More than one cloth material, warning
-                logger.warning(
-                    f"Drawable model '{obj.name}' has multiple cloth materials! "
-                    f"This is not supported, only a single cloth material per mesh is supported."
-                )
+                if not silent:
+                    logger.warning(
+                        f"Drawable model '{obj.name}' has multiple cloth materials! "
+                        f"This is not supported, only a single cloth material per mesh is supported."
+                    )
             case (_, _):
                 # Multiple materials including cloth, warning
-                logger.warning(
-                    f"Drawable model '{obj.name}' has a cloth material along with other materials! "
-                    f"This is not supported, only a single cloth material per mesh is supported."
-                )
+                if not silent:
+                    logger.warning(
+                        f"Drawable model '{obj.name}' has a cloth material along with other materials! "
+                        f"This is not supported, only a single cloth material per mesh is supported."
+                    )
 
     return mesh_objs
 
@@ -1446,8 +1468,6 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
 
     env_cloth.tuning = None
 
-
-    # TODO: the fragment may not have a Drawable, we should create it here from scratch in that case
     cloth_drawable_xml = env_cloth.drawable
     cloth_drawable_xml.name = "skel"
     cloth_drawable_xml.shader_group = drawable_xml.shader_group
@@ -1460,12 +1480,11 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     # TODO: lods
     model_xml = create_model_xml(cloth_obj, LODLevel.HIGH, materials, transforms_to_apply=transforms_to_apply)
 
-
     bone = get_child_of_bone(cloth_obj)
     if bone is None:
         logger.error(
             f"Fragment cloth '{cloth_obj.name}' is not attached to a bone! "
-            "Attach to the bone via a Copy Transforms constraint."
+            "Attach it to a bone via a Copy Transforms constraint."
         )
         return None
 
@@ -1499,3 +1518,30 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     cloth_obj_eval.to_mesh_clear()
 
     return env_cloth
+
+
+def create_dummy_frag_physics_xml_for_cloth(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material]) -> Physics:
+    dummy_physics = Physics()
+    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
+
+    lod_xml = create_phys_lod_xml(dummy_physics, lod_props)
+    arch_xml = create_archetype_xml(lod_xml, frag_obj)
+
+    create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
+    arch_xml.bounds.volume = 1
+    arch_xml.bounds.inertia = Vector((1.0, 1.0, 1.0))
+    arch_xml.bounds.sphere_radius = frag_xml.bounding_sphere_radius
+    lod_xml.groups[0].mass = 1
+
+    child_xml = PhysicsChild()
+    child_xml.group_index = 0
+    child_xml.pristine_mass = lod_xml.groups[0].mass
+    child_xml.damaged_mass = child_xml.pristine_mass
+    child_xml.bone_tag = 0
+    child_xml.inertia_tensor = Vector((0.0, 0.0, 0.0, 0.0))
+
+    create_phys_child_drawable(child_xml, materials, None)
+
+    lod_xml.children.append(child_xml)
+
+    return dummy_physics

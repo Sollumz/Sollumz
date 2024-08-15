@@ -74,23 +74,37 @@ def make_non_hi_yft_filepath(yft_filepath: str) -> str:
 
 
 def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] = None, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
-    frag_obj = create_frag_armature(frag_xml, name)
-
     if hi_xml is not None:
         frag_xml = merge_hi_fragment(frag_xml, hi_xml)
 
-    shader_group = frag_xml.drawable.shader_group
-    cloth_shader_group = frag_xml.cloths[0].drawable.shader_group if len(frag_xml.cloths) > 0 else None
-    if len(shader_group.shaders) == 0 and cloth_shader_group is not None:
-        shader_group = cloth_shader_group
+    drawable_xml = frag_xml.drawable
+    if drawable_xml.is_empty and frag_xml.cloths and not frag_xml.cloths[0].drawable.is_empty:
+        # We have a fragment without a main drawable, only the cloth drawable. So shallow-copy properties we may need
+        # from the cloth drawable, except the drawable models. Creating the cloth drawable model will be handled by
+        # `create_env_cloth_meshes`
+        cloth_drawable_xml = frag_xml.cloths[0].drawable
+        drawable_xml.name = cloth_drawable_xml.name
+        drawable_xml.bounding_sphere_center = cloth_drawable_xml.bounding_sphere_center
+        drawable_xml.bounding_sphere_radius = cloth_drawable_xml.bounding_sphere_radius
+        drawable_xml.bounding_box_min = cloth_drawable_xml.bounding_box_min
+        drawable_xml.bounding_box_max = cloth_drawable_xml.bounding_box_max
+        drawable_xml.lod_dist_high = cloth_drawable_xml.lod_dist_high
+        drawable_xml.lod_dist_med = cloth_drawable_xml.lod_dist_med
+        drawable_xml.lod_dist_low = cloth_drawable_xml.lod_dist_low
+        drawable_xml.lod_dist_vlow = cloth_drawable_xml.lod_dist_vlow
+        drawable_xml.shader_group = cloth_drawable_xml.shader_group
+        drawable_xml.skeleton = cloth_drawable_xml.skeleton
+        drawable_xml.joints = cloth_drawable_xml.joints
 
-    materials = shadergroup_to_materials(frag_xml.drawable.shader_group, filepath)
+    materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
 
     # Need to append [PAINT_LAYER] extension at the end of the material names
     for mat in materials:
         if "matDiffuseColor" in mat.node_tree.nodes:
             from .properties import _update_mat_paint_name
             _update_mat_paint_name(mat)
+
+    frag_obj = create_frag_armature(frag_xml, name)
 
     drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
 
@@ -119,8 +133,7 @@ def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
     """Create the fragment armature along with the bones and rotation limits."""
     name = name or frag_xml.name.replace("pack:/", "")
     drawable_xml = frag_xml.drawable
-    frag_obj = create_armature_obj_from_skel(
-        drawable_xml.skeleton, name, SollumType.FRAGMENT)
+    frag_obj = create_armature_obj_from_skel(drawable_xml.skeleton, name, SollumType.FRAGMENT)
     create_joint_constraints(frag_obj, drawable_xml.joints)
 
     set_fragment_properties(frag_xml, frag_obj)
@@ -129,8 +142,9 @@ def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
 
 
 def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, materials: list[bpy.types.Material], split_by_group: bool = False):
+    drawable_xml = frag_xml.drawable
     drawable_obj = create_drawable_obj(
-        frag_xml.drawable, filepath, name=f"{frag_obj.name}.mesh", materials=materials, split_by_group=split_by_group, external_armature=frag_obj)
+            drawable_xml, filepath, name=f"{frag_obj.name}.mesh", materials=materials, split_by_group=split_by_group, external_armature=frag_obj)
     drawable_obj.parent = frag_obj
 
     return drawable_obj
@@ -169,11 +183,20 @@ def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Frag
 
     for group_xml in groups_xml:
         if group_xml.name not in armature.bones:
-            logger.warning(
-                f"No bone exists for the physics group {group_xml.name}! Skipping...")
-            continue
+            # Bone not found, try a case-insensitive search
+            group_name_lower = group_xml.name.lower()
+            for armature_bone in armature.bones:
+                if group_name_lower == armature_bone.name.lower():
+                    group_xml.name = armature_bone.name # update group name to match actual bone name
+                    bone = armature_bone
+                    break
+            else:
+                # Still no bone found
+                logger.warning(f"No bone exists for the physics group {group_xml.name}! Skipping...")
+                continue
+        else:
+            bone = armature.bones[group_xml.name]
 
-        bone = armature.bones[group_xml.name]
         bone.sollumz_use_physics = True
         set_group_properties(group_xml, bone)
 
