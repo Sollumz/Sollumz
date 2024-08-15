@@ -56,6 +56,32 @@ from . import auto_load  # noqa: E402
 
 
 sollumz_debug.init_debug()  # first in case we need to debug initialization code
+
+
+def check_blender_version():
+    import bpy
+
+    required_version = bl_info["blender"]
+
+    if bpy.app.version < required_version:
+        required_version_str = ".".join(map(str, required_version))
+        title = "Incompatible Blender Version"
+        message = f"Sollumz requires Blender {required_version_str} or newer. Please update your Blender version."
+
+        def _draw_version_error_popup(self, context):
+            self.layout.label(text=message)
+
+        def _show_version_error_popup():
+            bpy.context.window_manager.popup_menu(_draw_version_error_popup, title=title, icon="ERROR")
+
+        bpy.app.timers.register(_show_version_error_popup, first_interval=0.0)
+
+        # Raise an error so Blender doesn't actually enable the add-on
+        raise ImportError(f"{title}. \n{message}")
+
+
+check_blender_version()
+
 auto_load.init()
 
 
