@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
 
 bl_info = {
     "name": "Sollumz",
@@ -60,6 +59,8 @@ sollumz_debug.init_debug()  # first in case we need to debug initialization code
 
 
 def check_blender_version():
+    import bpy
+
     required_version = bl_info["blender"]
 
     if bpy.app.version < required_version:
