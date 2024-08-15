@@ -79,6 +79,12 @@ def unregister():
 
 
 def check_blender_version():
+    if "bl_info" not in globals():
+        # When installed as extension Blender deletes the `bl_info` variable.
+        # For extensions, Blender already checks the required minimum version specified in the manifest and doesn't
+        # allow enabling the extension if it isn't compatible. Don't need to check again.
+        return
+
     required_version = bl_info["blender"]
 
     if bpy.app.version < required_version:
