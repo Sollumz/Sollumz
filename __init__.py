@@ -25,42 +25,6 @@ bl_info = {
 }
 
 
-def check_blender_version():
-    try:
-        required_version = bl_info.get("blender", (0, 0, 0))
-    except NameError:
-        # If bl_info is not accessible, fall back to a default version.
-        # Unexpected behavior in 4.2, might also occur in lower versions.
-        required_version = (4, 0, 0)
-
-    if bpy.app.version < required_version:
-        error_message = f"Sollumz requires Blender {'.'.join(map(str, required_version))} or newer. Please update your Blender version."
-        raise ImportError(error_message)
-
-
-class SOLLUMZ_OT_version_error(bpy.types.Operator):
-    bl_idname = "sollumz.version_error"
-    bl_label = "Sollumz Version Error"
-    bl_description = "Sollumz version error"
-    bl_options = {'INTERNAL'}
-
-    def execute(self, context):
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self, width=400)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Sollumz could not be loaded due to an incompatible Blender version.", icon='ERROR')
-        layout.label(text="Please check the System Console for more information.")
-        layout.label(text="Update Blender or use a compatible version to use Sollumz.")
-
-
-def show_version_error_popup():
-    bpy.ops.sollumz.version_error('INVOKE_DEFAULT')
-
-
 def reload_sollumz_modules():
     import sys
 
@@ -93,18 +57,34 @@ from . import auto_load  # noqa: E402
 
 
 sollumz_debug.init_debug()  # first in case we need to debug initialization code
+
+
+def check_blender_version():
+    required_version = bl_info["blender"]
+
+    if bpy.app.version < required_version:
+        required_version_str = ".".join(map(str, required_version))
+        title = "Incompatible Blender Version"
+        message = f"Sollumz requires Blender {required_version_str} or newer. Please update your Blender version."
+
+        def _draw_version_error_popup(self, context):
+            self.layout.label(text=message)
+
+        def _show_version_error_popup():
+            bpy.context.window_manager.popup_menu(_draw_version_error_popup, title=title, icon="ERROR")
+
+        bpy.app.timers.register(_show_version_error_popup, first_interval=0.0)
+
+        # Raise an error so Blender doesn't actually enable the add-on
+        raise ImportError(f"{title}. \n{message}")
+
+
+check_blender_version()
+
 auto_load.init()
 
 
 def register():
-    try:
-        check_blender_version()
-    except ImportError as e:
-        print(f"Sollumz Error: {str(e)}")
-        bpy.utils.register_class(SOLLUMZ_OT_version_error)
-        bpy.app.timers.register(show_version_error_popup, first_interval=0.1)
-        return
-
     auto_load.register()
 
     # WorkSpaceTools need to be registered after normal modules so the keymaps
@@ -113,25 +93,6 @@ def register():
 
 
 def unregister():
-    # Unregister add-on components with error handling on incompatible Blender versions to prevent error messages
-    if "SOLLUMZ_OT_version_error" in dir(bpy.types):
-        bpy.utils.unregister_class(SOLLUMZ_OT_version_error)
+    sollumz_tool.unregister_tools()
 
-    if "sollumz_tool" in globals() and hasattr(sollumz_tool, "sollumz_tools"):
-        for tool in sollumz_tool.sollumz_tools:
-            try:
-                bpy.utils.unregister_tool(tool.cls)
-            except (AttributeError, RuntimeError, ValueError):
-                pass
-
-    if "sollumz_tool" in globals() and hasattr(sollumz_tool, "unregister_tools"):
-        try:
-            sollumz_tool.unregister_tools()
-        except Exception:
-            pass
-
-    if "auto_load" in globals() and hasattr(auto_load, "unregister"):
-        try:
-            auto_load.unregister()
-        except Exception:
-            pass
+    auto_load.unregister()
