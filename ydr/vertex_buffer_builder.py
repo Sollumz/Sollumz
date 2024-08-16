@@ -12,6 +12,8 @@ from ..tools.meshhelper import (
 )
 from ..cwxml.drawable import VertexBuffer
 
+from .. import logger
+
 
 def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bone]):
     bone_ind_by_name: dict[str, int] = {b.name: i for i, b in enumerate(bones)}
@@ -153,14 +155,28 @@ class VertexBufferBuilder:
         ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
         weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
 
+        ungrouped_verts = 0
+
         for i, vert in enumerate(self.mesh.vertices):
             groups = self._get_sorted_vertex_group_elements(vert)
+            if not groups:
+                ungrouped_verts += 1
+                continue
+
             for j, grp in enumerate(groups):
                 if j > 3:
                     break
 
                 weights_arr[i][j] = grp.weight
                 ind_arr[i][j] = bone_by_vgroup[grp.group]
+
+        if ungrouped_verts != 0:
+            logger.warning(
+                f"Mesh '{self.mesh.name}' has {ungrouped_verts} vertices not weighted to any vertex group! "
+                "These vertices will be weighted to the root bone which may cause parts to float in-game. "
+                "In Edit Mode, you can use 'Select > Select All by Trait > Ungrouped vertices' to select "
+                "these vertices."
+            )
 
         weights_arr = self._normalize_weights(weights_arr)
         weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
