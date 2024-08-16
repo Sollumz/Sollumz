@@ -343,6 +343,7 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
 
     archetype.name = archetype_xml.name
     archetype.flags.total = str(archetype_xml.flags)
+    archetype.lod_dist = archetype_xml.lod_dist
     archetype.special_attribute = SpecialAttribute(archetype_xml.special_attribute).name
     archetype.hd_texture_dist = archetype_xml.hd_texture_dist
     archetype.texture_dictionary = archetype_xml.texture_dictionary
