@@ -351,16 +351,24 @@ def register():
 
 
     from .cloth import ClothAttr
-    bpy.types.Scene.sz_ui_cloth_set_vertex_weight = bpy.props.FloatProperty(
+    bpy.types.WindowManager.sz_ui_cloth_vertex_weight_visualize = bpy.props.BoolProperty(
+        name="Show Weights", description="Display the cloth weight values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_vertex_weight = bpy.props.FloatProperty(
         name=ClothAttr.VERTEX_WEIGHT.label, description=ClothAttr.VERTEX_WEIGHT.description,
         min=0.00001, max=1.0, default=ClothAttr.VERTEX_WEIGHT.default_value,
         precision=6, step=1
     )
-    bpy.types.Scene.sz_ui_cloth_set_inflation_scale = bpy.props.FloatProperty(
+    bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize = bpy.props.BoolProperty(
+        name="Show Inflation Scale", description="Display the cloth inflation scale values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_inflation_scale = bpy.props.FloatProperty(
         name=ClothAttr.INFLATION_SCALE.label, description=ClothAttr.INFLATION_SCALE.description,
         min=0.0, max=1.0, default=ClothAttr.INFLATION_SCALE.default_value
     )
-    bpy.types.Scene.sz_ui_cloth_pinned_visualize = bpy.props.BoolProperty(
+    bpy.types.WindowManager.sz_ui_cloth_pinned_visualize = bpy.props.BoolProperty(
         name="Show Pinned", description="Display the cloth pinned vertices on the 3D Viewport",
         default=False
     )
@@ -385,6 +393,8 @@ def unregister():
     del bpy.types.Scene.selected_vehicle_light_id
     del bpy.types.Material.sz_paint_layer
 
-    del bpy.types.Scene.sz_ui_cloth_set_vertex_weight
-    del bpy.types.Scene.sz_ui_cloth_set_inflation_scale
-    del bpy.types.Scene.sz_ui_cloth_pinned_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_vertex_weight
+    del bpy.types.WindowManager.sz_ui_cloth_vertex_weight_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_inflation_scale
+    del bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_pinned_visualize

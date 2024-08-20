@@ -4,7 +4,7 @@ from bpy.types import (
     Object,
 )
 import gpu
-import gpu_extras
+from gpu_extras import batch
 import blf
 from mathutils import Vector
 from collections.abc import Sequence
@@ -14,8 +14,6 @@ from .cloth import (
     is_cloth_mesh_object,
     mesh_get_cloth_attribute_values,
 )
-from bpy_extras.view3d_utils import location_3d_to_region_2d
-from bpy_extras.mesh_utils import edge_loops_from_edges
 import bmesh
 
 
@@ -36,8 +34,8 @@ class ClothOverlaysDrawHandler:
 
     def can_draw_anything(self) -> bool:
         context = bpy.context
-        scene = context.scene
-        if not scene.sz_ui_cloth_pinned_visualize:
+        wm = context.window_manager
+        if not wm.sz_ui_cloth_pinned_visualize:
             return False
 
         obj = context.active_object
@@ -56,10 +54,10 @@ class ClothOverlaysDrawHandler:
             return
 
         context = bpy.context
-        scene = context.scene
+        wm = context.window_manager
         obj = context.active_object
 
-        if scene.sz_ui_cloth_pinned_visualize:
+        if wm.sz_ui_cloth_pinned_visualize:
             self.draw_pinned_geometry(obj)
 
     def draw_pinned_geometry(self, cloth_obj: Object):
@@ -84,9 +82,10 @@ class ClothOverlaysDrawHandler:
                     coords.append(v.co + Vector((1.0, 0.0, 0.0)))
 
         shader = gpu.shader.from_builtin("UNIFORM_COLOR")
-        batch = gpu_extras.batch.batch_for_shader(shader, "LINES", {"pos": coords})
+        lines_batch = batch.batch_for_shader(shader, "LINES", {"pos": coords})
         shader.uniform_float("color", (1.0, 0.0, 1.0, 1.0))
-        batch.draw(shader)
+        lines_batch.draw(shader)
+
 
 draw_handlers = []
 

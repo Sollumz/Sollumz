@@ -1,131 +1,105 @@
 import bpy
+from bpy.types import (
+    Context,
+    Operator,
+    Attribute,
+)
 from bpy.props import (
     FloatProperty,
     BoolProperty,
 )
-import bmesh
-from .cloth import is_cloth_mesh_object, ClothAttr, mesh_add_cloth_attribute, mesh_has_cloth_attribute
+from .cloth import (
+    ClothAttr,
+    is_cloth_mesh_object,
+    mesh_add_cloth_attribute,
+    mesh_has_cloth_attribute,
+)
 
 
-class SOLLUMZ_OT_CLOTH_TEST(bpy.types.Operator):
-    """"""
-    bl_idname = "sollumz.cloth_test"
-    bl_label = "Test"
-    bl_options = {"UNDO"}
-
+class ClothEditRestrictedHelper:
     @classmethod
-    def poll(cls, context):
-        return any(is_cloth_mesh_object(o) for o in context.selected_objects)
+    def poll(cls, context: Context):
+        cls.poll_message_set("Must be in Edit mode with a cloth drawable model.")
+        obj = context.active_object
+        return obj is not None and obj.mode == "EDIT" and is_cloth_mesh_object(obj)
+
+
+class ClothRestrictedHelper:
+    @classmethod
+    def poll(cls, context: Context):
+        cls.poll_message_set("Must have a cloth drawable model selected.")
+        objs = context.selected_objects
+        return any(is_cloth_mesh_object(obj) for obj in objs)
+
+
+class ClothSetAttributeBase(ClothEditRestrictedHelper):
+    bl_options = {"REGISTER", "UNDO"}
+
+    attribute: ClothAttr
 
     def execute(self, context):
-        for obj in context.selected_objects:
-            if not is_cloth_mesh_object(obj):
+        obj = context.active_object
+
+        mode = obj.mode
+        # we need to switch from Edit mode to Object mode so the selection gets updated
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+        mesh = obj.data
+        if not mesh_has_cloth_attribute(mesh, self.attribute):
+            mesh_add_cloth_attribute(mesh, self.attribute)
+
+        attr = mesh.attributes[self.attribute]
+        for v in mesh.vertices:
+            if not v.select:
                 continue
 
-            print(f"{obj=}")
+            self.do_set_attribute(v.index, attr)
 
+        bpy.ops.object.mode_set(mode=mode)
         return {"FINISHED"}
 
+    def do_set_attribute(self, vertex_index: int, attr: Attribute):
+        attr.data[vertex_index].value = self.value
 
-class SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT(bpy.types.Operator):
-    """"""
+
+class SOLLUMZ_OT_cloth_set_vertex_weight(Operator, ClothSetAttributeBase):
     bl_idname = "sollumz.cloth_set_vertex_weight"
-    bl_label = "Modify Cloth Vertex Weights"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_label = "Set Cloth Vertex Weight"
+    bl_description = (
+        "Sets the weight of the cloth at the selected vertices.\n\n"
+    ) + f"{ClothAttr.VERTEX_WEIGHT.label}: {ClothAttr.VERTEX_WEIGHT.description}"
 
-    vertex_weight: FloatProperty(
+    attribute = ClothAttr.VERTEX_WEIGHT
+    value: FloatProperty(
         name=ClothAttr.VERTEX_WEIGHT.label, description=ClothAttr.VERTEX_WEIGHT.description,
-        default=ClothAttr.VERTEX_WEIGHT.default_value, min=0.00001, max=1.0, precision=6, step=1
+        min=0.00001, max=1.0, default=ClothAttr.VERTEX_WEIGHT.default_value,
+        precision=6, step=1
     )
-    selection: BoolProperty(name="Selection", default=True)
-
-    @classmethod
-    def poll(cls, context):
-        return context.mode == "EDIT_MESH" and is_cloth_mesh_object(context.active_object)
-
-    def execute(self, context):
-        obj = context.active_object
-        mesh = obj.data
-
-        if not mesh_has_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT):
-            mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
-
-        bm = bmesh.from_edit_mesh(mesh)
-        vertex_weight_layer = bm.verts.layers.float.get(ClothAttr.VERTEX_WEIGHT)
-        for v in bm.verts:
-            if not self.selection or v.select:
-                v[vertex_weight_layer] = self.vertex_weight
-
-        bmesh.update_edit_mesh(mesh)
-
-        return {"FINISHED"}
 
 
-class SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE(bpy.types.Operator):
-    """"""
+class SOLLUMZ_OT_cloth_set_inflation_scale(Operator, ClothSetAttributeBase):
     bl_idname = "sollumz.cloth_set_inflation_scale"
-    bl_label = "Modify Cloth Inflation Scale"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_label = "Set Cloth Inflation Scale"
+    bl_description = (
+        "Sets the inflation scale of the cloth at the selected vertices.\n\n"
+    ) + f"{ClothAttr.INFLATION_SCALE.label}: {ClothAttr.INFLATION_SCALE.description}"
 
-    inflation_scale: FloatProperty(
+    attribute = ClothAttr.INFLATION_SCALE
+    value: FloatProperty(
         name=ClothAttr.INFLATION_SCALE.label, description=ClothAttr.INFLATION_SCALE.description,
-        default=ClothAttr.INFLATION_SCALE.default_value, min=0.0, max=1.0
+        min=0.0, max=1.0, default=ClothAttr.INFLATION_SCALE.default_value
     )
-    selection: BoolProperty(name="Selection", default=True)
-
-    @classmethod
-    def poll(cls, context):
-        return context.mode == "EDIT_MESH" and is_cloth_mesh_object(context.active_object)
-
-    def execute(self, context):
-        obj = context.active_object
-        mesh = obj.data
-
-        if not mesh_has_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE):
-            mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
-
-        bm = bmesh.from_edit_mesh(mesh)
-        inflation_scale_layer = bm.verts.layers.float.get(ClothAttr.INFLATION_SCALE)
-        for v in bm.verts:
-            if not self.selection or v.select:
-                v[inflation_scale_layer] = self.inflation_scale
-
-        bmesh.update_edit_mesh(mesh)
-
-        return {"FINISHED"}
 
 
-class SOLLUMZ_OT_CLOTH_SET_PINNED(bpy.types.Operator):
-    """"""
+class SOLLUMZ_OT_cloth_set_pinned(Operator, ClothSetAttributeBase):
     bl_idname = "sollumz.cloth_set_pinned"
     bl_label = "Pin Cloth Vertices"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_description = (
+        "Pins or unpins the selected cloth vertices.\n\n"
+    ) + f"{ClothAttr.PINNED.label}: {ClothAttr.PINNED.description}"
 
-    pin: BoolProperty(
-        name="Pin", description="",
-        default=False
+    attribute = ClothAttr.PINNED
+    value: BoolProperty(
+        name="Pin", description=ClothAttr.PINNED.description,
+        default=ClothAttr.PINNED.default_value
     )
-    selection: BoolProperty(name="Selection", default=True)
-
-    @classmethod
-    def poll(cls, context):
-        return context.mode == "EDIT_MESH" and is_cloth_mesh_object(context.active_object)
-
-    def execute(self, context):
-        obj = context.active_object
-        mesh = obj.data
-
-        if not mesh_has_cloth_attribute(mesh, ClothAttr.PINNED):
-            mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
-
-        bm = bmesh.from_edit_mesh(mesh)
-
-        pinned_layer = bm.verts.layers.int.get(ClothAttr.PINNED)
-        pin = 1 if self.pin else 0
-        for v in bm.verts:
-            if not self.selection or v.select:
-                v[pinned_layer] = pin
-
-        bmesh.update_edit_mesh(mesh)
-
-        return {"FINISHED"}

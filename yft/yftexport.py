@@ -1266,7 +1266,6 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     # env_cloth.flags = ValueProperty("Unknown78", 1)
     # env_cloth.user_data = TextListProperty("UnknownData")
     # env_cloth.tuning = ClothInstanceTuning()
-    # env_cloth.drawable = Drawable()
     cloth_obj_eval = get_evaluated_obj(cloth_obj)
     cloth_mesh = cloth_obj_eval.to_mesh()
     cloth_mesh.calc_loop_triangles()
@@ -1345,7 +1344,8 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     del edges_added
 
 
-    # sort edges such that no vertex is repeated within chunks of 8 edges
+    # Sort edges such that no vertex is repeated within chunks of 8 edges. Required due to how the cloth physics code
+    # is vectorized.
     # fairly inefficient algorithm ahead, works for now
     edge_buckets = [[] for _ in range(len(edges) * 4)]
     last_bucket_index = -1

@@ -155,60 +155,46 @@ class SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="MATCLOTH")
 
     def draw(self, context):
-        from .cloth import ClothAttr, is_cloth_mesh_object
         from . import cloth_operators as cloth_ops
+        from .cloth import ClothAttr
 
-        scene = context.scene
+        wm = context.window_manager
 
         layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
 
-        is_cloth = is_cloth_mesh_object(context.active_object)
-        if not is_cloth:
-            layout.label(text="Select a drawable model with a cloth material to access cloth tools")
-            return
+        def _visible_icon_prop(layout, obj, prop_name):
+            visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
+            layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
 
-        layout.operator(cloth_ops.SOLLUMZ_OT_CLOTH_TEST.bl_idname)
-        if context.mode == "EDIT_MESH":
-            layout.label(text="In edit mode")
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.VERTEX_WEIGHT.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_vertex_weight_visualize")
 
-            row = layout.row(align=True)
-            row.prop(context.scene, "sz_ui_cloth_set_vertex_weight", text="Vertex Weight")
-            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT.bl_idname, text="Selection")
-            op.selection = True
-            op.vertex_weight = context.scene.sz_ui_cloth_set_vertex_weight
-            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_VERTEX_WEIGHT.bl_idname, text="All")
-            op.selection = False
-            op.vertex_weight = context.scene.sz_ui_cloth_set_vertex_weight
-
-            row = layout.row(align=True)
-            row.prop(context.scene, "sz_ui_cloth_set_inflation_scale", text="Inflation Scale")
-            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE.bl_idname, text="Selection")
-            op.selection = True
-            op.inflation_scale = context.scene.sz_ui_cloth_set_inflation_scale
-            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_INFLATION_SCALE.bl_idname, text="All")
-            op.selection = False
-            op.inflation_scale = context.scene.sz_ui_cloth_set_inflation_scale
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_vertex_weight.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_vertex_weight
+        row.prop(wm, "sz_ui_cloth_vertex_weight", text="")
 
 
-            def _visible_icon_prop(layout, obj, prop_name):
-                visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
-                layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.INFLATION_SCALE.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_inflation_scale_visualize")
 
-            row = layout.row(align=True)
-            row.label(text=ClothAttr.PINNED.label)
-            _visible_icon_prop(row, scene, "sz_ui_cloth_pinned_visualize")
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_inflation_scale
+        row.prop(wm, "sz_ui_cloth_inflation_scale", text="")
 
-            row = layout.row(align=True)
-            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_PINNED.bl_idname, text="Pin")
-            op.selection = True
-            op.pin = True
-            op = row.operator(cloth_ops.SOLLUMZ_OT_CLOTH_SET_PINNED.bl_idname, text="Unpin")
-            op.selection = True
-            op.pin = False
-        else:
-            layout.label(text="Go to edit mode")
+
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.PINNED.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_pinned_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin")
+        op.value = True
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin")
+        op.value = False
 
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
