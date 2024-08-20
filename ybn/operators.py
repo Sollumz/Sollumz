@@ -38,9 +38,33 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
     """Creates a Bound Box or Bound Poly Box from the selected vertices"""
     bl_idname = "sollumz.createpolyboxfromverts"
     bl_label = "Create Box from Selection"
-    bl_options = {"UNDO"}
+    bl_options = {"UNDO", "REGISTER"}
 
-    parent_name: bpy.props.StringProperty(name="Parent")
+    parent_name: bpy.props.StringProperty(
+        name="Parent",
+        description="Parent for the new box object. If not set, the parent of the active object is used."
+    )
+    num_samples: bpy.props.IntProperty(
+        name="Number of Samples",
+        description="Number of samples to use to find the best orientation for the bounding box",
+        default=100,
+        min=1,
+        max=1000
+    )
+    angle_step: bpy.props.IntProperty(
+        name="Range Precision",
+        description="Amount of angle steps to skip, this can be usefull in situations where number of samples alone doesn't give a precise result. Lower values mean higher precision",
+        default=2,
+        min=1,
+        max=10
+    )
+    sollum_type: bpy.props.EnumProperty(
+        items=[
+            (SollumType.BOUND_POLY_BOX.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_POLY_BOX], "Create a bound polygon box object"),
+            (SollumType.BOUND_BOX.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_BOX], "Create a bound box object")],
+        name="Type",
+        default=None
+    )
 
     @classmethod
     def poll(self, context):
@@ -48,10 +72,8 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
         return context.mode == "EDIT_MESH"
 
     def execute(self, context):
-        sollum_type = context.scene.poly_bound_type_verts
-
         objects = context.objects_in_mode
-        verts = []
+        verts: list[Vector] = []
         for obj in objects:
             verts.extend(get_selected_vertices(obj))
 
@@ -68,9 +90,9 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
             self.report({"INFO"}, "Please select at least three vertices.")
             return {"CANCELLED"}
 
-        pobj = create_blender_object(sollum_type)
+        pobj = create_blender_object(self.sollum_type)
 
-        obb, world_matrix = get_obb(verts)
+        obb, world_matrix = get_obb(verts, self.num_samples, self.angle_step)
         bbmin, bbmax = get_obb_extents(obb)
 
         center = world_matrix @ (bbmin + bbmax) / 2
