@@ -633,6 +633,24 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(vcs.outputs["Alpha"], multi.inputs[0])
         links.new(texture.outputs["Alpha"], multi.inputs[1])
         links.new(multi.outputs["Value"], mix.inputs["Fac"])
+    if decalflag == 2:
+        # create RGB curves to invert colour
+        rgb_curves: bpy.types.ShaderNodeRGBCurve = node_tree.nodes.new("ShaderNodeRGBCurve")
+        combined_curve = rgb_curves.mapping.curves[-1]
+        combined_curve.points[0].location = (0, 1)
+        combined_curve.points[1].location = (1, 0)
+        links.new(texture.outputs["Color"], rgb_curves.inputs["Color"])
+        # Create RGB Mix node
+        mix_color = node_tree.nodes.new("ShaderNodeMixRGB")
+        links.new(rgb_curves.outputs["Color"], mix_color.inputs["Color1"])
+        # Create Color Attribute node
+        col_attr = node_tree.nodes.new("ShaderNodeVertexColor")
+        col_attr.layer_name = get_color_attr_name(0)
+        links.new(col_attr.outputs["Color"], mix_color.inputs["Color2"])
+        links.new(col_attr.outputs["Alpha"], mix.inputs["Fac"])
+        # Link Mix node to Mix Shader node
+        links.new(mix_color.outputs["Color"], bsdf.inputs["Base Color"])
+
 
     links.new(trans.outputs["BSDF"], mix.inputs[1])
     links.remove(bsdf.outputs["BSDF"].links[0])
