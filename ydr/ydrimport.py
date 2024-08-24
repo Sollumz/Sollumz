@@ -309,8 +309,13 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                             name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
                         n.image = texture
 
-                    # assign non color to normal maps
-                    if "Bump" in param.name or param.name == "distanceMapSampler":
+                    # TODO: we could specify non-color textures in shaders.xml
+                    # assign non-color...
+                    if (
+                        "Bump" in param.name or  # ...to normal maps
+                        param.name == "distanceMapSampler" or  # ...to distance maps
+                        (filename == "decal_dirt.sps" and param.name == "DiffuseSampler") # ...to shadow maps
+                    ):
                         n.image.colorspace_settings.name = "Non-Color"
 
                     preferences = get_addon_preferences(bpy.context)

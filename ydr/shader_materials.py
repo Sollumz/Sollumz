@@ -625,7 +625,7 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
 
     if decalflag == 0:
         links.new(texture.outputs["Alpha"], mix.inputs["Fac"])
-    if decalflag == 1:
+    elif decalflag == 1:
         vcs = node_tree.nodes.new("ShaderNodeVertexColor")
         vcs.layer_name = get_color_attr_name(0)
         multi = node_tree.nodes.new("ShaderNodeMath")
@@ -633,6 +633,35 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(vcs.outputs["Alpha"], multi.inputs[0])
         links.new(texture.outputs["Alpha"], multi.inputs[1])
         links.new(multi.outputs["Value"], mix.inputs["Fac"])
+    elif decalflag == 2: # decal_dirt.sps
+        # Here, the diffuse sampler represents an alpha map. DirtDecalMask indicates which channels to consider. Actual
+        # color stored in the color0 attribute.
+        #   alpha = dot(diffuseColor, DirtDecalMask)
+        #   alpha *= color0.a
+        #   baseColor = color0.rgb
+        dirt_decal_mask_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+        dirt_decal_mask = node_tree.nodes["DirtDecalMask"]
+        dot_diffuse_mask = node_tree.nodes.new("ShaderNodeVectorMath")
+        dot_diffuse_mask.operation = "DOT_PRODUCT"
+        mult_alpha_color0a = node_tree.nodes.new("ShaderNodeMath")
+        mult_alpha_color0a.operation = "MULTIPLY"
+        color0_attr = node_tree.nodes.new("ShaderNodeVertexColor")
+        color0_attr.layer_name = get_color_attr_name(0)
+
+        links.new(dirt_decal_mask.outputs["X"], dirt_decal_mask_xyz.inputs["X"])
+        links.new(dirt_decal_mask.outputs["Y"], dirt_decal_mask_xyz.inputs["Y"])
+        links.new(dirt_decal_mask.outputs["Z"], dirt_decal_mask_xyz.inputs["Z"])
+
+        links.new(texture.outputs["Color"], dot_diffuse_mask.inputs[0])
+        links.new(dirt_decal_mask_xyz.outputs["Vector"], dot_diffuse_mask.inputs[1])
+
+        links.new(dot_diffuse_mask.outputs["Value"], mult_alpha_color0a.inputs[0])
+        links.new(color0_attr.outputs["Alpha"], mult_alpha_color0a.inputs[1])
+
+        links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
+
+        links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
+
 
     links.new(trans.outputs["BSDF"], mix.inputs[1])
     links.remove(bsdf.outputs["BSDF"].links[0])
@@ -858,8 +887,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             blend_mode = "BLEND"
             decalflag = 1
         # set flags
-        if filename in [ShaderManager.decals[20]]:  # decal_dirt.sps
-            # txt_alpha_mask = ?
+        if filename == "decal_dirt.sps":
             decalflag = 2
         # decal_normal_only.sps / mirror_decal.sps / reflect_decal.sps
         elif filename in [ShaderManager.decals[4], ShaderManager.decals[21], ShaderManager.decals[19]]:
