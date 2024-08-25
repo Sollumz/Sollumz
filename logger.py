@@ -4,7 +4,8 @@ Logging module to easily log messages from operators that are extended into many
 
 from bpy.types import Operator
 from abc import ABC, abstractmethod
-from typing import Sequence, Iterator, defaultdict
+from typing import Sequence, Iterator
+from collections import defaultdict
 from contextlib import contextmanager
 
 
