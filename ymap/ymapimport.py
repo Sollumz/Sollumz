@@ -97,22 +97,23 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
         entities_amount = len(ymap.entities)
         count = 0
 
-        existing_objects = []
-        for obj in bpy.context.view_layer.objects:
-            existing_objects.append(obj)
+        for entity in ymap.entities:
+            obj = bpy.data.objects.get(entity.archetype_name, None)
+            if obj is None:
+                # No object with the given archetype name found
+                continue
 
-        for obj in existing_objects:
-            for entity in ymap.entities:
-                if entity.archetype_name == obj.name:
-                    if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT:
-                        new_obj = duplicate_object_with_children(obj)
-                        apply_entity_properties(new_obj, entity)
-                        new_obj.parent = group_obj
-                        count += 1
-                        entity.found = True
-                    else:
-                        logger.error(
-                            f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
+            # TODO: requiring ymap entities to be drawable or fragment in blender seems like an unnecessary limitation
+            # Need to special case assets because their type when imported by sollumz is drawable model
+            if obj.sollum_type == SollumType.DRAWABLE or obj.sollum_type == SollumType.FRAGMENT or obj.asset_data is not None:
+                new_obj = duplicate_object_with_children(obj)
+                apply_entity_properties(new_obj, entity)
+                new_obj.parent = group_obj
+                count += 1
+                entity.found = True
+            else:
+                logger.error(
+                    f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
 
         # Creating empty entity if no object was found for reference, and notify user
         import_settings = get_import_settings()

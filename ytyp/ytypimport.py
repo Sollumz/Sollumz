@@ -113,11 +113,25 @@ def find_and_link_entity_object(entity_xml: ymapxml.Entity, entity: MloEntityPro
     linked instead of the object itself.
     """
 
-    obj = bpy.context.scene.objects.get(entity_xml.archetype_name, None)
+    should_instance = get_import_settings().ytyp_mlo_instance_entities
+
+    # Lookup in the whole .blend (i.e. current scene, other scenes, asset browser)
+    obj = bpy.data.objects.get(entity_xml.archetype_name, None)
     if obj is None:
+        # No object with the given archetype name found
         return
 
-    should_instance = get_import_settings().ytyp_mlo_instance_entities
+    if obj.name not in bpy.context.scene.objects:
+        # Since it isn't in the current scene, we have to duplicate the object always
+        should_instance = True
+    elif should_instance:
+        # If found in the scene and user wants to instance entities, only instance it if it is no longer at the origin,
+        # meaning it was already placed elsewhere in the MLO or the user moved it away.
+        # This is to support the workflow of importing all models and then importing the MLO ytyp with instancing
+        # enabled, without duplicating every entity.
+        origin = Vector((0.0, 0.0, 0.0))
+        should_instance = obj.location != origin
+
     if should_instance:
         obj = duplicate_object_with_children(obj)
 
