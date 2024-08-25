@@ -147,12 +147,12 @@ class SOLLUMZ_OT_clip_recalculate_uv_hash(SOLLUMZ_OT_base, bpy.types.Operator):
         return context.active_object is not None and context.active_object.sollum_type == SollumType.CLIP
 
     def run(self, context):
-        logger.set_logging_operator(self)
-        clip_obj = context.active_object
-        if update_uv_clip_hash(clip_obj):
-            return {"FINISHED"}
-        else:
-            return {"CANCELLED"}
+        with logger.use_operator_logger(self):
+            clip_obj = context.active_object
+            if update_uv_clip_hash(clip_obj):
+                return {"FINISHED"}
+            else:
+                return {"CANCELLED"}
 
 
 class SOLLUMZ_OT_clip_new_animation(SOLLUMZ_OT_base, bpy.types.Operator):

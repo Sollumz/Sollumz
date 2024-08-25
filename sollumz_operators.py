@@ -77,47 +77,44 @@ class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
         pass
 
     def execute_timed(self, context):
-        logger.set_logging_operator(self)
-
-        if not self.directory or len(self.files) == 0 or self.files[0].name == "":
-            self.report({"INFO"}, "No file selected for import!")
-            return {"CANCELLED"}
-
-        self.directory = bpy.path.abspath(self.directory)
-
-        filenames = self.dedupe_hi_yft_filenames([f.name for f in self.files])
-
-        for filename in filenames:
-            filepath = os.path.join(self.directory, filename)
-
-            try:
-
-                if YDR.file_extension in filepath:
-                    import_ydr(filepath)
-                elif YDD.file_extension in filepath:
-                    import_ydd(filepath)
-                elif YFT.file_extension in filepath:
-                    import_yft(filepath)
-                elif YBN.file_extension in filepath:
-                    import_ybn(filepath)
-                elif YNV.file_extension in filepath:
-                    import_ynv(filepath)
-                elif YCD.file_extension in filepath:
-                    import_ycd(filepath)
-                elif YMAP.file_extension in filepath:
-                    import_ymap(filepath)
-                else:
-                    continue
-
-                self.report({"INFO"}, f"Successfully imported '{filepath}'")
-            except:
-                self.report({"ERROR"}, f"Error importing: {filepath} \n {traceback.format_exc()}")
-
+        with logger.use_operator_logger(self):
+            if not self.directory or len(self.files) == 0 or self.files[0].name == "":
+                logger.info("No file selected for import!")
                 return {"CANCELLED"}
 
-        self.report({"INFO"}, f"Imported in {self.time_elapsed} seconds")
+            self.directory = bpy.path.abspath(self.directory)
 
-        return {"FINISHED"}
+            filenames = self.dedupe_hi_yft_filenames([f.name for f in self.files])
+
+            for filename in filenames:
+                filepath = os.path.join(self.directory, filename)
+
+                try:
+
+                    if YDR.file_extension in filepath:
+                        import_ydr(filepath)
+                    elif YDD.file_extension in filepath:
+                        import_ydd(filepath)
+                    elif YFT.file_extension in filepath:
+                        import_yft(filepath)
+                    elif YBN.file_extension in filepath:
+                        import_ybn(filepath)
+                    elif YNV.file_extension in filepath:
+                        import_ynv(filepath)
+                    elif YCD.file_extension in filepath:
+                        import_ycd(filepath)
+                    elif YMAP.file_extension in filepath:
+                        import_ymap(filepath)
+                    else:
+                        continue
+
+                    logger.info(f"Successfully imported '{filepath}'")
+                except:
+                    logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
+                    return {"CANCELLED"}
+
+            logger.info(f"Imported in {self.time_elapsed} seconds")
+            return {"FINISHED"}
 
     def invoke(self, context, event):
         if self.directory and len(self.files) > 0 and self.files[0].name != "":
@@ -186,67 +183,69 @@ class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
             return {"RUNNING_MODAL"}
 
     def execute_timed(self, context: bpy.types.Context):
-        logger.set_logging_operator(self)
-        objs = self.collect_objects(context)
-        export_settings = get_export_settings()
+        with logger.use_operator_logger(self) as op_log:
+            logger.info("Starting export...")
+            objs = self.collect_objects(context)
+            export_settings = get_export_settings()
 
-        self.directory = bpy.path.abspath(self.directory)
+            self.directory = bpy.path.abspath(self.directory)
 
-        if not objs:
-            if export_settings.limit_to_selected:
-                self.report(
-                    {"INFO"}, "No Sollumz objects selected for export!")
-            else:
-                self.report(
-                    {"INFO"}, "No Sollumz objects in the scene to export!")
-
-            return {"CANCELLED"}
-
-        for obj in objs:
-            filepath = None
-            try:
-                success = False
-                if obj.sollum_type == SollumType.DRAWABLE:
-                    filepath = self.get_filepath(obj, YDR.file_extension)
-                    success = export_ydr(obj, filepath)
-                elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
-                    filepath = self.get_filepath(obj, YDD.file_extension)
-                    success = export_ydd(obj, filepath)
-                elif obj.sollum_type == SollumType.FRAGMENT:
-                    filepath = self.get_filepath(obj, YFT.file_extension)
-                    success = export_yft(obj, filepath)
-                elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
-                    filepath = self.get_filepath(obj, YCD.file_extension)
-                    success = export_ycd(obj, filepath)
-                elif obj.sollum_type in BOUND_TYPES:
-                    filepath = self.get_filepath(obj, YBN.file_extension)
-                    success = export_ybn(obj, filepath)
-                elif obj.sollum_type == SollumType.YMAP:
-                    filepath = self.get_filepath(obj, YMAP.file_extension)
-                    success = export_ymap(obj, filepath)
+            if not objs:
+                if export_settings.limit_to_selected:
+                    logger.info("No Sollumz objects selected for export!")
                 else:
-                    continue
-
-                if success:
-                    self.report({"INFO"}, f"Successfully exported '{filepath}'")
-            except:
-                self.report({"ERROR"},
-                            f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
-
+                    logger.info("No Sollumz objects in the scene to export!")
                 return {"CANCELLED"}
+
+            any_warnings_or_errors = False
+            for obj in objs:
+                op_log.clear_log_counts()
+                filepath = None
+                try:
+                    success = False
+                    if obj.sollum_type == SollumType.DRAWABLE:
+                        filepath = self.get_filepath(obj, YDR.file_extension)
+                        success = export_ydr(obj, filepath)
+                    elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                        filepath = self.get_filepath(obj, YDD.file_extension)
+                        success = export_ydd(obj, filepath)
+                    elif obj.sollum_type == SollumType.FRAGMENT:
+                        filepath = self.get_filepath(obj, YFT.file_extension)
+                        success = export_yft(obj, filepath)
+                    elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
+                        filepath = self.get_filepath(obj, YCD.file_extension)
+                        success = export_ycd(obj, filepath)
+                    elif obj.sollum_type in BOUND_TYPES:
+                        filepath = self.get_filepath(obj, YBN.file_extension)
+                        success = export_ybn(obj, filepath)
+                    elif obj.sollum_type == SollumType.YMAP:
+                        filepath = self.get_filepath(obj, YMAP.file_extension)
+                        success = export_ymap(obj, filepath)
+                    else:
+                        continue
+
+                    if success:
+                        if op_log.has_warnings_or_errors:
+                            logger.info(f"Exported '{filepath}' with WARNINGS or ERRORS! Please check the Info Log for details.")
+                            any_warnings_or_errors = True
+                        else:
+                            logger.info(f"Successfully exported '{filepath}'")
+                except:
+                    logger.error(f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
+                    any_warnings_or_errors = True
+                    return {"CANCELLED"}
 
             if export_settings.export_with_ytyp:
                 ytyp = ytyp_from_objects(objs)
                 filepath = os.path.join(
                     self.directory, f"{ytyp.name}.ytyp.xml")
                 ytyp.write_xml(filepath)
-                self.report(
-                    {"INFO"}, f"Successfully exported '{filepath}' (auto-generated)")
+                logger.info(f"Successfully exported '{filepath}' (auto-generated)")
 
-        self.report(
-            {"INFO"}, f"Exported in {self.time_elapsed} seconds")
-
-        return {"FINISHED"}
+            logger.info(f"Exported in {self.time_elapsed} seconds")
+            if any_warnings_or_errors:
+                bpy.ops.screen.info_log_show()
+            return {"FINISHED"}
 
     def collect_objects(self, context: bpy.types.Context) -> list[bpy.types.Object]:
         export_settings = get_export_settings()
