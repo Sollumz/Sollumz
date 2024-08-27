@@ -161,12 +161,18 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def update_room_names(self, context):
         self.room_from_name = self.get_room_name(self.room_from_index)
         self.room_to_name = self.get_room_name(self.room_to_index)
+        del self.__name
 
     def get_name(self):
+        if hasattr(self, "__name") and self.__name is not None:
+            return self.__name
         if not self.room_from_name or not self.room_to_name:
             self.update_room_names(bpy.context)
 
-        return f"{self.get_portal_index() + 1} | {self.room_from_name} to {self.room_to_name}"
+        # EnumProperty can crash blender if the name isn't referenced anywhere See https://docs.blender.org/api/current/bpy.props.html#bpy.props.EnumProperty
+        # Updating is done by update_room_names
+        self.__name = f"{self.get_portal_index() + 1} | {self.room_from_name} to {self.room_to_name}"
+        return self.__name
 
     # Work around to store audio_occlusion as a string property since blender int property cant store 32 bit unsigned integers
     def update_audio_occlusion(self, context):
