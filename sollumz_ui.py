@@ -108,7 +108,7 @@ class SollumzFileSettingsPanel:
 
 
 class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
-    operator_id = "SOLLUMZ_OT_import"
+    operator_id = "SOLLUMZ_OT_import_assets"
 
     def get_settings(self, context: bpy.types.Context):
         return get_import_settings(context)
@@ -118,7 +118,7 @@ class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
 
 
 class SollumzExportSettingsPanel(SollumzFileSettingsPanel):
-    operator_id = "SOLLUMZ_OT_export"
+    operator_id = "SOLLUMZ_OT_export_assets"
 
     def get_settings(self, context: bpy.types.Context):
         return get_export_settings(context)
@@ -255,14 +255,14 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.operator("sollumz.import")
+        row.operator("sollumz.import_assets")
 
         if context.scene.sollumz_export_path != "":
-            op = row.operator("sollumz.export")
+            op = row.operator("sollumz.export_assets")
             op.directory = context.scene.sollumz_export_path
             op.direct_export = True
         else:
-            row.operator("sollumz.export")
+            row.operator("sollumz.export_assets")
 
 
 class GeneralToolChildPanel:

@@ -54,10 +54,10 @@ class TimedOperator:
         ...
 
 
-class SOLLUMZ_OT_import(bpy.types.Operator, ImportHelper, TimedOperator):
-    """Imports xml files exported by codewalker"""
-    bl_idname = "sollumz.import"
-    bl_label = "Import Codewalker XML"
+class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
+    """Import XML files exported by CodeWalker"""
+    bl_idname = "sollumz.import_assets"
+    bl_label = "Import CodeWalker XML"
     bl_options = {"UNDO"}
 
     directory: bpy.props.StringProperty(subtype="FILE_PATH", options={"HIDDEN", "SKIP_SAVE"})
@@ -137,7 +137,7 @@ if bpy.app.version >= (4, 1, 0):
         # import .ytyps)
         bl_idname = "SOLLUMZ_FH_import"
         bl_label = "File handler for CodeWalker XML import"
-        bl_import_operator = SOLLUMZ_OT_import.bl_idname
+        bl_import_operator = SOLLUMZ_OT_import_assets.bl_idname
         # Supports handling multiple extensions, but doesn't support multi-dot extensions like .yft.xml. Should be fine
         # because the operator checks the extension, but it is a bit broad.
         bl_file_extensions = ".xml"
@@ -148,10 +148,10 @@ if bpy.app.version >= (4, 1, 0):
             return a is not None and (a.type == "VIEW_3D" or a.type == "OUTLINER")
 
 
-class SOLLUMZ_OT_export(bpy.types.Operator, TimedOperator):
-    """Exports codewalker xml files"""
-    bl_idname = "sollumz.export"
-    bl_label = "Export Codewalker XML"
+class SOLLUMZ_OT_export_assets(bpy.types.Operator, TimedOperator):
+    """Export CodeWalker XML files"""
+    bl_idname = "sollumz.export_assets"
+    bl_label = "Export CodeWalker XML"
 
     filter_glob: bpy.props.StringProperty(
         default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
@@ -418,13 +418,13 @@ class ClearTimeFlags(SOLLUMZ_OT_base):
 
 
 def sollumz_menu_func_import(self, context):
-    self.layout.operator(SOLLUMZ_OT_import.bl_idname,
-                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
+    self.layout.operator(SOLLUMZ_OT_import_assets.bl_idname,
+                         text=f"CodeWalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
 
 
 def sollumz_menu_func_export(self, context):
-    self.layout.operator(SOLLUMZ_OT_export.bl_idname,
-                         text=f"Codewalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
+    self.layout.operator(SOLLUMZ_OT_export_assets.bl_idname,
+                         text=f"CodeWalker XML({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})")
 
 
 class SOLLUMZ_OT_debug_hierarchy(bpy.types.Operator):
