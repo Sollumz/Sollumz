@@ -1,32 +1,27 @@
 ---
 name: Bug report
-about: Create a bug report
+about: Report an issue with the plugin
 title: ''
 labels: bug
 assignees: ''
 
 ---
 
-## Description
+**🔍 Issue Description:** *What is the issue?*
+ <!-- Enter the issue description here -->
+---
 
-< describe bug here >
+**🔄 Reproduction steps:** *How can someone replicate this issue?*
+ <!-- Enter steps to reproduce the issue here -->
+---
 
-## Preconditions
+**🎯 Expected Result:** *What is expected to happen?*
+ <!-- Enter expected result here -->
+---
 
-< optional block, can be deleted >
+**⚠️ Current Result:** *What currently happens when attempting this?*
+ <!-- Enter current result here -->
+---
 
-## Steps to reproduce
-
-< list of steps >
-
-## Actual result
-
-< what you get >
-
-## Expected result
-
-< what you waiting for >
-
-## Additional context
-
-< add any other context about the problem here >
+**💡 Additional Context:** *Is there any additional information needed to help resolve this?*
+ <!-- If applicable, enter any additional information that might be useful to anyone reading this issue -->
