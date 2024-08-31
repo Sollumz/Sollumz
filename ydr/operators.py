@@ -898,7 +898,7 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         row = layout.row()
         col = row.column()
 
-        col.template_list("SOLLUMZ_UL_SHADER_ORDER_LIST", "", shader_order, "items",
+        col.template_list("SOLLUMZ_UL_SHADER_ORDER_LIST", "", shader_order, "order_items",
                           shader_order, "active_index", maxrows=40)
 
         col = row.column()
