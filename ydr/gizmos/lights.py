@@ -32,18 +32,9 @@ class SOLLUMZ_OT_object_select(Operator):
         context.view_layer.objects.active = obj
         return {"FINISHED"}
 
-
-class GizmoWithObjectSelection:
-    """Mixin for Gizmos associated to an object, that when clicked on should select the object."""
-
-    object_name: bpy.props.StringProperty()
-
     def invoke(self, context, event):
-        bpy.ops.sollumz.object_select(True, object_name=self.object_name, extend=event.shift)
-        return {"FINISHED"}
-
-    def modal(self, context, event, tweak):
-        return {"PASS_THROUGH"}
+        self.extend = event.shift
+        return self.execute(context)
 
 
 @functools.cache
@@ -103,7 +94,7 @@ def get_capsule_cap_shape() -> object:
     return Gizmo.new_custom_shape("LINES", all_verts)
 
 
-class SOLLUMZ_GT_capsule(GizmoWithObjectSelection, Gizmo):
+class SOLLUMZ_GT_capsule(Gizmo):
     bl_idname = "SOLLUMZ_GT_capsule"
 
     length: bpy.props.FloatProperty(default=1.0)
@@ -222,7 +213,7 @@ def get_culling_plane_shader() -> tuple[gpu.types.GPUShader, gpu.types.GPUBatch]
     return shader, batch
 
 
-class SOLLUMZ_GT_culling_plane(GizmoWithObjectSelection, Gizmo):
+class SOLLUMZ_GT_culling_plane(Gizmo):
     bl_idname = "SOLLUMZ_GT_culling_plane"
 
     extend: bpy.props.BoolProperty(default=False)
@@ -318,14 +309,15 @@ class SOLLUMZ_GGT_lights(GizmoGroup):
                     self.capsule_gizmos.append(gz)
                     gz.alpha = 0.9
 
-                gz.object_name = light_obj.name
-                gz.use_event_handle_all = True
+                gz.use_event_handle_all = False
                 gz.matrix_basis = light_obj.matrix_world.normalized()
                 gz.length = length
                 gz.radius = radius
                 gz.color = gz_color
                 gz.color_highlight = gz_color
                 gz.alpha_highlight = gz.alpha
+                op = gz.target_set_operator(SOLLUMZ_OT_object_select.bl_idname)
+                op.object_name = light_obj.name
 
                 capsule_gz_idx += 1
 
@@ -348,12 +340,14 @@ class SOLLUMZ_GGT_lights(GizmoGroup):
                 plane_mat = Matrix.Translation(light_mat.translation) @ plane_rot_mat @ plane_offset_mat
 
                 gz.object_name = light_obj.name
-                gz.use_event_handle_all = True
+                gz.use_event_handle_all = False
                 gz.matrix_basis = plane_mat
                 gz.extend = light_active and light_selected
                 gz.color = gz_color
                 gz.color_highlight = gz_color
                 gz.alpha_highlight = gz.alpha
+                op = gz.target_set_operator(SOLLUMZ_OT_object_select.bl_idname)
+                op.object_name = light_obj.name
 
                 culling_plane_gz_idx += 1
 
