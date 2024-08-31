@@ -339,7 +339,6 @@ class SOLLUMZ_GGT_lights(GizmoGroup):
                 plane_offset_mat = Matrix.Translation((0.0, 0.0, -light.light_properties.culling_plane_offset))
                 plane_mat = Matrix.Translation(light_mat.translation) @ plane_rot_mat @ plane_offset_mat
 
-                gz.object_name = light_obj.name
                 gz.use_event_handle_all = False
                 gz.matrix_basis = plane_mat
                 gz.extend = light_active and light_selected
