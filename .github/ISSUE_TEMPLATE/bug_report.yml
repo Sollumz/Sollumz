@@ -1,0 +1,35 @@
+name: Bug report
+description: Report an issue with the plugin
+labels: 'bug'
+body:
+- type: input
+  attributes:
+    label: 🔍 Issue Description
+    description: What is this feature? What will it improve?
+    placeholder: Enter the issue description here
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 🔄 Reproduction steps
+    description: How can someone replicate this issue?
+    placeholder: Enter steps to reproduce the issue here
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 🎯 Expected Result
+    description: What is expected to happen?
+    placeholder: Enter expected result here
+- type: textarea
+  attributes:
+    label: ⚠️ Current Result
+    description: What currently happens when attempting this?
+    placeholder: Enter current result here
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 💡 Additional Context
+    description: Is there any additional information needed to help resolve this?
+    placeholder: If applicable, enter any additional information that might be useful to anyone reading this issue
