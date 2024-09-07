@@ -1,0 +1,21 @@
+name: Feature Request
+description: Suggest a new feature for the project
+labels: feature request
+body:
+- type: textarea
+  attributes:
+    label: 📝 Feature Description
+    description: How can someone replicate this issue?
+    placeholder: Enter your feature description here
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 💡 Implementation Details
+    description: How will this feature work/function?
+    placeholder: Enter the implementation details here
+- type: textarea
+  attributes:
+    label: 📎 Attachments
+    description: If applicable, please include examples, screenshots, or images
+    placeholder: Attach your files or enter your notes here
