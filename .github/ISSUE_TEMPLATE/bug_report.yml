@@ -2,7 +2,7 @@ name: Bug report
 description: Report an issue with the plugin
 labels: 'bug'
 body:
-- type: input
+- type: textarea
   attributes:
     label: 🔍 Issue Description
     description: What is this feature? What will it improve?
