@@ -1,12 +1,26 @@
-name: Bug report
+name: Bug Report
 description: Report an issue with the plugin
-labels: 'bug'
+labels: bug
 body:
 - type: textarea
   attributes:
     label: 🔍 Issue Description
-    description: What is this feature? What will it improve?
+    description: What is the issue?
     placeholder: Enter the issue description here
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: 🛠️ Sollumz Version(s)
+    description: On which Sollumz version(s) this issue occured? You can find the Sollumz version under 'Preferences > Add-ons'.
+    placeholder: 2.4.2, latest commit
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: 🖥️ Blender Version(s)
+    description: On which the Blender version(s) this issue occured?
+    placeholder: 4.2
   validations:
     required: true
 - type: textarea
@@ -30,6 +44,6 @@ body:
     required: true
 - type: textarea
   attributes:
-    label: 💡 Additional Context
-    description: Is there any additional information needed to help resolve this?
-    placeholder: If applicable, enter any additional information that might be useful to anyone reading this issue
+    label: 📎 Attachments
+    description: Attach screenshots, .blend or .xml files that would help us reproduce this issue.
+    placeholder: Attach your files here
