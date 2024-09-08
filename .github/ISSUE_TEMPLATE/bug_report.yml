@@ -20,7 +20,7 @@ body:
   attributes:
     label: 🖥️ Blender Version(s)
     description: On which the Blender version(s) this issue occured?
-    placeholder: 4.2
+    placeholder: 4.1, 4.2+
   validations:
     required: true
 - type: textarea
