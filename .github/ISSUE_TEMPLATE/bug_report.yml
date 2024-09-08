@@ -1,0 +1,49 @@
+name: Bug Report
+description: Report an issue with the plugin
+labels: bug
+body:
+- type: textarea
+  attributes:
+    label: 🔍 Issue Description
+    description: What is the issue?
+    placeholder: Enter the issue description here
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: 🛠️ Sollumz Version(s)
+    description: On which Sollumz version(s) this issue occured? You can find the Sollumz version under 'Preferences > Add-ons'.
+    placeholder: 2.4.2, latest commit
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: 🖥️ Blender Version(s)
+    description: On which the Blender version(s) this issue occured?
+    placeholder: 4.1, 4.2+
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 🔄 Reproduction steps
+    description: How can someone replicate this issue?
+    placeholder: Enter steps to reproduce the issue here
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 🎯 Expected Result
+    description: What is expected to happen?
+    placeholder: Enter expected result here
+- type: textarea
+  attributes:
+    label: ⚠️ Current Result
+    description: What currently happens when attempting this?
+    placeholder: Enter current result here
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: 📎 Attachments
+    description: Attach screenshots, .blend or .xml files that would help us reproduce this issue.
+    placeholder: Attach your files here
