@@ -787,22 +787,22 @@ def create_water_nodes(b: ShaderBuilder):
     bsdf = b.bsdf
     output = b.material_output
 
-    bsdf.inputs[0].default_value = (0.316, 0.686, 0.801, 1.0) # Base Color
-    bsdf.inputs[2].default_value = 0.0                        # Roughness
-    bsdf.inputs[3].default_value = 1.444                      # IOR
-    bsdf.inputs[4].default_value = 0.750                      # Alpha
-    bsdf.inputs[17].default_value = 0.750                     # Transmission
+    bsdf.inputs["Base Color"].default_value = (0.316, 0.686, 0.801, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.0
+    bsdf.inputs["IOR"].default_value = 1.444
+    bsdf.inputs["Alpha"].default_value = 0.750
+    bsdf.inputs["Transmission Weight"].default_value = 0.750
 
-    nm = node_tree.nodes.new("ShaderNodeNormalMap")           # Create Normal Map
-    nm.inputs[0].default_value = 0.5                          # Strength
-    noise = node_tree.nodes.new("ShaderNodeTexNoise")         # Create Noise Texture
-    noise.inputs[2].default_value = 55.0                      # Scale
-    noise.inputs[3].default_value = 2.0                       # Detail
-    noise.inputs[4].default_value = 2.0                       # Roughness
+    nm = node_tree.nodes.new("ShaderNodeNormalMap")
+    nm.inputs["Strength"].default_value = 0.5
+    noise = node_tree.nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 8.0
+    noise.inputs["Detail"].default_value = 2.0
+    noise.inputs["Roughness"].default_value = 2.0
 
-    links.new(noise.outputs[1], nm.inputs[1])                 # Link Noise to Normal Map
-    links.new(nm.outputs[0], bsdf.inputs[5])                  # Link Normal Map to BSDF
-    links.new(bsdf.outputs[0], output.inputs[0])              # Link BSDF to Material Output
+    links.new(noise.outputs["Color"], nm.inputs["Color"])
+    links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
+    links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
 
 
 def create_basic_shader_nodes(b: ShaderBuilder):
