@@ -1,6 +1,6 @@
 import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base, set_object_collection
-from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group, get_cargen_mesh
+from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group, get_cargen_mesh, generate_ymap_extents
 from ..sollumz_properties import SollumType
 
 
@@ -206,3 +206,12 @@ class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
         context.view_layer.objects.active = cargen_obj
 
         return True
+
+class SOLLUMZ_OT_generate_ymap_extents(bpy.types.Operator):
+    bl_idname = "sollumz.generate_ymap_extents"
+    bl_label = "Generate Ymap Extents"
+    bl_description = "Generate the YMAP's streaming and entity extents (using YMAP and YTYP entities data)"
+
+    def execute(self, context):
+        generate_ymap_extents(selected_ymap=context.active_object)
+        return {"FINISHED"}

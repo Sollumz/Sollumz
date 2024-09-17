@@ -44,6 +44,16 @@ def draw_ymap_properties(self, context):
         row.prop(obj.ymap_properties.content_flags_toggle,
                  "has_grass", toggle=1)
 
+        layout.label(text="Extents")
+        layout.prop(obj.ymap_properties, "entities_extents_min")
+        layout.prop(obj.ymap_properties, "entities_extents_max")
+        layout.prop(obj.ymap_properties, "streaming_extents_min")
+        layout.prop(obj.ymap_properties, "streaming_extents_max")
+
+        layout.separator()
+        layout.operator("sollumz.generate_ymap_extents", icon="FILE_REFRESH")
+
+
 
 def draw_ymap_model_occluder_properties(self, context):
     obj = context.active_object

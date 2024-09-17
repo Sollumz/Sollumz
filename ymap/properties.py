@@ -102,10 +102,10 @@ class YmapProperties(bpy.types.PropertyGroup):
     content_flags: IntProperty(name="Content Flags", default=0, min=0, max=(
         2**11)-1, update=ContentFlagPropertyGroup.update_flags_total)
 
-    streaming_extents_min: FloatVectorProperty()
-    streaming_extents_max: FloatVectorProperty()
-    entities_extents_min: FloatVectorProperty()
-    entities_extents_max: FloatVectorProperty()
+    streaming_extents_min: FloatVectorProperty(name="Streaming Extents Min", default=(0, 0, 0), size=3, subtype='XYZ')
+    streaming_extents_max: FloatVectorProperty(name="Streaming Extents Max", default=(0, 0, 0), size=3, subtype='XYZ')
+    entities_extents_min: FloatVectorProperty(name="Entities Extents Min", default=(0, 0, 0), size=3, subtype='XYZ')
+    entities_extents_max: FloatVectorProperty(name="Entities Extents Max", default=(0, 0, 0), size=3, subtype='XYZ')
 
     flags_toggle: PointerProperty(type=MapFlags)
     content_flags_toggle: PointerProperty(type=ContentFlags)
