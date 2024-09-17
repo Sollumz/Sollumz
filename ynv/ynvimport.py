@@ -52,7 +52,14 @@ def portals_to_obj(portals):
     return pobj
 
 
+material_cache = {}
+
 def get_material(flags):
+    # Check if a material with the same flags already exists
+    if flags in material_cache:
+        return material_cache[flags]
+
+    # Create a new material if it doesn't exist in the cache
     mat = bpy.data.materials.new(flags)
     mat.use_nodes = True
     r = 0
@@ -60,11 +67,11 @@ def get_material(flags):
     b = 0
 
     sp = flags.split(" ")
-    flags = []
+    flags_list = []
     for part in sp:
-        flags.append(int(part))
+        flags_list.append(int(part))
 
-    flags0 = flags[0]
+    flags0 = flags_list[0]
     if flags0 & 1 > 0:
         r += 0.01  # avoid? loiter?
     if flags0 & 2 > 0:
@@ -78,7 +85,7 @@ def get_material(flags):
     if flags0 & 128 > 0:
         b += 0.25
 
-    flags1 = flags[1]
+    flags1 = flags_list[1]
     if flags1 & 64 > 0:
         b += 0.1
     if flags1 & 512 > 0:
@@ -97,8 +104,10 @@ def get_material(flags):
         g = 0.2
 
     bsdf, _ = find_bsdf_and_material_output(mat)
-    bsdf.inputs[0].default_value = (
-        r, g, b, 0.75)
+    bsdf.inputs[0].default_value = (r, g, b, 0.75)
+
+    # Cache the material before returning it
+    material_cache[flags] = mat
     return mat
 
 
@@ -131,11 +140,15 @@ def polygons_to_obj(polygons):
         SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POLY_MESH], mesh)
     obj.sollum_type = SollumType.NAVMESH_POLY_MESH
 
+    # Ensure materials are unique in the mesh
+    used_materials = []
     for mat in mats:
-        mesh.materials.append(mat)
+        if mat not in used_materials:
+            mesh.materials.append(mat)
+            used_materials.append(mat)
 
     for idx, poly in enumerate(mesh.polygons):
-        poly.material_index = idx
+        poly.material_index = used_materials.index(mats[idx])
 
     return obj
 
