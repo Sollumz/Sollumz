@@ -1,13 +1,15 @@
 import bpy
 from bpy.types import (
-    Object
+    Object,
+    Mesh
 )
 import os
 import math
+import numpy as np
 from ..tools.meshhelper import create_box
-from ..cwxml.navmesh import YNV, NavCoverPoint
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-from ..tools.blenderhelper import find_bsdf_and_material_output
+from ..cwxml.navmesh import YNV, NavCoverPoint, NavPolygon
+from ..sollumz_properties import SollumType
+from .navmesh_attributes import NavMeshAttr, mesh_add_navmesh_attribute
 from typing import Sequence
 
 
@@ -16,7 +18,7 @@ def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
     pobj.empty_display_size = 0
 
     for idx, point in enumerate(points):
-        obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_COVER_POINT] + " " + str(idx), None)
+        obj = bpy.data.objects.new(f"Cover Point {idx}", None)
         obj.sollum_type = SollumType.NAVMESH_COVER_POINT
         obj.parent = pobj
         obj.empty_display_size = 0.5
@@ -43,8 +45,7 @@ def portals_to_obj(portals):
         create_box(tomesh, 0.5)
         toobj = bpy.data.objects.new("to", tomesh)
         toobj.location = portal.position_to
-        obj = bpy.data.objects.new(
-            SOLLUMZ_UI_NAMES[SollumType.NAVMESH_PORTAL] + " " + str(idx), tomesh)
+        obj = bpy.data.objects.new(f"Portal {idx}", tomesh)
         obj.sollum_type = SollumType.NAVMESH_PORTAL
         fromobj.parent = obj
         toobj.parent = obj
@@ -56,119 +57,53 @@ def portals_to_obj(portals):
     return pobj
 
 
-def get_material(flags, material_cache):
-    if flags in material_cache:
-        return material_cache[flags]
-
-    mat = bpy.data.materials.new(flags)
-    mat.use_nodes = True
-    r, g, b = 0.0, 0.0, 0.0
-
-    sp = flags.split(" ")
-    flags_list = []
-    for part in sp:
-        flags_list.append(int(part))
-
-    flags0 = flags_list[0]
-    if flags0 & 1 > 0:
-        r += 0.01             # SmallPoly
-    if flags0 & 2 > 0:
-        r += 0.01             # LargePoly
-    if flags0 & 4 > 0:
-        g += 0.25             # IsPavement
-    if flags0 & 8 > 0:
-        g += 0.02             # IsUnderground
-    if flags0 & 64 > 0:
-        r += 0.25             # Unused1
-    if flags0 & 128 > 0:
-        b += 0.25             # Unused2
-
-    flags1 = flags_list[1]
-    if flags1 & 64 > 0:
-        b += 0.1              # AudioProperties1
-    if flags1 & 512 > 0:
-        g += 0.1              # AudioProperties2
-    if flags1 & 1024 > 0:
-        b += 0.03             # AudioProperties3
-    if flags1 & 4096 > 0:
-        g += 0.75             # AudioProperties4
-    if flags1 & 8192 > 0:
-        b += 0.75             # Unused3
-    if flags1 & 16384 > 0:
-        r += 0.2              # NearCarNode
-    if flags1 & 32768 > 0:
-        b += 0.2              # IsInterior
-    if flags1 & 65536 > 0:
-        g = 0.2               # IsIsolated
-
-    bsdf, _ = find_bsdf_and_material_output(mat)
-    bsdf.inputs[0].default_value = (r, g, b, 0.75)
-
-    # Cache the material before returning it
-    material_cache[flags] = mat
-    return mat
-
-
-def polygons_to_obj(polygons):
-    material_cache = {}
-    mats = []
+def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
     vertices = {}
     verts = []
     indices = []
-    face = []
-    for poly in polygons:
-        mats.append(get_material(poly.flags, material_cache))
-        maxtcount = len(poly.vertices)
+    flag_values = np.empty((len(polygons), len(NavMeshAttr)), dtype=np.int32)
+    for poly_index, poly in enumerate(polygons):
+        face_indices = []
         for vert in poly.vertices:
-            vertex = id(vert)
-            if vertex in vertices:
-                idx = vertices[vertex]
+            vertex_id = id(vert)
+            if vertex_id in vertices:
+                idx = vertices[vertex_id]
             else:
                 idx = len(vertices)
-                vertices[vertex] = idx
+                vertices[vertex_id] = idx
                 verts.append(vert)
-            face.append(idx)
-            if len(face) == maxtcount:
-                indices.append(face)
-                face = []
+            face_indices.append(idx)
 
-    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POLY_MESH])
+        indices.append(face_indices)
+
+        flags = tuple(map(int, poly.flags.split(" ")))
+        flag_values[poly_index, :] = flags
+
+    mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(verts, [], indices)
-    obj = bpy.data.objects.new(
-        SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POLY_MESH], mesh)
-    obj.sollum_type = SollumType.NAVMESH_POLY_MESH
 
-    # Ensure materials are unique in the mesh
-    used_materials = []
-    for mat in mats:
-        if mat not in used_materials:
-            mesh.materials.append(mat)
-            used_materials.append(mat)
+    for i, attr in enumerate(NavMeshAttr):
+        mesh_add_navmesh_attribute(mesh, attr)
+        mesh.attributes[attr].data.foreach_set("value", flag_values[:, i].ravel())
 
-    for idx, poly in enumerate(mesh.polygons):
-        poly.material_index = used_materials.index(mats[idx])
-
-    return obj
+    return mesh
 
 
 def navmesh_to_obj(navmesh, filepath):
     name = os.path.basename(filepath.replace(YNV.file_extension, ""))
-    nobj = bpy.data.objects.new(name, None)
-    nobj.sollum_type = SollumType.NAVMESH
-    nobj.empty_display_size = 0
-    bpy.context.collection.objects.link(nobj)
+    mesh = polygons_to_mesh(name, navmesh.polygons)
+    mesh_obj = bpy.data.objects.new(name, mesh)
+    mesh_obj.sollum_type = SollumType.NAVMESH
+    mesh_obj.empty_display_size = 0
+    bpy.context.collection.objects.link(mesh_obj)
 
-    nmobj = polygons_to_obj(navmesh.polygons)
-    nmobj.parent = nobj
-    bpy.context.collection.objects.link(nmobj)
+    portals_obj = portals_to_obj(navmesh.portals)
+    portals_obj.parent = mesh_obj
+    bpy.context.collection.objects.link(portals_obj)
 
-    npobj = portals_to_obj(navmesh.portals)
-    npobj.parent = nobj
-    bpy.context.collection.objects.link(npobj)
-
-    npobj = cover_points_to_obj(navmesh.cover_points)
-    npobj.parent = nobj
-    bpy.context.collection.objects.link(npobj)
+    cover_points_obj = cover_points_to_obj(navmesh.cover_points)
+    cover_points_obj.parent = mesh_obj
+    bpy.context.collection.objects.link(cover_points_obj)
 
 
 def import_ynv(filepath):

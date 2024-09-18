@@ -37,7 +37,6 @@ class SollumType(str, Enum):
     BOUND_POLY_TRIANGLE = "sollumz_bound_poly_triangle"
 
     NAVMESH = "sollumz_navmesh"
-    NAVMESH_POLY_MESH = "sollumz_navmesh_mesh"
     NAVMESH_PORTAL = "sollumz_navmesh_portal"
     NAVMESH_COVER_POINT = "sollumz_navmesh_point"
 
@@ -236,9 +235,8 @@ SOLLUMZ_UI_NAMES = {
     SollumType.LIGHT: "Light",
 
     SollumType.NAVMESH: "NavMesh",
-    SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
     SollumType.NAVMESH_PORTAL: "NavMesh Portal",
-    SollumType.NAVMESH_COVER_POINT: "Cover Point",
+    SollumType.NAVMESH_COVER_POINT: "NavMesh Cover Point",
 
     SollumType.CLIP_DICTIONARY: "Clip Dictionary",
     SollumType.CLIPS: "Clips",
