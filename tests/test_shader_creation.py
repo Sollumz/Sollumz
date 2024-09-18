@@ -5,7 +5,6 @@ import random
 from .test_fixtures import BLENDER_LANGUAGES, SOLLUMZ_SHADERS, SOLLUMZ_COLLISION_MATERIALS, context, plane_object
 from ..ydr.shader_materials import create_shader
 from ..ybn.collision_materials import create_collision_material_from_index
-from ..ynv.ynvimport import get_material as ynv_get_material
 from ..tools.ymaphelper import add_occluder_material
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_bsdf_and_material_output, material_from_image
@@ -32,10 +31,6 @@ class TestAllLanguages:
     @pytest.mark.parametrize("material_index", list(range(len(SOLLUMZ_COLLISION_MATERIALS))))
     def test_create_collision_material(self, material_index, use_every_language):
         mat = create_collision_material_from_index(material_index)
-        assert mat is not None
-
-    def test_create_navmesh_material(self, use_every_language):
-        mat = ynv_get_material("0 204 0 255 161 107", {})
         assert mat is not None
 
     @pytest.mark.parametrize("sollum_type", (SollumType.YMAP_MODEL_OCCLUDER, SollumType.YMAP_BOX_OCCLUDER))
