@@ -1,26 +1,30 @@
-from ..tools.meshhelper import create_box
-from ..cwxml.navmesh import YNV
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
-import os
 import bpy
+from bpy.types import (
+    Object
+)
+import os
+import math
+from ..tools.meshhelper import create_box
+from ..cwxml.navmesh import YNV, NavCoverPoint
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import find_bsdf_and_material_output
+from typing import Sequence
 
 
-def points_to_obj(points):
-    pobj = bpy.data.objects.new("Points", None)
+def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
+    pobj = bpy.data.objects.new("Cover Points", None)
     pobj.empty_display_size = 0
 
     for idx, point in enumerate(points):
-        mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POINT])
-        obj = bpy.data.objects.new(
-            SOLLUMZ_UI_NAMES[SollumType.NAVMESH_POINT] + " " + str(idx), mesh)
-        obj.sollum_type = SollumType.NAVMESH_POINT
+        obj = bpy.data.objects.new(SOLLUMZ_UI_NAMES[SollumType.NAVMESH_COVER_POINT] + " " + str(idx), None)
+        obj.sollum_type = SollumType.NAVMESH_COVER_POINT
         obj.parent = pobj
-
-        # properties
-        create_box(mesh, 0.5)
+        obj.empty_display_size = 0.5
+        obj.empty_display_type = "CONE"
         obj.location = point.position
-        obj.rotation_euler = (0, 0, point.angle)
+        obj.rotation_euler = (0, 0, math.pi + point.angle)  # flip rotation so the cone display is more intuitive
+        obj.lock_rotation = (True, True, False)
+        # TODO: point.type
         bpy.context.collection.objects.link(obj)
 
     return pobj
@@ -162,7 +166,7 @@ def navmesh_to_obj(navmesh, filepath):
     npobj.parent = nobj
     bpy.context.collection.objects.link(npobj)
 
-    npobj = points_to_obj(navmesh.points)
+    npobj = cover_points_to_obj(navmesh.cover_points)
     npobj.parent = nobj
     bpy.context.collection.objects.link(npobj)
 
