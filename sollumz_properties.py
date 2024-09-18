@@ -41,7 +41,7 @@ class SollumType(str, Enum):
     NAVMESH = "sollumz_navmesh"
     NAVMESH_POLY_MESH = "sollumz_navmesh_mesh"
     NAVMESH_PORTAL = "sollumz_navmesh_portal"
-    NAVMESH_POINT = "sollumz_navmesh_point"
+    NAVMESH_COVER_POINT = "sollumz_navmesh_point"
 
     CLIP_DICTIONARY = "sollumz_clip_dictionary"
     CLIPS = "sollumz_clips"
@@ -247,7 +247,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.NAVMESH: "NavMesh",
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",
     SollumType.NAVMESH_PORTAL: "NavMesh Portal",
-    SollumType.NAVMESH_POINT: "NavMesh Point",
+    SollumType.NAVMESH_COVER_POINT: "Cover Point",
 
     SollumType.CLIP_DICTIONARY: "Clip Dictionary",
     SollumType.CLIPS: "Clips",

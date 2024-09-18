@@ -22,7 +22,7 @@ class YNV:
         return nav.write_xml(filepath)
 
 
-class NavPoint(ElementTree):
+class NavCoverPoint(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -32,8 +32,8 @@ class NavPoint(ElementTree):
         self.position = VectorProperty("Position")
 
 
-class NavPointList(ListProperty):
-    list_type = NavPoint
+class NavCoverPointList(ListProperty):
+    list_type = NavCoverPoint
     tag_name = "Points"
 
 
@@ -107,4 +107,4 @@ class Navmesh(ElementTree):
         self.bb_size = VectorProperty("BBSize")
         self.polygons = NavPolygonList()
         self.portals = NavPortalList()
-        self.points = NavPointList()
+        self.cover_points = NavCoverPointList()
