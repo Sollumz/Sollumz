@@ -52,19 +52,13 @@ def portals_to_obj(portals):
     return pobj
 
 
-material_cache = {}
-
-def get_material(flags):
-    # Check if a material with the same flags already exists
+def get_material(flags, material_cache):
     if flags in material_cache:
         return material_cache[flags]
 
-    # Create a new material if it doesn't exist in the cache
     mat = bpy.data.materials.new(flags)
     mat.use_nodes = True
-    r = 0
-    g = 0
-    b = 0
+    r, g, b = 0.0
 
     sp = flags.split(" ")
     flags_list = []
@@ -73,35 +67,35 @@ def get_material(flags):
 
     flags0 = flags_list[0]
     if flags0 & 1 > 0:
-        r += 0.01  # avoid? loiter?
+        r += 0.01             # SmallPoly
     if flags0 & 2 > 0:
-        r += 0.01  # avoid?
+        r += 0.01             # LargePoly
     if flags0 & 4 > 0:
-        g += 0.25  # ped/footpath
+        g += 0.25             # IsPavement
     if flags0 & 8 > 0:
-        g += 0.02  # underground?
+        g += 0.02             # IsUnderground
     if flags0 & 64 > 0:
-        r += 0.25
+        r += 0.25             # Unused1
     if flags0 & 128 > 0:
-        b += 0.25
+        b += 0.25             # Unused2
 
     flags1 = flags_list[1]
     if flags1 & 64 > 0:
-        b += 0.1
+        b += 0.1              # AudioProperties1
     if flags1 & 512 > 0:
-        g += 0.1
+        g += 0.1              # AudioProperties2
     if flags1 & 1024 > 0:
-        b += 0.03
+        b += 0.03             # AudioProperties3
     if flags1 & 4096 > 0:
-        g += 0.75
+        g += 0.75             # AudioProperties4
     if flags1 & 8192 > 0:
-        b += 0.75
+        b += 0.75             # Unused3
     if flags1 & 16384 > 0:
-        r += 0.2
+        r += 0.2              # NearCarNode
     if flags1 & 32768 > 0:
-        b += 0.2
+        b += 0.2              # IsInterior
     if flags1 & 65536 > 0:
-        g = 0.2
+        g = 0.2               # IsIsolated
 
     bsdf, _ = find_bsdf_and_material_output(mat)
     bsdf.inputs[0].default_value = (r, g, b, 0.75)
@@ -112,14 +106,14 @@ def get_material(flags):
 
 
 def polygons_to_obj(polygons):
-    # build mesh
+    material_cache = {}
     mats = []
     vertices = {}
     verts = []
     indices = []
     face = []
     for poly in polygons:
-        mats.append(get_material(poly.flags))
+        mats.append(get_material(poly.flags, material_cache))
         maxtcount = len(poly.vertices)
         for vert in poly.vertices:
             vertex = id(vert)
