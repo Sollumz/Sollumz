@@ -786,34 +786,23 @@ def create_water_nodes(b: ShaderBuilder):
     links = node_tree.links
     bsdf = b.bsdf
     output = b.material_output
-    mix_shader = node_tree.nodes.new("ShaderNodeMixShader")
-    add_shader = node_tree.nodes.new("ShaderNodeAddShader")
-    vol_absorb = node_tree.nodes.new("ShaderNodeVolumeAbsorption")
-    vol_absorb.inputs["Color"].default_value = (0.772, 0.91, 0.882, 1.0)
-    vol_absorb.inputs["Density"].default_value = 0.25
-    bsdf.inputs["Base Color"].default_value = (0.588, 0.91, 0.851, 1.0)
-    bsdf.inputs["Emission Color"].default_value = (0.49102, 0.938685, 1.0, 1.0)
-    bsdf.inputs["Emission Strength"].default_value = 0.1
-    glass_shader = node_tree.nodes.new("ShaderNodeBsdfGlass")
-    glass_shader.inputs["IOR"].default_value = 1.333
-    trans_shader = node_tree.nodes.new("ShaderNodeBsdfTransparent")
-    light_path = node_tree.nodes.new("ShaderNodeLightPath")
-    bump = node_tree.nodes.new("ShaderNodeBump")
-    bump.inputs["Strength"].default_value = 0.05
-    noise_tex = node_tree.nodes.new("ShaderNodeTexNoise")
-    noise_tex.inputs["Scale"].default_value = 12.0
-    noise_tex.inputs["Detail"].default_value = 3.0
-    noise_tex.inputs["Roughness"].default_value = 0.85
 
-    links.new(glass_shader.outputs[0], mix_shader.inputs[1])
-    links.new(trans_shader.outputs[0], mix_shader.inputs[2])
-    links.new(bsdf.outputs[0], add_shader.inputs[0])
-    links.new(vol_absorb.outputs[0], add_shader.inputs[1])
-    links.new(add_shader.outputs[0], output.inputs["Volume"])
-    links.new(mix_shader.outputs[0], output.inputs["Surface"])
-    links.new(light_path.outputs["Is Shadow Ray"], mix_shader.inputs["Fac"])
-    links.new(noise_tex.outputs["Fac"], bump.inputs["Height"])
-    links.new(bump.outputs["Normal"], glass_shader.inputs["Normal"])
+    bsdf.inputs["Base Color"].default_value = (0.316, 0.686, 0.801, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.0
+    bsdf.inputs["IOR"].default_value = 1.444
+    bsdf.inputs["Alpha"].default_value = 0.750
+    bsdf.inputs["Transmission Weight"].default_value = 0.750
+
+    nm = node_tree.nodes.new("ShaderNodeNormalMap")
+    nm.inputs["Strength"].default_value = 0.5
+    noise = node_tree.nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 8.0
+    noise.inputs["Detail"].default_value = 2.0
+    noise.inputs["Roughness"].default_value = 2.0
+
+    links.new(noise.outputs["Color"], nm.inputs["Color"])
+    links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
+    links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
 
 
 def create_basic_shader_nodes(b: ShaderBuilder):
