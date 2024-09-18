@@ -58,7 +58,7 @@ def get_material(flags, material_cache):
 
     mat = bpy.data.materials.new(flags)
     mat.use_nodes = True
-    r, g, b = 0.0
+    r, g, b = 0.0, 0.0, 0.0
 
     sp = flags.split(" ")
     flags_list = []

@@ -35,7 +35,7 @@ class TestAllLanguages:
         assert mat is not None
 
     def test_create_navmesh_material(self, use_every_language):
-        mat = ynv_get_material("0 204 0 255 161 107")
+        mat = ynv_get_material("0 204 0 255 161 107", {})
         assert mat is not None
 
     @pytest.mark.parametrize("sollum_type", (SollumType.YMAP_MODEL_OCCLUDER, SollumType.YMAP_BOX_OCCLUDER))
