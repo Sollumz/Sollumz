@@ -144,11 +144,7 @@ def ymap_from_object(obj):
         # Entities
         if export_settings.ymap_exclude_entities == False and child.sollum_type == SollumType.YMAP_ENTITY_GROUP:
             for entity_obj in child.children:
-                if entity_obj.sollum_type == SollumType.DRAWABLE:
-                    ymap.entities.append(entity_from_obj(entity_obj))
-                else:
-                    logger.warning(
-                        f"Object {entity_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]} type.")
+                ymap.entities.append(entity_from_obj(entity_obj))
 
         # Box occluders
         if export_settings.ymap_box_occluders == False and child.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
