@@ -15,7 +15,7 @@ class YNV:
 
     @staticmethod
     def from_xml_file(filepath):
-        return Navmesh.from_xml_file(filepath)
+        return NavMesh.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(nav, filepath):
@@ -37,7 +37,7 @@ class NavCoverPointList(ListProperty):
     tag_name = "Points"
 
 
-class NavPortal(ElementTree):
+class NavLink(ElementTree):
     tag_name = "Item"
 
     def __init__(self):
@@ -50,8 +50,8 @@ class NavPortal(ElementTree):
         self.position_to = VectorProperty("PositionTo")
 
 
-class NavPortalList(ListProperty):
-    list_type = NavPortal
+class NavLinkList(ListProperty):
+    list_type = NavLink
     tag_name = "Portals"
 
 
@@ -62,22 +62,41 @@ class NavPolygonVertices(ListProperty):
     def __init__(self, tag_name=None, value=None):
         super().__init__(tag_name=tag_name, value=value)
 
-    @classmethod
-    def from_xml(cls, element: ET.Element):
-        new = cls()
-        verts = []
-        if element.text:
-            txts = element.text.strip().split("\n")
-            for txt in txts:
-                txt = txt.strip()
-            for txt in txts:
-                nums = txt.split(", ")
-                v0 = float(nums[0])
-                v1 = float(nums[1])
-                v2 = float(nums[2])
-                verts.append(Vector((v0, v1, v2)))
-        new.value = verts
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = NavPolygonVertices(element.tag, [])
+        text = element.text.strip().split("\n")
+        if len(text) > 0:
+            for line in text:
+                coords = line.strip().split(",")
+                if not len(coords) == 3:
+                    return NavPolygonVertices.read_value_error(element)
+
+                new.value.append(
+                    Vector((float(coords[0]), float(coords[1]), float(coords[2]))))
+
         return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        text = ["\n"]
+
+        if not self.value:
+            return
+
+        for vertex in self.value:
+            if not isinstance(vertex, Vector):
+                raise TypeError(
+                    f"NavPolygonVertices can only contain Vector objects, not '{type(self.value)}'!")
+            for index, component in enumerate(vertex):
+                text.append(str(component))
+                if index < len(vertex) - 1:
+                    text.append(", ")
+            text.append("\n")
+
+        element.text = "".join(text)
+
+        return element
 
 
 class NavPolygon(ElementTree):
@@ -95,7 +114,7 @@ class NavPolygonList(ListProperty):
     tag_name = "Polygons"
 
 
-class Navmesh(ElementTree):
+class NavMesh(ElementTree):
     tag_name = "NavMesh"
 
     def __init__(self):
@@ -106,5 +125,5 @@ class Navmesh(ElementTree):
         self.bb_max = VectorProperty("BBMax")
         self.bb_size = VectorProperty("BBSize")
         self.polygons = NavPolygonList()
-        self.portals = NavPortalList()
+        self.links = NavLinkList()
         self.cover_points = NavCoverPointList()

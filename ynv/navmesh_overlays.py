@@ -1,14 +1,11 @@
 import bpy
 from bpy.types import (
     SpaceView3D,
-    Object,
 )
 import gpu
 import gpu_extras
 import gpu_extras.batch
 from mathutils import Vector
-from typing import NamedTuple
-import bmesh
 from .navmesh import (
     navmesh_is_valid,
     navmesh_get_grid_cell,
@@ -61,7 +58,6 @@ class NavMeshOverlaysDrawHandler:
         for navmesh_obj in context.scene.objects:
             if not navmesh_is_valid(navmesh_obj):
                 continue
-            print(navmesh_obj)
 
             if not navmesh_obj.visible_get():
                 continue

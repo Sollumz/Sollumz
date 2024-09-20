@@ -1,4 +1,7 @@
 import bpy
+from bpy.types import (
+    Panel
+)
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from ..sollumz_properties import SollumType
 from .navmesh import (
@@ -6,7 +9,7 @@ from .navmesh import (
 )
 
 
-class SOLLUMZ_PT_NAVMESH_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_NAVMESH_PANEL(Panel):
     bl_label = "Navigation Mesh Properties"
     bl_idname = "SOLLUMZ_PT_NAVMESH_PANEL"
     bl_space_type = "PROPERTIES"
@@ -22,7 +25,7 @@ class SOLLUMZ_PT_NAVMESH_PANEL(bpy.types.Panel):
         pass
 
 
-class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):
     bl_label = "Cover Point Properties"
     bl_idname = "SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL"
     bl_space_type = "PROPERTIES"
@@ -43,7 +46,7 @@ class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(bpy.types.Panel):
         layout.prop(cover_point_props, "point_type")
 
 
-class SOLLUMZ_PT_NAVMESH_TOOL_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_NAVMESH_TOOL_PANEL(Panel):
     bl_label = "Navigation Mesh"
     bl_idname = "SOLLUMZ_PT_NAVMESH_TOOL_PANEL"
     bl_category = "Sollumz Tools"
