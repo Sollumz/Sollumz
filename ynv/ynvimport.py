@@ -26,7 +26,7 @@ def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
         obj.location = point.position
         obj.rotation_euler = (0, 0, math.pi + point.angle)  # flip rotation so the cone display is more intuitive
         obj.lock_rotation = (True, True, False)
-        # TODO: point.type
+        obj.sz_nav_cover_point.point_type = point.type
         bpy.context.collection.objects.link(obj)
 
     return pobj
@@ -45,7 +45,7 @@ def portals_to_obj(portals):
         create_box(tomesh, 0.5)
         toobj = bpy.data.objects.new("to", tomesh)
         toobj.location = portal.position_to
-        obj = bpy.data.objects.new(f"Portal {idx}", tomesh)
+        obj = bpy.data.objects.new(f"Portal {idx}", None)
         obj.sollum_type = SollumType.NAVMESH_PORTAL
         fromobj.parent = obj
         toobj.parent = obj
@@ -58,29 +58,28 @@ def portals_to_obj(portals):
 
 
 def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
-    vertices = {}
-    verts = []
-    indices = []
+    vert_to_idx = {}
+    vertices = []
+    faces = []
     flag_values = np.empty((len(polygons), len(NavMeshAttr)), dtype=np.int32)
     for poly_index, poly in enumerate(polygons):
         face_indices = []
         for vert in poly.vertices:
-            vertex_id = id(vert)
-            if vertex_id in vertices:
-                idx = vertices[vertex_id]
-            else:
+            vert.freeze()
+            idx = vert_to_idx.get(vert, None)
+            if idx is None:
                 idx = len(vertices)
-                vertices[vertex_id] = idx
-                verts.append(vert)
+                vert_to_idx[vert] = idx
+                vertices.append(vert)
             face_indices.append(idx)
 
-        indices.append(face_indices)
+        faces.append(face_indices)
 
-        flags = tuple(map(int, poly.flags.split(" ")))
+        flags = tuple(map(int, poly.flags.split(" ")))[:4]
         flag_values[poly_index, :] = flags
 
     mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], indices)
+    mesh.from_pydata(vertices, [], faces)
 
     for i, attr in enumerate(NavMeshAttr):
         mesh_add_navmesh_attribute(mesh, attr)
