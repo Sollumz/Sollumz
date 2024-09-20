@@ -1,5 +1,7 @@
 from bpy.types import (
-    Object
+    Object,
+    Mesh,
+    MeshPolygon,
 )
 import re
 from ..sollumz_properties import SollumType
@@ -16,6 +18,10 @@ NAVMESH_GRID_BOUNDS_MAX = \
 NAVMESH_GRID_BOUNDS_MAX.freeze()
 
 NAVMESH_SECTORS_PER_GRID_CELL = 3
+
+NAVMESH_STANDALONE_CELL_INDEX = 10000
+
+NAVMESH_ADJACENCY_INDEX_NONE = 0x3FFF
 
 
 def navmesh_is_valid(obj: Object) -> bool:
@@ -53,3 +59,61 @@ def navmesh_grid_get_cell_bounds(x: int, y: int) -> tuple[Vector, Vector]:
     cell_min = NAVMESH_GRID_BOUNDS_MIN + Vector((x, y, 0.0)) * NAVMESH_GRID_CELL_SIZE
     cell_max = cell_min + Vector((NAVMESH_GRID_CELL_SIZE, NAVMESH_GRID_CELL_SIZE, 0.0))
     return cell_min, cell_max
+
+
+def navmesh_grid_get_cell_index(x: int, y: int) -> int:
+    return y * NAVMESH_GRID_SIZE + x
+
+
+def _loop_to_half_edge(mesh: Mesh, loop_idx: int) -> tuple[int, int]:
+    loop = mesh.loops[loop_idx]
+    edge_verts = mesh.edges[loop.edge_index].vertices
+    v0, v1 = edge_verts
+    if v0 != loop.vertex_index:
+        v1, v0 = edge_verts
+    assert v0 == loop.vertex_index, \
+        f"Degenerate mesh, failed to get half-edge from loop: {v0=}, {v1=}, {loop.vertex_index=}, {loop.edge_index=}"
+    return v0, v1
+
+
+def navmesh_compute_edge_adjacency(mesh: Mesh) -> tuple[dict[tuple[int, int], int], dict[tuple[int, int], int]]:
+    half_edge_to_lhs_poly = {}
+    half_edge_to_rhs_poly = {}
+
+    for poly in mesh.polygons:
+        for loop_idx in poly.loop_indices:
+            v0, v1 = _loop_to_half_edge(mesh, loop_idx)
+
+            assert (v0, v1) not in half_edge_to_lhs_poly, \
+                f"Degenerate mesh, multiple LHS polygons on half-edge ({v0}, {v1})"
+
+            half_edge_to_lhs_poly[(v0, v1)] = poly.index
+
+    for poly in mesh.polygons:
+        for loop_idx in poly.loop_indices:
+            v0, v1 = _loop_to_half_edge(mesh, loop_idx)
+
+            # The RHS poly of this half-edge is the LHS poly of the half-edge going on the opposite direction
+            rhs_poly_idx = half_edge_to_lhs_poly.get((v1, v0), None)
+            if rhs_poly_idx is not None:
+                assert (v0, v1) not in half_edge_to_rhs_poly, \
+                    f"Degenerate mesh, multiple RHS polygons on half-edge ({v0}, {v1})"
+                half_edge_to_rhs_poly[(v0, v1)] = rhs_poly_idx
+
+    return half_edge_to_lhs_poly, half_edge_to_rhs_poly
+
+
+def navmesh_poly_get_adjacent_polys_local(mesh: Mesh, poly: MeshPolygon, edge_adjacendy: tuple[dict[tuple[int, int], int], dict[tuple[int, int], int]]):
+    _, half_edge_to_rhs_poly = edge_adjacendy
+
+    adjacent_polys = []
+    for loop_idx in poly.loop_indices:
+        v0, v1 = _loop_to_half_edge(mesh, loop_idx)
+
+        adjacent_poly = half_edge_to_rhs_poly.get((v0, v1), None)
+        if adjacent_poly is None:
+            adjacent_poly = NAVMESH_ADJACENCY_INDEX_NONE
+
+        adjacent_polys.append(adjacent_poly)
+
+    return adjacent_polys

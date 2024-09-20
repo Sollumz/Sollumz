@@ -7,7 +7,12 @@ import os
 import math
 import numpy as np
 from ..tools.meshhelper import create_box
-from ..cwxml.navmesh import YNV, NavCoverPoint, NavPolygon
+from ..cwxml.navmesh import (
+    YNV,
+    NavCoverPoint,
+    NavLink,
+    NavPolygon,
+)
 from ..sollumz_properties import SollumType
 from .navmesh_attributes import NavMeshAttr, mesh_add_navmesh_attribute
 from typing import Sequence
@@ -15,6 +20,7 @@ from typing import Sequence
 
 def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
     pobj = bpy.data.objects.new("Cover Points", None)
+    pobj.sollum_type = SollumType.NAVMESH_COVER_POINT_GROUP
     pobj.empty_display_size = 0
 
     for idx, point in enumerate(points):
@@ -32,21 +38,22 @@ def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
     return pobj
 
 
-def portals_to_obj(portals):
-    pobj = bpy.data.objects.new("Portals", None)
+def links_to_obj(links: Sequence[NavLink]) -> Object:
+    pobj = bpy.data.objects.new("Links", None)
+    pobj.sollum_type = SollumType.NAVMESH_LINK_GROUP
     pobj.empty_display_size = 0
 
-    for idx, portal in enumerate(portals):
+    for idx, link in enumerate(links):
         frommesh = bpy.data.meshes.new("from")
         create_box(frommesh, 0.5)
         fromobj = bpy.data.objects.new("from", frommesh)
-        fromobj.location = portal.position_from
+        fromobj.location = link.position_from
         tomesh = bpy.data.meshes.new("to")
         create_box(tomesh, 0.5)
         toobj = bpy.data.objects.new("to", tomesh)
-        toobj.location = portal.position_to
-        obj = bpy.data.objects.new(f"Portal {idx}", None)
-        obj.sollum_type = SollumType.NAVMESH_PORTAL
+        toobj.location = link.position_to
+        obj = bpy.data.objects.new(f"Link {idx}", None)
+        obj.sollum_type = SollumType.NAVMESH_LINK
         fromobj.parent = obj
         toobj.parent = obj
         obj.parent = pobj
@@ -96,9 +103,9 @@ def navmesh_to_obj(navmesh, filepath):
     mesh_obj.empty_display_size = 0
     bpy.context.collection.objects.link(mesh_obj)
 
-    portals_obj = portals_to_obj(navmesh.portals)
-    portals_obj.parent = mesh_obj
-    bpy.context.collection.objects.link(portals_obj)
+    links_obj = links_to_obj(navmesh.links)
+    links_obj.parent = mesh_obj
+    bpy.context.collection.objects.link(links_obj)
 
     cover_points_obj = cover_points_to_obj(navmesh.cover_points)
     cover_points_obj.parent = mesh_obj
