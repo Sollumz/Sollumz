@@ -42,40 +42,49 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
         navmesh_obj = context.active_object
         mesh = navmesh_obj.data
 
-        selected_poly = mesh.sz_navmesh_selected_poly
+        poly_access = mesh.sz_navmesh_poly_access
+
+        active_poly = poly_access.active_poly
+        selected_polys = list(poly_access.selected_polys)
+        layout.alignment = "RIGHT"
+        layout.label(
+            text=f"Polygon #{active_poly} (+ {len(selected_polys)} selected polys)"
+                 if len(selected_polys) > 0
+                 else f"Polygon #{active_poly}"
+        )
 
         grid = layout.grid_flow(columns=-3)
-        grid.prop(selected_poly, "is_small")
-        grid.prop(selected_poly, "is_large")
-        grid.prop(selected_poly, "is_pavement")
-        grid.prop(selected_poly, "is_road")
-        grid.prop(selected_poly, "is_near_car_node")
-        grid.prop(selected_poly, "is_train_track")
-        grid.prop(selected_poly, "is_in_shelter")
-        grid.prop(selected_poly, "is_interior")
-        grid.prop(selected_poly, "is_too_steep_to_walk_on")
-        grid.prop(selected_poly, "is_water")
-        grid.prop(selected_poly, "is_shallow_water")
-        grid.prop(selected_poly, "is_network_spawn_candidate")
-        grid.prop(selected_poly, "is_isolated")
-        grid.prop(selected_poly, "lies_along_edge")
+        grid.prop(poly_access, "is_small")
+        grid.prop(poly_access, "is_large")
+        grid.prop(poly_access, "is_pavement")
+        grid.prop(poly_access, "is_road")
+        grid.prop(poly_access, "is_near_car_node")
+        grid.prop(poly_access, "is_train_track")
+        grid.prop(poly_access, "is_in_shelter")
+        grid.prop(poly_access, "is_interior")
+        grid.prop(poly_access, "is_too_steep_to_walk_on")
+        grid.prop(poly_access, "is_water")
+        grid.prop(poly_access, "is_shallow_water")
+        grid.prop(poly_access, "is_network_spawn_candidate")
+        grid.prop(poly_access, "is_isolated")
+        grid.prop(poly_access, "lies_along_edge")
 
-        layout.prop(selected_poly, "audio_properties")
-        layout.prop(selected_poly, "ped_density", slider=True)
+        layout.prop(poly_access, "audio_properties")
+        layout.prop(poly_access, "ped_density", slider=True)
 
         col = layout.column(align=True, heading="Cover Directions")
         row = col.row(align=True)
-        row.prop(selected_poly, "cover_directions", index=3, toggle=True, text="-X -Y")
-        row.prop(selected_poly, "cover_directions", index=4, toggle=True, text="-Y")
-        row.prop(selected_poly, "cover_directions", index=5, toggle=True, text="+X -Y")
+        row.prop(poly_access, "cover_directions", index=3, toggle=True, text="-X -Y")
+        row.prop(poly_access, "cover_directions", index=4, toggle=True, text="-Y")
+        row.prop(poly_access, "cover_directions", index=5, toggle=True, text="+X -Y")
         row = col.row(align=True)
-        row.prop(selected_poly, "cover_directions", index=2, toggle=True, text="-X")
+        row.prop(poly_access, "cover_directions", index=2, toggle=True, text="-X")
         row.label(text="")
-        row.prop(selected_poly, "cover_directions", index=6, toggle=True, text="+X")
+        row.prop(poly_access, "cover_directions", index=6, toggle=True, text="+X")
         row = col.row(align=True)
-        row.prop(selected_poly, "cover_directions", index=1, toggle=True, text="-X +Y")
-        row.prop(selected_poly, "cover_directions", index=0, toggle=True, text="+Y")
-        row.prop(selected_poly, "cover_directions", index=7, toggle=True, text="+X +Y")
+        row.prop(poly_access, "cover_directions", index=1, toggle=True, text="-X +Y")
+        row.prop(poly_access, "cover_directions", index=0, toggle=True, text="+Y")
+        row.prop(poly_access, "cover_directions", index=7, toggle=True, text="+X +Y")
 
 
 class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):

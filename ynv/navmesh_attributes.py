@@ -67,11 +67,13 @@ class NavPolyAttributes:
 def mesh_get_navmesh_poly_attributes(mesh: Mesh, poly_idx: int) -> NavPolyAttributes:
     if mesh.is_editmode:
         bm = bmesh.from_edit_mesh(mesh)
+        bm.faces.ensure_lookup_table()
+
         data0_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_0]
         data1_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_1]
 
-        data0 = 0 if data0_layer is None else bm.faces.active[data0_layer]
-        data1 = 0 if data1_layer is None else bm.faces.active[data1_layer]
+        data0 = 0 if data0_layer is None else bm.faces[poly_idx][data0_layer]
+        data1 = 0 if data1_layer is None else bm.faces[poly_idx][data1_layer]
     else:
         data0_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_0, None)
         data1_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_1, None)
@@ -142,13 +144,15 @@ def mesh_set_navmesh_poly_attributes(mesh: Mesh, poly_idx: int, poly_attrs: NavP
     # TODO: add attributes if they don't exist in the mesh
     if mesh.is_editmode:
         bm = bmesh.from_edit_mesh(mesh)
+        bm.faces.ensure_lookup_table()
+
         data0_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_0]
         data1_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_1]
 
         if data0_layer is not None:
-            bm.faces.active[data0_layer] = data0
+            bm.faces[poly_idx][data0_layer] = data0
         if data1_layer is not None:
-            bm.faces.active[data1_layer] = data1
+            bm.faces[poly_idx][data1_layer] = data1
     else:
         data0_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_0, None)
         data1_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_1, None)
