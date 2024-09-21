@@ -35,6 +35,7 @@ from .navmesh import (
     NAVMESH_ADJACENCY_INDEX_NONE,
 )
 from .navmesh_attributes import NavMeshAttr
+from .properties import NavLinkType
 
 from .. import logger
 
@@ -65,9 +66,10 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         navmesh_xml.bb_size = bbmax - bbmin
         navmesh_xml.area_id = NAVMESH_STANDALONE_CELL_INDEX
     else:
-        neighbors = locate_neighbors_in_scene(navmesh_obj)
-        if neighbors is None:
-            return None
+        # TODO: actually use neighbors
+        # neighbors = locate_neighbors_in_scene(navmesh_obj)
+        # if neighbors is None:
+        #     return None
         cell_x, cell_y = navmesh_get_grid_cell(navmesh_obj)
         cell_min, cell_max = navmesh_grid_get_cell_bounds(cell_x, cell_y)
         cell_min.z = bbmin.z
@@ -77,7 +79,7 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         navmesh_xml.bb_size = cell_max - cell_min
         navmesh_xml.area_id = navmesh_grid_get_cell_index(cell_x, cell_y)
 
-    navmesh_xml.polygons = polygons_from_object(navmesh_obj)
+    navmesh_xml.polygons, has_water = polygons_from_object(navmesh_obj)
 
     links_obj = None
     cover_points_obj = None
@@ -87,13 +89,14 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         elif child_obj.sollum_type == SollumType.NAVMESH_COVER_POINT_GROUP:
             cover_points_obj = child_obj
 
-    # TODO: navmesh links
-    # if links_obj is not None:
-    #     for link_obj in links_obj.children:
-    #         if link_obj.sollum_type != SollumType.NAVMESH_LINK:
-    #             continue
-    #
-    #         navmesh_xml.links.append(link_from_object(link_obj))
+    if links_obj is not None:
+        for link_obj in links_obj.children:
+            if link_obj.sollum_type != SollumType.NAVMESH_LINK:
+                continue
+
+            link_xml = link_from_object(link_obj)
+            if link_xml is not None:
+                navmesh_xml.links.append(link_xml)
 
     if cover_points_obj is not None:
         for cover_point_obj in cover_points_obj.children:
@@ -109,8 +112,8 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         content_flags.append("Portals")
     if is_standalone:
         content_flags.append("Vehicle")
-    # if has_water:
-    #     content_flags.append("Unknown8")
+    if has_water:
+        content_flags.append("Unknown8")
     # if is_dlc:
     #     content_flags.append("Unknown16")
     navmesh_xml.content_flags = ", ".join(content_flags)
@@ -142,11 +145,23 @@ def locate_neighbors_in_scene(navmesh_obj: Object) -> Optional[dict[tuple[int, i
         return cells
 
 
-def link_from_object(link_obj: Object) -> NavLink:
+def link_from_object(link_obj: Object) -> Optional[NavLink]:
     assert link_obj.sollum_type == SollumType.NAVMESH_LINK
 
-    # TODO: link_from_object
+    link_target_obj = next((c for c in link_obj.children if c.sollum_type == SollumType.NAVMESH_LINK_TARGET), None)
+    if link_target_obj is None:
+        logger.error(f"Link '{link_obj.name}' has no target object!")
+        return None
+
+    link_props = link_obj.sz_nav_link
     link_xml = NavLink()
+    link_xml.type = NavLinkType[link_props.link_type].value
+    link_xml.angle = wrap_angle(link_props.heading)
+    link_xml.position_from = link_obj.location
+    link_xml.position_to = link_obj.location + link_target_obj.location
+    # TODO: automatically find poly_from/poly_to from position
+    link_xml.poly_from = link_props.poly_from
+    link_xml.poly_to = link_props.poly_to
     return link_xml
 
 
@@ -162,7 +177,7 @@ def cover_point_from_object(cover_point_obj: Object) -> NavCoverPoint:
     return cover_point_xml
 
 
-def polygons_from_object(navmesh_obj: Object) -> list[NavPolygon]:
+def polygons_from_object(navmesh_obj: Object) -> tuple[list[NavPolygon], bool]:
     assert navmesh_is_valid(navmesh_obj)
 
     cell_x, cell_y = navmesh_get_grid_cell(navmesh_obj)
@@ -173,6 +188,7 @@ def polygons_from_object(navmesh_obj: Object) -> list[NavPolygon]:
         cell_index = navmesh_grid_get_cell_index(cell_x, cell_y)
 
     polygons_xml = []
+    has_water = False
     navmesh_obj_eval = get_evaluated_obj(navmesh_obj)
     mesh = navmesh_obj_eval.to_mesh()
     mesh_edge_adjacency = navmesh_compute_edge_adjacency(mesh)
@@ -216,6 +232,9 @@ def polygons_from_object(navmesh_obj: Object) -> list[NavPolygon]:
         flag2 = data1 & 0xFF
         flag3 = (data1 >> 8) & 0xFF
 
+        if (flag0 & 128) != 0:
+            has_water = True
+
         poly_xml = NavPolygon()
         poly_xml.vertices = poly_verts
         poly_xml.edges = "\n".join(map(lambda e: f"{e[0]}:{e[1]}, {e[0]}:{e[1]}", adjacent_polys_with_cell_index))
@@ -224,4 +243,4 @@ def polygons_from_object(navmesh_obj: Object) -> list[NavPolygon]:
 
     navmesh_obj_eval.to_mesh_clear()
 
-    return polygons_xml
+    return polygons_xml, has_water

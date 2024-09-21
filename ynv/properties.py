@@ -9,11 +9,11 @@ from bpy.props import (
     BoolProperty,
     BoolVectorProperty,
     IntProperty,
+    FloatProperty,
     EnumProperty,
     PointerProperty,
 )
 from enum import IntEnum
-from collections.abc import Iterator
 from .navmesh_attributes import (
     mesh_get_navmesh_poly_attributes,
     mesh_set_navmesh_poly_attributes,
@@ -57,6 +57,26 @@ class NavCoverPointProps(PropertyGroup):
             # in case of corrupted out-of-range values, default to low-wall
             self.cover_type = NavCoverType.LOW_WALL.name
         self.disabled = (value & 0x8) != 0
+
+
+class NavLinkType(IntEnum):
+    CLIMB_LADDER = 1
+    DESCEND_LADDER = 2
+    CLIMB_OBJECT = 3
+
+
+NavLinkTypeEnumItems = tuple((enum.name, label, desc, enum.value) for enum, label, desc in (
+    (NavLinkType.CLIMB_LADDER, "Climb Ladder", "Link from the bottom of a ladder to the top"),
+    (NavLinkType.DESCEND_LADDER, "Descend Ladder", "Link from the top of a ladder to the bottom"),
+    (NavLinkType.CLIMB_OBJECT, "Climb Object", "Link for a climbable object"),
+))
+
+
+class NavLinkProps(PropertyGroup):
+    link_type: EnumProperty(name="Type", items=NavLinkTypeEnumItems, default=NavLinkType.CLIMB_LADDER.name)
+    heading: FloatProperty(name="Heading", subtype="ANGLE", unit="ROTATION")
+    poly_from: IntProperty(name="Poly From")
+    poly_to: IntProperty(name="Poly To")
 
 
 # Helper functions for NavMeshSelectedPolyProps
@@ -137,6 +157,7 @@ class NavMeshSelectedPolyProps(PropertyGroup):
 
 def register():
     Object.sz_nav_cover_point = PointerProperty(type=NavCoverPointProps)
+    Object.sz_nav_link = PointerProperty(type=NavLinkProps)
     Mesh.sz_navmesh_selected_poly = PointerProperty(type=NavMeshSelectedPolyProps)
 
     WindowManager.sz_ui_nav_view_bounds = BoolProperty(
@@ -147,5 +168,6 @@ def register():
 
 def unregister():
     del Object.sz_nav_cover_point
+    del Object.sz_nav_link
     del Mesh.sz_navmesh_selected_poly
     del WindowManager.sz_ui_nav_view_bounds

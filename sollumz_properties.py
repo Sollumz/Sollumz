@@ -38,6 +38,7 @@ class SollumType(str, Enum):
     NAVMESH = "sollumz_navmesh"
     NAVMESH_LINK_GROUP = "sollumz_navmesh_link_group"
     NAVMESH_LINK = "sollumz_navmesh_link"
+    NAVMESH_LINK_TARGET = "sollumz_navmesh_link_target"
     NAVMESH_COVER_POINT_GROUP = "sollumz_navmesh_point_group"
     NAVMESH_COVER_POINT = "sollumz_navmesh_point"
 
@@ -286,6 +287,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.NAVMESH: "NavMesh",
     SollumType.NAVMESH_LINK_GROUP: "NavMesh Link Group",
     SollumType.NAVMESH_LINK: "NavMesh Link",
+    SollumType.NAVMESH_LINK_TARGET: "NavMesh Link Target",
     SollumType.NAVMESH_COVER_POINT_GROUP: "NavMesh Cover Point Group",
     SollumType.NAVMESH_COVER_POINT: "NavMesh Cover Point",
 
