@@ -43,7 +43,8 @@ class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):
         cover_point_obj = context.active_object
         cover_point_props = cover_point_obj.sz_nav_cover_point
 
-        layout.prop(cover_point_props, "point_type")
+        layout.prop(cover_point_props, "cover_type")
+        layout.prop(cover_point_props, "disabled")
 
 
 class SOLLUMZ_PT_NAVMESH_TOOL_PANEL(Panel):
