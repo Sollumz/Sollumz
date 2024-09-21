@@ -32,7 +32,7 @@ def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
         obj.location = point.position
         obj.rotation_euler = (0, 0, math.pi + point.angle)  # flip rotation so the cone display is more intuitive
         obj.lock_rotation = (True, True, False)
-        obj.sz_nav_cover_point.point_type = point.type
+        obj.sz_nav_cover_point.set_raw_int(point.type)
         bpy.context.collection.objects.link(obj)
 
     return pobj

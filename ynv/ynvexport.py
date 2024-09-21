@@ -120,7 +120,7 @@ def cover_point_from_object(cover_point_obj: Object) -> NavCoverPoint:
     cover_point_props = cover_point_obj.sz_nav_cover_point
     # TODO: warn if rotation is not Z-axis aligned
     cover_point_xml = NavCoverPoint()
-    cover_point_xml.type = cover_point_props.point_type
+    cover_point_xml.type = cover_point_props.get_raw_int()
     cover_point_xml.angle = cover_point_obj.rotation_euler.z - math.pi  # TODO: wrap to [0..2pi] range
     cover_point_xml.position = Vector(cover_point_obj.location)
     return cover_point_xml
@@ -163,10 +163,10 @@ def polygons_from_object(navmesh_obj: Object, local_cell_index: int) -> list[Nav
         compressed_centroid_x = min(max(compressed_centroid_x, 0), 255)
         compressed_centroid_y = min(max(compressed_centroid_y, 0), 255)
 
-        flag0 = flags0[poly.index].value
-        flag1 = flags1[poly.index].value
-        flag2 = flags2[poly.index].value
-        flag3 = flags3[poly.index].value
+        flag0 = min(max(flags0[poly.index].value, 0), 255)
+        flag1 = min(max(flags1[poly.index].value, 0), 255)
+        flag2 = min(max(flags2[poly.index].value, 0), 255)
+        flag3 = min(max(flags3[poly.index].value, 0), 255)
 
         poly_xml = NavPolygon()
         poly_xml.vertices = poly_verts

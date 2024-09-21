@@ -14,8 +14,6 @@ class NavMeshAttr(str, Enum):
     FLAG_1 = ".navmesh.flag1"
     FLAG_2 = ".navmesh.flag2"
     FLAG_3 = ".navmesh.flag3"
-    # FLAG_4 = ".navmesh.flag4" # TODO: centroid X/Y
-    # FLAG_5 = ".navmesh.flag5"
 
     @property
     def type(self):
