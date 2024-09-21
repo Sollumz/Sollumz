@@ -13,6 +13,8 @@ from bpy.props import (
     EnumProperty,
     PointerProperty,
 )
+import bmesh
+from collections.abc import Iterator
 from enum import IntEnum
 from .navmesh_attributes import (
     mesh_get_navmesh_poly_attributes,
@@ -89,10 +91,16 @@ def _attr_getter(attr_name: str):
 
 def _attr_setter(attr_name: str):
     def fn(self, value):
-        # TODO: apply to all selected polys
-        attrs = self.active_poly_attributes
+        mesh = self.mesh
+        for selected_poly in self.selected_polys:
+            attrs = mesh_get_navmesh_poly_attributes(mesh, selected_poly)
+            setattr(attrs, attr_name, value)
+            mesh_set_navmesh_poly_attributes(mesh, selected_poly, attrs)
+
+        active_poly = self.active_poly
+        attrs = mesh_get_navmesh_poly_attributes(mesh, active_poly)
         setattr(attrs, attr_name, value)
-        mesh_set_navmesh_poly_attributes(self.mesh, self.active_poly, attrs)
+        mesh_set_navmesh_poly_attributes(mesh, active_poly, attrs)
 
     return fn
 
@@ -120,7 +128,7 @@ def BoolVectorAttr(name: str, attr_name: str, size: int):
     )
 
 
-class NavMeshSelectedPolyProps(PropertyGroup):
+class NavMeshPolyAccessor(PropertyGroup):
     """Property group to allow to access navmesh polygon attributes from the UI."""
 
     @property
@@ -130,7 +138,28 @@ class NavMeshSelectedPolyProps(PropertyGroup):
 
     @property
     def active_poly(self) -> int:
-        return self.mesh.polygons.active
+        mesh = self.mesh
+        if mesh.is_editmode:
+            bm = bmesh.from_edit_mesh(mesh)
+            bm.faces.index_update()
+            return bm.faces.active.index
+        else:
+            return mesh.polygons.active
+
+    @property
+    def selected_polys(self) -> Iterator[int]:
+        mesh = self.mesh
+        active_poly = self.active_poly
+        if mesh.is_editmode:
+            bm = bmesh.from_edit_mesh(mesh)
+            bm.faces.index_update()
+            for face in bm.faces:
+                if face.index != active_poly and face.select:
+                    yield face.index
+        else:
+            for poly in mesh.polygons:
+                if poly.index != active_poly and poly.select:
+                    yield poly.index
 
     @property
     def active_poly_attributes(self) -> NavPolyAttributes:
@@ -158,7 +187,7 @@ class NavMeshSelectedPolyProps(PropertyGroup):
 def register():
     Object.sz_nav_cover_point = PointerProperty(type=NavCoverPointProps)
     Object.sz_nav_link = PointerProperty(type=NavLinkProps)
-    Mesh.sz_navmesh_selected_poly = PointerProperty(type=NavMeshSelectedPolyProps)
+    Mesh.sz_navmesh_poly_access = PointerProperty(type=NavMeshPolyAccessor)
 
     WindowManager.sz_ui_nav_view_bounds = BoolProperty(
         name="Display Grid Bounds", description="Display the navigation mesh map grid bounds on the 3D Viewport",
@@ -169,5 +198,5 @@ def register():
 def unregister():
     del Object.sz_nav_cover_point
     del Object.sz_nav_link
-    del Mesh.sz_navmesh_selected_poly
+    del Mesh.sz_navmesh_poly_access
     del WindowManager.sz_ui_nav_view_bounds
