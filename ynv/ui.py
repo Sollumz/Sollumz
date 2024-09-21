@@ -25,6 +25,59 @@ class SOLLUMZ_PT_NAVMESH_PANEL(Panel):
         pass
 
 
+class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
+    bl_label = "Polygon Attributes"
+    bl_idname = "SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_NAVMESH_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        navmesh_obj = context.active_object
+        mesh = navmesh_obj.data
+
+        selected_poly = mesh.sz_navmesh_selected_poly
+
+        grid = layout.grid_flow(columns=-3)
+        grid.prop(selected_poly, "is_small")
+        grid.prop(selected_poly, "is_large")
+        grid.prop(selected_poly, "is_pavement")
+        grid.prop(selected_poly, "is_road")
+        grid.prop(selected_poly, "is_near_car_node")
+        grid.prop(selected_poly, "is_train_track")
+        grid.prop(selected_poly, "is_in_shelter")
+        grid.prop(selected_poly, "is_interior")
+        grid.prop(selected_poly, "is_too_steep_to_walk_on")
+        grid.prop(selected_poly, "is_water")
+        grid.prop(selected_poly, "is_shallow_water")
+        grid.prop(selected_poly, "is_network_spawn_candidate")
+        grid.prop(selected_poly, "is_isolated")
+        grid.prop(selected_poly, "lies_along_edge")
+
+        layout.prop(selected_poly, "audio_properties")
+        layout.prop(selected_poly, "ped_density", slider=True)
+
+        col = layout.column(align=True, heading="Cover Directions")
+        row = col.row(align=True)
+        row.prop(selected_poly, "cover_directions", index=3, toggle=True, text="-X -Y")
+        row.prop(selected_poly, "cover_directions", index=4, toggle=True, text="-Y")
+        row.prop(selected_poly, "cover_directions", index=5, toggle=True, text="+X -Y")
+        row = col.row(align=True)
+        row.prop(selected_poly, "cover_directions", index=2, toggle=True, text="-X")
+        row.label(text="")
+        row.prop(selected_poly, "cover_directions", index=6, toggle=True, text="+X")
+        row = col.row(align=True)
+        row.prop(selected_poly, "cover_directions", index=1, toggle=True, text="-X +Y")
+        row.prop(selected_poly, "cover_directions", index=0, toggle=True, text="+Y")
+        row.prop(selected_poly, "cover_directions", index=7, toggle=True, text="+X +Y")
+
+
 class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):
     bl_label = "Cover Point Properties"
     bl_idname = "SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL"

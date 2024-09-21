@@ -10,6 +10,7 @@ from .navmesh import (
     navmesh_is_valid,
     navmesh_get_grid_cell,
     navmesh_grid_get_cell_bounds,
+    navmesh_grid_get_cell_neighbors,
 )
 
 
@@ -42,30 +43,26 @@ class NavMeshOverlaysDrawHandler:
         wm = context.window_manager
 
         if wm.sz_ui_nav_view_bounds:
-            self.draw_grid_bounds()
+            self._draw_grid_bounds()
 
-    def draw_grid_bounds(self):
+    def _draw_grid_bounds(self):
         context = bpy.context
 
-        color_colums = (0.9, 0.45, 0.0, 0.8)
-        color_walls = (0.8, 0.4, 0.0, 0.25)
-        color_walls_end = (0.9, 0.45, 0.0, 0.0)
+        self_color_columns = (0.9, 0.45, 0.0, 0.8)
+        self_color_walls = (0.8, 0.4, 0.0, 0.25)
+        self_color_walls_end = (0.9, 0.45, 0.0, 0.0)
+        neighbor_color_columns = (0.5, 0.5, 0.5, 0.8)
+        neighbor_color_walls = (0.5, 0.5, 0.5, 0.25)
+        neighbor_color_walls_end = (0.5, 0.5, 0.5, 0.0)
+        color_columns = self_color_columns  # neighbor_color_columns if is_neighbor else self_color_columns
 
         columns_coords = []
         walls_coords = []
         walls_colors = []
 
-        for navmesh_obj in context.scene.objects:
-            if not navmesh_is_valid(navmesh_obj):
-                continue
-
-            if not navmesh_obj.visible_get():
-                continue
-
-            x, y = navmesh_get_grid_cell(navmesh_obj)
-            if x < 0 or y < 0:
-                continue
-
+        def _build_grid_cell_geometry(x: int, y: int, is_neighbor: bool = False):
+            color_walls = neighbor_color_walls if is_neighbor else self_color_walls
+            color_walls_end = neighbor_color_walls_end if is_neighbor else self_color_walls_end
             cell_min, cell_max = navmesh_grid_get_cell_bounds(x, y)
             v0 = cell_min
             v1 = Vector((cell_min.x, cell_max.y, 0.0))
@@ -111,20 +108,35 @@ class NavMeshOverlaysDrawHandler:
                 walls_colors.append(color_walls_end)
                 walls_colors.append(color_walls_end)
 
+        for navmesh_obj in context.scene.objects:
+            if not navmesh_is_valid(navmesh_obj):
+                continue
+
+            if not navmesh_obj.visible_get():
+                continue
+
+            x, y = navmesh_get_grid_cell(navmesh_obj)
+            if x < 0 or y < 0:
+                continue
+
+            _build_grid_cell_geometry(x, y)
+            # for nx, ny in navmesh_grid_get_cell_neighbors(x, y):
+            #     _build_grid_cell_geometry(nx, ny, is_neighbor=True)
+
         old_blend = gpu.state.blend_get()
         gpu.state.blend_set("ALPHA")
         gpu.state.depth_test_set("LESS_EQUAL")
         gpu.state.depth_mask_set(True)
 
-        colums_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+        columns_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
         walls_shader = gpu.shader.from_builtin("SMOOTH_COLOR")
 
-        colums_shader.uniform_float("color", color_colums)
-        columns_batch = gpu_extras.batch.batch_for_shader(colums_shader, "LINES", {"pos": columns_coords})
+        columns_shader.uniform_float("color", color_columns)
+        columns_batch = gpu_extras.batch.batch_for_shader(columns_shader, "LINES", {"pos": columns_coords})
         walls_batch = gpu_extras.batch.batch_for_shader(
             walls_shader, "TRIS", {"pos": walls_coords, "color": walls_colors})
 
-        columns_batch.draw(colums_shader)
+        columns_batch.draw(columns_shader)
         walls_batch.draw(walls_shader)
 
         gpu.state.depth_mask_set(False)

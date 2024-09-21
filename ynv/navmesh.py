@@ -4,6 +4,7 @@ from bpy.types import (
     MeshPolygon,
 )
 import re
+from collections.abc import Iterator
 from ..sollumz_properties import SollumType
 from mathutils import Vector
 
@@ -54,6 +55,10 @@ def navmesh_get_grid_cell(obj: Object) -> tuple[int, int]:
     y = int(match.group(2))
     return x // NAVMESH_SECTORS_PER_GRID_CELL, y // NAVMESH_SECTORS_PER_GRID_CELL
 
+def navmesh_grid_get_cell_filename(x: int, y: int) -> str:
+    sx = x * NAVMESH_SECTORS_PER_GRID_CELL
+    sy = y * NAVMESH_SECTORS_PER_GRID_CELL
+    return f"navmesh[{sx}][{sy}]"
 
 def navmesh_grid_get_cell_bounds(x: int, y: int) -> tuple[Vector, Vector]:
     cell_min = NAVMESH_GRID_BOUNDS_MIN + Vector((x, y, 0.0)) * NAVMESH_GRID_CELL_SIZE
@@ -63,6 +68,21 @@ def navmesh_grid_get_cell_bounds(x: int, y: int) -> tuple[Vector, Vector]:
 
 def navmesh_grid_get_cell_index(x: int, y: int) -> int:
     return y * NAVMESH_GRID_SIZE + x
+
+
+def navmesh_grid_is_cell_valid(x: int, y: int) -> bool:
+    return 0 <= x < NAVMESH_GRID_SIZE and 0 <= y < NAVMESH_GRID_SIZE
+
+
+def navmesh_grid_get_cell_neighbors(x: int, y: int) -> Iterator[tuple[int, int]]:
+    if navmesh_grid_is_cell_valid(x - 1, y):
+        yield x - 1, y
+    if navmesh_grid_is_cell_valid(x, y - 1):
+        yield x, y - 1
+    if navmesh_grid_is_cell_valid(x + 1, y):
+        yield x + 1, y
+    if navmesh_grid_is_cell_valid(x, y + 1):
+        yield x, y + 1
 
 
 def _loop_to_half_edge(mesh: Mesh, loop_idx: int) -> tuple[int, int]:

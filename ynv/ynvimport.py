@@ -5,6 +5,7 @@ from bpy.types import (
 )
 import os
 import math
+from ..shared.math import wrap_angle
 import numpy as np
 from ..tools.meshhelper import create_box
 from ..cwxml.navmesh import (
@@ -30,7 +31,8 @@ def cover_points_to_obj(points: Sequence[NavCoverPoint]) -> Object:
         obj.empty_display_size = 0.5
         obj.empty_display_type = "CONE"
         obj.location = point.position
-        obj.rotation_euler = (0, 0, math.pi + point.angle)  # flip rotation so the cone display is more intuitive
+        # flip rotation so the cone display is more intuitive
+        obj.rotation_euler = (0, 0, wrap_angle(math.pi + point.angle))
         obj.lock_rotation = (True, True, False)
         obj.sz_nav_cover_point.set_raw_int(point.type)
         bpy.context.collection.objects.link(obj)
@@ -68,7 +70,8 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
     vert_to_idx = {}
     vertices = []
     faces = []
-    flag_values = np.empty((len(polygons), len(NavMeshAttr)), dtype=np.int32)
+    poly_data_attrs = (NavMeshAttr.POLY_DATA_0, NavMeshAttr.POLY_DATA_1)
+    poly_data = np.empty((len(polygons), len(poly_data_attrs)), dtype=np.uint16)
     for poly_index, poly in enumerate(polygons):
         face_indices = []
         for vert in poly.vertices:
@@ -83,14 +86,14 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
         faces.append(face_indices)
 
         flags = tuple(map(int, poly.flags.split(" ")))[:4]
-        flag_values[poly_index, :] = flags
+        poly_data[poly_index, :] = flags[0] | (flags[1] << 8), flags[2] | (flags[3] << 8)
 
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(vertices, [], faces)
 
-    for i, attr in enumerate(NavMeshAttr):
+    for i, attr in enumerate(poly_data_attrs):
         mesh_add_navmesh_attribute(mesh, attr)
-        mesh.attributes[attr].data.foreach_set("value", flag_values[:, i].ravel())
+        mesh.attributes[attr].data.foreach_set("value", poly_data[:, i].ravel())
 
     return mesh
 

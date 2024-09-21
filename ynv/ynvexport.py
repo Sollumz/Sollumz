@@ -4,6 +4,8 @@ from bpy.types import (
 )
 from mathutils import Vector
 import math
+from ..shared.math import wrap_angle
+from typing import Optional
 from ..cwxml.navmesh import (
     NavMesh,
     NavCoverPoint,
@@ -21,9 +23,12 @@ from ..tools.blenderhelper import (
 from .navmesh import (
     navmesh_is_valid,
     navmesh_is_standalone,
+    navmesh_is_map,
     navmesh_get_grid_cell,
     navmesh_grid_get_cell_bounds,
     navmesh_grid_get_cell_index,
+    navmesh_grid_get_cell_neighbors,
+    navmesh_grid_get_cell_filename,
     navmesh_compute_edge_adjacency,
     navmesh_poly_get_adjacent_polys_local,
     NAVMESH_STANDALONE_CELL_INDEX,
@@ -37,11 +42,15 @@ from .. import logger
 def export_ynv(navmesh_obj: Object, filepath: str) -> bool:
     assert navmesh_is_valid(navmesh_obj)
 
-    navmesh_from_object(navmesh_obj).write_xml(filepath)
-    return True
+    navmesh_xml = navmesh_from_object(navmesh_obj)
+    if navmesh_xml is not None:
+        navmesh_xml.write_xml(filepath)
+        return True
+    else:
+        return False
 
 
-def navmesh_from_object(navmesh_obj: Object) -> NavMesh:
+def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
     """Create a ``NavMesh`` cwxml object."""
 
     is_standalone = navmesh_is_standalone(navmesh_obj)
@@ -56,6 +65,9 @@ def navmesh_from_object(navmesh_obj: Object) -> NavMesh:
         navmesh_xml.bb_size = bbmax - bbmin
         navmesh_xml.area_id = NAVMESH_STANDALONE_CELL_INDEX
     else:
+        neighbors = locate_neighbors_in_scene(navmesh_obj)
+        if neighbors is None:
+            return None
         cell_x, cell_y = navmesh_get_grid_cell(navmesh_obj)
         cell_min, cell_max = navmesh_grid_get_cell_bounds(cell_x, cell_y)
         cell_min.z = bbmin.z
@@ -65,7 +77,7 @@ def navmesh_from_object(navmesh_obj: Object) -> NavMesh:
         navmesh_xml.bb_size = cell_max - cell_min
         navmesh_xml.area_id = navmesh_grid_get_cell_index(cell_x, cell_y)
 
-    navmesh_xml.polygons = polygons_from_object(navmesh_obj, navmesh_xml.area_id)
+    navmesh_xml.polygons = polygons_from_object(navmesh_obj)
 
     links_obj = None
     cover_points_obj = None
@@ -106,6 +118,30 @@ def navmesh_from_object(navmesh_obj: Object) -> NavMesh:
     return navmesh_xml
 
 
+def locate_neighbors_in_scene(navmesh_obj: Object) -> Optional[dict[tuple[int, int], Object]]:
+    cell_to_obj = {navmesh_get_grid_cell(obj): obj for obj in bpy.context.scene.objects if navmesh_is_map(obj)}
+
+    cell_x, cell_y = navmesh_get_grid_cell(navmesh_obj)
+    cells = {}
+    missing_cells = []
+    for ncell_x, ncell_y in navmesh_grid_get_cell_neighbors(cell_x, cell_y):
+        ncell = cell_to_obj.get((ncell_x, ncell_y), None)
+        if ncell is not None:
+            cells[(ncell_x, ncell_y)] = ncell
+        else:
+            missing_cells.append((ncell_x, ncell_y))
+
+    if len(missing_cells) > 0:
+        missing_cells_str = ", ".join(navmesh_grid_get_cell_filename(x, y) for x, y in missing_cells)
+        logger.error(
+            "Map navmesh export requires neighboring cells. "
+            f"The following navmeshes must be imported into the scene: {missing_cells_str}."
+        )
+        return None
+    else:
+        return cells
+
+
 def link_from_object(link_obj: Object) -> NavLink:
     assert link_obj.sollum_type == SollumType.NAVMESH_LINK
 
@@ -121,15 +157,20 @@ def cover_point_from_object(cover_point_obj: Object) -> NavCoverPoint:
     # TODO: warn if rotation is not Z-axis aligned
     cover_point_xml = NavCoverPoint()
     cover_point_xml.type = cover_point_props.get_raw_int()
-    cover_point_xml.angle = cover_point_obj.rotation_euler.z - math.pi  # TODO: wrap to [0..2pi] range
+    cover_point_xml.angle = wrap_angle(cover_point_obj.rotation_euler.z - math.pi)
     cover_point_xml.position = Vector(cover_point_obj.location)
     return cover_point_xml
 
 
-def polygons_from_object(navmesh_obj: Object, local_cell_index: int) -> list[NavPolygon]:
+def polygons_from_object(navmesh_obj: Object) -> list[NavPolygon]:
     assert navmesh_is_valid(navmesh_obj)
 
-    # TODO: error if there are vertices outside cell bounds for map navmeshes
+    cell_x, cell_y = navmesh_get_grid_cell(navmesh_obj)
+    if cell_x < 0 or cell_y < 0:
+        cell_index = NAVMESH_STANDALONE_CELL_INDEX
+    else:
+        # TODO: error if there are vertices outside cell bounds for map navmeshes
+        cell_index = navmesh_grid_get_cell_index(cell_x, cell_y)
 
     polygons_xml = []
     navmesh_obj_eval = get_evaluated_obj(navmesh_obj)
@@ -137,10 +178,8 @@ def polygons_from_object(navmesh_obj: Object, local_cell_index: int) -> list[Nav
     mesh_edge_adjacency = navmesh_compute_edge_adjacency(mesh)
 
     mesh_verts = mesh.vertices
-    flags0 = mesh.attributes[NavMeshAttr.FLAG_0].data  # TODO: validate that attrs exist
-    flags1 = mesh.attributes[NavMeshAttr.FLAG_1].data
-    flags2 = mesh.attributes[NavMeshAttr.FLAG_2].data
-    flags3 = mesh.attributes[NavMeshAttr.FLAG_3].data
+    poly_data0 = mesh.attributes[NavMeshAttr.POLY_DATA_0].data  # TODO: validate that attrs exist
+    poly_data1 = mesh.attributes[NavMeshAttr.POLY_DATA_1].data
     for poly in mesh.polygons:
         poly_verts = [mesh_verts[v].co for v in poly.vertices]
 
@@ -163,24 +202,24 @@ def polygons_from_object(navmesh_obj: Object, local_cell_index: int) -> list[Nav
         compressed_centroid_x = min(max(compressed_centroid_x, 0), 255)
         compressed_centroid_y = min(max(compressed_centroid_y, 0), 255)
 
-        flag0 = min(max(flags0[poly.index].value, 0), 255)
-        flag1 = min(max(flags1[poly.index].value, 0), 255)
-        flag2 = min(max(flags2[poly.index].value, 0), 255)
-        flag3 = min(max(flags3[poly.index].value, 0), 255)
-
-        poly_xml = NavPolygon()
-        poly_xml.vertices = poly_verts
-
         adjacent_polys = navmesh_poly_get_adjacent_polys_local(mesh, poly, mesh_edge_adjacency)
         adjacent_polys_with_cell_index = [
             (NAVMESH_ADJACENCY_INDEX_NONE, NAVMESH_ADJACENCY_INDEX_NONE)
-            if poly_idx == NAVMESH_ADJACENCY_INDEX_NONE else (local_cell_index, poly_idx)
+            if poly_idx == NAVMESH_ADJACENCY_INDEX_NONE else (cell_index, poly_idx)
             for poly_idx in adjacent_polys
         ]
 
+        data0 = poly_data0[poly.index].value
+        data1 = poly_data1[poly.index].value
+        flag0 = data0 & 0xFF
+        flag1 = (data0 >> 8) & 0xFF
+        flag2 = data1 & 0xFF
+        flag3 = (data1 >> 8) & 0xFF
+
+        poly_xml = NavPolygon()
+        poly_xml.vertices = poly_verts
         poly_xml.edges = "\n".join(map(lambda e: f"{e[0]}:{e[1]}, {e[0]}:{e[1]}", adjacent_polys_with_cell_index))
         poly_xml.flags = f"{flag0} {flag1} {flag2} {flag3} {compressed_centroid_x} {compressed_centroid_y}"
-
         polygons_xml.append(poly_xml)
 
     navmesh_obj_eval.to_mesh_clear()
