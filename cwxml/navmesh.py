@@ -42,7 +42,7 @@ class NavLink(ElementTree):
 
     def __init__(self):
         super().__init__()
-        self.type = ValueProperty("Value")
+        self.type = ValueProperty("Type")
         self.angle = ValueProperty("Angle")
         self.poly_from = ValueProperty("PolyFrom")
         self.poly_to = ValueProperty("PolyTo")

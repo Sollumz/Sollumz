@@ -7,7 +7,6 @@ import os
 import math
 from ..shared.math import wrap_angle
 import numpy as np
-from ..tools.meshhelper import create_box
 from ..cwxml.navmesh import (
     YNV,
     NavCoverPoint,
@@ -16,6 +15,7 @@ from ..cwxml.navmesh import (
 )
 from ..sollumz_properties import SollumType
 from .navmesh_attributes import NavMeshAttr, mesh_add_navmesh_attribute
+from .properties import NavLinkType
 from typing import Sequence
 
 
@@ -46,22 +46,26 @@ def links_to_obj(links: Sequence[NavLink]) -> Object:
     pobj.empty_display_size = 0
 
     for idx, link in enumerate(links):
-        frommesh = bpy.data.meshes.new("from")
-        create_box(frommesh, 0.5)
-        fromobj = bpy.data.objects.new("from", frommesh)
-        fromobj.location = link.position_from
-        tomesh = bpy.data.meshes.new("to")
-        create_box(tomesh, 0.5)
-        toobj = bpy.data.objects.new("to", tomesh)
-        toobj.location = link.position_to
-        obj = bpy.data.objects.new(f"Link {idx}", None)
-        obj.sollum_type = SollumType.NAVMESH_LINK
-        fromobj.parent = obj
-        toobj.parent = obj
-        obj.parent = pobj
-        bpy.context.collection.objects.link(fromobj)
-        bpy.context.collection.objects.link(toobj)
-        bpy.context.collection.objects.link(obj)
+        from_obj = bpy.data.objects.new(f"Link {idx}", None)
+        from_obj.sollum_type = SollumType.NAVMESH_LINK
+        from_obj.parent = pobj
+        from_obj.empty_display_size = 0.65
+        from_obj.empty_display_type = "SPHERE"
+        from_obj.location = link.position_from
+        from_obj.sz_nav_link.link_type = NavLinkType(link.type).name
+        from_obj.sz_nav_link.heading = link.angle
+        from_obj.sz_nav_link.poly_from = link.poly_from
+        from_obj.sz_nav_link.poly_to = link.poly_to
+
+        to_obj = bpy.data.objects.new(f"Link {idx}.target", None)
+        to_obj.sollum_type = SollumType.NAVMESH_LINK_TARGET
+        to_obj.parent = from_obj
+        to_obj.empty_display_size = 0.45
+        to_obj.empty_display_type = "SPHERE"
+        to_obj.location = link.position_to - link.position_from
+
+        bpy.context.collection.objects.link(from_obj)
+        bpy.context.collection.objects.link(to_obj)
 
     return pobj
 
