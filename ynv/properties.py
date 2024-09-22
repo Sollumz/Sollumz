@@ -3,13 +3,15 @@ from bpy.types import (
     Object,
     Mesh,
     WindowManager,
-    PropertyGroup
+    PropertyGroup,
+    ShaderNode,
 )
 from bpy.props import (
     BoolProperty,
     BoolVectorProperty,
     IntProperty,
     FloatProperty,
+    FloatVectorProperty,
     EnumProperty,
     PointerProperty,
 )
@@ -21,6 +23,7 @@ from .navmesh_attributes import (
     mesh_set_navmesh_poly_attributes,
     NavPolyAttributes,
 )
+from . import navmesh_material
 
 
 class NavCoverType(IntEnum):
@@ -184,10 +187,55 @@ class NavMeshPolyAccessor(PropertyGroup):
     ped_density: IntAttr("Ped Density", "ped_density", min=0, max=7)
 
 
+class NavMeshPolyRender(PropertyGroup):
+    @property
+    def mesh(self) -> Mesh:
+        assert self.id_data is not None and self.id_data.id_type == "MESH"
+        return self.id_data
+
+    def get_node(self, name: str) -> ShaderNode:
+        mesh = self.mesh
+        node_tree = mesh.materials[0].node_tree
+        return node_tree.nodes[name]
+
+
+def _define_poly_render_attr_properties(attr: navmesh_material.AttributeRenderInfo):
+    def _toggle_getter(self: NavMeshPolyRender) -> bool:
+        return self.get_node(attr.toggle_name).outputs[0].default_value != 0
+
+    def _toggle_setter(self: NavMeshPolyRender, value: bool):
+        self.get_node(attr.toggle_name).outputs[0].default_value = 1.0 if value else 0.0
+
+    def _color_getter(self: NavMeshPolyRender) -> tuple[float, float, float]:
+        node = self.get_node(attr.color_name)
+        return tuple(node.inputs[i].default_value for i in range(3))
+
+    def _color_setter(self: NavMeshPolyRender, value: tuple[float, float, float]):
+        node = self.get_node(attr.color_name)
+        for i in range(3):
+            node.inputs[i].default_value = value[i]
+
+    NavMeshPolyRender.__annotations__[attr.toggle_name] = BoolProperty(
+        name=attr.toggle_name,
+        get=_toggle_getter,
+        set=_toggle_setter,
+    )
+    NavMeshPolyRender.__annotations__[attr.color_name] = FloatVectorProperty(
+        name=attr.color_name, size=3, subtype="COLOR", min=0.0, max=1.0,
+        get=_color_getter,
+        set=_color_setter,
+    )
+
+
+for attr in navmesh_material.ALL_ATTRIBUTES:
+    _define_poly_render_attr_properties(attr)
+
+
 def register():
     Object.sz_nav_cover_point = PointerProperty(type=NavCoverPointProps)
     Object.sz_nav_link = PointerProperty(type=NavLinkProps)
     Mesh.sz_navmesh_poly_access = PointerProperty(type=NavMeshPolyAccessor)
+    Mesh.sz_navmesh_poly_render = PointerProperty(type=NavMeshPolyRender)
 
     WindowManager.sz_ui_nav_view_bounds = BoolProperty(
         name="Display Grid Bounds", description="Display the navigation mesh map grid bounds on the 3D Viewport",
@@ -199,4 +247,5 @@ def unregister():
     del Object.sz_nav_cover_point
     del Object.sz_nav_link
     del Mesh.sz_navmesh_poly_access
+    del Mesh.sz_navmesh_poly_render
     del WindowManager.sz_ui_nav_view_bounds
