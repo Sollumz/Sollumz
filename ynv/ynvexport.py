@@ -66,7 +66,6 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         navmesh_xml.bb_size = bbmax - bbmin
         navmesh_xml.area_id = NAVMESH_STANDALONE_CELL_INDEX
     else:
-        # TODO: actually use neighbors
         # neighbors = locate_neighbors_in_scene(navmesh_obj)
         # if neighbors is None:
         #     return None

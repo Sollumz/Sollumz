@@ -48,7 +48,7 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
         selected_polys = list(poly_access.selected_polys)
         layout.alignment = "RIGHT"
         layout.label(
-            text=f"Polygon #{active_poly} (+ {len(selected_polys)} selected polys)"
+            text=f"Polygon #{active_poly} (+ {len(selected_polys)} selected)"
                  if len(selected_polys) > 0
                  else f"Polygon #{active_poly}"
         )
@@ -74,17 +74,17 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
 
         col = layout.column(align=True, heading="Cover Directions")
         row = col.row(align=True)
-        row.prop(poly_access, "cover_directions", index=3, toggle=True, text="-X -Y")
-        row.prop(poly_access, "cover_directions", index=4, toggle=True, text="-Y")
         row.prop(poly_access, "cover_directions", index=5, toggle=True, text="+X -Y")
+        row.prop(poly_access, "cover_directions", index=4, toggle=True, text="-Y")
+        row.prop(poly_access, "cover_directions", index=3, toggle=True, text="-X -Y")
         row = col.row(align=True)
-        row.prop(poly_access, "cover_directions", index=2, toggle=True, text="-X")
-        row.label(text="")
         row.prop(poly_access, "cover_directions", index=6, toggle=True, text="+X")
+        row.label(text="")
+        row.prop(poly_access, "cover_directions", index=2, toggle=True, text="-X")
         row = col.row(align=True)
-        row.prop(poly_access, "cover_directions", index=1, toggle=True, text="-X +Y")
-        row.prop(poly_access, "cover_directions", index=0, toggle=True, text="+Y")
         row.prop(poly_access, "cover_directions", index=7, toggle=True, text="+X +Y")
+        row.prop(poly_access, "cover_directions", index=0, toggle=True, text="+Y")
+        row.prop(poly_access, "cover_directions", index=1, toggle=True, text="-X +Y")
 
 
 class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):

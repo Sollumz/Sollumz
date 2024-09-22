@@ -12,8 +12,11 @@ class NavMeshAttr(str, Enum):
     # Even though 'INT' is 4-bytes, we only use the lower 2-bytes of 2 separate mesh attributes in case we need to
     # access them from shader nodes. Shader nodes cannot use integers and they are converted to 32-bit floats.
     # Limiting their values to 2-bytes we ensure we don't lose precision in the int -> float conversion.
+    # See mesh_get/set_navmesh_poly_attributes for info on these attributes.
     POLY_DATA_0 = ".navmesh.poly_data0"
     POLY_DATA_1 = ".navmesh.poly_data1"
+
+    EDGE_EXTERNAL_POLY = ".navmesh.edge_external_poly"
 
     @property
     def type(self):
@@ -21,7 +24,13 @@ class NavMeshAttr(str, Enum):
 
     @property
     def domain(self):
-        return "FACE"
+        match self:
+            case NavMeshAttr.POLY_DATA_0 | NavMeshAttr.POLY_DATA_1:
+                return "FACE"
+            case NavMeshAttr.EDGE_EXTERNAL_POLY:
+                return "EDGE"
+            case _:
+                assert False, f"Domain not set for navmesh attribute '{self}'"
 
 
 def mesh_add_navmesh_attribute(mesh: Mesh, attr: NavMeshAttr):

@@ -78,26 +78,50 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
     poly_data = np.empty((len(polygons), len(poly_data_attrs)), dtype=np.uint16)
     for poly_index, poly in enumerate(polygons):
         face_indices = []
+        num_new_vertices = 0
+        prev_idx = None
         for vert in poly.vertices:
             vert.freeze()
             idx = vert_to_idx.get(vert, None)
+            if prev_idx is not None and idx == prev_idx:
+                # In some cases there are edges with the same vertex as start and end, skip them.
+                continue
+
             if idx is None:
                 idx = len(vertices)
                 vert_to_idx[vert] = idx
                 vertices.append(vert)
-            face_indices.append(idx)
+                num_new_vertices += 1
 
+            face_indices.append(idx)
+            prev_idx = idx
+
+        if len(set(face_indices)) <= 2:
+            # Skip faces with the less than 3 different vertices.
+            # Blender polygons require at least 3 vertices, but navmeshes often have polygons with
+            # only 2 vertices (e.g. the zero-area stich polys for DLCs). These should be computed
+            # again on export if needed.
+
+            # Roll-back changes in the vertices array
+            if num_new_vertices > 0:
+                for _ in range(num_new_vertices):
+                    new_vert = vertices.pop(-1)
+                    del vert_to_idx[new_vert]
+
+            continue
+
+        poly_index_in_mesh = len(faces)
         faces.append(face_indices)
 
         flags = tuple(map(int, poly.flags.split(" ")))[:4]
-        poly_data[poly_index, :] = flags[0] | (flags[1] << 8), flags[2] | (flags[3] << 8)
+        poly_data[poly_index_in_mesh, :] = flags[0] | (flags[1] << 8), flags[2] | (flags[3] << 8)
 
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(vertices, [], faces)
 
     for i, attr in enumerate(poly_data_attrs):
         mesh_add_navmesh_attribute(mesh, attr)
-        mesh.attributes[attr].data.foreach_set("value", poly_data[:, i].ravel())
+        mesh.attributes[attr].data.foreach_set("value", poly_data[:len(faces), i].ravel())
 
     return mesh
 
