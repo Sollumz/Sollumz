@@ -69,7 +69,8 @@ class NavPolyAttributes:
     is_train_track: bool
     is_shallow_water: bool
     cover_directions: NavPolyCoverDirections
-    audio_properties: int  # 4 bits, 0..15
+    audio_reverb_size: int  # 2 bits, 0..3
+    audio_reverb_wet: int  # 2 bits, 0..3
     ped_density: int  # 3 bits, 0..7
 
 
@@ -103,7 +104,8 @@ def mesh_get_navmesh_poly_attributes(mesh: Mesh, poly_idx: int) -> NavPolyAttrib
         is_too_steep_to_walk_on=(flags0 & 64) != 0,
         is_water=(flags0 & 128) != 0,
 
-        audio_properties=flags1 & 0xF,
+        audio_reverb_size=flags1 & 3,
+        audio_reverb_wet=(flags1 >> 2) & 3,
         is_near_car_node=(flags1 & 32) != 0,
         is_interior=(flags1 & 64) != 0,
         is_isolated=(flags1 & 128) != 0,
@@ -130,7 +132,8 @@ def mesh_set_navmesh_poly_attributes(mesh: Mesh, poly_idx: int, poly_attrs: NavP
     flags0 |= 64 if poly_attrs.is_too_steep_to_walk_on else 0
     flags0 |= 128 if poly_attrs.is_water else 0
 
-    flags1 = poly_attrs.audio_properties & 0xF
+    flags1 = poly_attrs.audio_reverb_size & 3
+    flags1 |= (poly_attrs.audio_reverb_wet & 3) << 2
     flags1 |= 32 if poly_attrs.is_near_car_node else 0
     flags1 |= 64 if poly_attrs.is_interior else 0
     flags1 |= 128 if poly_attrs.is_isolated else 0

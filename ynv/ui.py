@@ -70,7 +70,10 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
         grid.prop(poly_access, "is_isolated")
         grid.prop(poly_access, "lies_along_edge")
 
-        layout.prop(poly_access, "audio_properties")
+        col = layout.column(align=True)
+        col.prop(poly_access, "audio_reverb_size", slider=True)
+        col.prop(poly_access, "audio_reverb_wet", slider=True, text="Reverb Wet")
+
         layout.prop(poly_access, "ped_density", slider=True)
 
         col = layout.column(align=True, heading="Cover Directions")

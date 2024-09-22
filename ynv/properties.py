@@ -183,7 +183,8 @@ class NavMeshPolyAccessor(PropertyGroup):
     is_train_track: BoolAttr("Train Track", "is_train_track")
     is_shallow_water: BoolAttr("Shallow Water", "is_shallow_water")
     cover_directions: BoolVectorAttr("Cover Directions", "cover_directions", size=8)
-    audio_properties: IntAttr("Audio Properties", "audio_properties", min=0, max=15)
+    audio_reverb_size: IntAttr("Audio Reverb Size", "audio_reverb_size", min=0, max=3)
+    audio_reverb_wet: IntAttr("Audio Reverb Wet", "audio_reverb_wet", min=0, max=3)
     ped_density: IntAttr("Ped Density", "ped_density", min=0, max=7)
 
 
