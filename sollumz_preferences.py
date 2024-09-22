@@ -335,12 +335,12 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         update=_save_preferences
     )
 
-    experimental_shader_expressions: bpy.props.BoolProperty(
-        name="Shader Expressions",
-        description="[Experimental] Use shader expressions to create material node trees",
-        default=False,
-        update=_save_preferences
-    )
+    # experimental_shader_expressions: bpy.props.BoolProperty(
+    #     name="Shader Expressions",
+    #     description="[Experimental] Use shader expressions to create material node trees",
+    #     default=False,
+    #     update=_save_preferences
+    # )
 
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
@@ -386,9 +386,9 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_up.bl_idname, text="", icon="TRIA_UP")
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
 
-        layout.separator()
-        layout.label(text="Experimental:")
-        layout.prop(self, "experimental_shader_expressions")
+        # layout.separator()
+        # layout.label(text="Experimental:")
+        # layout.prop(self, "experimental_shader_expressions")
 
     def register():
         _load_preferences()
