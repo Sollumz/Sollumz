@@ -33,6 +33,7 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_NAVMESH_PANEL.bl_idname
+    bl_order = 1
 
     def draw(self, context):
         layout = self.layout
@@ -85,6 +86,40 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
         row.prop(poly_access, "cover_directions", index=7, toggle=True, text="+X +Y")
         row.prop(poly_access, "cover_directions", index=0, toggle=True, text="+Y")
         row.prop(poly_access, "cover_directions", index=1, toggle=True, text="-X +Y")
+
+
+class SOLLUMZ_PT_NAVMESH_POLY_RENDER_PANEL(bpy.types.Panel):
+    bl_label = "Polygon Render"
+    bl_idname = "SOLLUMZ_PT_NAVMESH_POLY_RENDER_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_NAVMESH_PANEL.bl_idname
+    bl_order = 2
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        navmesh_obj = context.active_object
+        mesh = navmesh_obj.data
+
+        poly_render = mesh.sz_navmesh_poly_render
+        from .navmesh_material import ALL_ATTRIBUTES
+        for attr in ALL_ATTRIBUTES:
+            split = layout.split(factor=0.667)
+
+            row = split.row()
+            row.alignment = "RIGHT"
+            row.label(text=attr.name)
+            is_toggled = getattr(poly_render, attr.toggle_name)
+            toggle_icon = "HIDE_OFF" if is_toggled else "HIDE_ON"
+            row.prop(poly_render, attr.toggle_name, text="", emboss=False, icon=toggle_icon)
+
+            row = split.row()
+            row.prop(poly_render, attr.color_name, text="")
 
 
 class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):
