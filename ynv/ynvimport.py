@@ -123,6 +123,9 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
         mesh_add_navmesh_attribute(mesh, attr)
         mesh.attributes[attr].data.foreach_set("value", poly_data[:len(faces), i].ravel())
 
+    from .navmesh_material import get_navmesh_material
+    mesh.materials.append(get_navmesh_material())
+
     return mesh
 
 
