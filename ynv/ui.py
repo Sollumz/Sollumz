@@ -110,19 +110,33 @@ class SOLLUMZ_PT_NAVMESH_POLY_RENDER_PANEL(bpy.types.Panel):
         mesh = navmesh_obj.data
 
         poly_render = mesh.sz_navmesh_poly_render
-        from .navmesh_material import ALL_ATTRIBUTES
-        for attr in ALL_ATTRIBUTES:
+        from .navmesh_material import ALL_FLAGS, ALL_VALUES
+        for flag in ALL_FLAGS:
             split = layout.split(factor=0.667)
 
             row = split.row()
             row.alignment = "RIGHT"
-            row.label(text=attr.name)
-            is_toggled = getattr(poly_render, attr.toggle_name)
+            row.label(text=flag.name)
+            is_toggled = getattr(poly_render, flag.toggle_name)
             toggle_icon = "HIDE_OFF" if is_toggled else "HIDE_ON"
-            row.prop(poly_render, attr.toggle_name, text="", emboss=False, icon=toggle_icon)
+            row.prop(poly_render, flag.toggle_name, text="", emboss=False, icon=toggle_icon)
 
             row = split.row()
-            row.prop(poly_render, attr.color_name, text="")
+            row.prop(poly_render, flag.color_name, text="")
+
+        for val in ALL_VALUES:
+            split = layout.split(factor=0.667)
+
+            row = split.row()
+            row.alignment = "RIGHT"
+            row.label(text=val.name)
+            is_toggled = getattr(poly_render, val.toggle_name)
+            toggle_icon = "HIDE_OFF" if is_toggled else "HIDE_ON"
+            row.prop(poly_render, val.toggle_name, text="", emboss=False, icon=toggle_icon)
+
+            row = split.row(align=True)
+            row.prop(poly_render, val.color_min_name, text="")
+            row.prop(poly_render, val.color_max_name, text="")
 
 
 class SOLLUMZ_PT_NAVMESH_COVER_POINT_PANEL(Panel):
