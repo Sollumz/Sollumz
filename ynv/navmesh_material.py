@@ -11,6 +11,8 @@ from ..shared.shader_expr.builtins import (
     value,
     vec_value,
     roundf,
+    truncf,
+    mix_color,
 )
 from ..shared.shader_expr import expr, compile_to_material
 from .navmesh_attributes import NavMeshAttr
@@ -18,7 +20,7 @@ from .navmesh_attributes import NavMeshAttr
 NAVMESH_MATERIAL_NAME = ".sz.navmesh"
 
 
-class AttributeRenderInfo(NamedTuple):
+class FlagRenderInfo(NamedTuple):
     name: str
     data_index: int
     flag_value: int
@@ -34,22 +36,50 @@ class AttributeRenderInfo(NamedTuple):
         return f"{self.name}__color"
 
 
+class ValueRenderInfo(NamedTuple):
+    name: str
+    data_index: int
+    start_bit: int
+    end_bit: int
+    default_toggle: bool
+    default_color_min: tuple[float, float, float]
+    default_color_max: tuple[float, float, float]
+
+    @property
+    def toggle_name(self) -> str:
+        return f"{self.name}__toggle"
+
+    @property
+    def color_min_name(self) -> str:
+        return f"{self.name}__color_min"
+
+    @property
+    def color_max_name(self) -> str:
+        return f"{self.name}__color_max"
+
+
 # TODO: better default colors
-ALL_ATTRIBUTES = tuple(AttributeRenderInfo(*args) for args in (
+ALL_FLAGS = tuple(FlagRenderInfo(*args) for args in (
     ("is_small",                   0, 1,     False, (0.0, 0.1, 0.1)),
-    ("is_large",                   0, 2,     True,  (0.1, 0.0, 0.1)),
-    ("is_pavement",                0, 4,     False, (0.0, 0.25, 0.0)),
-    ("is_road",                    1, 2,     False, (0.45, 0.0, 0.3)),
+    ("is_large",                   0, 2,     False, (0.1, 0.0, 0.1)),
+    ("is_pavement",                0, 4,     True,  (0.0, 0.25, 0.0)),
+    ("is_road",                    1, 2,     True,  (0.45, 0.0, 0.3)),
     ("is_near_car_node",           0, 8192,  False, (0.45, 0.0, 0.3)),
-    ("is_train_track",             1, 8,     False, (0.45, 0.0, 0.3)),
+    ("is_train_track",             1, 8,     True,  (0.45, 0.0, 0.3)),
     ("is_in_shelter",              0, 8,     False, (0.0, 0.25, 0.0)),
     ("is_interior",                0, 16384, False, (0.0, 0.25, 0.0)),
-    ("is_too_steep_to_walk_on",    0, 64,    False, (0.0, 0.25, 0.0)),
-    ("is_water",                   0, 128,   False, (0.0, 0.0, 0.95)),
-    ("is_shallow_water",           1, 16,    False, (0.0, 0.0, 0.15)),
+    ("is_too_steep_to_walk_on",    0, 64,    True,  (0.0, 0.25, 0.0)),
+    ("is_water",                   0, 128,   True,  (0.0, 0.0, 0.25)),
+    ("is_shallow_water",           1, 16,    True,  (0.0, 0.0, 0.7)),
     ("is_network_spawn_candidate", 1, 1,     False, (0.15, 0.0, 0.0)),
     ("is_isolated",                0, 32768, False, (0.3, 0.0, 0.0)),
     ("lies_along_edge",            1, 4,     False, (0.3, 0.3, 0.3)),
+))
+
+ALL_VALUES = tuple(ValueRenderInfo(*args) for args in (
+    ("audio_reverb_size", 0,  8,  9,  False, (0.66, 0.0, 1.0), (0.08, 0.0, 0.1)),
+    ("audio_reverb_wet",  0,  10, 11, False, (0.102, 0.1, 1.0), (0.002, 0.0, 0.1)),
+    ("ped_density",       1,  5,  7,  True,  (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
 ))
 
 
@@ -62,11 +92,22 @@ def navmesh_material_shader_expr() -> expr.ShaderExpr:
     eps = 0.00001
 
     color = vec(0.0, 0.0, 0.0)
-    for attr in ALL_ATTRIBUTES:
-        flag_toggle = value(attr.toggle_name, default_value=1.0 if attr.default_toggle else 0.0)
-        flag_color = vec_value(attr.color_name, default_value=attr.default_color)
-        flag = ((data[attr.data_index] / (attr.flag_value - eps)) % 2.0) > (1.0 - eps)
+    for flag_info in ALL_FLAGS:
+        flag_toggle = value(flag_info.toggle_name, default_value=1.0 if flag_info.default_toggle else 0.0)
+        flag_color = vec_value(flag_info.color_name, default_value=flag_info.default_color)
+        flag = ((data[flag_info.data_index] / (flag_info.flag_value - eps)) % 2.0) > (1.0 - eps)
         color += f2v(flag * flag_toggle) * flag_color
+
+    for val_info in ALL_VALUES:
+        val_toggle = value(val_info.toggle_name, default_value=1.0 if val_info.default_toggle else 0.0)
+        val_color_min = vec_value(val_info.color_min_name, default_value=val_info.default_color_min)
+        val_color_max = vec_value(val_info.color_max_name, default_value=val_info.default_color_max)
+
+        num_bits = val_info.end_bit - val_info.start_bit + 1
+        max_val = float((1 << num_bits) - 1)
+        val = truncf(data[val_info.data_index] / float(1 << val_info.start_bit)) % float(1 << num_bits)
+        val_normalized = (val - 1.0) / (max_val - 1.0)  # -1 because 0 = no color, 1 = min color, max_val = max color
+        color += f2v((val > 0.0) * val_toggle) * mix_color(val_color_min, val_color_max, val_normalized)
 
     return bsdf_diffuse(
         color=color,
