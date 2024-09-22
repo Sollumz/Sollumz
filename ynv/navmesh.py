@@ -92,7 +92,7 @@ def _loop_to_half_edge(mesh: Mesh, loop_idx: int) -> tuple[int, int]:
     if v0 != loop.vertex_index:
         v1, v0 = edge_verts
     assert v0 == loop.vertex_index, \
-        f"Degenerate mesh, failed to get half-edge from loop: {v0=}, {v1=}, {loop.vertex_index=}, {loop.edge_index=}"
+        f"Degenerate mesh, failed to get half-edge from loop: {v0=}, {v1=}, {loop_idx=}, {loop.vertex_index=}, {loop.edge_index=}"
     return v0, v1
 
 
@@ -105,7 +105,7 @@ def navmesh_compute_edge_adjacency(mesh: Mesh) -> tuple[dict[tuple[int, int], in
             v0, v1 = _loop_to_half_edge(mesh, loop_idx)
 
             assert (v0, v1) not in half_edge_to_lhs_poly, \
-                f"Degenerate mesh, multiple LHS polygons on half-edge ({v0}, {v1})"
+                    f"Degenerate mesh, multiple LHS polygons on half-edge ({v0}, {v1}): {half_edge_to_lhs_poly[(v0, v1)]} and {poly.index}"
 
             half_edge_to_lhs_poly[(v0, v1)] = poly.index
 
@@ -117,7 +117,7 @@ def navmesh_compute_edge_adjacency(mesh: Mesh) -> tuple[dict[tuple[int, int], in
             rhs_poly_idx = half_edge_to_lhs_poly.get((v1, v0), None)
             if rhs_poly_idx is not None:
                 assert (v0, v1) not in half_edge_to_rhs_poly, \
-                    f"Degenerate mesh, multiple RHS polygons on half-edge ({v0}, {v1})"
+                    f"Degenerate mesh, multiple RHS polygons on half-edge ({v0}, {v1}): {half_edge_to_rhs_poly[(v0, v1)]} and {rhs_poly_idx}"
                 half_edge_to_rhs_poly[(v0, v1)] = rhs_poly_idx
 
     return half_edge_to_lhs_poly, half_edge_to_rhs_poly
