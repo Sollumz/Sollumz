@@ -254,30 +254,6 @@ class FloatMapRangeExpr(FloatExpr):
         return var_id
 
 
-class FloatRoundExpr(FloatExpr):
-    """Round a float value."""
-
-    value: FloatExpr
-    clamp: bool
-
-    def __init__(
-        self, value: Floaty,
-        clamp: bool = False
-    ):
-        self.value = floaty(value)
-        self.clamp = clamp
-
-    def __str__(self):
-        return f"round({self.value}, {self.clamp})"
-
-    def dump(self, ctx: ExprDumpContext) -> str:
-        def g():
-            value_id = self.value.dump(ctx)
-            return f"round({value_id}, {self.clamp})"
-        var_id = ctx.get_var_id(self, g)
-        return var_id
-
-
 class VectorComponent(IntEnum):
     X = 0
     Y = 1
