@@ -74,17 +74,18 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
     vert_to_idx = {}
     vertices = []
     faces = []
+    faces_set = set()
     poly_data_attrs = (NavMeshAttr.POLY_DATA_0, NavMeshAttr.POLY_DATA_1)
     poly_data = np.empty((len(polygons), len(poly_data_attrs)), dtype=np.uint16)
     for poly_index, poly in enumerate(polygons):
         face_indices = []
         num_new_vertices = 0
-        prev_idx = None
         for vert in poly.vertices:
             vert.freeze()
             idx = vert_to_idx.get(vert, None)
-            if prev_idx is not None and idx == prev_idx:
+            if idx in face_indices:
                 # In some cases there are edges with the same vertex as start and end, skip them.
+                # The same face shouldn't repeat any vertex anyways, so check for that
                 continue
 
             if idx is None:
@@ -94,7 +95,6 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
                 num_new_vertices += 1
 
             face_indices.append(idx)
-            prev_idx = idx
 
         if len(set(face_indices)) <= 2:
             # Skip faces with the less than 3 different vertices.
@@ -110,8 +110,17 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
 
             continue
 
+        face_indices_set = frozenset(face_indices)
+        if face_indices_set in faces_set:
+            # Duplicate face, skip it.
+            # Don't need to roll-back vertices because they should all already have been added with
+            # an earlier face, not now.
+            assert num_new_vertices == 0, "Duplicate face but with new vertices?"
+            continue
+
         poly_index_in_mesh = len(faces)
         faces.append(face_indices)
+        faces_set.add(face_indices_set)
 
         flags = tuple(map(int, poly.flags.split(" ")))[:4]
         poly_data[poly_index_in_mesh, :] = flags[0] | (flags[1] << 8), flags[2] | (flags[3] << 8)
