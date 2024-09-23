@@ -54,6 +54,10 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
                  else f"Polygon #{active_poly}"
         )
 
+        from . import operators as nav_ops
+
+        layout.operator(nav_ops.SOLLUMZ_OT_navmesh_polys_update_flags.bl_idname)
+
         grid = layout.grid_flow(columns=-3)
         grid.prop(poly_access, "is_small")
         grid.prop(poly_access, "is_large")

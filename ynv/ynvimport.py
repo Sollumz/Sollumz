@@ -96,7 +96,8 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
 
             face_indices.append(idx)
 
-        if len(set(face_indices)) <= 2:
+        face_indices_set = frozenset(face_indices)
+        if len(face_indices_set) <= 2:
             # Skip faces with the less than 3 different vertices.
             # Blender polygons require at least 3 vertices, but navmeshes often have polygons with
             # only 2 vertices (e.g. the zero-area stich polys for DLCs). These should be computed
@@ -110,7 +111,6 @@ def polygons_to_mesh(name: str, polygons: Sequence[NavPolygon]) -> Mesh:
 
             continue
 
-        face_indices_set = frozenset(face_indices)
         if face_indices_set in faces_set:
             # Duplicate face, skip it.
             # Don't need to roll-back vertices because they should all already have been added with
