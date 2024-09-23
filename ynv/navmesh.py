@@ -24,6 +24,9 @@ NAVMESH_STANDALONE_CELL_INDEX = 10000
 
 NAVMESH_ADJACENCY_INDEX_NONE = 0x3FFF
 
+NAVMESH_POLY_SMALL_MAX_AREA = 2.0
+NAVMESH_POLY_LARGE_MIN_AREA = 40.0
+
 
 def navmesh_is_valid(obj: Object) -> bool:
     """Gets whether the object is a navmesh."""
@@ -55,10 +58,12 @@ def navmesh_get_grid_cell(obj: Object) -> tuple[int, int]:
     y = int(match.group(2))
     return x // NAVMESH_SECTORS_PER_GRID_CELL, y // NAVMESH_SECTORS_PER_GRID_CELL
 
+
 def navmesh_grid_get_cell_filename(x: int, y: int) -> str:
     sx = x * NAVMESH_SECTORS_PER_GRID_CELL
     sy = y * NAVMESH_SECTORS_PER_GRID_CELL
     return f"navmesh[{sx}][{sy}]"
+
 
 def navmesh_grid_get_cell_bounds(x: int, y: int) -> tuple[Vector, Vector]:
     cell_min = NAVMESH_GRID_BOUNDS_MIN + Vector((x, y, 0.0)) * NAVMESH_GRID_CELL_SIZE
@@ -105,7 +110,7 @@ def navmesh_compute_edge_adjacency(mesh: Mesh) -> tuple[dict[tuple[int, int], in
             v0, v1 = _loop_to_half_edge(mesh, loop_idx)
 
             assert (v0, v1) not in half_edge_to_lhs_poly, \
-                    f"Degenerate mesh, multiple LHS polygons on half-edge ({v0}, {v1}): {half_edge_to_lhs_poly[(v0, v1)]} and {poly.index}"
+                f"Degenerate mesh, multiple LHS polygons on half-edge ({v0}, {v1}): {half_edge_to_lhs_poly[(v0, v1)]} and {poly.index}"
 
             half_edge_to_lhs_poly[(v0, v1)] = poly.index
 
@@ -123,10 +128,11 @@ def navmesh_compute_edge_adjacency(mesh: Mesh) -> tuple[dict[tuple[int, int], in
     return half_edge_to_lhs_poly, half_edge_to_rhs_poly
 
 
-def navmesh_poly_get_adjacent_polys_local(mesh: Mesh, poly: MeshPolygon, edge_adjacendy: tuple[dict[tuple[int, int], int], dict[tuple[int, int], int]]):
+def navmesh_poly_get_adjacent_polys_local(mesh: Mesh, poly_idx: int, edge_adjacendy: tuple[dict[tuple[int, int], int], dict[tuple[int, int], int]]):
     _, half_edge_to_rhs_poly = edge_adjacendy
 
     adjacent_polys = []
+    poly = mesh.polygons[poly_idx]
     for loop_idx in poly.loop_indices:
         v0, v1 = _loop_to_half_edge(mesh, loop_idx)
 
@@ -137,3 +143,17 @@ def navmesh_poly_get_adjacent_polys_local(mesh: Mesh, poly: MeshPolygon, edge_ad
         adjacent_polys.append(adjacent_poly)
 
     return adjacent_polys
+
+
+def navmesh_poly_update_flags(mesh: Mesh, poly_idx: int):
+    """"""
+    from .navmesh_attributes import mesh_get_navmesh_poly_attributes, mesh_set_navmesh_poly_attributes
+
+    poly = mesh.polygons[poly_idx]
+    poly_attrs = mesh_get_navmesh_poly_attributes(mesh, poly_idx)
+
+    area = poly.area
+    poly_attrs.is_small = area < NAVMESH_POLY_SMALL_MAX_AREA
+    poly_attrs.is_large = area > NAVMESH_POLY_LARGE_MIN_AREA
+
+    mesh_set_navmesh_poly_attributes(mesh, poly_idx, poly_attrs)
