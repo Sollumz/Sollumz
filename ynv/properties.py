@@ -18,6 +18,7 @@ from bpy.props import (
 import bmesh
 from collections.abc import Iterator
 from enum import IntEnum
+from ..tools.blenderhelper import tag_redraw
 from .navmesh_attributes import (
     mesh_get_navmesh_poly_attributes,
     mesh_set_navmesh_poly_attributes,
@@ -104,6 +105,9 @@ def _attr_setter(attr_name: str):
         attrs = mesh_get_navmesh_poly_attributes(mesh, active_poly)
         setattr(attrs, attr_name, value)
         mesh_set_navmesh_poly_attributes(mesh, active_poly, attrs)
+
+        mesh.update_tag()
+        tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
 
     return fn
 
