@@ -122,15 +122,15 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
 
 class SollumzImportSettings(bpy.types.PropertyGroup):
     import_as_asset: bpy.props.BoolProperty(
-        name="Import as asset",
-        description="Create an asset from the .ydr/.yft high LOD",
+        name="Import To Asset Library",
+        description="Imports the selected file as an asset to the current blend file asset library",
         default=False,
         update=_save_preferences
     )
 
     split_by_group: bpy.props.BoolProperty(
-        name="Split Mesh by Group",
-        description="Splits the mesh by vertex groups",
+        name="Split Mesh by Vertex Group",
+        description="Splits the mesh by the vertex groups",
         default=True,
         update=_save_preferences
     )
