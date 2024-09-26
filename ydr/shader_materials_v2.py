@@ -347,7 +347,7 @@ def get_shader_expr(shader: ShaderDef) -> expr.ShaderExpr:
 
 
 def organize_node_tree(node_tree: bpy.types.ShaderNodeTree):
-    from .shader_materials import organize_node, organize_loose_nodes, group_image_texture_nodes, try_get_node_by_cls
+    from .shader_materials import organize_node, organize_loose_nodes, group_image_texture_nodes, try_get_node_by_cls, group_uv_map_nodes
 
     mo = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeOutputMaterial)
     mo.location.x = 0
@@ -355,6 +355,7 @@ def organize_node_tree(node_tree: bpy.types.ShaderNodeTree):
     organize_node(mo)
     organize_loose_nodes(node_tree, 1000, 0)
     group_image_texture_nodes(node_tree)
+    group_uv_map_nodes(node_tree)
 
 
 def create_shader(filename: str):

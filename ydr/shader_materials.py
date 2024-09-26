@@ -96,6 +96,31 @@ def group_image_texture_nodes(node_tree):
         node.location.y += group_offset
 
 
+def group_uv_map_nodes(node_tree):
+    uv_map_nodes = [node for node in node_tree.nodes if node.type == "UVMAP"]
+
+    if not uv_map_nodes:
+        return
+
+    uv_map_nodes.sort(key=lambda node: node.location.y)
+
+    avg_x = min([node.location.x for node in uv_map_nodes])
+
+    # adjust margin to change gap in between UV map nodes
+    margin = 120
+    current_y = min([node.location.y for node in uv_map_nodes]) - margin
+    for node in uv_map_nodes:
+        current_y += margin
+        node.location.x = avg_x
+        node.location.y = current_y
+
+    # how far to the left the UV map nodes are
+    group_offset = 600
+    for node in uv_map_nodes:
+        node.location.x -= group_offset
+        node.location.y += group_offset
+
+
 def get_loose_nodes(node_tree):
     loose_nodes = []
     for node in node_tree.nodes:
@@ -123,6 +148,7 @@ def organize_node_tree(b: ShaderBuilder):
     organize_node(mo)
     organize_loose_nodes(b.node_tree, 1000, 0)
     group_image_texture_nodes(b.node_tree)
+    group_uv_map_nodes(b.node_tree)
 
 
 def organize_node(node):
