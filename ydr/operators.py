@@ -442,6 +442,12 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Create a Shader Material"
 
     def create_material(self, context, obj, shader):
+
+        if obj.type != "MESH":
+            self.warning(
+                f"Object {obj.name} is not a mesh and will be skipped.")
+            return
+
         mat = create_shader(shader)
         obj.data.materials.append(mat)
 
