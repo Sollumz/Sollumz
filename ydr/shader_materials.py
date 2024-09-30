@@ -102,7 +102,7 @@ def group_uv_map_nodes(node_tree):
     if not uv_map_nodes:
         return
 
-    uv_map_nodes.sort(key=lambda node: node.location.y)
+    uv_map_nodes.sort(key=lambda node: node.name, reverse=True)
 
     avg_x = min([node.location.x for node in uv_map_nodes])
 
@@ -115,7 +115,7 @@ def group_uv_map_nodes(node_tree):
         node.location.y = current_y
 
     # how far to the left the UV map nodes are
-    group_offset = 600
+    group_offset = 900
     for node in uv_map_nodes:
         node.location.x -= group_offset
         node.location.y += group_offset
