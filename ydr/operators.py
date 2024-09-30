@@ -460,6 +460,8 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
         if is_tint_material(mat):
             create_tinted_shader_graph(obj)
 
+        self.message(f"Added a {shader} shader to {obj.name}.")
+
     def run(self, context):
 
         objs = bpy.context.selected_objects
@@ -472,7 +474,6 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
             shader = shadermats[context.window_manager.sz_shader_material_index].value
             try:
                 self.create_material(context, obj, shader)
-                self.message(f"Added a {shader} shader to {obj.name}.")
             except:
                 self.message(
                     f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
