@@ -4,7 +4,7 @@ from bpy.types import (
     Object,
 )
 import gpu
-import gpu_extras
+from gpu_extras.batch import batch_for_shader
 import blf
 from mathutils import Vector
 from collections.abc import Sequence
@@ -143,7 +143,7 @@ class CableOverlaysDrawHandler:
             coords.extend(self.build_radius_geometry_for_cable_piece(cable_obj, piece))
 
         shader = gpu.shader.from_builtin("UNIFORM_COLOR")
-        batch = gpu_extras.batch.batch_for_shader(shader, "LINES", {"pos": coords})
+        batch = batch_for_shader(shader, "LINES", {"pos": coords})
         shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
         batch.draw(shader)
 
