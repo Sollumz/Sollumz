@@ -87,26 +87,25 @@ def create_bound_disc():
     return bound_obj
 
 
-def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False, do_center: bool = False):
     """Convert each object in ``objs`` to a Bound Composite."""
     for obj in objs:
-        convert_obj_to_composite(obj, bound_child_type, apply_default_flags)
+        convert_obj_to_composite(obj, bound_child_type, apply_default_flags, do_center)
 
 
-def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False, do_center: bool = False):
     """Create a single composite from all ``objs``."""
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
-
     for obj in objs:
         if bound_child_type == SollumType.BOUND_GEOMETRY:
-            convert_obj_to_geometry(obj, apply_default_flags)
+            convert_obj_to_geometry(obj, apply_default_flags, do_center)
             obj.parent = composite_obj
         else:
-            bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
+            bvh_obj = convert_obj_to_bvh(obj, apply_default_flags, do_center)
             bvh_obj.parent = composite_obj
+            bvh_obj.location = composite_obj.location
 
-            bvh_obj.location = obj.location
-            obj.location = Vector()
+    move_to_active_object_collection(obj, composite_obj)
 
     return composite_obj
 
@@ -115,22 +114,79 @@ def center_composite_to_children(composite_obj: bpy.types.Object):
     child_objs = [
         child for child in composite_obj.children if child.sollum_type in BOUND_TYPES]
 
-    center = Vector()
+    center = get_bounding_box_center_of_selected()
 
-    for obj in child_objs:
-        center += obj.location
-
-    center /= len(child_objs)
+    if center is None:
+        return
 
     composite_obj.location = center
 
-    for obj in child_objs:
-        obj.location -= center
+    for child in child_objs:
+        child.location = Vector((0, 0, 0))
+        for grandchild in child.children:
+            grandchild.location -= center
 
 
-def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool):
+def get_bounding_box_center_of_selected():
+    selected_objects = bpy.context.selected_objects
+
+    if not selected_objects:
+        return None
+
+    bpy.context.view_layer.objects.active = selected_objects[0]
+
+    original_area = bpy.context.area.type
+    bpy.context.area.type = 'VIEW_3D'
+
+    bpy.ops.object.duplicate()
+    duplicated_objects = bpy.context.selected_objects
+
+    bpy.ops.object.join()
+    joined_object = bpy.context.active_object
+
+    min_bounds = Vector((float('inf'), float('inf'), float('inf')))
+    max_bounds = Vector((float('-inf'), float('-inf'), float('-inf')))
+
+    for vert in joined_object.bound_box:
+        world_vert = joined_object.matrix_world @ Vector(vert)
+        min_bounds.x = min(min_bounds.x, world_vert.x)
+        min_bounds.y = min(min_bounds.y, world_vert.y)
+        min_bounds.z = min(min_bounds.z, world_vert.z)
+
+        max_bounds.x = max(max_bounds.x, world_vert.x)
+        max_bounds.y = max(max_bounds.y, world_vert.y)
+        max_bounds.z = max(max_bounds.z, world_vert.z)
+
+    bounding_box_center = (min_bounds + max_bounds) / 2
+
+    bpy.data.objects.remove(joined_object, do_unlink=True)
+
+    bpy.context.area.type = original_area
+
+    return bounding_box_center
+
+
+def move_to_active_object_collection(first_obj, created_obj):
+    first_obj_collection = None
+
+    for coll in first_obj.users_collection:
+        first_obj_collection = coll
+        break
+
+    def move_object_to_collection(obj, collection):
+        for coll in obj.users_collection:
+            coll.objects.unlink(obj)
+        
+        collection.objects.link(obj)
+
+    move_object_to_collection(created_obj, first_obj_collection)
+    for child in created_obj.children:
+        move_object_to_collection(child, first_obj_collection)
+
+
+def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool, do_center: bool):
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
-    composite_obj.location = obj.location
+    composite_obj.location = Vector()
     composite_obj.parent = obj.parent
     name = obj.name
 
@@ -138,16 +194,21 @@ def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType
         convert_obj_to_geometry(obj, apply_default_flags)
         obj.parent = composite_obj
     else:
-        bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
+        bvh_obj = convert_obj_to_bvh(obj, apply_default_flags, do_center)
         bvh_obj.parent = composite_obj
 
+    move_to_active_object_collection(obj, composite_obj)
+
     composite_obj.name = name
-    obj.location = Vector()
+
+    if do_center:
+        composite_obj.location = obj.location
+    obj.location -= composite_obj.location
 
     return composite_obj
 
 
-def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool):
+def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool, do_center: bool):
     obj.sollum_type = SollumType.BOUND_GEOMETRY
     obj.name = f"{remove_number_suffix(obj.name)}.bound_geom"
 
@@ -155,7 +216,7 @@ def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool):
         apply_default_flag_preset(obj)
 
 
-def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
+def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool, do_center: bool):
     obj_name = remove_number_suffix(obj.name)
 
     bvh_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)

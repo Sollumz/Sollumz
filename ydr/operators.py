@@ -99,7 +99,7 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
                 drawable_obj = convert_obj_to_drawable(obj)
 
                 if auto_embed_col:
-                    composite_obj = convert_obj_to_composite(duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                    composite_obj = convert_obj_to_composite(duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True, do_center=bool)
                     composite_obj.parent = drawable_obj
                     composite_obj.name = f"{drawable_obj.name}.col"
 
