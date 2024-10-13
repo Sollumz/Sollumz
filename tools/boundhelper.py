@@ -8,7 +8,7 @@ from ..tools.meshhelper import (
     create_disc,
 )
 from ..ybn.properties import load_flag_presets, flag_presets, BoundFlags
-from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
+from .blenderhelper import create_blender_object, create_empty_object, get_bounding_box_center_of_selected, remove_number_suffix
 from mathutils import Vector, Matrix
 
 
@@ -101,7 +101,7 @@ def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_t
             convert_obj_to_geometry(obj, apply_default_flags, do_center)
             obj.parent = composite_obj
         else:
-            bvh_obj = convert_obj_to_bvh(obj, apply_default_flags, do_center)
+            bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
             bvh_obj.parent = composite_obj
             bvh_obj.location = composite_obj.location
 
@@ -125,45 +125,6 @@ def center_composite_to_children(composite_obj: bpy.types.Object):
         child.location = Vector((0, 0, 0))
         for grandchild in child.children:
             grandchild.location -= center
-
-
-def get_bounding_box_center_of_selected():
-    selected_objects = bpy.context.selected_objects
-
-    if not selected_objects:
-        return None
-
-    bpy.context.view_layer.objects.active = selected_objects[0]
-
-    original_area = bpy.context.area.type
-    bpy.context.area.type = 'VIEW_3D'
-
-    bpy.ops.object.duplicate()
-    duplicated_objects = bpy.context.selected_objects
-
-    bpy.ops.object.join()
-    joined_object = bpy.context.active_object
-
-    min_bounds = Vector((float('inf'), float('inf'), float('inf')))
-    max_bounds = Vector((float('-inf'), float('-inf'), float('-inf')))
-
-    for vert in joined_object.bound_box:
-        world_vert = joined_object.matrix_world @ Vector(vert)
-        min_bounds.x = min(min_bounds.x, world_vert.x)
-        min_bounds.y = min(min_bounds.y, world_vert.y)
-        min_bounds.z = min(min_bounds.z, world_vert.z)
-
-        max_bounds.x = max(max_bounds.x, world_vert.x)
-        max_bounds.y = max(max_bounds.y, world_vert.y)
-        max_bounds.z = max(max_bounds.z, world_vert.z)
-
-    bounding_box_center = (min_bounds + max_bounds) / 2
-
-    bpy.data.objects.remove(joined_object, do_unlink=True)
-
-    bpy.context.area.type = original_area
-
-    return bounding_box_center
 
 
 def move_to_active_object_collection(first_obj, created_obj):
@@ -194,7 +155,7 @@ def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType
         convert_obj_to_geometry(obj, apply_default_flags)
         obj.parent = composite_obj
     else:
-        bvh_obj = convert_obj_to_bvh(obj, apply_default_flags, do_center)
+        bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
         bvh_obj.parent = composite_obj
 
     move_to_active_object_collection(obj, composite_obj)
@@ -208,7 +169,7 @@ def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType
     return composite_obj
 
 
-def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool, do_center: bool):
+def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool):
     obj.sollum_type = SollumType.BOUND_GEOMETRY
     obj.name = f"{remove_number_suffix(obj.name)}.bound_geom"
 
@@ -216,7 +177,7 @@ def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool, do
         apply_default_flag_preset(obj)
 
 
-def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool, do_center: bool):
+def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
     obj_name = remove_number_suffix(obj.name)
 
     bvh_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)

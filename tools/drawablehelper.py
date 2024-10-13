@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
-from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output
+from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output, get_bounding_box_center_of_selected
 from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
 from ..cwxml.shader import (
     ShaderManager,
@@ -257,34 +257,6 @@ def center_drawable_to_models(drawable_obj: bpy.types.Object):
 
     for obj in model_objs:
         obj.location -= center
-
-def get_bounding_box_center_of_selected():
-    selected_objects = bpy.context.selected_objects
-
-    if not selected_objects:
-        return None
-
-    bpy.context.view_layer.objects.active = selected_objects[0]
-    original_area = bpy.context.area.type
-    bpy.context.area.type = 'VIEW_3D'
-
-    bpy.ops.object.duplicate()
-    bpy.ops.object.join()
-    joined_object = bpy.context.active_object
-
-    min_bounds = Vector((float('inf'), float('inf'), float('inf')))
-    max_bounds = Vector((float('-inf'), float('-inf'), float('-inf')))
-
-    for vert in joined_object.bound_box:
-        world_vert = joined_object.matrix_world @ Vector(vert)
-        min_bounds = Vector((min(min_bounds.x, world_vert.x), min(min_bounds.y, world_vert.y), min(min_bounds.z, world_vert.z)))
-        max_bounds = Vector((max(max_bounds.x, world_vert.x), max(max_bounds.y, world_vert.y), max(max_bounds.z, world_vert.z)))
-
-    bounding_box_center = (min_bounds + max_bounds) / 2
-    bpy.data.objects.remove(joined_object, do_unlink=True)
-    bpy.context.area.type = original_area
-
-    return bounding_box_center
 
 
 def get_model_xmls_by_lod(drawable_xml: Drawable) -> dict[LODLevel, DrawableModel]:

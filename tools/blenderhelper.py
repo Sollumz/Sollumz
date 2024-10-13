@@ -459,3 +459,29 @@ def find_bsdf_and_material_output(material: bpy.types.Material) -> Tuple[bpy.typ
 
     return bsdf, material_output
 
+
+def get_bounding_box_center_of_selected():
+    selected_objects = bpy.context.selected_objects
+
+    if not selected_objects:
+        return None
+
+    min_bounds = Vector((float('inf'), float('inf'), float('inf')))
+    max_bounds = Vector((float('-inf'), float('-inf'), float('-inf')))
+
+
+    for obj in selected_objects:
+        for corner in obj.bound_box:
+            world_corner = obj.matrix_world @ Vector(corner)
+
+            min_bounds.x = min(min_bounds.x, world_corner.x)
+            min_bounds.y = min(min_bounds.y, world_corner.y)
+            min_bounds.z = min(min_bounds.z, world_corner.z)
+
+            max_bounds.x = max(max_bounds.x, world_corner.x)
+            max_bounds.y = max(max_bounds.y, world_corner.y)
+            max_bounds.z = max(max_bounds.z, world_corner.z)
+
+    bounding_box_center = (min_bounds + max_bounds) / 2
+
+    return bounding_box_center
