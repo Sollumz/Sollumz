@@ -1,5 +1,10 @@
 import bpy
-from bpy.types import Context
+from bpy.types import (
+    Context
+)
+from bpy.props import (
+    BoolProperty
+)
 from . import operators as ydr_ops
 from .shader_materials import shadermats
 from .cable import is_cable_mesh
@@ -128,6 +133,8 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_SHADER_MATERIALS_LIST"
 
+    use_filter_favorites: BoolProperty(name="Filter Favorites")
+
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
@@ -136,10 +143,61 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
             row.label(text=name, icon="SHADING_TEXTURE")
+            favorite_icon = "SOLO_ON" if item.favorite else "SOLO_OFF"
+            row.prop(item, "favorite", text="", toggle=True, emboss=False, icon=favorite_icon)
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
                         text=name, emboss=False, icon="SHADING_TEXTURE")
+
+    def draw_filter(self, context, layout):
+        row = layout.row()
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "filter_name", text="")
+        subrow.prop(self, "use_filter_invert", text="", toggle=True, icon="ARROW_LEFTRIGHT")
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "use_filter_sort_alpha", text="", toggle=True, icon="SORTALPHA")
+        icon = "SORT_DESC" if self.use_filter_sort_reverse else "SORT_ASC"
+        subrow.prop(self, "use_filter_sort_reverse", text="", toggle=True, icon=icon)
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "use_filter_favorites", text="", toggle=True, icon="SOLO_ON")
+
+    def filter_items(self, context, data, propname):
+        shader_materials = getattr(data, propname)
+        helper_funcs = bpy.types.UI_UL_list
+
+        # Default return values.
+        flt_flags = []
+        flt_neworder = []
+
+        # Filtering by name
+        if self.filter_name:
+            flt_flags = helper_funcs.filter_items_by_name(
+                self.filter_name, self.bitflag_filter_item, shader_materials, "name",
+                reverse=self.use_filter_sort_reverse
+            )
+
+        # Filter favorites.
+        if self.use_filter_favorites:
+            if not flt_flags:
+                flt_flags = [self.bitflag_filter_item] * len(shader_materials)
+
+            # NOTE: shader_material.favorite is O(n) where n is the number of favorite shaders. The user probably won't
+            # have more than 20-30 favorites so this shouldn't be a problem. Also tested by setting all shaders as
+            # favorite and didn't notice any major lag in the UI.
+            # If there starts to be noticeable performance drops, we could cache the list of favorite shaders in a set.
+            for idx, shader_material in enumerate(shader_materials):
+                if not shader_material.favorite:
+                    flt_flags[idx] &= ~self.bitflag_filter_item
+
+        # Reorder by name or average weight.
+        if self.use_filter_sort_alpha:
+            flt_neworder = helper_funcs.sort_items_by_name(shader_materials, "name")
+
+        return flt_flags, flt_neworder
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
@@ -762,7 +820,6 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         op.value = scene.sz_ui_cable_radius
         row.prop(scene, "sz_ui_cable_radius", text="")
 
-
         row = layout.row(align=True)
         row.label(text=CableAttr.DIFFUSE_FACTOR.label)
         _visible_icon_prop(row, scene, "sz_ui_cable_diffuse_factor_visualize")
@@ -772,7 +829,6 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         op.value = scene.sz_ui_cable_diffuse_factor
         row.prop(scene, "sz_ui_cable_diffuse_factor", text="")
 
-
         row = layout.row(align=True)
         row.label(text=CableAttr.UM_SCALE.label)
         _visible_icon_prop(row, scene, "sz_ui_cable_um_scale_visualize")
@@ -781,7 +837,6 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="Set")
         op.value = scene.sz_ui_cable_um_scale
         row.prop(scene, "sz_ui_cable_um_scale", text="")
-
 
         row = layout.row(align=True)
         row.label(text=CableAttr.PHASE_OFFSET.label)

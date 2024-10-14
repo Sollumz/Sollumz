@@ -28,9 +28,13 @@ def _save_preferences(self, context):
             config[key] = _get_data_block_as_dict(value)
             continue
 
-        if isinstance(value, bpy.types.bpy_prop_collection):
+        # TODO: need something better to handle collections
+        if isinstance(value, bpy.types.bpy_prop_collection) and key == "shared_textures_directories":
             # Convert CollectionProperty to a list of tuples
             value = list(map(lambda d: (d.path, d.recursive), value))
+        if isinstance(value, bpy.types.bpy_prop_collection) and key == "favorite_shaders":
+            # Convert CollectionProperty to a list of strings
+            value = list(map(lambda s: s.name, value))
 
         main_prefs[key] = value
 
@@ -96,10 +100,8 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
         options={"ENUM_FLAG"},
         default=({"sollumz_export_very_high", "sollumz_export_main_lods"}),
         items=(
-            ("sollumz_export_very_high", "Very High",
-             "Export Very High LODs into a _hi.yft"),
-            ("sollumz_export_main_lods", "High - Very Low",
-             "Export all LODs except Very High")
+            ("sollumz_export_very_high", "Very High", "Export Very High LODs into a _hi.yft"),
+            ("sollumz_export_main_lods", "High - Very Low", "Export all LODs except Very High")
         ),
         update=_save_preferences
     )
@@ -305,6 +307,12 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class SzFavoriteEntry(bpy.types.PropertyGroup):
+    name: StringProperty(
+        name="Name",
+    )
+
+
 class SollumzAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
@@ -351,6 +359,11 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         min=0
     )
 
+    favorite_shaders: CollectionProperty(
+        name="Favorite Shaders",
+        type=SzFavoriteEntry,
+    )
+
     export_settings: bpy.props.PointerProperty(type=SollumzExportSettings, name="Export Settings")
     import_settings: bpy.props.PointerProperty(type=SollumzImportSettings, name="Import Settings")
 
@@ -361,6 +374,36 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         pathB, recB = b.path, b.recursive
         a.path, a.recursive = pathB, recB
         b.path, b.recursive = pathA, recA
+
+    def is_favorite_shader(self, shader_name: str) -> bool:
+        for entry in self.favorite_shaders:
+            if entry.name == shader_name:
+                return True
+
+        return False
+
+    def toggle_favorite_shader(self, shader_name: str, favorite: bool):
+        found = None
+        for i, entry in enumerate(self.favorite_shaders):
+            if entry.name == shader_name:
+                found = i
+                break
+
+        updated = False
+        if favorite:
+            # Set as favorite
+            if found is None:
+                s = self.favorite_shaders.add()
+                s.name = shader_name
+                updated = True
+        else:
+            # Remove from favorites
+            if found is not None:
+                self.favorite_shaders.remove(found)
+                updated = True
+
+        if updated:
+            _save_preferences(self, bpy.context)
 
     def draw(self, context):
         layout = self.layout
@@ -430,8 +473,7 @@ def _load_preferences():
             continue
 
         if not hasattr(addon_prefs, section):
-            print(
-                f"Unknown preferences pointer property '{section}'! Skipping...")
+            print(f"Unknown preferences pointer property '{section}'! Skipping...")
             continue
 
         prop_group = getattr(addon_prefs, section)
@@ -447,6 +489,7 @@ def _apply_preferences(data_block: bpy.types.ID, config: ConfigParser, section: 
         value_str = config.get(section, key)
         value = ast.literal_eval(value_str)
 
+        # TODO: need something better to handle collections
         if key == "shared_textures_directories":
             # Special case to handle CollectionProperty
             data_block.shared_textures_directories.clear()
@@ -454,6 +497,12 @@ def _apply_preferences(data_block: bpy.types.ID, config: ConfigParser, section: 
                 d = data_block.shared_textures_directories.add()
                 d.path = path
                 d.recursive = recursive
+        elif key == "favorite_shaders":
+            # Special case to handle CollectionProperty
+            data_block.favorite_shaders.clear()
+            for name in value:
+                s = data_block.favorite_shaders.add()
+                s.name = name
         else:
             setattr(data_block, key, value)
 

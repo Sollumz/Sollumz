@@ -1,4 +1,7 @@
 import bpy
+from bpy.props import (
+    BoolProperty,
+)
 import os
 from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
@@ -248,8 +251,23 @@ class BoneProperties(bpy.types.PropertyGroup):
 
 
 class ShaderMaterial(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty("Index")
-    name: bpy.props.StringProperty("Name")
+    def _get_favorite(self):
+        from ..sollumz_preferences import get_addon_preferences
+        preferences = get_addon_preferences(bpy.context)
+        return preferences.is_favorite_shader(self.name)
+
+    def _set_favorite(self, value):
+        from ..sollumz_preferences import get_addon_preferences
+        preferences = get_addon_preferences(bpy.context)
+        preferences.toggle_favorite_shader(self.name, value)
+
+    index: bpy.props.IntProperty(name="Index")
+    name: bpy.props.StringProperty(name="Name")
+    favorite: BoolProperty(
+        name="Favorite",
+        get=_get_favorite,
+        set=_set_favorite,
+    )
 
 
 class LightProperties(bpy.types.PropertyGroup):
@@ -549,7 +567,9 @@ def on_blend_file_loaded(_):
 
 def register():
     bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index")
-    bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(type=ShaderMaterial, name="Shader Materials")
+    bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(
+        type=ShaderMaterial, name="Shader Materials"
+    )
     bpy.types.Object.drawable_properties = bpy.props.PointerProperty(
         type=DrawableProperties)
     bpy.types.Material.shader_properties = bpy.props.PointerProperty(
@@ -668,7 +688,6 @@ def register():
         name=CableAttr.MATERIAL_INDEX.label, description=CableAttr.MATERIAL_INDEX.description,
         min=0, default=CableAttr.MATERIAL_INDEX.default_value,
     )
-
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
