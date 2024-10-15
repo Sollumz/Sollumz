@@ -1,9 +1,19 @@
 import bpy
+from bpy.types import (
+    bpy_struct,
+    bpy_prop_collection,
+    PropertyGroup,
+    Operator,
+    UIList,
+    AddonPreferences,
+)
 from bpy.props import (
     StringProperty,
     IntProperty,
     BoolProperty,
+    EnumProperty,
     CollectionProperty,
+    PointerProperty,
 )
 import os
 import ast
@@ -14,86 +24,61 @@ from typing import Optional
 PREFS_FILE_NAME = "sollumz_prefs.ini"
 
 
-def _save_preferences(self, context):
-    addon_prefs = get_addon_preferences(context)
-    prefs_path = get_prefs_path()
-
-    config = ConfigParser()
-    prefs_dict = _get_data_block_as_dict(addon_prefs)
-    main_prefs: dict[str, Any] = {}
-
-    for key, value in prefs_dict.items():
-        if isinstance(value, bpy.types.PropertyGroup):
-            config[key] = _get_data_block_as_dict(value)
-            continue
-
-        # TODO: need something better to handle collections
-        if isinstance(value, bpy.types.bpy_prop_collection) and key == "shared_textures_directories":
-            # Convert CollectionProperty to a list of tuples
-            value = list(map(lambda d: (d.path, d.recursive), value))
-        if isinstance(value, bpy.types.bpy_prop_collection) and key in {"favorite_shaders", "favorite_collision_materials"}:
-            # Convert CollectionProperty to a list of strings
-            value = list(map(lambda s: s.name, value))
-
-        main_prefs[key] = value
-
-    config["main"] = main_prefs
-
-    with open(prefs_path, "w") as f:
-        config.write(f)
+def _save_preferences_on_update(self, context):
+    _save_preferences()
 
 
-class SollumzExportSettings(bpy.types.PropertyGroup):
-    limit_to_selected: bpy.props.BoolProperty(
+class SollumzExportSettings(PropertyGroup):
+    limit_to_selected: BoolProperty(
         name="Limit to Selected",
         description="Export selected and visible objects only",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    exclude_skeleton: bpy.props.BoolProperty(
+    exclude_skeleton: BoolProperty(
         name="Exclude Skeleton",
         description="Exclude skeleton from export. Usually done with mp ped components",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    export_with_ytyp: bpy.props.BoolProperty(
+    export_with_ytyp: BoolProperty(
         name="Export with ytyp",
         description="Exports a .ytyp.xml with an archetype for every drawable or drawable dictionary being exported",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_exclude_entities: bpy.props.BoolProperty(
+    ymap_exclude_entities: BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all Entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_box_occluders: bpy.props.BoolProperty(
+    ymap_box_occluders: BoolProperty(
         name="Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_model_occluders: bpy.props.BoolProperty(
+    ymap_model_occluders: BoolProperty(
         name="Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_car_generators: bpy.props.BoolProperty(
+    ymap_car_generators: BoolProperty(
         name="Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    export_lods: bpy.props.EnumProperty(
+    export_lods: EnumProperty(
         name="Toggle LODs",
         description="Toggle LODs to export",
         options={"ENUM_FLAG"},
@@ -102,114 +87,116 @@ class SollumzExportSettings(bpy.types.PropertyGroup):
             ("sollumz_export_very_high", "Very High", "Export Very High LODs into a _hi.yft"),
             ("sollumz_export_main_lods", "High - Very Low", "Export all LODs except Very High")
         ),
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    apply_transforms: bpy.props.BoolProperty(
+    apply_transforms: BoolProperty(
         name="Apply Parent Transforms",
         description="Apply Drawable/Fragment scale and rotation",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
     @property
-    def export_hi(self):
+    def export_hi(self) -> bool:
         return "sollumz_export_very_high" in self.export_lods
 
     @property
-    def export_non_hi(self):
+    def export_non_hi(self) -> bool:
         return "sollumz_export_main_lods" in self.export_lods
 
 
-class SollumzImportSettings(bpy.types.PropertyGroup):
-    import_as_asset: bpy.props.BoolProperty(
+class SollumzImportSettings(PropertyGroup):
+    import_as_asset: BoolProperty(
         name="Import To Asset Library",
         description="Imports the selected file as an asset to the current blend file asset library",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    split_by_group: bpy.props.BoolProperty(
+    split_by_group: BoolProperty(
         name="Split Mesh by Vertex Group",
         description="Splits the mesh by the vertex groups",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    import_ext_skeleton: bpy.props.BoolProperty(
+    import_ext_skeleton: BoolProperty(
         name="Import External Skeleton",
         description="Imports the first found yft skeleton in the same folder as the selected file",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_skip_missing_entities: bpy.props.BoolProperty(
+    ymap_skip_missing_entities: BoolProperty(
         name="Skip Missing Entities",
         description="If enabled, missing entities wont be created as an empty object",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_exclude_entities: bpy.props.BoolProperty(
+    ymap_exclude_entities: BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_box_occluders: bpy.props.BoolProperty(
+    ymap_box_occluders: BoolProperty(
         name="Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_model_occluders: bpy.props.BoolProperty(
+    ymap_model_occluders: BoolProperty(
         name="Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_car_generators: bpy.props.BoolProperty(
+    ymap_car_generators: BoolProperty(
         name="Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    ymap_instance_entities: bpy.props.BoolProperty(
+    ymap_instance_entities: BoolProperty(
         name="Instance Entities",
         description="If enabled, instance all entities from the selected ymap(s)",
         default=False,
+        update=_save_preferences_on_update
     )
 
-    ytyp_mlo_instance_entities: bpy.props.BoolProperty(
+    ytyp_mlo_instance_entities: BoolProperty(
         name="Instance MLO Entities",
         description=(
             "If enabled, MLO entities will be linked to a copy of the object matching the archetype name, instead of"
             "the object itself"
         ),
         default=True,
+        update=_save_preferences_on_update
     )
 
 
-class SzSharedTexturesDirectory(bpy.types.PropertyGroup):
+class SzSharedTexturesDirectory(PropertyGroup):
     path: StringProperty(
         name="Path",
         description="Path to a directory with textures",
         subtype="DIR_PATH",
-        update=_save_preferences,
+        update=_save_preferences_on_update,
     )
     recursive: BoolProperty(
         name="Recursive",
         description="Search this directory recursively",
         default=True,
-        update=_save_preferences,
+        update=_save_preferences_on_update,
     )
 
 
-class SOLLUMZ_UL_prefs_shared_textures_directories(bpy.types.UIList):
+class SOLLUMZ_UL_prefs_shared_textures_directories(UIList):
     bl_idname = "SOLLUMZ_UL_prefs_shared_textures_directories"
 
     def draw_item(
@@ -219,7 +206,7 @@ class SOLLUMZ_UL_prefs_shared_textures_directories(bpy.types.UIList):
         layout.prop(item, "recursive", text="", icon="OUTLINER")
 
 
-class SOLLUMZ_OT_prefs_shared_textures_directory_add(bpy.types.Operator):
+class SOLLUMZ_OT_prefs_shared_textures_directory_add(Operator):
     bl_idname = "sollumz.prefs_shared_textures_directory_add"
     bl_label = "Add Shared Textures Directory"
     bl_description = "Add a new directory to search textures in"
@@ -249,7 +236,7 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_add(bpy.types.Operator):
         return wm.invoke_props_dialog(self)
 
 
-class SOLLUMZ_OT_prefs_shared_textures_directory_remove(bpy.types.Operator):
+class SOLLUMZ_OT_prefs_shared_textures_directory_remove(Operator):
     bl_idname = "sollumz.prefs_shared_textures_directory_remove"
     bl_label = "Remove Shared Textures Directory"
     bl_description = "Remove the selected directory"
@@ -268,7 +255,7 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_remove(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_prefs_shared_textures_directory_move_up(bpy.types.Operator):
+class SOLLUMZ_OT_prefs_shared_textures_directory_move_up(Operator):
     bl_idname = "sollumz.prefs_shared_textures_directory_move_up"
     bl_label = "Increase Shared Texture Directory Priority"
     bl_description = "Increase search priority of this directory"
@@ -287,7 +274,7 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_move_up(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(bpy.types.Operator):
+class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(Operator):
     bl_idname = "sollumz.prefs_shared_textures_directory_move_down"
     bl_label = "Decrease Shared Texture Directory Priority"
     bl_description = "Decrease search priority of this directory"
@@ -306,47 +293,47 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SzFavoriteEntry(bpy.types.PropertyGroup):
+class SzFavoriteEntry(PropertyGroup):
     name: StringProperty(
         name="Name",
     )
 
 
-class SollumzAddonPreferences(bpy.types.AddonPreferences):
+class SollumzAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
-    show_vertex_painter: bpy.props.BoolProperty(
+    show_vertex_painter: BoolProperty(
         name="Show Vertex Painter",
         description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    extra_color_swatches: bpy.props.BoolProperty(
+    extra_color_swatches: BoolProperty(
         name="Extra Vertex Color Swatches",
         description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    sollumz_icon_header: bpy.props.BoolProperty(
+    sollumz_icon_header: BoolProperty(
         name="Show Sollumz icon",
         description="Show the Sollumz icon in properties section headers",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
-    use_text_name_as_mat_name: bpy.props.BoolProperty(
+    use_text_name_as_mat_name: BoolProperty(
         name="Use Texture Name as Material Name",
         description="Use the name of the texture as the material name",
         default=True,
-        update=_save_preferences
+        update=_save_preferences_on_update
     )
 
-    # experimental_shader_expressions: bpy.props.BoolProperty(
+    # experimental_shader_expressions: BoolProperty(
     #     name="Shader Expressions",
     #     description="[Experimental] Use shader expressions to create material node trees",
     #     default=False,
-    #     update=_save_preferences
+    #     update=_save_preferences_on_update
     # )
 
     shared_textures_directories: CollectionProperty(
@@ -367,8 +354,8 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         type=SzFavoriteEntry,
     )
 
-    export_settings: bpy.props.PointerProperty(type=SollumzExportSettings, name="Export Settings")
-    import_settings: bpy.props.PointerProperty(type=SollumzImportSettings, name="Import Settings")
+    export_settings: PointerProperty(type=SollumzExportSettings, name="Export Settings")
+    import_settings: PointerProperty(type=SollumzImportSettings, name="Import Settings")
 
     def swap_shared_textures_directories(self, indexA: int, indexB: int):
         a = self.shared_textures_directories[indexA]
@@ -464,81 +451,121 @@ def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzE
     return get_addon_preferences(context or bpy.context).export_settings
 
 
+def _save_preferences():
+    addon_prefs = get_addon_preferences(bpy.context)
+    prefs_path = get_prefs_path()
+
+    config = ConfigParser()
+    prefs_dict = _get_bpy_struct_as_dict(addon_prefs)
+    main_prefs: dict[str, Any] = {}
+
+    for key, value in prefs_dict.items():
+        if isinstance(value, dict):
+            config[key] = value
+            continue
+
+        main_prefs[key] = value
+
+    config["main"] = main_prefs
+
+    with open(prefs_path, "w") as f:
+        config.write(f)
+
+
 def _load_preferences():
     # Preferences are loaded via an ini file in <user_blender_path>/<version>/config/sollumz_prefs.ini
     addon_prefs = get_addon_preferences(bpy.context)
-
     if addon_prefs is None:
         return
 
     prefs_path = get_prefs_path()
-
-    if not os.path.exists(prefs_path):
+    if not os.path.isfile(prefs_path):
         return
 
     config = ConfigParser()
     config.read(prefs_path)
-
+    config_dict = {}
     for section in config.keys():
         if section == "DEFAULT":
             continue
 
         if section == "main":
-            _apply_preferences(addon_prefs, config, section)
-            continue
-
-        if not hasattr(addon_prefs, section):
-            print(f"Unknown preferences pointer property '{section}'! Skipping...")
-            continue
-
-        prop_group = getattr(addon_prefs, section)
-        _apply_preferences(prop_group, config, section)
-
-
-def _apply_preferences(data_block: bpy.types.ID, config: ConfigParser, section: str):
-    for key in config[section].keys():
-        if not hasattr(data_block, key):
-            print(f"Unknown preference '{key}'! Skipping...")
-            continue
-
-        value_str = config.get(section, key)
-        value = ast.literal_eval(value_str)
-
-        # TODO: need something better to handle collections
-        if key == "shared_textures_directories":
-            # Special case to handle CollectionProperty
-            data_block.shared_textures_directories.clear()
-            for path, recursive in value:
-                d = data_block.shared_textures_directories.add()
-                d.path = path
-                d.recursive = recursive
-        elif key == "favorite_shaders":
-            # Special case to handle CollectionProperty
-            data_block.favorite_shaders.clear()
-            for name in value:
-                s = data_block.favorite_shaders.add()
-                s.name = name
-        elif key == "favorite_collision_materials":
-            # Special case to handle CollectionProperty
-            data_block.favorite_collision_materials.clear()
-            for name in value:
-                s = data_block.favorite_collision_materials.add()
-                s.name = name
+            config_dict.update(config["main"])
         else:
-            setattr(data_block, key, value)
+            config_dict[section] = dict(config[section])
+
+    _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
 
 
-def _get_data_block_as_dict(data_block: bpy.types.ID):
-    data_block_dict: dict[str, Any] = {}
+def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
+    def _prop_to_value(key: str):
+        prop = getattr(struct, key)
+        if isinstance(prop, bpy_prop_collection):
+            prop = _get_bpy_collection_as_list(prop)
+        elif isinstance(prop, bpy_struct):
+            prop = _get_bpy_struct_as_dict(prop)
 
-    for key in data_block.__annotations__.keys():
-        if not hasattr(data_block, key):
+        return prop
+
+    return {
+        key: _prop_to_value(key)
+        for key in struct.__annotations__.keys()
+    }
+
+
+def _update_bpy_struct_from_dict(struct: bpy_struct, values: dict, eval_strings: bool = False):
+    for key in struct.__annotations__.keys():
+        value = values.get(key, None)
+        if value is None:
             continue
 
-        value = getattr(data_block, key)
-        data_block_dict[key] = value
+        if eval_strings and isinstance(value, str):
+            value = ast.literal_eval(value)
 
-    return data_block_dict
+        prop = getattr(struct, key)
+        if isinstance(prop, bpy_prop_collection):
+            assert isinstance(value, list)
+            _update_bpy_collection_from_list(prop, value)
+        elif isinstance(prop, bpy_struct):
+            assert isinstance(value, dict)
+            _update_bpy_struct_from_dict(prop, value, eval_strings=eval_strings)
+        else:
+            setattr(struct, key, value)
+
+
+def _get_bpy_collection_as_list(collection: bpy_prop_collection) -> list:
+    return list(
+        entry_tuple if len(entry_tuple) > 1 else entry_tuple[0]
+        for entry_tuple in map(_get_bpy_struct_as_tuple, collection)
+    )
+
+
+def _update_bpy_collection_from_list(collection: bpy_prop_collection, entries: list):
+    collection.clear()
+    for entry_tuple in entries:
+        entry = collection.add()
+        _update_bpy_struct_from_tuple(entry, entry_tuple)
+
+
+def _get_bpy_struct_as_tuple(struct: bpy_struct) -> tuple:
+    return tuple(
+        getattr(struct, key)
+        for key in struct.__annotations__.keys()
+    )
+
+
+def _update_bpy_struct_from_tuple(struct: bpy_struct, values: tuple | object):
+    keys = list(struct.__annotations__.keys())
+    values_is_tuple = isinstance(values, tuple)
+    num_values = len(values) if values_is_tuple else 1
+    if len(keys) != num_values:
+        raise ValueError(f"Incorrect number of values in tuple: expected {len(keys)}, got {len(values)}")
+
+    if not values_is_tuple:
+        values = (values,)
+
+    for key, value in zip(keys, values):
+        setattr(struct, key, value)
 
 
 def get_prefs_path():
