@@ -228,7 +228,7 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_add(Operator):
         d.path = self.path
         d.recursive = self.recursive
         prefs.shared_textures_directories_index = len(prefs.shared_textures_directories) - 1
-        _save_preferences(None, context)
+        _save_preferences()
         return {"FINISHED"}
 
     def invoke(self, context, event):
@@ -251,7 +251,7 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_remove(Operator):
         prefs.shared_textures_directories.remove(prefs.shared_textures_directories_index)
         context.scene.ytyps.remove(context.scene.ytyp_index)
         prefs.shared_textures_directories_index = max(prefs.shared_textures_directories_index - 1, 0)
-        _save_preferences(None, context)
+        _save_preferences()
         return {"FINISHED"}
 
 
@@ -393,7 +393,7 @@ class SollumzAddonPreferences(AddonPreferences):
                 updated = True
 
         if updated:
-            _save_preferences(self, bpy.context)
+            _save_preferences()
 
     def is_favorite_shader(self, shader_name: str) -> bool:
         return self._is_favorite(self.favorite_shaders, shader_name)
