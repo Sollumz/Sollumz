@@ -8,7 +8,6 @@ from bpy.props import (
 import os
 import ast
 from typing import Any
-from .sollumz_properties import SollumType
 from configparser import ConfigParser
 from typing import Optional
 
@@ -32,7 +31,7 @@ def _save_preferences(self, context):
         if isinstance(value, bpy.types.bpy_prop_collection) and key == "shared_textures_directories":
             # Convert CollectionProperty to a list of tuples
             value = list(map(lambda d: (d.path, d.recursive), value))
-        if isinstance(value, bpy.types.bpy_prop_collection) and key == "favorite_shaders":
+        if isinstance(value, bpy.types.bpy_prop_collection) and key in {"favorite_shaders", "favorite_collision_materials"}:
             # Convert CollectionProperty to a list of strings
             value = list(map(lambda s: s.name, value))
 
@@ -363,6 +362,10 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         name="Favorite Shaders",
         type=SzFavoriteEntry,
     )
+    favorite_collision_materials: CollectionProperty(
+        name="Favorite Collision Materials",
+        type=SzFavoriteEntry,
+    )
 
     export_settings: bpy.props.PointerProperty(type=SollumzExportSettings, name="Export Settings")
     import_settings: bpy.props.PointerProperty(type=SollumzImportSettings, name="Import Settings")
@@ -375,17 +378,17 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         a.path, a.recursive = pathB, recB
         b.path, b.recursive = pathA, recA
 
-    def is_favorite_shader(self, shader_name: str) -> bool:
-        for entry in self.favorite_shaders:
-            if entry.name == shader_name:
+    def _is_favorite(self, favorites, entry_name: str) -> bool:
+        for entry in favorites:
+            if entry.name == entry_name:
                 return True
 
         return False
 
-    def toggle_favorite_shader(self, shader_name: str, favorite: bool):
+    def _toggle_favorite(self, favorites, entry_name: str, favorite: bool):
         found = None
-        for i, entry in enumerate(self.favorite_shaders):
-            if entry.name == shader_name:
+        for i, entry in enumerate(favorites):
+            if entry.name == entry_name:
                 found = i
                 break
 
@@ -393,17 +396,29 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         if favorite:
             # Set as favorite
             if found is None:
-                s = self.favorite_shaders.add()
-                s.name = shader_name
+                s = favorites.add()
+                s.name = entry_name
                 updated = True
         else:
             # Remove from favorites
             if found is not None:
-                self.favorite_shaders.remove(found)
+                favorites.remove(found)
                 updated = True
 
         if updated:
             _save_preferences(self, bpy.context)
+
+    def is_favorite_shader(self, shader_name: str) -> bool:
+        return self._is_favorite(self.favorite_shaders, shader_name)
+
+    def is_favorite_collision_material(self, collision_material_name: str) -> bool:
+        return self._is_favorite(self.favorite_collision_materials, collision_material_name)
+
+    def toggle_favorite_shader(self, shader_name: str, favorite: bool):
+        self._toggle_favorite(self.favorite_shaders, shader_name, favorite)
+
+    def toggle_favorite_collision_material(self, collision_material_name: str, favorite: bool):
+        self._toggle_favorite(self.favorite_collision_materials, collision_material_name, favorite)
 
     def draw(self, context):
         layout = self.layout
@@ -502,6 +517,12 @@ def _apply_preferences(data_block: bpy.types.ID, config: ConfigParser, section: 
             data_block.favorite_shaders.clear()
             for name in value:
                 s = data_block.favorite_shaders.add()
+                s.name = name
+        elif key == "favorite_collision_materials":
+            # Special case to handle CollectionProperty
+            data_block.favorite_collision_materials.clear()
+            for name in value:
+                s = data_block.favorite_collision_materials.add()
                 s.name = name
         else:
             setattr(data_block, key, value)

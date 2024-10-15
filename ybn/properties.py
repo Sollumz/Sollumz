@@ -1,4 +1,7 @@
 import bpy
+from bpy.props import (
+    BoolProperty
+)
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
@@ -292,8 +295,23 @@ class BoundShapeProps(bpy.types.PropertyGroup):
 
 
 class CollisionMaterial(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty("Index")
-    name: bpy.props.StringProperty("Name")
+    def _get_favorite(self):
+        from ..sollumz_preferences import get_addon_preferences
+        preferences = get_addon_preferences(bpy.context)
+        return preferences.is_favorite_collision_material(self.name)
+
+    def _set_favorite(self, value):
+        from ..sollumz_preferences import get_addon_preferences
+        preferences = get_addon_preferences(bpy.context)
+        preferences.toggle_favorite_collision_material(self.name, value)
+
+    index: bpy.props.IntProperty(name="Index")
+    name: bpy.props.StringProperty(name="Name")
+    favorite: BoolProperty(
+        name="Favorite",
+        get=_get_favorite,
+        set=_set_favorite,
+    )
 
 
 class FlagPresetProp(bpy.types.PropertyGroup):

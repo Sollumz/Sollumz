@@ -1,4 +1,7 @@
 import bpy
+from bpy.props import (
+    BoolProperty
+)
 from .properties import BoundFlags, CollisionProperties, CollisionMatFlags
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
@@ -160,6 +163,8 @@ class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
 class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_COLLISION_MATERIALS_LIST"
 
+    use_filter_favorites: BoolProperty(name="Filter Favorites")
+
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
@@ -167,10 +172,57 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
             row.label(text=name, icon="MATERIAL")
+            favorite_icon = "SOLO_ON" if item.favorite else "SOLO_OFF"
+            row.prop(item, "favorite", text="", toggle=True, emboss=False, icon=favorite_icon)
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
                         text=name, emboss=False, icon="MATERIAL")
+
+    def draw_filter(self, context, layout):
+        row = layout.row()
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "filter_name", text="")
+        subrow.prop(self, "use_filter_invert", text="", toggle=True, icon="ARROW_LEFTRIGHT")
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "use_filter_sort_alpha", text="", toggle=True, icon="SORTALPHA")
+        icon = "SORT_DESC" if self.use_filter_sort_reverse else "SORT_ASC"
+        subrow.prop(self, "use_filter_sort_reverse", text="", toggle=True, icon=icon)
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "use_filter_favorites", text="", toggle=True, icon="SOLO_ON")
+
+    def filter_items(self, context, data, propname):
+        collision_materials = getattr(data, propname)
+        helper_funcs = bpy.types.UI_UL_list
+
+        # Default return values.
+        flt_flags = []
+        flt_neworder = []
+
+        # Filtering by name
+        if self.filter_name:
+            flt_flags = helper_funcs.filter_items_by_name(
+                self.filter_name, self.bitflag_filter_item, collision_materials, "name",
+                reverse=self.use_filter_sort_reverse
+            )
+
+        # Filter favorites.
+        if self.use_filter_favorites:
+            if not flt_flags:
+                flt_flags = [self.bitflag_filter_item] * len(collision_materials)
+
+            for idx, collision_material in enumerate(collision_materials):
+                if not collision_material.favorite:
+                    flt_flags[idx] &= ~self.bitflag_filter_item
+
+        # Reorder by name or average weight.
+        if self.use_filter_sort_alpha:
+            flt_neworder = helper_funcs.sort_items_by_name(collision_materials, "name")
+
+        return flt_flags, flt_neworder
 
 
 class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
