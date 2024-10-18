@@ -1,10 +1,23 @@
 import bpy
+from typing import Optional
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
 from .sollumz_operators import SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location, SOLLUMZ_OT_paste_rotation
 from .tools.blenderhelper import get_armature_obj
-from .sollumz_properties import SollumType, MaterialType
-from .lods import (SOLLUMZ_OT_SET_LOD_HIGH, SOLLUMZ_OT_SET_LOD_MED, SOLLUMZ_OT_SET_LOD_LOW, SOLLUMZ_OT_SET_LOD_VLOW,
-                   SOLLUMZ_OT_SET_LOD_VERY_HIGH, SOLLUMZ_OT_HIDE_COLLISIONS, SOLLUMZ_OT_HIDE_SHATTERMAPS, SOLLUMZ_OT_HIDE_OBJECT, SOLLUMZ_OT_SHOW_COLLISIONS, SOLLUMZ_OT_SHOW_SHATTERMAPS)
+from .sollumz_properties import (
+    SollumType,
+    MaterialType,
+    SOLLUMZ_UI_NAMES,
+)
+from .sollumz_helper import find_sollumz_parent
+from .lods import (
+    LODLevel,
+    SOLLUMZ_OT_set_lod_level,
+    SOLLUMZ_OT_hide_object,
+    SOLLUMZ_OT_HIDE_COLLISIONS,
+    SOLLUMZ_OT_HIDE_SHATTERMAPS,
+    SOLLUMZ_OT_SHOW_COLLISIONS,
+    SOLLUMZ_OT_SHOW_SHATTERMAPS
+)
 from .icons import icon_manager
 
 
@@ -301,16 +314,36 @@ class SOLLUMZ_PT_VIEW_PANEL(GeneralToolChildPanel, bpy.types.Panel):
 
         layout.label(text="Level of Detail")
 
-        grid = layout.grid_flow(align=True, row_major=True)
-        grid.scale_x = 0.7
-        grid.operator(SOLLUMZ_OT_SET_LOD_VERY_HIGH.bl_idname)
-        grid.operator(SOLLUMZ_OT_SET_LOD_HIGH.bl_idname)
-        grid.operator(SOLLUMZ_OT_SET_LOD_MED.bl_idname)
-        grid.operator(SOLLUMZ_OT_SET_LOD_LOW.bl_idname)
-        grid.operator(SOLLUMZ_OT_SET_LOD_VLOW.bl_idname)
-        grid.operator(SOLLUMZ_OT_HIDE_OBJECT.bl_idname)
+        active_obj = context.view_layer.objects.active
+        active_lod_level = self._get_object_active_lod_level(active_obj)
 
-        grid.enabled = context.view_layer.objects.active is not None and context.view_layer.objects.active.mode == "OBJECT"
+        grid = layout.grid_flow(align=True, row_major=True)
+        grid.enabled = active_obj is not None and context.view_layer.objects.active.mode == "OBJECT"
+        grid.scale_x = 0.7
+        for lod_level in LODLevel:
+            grid.operator(
+                SOLLUMZ_OT_set_lod_level.bl_idname,
+                text=SOLLUMZ_UI_NAMES[lod_level],
+                depress=active_lod_level == lod_level
+            ).lod_level = lod_level
+        grid.operator(SOLLUMZ_OT_hide_object.bl_idname, depress=active_lod_level == "hidden")
+
+    def _get_object_active_lod_level(self, obj: Optional[bpy.types.Object]) -> str:
+        active_lod_level = None
+        if obj is not None:
+            parent_obj = find_sollumz_parent(obj)
+            if parent_obj.hide_get():
+                active_lod_level = "hidden"
+            else:
+                for child in parent_obj.children_recursive:
+                    if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
+                        # Simply use the LOD level of the first model we find. Might not be accurate if the user
+                        # manually changes LODs of the models separately instead of using the buttons in the tools
+                        # panel, but in general this should be enough.
+                        active_lod_level = child.sz_lods.active_lod_level
+                        break
+
+        return active_lod_level
 
 
 class SOLLUMZ_PT_OBJ_YMAP_LOCATION(GeneralToolChildPanel, bpy.types.Panel):

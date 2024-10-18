@@ -5,6 +5,7 @@ from bpy.types import (
     Mesh,
     PropertyGroup,
     Object,
+    Operator,
 )
 from bpy.props import (
     EnumProperty,
@@ -160,9 +161,28 @@ class LODLevels(PropertyGroup):
                 return
 
 
-class SetLodLevelHelper:
-    """Helper class for setting the LOD level of Sollumz objects."""
-    LOD_LEVEL: LODLevel = LODLevel.HIGH
+class SOLLUMZ_OT_set_lod_level(Operator):
+    bl_idname = "sollumz.set_lod_level"
+    bl_label = "Set LOD Level"
+    bl_description = "Set the viewing level for the selected Fragment/Drawable"
+
+    lod_level: EnumProperty(name="LOD Level", items=LODLevelEnumItems)
+
+    @classmethod
+    def poll(cls, context):
+        active_obj = context.view_layer.objects.active
+        return active_obj is not None and find_sollumz_parent(active_obj)
+
+    def execute(self, context):
+        active_obj = context.view_layer.objects.active
+        obj = find_sollumz_parent(active_obj)
+        set_all_lods(obj, LODLevel(self.lod_level))
+
+        return {"FINISHED"}
+
+class SOLLUMZ_OT_hide_object(Operator):
+    bl_idname = "sollumz.hide_object"
+    bl_label = "Hidden"
     bl_description = "Set the viewing level for the selected Fragment/Drawable"
 
     @classmethod
@@ -173,58 +193,8 @@ class SetLodLevelHelper:
     def execute(self, context):
         active_obj = context.view_layer.objects.active
         obj = find_sollumz_parent(active_obj)
-        set_all_lods(obj, self.LOD_LEVEL)
 
-        return {"FINISHED"}
-
-
-class SOLLUMZ_OT_SET_LOD_VERY_HIGH(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.set_lod_very_high"
-    bl_label = "Very High"
-
-    LOD_LEVEL = LODLevel.VERYHIGH
-
-
-class SOLLUMZ_OT_SET_LOD_HIGH(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.set_lod_high"
-    bl_label = "High"
-
-    LOD_LEVEL = LODLevel.HIGH
-
-
-class SOLLUMZ_OT_SET_LOD_MED(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.set_lod_med"
-    bl_label = "Medium"
-
-    LOD_LEVEL = LODLevel.MEDIUM
-
-
-class SOLLUMZ_OT_SET_LOD_LOW(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.set_lod_low"
-    bl_label = "Low"
-
-    LOD_LEVEL = LODLevel.LOW
-
-
-class SOLLUMZ_OT_SET_LOD_VLOW(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.set_lod_vlow"
-    bl_label = "Very Low"
-
-    LOD_LEVEL = LODLevel.VERYLOW
-
-
-class SOLLUMZ_OT_HIDE_OBJECT(bpy.types.Operator, SetLodLevelHelper):
-    bl_idname = "sollumz.hide_object"
-    bl_label = "Hidden"
-
-    def execute(self, context):
-        active_obj = context.view_layer.objects.active
-        obj = find_sollumz_parent(active_obj)
-        obj_hidden = obj.sollumz_obj_is_hidden
-
-        do_hide = not obj_hidden
-        obj.sollumz_obj_is_hidden = do_hide
-
+        do_hide = not obj.hide_get()
         obj.hide_set(do_hide)
 
         for child in obj.children_recursive:
@@ -381,7 +351,6 @@ def set_shattermaps_visibility(is_visible: bool):
 
 def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
     """Set LOD levels of all of children of ``obj``"""
-    obj.sollumz_obj_is_hidden = False
     obj.hide_set(False)
 
     for child in obj.children_recursive:
@@ -413,7 +382,6 @@ def operates_on_lod_level(func: Callable):
 
 def register():
     bpy.types.Object.sz_lods = bpy.props.PointerProperty(type=LODLevels)
-    bpy.types.Object.sollumz_obj_is_hidden = bpy.props.BoolProperty()
     bpy.types.Scene.sollumz_show_collisions = bpy.props.BoolProperty(default=True)
     bpy.types.Scene.sollumz_show_shattermaps = bpy.props.BoolProperty(default=True)
     bpy.types.Scene.sollumz_copy_lod_level = bpy.props.EnumProperty(items=LODLevelEnumItems)
@@ -421,7 +389,6 @@ def register():
 
 def unregister():
     del bpy.types.Object.sz_lods
-    del bpy.types.Object.sollumz_obj_is_hidden
     del bpy.types.Scene.sollumz_show_collisions
     del bpy.types.Scene.sollumz_show_shattermaps
     del bpy.types.Scene.sollumz_copy_lod_level
