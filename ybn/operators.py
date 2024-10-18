@@ -128,13 +128,14 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
 
         if context.scene.create_seperate_composites or len(selected_meshes) == 1:
             convert_objs_to_composites(
-                selected_meshes, bound_child_type, apply_default_flags)
+                selected_meshes, bound_child_type, apply_default_flags, do_center)
         else:
             composite_obj = convert_objs_to_single_composite(
-                selected_meshes, bound_child_type, apply_default_flags)
+                selected_meshes, bound_child_type, apply_default_flags, do_center)
 
             if do_center:
                 center_composite_to_children(composite_obj)
+        
 
         self.report(
             {"INFO"}, f"Succesfully converted all selected objects to a Composite.")

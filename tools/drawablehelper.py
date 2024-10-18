@@ -2,7 +2,7 @@ import bpy
 from mathutils import Vector
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
-from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output
+from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output, get_bounding_box_center_of_selected
 from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
 from ..cwxml.shader import (
     ShaderManager,
@@ -248,12 +248,10 @@ def center_drawable_to_models(drawable_obj: bpy.types.Object):
     model_objs = [
         child for child in drawable_obj.children if child.sollum_type == SollumType.DRAWABLE_MODEL]
 
-    center = Vector()
+    center = get_bounding_box_center_of_selected()
 
-    for obj in model_objs:
-        center += obj.location
-
-    center /= len(model_objs)
+    if center is None:
+        return
 
     drawable_obj.location = center
 
