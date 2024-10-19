@@ -4,6 +4,8 @@ from .expr import (
     FloatExpr,
     FloatConstantExpr,
     FloatMapRangeExpr,
+    FloatUnaryExpr,
+    FloatUnaryExprOp,
     VectorExpr,
     VectorConstantExpr,
     VectorMixColorExpr,
@@ -13,10 +15,14 @@ from .expr import (
     ParameterExpr,
     TextureExpr,
     ColorAttributeExpr,
+    AttributeExpr,
     ShaderExpr,
     BsdfPrincipledExpr,
+    BsdfDiffuseExpr,
     EmissionExpr,
     ShaderMixExpr,
+    ValueExpr,
+    VectorValueExpr,
 )
 
 
@@ -36,6 +42,12 @@ def color_attribute(name: str) -> ColorAttributeExpr:
     """Access a color attribute."""
     assert isinstance(name, str)
     return ColorAttributeExpr(name)
+
+
+def attribute(name: str) -> AttributeExpr:
+    """Access an attribute."""
+    assert isinstance(name, str)
+    return AttributeExpr(name)
 
 
 def param(parameter_name: str) -> ParameterExpr:
@@ -59,6 +71,11 @@ def vec(x: Floaty, y: Floaty, z: Floaty) -> VectorExpr:
         return ConstructVectorExpr(x, y, z)
 
 
+def f2v(f: Floaty) -> VectorExpr:
+    """Create a vector with the same value in the three components."""
+    return vec(f, f, f)
+
+
 def dot(a: VectorExpr, b: VectorExpr) -> FloatExpr:
     """Dot product of two vectors."""
     return a.dot(b)
@@ -72,6 +89,16 @@ def cross(a: VectorExpr, b: VectorExpr) -> VectorExpr:
 def map_range(*args, **kwargs) -> FloatExpr:
     """Remap a float value from a range to a target range. See ``FloatMapRangeExpr`` for parameters."""
     return FloatMapRangeExpr(*args, **kwargs)
+
+
+def roundf(value: Floaty) -> FloatExpr:
+    """Round a float value."""
+    return FloatUnaryExpr(value, FloatUnaryExprOp.ROUND)
+
+
+def truncf(value: Floaty) -> FloatExpr:
+    """Truncate a float value."""
+    return FloatUnaryExpr(value, FloatUnaryExprOp.TRUNC)
 
 
 def mix_color(*args, **kwargs) -> VectorExpr:
@@ -89,6 +116,11 @@ def bsdf_principled(*args, **kwargs) -> ShaderExpr:
     return BsdfPrincipledExpr(*args, **kwargs)
 
 
+def bsdf_diffuse(*args, **kwargs) -> ShaderExpr:
+    """Create a Diffuse BSDF shader. See ``BsdfDiffuseExpr`` for parameters."""
+    return BsdfDiffuseExpr(*args, **kwargs)
+
+
 def emission(*args, **kwargs) -> ShaderExpr:
     """Create a Emission shader. See ``EmissionExpr`` for parameters."""
     return EmissionExpr(*args, **kwargs)
@@ -97,3 +129,17 @@ def emission(*args, **kwargs) -> ShaderExpr:
 def mix_shader(*args, **kwargs) -> VectorExpr:
     """Mix two input shader by a factor. See ``ShaderMixExpr`` for parameters."""
     return ShaderMixExpr(*args, **kwargs)
+
+
+def value(*args, **kwargs) -> ValueExpr:
+    """Define a value node with the given name. The name can be used to find the node in the node tree later.
+    See ``ValueExpr`` for parameters.
+    """
+    return ValueExpr(*args, **kwargs)
+
+
+def vec_value(*args, **kwargs) -> VectorValueExpr:
+    """Define a vector value node with the given name. The name can be used to find the node in the node tree later.
+    See ``VectorValueExpr`` for parameters.
+    """
+    return VectorValueExpr(*args, **kwargs)

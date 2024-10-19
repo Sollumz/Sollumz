@@ -65,6 +65,8 @@ class Compiler:
                 op = "MULTIPLY"
             case expr.FloatBinaryExprOp.DIVIDE:
                 op = "DIVIDE"
+            case expr.FloatBinaryExprOp.MODULO:
+                op = "MODULO"
             case expr.FloatBinaryExprOp.POWER:
                 op = "POWER"
             case expr.FloatBinaryExprOp.LESS_THAN:
@@ -91,6 +93,20 @@ class Compiler:
             self.connect_float_input(src, map_range, input_socket)
 
         return CompiledExpr(map_range, 0)
+
+    def visit_FloatUnaryExpr(self, e: expr.FloatUnaryExpr) -> CompiledExpr:
+        match e.op:
+            case expr.FloatUnaryExprOp.ROUND:
+                op = "ROUND"
+            case expr.FloatUnaryExprOp.TRUNC:
+                op = "TRUNC"
+            case _:
+                raise NotImplementedError(f"{e.op} not implemented!")
+
+        math = self.node_tree.nodes.new("ShaderNodeMath")
+        math.operation = op
+        self.connect_float_input(e.value, math, "Value")
+        return CompiledExpr(math, 0)
 
     def visit_VectorMixColorExpr(self, e: expr.VectorMixColorExpr) -> CompiledExpr:
         mix = self.node_tree.nodes.new("ShaderNodeMix")
@@ -215,6 +231,19 @@ class Compiler:
         color_attr_expr = self.visit(e.color_attribute)
         return CompiledExpr(color_attr_expr.node, 1)
 
+    def visit_AttributeExpr(self, e: expr.AttributeExpr) -> CompiledExpr:
+        attr = self.node_tree.nodes.new("ShaderNodeAttribute")
+        attr.attribute_name = e.attribute_name
+        return CompiledExpr(attr, None)
+
+    def visit_AttributeVectorExpr(self, e: expr.AttributeVectorExpr) -> CompiledExpr:
+        attr_expr = self.visit(e.attribute)
+        return CompiledExpr(attr_expr.node, "Vector")
+
+    def visit_AttributeFacExpr(self, e: expr.AttributeFacExpr) -> CompiledExpr:
+        attr_expr = self.visit(e.attribute)
+        return CompiledExpr(attr_expr.node, "Fac")
+
     def visit_BsdfPrincipledExpr(self, e: expr.BsdfPrincipledExpr) -> CompiledExpr:
         bsdf = self.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
 
@@ -237,6 +266,24 @@ class Compiler:
 
         return CompiledExpr(bsdf, 0)
 
+    def visit_BsdfDiffuseExpr(self, e: expr.BsdfDiffuseExpr) -> CompiledExpr:
+        bsdf = self.node_tree.nodes.new("ShaderNodeBsdfDiffuse")
+
+        # vector inputs
+        for input_socket, src in (
+            ("Color", e.color),
+            ("Normal", e.normal),
+        ):
+            self.connect_vector_input(src, bsdf, input_socket)
+
+        # float inputs
+        for input_socket, src in (
+            ("Roughness", e.roughness),
+        ):
+            self.connect_float_input(src, bsdf, input_socket)
+
+        return CompiledExpr(bsdf, 0)
+
     def visit_EmissionExpr(self, e: expr.EmissionExpr) -> CompiledExpr:
         em = self.node_tree.nodes.new("ShaderNodeEmission")
         self.connect_vector_input(e.color, em, "Color")
@@ -249,6 +296,22 @@ class Compiler:
         self.connect_shader_input(e.in_a, mix, 1)
         self.connect_shader_input(e.in_b, mix, 2)
         return CompiledExpr(mix, 0)
+
+    def visit_ValueExpr(self, e: expr.ValueExpr) -> CompiledExpr:
+        value = self.node_tree.nodes.new("ShaderNodeValue")
+        value.name = e.name
+        value.label = e.name
+        value.outputs[0].default_value = e.default_value
+        return CompiledExpr(value, 0)
+
+    def visit_VectorValueExpr(self, e: expr.ValueExpr) -> CompiledExpr:
+        vec_value = self.node_tree.nodes.new("ShaderNodeCombineXYZ")
+        vec_value.name = e.name
+        vec_value.label = e.name
+        vec_value.inputs[0].default_value = e.default_value[0]
+        vec_value.inputs[1].default_value = e.default_value[1]
+        vec_value.inputs[2].default_value = e.default_value[2]
+        return CompiledExpr(vec_value, 0)
 
     def compile_vector_math(self, op: str, a: expr.VectorExpr, b: expr.VectorExpr, output_socket: int = 0) -> CompiledExpr:
         math = self.node_tree.nodes.new("ShaderNodeVectorMath")

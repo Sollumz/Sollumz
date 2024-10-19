@@ -53,6 +53,9 @@ class FloatExpr(Expr, ABC):
     def __truediv__(self, rhs: 'FloatExpr') -> 'FloatBinaryExpr':
         return FloatBinaryExpr(self, rhs, FloatBinaryExprOp.DIVIDE)
 
+    def __mod__(self, rhs: 'FloatExpr') -> 'FloatBinaryExpr':
+        return FloatBinaryExpr(self, rhs, FloatBinaryExprOp.MODULO)
+
     def __pow__(self, exp: 'FloatExpr', mod=None) -> 'FloatBinaryExpr':
         if mod is not None:
             raise NotImplementedError("mod not supported")
@@ -70,6 +73,9 @@ class FloatExpr(Expr, ABC):
 
     def __rtruediv__(self, lhs: 'FloatExpr') -> 'FloatBinaryExpr':
         return FloatBinaryExpr(lhs, self, FloatBinaryExprOp.DIVIDE)
+
+    def __rmod__(self, lhs: 'FloatExpr') -> 'FloatBinaryExpr':
+        return FloatBinaryExpr(lhs, self, FloatBinaryExprOp.MODULO)
 
     def __rpow__(self, base: 'FloatExpr', mod=None) -> 'FloatBinaryExpr':
         if mod is not None:
@@ -124,9 +130,10 @@ class FloatBinaryExprOp(IntEnum):
     SUBTRACT = 1
     MULTIPLY = 2
     DIVIDE = 3
-    POWER = 4
-    LESS_THAN = 5
-    GREATER_THAN = 6
+    MODULO = 4
+    POWER = 5
+    LESS_THAN = 6
+    GREATER_THAN = 7
 
     def token(self) -> str:
         match self:
@@ -138,6 +145,8 @@ class FloatBinaryExprOp(IntEnum):
                 return "*"
             case FloatBinaryExprOp.DIVIDE:
                 return "/"
+            case FloatBinaryExprOp.MODULO:
+                return "%"
             case FloatBinaryExprOp.POWER:
                 return "**"
             case FloatBinaryExprOp.LESS_THAN:
@@ -168,6 +177,41 @@ class FloatBinaryExpr(FloatExpr):
             lhs_id = self.lhs.dump(ctx)
             rhs_id = self.rhs.dump(ctx)
             return f"{lhs_id} {self.op.token()} {rhs_id}"
+        var_id = ctx.get_var_id(self, g)
+        return var_id
+
+
+class FloatUnaryExprOp(IntEnum):
+    ROUND = 0
+    TRUNC = 1
+
+    def token(self) -> str:
+        match self:
+            case FloatUnaryExprOp.ROUND:
+                return "roundf"
+            case FloatUnaryExprOp.ROUND:
+                return "truncf"
+            case _:
+                raise NotImplementedError(f"'{self}' not implemented!")
+
+
+class FloatUnaryExpr(FloatExpr):
+    """Operation on a float that produces another float."""
+
+    value: FloatExpr
+    op: FloatUnaryExprOp
+
+    def __init__(self, value: Floaty, op: FloatUnaryExprOp):
+        self.value = floaty(value)
+        self.op = op
+
+    def __str__(self):
+        return f"{self.op.token()}({self.value})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            value_id = self.value.dump(ctx)
+            return f"{self.op.token}({value_id})"
         var_id = ctx.get_var_id(self, g)
         return var_id
 
@@ -681,7 +725,7 @@ class ColorAttributeColorExpr(VectorExpr):
 
 
 class ColorAttributeAlphaExpr(FloatExpr):
-    """Read the alpha component of a texture."""
+    """Read the alpha component of a color attribute."""
 
     color_attribute: ColorAttributeExpr
 
@@ -694,6 +738,78 @@ class ColorAttributeAlphaExpr(FloatExpr):
     def dump(self, ctx: ExprDumpContext) -> str:
         color_attribute_id = self.color_attribute.dump(ctx)
         return f"{color_attribute_id}.alpha"
+
+
+class AttributeExpr(Expr):
+    """Access an attribute."""
+
+    attribute_name: str
+
+    def __init__(self, attribute_name: str):
+        self.attribute_name = attribute_name
+
+    def __str__(self):
+        return f"attribute('{self.attribute_name}')"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"attribute('{self.attribute_name}')"
+
+    @property
+    def fac(self) -> 'AttributeFacExpr':
+        return AttributeFacExpr(self)
+
+    @property
+    def vector(self) -> 'AttributeVectorExpr':
+        return AttributeVectorExpr(self)
+
+    @property
+    def x(self) -> FloatExpr:
+        return self.color.x
+
+    @property
+    def y(self) -> FloatExpr:
+        return self.color.y
+
+    @property
+    def z(self) -> FloatExpr:
+        return self.color.z
+
+    # Aliases
+    r = x
+    g = y
+    b = z
+
+
+class AttributeFacExpr(FloatExpr):
+    """Read the factor value of an attribute."""
+
+    attribute: AttributeExpr
+
+    def __init__(self, attribute: AttributeExpr):
+        self.attribute = attribute
+
+    def __str__(self):
+        return f"{self.attribute}.fac"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        attribute_id = self.attribute.dump(ctx)
+        return f"{attribute_id}.fac"
+
+
+class AttributeVectorExpr(VectorExpr):
+    """Read the vector value of an attribute."""
+
+    attribute: AttributeExpr
+
+    def __init__(self, attribute: AttributeExpr):
+        self.attribute = attribute
+
+    def __str__(self):
+        return f"{self.attribute}.fac"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        attribute_id = self.attribute.dump(ctx)
+        return f"{attribute_id}.fac"
 
 
 class ShaderExpr(Expr, ABC):
@@ -730,7 +846,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         self.normal = normal
 
     def __str__(self):
-        s = f"bsdf_principled({self.base_color}"
+        s = "bsdf_principled("
         first_arg = True
 
         def _arg(name: str):
@@ -786,6 +902,72 @@ class BsdfPrincipledExpr(ShaderExpr):
         return var_id
 
 
+class BsdfDiffuseExpr(ShaderExpr):
+    """A Diffuse BSDF shader expression."""
+
+    color: Optional[VectorExpr]
+    roughness: Optional[FloatExpr]
+    normal: Optional[VectorExpr]
+
+    def __init__(
+        self,
+        color: Optional[VectorExpr] = None,
+        roughness: Optional[Floaty] = None,
+        normal: Optional[VectorExpr] = None,
+    ):
+        self.color = color
+        self.roughness = optional_floaty(roughness)
+        self.normal = normal
+
+    def __str__(self):
+        s = "bsdf_diffuse("
+        first_arg = True
+
+        def _arg(name: str):
+            nonlocal s, first_arg
+            expr = getattr(self, name, None)
+            if expr is None:
+                return
+
+            if not first_arg:
+                s += ", "
+            s += f"{name}={expr}"
+            first_arg = False
+
+        _arg("color")
+        _arg("roughness")
+        _arg("normal")
+
+        s += ")"
+        return s
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        def g():
+            s = "bsdf_diffuse("
+            first_arg = True
+
+            def _arg(name: str):
+                nonlocal s, first_arg
+                expr = getattr(self, name, None)
+                if expr is None:
+                    return
+
+                expr_id = expr.dump(ctx)
+                if not first_arg:
+                    s += ", "
+                s += f"{name}={expr_id}"
+                first_arg = False
+
+            _arg("color")
+            _arg("roughness")
+            _arg("normal")
+
+            s += ")"
+            return s
+        var_id = ctx.get_var_id(self, g)
+        return var_id
+
+
 class EmissionExpr(ShaderExpr):
     """A emission shader expression."""
 
@@ -831,6 +1013,40 @@ class ShaderMixExpr(ShaderExpr):
             return f"mix_shader({a_id}, {b_id}, {factor_id})"
         var_id = ctx.get_var_id(self, g)
         return var_id
+
+
+class ValueExpr(FloatExpr):
+    """Define a value node with the given name. The name can be used to find the node in the node tree later."""
+
+    name: str
+    default_value: float
+
+    def __init__(self, name: str, default_value: float = 0.0):
+        self.name = name
+        self.default_value = default_value
+
+    def __str__(self):
+        return f"value('{self.name}')"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"value('{self.name}')"
+
+
+class VectorValueExpr(VectorExpr):
+    """Define a vector value node with the given name. The name can be used to find the node in the node tree later."""
+
+    name: str
+    default_value: tuple[float, float, float]
+
+    def __init__(self, name: str, default_value: tuple[float, float, float] = (0.0, 0.0, 0.0)):
+        self.name = name
+        self.default_value = default_value
+
+    def __str__(self):
+        return f"vec_value('{self.name}')"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"vec_value('{self.name}')"
 
 
 def dump(expr: Expr) -> str:
