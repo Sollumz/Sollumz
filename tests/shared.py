@@ -19,10 +19,11 @@ def get_env_path(name: str) -> Optional[Path]:
 SOLLUMZ_TEST_TMP_DIR = get_env_path("SOLLUMZ_TEST_TMP_DIR")
 SOLLUMZ_TEST_GAME_ASSETS_DIR = get_env_path("SOLLUMZ_TEST_GAME_ASSETS_DIR")
 SOLLUMZ_TEST_ASSETS_DIR = Path(__file__).parent.joinpath("assets/")
-SOLLUMZ_TEST_VERSIONING_DATA_DIR = Path(__file__).parent.joinpath("versioning/data/")
+
 
 def is_tmp_dir_available() -> bool:
     return SOLLUMZ_TEST_TMP_DIR is not None
+
 
 def tmp_path(file_name: str, subdirectory: Optional[str] = None) -> Path:
     if not is_tmp_dir_available():
@@ -36,6 +37,7 @@ def tmp_path(file_name: str, subdirectory: Optional[str] = None) -> Path:
     path = dir_path.joinpath(file_name)
     return path
 
+
 def glob_assets(ext: str) -> list[tuple[Path, str]]:
     glob_pattern = f"*.{ext}.xml"
     assets = SOLLUMZ_TEST_ASSETS_DIR.rglob(glob_pattern)
@@ -44,6 +46,7 @@ def glob_assets(ext: str) -> list[tuple[Path, str]]:
         assets = itertools.chain(assets, game_assets)
 
     return list(map(lambda p: (p, str(p)), assets))
+
 
 def asset_path(file_name: str) -> Path:
     path = SOLLUMZ_TEST_ASSETS_DIR.joinpath(file_name)
