@@ -336,7 +336,11 @@ class Compiler:
 
     def connect_vector_input(self, src_expr: Optional[expr.VectorExpr], node: ShaderNode, input_socket: int | str):
         if isinstance(src_expr, expr.VectorConstantExpr):
-            node.inputs[input_socket].default_value = src_expr.value_x, src_expr.value_y, src_expr.value_z
+            node_input = node.inputs[input_socket]
+            if node_input.type == "RGBA":
+                node_input.default_value = src_expr.value_x, src_expr.value_y, src_expr.value_z, 1.0
+            else:
+                node_input.default_value = src_expr.value_x, src_expr.value_y, src_expr.value_z
         elif src_expr is not None:
             compiled_src_expr = self.visit(src_expr)
             self.node_tree.links.new(compiled_src_expr.output, node.inputs[input_socket])
