@@ -3,7 +3,12 @@ import bmesh
 from enum import IntEnum
 
 from ..tools.blenderhelper import remove_number_suffix
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, VehicleLightID, VehiclePaintLayer, items_from_enums
+from ..sollumz_properties import (
+    SOLLUMZ_UI_NAMES,
+    SollumType,
+    VehicleLightID,
+    items_from_enums,
+)
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -164,29 +169,120 @@ def get_light_id_of_selection(self):
     return light_id
 
 
-PAINT_LAYER_VALUES = {
-    VehiclePaintLayer.NOT_PAINTABLE: 0,
-    VehiclePaintLayer.PRIMARY: 1,
-    VehiclePaintLayer.SECONDARY: 2,
-    VehiclePaintLayer.WHEEL: 4,
-    VehiclePaintLayer.INTERIOR_TRIM: 6,
-    VehiclePaintLayer.INTERIOR_DASH: 7,
-}
+class VehiclePaintLayer(IntEnum):
+    CUSTOM = 0
+    PRIMARY = 1
+    SECONDARY = 2
+    PEARLESCENT = 3
+    WHEEL = 4
+    DEFAULT = 5
+    INTERIOR_TRIM = 6
+    INTERIOR_DASH = 7
+
+    @property
+    def ui_label(self) -> str:
+        match self:
+            case VehiclePaintLayer.CUSTOM:
+                return "Custom - Not Paintable"
+            case VehiclePaintLayer.PRIMARY:
+                return "Primary"
+            case VehiclePaintLayer.SECONDARY:
+                return "Secondary"
+            case VehiclePaintLayer.PEARLESCENT:
+                return "Pearlescent"
+            case VehiclePaintLayer.WHEEL:
+                return "Wheel"
+            case VehiclePaintLayer.DEFAULT:
+                return "Default - Not Paintable"
+            case VehiclePaintLayer.INTERIOR_TRIM:
+                return "Interior Trim"
+            case VehiclePaintLayer.INTERIOR_DASH:
+                return "Dashboard"
+            case _:
+                assert False, f"Unknown paint layer {self}"
 
 
-def update_mat_paint_name(mat: bpy.types.Material):
+VehiclePaintLayerEnumItems = tuple((enum.name, enum.ui_label, desc, enum.value) for enum, desc in (
+    (VehiclePaintLayer.CUSTOM,
+        "Custom - cannot be painted at mod shops. Use 'matDiffuseColor' parameter as paint color"),
+    (VehiclePaintLayer.DEFAULT,
+        "Default - cannot be painted at mod shops. Use white as paint color, or grey when vehicle is scorched"),
+    (VehiclePaintLayer.PRIMARY,
+        "Use Primary paint color on this material"),
+    (VehiclePaintLayer.SECONDARY,
+        "Use Secondary paint color on this material"),
+    (VehiclePaintLayer.PEARLESCENT,
+        "Use Pearlescent paint color on this material. Note, this does not apply the pearlescent effect, but simply "
+        "use the color chosen for pearlescent to paint this material as well"),
+    (VehiclePaintLayer.WHEEL,
+        "Use Wheel paint color on this material"),
+    (VehiclePaintLayer.INTERIOR_TRIM,
+        "Use Interior Trim paint color on this material"),
+    (VehiclePaintLayer.INTERIOR_DASH,
+        "Use Interior Dashboard paint color on this material"),
+))
+
+
+def _get_mat_paint_layer(self: bpy.types.Material) -> int:
+    """Get material paint layer (i.e Primary, Secondary) based on the value of matDiffuseColor."""
+    paint_layer_int = VehiclePaintLayer.CUSTOM.value
+    if self.node_tree is None:
+        return paint_layer_int
+
+    matDiffuseColor = self.node_tree.nodes.get("matDiffuseColor", None)
+    if matDiffuseColor is None:
+        return paint_layer_int
+
+    x = matDiffuseColor.get("X")
+    if x != 2.0:
+        return paint_layer_int
+
+    y = matDiffuseColor.get("Y")
+    z = matDiffuseColor.get("Z")
+
+    if y != z:
+        return paint_layer_int
+
+    for paint_layer in VehiclePaintLayer:
+        if y == paint_layer.value:
+            paint_layer_int = paint_layer.value
+            break
+
+    return paint_layer_int
+
+
+def _set_mat_paint_layer(self: bpy.types.Material, value_int: int):
+    """Set matDiffuseColor value from paint layer selection."""
+
+    if self.node_tree is None or not 0 <= value_int <= 7:
+        return
+
+    matDiffuseColor = self.node_tree.nodes.get("matDiffuseColor", None)
+    if matDiffuseColor is None:
+        return
+
+    if value_int == 0:
+        matDiffuseColor.set_vec3((1.0, 1.0, 1.0))
+        return
+
+    matDiffuseColor.set("X", 2.0)
+    matDiffuseColor.set("Y", float(value_int))
+    matDiffuseColor.set("Z", float(value_int))
+
+
+def _update_mat_paint_name(mat: bpy.types.Material):
     """Update material name to have [PAINT_LAYER] extension at the end."""
-    def get_paint_layer_name(_paint_layer: VehiclePaintLayer):
-        if _paint_layer == VehiclePaintLayer.NOT_PAINTABLE:
+    def _get_paint_layer_name(_paint_layer: VehiclePaintLayer):
+        if _paint_layer == VehiclePaintLayer.CUSTOM or _paint_layer == VehiclePaintLayer.DEFAULT:
             return ""
-        return f"[{SOLLUMZ_UI_NAMES[_paint_layer].upper()}]"
+        return f"[{_paint_layer.ui_label.upper()}]"
 
-    new_name_ext = get_paint_layer_name(mat.sollumz_paint_layer)
+    new_name_ext = _get_paint_layer_name(VehiclePaintLayer[mat.sz_paint_layer])
     mat_base_name = remove_number_suffix(mat.name).strip()
 
     # Replace existing extension
     for paint_layer in VehiclePaintLayer:
-        name_ext = get_paint_layer_name(paint_layer)
+        name_ext = _get_paint_layer_name(paint_layer)
         if name_ext in mat_base_name:
             mat_base_name = mat_base_name.replace(name_ext, "").strip()
 
@@ -244,22 +340,14 @@ def register():
     bpy.types.Scene.selected_vehicle_light_id = bpy.props.IntProperty(
         name="Light ID", get=get_light_id_of_selection)
 
-    bpy.types.Material.sollumz_paint_layer = bpy.props.EnumProperty(
-        items=(
-            (VehiclePaintLayer.NOT_PAINTABLE.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.NOT_PAINTABLE],
-             "Material cannot be painted at mod shops"),
-            (VehiclePaintLayer.PRIMARY.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.PRIMARY],
-             "Primary paint color will use this material"),
-            (VehiclePaintLayer.SECONDARY.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.SECONDARY],
-             "Secondary paint color will use this material"),
-            (VehiclePaintLayer.WHEEL.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.WHEEL],
-             "Wheel color will use this material"),
-            (VehiclePaintLayer.INTERIOR_TRIM.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_TRIM],
-             "Interior trim color will use this material"),
-            (VehiclePaintLayer.INTERIOR_DASH.value, SOLLUMZ_UI_NAMES[VehiclePaintLayer.INTERIOR_DASH],
-             "Interior dash color will use this material"),
-        ),
-        name="Paint Layer", default=VehiclePaintLayer.NOT_PAINTABLE, update=lambda mat, context: update_mat_paint_name(mat))
+    bpy.types.Material.sz_paint_layer = bpy.props.EnumProperty(
+        name="Paint Layer",
+        items=VehiclePaintLayerEnumItems,
+        default=VehiclePaintLayer.CUSTOM.value,
+        get=_get_mat_paint_layer,
+        set=_set_mat_paint_layer,
+        update=lambda self, context: _update_mat_paint_name(self),
+    )
 
 
 def unregister():
@@ -279,4 +367,4 @@ def unregister():
     del bpy.types.Scene.set_custom_vehicle_light_id
     del bpy.types.Scene.select_custom_vehicle_light_id
     del bpy.types.Scene.selected_vehicle_light_id
-    del bpy.types.Material.sollumz_paint_layer
+    del bpy.types.Material.sz_paint_layer

@@ -9,15 +9,14 @@ from .fragment_merger import FragmentMerger
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
-from ..shared.shader_nodes import SzShaderNodeParameter
-from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, VehiclePaintLayer
+from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype, GlassWindow
 from ..cwxml.drawable import Drawable, Bone
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object
 from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GlassTypes, PAINT_LAYER_VALUES, FragmentTemplateAsset
+from .properties import LODProperties, FragArchetypeProperties, GlassTypes, FragmentTemplateAsset
 from ..tools.blenderhelper import get_child_of_bone
 
 
@@ -81,9 +80,13 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
     if hi_xml is not None:
         frag_xml = merge_hi_fragment(frag_xml, hi_xml)
 
-    materials = shadergroup_to_materials(
-        frag_xml.drawable.shader_group, filepath)
-    update_mat_paint_layers(materials)
+    materials = shadergroup_to_materials(frag_xml.drawable.shader_group, filepath)
+
+    # Need to append [PAINT_LAYER] extension at the end of the material names
+    for mat in materials:
+        if "matDiffuseColor" in mat.node_tree.nodes:
+            from .properties import _update_mat_paint_name
+            _update_mat_paint_name(mat)
 
     drawable_obj = create_fragment_drawable(
         frag_xml, frag_obj, filepath, materials, split_by_group)
@@ -141,31 +144,6 @@ def merge_hi_fragment(frag_xml: Fragment, hi_xml: Fragment) -> Fragment:
     frag_xml = FragmentMerger(frag_xml, hi_xml).merge()
 
     return frag_xml
-
-
-def update_mat_paint_layers(materials: list[bpy.types.Material]):
-    for mat in materials:
-        mat.sollumz_paint_layer = get_mat_paint_layer(mat)
-
-
-def get_mat_paint_layer(mat: bpy.types.Material):
-    """Get material paint layer (i.e Primary, Secondary) based on the value of matDiffuseColor"""
-    x = -1
-    y = -1
-    z = -1
-
-    for node in mat.node_tree.nodes:
-        if isinstance(node, SzShaderNodeParameter) and node.name == "matDiffuseColor":
-            x = node.get("X")
-            y = node.get("Y")
-            z = node.get("Z")
-            break
-
-    for paint_layer, value in PAINT_LAYER_VALUES.items():
-        if x == 2 and y == value and z == value:
-            return paint_layer
-
-    return VehiclePaintLayer.NOT_PAINTABLE
 
 
 def create_phys_lod(frag_xml: Fragment, frag_obj: bpy.types.Object):

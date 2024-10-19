@@ -189,15 +189,6 @@ class VehicleLightID(str, Enum):
     CUSTOM = "custom"
 
 
-class VehiclePaintLayer(str, Enum):
-    NOT_PAINTABLE = "sollumz_not_paintable"
-    PRIMARY = "sollumz_primary_color"
-    SECONDARY = "sollumz_secondary_color"
-    WHEEL = "sollumz_wheel_color"
-    INTERIOR_TRIM = "sollumz_interior_trim_color"
-    INTERIOR_DASH = "sollumz_interior_dash_color"
-
-
 FRAGMENT_TYPES = [
     SollumType.FRAGMENT,
     SollumType.FRAGGROUP,
@@ -415,12 +406,6 @@ SOLLUMZ_UI_NAMES = {
     VehicleLightID.EXTRA_REAR_LEFT: "Extra Rear Left (extralight_3)",
     VehicleLightID.EXTRA_REAR_RIGHT: "Extra Rear Right (extralight_4)",
 
-    VehiclePaintLayer.NOT_PAINTABLE: "Not Paintable",
-    VehiclePaintLayer.PRIMARY: "Primary",
-    VehiclePaintLayer.SECONDARY: "Secondary",
-    VehiclePaintLayer.WHEEL: "Wheel",
-    VehiclePaintLayer.INTERIOR_DASH: "Dashboard",
-    VehiclePaintLayer.INTERIOR_TRIM: "Interior Trim"
 }
 
 

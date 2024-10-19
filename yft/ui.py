@@ -368,8 +368,7 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         if aobj is None or aobj.sollum_type != SollumType.DRAWABLE_MODEL:
             return False
 
-        has_frag_parent = find_sollumz_parent(
-            aobj, parent_type=SollumType.FRAGMENT) is not None
+        has_frag_parent = find_sollumz_parent(aobj, parent_type=SollumType.FRAGMENT) is not None
         mat = aobj.active_material
 
         return mat is not None and mat.sollum_type == MaterialType.SHADER and has_frag_parent
@@ -378,11 +377,9 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         layout = self.layout
         mat = context.active_object.active_material
 
-        has_mat_diffuse_color = any(
-            "matDiffuseColor" in n.name for n in mat.node_tree.nodes)
+        has_mat_diffuse_color = "matDiffuseColor" in mat.node_tree.nodes
         row = layout.row()
         row.enabled = has_mat_diffuse_color
-        row.prop(mat, "sollumz_paint_layer")
+        row.prop(mat, "sz_paint_layer")
         if not has_mat_diffuse_color:
-            layout.label(
-                text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")
+            layout.label(text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")

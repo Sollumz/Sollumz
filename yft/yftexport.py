@@ -13,20 +13,20 @@ from ..cwxml.fragment import (
     Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window,
     GlassWindow, GlassWindows,
 )
-from ..cwxml.drawable import Bone, Drawable, ShaderGroup, VectorShaderParameter, VertexLayoutList
+from ..cwxml.drawable import Bone, Drawable, VertexLayoutList
 from ..tools.blenderhelper import get_evaluated_obj, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import flip_uvs
 from ..tools.utils import prop_array_to_vector, reshape_mat_4x3, vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_parent_inverse, get_sollumz_materials
-from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel, VehiclePaintLayer
+from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
 from .. import logger
 from .properties import (
-    LODProperties, FragArchetypeProperties, GroupProperties, PAINT_LAYER_VALUES,
+    LODProperties, FragArchetypeProperties, GroupProperties,
     GroupFlagBit, get_glass_type_index,
     FragmentTemplateAsset,
 )
@@ -82,8 +82,6 @@ def create_fragment_xml(frag_obj: bpy.types.Object, apply_transforms: bool = Fal
     original_pose = frag_obj.data.pose_position
     frag_obj.data.pose_position = "REST"
 
-    set_paint_layer_shader_params(materials, drawable_xml.shader_group)
-
     frag_xml.bounding_sphere_center = drawable_xml.bounding_sphere_center
     frag_xml.bounding_sphere_radius = drawable_xml.bounding_sphere_radius
 
@@ -116,21 +114,6 @@ def create_frag_drawable_xml(frag_obj: bpy.types.Object, materials: list[bpy.typ
         drawable_xml.name = "skel"
 
         return drawable_xml
-
-
-def set_paint_layer_shader_params(materials: list[bpy.types.Material], shader_group: ShaderGroup):
-    """Set matDiffuseColor shader params based off of paint layer selection (expects materials to be ordered by shader)"""
-    for i, mat in enumerate(materials):
-        paint_layer = mat.sollumz_paint_layer
-        if paint_layer == VehiclePaintLayer.NOT_PAINTABLE:
-            continue
-
-        for param in shader_group.shaders[i].parameters:
-            if not isinstance(param, VectorShaderParameter) or param.name != "matDiffuseColor":
-                continue
-
-            value = PAINT_LAYER_VALUES[paint_layer]
-            param.x, param.y, param.z, param.w = (2, value, value, 0)
 
 
 def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, apply_transforms: bool = False):
