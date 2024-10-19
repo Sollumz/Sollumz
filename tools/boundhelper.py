@@ -93,12 +93,12 @@ def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: S
         convert_obj_to_composite(obj, bound_child_type, apply_default_flags, do_center)
 
 
-def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False, do_center: bool = False):
+def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
     """Create a single composite from all ``objs``."""
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
     for obj in objs:
         if bound_child_type == SollumType.BOUND_GEOMETRY:
-            convert_obj_to_geometry(obj, apply_default_flags, do_center)
+            convert_obj_to_geometry(obj, apply_default_flags)
             obj.parent = composite_obj
         else:
             bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
