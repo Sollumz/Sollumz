@@ -4,7 +4,7 @@ import traceback
 from ..cwxml.flag_preset import FlagPreset
 from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from ..ybn.collision_materials import create_collision_material_from_index
-from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, convert_objs_to_single_composite, center_composite_to_children
+from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, convert_objs_to_single_composite, center_composite_to_children, apply_flag_preset
 from ..tools.meshhelper import create_box_from_extents
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, MaterialType, BOUND_POLYGON_TYPES
 from ..sollumz_helper import SOLLUMZ_OT_base
@@ -161,23 +161,16 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
         else:
             parent = None
 
-        bound_obj = create_empty_object(bound_type)
+        # Check the bound type and create the appropriate object
+        if bound_type in [SollumType.BOUND_COMPOSITE, SollumType.BOUND_GEOMETRYBVH]:
+            bound_obj = create_empty_object(bound_type)  # Create an empty for composites and BVH
+        else:
+            bound_obj = create_bound_shape(bound_type)  # Create shape for other bounds
+
         bound_obj.parent = parent
 
-        # Always apply the selected flag preset for all bound types
-        index = context.window_manager.sz_flag_preset_index
-        load_flag_presets()
-
-        try:
-            preset = flag_presets.presets[index]
-            for flag_name in BoundFlags.__annotations__.keys():
-                bound_obj.composite_flags1[flag_name] = flag_name in preset.flags1
-                bound_obj.composite_flags2[flag_name] = flag_name in preset.flags2
-
-            self.report({"INFO"}, f"Applied preset '{preset.name}' to new bound object.")
-
-        except IndexError:
-            self.report({"WARNING"}, "Flag preset does not exist or is not selected.")
+        # Apply the selected flag preset for all bound types using the imported function
+        apply_flag_preset(bound_obj)
 
         return {"FINISHED"}
 
@@ -482,21 +475,10 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
 
         for obj in selected:
             try:
+                # Get the preset based on the index
                 preset = flag_presets.presets[index]
 
-                for flag_name in BoundFlags.__annotations__.keys():
-                    if flag_name in preset.flags1:
-                        obj.composite_flags1[flag_name] = True
-                    else:
-                        obj.composite_flags1[flag_name] = False
-
-                    if flag_name in preset.flags2:
-                        obj.composite_flags2[flag_name] = True
-                    else:
-                        obj.composite_flags2[flag_name] = False
-
-                tag_redraw(context)
-
+                apply_flag_preset(obj)
                 self.message(f"Applied preset '{preset.name}' to: {obj.name}")
             except IndexError:
                 filepath = get_flag_presets_path()
