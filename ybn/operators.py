@@ -160,6 +160,29 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
             bound_obj = create_empty_object(bound_type)
             bound_obj.parent = parent
 
+            # Check if a flag preset is selected and apply it
+            index = context.window_manager.sz_flag_preset_index
+            load_flag_presets()
+
+            try:
+                preset = flag_presets.presets[index]
+
+                for flag_name in BoundFlags.__annotations__.keys():
+                    if flag_name in preset.flags1:
+                        bound_obj.composite_flags1[flag_name] = True
+                    else:
+                        bound_obj.composite_flags1[flag_name] = False
+
+                    if flag_name in preset.flags2:
+                        bound_obj.composite_flags2[flag_name] = True
+                    else:
+                        bound_obj.composite_flags2[flag_name] = False
+
+                self.report({"INFO"}, f"Applied preset '{preset.name}' to new Bound GeometryBVH object.")
+
+            except IndexError:
+                self.report({"WARNING"}, "Flag preset does not exist or is not selected.")
+
             return {"FINISHED"}
 
         bound_obj = create_bound_shape(bound_type)
