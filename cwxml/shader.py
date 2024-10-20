@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import os
 from abc import ABC, abstractmethod
 from .element import (
+    ElementProperty,
     ElementTree,
     ListProperty,
     TextProperty,
@@ -10,7 +11,7 @@ from .element import (
 from .drawable import VertexLayoutList
 from ..tools import jenkhash
 from typing import Optional
-from enum import Enum
+from enum import Enum, Flag, auto
 
 
 class FileNameList(ListProperty):
@@ -155,6 +156,35 @@ class ShaderParameterDefsList(ListProperty):
         return new
 
 
+class ShaderDefFlag(Flag):
+    IS_CLOTH = auto()
+
+class ShaderDefFlagProperty(ElementProperty):
+    value_types = (ShaderDefFlag)
+
+    def __init__(self, tag_name: str = "Flags", value: ShaderDefFlag = ShaderDefFlag(0)):
+        super().__init__(tag_name, value)
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = ShaderDefFlagProperty(element.tag)
+        if element.text and len(element.text.strip()) > 0:
+            text = element.text.replace(" ", "").split(",")
+            for flag in text:
+                if flag in ShaderDefFlag.__members__:
+                    new.value = new.value | ShaderDefFlag[flag]
+                else:
+                    ShaderDefFlagProperty.read_value_error(element)
+
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        if len(self.value) > 0:
+            element.text = ", ".join(f.name for f in self.value)
+        return element
+
+
 class ShaderDef(ElementTree):
     tag_name = "Item"
 
@@ -166,6 +196,7 @@ class ShaderDef(ElementTree):
     def __init__(self):
         super().__init__()
         self.filename = TextProperty("Name", "")
+        self.flags = ShaderDefFlagProperty()
         self.layouts = LayoutList()
         self.parameters = ShaderParameterDefsList("Parameters")
         self.render_bucket = 0
@@ -230,6 +261,10 @@ class ShaderDef(ElementTree):
     @property
     def is_uv_animation_supported(self) -> bool:
         return "globalAnimUV0" in self.parameter_map and "globalAnimUV1" in self.parameter_map
+
+    @property
+    def is_cloth(self) -> bool:
+        return ShaderDefFlag.IS_CLOTH in self.flags
 
     @classmethod
     def from_xml(cls, element: ET.Element) -> "ShaderDef":

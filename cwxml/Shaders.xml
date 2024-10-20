@@ -1918,6 +1918,7 @@
    <Item bucket="3">cloth_normal_spec_cutout.sps</Item>
    <Item bucket="1">cloth_normal_spec_alpha.sps</Item>
   </FileName>
+  <Flags>IS_CLOTH</Flags>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -2033,6 +2034,7 @@
   <FileName>
    <Item bucket="0">cloth_default.sps</Item>
   </FileName>
+  <Flags>IS_CLOTH</Flags>
   <Layout>
    <Item type="GTAV3">
     <Position />
@@ -3055,6 +3057,7 @@
    <Item bucket="3">cloth_spec_cutout.sps</Item>
    <Item bucket="1">cloth_spec_alpha.sps</Item>
   </FileName>
+  <Flags>IS_CLOTH</Flags>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -4062,6 +4065,7 @@
   <FileName>
    <Item bucket="0">vehicle_cloth.sps</Item>
   </FileName>
+  <Flags>IS_CLOTH</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7781,6 +7785,7 @@
   <FileName>
    <Item bucket="0">cloth_normal_spec_tnt.sps</Item>
   </FileName>
+  <Flags>IS_CLOTH</Flags>
   <Layout>
    <Item type="GTAV2">
     <Position />
@@ -8360,6 +8365,7 @@
   <FileName>
    <Item bucket="0">vehicle_cloth2.sps</Item>
   </FileName>
+  <Flags>IS_CLOTH</Flags>
   <Layout>
    <Item type="GTAV2">
     <Position />
