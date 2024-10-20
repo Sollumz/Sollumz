@@ -53,7 +53,7 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
     )
     angle_step: bpy.props.IntProperty(
         name="Range Precision",
-        description="Amount of angle steps to skip, this can be usefull in situations where number of samples alone doesn't give a precise result. Lower values mean higher precision",
+        description="Amount of angle steps to skip, this can be useful in situations where number of samples alone doesn't give a precise result. Lower values mean higher precision",
         default=2,
         min=1,
         max=10
@@ -123,21 +123,26 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
             return {"CANCELLED"}
 
         bound_child_type = context.scene.bound_child_type
-        apply_default_flags = context.scene.composite_apply_default_flag_preset
         do_center = context.scene.center_composite_to_selection
 
+        # Always apply the selected flag preset
+        index = context.window_manager.sz_flag_preset_index
+        load_flag_presets()
+        try:
+            preset = flag_presets.presets[index]
+        except IndexError:
+            self.report({"WARNING"}, "Flag preset does not exist or is not selected.")
+            return {"CANCELLED"}
+
         if context.scene.create_seperate_composites or len(selected_meshes) == 1:
-            convert_objs_to_composites(
-                selected_meshes, bound_child_type, apply_default_flags)
+            convert_objs_to_composites(selected_meshes, bound_child_type, preset)
         else:
-            composite_obj = convert_objs_to_single_composite(
-                selected_meshes, bound_child_type, apply_default_flags)
+            composite_obj = convert_objs_to_single_composite(selected_meshes, bound_child_type, preset)
 
             if do_center:
                 center_composite_to_children(composite_obj)
 
-        self.report(
-            {"INFO"}, f"Succesfully converted all selected objects to a Composite.")
+        self.report({"INFO"}, f"Succesfully converted all selected objects to a Composite.")
 
         return {"FINISHED"}
 
@@ -156,41 +161,23 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
         else:
             parent = None
 
-        if bound_type in [SollumType.BOUND_COMPOSITE, SollumType.BOUND_GEOMETRYBVH]:
-            bound_obj = create_empty_object(bound_type)
-            bound_obj.parent = parent
-
-            # Check if a flag preset is selected and apply it
-            index = context.window_manager.sz_flag_preset_index
-            load_flag_presets()
-
-            try:
-                preset = flag_presets.presets[index]
-
-                for flag_name in BoundFlags.__annotations__.keys():
-                    if flag_name in preset.flags1:
-                        bound_obj.composite_flags1[flag_name] = True
-                    else:
-                        bound_obj.composite_flags1[flag_name] = False
-
-                    if flag_name in preset.flags2:
-                        bound_obj.composite_flags2[flag_name] = True
-                    else:
-                        bound_obj.composite_flags2[flag_name] = False
-
-                self.report({"INFO"}, f"Applied preset '{preset.name}' to new Bound GeometryBVH object.")
-
-            except IndexError:
-                self.report({"WARNING"}, "Flag preset does not exist or is not selected.")
-
-            return {"FINISHED"}
-
-        bound_obj = create_bound_shape(bound_type)
-
-        if bound_obj is None:
-            return {"CANCELLED"}
-
+        bound_obj = create_empty_object(bound_type)
         bound_obj.parent = parent
+
+        # Always apply the selected flag preset for all bound types
+        index = context.window_manager.sz_flag_preset_index
+        load_flag_presets()
+
+        try:
+            preset = flag_presets.presets[index]
+            for flag_name in BoundFlags.__annotations__.keys():
+                bound_obj.composite_flags1[flag_name] = flag_name in preset.flags1
+                bound_obj.composite_flags2[flag_name] = flag_name in preset.flags2
+
+            self.report({"INFO"}, f"Applied preset '{preset.name}' to new bound object.")
+
+        except IndexError:
+            self.report({"WARNING"}, "Flag preset does not exist or is not selected.")
 
         return {"FINISHED"}
 
