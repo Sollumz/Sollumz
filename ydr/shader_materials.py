@@ -962,8 +962,6 @@ def create_basic_shader_nodes(b: ShaderBuilder):
 
 def create_terrain_shader(b: ShaderBuilder):
     shader = b.shader
-    filename = b.filename
-    mat = b.material
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
@@ -1015,7 +1013,7 @@ def create_terrain_shader(b: ShaderBuilder):
         mixns.append(mix)
 
     seprgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
-    if filename in ShaderManager.mask_only_terrains:
+    if shader.is_terrain_mask_only:
         links.new(tm.outputs[0], seprgb.inputs[0])
     else:
         attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
@@ -1136,7 +1134,7 @@ def create_shader(filename: str):
 
     create_uv_map_nodes(builder)
 
-    if filename in ShaderManager.terrains:
+    if shader.is_terrain:
         create_terrain_shader(builder)
     else:
         create_basic_shader_nodes(builder)

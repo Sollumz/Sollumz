@@ -289,7 +289,7 @@ def terrain_shader(shader: ShaderDef) -> expr.ShaderExpr:
     lookup_uv = uv(shader.uv_maps.get(lookup_name, 0))
     lookup_tex = tex(lookup_name, lookup_uv)
 
-    if shader.filename in ShaderManager.mask_only_terrains:
+    if shader.is_terrain_mask_only:
         lookup = lookup_tex.color
     else:
         attr_c0 = color_attribute("Color 1")
@@ -340,7 +340,7 @@ def terrain_shader(shader: ShaderDef) -> expr.ShaderExpr:
 
 
 def get_shader_expr(shader: ShaderDef) -> expr.ShaderExpr:
-    if shader.filename in ShaderManager.terrains:
+    if shader.is_terrain:
         return terrain_shader(shader)
     else:
         return basic_shader(shader)

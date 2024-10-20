@@ -158,6 +158,8 @@ class ShaderParameterDefsList(ListProperty):
 
 class ShaderDefFlag(Flag):
     IS_CLOTH = auto()
+    IS_TERRAIN = auto()
+    IS_TERRAIN_MASK_ONLY = auto()
 
 class ShaderDefFlagProperty(ElementProperty):
     value_types = (ShaderDefFlag)
@@ -168,8 +170,8 @@ class ShaderDefFlagProperty(ElementProperty):
     @staticmethod
     def from_xml(element: ET.Element):
         new = ShaderDefFlagProperty(element.tag)
-        if element.text and len(element.text.strip()) > 0:
-            text = element.text.replace(" ", "").split(",")
+        if element.text:
+            text = element.text.split()
             for flag in text:
                 if flag in ShaderDefFlag.__members__:
                     new.value = new.value | ShaderDefFlag[flag]
@@ -181,7 +183,7 @@ class ShaderDefFlagProperty(ElementProperty):
     def to_xml(self):
         element = ET.Element(self.tag_name)
         if len(self.value) > 0:
-            element.text = ", ".join(f.name for f in self.value)
+            element.text = " ".join(f.name for f in self.value)
         return element
 
 
@@ -266,6 +268,14 @@ class ShaderDef(ElementTree):
     def is_cloth(self) -> bool:
         return ShaderDefFlag.IS_CLOTH in self.flags
 
+    @property
+    def is_terrain(self) -> bool:
+        return ShaderDefFlag.IS_TERRAIN in self.flags
+
+    @property
+    def is_terrain_mask_only(self) -> bool:
+        return ShaderDefFlag.IS_TERRAIN_MASK_ONLY in self.flags
+
     @classmethod
     def from_xml(cls, element: ET.Element) -> "ShaderDef":
         new: ShaderDef = super().from_xml(element)
@@ -284,13 +294,6 @@ class ShaderManager:
     _shaders: dict[str, ShaderDef] = {}
     _shaders_by_hash: dict[int, ShaderDef] = {}
 
-    terrains = ["terrain_cb_w_4lyr.sps", "terrain_cb_w_4lyr_lod.sps", "terrain_cb_w_4lyr_spec.sps", "terrain_cb_w_4lyr_spec_pxm.sps", "terrain_cb_w_4lyr_pxm_spm.sps",
-                "terrain_cb_w_4lyr_pxm.sps", "terrain_cb_w_4lyr_cm_pxm.sps", "terrain_cb_w_4lyr_cm_tnt.sps", "terrain_cb_w_4lyr_cm_pxm_tnt.sps", "terrain_cb_w_4lyr_cm.sps",
-                "terrain_cb_w_4lyr_2tex.sps", "terrain_cb_w_4lyr_2tex_blend.sps", "terrain_cb_w_4lyr_2tex_blend_lod.sps", "terrain_cb_w_4lyr_2tex_blend_pxm.sps",
-                "terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps", "terrain_cb_w_4lyr_2tex_pxm.sps", "terrain_cb_4lyr.sps", "terrain_cb_w_4lyr_spec_int_pxm.sps",
-                "terrain_cb_w_4lyr_spec_int.sps", "terrain_cb_4lyr_lod.sps"]
-    mask_only_terrains = ["terrain_cb_w_4lyr_cm.sps", "terrain_cb_w_4lyr_cm_tnt.sps",
-                          "terrain_cb_w_4lyr_cm_pxm_tnt.sps", "terrain_cb_w_4lyr_cm_pxm.sps"]
     cutouts = ["cutout.sps", "cutout_um.sps", "cutout_tnt.sps", "cutout_fence.sps", "cutout_fence_normal.sps", "cutout_hard.sps", "cutout_spec_tnt.sps", "normal_cutout.sps",
                "normal_cutout_tnt.sps", "normal_cutout_um.sps", "normal_spec_cutout.sps", "normal_spec_cutout_tnt.sps", "trees_lod.sps", "trees.sps", "trees_tnt.sps",
                "trees_normal.sps", "trees_normal_spec.sps", "trees_normal_spec_tnt.sps", "trees_normal_diffspec.sps", "trees_normal_diffspec_tnt.sps"]

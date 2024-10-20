@@ -840,6 +840,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_2tex_blend_pxm_spm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -891,6 +892,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_2tex_blend_lod.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1363,6 +1365,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_2tex_blend.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1588,6 +1591,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_4lyr_lod.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -1613,6 +1617,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_lod.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2388,6 +2393,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_pxm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2493,6 +2499,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_pxm_spm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2623,6 +2630,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_spec_pxm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -2966,6 +2974,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_2tex_blend_pxm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -3582,6 +3591,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -4836,6 +4846,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_spec_int_pxm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5074,6 +5085,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_spec_int.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -5487,6 +5499,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_2tex.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6130,6 +6143,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_cm_tnt.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN IS_TERRAIN_MASK_ONLY</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6524,6 +6538,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_spec.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -6892,6 +6907,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_cm_pxm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN IS_TERRAIN_MASK_ONLY</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7015,6 +7031,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_cm_pxm_tnt.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN IS_TERRAIN_MASK_ONLY</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7132,6 +7149,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_2tex_pxm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8242,6 +8260,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_w_4lyr_cm.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN IS_TERRAIN_MASK_ONLY</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8535,6 +8554,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_4lyr_2tex.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8714,6 +8734,7 @@
   <FileName>
    <Item bucket="0">terrain_cb_4lyr.sps</Item>
   </FileName>
+  <Flags>IS_TERRAIN</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
