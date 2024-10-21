@@ -1,4 +1,5 @@
 import bpy
+from typing import Optional
 from ..sollumz_properties import SollumType, BOUND_TYPES
 from ..tools.meshhelper import (
     create_box,
@@ -31,6 +32,8 @@ def create_bound_shape(bound_type: SollumType):
         return create_bound_poly_capsule()
     elif bound_type == SollumType.BOUND_POLY_CYLINDER:
         return create_bound_poly_cylinder()
+    else:
+        assert False, f"Unsupported bound type '{bound_type}'"
 
 
 def create_bound_box():
@@ -87,21 +90,21 @@ def create_bound_disc():
     return bound_obj
 
 
-def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, preset: int = None):
+def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, flag_preset_index: Optional[int] = None):
     """Convert each object in ``objs`` to a Bound Composite."""
     for obj in objs:
-        convert_obj_to_composite(obj, bound_child_type, preset)
+        convert_obj_to_composite(obj, bound_child_type, flag_preset_index)
 
 
-def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, preset: int = None):
+def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, flag_preset_index: Optional[int] = None):
     """Create a single composite from all ``objs``."""
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
     for obj in objs:
         if bound_child_type == SollumType.BOUND_GEOMETRY:
-            convert_obj_to_geometry(obj, preset)
+            convert_obj_to_geometry(obj, flag_preset_index)
             obj.parent = composite_obj
         else:
-            bvh_obj = convert_obj_to_bvh(obj, preset)
+            bvh_obj = convert_obj_to_bvh(obj, flag_preset_index)
             bvh_obj.parent = composite_obj
             bvh_obj.location = obj.location
             obj.location = Vector()
@@ -125,17 +128,17 @@ def center_composite_to_children(composite_obj: bpy.types.Object):
         obj.location -= center
 
 
-def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, apply_default_flags: bool):
+def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType, flag_preset_index: Optional[int] = None):
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
     composite_obj.location = obj.location
     composite_obj.parent = obj.parent
     name = obj.name
 
     if bound_child_type == SollumType.BOUND_GEOMETRY:
-        convert_obj_to_geometry(obj, apply_default_flags)
+        convert_obj_to_geometry(obj, flag_preset_index)
         obj.parent = composite_obj
     else:
-        bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
+        bvh_obj = convert_obj_to_bvh(obj, flag_preset_index)
         bvh_obj.parent = composite_obj
 
     composite_obj.name = name
@@ -144,15 +147,15 @@ def convert_obj_to_composite(obj: bpy.types.Object, bound_child_type: SollumType
     return composite_obj
 
 
-def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool):
+def convert_obj_to_geometry(obj: bpy.types.Object, flag_preset_index: Optional[int] = None):
     obj.sollum_type = SollumType.BOUND_GEOMETRY
     obj.name = f"{remove_number_suffix(obj.name)}.bound_geom"
 
-    if apply_default_flags:
-        apply_flag_preset(obj)
+    if flag_preset_index is not None:
+        apply_flag_preset(obj, flag_preset_index)
 
 
-def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
+def convert_obj_to_bvh(obj: bpy.types.Object, flag_preset_index: Optional[int] = None):
     obj_name = remove_number_suffix(obj.name)
 
     bvh_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)
@@ -162,24 +165,23 @@ def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
     obj.name = f"{obj_name}.poly_mesh"
     obj.parent = bvh_obj
 
-    if apply_default_flags:
-        apply_flag_preset(bvh_obj)
+    if flag_preset_index is not None:
+        apply_flag_preset(bvh_obj, flag_preset_index)
 
     return bvh_obj
 
 
-def apply_flag_preset(obj: bpy.types.Object):
-    load_flag_presets()
+def apply_flag_preset(obj: bpy.types.Object, preset_index: int, reload_presets: bool = True) -> bool:
+    if reload_presets:
+        load_flag_presets()
 
-    preset = flag_presets.presets[0]
+    if preset_index < 0 or preset_index >= len(flag_presets.presets):
+        return False
+
+    preset = flag_presets.presets[preset_index]
 
     for flag_name in BoundFlags.__annotations__.keys():
-        if flag_name in preset.flags1:
-            obj.composite_flags1[flag_name] = True
-        else:
-            obj.composite_flags1[flag_name] = False
+        obj.composite_flags1[flag_name] = flag_name in preset.flags1
+        obj.composite_flags2[flag_name] = flag_name in preset.flags2
 
-        if flag_name in preset.flags2:
-            obj.composite_flags2[flag_name] = True
-        else:
-            obj.composite_flags2[flag_name] = False
+    return True

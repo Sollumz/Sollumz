@@ -109,7 +109,7 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
-    """Convert the selected object to a Bound Composite"""
+    """Convert the selected object to a Bound Composite. Applies the selected flag preset to the created bounds"""
     bl_idname = "sollumz.converttocomposite"
     bl_label = "Convert to Composite"
     bl_options = {"UNDO"}
@@ -125,19 +125,12 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
         bound_child_type = context.scene.bound_child_type
         do_center = context.scene.center_composite_to_selection
 
-        # Always apply the selected flag preset
-        index = context.window_manager.sz_flag_preset_index
-        load_flag_presets()
-        try:
-            preset = flag_presets.presets[index]
-        except IndexError:
-            self.report({"WARNING"}, "Flag preset does not exist or is not selected.")
-            return {"CANCELLED"}
+        flag_preset_index = context.window_manager.sz_flag_preset_index
 
         if context.scene.create_seperate_composites or len(selected_meshes) == 1:
-            convert_objs_to_composites(selected_meshes, bound_child_type, preset)
+            convert_objs_to_composites(selected_meshes, bound_child_type, flag_preset_index)
         else:
-            composite_obj = convert_objs_to_single_composite(selected_meshes, bound_child_type, preset)
+            composite_obj = convert_objs_to_single_composite(selected_meshes, bound_child_type, flag_preset_index)
 
             if do_center:
                 center_composite_to_children(composite_obj)
@@ -148,9 +141,10 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_create_bound(bpy.types.Operator):
-    """Create a sollumz bound of the selected type"""
+    """Create a Sollumz bound of the selected type. Applies the selected flag preset to the created bound"""
     bl_idname = "sollumz.createbound"
     bl_label = "Create Bound"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
         bound_type = context.scene.create_bound_type
@@ -169,8 +163,7 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
 
         bound_obj.parent = parent
 
-        # Apply the selected flag preset for all bound types using the imported function
-        apply_flag_preset(bound_obj)
+        apply_flag_preset(bound_obj, context.window_manager.sz_flag_preset_index)
 
         return {"FINISHED"}
 
@@ -475,11 +468,9 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
 
         for obj in selected:
             try:
-                # Get the preset based on the index
-                preset = flag_presets.presets[index]
-
-                apply_flag_preset(obj)
-                self.message(f"Applied preset '{preset.name}' to: {obj.name}")
+                if apply_flag_preset(obj, index, reload_presets=False):
+                    preset = flag_presets.presets[index]
+                    self.message(f"Applied preset '{preset.name}' to: {obj.name}")
             except IndexError:
                 filepath = get_flag_presets_path()
                 self.error(
