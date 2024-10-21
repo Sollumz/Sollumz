@@ -328,20 +328,25 @@ class SOLLUMZ_PT_VIEW_PANEL(GeneralToolChildPanel, bpy.types.Panel):
             ).lod_level = lod_level
         grid.operator(SOLLUMZ_OT_hide_object.bl_idname, depress=active_lod_level == "hidden")
 
-    def _get_object_active_lod_level(self, obj: Optional[bpy.types.Object]) -> str:
+    def _get_object_active_lod_level(self, obj: Optional[bpy.types.Object]) -> Optional[str]:
+        if obj is None:
+            return None
+
+        parent_obj = find_sollumz_parent(obj)
+        if parent_obj is None:
+            return None
+
         active_lod_level = None
-        if obj is not None:
-            parent_obj = find_sollumz_parent(obj)
-            if parent_obj.hide_get():
-                active_lod_level = "hidden"
-            else:
-                for child in parent_obj.children_recursive:
-                    if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
-                        # Simply use the LOD level of the first model we find. Might not be accurate if the user
-                        # manually changes LODs of the models separately instead of using the buttons in the tools
-                        # panel, but in general this should be enough.
-                        active_lod_level = child.sz_lods.active_lod_level
-                        break
+        if parent_obj.hide_get():
+            active_lod_level = "hidden"
+        else:
+            for child in parent_obj.children_recursive:
+                if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
+                    # Simply use the LOD level of the first model we find. Might not be accurate if the user
+                    # manually changes LODs of the models separately instead of using the buttons in the tools
+                    # panel, but in general this should be enough.
+                    active_lod_level = child.sz_lods.active_lod_level
+                    break
 
         return active_lod_level
 
