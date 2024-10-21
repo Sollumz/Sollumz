@@ -99,7 +99,11 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
                 drawable_obj = convert_obj_to_drawable(obj)
 
                 if auto_embed_col:
-                    composite_obj = convert_obj_to_composite(duplicate_object(obj), SollumType.BOUND_GEOMETRYBVH, True)
+                    composite_obj = convert_obj_to_composite(
+                        duplicate_object(obj),
+                        SollumType.BOUND_GEOMETRYBVH,
+                        context.window_manager.sz_flag_preset_index
+                    )
                     composite_obj.parent = drawable_obj
                     composite_obj.name = f"{drawable_obj.name}.col"
 
@@ -122,7 +126,11 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
 
             if auto_embed_col:
                 col_objs = [duplicate_object(o) for o in selected_meshes]
-                composite_obj = convert_objs_to_single_composite(col_objs, SollumType.BOUND_GEOMETRYBVH, True)
+                composite_obj = convert_objs_to_single_composite(
+                    col_objs,
+                    SollumType.BOUND_GEOMETRYBVH,
+                    context.window_manager.sz_flag_preset_index
+                )
                 composite_obj.parent = drawable_obj
 
 
