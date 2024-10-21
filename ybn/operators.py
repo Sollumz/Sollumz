@@ -477,6 +477,7 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
                     f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
                 return False
 
+        tag_redraw(context)
         return True
 
 
