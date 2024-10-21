@@ -87,27 +87,24 @@ def create_bound_disc():
     return bound_obj
 
 
-def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+def convert_objs_to_composites(objs: list[bpy.types.Object], bound_child_type: SollumType, preset: int = None):
     """Convert each object in ``objs`` to a Bound Composite."""
     for obj in objs:
-        convert_obj_to_composite(obj, bound_child_type, apply_default_flags)
+        convert_obj_to_composite(obj, bound_child_type, preset)
 
 
-def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, apply_default_flags: bool = False):
+def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_type: SollumType, preset: int = None):
     """Create a single composite from all ``objs``."""
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE)
-
     for obj in objs:
         if bound_child_type == SollumType.BOUND_GEOMETRY:
-            convert_obj_to_geometry(obj, apply_default_flags)
+            convert_obj_to_geometry(obj, preset)
             obj.parent = composite_obj
         else:
-            bvh_obj = convert_obj_to_bvh(obj, apply_default_flags)
+            bvh_obj = convert_obj_to_bvh(obj, preset)
             bvh_obj.parent = composite_obj
-
             bvh_obj.location = obj.location
             obj.location = Vector()
-
     return composite_obj
 
 
@@ -152,7 +149,7 @@ def convert_obj_to_geometry(obj: bpy.types.Object, apply_default_flags: bool):
     obj.name = f"{remove_number_suffix(obj.name)}.bound_geom"
 
     if apply_default_flags:
-        apply_default_flag_preset(obj)
+        apply_flag_preset(obj)
 
 
 def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
@@ -166,12 +163,12 @@ def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool):
     obj.parent = bvh_obj
 
     if apply_default_flags:
-        apply_default_flag_preset(bvh_obj)
+        apply_flag_preset(bvh_obj)
 
     return bvh_obj
 
 
-def apply_default_flag_preset(obj: bpy.types.Object):
+def apply_flag_preset(obj: bpy.types.Object):
     load_flag_presets()
 
     preset = flag_presets.presets[0]

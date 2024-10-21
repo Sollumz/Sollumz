@@ -299,7 +299,6 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
 
         row = layout.row()
         row.prop(context.scene, "create_seperate_composites")
-        row.prop(context.scene, "composite_apply_default_flag_preset")
         row.prop(context.scene, "center_composite_to_selection")
 
         layout.separator()
