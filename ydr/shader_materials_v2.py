@@ -122,7 +122,7 @@ def get_shader_config(shader: ShaderDef) -> LegacyShaderConfig:
             if not texture:
                 texture = p.name
 
-    use_decal = True if shader.filename in ShaderManager.tinted_shaders() else False or shader.is_decal or shader.is_cutout
+    use_decal = shader.is_alpha or shader.is_decal or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
     if use_decal:

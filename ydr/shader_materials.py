@@ -893,7 +893,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
 
     # TODO: Material.blend_method is deprecated
     # https://developer.blender.org/docs/release_notes/4.2/eevee/#shading-modes
-    use_decal = True if filename in ShaderManager.tinted_shaders() else False or shader.is_decal or shader.is_cutout
+    use_decal = shader.is_alpha or shader.is_decal or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
     if use_decal:

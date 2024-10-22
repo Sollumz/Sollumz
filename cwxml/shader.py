@@ -277,6 +277,10 @@ class ShaderDef(ElementTree):
         return ShaderDefFlag.IS_TERRAIN_MASK_ONLY in self.flags
 
     @property
+    def is_alpha(self) -> bool:
+        return self.render_bucket == 1
+
+    @property
     def is_decal(self) -> bool:
         return self.render_bucket == 2
 
@@ -302,14 +306,6 @@ class ShaderManager:
     _shaders: dict[str, ShaderDef] = {}
     _shaders_by_hash: dict[int, ShaderDef] = {}
 
-    alphas = ["normal_spec_alpha.sps", "normal_spec_reflect_alpha.sps", "normal_spec_reflect_emissivenight_alpha.sps", "normal_spec_screendooralpha.sps", "normal_alpha.sps",
-              "normal_reflect_alpha.sps", "emissive_alpha.sps", "emissive_alpha_tnt.sps", "emissive_clip.sps", "emissive_additive_alpha.sps", "emissivenight_alpha.sps", "emissivestrong_alpha.sps",
-              "spec_alpha.sps", "spec_reflect_alpha.sps", "alpha.sps", "reflect_alpha.sps", "normal_screendooralpha.sps", "spec_screendooralpha.sps", "cloth_spec_alpha.sps",
-              "cloth_normal_spec_alpha.sps"]
-    glasses = ["glass.sps", "glass_pv.sps", "glass_pv_env.sps", "glass_env.sps", "glass_spec.sps", "glass_reflect.sps", "glass_emissive.sps", "glass_emissivenight.sps",
-               "glass_emissivenight_alpha.sps", "glass_breakable.sps", "glass_breakable_screendooralpha.sps", "glass_displacement.sps", "glass_normal_spec_reflect.sps",
-               "glass_emissive_alpha.sps"]
-    veh_glasses = ["vehicle_vehglass.sps", "vehicle_vehglass_inner.sps"]
     # Tint shaders that use colour1 instead of colour0 to index the tint palette
     tint_colour1_shaders = ["trees_normal_diffspec_tnt.sps", "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
     palette_shaders = ["ped_palette.sps", "ped_default_palette.sps", "weapon_normal_spec_cutout_palette.sps",
@@ -324,9 +320,6 @@ class ShaderManager:
                   "vehicle_paint2.sps", "vehicle_paint2_enveff.sps", "vehicle_paint3.sps", "vehicle_paint3_enveff.sps", "vehicle_paint3_lvr.sps", "vehicle_paint4.sps", "vehicle_paint4_emissive.sps",
                   "vehicle_paint4_enveff.sps", "vehicle_paint5_enveff.sps", "vehicle_paint6.sps", "vehicle_paint6_enveff.sps", "vehicle_paint7.sps", "vehicle_paint7_enveff.sps", "vehicle_paint8.sps",
                   "vehicle_paint9.sps",]
-
-    def tinted_shaders():
-        return ShaderManager.alphas + ShaderManager.glasses + ShaderManager.veh_glasses
 
     @staticmethod
     def load_shaders():
