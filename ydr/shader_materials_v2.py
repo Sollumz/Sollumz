@@ -78,10 +78,6 @@ class LegacyShaderConfig(NamedTuple):
         return self.diffpal and self.shader.filename in ShaderManager.palette_shaders
 
     @property
-    def use_decal(self) -> bool:
-        return self.shader.filename in ShaderManager.tinted_shaders()
-
-    @property
     def is_emissive(self) -> bool:
         return self.shader.filename in ShaderManager.em_shaders
 
@@ -126,12 +122,12 @@ def get_shader_config(shader: ShaderDef) -> LegacyShaderConfig:
             if not texture:
                 texture = p.name
 
-    use_decal = True if shader.filename in ShaderManager.tinted_shaders() else False
+    use_decal = True if shader.filename in ShaderManager.tinted_shaders() else False or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
     if use_decal:
         # set blend mode
-        if shader.filename in ShaderManager.cutout_shaders():
+        if shader.is_cutout:
             blend_mode = "CLIP"
         else:
             blend_mode = "BLEND"

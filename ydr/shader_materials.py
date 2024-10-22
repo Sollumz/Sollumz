@@ -891,12 +891,12 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     # shader nodes on the specific shaders that use it
     use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
 
-    use_decal = True if filename in ShaderManager.tinted_shaders() else False
+    use_decal = True if filename in ShaderManager.tinted_shaders() else False or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
     if use_decal:
         # set blend mode
-        if filename in ShaderManager.cutout_shaders():
+        if shader.is_cutout:
             blend_mode = "CLIP"
         else:
             blend_mode = "BLEND"

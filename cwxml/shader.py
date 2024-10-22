@@ -276,6 +276,10 @@ class ShaderDef(ElementTree):
     def is_terrain_mask_only(self) -> bool:
         return ShaderDefFlag.IS_TERRAIN_MASK_ONLY in self.flags
 
+    @property
+    def is_cutout(self) -> bool:
+        return self.render_bucket == 3
+
     @classmethod
     def from_xml(cls, element: ET.Element) -> "ShaderDef":
         new: ShaderDef = super().from_xml(element)
@@ -294,9 +298,6 @@ class ShaderManager:
     _shaders: dict[str, ShaderDef] = {}
     _shaders_by_hash: dict[int, ShaderDef] = {}
 
-    cutouts = ["cutout.sps", "cutout_um.sps", "cutout_tnt.sps", "cutout_fence.sps", "cutout_fence_normal.sps", "cutout_hard.sps", "cutout_spec_tnt.sps", "normal_cutout.sps",
-               "normal_cutout_tnt.sps", "normal_cutout_um.sps", "normal_spec_cutout.sps", "normal_spec_cutout_tnt.sps", "trees_lod.sps", "trees.sps", "trees_tnt.sps",
-               "trees_normal.sps", "trees_normal_spec.sps", "trees_normal_spec_tnt.sps", "trees_normal_diffspec.sps", "trees_normal_diffspec_tnt.sps"]
     alphas = ["normal_spec_alpha.sps", "normal_spec_reflect_alpha.sps", "normal_spec_reflect_emissivenight_alpha.sps", "normal_spec_screendooralpha.sps", "normal_alpha.sps",
               "normal_reflect_alpha.sps", "emissive_alpha.sps", "emissive_alpha_tnt.sps", "emissive_clip.sps", "emissive_additive_alpha.sps", "emissivenight_alpha.sps", "emissivestrong_alpha.sps",
               "spec_alpha.sps", "spec_reflect_alpha.sps", "alpha.sps", "reflect_alpha.sps", "normal_screendooralpha.sps", "spec_screendooralpha.sps", "cloth_spec_alpha.sps",
@@ -308,11 +309,9 @@ class ShaderManager:
               "decal_amb_only.sps", "normal_decal.sps", "normal_decal_pxm.sps", "normal_decal_pxm_tnt.sps", "normal_decal_tnt.sps", "normal_spec_decal.sps", "normal_spec_decal_detail.sps",
               "normal_spec_decal_nopuddle.sps", "normal_spec_decal_tnt.sps", "normal_spec_decal_pxm.sps", "spec_decal.sps", "spec_reflect_decal.sps", "reflect_decal.sps", "decal_dirt.sps",
               "mirror_decal.sps", "grass_batch.sps"]
-    veh_cutouts = ["vehicle_cutout.sps", "vehicle_badges.sps"]
     veh_glasses = ["vehicle_vehglass.sps", "vehicle_vehglass_inner.sps"]
     veh_decals = ["vehicle_decal.sps", "vehicle_decal2.sps",
                   "vehicle_blurredrotor_emissive.sps"]
-    shadow_proxies = ["trees_shadow_proxy.sps"]
     # Tint shaders that use colour1 instead of colour0 to index the tint palette
     tint_colour1_shaders = ["trees_normal_diffspec_tnt.sps", "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
     palette_shaders = ["ped_palette.sps", "ped_default_palette.sps", "weapon_normal_spec_cutout_palette.sps",
@@ -329,10 +328,7 @@ class ShaderManager:
                   "vehicle_paint9.sps",]
 
     def tinted_shaders():
-        return ShaderManager.cutouts + ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_cutouts + ShaderManager.veh_glasses + ShaderManager.veh_decals + ShaderManager.shadow_proxies
-
-    def cutout_shaders():
-        return ShaderManager.cutouts + ShaderManager.veh_cutouts + ShaderManager.shadow_proxies
+        return ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_glasses + ShaderManager.veh_decals
 
     @staticmethod
     def load_shaders():
