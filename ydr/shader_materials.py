@@ -891,7 +891,9 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     # shader nodes on the specific shaders that use it
     use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
 
-    use_decal = True if filename in ShaderManager.tinted_shaders() else False or shader.is_cutout
+    # TODO: Material.blend_method is deprecated
+    # https://developer.blender.org/docs/release_notes/4.2/eevee/#shading-modes
+    use_decal = True if filename in ShaderManager.tinted_shaders() else False or shader.is_decal or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
     if use_decal:
@@ -904,11 +906,9 @@ def create_basic_shader_nodes(b: ShaderBuilder):
         # set flags
         if filename == "decal_dirt.sps":
             decalflag = 2
-        # decal_normal_only.sps / mirror_decal.sps / reflect_decal.sps
-        elif filename in [ShaderManager.decals[4], ShaderManager.decals[21], ShaderManager.decals[19]]:
+        elif filename in {"decal_normal_only.sps", "mirror_decal.sps", "reflect_decal.sps"}:
             decalflag = 3
-        # decal_spec_only.sps / spec_decal.sps
-        elif filename in [ShaderManager.decals[3], ShaderManager.decals[17]]:
+        elif filename in {"decal_spec_only.sps", "spec_decal.sps"}:
             decalflag = 4
 
     is_emissive = True if filename in ShaderManager.em_shaders else False

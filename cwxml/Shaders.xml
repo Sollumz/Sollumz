@@ -4558,7 +4558,7 @@
  <Item>
   <Name>grass</Name>
   <FileName>
-   <Item bucket="0">grass.sps</Item>
+   <Item bucket="3">grass.sps</Item>
   </FileName>
   <Layout>
    <Item type="GTAV1">
@@ -5157,7 +5157,7 @@
  <Item>
   <Name>grass_batch</Name>
   <FileName>
-   <Item bucket="0">grass_batch.sps</Item>
+   <Item bucket="3">grass_batch.sps</Item>
   </FileName>
   <Layout>
    <Item type="GTAV1">

@@ -122,7 +122,7 @@ def get_shader_config(shader: ShaderDef) -> LegacyShaderConfig:
             if not texture:
                 texture = p.name
 
-    use_decal = True if shader.filename in ShaderManager.tinted_shaders() else False or shader.is_cutout
+    use_decal = True if shader.filename in ShaderManager.tinted_shaders() else False or shader.is_decal or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
     if use_decal:
@@ -133,14 +133,12 @@ def get_shader_config(shader: ShaderDef) -> LegacyShaderConfig:
             blend_mode = "BLEND"
             decalflag = 1
         # set flags
-        if shader.filename in [ShaderManager.decals[20]]:  # decal_dirt.sps
+        if shader.filename == "decal_dirt.sps":
             # txt_alpha_mask = ?
             decalflag = 2
-        # decal_normal_only.sps / mirror_decal.sps / reflect_decal.sps
-        elif shader.filename in [ShaderManager.decals[4], ShaderManager.decals[21], ShaderManager.decals[19]]:
+        elif shader.filename in {"decal_normal_only.sps", "mirror_decal.sps", "reflect_decal.sps"}:
             decalflag = 3
-        # decal_spec_only.sps / spec_decal.sps
-        elif shader.filename in [ShaderManager.decals[3], ShaderManager.decals[17]]:
+        elif shader.filename in {"decal_spec_only.sps", "spec_decal.sps"}:
             decalflag = 4
 
     if is_distance_map:

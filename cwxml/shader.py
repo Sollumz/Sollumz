@@ -277,6 +277,10 @@ class ShaderDef(ElementTree):
         return ShaderDefFlag.IS_TERRAIN_MASK_ONLY in self.flags
 
     @property
+    def is_decal(self) -> bool:
+        return self.render_bucket == 2
+
+    @property
     def is_cutout(self) -> bool:
         return self.render_bucket == 3
 
@@ -305,13 +309,7 @@ class ShaderManager:
     glasses = ["glass.sps", "glass_pv.sps", "glass_pv_env.sps", "glass_env.sps", "glass_spec.sps", "glass_reflect.sps", "glass_emissive.sps", "glass_emissivenight.sps",
                "glass_emissivenight_alpha.sps", "glass_breakable.sps", "glass_breakable_screendooralpha.sps", "glass_displacement.sps", "glass_normal_spec_reflect.sps",
                "glass_emissive_alpha.sps"]
-    decals = ["decal.sps", "decal_tnt.sps", "decal_glue.sps", "decal_spec_only.sps", "decal_normal_only.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps",
-              "decal_amb_only.sps", "normal_decal.sps", "normal_decal_pxm.sps", "normal_decal_pxm_tnt.sps", "normal_decal_tnt.sps", "normal_spec_decal.sps", "normal_spec_decal_detail.sps",
-              "normal_spec_decal_nopuddle.sps", "normal_spec_decal_tnt.sps", "normal_spec_decal_pxm.sps", "spec_decal.sps", "spec_reflect_decal.sps", "reflect_decal.sps", "decal_dirt.sps",
-              "mirror_decal.sps", "grass_batch.sps"]
     veh_glasses = ["vehicle_vehglass.sps", "vehicle_vehglass_inner.sps"]
-    veh_decals = ["vehicle_decal.sps", "vehicle_decal2.sps",
-                  "vehicle_blurredrotor_emissive.sps"]
     # Tint shaders that use colour1 instead of colour0 to index the tint palette
     tint_colour1_shaders = ["trees_normal_diffspec_tnt.sps", "trees_tnt.sps", "trees_normal_spec_tnt.sps"]
     palette_shaders = ["ped_palette.sps", "ped_default_palette.sps", "weapon_normal_spec_cutout_palette.sps",
@@ -328,7 +326,7 @@ class ShaderManager:
                   "vehicle_paint9.sps",]
 
     def tinted_shaders():
-        return ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_glasses + ShaderManager.veh_decals
+        return ShaderManager.alphas + ShaderManager.glasses + ShaderManager.veh_glasses
 
     @staticmethod
     def load_shaders():
