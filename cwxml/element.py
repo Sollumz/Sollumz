@@ -189,6 +189,8 @@ class ElementProperty(Element, AbstractClass):
 class ListProperty(ElementProperty, AbstractClass):
     """Holds a list value. List can only contain values of one type."""
 
+    item_tag_name = None
+    allow_none_items = False # Allow `None` in the list, remember to implement `create_element_for_none_item`
     value_types = (list)
 
     @property
@@ -208,30 +210,48 @@ class ListProperty(ElementProperty, AbstractClass):
     def from_xml(cls, element: ET.Element):
         new = cls(element.tag)
 
-        children = element.findall(new.list_type.tag_name)
+        children = element.findall(new.item_tag_name or new.list_type.tag_name)
 
         for child in children:
             new.value.append(new.list_type.from_xml(child))
         return new
 
     def to_xml(self):
+        if self.value:
+            return self._do_to_xml()
+
+        return None
+
+    def _do_to_xml(self):
         element = ET.Element(self.tag_name)
 
         for child in vars(self).values():
             if isinstance(child, AttributeProperty):
                 element.set(child.name, str(child.value))
 
-        if self.value and len(self.value) > 0:
+        if self.value:
             for item in self.value:
+                if item is None:
+                    if self.allow_none_items:
+                        element.append(self.create_element_for_none_item())
+                    else:
+                        raise TypeError(f"{type(self).__name__} does not allow 'None' entries")
+                    continue
+
+                if self.item_tag_name:
+                    item.tag_name = self.item_tag_name
                 if isinstance(item, self.list_type):
                     element.append(item.to_xml())
                 else:
                     raise TypeError(
-                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
+                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'"
+                    )
 
-            return element
+        return element
 
-        return None
+    def create_element_for_none_item(self) -> ET.Element:
+        """Create an element to insert for 'None' entries when converting to XML."""
+        raise NotImplementedError
 
 
 class ListPropertyRequired(ListProperty):
@@ -241,21 +261,7 @@ class ListPropertyRequired(ListProperty):
         super().__init__(tag_name or type(self).tag_name, value or [])
 
     def to_xml(self):
-        element = ET.Element(self.tag_name)
-
-        for child in vars(self).values():
-            if isinstance(child, AttributeProperty):
-                element.set(child.name, str(child.value))
-
-        if self.value and len(self.value) > 0:
-            for item in self.value:
-                if isinstance(item, self.list_type):
-                    element.append(item.to_xml())
-                else:
-                    raise TypeError(
-                        f"{type(self).__name__} can only hold objects of type '{self.list_type.__name__}', not '{type(item)}'")
-
-        return element
+        return self._do_to_xml()
 
 
 class TextProperty(ElementProperty):

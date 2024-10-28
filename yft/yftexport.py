@@ -1,7 +1,10 @@
 import bpy
-from typing import Optional, Tuple
+from bpy.types import (
+    Object
+)
+from typing import Optional, Tuple, NamedTuple
 from collections import defaultdict
-from itertools import combinations
+from itertools import combinations, zip_longest
 from mathutils import Matrix, Vector
 from bpy_extras.mesh_utils import mesh_linked_triangles
 from sys import float_info
@@ -32,10 +35,14 @@ from .properties import (
 )
 
 
-def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
+def export_yft(frag_obj: Object, filepath: str) -> bool:
     export_settings = get_export_settings()
-    frag_xml = create_fragment_xml(frag_obj, export_settings.apply_transforms)
 
+    frag = locate_fragment_objects(frag_obj)
+    if frag is None:
+        return False
+
+    frag_xml = create_fragment_xml(frag, export_settings.apply_transforms)
     if frag_xml is None:
         return False
 
@@ -46,7 +53,7 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     if export_settings.export_hi and has_hi_lods(frag_obj):
         hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
 
-        hi_frag_xml = create_hi_frag_xml(frag_obj, frag_xml, export_settings.apply_transforms)
+        hi_frag_xml = create_hi_frag_xml(frag, frag_xml, export_settings.apply_transforms)
         hi_frag_xml.write_xml(hi_filepath)
 
         write_embedded_textures(frag_obj, hi_filepath)
@@ -59,81 +66,174 @@ def export_yft(frag_obj: bpy.types.Object, filepath: str) -> bool:
     return True
 
 
-def create_fragment_xml(frag_obj: bpy.types.Object, apply_transforms: bool = False):
+class FragmentObjects(NamedTuple):
+    """Contains the important Blender objects in a fragment hierarchy."""
+    fragment: Object
+    drawable: Object
+    composite: Optional[Object]
+    damaged_drawable: Optional[Object]
+    damaged_composite: Optional[Object]
+
+    @property
+    def has_collisions(self) -> bool:
+        return self.composite is not None
+
+
+def locate_fragment_objects(frag: Object) -> Optional[FragmentObjects]:
+    """Explore the fragment hierarchy looking for the important objects (drawables, bound composites). Returns ``None``
+    if there are missing objects such that the export process would not be able to continue.
+    """
+    assert frag.sollum_type == SollumType.FRAGMENT
+    if frag.type != "ARMATURE":
+        logger.warning(f"Fragment '{frag.name}' must have an armature!")
+        return None
+
+    drawables = []
+    damaged_drawables = []
+    composites = []
+    damaged_composites = []
+
+    for obj in frag.children:
+        match obj.sollum_type:
+            case SollumType.DRAWABLE:
+                if ".damaged" in obj.name:
+                    damaged_drawables.append(obj)
+                else:
+                    drawables.append(obj)
+            case SollumType.BOUND_COMPOSITE:
+                if ".damaged" in obj.name:
+                    damaged_composites.append(obj)
+                else:
+                    composites.append(obj)
+            case _:
+                continue
+
+    if not drawables:
+        logger.warning(f"Fragment '{frag.name}' must have a Drawable!")
+        return None
+
+    drawable, *bad_drawables = drawables
+    if bad_drawables:
+        bad_drawables_names = (f"'{d.name}'" for d in bad_drawables)
+        logger.warning(
+            f"Fragment '{frag.name}' has multiple Drawables! Fragments only support a single drawable. Only "
+            f"'{drawable.name}' will be exported, other drawables will be ignored ({', '.join(bad_drawables_names)}). "
+            f"Please, remove them or combine their meshes."
+        )
+
+    if damaged_drawables:
+        damaged_drawable, *bad_damaged_drawables = damaged_drawables
+        if bad_damaged_drawables:
+            bad_damaged_drawables_names = (f"'{d.name}'" for d in bad_damaged_drawables)
+            logger.warning(
+                f"Fragment '{frag.name}' has multiple damaged Drawables! Fragments only support a single damaged "
+                f"drawable. Only '{damaged_drawable.name}' will be exported, other damaged drawables will be ignored "
+                f"({', '.join(bad_damaged_drawables_names)}). Please, remove them or combine their meshes."
+            )
+    else:
+        damaged_drawable = None
+
+    if composites:
+        composite, *bad_composites = composites
+        if bad_composites:
+            bad_composites_names = (f"'{d.name}'" for d in bad_composites)
+            logger.warning(
+                f"Fragment '{frag.name}' has multiple Bound Composites! Fragments only support a single bound "
+                f"composite. Only '{composite.name}' will be exported, other bound composites will be ignored "
+                f"({', '.join(bad_composites_names)}). Please, remove them or combine their child bounds."
+            )
+    else:
+        composite = None
+
+    if damaged_composites:
+        damaged_composite, *bad_damaged_composites = damaged_composites
+        if bad_damaged_composites:
+            bad_damaged_composites_names = (f"'{d.name}'" for d in bad_damaged_composites)
+            logger.warning(
+                f"Fragment '{frag.name}' has multiple damaged Bound Composites! Fragments only support a single "
+                f"damaged bound composite. Only '{damaged_composite.name}' will be exported, other damaged bound "
+                f"composites will be ignored ({', '.join(bad_damaged_composites_names)}). Please, remove them or "
+                f"combine their child bounds."
+            )
+    else:
+        damaged_composite = None
+
+    return FragmentObjects(frag, drawable, composite, damaged_drawable, damaged_composite)
+
+
+def create_fragment_xml(frag: FragmentObjects, apply_transforms: bool = False) -> Optional[Fragment]:
     """Create an XML parsable Fragment object. Returns the XML object and the hi XML object (if hi lods are present)."""
+    frag_obj = frag.fragment
+
     frag_xml = Fragment()
     frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
-
-    if frag_obj.type != "ARMATURE":
-        logger.warning(
-            f"Failed to create Fragment XML: {frag_obj.name} must be an armature with a skeleton!")
-        return
 
     set_frag_xml_properties(frag_obj, frag_xml)
 
     materials = get_sollumz_materials(frag_obj)
-    drawable_xml = create_frag_drawable_xml(frag_obj, materials, apply_transforms)
+    drawable_xml = create_frag_drawable_xml(frag, materials, apply_transforms)
 
-    if drawable_xml is None:
-        logger.warning(
-            f"Failed to create Fragment XML: {frag_obj.name} has no Drawable!")
-        return
-
-    original_pose = frag_obj.data.pose_position
-    frag_obj.data.pose_position = "REST"
+    frag_armature = frag_obj.data
+    original_pose = frag_armature.pose_position
+    frag_armature.pose_position = "REST"
 
     frag_xml.bounding_sphere_center = drawable_xml.bounding_sphere_center
     frag_xml.bounding_sphere_radius = drawable_xml.bounding_sphere_radius
 
     frag_xml.drawable = drawable_xml
 
-    if frag_obj.data.bones:
+    if frag.damaged_drawable is not None:
+        frag_xml.extra_drawables = [create_frag_damaged_drawable_xml(frag, materials, apply_transforms)]
+
+    if frag_armature.bones:
         create_bone_transforms_xml(frag_xml)
 
     # Physics data doesn't do anything if no collisions are present and will cause crashes
-    if frag_has_collisions(frag_obj) and frag_obj.data.bones:
-        create_frag_physics_xml(frag_obj, frag_xml, materials)
+    if frag.has_collisions and frag_armature.bones:
+        create_frag_physics_xml(frag, frag_xml, materials)
         create_vehicle_windows_xml(frag_obj, frag_xml, materials)
     else:
         frag_xml.physics = None
 
     frag_xml.lights = create_xml_lights(frag_obj)
 
-    frag_obj.data.pose_position = original_pose
+    frag_armature.pose_position = original_pose
 
     return frag_xml
 
 
-def create_frag_drawable_xml(frag_obj: bpy.types.Object, materials: list[bpy.types.Material], apply_transforms: bool = False):
-    for obj in frag_obj.children:
-        if obj.sollum_type != SollumType.DRAWABLE:
-            continue
-
-        drawable_xml = create_drawable_xml(
-            obj, materials=materials, armature_obj=frag_obj, apply_transforms=apply_transforms)
-        drawable_xml.name = "skel"
-
-        return drawable_xml
+def create_frag_drawable_xml(frag: FragmentObjects, materials: list[bpy.types.Material], apply_transforms: bool = False) -> Drawable:
+    drawable_xml = create_drawable_xml(
+        frag.drawable, materials=materials, armature_obj=frag.fragment, apply_transforms=apply_transforms
+    )
+    drawable_xml.name = "skel"
+    return drawable_xml
 
 
-def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, apply_transforms: bool = False):
-    hi_obj = frag_obj.copy()
+def create_frag_damaged_drawable_xml(frag: FragmentObjects, materials: list[bpy.types.Material], apply_transforms: bool = False) -> Drawable:
+    assert frag.damaged_drawable is not None, "Caller must ensure that there is a damaged drawable"
+    drawable_xml = create_drawable_xml(
+        frag.damaged_drawable, materials=materials, armature_obj=frag.fragment, apply_transforms=apply_transforms
+    )
+    drawable_xml.name = "damaged"
+    # uses the shader group and skeleton of the main drawable
+    drawable_xml.shader_group = None
+    drawable_xml.skeleton = None
+    return drawable_xml
+
+
+def create_hi_frag_xml(frag: FragmentObjects, frag_xml: Fragment, apply_transforms: bool = False):
+    hi_obj = frag.fragment.copy()
     hi_obj.name = f"{remove_number_suffix(hi_obj.name)}_hi"
-    drawable_obj = None
-
     bpy.context.collection.objects.link(hi_obj)
 
-    for child in frag_obj.children:
-        if child.sollum_type == SollumType.DRAWABLE:
-            drawable_obj = copy_hierarchy(child, hi_obj)
-            drawable_obj.parent = hi_obj
-            break
-
-    if drawable_obj is not None:
-        remove_non_hi_lods(drawable_obj)
+    drawable_obj = copy_hierarchy(frag.drawable, hi_obj)
+    drawable_obj.parent = hi_obj
+    remove_non_hi_lods(drawable_obj)
+    hi_frag = FragmentObjects(hi_obj, drawable_obj, None, None, None)
 
     materials = get_sollumz_materials(hi_obj)
-    hi_drawable = create_frag_drawable_xml(hi_obj, materials, apply_transforms)
+    hi_drawable = create_frag_drawable_xml(hi_frag, materials, apply_transforms)
 
     hi_frag_xml = Fragment()
     hi_frag_xml.__dict__ = frag_xml.__dict__.copy()
@@ -148,7 +248,7 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, apply_tra
         # because`frag_xml` is not used after this call during YFT export, but if eventually we need to use it,
         # we should change to a deep copy.
         bones = hi_frag_xml.drawable.skeleton.bones
-        child_meshes = get_child_meshes(hi_obj)
+        child_meshes = get_child_meshes(hi_frag)
         for child_xml in hi_frag_xml.physics.lod1.children:
             drawable = child_xml.drawable
             drawable.drawable_models_high.clear()
@@ -174,7 +274,7 @@ def create_hi_frag_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, apply_tra
     return hi_frag_xml
 
 
-def copy_hierarchy(obj: bpy.types.Object, armature_obj: bpy.types.Object):
+def copy_hierarchy(obj: Object, armature_obj: Object):
     obj_copy = obj.copy()
 
     bpy.context.collection.objects.link(obj_copy)
@@ -199,7 +299,7 @@ def copy_hierarchy(obj: bpy.types.Object, armature_obj: bpy.types.Object):
     return obj_copy
 
 
-def remove_non_hi_lods(drawable_obj: bpy.types.Object):
+def remove_non_hi_lods(drawable_obj: Object):
     for model_obj in drawable_obj.children:
         if model_obj.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
@@ -222,23 +322,7 @@ def remove_non_hi_lods(drawable_obj: bpy.types.Object):
                 lod.mesh = None
 
 
-def copy_phys_xml(phys_xml: Physics, lod_props: LODProperties):
-    new_phys_xml = Physics()
-    lod_xml = PhysicsLOD("LOD1")
-    new_phys_xml.lod1 = lod_xml
-    new_phys_xml.lod2 = None
-    new_phys_xml.lod3 = None
-
-    lod_xml.archetype = phys_xml.lod1.archetype
-    lod_xml.groups = phys_xml.lod1.groups
-    lod_xml.archetype2 = None
-
-    set_lod_xml_properties(lod_props, lod_xml)
-
-    return new_phys_xml
-
-
-def has_hi_lods(frag_obj: bpy.types.Object):
+def has_hi_lods(frag_obj: Object):
     for child in frag_obj.children_recursive:
         if child.sollum_type != SollumType.DRAWABLE_MODEL and not child.sollumz_is_physics_child_mesh:
             continue
@@ -253,10 +337,9 @@ def has_hi_lods(frag_obj: bpy.types.Object):
 def sort_cols_and_children(lod_xml: PhysicsLOD):
     children_by_group: dict[int, list[int]] = defaultdict(list)
 
-    bounds = lod_xml.archetype.bounds.children
     children = lod_xml.children
 
-    if not bounds or not children:
+    if not children:
         return
 
     for i, child in enumerate(children):
@@ -276,30 +359,36 @@ def sort_cols_and_children(lod_xml: PhysicsLOD):
             sorted_children.append(children[child_index])
 
     lod_xml.children = sorted_children
+
     # Apply sorting to collisions
-    sorted_collisions: list[Bound] = [None] * len(indices)
+    for composite in (
+        lod_xml.archetype.bounds,
+        lod_xml.damaged_archetype.bounds if lod_xml.damaged_archetype else None
+    ):
+        if composite is None:
+            continue
 
-    for old_index, new_index in indices.items():
-        sorted_collisions[new_index] = bounds[old_index]
+        bounds = composite.children
+        sorted_collisions: list[Bound] = [None] * len(indices)
 
-    lod_xml.archetype.bounds.children = sorted_collisions
+        for old_index, new_index in indices.items():
+            sorted_collisions[new_index] = bounds[old_index]
+
+        composite.children = sorted_collisions
 
 
-def frag_has_collisions(frag_obj: bpy.types.Object):
-    return any(child.sollum_type == SollumType.BOUND_COMPOSITE for child in frag_obj.children)
-
-
-def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material]):
+def create_frag_physics_xml(frag: FragmentObjects, frag_xml: Fragment, materials: list[bpy.types.Material]):
+    frag_obj = frag.fragment
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
     drawable_xml = frag_xml.drawable
 
     lod_xml = create_phys_lod_xml(frag_xml.physics, lod_props)
-    arch_xml = create_archetype_xml(lod_xml, frag_obj)
+    arch_xml, damaged_arch_xml = create_archetype_xml(lod_xml, frag)
     col_obj_to_bound_index = dict()
-    create_collision_xml(frag_obj, arch_xml, col_obj_to_bound_index)
+    composite_xml, damaged_composite_xml = create_collision_xml(frag, lod_xml, col_obj_to_bound_index)
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
-    create_phys_child_xmls(frag_obj, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
+    create_phys_child_xmls(frag, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
 
     calculate_group_masses(lod_xml)
     calculate_child_drawable_matrices(frag_xml)
@@ -308,6 +397,8 @@ def create_frag_physics_xml(frag_obj: bpy.types.Object, frag_xml: Fragment, mate
 
     calculate_physics_lod_transforms(frag_xml)
     calculate_archetype_mass_inertia(lod_xml)
+    if damaged_composite_xml:
+        calculate_archetype_mass_inertia(lod_xml, damaged=True)
     calculate_physics_lod_inertia_limits(lod_xml)
 
 
@@ -322,7 +413,12 @@ def create_phys_lod_xml(phys_xml: Physics, lod_props: LODProperties):
 def calculate_physics_lod_inertia_limits(lod_xml: PhysicsLOD):
     """Calculates the physics LOD smallest and largest angular inertia from its children."""
     phys_children = lod_xml.children
-    inertia_values = [value for c in phys_children for value in c.inertia_tensor.xyz]
+    inertia_values = [
+        value
+        for c in phys_children
+        for inertia in (c.inertia_tensor, c.damaged_inertia_tensor)
+        for value in inertia.xyz
+    ]
     largest_inertia = max(inertia_values)
     smallest_inertia = largest_inertia / 10000.0  # game assets always have same value as largest divided by 10000
 
@@ -332,30 +428,38 @@ def calculate_physics_lod_inertia_limits(lod_xml: PhysicsLOD):
     lod_xml.unknown_18 = largest_inertia
 
 
-def create_archetype_xml(lod_xml: PhysicsLOD, frag_obj: bpy.types.Object):
+def create_archetype_xml(lod_xml: PhysicsLOD, frag: FragmentObjects) -> tuple[Archetype, Optional[Archetype]]:
+    frag_obj = frag.fragment
     archetype_props: FragArchetypeProperties = frag_obj.fragment_properties.lod_properties.archetype_properties
+    archetype_name = remove_number_suffix(frag_obj.name)
 
-    set_archetype_xml_properties(archetype_props, lod_xml.archetype, remove_number_suffix(frag_obj.name))
-    lod_xml.archetype2 = None
+    set_archetype_xml_properties(archetype_props, lod_xml.archetype, archetype_name)
 
-    return lod_xml.archetype
+    if frag.damaged_composite is not None:
+        set_archetype_xml_properties(archetype_props, lod_xml.damaged_archetype, archetype_name)
+    else:
+        lod_xml.damaged_archetype = None
+
+    return lod_xml.archetype, lod_xml.damaged_archetype
 
 
-def calculate_archetype_mass_inertia(lod_xml: PhysicsLOD):
+def calculate_archetype_mass_inertia(lod_xml: PhysicsLOD, damaged: bool = False):
     """Set archetype mass and inertia based on children mass and bounds. Expects physics children and collisions to
     exist, and the physics LOD root CG to have already been calculted.
     """
 
     from ..shared.geometry import calculate_composite_inertia
+    arch_xml = lod_xml.damaged_archetype if damaged else lod_xml.archetype
     phys_children = lod_xml.children
-    bounds = lod_xml.archetype.bounds.children
-    masses = [child_xml.pristine_mass for child_xml in phys_children]
-    inertias = [child_xml.inertia_tensor.xyz for child_xml in phys_children]
+    bounds = arch_xml.bounds.children
+    # Filter out children with null bounds
+    phys_children, bounds = zip(*((c, b) for c, b in zip(phys_children, bounds) if b is not None))
+    masses = [child_xml.damaged_mass if damaged else child_xml.pristine_mass for child_xml in phys_children]
+    inertias = [(child_xml.damaged_inertia_tensor if damaged else child_xml.inertia_tensor).xyz for child_xml in phys_children]
     cgs = [bound_xml.composite_transform.transposed() @ bound_xml.sphere_center for bound_xml in bounds]
     mass = sum(masses)
     inertia = calculate_composite_inertia(lod_xml.position_offset, cgs, masses, inertias)
 
-    arch_xml = lod_xml.archetype
     arch_xml.mass = mass
     arch_xml.mass_inv = (1 / mass) if mass != 0 else 0
     arch_xml.inertia_tensor = inertia
@@ -363,22 +467,43 @@ def calculate_archetype_mass_inertia(lod_xml: PhysicsLOD):
 
 
 def create_collision_xml(
-    frag_obj: bpy.types.Object,
-    arch_xml: Archetype,
-    col_obj_to_bound_index: dict[bpy.types.Object, int] = None
-) -> BoundComposite:
-    for child in frag_obj.children:
-        if child.sollum_type != SollumType.BOUND_COMPOSITE:
-            continue
+    frag: FragmentObjects,
+    lod_xml: PhysicsLOD,
+    col_obj_to_bound_index: dict[Object, int]
+) -> tuple[BoundComposite, Optional[BoundComposite]]:
+    assert frag.composite is not None, "Caller must ensure that there is a composite"
 
-        composite_xml = create_composite_xml(child, col_obj_to_bound_index)
-        arch_xml.bounds = composite_xml
+    composite_xml = create_composite_xml(frag.composite, col_obj_to_bound_index)
+    lod_xml.archetype.bounds = composite_xml
+    all_bounds = (composite_xml, *composite_xml.children)
 
-        composite_xml.unk_type = 2
+    if frag.damaged_composite is not None:
+        assert lod_xml.damaged_archetype is not None, "Caller must ensure that the damaged archetype already exists"
+        damaged_col_obj_to_bound_index = {}
+        damaged_composite_xml = create_composite_xml(frag.damaged_composite, damaged_col_obj_to_bound_index)
+        lod_xml.damaged_archetype.bounds = damaged_composite_xml
+        all_bounds = (*all_bounds, damaged_composite_xml, *damaged_composite_xml.children)
 
-        for bound_xml in composite_xml.children:
-            bound_xml.unk_type = 2
-        return composite_xml
+        # With damaged fragments we have to make space in both composites to fit all bounds (both damaged and undamaged)
+        # so indices remain consistent between them. Extra spaces are just left empty (none)
+        composite_xml.children = composite_xml.children + [None] * len(damaged_composite_xml.children)
+        damaged_composite_xml.children = [None] * len(composite_xml.children) + damaged_composite_xml.children
+
+        # Include the damaged bounds in the output obj->index mapping
+        for damaged_col_obj, bound_index in damaged_col_obj_to_bound_index.items():
+            col_obj_to_bound_index[damaged_col_obj] = bound_index + len(composite_xml.children)
+    else:
+        damaged_composite_xml = None
+
+    # In fragments, every bound is referenced twice:
+    # - Composite: in the physics LOD and the archetype
+    # - Damaged composite: only in the damaged archetype, but the game still expects 2 refs (and does indeed release it
+    #                      twice in the physics LOD destructor)
+    # - All child bounds: in the composite and in the physics child drawable
+    for bound_xml in all_bounds:
+        bound_xml.ref_count = 2
+
+    return composite_xml, damaged_composite_xml
 
 
 def create_phys_xml_groups(
@@ -444,9 +569,8 @@ def create_phys_xml_groups(
     return lod_xml.groups
 
 
-def does_bone_have_collision(bone_name: str, frag_obj: bpy.types.Object):
-    col_objs = [
-        obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
+def does_bone_have_collision(bone_name: str, frag_obj: Object):
+    col_objs = [obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
 
     for obj in col_objs:
         bone = get_child_of_bone(obj)
@@ -552,105 +676,133 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
 
 
 def create_phys_child_xmls(
-    frag_obj: bpy.types.Object,
+    frag: FragmentObjects,
     lod_xml: PhysicsLOD,
     bones_xml: list[Bone],
     materials: list[bpy.types.Material],
-    col_obj_to_bound_index: dict[bpy.types.Object, int]
+    col_obj_to_bound_index: dict[Object, int]
 ):
     """Creates the physics children XML objects for each collision object and adds them to ``lod_xml.children``.
 
     Additionally, makes sure that ``lod_xml.archetype.bounds.children`` order matches ``lod_xml.children`` order so
     the same indices can be used with both collections.
     """
-    child_meshes = get_child_meshes(frag_obj)
-    child_cols = get_child_cols(frag_obj)
+    frag_obj = frag.fragment
+    frag_armature = frag_obj.data
+    child_meshes = get_child_meshes(frag)
+    child_cols = get_child_cols(frag)
+    damaged_child_cols = get_child_cols(frag, damaged=True) if frag.damaged_composite else {}
 
     bound_index_to_child_index = []
-    for bone_name, objs in child_cols.items():
-        for obj in objs:
+    damaged_bound_index_to_child_index = []
+    for bone_name, col_objs in child_cols.items():
+        damaged_col_objs = damaged_child_cols.get(bone_name, [])
+        for col_obj, damaged_col_obj in zip_longest(col_objs, damaged_col_objs, fillvalue=None):
             child_index = len(lod_xml.children)
-            bound_index = col_obj_to_bound_index[obj]
-            bound_index_to_child_index.append((bound_index, child_index))
+            if col_obj:
+                bound_index = col_obj_to_bound_index[col_obj]
+                bound_index_to_child_index.append((bound_index, child_index))
+            else:
+                bound_index = None
+            if damaged_col_obj:
+                damaged_bound_index = col_obj_to_bound_index[damaged_col_obj]
+                damaged_bound_index_to_child_index.append((damaged_bound_index, child_index))
+            else:
+                damaged_bound_index = None
 
-            bone: bpy.types.Bone = frag_obj.data.bones.get(bone_name)
-            bone_index = get_bone_index(frag_obj.data, bone) or 0
+            bone = frag_armature.bones.get(bone_name)
+            bone_index = get_bone_index(frag_armature, bone) or 0
 
             child_xml = PhysicsChild()
             child_xml.group_index = get_bone_group_index(lod_xml, bone_name)
-            child_xml.pristine_mass = obj.child_properties.mass
-            child_xml.damaged_mass = child_xml.pristine_mass
+            child_xml.pristine_mass = col_obj.child_properties.mass if col_obj else 0.0
+            child_xml.damaged_mass = damaged_col_obj.child_properties.mass if damaged_col_obj else child_xml.pristine_mass
             child_xml.bone_tag = bones_xml[bone_index].tag
-            child_xml.inertia_tensor = get_child_inertia(lod_xml.archetype, child_xml, bound_index)
+            child_xml.inertia_tensor = \
+                calc_child_inertia(lod_xml, child_xml, bound_index) \
+                if col_obj else Vector((0.0, 0.0, 0.0, 0.0))
+            child_xml.damaged_inertia_tensor = \
+                calc_child_inertia(lod_xml, child_xml, damaged_bound_index, damaged=True) \
+                if damaged_col_obj else Vector((0.0, 0.0, 0.0, 0.0))
 
             mesh_objs = None
             if bone_name in child_meshes:
                 mesh_objs = child_meshes[bone_name]
 
             create_phys_child_drawable(child_xml, materials, mesh_objs)
+            if damaged_col_obj:
+                create_phys_child_drawable(child_xml, materials, damaged=True)
+            else:
+                child_xml.damaged_drawable = None
 
             lod_xml.children.append(child_xml)
 
     # reorder bounds children based on physics children order
-    bounds_children = lod_xml.archetype.bounds.children
-    new_bounds_children = [None] * len(lod_xml.archetype.bounds.children)
-    for bound_index, child_index in bound_index_to_child_index:
-        new_bounds_children[child_index] = bounds_children[bound_index]
-    lod_xml.archetype.bounds.children = new_bounds_children
+    composite = lod_xml.archetype.bounds
+    damaged_composite = lod_xml.damaged_archetype.bounds if lod_xml.damaged_archetype else None
+    for comp, index_map in (
+        (composite, bound_index_to_child_index),
+        (damaged_composite, damaged_bound_index_to_child_index)
+    ):
+        if comp is None:
+            continue
+
+        bounds = comp.children
+        new_bounds = [None] * len(lod_xml.children)
+        for bound_index, child_index in index_map:
+            new_bounds[child_index] = bounds[bound_index]
+
+        comp.children = new_bounds
 
 
-def get_child_inertia(arch_xml: Archetype, child_xml: PhysicsChild, bound_index: int):
+def calc_child_inertia(lod_xml: PhysicsLOD, child_xml: PhysicsChild, bound_index: int, damaged: bool = False):
+    arch_xml = lod_xml.damaged_archetype if damaged else lod_xml.archetype
     if not arch_xml.bounds or bound_index >= len(arch_xml.bounds.children):
         return Vector()
 
     bound_xml = arch_xml.bounds.children[bound_index]
-    inertia = bound_xml.inertia * child_xml.pristine_mass
-    return Vector((inertia.x, inertia.y, inertia.z, bound_xml.volume * child_xml.pristine_mass))
+    mass = child_xml.damaged_mass if damaged else child_xml.pristine_mass
+    inertia = bound_xml.inertia * mass
+    return Vector((inertia.x, inertia.y, inertia.z, bound_xml.volume * mass))
 
 
-def get_child_cols(frag_obj: bpy.types.Object):
+def get_child_cols(frag: FragmentObjects, damaged: bool = False) -> dict[str, list[Object]]:
     """Get collisions that are linked to a child. Returns a dict mapping each collision to a bone name."""
-    child_cols_by_bone: dict[str, list[bpy.types.Object]] = defaultdict(list)
+    composite_obj = frag.damaged_composite if damaged else frag.composite
+    assert composite_obj is not None, "Caller must ensure that there is a composite"
 
-    for composite_obj in frag_obj.children:
-        if composite_obj.sollum_type != SollumType.BOUND_COMPOSITE:
+    child_cols_by_bone: dict[str, list[Object]] = defaultdict(list)
+    for bound_obj in composite_obj.children:
+        if bound_obj.sollum_type not in BOUND_TYPES:
             continue
 
-        for bound_obj in composite_obj.children:
-            if not bound_obj.sollum_type in BOUND_TYPES:
-                continue
+        if (bound_obj.type == "MESH" and not has_col_mats(bound_obj)) or (bound_obj.type == "EMPTY" and not bound_geom_has_mats(bound_obj)):
+            continue
 
-            if (bound_obj.type == "MESH" and not has_col_mats(bound_obj)) or (bound_obj.type == "EMPTY" and not bound_geom_has_mats(bound_obj)):
-                continue
+        bone = get_child_of_bone(bound_obj)
 
-            bone = get_child_of_bone(bound_obj)
+        if bone is None or not bone.sollumz_use_physics:
+            continue
 
-            if bone is None or not bone.sollumz_use_physics:
-                continue
-
-            child_cols_by_bone[bone.name].append(bound_obj)
+        child_cols_by_bone[bone.name].append(bound_obj)
 
     return child_cols_by_bone
 
 
-def get_child_meshes(frag_obj: bpy.types.Object):
+def get_child_meshes(frag: FragmentObjects) -> dict[str, list[Object]]:
     """Get meshes that are linked to a child. Returns a dict mapping child meshes to bone name."""
-    child_meshes_by_bone: dict[str, list[bpy.types.Object]] = defaultdict(list)
-
-    for drawable_obj in frag_obj.children:
-        if drawable_obj.sollum_type != SollumType.DRAWABLE:
+    drawable_obj = frag.drawable
+    child_meshes_by_bone: dict[str, list[Object]] = defaultdict(list)
+    for model_obj in drawable_obj.children:
+        if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
             continue
 
-        for model_obj in drawable_obj.children:
-            if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
-                continue
+        bone = get_child_of_bone(model_obj)
 
-            bone = get_child_of_bone(model_obj)
+        if bone is None or not bone.sollumz_use_physics:
+            continue
 
-            if bone is None or not bone.sollumz_use_physics:
-                continue
-
-            child_meshes_by_bone[bone.name].append(model_obj)
+        child_meshes_by_bone[bone.name].append(model_obj)
 
     return child_meshes_by_bone
 
@@ -664,26 +816,31 @@ def get_bone_group_index(lod_xml: PhysicsLOD, bone_name: str):
     return -1
 
 
-def create_child_mat_arrays(children: list[PhysicsChild]):
+def create_child_mat_arrays(lod_xml: PhysicsLOD):
     """Create the matrix arrays for each child. This appears to be in the first child of multiple children that
     share the same group. Each matrix in the array is just the matrix for each child in that group."""
+    children = lod_xml.children
+    bounds = lod_xml.archetype.bounds.children
+    damaged_bounds = lod_xml.damaged_archetype.bounds.children if lod_xml.damaged_archetype else None
     group_inds = set(child.group_index for child in children)
 
     for i in group_inds:
-        group_children = [
-            child for child in children if child.group_index == i]
+        group_children = [(child_index, child) for child_index, child in enumerate(children) if child.group_index == i]
 
         if len(group_children) <= 1:
             continue
 
-        first = group_children[0]
+        _, first = group_children[0]
 
-        for child in group_children[1:]:
-            first.drawable.matrices.append(child.drawable.matrix)
+        for child_index, child in group_children[1:]:
+            if bounds[child_index]:
+                first.drawable.frag_extra_bound_matrices.append(child.drawable.frag_bound_matrix)
+            if damaged_bounds and damaged_bounds[child_index]:
+                first.damaged_drawable.frag_extra_bound_matrices.append(child.damaged_drawable.frag_bound_matrix)
 
 
-def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], mesh_objs: Optional[list[bpy.types.Object]] = None):
-    drawable_xml = child_xml.drawable
+def create_phys_child_drawable(child_xml: PhysicsChild, materials: list[bpy.types.Object], mesh_objs: Optional[list[bpy.types.Object]] = None, damaged: bool = False):
+    drawable_xml = child_xml.damaged_drawable if damaged else child_xml.drawable
     drawable_xml.shader_group = None
     drawable_xml.skeleton = None
     drawable_xml.joints = None
@@ -901,20 +1058,28 @@ def calculate_child_drawable_matrices(frag_xml: Fragment):
     bones = frag_xml.drawable.skeleton.bones
     lod_xml = frag_xml.physics.lod1
     collisions = lod_xml.archetype.bounds.children
+    damaged_collisions = lod_xml.damaged_archetype.bounds.children if lod_xml.damaged_archetype else None
 
-    bone_transform_by_tag: dict[str, Matrix] = {
-        b.tag: bone_transforms[i].value for i, b in enumerate(bones)}
+    bone_transform_by_tag: dict[str, Matrix] = {b.tag: bone_transforms[i].value for i, b in enumerate(bones)}
 
-    for i, child in enumerate(lod_xml.children):
-        bone_transform = bone_transform_by_tag[child.bone_tag]
-        col = collisions[i]
+    for cols in (collisions, damaged_collisions):
+        if not cols:
+            continue
 
-        bone_inv = bone_transform.to_4x4().inverted()
+        for i, child in enumerate(lod_xml.children):
+            bone_transform = bone_transform_by_tag[child.bone_tag]
 
-        matrix = col.composite_transform @ bone_inv.transposed()
-        child.drawable.matrix = reshape_mat_4x3(matrix)
+            col = cols[i]
+            if not col:
+                continue
 
-    create_child_mat_arrays(lod_xml.children)
+            bone_inv = bone_transform.to_4x4().inverted()
+
+            matrix = col.composite_transform @ bone_inv.transposed()
+            drawable = child.damaged_drawable if cols is damaged_collisions else child.drawable
+            drawable.frag_bound_matrix = reshape_mat_4x3(matrix)
+
+    create_child_mat_arrays(lod_xml)
 
 
 def set_lod_xml_properties(lod_props: LODProperties, lod_xml: PhysicsLOD):

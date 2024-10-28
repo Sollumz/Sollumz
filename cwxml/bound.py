@@ -55,7 +55,7 @@ class Bound(ElementTree, AbstractClass):
         self.ped_density = ValueProperty("PedDensity", 0)
         self.unk_flags = ValueProperty("UnkFlags", 0)
         self.poly_flags = ValueProperty("PolyFlags", 0)
-        self.unk_type = ValueProperty("UnkType", 1)
+        self.ref_count = ValueProperty("UnkType", 1)
 
 
 class BoundComposite(Bound):
@@ -174,6 +174,8 @@ class BoundGeometryBVH(BoundGeometry):
 class BoundList(ListProperty):
     list_type = BoundChild
     tag_name = "Children"
+    item_tag_name = "Item"
+    allow_none_items = True
 
     @staticmethod
     def from_xml(element: ET.Element):
@@ -198,8 +200,14 @@ class BoundList(ListProperty):
                     new.value.append(BoundGeometry.from_xml(child))
                 elif bound_type == "GeometryBVH":
                     new.value.append(BoundGeometryBVH.from_xml(child))
+                elif bound_type == "None":
+                    # For fragments it is important to keep the null entries in the composite children array
+                    new.value.append(None)
 
         return new
+
+    def create_element_for_none_item(self) -> ET.Element:
+        return ET.Element(self.item_tag_name, attrib={"type": "None"})
 
 
 class Material(ElementTree):

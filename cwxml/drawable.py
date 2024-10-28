@@ -475,7 +475,7 @@ class VertexBuffer(ElementTree):
             data = np.empty_like(raw_data, dtype=struct_dtype)
             for comp in layout.value:
                 if comp == "Normal":
-                    data["Normal"] = raw_data["Normal"][:,:3]
+                    data["Normal"] = raw_data["Normal"][:, :3]
                 else:
                     data[comp] = raw_data[comp]
 
@@ -608,7 +608,7 @@ class DrawableModelList(ListProperty):
 
 
 class Drawable(ElementTree, AbstractClass):
-    tag_name = "Drawable"
+    tag_name = None
 
     @property
     def is_empty(self) -> bool:
@@ -622,11 +622,13 @@ class Drawable(ElementTree, AbstractClass):
     def all_models(self) -> list[DrawableModel]:
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
-    def __init__(self):
+    def __init__(self, tag_name: str = "Drawable"):
         super().__init__()
+        self.tag_name = tag_name
+
         # Only in fragment drawables
-        self.matrix = MatrixProperty("Matrix")
-        self.matrices = DrawableMatrices("Matrices")
+        self.frag_bound_matrix = MatrixProperty("Matrix")
+        self.frag_extra_bound_matrices = DrawableMatrices("Matrices")
 
         self.name = TextProperty("Name", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
@@ -662,6 +664,7 @@ class Drawable(ElementTree, AbstractClass):
     @classmethod
     def from_xml(cls, element: ET.Element):
         new = super().from_xml(element)
+
         bounds_elem = element.find("Bounds")
         if bounds_elem is not None:
             bound_type = bounds_elem.get("type")
