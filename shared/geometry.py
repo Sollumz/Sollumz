@@ -267,6 +267,22 @@ def is_mesh_solid(mesh_vertices, mesh_faces) -> bool:
     return len(boundary_edges) == 0 and len(non_manifold_edges) == 0
 
 
+def transform_inertia(inertia: Vector, mass: float, translation: Vector) -> Vector:
+    """Uses Principal Axis Theorem to change the axis of a moment of inertia. Returns the new moment of intertia."""
+    # https://dspace.mit.edu/bitstream/handle/1721.1/60691/16-07-fall-2004/contents/lecture-notes/d23.pdf
+    ixx, iyy, izz = inertia
+
+    dx, dy, dz = translation
+    dx2 = dx * dx
+    dy2 = dy * dy
+    dz2 = dz * dz
+
+    ixx += mass * (dy2 + dz2)
+    iyy += mass * (dx2 + dz2)
+    izz += mass * (dx2 + dy2)
+    return Vector((ixx, iyy, izz))
+
+
 def calculate_composite_inertia(
     root_cg: Vector,
     parts_cg: list[Vector],
@@ -278,17 +294,14 @@ def calculate_composite_inertia(
 
     total_inertia = Vector((0.0, 0.0, 0.0))
     for cg, mass, inertia in zip(parts_cg, parts_mass, parts_inertia):
-        x, y, z = cg - root_cg
-        x2, y2, z2 = x * x, y * y, z * z
-        inertia.x += mass * (y2 + z2)
-        inertia.y += mass * (z2 + x2)
-        inertia.z += mass * (x2 + y2)
-
-        total_inertia += inertia
+        cg_offset = cg - root_cg
+        total_inertia += transform_inertia(inertia, mass, cg_offset)
 
     return total_inertia
 
+
 NO_NEIGHBOR = -1
+
 
 def shrink_mesh(mesh_vertices, mesh_faces):
     margin = 0.04
@@ -312,6 +325,7 @@ def shrink_mesh(mesh_vertices, mesh_faces):
     margin = max(margin, 0.025)
 
     return shrunk_vertices, margin
+
 
 def _try_shrink_mesh(mesh_vertices, mesh_faces, neighbors, margin: float):
     shrunk_vertices = _shrink_polys(mesh_vertices, mesh_faces, neighbors, margin)
@@ -355,8 +369,8 @@ def _try_shrink_mesh(mesh_vertices, mesh_faces, neighbors, margin: float):
             if _intersect_test(vs1, vs2, vs3):
                 return None
 
-
     return shrunk_vertices
+
 
 def _shrink_polys(mesh_vertices, mesh_faces, neighbors, margin):
     # TODO: copied from rageAm's C++ code, very unoptimized Python code, vectorize with Numpy somehow
@@ -408,7 +422,6 @@ def _shrink_polys(mesh_vertices, mesh_faces, neighbors, margin):
                         break
                 else:
                     break
-
 
                 # Check if we've closed circle and iterated through all neighbors
                 if new_neighbor_poly_idx == poly_idx:
@@ -470,6 +483,7 @@ def _shrink_polys(mesh_vertices, mesh_faces, neighbors, margin):
 
     return output_vertices
 
+
 def _compute_neighbors(mesh_vertices, mesh_faces):
     # Each triangle has up to 3 neighbors, so same shape as the mesh_faces array
     neighbors = np.full_like(mesh_faces, NO_NEIGHBOR, dtype=int)
@@ -483,6 +497,7 @@ def _compute_neighbors(mesh_vertices, mesh_faces):
 
     def _get_next_l(idx):
         return (idx + 1) % 3
+
     def _get_next_r(idx):
         return 2 if idx == 0 else idx - 1
 

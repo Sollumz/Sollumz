@@ -80,13 +80,20 @@ def create_composite_xml(
     cg /= volume
     centroid /= len(composite_xml.children)
 
+    # Calculate combined moment of inertia
+    from ..shared.geometry import calculate_composite_inertia
+    child_masses = [child_xml.volume for child_xml in composite_xml.children]
+    child_inertias = [child_xml.inertia * child_xml.volume for child_xml in composite_xml.children]
+    child_cgs = [child_xml.composite_transform @ child_xml.sphere_center for child_xml in composite_xml.children]
+    inertia = calculate_composite_inertia(cg, child_cgs, child_masses, child_inertias)
+    inertia /= volume
+
     # Calculate extents after children have been created
     bbmin, bbmax = get_composite_extents(composite_xml)
     set_bound_extents(composite_xml, bbmin, bbmax)
 
     radius_around_centroid = (bbmax - centroid).length
 
-    inertia = Vector((1.0, 1.0, 1.0))  # composite inertia doesn't need to be calculated
     set_bound_centroid(composite_xml, centroid, radius_around_centroid)
     set_bound_mass_properties(composite_xml, volume, cg, inertia)
 
@@ -185,7 +192,7 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild
             # CW calculates the shrunk mesh on import now (though it doesn't update the margin!)
             # _, margin = shrink_mesh(mesh_vertices, mesh_faces)
             # bound_xml.vertices_shrunk = [Vector(vert) - bound_xml.geometry_center for vert in shrunk_vertices]
-            margin = 0.0025 # set it to the minimum margin, though it should depend on the shrunk mesh
+            margin = 0.0025  # set it to the minimum margin, though it should depend on the shrunk mesh
 
         case SollumType.BOUND_GEOMETRYBVH:
             bound_xml = create_bvh_xml(obj)
@@ -242,7 +249,6 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild
 
         case _:
             assert False, f"Unknown bound type '{obj.sollum_type}'"
-
 
     if is_root and obj.sollum_type in {
         SollumType.BOUND_BOX,
