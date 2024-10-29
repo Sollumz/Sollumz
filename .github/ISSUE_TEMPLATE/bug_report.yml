@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report an issue with the plugin
-labels: bug
+labels: Bug
 body:
 - type: textarea
   attributes:
@@ -23,6 +23,24 @@ body:
     placeholder: 4.1, 4.2+
   validations:
     required: true
+- type: dropdown
+  id: area
+  attributes:
+    label: 🧩 Area
+    description: What is affected by this issue? Please choose any that apply.
+    multiple: true
+    options:
+      - 'Animations'
+      - 'Archetypes'
+      - 'Collisions'
+      - 'Drawables'
+      - 'Fragments'
+      - 'Interiors'
+      - 'Maps'
+      - 'Navmesh'
+      - 'Shaders'
+  validations:
+    required: false
 - type: textarea
   attributes:
     label: 🔄 Reproduction steps

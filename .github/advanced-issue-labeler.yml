@@ -1,0 +1,30 @@
+policy:
+  - section:
+      - id: [area]
+        label:
+          - name: 'Area: Animations'
+            keys: ['Animations']
+
+          - name: 'Area: Archetypes'
+            keys: ['Archetypes']
+
+          - name: 'Area: Collisions'
+            keys: ['Collisions']
+
+          - name: 'Area: Drawables'
+            keys: ['Drawables']
+
+          - name: 'Area: Fragments'
+            keys: ['Fragments']
+
+          - name: 'Area: Interiors'
+            keys: ['Interiors']
+
+          - name: 'Area: Maps'
+            keys: ['Maps']
+
+          - name: 'Area: Navmesh'
+            keys: ['Navmesh']
+
+          - name: 'Area: Shaders'
+            keys: ['Shaders']

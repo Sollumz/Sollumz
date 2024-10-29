@@ -1,6 +1,6 @@
 name: Feature Request
 description: Suggest a new feature for the project
-labels: feature request
+labels: Feature Request
 body:
 - type: textarea
   attributes:
@@ -14,3 +14,21 @@ body:
     label: 🔧 Feature Workflow
     description: How will this feature work/function/be used by users? How would the workflow look like within Blender?
     placeholder: Enter the feature workflow here
+- type: dropdown
+  id: area
+  attributes:
+    label: 🧩 Area
+    description: What is this feature related to? Please choose any that apply.
+    multiple: true
+    options:
+      - 'Animations'
+      - 'Archetypes'
+      - 'Collisions'
+      - 'Drawables'
+      - 'Fragments'
+      - 'Interiors'
+      - 'Maps'
+      - 'Navmesh'
+      - 'Shaders'
+  validations:
+    required: false
