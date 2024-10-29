@@ -69,8 +69,9 @@ def create_composite_xml(
             out_child_obj_to_index[child] = len(composite_xml.children)
         composite_xml.children.append(child_xml)
 
-        child_cg = child_xml.composite_transform @ child_xml.sphere_center
-        child_centroid = child_xml.composite_transform @ child_xml.box_center
+        child_transform = child_xml.composite_transform.transposed()
+        child_cg = child_transform @ child_xml.sphere_center
+        child_centroid = child_transform @ child_xml.box_center
         child_volume = child_xml.volume
 
         volume += child_volume
@@ -84,7 +85,7 @@ def create_composite_xml(
     from ..shared.geometry import calculate_composite_inertia
     child_masses = [child_xml.volume for child_xml in composite_xml.children]
     child_inertias = [child_xml.inertia * child_xml.volume for child_xml in composite_xml.children]
-    child_cgs = [child_xml.composite_transform @ child_xml.sphere_center for child_xml in composite_xml.children]
+    child_cgs = [child_xml.composite_transform.transposed() @ child_xml.sphere_center for child_xml in composite_xml.children]
     inertia = calculate_composite_inertia(cg, child_cgs, child_masses, child_inertias)
     inertia /= volume
 
