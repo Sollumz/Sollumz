@@ -653,6 +653,21 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
     camera_rotations_to_transform = {}
 
     action = animation_obj.animation_properties.action
+
+    # If we have an armature, rename groups named with the bone ID after the bone in the armature
+    if new_bone_map is not None:
+        for group in action.groups:
+            name = group.name
+            if not name.startswith("#") or not name[1:].isnumeric():
+                continue
+
+            bone_id = int(name[1:])
+            bone = new_bone_map.get(bone_id, None)
+            if bone is None:
+                continue
+
+            group.name = bone.name
+
     for fcurve in action.fcurves:
         # TODO: can we somehow store the track ID in the F-Curve to avoid parsing the data paths?
         data_path = fcurve.data_path
