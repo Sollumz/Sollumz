@@ -8,7 +8,7 @@ import re
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion
 from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
-from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlags, ArchetypeType, LODLevel
+from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlagsMixin, ArchetypeType, LODLevel
 from .sollumz_preferences import get_export_settings
 from .cwxml.drawable import YDR, YDD
 from .cwxml.fragment import YFT
@@ -385,7 +385,7 @@ class SelectTimeFlagsRange(SOLLUMZ_OT_base):
         start = int(flags.time_flags_start)
         end = int(flags.time_flags_end)
         index = 0
-        for prop in TimeFlags.__annotations__:
+        for prop in TimeFlagsMixin.flag_names:
             if index < 24:
                 if start < end:
                     if index >= start and index < end:
@@ -411,7 +411,7 @@ class ClearTimeFlags(SOLLUMZ_OT_base):
         flags = self.get_flags(context)
         if not flags:
             return False
-        for prop in TimeFlags.__annotations__:
+        for prop in TimeFlagsMixin.flag_names:
             flags[prop] = False
         flags.update_flag(context)
         return True

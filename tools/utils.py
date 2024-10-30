@@ -25,11 +25,11 @@ def int_to_bool_list(num, size=None):
     return [bool(num & (1 << n)) for n in range(size or 32)]
 
 
-def flag_prop_to_list(prop_type, data_block, size=None):
+def flag_prop_to_list(flag_names, data_block, size=None):
     size = (size or 32) + 1
     flags = [False] * size
     i = 0
-    for flag_name in prop_type.__annotations__:
+    for flag_name in flag_names:
         if i < size:
             if flag_name in data_block:
                 flags[i] = data_block[flag_name] != 0

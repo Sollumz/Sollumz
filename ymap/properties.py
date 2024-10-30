@@ -21,6 +21,7 @@ def update_uint_prop(self, context, var_name):
         setattr(self, var_name, str(max_val))
 
 
+# TODO: why is FlagPropertyGroup duplicated here?
 class FlagPropertyGroup:
     """Credits: Sollumz"""
 
@@ -30,7 +31,7 @@ class FlagPropertyGroup:
             self.flags_toggle[flag_name] = flags[index]
 
     def update_flag(self, context):
-        flags = flag_prop_to_list(self.__class__, self)
+        flags = flag_prop_to_list(self.__class__.__annotations__, self)
         obj = context.active_object
         if obj:
             obj.ymap_properties.flags = flag_list_to_int(flags)
@@ -45,7 +46,7 @@ class ContentFlagPropertyGroup:
             self.content_flags_toggle[flag_name] = flags[index]
 
     def update_flag(self, context):
-        flags = flag_prop_to_list(self.__class__, self)
+        flags = flag_prop_to_list(self.__class__.__annotations__, self)
         obj = context.active_object
         if obj:
             obj.ymap_properties.content_flags = flag_list_to_int(flags)
