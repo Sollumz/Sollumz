@@ -346,6 +346,7 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel)
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_create_collision_material.bl_idname)
         row = layout.row()
+        row.prop(context.scene, "convert_all_materials_to_collision")
         row.operator(
             ybn_ops.SOLLUMZ_OT_convert_to_collision_material.bl_idname)
         row.operator(

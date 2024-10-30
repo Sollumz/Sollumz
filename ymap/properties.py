@@ -95,7 +95,7 @@ class YmapBlockProperties(bpy.types.PropertyGroup):
     time: StringProperty(name="Time")
 
 
-class YmapProperties(bpy.types.PropertyGroup):
+class CMapDataProperties(bpy.types.PropertyGroup):
     parent: StringProperty(name="Parent", default="")
     flags: IntProperty(name="Flags", default=0, min=0, max=3,
                        update=FlagPropertyGroup.update_flags_total)
@@ -132,14 +132,18 @@ class YmapCarGeneratorProperties(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.ymap_properties = PointerProperty(type=YmapProperties)
-    bpy.types.Object.ymap_model_occl_properties = PointerProperty(
+    bpy.types.Scene.ymaps = bpy.props.CollectionProperty(
+        type=CMapDataProperties, name="YMAPs")
+    bpy.types.Scene.ymap_index = bpy.props.IntProperty(name="YMAP")
+    bpy.types.Scene.ymap_model_occl_properties = PointerProperty(
         type=YmapModelOccluderProperties)
-    bpy.types.Object.ymap_cargen_properties = PointerProperty(
+    bpy.types.Scene.ymap_cargen_properties = PointerProperty(
         type=YmapCarGeneratorProperties)
 
 
 def unregister():
-    del bpy.types.Object.ymap_properties
-    del bpy.types.Object.ymap_model_occl_properties
-    del bpy.types.Object.ymap_cargen_properties
+    del bpy.types.Scene.ymaps
+    del bpy.types.Scene.ymap_index
+    del bpy.types.Scene.ymap_properties
+    del bpy.types.Scene.ymap_model_occl_properties
+    del bpy.types.Scene.ymap_cargen_properties

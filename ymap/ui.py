@@ -2,6 +2,7 @@ import bpy
 
 from ..sollumz_properties import SollumType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
+from ..sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
 
 
 def draw_ymap_properties(self, context):
@@ -78,6 +79,11 @@ def draw_ymap_car_generator_properties(self, context):
         layout.prop(obj.ymap_cargen_properties, 'livery')
 
 
+class SOLLUMZ_UL_YMAP_LIST(BasicListHelper, bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_YMAP_LIST"
+    item_icon = "PRESET"
+
+
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Map Data"
     bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
@@ -91,35 +97,27 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="OBJECT_ORIGIN")
 
     def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.createymap")
+        ...
 
-        if (len(bpy.context.selected_objects) > 0):
-            active_object = bpy.context.selected_objects[0]
 
-            if active_object.sollum_type == SollumType.YMAP:
-                layout.label(text="Create groups")
-                layout.separator()
-                layout.operator("sollumz.create_entity_group")
-                layout.operator("sollumz.create_model_occluder_group")
-                layout.operator("sollumz.create_box_occluder_group")
-                layout.operator("sollumz.create_car_generator_group")
-            elif active_object.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
-                layout.label(text="Box Occluders Options")
-                row = layout.row()
-                row.operator("sollumz.create_box_occluder")
-            elif active_object.sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
-                layout.label(text="Model Occluders Options")
-                row = layout.row()
-                row.operator("sollumz.create_model_occluder")
-            elif active_object.sollum_type == SollumType.YMAP_CAR_GENERATOR_GROUP:
-                layout.label(text="Car Generators Options")
-                row = layout.row()
-                row.operator("sollumz.create_car_generator")
+class YmapToolChildPanel:
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_parent_id = SOLLUMZ_PT_YMAP_TOOL_PANEL.bl_idname
+    bl_category = SOLLUMZ_PT_YMAP_TOOL_PANEL.bl_category
 
-        else:
-            layout.label(text="No Ymap Selected")
+
+class SOLLUMZ_PT_YMAP_LIST_PANEL(YmapToolChildPanel, bpy.types.Panel):
+    bl_label = "YMAPS"
+    bl_idname = "SOLLUMZ_PT_YMAP_LIST_PANEL"
+    bl_order = 0
+
+    def draw(self, context):
+        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createymap", "sollumz.deleteymap",
+                                                SOLLUMZ_UL_YMAP_LIST.bl_idname, "", context.scene, "ymaps", context.scene, "ymap_index", rows=3)
+        row = list_col.row()
+        row.operator("sollumz.importymap", icon="IMPORT")
+        row.operator("sollumz.exportymap", icon="EXPORT")
 
 
 class OBJECT_PT_ymap_block(bpy.types.Panel):
