@@ -290,12 +290,24 @@ def get_object_with_children(obj):
     return objs
 
 
+# Sollumz types for which Object.hide_render should be set to false when created.
+_types_to_hide_in_render = {
+    SollumType.BOUND_BOX, SollumType.BOUND_SPHERE, SollumType.BOUND_CAPSULE, SollumType.BOUND_CYLINDER,
+    SollumType.BOUND_DISC, SollumType.BOUND_CLOTH, SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH,
+    SollumType.BOUND_COMPOSITE, SollumType.BOUND_POLY_BOX, SollumType.BOUND_POLY_CAPSULE,
+    SollumType.BOUND_POLY_CYLINDER, SollumType.BOUND_POLY_SPHERE, SollumType.BOUND_POLY_TRIANGLE,
+
+    SollumType.SHATTERMAP,
+}
+
+
 def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, object_data: Optional[bpy.types.Mesh] = None) -> bpy.types.Object:
     """Create a bpy object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
     object_data = object_data or bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, object_data)
     obj.sollum_type = sollum_type
+    obj.hide_render = sollum_type in _types_to_hide_in_render
     bpy.context.collection.objects.link(obj)
 
     return obj
@@ -307,6 +319,7 @@ def create_empty_object(sollum_type: SollumType, name: Optional[str] = None) -> 
     obj = bpy.data.objects.new(name, None)
     obj.empty_display_size = 0
     obj.sollum_type = sollum_type
+    obj.hide_render = sollum_type in _types_to_hide_in_render
     bpy.context.collection.objects.link(obj)
 
     return obj
@@ -458,4 +471,3 @@ def find_bsdf_and_material_output(material: bpy.types.Material) -> Tuple[bpy.typ
             bsdf = node
 
     return bsdf, material_output
-

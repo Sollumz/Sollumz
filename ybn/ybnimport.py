@@ -221,8 +221,6 @@ def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material],
             continue
 
         poly_obj = poly_to_obj(poly, materials, bvh.vertices)
-
-        bpy.context.collection.objects.link(poly_obj)
         poly_obj.location += bvh.geometry_center
         poly_obj.parent = bvh_obj
 
@@ -233,9 +231,7 @@ def init_poly_obj(poly, sollum_type, materials):
     if poly.material_index < len(materials):
         mesh.materials.append(materials[poly.material_index])
 
-    obj = bpy.data.objects.new(name, mesh)
-    obj.sollum_type = sollum_type.value
-
+    obj = create_blender_object(sollum_type, name, mesh)
     return obj
 
 
