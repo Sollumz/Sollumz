@@ -297,7 +297,8 @@ def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, o
     obj = bpy.data.objects.new(name, object_data)
     obj.sollum_type = sollum_type
     bpy.context.collection.objects.link(obj)
-
+    if sollum_type == SollumType.BOUND_BOX or SollumType.BOUND_CYLINDER or SollumType.BOUND_SPHERE or SollumType.BOUND_CAPSULE or SollumType.BOUND_GEOMETRY or SollumType.BOUND_DISC or SollumType.BOUND_POLY_BOX or SollumType.BOUND_POLY_CAPSULE or SollumType.BOUND_POLY_CYLINDER or SollumType.BOUND_POLY_SPHERE or SollumType.BOUND_CLOTH:
+        obj.hide_render = True
     return obj
 
 
