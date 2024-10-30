@@ -1,8 +1,9 @@
 import bpy
 
-from ..sollumz_properties import SollumType
+from ..sollumz_properties import SollumType, YmapElementType
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
-from ..sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
+from ..sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove, draw_simple_list
+from .utils import get_selected_ymap, get_active_element_list
 
 
 def draw_ymap_properties(self, context):
@@ -83,6 +84,10 @@ class SOLLUMZ_UL_YMAP_LIST(BasicListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_YMAP_LIST"
     item_icon = "PRESET"
 
+class SOLLUMZ_UL_ELEMENT_LIST(BasicListHelper, bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_ELEMENT_LIST"
+    item_icon = "PRESET"
+
 
 class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Map Data"
@@ -113,6 +118,7 @@ class SOLLUMZ_PT_YMAP_LIST_PANEL(YmapToolChildPanel, bpy.types.Panel):
     bl_order = 0
 
     def draw(self, context):
+        layout = self.layout
         list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createymap", "sollumz.deleteymap",
                                                 SOLLUMZ_UL_YMAP_LIST.bl_idname, "", context.scene, "ymaps", context.scene, "ymap_index", rows=3)
         row = list_col.row()
@@ -120,6 +126,35 @@ class SOLLUMZ_PT_YMAP_LIST_PANEL(YmapToolChildPanel, bpy.types.Panel):
         row.operator("sollumz.exportymap", icon="EXPORT")
 
 
+class SOLLUMZ_PT_YMAP_CONTENT_PANEL(YmapToolChildPanel, bpy.types.Panel):
+    bl_label = "Content"
+    bl_idname = "SOLLUMZ_PT_YMAP_CONTENT_PANEL"
+    bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_ymap(context) is not None
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(context.scene, "selected_ymap_element")
+        list_name, index = get_active_element_list(context)
+
+        selected_ymap = get_selected_ymap(context)
+        if (list_name in ["modeloccluders", "boxoccluders"] and len(selected_ymap.entities) > 0) or \
+        (list_name == "entities" and max(len(selected_ymap.modeloccluders), len(selected_ymap.boxoccluders)) > 0):
+            layout.label(text="Can't have Entities and Occluders")
+            
+        else:
+            list_col = draw_simple_list(
+                self.layout, SOLLUMZ_UL_ELEMENT_LIST.bl_idname, "", get_selected_ymap(context), list_name, get_selected_ymap(context), index, rows=3)
+            
+            row = list_col.row()
+            row.operator("sollumz.addelement", icon="ADD")
+            row.operator("sollumz.delelement", icon="REMOVE")
+
+
+'''
 class OBJECT_PT_ymap_block(bpy.types.Panel):
     bl_label = "Block"
     bl_space_type = "PROPERTIES"
@@ -146,7 +181,6 @@ class OBJECT_PT_ymap_block(bpy.types.Panel):
             layout.prop(obj.ymap_properties.block, "owner")
             layout.prop(obj.ymap_properties.block, "time")
 
-
 def register():
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_ymap_properties)
     SOLLUMZ_PT_OBJECT_PANEL.append(draw_ymap_model_occluder_properties)
@@ -157,3 +191,4 @@ def unregister():
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_ymap_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_ymap_model_occluder_properties)
     SOLLUMZ_PT_OBJECT_PANEL.remove(draw_ymap_car_generator_properties)
+'''
