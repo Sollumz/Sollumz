@@ -1,5 +1,6 @@
 import bpy
 from enum import Enum
+from typing import Sequence
 from .tools.utils import flag_list_to_int, flag_prop_to_list, int_to_bool_list
 
 
@@ -425,6 +426,10 @@ def items_from_enums(*enums, exclude=None):
 
 
 class FlagPropertyGroup:
+    def get_flag_names(self) -> Sequence[str]:
+        print(f"{self=}   {self.flag_names=}   {self.__annotations__.keys()=}")
+        return self.flag_names if self.flag_names else self.__annotations__.keys()
+
     def update_flags_total(self, context):
         # Ensure string can be converted to int
         try:
@@ -433,20 +438,24 @@ class FlagPropertyGroup:
             self.total = "0"
 
         flags = int_to_bool_list(int(self.total), size=self.size)
-        for index, flag_name in enumerate(self.__annotations__):
+        for index, flag_name in enumerate(self.get_flag_names()):
             if index >= self.size:
                 break
 
             self[flag_name] = flags[index]
 
     def update_flag(self, context):
-        flags = flag_prop_to_list(self.__class__, self, size=self.size)
+        flags = flag_prop_to_list(self.get_flag_names(), self, size=self.size)
         flags.pop()
         self.total = str(flag_list_to_int(flags))
 
+    # Can be set to a list of strings to override the flags used or their order, otherwise, use the annotations.
+    # Useful when the class annotations don't have all the flags (e.g. some flags are defined in base/mixin class)
+    flag_names = None
+
     size = 32
-    total: bpy.props.StringProperty(
-        name="Flags", update=update_flags_total, default="0")
+
+    total: bpy.props.StringProperty(name="Flags", update=update_flags_total, default="0")
 
 
 time_items = [("0", "12:00 AM", ""),
@@ -475,61 +484,36 @@ time_items = [("0", "12:00 AM", ""),
               ("23", "11:00 PM", "")]
 
 
-class TimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+class TimeFlagsMixin(FlagPropertyGroup):
     size = 24
-    hour1: bpy.props.BoolProperty(
-        name="12:00 AM - 1:00 AM", update=FlagPropertyGroup.update_flag)
-    hour2: bpy.props.BoolProperty(
-        name="1:00 AM - 2:00 AM", update=FlagPropertyGroup.update_flag)
-    hour3: bpy.props.BoolProperty(
-        name="2:00 AM - 3:00 AM", update=FlagPropertyGroup.update_flag)
-    hour4: bpy.props.BoolProperty(
-        name="3:00 AM - 4:00 AM", update=FlagPropertyGroup.update_flag)
-    hour5: bpy.props.BoolProperty(
-        name="4:00 AM - 5:00 AM", update=FlagPropertyGroup.update_flag)
-    hour6: bpy.props.BoolProperty(
-        name="5:00 AM - 6:00 AM", update=FlagPropertyGroup.update_flag)
-    hour7: bpy.props.BoolProperty(
-        name="6:00 AM - 7:00 AM", update=FlagPropertyGroup.update_flag)
-    hour8: bpy.props.BoolProperty(
-        name="7:00 AM - 8:00 AM", update=FlagPropertyGroup.update_flag)
-    hour9: bpy.props.BoolProperty(
-        name="8:00 AM - 9:00 AM", update=FlagPropertyGroup.update_flag)
-    hour10: bpy.props.BoolProperty(
-        name="9:00 AM - 10:00 AM", update=FlagPropertyGroup.update_flag)
-    hour11: bpy.props.BoolProperty(
-        name="10:00 AM - 11:00 AM", update=FlagPropertyGroup.update_flag)
-    hour12: bpy.props.BoolProperty(
-        name="11:00 AM - 12:00 PM", update=FlagPropertyGroup.update_flag)
-    hour13: bpy.props.BoolProperty(
-        name="12:00 PM - 1:00 PM", update=FlagPropertyGroup.update_flag)
-    hour14: bpy.props.BoolProperty(
-        name="1:00 PM - 2:00 PM", update=FlagPropertyGroup.update_flag)
-    hour15: bpy.props.BoolProperty(
-        name="2:00 PM - 3:00 PM", update=FlagPropertyGroup.update_flag)
-    hour16: bpy.props.BoolProperty(
-        name="3:00 PM - 4:00 PM", update=FlagPropertyGroup.update_flag)
-    hour17: bpy.props.BoolProperty(
-        name="4:00 PM - 5:00 PM", update=FlagPropertyGroup.update_flag)
-    hour18: bpy.props.BoolProperty(
-        name="5:00 PM - 6:00 PM", update=FlagPropertyGroup.update_flag)
-    hour19: bpy.props.BoolProperty(
-        name="6:00 PM - 7:00 PM", update=FlagPropertyGroup.update_flag)
-    hour20: bpy.props.BoolProperty(
-        name="7:00 PM - 8:00 PM", update=FlagPropertyGroup.update_flag)
-    hour21: bpy.props.BoolProperty(
-        name="8:00 PM - 9:00 PM", update=FlagPropertyGroup.update_flag)
-    hour22: bpy.props.BoolProperty(
-        name="9:00 PM - 10:00 PM", update=FlagPropertyGroup.update_flag)
-    hour23: bpy.props.BoolProperty(
-        name="10:00 PM - 11:00 PM", update=FlagPropertyGroup.update_flag)
-    hour24: bpy.props.BoolProperty(
-        name="11:00 PM - 12:00 AM", update=FlagPropertyGroup.update_flag)
+    flag_names = [f"hour{i + 1}" for i in range(0, 24)]
+    hour1: bpy.props.BoolProperty(name="12:00 AM - 1:00 AM", update=FlagPropertyGroup.update_flag)
+    hour2: bpy.props.BoolProperty(name="1:00 AM - 2:00 AM", update=FlagPropertyGroup.update_flag)
+    hour3: bpy.props.BoolProperty(name="2:00 AM - 3:00 AM", update=FlagPropertyGroup.update_flag)
+    hour4: bpy.props.BoolProperty(name="3:00 AM - 4:00 AM", update=FlagPropertyGroup.update_flag)
+    hour5: bpy.props.BoolProperty(name="4:00 AM - 5:00 AM", update=FlagPropertyGroup.update_flag)
+    hour6: bpy.props.BoolProperty(name="5:00 AM - 6:00 AM", update=FlagPropertyGroup.update_flag)
+    hour7: bpy.props.BoolProperty(name="6:00 AM - 7:00 AM", update=FlagPropertyGroup.update_flag)
+    hour8: bpy.props.BoolProperty(name="7:00 AM - 8:00 AM", update=FlagPropertyGroup.update_flag)
+    hour9: bpy.props.BoolProperty(name="8:00 AM - 9:00 AM", update=FlagPropertyGroup.update_flag)
+    hour10: bpy.props.BoolProperty(name="9:00 AM - 10:00 AM", update=FlagPropertyGroup.update_flag)
+    hour11: bpy.props.BoolProperty(name="10:00 AM - 11:00 AM", update=FlagPropertyGroup.update_flag)
+    hour12: bpy.props.BoolProperty(name="11:00 AM - 12:00 PM", update=FlagPropertyGroup.update_flag)
+    hour13: bpy.props.BoolProperty(name="12:00 PM - 1:00 PM", update=FlagPropertyGroup.update_flag)
+    hour14: bpy.props.BoolProperty(name="1:00 PM - 2:00 PM", update=FlagPropertyGroup.update_flag)
+    hour15: bpy.props.BoolProperty(name="2:00 PM - 3:00 PM", update=FlagPropertyGroup.update_flag)
+    hour16: bpy.props.BoolProperty(name="3:00 PM - 4:00 PM", update=FlagPropertyGroup.update_flag)
+    hour17: bpy.props.BoolProperty(name="4:00 PM - 5:00 PM", update=FlagPropertyGroup.update_flag)
+    hour18: bpy.props.BoolProperty(name="5:00 PM - 6:00 PM", update=FlagPropertyGroup.update_flag)
+    hour19: bpy.props.BoolProperty(name="6:00 PM - 7:00 PM", update=FlagPropertyGroup.update_flag)
+    hour20: bpy.props.BoolProperty(name="7:00 PM - 8:00 PM", update=FlagPropertyGroup.update_flag)
+    hour21: bpy.props.BoolProperty(name="8:00 PM - 9:00 PM", update=FlagPropertyGroup.update_flag)
+    hour22: bpy.props.BoolProperty(name="9:00 PM - 10:00 PM", update=FlagPropertyGroup.update_flag)
+    hour23: bpy.props.BoolProperty(name="10:00 PM - 11:00 PM", update=FlagPropertyGroup.update_flag)
+    hour24: bpy.props.BoolProperty(name="11:00 PM - 12:00 AM", update=FlagPropertyGroup.update_flag)
 
-    time_flags_start: bpy.props.EnumProperty(
-        items=time_items, name="Time Start")
-    time_flags_end: bpy.props.EnumProperty(
-        items=time_items, name="Time End")
+    time_flags_start: bpy.props.EnumProperty(items=time_items, name="Time Start")
+    time_flags_end: bpy.props.EnumProperty(items=time_items, name="Time End")
 
 
 class EntityProperties:

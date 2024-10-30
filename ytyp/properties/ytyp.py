@@ -1,8 +1,11 @@
-from typing import Union
 import bpy
+from bpy.props import (
+    BoolProperty,
+)
 from enum import IntEnum
+from typing import Union
 from ...tools.blenderhelper import get_children_recursive
-from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlags, SOLLUMZ_UI_NAMES
+from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, MloFlags
@@ -69,6 +72,20 @@ SpecialAttributeEnumItems = tuple(None if enum is None else (enum.name, f"{label
      "Set 'Double-sided rendering' flag instead. Here for compatibility with original game files"),
 
 ))
+
+
+class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
+    size = 25
+    flag_names = TimeFlagsMixin.flag_names + ["swap_while_visible"]
+
+    swap_while_visible: BoolProperty(
+        name="Allow Swap While Visible",
+        description=(
+            "If enabled, the model may become visible or hidden while the player is looking at it; otherwise, waits "
+            "until the player faces the camera away"
+        ),
+        update=TimeFlagsMixin.update_flag,
+    )
 
 
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
@@ -222,7 +239,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     asset_name: bpy.props.StringProperty(
         name="Asset Name")
     # Time archetype
-    time_flags: bpy.props.PointerProperty(type=TimeFlags, name="Time Flags")
+    time_flags: bpy.props.PointerProperty(type=ArchetypeTimeFlags, name="Time Flags")
     # Mlo archetype
     mlo_flags: bpy.props.PointerProperty(type=MloFlags, name="MLO Flags")
     rooms: bpy.props.CollectionProperty(type=RoomProperties, name="Rooms")

@@ -7,7 +7,7 @@ from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats
 from .render_bucket import RenderBucket, RenderBucketEnumItems
 from .light_flashiness import Flashiness, LightFlashinessEnumItems
@@ -309,6 +309,10 @@ class LightProperties(bpy.types.PropertyGroup):
 class LightPresetProp(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
+
+
+class LightTimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    pass
 
 
 class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
@@ -626,7 +630,7 @@ def register():
         default=LightType.POINT,
         options={"HIDDEN"}
     )
-    bpy.types.Light.time_flags = bpy.props.PointerProperty(type=TimeFlags)
+    bpy.types.Light.time_flags = bpy.props.PointerProperty(type=LightTimeFlags)
     bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
     bpy.types.Scene.sollumz_auto_lod_ref_mesh = bpy.props.PointerProperty(
