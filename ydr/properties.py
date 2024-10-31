@@ -311,7 +311,7 @@ class LightPresetProp(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty("Name")
 
 
-class LightTimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+class LightTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
     pass
 
 

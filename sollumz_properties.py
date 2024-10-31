@@ -439,7 +439,6 @@ def items_from_enums(*enums, exclude=None):
 
 class FlagPropertyGroup:
     def get_flag_names(self) -> Sequence[str]:
-        print(f"{self=}   {self.flag_names=}   {self.__annotations__.keys()=}")
         return self.flag_names if self.flag_names else self.__annotations__.keys()
 
     def update_flags_total(self, context):
