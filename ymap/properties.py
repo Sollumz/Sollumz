@@ -40,8 +40,7 @@ class FlagPropertyGroup:
 
 
 class YmapModelOccluderProperties(bpy.types.PropertyGroup):
-    name: StringProperty(name="Name", default="")
-    flags: IntProperty(name="Flags", default=0)
+    model_occl_flags: IntProperty(name="Flags", default=0)
 
 class YmapBoxOcclProperties(bpy.types.PropertyGroup):
     name: StringProperty(name="Name", default="")
@@ -49,7 +48,7 @@ class YmapBoxOcclProperties(bpy.types.PropertyGroup):
 
 class YmapCarGeneratorProperties(bpy.types.PropertyGroup):
     car_model: StringProperty(name="CarModel", default="panto")
-    flags: IntProperty(name="Flags", default=0)
+    cargen_flags: IntProperty(name="Flags", default=0)
     pop_group: StringProperty(name="PopGroup", default="")
     perpendicular_length: FloatProperty(
         name="PerpendicularLength", default=2.3)
@@ -119,73 +118,6 @@ class YmapBlockProperties(bpy.types.PropertyGroup):
     time: StringProperty(name="Time")
 
 
-class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
-    size = 32
-    flag1: bpy.props.BoolProperty(
-        name="Allow full rotation", update=FlagPropertyGroup.update_flag)
-    flag2: bpy.props.BoolProperty(
-        name="Stream Low Priority", update=FlagPropertyGroup.update_flag)
-    flag3: bpy.props.BoolProperty(
-        name="Disable embedded collisions", update=FlagPropertyGroup.update_flag)
-    flag4: bpy.props.BoolProperty(
-        name="LOD in Parented YMAP", update=FlagPropertyGroup.update_flag)
-    flag5: bpy.props.BoolProperty(
-        name="LOD Adopt Me", update=FlagPropertyGroup.update_flag)
-    flag6: bpy.props.BoolProperty(
-        name="Static entity", update=FlagPropertyGroup.update_flag)
-    flag7: bpy.props.BoolProperty(
-        name="Interior LOD", update=FlagPropertyGroup.update_flag)
-    flag8: bpy.props.BoolProperty(
-        name="Unknown 8", update=FlagPropertyGroup.update_flag)
-    flag9: bpy.props.BoolProperty(
-        name="Unknown 9", update=FlagPropertyGroup.update_flag)
-    flag10: bpy.props.BoolProperty(
-        name="Unknown 10", update=FlagPropertyGroup.update_flag)
-    flag11: bpy.props.BoolProperty(
-        name="Unknown 11", update=FlagPropertyGroup.update_flag)
-    flag12: bpy.props.BoolProperty(
-        name="Unknown 12", update=FlagPropertyGroup.update_flag)
-    flag13: bpy.props.BoolProperty(
-        name="Unknown 13", update=FlagPropertyGroup.update_flag)
-    flag14: bpy.props.BoolProperty(
-        name="Unknown 14", update=FlagPropertyGroup.update_flag)
-    flag15: bpy.props.BoolProperty(
-        name="Unknown 15", update=FlagPropertyGroup.update_flag)
-    flag16: bpy.props.BoolProperty(
-        name="LOD Use Alt Fade", update=FlagPropertyGroup.update_flag)
-    flag17: bpy.props.BoolProperty(
-        name="Unused", update=FlagPropertyGroup.update_flag)
-    flag18: bpy.props.BoolProperty(
-        name="Does Not Touch Water", update=FlagPropertyGroup.update_flag)
-    flag19: bpy.props.BoolProperty(name="Does Not Spawn Peds",
-                                   update=FlagPropertyGroup.update_flag)
-    flag20: bpy.props.BoolProperty(
-        name="Cast Static Shadows", update=FlagPropertyGroup.update_flag)
-    flag21: bpy.props.BoolProperty(
-        name="Cast Dynamic Shadows", update=FlagPropertyGroup.update_flag)
-    flag22: bpy.props.BoolProperty(
-        name="Ignore Day Night Settings", update=FlagPropertyGroup.update_flag)
-    flag23: bpy.props.BoolProperty(
-        name="Disable shadow for entity", update=FlagPropertyGroup.update_flag)
-    flag24: bpy.props.BoolProperty(
-        name="Disable entity, shadow casted", update=FlagPropertyGroup.update_flag)
-    flag25: bpy.props.BoolProperty(
-        name="Dont Render In Reflections", update=FlagPropertyGroup.update_flag)
-    flag26: bpy.props.BoolProperty(
-        name="Only Render In Reflections", update=FlagPropertyGroup.update_flag)
-    flag27: bpy.props.BoolProperty(
-        name="Dont Render In Water Reflections", update=FlagPropertyGroup.update_flag)
-    flag28: bpy.props.BoolProperty(
-        name="Only Render In Water Reflections", update=FlagPropertyGroup.update_flag)
-    flag29: bpy.props.BoolProperty(
-        name="Dont Render In Mirror Reflections", update=FlagPropertyGroup.update_flag)
-    flag30: bpy.props.BoolProperty(
-        name="Only Render In Mirror Reflections", update=FlagPropertyGroup.update_flag)
-    flag31: bpy.props.BoolProperty(
-        name="Unknown 31", update=FlagPropertyGroup.update_flag)
-    flag32: bpy.props.BoolProperty(
-        name="Unknown 32", update=FlagPropertyGroup.update_flag)
-
 #TODO: FIX DUPLICATED CODE
 class EntityLodLevel(str, Enum):
     LODTYPES_DEPTH_HD = "sollumz_lodtypes_depth_hd"
@@ -206,7 +138,7 @@ class EntityPriorityLevel(str, Enum):
 
 class EntityProperties(bpy.types.PropertyGroup):
     archetype_name: bpy.props.StringProperty(name="Archetype Name")
-    flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
+    flags: bpy.props.IntProperty(name="Flags", default=32)
     guid: bpy.props.FloatProperty(name="GUID")
     parent_index: bpy.props.IntProperty(name="Parent Index", default=-1)
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200)
@@ -233,7 +165,8 @@ class EntityProperties(bpy.types.PropertyGroup):
 
 class CMapDataProperties(bpy.types.PropertyGroup):
     parent: StringProperty(name="Parent", default="")
-    flags: bpy.props.PointerProperty(type=MapFlags, name="Flags")
+    flags: IntProperty(name="Flags", default=0, min=0, max=3,
+                       update=FlagPropertyGroup.update_flags_total)
     content_flags: IntProperty(name="Content Flags", default=0, min=0, max=(
         2**11)-1, update=ContentFlagPropertyGroup.update_flags_total)
 
@@ -252,7 +185,7 @@ class CMapDataProperties(bpy.types.PropertyGroup):
     entities: CollectionProperty(type=EntityProperties)
     entity_index: IntProperty()
 
-    cargens: CollectionProperty(type=YmapCarGeneratorProperties)
+    cargens: CollectionProperty(type=YmapModelOccluderProperties)
     cargen_index: IntProperty()
 
     modeloccluders: CollectionProperty(type=YmapModelOccluderProperties)

@@ -1,7 +1,7 @@
 import bpy
 import re
 import math
-
+import numpy as np
 from mathutils import Vector
 from struct import pack
 from ..cwxml.ymap import *
@@ -47,23 +47,19 @@ def triangulate_obj(obj):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def get_verts_from_obj(obj):
+def occlusion_model_obj_get_data_buffer(obj) -> bytes:
     """
-    For each vertex get its coordinates in global space (this way we don't need to apply transfroms)
-    then get their bytes hex representation and append. After that for each face get its indices,
-    get their bytes hex representation and append.
+    For each vertex get its coordinates in global space (this way we don't need to apply transfroms) as 32-bit floats
+    and for each face get its indices as 8-bit integers. Then convert them to bytes and append them together.
 
-    :return verts: String if vertex coordinates and face indices in hex representation
-    :rtype str:
+    :return verts: Bytes buffer containing the vertex coordinates and face indices
+    :rtype bytes:
     """
-    verts = ''
-    for v in obj.data.vertices:
-        for c in obj.matrix_world @ v.co:
-            verts += str(hexlify(pack('f', c)))[2:-1].upper()
-    for p in obj.data.polygons:
-        for i in p.vertices:
-            verts += str(hexlify(pack('B', i)))[2:-1].upper()
-    return verts
+    # TODO: should validate that the mesh is within <256 verts
+    mesh = obj.data
+    verts = np.array([obj.matrix_world @ v.co for v in mesh.vertices], dtype=np.float32)
+    indices = np.array([i for p in mesh.polygons for i in p.vertices], dtype=np.uint8)
+    return verts.tobytes() + indices.tobytes()
 
 
 def model_from_obj(obj):
@@ -71,12 +67,14 @@ def model_from_obj(obj):
 
     model = OccludeModel()
     model.bmin, model.bmax = get_extents(obj)
-    model.verts = get_verts_from_obj(obj)
+    model.verts = occlusion_model_obj_get_data_buffer(obj)
     model.num_verts_in_bytes = len(obj.data.vertices) * 12
     face_count = len(obj.data.polygons)
-    model.num_tris = face_count + 32768
-    model.data_size = model.num_verts_in_bytes + (face_count * 3)
+    model.num_tris = face_count | 0x8000  # add float vertex format marker
+    model.data_size = len(model.verts)
     model.flags = obj.ymap_properties.flags
+
+    assert model.data_size == (model.num_verts_in_bytes + face_count * 3)
 
     return model
 

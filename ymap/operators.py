@@ -2,7 +2,7 @@ import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base, set_object_collection
 from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group, get_cargen_mesh, generate_ymap_extents
 from ..sollumz_properties import SollumType
-from .utils import get_selected_ymap, get_active_element
+from .utils import get_selected_ymap, get_active_element_list
 
 
 class SOLLUMZ_OT_create_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -76,7 +76,7 @@ class SOLLUMZ_OT_add_ymap_element(SOLLUMZ_OT_base, bpy.types.Operator):
         selected_objects = bpy.context.selected_objects
         active_ymap = get_selected_ymap(context)
         
-        list_name, index = get_active_element("list", context)
+        list_name, index_attr = get_active_element_list(context)
         element_list = getattr(active_ymap, list_name, None)
         
         for active_obj in selected_objects:
@@ -84,7 +84,7 @@ class SOLLUMZ_OT_add_ymap_element(SOLLUMZ_OT_base, bpy.types.Operator):
                 new_item = element_list.add()
                 new_item.name = active_obj.name
         
-        setattr(active_ymap, index, len(element_list) - 1)
+        setattr(active_ymap, index_attr, len(element_list) - 1)
         
         return {'FINISHED'}
 
@@ -98,19 +98,19 @@ class SOLLUMZ_OT_del_ymap_element(SOLLUMZ_OT_base, bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         active_ymap = get_selected_ymap(context)
-        list_name, index = get_active_element("list", context)
+        list_name, index_attr = get_active_element_list(context)
         element_list = getattr(active_ymap, list_name, None)
         return active_ymap is not None and element_list and len(element_list) > 0
     
     def execute(self, context):
         active_ymap = get_selected_ymap(context)
-        list_name, index = get_active_element("list", context)
+        list_name, index_attr = get_active_element_list(context)
         element_list = getattr(active_ymap, list_name, None)
         
-        active_index = getattr(active_ymap, index)
+        active_index = getattr(active_ymap, index_attr)
         element_list.remove(active_index)
         
-        setattr(active_ymap, index, max(getattr(active_ymap, index) - 1, 0))
+        setattr(active_ymap, index_attr, max(getattr(active_ymap, index_attr) - 1, 0))
         
         return {'FINISHED'}
 
