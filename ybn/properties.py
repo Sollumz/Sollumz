@@ -456,6 +456,9 @@ def register():
         name="Parent", description="Parent for the new box object. If not set, the parent of the active object is used.",
         type=bpy.types.Object
     )
+    
+    bpy.types.Scene.convert_all_materials_to_collision = bpy.props.BoolProperty(
+        name="", description="Converts all shared materials to the selected Collision Material", default=False)
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
@@ -476,5 +479,6 @@ def unregister():
     del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.center_composite_to_selection
     del bpy.types.WindowManager.sz_create_bound_box_parent
+    del bpy.types.Scene.convert_all_materials_to_collision
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
