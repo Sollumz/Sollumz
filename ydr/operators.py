@@ -1,5 +1,8 @@
 import traceback
 import bpy
+from bpy.props import (
+    IntProperty,
+)
 from mathutils import Vector, Color
 from bpy.types import Context
 from .light_flashiness import Flashiness
@@ -15,12 +18,10 @@ from ..tools.blenderhelper import add_armature_modifier, add_child_of_bone_const
 from ..sollumz_helper import get_sollumz_materials
 from .properties import DrawableShaderOrder, LightProperties, get_light_presets_path, load_light_presets, light_presets
 from ..tools.meshhelper import (
-    get_uv_map_name,
-    get_color_attr_name,
-    get_mesh_used_texcoords_indices,
-    get_mesh_used_colors_indices,
-    create_uv_attr,
-    create_color_attr,
+    mesh_add_missing_uv_maps,
+    mesh_add_missing_color_attrs,
+    mesh_rename_uv_maps_by_order,
+    mesh_rename_color_attrs_by_order,
 )
 
 
@@ -449,42 +450,52 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Create Shader Material"
     bl_action = "Create a Shader Material"
 
-    def create_material(self, context, obj, shader):
+    shader_index: IntProperty(name="Shader Index", min=0, max=len(shadermats) - 1)
+
+    def create_material(self, context, obj, shader_filename):
 
         if obj.type != "MESH":
-            self.warning(
-                f"Object {obj.name} is not a mesh and will be skipped.")
+            self.warning(f"Object {obj.name} is not a mesh and will be skipped.")
             return
 
-        mat = create_shader(shader)
-        obj.data.materials.append(mat)
+        mesh = obj.data
+
+        mat = create_shader(shader_filename)
+        mesh.materials.append(mat)
 
         for n in mat.node_tree.nodes:
             if isinstance(n, bpy.types.ShaderNodeTexImage):
-                texture = bpy.data.images.new(
-                    name="Texture", width=512, height=512)
+                # TODO: don't create new texture for hidden texture parameters
+                # TODO: should we reuse the image
+                texture = bpy.data.images.new(name="Texture", width=512, height=512)
                 n.image = texture
+
+        # First, try renaming to avoid creating more attributes than needed if the mesh already has some
+        mesh_rename_uv_maps_by_order(mesh)
+        mesh_rename_color_attrs_by_order(mesh)
+
+        # Then, just add the remaining attributes required by the shader
+        mesh_add_missing_uv_maps(mesh)
+        mesh_add_missing_color_attrs(mesh)
 
         if is_tint_material(mat):
             create_tinted_shader_graph(obj)
 
-        self.message(f"Added a {shader} shader to {obj.name}.")
+        self.message(f"Added a {shader_filename} shader to {obj.name}.")
 
     def run(self, context):
 
         objs = bpy.context.selected_objects
         if len(objs) == 0:
-            self.warning(
-                f"Please select a object to add a shader material to.")
+            self.warning("Please select a object to add a shader material to.")
             return False
 
+        shader_filename = shadermats[self.shader_index].value
         for obj in objs:
-            shader = shadermats[context.window_manager.sz_shader_material_index].value
             try:
-                self.create_material(context, obj, shader)
+                self.create_material(context, obj, shader_filename)
             except:
-                self.message(
-                    f"Failed adding {shader} to {obj.name} because : \n {traceback.format_exc()}")
+                self.message(f"Failed adding {shader_filename} to {obj.name} because : \n {traceback.format_exc()}")
 
         return True
 
@@ -1175,27 +1186,7 @@ class SOLLUMZ_OT_uv_maps_rename_by_order(bpy.types.Operator):
             return {"CANCELLED"}
 
         for mesh_obj in selected_meshes:
-            mesh = mesh_obj.data
-            uvmaps = get_mesh_used_texcoords_indices(mesh)
-            missing_uvmaps = set(uvmaps)
-            attrs_in_use = set()
-            for uvmap in uvmaps:
-                name = get_uv_map_name(uvmap)
-                if name in mesh.uv_layers:
-                    missing_uvmaps.remove(uvmap)
-                    attrs_in_use.add(name)
-
-            missing_uvmaps = list(missing_uvmaps)
-            missing_uvmaps.sort()
-
-            for attr in mesh.uv_layers:
-                if len(missing_uvmaps) == 0:
-                    break
-
-                if attr.name in attrs_in_use:
-                    continue
-
-                attr.name = get_uv_map_name(missing_uvmaps.pop(0))
+            mesh_rename_uv_maps_by_order(mesh_obj.data)
 
         return {"FINISHED"}
 
@@ -1220,14 +1211,7 @@ class SOLLUMZ_OT_uv_maps_add_missing(bpy.types.Operator):
             return {"CANCELLED"}
 
         for mesh_obj in selected_meshes:
-            mesh = mesh_obj.data
-            uvmaps = get_mesh_used_texcoords_indices(mesh)
-            for uvmap in uvmaps:
-                name = get_uv_map_name(uvmap)
-                if name in mesh.uv_layers:
-                    continue
-
-                create_uv_attr(mesh, uvmap)
+            mesh_add_missing_uv_maps(mesh_obj.data)
 
         return {"FINISHED"}
 
@@ -1252,37 +1236,9 @@ class SOLLUMZ_OT_color_attrs_rename_by_order(bpy.types.Operator):
             return {"CANCELLED"}
 
         for mesh_obj in selected_meshes:
-            mesh = mesh_obj.data
-            colors = get_mesh_used_colors_indices(mesh)
-            missing_colors = set(colors)
-            attrs_in_use = set()
-            for color in colors:
-                name = get_color_attr_name(color)
-                if name in mesh.color_attributes:
-                    missing_colors.remove(color)
-                    attrs_in_use.add(name)
-
-            missing_colors = list(missing_colors)
-            missing_colors.sort()
-
-            for attr in mesh.color_attributes:
-                if len(missing_colors) == 0:
-                    break
-
-                if attr.name in attrs_in_use or not self._is_valid_color_attr(attr):
-                    continue
-
-                attr.name = get_color_attr_name(missing_colors.pop(0))
+            mesh_rename_color_attrs_by_order(mesh_obj.data)
 
         return {"FINISHED"}
-
-    def _is_valid_color_attr(self, attr: bpy.types.Attribute) -> bool:
-        return (# `TintColor` only used for the tint shaders/geometry nodes
-                not attr.name.startswith("TintColor") and
-                # Name prefixed by `.` indicate a reserved attribute name for Blender
-                # e.g. `.a_1234` for anonymous attributes
-                # https://projects.blender.org/blender/blender/issues/97452
-                not attr.name.startswith("."))
 
 
 class SOLLUMZ_OT_color_attrs_add_missing(bpy.types.Operator):
@@ -1305,13 +1261,6 @@ class SOLLUMZ_OT_color_attrs_add_missing(bpy.types.Operator):
             return {"CANCELLED"}
 
         for mesh_obj in selected_meshes:
-            mesh = mesh_obj.data
-            colors = get_mesh_used_colors_indices(mesh)
-            for color in colors:
-                name = get_color_attr_name(color)
-                if name in mesh.color_attributes:
-                    continue
-
-                create_color_attr(mesh, color)
+            mesh_add_missing_color_attrs(mesh_obj.data)
 
         return {"FINISHED"}

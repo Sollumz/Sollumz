@@ -466,30 +466,27 @@ class BoxOccludersList(ListPropertyRequired):
 class OccludeModel(ElementTree):
     class VertsProperty(ElementProperty):
         """Same as a TextProperty but formats the input and output and returns an empty element rather than None"""
-        value_types = (str)
+        value_types = (bytes)
 
         def __init__(self, tag_name: str = "verts", value=None):
-            super().__init__(tag_name, value or "")
+            super().__init__(tag_name, value or b"")
 
         @staticmethod
         def from_xml(element: ET.Element):
-            text = element.text.replace("\n", "").replace(" ", "")
-            if not text:
+            verts_hex_str = element.text
+            if not verts_hex_str:
                 raise ValueError(
                     f'Missing verts data on {OccludeModel.VertsProperty.__name__}')
-            return OccludeModel.VertsProperty(element.tag, text)
+            verts = bytes.fromhex(verts_hex_str)
+            return OccludeModel.VertsProperty(element.tag, verts)
 
         def to_xml(self):
             element = ET.Element(self.tag_name)
             if not self.value or len(self.value) < 1:
                 return element
 
-            text = []
-            for chunk in [self.value[i:i + 64] for i in range(0, len(self.value), 64)]:
-                text.append(" ".join([chunk[j:j + 2]
-                            for j in range(0, len(chunk), 2)]))
-                text.append("\n")
-            element.text = "".join(text)
+            verts_hex_str = self.value.hex(" ") # all in a single line, but who's gonna be reading this anyways?
+            element.text = verts_hex_str
 
             return element
 
