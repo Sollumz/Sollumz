@@ -74,12 +74,8 @@ def add_occluder_material(sollum_type=None):
     bsdf.inputs["Alpha"].default_value = mat_transparency
     bsdf.inputs["Base Color"].default_value = mat_color
     bsdf.inputs["Specular IOR Level"].default_value = 0
-    bsdf.inputs["Roughness"].default_value = 1
+    bsdf.inputs["Roughness"].default_value = 0
     bsdf.inputs["Metallic"].default_value = 0
-
-    # For display in solid mode
-    material.diffuse_color = mat_color
-    material.roughness = 1
 
     return material
 

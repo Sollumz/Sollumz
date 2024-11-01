@@ -570,7 +570,7 @@ def on_blend_file_loaded(_):
 
 
 def register():
-    bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index", min=0, max=len(shadermats) - 1)
+    bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index")
     bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(
         type=ShaderMaterial, name="Shader Materials"
     )

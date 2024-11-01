@@ -1,31 +1,36 @@
+import binascii
+import struct
 import math
 import bpy
-import numpy as np
-from numpy.typing import NDArray
 from mathutils import Vector, Euler
 from ..sollumz_helper import duplicate_object_with_children, set_object_collection
 from ..tools.ymaphelper import add_occluder_material, get_cargen_mesh
 from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_import_settings
 from ..cwxml.ymap import CMapData, OccludeModel, YMAP
-from ..tools.blenderhelper import create_blender_object, create_empty_object
-from ..tools.meshhelper import create_box
 from .. import logger
 
 # TODO: Make better?
 
 
-def occlude_model_to_mesh_data(model: OccludeModel) -> tuple[NDArray, NDArray]:
-    assert (model.num_tris & 0x8000) != 0, "Only float vertex format of occlude models is supported"
+def get_mesh_data(model: OccludeModel):
+    result = ([], [])
+    for i in range(int(model.num_verts_in_bytes / 12)):
+        pos_data: str = model.verts[i * 24:(i * 24) + 24]
+        x = struct.unpack('<f', binascii.a2b_hex(pos_data[:8]))[0]
+        y = struct.unpack('<f', binascii.a2b_hex(pos_data[8:16]))[0]
+        z = struct.unpack('<f', binascii.a2b_hex(pos_data[16:24]))[0]
+        result[0].append((x, y, z))
 
-    num_verts_in_bytes = model.num_verts_in_bytes
-    num_verts = num_verts_in_bytes // (4*3)  # sizeof(float)*3
-    num_tris = model.num_tris & ~0x8000
+    indicies: str = model.verts[int(model.num_verts_in_bytes * 2):]
+    for i in range(int(model.num_tris - 32768)):
+        j = i * 6
+        i0 = int.from_bytes(binascii.a2b_hex(indicies[j:j + 2]), 'little')
+        i1 = int.from_bytes(binascii.a2b_hex(indicies[j + 2:j + 4]), 'little')
+        i2 = int.from_bytes(binascii.a2b_hex(indicies[j + 4:j + 6]), 'little')
+        result[1].append((i0, i1, i2))
 
-    data = np.frombuffer(model.verts, dtype=np.uint8)
-    verts = data[:num_verts_in_bytes].view(dtype=np.float32).reshape((num_verts, 3))
-    faces = data[num_verts_in_bytes:].reshape((num_tris, 3))
-    return verts, faces
+    return result
 
 
 def apply_entity_properties(obj, entity):
@@ -137,20 +142,26 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
 
 
 def box_to_obj(obj, ymap: CMapData):
-    group_obj = create_empty_object(SollumType.YMAP_BOX_OCCLUDER_GROUP, "Box Occluders")
+    group_obj = bpy.data.objects.new("Box Occluders", None)
+    group_obj.sollum_type = SollumType.YMAP_BOX_OCCLUDER_GROUP
     group_obj.parent = obj
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
     group_obj.lock_scale = (True, True, True)
+    bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
     obj.ymap_properties.content_flags_toggle.has_occl = True
 
     for box in ymap.box_occluders:
-        box_obj = create_blender_object(SollumType.YMAP_BOX_OCCLUDER, "Box")
-        box_obj.active_material = add_occluder_material(SollumType.YMAP_BOX_OCCLUDER)
-        create_box(box_obj.data, 1)
-        box_obj.location = Vector([box.center_x, box.center_y, box.center_z]) / 4
+        bpy.ops.mesh.primitive_cube_add(size=1)
+        box_obj = bpy.context.view_layer.objects.active
+        box_obj.sollum_type = SollumType.YMAP_BOX_OCCLUDER
+        box_obj.name = "Box"
+        box_obj.active_material = add_occluder_material(
+            SollumType.YMAP_BOX_OCCLUDER)
+        box_obj.location = Vector(
+            [box.center_x, box.center_y, box.center_z]) / 4
         box_obj.rotation_euler[2] = math.atan2(box.cos_z, box.sin_z)
         box_obj.scale = Vector([box.length, box.width, box.height]) / 4
         box_obj.parent = group_obj
@@ -159,22 +170,28 @@ def box_to_obj(obj, ymap: CMapData):
 
 
 def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
-    group_obj = create_empty_object(SollumType.YMAP_MODEL_OCCLUDER_GROUP, "Model Occluders")
+    group_obj = bpy.data.objects.new('Model Occluders', None)
     group_obj.parent = obj
+    group_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER_GROUP
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
     group_obj.lock_scale = (True, True, True)
+    bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
     obj.ymap_properties.content_flags_toggle.has_occl = True
 
     for model in ymap.occlude_models:
-        verts, faces = occlude_model_to_mesh_data(model)
+        verts, faces = get_mesh_data(model)
 
         mesh = bpy.data.meshes.new("Model Occluders")
-        model_obj = create_blender_object(SollumType.YMAP_MODEL_OCCLUDER, "Model", mesh)
+        model_obj = bpy.data.objects.new("Model", mesh)
+        model_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER
         model_obj.ymap_properties.flags = model.flags
-        model_obj.active_material = add_occluder_material(SollumType.YMAP_MODEL_OCCLUDER)
+        model_obj.active_material = add_occluder_material(
+            SollumType.YMAP_MODEL_OCCLUDER)
+        bpy.context.collection.objects.link(model_obj)
+        bpy.context.view_layer.objects.active = model_obj
         mesh.from_pydata(verts, [], faces)
         model_obj.parent = group_obj
         model_obj.lock_location = (True, True, True)

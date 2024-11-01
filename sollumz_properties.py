@@ -154,10 +154,10 @@ class EntityPriorityLevel(str, Enum):
 
 
 class YmapElementType(str, Enum):
-    ENTITY = "sollumz_ymapelement_entity"
-    MODEL_OCCLUDER = "sollumz_ymapelement_modeloccluder"
-    BOX_OCCLUDER = "sollumz_ymapelement_boxoccluder"
-    CAR_GENERATOR = "sollumz_ymapelement_cargenerator"
+    ENTITY = "sollumz_element_entity"
+    MODEL_OCCLUDER = "sollumz_element_modeloccluder"
+    BOX_OCCLUDER = "sollumz_element_boxoccluder"
+    CAR_GENERATOR = "sollumz_element_cargenerator"
 
 
 class ArchetypeType(str, Enum):

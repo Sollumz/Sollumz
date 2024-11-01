@@ -375,16 +375,15 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="TOOL_SETTINGS")
 
     def draw(self, context):
-        wm = context.window_manager
         layout = self.layout
         layout.label(text="Create")
         layout.template_list(
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
-            wm, "sz_shader_materials", wm, "sz_shader_material_index"
+            context.window_manager, "sz_shader_materials", context.window_manager, "sz_shader_material_index"
         )
         row = layout.row()
-        op = row.operator(ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname)
-        op.shader_index = wm.sz_shader_material_index
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_create_shader_material.bl_idname, text="Create Shader Material")
         grid = layout.grid_flow(align=True)
         grid.operator(ydr_ops.SOLLUMZ_OT_convert_material_to_selected.bl_idname,
                       text="Convert Active Material", icon="FILE_REFRESH")
