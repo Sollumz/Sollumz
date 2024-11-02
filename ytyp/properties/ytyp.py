@@ -4,6 +4,7 @@ from bpy.props import (
 )
 from enum import IntEnum
 from typing import Union
+from ..utils import get_selected_entity
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
@@ -212,6 +213,14 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
         # Max id + 1
         return ids[-1] + 1
+    
+    def select_linked_object(self, context):
+        selected_entity = get_selected_entity(context)
+        if selected_entity.linked_object:
+            context.view_layer.objects.active = selected_entity.linked_object
+            bpy.ops.object.select_all(action="DESELECT")
+            selected_entity.linked_object.select_set(True)
+
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
@@ -257,7 +266,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected portal index
     portal_index: bpy.props.IntProperty(name="Portal")
     # Selected entity index
-    entity_index: bpy.props.IntProperty(name="Entity")
+    entity_index: bpy.props.IntProperty(name="Entity", update=select_linked_object)
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier")
