@@ -7,7 +7,7 @@ from pathlib import Path
 from ..tools.drawablehelper import get_model_xmls_by_lod
 from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
-from ..sollumz_properties import TextureFormat, TextureUsage, SollumType, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_addon_preferences, get_import_settings
 from ..cwxml.drawable import YDR, BoneLimit, Joints, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
 from ..cwxml.bound import Bound
@@ -329,25 +329,6 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         for texture in shader_group.texture_dictionary:
                             if texture.name == param.texture_name:
                                 n.texture_properties.embedded = True
-                                try:
-                                    format = TextureFormat[texture.format.replace("D3DFMT_", "")]
-                                    n.texture_properties.format = format
-                                except AttributeError:
-                                    print(f"Failed to set texture format: format '{texture.format}' unknown.")
-
-                                try:
-                                    usage = TextureUsage[texture.usage]
-                                    n.texture_properties.usage = usage
-                                except AttributeError:
-                                    print(f"Failed to set texture usage: usage '{texture.usage}' unknown.")
-
-                                n.texture_properties.extra_flags = texture.extra_flags
-
-                                for prop in dir(n.texture_flags):
-                                    for uf in texture.usage_flags:
-                                        if uf.lower() == prop:
-                                            setattr(
-                                                n.texture_flags, prop, True)
 
                     if not n.texture_properties.embedded and not n.image.filepath:
                         # Set external texture name for non-embedded textures

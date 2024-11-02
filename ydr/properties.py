@@ -7,7 +7,7 @@ from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats
 from .render_bucket import RenderBucket, RenderBucketEnumItems
 from .light_flashiness import Flashiness, LightFlashinessEnumItems
@@ -139,50 +139,8 @@ class ShaderProperties(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Shader Name", default="default")
 
 
-class TextureFlags(bpy.types.PropertyGroup):
-    not_half: bpy.props.BoolProperty(name="NOT_HALF", default=False)
-    hd_split: bpy.props.BoolProperty(name="HD_SPLIT", default=False)
-    x2: bpy.props.BoolProperty(name="X2", default=False)
-    x4: bpy.props.BoolProperty(name="X4", default=False)
-    y4: bpy.props.BoolProperty(name="Y4", default=False)
-    x8: bpy.props.BoolProperty(name="X8", default=False)
-    x16: bpy.props.BoolProperty(name="X16", default=False)
-    x32: bpy.props.BoolProperty(name="X32", default=False)
-    x64: bpy.props.BoolProperty(name="X64", default=False)
-    y64: bpy.props.BoolProperty(name="Y64", default=False)
-    x128: bpy.props.BoolProperty(name="X128", default=False)
-    x256: bpy.props.BoolProperty(name="X256", default=False)
-    x512: bpy.props.BoolProperty(name="X512", default=False)
-    y512: bpy.props.BoolProperty(name="Y512", default=False)
-    x1024: bpy.props.BoolProperty(name="X1024", default=False)
-    y1024: bpy.props.BoolProperty(name="Y1024", default=False)
-    x2048: bpy.props.BoolProperty(name="X2048", default=False)
-    y2048: bpy.props.BoolProperty(name="Y2048", default=False)
-    embeddedscriptrt: bpy.props.BoolProperty(
-        name="EMBEDDEDSCRIPTRT", default=False)
-    unk19: bpy.props.BoolProperty(name="UNK19", default=False)
-    unk20: bpy.props.BoolProperty(name="UNK20", default=False)
-    unk21: bpy.props.BoolProperty(name="UNK21", default=False)
-    flag_full: bpy.props.BoolProperty(name="FLAG_FULL", default=False)
-    maps_half: bpy.props.BoolProperty(name="MAPS_HALF", default=False)
-    unk24: bpy.props.BoolProperty(name="UNK24", default=False)
-
-
 class TextureProperties(bpy.types.PropertyGroup):
     embedded: bpy.props.BoolProperty(name="Embedded", default=False)
-    usage: bpy.props.EnumProperty(
-        items=items_from_enums(TextureUsage),
-        name="Usage",
-        default=TextureUsage.UNKNOWN
-    )
-
-    format: bpy.props.EnumProperty(
-        items=items_from_enums(TextureFormat),
-        name="Format",
-        default=TextureFormat.DXT1
-    )
-
-    extra_flags: bpy.props.IntProperty(name="Extra Flags", default=0)
 
 
 class BoneFlag(bpy.types.PropertyGroup):
@@ -580,8 +538,6 @@ def register():
         type=ShaderProperties)
     bpy.types.ShaderNodeTexImage.texture_properties = bpy.props.PointerProperty(
         type=TextureProperties)
-    bpy.types.ShaderNodeTexImage.texture_flags = bpy.props.PointerProperty(
-        type=TextureFlags)
     bpy.types.ShaderNodeTexImage.sollumz_texture_name = bpy.props.StringProperty(
         name="Texture Name", description="Name of texture", get=get_texture_name)
 
@@ -705,7 +661,6 @@ def unregister():
     del bpy.types.Object.skinned_model_properties
     del bpy.types.Material.shader_properties
     del bpy.types.ShaderNodeTexImage.texture_properties
-    del bpy.types.ShaderNodeTexImage.texture_flags
     del bpy.types.Bone.bone_properties
     del bpy.types.Light.light_properties
     del bpy.types.Scene.create_light_type

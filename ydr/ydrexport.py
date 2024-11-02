@@ -616,30 +616,11 @@ def get_embedded_texture_nodes(materials: list[bpy.types.Material]):
 
 def texture_from_img_node(node: bpy.types.ShaderNodeTexImage):
     texture = Texture()
-
     texture.name = node.sollumz_texture_name
     texture.width = node.image.size[0]
     texture.height = node.image.size[1]
-
-    texture.usage = SOLLUMZ_UI_NAMES[node.texture_properties.usage]
-    texture.extra_flags = node.texture_properties.extra_flags
-    texture.format = SOLLUMZ_UI_NAMES[node.texture_properties.format]
-    texture.miplevels = 0
     texture.filename = texture.name + ".dds"
-
-    set_texture_flags(node, texture)
-
-    return texture
-
-
-def set_texture_flags(node: bpy.types.ShaderNodeTexImage, texture: Texture):
-    """Set the texture flags of ``texture`` from ``node.texture_flags``."""
-    for prop in dir(node.texture_flags):
-        value = getattr(node.texture_flags, prop)
-
-        if value == True:
-            texture.usage_flags.append(prop.upper())
-
+    # Other texture properties (format, mipmaps, etc.) are set by CW when importing the texture
     return texture
 
 

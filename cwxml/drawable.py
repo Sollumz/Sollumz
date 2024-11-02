@@ -69,13 +69,13 @@ class Texture(ElementTree):
         super().__init__()
         self.name = TextProperty("Name", "")
         self.unk32 = ValueProperty("Unk32", 0)
-        self.usage = TextProperty("Usage")
+        self.usage = TextProperty("Usage", "UNKNOWN")
         self.usage_flags = FlagsProperty("UsageFlags")
         self.extra_flags = ValueProperty("ExtraFlags", 0)
         self.width = ValueProperty("Width", 0)
         self.height = ValueProperty("Height", 0)
         self.miplevels = ValueProperty("MipLevels", 0)
-        self.format = TextProperty("Format")
+        self.format = TextProperty("Format", "D3DFMT_DXT1")
         self.filename = TextProperty("FileName", "")
 
 
