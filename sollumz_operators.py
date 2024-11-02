@@ -30,6 +30,7 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
+from .ytyp.ytypimport import import_ytyp
 from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
 from .ybn.properties import BoundFlags
@@ -68,7 +69,7 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
     )
 
     filter_glob: bpy.props.StringProperty(
-        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YNV.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
+        default="".join(f"*{filetype.file_extension};" for filetype in (YDR, YDD, YFT, YBN, YNV, YCD, YMAP, YTYP)),
         options={"HIDDEN", "SKIP_SAVE"},
         maxlen=255,
     )
@@ -84,7 +85,9 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
 
             self.directory = bpy.path.abspath(self.directory)
 
-            filenames = self.dedupe_hi_yft_filenames([f.name for f in self.files])
+            filenames = [f.name for f in self.files]
+            filenames, ytyp_filenames = self._separate_ytyp_filenames(filenames)
+            filenames = self._dedupe_hi_yft_filenames(filenames)
 
             for filename in filenames:
                 filepath = os.path.join(self.directory, filename)
@@ -113,6 +116,17 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
                     logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
                     return {"CANCELLED"}
 
+            # Import the .ytyps after all the assets to ensure that the archetypes get linked to their object in case
+            # they are imported together
+            for filename in ytyp_filenames:
+                filepath = os.path.join(self.directory, filename)
+                try:
+                    import_ytyp(filepath)
+                    logger.info(f"Successfully imported '{filepath}'")
+                except:
+                    logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
+                    return {"CANCELLED"}
+
             logger.info(f"Imported in {self.time_elapsed} seconds")
             return {"FINISHED"}
 
@@ -124,11 +138,19 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
 
         return super().invoke(context, event)
 
-    def dedupe_hi_yft_filenames(self, filenames: list[str]) -> list[str]:
+    def _dedupe_hi_yft_filenames(self, filenames: list[str]) -> list[str]:
         """If the user selected both a non-hi .yft.xml and its _hi.yft.xml, remove the _hi.yft.xml one to prevent
         importing the same model twice.
         """
         return [f for f in filenames if not f.endswith("_hi.yft.xml") or f"{f[:-11]}.yft.xml" not in filenames]
+
+    def _separate_ytyp_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
+        """Separate the filenames list into two lists, one with all the assets and another one only with .ytyps."""
+        asset_filenames, ytyp_filenames = [], []
+        for f in filenames:
+            dest = ytyp_filenames if f.endswith(YTYP.file_extension) else asset_filenames
+            dest.append(f)
+        return asset_filenames, ytyp_filenames
 
 
 if bpy.app.version >= (4, 1, 0):

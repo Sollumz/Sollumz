@@ -6,9 +6,8 @@ from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collis
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ...sollumz_preferences import get_export_settings
-from ...cwxml.ytyp import YTYP
 from ..utils import get_selected_ytyp, get_selected_archetype
-from ..ytypimport import ytyp_to_obj
+from ..ytypimport import import_ytyp
 from ..ytypexport import selected_ytyp_to_xml
 
 
@@ -301,7 +300,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     def run(self, context):
         try:
-            ytyp_to_obj(YTYP.from_xml_file(self.filepath))
+            import_ytyp(self.filepath)
             self.message(f"Successfully imported: {self.filepath}")
             return True
         except:

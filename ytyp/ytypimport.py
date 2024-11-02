@@ -397,3 +397,8 @@ def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes):
 
     for arch_xml in ytyp_xml.archetypes:
         create_archetype(arch_xml, ytyp)
+
+
+def import_ytyp(filepath: str):
+    ytyp_xml = ytypxml.YTYP.from_xml_file(filepath)
+    ytyp_to_obj(ytyp_xml)
