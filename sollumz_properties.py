@@ -153,11 +153,18 @@ class EntityPriorityLevel(str, Enum):
     PRI_OPTIONAL_LOW = "sollumz_pri_optional_low"
 
 
+class YmapElementType(str, Enum):
+    ENTITY = "sollumz_element_entity"
+    MODEL_OCCLUDER = "sollumz_element_modeloccluder"
+    BOX_OCCLUDER = "sollumz_element_boxoccluder"
+    CAR_GENERATOR = "sollumz_element_cargenerator"
+
+
 class ArchetypeType(str, Enum):
     BASE = "sollumz_archetype_base"
     TIME = "sollumz_archetype_time"
     MLO = "sollumz_archetype_mlo"
-
+    
 
 class AssetType(str, Enum):
     UNITIALIZED = "sollumz_asset_unintialized"
@@ -379,6 +386,11 @@ SOLLUMZ_UI_NAMES = {
     ArchetypeType.BASE: "Base",
     ArchetypeType.TIME: "Time",
     ArchetypeType.MLO: "MLO",
+
+    YmapElementType.ENTITY: "Entities",
+    YmapElementType.MODEL_OCCLUDER: "Model Occluders",
+    YmapElementType.BOX_OCCLUDER: "Box Occluders",
+    YmapElementType.CAR_GENERATOR: "Car Generators",
 
     AssetType.UNITIALIZED: "Uninitialized",
     AssetType.FRAGMENT: "Fragment",

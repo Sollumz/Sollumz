@@ -33,6 +33,13 @@ def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, rem
 
     return list_col, side_col
 
+def draw_simple_list(layout: bpy.types.UILayout, *temp_list_args, **temp_list_kwargs):
+    """Draw a UIList with an add and remove button on the right column. Returns the left column."""
+    row = layout.row()
+    list_col = row.column()
+    list_col.template_list(*temp_list_args, **temp_list_kwargs)
+
+    return list_col
 
 class BasicListHelper:
     """Provides functionality for drawing simple lists where each item has a name and icon"""
