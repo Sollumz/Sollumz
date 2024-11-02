@@ -531,6 +531,7 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
 
     lod_xml.position_offset = links_center_of_gravity[0]  # aka "root CG offset"
     lod_xml.unknown_40 = lod_xml.position_offset  # aka "original root CG offset", same as root CG offset in all game .yfts
+    lod_xml.archetype.bounds.sphere_center = lod_xml.position_offset  # the physics LOD CG overrides the composite CG
 
     # Calculate child transforms (aka "link attachments", offset from bound to link CG)
     for child_index, child in enumerate(lod_xml.children):
