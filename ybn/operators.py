@@ -230,6 +230,8 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
     bl_action = f"{bl_label}"
 
     def run(self, context):
+        convert_all = context.scene.convert_all_to_collision_material
+        print(convert_all)
         aobj = context.active_object
         if not aobj:
             self.message("No object selected!")
@@ -241,9 +243,16 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
             return False
 
         mat = create_collision_material_from_index(context.window_manager.sz_collision_material_index)
-        active_mat_index = aobj.active_material_index
-        aobj.data.materials[active_mat_index] = mat
-
+        
+        if convert_all:
+            for obj in bpy.data.objects:
+                if obj.type == 'MESH':
+                    for i, slot in enumerate(obj.data.materials):
+                        if slot == obj.active_material:
+                            obj.data.materials[i] = mat
+        else:
+            active_mat_index = aobj.active_material_index
+            aobj.data.materials[active_mat_index] = mat
 
 class SOLLUMZ_OT_split_collision(SOLLUMZ_OT_base, bpy.types.Operator):
     """Split a collision into many parts. Sorted based on location"""
