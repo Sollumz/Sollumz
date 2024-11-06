@@ -5,8 +5,8 @@ from bpy.props import (
 )
 from mathutils import Vector, Color
 from bpy.types import Context
-from .light_flashiness import Flashiness
 from ..cwxml.light_preset import LightPreset
+from ..cwxml.shader_preset import ShaderPreset, ShaderPresetParam
 from ..lods import LODLevels
 from ..sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, LightType, SollumType, MaterialType
@@ -16,13 +16,15 @@ from ..tools.drawablehelper import MaterialConverter, set_recommended_bone_prope
 from ..tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ..tools.blenderhelper import add_armature_modifier, add_child_of_bone_constraint, create_blender_object, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space, tag_redraw
 from ..sollumz_helper import get_sollumz_materials
-from .properties import DrawableShaderOrder, LightProperties, get_light_presets_path, load_light_presets, light_presets
+from .properties import DrawableShaderOrder, LightProperties, get_light_presets_path, load_light_presets, light_presets, get_shader_presets_path, load_shader_presets, shader_presets
 from ..tools.meshhelper import (
     mesh_add_missing_uv_maps,
     mesh_add_missing_color_attrs,
     mesh_rename_uv_maps_by_order,
     mesh_rename_color_attrs_by_order,
 )
+from ..shared.shader_nodes import SzShaderNodeParameter
+from ..cwxml.shader import ShaderParameterFloatVectorDef, ShaderManager
 
 
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
@@ -186,7 +188,7 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
             light_obj.location = cursor_loc
 
         # Apply light preset
-        bpy.ops.object.select_all(action="DESELECT") # Deselect everything to avoid applying the preset to other lights
+        bpy.ops.object.select_all(action="DESELECT")  # Deselect everything to avoid applying the preset to other lights
         light_obj.select_set(True)
         bpy.ops.sollumz.load_light_preset()
 
@@ -377,6 +379,162 @@ class SOLLUMZ_OT_delete_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         except IndexError:
             self.warning(
                 f"Light preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
+            return False
+
+
+class SOLLUMZ_OT_save_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Save a shader preset of the active material"""
+    bl_idname = "sollumz.save_shader_preset"
+    bl_label = "Save Shader Preset"
+    bl_action = f"{bl_label}"
+
+    name: bpy.props.StringProperty(name="Name")
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        mat = aobj and aobj.active_material
+        if mat is None or mat.sollum_type != MaterialType.SHADER:
+            cls.poll_message_set("No Sollumz shader material selected.")
+            return False
+
+        return True
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def run(self, context):
+        self.name = self.name.strip()
+
+        if len(self.name) == 0:
+            self.warning("Please specify a name for the new shader preset.")
+            return False
+
+        mat = context.active_object.active_material
+        if not mat:
+            self.warning("No material selected!")
+            return False
+
+        load_shader_presets()
+
+        for preset in shader_presets.presets:
+            if preset.name == self.name:
+                self.warning(
+                    "A preset with that name already exists! If you wish to overwrite this preset, delete the original.")
+                return False
+
+        shader_preset = ShaderPreset()
+        shader_preset.name = self.name
+
+        shader_def = ShaderManager.find_shader(mat.shader_properties.filename)
+
+        for node in mat.node_tree.nodes:
+            if isinstance(node, SzShaderNodeParameter):
+                param_def = shader_def.parameter_map.get(node.name)
+                is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
+                if is_vector:
+                    param = ShaderPresetParam()
+                    param.name = node.name
+                    param.x = node.get(0)
+                    param.y = node.get(1) if node.num_cols > 1 else 0.0
+                    param.z = node.get(2) if node.num_cols > 2 else 0.0
+                    param.w = node.get(3) if node.num_cols > 3 else 0.0
+                    shader_preset.params.append(param)
+
+        shader_presets.presets.append(shader_preset)
+
+        filepath = get_shader_presets_path()
+        shader_presets.write_xml(filepath)
+        load_shader_presets()
+
+        self.message(f"Saved preset '{shader_preset.name}'!")
+
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
+        return True
+
+
+class SOLLUMZ_OT_load_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Apply a shader preset to the active material"""
+    bl_idname = "sollumz.load_shader_preset"
+    bl_label = "Apply Shader Preset to Selected"
+    bl_context = "object"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_action = f"{bl_label}"
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        mat = aobj and aobj.active_material
+        if mat is None or mat.sollum_type != MaterialType.SHADER:
+            cls.poll_message_set("No Sollumz shader material selected.")
+            return False
+
+        wm = context.window_manager
+        if not (0 <= wm.sz_shader_preset_index < len(wm.sz_shader_presets)):
+            cls.poll_message_set("No shader preset available.")
+            return False
+
+        return True
+
+    def run(self, context):
+        index = context.window_manager.sz_shader_preset_index
+        mat = context.active_object.active_material
+        if not mat:
+            self.warning("No shaders selected!")
+            return False
+
+        load_shader_presets()
+        shader_preset: ShaderPreset = shader_presets.presets[index]
+
+        for param in shader_preset.params:
+            node = mat.node_tree.nodes.get(param.name, None)
+            if node is None or not isinstance(node, SzShaderNodeParameter):
+                continue
+
+            node.set(0, param.x)
+            if node.num_cols > 1:
+                node.set(1, param.y)
+            if node.num_cols > 2:
+                node.set(2, param.z)
+            if node.num_cols > 3:
+                node.set(3, param.w)
+
+        self.message(f"Applied preset '{shader_preset.name}' to {mat.name} material.")
+        return True
+
+
+class SOLLUMZ_OT_delete_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Delete the selected shader preset"""
+    bl_idname = "sollumz.delete_shader_preset"
+    bl_label = "Delete Shader Preset"
+    bl_action = f"{bl_label}"
+
+    @classmethod
+    def poll(cls, context):
+        wm = context.window_manager
+        return 0 <= wm.sz_shader_preset_index < len(wm.sz_shader_presets)
+
+    def run(self, context):
+        index = context.window_manager.sz_shader_preset_index
+        load_shader_presets()
+        filepath = get_shader_presets_path()
+
+        try:
+            preset = shader_presets.presets[index]
+            shader_presets.presets.remove(preset)
+
+            try:
+                shader_presets.write_xml(filepath)
+                load_shader_presets()
+
+                return True
+            except:
+                self.error(f"Error during deletion of shader preset: {traceback.format_exc()}")
+                return False
+
+        except IndexError:
+            self.warning(
+                f"Shader preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
             return False
 
 

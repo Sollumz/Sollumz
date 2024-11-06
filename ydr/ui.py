@@ -498,6 +498,51 @@ class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
                         text=item.name, emboss=False, icon="BOOKMARKS")
 
 
+class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
+    bl_label = "Shader Presets"
+    bl_idname = "SOLLUMZ_PT_SHADER_PRESET_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_SHADER_TOOLS_PANEL.bl_idname
+
+    bl_order = 1
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="BOOKMARKS")
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row()
+        row.template_list(
+            SOLLUMZ_UL_SHADER_PRESET_LIST.bl_idname, "shader_presets",
+            context.window_manager, "sz_shader_presets",
+            context.window_manager, "sz_shader_preset_index"
+        )
+        col = row.column(align=True)
+        col.operator(ydr_ops.SOLLUMZ_OT_save_shader_preset.bl_idname, text="", icon="ADD")
+        col.operator(ydr_ops.SOLLUMZ_OT_delete_shader_preset.bl_idname, text="", icon="REMOVE")
+        row = layout.row()
+        row.operator(ydr_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon='CHECKMARK')
+
+
+class SOLLUMZ_UL_SHADER_PRESET_LIST(bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_SHADER_PRESET_LIST"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            row = layout.row()
+            row.label(text=item.name, icon="BOOKMARKS")
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.prop(item, "name",
+                        text=item.name, emboss=False, icon="BOOKMARKS")
+
+
 class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
     bl_label = "Bone Tools"
     bl_idname = "SOLLUMZ_PT_BONE_TOOLS_PANEL"
