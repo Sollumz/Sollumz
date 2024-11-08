@@ -337,10 +337,10 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
 
     def select_archetype_linked_object(self, context):
         selected_archetype = get_selected_archetype(context)
-        if selected_archetype.linked_object:
-            context.view_layer.objects.active = selected_archetype.linked_object
+        if selected_archetype.asset:
+            context.view_layer.objects.active = selected_archetype.asset
             bpy.ops.object.select_all(action="DESELECT")
-            selected_archetype.linked_object.select_set(True)
+            selected_archetype.asset.select_set(True)
 
     name: bpy.props.StringProperty(name="Name")
     all_texture_dictionary: bpy.props.StringProperty(
