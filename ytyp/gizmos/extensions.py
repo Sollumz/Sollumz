@@ -267,8 +267,8 @@ def get_transform_axis(
 class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
     bl_idname = "SOLLUMZ_GT_archetype_extension"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.linked_archetype_index = -1
         self.linked_extension_index = -1
 

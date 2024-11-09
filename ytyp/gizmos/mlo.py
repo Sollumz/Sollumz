@@ -23,8 +23,8 @@ def can_draw_gizmos(context):
 class RoomGizmo(bpy.types.Gizmo):
     bl_idname = "OBJECT_GT_room"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.linked_room = None
 
     @staticmethod
@@ -124,8 +124,8 @@ class RoomGizmoGroup(bpy.types.GizmoGroup):
 class PortalGizmo(bpy.types.Gizmo):
     bl_idname = "OBJECT_GT_portal"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.linked_portal = None
 
     @staticmethod
@@ -187,8 +187,8 @@ class PortalGizmo(bpy.types.Gizmo):
 class PortalNormalGizmo(bpy.types.Gizmo):
     bl_idname = "OBJECT_GT_portal_normal"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.linked_portal = None
 
     def draw(self, context):
