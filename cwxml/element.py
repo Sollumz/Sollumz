@@ -97,6 +97,8 @@ class ElementTree(Element):
     def from_xml(cls: Element, element: ET.Element):
         """Convert ET.Element object to ElementTree"""
         new = cls()
+        if new.tag_name != element.tag:
+            new.tag_name = element.tag
 
         for prop_name, obj_element in vars(new).items():
             if isinstance(obj_element, Element):
@@ -106,7 +108,7 @@ class ElementTree(Element):
                     setattr(new, prop_name, type(obj_element).from_xml(child))
             elif isinstance(obj_element, AttributeProperty):
                 # Add attribute to element if attribute is defined in class definition
-                if obj_element.name in element.attrib and new.tag_name == element.tag:
+                if obj_element.name in element.attrib:
                     obj_element.value = element.get(obj_element.name)
 
         return new
