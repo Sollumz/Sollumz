@@ -4,6 +4,7 @@ from bpy.props import (
 )
 from enum import IntEnum
 from typing import Union
+from ..utils import get_selected_archetype, get_selected_entity
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
@@ -34,8 +35,8 @@ class SpecialAttribute(IntEnum):
 
     # These don't need to be set by the user but some game files still have them, define them to prevent import errors
     UNUSED1 = 1,
-    IS_LADDER = 2, # set by the ladder extension at runtime
-    IS_TREE_DEPRECATED = 31, # same as double-sided rendering flag
+    IS_LADDER = 2,  # set by the ladder extension at runtime
+    IS_TREE_DEPRECATED = 31,  # same as double-sided rendering flag
 
 
 SpecialAttributeEnumItems = tuple(None if enum is None else (enum.name, f"{label} ({enum.value})", desc, enum.value)
@@ -213,6 +214,13 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         # Max id + 1
         return ids[-1] + 1
 
+    def select_linked_object(self, context):
+        selected_entity = get_selected_entity(context)
+        if selected_entity.linked_object:
+            context.view_layer.objects.active = selected_entity.linked_object
+            bpy.ops.object.select_all(action="DESELECT")
+            selected_entity.linked_object.select_set(True)
+
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
     bs_center: bpy.props.FloatVectorProperty(name="Bound Center")
@@ -257,7 +265,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected portal index
     portal_index: bpy.props.IntProperty(name="Portal")
     # Selected entity index
-    entity_index: bpy.props.IntProperty(name="Entity")
+    entity_index: bpy.props.IntProperty(name="Entity", update=select_linked_object)
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier")
@@ -327,6 +335,13 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
 
         return item
 
+    def select_archetype_linked_object(self, context):
+        selected_archetype = get_selected_archetype(context)
+        if selected_archetype.asset:
+            context.view_layer.objects.active = selected_archetype.asset
+            bpy.ops.object.select_all(action="DESELECT")
+            selected_archetype.asset.select_set(True)
+
     name: bpy.props.StringProperty(name="Name")
     all_texture_dictionary: bpy.props.StringProperty(
         name="Texture Dictionary: ")
@@ -338,7 +353,7 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
         type=ArchetypeProperties, name="Archetypes")
     # Selected archetype index
     archetype_index: bpy.props.IntProperty(
-        name="Archetype Index")
+        name="Archetype Index", update=select_archetype_linked_object)
     # Unique archetype id
     last_archetype_id: bpy.props.IntProperty()
 
