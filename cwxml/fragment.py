@@ -47,10 +47,11 @@ class BoneTransformsList(ListProperty):
 
 
 class Archetype(ElementTree):
-    tag_name = "Archetype"
+    tag_name = None
 
-    def __init__(self):
+    def __init__(self, tag_name: str = "Archetype"):
         super().__init__()
+        self.tag_name = tag_name
         self.name = TextProperty("Name")
         self.mass = ValueProperty("Mass")
         self.mass_inv = ValueProperty("MassInv")
@@ -61,10 +62,6 @@ class Archetype(ElementTree):
         self.inertia_tensor = VectorProperty("InertiaTensor")
         self.inertia_tensor_inv = VectorProperty("InertiaTensorInv")
         self.bounds = BoundComposite()
-
-
-class Archetype2(Archetype):
-    tag_name = "Archetype2"
 
 
 class Transform(MatrixProperty):
@@ -92,9 +89,10 @@ class PhysicsChild(ElementTree):
         self.pristine_mass = ValueProperty("PristineMass")
         self.damaged_mass = ValueProperty("DamagedMass")
         self.unk_float = ValueProperty("UnkFloat")
-        self.unk_vec = Vector4Property("UnkVec")
+        self.damaged_inertia_tensor = Vector4Property("UnkVec")
         self.inertia_tensor = Vector4Property("InertiaTensor")
         self.drawable = Drawable()
+        self.damaged_drawable = Drawable("Drawable2")
 
 
 class ChildrenList(ListProperty):
@@ -164,7 +162,7 @@ class PhysicsLOD(ElementTree):
         self.damping_angular_v = VectorProperty("DampingAngularV")
         self.damping_angular_v2 = VectorProperty("DampingAngularV2")
         self.archetype = Archetype()
-        self.archetype2 = Archetype2()
+        self.damaged_archetype = Archetype("Archetype2")
         self.transforms = TransformsList()
         self.groups = GroupsList()
         self.children = ChildrenList()
@@ -261,6 +259,12 @@ class GlassWindows(ListProperty):
     tag_name = "GlassWindows"
 
 
+class DrawablesList(ListProperty):
+    list_type = Drawable
+    tag_name = "DrawableArray"
+    item_tag_name = "Item"
+
+
 class Fragment(ElementTree, AbstractClass):
     tag_name = "Fragment"
 
@@ -278,6 +282,7 @@ class Fragment(ElementTree, AbstractClass):
         self.gravity_factor = ValueProperty("GravityFactor")
         self.buoyancy_factor = ValueProperty("BuoyancyFactor")
         self.drawable = Drawable()
+        self.extra_drawables = DrawablesList()  # only used for damaged drawable
         self.bones_transforms = BoneTransformsList()
         self.physics = Physics()
         self.glass_windows = GlassWindows()

@@ -20,7 +20,8 @@ class SOLLUMZ_OT_base:
     bl_action = "do"
     bl_showtime = False
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.messages = []
 
     @abstractmethod

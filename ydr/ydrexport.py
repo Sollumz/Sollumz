@@ -75,7 +75,7 @@ def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
 def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, apply_transforms: bool = False):
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
     drawable_xml = Drawable()
-    drawable_xml.matrix = None
+    drawable_xml.frag_bound_matrix = None
 
     drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
 

@@ -7,6 +7,7 @@ from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
+from ..cwxml.shader_preset import ShaderPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats
 from .render_bucket import RenderBucket, RenderBucketEnumItems
@@ -264,7 +265,7 @@ class LightProperties(bpy.types.PropertyGroup):
     projected_texture_hash: bpy.props.StringProperty(name="Projected Texture Hash")
 
 
-class LightPresetProp(bpy.types.PropertyGroup):
+class PresetEntry(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
 
@@ -461,14 +462,27 @@ def get_light_presets_path() -> str:
     return os.path.join(get_config_directory_path(), "light_presets.xml")
 
 
+def get_shader_presets_path() -> str:
+    from ..sollumz_preferences import get_config_directory_path
+    return os.path.join(get_config_directory_path(), "shader_presets.xml")
+
+
 _default_light_presets_path = os.path.join(os.path.dirname(__file__), "light_presets.xml")
+
+_default_shader_presets_path = os.path.join(os.path.dirname(__file__), "shader_presets.xml")
 
 
 def get_default_light_presets_path() -> str:
     return _default_light_presets_path
 
 
+def get_default_shader_presets_path() -> str:
+    return _default_shader_presets_path
+
+
 light_presets = LightPresetsFile()
+
+shader_presets = ShaderPresetsFile()
 
 
 def load_light_presets():
@@ -484,6 +498,23 @@ def load_light_presets():
     light_presets.presets = file.presets
     for index, preset in enumerate(light_presets.presets):
         item = bpy.context.window_manager.sz_light_presets.add()
+        item.name = str(preset.name)
+        item.index = index
+
+
+def load_shader_presets():
+    bpy.context.window_manager.sz_shader_presets.clear()
+
+    path = get_shader_presets_path()
+    if not os.path.exists(path):
+        path = get_default_shader_presets_path()
+        if not os.path.exists(path):
+            return
+
+    file = ShaderPresetsFile.from_xml_file(path)
+    shader_presets.presets = file.presets
+    for index, preset in enumerate(shader_presets.presets):
+        item = bpy.context.window_manager.sz_shader_presets.add()
         item.name = str(preset.name)
         item.index = index
 
@@ -520,6 +551,7 @@ def refresh_ui_collections():
         item.name = mat.name
 
     load_light_presets()
+    load_shader_presets()
 
 
 @persistent
@@ -528,7 +560,8 @@ def on_blend_file_loaded(_):
 
 
 def register():
-    bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(name="Shader Material Index", min=0, max=len(shadermats) - 1)
+    bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(
+        name="Shader Material Index", min=0, max=len(shadermats) - 1)
     bpy.types.WindowManager.sz_shader_materials = bpy.props.CollectionProperty(
         type=ShaderMaterial, name="Shader Materials"
     )
@@ -596,7 +629,10 @@ def register():
         name="Decimate Step", min=0.0, max=0.99, default=0.6)
 
     bpy.types.WindowManager.sz_light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
-    bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=LightPresetProp, name="Light Presets")
+    bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Light Presets")
+
+    bpy.types.WindowManager.sz_shader_preset_index = bpy.props.IntProperty(name="Shader Preset Index")
+    bpy.types.WindowManager.sz_shader_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Shader Presets")
 
     bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(
@@ -636,7 +672,7 @@ def register():
         name="Show Phase Offset", description="Display the cable phase offset values on the 3D Viewport",
         default=False
     )
-    bpy.types.Scene.sz_ui_cable_phase_offset =  bpy.props.FloatVectorProperty(
+    bpy.types.Scene.sz_ui_cable_phase_offset = bpy.props.FloatVectorProperty(
         name=CableAttr.PHASE_OFFSET.label, description=CableAttr.PHASE_OFFSET.description,
         size=2, min=0.0, max=1.0, default=CableAttr.PHASE_OFFSET.default_value[0:2]
     )
@@ -669,6 +705,8 @@ def unregister():
     del bpy.types.Light.is_capsule
     del bpy.types.WindowManager.sz_light_presets
     del bpy.types.WindowManager.sz_light_preset_index
+    del bpy.types.WindowManager.sz_shader_presets
+    del bpy.types.WindowManager.sz_shader_preset_index
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection

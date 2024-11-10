@@ -44,7 +44,8 @@ class TimedOperator:
         """Get time elapsed since execution"""
         return round(time.time() - self._start, 3)
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self._start: float = 0.0
 
     def execute(self, context: bpy.types.Context):

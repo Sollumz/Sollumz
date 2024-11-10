@@ -68,7 +68,7 @@ def make_non_hi_yft_filepath(yft_filepath: str) -> str:
     yft_dir = os.path.dirname(yft_filepath)
     yft_name = get_filename(yft_filepath)
     if yft_name.endswith("_hi"):
-        yft_name = yft_name[:-3] # trim '_hi'
+        yft_name = yft_name[:-3]  # trim '_hi'
 
     non_hi_path = os.path.join(yft_dir, f"{yft_name}.yft.xml")
     return non_hi_path
@@ -88,10 +88,23 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
             from .properties import _update_mat_paint_name
             _update_mat_paint_name(mat)
 
-    drawable_obj = create_fragment_drawable(
-        frag_xml, frag_obj, filepath, materials, split_by_group)
+    drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
+    damaged_drawable_obj = create_fragment_drawable(
+        frag_xml, frag_obj, filepath, materials, split_by_group, damaged=True)
 
     create_frag_collisions(frag_xml, frag_obj)
+    if damaged_drawable_obj is not None:
+        create_frag_collisions(frag_xml, frag_obj, damaged=True)
+
+        if frag_xml.physics.lod1.damaged_archetype is not None:
+            a = frag_xml.physics.lod1.archetype
+            b = frag_xml.physics.lod1.damaged_archetype
+            # We assume that these archetype properties are the same in both the undamaged and damaged archetypes so the
+            # user only has to set them once in the UI
+            assert a.unknown_48 == b.unknown_48, "gravity_factor different in damaged archetype. Open an issue!"
+            assert a.unknown_4c == b.unknown_4c, "max_speed factor different in damaged archetype. Open an issue!"
+            assert a.unknown_50 == b.unknown_50, "max_ang_speed different in damaged archetype. Open an issue!"
+            assert a.unknown_54 == b.unknown_54, "buoyancy_factor different in damaged archetype. Open an issue!"
 
     create_phys_lod(frag_xml, frag_obj)
     set_all_bone_physics_properties(frag_obj.data, frag_xml)
@@ -123,9 +136,25 @@ def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
     return frag_obj
 
 
-def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, materials: list[bpy.types.Material], split_by_group: bool = False):
+def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, materials: list[bpy.types.Material], split_by_group: bool = False, damaged: bool = False) -> Optional[bpy.types.Object]:
+    if damaged:
+        if not frag_xml.extra_drawables:
+            return None
+
+        drawable_xml = frag_xml.extra_drawables[0]
+        drawable_name = f"{frag_obj.name}.damaged.mesh"
+    else:
+        drawable_xml = frag_xml.drawable
+        drawable_name = f"{frag_obj.name}.mesh"
+
     drawable_obj = create_drawable_obj(
-        frag_xml.drawable, filepath, name=f"{frag_obj.name}.mesh", materials=materials, split_by_group=split_by_group, external_armature=frag_obj)
+        drawable_xml,
+        filepath,
+        name=drawable_name,
+        materials=materials,
+        split_by_group=split_by_group,
+        external_armature=frag_obj
+    )
     drawable_obj.parent = frag_obj
 
     return drawable_obj
@@ -173,16 +202,22 @@ def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Frag
         set_group_properties(group_xml, bone)
 
 
-def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bpy.types.Object | None:
-    bounds_xml = frag_xml.physics.lod1.archetype.bounds
+def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object, damaged: bool = False) -> Optional[bpy.types.Object]:
+    lod1 = frag_xml.physics.lod1
+    bounds_xml = lod1.damaged_archetype.bounds if damaged else lod1.archetype.bounds
 
     if bounds_xml is None or not bounds_xml.children:
         return None
 
-    composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE, name=f"{frag_obj.name}.col")
+    col_name_suffix = ".damaged.col" if damaged else ".col"
+    composite_name = f"{frag_obj.name}{col_name_suffix}"
+    composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE, name=composite_name)
     composite_obj.parent = frag_obj
 
     for i, bound_xml in enumerate(bounds_xml.children):
+        if bound_xml is None:
+            continue
+
         bound_obj = create_bound_object(bound_xml)
         bound_obj.parent = composite_obj
 
@@ -190,13 +225,19 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object) -> bp
         if bone is None:
             continue
 
-        bound_obj.name = f"{bone.name}.col"
+        bound_obj.name = f"{bone.name}{col_name_suffix}"
 
         if bound_obj.data is not None:
             bound_obj.data.name = bound_obj.name
 
-        add_col_bone_constraint(bound_obj, frag_obj, bone.name)
-        bound_obj.child_properties.mass = frag_xml.physics.lod1.children[i].pristine_mass
+        phys_child = lod1.children[i]
+        bound_obj.child_properties.mass = phys_child.damaged_mass if damaged else phys_child.pristine_mass
+        # NOTE: we currently lose damaged mass or pristine mass if the phys child only has a pristine bound or damaged
+        # bound, but archetype still use this mass. Is this important?
+
+        add_child_of_bone_constraint(bound_obj, frag_obj, bone.name)
+        drawable = phys_child.damaged_drawable if damaged else phys_child.drawable
+        bound_obj.matrix_local = drawable.frag_bound_matrix.transposed()
 
 
 def find_bound_bone(bound_index: int, frag_xml: Fragment) -> Bone | None:
@@ -212,17 +253,6 @@ def find_bound_bone(bound_index: int, frag_xml: Fragment) -> Bone | None:
             continue
 
         return bone
-
-
-def add_col_bone_constraint(bound_obj: bpy.types.Object, frag_obj: bpy.types.Object, bone_name: str):
-    constraint = add_child_of_bone_constraint(bound_obj, frag_obj, bone_name)
-
-    # Composite transforms include bone transforms, so adding the child of bone constraint will cause the object
-    # to get the bone transforms twice. We need to invert the bone transforms so this does not happen.
-    bpy_bone = frag_obj.data.bones.get(constraint.subtarget)
-    bound_obj.matrix_local = bpy_bone.matrix_local.inverted() @ bound_obj.matrix_local
-
-    return constraint
 
 
 def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):

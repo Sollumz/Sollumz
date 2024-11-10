@@ -2,7 +2,8 @@ import bpy
 from bpy.props import (
     BoolProperty
 )
-from .properties import BoundFlags, CollisionProperties, CollisionMatFlags
+import os
+from .properties import BoundFlags, CollisionMatFlags
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
@@ -375,9 +376,24 @@ class SOLLUMZ_PT_FLAG_PRESETS_PANEL(CollisionToolChildPanel, bpy.types.Panel):
         col = row.column(align=True)
         col.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname, text="", icon="ADD")
         col.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname, text="", icon="REMOVE")
+        col.separator()
+        col.menu(SOLLUMZ_MT_flag_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
 
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname, icon='CHECKMARK')
 
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname, icon='SHADERFX')
+
+
+class SOLLUMZ_MT_flag_presets_context_menu(bpy.types.Menu):
+    bl_label = "Flag Presets Specials"
+    bl_idname = "SOLLUMZ_MT_flag_presets_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+
+        from .properties import get_flag_presets_path
+        path = get_flag_presets_path()
+        layout.enabled = os.path.exists(path)
+        layout.operator("wm.path_open", text="Open XML File").filepath = path
