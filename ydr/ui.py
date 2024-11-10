@@ -5,6 +5,7 @@ from bpy.types import (
 from bpy.props import (
     BoolProperty
 )
+import os
 from . import operators as ydr_ops
 from .shader_materials import shadermats
 from .cable import is_cable_mesh
@@ -474,6 +475,9 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
         col = row.column(align=True)
         col.operator(ydr_ops.SOLLUMZ_OT_save_light_preset.bl_idname, text="", icon="ADD")
         col.operator(ydr_ops.SOLLUMZ_OT_delete_light_preset.bl_idname, text="", icon="REMOVE")
+        col.separator()
+        col.menu(SOLLUMZ_MT_light_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
+
         row = layout.row()
         row.operator(ydr_ops.SOLLUMZ_OT_load_light_preset.bl_idname, icon='CHECKMARK')
 
@@ -481,6 +485,19 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator(ydr_ops.SOLLUMZ_OT_create_light.bl_idname)
         row.prop(context.scene, "create_light_type", text="")
+
+
+class SOLLUMZ_MT_light_presets_context_menu(bpy.types.Menu):
+    bl_label = "Light Presets Specials"
+    bl_idname = "SOLLUMZ_MT_light_presets_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+
+        from .properties import get_light_presets_path
+        path = get_light_presets_path()
+        layout.enabled = os.path.exists(path)
+        layout.operator("wm.path_open", text="Open XML File").filepath = path
 
 
 class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
@@ -524,8 +541,24 @@ class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
         col = row.column(align=True)
         col.operator(ydr_ops.SOLLUMZ_OT_save_shader_preset.bl_idname, text="", icon="ADD")
         col.operator(ydr_ops.SOLLUMZ_OT_delete_shader_preset.bl_idname, text="", icon="REMOVE")
+        col.separator()
+        col.menu(SOLLUMZ_MT_shader_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
+
         row = layout.row()
         row.operator(ydr_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon='CHECKMARK')
+
+
+class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
+    bl_label = "Shader Presets Specials"
+    bl_idname = "SOLLUMZ_MT_shader_presets_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+
+        from .properties import get_shader_presets_path
+        path = get_shader_presets_path()
+        layout.enabled = os.path.exists(path)
+        layout.operator("wm.path_open", text="Open XML File").filepath = path
 
 
 class SOLLUMZ_UL_SHADER_PRESET_LIST(bpy.types.UIList):
