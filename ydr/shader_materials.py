@@ -332,7 +332,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # c1
     mathns[0].operation = "LESS_THAN"
     gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
-    mathns[0].inputs[1].default_value = 0.003
+    mathns[0].inputs[1].default_value = 0.004
     mathns[1].operation = "SUBTRACT"
     gnt.links.new(mathns[0].outputs[0], mathns[1].inputs[1])
     mathns[1].inputs[0].default_value = 1.0
