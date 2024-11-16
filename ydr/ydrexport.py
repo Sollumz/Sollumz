@@ -157,7 +157,7 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
 
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
     """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
-    from ..yft.cloth import is_cloth_mesh_object  # TODO: a bit ugly
+    from .cloth import is_cloth_mesh_object
     return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh and not is_cloth_mesh_object(obj)]
 
 
