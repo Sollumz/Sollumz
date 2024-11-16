@@ -4,6 +4,8 @@ from typing import Sequence
 from .tools.utils import flag_list_to_int, flag_prop_to_list, int_to_bool_list
 
 
+# NOTE: Do not reorder these enums or insert new entries in the middle. That will break compatibility with
+#       existing .blend and require new versioning code. New entries can be added at the end.
 class SollumType(str, Enum):
     NONE = "sollumz_none"
 
@@ -55,6 +57,8 @@ class SollumType(str, Enum):
     YMAP_BOX_OCCLUDER = "sollumz_ymap_box_occluder"
     YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
     YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
+
+    CHARACTER_CLOTH_MESH = "sollumz_character_cloth_mesh"
 
 
 class LightType(str, Enum):
@@ -234,6 +238,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.DRAWABLE_GEOMETRY: "Drawable Geometry",
     SollumType.SKELETON: "Skeleton",
     SollumType.LIGHT: "Light",
+    SollumType.CHARACTER_CLOTH_MESH: "Character Cloth Mesh",
 
     SollumType.NAVMESH: "NavMesh",
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",

@@ -327,7 +327,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
         return
 
     from ..cwxml.cloth import EnvironmentCloth
-    from .cloth import ClothAttr, mesh_add_cloth_attribute
+    from ..ydr.cloth import ClothAttr, mesh_add_cloth_attribute
 
 
     cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment

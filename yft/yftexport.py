@@ -1440,7 +1440,7 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
             f"The following drawable models will be ignored: {other_cloth_objs_names}."
         )
 
-    from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, ClothAttr
+    from ..ydr.cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, ClothAttr
 
     env_cloth = EnvironmentCloth()
     # env_cloth.flags = ValueProperty("Unknown78", 1)

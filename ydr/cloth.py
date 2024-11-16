@@ -111,11 +111,16 @@ def mesh_get_cloth_attribute_values(mesh: Mesh, attr: ClothAttr) -> np.ndarray:
 
 def is_cloth_mesh_object(mesh_obj: Optional[Object]) -> bool:
     """Checks whether the mesh object is valid cloth mesh."""
-    if mesh_obj is None:
+    if (
+        mesh_obj is None or
+        mesh_obj.sollum_type not in {SollumType.DRAWABLE_MODEL, SollumType.CHARACTER_CLOTH_MESH} or
+        mesh_obj.type != "MESH"
+    ):
         return False
 
-    if mesh_obj.sollum_type != SollumType.DRAWABLE_MODEL or mesh_obj.type != "MESH":
-        return False
+    if mesh_obj.sollum_type == SollumType.CHARACTER_CLOTH_MESH:
+        # Character cloth mesh are not supposed to have any materials, so don't need to check anything else
+        return True
 
     mesh = mesh_obj.data
     return is_cloth_mesh(mesh)
