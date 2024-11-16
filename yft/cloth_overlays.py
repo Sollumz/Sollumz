@@ -61,6 +61,7 @@ class ClothOverlaysDrawHandler:
             self.draw_pinned_geometry(obj)
 
     def draw_pinned_geometry(self, cloth_obj: Object):
+        transform = cloth_obj.matrix_world
         mesh = cloth_obj.data
 
         coords = []
@@ -71,20 +72,20 @@ class ClothOverlaysDrawHandler:
             for v in edit_mesh.verts:
                 is_pinned = ClothAttr.PINNED.default_value if pinned_layer is None else v[pinned_layer]
                 if is_pinned:
-                    coords.append(v.co + Vector((0.0, 0.0, 0.0)))
-                    coords.append(v.co + Vector((1.0, 0.0, 0.0)))
+                    coords.append(transform @ v.co)
         else:
             pinned_values = mesh_get_cloth_attribute_values(mesh, ClothAttr.PINNED)
             for v in mesh.vertices:
                 is_pinned = pinned_values[v.index] != 0
                 if is_pinned:
-                    coords.append(v.co + Vector((0.0, 0.0, 0.0)))
-                    coords.append(v.co + Vector((1.0, 0.0, 0.0)))
+                    coords.append(transform @ v.co)
 
+        gpu.state.point_size_set(12.5)
+        gpu.state.blend_set("ALPHA")
         shader = gpu.shader.from_builtin("UNIFORM_COLOR")
-        lines_batch = batch.batch_for_shader(shader, "LINES", {"pos": coords})
-        shader.uniform_float("color", (1.0, 0.0, 1.0, 1.0))
-        lines_batch.draw(shader)
+        pinned_verts_batch = batch.batch_for_shader(shader, "POINTS", {"pos": coords})
+        shader.uniform_float("color", (1.0, 0.65, 0.0, 0.5))
+        pinned_verts_batch.draw(shader)
 
 
 draw_handlers = []
