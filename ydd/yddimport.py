@@ -31,9 +31,9 @@ def import_ydd(filepath: str):
         skel_yft = load_external_skeleton(filepath)
 
         if skel_yft is not None and skel_yft.drawable.skeleton is not None:
-            return create_ydd_obj_ext_skel(ydd_xml, filepath, yld_xml, skel_yft)
+            return create_ydd_obj(ydd_xml, filepath, yld_xml, skel_yft)
 
-    return create_ydd_obj(ydd_xml, filepath, yld_xml)
+    return create_ydd_obj(ydd_xml, filepath, yld_xml, None)
 
 
 def load_external_skeleton(ydd_filepath: str) -> Optional[Fragment]:
@@ -43,71 +43,59 @@ def load_external_skeleton(ydd_filepath: str) -> Optional[Fragment]:
     yft_filepath = get_first_yft_path(directory)
 
     if yft_filepath is None:
-        logger.warning(
-            f"Could not find external skeleton yft in directory '{directory}'.")
-        return
+        logger.warning(f"Could not find external skeleton yft in directory '{directory}'.")
+        return None
 
     logger.info(f"Using '{yft_filepath}' as external skeleton...")
 
     return YFT.from_xml_file(yft_filepath)
 
 
-def get_first_yft_path(directory: str):
+def get_first_yft_path(directory: str) -> Optional[str]:
     for filepath in os.listdir(directory):
         if filepath.endswith(".yft.xml"):
             return os.path.join(directory, filepath)
 
+    return None
 
-def create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional[ClothDictionary], external_skel: Fragment):
-    """Create ydd object with an external skeleton."""
+
+def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional[ClothDictionary], external_skel: Optional[Fragment]):
     name = get_filename(filepath)
-    dict_obj = create_armature_parent(name, external_skel)
-
-    for drawable_xml in ydd_xml:
-        external_bones = None
-        external_armature = None
-
-        if not drawable_xml.skeleton.bones:
-            external_bones = external_skel.drawable.skeleton.bones
-
-        if not drawable_xml.skeleton.bones:
-            external_armature = dict_obj
-
-        drawable_obj = create_drawable_obj(
-            drawable_xml, filepath, external_armature=external_armature, external_bones=external_bones)
-        drawable_obj.parent = dict_obj
-
-        if yld_xml is not None:
-            cloth = next((c for c in yld_xml if c.name == drawable_xml.name), None)
-            if cloth is not None:
-                cloth_obj = create_character_cloth_mesh(cloth, drawable_xml.skeleton.bones or external_skel.drawable.skeleton.bones)
-                bounds_obj = create_character_cloth_bounds(cloth, dict_obj, drawable_xml.skeleton.bones or external_skel.drawable.skeleton.bones)
-                bounds_obj.parent = cloth_obj
-                cloth_obj.parent = drawable_obj
-
-    return dict_obj
-
-
-def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional[ClothDictionary]):
-    name = get_filename(filepath)
-    dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
+    if external_skel is not None:
+        dict_obj = create_armature_parent(name, external_skel)
+    else:
+        dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
 
     ydd_skel = find_first_skel(ydd_xml)
 
     for drawable_xml in ydd_xml:
-        if not drawable_xml.skeleton.bones and ydd_skel is not None:
-            external_bones = ydd_skel.bones
-        else:
-            external_bones = None
+        if external_skel is not None:
+            if not drawable_xml.skeleton.bones:
+                external_bones = external_skel.drawable.skeleton.bones
 
-        drawable_obj = create_drawable_obj(drawable_xml, filepath, external_bones=external_bones)
+            if not drawable_xml.skeleton.bones:
+                external_armature = dict_obj
+        else:
+            if not drawable_xml.skeleton.bones and ydd_skel is not None:
+                external_bones = ydd_skel.bones
+            else:
+                external_bones = None
+
+            external_armature = None
+
+        drawable_obj = create_drawable_obj(
+            drawable_xml,
+            filepath,
+            external_armature=external_armature,
+            external_bones=external_bones,
+        )
         drawable_obj.parent = dict_obj
 
         if yld_xml is not None:
             cloth = next((c for c in yld_xml if c.name == drawable_xml.name), None)
             if cloth is not None:
-                cloth_obj = create_character_cloth_mesh(cloth, drawable_xml.skeleton.bones or ydd_skel.bones)
-                bounds_obj = create_character_cloth_bounds(cloth, drawable_xml.skeleton.bones or ydd_skel.bones)
+                cloth_obj = create_character_cloth_mesh(cloth, drawable_xml.skeleton.bones or external_bones)
+                bounds_obj = create_character_cloth_bounds(cloth, external_armature or drawable_obj, drawable_xml.skeleton.bones or external_bones)
                 bounds_obj.parent = cloth_obj
                 cloth_obj.parent = drawable_obj
 
@@ -155,9 +143,7 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
 
     mesh = bpy.data.meshes.new(f"{controller.name}.cloth")
     mesh.from_pydata(vertices, [], indices)
-    obj = bpy.data.objects.new(f"{controller.name}.cloth", mesh)
-    bpy.context.collection.objects.link(obj)
-
+    obj = create_blender_object(SollumType.CHARACTER_CLOTH_MESH, f"{controller.name}.cloth", mesh)
 
     pin_radius = cloth.controller.bridge.pin_radius_high
     weights = cloth.controller.bridge.vertex_weights_high
@@ -170,7 +156,7 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
     has_weights = len(weights) > 0
     has_inflation_scale = len(inflation_scale) > 0
 
-    from ..yft.cloth import ClothAttr, mesh_add_cloth_attribute
+    from ..ydr.cloth import ClothAttr, mesh_add_cloth_attribute
 
     if has_pinned:
         mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)

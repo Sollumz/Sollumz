@@ -300,6 +300,8 @@ _types_to_hide_in_render = {
     SollumType.BOUND_POLY_CYLINDER, SollumType.BOUND_POLY_SPHERE, SollumType.BOUND_POLY_TRIANGLE,
 
     SollumType.SHATTERMAP,
+
+    SollumType.CHARACTER_CLOTH_MESH,
 }
 
 

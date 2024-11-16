@@ -692,6 +692,29 @@ def register():
         min=0, default=CableAttr.MATERIAL_INDEX.default_value,
     )
 
+    from .cloth import ClothAttr
+    bpy.types.WindowManager.sz_ui_cloth_vertex_weight_visualize = bpy.props.BoolProperty(
+        name="Show Weights", description="Display the cloth weight values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_vertex_weight = bpy.props.FloatProperty(
+        name=ClothAttr.VERTEX_WEIGHT.label, description=ClothAttr.VERTEX_WEIGHT.description,
+        min=0.00001, max=1.0, default=ClothAttr.VERTEX_WEIGHT.default_value,
+        precision=6, step=1
+    )
+    bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize = bpy.props.BoolProperty(
+        name="Show Inflation Scale", description="Display the cloth inflation scale values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_inflation_scale = bpy.props.FloatProperty(
+        name=ClothAttr.INFLATION_SCALE.label, description=ClothAttr.INFLATION_SCALE.description,
+        min=0.0, max=1.0, default=ClothAttr.INFLATION_SCALE.default_value
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pinned_visualize = bpy.props.BoolProperty(
+        name="Show Pinned", description="Display the cloth pinned vertices on the 3D Viewport",
+        default=False
+    )
+
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
 
@@ -722,6 +745,7 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_decimate_step
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
+
     del bpy.types.WindowManager.sz_ui_cable_radius_visualize
     del bpy.types.WindowManager.sz_ui_cable_radius
     del bpy.types.WindowManager.sz_ui_cable_diffuse_factor_visualize
@@ -732,5 +756,11 @@ def unregister():
     del bpy.types.WindowManager.sz_ui_cable_phase_offset
     del bpy.types.WindowManager.sz_ui_cable_material_index_visualize
     del bpy.types.WindowManager.sz_ui_cable_material_index
+
+    del bpy.types.WindowManager.sz_ui_cloth_vertex_weight
+    del bpy.types.WindowManager.sz_ui_cloth_vertex_weight_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_inflation_scale
+    del bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_pinned_visualize
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)

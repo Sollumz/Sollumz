@@ -142,60 +142,6 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
         else:
             layout.label(text="Must be in Edit Mode > Face Selection.", icon="ERROR")
 
-class SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL(bpy.types.Panel):
-    bl_label = "Cloth Tools"
-    bl_idname = "SOLLUMZ_PT_FRAGMENT_CLOTH_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_FRAGMENT_TOOL_PANEL.bl_idname
-    bl_order = 5
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="MATCLOTH")
-
-    def draw(self, context):
-        from . import cloth_operators as cloth_ops
-        from .cloth import ClothAttr
-
-        wm = context.window_manager
-
-        layout = self.layout
-
-        def _visible_icon_prop(layout, obj, prop_name):
-            visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
-            layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
-
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.VERTEX_WEIGHT.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_vertex_weight_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_vertex_weight.bl_idname, text="Set")
-        op.value = wm.sz_ui_cloth_vertex_weight
-        row.prop(wm, "sz_ui_cloth_vertex_weight", text="")
-
-
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.INFLATION_SCALE.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_inflation_scale_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="Set")
-        op.value = wm.sz_ui_cloth_inflation_scale
-        row.prop(wm, "sz_ui_cloth_inflation_scale", text="")
-
-
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.PINNED.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_pinned_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin")
-        op.value = True
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin")
-        op.value = False
-
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
     bl_label = "Fragment"
