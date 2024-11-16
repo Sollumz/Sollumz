@@ -212,7 +212,7 @@ def create_fragment_xml(frag: FragmentObjects, apply_transforms: bool = False) -
             frag_xml.bounding_sphere_radius = env_cloth.drawable.bounding_sphere_radius
 
         if frag_xml.physics is None:
-            frag_xml.physics = create_dummy_frag_physics_xml_for_cloth(frag_obj, frag_xml, materials)
+            frag_xml.physics = create_dummy_frag_physics_xml_for_cloth(frag, frag_xml, materials)
 
     frag_armature.pose_position = original_pose
 
@@ -1700,12 +1700,13 @@ def create_frag_env_cloth(frag_obj: bpy.types.Object, drawable_xml: Drawable, ma
     return env_cloth
 
 
-def create_dummy_frag_physics_xml_for_cloth(frag_obj: bpy.types.Object, frag_xml: Fragment, materials: list[bpy.types.Material]) -> Physics:
+def create_dummy_frag_physics_xml_for_cloth(frag: FragmentObjects, frag_xml: Fragment, materials: list[bpy.types.Material]) -> Physics:
     dummy_physics = Physics()
+    frag_obj = frag.fragment
     lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
 
     lod_xml = create_phys_lod_xml(dummy_physics, lod_props)
-    arch_xml = create_archetype_xml(lod_xml, frag_obj)
+    arch_xml, _ = create_archetype_xml(lod_xml, frag)
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
     arch_xml.bounds.volume = 1
