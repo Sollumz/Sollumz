@@ -230,6 +230,7 @@ def polygons_from_object(navmesh_obj: Object) -> tuple[list[NavPolygon], bool]:
         flag1 = (data0 >> 8) & 0xFF
         flag2 = data1 & 0xFF
         flag3 = (data1 >> 8) & 0xFF
+        flag4 = 0  # is zero area dlc stitch poly
 
         if (flag0 & 128) != 0:
             has_water = True
@@ -237,7 +238,7 @@ def polygons_from_object(navmesh_obj: Object) -> tuple[list[NavPolygon], bool]:
         poly_xml = NavPolygon()
         poly_xml.vertices = poly_verts
         poly_xml.edges = "\n".join(map(lambda e: f"{e[0]}:{e[1]}, {e[0]}:{e[1]}", adjacent_polys_with_cell_index))
-        poly_xml.flags = f"{flag0} {flag1} {flag2} {flag3} {compressed_centroid_x} {compressed_centroid_y}"
+        poly_xml.flags = f"{flag0} {flag1} {flag2} {flag3} {compressed_centroid_x} {compressed_centroid_y} {flag4}"
         polygons_xml.append(poly_xml)
 
     navmesh_obj_eval.to_mesh_clear()

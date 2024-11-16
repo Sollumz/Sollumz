@@ -107,6 +107,7 @@ class NavPolygon(ElementTree):
         self.flags = TextProperty("Flags")
         self.vertices = NavPolygonVertices("Vertices")
         self.edges = TextProperty("Edges")
+        self.edges_flags = TextProperty("EdgesFlags")
 
 
 class NavPolygonList(ListProperty):
