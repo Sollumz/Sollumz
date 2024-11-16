@@ -15,6 +15,7 @@ from .cwxml.fragment import YFT
 from .cwxml.bound import YBN
 from .cwxml.navmesh import YNV
 from .cwxml.clipdictionary import YCD
+from .cwxml.ytyp import YTYP
 from .cwxml.ymap import YMAP
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
