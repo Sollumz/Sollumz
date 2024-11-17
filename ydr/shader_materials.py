@@ -304,10 +304,12 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
     cptn.domain = "CORNER"
     if bpy.app.version >= (4, 2, 0):
-        cpt_attr = cptn.capture_items.new("RGBA", "Color")
-        cpt_attr.data_type = "FLOAT_COLOR"
+        cpt_name = "UV"
+        cpt_attr = cptn.capture_items.new("VECTOR", cpt_name)
+        cpt_attr.data_type = "FLOAT_VECTOR"
     else:
-        cptn.data_type = "FLOAT_COLOR"
+        cpt_name = "Attribute"
+        cptn.data_type = "FLOAT_VECTOR"
     gnt.links.new(input.outputs["Geometry"], cptn.inputs["Geometry"])
     gnt.links.new(cptn.outputs["Geometry"], output.inputs["Geometry"])
 
@@ -315,8 +317,11 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
     txtn.interpolation = "Closest"
     gnt.links.new(input.outputs["Palette Texture"], txtn.inputs["Image"])
-    gnt.links.new(cptn.outputs["Attribute"], txtn.inputs["Vector"])
+    gnt.links.new(cptn.outputs[cpt_name], txtn.inputs["Vector"])
     gnt.links.new(txtn.outputs["Color"], output.inputs["Tint Color"])
+
+    pal_img_info = gnt.nodes.new("GeometryNodeImageInfo")
+    gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
 
     # separate colour0
     sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
@@ -324,7 +329,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # create math nodes
     mathns = []
-    for i in range(9):
+    for i in range(12):
         mathns.append(gnt.nodes.new("ShaderNodeMath"))
 
     # Convert color attribute from linear to sRGB
@@ -332,7 +337,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # c1
     mathns[0].operation = "LESS_THAN"
     gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
-    mathns[0].inputs[1].default_value = 0.003
+    mathns[0].inputs[1].default_value = 0.0031308
     mathns[1].operation = "SUBTRACT"
     gnt.links.new(mathns[0].outputs[0], mathns[1].inputs[1])
     mathns[1].inputs[0].default_value = 1.0
@@ -364,13 +369,23 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.links.new(mathns[3].outputs[0], mathns[8].inputs[0])
     gnt.links.new(mathns[7].outputs[0], mathns[8].inputs[1])
 
+    # Fix precision issues due to the linear->sRGB conversion
+    # uv.x = round(uv.x * width) / width
+    mathns[9].operation = "MULTIPLY"
+    gnt.links.new(mathns[8].outputs[0], mathns[9].inputs[0])
+    gnt.links.new(pal_img_info.outputs["Width"], mathns[9].inputs[1])
+    mathns[10].operation = "ROUND"
+    gnt.links.new(mathns[9].outputs[0], mathns[10].inputs[0])
+    mathns[11].operation = "DIVIDE"
+    gnt.links.new(mathns[10].outputs[0], mathns[11].inputs[0])
+    gnt.links.new(pal_img_info.outputs["Width"], mathns[11].inputs[1])
+
     # Select palette row
     # uv.y = (palette_preview_index + 0.5) / img.height
     # uv.y = ((uv.y - 1) * -1)   ; flip_uv
     pal_add = gnt.nodes.new("ShaderNodeMath")
     pal_add.operation = "ADD"
     pal_add.inputs[1].default_value = 0.5
-    pal_img_info = gnt.nodes.new("GeometryNodeImageInfo")
     pal_div = gnt.nodes.new("ShaderNodeMath")
     pal_div.operation = "DIVIDE"
     pal_flip_uv_sub = gnt.nodes.new("ShaderNodeMath")
@@ -380,7 +395,6 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_flip_uv_mult.operation = "MULTIPLY"
     pal_flip_uv_mult.inputs[1].default_value = -1.0
 
-    gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
     gnt.links.new(input.outputs["Palette (Preview)"], pal_add.inputs[1])
     gnt.links.new(pal_add.outputs[0], pal_div.inputs[0])
     gnt.links.new(pal_img_info.outputs["Height"], pal_div.inputs[1])
@@ -388,8 +402,8 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.links.new(pal_flip_uv_sub.outputs[0], pal_flip_uv_mult.inputs[0])
 
     # create and link vector
-    comb = gnt.nodes.new("ShaderNodeCombineRGB")
-    gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
+    comb = gnt.nodes.new("ShaderNodeCombineXYZ")
+    gnt.links.new(mathns[11].outputs[0], comb.inputs[0])
     gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
     gnt.links.new(comb.outputs[0], cptn.inputs["Value"])
 
