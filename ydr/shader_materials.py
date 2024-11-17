@@ -329,7 +329,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # create math nodes
     mathns = []
-    for i in range(12):
+    for i in range(9):
         mathns.append(gnt.nodes.new("ShaderNodeMath"))
 
     # Convert color attribute from linear to sRGB
@@ -337,7 +337,10 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # c1
     mathns[0].operation = "LESS_THAN"
     gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
-    mathns[0].inputs[1].default_value = 0.0031308
+    # NOTE: the correct constant here should be 0.0031308 but the loss of precision due to the linear->sRGB conversion
+    #       causes it not to recover the correct UV.x value on some pixels, sampling neighboring pixels. With 0.004, it
+    #       works better in our specific case (UVs for pixels between 0-256) and seems to work for all palette pixels.
+    mathns[0].inputs[1].default_value = 0.004
     mathns[1].operation = "SUBTRACT"
     gnt.links.new(mathns[0].outputs[0], mathns[1].inputs[1])
     mathns[1].inputs[0].default_value = 1.0
@@ -369,17 +372,6 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.links.new(mathns[3].outputs[0], mathns[8].inputs[0])
     gnt.links.new(mathns[7].outputs[0], mathns[8].inputs[1])
 
-    # Fix precision issues due to the linear->sRGB conversion
-    # uv.x = round(uv.x * width) / width
-    mathns[9].operation = "MULTIPLY"
-    gnt.links.new(mathns[8].outputs[0], mathns[9].inputs[0])
-    gnt.links.new(pal_img_info.outputs["Width"], mathns[9].inputs[1])
-    mathns[10].operation = "ROUND"
-    gnt.links.new(mathns[9].outputs[0], mathns[10].inputs[0])
-    mathns[11].operation = "DIVIDE"
-    gnt.links.new(mathns[10].outputs[0], mathns[11].inputs[0])
-    gnt.links.new(pal_img_info.outputs["Width"], mathns[11].inputs[1])
-
     # Select palette row
     # uv.y = (palette_preview_index + 0.5) / img.height
     # uv.y = ((uv.y - 1) * -1)   ; flip_uv
@@ -403,7 +395,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     # create and link vector
     comb = gnt.nodes.new("ShaderNodeCombineXYZ")
-    gnt.links.new(mathns[11].outputs[0], comb.inputs[0])
+    gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
     gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
     gnt.links.new(comb.outputs[0], cptn.inputs["Value"])
 
