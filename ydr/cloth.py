@@ -1,5 +1,3 @@
-# TODO: we will probably share code here with .yld in .ydd cloth stuff, might want to move out of yft module
-
 from bpy.types import (
     Object,
     Mesh,
@@ -63,7 +61,7 @@ class ClothAttr(str, Enum):
             case ClothAttr.PINNED:
                 return "Pinned"
             case ClothAttr.VERTEX_WEIGHT:
-                return "Weight"
+                return "Mass Per Vertex"
             case ClothAttr.INFLATION_SCALE:
                 return "Inflation Scale"
             case _:

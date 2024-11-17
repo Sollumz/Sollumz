@@ -37,11 +37,13 @@ class CableOverlaysDrawHandler:
     def can_draw_anything(self) -> bool:
         context = bpy.context
         wm = context.window_manager
-        if (not wm.sz_ui_cable_radius_visualize and
+        if (
+            not wm.sz_ui_cable_radius_visualize and
             not wm.sz_ui_cable_diffuse_factor_visualize and
             not wm.sz_ui_cable_um_scale_visualize and
             not wm.sz_ui_cable_phase_offset_visualize and
-                not wm.sz_ui_cable_material_index_visualize):
+            not wm.sz_ui_cable_material_index_visualize
+        ):
             return False
 
         obj = context.active_object
