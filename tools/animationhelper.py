@@ -503,6 +503,32 @@ def setup_armature_for_animation(armature: bpy.types.Armature):
     armature_obj = get_data_obj(armature)
     armature_obj.rotation_mode = "QUATERNION"  # root rotation track uses rotation_quaternion
 
+    # Add Copy Rotation constraints to ped thigh roll bones
+    # The game calculates the thigh roll bones rotation at runtime using expressions (.yed) but as we don't currently support this, we use this workaround.
+    # Without this rotation, peds legs during animation playback look really deformed. Copying the thigh rotation isn't perfect, but it's better.
+    thigh_bones = (
+        ("RB_L_ThighRoll", "SKEL_L_Thigh"),
+        ("RB_R_ThighRoll", "SKEL_R_Thigh"),
+    )
+    for thigh_roll_bone, thigh_bone in thigh_bones:
+        if thigh_roll_bone not in armature.bones or thigh_bone not in armature.bones:
+            continue
+
+        # Check if the constraint already exists
+        thigh_roll_pose_bone = armature_obj.pose.bones[thigh_roll_bone]
+        has_constraint = any(
+            c.type == "COPY_ROTATION" and c.target == armature_obj and c.subtarget == thigh_bone
+            for c in thigh_roll_pose_bone.constraints
+        )
+        if has_constraint:
+            continue
+
+        # Add the constraint
+        constraint = thigh_roll_pose_bone.constraints.new("COPY_ROTATION")
+        constraint.name = "Copy Rotation from Thigh"
+        constraint.target = armature_obj
+        constraint.subtarget = thigh_bone
+
 
 def get_canonical_track_data_path(track: Track, bone_id: int):
     """
