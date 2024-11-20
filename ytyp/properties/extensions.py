@@ -1,12 +1,25 @@
 import bpy
 from bpy.types import (
-    UILayout
+    Context,
+    UILayout,
+)
+from bpy.props import (
+    BoolProperty,
+    EnumProperty,
+    IntProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    StringProperty,
 )
 from mathutils import Vector
-from typing import Union
-from enum import Enum
+from typing import Union, TYPE_CHECKING
+from collections.abc import Iterator
+from enum import Enum, IntEnum
 from ...tools.utils import get_list_item
 from ...ydr.light_flashiness import Flashiness, LightFlashinessEnumItems
+
+if TYPE_CHECKING:
+    from .ytyp import ArchetypeProperties
 
 
 class ExtensionType(str, Enum):
@@ -102,6 +115,13 @@ LightShaftVolumeTypeEnumItems = (
 class BaseExtensionProperties:
     offset_position: bpy.props.FloatVectorProperty(name="Offset Position", subtype="TRANSLATION")
 
+    def find_owner_archetype(self) -> 'ArchetypeProperties':
+        id_data = self.id_data
+        path = self.path_from_id()
+        archetype_path, _ = path.split(".extensions[")
+        archetype = id_data.path_resolve(archetype_path)
+        return archetype
+
     def draw_props(self, layout: UILayout):
         row = layout.row()
         row.prop(self, "offset_position")
@@ -124,15 +144,260 @@ class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
     audio_hash: bpy.props.StringProperty(name="Audio Hash")
 
 
+class ParticleFxType(IntEnum):
+    AMBIENT = 0
+    COLLISION = 1
+    SHOT = 2
+    BREAK = 3
+    DESTROY = 4
+    RAYFIRE = 6
+    IN_WATER = 7
+
+    # Unused, no vanilla props use it. There is some left-over code, but not sure if it is possible to still trigger the
+    # conditions for this FX type, seems to require the object to be equipped by a ped playing an ambient clip with
+    # "ObjectVfx" clip tags
+    ANIM = 5
+
+ParticleFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})", desc, enum.value) for enum, label, desc in (
+    (
+        ParticleFxType.AMBIENT,
+        "Ambient",
+        "Ambient effect. Valid FX names and specific trigger conditions are defined in the ENTITYFX_AMBIENT_PTFX block "
+        "within entityfx.dat"
+    ),
+    (
+        ParticleFxType.COLLISION,
+        "Collision",
+        "Trigger when this object collides with something. Valid FX names are defined in the ENTITYFX_COLLISION_PTFX "
+        "block within entityfx.dat"
+    ),
+    (
+        ParticleFxType.SHOT,
+        "Shot",
+        "Trigger when this object is shot at. Valid FX names are defined in the ENTITYFX_SHOT_PTFX block within "
+        "entityfx.dat"
+    ),
+    (
+        ParticleFxType.BREAK,
+        "Break",
+        "Fragments only, trigger when this fragment breaks apart. Valid FX names are defined in the "
+        "FRAGMENTFX_BREAK_PTFX block within entityfx.dat"
+
+    ),
+    (
+        ParticleFxType.DESTROY,
+        "Destroy",
+        "Fragments only, trigger when this fragment is destroyed. Valid FX names are defined in the "
+        "FRAGMENTFX_DESTROY_PTFX block within entityfx.dat"
+
+    ),
+    (
+        ParticleFxType.RAYFIRE,
+        "RayFire",
+        "Trigger during RayFire animation. Valid FX names are defined in the ENTITYFX_RAYFIRE_PTFX block within "
+        "entityfx.dat"
+    ),
+    (
+        ParticleFxType.IN_WATER,
+        "In Water",
+        "Trigger when this object is in water. Valid FX names are defined in the ENTITYFX_INWATER_PTFX block within "
+        "entityfx.dat"
+    ),
+    (None, None, None),
+    (ParticleFxType.ANIM, "Animation (Unused)", ""),
+))
+
+
 class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
-    fx_name: bpy.props.StringProperty(name="FX Name")
-    fx_type: bpy.props.IntProperty(name="FX Type")
-    bone_tag: bpy.props.IntProperty(name="Bone Tag")
-    scale: bpy.props.FloatProperty(name="Scale")
-    probability: bpy.props.IntProperty(name="Probability")
-    flags: bpy.props.IntProperty(name="Flags")
-    color: bpy.props.FloatVectorProperty(name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
+    offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
+    fx_name: StringProperty(name="FX Name")
+    fx_type: IntProperty(name="FX Type", min=0, max=7, default=ParticleFxType.AMBIENT.value)
+    bone_tag: IntProperty(name="Bone Tag")
+    scale: FloatProperty(name="Scale")
+    probability: IntProperty(name="Probability", min=0, max=100, subtype="PERCENTAGE")
+    flags: IntProperty(name="Flags")
+    color: FloatVectorProperty(name="Tint Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
+
+    # Wrapper properties for better UI
+    def fx_type_get(self) -> int:
+        return self.fx_type
+
+    def fx_type_set(self, value: int):
+        self.fx_type = value
+
+    fx_type_enum: EnumProperty(
+        items=ParticleFxTypeEnumItems,
+        name="FX Type",
+        get=fx_type_get,
+        set=fx_type_set,
+    )
+
+    def is_bone_name_available(self) -> str:
+        archetype = self.find_owner_archetype()
+        if not archetype.asset or archetype.asset.type != "ARMATURE":
+            # No linked object, cannot retrieve the bone name
+            return False
+
+        bone_tag = self.bone_tag
+        if bone_tag == -1:
+            # Not set, name is available but just an empty string
+            return True
+
+        armature = archetype.asset.data
+        for bone in armature.bones:
+            if bone.bone_properties.tag == bone_tag:
+                # Bone exists with the tag, we can retrieve the name
+                return True
+
+        # No bone found
+        return False
+
+    def bone_name_get(self) -> str:
+        bone_tag = self.bone_tag
+        if bone_tag == -1:
+            return ""
+        else:
+            archetype = self.find_owner_archetype()
+            if archetype.asset is None or archetype.asset.type != "ARMATURE":
+                assert False, "bone_name_get should not be called when not available! Missing armature!"
+
+            armature = archetype.asset.data
+            for bone in armature.bones:
+                if bone.bone_properties.tag == bone_tag:
+                    return bone.name
+
+            assert False, "bone_name_get should not be called when not available! Missing bone!"
+
+    def bone_name_set(self, value: str):
+        bone_name = value.strip()
+        if not bone_name:
+            self.bone_tag = -1
+        else:
+            archetype = self.find_owner_archetype()
+            if not archetype.asset or archetype.asset.type != "ARMATURE":
+                # No linked object, just clear the bone tag
+                self.bone_tag = -1
+                return
+
+            armature = archetype.asset.data
+            bone = armature.bones.get(bone_name, None)
+            if not bone:
+                # No bone found, just clear the bone tag
+                self.bone_tag = -1
+                return
+
+            self.bone_tag = bone.bone_properties.tag
+
+    def bone_name_search(self, context: Context, edit_text: str) -> Iterator[str]:
+        archetype = self.find_owner_archetype()
+        if not archetype.asset or archetype.asset.type != "ARMATURE":
+            return
+
+        armature = archetype.asset.data
+        for bone in armature.bones:
+            yield bone.name
+
+    bone_name: StringProperty(
+        name="Bone",
+        get=bone_name_get,
+        set=bone_name_set,
+        search=bone_name_search,
+        search_options=set(),
+    )
+
+    def is_flag_set(self, bit: int) -> bool:
+        return (self.flags & (1 << bit)) != 0
+
+    def set_flag(self, bit: int, enable: bool):
+        if enable:
+            self.flags |= 1 << bit
+        else:
+            self.flags &= ~(1 << bit)
+
+    def flag_get(bit: int):
+        return lambda s: s.is_flag_set(bit)
+
+    def flag_set(bit: int):
+        return lambda s, v: s.set_flag(bit, v)
+
+    flag_has_tint: BoolProperty(
+        name="Enable Tint",
+        description="Tint the particle effect with the specified color",
+        get=flag_get(0), set=flag_set(0)
+    )
+    flag_ignore_damaged_model: BoolProperty(
+        name="Ignore Damaged Model",
+        description="For fragments, do not trigger when using the damaged model. Used by Collision and Shot FX types",
+        get=flag_get(1), set=flag_set(1)
+    )
+    flag_play_on_parent: BoolProperty(
+        name="Play on Parent",
+        description=(
+            "For fragments when breaking, attach the particle to the parent instead of the broken apart piece. Used by "
+            "Break FX type"
+        ),
+        get=flag_get(2), set=flag_set(2)
+    )
+    flag_only_on_damaged_model: BoolProperty(
+        name="Only on Damaged Model",
+        description="For fragments, only trigger when using the damaged model. Used by Ambient FX type",
+        get=flag_get(3), set=flag_set(3)
+    )
+    flag_allow_rubber_bullet_shot_fx: BoolProperty(
+        name="Allow Rubber Bullet Shot",
+        description=(
+            "When shot at, trigger even if the damage type of the weapon used is BULLET_RUBBER. Used by Shot FX type"
+        ),
+        get=flag_get(4), set=flag_set(4)
+    )
+    flag_allow_electric_bullet_shot_fx: BoolProperty(
+        name="Allow Electric Bullet Shot",
+        description=(
+            "When shot at, trigger even if the damage type of the weapon used is ELECTRIC. Used by Shot FX type"
+        ),
+        get=flag_get(5), set=flag_set(5)
+    )
+
+    def draw_props(self, layout: UILayout):
+        for prop_name in (
+            "offset_position",
+            "offset_rotation",
+            "fx_name",
+            "fx_type_enum",
+            "bone_tag",
+            "scale",
+            "probability",
+        ):
+            icon = "NONE"
+            row = layout.row()
+            if prop_name == "bone_tag":
+                icon = "BONE_DATA"
+                if self.is_bone_name_available():
+                    prop_name = "bone_name"
+            row.prop(self, prop_name, icon=icon)
+
+        col = layout.column(heading="Flags", align=True)
+        def _prop_enabled(prop_name, enabled):
+            row = col.row(align=True)
+            row.active = enabled
+            row.prop(self, prop_name)
+        fx_type = self.fx_type
+        is_shot = fx_type == ParticleFxType.SHOT
+        _prop_enabled("flag_ignore_damaged_model", is_shot or fx_type == ParticleFxType.COLLISION)
+        _prop_enabled("flag_play_on_parent", fx_type == ParticleFxType.BREAK)
+        _prop_enabled("flag_only_on_damaged_model", fx_type == ParticleFxType.AMBIENT)
+        _prop_enabled("flag_allow_rubber_bullet_shot_fx", is_shot)
+        _prop_enabled("flag_allow_electric_bullet_shot_fx", is_shot)
+
+        col = layout.column(heading="Tint Color")
+        row = col.row()
+        row.prop(self, "flag_has_tint", text="")
+        row.prop(self, "color", text="")
+
+        from ..operators.extensions import SOLLUMZ_OT_extension_update_location_from_selected
+        layout.separator()
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_extension_update_location_from_selected.bl_idname)
 
 
 class AudioCollisionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
@@ -300,7 +565,6 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
                     layout.separator()
                 row = layout.row()
                 row.prop(self, prop_name)
-
 
 
 class SpawnPointExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
