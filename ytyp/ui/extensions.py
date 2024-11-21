@@ -56,7 +56,9 @@ class ExtensionsPanelHelper:
             layout.separator()
 
             extension_properties = selected_extension.get_properties()
+            extension_properties.draw_props_pre(layout)
             extension_properties.draw_props(layout)
+            extension_properties.draw_props_post(layout)
 
 
 class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(ExtensionsListHelper, bpy.types.UIList):

@@ -2,6 +2,7 @@ import bpy
 from bpy.types import (
     Context,
     UILayout,
+    PropertyGroup,
 )
 from bpy.props import (
     BoolProperty,
@@ -141,6 +142,9 @@ class BaseExtensionProperties:
         archetype = id_data.path_resolve(archetype_path)
         return archetype
 
+    def draw_props_pre(self, layout: UILayout):
+        pass
+
     def draw_props(self, layout: UILayout):
         row = layout.row()
         row.prop(self, "offset_position")
@@ -148,13 +152,102 @@ class BaseExtensionProperties:
             row = layout.row()
             row.prop(self, prop_name)
 
+    def draw_props_post(self, layout: UILayout):
         from ..operators.extensions import SOLLUMZ_OT_extension_update_location_from_selected
         layout.separator()
         row = layout.row()
         row.operator(SOLLUMZ_OT_extension_update_location_from_selected.bl_idname)
 
 
-class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class ExtensionWithBoneTagMixin:
+    def draw_props(self, layout: UILayout):
+        row = layout.row()
+        row.prop(self, "offset_position")
+        for prop_name in self.__class__.__annotations__:
+            icon = "NONE"
+            if prop_name == "bone_tag":
+                icon = "BONE_DATA"
+                if self.is_bone_name_available():
+                    prop_name = "bone_name"
+
+            row = layout.row()
+            row.prop(self, prop_name, icon=icon)
+
+    def is_bone_name_available(self) -> str:
+        archetype = self.find_owner_archetype()
+        if not archetype.asset or archetype.asset.type != "ARMATURE":
+            # No linked object, cannot retrieve the bone name
+            return False
+
+        bone_tag = self.bone_tag
+        if bone_tag == -1:
+            # Not set, name is available but just an empty string
+            return True
+
+        armature = archetype.asset.data
+        for bone in armature.bones:
+            if bone.bone_properties.tag == bone_tag:
+                # Bone exists with the tag, we can retrieve the name
+                return True
+
+        # No bone found
+        return False
+
+    def bone_name_get(self) -> str:
+        bone_tag = self.bone_tag
+        if bone_tag == -1:
+            return ""
+        else:
+            archetype = self.find_owner_archetype()
+            if archetype.asset is None or archetype.asset.type != "ARMATURE":
+                assert False, "bone_name_get should not be called when not available! Missing armature!"
+
+            armature = archetype.asset.data
+            for bone in armature.bones:
+                if bone.bone_properties.tag == bone_tag:
+                    return bone.name
+
+            assert False, "bone_name_get should not be called when not available! Missing bone!"
+
+    def bone_name_set(self, value: str):
+        bone_name = value.strip()
+        if not bone_name:
+            self.bone_tag = -1
+        else:
+            archetype = self.find_owner_archetype()
+            if not archetype.asset or archetype.asset.type != "ARMATURE":
+                # No linked object, just clear the bone tag
+                self.bone_tag = -1
+                return
+
+            armature = archetype.asset.data
+            bone = armature.bones.get(bone_name, None)
+            if not bone:
+                # No bone found, just clear the bone tag
+                self.bone_tag = -1
+                return
+
+            self.bone_tag = bone.bone_properties.tag
+
+    def bone_name_search(self, context: Context, edit_text: str) -> Iterator[str]:
+        archetype = self.find_owner_archetype()
+        if not archetype.asset or archetype.asset.type != "ARMATURE":
+            return
+
+        armature = archetype.asset.data
+        for bone in armature.bones:
+            yield bone.name
+
+    bone_name: StringProperty(
+        name="Bone",
+        get=bone_name_get,
+        set=bone_name_set,
+        search=bone_name_search,
+        search_options=set(),
+    )
+
+
+class DoorExtensionProperties(BaseExtensionProperties, PropertyGroup):
     enable_limit_angle: bpy.props.BoolProperty(name="Enable Limit Angle")
     starts_locked: bpy.props.BoolProperty(name="Starts Locked")
     can_break: bpy.props.BoolProperty(name="Can Break")
@@ -228,11 +321,11 @@ ParticleFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})",
 ))
 
 
-class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     fx_name: StringProperty(name="FX Name")
     fx_type: IntProperty(name="FX Type", min=0, max=7, default=ParticleFxType.AMBIENT.value)
-    bone_tag: IntProperty(name="Bone Tag")
+    bone_tag: IntProperty(name="Bone Tag", default=-1)
     scale: FloatProperty(name="Scale")
     probability: IntProperty(name="Probability", min=0, max=100, subtype="PERCENTAGE")
     flags: IntProperty(name="Flags")
@@ -250,79 +343,6 @@ class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperti
         name="FX Type",
         get=fx_type_get,
         set=fx_type_set,
-    )
-
-    def is_bone_name_available(self) -> str:
-        archetype = self.find_owner_archetype()
-        if not archetype.asset or archetype.asset.type != "ARMATURE":
-            # No linked object, cannot retrieve the bone name
-            return False
-
-        bone_tag = self.bone_tag
-        if bone_tag == -1:
-            # Not set, name is available but just an empty string
-            return True
-
-        armature = archetype.asset.data
-        for bone in armature.bones:
-            if bone.bone_properties.tag == bone_tag:
-                # Bone exists with the tag, we can retrieve the name
-                return True
-
-        # No bone found
-        return False
-
-    def bone_name_get(self) -> str:
-        bone_tag = self.bone_tag
-        if bone_tag == -1:
-            return ""
-        else:
-            archetype = self.find_owner_archetype()
-            if archetype.asset is None or archetype.asset.type != "ARMATURE":
-                assert False, "bone_name_get should not be called when not available! Missing armature!"
-
-            armature = archetype.asset.data
-            for bone in armature.bones:
-                if bone.bone_properties.tag == bone_tag:
-                    return bone.name
-
-            assert False, "bone_name_get should not be called when not available! Missing bone!"
-
-    def bone_name_set(self, value: str):
-        bone_name = value.strip()
-        if not bone_name:
-            self.bone_tag = -1
-        else:
-            archetype = self.find_owner_archetype()
-            if not archetype.asset or archetype.asset.type != "ARMATURE":
-                # No linked object, just clear the bone tag
-                self.bone_tag = -1
-                return
-
-            armature = archetype.asset.data
-            bone = armature.bones.get(bone_name, None)
-            if not bone:
-                # No bone found, just clear the bone tag
-                self.bone_tag = -1
-                return
-
-            self.bone_tag = bone.bone_properties.tag
-
-    def bone_name_search(self, context: Context, edit_text: str) -> Iterator[str]:
-        archetype = self.find_owner_archetype()
-        if not archetype.asset or archetype.asset.type != "ARMATURE":
-            return
-
-        armature = archetype.asset.data
-        for bone in armature.bones:
-            yield bone.name
-
-    bone_name: StringProperty(
-        name="Bone",
-        get=bone_name_get,
-        set=bone_name_set,
-        search=bone_name_search,
-        search_options=set(),
     )
 
     def is_flag_set(self, bit: int) -> bool:
@@ -415,31 +435,26 @@ class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperti
         row.prop(self, "flag_has_tint", text="")
         row.prop(self, "color", text="")
 
-        from ..operators.extensions import SOLLUMZ_OT_extension_update_location_from_selected
-        layout.separator()
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_extension_update_location_from_selected.bl_idname)
 
-
-class AudioCollisionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class AudioCollisionExtensionProperties(BaseExtensionProperties, PropertyGroup):
     settings: bpy.props.StringProperty(name="Settings")
 
 
-class AudioEmitterExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class AudioEmitterExtensionProperties(BaseExtensionProperties, PropertyGroup):
     offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     effect_hash: bpy.props.StringProperty(name="Effect Hash")
 
 
-class ExplosionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
-    explosion_name: bpy.props.StringProperty(name="Explosion Name")
-    bone_tag: bpy.props.IntProperty(name="Bone Tag")
-    explosion_tag: bpy.props.IntProperty(name="Explosion Tag")
-    explosion_type: bpy.props.IntProperty(name="Explosion Type")
-    flags: bpy.props.IntProperty(name="Flags", subtype="UNSIGNED")
+class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
+    offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
+    explosion_name: StringProperty(name="Explosion Name")
+    bone_tag: IntProperty(name="Bone Tag", default=-1)
+    explosion_tag: IntProperty(name="Explosion Tag")
+    explosion_type: IntProperty(name="Explosion Type")
+    flags: IntProperty(name="Flags", subtype="UNSIGNED")
 
 
-class LadderExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class LadderExtensionProperties(BaseExtensionProperties, PropertyGroup):
     bottom: bpy.props.FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
     top: bpy.props.FloatVectorProperty(name="Top", subtype="TRANSLATION")
     normal: bpy.props.FloatVectorProperty(name="Normal", subtype="TRANSLATION")
@@ -448,27 +463,27 @@ class LadderExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties
     can_get_off_at_top: bpy.props.BoolProperty(name="Can Get Off At Top", default=True)
     can_get_off_at_bottom: bpy.props.BoolProperty(name="Can Get Off At Bottom", default=True)
 
-    def draw_props(self, layout: UILayout):
-        super().draw_props(layout)
+    def draw_props_post(self, layout: UILayout):
+        super().draw_props_post(layout)
 
         from ..operators.extensions import SOLLUMZ_OT_update_bottom_from_selected
         row = layout.row()
         row.operator(SOLLUMZ_OT_update_bottom_from_selected.bl_idname)
 
 
-class BuoyancyExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class BuoyancyExtensionProperties(BaseExtensionProperties, PropertyGroup):
     # No additional properties
     pass
 
 
-class ExpressionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class ExpressionExtensionProperties(BaseExtensionProperties, PropertyGroup):
     expression_dictionary_name: bpy.props.StringProperty(name="Expression Dictionary Name")
     expression_name: bpy.props.StringProperty(name="Expression Name")
     creature_metadata_name: bpy.props.StringProperty(name="Creature Metadata Name")
     initialize_on_collision: bpy.props.BoolProperty(name="Initialize on Collision")
 
 
-class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
     density_type: bpy.props.EnumProperty(items=LightShaftDensityTypeEnumItems, name="Density Type")
     volume_type: bpy.props.EnumProperty(items=LightShaftVolumeTypeEnumItems, name="Volume Type")
     scale_by_sun_intensity: bpy.props.BoolProperty(name="Scale by Sun Intensity")
@@ -541,7 +556,7 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     flag_5: bpy.props.BoolProperty(name="Scale By Sun Intensity", description="", get=flag_get(5), set=flag_set(5))
     flag_6: bpy.props.BoolProperty(name="Draw In Front And Behind", description="", get=flag_get(6), set=flag_set(6))
 
-    def draw_props(self, layout: UILayout):
+    def draw_props_pre(self, layout: UILayout):
         from ..operators.extensions import (
             SOLLUMZ_OT_update_corner_a_location,
             SOLLUMZ_OT_update_corner_b_location,
@@ -566,6 +581,7 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
         row.operator(SOLLUMZ_OT_calculate_light_shaft_center_offset_location.bl_idname)
         layout.separator()
 
+    def draw_props(self, layout: UILayout):
         row = layout.row()
         row.prop(self, "offset_position")
         for prop_name in self.__class__.__annotations__:
@@ -587,8 +603,11 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
                 row = layout.row()
                 row.prop(self, prop_name)
 
+    def draw_props_post(self, layout: UILayout):
+        pass
 
-class SpawnPointExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+
+class SpawnPointExtensionProperties(BaseExtensionProperties, PropertyGroup):
     offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     spawn_type: bpy.props.StringProperty(name="Spawn Type")
     ped_type: bpy.props.StringProperty(name="Ped Type")
@@ -609,7 +628,7 @@ class SpawnPointExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     scenario_flags: bpy.props.StringProperty(name="Scenario Flags")
 
 
-class SpawnPointOverrideProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class SpawnPointOverrideProperties(BaseExtensionProperties, PropertyGroup):
     scenario_type: bpy.props.StringProperty(name="Scenario Type")
     itime_start_override: bpy.props.FloatProperty(name="iTime Start Override")
     itime_end_override: bpy.props.FloatProperty(name="iTime End Override")
@@ -623,16 +642,16 @@ class SpawnPointOverrideProperties(bpy.types.PropertyGroup, BaseExtensionPropert
     scenario_flags: bpy.props.StringProperty(name="Scenario Flags")
 
 
-class WindDisturbanceExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
-    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
-    disturbance_type: bpy.props.IntProperty(name="Disturbance Type")
-    bone_tag: bpy.props.IntProperty(name="Bone Tag")
-    size: bpy.props.FloatVectorProperty(name="Size", size=4, subtype="XYZ")
-    strength: bpy.props.FloatProperty(name="Strength")
-    flags: bpy.props.IntProperty(name="Flags")
+class WindDisturbanceExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
+    offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
+    disturbance_type: IntProperty(name="Disturbance Type")
+    bone_tag: IntProperty(name="Bone Tag", default=-1)
+    size: FloatVectorProperty(name="Size", size=4, subtype="XYZ")
+    strength: FloatProperty(name="Strength")
+    flags: IntProperty(name="Flags")
 
 
-class ProcObjectExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class ProcObjectExtensionProperties(BaseExtensionProperties, PropertyGroup):
     radius_inner: bpy.props.FloatProperty(name="Radius Inner")
     radius_outer: bpy.props.FloatProperty(name="Radius Outer")
     spacing: bpy.props.FloatProperty(name="Spacing")
@@ -646,15 +665,12 @@ class ProcObjectExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     flags: bpy.props.IntProperty(name="Flags", subtype="UNSIGNED")
 
 
-class LightEffectExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+class LightEffectExtensionProperties(BaseExtensionProperties, PropertyGroup):
     ignored_in_import_export = {"parent_obj"}
 
     linked_lights_object: bpy.props.PointerProperty(name="Linked Lights", type=bpy.types.Object)
 
-    def draw_props(self, layout: UILayout):
-        row = layout.row()
-        row.prop(self, "linked_lights_object")
-
+    def draw_props_post(self, layout: UILayout):
         from ..operators.extensions import SOLLUMZ_OT_light_effect_create_lights_from_entity
         layout.separator()
         row = layout.row()
