@@ -1,5 +1,6 @@
 import bpy
 from bpy.types import (
+    Object,
     Context,
     UILayout,
     PropertyGroup,
@@ -11,6 +12,8 @@ from bpy.props import (
     FloatProperty,
     FloatVectorProperty,
     StringProperty,
+    PointerProperty,
+    CollectionProperty,
 )
 from mathutils import Vector
 from typing import Union, Optional, TYPE_CHECKING
@@ -133,7 +136,7 @@ LightShaftVolumeTypeEnumItems = (
 
 
 class BaseExtensionProperties:
-    offset_position: bpy.props.FloatVectorProperty(name="Offset Position", subtype="TRANSLATION")
+    offset_position: FloatVectorProperty(name="Offset Position", subtype="TRANSLATION")
 
     def find_owner_archetype(self) -> 'ArchetypeProperties':
         id_data = self.id_data
@@ -248,12 +251,12 @@ class ExtensionWithBoneTagMixin:
 
 
 class DoorExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    enable_limit_angle: bpy.props.BoolProperty(name="Enable Limit Angle")
-    starts_locked: bpy.props.BoolProperty(name="Starts Locked")
-    can_break: bpy.props.BoolProperty(name="Can Break")
-    limit_angle: bpy.props.FloatProperty(name="Limit Angle")
-    door_target_ratio: bpy.props.FloatProperty(name="Door Target Ratio", min=0)
-    audio_hash: bpy.props.StringProperty(name="Audio Hash")
+    enable_limit_angle: BoolProperty(name="Enable Limit Angle")
+    starts_locked: BoolProperty(name="Starts Locked")
+    can_break: BoolProperty(name="Can Break")
+    limit_angle: FloatProperty(name="Limit Angle")
+    door_target_ratio: FloatProperty(name="Door Target Ratio", min=0)
+    audio_hash: StringProperty(name="Audio Hash")
 
 
 class ParticleFxType(IntEnum):
@@ -437,12 +440,12 @@ class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProper
 
 
 class AudioCollisionExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    settings: bpy.props.StringProperty(name="Settings")
+    settings: StringProperty(name="Settings")
 
 
 class AudioEmitterExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
-    effect_hash: bpy.props.StringProperty(name="Effect Hash")
+    offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
+    effect_hash: StringProperty(name="Effect Hash")
 
 
 class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
@@ -455,13 +458,13 @@ class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionPrope
 
 
 class LadderExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    bottom: bpy.props.FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
-    top: bpy.props.FloatVectorProperty(name="Top", subtype="TRANSLATION")
-    normal: bpy.props.FloatVectorProperty(name="Normal", subtype="TRANSLATION")
-    material_type: bpy.props.StringProperty(name="Material Type", default="METAL_SOLID_LADDER")
-    template: bpy.props.StringProperty(name="Template", default="default")
-    can_get_off_at_top: bpy.props.BoolProperty(name="Can Get Off At Top", default=True)
-    can_get_off_at_bottom: bpy.props.BoolProperty(name="Can Get Off At Bottom", default=True)
+    bottom: FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
+    top: FloatVectorProperty(name="Top", subtype="TRANSLATION")
+    normal: FloatVectorProperty(name="Normal", subtype="TRANSLATION")
+    material_type: StringProperty(name="Material Type", default="METAL_SOLID_LADDER")
+    template: StringProperty(name="Template", default="default")
+    can_get_off_at_top: BoolProperty(name="Can Get Off At Top", default=True)
+    can_get_off_at_bottom: BoolProperty(name="Can Get Off At Bottom", default=True)
 
     def draw_props_post(self, layout: UILayout):
         super().draw_props_post(layout)
@@ -477,40 +480,40 @@ class BuoyancyExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class ExpressionExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    expression_dictionary_name: bpy.props.StringProperty(name="Expression Dictionary Name")
-    expression_name: bpy.props.StringProperty(name="Expression Name")
-    creature_metadata_name: bpy.props.StringProperty(name="Creature Metadata Name")
-    initialize_on_collision: bpy.props.BoolProperty(name="Initialize on Collision")
+    expression_dictionary_name: StringProperty(name="Expression Dictionary Name")
+    expression_name: StringProperty(name="Expression Name")
+    creature_metadata_name: StringProperty(name="Creature Metadata Name")
+    initialize_on_collision: BoolProperty(name="Initialize on Collision")
 
 
 class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    density_type: bpy.props.EnumProperty(items=LightShaftDensityTypeEnumItems, name="Density Type")
-    volume_type: bpy.props.EnumProperty(items=LightShaftVolumeTypeEnumItems, name="Volume Type")
-    scale_by_sun_intensity: bpy.props.BoolProperty(name="Scale by Sun Intensity")
-    direction_amount: bpy.props.FloatProperty(name="Direction Amount")
-    length: bpy.props.FloatProperty(name="Length")
-    color: bpy.props.FloatVectorProperty(
+    density_type: EnumProperty(items=LightShaftDensityTypeEnumItems, name="Density Type")
+    volume_type: EnumProperty(items=LightShaftVolumeTypeEnumItems, name="Volume Type")
+    scale_by_sun_intensity: BoolProperty(name="Scale by Sun Intensity")
+    direction_amount: FloatProperty(name="Direction Amount")
+    length: FloatProperty(name="Length")
+    color: FloatVectorProperty(
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
-    intensity: bpy.props.FloatProperty(name="Intensity")
-    flashiness: bpy.props.EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
+    intensity: FloatProperty(name="Intensity")
+    flashiness: EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
                                        default=Flashiness.CONSTANT.name)
-    flags: bpy.props.IntProperty(name="Flags")
-    fade_in_time_start: bpy.props.FloatProperty(name="Fade In Time Start")
-    fade_in_time_end: bpy.props.FloatProperty(name="Fade In Time End")
-    fade_out_time_start: bpy.props.FloatProperty(name="Fade Out Time Start")
-    fade_out_time_end: bpy.props.FloatProperty(name="Fade Out Time End")
-    fade_distance_start: bpy.props.FloatProperty(name="Fade Distance Start")
-    fade_distance_end: bpy.props.FloatProperty(name="Fade Distance End")
-    softness: bpy.props.FloatProperty(name="Softness")
-    cornerA: bpy.props.FloatVectorProperty(
+    flags: IntProperty(name="Flags")
+    fade_in_time_start: FloatProperty(name="Fade In Time Start")
+    fade_in_time_end: FloatProperty(name="Fade In Time End")
+    fade_out_time_start: FloatProperty(name="Fade Out Time Start")
+    fade_out_time_end: FloatProperty(name="Fade Out Time End")
+    fade_distance_start: FloatProperty(name="Fade Distance Start")
+    fade_distance_end: FloatProperty(name="Fade Distance End")
+    softness: FloatProperty(name="Softness")
+    cornerA: FloatVectorProperty(
         name="Corner A", subtype="TRANSLATION")
-    cornerB: bpy.props.FloatVectorProperty(
+    cornerB: FloatVectorProperty(
         name="Corner B", subtype="TRANSLATION")
-    cornerC: bpy.props.FloatVectorProperty(
+    cornerC: FloatVectorProperty(
         name="Corner C", subtype="TRANSLATION")
-    cornerD: bpy.props.FloatVectorProperty(
+    cornerD: FloatVectorProperty(
         name="Corner D", subtype="TRANSLATION")
-    direction: bpy.props.FloatVectorProperty(
+    direction: FloatVectorProperty(
         name="Direction", subtype="XYZ")
 
     # HACK: import/export iterates the annotations matching properties here with properties in the XML class,
@@ -550,11 +553,11 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
     # Using getters and setters because there isn't a nice way to have a list of checkboxes with EnumProperty and ENUM_FLAG option :(
     # BoolVectorProperty isn't a good option either because there are unused bits.
-    flag_0: bpy.props.BoolProperty(name="Use Sun Direction", description="", get=flag_get(0), set=flag_set(0))
-    flag_1: bpy.props.BoolProperty(name="Use Sun Color", description="", get=flag_get(1), set=flag_set(1))
-    flag_4: bpy.props.BoolProperty(name="Scale By Sun Color", description="", get=flag_get(4), set=flag_set(4))
-    flag_5: bpy.props.BoolProperty(name="Scale By Sun Intensity", description="", get=flag_get(5), set=flag_set(5))
-    flag_6: bpy.props.BoolProperty(name="Draw In Front And Behind", description="", get=flag_get(6), set=flag_set(6))
+    flag_0: BoolProperty(name="Use Sun Direction", description="", get=flag_get(0), set=flag_set(0))
+    flag_1: BoolProperty(name="Use Sun Color", description="", get=flag_get(1), set=flag_set(1))
+    flag_4: BoolProperty(name="Scale By Sun Color", description="", get=flag_get(4), set=flag_set(4))
+    flag_5: BoolProperty(name="Scale By Sun Intensity", description="", get=flag_get(5), set=flag_set(5))
+    flag_6: BoolProperty(name="Draw In Front And Behind", description="", get=flag_get(6), set=flag_set(6))
 
     def draw_props_pre(self, layout: UILayout):
         from ..operators.extensions import (
@@ -608,38 +611,38 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class SpawnPointExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    offset_rotation: bpy.props.FloatVectorProperty(name="Offset Rotation", subtype="EULER")
-    spawn_type: bpy.props.StringProperty(name="Spawn Type")
-    ped_type: bpy.props.StringProperty(name="Ped Type")
-    group: bpy.props.StringProperty(name="Group")
-    interior: bpy.props.StringProperty(name="Interior")
-    required_map: bpy.props.StringProperty(name="Required Map")
-    probability: bpy.props.FloatProperty(name="Probability")
-    time_till_ped_leaves: bpy.props.FloatProperty(name="Time Till Ped Leaves")
-    radius: bpy.props.FloatProperty(name="Radius")
-    start: bpy.props.FloatProperty(name="Start")
-    end: bpy.props.FloatProperty(name="End")
-    high_pri: bpy.props.BoolProperty(name="High Priority")
-    extended_range: bpy.props.BoolProperty(name="Extended Range")
-    short_range: bpy.props.BoolProperty(name="Short Range")
+    offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
+    spawn_type: StringProperty(name="Spawn Type")
+    ped_type: StringProperty(name="Ped Type")
+    group: StringProperty(name="Group")
+    interior: StringProperty(name="Interior")
+    required_map: StringProperty(name="Required Map")
+    probability: FloatProperty(name="Probability")
+    time_till_ped_leaves: FloatProperty(name="Time Till Ped Leaves")
+    radius: FloatProperty(name="Radius")
+    start: FloatProperty(name="Start")
+    end: FloatProperty(name="End")
+    high_pri: BoolProperty(name="High Priority")
+    extended_range: BoolProperty(name="Extended Range")
+    short_range: BoolProperty(name="Short Range")
 
     # TODO: Use enums
-    available_in_mp_sp: bpy.props.StringProperty(name="Available in MP/SP")
-    scenario_flags: bpy.props.StringProperty(name="Scenario Flags")
+    available_in_mp_sp: StringProperty(name="Available in MP/SP")
+    scenario_flags: StringProperty(name="Scenario Flags")
 
 
 class SpawnPointOverrideProperties(BaseExtensionProperties, PropertyGroup):
-    scenario_type: bpy.props.StringProperty(name="Scenario Type")
-    itime_start_override: bpy.props.FloatProperty(name="iTime Start Override")
-    itime_end_override: bpy.props.FloatProperty(name="iTime End Override")
-    group: bpy.props.StringProperty(name="Group")
-    model_set: bpy.props.StringProperty(name="Model Set")
-    radius: bpy.props.FloatProperty(name="Radius")
-    time_till_ped_leaves: bpy.props.StringProperty(name="Time Till Ped Leaves")
+    scenario_type: StringProperty(name="Scenario Type")
+    itime_start_override: FloatProperty(name="iTime Start Override")
+    itime_end_override: FloatProperty(name="iTime End Override")
+    group: StringProperty(name="Group")
+    model_set: StringProperty(name="Model Set")
+    radius: FloatProperty(name="Radius")
+    time_till_ped_leaves: StringProperty(name="Time Till Ped Leaves")
 
     # TODO: Use enums
-    available_in_mp_sp: bpy.props.StringProperty(name="Available in MP/SP")
-    scenario_flags: bpy.props.StringProperty(name="Scenario Flags")
+    available_in_mp_sp: StringProperty(name="Available in MP/SP")
+    scenario_flags: StringProperty(name="Scenario Flags")
 
 
 class WindDisturbanceExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
@@ -652,23 +655,23 @@ class WindDisturbanceExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensio
 
 
 class ProcObjectExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    radius_inner: bpy.props.FloatProperty(name="Radius Inner")
-    radius_outer: bpy.props.FloatProperty(name="Radius Outer")
-    spacing: bpy.props.FloatProperty(name="Spacing")
-    min_scale: bpy.props.FloatProperty(name="Min Scale")
-    max_scale: bpy.props.FloatProperty(name="Max Scale")
-    min_scale_z: bpy.props.FloatProperty(name="Min Scale Z")
-    max_scale_z: bpy.props.FloatProperty(name="Max Scale Z")
-    min_z_offset: bpy.props.FloatProperty(name="Min Z Offset")
-    max_z_offset: bpy.props.FloatProperty(name="Max Z Offset")
-    object_hash: bpy.props.IntProperty(name="Object Hash", subtype="UNSIGNED")
-    flags: bpy.props.IntProperty(name="Flags", subtype="UNSIGNED")
+    radius_inner: FloatProperty(name="Radius Inner")
+    radius_outer: FloatProperty(name="Radius Outer")
+    spacing: FloatProperty(name="Spacing")
+    min_scale: FloatProperty(name="Min Scale")
+    max_scale: FloatProperty(name="Max Scale")
+    min_scale_z: FloatProperty(name="Min Scale Z")
+    max_scale_z: FloatProperty(name="Max Scale Z")
+    min_z_offset: FloatProperty(name="Min Z Offset")
+    max_z_offset: FloatProperty(name="Max Z Offset")
+    object_hash: IntProperty(name="Object Hash", subtype="UNSIGNED")
+    flags: IntProperty(name="Flags", subtype="UNSIGNED")
 
 
 class LightEffectExtensionProperties(BaseExtensionProperties, PropertyGroup):
     ignored_in_import_export = {"parent_obj"}
 
-    linked_lights_object: bpy.props.PointerProperty(name="Linked Lights", type=bpy.types.Object)
+    linked_lights_object: PointerProperty(name="Linked Lights", type=Object)
 
     def draw_props_post(self, layout: UILayout):
         from ..operators.extensions import SOLLUMZ_OT_light_effect_create_lights_from_entity
@@ -677,7 +680,7 @@ class LightEffectExtensionProperties(BaseExtensionProperties, PropertyGroup):
         row.operator(SOLLUMZ_OT_light_effect_create_lights_from_entity.bl_idname)
 
 
-class ExtensionProperties(bpy.types.PropertyGroup):
+class ExtensionProperties(PropertyGroup):
     def get_properties(self) -> BaseExtensionProperties:
         if self.extension_type == ExtensionType.DOOR:
             return self.door_extension_properties
@@ -731,32 +734,32 @@ class ExtensionProperties(bpy.types.PropertyGroup):
     def _set_extension_type_int(self, value: int):
         self["extension_type"] = value  # using indexer to set the integer value directly
 
-    extension_type: bpy.props.EnumProperty(name="Type", items=ExtensionTypeEnumItems)
-    extension_type_for_archetypes: bpy.props.EnumProperty(
+    extension_type: EnumProperty(name="Type", items=ExtensionTypeEnumItems)
+    extension_type_for_archetypes: EnumProperty(
         name="Type", items=ExtensionTypeForArchetypesEnumItems,
         get=_get_extension_type_int, set=_set_extension_type_int,
     )
-    extension_type_for_entities: bpy.props.EnumProperty(
+    extension_type_for_entities: EnumProperty(
         name="Type", items=ExtensionTypeForEntitiesEnumItems,
         get=_get_extension_type_int, set=_set_extension_type_int,
     )
 
-    name: bpy.props.StringProperty(name="Name", default="Extension")
+    name: StringProperty(name="Name", default="Extension")
 
-    door_extension_properties: bpy.props.PointerProperty(type=DoorExtensionProperties)
-    particle_extension_properties: bpy.props.PointerProperty(type=ParticleExtensionProperties)
-    audio_collision_extension_properties: bpy.props.PointerProperty(type=AudioCollisionExtensionProperties)
-    audio_emitter_extension_properties: bpy.props.PointerProperty(type=AudioEmitterExtensionProperties)
-    explosion_extension_properties: bpy.props.PointerProperty(type=ExplosionExtensionProperties)
-    ladder_extension_properties: bpy.props.PointerProperty(type=LadderExtensionProperties)
-    buoyancy_extension_properties: bpy.props.PointerProperty(type=BuoyancyExtensionProperties)
-    expression_extension_properties: bpy.props.PointerProperty(type=ExpressionExtensionProperties)
-    light_shaft_extension_properties: bpy.props.PointerProperty(type=LightShaftExtensionProperties)
-    spawn_point_extension_properties: bpy.props.PointerProperty(type=SpawnPointExtensionProperties)
-    spawn_point_override_properties: bpy.props.PointerProperty(type=SpawnPointOverrideProperties)
-    wind_disturbance_properties: bpy.props.PointerProperty(type=WindDisturbanceExtensionProperties)
-    proc_object_extension_properties: bpy.props.PointerProperty(type=ProcObjectExtensionProperties)
-    light_effect_properties: bpy.props.PointerProperty(type=LightEffectExtensionProperties)
+    door_extension_properties: PointerProperty(type=DoorExtensionProperties)
+    particle_extension_properties: PointerProperty(type=ParticleExtensionProperties)
+    audio_collision_extension_properties: PointerProperty(type=AudioCollisionExtensionProperties)
+    audio_emitter_extension_properties: PointerProperty(type=AudioEmitterExtensionProperties)
+    explosion_extension_properties: PointerProperty(type=ExplosionExtensionProperties)
+    ladder_extension_properties: PointerProperty(type=LadderExtensionProperties)
+    buoyancy_extension_properties: PointerProperty(type=BuoyancyExtensionProperties)
+    expression_extension_properties: PointerProperty(type=ExpressionExtensionProperties)
+    light_shaft_extension_properties: PointerProperty(type=LightShaftExtensionProperties)
+    spawn_point_extension_properties: PointerProperty(type=SpawnPointExtensionProperties)
+    spawn_point_override_properties: PointerProperty(type=SpawnPointOverrideProperties)
+    wind_disturbance_properties: PointerProperty(type=WindDisturbanceExtensionProperties)
+    proc_object_extension_properties: PointerProperty(type=ProcObjectExtensionProperties)
+    light_effect_properties: PointerProperty(type=LightEffectExtensionProperties)
 
 
 class ExtensionsContainer:
@@ -795,7 +798,7 @@ class ExtensionsContainer:
         self.extension_index = max(self.extension_index - 1, 0)
 
     def duplicate_selected_extension(self) -> ExtensionProperties:
-        def _copy_property_group(dst: bpy.types.PropertyGroup, src: bpy.types.PropertyGroup):
+        def _copy_property_group(dst: PropertyGroup, src: PropertyGroup):
             if getattr(src, "offset_position", None) is not None:
                 # __annotations__ doesn't include `offset_position` as it is from a base class
                 # manually copy it instead
@@ -807,7 +810,7 @@ class ExtensionsContainer:
                     continue
 
                 src_value = getattr(src, prop_name)
-                if isinstance(src_value, bpy.types.PropertyGroup):
+                if isinstance(src_value, PropertyGroup):
                     _copy_property_group(getattr(dst, prop_name), src_value)
                 else:
                     setattr(dst, prop_name, src_value)
@@ -824,8 +827,8 @@ class ExtensionsContainer:
         self.extension_index = len(self.extensions) - 1
         return new_ext
 
-    extensions: bpy.props.CollectionProperty(type=ExtensionProperties, name="Extensions")
-    extension_index: bpy.props.IntProperty(name="Extension")
+    extensions: CollectionProperty(type=ExtensionProperties, name="Extensions")
+    extension_index: IntProperty(name="Extension")
 
     @property
     def selected_extension(self) -> Union[ExtensionProperties, None]:
