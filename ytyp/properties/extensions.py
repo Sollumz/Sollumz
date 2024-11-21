@@ -12,7 +12,7 @@ from bpy.props import (
     StringProperty,
 )
 from mathutils import Vector
-from typing import Union, TYPE_CHECKING
+from typing import Union, Optional, TYPE_CHECKING
 from collections.abc import Iterator
 from enum import Enum, IntEnum
 from ...tools.utils import get_list_item
@@ -39,43 +39,62 @@ class ExtensionType(str, Enum):
     LIGHT_EFFECT = "CExtensionDefLightEffect"
 
 
-ExtensionTypeEnumItems = (
-    (ExtensionType.DOOR, "Door", "", 0),
-    (ExtensionType.PARTICLE, "Particle", "", 1),
-    (ExtensionType.AUDIO_COLLISION, "Audio Collision Settings", "", 2),
-    (ExtensionType.AUDIO_EMITTER, "Audio Emitter", "", 3),
-    (ExtensionType.EXPLOSION_EFFECT, "Explosion Effect", "", 4),
-    (ExtensionType.LADDER, "Ladder", "", 5),
-    (ExtensionType.BUOYANCY, "Buoyancy", "", 6),
-    (ExtensionType.LIGHT_SHAFT, "Light Shaft", "", 7),
-    (ExtensionType.SPAWN_POINT, "Spawn Point", "", 8),
-    (ExtensionType.SPAWN_POINT_OVERRIDE, "Spawn Point Override", "", 9),
-    (ExtensionType.WIND_DISTURBANCE, "Wind Disturbance", "", 10),
-    (ExtensionType.PROC_OBJECT, "Procedural Object", "", 11),
-    (ExtensionType.EXPRESSION, "Expression", "", 12),
-    (ExtensionType.LIGHT_EFFECT, "Light Effect", "", 13),
-)
+def ExtensionTypeEnumItems(self, context: Optional[Context]):
+    # Using a function because the icons are only available after register() is executed
+    try:
+        return ExtensionTypeEnumItems._backing
+    except AttributeError:
+        from ...icons import icon
+        ExtensionTypeEnumItems._backing = (
+            (ExtensionType.DOOR, "Door", "", icon("extension_door"), 0),
+            (ExtensionType.PARTICLE, "Particle", "", icon("extension_particle_effect"), 1),
+            (ExtensionType.AUDIO_COLLISION, "Audio Collision Settings", "", icon("extension_audio_collision_settings"), 2),
+            (ExtensionType.AUDIO_EMITTER, "Audio Emitter", "", icon("extension_audio_emitter"), 3),
+            (ExtensionType.EXPLOSION_EFFECT, "Explosion Effect", "", icon("extension_explosion_effect"), 4),
+            (ExtensionType.LADDER, "Ladder", "", icon("extension_ladder"), 5),
+            (ExtensionType.BUOYANCY, "Buoyancy", "", icon("extension_buoyancy"), 6),
+            (ExtensionType.LIGHT_SHAFT, "Light Shaft", "", icon("extension_light_shaft"), 7),
+            (ExtensionType.SPAWN_POINT, "Spawn Point", "", icon("extension_spawn_point"), 8),
+            (ExtensionType.SPAWN_POINT_OVERRIDE, "Spawn Point Override", "", icon("extension_spawn_point_override"), 9),
+            (ExtensionType.WIND_DISTURBANCE, "Wind Disturbance", "", icon("extension_wind_disturbance"), 10),
+            (ExtensionType.PROC_OBJECT, "Procedural Object", "", icon("extension_proc_object"), 11),
+            (ExtensionType.EXPRESSION, "Expression", "", icon("extension_expression"), 12),
+            (ExtensionType.LIGHT_EFFECT, "Light Effect", "", "OUTLINER_OB_LIGHT", 13),
+        )
+        return ExtensionTypeEnumItems._backing
 
-ExtensionTypeForArchetypesEnumItems = tuple(e for e in ExtensionTypeEnumItems if e[0] in {
-    ExtensionType.PARTICLE,
-    ExtensionType.AUDIO_COLLISION,
-    ExtensionType.AUDIO_EMITTER,
-    ExtensionType.EXPLOSION_EFFECT,
-    ExtensionType.LADDER,
-    ExtensionType.BUOYANCY,
-    ExtensionType.LIGHT_SHAFT,
-    ExtensionType.SPAWN_POINT,
-    ExtensionType.WIND_DISTURBANCE,
-    ExtensionType.PROC_OBJECT,
-    ExtensionType.EXPRESSION,
-})
 
-ExtensionTypeForEntitiesEnumItems = tuple(e for e in ExtensionTypeEnumItems if e[0] in {
-    ExtensionType.DOOR,
-    ExtensionType.SPAWN_POINT_OVERRIDE,
-    ExtensionType.LIGHT_EFFECT,
-    # TODO: ExtensionType.VERLET_CLOTH_CUSTOM_BOUNDS,
-})
+def ExtensionTypeForArchetypesEnumItems(self, context: Optional[Context]):
+    try:
+        return ExtensionTypeForArchetypesEnumItems._backing
+    except AttributeError:
+        ExtensionTypeForArchetypesEnumItems._backing = tuple(e for e in ExtensionTypeEnumItems(self, context) if e[0] in {
+            ExtensionType.PARTICLE,
+            ExtensionType.AUDIO_COLLISION,
+            ExtensionType.AUDIO_EMITTER,
+            ExtensionType.EXPLOSION_EFFECT,
+            ExtensionType.LADDER,
+            ExtensionType.BUOYANCY,
+            ExtensionType.LIGHT_SHAFT,
+            ExtensionType.SPAWN_POINT,
+            ExtensionType.WIND_DISTURBANCE,
+            ExtensionType.PROC_OBJECT,
+            ExtensionType.EXPRESSION,
+        })
+        return ExtensionTypeForArchetypesEnumItems._backing
+
+
+def ExtensionTypeForEntitiesEnumItems(self, context: Optional[Context]):
+    try:
+        return ExtensionTypeForEntitiesEnumItems._backing
+    except AttributeError:
+        ExtensionTypeForEntitiesEnumItems._backing = tuple(e for e in ExtensionTypeEnumItems(self, context) if e[0] in {
+            ExtensionType.DOOR,
+            ExtensionType.SPAWN_POINT_OVERRIDE,
+            ExtensionType.LIGHT_EFFECT,
+            # TODO: ExtensionType.VERLET_CLOTH_CUSTOM_BOUNDS,
+        })
+        return ExtensionTypeForEntitiesEnumItems._backing
 
 
 class LightShaftDensityType(str, Enum):
@@ -157,6 +176,7 @@ class ParticleFxType(IntEnum):
     # conditions for this FX type, seems to require the object to be equipped by a ped playing an ambient clip with
     # "ObjectVfx" clip tags
     ANIM = 5
+
 
 ParticleFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})", desc, enum.value) for enum, label, desc in (
     (
@@ -377,6 +397,7 @@ class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperti
             row.prop(self, prop_name, icon=icon)
 
         col = layout.column(heading="Flags", align=True)
+
         def _prop_enabled(prop_name, enabled):
             row = col.row(align=True)
             row.active = enabled
@@ -559,7 +580,7 @@ class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
             elif (prop_name.startswith("flag_") or prop_name == "scale_by_sun_intensity"):
                 # skip light shaft flag props, drawn above
                 # and skip scale_by_sun_intensity because it is the same as flag_5
-               continue
+                continue
             else:
                 if prop_name in {"direction_amount", "cornerA"}:
                     layout.separator()
@@ -689,10 +710,10 @@ class ExtensionProperties(bpy.types.PropertyGroup):
                     c += offset
 
     def _get_extension_type_int(self) -> int:
-        return self["extension_type"] # using indexer to get the integer value instead of a string
+        return self["extension_type"]  # using indexer to get the integer value instead of a string
 
     def _set_extension_type_int(self, value: int):
-        self["extension_type"] = value # using indexer to set the integer value directly
+        self["extension_type"] = value  # using indexer to set the integer value directly
 
     extension_type: bpy.props.EnumProperty(name="Type", items=ExtensionTypeEnumItems)
     extension_type_for_archetypes: bpy.props.EnumProperty(

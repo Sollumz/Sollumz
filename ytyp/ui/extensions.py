@@ -1,21 +1,16 @@
 import bpy
+from bpy.types import (
+    UILayout
+)
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.extensions import ExtensionsContainer
 from ..utils import get_selected_archetype
 from .archetype import ArchetypeChildTabPanel
 
 
-class ExtensionsListHelper:
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=item.name, icon="CON_TRACKTO")
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="CON_TRACKTO")
+class ExtensionsListHelper(BasicListHelper):
+    def get_item_icon(self, item) -> str | int:
+        return UILayout.enum_item_icon(item, "extension_type", item.extension_type)
 
 
 class ExtensionsPanelHelper:
@@ -64,9 +59,8 @@ class ExtensionsPanelHelper:
             extension_properties.draw_props(layout)
 
 
-class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(ExtensionsListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST"
-    icon = "CON_TRACKTO"
 
 
 class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(ArchetypeChildTabPanel, ExtensionsPanelHelper, bpy.types.Panel):

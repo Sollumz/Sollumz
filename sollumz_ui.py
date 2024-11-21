@@ -43,13 +43,22 @@ class BasicListHelper:
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        if not self.name_editable:
-            layout.label(text=getattr(item, self.name_prop),
-                         icon=self.item_icon)
-            return
+        icon = self.get_item_icon(item)
+        match icon:
+            case str():
+                icon_str, icon_value = icon, 0
+            case int():
+                icon_str, icon_value = "NONE", icon
+            case _:
+                raise ValueError(f"Invalid item icon. Only str or int supported, got '{icon}'")
 
-        layout.prop(item, self.name_prop, text="",
-                    emboss=False, icon=self.item_icon)
+        if self.name_editable:
+            layout.prop(item, self.name_prop, text="", emboss=False, icon=icon_str, icon_value=icon_value)
+        else:
+            layout.label(text=getattr(item, self.name_prop), icon=icon_str, icon_value=icon_value)
+
+    def get_item_icon(self, item) -> str | int:
+        return self.item_icon
 
 
 class FilterListHelper:

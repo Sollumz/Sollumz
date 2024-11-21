@@ -168,7 +168,7 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
             layout.prop(selected_entity, prop_name)
 
 
-class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(bpy.types.UIList, ExtensionsListHelper):
+class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(ExtensionsListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST"
 
 
