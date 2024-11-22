@@ -633,6 +633,7 @@ def register():
 
     bpy.types.WindowManager.sz_shader_preset_index = bpy.props.IntProperty(name="Shader Preset Index")
     bpy.types.WindowManager.sz_shader_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Shader Presets")
+    bpy.types.WindowManager.sz_shader_preset_apply_textures = bpy.props.BoolProperty(name="Apply Textures")
 
     bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(

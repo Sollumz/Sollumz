@@ -234,7 +234,7 @@ def shadergroup_to_materials(shader_group: ShaderGroup, filepath: str):
     return materials
 
 
-def lookup_texture_file(texture_name: str, model_textures_directory: Path) -> Optional[Path]:
+def lookup_texture_file(texture_name: str, model_textures_directory: Optional[Path]) -> Optional[Path]:
     """Searches for a DDS file with the given ``texture_name``.
     The search order is as follows:
       1. Check if file exists in ``model_textures_directory``.
@@ -260,7 +260,7 @@ def lookup_texture_file(texture_name: str, model_textures_directory: Path) -> Op
         return texture_path if texture_path is not None and texture_path.is_file() else None
 
     # First, check the textures directory next to the model we imported
-    found_texture_path = _lookup_in_directory(model_textures_directory, False)
+    found_texture_path = model_textures_directory and _lookup_in_directory(model_textures_directory, False)
     if found_texture_path is not None:
         return found_texture_path
 
@@ -273,6 +273,16 @@ def lookup_texture_file(texture_name: str, model_textures_directory: Path) -> Op
 
     # Texture still not found
     return None
+
+
+def is_non_color_texture(shader_filename: str, param_name: str):
+    # TODO: we could specify non-color textures in shaders.xml
+    # assign non-color...
+    return (
+        "Bump" in param_name or  # ...to normal maps
+        param_name == "distanceMapSampler" or  # ...to distance maps
+        (shader_filename == "decal_dirt.sps" and param_name == "DiffuseSampler") # ...to shadow maps
+    )
 
 
 def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath: str):
@@ -309,13 +319,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                             name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
                         n.image = texture
 
-                    # TODO: we could specify non-color textures in shaders.xml
-                    # assign non-color...
-                    if (
-                        "Bump" in param.name or  # ...to normal maps
-                        param.name == "distanceMapSampler" or  # ...to distance maps
-                        (filename == "decal_dirt.sps" and param.name == "DiffuseSampler") # ...to shadow maps
-                    ):
+                    if is_non_color_texture(filename, param.name):
                         n.image.colorspace_settings.name = "Non-Color"
 
                     preferences = get_addon_preferences(bpy.context)

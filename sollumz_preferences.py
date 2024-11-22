@@ -336,6 +336,16 @@ class SollumzAddonPreferences(AddonPreferences):
     #     update=_save_preferences_on_update
     # )
 
+    shader_preset_apply_textures: BoolProperty(
+        name="Apply Textures from Shader Preset",
+        description=(
+            "Enable to replace the material's existing textures with those from the shader preset. Disable to keep the "
+            "current textures unchanged"
+        ),
+        default=True,
+        update=_save_preferences_on_update
+    )
+
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
         type=SzSharedTexturesDirectory,
@@ -413,6 +423,7 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")
         layout.prop(self, "use_text_name_as_mat_name")
+        layout.prop(self, "shader_preset_apply_textures")
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()

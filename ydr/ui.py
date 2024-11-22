@@ -14,6 +14,7 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
+from ..sollumz_preferences import get_addon_preferences
 from ..icons import icon_manager
 from ..shared.shader_nodes import SzShaderNodeParameter
 from ..tools.meshhelper import (
@@ -531,12 +532,13 @@ class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        wm = context.window_manager
 
         row = layout.row()
         row.template_list(
             SOLLUMZ_UL_SHADER_PRESET_LIST.bl_idname, "shader_presets",
-            context.window_manager, "sz_shader_presets",
-            context.window_manager, "sz_shader_preset_index"
+            wm, "sz_shader_presets",
+            wm, "sz_shader_preset_index"
         )
         col = row.column(align=True)
         col.operator(ydr_ops.SOLLUMZ_OT_save_shader_preset.bl_idname, text="", icon="ADD")
@@ -544,8 +546,10 @@ class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
         col.separator()
         col.menu(SOLLUMZ_MT_shader_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
 
-        row = layout.row()
-        row.operator(ydr_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon='CHECKMARK')
+        row = layout.row(align=True)
+        op = row.operator(ydr_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon="CHECKMARK")
+        op.apply_textures = get_addon_preferences(context).shader_preset_apply_textures
+        row.menu(SOLLUMZ_MT_shader_presets_apply_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
 
 
 class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
@@ -559,6 +563,15 @@ class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
         path = get_shader_presets_path()
         layout.enabled = os.path.exists(path)
         layout.operator("wm.path_open", text="Open XML File").filepath = path
+
+
+class SOLLUMZ_MT_shader_presets_apply_context_menu(bpy.types.Menu):
+    bl_label = "Shader Presets Apply Options"
+    bl_idname = "SOLLUMZ_MT_shader_presets_apply_context_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(get_addon_preferences(context), "shader_preset_apply_textures", text="Apply Textures")
 
 
 class SOLLUMZ_UL_SHADER_PRESET_LIST(bpy.types.UIList):

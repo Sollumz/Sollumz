@@ -2,6 +2,7 @@ import traceback
 import bpy
 from bpy.props import (
     IntProperty,
+    BoolProperty,
 )
 from mathutils import Vector, Color
 from bpy.types import Context
@@ -24,7 +25,7 @@ from ..tools.meshhelper import (
     mesh_rename_color_attrs_by_order,
 )
 from ..shared.shader_nodes import SzShaderNodeParameter
-from ..cwxml.shader import ShaderParameterFloatVectorDef, ShaderManager
+from ..cwxml.shader import ShaderParameterFloatVectorDef, ShaderParameterTextureDef, ShaderManager
 
 
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
@@ -429,17 +430,30 @@ class SOLLUMZ_OT_save_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         shader_def = ShaderManager.find_shader(mat.shader_properties.filename)
 
         for node in mat.node_tree.nodes:
-            if isinstance(node, SzShaderNodeParameter):
-                param_def = shader_def.parameter_map.get(node.name)
-                is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
-                if is_vector:
-                    param = ShaderPresetParam()
-                    param.name = node.name
-                    param.x = node.get(0)
-                    param.y = node.get(1) if node.num_cols > 1 else 0.0
-                    param.z = node.get(2) if node.num_cols > 2 else 0.0
-                    param.w = node.get(3) if node.num_cols > 3 else 0.0
-                    shader_preset.params.append(param)
+            param_def = shader_def.parameter_map.get(node.name, None)
+            if param_def is None:
+                continue
+
+            if (
+                isinstance(node, SzShaderNodeParameter) and
+                isinstance(param_def, ShaderParameterFloatVectorDef) and
+                not param_def.is_array
+            ):
+                param = ShaderPresetParam()
+                param.name = node.name
+                param.x = node.get(0)
+                param.y = node.get(1) if node.num_cols > 1 else None
+                param.z = node.get(2) if node.num_cols > 2 else None
+                param.w = node.get(3) if node.num_cols > 3 else None
+                shader_preset.params.append(param)
+            elif (
+                isinstance(node, bpy.types.ShaderNodeTexImage) and
+                isinstance(param_def, ShaderParameterTextureDef)
+            ):
+                param = ShaderPresetParam()
+                param.name = node.name
+                param.texture = node.sollumz_texture_name
+                shader_preset.params.append(param)
 
         shader_presets.presets.append(shader_preset)
 
@@ -460,6 +474,8 @@ class SOLLUMZ_OT_load_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_context = "object"
     bl_options = {"REGISTER", "UNDO"}
     bl_action = f"{bl_label}"
+
+    apply_textures: BoolProperty(name="Apply Textures", default=True)
 
     @classmethod
     def poll(cls, context):
@@ -486,18 +502,47 @@ class SOLLUMZ_OT_load_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         load_shader_presets()
         shader_preset: ShaderPreset = shader_presets.presets[index]
 
+        shader_def = ShaderManager.find_shader(mat.shader_properties.filename)
+
         for param in shader_preset.params:
-            node = mat.node_tree.nodes.get(param.name, None)
-            if node is None or not isinstance(node, SzShaderNodeParameter):
+            param_def = shader_def.parameter_map.get(param.name, None)
+            if param_def is None:
                 continue
 
-            node.set(0, param.x)
-            if node.num_cols > 1:
-                node.set(1, param.y)
-            if node.num_cols > 2:
-                node.set(2, param.z)
-            if node.num_cols > 3:
-                node.set(3, param.w)
+            node = mat.node_tree.nodes.get(param.name, None)
+            if node is None:
+                continue
+
+            if (
+                isinstance(node, SzShaderNodeParameter) and
+                isinstance(param_def, ShaderParameterFloatVectorDef) and
+                not param_def.is_array
+            ):
+                if node.num_cols > 0 and param.x is not None:
+                    node.set(0, param.x)
+                if node.num_cols > 1 and param.y is not None:
+                    node.set(1, param.y)
+                if node.num_cols > 2 and param.z is not None:
+                    node.set(2, param.z)
+                if node.num_cols > 3 and param.w is not None:
+                    node.set(3, param.w)
+            elif self.apply_textures and (
+                isinstance(node, bpy.types.ShaderNodeTexImage) and
+                isinstance(param_def, ShaderParameterTextureDef)
+            ):
+                # Try to get a loaded image...
+                img = bpy.data.images.get(param.texture, None) or bpy.data.images.get(f"{param.texture}.dds", None)
+                if not img:
+                    # Otherwise, search in the shared textures directories
+                    from .ydrimport import lookup_texture_file, is_non_color_texture
+                    texture_path = lookup_texture_file(param.texture, None)
+                    img = texture_path and bpy.data.images.load(str(texture_path), check_existing=True)
+                    if img and is_non_color_texture(shader_def.filename, param.name):
+                        img.colorspace_settings.name = "Non-Color"
+
+                if img:
+                    node.image = img
+
 
         self.message(f"Applied preset '{shader_preset.name}' to {mat.name} material.")
         return True
