@@ -394,4 +394,4 @@ class SOLLUMZ_MT_flag_presets_context_menu(bpy.types.Menu):
         from .properties import get_flag_presets_path
         path = get_flag_presets_path()
         layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open XML File").filepath = path
+        layout.operator("wm.path_open", text="Open Presets File").filepath = path

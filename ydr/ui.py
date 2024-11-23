@@ -498,7 +498,7 @@ class SOLLUMZ_MT_light_presets_context_menu(bpy.types.Menu):
         from .properties import get_light_presets_path
         path = get_light_presets_path()
         layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open XML File").filepath = path
+        layout.operator("wm.path_open", text="Open Presets File").filepath = path
 
 
 class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
@@ -562,7 +562,7 @@ class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
         from .properties import get_shader_presets_path
         path = get_shader_presets_path()
         layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open XML File").filepath = path
+        layout.operator("wm.path_open", text="Open Presets File").filepath = path
 
 
 class SOLLUMZ_MT_shader_presets_apply_context_menu(bpy.types.Menu):
