@@ -710,8 +710,28 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
         row = self.layout.row()
 
         row.prop(mat.shader_properties, "renderbucket")
-        row.prop(mat.shader_properties, "filename")
-        row.prop(mat.shader_properties, "name")
+
+        subrow = row.row(align=True)
+        subrow.prop(mat.shader_properties, "ui_name")
+        subrow.popover(SOLLUMZ_PT_change_shader.bl_idname, icon="DOWNARROW_HLT", text="")
+
+
+class SOLLUMZ_PT_change_shader(bpy.types.Panel):
+    bl_idname = "SOLLUMZ_PT_change_shader"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "HEADER"
+    bl_label = "Change Shader"
+    bl_ui_units_x = 18  # make popup wider to fit all shader names
+
+    def draw(self, context):
+        wm = context.window_manager
+        layout = self.layout
+        layout.template_list(
+            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
+            wm, "sz_shader_materials", wm, "sz_shader_material_index"
+        )
+        op = layout.operator(ydr_ops.SOLLUMZ_OT_change_shader.bl_idname)
+        op.shader_index = wm.sz_shader_material_index
 
 
 def collect_parameter_nodes(mat: bpy.types.Material, filter_func) -> list[bpy.types.Node]:

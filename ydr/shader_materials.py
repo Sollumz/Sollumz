@@ -38,8 +38,9 @@ shadermats = []
 for shader in ShaderManager._shaders.values():
     name = shader.filename.replace(".sps", "").upper()
 
-    shadermats.append(ShaderMaterial(
-        name, name.replace("_", " "), shader.filename))
+    shadermats.append(ShaderMaterial(name, name.replace("_", " "), shader.filename))
+
+shadermats_by_filename = {s.value: s for s in shadermats}
 
 
 def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types.Node]:
@@ -1151,7 +1152,7 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
         node_tree.links.new(uv_map_node.outputs[0], tex_node.inputs[0])
 
 
-def create_shader(filename: str):
+def create_shader(filename: str, in_place_material: Optional[bpy.types.Material] = None) -> bpy.types.Material:
     # from ..sollumz_preferences import get_addon_preferences
     # preferences = get_addon_preferences(bpy.context)
     # if preferences.experimental_shader_expressions:
@@ -1164,8 +1165,27 @@ def create_shader(filename: str):
 
     filename = shader.filename  # in case `filename` was hashed initially
     base_name = ShaderManager.find_shader_base_name(filename)
+    material_name = filename.replace(".sps", "")
 
-    mat = bpy.data.materials.new(filename.replace(".sps", ""))
+    if in_place_material and in_place_material.use_nodes:
+        # If creating the shader in an existing material, setup the node tree to its default state
+        current_node_tree = in_place_material.node_tree
+        current_node_tree.nodes.clear()
+        material_ouput = current_node_tree.nodes.new("ShaderNodeOutputMaterial")
+        bsdf = current_node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+        current_node_tree.links.new(bsdf.outputs["BSDF"], material_ouput.inputs["Surface"])
+
+        # If the material had a default name based on its current shader, replace it with the new shader name
+        import re
+        current_filename = in_place_material.shader_properties.filename
+        if (
+            in_place_material.sollum_type == MaterialType.SHADER and
+            current_filename and
+            re.match(rf"{current_filename.replace('.sps', '')}(\.\d\d\d)?", in_place_material.name)
+        ):
+            in_place_material.name = material_name
+
+    mat = in_place_material or bpy.data.materials.new(material_name)
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
     mat.shader_properties.name = base_name
