@@ -389,6 +389,12 @@ def create_frag_physics_xml(frag: FragmentObjects, frag_xml: Fragment, materials
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
     create_phys_child_xmls(frag, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
+    if not lod_xml.children:
+        # The operations after this expect to have at least one physics child, so don't continue if we couldn't
+        # create any children to avoid errors like division by zero. Previous functions should have already reported
+        # any errors/warnings that caused them not to create the children so don't need to report anything here, just
+        # exit early.
+        return
 
     calculate_group_masses(lod_xml)
     calculate_child_drawable_matrices(frag_xml)
@@ -648,7 +654,8 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
                 links_center_of_gravity[link_index] += center * child_mass
                 link_total_mass += child_mass
 
-        links_center_of_gravity[link_index] /= link_total_mass
+        if link_total_mass > 0.0:
+            links_center_of_gravity[link_index] /= link_total_mass
 
     # add the user-defined unbroken CG offset to the root CG offset
     links_center_of_gravity[0] += lod_xml.unknown_50
