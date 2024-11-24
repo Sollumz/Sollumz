@@ -2,6 +2,7 @@ import bpy
 from mathutils import Vector, Quaternion
 import math
 import struct
+from typing import Optional
 from ..cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools import jenkhash
@@ -73,7 +74,7 @@ def sequence_items_from_action(
         data_path = fcurve.data_path
         bone_id_track_pair = get_id_and_track_from_track_data_path(data_path, target_id, bone_name_map)
         if bone_id_track_pair is None:
-            logger.warning(f"F-curve data-path '{data_path}' in action '{action.name}' is unsupported, skipping...")
+            logger.warning(f"Channel '{data_path}' in action '{action.name}' is unsupported, skipping...")
             continue
 
         bone_id, track = bone_id_track_pair
@@ -338,13 +339,15 @@ def sequence_data_from_frames_data(
     return sequence_data
 
 
-def animation_from_object(animation_obj: bpy.types.Object) -> ycdxml.Animation:
-    animation = ycdxml.Animation()
-
+def animation_from_object(animation_obj: bpy.types.Object) -> Optional[ycdxml.Animation]:
     animation_properties = animation_obj.animation_properties
     action = animation_properties.action
     export_frame_count = get_action_export_frame_count(action)
+    if export_frame_count == 0:
+        logger.error(f"Action '{action.name}' has no keyframes. Used by animation '{animation_obj.name}'. Cannot export empty action.")
+        return None
 
+    animation = ycdxml.Animation()
     animation.hash = animation_properties.hash
     animation.frame_count = export_frame_count
     animation.sequence_frame_limit = export_frame_count + 30
@@ -529,7 +532,7 @@ def clip_from_object(clip_obj: bpy.types.Object) -> ycdxml.Clip:
     return xml_clip
 
 
-def clip_dictionary_from_object(obj: bpy.types.Object) -> ycdxml.ClipDictionary:
+def clip_dictionary_from_object(obj: bpy.types.Object) -> Optional[ycdxml.ClipDictionary]:
     clip_dictionary = ycdxml.ClipDictionary()
 
     animations_obj = None
@@ -541,10 +544,18 @@ def clip_dictionary_from_object(obj: bpy.types.Object) -> ycdxml.ClipDictionary:
         elif child_obj.sollum_type == SollumType.CLIPS:
             clips_obj = child_obj
 
+    any_animation_export_failed = False
     for animation_obj in animations_obj.children:
         animation = animation_from_object(animation_obj)
+        if animation is None:
+            any_animation_export_failed = True
+            continue
 
         clip_dictionary.animations.append(animation)
+
+    if any_animation_export_failed:
+        # If any animation had some error, it's not safe to continue exporting the clips
+        return None
 
     for clip_obj in clips_obj.children:
         clip = clip_from_object(clip_obj)
@@ -555,5 +566,9 @@ def clip_dictionary_from_object(obj: bpy.types.Object) -> ycdxml.ClipDictionary:
 
 
 def export_ycd(obj: bpy.types.Object, filepath: str) -> bool:
-    clip_dictionary_from_object(obj).write_xml(filepath)
+    clip_dict = clip_dictionary_from_object(obj)
+    if clip_dict is None:
+        return False
+
+    clip_dict.write_xml(filepath)
     return True

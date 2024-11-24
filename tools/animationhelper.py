@@ -847,6 +847,9 @@ def get_action_duration_secs(action: bpy.types.Action) -> float:
 
 def get_action_export_frame_count(action: bpy.types.Action) -> int:
     """Gets how many frames should be exported for the given action."""
-    max_num_keyframes = max(len(fc.keyframe_points) for fc in action.fcurves)
-    num_frames = math.ceil(get_action_duration_frames(action) + 1)
+    max_num_keyframes = max((len(fc.keyframe_points) for fc in action.fcurves), default=0)
+    duration_in_frames = get_action_duration_frames(action)
+    if max_num_keyframes == 0 or duration_in_frames == 0.0:
+        return 0
+    num_frames = math.ceil(duration_in_frames + 1)
     return max(max_num_keyframes, num_frames)
