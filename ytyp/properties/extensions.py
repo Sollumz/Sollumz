@@ -330,7 +330,7 @@ class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProper
     bone_tag: IntProperty(name="Bone Tag", default=-1)
     scale: FloatProperty(name="Scale")
     probability: IntProperty(name="Probability", min=0, max=100, subtype="PERCENTAGE")
-    flags: IntProperty(name="Flags")
+    flags: IntProperty(name="Flags", subtype="UNSIGNED")
     color: FloatVectorProperty(name="Tint Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
 
     # Wrapper properties for better UI
@@ -447,13 +447,223 @@ class AudioEmitterExtensionProperties(BaseExtensionProperties, PropertyGroup):
     effect_hash: StringProperty(name="Effect Hash")
 
 
+class ExplosionFxType(IntEnum):
+    SHOT_POINT = 0
+    BREAK = 1
+    DESTROY = 2
+    SHOT_OFFSET = 3
+
+
+ExplosionFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})", desc, enum.value) for enum, label, desc in (
+    (
+        ExplosionFxType.SHOT_POINT,
+        "Shot (at impact point)",
+        "Trigger when this object is shot at. The explosion will be created at the point where the object was shot"
+    ),
+    (
+        ExplosionFxType.SHOT_OFFSET,
+        "Shot (at offset position)",
+        "Trigger when this object is shot at. The explosion will be created at the extension offset position"
+    ),
+    (
+        ExplosionFxType.BREAK,
+        "Break",
+        "Fragments only, trigger when this fragment breaks apart"
+    ),
+    (
+        ExplosionFxType.DESTROY,
+        "Destroy",
+        "Fragments only, trigger when this fragment is destroyed"
+    ),
+))
+
+
+KNOWN_EXPLOSION_NAMES = (
+    "exp_tag_air_defence",
+    "exp_tag_apcshell",
+    "exp_tag_balanced_cannons",
+    "exp_tag_barrel",
+    "exp_tag_bike",
+    "exp_tag_bird_crap",
+    "exp_tag_blimp",
+    "exp_tag_blimp2",
+    "exp_tag_boat",
+    "exp_tag_bomb_cluster",
+    "exp_tag_bomb_cluster_secondary",
+    "exp_tag_bomb_gas",
+    "exp_tag_bomb_incendiary",
+    "exp_tag_bomb_standard",
+    "exp_tag_bomb_standard_wide",
+    "exp_tag_bomb_water",
+    "exp_tag_bomb_water_secondary",
+    "exp_tag_bombushka_cannon",
+    "exp_tag_bullet",
+    "exp_tag_buriedmine",
+    "exp_tag_bzgas",
+    "exp_tag_car",
+    "exp_tag_dir_flame",
+    "exp_tag_dir_flame_explode",
+    "exp_tag_dir_gas_canister",
+    "exp_tag_dir_steam",
+    "exp_tag_dir_water_hydrant",
+    "exp_tag_emplauncher_emp",
+    "exp_tag_explosiveammo",
+    "exp_tag_explosiveammo_shotgun",
+    "exp_tag_extinguisher",
+    "exp_tag_firework",
+    "exp_tag_flare",
+    "exp_tag_gas_canister",
+    "exp_tag_gas_tank",
+    "exp_tag_grenade",
+    "exp_tag_grenadelauncher",
+    "exp_tag_hi_octane",
+    "exp_tag_hunter_barrage",
+    "exp_tag_hunter_cannon",
+    "exp_tag_mine_underwater",
+    "exp_tag_molotov",
+    "exp_tag_mortar_kinetic",
+    "exp_tag_oppressor2_cannon",
+    "exp_tag_orbital_cannon",
+    "exp_tag_petrol_pump",
+    "exp_tag_pipebomb",
+    "exp_tag_plane",
+    "exp_tag_plane_rocket",
+    "exp_tag_programmablear",
+    "exp_tag_propane",
+    "exp_tag_proxmine",
+    "exp_tag_railgun",
+    "exp_tag_railgunxm3",
+    "exp_tag_raygun",
+    "exp_tag_rctank_rocket",
+    "exp_tag_rocket",
+    "exp_tag_rogue_cannon",
+    "exp_tag_script_drone",
+    "exp_tag_script_missile",
+    "exp_tag_script_missile_large",
+    "exp_tag_ship_destroy",
+    "exp_tag_smokegrenade",
+    "exp_tag_smokegrenadelauncher",
+    "exp_tag_snowball",
+    "exp_tag_stickybomb",
+    "exp_tag_submarine_big",
+    "exp_tag_tanker",
+    "exp_tag_tankshell",
+    "exp_tag_torpedo",
+    "exp_tag_torpedo_underwater",
+    "exp_tag_train",
+    "exp_tag_truck",
+    "exp_tag_valkyrie_cannon",
+    "exp_tag_vehicle_bullet",
+    "exp_tag_vehiclemine",
+    "exp_tag_vehiclemine_emp",
+    "exp_tag_vehiclemine_kinetic",
+    "exp_tag_vehiclemine_slick",
+    "exp_tag_vehiclemine_spike",
+    "exp_tag_vehiclemine_tar",
+)
+
+
 class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
-    explosion_name: StringProperty(name="Explosion Name")
+    explosion_name: StringProperty(
+        name="Explosion Name",
+        description=(
+            "Name of the explosion to use, as defined in explosion.ymt or explosion.meta. If the explosion is marked "
+            "as 'minorExplosion', it will trigger each time the conditions are met (e.g. each time the object is shot "
+            "when using the Shot explosion type); otherwise, only once"
+        ),
+        search=lambda s, c, v: KNOWN_EXPLOSION_NAMES,
+        search_options={"SUGGESTION"}
+    )
     bone_tag: IntProperty(name="Bone Tag", default=-1)
-    explosion_tag: IntProperty(name="Explosion Tag")
-    explosion_type: IntProperty(name="Explosion Type")
+    explosion_type: IntProperty(name="Explosion Type", min=0, max=3, default=ExplosionFxType.SHOT_POINT.value)
     flags: IntProperty(name="Flags", subtype="UNSIGNED")
+
+    # Wrapper properties for better UI
+    def explosion_type_get(self) -> int:
+        return self.explosion_type
+
+    def explosion_type_set(self, value: int):
+        self.explosion_type = value
+
+    explosion_type_enum: EnumProperty(
+        items=ExplosionFxTypeEnumItems,
+        name="Explosion Type",
+        get=explosion_type_get,
+        set=explosion_type_set,
+    )
+
+    def is_flag_set(self, bit: int) -> bool:
+        return (self.flags & (1 << bit)) != 0
+
+    def set_flag(self, bit: int, enable: bool):
+        if enable:
+            self.flags |= 1 << bit
+        else:
+            self.flags &= ~(1 << bit)
+
+    def flag_get(bit: int):
+        return lambda s: s.is_flag_set(bit)
+
+    def flag_set(bit: int):
+        return lambda s, v: s.set_flag(bit, v)
+
+    flag_ignore_damaged_model: BoolProperty(
+        name="Ignore Damaged Model",
+        description="For fragments, do not trigger when using the damaged model. Used by Shot explosion type",
+        get=flag_get(1), set=flag_set(1)
+    )
+    flag_play_on_parent: BoolProperty(
+        name="Play on Parent",
+        description=(
+            "For fragments when breaking, attach the explosion to the parent instead of the broken apart piece. Used by "
+            "Break explosion type"
+        ),
+        get=flag_get(2), set=flag_set(2)
+    )
+    flag_allow_rubber_bullet_shot_fx: BoolProperty(
+        name="Allow Rubber Bullet Shot",
+        description=(
+            "When shot at, trigger even if the damage type of the weapon used is BULLET_RUBBER. Used by Shot explosion type"
+        ),
+        get=flag_get(4), set=flag_set(4)
+    )
+    flag_allow_electric_bullet_shot_fx: BoolProperty(
+        name="Allow Electric Bullet Shot",
+        description=(
+            "When shot at, trigger even if the damage type of the weapon used is ELECTRIC. Used by Shot explosion type"
+        ),
+        get=flag_get(5), set=flag_set(5)
+    )
+
+    def draw_props(self, layout: UILayout):
+        for prop_name in (
+            "offset_position",
+            "offset_rotation",
+            "explosion_name",
+            "explosion_type_enum",
+            "bone_tag",
+        ):
+            icon = "NONE"
+            row = layout.row()
+            if prop_name == "bone_tag":
+                icon = "BONE_DATA"
+                if self.is_bone_name_available():
+                    prop_name = "bone_name"
+            row.prop(self, prop_name, icon=icon)
+
+        col = layout.column(heading="Flags", align=True)
+
+        def _prop_enabled(prop_name, enabled):
+            row = col.row(align=True)
+            row.active = enabled
+            row.prop(self, prop_name)
+        exp_type = self.explosion_type
+        is_shot = exp_type == ExplosionFxType.SHOT_POINT or exp_type == ExplosionFxType.SHOT_OFFSET
+        _prop_enabled("flag_ignore_damaged_model", is_shot)
+        _prop_enabled("flag_play_on_parent", exp_type == ExplosionFxType.BREAK)
+        _prop_enabled("flag_allow_rubber_bullet_shot_fx", is_shot)
+        _prop_enabled("flag_allow_electric_bullet_shot_fx", is_shot)
 
 
 class LadderExtensionProperties(BaseExtensionProperties, PropertyGroup):
