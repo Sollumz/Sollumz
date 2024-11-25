@@ -119,7 +119,6 @@ FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for 
 
 
 class FragmentProperties(bpy.types.PropertyGroup):
-    flags: bpy.props.IntProperty(name="Flags", default=1)  # TODO: rage::fragType::m_Flags
     unbroken_elasticity: bpy.props.FloatProperty(name="Unbroken Elasticity")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
     buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1.0)

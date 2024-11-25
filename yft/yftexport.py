@@ -167,6 +167,7 @@ def create_fragment_xml(frag: FragmentObjects, apply_transforms: bool = False) -
 
     frag_xml = Fragment()
     frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
+    frag_xml.flags = 1  # all fragments need this flag (uses cache entry)
 
     set_frag_xml_properties(frag_obj, frag_xml)
 
@@ -388,7 +389,7 @@ def create_frag_physics_xml(frag: FragmentObjects, frag_xml: Fragment, materials
     composite_xml, damaged_composite_xml = create_collision_xml(frag, lod_xml, col_obj_to_bound_index)
 
     create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
-    create_phys_child_xmls(frag, lod_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
+    create_phys_child_xmls(frag, frag_xml, drawable_xml.skeleton.bones, materials, col_obj_to_bound_index)
     if not lod_xml.children:
         # The operations after this expect to have at least one physics child, so don't continue if we couldn't
         # create any children to avoid errors like division by zero. Previous functions should have already reported
@@ -636,6 +637,9 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
         links[link_index].append(group)
         link_index_by_group[group_index] = link_index
 
+    if len(links) > 1:
+        frag_xml.flags |= 2  # set 'is articulated' flag
+
     # Calculate center of gravity of each link. This is the weighted mean of the center of gravity of all physics
     # children that form the link.
     links_center_of_gravity = [Vector((0.0, 0.0, 0.0)) for _ in range(len(links))]
@@ -684,7 +688,7 @@ def calculate_physics_lod_transforms(frag_xml: Fragment):
 
 def create_phys_child_xmls(
     frag: FragmentObjects,
-    lod_xml: PhysicsLOD,
+    frag_xml: Fragment,
     bones_xml: list[Bone],
     materials: list[bpy.types.Material],
     col_obj_to_bound_index: dict[Object, int]
@@ -696,6 +700,7 @@ def create_phys_child_xmls(
     """
     frag_obj = frag.fragment
     frag_armature = frag_obj.data
+    lod_xml = frag_xml.physics.lod1
     child_meshes = get_child_meshes(frag)
     child_cols = get_child_cols(frag)
     damaged_child_cols = get_child_cols(frag, damaged=True) if frag.damaged_composite else {}
@@ -741,6 +746,9 @@ def create_phys_child_xmls(
                 create_phys_child_drawable(child_xml, materials, damaged=True)
             else:
                 child_xml.damaged_drawable = None
+
+            if child_xml.drawable.all_models:
+                frag_xml.flags |= 64  # flag for vehicles, seems unused at runtime though
 
             lod_xml.children.append(child_xml)
 
@@ -1144,7 +1152,6 @@ def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
     frag_xml.unknown_b8 = 0
     frag_xml.unknown_bc = 0
     frag_xml.unknown_c0 = (FragmentTemplateAsset[frag_obj.fragment_properties.template_asset] & 0xFF) << 8
-    frag_xml.unknown_c4 = frag_obj.fragment_properties.flags
     frag_xml.unknown_cc = frag_obj.fragment_properties.unbroken_elasticity
     frag_xml.gravity_factor = frag_obj.fragment_properties.gravity_factor
     frag_xml.buoyancy_factor = frag_obj.fragment_properties.buoyancy_factor

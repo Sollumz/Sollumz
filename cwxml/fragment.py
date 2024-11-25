@@ -277,7 +277,7 @@ class Fragment(ElementTree, AbstractClass):
         self.unknown_b8 = ValueProperty("UnknownB8")
         self.unknown_bc = ValueProperty("UnknownBC")
         self.unknown_c0 = ValueProperty("UnknownC0")
-        self.unknown_c4 = ValueProperty("UnknownC4")
+        self.flags = ValueProperty("UnknownC4")
         self.unknown_cc = ValueProperty("UnknownCC")
         self.gravity_factor = ValueProperty("GravityFactor")
         self.buoyancy_factor = ValueProperty("BuoyancyFactor")

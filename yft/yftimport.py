@@ -515,7 +515,6 @@ def create_frag_lights(frag_xml: Fragment, frag_obj: bpy.types.Object):
 def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
     # unknown_c0 include "entity class" and "attach bottom end" but those are always 0 in game assets and seem unused
     frag_obj.fragment_properties.template_asset = FragmentTemplateAsset((frag_xml.unknown_c0 >> 8) & 0xFF).name
-    frag_obj.fragment_properties.flags = frag_xml.unknown_c4
     frag_obj.fragment_properties.unbroken_elasticity = frag_xml.unknown_cc
     frag_obj.fragment_properties.gravity_factor = frag_xml.gravity_factor
     frag_obj.fragment_properties.buoyancy_factor = frag_xml.buoyancy_factor
