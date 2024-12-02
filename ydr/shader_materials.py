@@ -220,6 +220,10 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
             input_color_attr_name = get_color_attr_name(0)
 
         tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
+        # Attribute creation fails with names that are too long. Truncate to max name length 64 characters, -4 so
+        # Blender still has space to append '.012' in case of duplicated names.
+        tint_color_attr_name = tint_color_attr_name[:64-4]
+
         tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
