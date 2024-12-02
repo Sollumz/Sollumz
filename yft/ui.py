@@ -278,7 +278,7 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
-        return aobj is not None and aobj.sollum_type != SollumType.BOUND_COMPOSITE and aobj.sollum_type in BOUND_TYPES and find_sollumz_parent(aobj)
+        return aobj is not None and aobj.sollum_type != SollumType.BOUND_COMPOSITE and aobj.sollum_type in BOUND_TYPES
 
     def draw(self, context):
         layout = self.layout

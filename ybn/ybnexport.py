@@ -54,6 +54,8 @@ def create_composite_xml(
     obj: bpy.types.Object,
     out_child_obj_to_index: dict[bpy.types.Object, int] = None
 ) -> BoundComposite:
+    assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
+
     if not obj.children:
         # We only do a simple check for children here, if there are any other issues with them it will checked and
         # reported by `create_bound_xml`
