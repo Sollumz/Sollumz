@@ -177,10 +177,15 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
 
         # Filtering by name
         if self.filter_name:
-            flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.bitflag_filter_item, shader_materials, "name",
-                reverse=self.use_filter_sort_reverse
-            )
+            filter_text = self.filter_name.strip().lower().replace(" ", "")
+            for shader_material in shader_materials:
+                name = shader_material.name.lower().replace("_", "").replace(" ", "")
+                if filter_text in name:
+                    flt_flags.append(self.bitflag_filter_item)
+                else:
+                    flt_flags.append(0)
+        else:
+            flt_flags = [self.bitflag_filter_item] * len(shader_materials)
 
         # Filter favorites.
         if self.use_filter_favorites:
