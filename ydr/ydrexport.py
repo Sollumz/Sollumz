@@ -1006,14 +1006,17 @@ def get_shaders_from_blender(materials):
             param = None
 
             if isinstance(node, bpy.types.ShaderNodeTexImage):
-                if node.name == "Extra":
-                    # Don't write extra material to xml
+                param_def = shader_def.parameter_map.get(node.name, None)
+                if not param_def:
                     continue
 
                 param = TextureShaderParameter()
                 param.texture_name = node.sollumz_texture_name
             elif isinstance(node, SzShaderNodeParameter):
-                param_def = shader_def.parameter_map.get(node.name)
+                param_def = shader_def.parameter_map.get(node.name, None)
+                if not param_def:
+                    continue
+
                 is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
                 if is_vector:
                     param = VectorShaderParameter()
