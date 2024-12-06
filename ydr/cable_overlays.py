@@ -116,11 +116,14 @@ class CableOverlaysDrawHandler:
 
         if cable_obj.mode == "EDIT":
             edit_mesh = bmesh.from_edit_mesh(mesh)
-            attr_layers = [(edit_mesh.verts.layers.float_vector if attr.type == "FLOAT_VECTOR" else edit_mesh.verts.layers.int if attr.type == "INT" else edit_mesh.verts.layers.float).get(attr, None) for attr in attrs]
-            for v in edit_mesh.verts:
-                attr_values = [attr.default_value if attr_layers[i] is None else v[attr_layers[i]]
-                               for i, attr in enumerate(attrs)]
-                _draw_vertex_attributes(v.co, attr_values)
+            try:
+                attr_layers = [(edit_mesh.verts.layers.float_vector if attr.type == "FLOAT_VECTOR" else edit_mesh.verts.layers.int if attr.type == "INT" else edit_mesh.verts.layers.float).get(attr, None) for attr in attrs]
+                for v in edit_mesh.verts:
+                    attr_values = [attr.default_value if attr_layers[i] is None else v[attr_layers[i]]
+                                   for i, attr in enumerate(attrs)]
+                    _draw_vertex_attributes(v.co, attr_values)
+            finally:
+                edit_mesh.free()
         else:
             all_attr_values = [mesh_get_cable_attribute_values(mesh, attr) for attr in attrs]
             for v in mesh.vertices:
@@ -133,8 +136,11 @@ class CableOverlaysDrawHandler:
         mesh = cable_obj.data
         if cable_obj.mode == "EDIT":
             edit_mesh = bmesh.from_edit_mesh(mesh)
-            edit_edges = [TempEditEdge((e.verts[0].index, e.verts[1].index))for e in edit_mesh.edges]
-            pieces = edge_loops_from_edges(None, edges=edit_edges)
+            try:
+                edit_edges = [TempEditEdge((e.verts[0].index, e.verts[1].index))for e in edit_mesh.edges]
+                pieces = edge_loops_from_edges(None, edges=edit_edges)
+            finally:
+                edit_mesh.free()
         else:
             pieces = edge_loops_from_edges(mesh)
 
@@ -182,20 +188,23 @@ class CableOverlaysDrawHandler:
 
         if cable_obj.mode == "EDIT":
             edit_mesh = bmesh.from_edit_mesh(mesh)
-            radius_layer = edit_mesh.verts.layers.float.get(CableAttr.RADIUS, None)
-            prev_pos = None
-            for i, vi in enumerate(piece):
-                v = edit_mesh.verts[vi]
-                radius_value = CableAttr.RADIUS.default_value if radius_layer is None else v[radius_layer]
-                if prev_pos is None:
-                    if i + 1 < num_piece_verts:
-                        tangent = (edit_mesh.verts[piece[i + 1]].co - v.co).normalized()
+            try:
+                radius_layer = edit_mesh.verts.layers.float.get(CableAttr.RADIUS, None)
+                prev_pos = None
+                for i, vi in enumerate(piece):
+                    v = edit_mesh.verts[vi]
+                    radius_value = CableAttr.RADIUS.default_value if radius_layer is None else v[radius_layer]
+                    if prev_pos is None:
+                        if i + 1 < num_piece_verts:
+                            tangent = (edit_mesh.verts[piece[i + 1]].co - v.co).normalized()
+                        else:
+                            tangent = Vector()
                     else:
-                        tangent = Vector()
-                else:
-                    tangent = (v.co - prev_pos).normalized()
-                _add_piece_vertex(i, v.co, tangent, radius_value)
-                prev_pos = v.co
+                        tangent = (v.co - prev_pos).normalized()
+                    _add_piece_vertex(i, v.co, tangent, radius_value)
+                    prev_pos = v.co
+            finally:
+                edit_mesh.free()
         else:
             radius_values = mesh_get_cable_attribute_values(mesh, CableAttr.RADIUS)
             prev_pos = None
