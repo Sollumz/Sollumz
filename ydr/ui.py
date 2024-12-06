@@ -177,8 +177,9 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
 
         # Filtering by name
         if self.filter_name:
+            filter_name = self.filter_name.replace(" ", "").replace("_", "")
             flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.bitflag_filter_item, shader_materials, "name",
+                filter_name, self.bitflag_filter_item, shader_materials, "search_name",
                 reverse=self.use_filter_sort_reverse
             )
 
@@ -197,7 +198,7 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
 
         # Reorder by name or average weight.
         if self.use_filter_sort_alpha:
-            flt_neworder = helper_funcs.sort_items_by_name(shader_materials, "name")
+            flt_neworder = helper_funcs.sort_items_by_name(shader_materials, "search_name")
 
         return flt_flags, flt_neworder
 

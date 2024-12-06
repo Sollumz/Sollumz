@@ -227,6 +227,7 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
     index: bpy.props.IntProperty(name="Index")
     name: bpy.props.StringProperty(name="Name")
+    search_name: bpy.props.StringProperty(name="Name")  # name without '_' or spaces used by list search filter
     favorite: BoolProperty(
         name="Favorite",
         get=_get_favorite,
@@ -554,6 +555,7 @@ def refresh_ui_collections():
         item = bpy.context.window_manager.sz_shader_materials.add()
         item.index = index
         item.name = mat.name
+        item.search_name = mat.ui_name.replace(" ", "").replace("_", "")
 
     load_light_presets()
     load_shader_presets()
