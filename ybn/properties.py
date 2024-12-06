@@ -446,9 +446,6 @@ def register():
     bpy.types.Scene.create_seperate_composites = bpy.props.BoolProperty(
         name="Separate Objects", description="Create a separate Composite for each selected object")
 
-    bpy.types.Scene.split_collision_count = bpy.props.IntProperty(
-        name="Divide By", description=f"Amount to split {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}s or {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}s by", default=2, min=2)
-
     bpy.types.Scene.center_composite_to_selection = bpy.props.BoolProperty(
         name="Center to Selection", description="Center the Bound Composite to all selected objects", default=True)
 
@@ -473,7 +470,6 @@ def unregister():
     del bpy.types.Scene.create_seperate_composites
     del bpy.types.Scene.create_bound_type
     del bpy.types.Scene.bound_child_type
-    del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.center_composite_to_selection
     del bpy.types.WindowManager.sz_create_bound_box_parent
 

@@ -266,25 +266,10 @@ class CollisionToolChildPanel:
     bl_category = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_category
 
 
-class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
-    bl_label = "Split Collision"
-    bl_idname = "SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL"
-    bl_order = 0
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="SCULPTMODE_HLT")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row(align=True)
-        row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname, icon="SCULPTMODE_HLT")
-        row.prop(context.scene, "split_collision_count")
-
-
 class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Create Bounds"
     bl_idname = "SOLLUMZ_PT_CREATE_BOUND_PANEL"
-    bl_order = 1
+    bl_order = 0
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -332,7 +317,7 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Create Collision Material"
     bl_idname = "SOLLUMZ_PT_CREATE_MATERIAL_PANEL"
-    bl_order = 2
+    bl_order = 1
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -359,7 +344,7 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel)
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Flag Presets"
     bl_idname = "SOLLUMZ_PT_FLAG_PRESETS_PANEL"
-    bl_order = 3
+    bl_order = 2
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
