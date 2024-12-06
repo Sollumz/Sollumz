@@ -56,8 +56,13 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(MloChildTabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createmloentity", "sollumz.deletemloentity",
-                                                SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "", selected_archetype, "entities", selected_archetype, "entity_index")
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createmloentity", "sollumz.deletemloentity",
+            SOLLUMZ_UL_ENTITIES_LIST.bl_idname, "",
+            selected_archetype, "entities",
+            selected_archetype, "entity_index_with_select_linked_object"
+        )
 
         filter_type = context.scene.sollumz_entity_filter_type
 

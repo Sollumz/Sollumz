@@ -214,12 +214,16 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         # Max id + 1
         return ids[-1] + 1
 
-    def select_linked_object(self, context):
-        selected_entity = get_selected_entity(context)
+    def select_entity_linked_object(self):
+        selected_entity = get_selected_entity(bpy.context)
         if selected_entity.linked_object:
-            context.view_layer.objects.active = selected_entity.linked_object
+            bpy.context.view_layer.objects.active = selected_entity.linked_object
             bpy.ops.object.select_all(action="DESELECT")
             selected_entity.linked_object.select_set(True)
+
+    def _set_entity_index_with_select_linked_object(self, index: int):
+        self.entity_index = index
+        self.select_entity_linked_object()
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
@@ -265,7 +269,12 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected portal index
     portal_index: bpy.props.IntProperty(name="Portal")
     # Selected entity index
-    entity_index: bpy.props.IntProperty(name="Entity", update=select_linked_object)
+    entity_index: bpy.props.IntProperty(name="Entity")
+    entity_index_with_select_linked_object: bpy.props.IntProperty(
+        name="Entity",
+        get=lambda s: s.entity_index,
+        set=_set_entity_index_with_select_linked_object,
+    )
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
         name="Timecycle Modifier")
@@ -335,12 +344,16 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
 
         return item
 
-    def select_archetype_linked_object(self, context):
-        selected_archetype = get_selected_archetype(context)
+    def select_archetype_linked_object(self):
+        selected_archetype = get_selected_archetype(bpy.context)
         if selected_archetype.asset:
-            context.view_layer.objects.active = selected_archetype.asset
+            bpy.context.view_layer.objects.active = selected_archetype.asset
             bpy.ops.object.select_all(action="DESELECT")
             selected_archetype.asset.select_set(True)
+
+    def _set_archetype_index_with_select_linked_object(self, index: int):
+        self.archetype_index = index
+        self.select_archetype_linked_object()
 
     name: bpy.props.StringProperty(name="Name")
     all_texture_dictionary: bpy.props.StringProperty(
@@ -352,8 +365,12 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
     archetypes: bpy.props.CollectionProperty(
         type=ArchetypeProperties, name="Archetypes")
     # Selected archetype index
-    archetype_index: bpy.props.IntProperty(
-        name="Archetype Index", update=select_archetype_linked_object)
+    archetype_index: bpy.props.IntProperty(name="Archetype Index")
+    archetype_index_with_select_linked_object: bpy.props.IntProperty(
+        name="Archetype Index",
+        get=lambda s: s.archetype_index,
+        set=_set_archetype_index_with_select_linked_object,
+    )
     # Unique archetype id
     last_archetype_id: bpy.props.IntProperty()
 
