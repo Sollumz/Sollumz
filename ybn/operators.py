@@ -248,11 +248,12 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
             for obj in bpy.data.objects:
                 if obj.type == 'MESH':
                     for i, slot in enumerate(obj.data.materials):
-                        if slot == obj.active_material:
+                        if slot == active_mat:
                             obj.data.materials[i] = mat
         else:
             active_mat_index = aobj.active_material_index
             aobj.data.materials[active_mat_index] = mat
+
 
 class SOLLUMZ_OT_split_collision(SOLLUMZ_OT_base, bpy.types.Operator):
     """Split a collision into many parts. Sorted based on location"""
