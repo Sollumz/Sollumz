@@ -238,7 +238,7 @@ class SOLLUMZ_OT_export_assets(bpy.types.Operator, TimedOperator):
                     elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
                         filepath = self.get_filepath(obj, YCD.file_extension)
                         success = export_ycd(obj, filepath)
-                    elif obj.sollum_type in BOUND_TYPES:
+                    elif obj.sollum_type == SollumType.BOUND_COMPOSITE:
                         filepath = self.get_filepath(obj, YBN.file_extension)
                         success = export_ybn(obj, filepath)
                     elif obj.sollum_type == SollumType.YMAP:
@@ -253,6 +253,10 @@ class SOLLUMZ_OT_export_assets(bpy.types.Operator, TimedOperator):
                             any_warnings_or_errors = True
                         else:
                             logger.info(f"Successfully exported '{filepath}'")
+                    else:
+                        if op_log.has_warnings_or_errors:
+                            logger.info(f"Failed to export '{obj.name}', ERRORS found! Please check the Info Log for details.")
+                            any_warnings_or_errors = True
                 except:
                     logger.error(f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
                     any_warnings_or_errors = True

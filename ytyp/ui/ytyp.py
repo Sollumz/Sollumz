@@ -106,8 +106,14 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createarchetype", "sollumz.deletearchetype", SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "", selected_ytyp, "archetypes",
-                                                selected_ytyp, "archetype_index", rows=3)
+        list_col, _ = draw_list_with_add_remove(
+            self.layout,
+            "sollumz.createarchetype", "sollumz.deletearchetype",
+            SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "",
+            selected_ytyp, "archetypes",
+            selected_ytyp, "archetype_index_with_select_linked_object",
+            rows=3
+        )
         row = list_col.row()
         row.operator("sollumz.createarchetypefromselected",
                      icon="FILE_REFRESH")

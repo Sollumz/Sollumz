@@ -9,7 +9,7 @@ from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
 from ..cwxml.shader_preset import ShaderPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
-from ..ydr.shader_materials import shadermats
+from ..ydr.shader_materials import shadermats, shadermats_by_filename
 from .render_bucket import RenderBucket, RenderBucketEnumItems
 from .light_flashiness import Flashiness, LightFlashinessEnumItems
 from bpy.app.handlers import persistent
@@ -135,9 +135,14 @@ class ShaderProperties(bpy.types.PropertyGroup):
         name="Render Bucket", items=RenderBucketEnumItems,
         default=RenderBucket.OPAQUE.name
     )
-    filename: bpy.props.StringProperty(
-        name="Shader Filename", default="default.sps")
+    filename: bpy.props.StringProperty(name="Shader Filename", default="default.sps")
     name: bpy.props.StringProperty(name="Shader Name", default="default")
+
+    def get_ui_name(self) -> str:
+        s = shadermats_by_filename.get(self.filename, None)
+        return (s and s.ui_name) or ""
+
+    ui_name: bpy.props.StringProperty(name="Shader", get=get_ui_name)
 
 
 class TextureProperties(bpy.types.PropertyGroup):
@@ -222,6 +227,7 @@ class ShaderMaterial(bpy.types.PropertyGroup):
 
     index: bpy.props.IntProperty(name="Index")
     name: bpy.props.StringProperty(name="Name")
+    search_name: bpy.props.StringProperty(name="Name")  # name without '_' or spaces used by list search filter
     favorite: BoolProperty(
         name="Favorite",
         get=_get_favorite,
@@ -549,6 +555,7 @@ def refresh_ui_collections():
         item = bpy.context.window_manager.sz_shader_materials.add()
         item.index = index
         item.name = mat.name
+        item.search_name = mat.ui_name.replace(" ", "").replace("_", "")
 
     load_light_presets()
     load_shader_presets()

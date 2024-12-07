@@ -34,8 +34,12 @@ from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_sphere_radius,
+    get_mesh_used_colors_indices,
+    get_mesh_used_texcoords_indices,
     get_used_colors,
     get_used_texcoords,
+    get_uv_map_name,
+    get_color_attr_name,
     get_normal_required,
     get_tangent_required,
 )
@@ -267,12 +271,49 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
         return cable_geometries
 
+    # Validate UV maps and color attributes
+    texcoords = [(t, get_uv_map_name(t)) for t in get_mesh_used_texcoords_indices(mesh_eval)]
+    texcoords_missing = [(t, name) for t, name in texcoords if name not in mesh_eval.uv_layers]
+    if texcoords_missing:
+        texcoords_missing_str = ", ".join(name for _, name in texcoords_missing)
+        logger.warning(
+            f"Mesh '{mesh_eval.name}' is missing UV maps used by Sollumz shaders: {texcoords_missing_str}. "
+            "Please add them to avoid rendering issues in-game."
+        )
+
+    colors = [(c, get_color_attr_name(c)) for c in get_mesh_used_colors_indices(mesh_eval)]
+    colors_missing = [(c, name) for c, name in colors if name not in mesh_eval.color_attributes]
+    if colors_missing:
+        colors_missing_str = ", ".join(c[1] for c in colors_missing)
+        logger.warning(
+            f"Mesh '{mesh_eval.name}' is missing color attributes used by Sollumz shaders: {colors_missing_str}. "
+            "Please add them to avoid rendering issues in-game."
+        )
+
+    colors_incorrect_format = [
+        (c, name) for c, name in colors
+        if (attr := mesh_eval.color_attributes.get(name, None)) and \
+           (attr.domain != "CORNER" or attr.data_type != "BYTE_COLOR")
+    ]
+    if colors_incorrect_format:
+        colors_incorrect_format_str = ", ".join(name for _, name in colors_incorrect_format)
+        logger.warning(
+            f"Mesh '{mesh_eval.name}' has color attributes with the incorrect format: {colors_incorrect_format_str}. "
+            "Their format must be 'Face Corner ▶ Byte Color'. Please convert them to avoid rendering issues in-game."
+        )
+
+    del texcoords
+    del texcoords_missing
+    del colors
+    del colors_missing
+    del colors_incorrect_format
+
+
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
     geometries: list[Geometry] = []
 
-    bone_by_vgroup = get_bone_by_vgroup(
-        vertex_groups, bones) if bones and vertex_groups else None
+    bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
 
     total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup).build()
 
@@ -965,14 +1006,17 @@ def get_shaders_from_blender(materials):
             param = None
 
             if isinstance(node, bpy.types.ShaderNodeTexImage):
-                if node.name == "Extra":
-                    # Don't write extra material to xml
+                param_def = shader_def.parameter_map.get(node.name, None)
+                if not param_def:
                     continue
 
                 param = TextureShaderParameter()
                 param.texture_name = node.sollumz_texture_name
             elif isinstance(node, SzShaderNodeParameter):
-                param_def = shader_def.parameter_map.get(node.name)
+                param_def = shader_def.parameter_map.get(node.name, None)
+                if not param_def:
+                    continue
+
                 is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
                 if is_vector:
                     param = VectorShaderParameter()

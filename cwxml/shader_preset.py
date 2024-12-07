@@ -14,10 +14,11 @@ class ShaderPresetParam(ElementTree):
 
     def __init__(self):
         self.name = AttributeProperty("name")
-        self.x = AttributeProperty("x", 0.0)
-        self.y = AttributeProperty("y", 0.0)
-        self.z = AttributeProperty("z", 0.0)
-        self.w = AttributeProperty("w", 0.0)
+        self.x = AttributeProperty("x")
+        self.y = AttributeProperty("y")
+        self.z = AttributeProperty("z")
+        self.w = AttributeProperty("w")
+        self.texture = AttributeProperty("texture")
 
 
 class ShaderPresetParamList(ListProperty):

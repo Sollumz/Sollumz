@@ -307,6 +307,7 @@ class CollisionMaterial(bpy.types.PropertyGroup):
 
     index: bpy.props.IntProperty(name="Index")
     name: bpy.props.StringProperty(name="Name")
+    search_name: bpy.props.StringProperty(name="Name")  # name without '_' or spaces used by list search filter
     favorite: BoolProperty(
         name="Favorite",
         get=_get_favorite,
@@ -357,6 +358,7 @@ def load_collision_materials():
         item = bpy.context.window_manager.sz_collision_materials.add()
         item.index = index
         item.name = mat.name
+        item.search_name = mat.ui_name.replace(" ", "").replace("_", "")
 
 
 def refresh_ui_collections():
@@ -448,9 +450,6 @@ def register():
     bpy.types.Scene.create_seperate_composites = bpy.props.BoolProperty(
         name="Separate Objects", description="Create a separate Composite for each selected object")
 
-    bpy.types.Scene.split_collision_count = bpy.props.IntProperty(
-        name="Divide By", description=f"Amount to split {SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRYBVH]}s or {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}s by", default=2, min=2)
-
     bpy.types.Scene.center_composite_to_selection = bpy.props.BoolProperty(
         name="Center to Selection", description="Center the Bound Composite to all selected objects", default=True)
 
@@ -476,7 +475,6 @@ def unregister():
     del bpy.types.Scene.create_seperate_composites
     del bpy.types.Scene.create_bound_type
     del bpy.types.Scene.bound_child_type
-    del bpy.types.Scene.split_collision_count
     del bpy.types.Scene.center_composite_to_selection
     del bpy.types.WindowManager.sz_create_bound_box_parent
 

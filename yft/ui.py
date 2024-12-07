@@ -2,7 +2,7 @@ import bpy
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
-from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES
+from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
 from ..sollumz_helper import find_sollumz_parent
 from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
@@ -110,8 +110,7 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
         layout.use_property_split = True
 
         row = layout.row(align=True)
-        row.operator(SOLLUMZ_OT_SET_LIGHT_ID.bl_idname,
-                     icon="OUTLINER_OB_LIGHT")
+        row.operator(SOLLUMZ_OT_SET_LIGHT_ID.bl_idname, icon="OUTLINER_OB_LIGHT")
         row.prop(context.scene, "set_vehicle_light_id", text="")
 
         if context.scene.set_vehicle_light_id == VehicleLightID.CUSTOM:
@@ -120,8 +119,7 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
 
         row = layout.row(align=True)
 
-        row.operator(SOLLUMZ_OT_SELECT_LIGHT_ID.bl_idname,
-                     icon="GROUP_VERTEX")
+        row.operator(SOLLUMZ_OT_SELECT_LIGHT_ID.bl_idname, icon="GROUP_VERTEX")
         row.prop(context.scene, "select_vehicle_light_id", text="")
 
         if context.scene.select_vehicle_light_id == VehicleLightID.CUSTOM:
@@ -136,11 +134,13 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
         if face_mode:
             if light_id == -1:
                 light_id = "N/A"
-            layout.label(
-                text=f"Selection Light ID: {light_id}")
+            elif 0 <= light_id <= 17:
+                light_id_enum = VehicleLightID(str(light_id))
+                light_id = f"{SOLLUMZ_UI_NAMES[light_id_enum]} ({light_id})"
+
+            layout.label(text=f"Selection Light ID: {light_id}")
         else:
-            layout.label(
-                text="Must be in Edit Mode > Face Selection.", icon="ERROR")
+            layout.label(text="Must be in Edit Mode > Face Selection.", icon="ERROR")
 
 
 class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
@@ -278,7 +278,7 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         aobj = context.active_object
-        return aobj is not None and aobj.sollum_type != SollumType.BOUND_COMPOSITE and aobj.sollum_type in BOUND_TYPES and find_sollumz_parent(aobj)
+        return aobj is not None and aobj.sollum_type != SollumType.BOUND_COMPOSITE and aobj.sollum_type in BOUND_TYPES
 
     def draw(self, context):
         layout = self.layout

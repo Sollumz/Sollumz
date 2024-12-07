@@ -84,7 +84,7 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         obj = context.active_object
-        return obj and (obj.sollum_type != SollumType.BOUND_COMPOSITE and obj.sollum_type != SollumType.BOUND_POLY_TRIANGLE)
+        return obj and (obj.sollum_type != SollumType.BOUND_COMPOSITE and obj.sollum_type != SollumType.BOUND_GEOMETRY and obj.sollum_type != SollumType.BOUND_GEOMETRYBVH and obj.sollum_type != SollumType.BOUND_CLOTH and obj.sollum_type != SollumType.BOUND_POLY_TRIANGLE)
 
     def draw(self, context):
         obj = context.active_object
@@ -205,8 +205,9 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
 
         # Filtering by name
         if self.filter_name:
+            filter_name = self.filter_name.replace(" ", "").replace("_", "")
             flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.bitflag_filter_item, collision_materials, "name",
+                filter_name, self.bitflag_filter_item, collision_materials, "search_name",
                 reverse=self.use_filter_sort_reverse
             )
 
@@ -221,7 +222,7 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
 
         # Reorder by name or average weight.
         if self.use_filter_sort_alpha:
-            flt_neworder = helper_funcs.sort_items_by_name(collision_materials, "name")
+            flt_neworder = helper_funcs.sort_items_by_name(collision_materials, "search_name")
 
         return flt_flags, flt_neworder
 
@@ -266,25 +267,10 @@ class CollisionToolChildPanel:
     bl_category = SOLLUMZ_PT_COLLISION_TOOL_PANEL.bl_category
 
 
-class SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
-    bl_label = "Split Collision"
-    bl_idname = "SOLLUMZ_PT_COLLISION_SPLIT_TOOL_PANEL"
-    bl_order = 0
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="SCULPTMODE_HLT")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row(align=True)
-        row.operator(ybn_ops.SOLLUMZ_OT_split_collision.bl_idname, icon="SCULPTMODE_HLT")
-        row.prop(context.scene, "split_collision_count")
-
-
 class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Create Bounds"
     bl_idname = "SOLLUMZ_PT_CREATE_BOUND_PANEL"
-    bl_order = 1
+    bl_order = 0
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -332,7 +318,7 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Create Collision Material"
     bl_idname = "SOLLUMZ_PT_CREATE_MATERIAL_PANEL"
-    bl_order = 2
+    bl_order = 1
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -361,7 +347,7 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel)
 class SOLLUMZ_PT_FLAG_PRESETS_PANEL(CollisionToolChildPanel, bpy.types.Panel):
     bl_label = "Flag Presets"
     bl_idname = "SOLLUMZ_PT_FLAG_PRESETS_PANEL"
-    bl_order = 3
+    bl_order = 2
 
     def draw_header(self, context):
         # Example property to display a checkbox, can be anything
@@ -396,4 +382,4 @@ class SOLLUMZ_MT_flag_presets_context_menu(bpy.types.Menu):
         from .properties import get_flag_presets_path
         path = get_flag_presets_path()
         layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open XML File").filepath = path
+        layout.operator("wm.path_open", text="Open Presets File").filepath = path

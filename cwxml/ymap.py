@@ -189,7 +189,7 @@ class ExtensionExplosionEffect(Extension):
         self.offset_rotation = QuaternionProperty("offsetRotation")
         self.explosion_name = TextProperty("explosionName")
         self.bone_tag = ValueProperty("boneTag")
-        self.explosion_tag = ValueProperty("explosionTag")
+        self.explosion_tag = ValueProperty("explosionTag", 0)
         self.explosion_type = ValueProperty("explosionType")
         self.flags = ValueProperty("flags")
 

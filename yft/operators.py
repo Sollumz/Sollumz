@@ -190,20 +190,22 @@ class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
 
         for obj in selected_mesh_objs:
             bm = bmesh.from_edit_mesh(obj.data)
-
-            if not bm.loops.layers.color:
-                self.report(
-                    {"INFO"}, f"'{obj.name}' has no 'Face Corner > Byte Color' color attribute layers! Skipping...")
-                continue
-
-            color_layer = bm.loops.layers.color[0]
-
-            for face in bm.faces:
-                if not face.select:
+            try:
+                if not bm.loops.layers.color:
+                    self.report(
+                        {"INFO"}, f"'{obj.name}' has no 'Face Corner > Byte Color' color attribute layers! Skipping...")
                     continue
 
-                for loop in face.loops:
-                    loop[color_layer][3] = alpha
+                color_layer = bm.loops.layers.color[0]
+
+                for face in bm.faces:
+                    if not face.select:
+                        continue
+
+                    for loop in face.loops:
+                        loop[color_layer][3] = alpha
+            finally:
+                bm.free()
 
         return {"FINISHED"}
 
@@ -239,13 +241,15 @@ class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
         for obj in selected_mesh_objs:
             mesh = obj.data
             bm = bmesh.from_edit_mesh(mesh)
+            try:
+                if not bm.loops.layers.color:
+                    continue
 
-            if not bm.loops.layers.color:
-                continue
+                color_layer = bm.loops.layers.color[0]
 
-            color_layer = bm.loops.layers.color[0]
-
-            face_inds = self.get_light_id_faces(bm, color_layer, light_id)
+                face_inds = self.get_light_id_faces(bm, color_layer, light_id)
+            finally:
+                bm.free()
 
             mode = obj.mode
             if obj.mode != "OBJECT":

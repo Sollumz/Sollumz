@@ -54,14 +54,19 @@ def create_composite_xml(
     obj: bpy.types.Object,
     out_child_obj_to_index: dict[bpy.types.Object, int] = None
 ) -> BoundComposite:
-    composite_xml = BoundComposite()
+    assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
+    if not obj.children:
+        # We only do a simple check for children here, if there are any other issues with them it will checked and
+        # reported by `create_bound_xml`
+        logger.warning(f"Bound composite '{obj.name}' has no children.")
+
+    composite_xml = BoundComposite()
     centroid = Vector()
     cg = Vector()
     volume = 0.0
     for child in obj.children:
         child_xml = create_bound_xml(child)
-
         if child_xml is None:
             continue
 
@@ -78,16 +83,20 @@ def create_composite_xml(
         cg += child_cg * child_volume  # uniform density so volume == mass
         centroid += child_centroid
 
-    cg /= volume
-    centroid /= len(composite_xml.children)
+    num_children = len(composite_xml.children)
+    cg /= volume if volume > 0 else 1.0
+    centroid /= num_children if num_children > 0 else 1
 
     # Calculate combined moment of inertia
-    from ..shared.geometry import calculate_composite_inertia
-    child_masses = [child_xml.volume for child_xml in composite_xml.children]
-    child_inertias = [child_xml.inertia * child_xml.volume for child_xml in composite_xml.children]
-    child_cgs = [child_xml.composite_transform.transposed() @ child_xml.sphere_center for child_xml in composite_xml.children]
-    inertia = calculate_composite_inertia(cg, child_cgs, child_masses, child_inertias)
-    inertia /= volume
+    if volume > 0.0 and num_children > 0:
+        from ..shared.geometry import calculate_composite_inertia
+        child_masses = [child_xml.volume for child_xml in composite_xml.children]
+        child_inertias = [child_xml.inertia * child_xml.volume for child_xml in composite_xml.children]
+        child_cgs = [child_xml.composite_transform.transposed() @ child_xml.sphere_center for child_xml in composite_xml.children]
+        inertia = calculate_composite_inertia(cg, child_cgs, child_masses, child_inertias)
+        inertia /= volume
+    else:
+        inertia = Vector((1.0, 1.0, 1.0))
 
     # Calculate extents after children have been created
     bbmin, bbmax = get_composite_extents(composite_xml)
@@ -103,11 +112,25 @@ def create_composite_xml(
     return composite_xml
 
 
-def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild:
+def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[BoundChild]:
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
-    if (obj.type == "MESH" and not has_col_mats(obj)) or (obj.type == "EMPTY" and not bound_geom_has_mats(obj)):
-        logger.warning(f"'{obj.name}' has no collision materials! Skipping...")
-        return
+    if obj.sollum_type not in {
+        SollumType.BOUND_BOX,
+        SollumType.BOUND_SPHERE,
+        SollumType.BOUND_CYLINDER,
+        SollumType.BOUND_CAPSULE,
+        SollumType.BOUND_DISC,
+        SollumType.BOUND_GEOMETRY,
+        SollumType.BOUND_GEOMETRYBVH,
+    }:
+        logger.warning(
+            f"'{obj.name}' is being exported as bound but has no bound Sollumz type! Please, use a bound type instead "
+            f"of '{SOLLUMZ_UI_NAMES[obj.sollum_type]}'."
+        )
+        return None
+
+    if obj.type == "MESH" and not validate_collision_materials(obj, verbose=True):
+        return None
 
     from ..shared.geometry import (
         get_centroid_of_box, get_mass_properties_of_box,
@@ -118,6 +141,13 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild
         get_centroid_of_mesh, get_mass_properties_of_mesh,
         grow_sphere
     )
+
+    centroid = Vector()
+    radius_around_centroid = 0.0
+    cg = Vector()
+    volume = 0.0
+    inertia = Vector((1.0, 1.0, 1.0))
+    margin = 0.0
 
     match obj.sollum_type:
         case SollumType.BOUND_BOX:
@@ -182,39 +212,46 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild
         case SollumType.BOUND_GEOMETRY:
             bound_xml = create_bound_geometry_xml(obj)
 
-            mesh_vertices = np.array([(v + bound_xml.geometry_center) for v in bound_xml.vertices])
-            mesh_faces = []
-            for poly in bound_xml.polygons:
-                mesh_faces.append([poly.v1, poly.v2, poly.v3])
-            mesh_faces = np.array(mesh_faces)
+            if bound_xml.vertices and bound_xml.polygons:
+                mesh_vertices = np.array([(v + bound_xml.geometry_center) for v in bound_xml.vertices])
+                mesh_faces = []
+                for poly in bound_xml.polygons:
+                    mesh_faces.append([poly.v1, poly.v2, poly.v3])
+                mesh_faces = np.array(mesh_faces)
 
-            centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
-            volume, cg, inertia = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
+                centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
+                volume, cg, inertia = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
+
             # CW calculates the shrunk mesh on import now (though it doesn't update the margin!)
             # _, margin = shrink_mesh(mesh_vertices, mesh_faces)
             # bound_xml.vertices_shrunk = [Vector(vert) - bound_xml.geometry_center for vert in shrunk_vertices]
             margin = 0.0025  # set it to the minimum margin, though it should depend on the shrunk mesh
 
         case SollumType.BOUND_GEOMETRYBVH:
+            if not validate_bvh_collision_materials(obj, verbose=True):
+                return None
+
             bound_xml = create_bvh_xml(obj)
 
-            mesh_vertices = np.array([(v + bound_xml.geometry_center) for v in bound_xml.vertices])
-            mesh_faces = []
             primitives = []
-            for poly in bound_xml.polygons:
-                if not isinstance(poly, PolyTriangle):
-                    primitives.append(poly)
-                    continue
-                mesh_faces.append([poly.v1, poly.v2, poly.v3])
+            if bound_xml.vertices and bound_xml.polygons:
+                mesh_vertices = np.array([(v + bound_xml.geometry_center) for v in bound_xml.vertices])
+                mesh_faces = []
+                for poly in bound_xml.polygons:
+                    if not isinstance(poly, PolyTriangle):
+                        primitives.append(poly)
+                        continue
+                    mesh_faces.append([poly.v1, poly.v2, poly.v3])
 
-            centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
-            if len(mesh_faces) > 0:
-                # If we have a mesh, calculate the center of gravity from the mesh
-                mesh_faces = np.array(mesh_faces)
-                _, cg, _ = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
-            else:
-                # Otherwise, approximate with the centroid
-                cg = centroid
+                centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
+                if len(mesh_faces) > 0:
+                    # If we have a mesh, calculate the center of gravity from the mesh
+                    mesh_faces = np.array(mesh_faces)
+                    _, cg, _ = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
+                else:
+                    # Otherwise, approximate with the centroid
+                    cg = centroid
+
             # BVHs don't need to calculate the volume or inertia
             volume = 1.0
             inertia = Vector((1.0, 1.0, 1.0))
@@ -279,21 +316,60 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> BoundChild
     return bound_xml
 
 
+def validate_collision_materials(obj: bpy.types.Object, verbose: bool = False) -> bool:
+    assert obj.type == "MESH", "Expected bound mesh object"
+    mesh = obj.data
+    non_col_mats = []
+    col_mats = []
+    for mat in mesh.materials:
+        if mat.sollum_type == MaterialType.COLLISION:
+            col_mats.append(mat)
+        else:
+            non_col_mats.append(mat)
+
+    if non_col_mats:
+        if verbose:
+            non_col_mats_str = ", ".join(m.name for m in non_col_mats)
+            logger.warning(
+                f"Bound '{obj.name}' has non-collision materials! Only collision materials are supported. "
+                f"Remove the following materials: {non_col_mats_str}."
+            )
+        return False
+
+    supports_multiple_materials = obj.sollum_type in {SollumType.BOUND_GEOMETRY, SollumType.BOUND_POLY_TRIANGLE}
+    if not col_mats:
+        if verbose:
+            logger.warning(f"Bound '{obj.name}' has no collision materials! Please, add a collision material.")
+        return False
+    elif len(col_mats) > 1 and not supports_multiple_materials:
+        if verbose:
+            col_mats_str = ", ".join(m.name for m in col_mats)
+            logger.warning(
+                f"Bound '{obj.name}' has multiple materials! Only a single collision material is supported on "
+                f"{SOLLUMZ_UI_NAMES[obj.sollum_type]}. Keep only one of the following materials: {col_mats_str}."
+            )
+        return False
+
+    return True
+
+
 def has_col_mats(obj: bpy.types.Object) -> bool:
-    col_mat = next((mat for mat in obj.data.materials if mat.sollum_type == MaterialType.COLLISION), None)
-    return col_mat is not None
+    return validate_collision_materials(obj, verbose=False)
+
+
+def validate_bvh_collision_materials(geom_obj: bpy.types.Object, verbose: bool = False) -> bool:
+    valid = True
+    for child in geom_obj.children:
+        if child.type != "MESH" or child.sollum_type not in BOUND_POLYGON_TYPES:
+            continue
+
+        valid = valid and validate_collision_materials(child, verbose=verbose)
+
+    return valid
 
 
 def bound_geom_has_mats(geom_obj: bpy.types.Object) -> bool:
-    for child in geom_obj.children:
-        if child.type != "MESH":
-            continue
-
-        col_mat = next((mat for mat in child.data.materials if mat.sollum_type == MaterialType.COLLISION), None)
-        if col_mat is not None:
-            return True
-
-    return False
+    return validate_bvh_collision_materials(geom_obj, verbose=False)
 
 
 def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object):
@@ -341,11 +417,13 @@ def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: 
     num_vertices = len(geom_xml.vertices)
 
     if num_vertices == 0:
-        logger.warning(f"{SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]} '{obj.name}' has no geometry!")
+        logger.warning(f"{SOLLUMZ_UI_NAMES[obj.sollum_type]} '{obj.name}' has no geometry!")
 
     if num_vertices > MAX_VERTICES:
         logger.warning(
-            f"{SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY]} '{obj.name}' exceeds maximum vertex limit of {MAX_VERTICES} (has {num_vertices}!")
+            f"{SOLLUMZ_UI_NAMES[obj.sollum_type]} '{obj.name}' exceeds maximum vertex limit of {MAX_VERTICES} "
+            f"(has {num_vertices})!"
+        )
 
 
 def center_verts_to_geometry(geom_xml: BoundGeometry | BoundGeometryBVH):
@@ -410,7 +488,12 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
     # For empty bound objects with children, create the bound polygons from its children
     for child in obj.children_recursive:
         if child.sollum_type not in BOUND_POLYGON_TYPES:
+            logger.warning(
+                f"'{child.name}' is being exported as bound poly but has no bound poly Sollumz type! Please, use a "
+                f"bound poly type instead of '{SOLLUMZ_UI_NAMES[child.sollum_type]}'."
+            )
             continue
+
         create_bound_xml_poly_shape(child, geom_xml, get_vert_index, get_mat_index)
 
 

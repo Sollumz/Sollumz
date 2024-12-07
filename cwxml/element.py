@@ -122,7 +122,9 @@ class ElementTree(Element):
                 if element is not None:
                     root.append(element)
             elif isinstance(child, AttributeProperty):
-                root.set(child.name, str(child.value))
+                value = child.value
+                if value is not None:
+                    root.set(child.name, str(value))
 
         return root
 

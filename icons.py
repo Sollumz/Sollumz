@@ -52,6 +52,11 @@ class IconManager:
 # Global icon manager instance
 icon_manager = IconManager(ICON_DIR)
 
+
+def icon(name: str) -> int:
+    return icon_manager.get_icon(name)
+
+
 ICON_GEOM_TOOL = str(ICON_DIR / "sollumz.tool")
 
 

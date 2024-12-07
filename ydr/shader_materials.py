@@ -38,8 +38,9 @@ shadermats = []
 for shader in ShaderManager._shaders.values():
     name = shader.filename.replace(".sps", "").upper()
 
-    shadermats.append(ShaderMaterial(
-        name, name.replace("_", " "), shader.filename))
+    shadermats.append(ShaderMaterial(name, name.replace("_", " "), shader.filename))
+
+shadermats_by_filename = {s.value: s for s in shadermats}
 
 
 def try_get_node(node_tree: bpy.types.NodeTree, name: str) -> Optional[bpy.types.Node]:
@@ -219,6 +220,10 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
             input_color_attr_name = get_color_attr_name(0)
 
         tint_color_attr_name = f"TintColor ({palette_img.name})" if palette_img else "TintColor"
+        # Attribute creation fails with names that are too long. Truncate to max name length 64 characters, -4 so
+        # Blender still has space to append '.012' in case of duplicated names.
+        tint_color_attr_name = tint_color_attr_name[:64-4]
+
         tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
@@ -304,10 +309,12 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
     cptn.domain = "CORNER"
     if bpy.app.version >= (4, 2, 0):
-        cpt_attr = cptn.capture_items.new("RGBA", "Color")
-        cpt_attr.data_type = "FLOAT_COLOR"
+        cpt_name = "UV"
+        cpt_attr = cptn.capture_items.new("VECTOR", cpt_name)
+        cpt_attr.data_type = "FLOAT_VECTOR"
     else:
-        cptn.data_type = "FLOAT_COLOR"
+        cpt_name = "Attribute"
+        cptn.data_type = "FLOAT_VECTOR"
     gnt.links.new(input.outputs["Geometry"], cptn.inputs["Geometry"])
     gnt.links.new(cptn.outputs["Geometry"], output.inputs["Geometry"])
 
@@ -315,8 +322,11 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
     txtn.interpolation = "Closest"
     gnt.links.new(input.outputs["Palette Texture"], txtn.inputs["Image"])
-    gnt.links.new(cptn.outputs["Attribute"], txtn.inputs["Vector"])
+    gnt.links.new(cptn.outputs[cpt_name], txtn.inputs["Vector"])
     gnt.links.new(txtn.outputs["Color"], output.inputs["Tint Color"])
+
+    pal_img_info = gnt.nodes.new("GeometryNodeImageInfo")
+    gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
 
     # separate colour0
     sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
@@ -332,7 +342,10 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # c1
     mathns[0].operation = "LESS_THAN"
     gnt.links.new(sepn.outputs[2], mathns[0].inputs[0])
-    mathns[0].inputs[1].default_value = 0.003
+    # NOTE: the correct constant here should be 0.0031308 but the loss of precision due to the linear->sRGB conversion
+    #       causes it not to recover the correct UV.x value on some pixels, sampling neighboring pixels. With 0.004, it
+    #       works better in our specific case (UVs for pixels between 0-256) and seems to work for all palette pixels.
+    mathns[0].inputs[1].default_value = 0.004
     mathns[1].operation = "SUBTRACT"
     gnt.links.new(mathns[0].outputs[0], mathns[1].inputs[1])
     mathns[1].inputs[0].default_value = 1.0
@@ -370,7 +383,6 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_add = gnt.nodes.new("ShaderNodeMath")
     pal_add.operation = "ADD"
     pal_add.inputs[1].default_value = 0.5
-    pal_img_info = gnt.nodes.new("GeometryNodeImageInfo")
     pal_div = gnt.nodes.new("ShaderNodeMath")
     pal_div.operation = "DIVIDE"
     pal_flip_uv_sub = gnt.nodes.new("ShaderNodeMath")
@@ -380,7 +392,6 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_flip_uv_mult.operation = "MULTIPLY"
     pal_flip_uv_mult.inputs[1].default_value = -1.0
 
-    gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
     gnt.links.new(input.outputs["Palette (Preview)"], pal_add.inputs[1])
     gnt.links.new(pal_add.outputs[0], pal_div.inputs[0])
     gnt.links.new(pal_img_info.outputs["Height"], pal_div.inputs[1])
@@ -388,7 +399,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.links.new(pal_flip_uv_sub.outputs[0], pal_flip_uv_mult.inputs[0])
 
     # create and link vector
-    comb = gnt.nodes.new("ShaderNodeCombineRGB")
+    comb = gnt.nodes.new("ShaderNodeCombineXYZ")
     gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
     gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
     gnt.links.new(comb.outputs[0], cptn.inputs["Value"])
@@ -649,8 +660,54 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
     trans = node_tree.nodes.new("ShaderNodeBsdfTransparent")
     links.new(texture.outputs["Color"], bsdf.inputs["Base Color"])
 
-    if decalflag == 0:
-        links.new(texture.outputs["Alpha"], mix.inputs["Fac"])
+    if decalflag == 0:  # cutout
+        # Handle alpha test logic for cutout shaders.
+        # TODO: alpha test nodes specific to cutout shaders without HardAlphaBlend
+        # - trees shaders have AlphaTest and AlphaScale parameters
+        # - grass_batch has gAlphaTest parameter
+        # - ped_fur? has cutout render bucket but no alpha test-related parameter afaict
+        if (
+            (hard_alpha_blend := try_get_node(node_tree, "HardAlphaBlend")) and
+            isinstance(hard_alpha_blend, SzShaderNodeParameter)
+        ):
+            # The HardAlphaBlend parameter is used to slightly smooth out the cutout edges.
+            # 1.0 = hard edges, 0.0 = softer edges (some transparency in the edges)
+            # Negative values invert the cutout but I don't think that's the intended use.
+            ALPHA_REF = 90.0 / 255.0
+            MIN_ALPHA_REF = 1.0 / 255.0
+            sub = node_tree.nodes.new("ShaderNodeMath")
+            sub.operation = "SUBTRACT"
+            sub.inputs[1].default_value = ALPHA_REF
+            div = node_tree.nodes.new("ShaderNodeMath")
+            div.operation = "DIVIDE"
+            div.inputs[1].default_value = (1.0 - ALPHA_REF) * 0.1
+            map_alpha_blend = node_tree.nodes.new("ShaderNodeMapRange")
+            map_alpha_blend.clamp = False
+            map_alpha_blend.inputs["From Min"].default_value = 0.0
+            map_alpha_blend.inputs["From Max"].default_value = 1.0
+            alpha_gt = node_tree.nodes.new("ShaderNodeMath")
+            alpha_gt.operation = "GREATER_THAN"
+            alpha_gt.inputs[1].default_value = MIN_ALPHA_REF
+            mul_alpha_test = node_tree.nodes.new("ShaderNodeMath")
+            mul_alpha_test.operation = "MULTIPLY"
+
+            links.new(texture.outputs["Alpha"], sub.inputs[0])
+            links.new(sub.outputs["Value"], div.inputs[0])
+            links.new(hard_alpha_blend.outputs["X"], map_alpha_blend.inputs["Value"])
+            links.new(texture.outputs["Alpha"], map_alpha_blend.inputs["To Min"])
+            links.new(div.outputs["Value"], map_alpha_blend.inputs["To Max"])
+            links.new(map_alpha_blend.outputs["Result"], alpha_gt.inputs[0])
+            links.new(map_alpha_blend.outputs["Result"], mul_alpha_test.inputs[0])
+            links.new(alpha_gt.outputs["Value"], mul_alpha_test.inputs[1])
+            links.new(mul_alpha_test.outputs["Value"], mix.inputs["Fac"])
+        else:
+            # Fallback to simple alpha test
+            # discard if alpha <= 0.5, else opaque
+            alpha_gt = node_tree.nodes.new("ShaderNodeMath")
+            alpha_gt.operation = "GREATER_THAN"
+            alpha_gt.inputs[1].default_value = 0.5
+            links.new(texture.outputs["Alpha"], alpha_gt.inputs[0])
+            links.new(alpha_gt.outputs["Value"], mix.inputs["Fac"])
     elif decalflag == 1:
         vcs = node_tree.nodes.new("ShaderNodeVertexColor")
         vcs.layer_name = get_color_attr_name(0)
@@ -891,8 +948,6 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     # shader nodes on the specific shaders that use it
     use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
 
-    # TODO: Material.blend_method is deprecated
-    # https://developer.blender.org/docs/release_notes/4.2/eevee/#shading-modes
     use_decal = shader.is_alpha or shader.is_decal or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
@@ -957,7 +1012,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     # link value parameters
     link_value_shader_parameters(b)
 
-    mat.blend_method = blend_mode
+    if bpy.app.version < (4, 2, 0):
+        mat.blend_method = blend_mode
 
 
 def create_terrain_shader(b: ShaderBuilder):
@@ -1100,7 +1156,7 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
         node_tree.links.new(uv_map_node.outputs[0], tex_node.inputs[0])
 
 
-def create_shader(filename: str):
+def create_shader(filename: str, in_place_material: Optional[bpy.types.Material] = None) -> bpy.types.Material:
     # from ..sollumz_preferences import get_addon_preferences
     # preferences = get_addon_preferences(bpy.context)
     # if preferences.experimental_shader_expressions:
@@ -1113,8 +1169,27 @@ def create_shader(filename: str):
 
     filename = shader.filename  # in case `filename` was hashed initially
     base_name = ShaderManager.find_shader_base_name(filename)
+    material_name = filename.replace(".sps", "")
 
-    mat = bpy.data.materials.new(filename.replace(".sps", ""))
+    if in_place_material and in_place_material.use_nodes:
+        # If creating the shader in an existing material, setup the node tree to its default state
+        current_node_tree = in_place_material.node_tree
+        current_node_tree.nodes.clear()
+        material_ouput = current_node_tree.nodes.new("ShaderNodeOutputMaterial")
+        bsdf = current_node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+        current_node_tree.links.new(bsdf.outputs["BSDF"], material_ouput.inputs["Surface"])
+
+        # If the material had a default name based on its current shader, replace it with the new shader name
+        import re
+        current_filename = in_place_material.shader_properties.filename
+        if (
+            in_place_material.sollum_type == MaterialType.SHADER and
+            current_filename and
+            re.match(rf"{current_filename.replace('.sps', '')}(\.\d\d\d)?", in_place_material.name)
+        ):
+            in_place_material.name = material_name
+
+    mat = in_place_material or bpy.data.materials.new(material_name)
     mat.sollum_type = MaterialType.SHADER
     mat.use_nodes = True
     mat.shader_properties.name = base_name

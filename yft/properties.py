@@ -119,7 +119,6 @@ FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for 
 
 
 class FragmentProperties(bpy.types.PropertyGroup):
-    flags: bpy.props.IntProperty(name="Flags", default=1)  # TODO: rage::fragType::m_Flags
     unbroken_elasticity: bpy.props.FloatProperty(name="Unbroken Elasticity")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
     buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1.0)
@@ -137,34 +136,36 @@ def get_light_id_of_selection(self):
     if not face_mode or bpy.context.mode != "EDIT_MESH":
         return -1
 
-    selected_mesh_objs = [
-        obj for obj in bpy.context.selected_objects if obj.type == "MESH"]
-
-    if not selected_mesh_objs:
+    mesh_objs = bpy.context.objects_in_mode_unique_data[:]
+    if not mesh_objs:
         return -1
 
     light_id = -1
 
-    for obj in selected_mesh_objs:
+    for obj in mesh_objs:
         mesh = obj.data
         bm = bmesh.from_edit_mesh(mesh)
-
-        if not bm.loops.layers.color:
-            continue
-
-        color_layer = bm.loops.layers.color[0]
-
-        for face in bm.faces:
-            if not face.select:
+        try:
+            if not bm.loops.layers.color:
                 continue
 
-            for loop in face.loops:
-                loop_light_id = int(loop[color_layer][3] * 255)
+            color_layer = bm.loops.layers.color[0]
 
-                if light_id != -1 and loop_light_id != light_id:
-                    return -1
-                elif loop_light_id != light_id and light_id == -1:
-                    light_id = loop_light_id
+            for face in bm.faces:
+                if not face.select:
+                    continue
+
+                for loop in face.loops:
+                    loop_light_id = int(loop[color_layer][3] * 255)
+
+                    if light_id != -1 and loop_light_id != light_id:
+                        return -1
+                    elif loop_light_id != light_id and light_id == -1:
+                        light_id = loop_light_id
+        finally:
+            # Make sure the bmesh is freed after each loop iteration. It can crash
+            # while the user edits the mesh otherwise.
+            bm.free()
 
     return light_id
 

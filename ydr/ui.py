@@ -14,6 +14,7 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
+from ..sollumz_preferences import get_addon_preferences
 from ..icons import icon_manager
 from ..shared.shader_nodes import SzShaderNodeParameter
 from ..tools.meshhelper import (
@@ -176,8 +177,9 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
 
         # Filtering by name
         if self.filter_name:
+            filter_name = self.filter_name.replace(" ", "").replace("_", "")
             flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.bitflag_filter_item, shader_materials, "name",
+                filter_name, self.bitflag_filter_item, shader_materials, "search_name",
                 reverse=self.use_filter_sort_reverse
             )
 
@@ -196,7 +198,7 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
 
         # Reorder by name or average weight.
         if self.use_filter_sort_alpha:
-            flt_neworder = helper_funcs.sort_items_by_name(shader_materials, "name")
+            flt_neworder = helper_funcs.sort_items_by_name(shader_materials, "search_name")
 
         return flt_flags, flt_neworder
 
@@ -497,7 +499,7 @@ class SOLLUMZ_MT_light_presets_context_menu(bpy.types.Menu):
         from .properties import get_light_presets_path
         path = get_light_presets_path()
         layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open XML File").filepath = path
+        layout.operator("wm.path_open", text="Open Presets File").filepath = path
 
 
 class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
@@ -531,12 +533,13 @@ class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        wm = context.window_manager
 
         row = layout.row()
         row.template_list(
             SOLLUMZ_UL_SHADER_PRESET_LIST.bl_idname, "shader_presets",
-            context.window_manager, "sz_shader_presets",
-            context.window_manager, "sz_shader_preset_index"
+            wm, "sz_shader_presets",
+            wm, "sz_shader_preset_index"
         )
         col = row.column(align=True)
         col.operator(ydr_ops.SOLLUMZ_OT_save_shader_preset.bl_idname, text="", icon="ADD")
@@ -544,8 +547,10 @@ class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
         col.separator()
         col.menu(SOLLUMZ_MT_shader_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
 
-        row = layout.row()
-        row.operator(ydr_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon='CHECKMARK')
+        row = layout.row(align=True)
+        op = row.operator(ydr_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon="CHECKMARK")
+        op.apply_textures = get_addon_preferences(context).shader_preset_apply_textures
+        row.menu(SOLLUMZ_MT_shader_presets_apply_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
 
 
 class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
@@ -558,7 +563,16 @@ class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
         from .properties import get_shader_presets_path
         path = get_shader_presets_path()
         layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open XML File").filepath = path
+        layout.operator("wm.path_open", text="Open Presets File").filepath = path
+
+
+class SOLLUMZ_MT_shader_presets_apply_context_menu(bpy.types.Menu):
+    bl_label = "Shader Presets Apply Options"
+    bl_idname = "SOLLUMZ_MT_shader_presets_apply_context_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(get_addon_preferences(context), "shader_preset_apply_textures", text="Apply Textures")
 
 
 class SOLLUMZ_UL_SHADER_PRESET_LIST(bpy.types.UIList):
@@ -697,8 +711,28 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
         row = self.layout.row()
 
         row.prop(mat.shader_properties, "renderbucket")
-        row.prop(mat.shader_properties, "filename")
-        row.prop(mat.shader_properties, "name")
+
+        subrow = row.row(align=True)
+        subrow.prop(mat.shader_properties, "ui_name")
+        subrow.popover(SOLLUMZ_PT_change_shader.bl_idname, icon="DOWNARROW_HLT", text="")
+
+
+class SOLLUMZ_PT_change_shader(bpy.types.Panel):
+    bl_idname = "SOLLUMZ_PT_change_shader"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "HEADER"
+    bl_label = "Change Shader"
+    bl_ui_units_x = 18  # make popup wider to fit all shader names
+
+    def draw(self, context):
+        wm = context.window_manager
+        layout = self.layout
+        layout.template_list(
+            SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
+            wm, "sz_shader_materials", wm, "sz_shader_material_index"
+        )
+        op = layout.operator(ydr_ops.SOLLUMZ_OT_change_shader.bl_idname)
+        op.shader_index = wm.sz_shader_material_index
 
 
 def collect_parameter_nodes(mat: bpy.types.Material, filter_func) -> list[bpy.types.Node]:
