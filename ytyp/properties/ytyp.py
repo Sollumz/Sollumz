@@ -109,7 +109,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
                     self.drawable_dictionary = self.asset.parent.name
             elif self.asset.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                 self.asset_type = AssetType.DRAWABLE_DICTIONARY
-            elif self.asset.sollum_type == AssetType.FRAGMENT:
+            elif self.asset.sollum_type == SollumType.FRAGMENT:
                 self.asset_type = AssetType.FRAGMENT
             # Check for embedded collisions
             if self.asset_type in [AssetType.DRAWABLE, AssetType.FRAGMENT]:
