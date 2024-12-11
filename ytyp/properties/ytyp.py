@@ -1,6 +1,10 @@
 import bpy
+from bpy.types import (
+    PropertyGroup,
+)
 from bpy.props import (
     BoolProperty,
+    PointerProperty,
 )
 from enum import IntEnum
 from typing import Union, Optional
@@ -12,6 +16,14 @@ from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
 from .flags import ArchetypeFlags, MloFlags
 from .extensions import ExtensionsContainer, ExtensionType
+from ...shared.multiselection import (
+    MultiSelectCollectionMixin,
+    MultiSelectAccessMixin,
+    MultiSelectIntProperty,
+    MultiSelectFloatProperty,
+    MultiSelectStringProperty,
+    MultiSelectEnumProperty,
+)
 
 
 class SpecialAttribute(IntEnum):
@@ -393,7 +405,19 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
 
-class CMapTypesProperties(bpy.types.PropertyGroup):
+class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+    type: MultiSelectEnumProperty("type", items=items_from_enums(ArchetypeType), name="Type")
+    lod_dist: MultiSelectFloatProperty("lod_dist", name="Lod Distance", default=60, min=-1)
+    special_attribute: MultiSelectEnumProperty("special_attribute", name="Special Attribute", items=SpecialAttributeEnumItems)
+    hd_texture_dist: MultiSelectFloatProperty("hd_texture_dist", name="HD Texture Distance", default=40, min=0)
+    name: MultiSelectStringProperty("name", name="Name")
+    texture_dictionary: MultiSelectStringProperty("texture_dictionary", name="Texture Dictionary")
+    clip_dictionary: MultiSelectStringProperty("clip_dictionary", name="Clip Dictionary")
+    drawable_dictionary: MultiSelectStringProperty("drawable_dictionary", name="Drawable Dictionary")
+    physics_dictionary: MultiSelectStringProperty("physics_dictionary", name="Physics Dictionary")
+
+
+class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
     def update_mlo_archetype_ids(self):
         for archetype in self.archetypes:
             if archetype.type == ArchetypeType.MLO:
@@ -438,8 +462,11 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
             bpy.ops.object.select_all(action="DESELECT")
             selected_archetype.asset.select_set(True)
 
+    def _set_archetype_index(self, index: int):
+        self.active_index = index
+
     def _set_archetype_index_with_select_linked_object(self, index: int):
-        self.archetype_index = index
+        self.active_index = index
         self.select_archetype_linked_object()
 
     name: bpy.props.StringProperty(name="Name")
@@ -448,16 +475,22 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
     all_lod_dist: bpy.props.FloatProperty(name="Lod Distance: ")
     all_hd_tex_dist: bpy.props.FloatProperty(name="HD Texture Distance: ")
     all_flags: bpy.props.IntProperty(name="Flags: ")
-    # extensions
-    archetypes: bpy.props.CollectionProperty(
-        type=ArchetypeProperties, name="Archetypes")
-    # Selected archetype index
-    archetype_index: bpy.props.IntProperty(name="Archetype Index")
+
+    archetypes: bpy.props.CollectionProperty(type=ArchetypeProperties, name="Archetypes")
+    selection: PointerProperty(type=ArchetypeSelectionAccess)
+
+    # TODO: archetype_index is deprecated, remove usages
+    archetype_index: bpy.props.IntProperty(
+        name="Archetype Index",
+        get=lambda s: s.active_index,
+        set=_set_archetype_index
+    )
     archetype_index_with_select_linked_object: bpy.props.IntProperty(
         name="Archetype Index",
-        get=lambda s: s.archetype_index,
+        get=lambda s: s.active_index,
         set=_set_archetype_index_with_select_linked_object,
     )
+
     # Unique archetype id
     last_archetype_id: bpy.props.IntProperty()
 
@@ -465,10 +498,12 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
         return get_list_item(self.archetypes, self.archetype_index)
 
+    def get_item(self, index: int) -> ArchetypeProperties:
+        return get_list_item(self.archetypes, index)
+
 
 def register():
-    bpy.types.Scene.ytyps = bpy.props.CollectionProperty(
-        type=CMapTypesProperties, name="YTYPs")
+    bpy.types.Scene.ytyps = bpy.props.CollectionProperty(type=CMapTypesProperties, name="YTYPs")
     bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP")
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(
         name="Show Room Gizmo", default=True)

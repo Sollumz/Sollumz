@@ -11,6 +11,9 @@ from ..utils import (
     get_selected_ytyp,
     get_selected_archetype
 )
+from ...shared.multiselection import (
+    MultiSelectUIListMixin
+)
 
 
 class SOLLUMZ_UL_YTYP_LIST(BasicListHelper, bpy.types.UIList):
@@ -79,19 +82,17 @@ class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
         layout.prop(settings, "apply_transforms")
 
 
-class SOLLUMZ_UL_ARCHETYPE_LIST(bpy.types.UIList):
+class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_LIST"
+    multiselect_operator = "sollumz.multiselect_archetype"
 
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
+    def get_item_icon(self, item) -> str:
         icon = "SEQ_STRIP_META"
         if item.type == ArchetypeType.MLO:
             icon = "HOME"
         elif item.type == ArchetypeType.TIME:
             icon = "TIME"
-
-        layout.prop(item, "name", text="", emboss=False, icon=icon)
+        return icon
 
 
 class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
