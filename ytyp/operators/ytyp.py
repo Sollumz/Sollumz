@@ -1,6 +1,10 @@
 import os
 import traceback
 import bpy
+from bpy.props import (
+    BoolProperty,
+    IntProperty,
+)
 from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
@@ -9,6 +13,7 @@ from ...sollumz_preferences import get_export_settings
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
 from ..ytypexport import selected_ytyp_to_xml
+from ...shared.multiselection import MultiSelectOperatorMixin
 
 
 class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -57,6 +62,15 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         selected_ytyp.new_archetype()
 
         return True
+
+
+class SOLLUMZ_OT_multiselect_archetype(MultiSelectOperatorMixin, bpy.types.Operator):
+    bl_idname = "sollumz.multiselect_archetype"
+    bl_label = "Select Archetype"
+
+    @classmethod
+    def get_collection(self, context):
+        return get_selected_ytyp(context)
 
 
 class SOLLUMZ_OT_set_texturedictionary_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):

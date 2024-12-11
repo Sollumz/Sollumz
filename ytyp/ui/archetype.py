@@ -2,7 +2,7 @@ import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ...sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ...sollumz_properties import AssetType, ArchetypeType
-from ..utils import get_selected_archetype
+from ..utils import get_selected_archetype, get_selected_ytyp
 from .ytyp import YtypToolChildPanel
 
 
@@ -52,22 +52,24 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
-        selected_archetype = get_selected_archetype(context)
-        layout.prop(selected_archetype, "type")
-        layout.prop(selected_archetype, "name")
-        layout.prop(selected_archetype, "special_attribute")
+        ytyp = get_selected_ytyp(context)
+        selection = ytyp.selection
+        active = ytyp.active_item
+        layout.prop(selection, "type")
+        layout.prop(selection, "name")
+        layout.prop(selection, "special_attribute")
 
-        if selected_archetype.asset_type != AssetType.ASSETLESS:
-            layout.prop(selected_archetype, "texture_dictionary")
-            layout.prop(selected_archetype, "clip_dictionary")
-            layout.prop(selected_archetype, "drawable_dictionary")
-            layout.prop(selected_archetype, "physics_dictionary")
-            layout.prop(selected_archetype, "hd_texture_dist")
-            layout.prop(selected_archetype, "lod_dist")
+        if active.asset_type != AssetType.ASSETLESS:
+            layout.prop(selection, "texture_dictionary")
+            layout.prop(selection, "clip_dictionary")
+            layout.prop(selection, "drawable_dictionary")
+            layout.prop(selection, "physics_dictionary")
+            layout.prop(selection, "hd_texture_dist")
+            layout.prop(selection, "lod_dist")
 
-        layout.prop(selected_archetype, "asset_type")
-        layout.prop(selected_archetype, "asset_name")
-        layout.prop(selected_archetype, "asset", text="Linked Object")
+        layout.prop(active, "asset_type")
+        layout.prop(active, "asset_name")
+        layout.prop(active, "asset", text="Linked Object")
 
 
 class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, FlagsPanel, bpy.types.Panel):
