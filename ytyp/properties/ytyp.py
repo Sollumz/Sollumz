@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import (
     PropertyGroup,
+    bpy_prop_collection,
 )
 from bpy.props import (
     BoolProperty,
@@ -408,7 +409,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     type: MultiSelectEnumProperty("type", items=items_from_enums(ArchetypeType), name="Type")
     lod_dist: MultiSelectFloatProperty("lod_dist", name="Lod Distance", default=60, min=-1)
-    special_attribute: MultiSelectEnumProperty("special_attribute", name="Special Attribute", items=SpecialAttributeEnumItems)
+    special_attribute: MultiSelectEnumProperty(
+        "special_attribute", name="Special Attribute", items=SpecialAttributeEnumItems)
     hd_texture_dist: MultiSelectFloatProperty("hd_texture_dist", name="HD Texture Distance", default=40, min=0)
     name: MultiSelectStringProperty("name", name="Name")
     texture_dictionary: MultiSelectStringProperty("texture_dictionary", name="Texture Dictionary")
@@ -498,8 +500,8 @@ class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
         return get_list_item(self.archetypes, self.archetype_index)
 
-    def get_item(self, index: int) -> ArchetypeProperties:
-        return get_list_item(self.archetypes, index)
+    def get_collection_property(self) -> bpy_prop_collection:
+        return self.archetypes
 
 
 def register():
