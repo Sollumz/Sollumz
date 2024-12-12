@@ -20,10 +20,8 @@ from .extensions import ExtensionsContainer, ExtensionType
 from ...shared.multiselection import (
     MultiSelectCollectionMixin,
     MultiSelectAccessMixin,
-    MultiSelectIntProperty,
-    MultiSelectFloatProperty,
-    MultiSelectStringProperty,
-    MultiSelectEnumProperty,
+    multiselect_access,
+    MultiSelectProperty,
 )
 
 
@@ -406,17 +404,21 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
 
+@multiselect_access(ArchetypeProperties)
 class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
-    type: MultiSelectEnumProperty("type", items=items_from_enums(ArchetypeType), name="Type")
-    lod_dist: MultiSelectFloatProperty("lod_dist", name="Lod Distance", default=60, min=-1)
-    special_attribute: MultiSelectEnumProperty(
-        "special_attribute", name="Special Attribute", items=SpecialAttributeEnumItems)
-    hd_texture_dist: MultiSelectFloatProperty("hd_texture_dist", name="HD Texture Distance", default=40, min=0)
-    name: MultiSelectStringProperty("name", name="Name")
-    texture_dictionary: MultiSelectStringProperty("texture_dictionary", name="Texture Dictionary")
-    clip_dictionary: MultiSelectStringProperty("clip_dictionary", name="Clip Dictionary")
-    drawable_dictionary: MultiSelectStringProperty("drawable_dictionary", name="Drawable Dictionary")
-    physics_dictionary: MultiSelectStringProperty("physics_dictionary", name="Physics Dictionary")
+    type: MultiSelectProperty()
+    lod_dist: MultiSelectProperty()
+    special_attribute: MultiSelectProperty()
+    hd_texture_dist: MultiSelectProperty()
+    name: MultiSelectProperty()
+    texture_dictionary: MultiSelectProperty()
+    clip_dictionary: MultiSelectProperty()
+    drawable_dictionary: MultiSelectProperty()
+    physics_dictionary: MultiSelectProperty()
+    asset_type: MultiSelectProperty()
+    asset_name: MultiSelectProperty()
+
+    # TODO(multiselect): support flags
 
 
 class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
@@ -458,39 +460,26 @@ class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
         return item
 
     def select_archetype_linked_object(self):
-        selected_archetype = get_selected_archetype(bpy.context)
-        if selected_archetype.asset:
-            bpy.context.view_layer.objects.active = selected_archetype.asset
+        archetype = self.active_item
+        if archetype.asset:
+            bpy.context.view_layer.objects.active = archetype.asset
             bpy.ops.object.select_all(action="DESELECT")
-            selected_archetype.asset.select_set(True)
+            archetype.asset.select_set(True)
 
     def _set_archetype_index(self, index: int):
         self.active_index = index
 
-    def _set_archetype_index_with_select_linked_object(self, index: int):
-        self.active_index = index
-        self.select_archetype_linked_object()
-
     name: bpy.props.StringProperty(name="Name")
-    all_texture_dictionary: bpy.props.StringProperty(
-        name="Texture Dictionary: ")
-    all_lod_dist: bpy.props.FloatProperty(name="Lod Distance: ")
-    all_hd_tex_dist: bpy.props.FloatProperty(name="HD Texture Distance: ")
     all_flags: bpy.props.IntProperty(name="Flags: ")
 
     archetypes: bpy.props.CollectionProperty(type=ArchetypeProperties, name="Archetypes")
     selection: PointerProperty(type=ArchetypeSelectionAccess)
 
-    # TODO: archetype_index is deprecated, remove usages
+    # TODO(multiselect): archetype_index is deprecated, remove usages
     archetype_index: bpy.props.IntProperty(
         name="Archetype Index",
         get=lambda s: s.active_index,
         set=_set_archetype_index
-    )
-    archetype_index_with_select_linked_object: bpy.props.IntProperty(
-        name="Archetype Index",
-        get=lambda s: s.active_index,
-        set=_set_archetype_index_with_select_linked_object,
     )
 
     # Unique archetype id
@@ -502,6 +491,9 @@ class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
 
     def get_collection_property(self) -> bpy_prop_collection:
         return self.archetypes
+
+    def on_active_index_update_from_ui(self, context):
+        self.select_archetype_linked_object()
 
 
 def register():
