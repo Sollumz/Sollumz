@@ -2,6 +2,7 @@
 Module with shared logic to support multi-selection in Blender PropertyGroups.
 """
 
+import bpy
 from bpy.types import (
     PropertyGroup,
     bpy_struct,
@@ -56,19 +57,23 @@ class MultiSelectAccessMixin:
 
 
 class MultiSelectCollectionMixin:
-    def _on_active_index_update(self, context):
-        self.on_active_index_update(context)
+    def _on_active_index_update_from_ui(self, value):
+        # This callback is only triggered when clicking on the active item in the list once it switched to a textfield
+        # instead of buttons
+        # Use select() instead of setting active_index to deselected the other items when clicking again on the active
+        # item
+        self.select(value, ui_callbacks=True)
 
     active_index: IntProperty(name="Active Index")
-    active_index_with_update_callback: IntProperty(
+    active_index_with_update_callback_for_ui: IntProperty(
         name="Active Index",
         get=lambda s: s.active_index,
-        set=_on_active_index_update,
+        set=_on_active_index_update_from_ui,
     )
     selection_indices: CollectionProperty(type=SelectionIndex)
     selection: PointerProperty(type=MultiSelectAccessMixin)  # should be overwritten by implementors
 
-    def on_active_index_update(self, context):
+    def on_active_index_update_from_ui(self, context):
         pass
 
     @property
@@ -80,6 +85,10 @@ class MultiSelectCollectionMixin:
 
     def get_collection_property(self) -> bpy_prop_collection:
         raise NotImplementedError("get_collection_property")
+
+    @property
+    def has_multiple_selection(self) -> bool:
+        return len(self.selection_indices) > 1
 
     @property
     def active_item(self) -> bpy_struct:
@@ -107,13 +116,16 @@ class MultiSelectCollectionMixin:
         index: int,
         mode: SelectMode = SelectMode.SET,
         filtered_items: Optional[Sequence[bool]] = None,
-        reorder_items: Optional[Sequence[int]] = None
+        reorder_items: Optional[Sequence[int]] = None,
+        ui_callbacks: bool = False,
     ):
         match mode:
             case SelectMode.SET:
                 self.selection_indices.clear()
                 self.active_index = index
                 self.selection_indices.add().index = index
+                if ui_callbacks:
+                    self.on_active_index_update_from_ui(bpy.context)
             case SelectMode.EXTEND:
                 self.selection_indices.clear()
                 if reorder_items:
@@ -149,6 +161,8 @@ class MultiSelectCollectionMixin:
                     # select
                     self.active_index = index
                     self.selection_indices.add().index = index
+                    if ui_callbacks:
+                        self.on_active_index_update_from_ui(bpy.context)
                 else:
                     # deselect
                     self.selection_indices.remove(index_in_selection)
@@ -173,13 +187,10 @@ class MultiSelectOperatorMixin:
     use_filter_sort_alpha: BoolProperty()
     use_filter_invert: BoolProperty()
 
-    @classmethod
-    def get_collection(cls, context) -> MultiSelectCollectionMixin:
-        raise NotImplementedError("get_collection")
+    trigger_ui_callbacks: BoolProperty(default=True)
 
-    @classmethod
-    def poll(cls, context):
-        return cls.get_collection(context) is not None
+    def get_collection(self, context) -> MultiSelectCollectionMixin:
+        raise NotImplementedError("get_collection")
 
     def execute(self, context):
         collection = self.get_collection(context)
@@ -202,7 +213,13 @@ class MultiSelectOperatorMixin:
             SelectMode.TOGGLE if self.toggle else
             SelectMode.SET
         )
-        collection.select(self.index, mode, filtered_items=filtered_items, reorder_items=reorder_items)
+        collection.select(
+            self.index,
+            mode,
+            filtered_items=filtered_items,
+            reorder_items=reorder_items,
+            ui_callbacks=self.trigger_ui_callbacks
+        )
         return {"FINISHED"}
 
     def invoke(self, context, event: Event):
@@ -211,41 +228,67 @@ class MultiSelectOperatorMixin:
         return self.execute(context)
 
 
-def _MultiSelectBasicProperty(prop_fn, attr_name: str, **kwargs):
-    def _getter(self: MultiSelectAccessMixin):
-        return getattr(self.active_item, attr_name)
+class MultiSelectAllOperatorMixin:
+    bl_options = {"UNDO"}
 
-    def _setter(self: MultiSelectAccessMixin, value):
-        for item in self.iter_selected_items():
-            setattr(item, attr_name, value)
+    def get_collection(self, context) -> MultiSelectCollectionMixin:
+        raise NotImplementedError("get_collection")
 
-    # TODO: somehow access kwards from the propertygroup we are wrapping to avoid code duplication
-    return prop_fn(**kwargs, get=_getter, set=_setter)
-
-
-def MultiSelectIntProperty(attr_name: str, **kwargs):
-    return _MultiSelectBasicProperty(IntProperty, attr_name, **kwargs)
+    def execute(self, context):
+        collection = self.get_collection(context)
+        collection.select_all()
+        return {"FINISHED"}
 
 
-def MultiSelectFloatProperty(attr_name: str, **kwargs):
-    return _MultiSelectBasicProperty(FloatProperty, attr_name, **kwargs)
+class MultiSelectProperty:
+    pass
 
 
-def MultiSelectStringProperty(attr_name: str, **kwargs):
-    return _MultiSelectBasicProperty(StringProperty, attr_name, **kwargs)
+def multiselect_access(item_cls: type) -> type:
+    def _wrap_basic_property(prop_fn, attr_name: str, **kwargs):
+        def _getter(self: MultiSelectAccessMixin):
+            return getattr(self.active_item, attr_name)
 
+        def _setter(self: MultiSelectAccessMixin, value):
+            for item in self.iter_selected_items():
+                setattr(item, attr_name, value)
 
-def MultiSelectEnumProperty(attr_name: str, **kwargs):
-    def _getter(self: MultiSelectAccessMixin) -> int:
-        enum_str = getattr(self.active_item, attr_name)
-        enum_int = self.rna_type.properties[attr_name].enum_items[enum_str].value
-        return enum_int
+        return prop_fn(**kwargs, get=_getter, set=_setter)
 
-    def _setter(self: MultiSelectAccessMixin, value: int):
-        for item in self.iter_selected_items():
-            item[attr_name] = value
+    def _wrap_enum_property(attr_name: str, **kwargs):
+        def _getter(self: MultiSelectAccessMixin) -> int:
+            enum_str = getattr(self.active_item, attr_name)
+            enum_int = self.rna_type.properties[attr_name].enum_items[enum_str].value
+            return enum_int
 
-    return EnumProperty(**kwargs, get=_getter, set=_setter)
+        def _setter(self: MultiSelectAccessMixin, value: int):
+            for item in self.iter_selected_items():
+                item[attr_name] = value
+
+        return EnumProperty(**kwargs, get=_getter, set=_setter)
+
+    def _decorator(cls: type) -> type:
+        assert issubclass(cls, MultiSelectAccessMixin), \
+            f"multiselect_access: Class '{cls}' must inherit 'MultiSelectAccessMixin'"
+        for name, annotation in cls.__annotations__.items():
+            if isinstance(annotation, MultiSelectProperty):
+                src_annotation = item_cls.__annotations__.get(name, None)
+                assert src_annotation is not None, f"multiselect_access: No property '{name}' found in '{item_cls}'"
+
+                fn = src_annotation.function
+                kwargs = dict(src_annotation.keywords)
+                if fn is EnumProperty:
+                    wrapper_prop = _wrap_enum_property(name, **kwargs)
+                elif fn in {IntProperty, FloatProperty, StringProperty}:
+                    wrapper_prop = _wrap_basic_property(fn, name, **kwargs)
+                else:
+                    assert False, f"multiselect_access: Cannot wrap '{src_annotation.function.__name__}'"
+
+                cls.__annotations__[name] = wrapper_prop
+
+        return cls
+
+    return _decorator
 
 
 class MultiSelectUIListMixin:
@@ -278,38 +321,36 @@ class MultiSelectUIListMixin:
             else:
                 layout.label(text=getattr(item, self.name_prop), icon=icon_str, icon_value=icon_value)
         else:
+            def _set_op_properties(op):
+                op.index = index
+                op.apply_filter = True
+                op.filter_name = self.filter_name
+                op.bitflag_filter_item = self.bitflag_filter_item
+                op.use_filter_sort_reverse = self.use_filter_sort_reverse
+                op.use_filter_sort_alpha = self.use_filter_sort_alpha
+                op.use_filter_invert = self.use_filter_invert
+
             # hacky way to left-align operator button text by having two buttons
             row = layout.row(align=True)
             subrow = row.row(align=True)
             subrow.alignment = "LEFT"
             op = subrow.operator(
-                "sollumz.multiselect_archetype",
+                self.multiselect_operator,
                 text=getattr(item, self.name_prop),
                 icon=icon_str, icon_value=icon_value,
                 emboss=is_selected or is_active,
             )
-            op.index = index
-            op.apply_filter = True
-            self.copy_filter_properties_to(op)
+            _set_op_properties(op)
             subrow = row.row(align=True)
             op = subrow.operator(
-                "sollumz.multiselect_archetype",
+                self.multiselect_operator,
                 text="",
                 emboss=is_selected or is_active,
             )
-            op.index = index
-            op.apply_filter = True
-            self.copy_filter_properties_to(op)
+            _set_op_properties(op)
 
     def get_item_icon(self, item) -> str | int:
         return self.default_item_icon
-
-    def copy_filter_properties_to(self, dest):
-        dest.filter_name = self.filter_name
-        dest.bitflag_filter_item = self.bitflag_filter_item
-        dest.use_filter_sort_reverse = self.use_filter_sort_reverse
-        dest.use_filter_sort_alpha = self.use_filter_sort_alpha
-        dest.use_filter_invert = self.use_filter_invert
 
 
 # This tries to mimic the default UIList filtering behaviour, because we need to know the filtered items in the

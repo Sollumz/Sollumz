@@ -14,6 +14,7 @@ from ..utils import (
 from ...shared.multiselection import (
     MultiSelectUIListMixin
 )
+from ..operators import ytyp as ytyp_ops
 
 
 class SOLLUMZ_UL_YTYP_LIST(BasicListHelper, bpy.types.UIList):
@@ -84,7 +85,7 @@ class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
 
 class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_LIST"
-    multiselect_operator = "sollumz.multiselect_archetype"
+    multiselect_operator = ytyp_ops.SOLLUMZ_OT_ytyp_select_archetype.bl_idname
 
     def get_item_icon(self, item) -> str:
         icon = "SEQ_STRIP_META"
@@ -107,18 +108,31 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        list_col, _ = draw_list_with_add_remove(
+        list_col, side_col = draw_list_with_add_remove(
             self.layout,
             "sollumz.createarchetype", "sollumz.deletearchetype",
             SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "",
             selected_ytyp, "archetypes",
-            selected_ytyp, "archetype_index_with_select_linked_object",
+            selected_ytyp, "active_index_with_update_callback_for_ui",
             rows=3
         )
+
+        side_col.separator()
+        side_col.menu(SOLLUMZ_MT_archetype_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
+
         row = list_col.row()
         row.operator("sollumz.createarchetypefromselected",
                      icon="FILE_REFRESH")
         row.prop(context.scene, "create_archetype_type", text="")
+
+
+class SOLLUMZ_MT_archetype_context_menu(bpy.types.Menu):
+    bl_label = "Archetypes Specials"
+    bl_idname = "SOLLUMZ_MT_archetype_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+        layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
 
 
 class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
@@ -143,15 +157,6 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         selected_ytyp = get_selected_ytyp(context)
-        row = layout.row()
-        row.prop(selected_ytyp, "all_texture_dictionary")
-        row.operator("sollumz.settexturedictionaryallarchs")
-        row = layout.row()
-        row.prop(selected_ytyp, "all_lod_dist")
-        row.operator("sollumz.setloddistallarchs")
-        row = layout.row()
-        row.prop(selected_ytyp, "all_hd_tex_dist")
-        row.operator("sollumz.sethdtexturedistallarchs")
         row = layout.row()
         row.prop(selected_ytyp, "all_flags")
         row.operator("sollumz.setflagsallarchs")
