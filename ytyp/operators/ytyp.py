@@ -57,6 +57,7 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return get_selected_ytyp(context) is not None
 
     def run(self, context):
+        # TODO(multiselect): consider selection indices when creating new items
         selected_ytyp = get_selected_ytyp(context)
         selected_ytyp.new_archetype()
 
@@ -74,7 +75,7 @@ class SOLLUMZ_OT_ytyp_select_archetype(MultiSelectOperatorMixin, bpy.types.Opera
             get_selected_ytyp(context)
             if self.ytyp_index == -1
             else context.scene.ytyps[self.ytyp_index]
-        )
+        ).archetypes
 
 
 class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperatorMixin, bpy.types.Operator):
@@ -88,7 +89,7 @@ class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperatorMixin, bpy.typ
             get_selected_ytyp(context)
             if self.ytyp_index == -1
             else context.scene.ytyps[self.ytyp_index]
-        )
+        ).archetypes
 
 
 class SOLLUMZ_OT_set_entity_loddist_for_all_archetypes(bpy.types.Operator):
@@ -193,6 +194,7 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return selected_ytyp is not None and len(selected_ytyp.archetypes) > 0
 
     def run(self, context):
+        # TODO(multiselect): consider selection indices when deleting items
         selected_ytyp = get_selected_ytyp(context)
         selected_ytyp.archetypes.remove(selected_ytyp.archetype_index)
         selected_ytyp.archetype_index = max(

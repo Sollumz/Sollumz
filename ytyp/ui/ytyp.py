@@ -85,6 +85,7 @@ class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
 
 class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_LIST"
+    multiselect_collection_name = "archetypes"
     multiselect_operator = ytyp_ops.SOLLUMZ_OT_ytyp_select_archetype.bl_idname
 
     def get_item_icon(self, item) -> str:
@@ -112,8 +113,8 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
             self.layout,
             "sollumz.createarchetype", "sollumz.deletearchetype",
             SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "",
-            selected_ytyp, "archetypes",
-            selected_ytyp, "active_index_with_update_callback_for_ui",
+            selected_ytyp, selected_ytyp.archetypes._collection_propname,
+            selected_ytyp, selected_ytyp.archetypes._active_index_propname,#"active_index_with_update_callback_for_ui",
             rows=3
         )
 

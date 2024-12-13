@@ -37,12 +37,18 @@ class SelectMode(Enum):
 
 
 class MultiSelectAccessMixin:
-    def find_owner_collection(self) -> 'MultiSelectCollectionMixin':
+    _collection_name = None
+    _path_split_str = None
+
+    def find_owner(self) -> PropertyGroup:
         id_data = self.id_data
         path = self.path_from_id()
-        collection_path, _ = path.split(".selection")
-        collection = id_data.path_resolve(collection_path)
-        return collection
+        owner_path, _ = path.split(self._path_split_str)
+        owner = id_data.path_resolve(owner_path)
+        return owner
+
+    def find_owner_collection(self) -> 'MultiSelectCollection':
+        return getattr(self.find_owner(), self._collection_name)
 
     @property
     def active_item(self) -> bpy_struct:
@@ -56,35 +62,88 @@ class MultiSelectAccessMixin:
         return self.find_owner_collection().selected_items
 
 
-class MultiSelectCollectionMixin:
-    def _on_active_index_update_from_ui(self, value):
-        # This callback is only triggered when clicking on the active item in the list once it switched to a textfield
-        # instead of buttons
-        # Use select() instead of setting active_index to deselected the other items when clicking again on the active
-        # item
-        self.select(value, ui_callbacks=True)
+def define_multiselect_collection(name: str, item_cls: type, item_access_cls: type, collection_kwargs: dict):
+    assert issubclass(item_access_cls, MultiSelectAccessMixin), "item_access_cls must implement MultiSelectAccessMixin"
 
-    active_index: IntProperty(name="Active Index")
-    active_index_with_update_callback_for_ui: IntProperty(
-        name="Active Index",
-        get=lambda s: s.active_index,
-        set=_on_active_index_update_from_ui,
-    )
-    selection_indices: CollectionProperty(type=SelectionIndex)
-    selection: PointerProperty(type=MultiSelectAccessMixin)  # should be overwritten by implementors
+    def _decorator(cls: type) -> type:
+        assert name in cls.__annotations__ and cls.__annotations__[name] is MultiSelectCollection, \
+            f"'{cls}' is missing '{name}: MultiSelectCollection' annotation."
 
-    def on_active_index_update_from_ui(self, context):
-        pass
+        collection_propname = f"{name}_"
+        active_index_propname = f"{name}_active_index_"
+        selection_indices_propname = f"{name}_selection_indices_"
+        selection_propname = f"{name}_selection_"
+        cls.__annotations__[collection_propname] = CollectionProperty(type=item_cls, **collection_kwargs)
+        cls.__annotations__[active_index_propname] = IntProperty(name="Active Index")
+        cls.__annotations__[selection_indices_propname] = CollectionProperty(type=SelectionIndex)
+        cls.__annotations__[selection_propname] = PointerProperty(type=item_access_cls)
+        item_access_cls._path_split_str = f".{selection_propname}"
+        item_access_cls._collection_name = name
+
+        def _collection_getter(self) -> MultiSelectCollection:
+            return MultiSelectCollection(self, collection_propname, active_index_propname, selection_indices_propname, selection_propname)
+        setattr(cls, name, property(_collection_getter))
+        return cls
+
+    return _decorator
+
+
+class MultiSelectCollection:
+    def __init__(self, owner: PropertyGroup, collection_propname: str, active_index_propname: str, selection_indices_propname: str, selection_propname: str):
+        self._owner = owner
+        self._collection_propname = collection_propname
+        self._active_index_propname = active_index_propname
+        self._selection_indices_propname = selection_indices_propname
+        self._selection_propname = selection_propname
 
     @property
-    def num_items(self) -> int:
-        return len(self.get_collection_property())
+    def collection(self) -> bpy_prop_collection:
+        return getattr(self._owner, self._collection_propname)
+
+    @property
+    def active_index(self) -> int:
+        return getattr(self._owner, self._active_index_propname)
+
+    @active_index.setter
+    def active_index(self, index: int) -> int:
+        setattr(self._owner, self._active_index_propname, index)
+
+    @property
+    def selection_indices(self) -> bpy_prop_collection:
+        return getattr(self._owner, self._selection_indices_propname)
+
+    @property
+    def selection(self) -> MultiSelectAccessMixin:
+        return getattr(self._owner, self._selection_propname)
+
+    def add(self) -> bpy_struct:
+        return self.collection.add()
+
+    def remove(self, index: int):
+        self.collection.remove(index)
+
+    # TODO(multiselect): add these callbacks
+    # def _on_active_index_update_from_ui(self, value):
+    #     # This callback is only triggered when clicking on the active item in the list once it switched to a textfield
+    #     # instead of buttons
+    #     # Use select() instead of setting active_index to deselected the other items when clicking again on the active
+    #     # item
+    #     self.select(value, ui_callbacks=True)
+    #
+    # active_index_with_update_callback_for_ui: IntProperty(
+    #     name="Active Index",
+    #     get=lambda s: s.active_index,
+    #     set=_on_active_index_update_from_ui,
+    # )
+
+    # def on_active_index_update_from_ui(self, context):
+    #     pass
+
+    def __len__(self) -> int:
+        return len(self.collection)
 
     def get_item(self, index: int) -> bpy_struct:
-        return self.get_collection_property()[index]
-
-    def get_collection_property(self) -> bpy_prop_collection:
-        raise NotImplementedError("get_collection_property")
+        return self.collection[index]
 
     @property
     def has_multiple_selection(self) -> bool:
@@ -124,12 +183,12 @@ class MultiSelectCollectionMixin:
                 self.selection_indices.clear()
                 self.active_index = index
                 self.selection_indices.add().index = index
-                if ui_callbacks:
-                    self.on_active_index_update_from_ui(bpy.context)
+                # if ui_callbacks:
+                #     self.on_active_index_update_from_ui(bpy.context)
             case SelectMode.EXTEND:
                 self.selection_indices.clear()
                 if reorder_items:
-                    assert len(reorder_items) == self.num_items
+                    assert len(reorder_items) == len(self)
                     actual_to_reordered_index_map = np.array(reorder_items)
                     reordered_to_actual_index_map = actual_to_reordered_index_map[actual_to_reordered_index_map]
                     index0 = actual_to_reordered_index_map[self.active_index]
@@ -141,7 +200,7 @@ class MultiSelectCollectionMixin:
                     end_index = max(self.active_index, index)
 
                 if filtered_items:
-                    assert len(filtered_items) == self.num_items
+                    assert len(filtered_items) == len(self)
 
                 for i in range(start_index, end_index + 1):
                     if reorder_items:
@@ -161,15 +220,15 @@ class MultiSelectCollectionMixin:
                     # select
                     self.active_index = index
                     self.selection_indices.add().index = index
-                    if ui_callbacks:
-                        self.on_active_index_update_from_ui(bpy.context)
+                    # if ui_callbacks:
+                    #     self.on_active_index_update_from_ui(bpy.context)
                 else:
                     # deselect
                     self.selection_indices.remove(index_in_selection)
 
     def select_all(self):
         self.selection_indices.clear()
-        for i in range(self.num_items):
+        for i in range(len(self)):
             self.selection_indices.add().index = i
 
 
@@ -189,7 +248,7 @@ class MultiSelectOperatorMixin:
 
     trigger_ui_callbacks: BoolProperty(default=True)
 
-    def get_collection(self, context) -> MultiSelectCollectionMixin:
+    def get_collection(self, context) -> MultiSelectCollection:
         raise NotImplementedError("get_collection")
 
     def execute(self, context):
@@ -231,7 +290,7 @@ class MultiSelectOperatorMixin:
 class MultiSelectAllOperatorMixin:
     bl_options = {"UNDO"}
 
-    def get_collection(self, context) -> MultiSelectCollectionMixin:
+    def get_collection(self, context) -> MultiSelectCollection:
         raise NotImplementedError("get_collection")
 
     def execute(self, context):
@@ -244,7 +303,7 @@ class MultiSelectProperty:
     pass
 
 
-def multiselect_access(item_cls: type) -> type:
+def define_multiselect_access(item_cls: type) -> type:
     def _wrap_basic_property(prop_fn, attr_name: str, **kwargs):
         def _getter(self: MultiSelectAccessMixin):
             return getattr(self.active_item, attr_name)
@@ -295,12 +354,13 @@ class MultiSelectUIListMixin:
     name_prop: str = "name"
     default_item_icon: str = "NONE"
     name_editable: bool = True
+    multiselect_collection_name: str = ""
     multiselect_operator: str = ""
 
     def draw_item(
         self, context, layout: UILayout, data, item, icon, active_data, active_propname, index
     ):
-        collection: MultiSelectCollectionMixin = data
+        collection: MultiSelectCollection = getattr(data, self.multiselect_collection_name)
         icon = self.get_item_icon(item)
         match icon:
             case str():
@@ -357,7 +417,7 @@ class MultiSelectUIListMixin:
 # multiselect operator. For now, assume that multiselectcollections UILists don't implement custom filtering.
 # If that is ever needed, we need to provide some customization point here.
 def _default_filter_items(
-    collection: MultiSelectCollectionMixin,
+    collection: MultiSelectCollection,
     filter_name: str,
     bitflag_filter_item: int,
     use_filter_sort_reverse: bool,
@@ -368,10 +428,10 @@ def _default_filter_items(
 
     if filter_name:
         flt_flags = UI_UL_list.filter_items_by_name(
-            filter_name, bitflag_filter_item, collection.get_collection_property(), "name"
+            filter_name, bitflag_filter_item, collection.collection, "name"
         )
 
     if use_filter_sort_alpha and not use_filter_sort_reverse:
-        flt_neworder = UI_UL_list.sort_items_by_name(collection.get_collection_property(), "name")
+        flt_neworder = UI_UL_list.sort_items_by_name(collection.collection, "name")
 
     return flt_flags, flt_neworder
