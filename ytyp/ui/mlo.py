@@ -23,7 +23,7 @@ class SOLLUMZ_PT_MLO_PANEL(ArchetypeChildPanel, TabbedPanelHelper, bpy.types.Pan
 
     def draw_before(self, context: bpy.types.Context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
-        self.layout.enabled = not get_selected_ytyp(context).has_multiple_selection
+        self.layout.enabled = not get_selected_ytyp(context).archetypes.has_multiple_selection
         self.layout.label(text="MLO")
 
 
@@ -58,7 +58,7 @@ class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
 
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
-        self.layout.enabled = not get_selected_ytyp(context).has_multiple_selection
+        self.layout.enabled = not get_selected_ytyp(context).archetypes.has_multiple_selection
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False

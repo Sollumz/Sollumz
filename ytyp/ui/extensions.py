@@ -85,5 +85,5 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(ArchetypeChildTabPanel, ExtensionsPa
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
         ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.has_multiple_selection
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
         super().draw(context)

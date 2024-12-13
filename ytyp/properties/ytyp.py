@@ -18,10 +18,11 @@ from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntit
 from .flags import ArchetypeFlags, MloFlags
 from .extensions import ExtensionsContainer, ExtensionType
 from ...shared.multiselection import (
-    MultiSelectCollectionMixin,
-    MultiSelectAccessMixin,
-    multiselect_access,
     MultiSelectProperty,
+    define_multiselect_access,
+    MultiSelectAccessMixin,
+    define_multiselect_collection,
+    MultiSelectCollection,
 )
 
 
@@ -404,7 +405,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
 
-@multiselect_access(ArchetypeProperties)
+@define_multiselect_access(ArchetypeProperties)
 class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     type: MultiSelectProperty()
     lod_dist: MultiSelectProperty()
@@ -420,10 +421,10 @@ class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
 
     # TODO(multiselect): support flags
 
-
-class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
+@define_multiselect_collection("archetypes", ArchetypeProperties, ArchetypeSelectionAccess, {"name": "Archetypes"})
+class CMapTypesProperties(PropertyGroup):
     def update_mlo_archetype_ids(self):
-        for archetype in self.archetypes:
+        for archetype in self.archetypes.collection:
             if archetype.type == ArchetypeType.MLO:
                 archetype.id = self.last_archetype_id
                 self.last_archetype_id += 1
@@ -460,25 +461,24 @@ class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
         return item
 
     def select_archetype_linked_object(self):
-        archetype = self.active_item
+        archetype = self.archetypes.active_item
         if archetype.asset:
             bpy.context.view_layer.objects.active = archetype.asset
             bpy.ops.object.select_all(action="DESELECT")
             archetype.asset.select_set(True)
 
     def _set_archetype_index(self, index: int):
-        self.active_index = index
+        self.archetypes.active_index = index
 
     name: bpy.props.StringProperty(name="Name")
     all_flags: bpy.props.IntProperty(name="Flags: ")
 
-    archetypes: bpy.props.CollectionProperty(type=ArchetypeProperties, name="Archetypes")
-    selection: PointerProperty(type=ArchetypeSelectionAccess)
+    archetypes: MultiSelectCollection
 
     # TODO(multiselect): archetype_index is deprecated, remove usages
     archetype_index: bpy.props.IntProperty(
         name="Archetype Index",
-        get=lambda s: s.active_index,
+        get=lambda s: s.archetypes_active_index_,
         set=_set_archetype_index
     )
 
@@ -487,10 +487,7 @@ class CMapTypesProperties(MultiSelectCollectionMixin, PropertyGroup):
 
     @property
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
-        return get_list_item(self.archetypes, self.archetype_index)
-
-    def get_collection_property(self) -> bpy_prop_collection:
-        return self.archetypes
+        return get_list_item(self.archetypes.collection, self.archetype_index)
 
     def on_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()

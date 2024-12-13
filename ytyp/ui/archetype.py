@@ -53,8 +53,8 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         ytyp = get_selected_ytyp(context)
-        selection = ytyp.selection
-        active = ytyp.active_item
+        selection = ytyp.archetypes.selection
+        active = ytyp.archetypes.active_item
         layout.prop(selection, "type")
         layout.prop(selection, "name")
         layout.prop(selection, "special_attribute")
@@ -71,7 +71,7 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
         layout.prop(selection, "asset_name")
 
         row = layout.row()
-        row.enabled = not ytyp.has_multiple_selection
+        row.enabled = not ytyp.archetypes.has_multiple_selection
         row.prop(active, "asset", text="Linked Object")
 
 
@@ -88,7 +88,7 @@ class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, FlagsPanel, bpy.t
     def draw(self, context):
         # TODO(multiselect): support multiselection
         ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.has_multiple_selection
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
         super().draw(context)
 
 
@@ -114,5 +114,5 @@ class SOLLUMZ_PT_TIME_FlAGS_PANEL(ArchetypeChildPanel, TimeFlagsPanel, bpy.types
     def draw(self, context):
         # TODO(multiselect): support multiselection
         ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.has_multiple_selection
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
         super().draw(context)
