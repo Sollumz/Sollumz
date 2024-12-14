@@ -85,7 +85,6 @@ class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
 
 class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_LIST"
-    multiselect_collection_name = "archetypes"
     multiselect_operator = ytyp_ops.SOLLUMZ_OT_ytyp_select_archetype.bl_idname
 
     def get_item_icon(self, item) -> str:
@@ -109,12 +108,15 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
+        if "archetypes_tool_panel" in SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options:
+            del SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options["archetypes_tool_panel"]
+
         list_col, side_col = draw_list_with_add_remove(
             self.layout,
             "sollumz.createarchetype", "sollumz.deletearchetype",
-            SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "",
+            SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "tool_panel",
             selected_ytyp, selected_ytyp.archetypes._collection_propname,
-            selected_ytyp, selected_ytyp.archetypes._active_index_propname,#"active_index_with_update_callback_for_ui",
+            selected_ytyp, selected_ytyp.archetypes._active_index_propname,  # "active_index_with_update_callback_for_ui",
             rows=3
         )
 
@@ -133,7 +135,9 @@ class SOLLUMZ_MT_archetype_context_menu(bpy.types.Menu):
 
     def draw(self, _context):
         layout = self.layout
-        layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
+        op = layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
+        if (filter_opts := SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options.get("archetypes_tool_panel", None)):
+            filter_opts.apply_to_operator(op)
 
 
 class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):

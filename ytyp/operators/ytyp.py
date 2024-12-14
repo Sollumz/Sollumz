@@ -12,7 +12,7 @@ from ...sollumz_preferences import get_export_settings
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
 from ..ytypexport import selected_ytyp_to_xml
-from ...shared.multiselection import MultiSelectOperatorMixin, MultiSelectAllOperatorMixin
+from ...shared.multiselection import MultiSelectOneOperator, MultiSelectAllOperator
 
 
 class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -64,7 +64,7 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_ytyp_select_archetype(MultiSelectOperatorMixin, bpy.types.Operator):
+class SOLLUMZ_OT_ytyp_select_archetype(MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.ytyp_select_archetype"
     bl_label = "Select Archetype"
 
@@ -78,7 +78,7 @@ class SOLLUMZ_OT_ytyp_select_archetype(MultiSelectOperatorMixin, bpy.types.Opera
         ).archetypes
 
 
-class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperatorMixin, bpy.types.Operator):
+class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.ytyp_select_all_archetypes"
     bl_label = "Select All Archetypes"
 

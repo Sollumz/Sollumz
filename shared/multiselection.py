@@ -20,10 +20,12 @@ from bpy.props import (
     CollectionProperty,
     PointerProperty,
 )
-from typing import Optional
+from typing import Optional, NamedTuple
 from collections.abc import Iterator, Sequence
 from enum import Enum, auto
 import numpy as np
+
+_BITFLAG_FILTER_ITEM = (1 << 30)  # same as UIList.bitflag_filter_item
 
 
 class SelectionIndex(PropertyGroup):
@@ -226,47 +228,58 @@ class MultiSelectCollection:
                     # deselect
                     self.selection_indices.remove(index_in_selection)
 
-    def select_all(self):
+    def select_all(self, filtered_items: Optional[Sequence[bool]] = None):
+        if filtered_items:
+            assert len(filtered_items) == len(self)
+
         self.selection_indices.clear()
         for i in range(len(self)):
-            self.selection_indices.add().index = i
+            is_filtered_out = filtered_items and not filtered_items[i]
+            if not is_filtered_out:
+                self.selection_indices.add().index = i
 
 
-class MultiSelectOperatorMixin:
+class MultiSelectOperatorBase:
     bl_options = {"UNDO"}
-
-    index: IntProperty(name="Index")
-    extend: BoolProperty(name="Extend")
-    toggle: BoolProperty(name="Toggle")
 
     apply_filter: BoolProperty()
     filter_name: StringProperty()
-    bitflag_filter_item: IntProperty()
     use_filter_sort_reverse: BoolProperty()
     use_filter_sort_alpha: BoolProperty()
     use_filter_invert: BoolProperty()
 
-    trigger_ui_callbacks: BoolProperty(default=True)
-
     def get_collection(self, context) -> MultiSelectCollection:
         raise NotImplementedError("get_collection")
 
-    def execute(self, context):
-        collection = self.get_collection(context)
+    def filter_items(self, context) -> tuple[Optional[Sequence[bool]], Optional[Sequence[int]]]:
         filtered_items = None
         reorder_items = None
         if self.apply_filter:
             filter_flags, reorder_items = _default_filter_items(
-                collection,
-                self.filter_name, self.bitflag_filter_item,
-                self.use_filter_sort_reverse, self.use_filter_sort_alpha
+                self.get_collection(context),
+                self.filter_name,
+                self.use_filter_sort_reverse,
+                self.use_filter_sort_alpha
             )
             if filter_flags:
-                filtered_items = (np.array(filter_flags) & self.bitflag_filter_item) != 0
+                filtered_items = (np.array(filter_flags) & _BITFLAG_FILTER_ITEM) != 0
                 if self.use_filter_invert:
                     filtered_items = np.logical_not(filtered_items)
                 filtered_items = list(filtered_items)
 
+        return filtered_items, reorder_items
+
+
+class MultiSelectOneOperator(MultiSelectOperatorBase):
+    index: IntProperty(name="Index")
+    extend: BoolProperty(name="Extend")
+    toggle: BoolProperty(name="Toggle")
+
+    trigger_ui_callbacks: BoolProperty(default=True)
+
+    def execute(self, context):
+        collection = self.get_collection(context)
+        filtered_items, reorder_items = self.filter_items(context)
         mode = (
             SelectMode.EXTEND if self.extend else
             SelectMode.TOGGLE if self.toggle else
@@ -287,15 +300,11 @@ class MultiSelectOperatorMixin:
         return self.execute(context)
 
 
-class MultiSelectAllOperatorMixin:
-    bl_options = {"UNDO"}
-
-    def get_collection(self, context) -> MultiSelectCollection:
-        raise NotImplementedError("get_collection")
-
+class MultiSelectAllOperator(MultiSelectOperatorBase):
     def execute(self, context):
         collection = self.get_collection(context)
-        collection.select_all()
+        filtered_items, _ = self.filter_items(context)
+        collection.select_all(filtered_items=filtered_items)
         return {"FINISHED"}
 
 
@@ -350,17 +359,43 @@ def define_multiselect_access(item_cls: type) -> type:
     return _decorator
 
 
+class MultiSelectFilterOptions(NamedTuple):
+    filter_name: str
+    use_filter_sort_reverse: bool
+    use_filter_sort_alpha: bool
+    use_filter_invert: bool
+
+    def apply_to_operator(self, op):
+        op.apply_filter = True
+        op.filter_name = self.filter_name
+        op.use_filter_sort_reverse = self.use_filter_sort_reverse
+        op.use_filter_sort_alpha = self.use_filter_sort_alpha
+        op.use_filter_invert = self.use_filter_invert
+
+
 class MultiSelectUIListMixin:
     name_prop: str = "name"
     default_item_icon: str = "NONE"
     name_editable: bool = True
-    multiselect_collection_name: str = ""
     multiselect_operator: str = ""
+    last_filter_options: dict[str, MultiSelectFilterOptions] = {}
 
     def draw_item(
         self, context, layout: UILayout, data, item, icon, active_data, active_propname, index
     ):
-        collection: MultiSelectCollection = getattr(data, self.multiselect_collection_name)
+        multiselect_collection_name = active_propname[:-14]  # remove '_active_index_' suffix
+
+        filter_opts = MultiSelectFilterOptions(
+            self.filter_name,
+            self.use_filter_sort_reverse,
+            self.use_filter_sort_alpha,
+            self.use_filter_invert,
+        )
+        self_cls = type(self)
+        if f"{multiselect_collection_name}_{self.list_id}" not in self_cls.last_filter_options:
+            self_cls.last_filter_options[f"{multiselect_collection_name}_{self.list_id}"] = filter_opts
+
+        collection: MultiSelectCollection = getattr(data, multiselect_collection_name)
         icon = self.get_item_icon(item)
         match icon:
             case str():
@@ -383,12 +418,7 @@ class MultiSelectUIListMixin:
         else:
             def _set_op_properties(op):
                 op.index = index
-                op.apply_filter = True
-                op.filter_name = self.filter_name
-                op.bitflag_filter_item = self.bitflag_filter_item
-                op.use_filter_sort_reverse = self.use_filter_sort_reverse
-                op.use_filter_sort_alpha = self.use_filter_sort_alpha
-                op.use_filter_invert = self.use_filter_invert
+                filter_opts.apply_to_operator(op)
 
             # hacky way to left-align operator button text by having two buttons
             row = layout.row(align=True)
@@ -419,7 +449,6 @@ class MultiSelectUIListMixin:
 def _default_filter_items(
     collection: MultiSelectCollection,
     filter_name: str,
-    bitflag_filter_item: int,
     use_filter_sort_reverse: bool,
     use_filter_sort_alpha: bool,
 ):
@@ -428,7 +457,7 @@ def _default_filter_items(
 
     if filter_name:
         flt_flags = UI_UL_list.filter_items_by_name(
-            filter_name, bitflag_filter_item, collection.collection, "name"
+            filter_name, _BITFLAG_FILTER_ITEM, collection.collection, "name"
         )
 
     if use_filter_sort_alpha and not use_filter_sort_reverse:
