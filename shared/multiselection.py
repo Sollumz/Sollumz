@@ -477,3 +477,34 @@ def _default_filter_items(
         flt_neworder = UI_UL_list.sort_items_by_name(collection.collection, "name")
 
     return flt_flags, flt_neworder
+
+
+def multiselect_ui_draw_list(
+    layout: UILayout,
+    collection: MultiSelectCollection,
+    add_operator: str,
+    remove_operator: str,
+    uilist_cls: type,
+    context_menu_cls: type,
+    list_id: str
+) -> tuple[UILayout, UILayout]:
+    from ..sollumz_ui import draw_list_with_add_remove
+    full_list_id = f"{collection._collection_propname}{list_id}"
+    if full_list_id in uilist_cls.last_filter_options:
+        del uilist_cls.last_filter_options[full_list_id]
+
+    owner = collection._owner
+
+    list_col, side_col = draw_list_with_add_remove(
+        layout,
+        add_operator, remove_operator,
+        uilist_cls.bl_idname, list_id,
+        owner, collection._collection_propname,
+        owner, collection._active_index_for_ui_propname,
+        rows=3
+    )
+
+    side_col.separator()
+    side_col.menu(context_menu_cls.bl_idname, icon="DOWNARROW_HLT", text="")
+
+    return list_col, side_col
