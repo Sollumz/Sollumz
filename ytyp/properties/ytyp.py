@@ -421,6 +421,7 @@ class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
 
     # TODO(multiselect): support flags
 
+
 @define_multiselect_collection("archetypes", {"name": "Archetypes"})
 class CMapTypesProperties(PropertyGroup):
     def update_mlo_archetype_ids(self):

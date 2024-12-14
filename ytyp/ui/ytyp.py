@@ -12,7 +12,8 @@ from ..utils import (
     get_selected_archetype
 )
 from ...shared.multiselection import (
-    MultiSelectUIListMixin
+    MultiSelectUIListMixin,
+    multiselect_ui_draw_list,
 )
 from ..operators import ytyp as ytyp_ops
 
@@ -108,24 +109,16 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        if "archetypes_tool_panel" in SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options:
-            del SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options["archetypes_tool_panel"]
-
-        list_col, side_col = draw_list_with_add_remove(
+        list_col, _ = multiselect_ui_draw_list(
             self.layout,
+            selected_ytyp.archetypes,
             "sollumz.createarchetype", "sollumz.deletearchetype",
-            SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "tool_panel",
-            selected_ytyp, selected_ytyp.archetypes._collection_propname,
-            selected_ytyp, selected_ytyp.archetypes._active_index_for_ui_propname,
-            rows=3
+            SOLLUMZ_UL_ARCHETYPE_LIST, SOLLUMZ_MT_archetype_context_menu,
+            "tool_panel"
         )
 
-        side_col.separator()
-        side_col.menu(SOLLUMZ_MT_archetype_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
-
         row = list_col.row()
-        row.operator("sollumz.createarchetypefromselected",
-                     icon="FILE_REFRESH")
+        row.operator("sollumz.createarchetypefromselected", icon="FILE_REFRESH")
         row.prop(context.scene, "create_archetype_type", text="")
 
 
