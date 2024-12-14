@@ -489,7 +489,7 @@ class CMapTypesProperties(PropertyGroup):
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
         return get_list_item(self.archetypes, self.archetype_index)
 
-    def on_active_index_update_from_ui(self, context):
+    def on_archetypes_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()
 
 
