@@ -116,7 +116,7 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
             "sollumz.createarchetype", "sollumz.deletearchetype",
             SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "tool_panel",
             selected_ytyp, selected_ytyp.archetypes._collection_propname,
-            selected_ytyp, selected_ytyp.archetypes._active_index_propname,  # "active_index_with_update_callback_for_ui",
+            selected_ytyp, selected_ytyp.archetypes._active_index_for_ui_propname,
             rows=3
         )
 

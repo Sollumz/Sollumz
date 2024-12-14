@@ -79,17 +79,24 @@ def define_multiselect_collection(name: str, collection_kwargs: dict):
 
         collection_propname = f"{name}_"
         active_index_propname = f"{name}_active_index_"
+        active_index_for_ui_propname = f"{name}_active_index_for_ui_"
         selection_indices_propname = f"{name}_selection_indices_"
         selection_propname = f"{name}_selection_"
+        on_active_index_update_from_ui_callback_name = f"on_{name}_active_index_update_from_ui"
         cls.__annotations__[collection_propname] = CollectionProperty(type=item_cls, **collection_kwargs)
         cls.__annotations__[active_index_propname] = IntProperty(name="Active Index")
+        cls.__annotations__[active_index_for_ui_propname] = IntProperty(
+            name="Active Index",
+            get=lambda s: getattr(s, active_index_propname),
+            set=lambda s, v: _collection_getter(s)._on_active_index_update_from_ui(v),
+        )
         cls.__annotations__[selection_indices_propname] = CollectionProperty(type=SelectionIndex)
         cls.__annotations__[selection_propname] = PointerProperty(type=item_access_cls)
         item_access_cls._path_split_str = f".{selection_propname}"
         item_access_cls._collection_name = name
 
         def _collection_getter(self) -> MultiSelectCollection[item_cls, item_access_cls]:
-            return MultiSelectCollection(self, collection_propname, active_index_propname, selection_indices_propname, selection_propname)
+            return MultiSelectCollection(self, collection_propname, active_index_propname, active_index_for_ui_propname, on_active_index_update_from_ui_callback_name, selection_indices_propname, selection_propname)
         setattr(cls, name, property(_collection_getter))
         return cls
 
@@ -101,10 +108,12 @@ TItemAccess = TypeVar("TItemAccess", bound=MultiSelectAccessMixin)
 
 
 class MultiSelectCollection(Generic[TItem, TItemAccess]):
-    def __init__(self, owner: PropertyGroup, collection_propname: str, active_index_propname: str, selection_indices_propname: str, selection_propname: str):
+    def __init__(self, owner: PropertyGroup, collection_propname: str, active_index_propname: str, active_index_for_ui_propname: str, on_active_index_update_from_ui_callback_name: str, selection_indices_propname: str, selection_propname: str):
         self._owner = owner
         self._collection_propname = collection_propname
         self._active_index_propname = active_index_propname
+        self._active_index_for_ui_propname = active_index_for_ui_propname
+        self._on_active_index_update_from_ui_callback_name = on_active_index_update_from_ui_callback_name
         self._selection_indices_propname = selection_indices_propname
         self._selection_propname = selection_propname
 
@@ -134,22 +143,16 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
     def remove(self, index: int):
         self.collection.remove(index)
 
-    # TODO(multiselect): add these callbacks
-    # def _on_active_index_update_from_ui(self, value):
-    #     # This callback is only triggered when clicking on the active item in the list once it switched to a textfield
-    #     # instead of buttons
-    #     # Use select() instead of setting active_index to deselected the other items when clicking again on the active
-    #     # item
-    #     self.select(value, ui_callbacks=True)
-    #
-    # active_index_with_update_callback_for_ui: IntProperty(
-    #     name="Active Index",
-    #     get=lambda s: s.active_index,
-    #     set=_on_active_index_update_from_ui,
-    # )
+    def _on_active_index_update_from_ui(self, value):
+        # This callback is only triggered when clicking on the active item in the list once it switched to a textfield
+        # instead of buttons
+        # Use select() instead of setting active_index to deselected the other items when clicking again on the active
+        # item
+        self.select(value, ui_callbacks=True)
 
-    # def on_active_index_update_from_ui(self, context):
-    #     pass
+    def on_active_index_update_from_ui(self, context):
+        if cb := getattr(self._owner, self._on_active_index_update_from_ui_callback_name, None):
+            cb(context)
 
     def __len__(self) -> int:
         return len(self.collection)
@@ -195,8 +198,8 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
                 self.selection_indices.clear()
                 self.active_index = index
                 self.selection_indices.add().index = index
-                # if ui_callbacks:
-                #     self.on_active_index_update_from_ui(bpy.context)
+                if ui_callbacks:
+                    self.on_active_index_update_from_ui(bpy.context)
             case SelectMode.EXTEND:
                 self.selection_indices.clear()
                 if reorder_items:
@@ -232,8 +235,8 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
                     # select
                     self.active_index = index
                     self.selection_indices.add().index = index
-                    # if ui_callbacks:
-                    #     self.on_active_index_update_from_ui(bpy.context)
+                    if ui_callbacks:
+                        self.on_active_index_update_from_ui(bpy.context)
                 else:
                     # deselect
                     self.selection_indices.remove(index_in_selection)
@@ -347,11 +350,11 @@ def define_multiselect_access(item_cls: type) -> type:
 
     def _decorator(cls: type) -> type:
         assert issubclass(cls, MultiSelectAccessMixin), \
-            f"multiselect_access: Class '{cls}' must inherit 'MultiSelectAccessMixin'"
+            f"'{cls.__name__}' must inherit 'MultiSelectAccessMixin'"
         for name, annotation in cls.__annotations__.items():
             if isinstance(annotation, MultiSelectProperty):
                 src_annotation = item_cls.__annotations__.get(name, None)
-                assert src_annotation is not None, f"multiselect_access: No property '{name}' found in '{item_cls}'"
+                assert src_annotation is not None, f"No property '{name}' found in '{item_cls.__name__}'"
 
                 fn = src_annotation.function
                 kwargs = dict(src_annotation.keywords)
@@ -360,7 +363,7 @@ def define_multiselect_access(item_cls: type) -> type:
                 elif fn in {IntProperty, FloatProperty, StringProperty}:
                     wrapper_prop = _wrap_basic_property(fn, name, **kwargs)
                 else:
-                    assert False, f"multiselect_access: Cannot wrap '{src_annotation.function.__name__}'"
+                    assert False, f"Cannot wrap '{src_annotation.function.__name__}'"
 
                 cls.__annotations__[name] = wrapper_prop
 
@@ -393,7 +396,7 @@ class MultiSelectUIListMixin:
     def draw_item(
         self, context, layout: UILayout, data, item, icon, active_data, active_propname, index
     ):
-        multiselect_collection_name = active_propname[:-14]  # remove '_active_index_' suffix
+        multiselect_collection_name = active_propname[:-21]  # remove '_active_index_for_ui_' suffix
 
         filter_opts = MultiSelectFilterOptions(
             self.filter_name,
