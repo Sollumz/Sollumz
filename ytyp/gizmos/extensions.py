@@ -481,7 +481,7 @@ class SOLLUMZ_OT_extension_select(bpy.types.Operator):
 
     def execute(self, context):
         selected_ytyp = get_selected_ytyp(context)
-        selected_ytyp.archetype_index = self.archetype_index
+        selected_ytyp.archetypes.select(self.archetype_index)
         selected_archetype = get_selected_archetype(context)
         selected_archetype.extension_index = self.extension_index
         tag_redraw(context, space_type="VIEW_3D", region_type="UI")
