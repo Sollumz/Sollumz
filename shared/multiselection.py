@@ -20,7 +20,8 @@ from bpy.props import (
     CollectionProperty,
     PointerProperty,
 )
-from typing import Optional, NamedTuple
+import typing
+from typing import Optional, NamedTuple, Generic, TypeVar
 from collections.abc import Iterator, Sequence
 from enum import Enum, auto
 import numpy as np
@@ -64,12 +65,17 @@ class MultiSelectAccessMixin:
         return self.find_owner_collection().selected_items
 
 
-def define_multiselect_collection(name: str, item_cls: type, item_access_cls: type, collection_kwargs: dict):
-    assert issubclass(item_access_cls, MultiSelectAccessMixin), "item_access_cls must implement MultiSelectAccessMixin"
-
+def define_multiselect_collection(name: str, collection_kwargs: dict):
     def _decorator(cls: type) -> type:
-        assert name in cls.__annotations__ and cls.__annotations__[name] is MultiSelectCollection, \
-            f"'{cls}' is missing '{name}: MultiSelectCollection' annotation."
+        assert name in cls.__annotations__ and typing.get_origin(cls.__annotations__[name]) is MultiSelectCollection, \
+            f"'{cls.__name__}' is missing '{name}: MultiSelectCollection[TItem, TItemAccess]' annotation."
+
+        item_cls, item_access_cls = typing.get_args(cls.__annotations__[name])
+
+        assert issubclass(item_cls, PropertyGroup), \
+            f"{item_cls.__name__} must be a PropertyGroup"
+        assert issubclass(item_access_cls, MultiSelectAccessMixin), \
+            f"{item_access_cls.__name__} must implement MultiSelectAccessMixin"
 
         collection_propname = f"{name}_"
         active_index_propname = f"{name}_active_index_"
@@ -82,7 +88,7 @@ def define_multiselect_collection(name: str, item_cls: type, item_access_cls: ty
         item_access_cls._path_split_str = f".{selection_propname}"
         item_access_cls._collection_name = name
 
-        def _collection_getter(self) -> MultiSelectCollection:
+        def _collection_getter(self) -> MultiSelectCollection[item_cls, item_access_cls]:
             return MultiSelectCollection(self, collection_propname, active_index_propname, selection_indices_propname, selection_propname)
         setattr(cls, name, property(_collection_getter))
         return cls
@@ -90,7 +96,11 @@ def define_multiselect_collection(name: str, item_cls: type, item_access_cls: ty
     return _decorator
 
 
-class MultiSelectCollection:
+TItem = TypeVar("TItem", bound=PropertyGroup)
+TItemAccess = TypeVar("TItemAccess", bound=MultiSelectAccessMixin)
+
+
+class MultiSelectCollection(Generic[TItem, TItemAccess]):
     def __init__(self, owner: PropertyGroup, collection_propname: str, active_index_propname: str, selection_indices_propname: str, selection_propname: str):
         self._owner = owner
         self._collection_propname = collection_propname
@@ -115,10 +125,10 @@ class MultiSelectCollection:
         return getattr(self._owner, self._selection_indices_propname)
 
     @property
-    def selection(self) -> MultiSelectAccessMixin:
+    def selection(self) -> TItemAccess:
         return getattr(self._owner, self._selection_propname)
 
-    def add(self) -> bpy_struct:
+    def add(self) -> TItem:
         return self.collection.add()
 
     def remove(self, index: int):
@@ -144,7 +154,7 @@ class MultiSelectCollection:
     def __len__(self) -> int:
         return len(self.collection)
 
-    def get_item(self, index: int) -> bpy_struct:
+    def __getitem__(self, index: int) -> TItem:
         return self.collection[index]
 
     @property
@@ -152,13 +162,13 @@ class MultiSelectCollection:
         return len(self.selection_indices) > 1
 
     @property
-    def active_item(self) -> bpy_struct:
-        return self.get_item(self.active_index)
+    def active_item(self) -> TItem:
+        return self[self.active_index]
 
-    def iter_selected_items(self) -> Iterator[bpy_struct]:
+    def iter_selected_items(self) -> Iterator[TItem]:
         found_active_item = False
         for s in self.selection_indices:
-            item = self.get_item(s.index)
+            item = self[s.index]
             if item is not None:
                 if s.index == self.active_index:
                     found_active_item = True
@@ -169,7 +179,7 @@ class MultiSelectCollection:
             yield self.active_item
 
     @property
-    def selected_items(self) -> list[bpy_struct]:
+    def selected_items(self) -> list[TItem]:
         return list(self.iter_selected_items())
 
     def select(
