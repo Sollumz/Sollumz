@@ -18,9 +18,15 @@ def test_versioning_archetype_uuids():
                 _check_uuid(arch.uuid, arch)
                 for e in arch.entities:
                     _check_uuid(e.uuid, e)
+                    assert e.mlo_archetype_uuid == arch.uuid
                 for s in arch.entity_sets:
                     _check_uuid(s.uuid, s)
+                    assert s.mlo_archetype_uuid == arch.uuid
                 for p in arch.portals:
                     _check_uuid(p.uuid, p)
+                    assert p.mlo_archetype_uuid == arch.uuid
                 for r in arch.rooms:
                     _check_uuid(r.uuid, r)
+                    assert r.mlo_archetype_uuid == arch.uuid
+                for tcm in arch.timecycle_modifiers:
+                    assert tcm.mlo_archetype_uuid == arch.uuid

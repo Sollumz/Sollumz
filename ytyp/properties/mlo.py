@@ -10,41 +10,28 @@ from ..utils import get_selected_ytyp, get_selected_archetype
 from .flags import EntityFlags, RoomFlags, PortalFlags
 from .extensions import ExtensionsContainer, ExtensionType
 
+_DEFAULT_EMPTY_ENUM_ITEMS = [("-1", "None", "", -1)]
+
 
 def get_portal_items_for_archetype(archetype: Optional["ArchetypeProperties"]):
-    items = [("-1", "None", "", -1)]
-
     if archetype is None:
-        return items
+        return _DEFAULT_EMPTY_ENUM_ITEMS
 
-    for portal in archetype.portals:
-        items.append((str(portal.id), portal.name, "", portal.id))
-
-    return items
+    return archetype.get_portal_enum_items()
 
 
 def get_room_items_for_archetype(archetype: Optional["ArchetypeProperties"]):
-    items = [("-1", "None", "", -1)]
-
     if archetype is None:
-        return items
+        return _DEFAULT_EMPTY_ENUM_ITEMS
 
-    for room in archetype.rooms:
-        items.append((str(room.id), room.name, "", room.id))
-
-    return items
+    return archetype.get_room_enum_items()
 
 
 def get_entityset_items_for_archetype(archetype: Optional["ArchetypeProperties"]):
-    items = [("-1", "None", "", -1)]
-
     if archetype is None:
-        return items
+        return _DEFAULT_EMPTY_ENUM_ITEMS
 
-    for entitySet in archetype.entity_sets:
-        items.append((str(entitySet.id), entitySet.name, "", entitySet.id))
-
-    return items
+    return archetype.get_entity_set_enum_items()
 
 
 def get_room_items_for_selected_archetype(self, context: Optional[bpy.types.Context]):
@@ -64,31 +51,66 @@ def get_entityset_items_for_selected_archetype(self, context: Optional[bpy.types
 
 class MloArchetypeChild:
     def get_mlo_archetype(self):
+        # TODO: this is incorrect if it gets called when the selected ytyp is not the owner of the MLO
         selected_ytyp = get_selected_ytyp(bpy.context)
 
-        if self.mlo_archetype_id == -1:
+        if self.mlo_archetype_id == -1 or not self.mlo_archetype_uuid:
             selected_ytyp.update_mlo_archetype_ids()
         for archetype in selected_ytyp.archetypes:
             if archetype.id == self.mlo_archetype_id:
                 return archetype
 
+        return None
+
     def get_room_items(self, context: Optional[bpy.types.Context]):
+        from .ytyp import ArchetypeProperties
+        if (
+            self.mlo_archetype_uuid and
+            (items := ArchetypeProperties.get_cached_room_enum_items(self.mlo_archetype_uuid))
+        ):
+            return items
         archetype = self.get_mlo_archetype()
         return get_room_items_for_archetype(archetype)
 
     def get_portal_items(self, context: Optional[bpy.types.Context]):
+        from .ytyp import ArchetypeProperties
+        if (
+            self.mlo_archetype_uuid and
+            (items := ArchetypeProperties.get_cached_portal_enum_items(self.mlo_archetype_uuid))
+        ):
+            return items
         archetype = self.get_mlo_archetype()
         return get_portal_items_for_archetype(archetype)
 
     def get_entityset_items(self, context: Optional[bpy.types.Context]):
+        from .ytyp import ArchetypeProperties
+        if (
+            self.mlo_archetype_uuid and
+            (items := ArchetypeProperties.get_cached_entity_set_enum_items(self.mlo_archetype_uuid))
+        ):
+            return items
         archetype = self.get_mlo_archetype()
         return get_entityset_items_for_archetype(archetype)
 
+    def update_mlo_archetype_caches(self, context: Optional[bpy.types.Context]):
+        archetype_uuid = self.mlo_archetype_uuid
+        if not archetype_uuid and (archetype := self.get_mlo_archetype()):
+            archetype_uuid = archetype.uuid
+
+        if not archetype_uuid:
+            return
+
+        from .ytyp import ArchetypeProperties
+        ArchetypeProperties.update_cached_portal_enum_items(archetype_uuid)
+        ArchetypeProperties.update_cached_room_enum_items(archetype_uuid)
+        ArchetypeProperties.update_cached_entity_set_enum_items(archetype_uuid)
+
     mlo_archetype_id: bpy.props.IntProperty(default=-1)
+    mlo_archetype_uuid: bpy.props.StringProperty(name="Archetype UUID", maxlen=36)
 
 
 class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
-    name: bpy.props.StringProperty(name="Name")
+    name: bpy.props.StringProperty(name="Name", update=MloArchetypeChild.update_mlo_archetype_caches)
     bb_min: bpy.props.FloatVectorProperty(name="Bounds Min", subtype="XYZ")
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
     blend: bpy.props.FloatProperty(name="Blend", default=1)
@@ -103,10 +125,12 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")
-    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
 
 
 class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
+    __name_cache: dict[str, str] = {}
+
     def get_room_from_index(self):
         archetype = self.get_mlo_archetype()
         room_from_id = self.room_from_id
@@ -162,18 +186,28 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     def update_room_names(self, context):
         self.room_from_name = self.get_room_name(self.room_from_index)
         self.room_to_name = self.get_room_name(self.room_to_index)
-        del self.__name
+        PortalProperties.update_cached_name(self.uuid)
+        self.update_mlo_archetype_caches(context)
 
     def get_name(self):
-        if hasattr(self, "__name") and self.__name is not None:
-            return self.__name
+        if name := PortalProperties.__name_cache.get(self.uuid, None):
+            return name
+
         if not self.room_from_name or not self.room_to_name:
             self.update_room_names(bpy.context)
 
-        # EnumProperty can crash blender if the name isn't referenced anywhere See https://docs.blender.org/api/current/bpy.props.html#bpy.props.EnumProperty
-        # Updating is done by update_room_names
-        self.__name = f"{self.get_portal_index() + 1} | {self.room_from_name} to {self.room_to_name}"
-        return self.__name
+        name = f"{self.get_portal_index() + 1} | {self.room_from_name} to {self.room_to_name}"
+        PortalProperties.__name_cache[self.uuid] = name
+        return name
+
+    @staticmethod
+    def get_cached_name(portal_uuid: str) -> Optional[list]:
+        return PortalProperties.__name_cache.get(portal_uuid, None)
+
+    @staticmethod
+    def update_cached_name(portal_uuid: str) -> Optional[list]:
+        if portal_uuid in PortalProperties.__name_cache:
+            del PortalProperties.__name_cache[portal_uuid]
 
     # Work around to store audio_occlusion as a string property since blender int property cant store 32 bit unsigned integers
     def update_audio_occlusion(self, context):
@@ -215,8 +249,8 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
     # Blender use only
     name: bpy.props.StringProperty(name="Name", default="Portal", get=get_name)
-    id: bpy.props.IntProperty(name="Id") # unique within the archetype
-    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
+    id: bpy.props.IntProperty(name="Id")  # unique within the archetype
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
 
 
 class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
@@ -332,7 +366,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")
-    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
 
 
 class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
@@ -347,13 +381,13 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
         return archetype.entity_sets[0].name
 
-    name: bpy.props.StringProperty(name="Name")
+    name: bpy.props.StringProperty(name="Name", update=MloArchetypeChild.update_mlo_archetype_caches)
     entities: bpy.props.CollectionProperty(
         type=MloEntityProperties, name="EntitySet Entities")
 
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")
-    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
 
 
 def register():

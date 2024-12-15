@@ -3,7 +3,7 @@ from bpy.props import (
     BoolProperty,
 )
 from enum import IntEnum
-from typing import Union
+from typing import Union, Optional
 from uuid import uuid4
 from ..utils import get_selected_archetype, get_selected_entity
 from ...tools.blenderhelper import get_children_recursive
@@ -94,6 +94,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
 
+    __portal_enum_items_cache: dict[str, list] = {}
+    __room_enum_items_cache: dict[str, list] = {}
+    __entity_set_enum_items_cache: dict[str, list] = {}
+
     def update_asset(self, context):
         if self.asset:
             self.asset_name = self.asset.name
@@ -143,6 +147,9 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             item.room_from_id = str(room_id)
 
         item.mlo_archetype_id = self.id
+        item.mlo_archetype_uuid = self.uuid
+
+        ArchetypeProperties.update_cached_portal_enum_items(self.uuid)
 
         return item
 
@@ -155,8 +162,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.id = item_id
         item.uuid = str(uuid4())
         item.mlo_archetype_id = self.id
+        item.mlo_archetype_uuid = self.uuid
 
         item.name = f"Room.{item.id}"
+
+        ArchetypeProperties.update_cached_room_enum_items(self.uuid)
 
         return item
 
@@ -170,6 +180,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.uuid = str(uuid4())
 
         item.mlo_archetype_id = self.id
+        item.mlo_archetype_uuid = self.uuid
 
         item.archetype_name = f"Entity.{item_id}"
 
@@ -178,6 +189,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
         item.mlo_archetype_id = self.id
+        item.mlo_archetype_uuid = self.uuid
 
         return item
 
@@ -190,8 +202,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.id = item_id
         item.uuid = str(uuid4())
         item.mlo_archetype_id = self.id
+        item.mlo_archetype_uuid = self.uuid
 
         item.name = f"EntitySet.{item.id}"
+
+        ArchetypeProperties.update_cached_entity_set_enum_items(self.uuid)
 
         return item
 
@@ -290,7 +305,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
 
     id: bpy.props.IntProperty(default=-1)
-    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
 
     @property
     def non_entity_set_entities(self) -> list[MloEntityProperties]:
@@ -320,6 +335,64 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     def selected_entity_set_id(self):
         return self.entity_set_index
 
+    def get_portal_enum_items(self) -> list:
+        if items := ArchetypeProperties.__portal_enum_items_cache.get(self.uuid, None):
+            return items
+
+        items = [("-1", "None", "", -1)]
+        for portal in self.portals:
+            items.append((str(portal.id), portal.name, "", portal.id))
+        ArchetypeProperties.__portal_enum_items_cache[self.uuid] = items
+        return items
+
+    def get_room_enum_items(self) -> list:
+        if items := ArchetypeProperties.__room_enum_items_cache.get(self.uuid, None):
+            return items
+
+        items = [("-1", "None", "", -1)]
+        for room in self.rooms:
+            items.append((str(room.id), room.name, "", room.id))
+        ArchetypeProperties.__room_enum_items_cache[self.uuid] = items
+        print(f"{self=}  {self.uuid=}  {items=}")
+        return items
+
+    def get_entity_set_enum_items(self) -> list:
+        if items := ArchetypeProperties.__entity_set_enum_items_cache.get(self.uuid, None):
+            return items
+
+        items = [("-1", "None", "", -1)]
+        for entity_set in self.entity_sets:
+            items.append((str(entity_set.id), entity_set.name, "", entity_set.id))
+        ArchetypeProperties.__entity_set_enum_items_cache[self.uuid] = items
+        return items
+
+    @staticmethod
+    def get_cached_portal_enum_items(archetype_uuid: str) -> Optional[list]:
+        return ArchetypeProperties.__portal_enum_items_cache.get(archetype_uuid, None)
+
+    @staticmethod
+    def get_cached_room_enum_items(archetype_uuid: str) -> Optional[list]:
+        return ArchetypeProperties.__room_enum_items_cache.get(archetype_uuid, None)
+
+    @staticmethod
+    def get_cached_entity_set_enum_items(archetype_uuid: str) -> Optional[list]:
+        return ArchetypeProperties.__entity_set_enum_items_cache.get(archetype_uuid, None)
+
+    @staticmethod
+    def update_cached_portal_enum_items(archetype_uuid: str) -> Optional[list]:
+        if archetype_uuid in ArchetypeProperties.__portal_enum_items_cache:
+            del ArchetypeProperties.__portal_enum_items_cache[archetype_uuid]
+
+    @staticmethod
+    def update_cached_room_enum_items(archetype_uuid: str) -> Optional[list]:
+        if archetype_uuid in ArchetypeProperties.__room_enum_items_cache:
+            del ArchetypeProperties.__room_enum_items_cache[archetype_uuid]
+
+    @staticmethod
+    def update_cached_entity_set_enum_items(archetype_uuid: str) -> Optional[list]:
+        if archetype_uuid in ArchetypeProperties.__entity_set_enum_items_cache:
+            del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
+
 
 class CMapTypesProperties(bpy.types.PropertyGroup):
     def update_mlo_archetype_ids(self):
@@ -330,15 +403,23 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
 
                 for entity in archetype.entities:
                     entity.mlo_archetype_id = archetype.id
+                    entity.mlo_archetype_uuid = archetype.uuid
 
                 for portal in archetype.portals:
                     portal.mlo_archetype_id = archetype.id
+                    portal.mlo_archetype_uuid = archetype.uuid
 
                 for room in archetype.rooms:
                     room.mlo_archetype_id = archetype.id
+                    room.mlo_archetype_uuid = archetype.uuid
 
                 for tcm in archetype.timecycle_modifiers:
                     tcm.mlo_archetype_id = archetype.id
+                    tcm.mlo_archetype_uuid = archetype.uuid
+
+                for entity_set in archetype.entity_sets:
+                    entity_set.mlo_archetype_id = archetype.id
+                    entity_set.mlo_archetype_uuid = archetype.uuid
 
     def new_archetype(self):
         item = self.archetypes.add()
