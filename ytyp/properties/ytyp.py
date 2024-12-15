@@ -4,6 +4,7 @@ from bpy.props import (
 )
 from enum import IntEnum
 from typing import Union
+from uuid import uuid4
 from ..utils import get_selected_archetype, get_selected_entity
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
@@ -134,6 +135,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         self.portal_index = len(self.portals) - 1
 
         item.id = item_id
+        item.uuid = str(uuid4())
 
         if len(self.rooms) > 0:
             room_id = self.rooms[0].id
@@ -151,6 +153,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         self.room_index = len(self.rooms) - 1
 
         item.id = item_id
+        item.uuid = str(uuid4())
         item.mlo_archetype_id = self.id
 
         item.name = f"Room.{item.id}"
@@ -164,6 +167,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         self.entity_index = len(self.entities) - 1
 
         item.id = item_id
+        item.uuid = str(uuid4())
 
         item.mlo_archetype_id = self.id
 
@@ -184,6 +188,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         self.entity_set_index = len(self.entity_sets) - 1
 
         item.id = item_id
+        item.uuid = str(uuid4())
         item.mlo_archetype_id = self.id
 
         item.name = f"EntitySet.{item.id}"
@@ -285,6 +290,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
 
     id: bpy.props.IntProperty(default=-1)
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
 
     @property
     def non_entity_set_entities(self) -> list[MloEntityProperties]:
@@ -340,6 +346,7 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
         item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index}"
         self.archetype_index = index - 1
         item.id = self.last_archetype_id + 1
+        item.uuid = str(uuid4())
         self.last_archetype_id += 1
 
         return item

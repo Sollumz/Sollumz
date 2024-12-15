@@ -103,6 +103,7 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
 
 
 class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
@@ -214,7 +215,8 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
     # Blender use only
     name: bpy.props.StringProperty(name="Name", default="Portal", get=get_name)
-    id: bpy.props.IntProperty(name="Id")
+    id: bpy.props.IntProperty(name="Id") # unique within the archetype
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
 
 
 class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
@@ -330,6 +332,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
 
 
 class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
@@ -350,6 +353,7 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")
+    uuid: bpy.props.StringProperty(name="UUID", maxlen=36) # unique within the whole .blend
 
 
 def register():
