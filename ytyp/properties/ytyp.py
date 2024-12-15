@@ -353,7 +353,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         for room in self.rooms:
             items.append((str(room.id), room.name, "", room.id))
         ArchetypeProperties.__room_enum_items_cache[self.uuid] = items
-        print(f"{self=}  {self.uuid=}  {items=}")
         return items
 
     def get_entity_set_enum_items(self) -> list:
