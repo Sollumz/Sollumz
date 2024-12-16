@@ -23,7 +23,7 @@ class SOLLUMZ_OT_capsule_light_set_size(Operator):
 
     def execute(self, context: Context):
         light_obj = context.view_layer.objects.active
-        if light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
+        if light_obj is None or light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
             return {"CANCELLED"}
 
         light = light_obj.data
@@ -113,7 +113,7 @@ class CapsuleLightManipulator:
 
     def handler_get_cage_transform(self):
         light_obj = bpy.context.view_layer.objects.active
-        if light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
+        if light_obj is None or light_obj.type != "LIGHT" or light_obj.sollum_type != SollumType.LIGHT:
             m = Matrix.Identity(4)
         else:
             m = self.get_capsule_light_size_matrix(light_obj)

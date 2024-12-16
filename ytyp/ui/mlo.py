@@ -81,7 +81,7 @@ class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
 
         layout.separator()
         for prop_name in RoomProperties.__annotations__:
-            if prop_name in ["flags", "id"]:
+            if prop_name in ["flags", "id", "uuid"]:
                 continue
             layout.prop(selected_room, prop_name)
 
