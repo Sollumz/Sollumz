@@ -251,6 +251,10 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
             if not is_filtered_out:
                 self.selection_indices.add().index = i
 
+        is_active_item_filtered_out = filtered_items and not filtered_items[self.active_index]
+        if is_active_item_filtered_out and len(self.selection_indices) > 0:
+            self.active_index = self.selection_indices[0].index
+
 
 class MultiSelectOperatorBase:
     bl_options = {"UNDO"}
@@ -264,16 +268,13 @@ class MultiSelectOperatorBase:
     def get_collection(self, context) -> MultiSelectCollection:
         raise NotImplementedError("get_collection")
 
-    def filter_items(self, context) -> tuple[Optional[Sequence[bool]], Optional[Sequence[int]]]:
+    def filter_items(self, context) -> tuple[Optional[list[bool]], Optional[list[int]]]:
         filtered_items = None
         reorder_items = None
         if self.apply_filter:
-            filter_flags, reorder_items = _default_filter_items(
-                self.get_collection(context),
-                self.filter_name,
-                self.use_filter_sort_reverse,
-                self.use_filter_sort_alpha
-            )
+            filter_flags, filter_order = self._filter_items_impl(context)
+            if filter_order:
+                reorder_items = filter_order
             if filter_flags:
                 filtered_items = (np.array(filter_flags) & _BITFLAG_FILTER_ITEM) != 0
                 if self.use_filter_invert:
@@ -281,6 +282,14 @@ class MultiSelectOperatorBase:
                 filtered_items = list(filtered_items)
 
         return filtered_items, reorder_items
+
+    def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
+        return _default_filter_items(
+            self.get_collection(context),
+            self.filter_name,
+            self.use_filter_sort_reverse,
+            self.use_filter_sort_alpha
+        )
 
 
 class MultiSelectOneOperator(MultiSelectOperatorBase):
@@ -337,24 +346,70 @@ def define_multiselect_access(item_cls: type) -> type:
         return prop_fn(**kwargs, get=_getter, set=_setter)
 
     def _wrap_enum_property(attr_name: str, **kwargs):
+        assert "ENUM_FLAG" not in kwargs.get("options", ()), \
+            "Flag enum properties not supported. Cannot wrap '{attr_name}'"
+
+        if (items := kwargs.get("items", None)) and callable(items):
+            dynamic_items_callback = items
+        else:
+            dynamic_items_callback = None
+
+        # Enum getters need to return the int value, but reading the properties gives the
+        # string name. So we need to lookup the value for the name.
         def _getter(self: MultiSelectAccessMixin) -> int:
-            enum_str = getattr(self.active_item, attr_name)
-            enum_int = self.rna_type.properties[attr_name].enum_items[enum_str].value
+            active = self.active_item
+            enum_str = getattr(active, attr_name)
+            enum_int = active.rna_type.properties[attr_name].enum_items[enum_str].value
             return enum_int
+
+        def _getter_dynamic(self: MultiSelectAccessMixin) -> int:
+            # EnumProperty.enum_items is empty with dynamic enum items, we need to call
+            # the callback and search for the correct enum manually.
+            # See https://projects.blender.org/blender/blender/issues/86803
+            active = self.active_item
+            enum_str = getattr(active, attr_name)
+            enum_items = dynamic_items_callback(active, bpy.context)
+            for i, enum_item in enumerate(enum_items):
+                if enum_item[0] == enum_str:
+                    n = len(enum_item)
+                    if n == 3:
+                        return i
+                    else:
+                        return enum_item[-1]
+
+            return 0 # TODO(multiselect): should this be some other default?
 
         def _setter(self: MultiSelectAccessMixin, value: int):
             for item in self.iter_selected_items():
                 item[attr_name] = value
 
-        return EnumProperty(**kwargs, get=_getter, set=_setter)
+        def _dynamic_items_wrapper(self: MultiSelectAccessMixin, context: Optional[bpy.types.Context]) -> list:
+            # Wrapper required to pass the active item to the enum items callback
+            # Otherwise the callback is invoked with the MultiSelectAccessMixin as self
+            active = self.active_item
+            return dynamic_items_callback(active, context)
+
+        if dynamic_items_callback:
+            kwargs["items"] = _dynamic_items_wrapper
+
+        return EnumProperty(
+            **kwargs,
+            get=_getter_dynamic if dynamic_items_callback else _getter,
+            set=_setter
+        )
 
     def _decorator(cls: type) -> type:
         assert issubclass(cls, MultiSelectAccessMixin), \
             f"'{cls.__name__}' must inherit 'MultiSelectAccessMixin'"
+        item_cls_annotations = _get_all_annotations(item_cls)
         for name, annotation in cls.__annotations__.items():
             if isinstance(annotation, MultiSelectProperty):
-                src_annotation = item_cls.__annotations__.get(name, None)
-                assert src_annotation is not None, f"No property '{name}' found in '{item_cls.__name__}'"
+                src_annotation = item_cls_annotations.get(name, None)
+                assert (
+                    src_annotation is not None and
+                    hasattr(src_annotation, "function") and
+                    hasattr(src_annotation, "keywords")
+                ), f"No property '{name}' found in '{item_cls.__name__}'"
 
                 fn = src_annotation.function
                 kwargs = dict(src_annotation.keywords)
@@ -464,17 +519,18 @@ def _default_filter_items(
     filter_name: str,
     use_filter_sort_reverse: bool,
     use_filter_sort_alpha: bool,
-):
+    name_prop: str = "name"
+) -> tuple[list[int], list[int]]:
     flt_flags = []
     flt_neworder = []
 
     if filter_name:
         flt_flags = UI_UL_list.filter_items_by_name(
-            filter_name, _BITFLAG_FILTER_ITEM, collection.collection, "name"
+            filter_name, _BITFLAG_FILTER_ITEM, collection.collection, name_prop
         )
 
     if use_filter_sort_alpha and not use_filter_sort_reverse:
-        flt_neworder = UI_UL_list.sort_items_by_name(collection.collection, "name")
+        flt_neworder = UI_UL_list.sort_items_by_name(collection.collection, name_prop)
 
     return flt_flags, flt_neworder
 
@@ -508,3 +564,14 @@ def multiselect_ui_draw_list(
     side_col.menu(context_menu_cls.bl_idname, icon="DOWNARROW_HLT", text="")
 
     return list_col, side_col
+
+
+def _get_all_annotations(cls):
+    """Gets the annotations of the class and all inherited annotations."""
+    import inspect
+    annotations = {}
+    # Reversed MRO iteration so annotations in child classes override parent class
+    for base in reversed(inspect.getmro(cls)):
+        if hasattr(base, "__annotations__"):
+            annotations.update(base.__annotations__)
+    return annotations

@@ -141,7 +141,7 @@ class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
         return get_selected_entity(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_entity(context)
+        return get_selected_archetype(context).entities.selection
 
 
 class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
@@ -156,4 +156,4 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
         return get_selected_entity(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_entity(context)
+        return get_selected_archetype(context).entities.selection

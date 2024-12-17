@@ -17,7 +17,7 @@ class SOLLUMZ_OT_search_entityset(SearchEnumHelper, bpy.types.Operator):
         return get_selected_entity(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_entity(context)
+        return get_selected_archetype(context).entities.selection
 
 
 class SOLLUMZ_OT_create_entityset(SOLLUMZ_OT_base, bpy.types.Operator):
