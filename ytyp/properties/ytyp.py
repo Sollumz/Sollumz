@@ -102,6 +102,29 @@ class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
     )
 
 
+@define_multiselect_access(MloEntityProperties)
+class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+    # from EntityProperties
+    archetype_name: MultiSelectProperty()
+    guid: MultiSelectProperty()
+    parent_index: MultiSelectProperty()
+    lod_dist: MultiSelectProperty()
+    child_lod_dist: MultiSelectProperty()
+    lod_level: MultiSelectProperty()
+    num_children: MultiSelectProperty()
+    priority_level: MultiSelectProperty()
+    ambient_occlusion_multiplier: MultiSelectProperty()
+    artificial_ambient_occlusion: MultiSelectProperty()
+    tint_value: MultiSelectProperty()
+
+    # from MloEntityProperties
+    attached_portal_id: MultiSelectProperty()
+    attached_room_id: MultiSelectProperty()
+    attached_entity_set_id: MultiSelectProperty()
+    # TODO: flags: MultiSelectProperty()
+
+
+@define_multiselect_collection("entities", {"name": "Entities"})
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
@@ -247,14 +270,13 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         return ids[-1] + 1
 
     def select_entity_linked_object(self):
-        selected_entity = get_selected_entity(bpy.context)
-        if selected_entity.linked_object:
-            bpy.context.view_layer.objects.active = selected_entity.linked_object
+        entity = self.entities.active_item
+        if entity.linked_object:
+            bpy.context.view_layer.objects.active = entity.linked_object
             bpy.ops.object.select_all(action="DESELECT")
-            selected_entity.linked_object.select_set(True)
+            entity.linked_object.select_set(True)
 
-    def _set_entity_index_with_select_linked_object(self, index: int):
-        self.entity_index = index
+    def on_entities_active_index_update_from_ui(self, context):
         self.select_entity_linked_object()
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
@@ -289,8 +311,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     rooms: bpy.props.CollectionProperty(type=RoomProperties, name="Rooms")
     portals: bpy.props.CollectionProperty(
         type=PortalProperties, name="Portals")
-    entities: bpy.props.CollectionProperty(
-        type=MloEntityProperties, name="Entities")
+    entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
     timecycle_modifiers: bpy.props.CollectionProperty(
         type=TimecycleModifierProperties, name="Timecycle Modifiers")
     entity_sets: bpy.props.CollectionProperty(
@@ -301,11 +322,13 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected portal index
     portal_index: bpy.props.IntProperty(name="Portal")
     # Selected entity index
-    entity_index: bpy.props.IntProperty(name="Entity")
-    entity_index_with_select_linked_object: bpy.props.IntProperty(
+    # TODO(multiselect): entity_index is deprecated, remove usages
+    def _set_entity_index(self, index: int):
+        self.entities.active_index = index
+    entity_index: bpy.props.IntProperty(
         name="Entity",
-        get=lambda s: s.entity_index,
-        set=_set_entity_index_with_select_linked_object,
+        get=lambda s: s.entities.active_index,
+        set=_set_entity_index
     )
     # Selected timecycle modifier index
     tcm_index: bpy.props.IntProperty(
@@ -313,8 +336,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected entityset
     entity_set_index: bpy.props.IntProperty(
         name="Entity Set")
-
-    all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
 
     id: bpy.props.IntProperty(default=-1)
     uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
@@ -468,8 +489,9 @@ class CMapTypesProperties(PropertyGroup):
             bpy.ops.object.select_all(action="DESELECT")
             archetype.asset.select_set(True)
 
-    def _set_archetype_index(self, index: int):
-        self.archetypes.active_index = index
+    def on_archetypes_active_index_update_from_ui(self, context):
+        self.select_archetype_linked_object()
+
 
     name: bpy.props.StringProperty(name="Name")
     all_flags: bpy.props.IntProperty(name="Flags: ")
@@ -477,9 +499,11 @@ class CMapTypesProperties(PropertyGroup):
     archetypes: MultiSelectCollection[ArchetypeProperties, ArchetypeSelectionAccess]
 
     # TODO(multiselect): archetype_index is deprecated, remove usages
+    def _set_archetype_index(self, index: int):
+        self.archetypes.active_index = index
     archetype_index: bpy.props.IntProperty(
         name="Archetype Index",
-        get=lambda s: s.archetypes_active_index_,
+        get=lambda s: s.archetypes.active_index,
         set=_set_archetype_index
     )
 
@@ -489,9 +513,6 @@ class CMapTypesProperties(PropertyGroup):
     @property
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
         return get_list_item(self.archetypes, self.archetype_index)
-
-    def on_archetypes_active_index_update_from_ui(self, context):
-        self.select_archetype_linked_object()
 
 
 def register():

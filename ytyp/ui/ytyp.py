@@ -113,7 +113,7 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
             self.layout,
             selected_ytyp.archetypes,
             "sollumz.createarchetype", "sollumz.deletearchetype",
-            SOLLUMZ_UL_ARCHETYPE_LIST, SOLLUMZ_MT_archetype_context_menu,
+            SOLLUMZ_UL_ARCHETYPE_LIST, SOLLUMZ_MT_archetype_list_context_menu,
             "tool_panel"
         )
 
@@ -122,9 +122,9 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
         row.prop(context.scene, "create_archetype_type", text="")
 
 
-class SOLLUMZ_MT_archetype_context_menu(bpy.types.Menu):
+class SOLLUMZ_MT_archetype_list_context_menu(bpy.types.Menu):
     bl_label = "Archetypes Specials"
-    bl_idname = "SOLLUMZ_MT_archetype_context_menu"
+    bl_idname = "SOLLUMZ_MT_archetype_list_context_menu"
 
     def draw(self, _context):
         layout = self.layout
@@ -158,14 +158,3 @@ class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
         row = layout.row()
         row.prop(selected_ytyp, "all_flags")
         row.operator("sollumz.setflagsallarchs")
-
-        selected_archetype = get_selected_archetype(context)
-
-        if not selected_archetype:
-            return
-
-        layout.separator()
-
-        row = layout.row()
-        row.prop(selected_archetype, "all_entity_lod_dist")
-        row.operator("sollumz.setentityloddistallarchs")

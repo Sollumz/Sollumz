@@ -92,22 +92,60 @@ class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperator, bpy.types.Op
         ).archetypes
 
 
-class SOLLUMZ_OT_set_entity_loddist_for_all_archetypes(bpy.types.Operator):
-    """Sets entity lod dist for all entities in all within the selected MLO archetype"""
-    bl_idname = "sollumz.setentityloddistallarchs"
-    bl_label = "Set to All Entities"
+class SOLLUMZ_OT_archetype_select_mlo_entity(MultiSelectOneOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_mlo_entity"
+    bl_label = "Select Archetype"
 
-    @classmethod
-    def poll(cls, context):
-        selected_archetype = get_selected_archetype(context)
-        return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO and len(selected_archetype.entities) > 0
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
-    def execute(self, context):
-        selected_archetype = get_selected_archetype(context)
-        for entity in selected_archetype.entities:
-            entity.lod_dist = selected_archetype.all_entity_lod_dist
+    def get_collection(self, context):
+        return (
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).entities
 
-        return {'FINISHED'}
+    def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
+        from ..ui.entities import entities_filter_items
+        return entities_filter_items(
+            self.get_collection(context),
+            self.filter_name,
+            self.use_filter_sort_reverse,
+            self.use_filter_sort_alpha
+        )
+
+
+class SOLLUMZ_OT_archetype_select_all_mlo_entity(MultiSelectAllOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_all_mlo_entity"
+    bl_label = "Select All Entities"
+
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
+
+    def get_collection(self, context):
+        return (
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).entities
+
+    def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
+        from ..ui.entities import entities_filter_items
+        return entities_filter_items(
+            self.get_collection(context),
+            self.filter_name,
+            self.use_filter_sort_reverse,
+            self.use_filter_sort_alpha
+        )
 
 
 class SOLLUMZ_OT_set_flag_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):

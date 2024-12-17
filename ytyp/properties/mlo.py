@@ -333,6 +333,30 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
             return room.name
         return ""
 
+
+    def is_filtered(self) -> bool:
+        """Returns true if this entity should be shown on UI list; false, otherwise."""
+        scene = bpy.context.scene
+        filter_type = scene.sollumz_entity_filter_type
+
+        if filter_type == "all":
+            return True
+
+        if filter_type == "room":
+            return scene.sollumz_entity_filter_room == self.attached_room_id
+        elif filter_type == "portal":
+            return scene.sollumz_entity_filter_portal == self.attached_portal_id
+        elif filter_type == "entity_set":
+            in_entity_set = scene.sollumz_entity_filter_entity_set == self.attached_entity_set_id
+
+            if scene.sollumz_do_entity_filter_entity_set_room:
+                in_room = scene.sollumz_entity_filter_entity_set_room == self.attached_room_id
+                return in_entity_set and in_room
+
+            return in_entity_set
+
+        return True
+
     # Transforms unused if no linked object
     position: bpy.props.FloatVectorProperty(name="Position")
     rotation: bpy.props.FloatVectorProperty(
