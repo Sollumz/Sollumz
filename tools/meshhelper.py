@@ -298,7 +298,7 @@ def mesh_rename_uv_maps_by_order(mesh: bpy.types.Mesh) -> dict[str, int]:
 def mesh_rename_color_attrs_by_order(mesh: bpy.types.Mesh) -> dict[str, int]:
     """Returns a dictionary with the renamed color attributes (old color name -> new color index)."""
 
-    def _is_candidate_color_attr(self, attr: bpy.types.Attribute) -> bool:
+    def _is_candidate_color_attr(attr: bpy.types.Attribute) -> bool:
         return (  # `TintColor` only used for the tint shaders/geometry nodes
             not attr.name.startswith("TintColor") and
             # Name prefixed by `.` indicate a reserved attribute name for Blender
