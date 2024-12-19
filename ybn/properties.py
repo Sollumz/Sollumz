@@ -378,6 +378,8 @@ def register():
 
     bpy.types.WindowManager.sz_collision_material_index = bpy.props.IntProperty(name="Material Index")
     bpy.types.WindowManager.sz_collision_materials = bpy.props.CollectionProperty(type=CollisionMaterial, name="Collision Materials")
+    bpy.types.Scene.convert_all_to_collision_material = bpy.props.BoolProperty(
+        name="", description="Convert all shared materials to a collision material", default=False)
 
     bpy.types.WindowManager.sz_flag_preset_index = bpy.props.IntProperty(name="Flag Preset Index")
     bpy.types.WindowManager.sz_flag_presets = bpy.props.CollectionProperty(type=FlagPresetProp, name="Flag Presets")
@@ -464,6 +466,7 @@ def unregister():
     del bpy.types.Object.composite_flags2
     del bpy.types.WindowManager.sz_collision_material_index
     del bpy.types.WindowManager.sz_collision_materials
+    del bpy.types.Scene.convert_all_to_collision_material
     del bpy.types.Material.collision_properties
     del bpy.types.Material.collision_flags
     del bpy.types.WindowManager.sz_flag_presets
