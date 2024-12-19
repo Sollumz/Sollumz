@@ -139,7 +139,8 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
         get_centroid_of_cylinder, get_mass_properties_of_cylinder,
         get_centroid_of_capsule, get_mass_properties_of_capsule,
         get_centroid_of_mesh, get_mass_properties_of_mesh,
-        grow_sphere
+        grow_sphere,
+        shrink_mesh,
     )
 
     centroid = Vector()
@@ -222,10 +223,16 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
                 centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
                 volume, cg, inertia = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
 
+
+            # R* seems to apply the margin to the bbox before calculating the actual margin from shrunk mesh, so
+            # the default margin is applied
+            bbox_margin = 0.04
+            bound_xml.box_min -= Vector((bbox_margin, bbox_margin, bbox_margin))
+            bound_xml.box_max += Vector((bbox_margin, bbox_margin, bbox_margin))
+
             # CW calculates the shrunk mesh on import now (though it doesn't update the margin!)
-            # _, margin = shrink_mesh(mesh_vertices, mesh_faces)
+            _, margin = shrink_mesh(mesh_vertices, mesh_faces)
             # bound_xml.vertices_shrunk = [Vector(vert) - bound_xml.geometry_center for vert in shrunk_vertices]
-            margin = 0.0025  # set it to the minimum margin, though it should depend on the shrunk mesh
 
         case SollumType.BOUND_GEOMETRYBVH:
             if not validate_bvh_collision_materials(obj, verbose=True):
@@ -256,6 +263,9 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
             volume = 1.0
             inertia = Vector((1.0, 1.0, 1.0))
             margin = 0.04  # BVHs always have this margin
+
+            bound_xml.box_min -= Vector((margin, margin, margin))
+            bound_xml.box_max += Vector((margin, margin, margin))
 
             # Grow radius_around_centroid to fit all primitives
             for prim in primitives:
