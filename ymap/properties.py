@@ -118,6 +118,18 @@ class YmapProperties(bpy.types.PropertyGroup):
 class YmapModelOccluderProperties(bpy.types.PropertyGroup):
     model_occl_flags: IntProperty(name="Flags", default=0)
 
+    def _set_is_water_only(self, enable: bool):
+        if enable:
+            self.model_occl_flags |= 1
+        else:
+            self.model_occl_flags &= ~1
+
+    is_water_only: BoolProperty(
+        name="Is Water Only",
+        get=lambda s: (s.model_occl_flags & 1) != 0,
+        set=_set_is_water_only
+    )
+
 
 class YmapCarGeneratorProperties(bpy.types.PropertyGroup):
     car_model: StringProperty(name="CarModel", default="panto")

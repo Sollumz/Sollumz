@@ -173,7 +173,7 @@ def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
 
         mesh = bpy.data.meshes.new("Model Occluders")
         model_obj = create_blender_object(SollumType.YMAP_MODEL_OCCLUDER, "Model", mesh)
-        model_obj.ymap_properties.flags = model.flags
+        model_obj.ymap_model_occl_properties.model_occl_flags = model.flags
         model_obj.active_material = add_occluder_material(SollumType.YMAP_MODEL_OCCLUDER)
         mesh.from_pydata(verts, [], faces)
         model_obj.parent = group_obj

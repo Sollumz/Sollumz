@@ -72,7 +72,7 @@ def model_from_obj(obj):
     face_count = len(obj.data.polygons)
     model.num_tris = face_count | 0x8000  # add float vertex format marker
     model.data_size = len(model.verts)
-    model.flags = obj.ymap_properties.flags
+    model.flags = obj.ymap_model_occl_properties.model_occl_flags
 
     assert model.data_size == (model.num_verts_in_bytes + face_count * 3)
 
