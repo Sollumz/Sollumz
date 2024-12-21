@@ -4,7 +4,7 @@ from typing import Optional, TypeVar, Callable, Type
 import numpy as np
 
 from ..sollumz_helper import get_parent_inverse
-from ..tools.blenderhelper import get_pose_inverse
+from ..tools.blenderhelper import get_pose_inverse, get_evaluated_obj
 from ..cwxml.bound import (
     BoundFile,
     Bound,
@@ -139,7 +139,8 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
         get_centroid_of_cylinder, get_mass_properties_of_cylinder,
         get_centroid_of_capsule, get_mass_properties_of_capsule,
         get_centroid_of_mesh, get_mass_properties_of_mesh,
-        grow_sphere
+        grow_sphere,
+        shrink_mesh,
     )
 
     centroid = Vector()
@@ -222,10 +223,19 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
                 centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
                 volume, cg, inertia = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
 
+
+            # R* seems to apply the margin to the bbox before calculating the actual margin from shrunk mesh, so
+            # the default margin is applied
+            bbox_margin = 0.04
+            bound_xml.box_min -= Vector((bbox_margin, bbox_margin, bbox_margin))
+            bound_xml.box_max += Vector((bbox_margin, bbox_margin, bbox_margin))
+
             # CW calculates the shrunk mesh on import now (though it doesn't update the margin!)
             # _, margin = shrink_mesh(mesh_vertices, mesh_faces)
             # bound_xml.vertices_shrunk = [Vector(vert) - bound_xml.geometry_center for vert in shrunk_vertices]
-            margin = 0.0025  # set it to the minimum margin, though it should depend on the shrunk mesh
+            # Set margin to the minimum, though it should depend on the shrunk mesh. Currently shrink_mesh is too slow
+            # to be worth using just for calculating the margin. In some cases, it can increase export times by a lot.
+            margin = 0.025
 
         case SollumType.BOUND_GEOMETRYBVH:
             if not validate_bvh_collision_materials(obj, verbose=True):
@@ -256,6 +266,9 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
             volume = 1.0
             inertia = Vector((1.0, 1.0, 1.0))
             margin = 0.04  # BVHs always have this margin
+
+            bound_xml.box_min -= Vector((margin, margin, margin))
+            bound_xml.box_max += Vector((margin, margin, margin))
 
             # Grow radius_around_centroid to fit all primitives
             for prim in primitives:
@@ -499,15 +512,17 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
 
 def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeometry, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound poly triangles and vertices for a ``BoundGeometry`` object."""
-    mesh = create_export_mesh(obj)
+    obj_eval, mesh = create_export_mesh(obj)
 
     transforms = get_bound_poly_transforms_to_apply(obj, geom_xml.composite_transform)
     triangles = create_poly_xml_triangles(mesh, transforms, get_vert_index, get_mat_index)
     geom_xml.polygons = triangles
 
+    obj_eval.to_mesh_clear()
+
 
 def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    mesh = create_export_mesh(obj)
+    obj_eval, mesh = create_export_mesh(obj)
 
     transforms = get_bound_poly_transforms_to_apply(obj, geom_xml.composite_transform)
 
@@ -528,6 +543,8 @@ def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBV
         case SollumType.BOUND_POLY_CAPSULE:
             capsule_xml = create_poly_cylinder_capsule_xml(PolyCapsule, obj, transforms, get_vert_index, get_mat_index)
             geom_xml.polygons.append(capsule_xml)
+
+    obj_eval.to_mesh_clear()
 
 
 def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, composite_transform: Matrix):
@@ -552,12 +569,13 @@ def get_scale_to_apply_to_bound(bound_obj: bpy.types.Object) -> Vector:
 def create_export_mesh(obj: bpy.types.Object):
     """Get an evaluated mesh from ``obj`` with normals and loop triangles calculated.
     Original mesh is not affected."""
-    mesh = obj.to_mesh()
+    obj_eval = get_evaluated_obj(obj)
+    mesh = obj_eval.to_mesh()
     if bpy.app.version < (4, 1, 0):
         mesh.calc_normals_split()
     mesh.calc_loop_triangles()
 
-    return mesh
+    return obj_eval, mesh
 
 
 def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
