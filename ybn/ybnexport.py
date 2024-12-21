@@ -512,15 +512,17 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
 
 def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeometry, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound poly triangles and vertices for a ``BoundGeometry`` object."""
-    mesh = create_export_mesh(obj)
+    obj_eval, mesh = create_export_mesh(obj)
 
     transforms = get_bound_poly_transforms_to_apply(obj, geom_xml.composite_transform)
     triangles = create_poly_xml_triangles(mesh, transforms, get_vert_index, get_mat_index)
     geom_xml.polygons = triangles
 
+    obj_eval.to_mesh_clear()
+
 
 def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    mesh = create_export_mesh(obj)
+    obj_eval, mesh = create_export_mesh(obj)
 
     transforms = get_bound_poly_transforms_to_apply(obj, geom_xml.composite_transform)
 
@@ -541,6 +543,8 @@ def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBV
         case SollumType.BOUND_POLY_CAPSULE:
             capsule_xml = create_poly_cylinder_capsule_xml(PolyCapsule, obj, transforms, get_vert_index, get_mat_index)
             geom_xml.polygons.append(capsule_xml)
+
+    obj_eval.to_mesh_clear()
 
 
 def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, composite_transform: Matrix):
@@ -571,7 +575,7 @@ def create_export_mesh(obj: bpy.types.Object):
         mesh.calc_normals_split()
     mesh.calc_loop_triangles()
 
-    return mesh
+    return obj_eval, mesh
 
 
 def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
