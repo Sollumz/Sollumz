@@ -4,7 +4,7 @@ from typing import Optional, TypeVar, Callable, Type
 import numpy as np
 
 from ..sollumz_helper import get_parent_inverse
-from ..tools.blenderhelper import get_pose_inverse
+from ..tools.blenderhelper import get_pose_inverse, get_evaluated_obj
 from ..cwxml.bound import (
     BoundFile,
     Bound,
@@ -565,7 +565,8 @@ def get_scale_to_apply_to_bound(bound_obj: bpy.types.Object) -> Vector:
 def create_export_mesh(obj: bpy.types.Object):
     """Get an evaluated mesh from ``obj`` with normals and loop triangles calculated.
     Original mesh is not affected."""
-    mesh = obj.to_mesh()
+    obj_eval = get_evaluated_obj(obj)
+    mesh = obj_eval.to_mesh()
     if bpy.app.version < (4, 1, 0):
         mesh.calc_normals_split()
     mesh.calc_loop_triangles()
