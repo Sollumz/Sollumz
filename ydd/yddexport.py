@@ -1,6 +1,7 @@
 import bpy
 from ..cwxml.drawable import DrawableDictionary
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
+from ..ydr.cloth_char import cloth_char_export_dictionary
 from ..tools import jenkhash
 from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_export_settings
@@ -10,6 +11,15 @@ def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
 
     ydd_xml = create_ydd_xml(ydd_obj, export_settings.exclude_skeleton)
+
+    # Export a cloth dictionary .yld.xml if it there is any cloth in the drawable dictionary
+    # TODO(cloth): the drawable needs the cloth for the vertex bindings, so this really should be
+    # done at the same time as we export the drawables, not after
+    yld_xml = cloth_char_export_dictionary(ydd_obj)
+    if yld_xml is not None:
+        from .yddimport import make_yld_filepath
+        yld_filepath = make_yld_filepath(filepath)
+        yld_xml.write_xml(yld_filepath)
 
     write_embedded_textures(ydd_obj, filepath)
 

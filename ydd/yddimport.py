@@ -141,9 +141,9 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
     indices = np.array(indices).reshape((-1, 3))
 
 
-    mesh = bpy.data.meshes.new(f"{controller.name}.cloth")
+    mesh = bpy.data.meshes.new(f"{cloth.name}.cloth")
     mesh.from_pydata(vertices, [], indices)
-    obj = create_blender_object(SollumType.CHARACTER_CLOTH_MESH, f"{controller.name}.cloth", mesh)
+    obj = create_blender_object(SollumType.CHARACTER_CLOTH_MESH, f"{cloth.name}.cloth", mesh)
 
     pin_radius = cloth.controller.bridge.pin_radius_high
     weights = cloth.controller.bridge.vertex_weights_high
@@ -209,10 +209,9 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
 
 def create_character_cloth_bounds(cloth: CharacterCloth, armature_obj: Object, bones: list[Bone]) -> Object:
     bounds_obj = create_bound_composite(cloth.bounds)
-    bounds_obj.name = f"{cloth.controller.name}.cloth.bounds"
+    bounds_obj.name = f"{cloth.name}.cloth.bounds"
 
     for bound_obj, bone_id in zip(bounds_obj.children, cloth.bounds_bone_ids):
-        print(f"{bones=}")
         bone_name = next((b.name for b in bones if b.tag == bone_id), None)
         assert bone_name is not None, "Cloth bound attached to non-existing bone."
 
