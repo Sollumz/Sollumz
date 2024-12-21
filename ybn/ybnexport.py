@@ -231,8 +231,11 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
             bound_xml.box_max += Vector((bbox_margin, bbox_margin, bbox_margin))
 
             # CW calculates the shrunk mesh on import now (though it doesn't update the margin!)
-            _, margin = shrink_mesh(mesh_vertices, mesh_faces)
+            # _, margin = shrink_mesh(mesh_vertices, mesh_faces)
             # bound_xml.vertices_shrunk = [Vector(vert) - bound_xml.geometry_center for vert in shrunk_vertices]
+            # Set margin to the minimum, though it should depend on the shrunk mesh. Currently shrink_mesh is too slow
+            # to be worth using just for calculating the margin. In some cases, it can increase export times by a lot.
+            margin = 0.025
 
         case SollumType.BOUND_GEOMETRYBVH:
             if not validate_bvh_collision_materials(obj, verbose=True):
