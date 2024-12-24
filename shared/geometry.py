@@ -152,12 +152,18 @@ def get_mass_properties_of_box(box_min: Vector, box_max: Vector) -> MassProperti
 def get_centroid_of_mesh(mesh_vertices) -> Centroid:
     from . import miniball
 
-    while True:
-        try:  # ugly, miniball can sometimes fail, so try again...
-            C, r2 = miniball.get_bounding_ball(mesh_vertices)
-            break
-        except np.linalg.LinAlgError:
-            continue
+    # miniball may throw errors if there are duplicated vertices, so remove them first
+    mesh_vertices = np.unique(mesh_vertices, axis=0)
+
+    try:
+        C, r2 = miniball.get_bounding_ball(mesh_vertices)
+    except np.linalg.LinAlgError:
+        # Fallback to sphere enclosing the bounding box
+        bb_min = np.min(mesh_vertices, axis=0)
+        bb_max = np.max(mesh_vertices, axis=0)
+        C = (bb_max + bb_min) * 0.5
+        r2 = np.linalg.norm(C - bb_min) ** 2
+
     centroid = Vector(C)
     radius_around_centroid = np.sqrt(r2)
     return Centroid(centroid, radius_around_centroid)
