@@ -16,7 +16,6 @@ from .cwxml.bound import YBN
 from .cwxml.navmesh import YNV
 from .cwxml.clipdictionary import YCD
 from .cwxml.ytyp import YTYP
-from .cwxml.ipl import IPL
 from .cwxml.ymap import YMAP
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
@@ -31,7 +30,6 @@ from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
-from .ymap.iplimport import import_ipl
 from .ytyp.ytypimport import import_ytyp
 from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
@@ -72,7 +70,7 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
     )
 
     filter_glob: bpy.props.StringProperty(
-        default="".join(f"*{filetype.file_extension};" for filetype in (YDR, YDD, YFT, YBN, YNV, YCD, YMAP, IPL, YTYP)),
+        default="".join(f"*{filetype.file_extension};" for filetype in (YDR, YDD, YFT, YBN, YNV, YCD, YMAP, YTYP)),
         options={"HIDDEN", "SKIP_SAVE"},
         maxlen=255,
     )
@@ -111,8 +109,6 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
                         import_ycd(filepath)
                     elif YMAP.file_extension in filepath:
                         import_ymap(filepath)
-                    elif IPL.file_extension in filepath:
-                        import_ipl(filepath)
                     else:
                         continue
 

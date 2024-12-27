@@ -22,8 +22,6 @@ See the [wiki](https://github.com/Skylumz/Sollumz/wiki) to get started. Make sur
   * YNV (Partial)
   * YFT
   
-  * IPL
-  
 **Supported Formats (Export)**
   * YDD
   * YDR
