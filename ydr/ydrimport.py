@@ -294,7 +294,6 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         filename = f"{shader.name}.sps"
 
     material = create_shader(filename)
-    material.name = shader.name
     material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
 
     for param in shader.parameters:
