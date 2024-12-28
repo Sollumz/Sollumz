@@ -6,6 +6,7 @@ from bpy.types import (
 )
 from bpy.props import (
     FloatProperty,
+    IntProperty,
     BoolProperty,
 )
 from .cloth import (
@@ -102,4 +103,18 @@ class SOLLUMZ_OT_cloth_set_pinned(Operator, ClothSetAttributeBase):
     value: BoolProperty(
         name="Pin", description=ClothAttr.PINNED.description,
         default=ClothAttr.PINNED.default_value
+    )
+
+
+class SOLLUMZ_OT_cloth_set_force_transform(Operator, ClothSetAttributeBase):
+    bl_idname = "sollumz.cloth_set_force_transform"
+    bl_label = "Set Cloth Force Transform"
+    bl_description = (
+        "Sets the force transform of the cloth at the selected vertices.\n\n"
+    ) + f"{ClothAttr.FORCE_TRANSFORM.label}: {ClothAttr.FORCE_TRANSFORM.description}"
+
+    attribute = ClothAttr.FORCE_TRANSFORM
+    value: IntProperty(
+        name=ClothAttr.FORCE_TRANSFORM.label, description=ClothAttr.FORCE_TRANSFORM.description,
+        min=0, max=2, default=ClothAttr.FORCE_TRANSFORM.default_value,
     )

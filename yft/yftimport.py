@@ -368,6 +368,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     inflation_scale = cloth.controller.bridge.inflation_scale_high
     display_map = np.array(cloth.controller.bridge.display_map_high)
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
+    force_transform = np.fromstring(cloth.user_data or "", dtype=int, sep=" ")
     # TODO: store switch distances somewhere or maybe on export can be derived from existing LOD distances
     # switch_distance_up = cloth.controller.cloth_high.switch_distance_up
     # switch_distance_down = cloth.controller.cloth_high.switch_distance_down
@@ -381,6 +382,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     has_pin_radius = len(pin_radius) > 0
     has_weights = len(weights) > 0
     has_inflation_scale = len(inflation_scale) > 0
+    has_force_transform = len(force_transform) > 0
 
     if has_pinned:
         mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
@@ -390,6 +392,8 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
         mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
     if has_inflation_scale:
         mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
+    if has_force_transform:
+        mesh_add_cloth_attribute(mesh, ClothAttr.FORCE_TRANSFORM)
 
     for mesh_vert_index, cloth_vert_index in enumerate(display_map):
         if has_pinned:
@@ -404,6 +408,9 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
 
         if has_inflation_scale:
             mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = inflation_scale[cloth_vert_index]
+
+        if has_force_transform:
+            mesh.attributes[ClothAttr.FORCE_TRANSFORM].data[mesh_vert_index].value = force_transform[cloth_vert_index]
 
     # TODO: find a cloth with custom edges and see what needs to be imported
 

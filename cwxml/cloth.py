@@ -330,7 +330,7 @@ class EnvironmentCloth(ElementTree):
     def __init__(self):
         super().__init__()
         self.flags = ValueProperty("Unknown78", 0)
-        self.user_data = TextListProperty("UnknownData")
+        self.user_data = TextProperty("UnknownData")
         self.controller = ClothController()
         self.tuning = ClothInstanceTuning()
         self.drawable = Drawable()
