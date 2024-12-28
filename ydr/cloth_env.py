@@ -154,6 +154,12 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     bridge.display_map_high = [-1] * num_vertices
     bridge.pinnable_list = [0] * int(np.ceil(num_vertices / 32))  # just need to allocate space for the pinnable list
 
+    force_transform = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.FORCE_TRANSFORM)
+    if (force_transform != 0).any():
+        env_cloth.user_data = " ".join(str(force_transform[mi]) for mi in cloth_to_mesh_vertex_map)
+    else:
+        env_cloth.user_data = None
+
     edges = []
     edges_added = set()
     for tri in triangles:

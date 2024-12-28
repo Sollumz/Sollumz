@@ -17,15 +17,22 @@ class ClothAttr(str, Enum):
     PIN_RADIUS = ".cloth.pin_radius"
     VERTEX_WEIGHT = ".cloth.weight"
     INFLATION_SCALE = ".cloth.inflation_scale"
+    FORCE_TRANSFORM = ".cloth.force_transform"
 
     @property
     def type(self):
         match self:
-            case (ClothAttr.PINNED):
-                return "INT"  # "BOOLEAN" - boolean attributes not accessible through bmesh API
-            case (ClothAttr.PIN_RADIUS |
-                  ClothAttr.VERTEX_WEIGHT |
-                  ClothAttr.INFLATION_SCALE):
+            # pinned should be "BOOLEAN" but boolean attributes are not accessible through bmesh API
+            case (
+                ClothAttr.PINNED |
+                ClothAttr.FORCE_TRANSFORM
+            ):
+                return "INT"
+            case (
+                ClothAttr.PIN_RADIUS |
+                ClothAttr.VERTEX_WEIGHT |
+                ClothAttr.INFLATION_SCALE
+            ):
                 return "FLOAT"
             case _:
                 assert False, f"Type not set for cloth attribute '{self}'"
@@ -33,10 +40,13 @@ class ClothAttr(str, Enum):
     @property
     def domain(self):
         match self:
-            case (ClothAttr.PINNED |
-                  ClothAttr.PIN_RADIUS |
-                  ClothAttr.VERTEX_WEIGHT |
-                  ClothAttr.INFLATION_SCALE):
+            case (
+                ClothAttr.PINNED |
+                ClothAttr.PIN_RADIUS |
+                ClothAttr.VERTEX_WEIGHT |
+                ClothAttr.INFLATION_SCALE |
+                ClothAttr.FORCE_TRANSFORM
+            ):
                 return "POINT"
             case _:
                 assert False, f"Domain not set for cloth attribute '{self}'"
@@ -44,7 +54,10 @@ class ClothAttr(str, Enum):
     @property
     def default_value(self) -> object:
         match self:
-            case ClothAttr.PINNED:
+            case (
+                ClothAttr.PINNED |
+                ClothAttr.FORCE_TRANSFORM
+            ):
                 return 0
             case ClothAttr.PIN_RADIUS:
                 return 1.0
@@ -64,6 +77,8 @@ class ClothAttr(str, Enum):
                 return "Mass Per Vertex"
             case ClothAttr.INFLATION_SCALE:
                 return "Inflation Scale"
+            case ClothAttr.FORCE_TRANSFORM:
+                return "Force Transform"
             case _:
                 assert False, f"Label not set for cloth attribute '{self}'"
 
@@ -76,8 +91,13 @@ class ClothAttr(str, Enum):
                 return "Determines how heavy each vertex of the cloth mesh is"
             case ClothAttr.INFLATION_SCALE:
                 return "Determines the elasticity of each vertex in the cloth mesh"
+            case ClothAttr.FORCE_TRANSFORM:
+                return (
+                    "Apply a transform to the force vector at this vertex. "
+                    "0 = no transform, 1 = rotate right, 2 = rotate left"
+                )
             case _:
-                assert False, f"Label not set for cloth attribute '{self}'"
+                assert False, f"Description not set for cloth attribute '{self}'"
 
 
 def mesh_add_cloth_attribute(mesh: Mesh, attr: ClothAttr) -> Attribute:

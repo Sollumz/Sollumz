@@ -1028,6 +1028,15 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin")
         op.value = False
 
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.FORCE_TRANSFORM.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_force_transform_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_force_transform.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_force_transform
+        row.prop(wm, "sz_ui_cloth_force_transform", text="")
+
 
 def uv_maps_panel_draw(self, context):
     me = context.mesh

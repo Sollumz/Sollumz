@@ -1398,6 +1398,7 @@ def create_dummy_frag_physics_xml_for_cloth(frag: FragmentObjects, frag_xml: Fra
     child_xml.inertia_tensor = Vector((0.0, 0.0, 0.0, 0.0))
 
     create_phys_child_drawable(child_xml, materials, None)
+    child_xml.damaged_drawable = None
 
     lod_xml.children.append(child_xml)
 

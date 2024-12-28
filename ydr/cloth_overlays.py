@@ -37,7 +37,8 @@ class ClothOverlaysDrawHandler:
         if (
             not wm.sz_ui_cloth_vertex_weight_visualize and
             not wm.sz_ui_cloth_inflation_scale_visualize and
-            not wm.sz_ui_cloth_pinned_visualize
+            not wm.sz_ui_cloth_pinned_visualize and
+            not wm.sz_ui_cloth_force_transform_visualize
         ):
             return False
 
@@ -60,6 +61,8 @@ class ClothOverlaysDrawHandler:
             attrs.append(ClothAttr.VERTEX_WEIGHT)
         if wm.sz_ui_cloth_inflation_scale_visualize:
             attrs.append(ClothAttr.INFLATION_SCALE)
+        if wm.sz_ui_cloth_force_transform_visualize:
+            attrs.append(ClothAttr.FORCE_TRANSFORM)
         self.draw_attribute_values(obj, attrs)
 
     def draw_geometry(self):

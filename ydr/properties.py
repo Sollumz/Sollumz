@@ -714,6 +714,14 @@ def register():
         name="Show Pinned", description="Display the cloth pinned vertices on the 3D Viewport",
         default=False
     )
+    bpy.types.WindowManager.sz_ui_cloth_force_transform_visualize = bpy.props.BoolProperty(
+        name="Show Force Transform", description="Display the cloth force transforms on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_force_transform = bpy.props.IntProperty(
+        name=ClothAttr.FORCE_TRANSFORM.label, description=ClothAttr.FORCE_TRANSFORM.description,
+        min=0, max=2, default=ClothAttr.FORCE_TRANSFORM.default_value
+    )
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
@@ -762,5 +770,7 @@ def unregister():
     del bpy.types.WindowManager.sz_ui_cloth_inflation_scale
     del bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize
     del bpy.types.WindowManager.sz_ui_cloth_pinned_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_force_transform
+    del bpy.types.WindowManager.sz_ui_cloth_force_transform_visualize
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
