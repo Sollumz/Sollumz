@@ -251,13 +251,13 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     bs_radius: bpy.props.FloatProperty(name="Bound Radius")
     type: bpy.props.EnumProperty(
         items=items_from_enums(ArchetypeType), name="Type")
-    lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=60, min=-1)
+    lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200, min=-1)
     flags: bpy.props.PointerProperty(
         type=ArchetypeFlags, name="Flags")
     special_attribute: bpy.props.EnumProperty(
         name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
     hd_texture_dist: bpy.props.FloatProperty(
-        name="HD Texture Distance", default=40, min=0)
+        name="HD Texture Distance", default=100, min=0)
     name: bpy.props.StringProperty(name="Name")
     texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
     clip_dictionary: bpy.props.StringProperty(name="Clip Dictionary")
