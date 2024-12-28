@@ -278,6 +278,51 @@ class ClothInstanceTuning(ElementTree):
     def __init__(self):
         super().__init__()
 
+        self.rotation_rate = ValueProperty("Unknown10", 0.0)
+        self.angle_threshold = ValueProperty("Unknown14", 0.0)
+        self.extra_force_x = ValueProperty("Unknown20", 0.0)
+        self.extra_force_y = ValueProperty("Unknown24", 0.0)
+        self.extra_force_z = ValueProperty("Unknown28", 0.0)
+        self.extra_force_w = ValueProperty("Unknown2C", 0.0) # just padding, extra_force is Vec3V
+        self.flags = ValueProperty("Flags", 0)
+        self.weight = ValueProperty("Unknown34", 0.0)
+        self.distance_threshold = ValueProperty("Unknown38", 0.0)
+        self.pin_verts_packed = ValueProperty("Unknown3C", 0)
+
+    @property
+    def extra_force(self) -> Vector:
+        return Vector((self.extra_force_x, self.extra_force_y, self.extra_force_z))
+
+    @extra_force.setter
+    def extra_force(self, value: Vector):
+        self.extra_force_x = value.x
+        self.extra_force_y = value.y
+        self.extra_force_z = value.z
+
+    @property
+    def pin_vert(self) -> int:
+        return self.pin_verts_packed & 0xFF
+
+    @pin_vert.setter
+    def pin_vert(self, value: int):
+        self.pin_verts_packed = (self.pin_verts_packed & 0xFFFFFF00) | (value & 0xFF)
+
+    @property
+    def non_pin_vert0(self) -> int:
+        return (self.pin_verts_packed >> 8) & 0xFF
+
+    @non_pin_vert0.setter
+    def non_pin_vert0(self, value: int):
+        self.pin_verts_packed = (self.pin_verts_packed & 0xFFFF00FF) | ((value & 0xFF) << 8)
+
+    @property
+    def non_pin_vert1(self) -> int:
+        return (self.pin_verts_packed >> 16) & 0xFF
+
+    @non_pin_vert1.setter
+    def non_pin_vert1(self, value: int):
+        self.pin_verts_packed = (self.pin_verts_packed & 0xFF00FFFF) | ((value & 0xFF) << 16)
+
 
 class EnvironmentCloth(ElementTree):
     tag_name = "Item"
@@ -289,6 +334,14 @@ class EnvironmentCloth(ElementTree):
         self.controller = ClothController()
         self.tuning = ClothInstanceTuning()
         self.drawable = Drawable()
+
+    @classmethod
+    def from_xml(cls, element: ET.Element) -> "EnvironmentCloth":
+        new: EnvironmentCloth = super().from_xml(element)
+        if not element.find(ClothInstanceTuning.tag_name):
+            # If there is no tuning in the xml, remove the default one
+            new.tuning = None
+        return new
 
 
 class EnvironmentClothList(ListProperty):

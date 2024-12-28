@@ -137,7 +137,6 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         vertices[vi] = Vector(v.co)
         mesh_to_cloth_vertex_map[v.index] = vi
         cloth_to_mesh_vertex_map[vi] = v.index
-        # print(f"v {v.index}  = {v.co}")
 
     triangles = cloth_mesh.loop_triangles
 
@@ -238,7 +237,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     verlet.dynamic_pin_list_size = 6  # TODO(cloth): what determines the dynamic pin list size?
     verlet.cloth_weight = 1.0  # TODO(cloth): cloth weight
     verlet.edges = edges
-    verlet.pinned_vertices_count = num_pinned  # TODO(cloth): pinned vertices
+    verlet.pinned_vertices_count = num_pinned
     # verlet.custom_edges = ...  # TODO(cloth): custom edges
 
     # eds = []
@@ -300,8 +299,6 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     bridge.display_map_low = None
     bridge.display_map_vlow = None
 
-    env_cloth.tuning = None
-
     cloth_drawable_xml = env_cloth.drawable
     cloth_drawable_xml.name = "skel"
     cloth_drawable_xml.shader_group = drawable_xml.shader_group
@@ -351,5 +348,22 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         bridge.display_map_high[mesh_vertex_index] = matching_cloth_vertex_index
 
     cloth_obj_eval.to_mesh_clear()
+
+    # Apply tuning
+    cloth_props = frag_obj.fragment_properties.cloth
+    if cloth_props.enable_tuning:
+        t = env_cloth.tuning
+        t.rotation_rate = cloth_props.rotation_rate
+        t.angle_threshold = cloth_props.angle_threshold
+        t.extra_force = cloth_props.extra_force
+        t.flags = int(cloth_props.tuning_flags.total)
+        t.weight = cloth_props.weight
+        t.distance_threshold = cloth_props.distance_threshold
+        # TODO(cloth): these vertex indices don't match the exported mesh
+        t.pin_vert = cloth_props.pin_vert
+        t.non_pin_vert0 = cloth_props.non_pin_vert0
+        t.non_pin_vert1 = cloth_props.non_pin_vert1
+    else:
+        env_cloth.tuning = None
 
     return env_cloth

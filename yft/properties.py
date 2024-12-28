@@ -1,4 +1,11 @@
 import bpy
+from bpy.props import (
+    BoolProperty,
+    IntProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    PointerProperty,
+)
 import bmesh
 from enum import IntEnum
 
@@ -8,6 +15,7 @@ from ..sollumz_properties import (
     SollumType,
     VehicleLightID,
     items_from_enums,
+    FlagPropertyGroup,
 )
 
 
@@ -118,6 +126,127 @@ FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for 
 ))
 
 
+class ClothTuningFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    size = 11
+
+    wind_feedback: bpy.props.BoolProperty(
+        name="Wind Feedback",
+        description="Rotate object based on wind direction. See the object 'prop_air_windsock' as an example",
+        update=FlagPropertyGroup.update_flag
+    )
+    flip_indices_order: bpy.props.BoolProperty(
+        name="Flip Indices Order",
+        description="???",
+        update=FlagPropertyGroup.update_flag
+    )
+    # actually CLOTH_TUNE_IGNORE_DISTURBANCES but that name doesn't make sense given what this flag actually does
+    flip_wind: bpy.props.BoolProperty(
+        name="Flip Wind",
+        description="Invert wind force direction",
+        update=FlagPropertyGroup.update_flag
+    )
+    is_in_interior: bpy.props.BoolProperty(
+        name="Is In Interior",
+        description="Disable wind force",
+        update=FlagPropertyGroup.update_flag
+    )
+    no_ped_collision: bpy.props.BoolProperty(
+        name="No Ped Collision",
+        description="Disable cloth interaction with peds",
+        update=FlagPropertyGroup.update_flag
+    )
+    use_distance_threshold: bpy.props.BoolProperty(
+        name="Use Distance Threshold",
+        description="???. Not compatible with 'Force Vertex Resistance'",
+        update=FlagPropertyGroup.update_flag
+    )
+    clamp_horizontal_force: bpy.props.BoolProperty(
+        name="Clamp Horizontal Force",
+        description="Ignore forces on the X and Y axes",
+        update=FlagPropertyGroup.update_flag
+    )
+    flip_gravity: bpy.props.BoolProperty(
+        name="Flip Gravity",
+        description="Invert gravity force direction",
+        update=FlagPropertyGroup.update_flag
+    )
+    activate_on_hit: bpy.props.BoolProperty(
+        name="Activate On Hit",
+        description="???",
+        update=FlagPropertyGroup.update_flag
+    )
+    force_vertex_resistance: bpy.props.BoolProperty(
+        name="Force Vertex Resistance",
+        description="???. Not compatible with 'Use Distance Threshold'",
+        update=FlagPropertyGroup.update_flag
+    )
+    update_if_visible: bpy.props.BoolProperty(
+        name="Update If Visible",
+        description="Only perform cloth simulation when the object is visible",
+        update=FlagPropertyGroup.update_flag
+    )
+
+
+class ClothProperties(bpy.types.PropertyGroup):
+    enable_tuning: BoolProperty(name="Tuning")
+    tuning_flags: PointerProperty(type=ClothTuningFlags)
+    extra_force: FloatVectorProperty(
+        name="Extra Force",
+        description="Additional force applied to the cloth",
+        subtype="XYZ",
+        size=3
+    )
+    weight: FloatProperty(
+        name="Weight",
+        description="If positive, override the cloth mass",
+        default=-1.0
+    )
+    distance_threshold: FloatProperty(
+        name="Distance Threshold or Vertex Resistance",
+        description=(
+            "When the flag 'Use Distance Threshold' is enabled, this is the distance threshold value used. When the "
+            "flag 'Force Vertex Resistance' is enabled, this is the vertex resistance value used. Otherwise, has no "
+            "effect"
+        )
+    )
+    # Wind feedback-specific properties
+    rotation_rate: FloatProperty(
+        name="Rotation Rate",
+        description="Rate at which to rotate the object towards the wind direction",
+        default=3.14159274,
+        subtype="ANGLE",
+        unit="ROTATION"
+    )
+    angle_threshold: FloatProperty(
+        name="Angle Threshold",
+        description="Maximum angle at which to stop rotating the object from the target wind direction",
+        default=0.5235988,
+        subtype="ANGLE",
+        unit="ROTATION"
+    )
+    pin_vert: IntProperty(
+        name="Pin Vertex",
+        description=(
+            "Index of a pinned vertex of the cloth. Used along with the middle-point of the other two non-pinned "
+            "vertices to determine the current cloth direction"
+        )
+    )
+    non_pin_vert0: IntProperty(
+        name="Non-Pin Vertex 0",
+        description=(
+            "Index of a non-pinned vertex of the cloth. Used along with the other two pinned and non-pinned vertices "
+            "to determine the current cloth direction"
+        )
+    )
+    non_pin_vert1: IntProperty(
+        name="Non-Pin Vertex 1",
+        description=(
+            "Index of a non-pinned vertex of the cloth. Used along with the other two pinned and non-pinned vertices "
+            "to determine the current cloth direction"
+        )
+    )
+
+
 class FragmentProperties(bpy.types.PropertyGroup):
     unbroken_elasticity: bpy.props.FloatProperty(name="Unbroken Elasticity")
     gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
@@ -128,6 +257,8 @@ class FragmentProperties(bpy.types.PropertyGroup):
     )
 
     lod_properties: bpy.props.PointerProperty(type=LODProperties)
+
+    cloth: bpy.props.PointerProperty(type=ClothProperties)
 
 
 def get_light_id_of_selection(self):

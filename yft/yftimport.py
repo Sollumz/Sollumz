@@ -334,6 +334,20 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     if cloth.drawable.is_empty:
         return
 
+    if cloth.tuning:
+        tuning = cloth.tuning
+        cloth_props = frag_obj.fragment_properties.cloth
+        cloth_props.enable_tuning = True
+        cloth_props.rotation_rate = tuning.rotation_rate
+        cloth_props.angle_threshold = tuning.angle_threshold
+        cloth_props.extra_force = tuning.extra_force
+        cloth_props.tuning_flags.total = str(tuning.flags)
+        cloth_props.weight = tuning.weight
+        cloth_props.distance_threshold = tuning.distance_threshold
+        cloth_props.pin_vert = tuning.pin_vert
+        cloth_props.non_pin_vert0 = tuning.non_pin_vert0
+        cloth_props.non_pin_vert1 = tuning.non_pin_vert1
+
     model_objs = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth")
     assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
 
@@ -344,7 +358,6 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     bone_index = cloth.drawable.drawable_models_high[0].bone_index
     bone_name = bones[bone_index].name
     add_child_of_bone_constraint(model_obj, frag_obj, bone_name)
-
 
     mesh = model_obj.data
 

@@ -27,7 +27,7 @@ from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
-from ..ydr.cloth_env import cloth_env_export
+from ..ydr.cloth_env import cloth_env_export, cloth_env_find_mesh_objects
 from .. import logger
 from .properties import (
     LODProperties, FragArchetypeProperties, GroupProperties,
@@ -602,7 +602,7 @@ def does_bone_have_collision(bone_name: str, frag_obj: Object):
 
 
 def does_bone_have_cloth(bone_name: str, frag_obj: bpy.types.Object) -> bool:
-    cloth_objs = get_frag_env_cloth_mesh_objects(frag_obj, silent=True)
+    cloth_objs = cloth_env_find_mesh_objects(frag_obj, silent=True)
 
     for obj in cloth_objs:
         bone = get_child_of_bone(obj)
