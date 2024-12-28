@@ -4,6 +4,7 @@ from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
 from ..sollumz_helper import find_sollumz_parent
+from ..sollumz_ui import FlagsPanel
 from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
     GroupFlagBit,
@@ -163,10 +164,7 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
         obj = context.active_object
 
         for prop in FragmentProperties.__annotations__:
-            if prop == "lod_properties":
-                continue
-            # skip flags because these don't look like they should be user-editable
-            if prop == "flags":
+            if prop == "lod_properties" or prop == "cloth":
                 continue
 
             self.layout.prop(obj.fragment_properties, prop)
@@ -214,6 +212,93 @@ class SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL(bpy.types.Panel):
 
         for prop in arch_props.__annotations__:
             layout.prop(arch_props, prop)
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_PANEL(bpy.types.Panel):
+    bl_label = "Cloth Tuning"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
+
+    def draw_header(self, context):
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        self.layout.prop(cloth_props, "enable_tuning", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        layout.active = cloth_props.enable_tuning
+
+        layout.prop(cloth_props, "extra_force")
+        layout.prop(cloth_props, "weight")
+        row = layout.row()
+        row.active = cloth_props.tuning_flags.use_distance_threshold or cloth_props.tuning_flags.force_vertex_resistance
+        row.prop(
+            cloth_props,
+            "distance_threshold",
+            text="Vertex Resistance" if cloth_props.tuning_flags.force_vertex_resistance else "Distance Threshold"
+        )
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_WIND_FEEDBACK_PANEL(bpy.types.Panel):
+    bl_label = "Wind Feedback"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_WIND_FEEDBACK_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAG_CLOTH_PANEL.bl_idname
+    bl_order = 1
+
+    def draw_header(self, context):
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        self.layout.active = cloth_props.enable_tuning
+        self.layout.prop(cloth_props.tuning_flags, "wind_feedback", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+
+        layout.active = cloth_props.enable_tuning and cloth_props.tuning_flags.wind_feedback
+        layout.prop(cloth_props, "rotation_rate")
+        layout.prop(cloth_props, "angle_threshold")
+        layout.prop(cloth_props, "pin_vert")
+        layout.prop(cloth_props, "non_pin_vert0")
+        layout.prop(cloth_props, "non_pin_vert1")
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_TUNING_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
+    bl_label = "Flags"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_TUNING_FLAGS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_parent_id = SOLLUMZ_PT_FRAG_CLOTH_PANEL.bl_idname
+    bl_order = 2
+
+    def get_flags(self, context):
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        return cloth_props.tuning_flags
+
+    def draw(self, context):
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        self.layout.active = cloth_props.enable_tuning
+        super().draw(context)
 
 
 class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):
@@ -383,4 +468,3 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         row.prop(mat, "sz_paint_layer")
         if not has_mat_diffuse_color:
             layout.label(text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")
-
