@@ -100,9 +100,8 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, ClothAttr
 
     env_cloth = EnvironmentCloth()
-    # env_cloth.flags = ValueProperty("Unknown78", 1)
+    env_cloth.flags = 0
     # env_cloth.user_data = TextListProperty("UnknownData")
-    # env_cloth.tuning = ClothInstanceTuning()
     cloth_obj_eval = get_evaluated_obj(cloth_obj)
     cloth_mesh = cloth_obj_eval.to_mesh()
     cloth_mesh.calc_loop_triangles()
@@ -352,6 +351,9 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     # Apply tuning
     cloth_props = frag_obj.fragment_properties.cloth
     if cloth_props.enable_tuning:
+        env_cloth.flags |= 16  # 'owns instance tuning' flag
+        if cloth_props.tuning_flags.is_in_interior:
+            env_cloth.flags |= 32  # 'is in interior' flag
         t = env_cloth.tuning
         t.rotation_rate = cloth_props.rotation_rate
         t.angle_threshold = cloth_props.angle_threshold
