@@ -412,7 +412,36 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
         if has_force_transform:
             mesh.attributes[ClothAttr.FORCE_TRANSFORM].data[mesh_vert_index].value = force_transform[cloth_vert_index]
 
-    # TODO: find a cloth with custom edges and see what needs to be imported
+    custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
+    if custom_edges:
+        cloth_to_mesh_map = [-1] * len(display_map)
+        for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+            cloth_to_mesh_map[cloth_vert_index] = mesh_vert_index
+        next_edge = len(mesh.edges)
+        mesh.edges.add(len(custom_edges))
+        for custom_edge in custom_edges:
+            v0 = custom_edge.vertex0
+            v1 = custom_edge.vertex1
+            mv0 = cloth_to_mesh_map[v0]
+            mv1 = cloth_to_mesh_map[v1]
+            mesh.edges[next_edge].vertices = mv0, mv1
+            next_edge += 1
+
+    # Debug code to visualize the verlet cloth edges.
+    # debug_edges = [e for e in (cloth.controller.cloth_high.edges or []) if e.vertex0 != e.vertex1]
+    # if debug_edges:
+    #     cloth_to_mesh_map = [-1] * len(display_map)
+    #     for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+    #         cloth_to_mesh_map[cloth_vert_index] = mesh_vert_index
+    #     next_edge = len(mesh.edges)
+    #     mesh.edges.add(len(debug_edges))
+    #     for edge in debug_edges:
+    #         v0 = edge.vertex0
+    #         v1 = edge.vertex1
+    #         mv0 = cloth_to_mesh_map[v0]
+    #         mv1 = cloth_to_mesh_map[v1]
+    #         mesh.edges[next_edge].vertices = mv0, mv1
+    #         next_edge += 1
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):
