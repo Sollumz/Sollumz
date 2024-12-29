@@ -334,19 +334,6 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     if cloth.drawable.is_empty:
         return
 
-    if cloth.tuning:
-        tuning = cloth.tuning
-        cloth_props = frag_obj.fragment_properties.cloth
-        cloth_props.enable_tuning = True
-        cloth_props.rotation_rate = tuning.rotation_rate
-        cloth_props.angle_threshold = tuning.angle_threshold
-        cloth_props.extra_force = tuning.extra_force
-        cloth_props.tuning_flags.total = str(tuning.flags)
-        cloth_props.weight = tuning.weight
-        cloth_props.distance_threshold = tuning.distance_threshold
-        cloth_props.pin_vert = tuning.pin_vert
-        cloth_props.non_pin_vert0 = tuning.non_pin_vert0
-        cloth_props.non_pin_vert1 = tuning.non_pin_vert1
 
     model_objs = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth")
     assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
@@ -366,7 +353,9 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     pin_radius = cloth.controller.bridge.pin_radius_high
     weights = cloth.controller.bridge.vertex_weights_high
     inflation_scale = cloth.controller.bridge.inflation_scale_high
-    display_map = np.array(cloth.controller.bridge.display_map_high)
+    mesh_to_cloth_map = np.array(cloth.controller.bridge.display_map_high)
+    cloth_to_mesh_map = np.empty_like(mesh_to_cloth_map)
+    cloth_to_mesh_map[mesh_to_cloth_map] = np.arange(len(mesh_to_cloth_map))
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
     force_transform = np.fromstring(cloth.user_data or "", dtype=int, sep=" ")
     # TODO: store switch distances somewhere or maybe on export can be derived from existing LOD distances
@@ -395,7 +384,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     if has_force_transform:
         mesh_add_cloth_attribute(mesh, ClothAttr.FORCE_TRANSFORM)
 
-    for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+    for mesh_vert_index, cloth_vert_index in enumerate(mesh_to_cloth_map):
         if has_pinned:
             pinned = cloth_vert_index < pinned_vertices_count
             mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
@@ -414,16 +403,13 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
 
     custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
     if custom_edges:
-        cloth_to_mesh_map = [-1] * len(display_map)
-        for mesh_vert_index, cloth_vert_index in enumerate(display_map):
-            cloth_to_mesh_map[cloth_vert_index] = mesh_vert_index
         next_edge = len(mesh.edges)
         mesh.edges.add(len(custom_edges))
         for custom_edge in custom_edges:
             v0 = custom_edge.vertex0
             v1 = custom_edge.vertex1
-            mv0 = cloth_to_mesh_map[v0]
-            mv1 = cloth_to_mesh_map[v1]
+            mv0 = int(cloth_to_mesh_map[v0])
+            mv1 = int(cloth_to_mesh_map[v1])
             mesh.edges[next_edge].vertices = mv0, mv1
             next_edge += 1
 
@@ -442,6 +428,21 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     #         mv1 = cloth_to_mesh_map[v1]
     #         mesh.edges[next_edge].vertices = mv0, mv1
     #         next_edge += 1
+
+    if cloth.tuning:
+        tuning = cloth.tuning
+        cloth_props = frag_obj.fragment_properties.cloth
+        cloth_props.enable_tuning = True
+        cloth_props.tuning_flags.total = str(tuning.flags)
+        cloth_props.extra_force = tuning.extra_force
+        cloth_props.weight = tuning.weight
+        cloth_props.distance_threshold = tuning.distance_threshold
+        if cloth_props.tuning_flags.wind_feedback:
+            cloth_props.rotation_rate = tuning.rotation_rate
+            cloth_props.angle_threshold = tuning.angle_threshold
+            cloth_props.pin_vert = cloth_to_mesh_map[tuning.pin_vert]
+            cloth_props.non_pin_vert0 = cloth_to_mesh_map[tuning.non_pin_vert0]
+            cloth_props.non_pin_vert1 = cloth_to_mesh_map[tuning.non_pin_vert1]
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):

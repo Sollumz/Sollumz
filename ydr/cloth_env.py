@@ -387,10 +387,14 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         t.flags = int(cloth_props.tuning_flags.total)
         t.weight = cloth_props.weight
         t.distance_threshold = cloth_props.distance_threshold
-        # TODO(cloth): these vertex indices don't match the exported mesh
-        t.pin_vert = cloth_props.pin_vert
-        t.non_pin_vert0 = cloth_props.non_pin_vert0
-        t.non_pin_vert1 = cloth_props.non_pin_vert1
+        if cloth_props.tuning_flags.wind_feedback:
+            t.pin_vert = mesh_to_cloth_vertex_map[cloth_props.pin_vert]
+            t.non_pin_vert0 = mesh_to_cloth_vertex_map[cloth_props.non_pin_vert0]
+            t.non_pin_vert1 = mesh_to_cloth_vertex_map[cloth_props.non_pin_vert1]
+        else:
+            t.pin_vert = 0
+            t.non_pin_vert0 = 0
+            t.non_pin_vert1 = 0
     else:
         env_cloth.tuning = None
 
