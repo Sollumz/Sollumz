@@ -69,6 +69,8 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional
     ydd_skel = find_first_skel(ydd_xml)
 
     for drawable_xml in ydd_xml:
+        external_armature = None
+        external_bones = None
         if external_skel is not None:
             if not drawable_xml.skeleton.bones:
                 external_bones = external_skel.drawable.skeleton.bones
@@ -78,10 +80,6 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional
         else:
             if not drawable_xml.skeleton.bones and ydd_skel is not None:
                 external_bones = ydd_skel.bones
-            else:
-                external_bones = None
-
-            external_armature = None
 
         drawable_obj = create_drawable_obj(
             drawable_xml,
@@ -182,6 +180,21 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
 
         if has_inflation_scale:
             mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = inflation_scale[cloth_vert_index]
+
+    custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
+    if custom_edges:
+        cloth_to_mesh_map = [-1] * len(display_map)
+        for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+            cloth_to_mesh_map[cloth_vert_index] = mesh_vert_index
+        next_edge = len(mesh.edges)
+        mesh.edges.add(len(custom_edges))
+        for custom_edge in custom_edges:
+            v0 = custom_edge.vertex0
+            v1 = custom_edge.vertex1
+            mv0 = cloth_to_mesh_map[v0]
+            mv1 = cloth_to_mesh_map[v1]
+            mesh.edges[next_edge].vertices = mv0, mv1
+            next_edge += 1
 
 
     def _create_group(bone_index: int):

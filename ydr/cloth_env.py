@@ -80,6 +80,52 @@ def cloth_env_find_mesh_objects(frag_obj: Object, silent: bool = False) -> list[
 
     return mesh_objs
 
+def _cloth_sort_verlet_edges(edges: list[VerletClothEdge]) -> list[VerletClothEdge]:
+    """Sort edges such that no vertex is repeated within chunks of 8 edges. Required due to how the cloth physics code
+    is vectorized.
+    """
+    # fairly inefficient algorithm ahead, works for now
+    edge_buckets = [[] for _ in range(len(edges) * 4)]
+    last_bucket_index = -1
+    MAX_EDGES_IN_BUCKET = 8
+    for e in edges:
+        for bucket_index, bucket in enumerate(edge_buckets):
+            if len(bucket) >= MAX_EDGES_IN_BUCKET:
+                continue
+
+            can_add_to_bucket = True
+            for edge_in_bucket in bucket:
+                if (e.vertex0 == edge_in_bucket.vertex0 or e.vertex0 == edge_in_bucket.vertex1 or
+                        e.vertex1 == edge_in_bucket.vertex0 or e.vertex1 == edge_in_bucket.vertex1):
+                    can_add_to_bucket = False
+                    break
+
+            if can_add_to_bucket:
+                bucket.append(e)
+                if bucket_index > last_bucket_index:
+                    last_bucket_index = bucket_index
+                break
+
+    new_edges = []
+    for bucket_index, bucket in enumerate(edge_buckets):
+        if bucket_index > last_bucket_index:
+            break
+
+        for i in range(MAX_EDGES_IN_BUCKET):
+            if i < len(bucket):
+                new_edges.append(bucket[i])
+            else:
+                # insert dummy edge
+                verlet_edge = VerletClothEdge()
+                verlet_edge.vertex0 = 0
+                verlet_edge.vertex1 = 0
+                verlet_edge.length_sqr = 1e8
+                verlet_edge.weight0 = 0.0
+                verlet_edge.compression_weight = 0.0
+                new_edges.append(verlet_edge)
+
+    return new_edges
+
 
 def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[Material]) -> Optional[EnvironmentCloth]:
     cloth_objs = cloth_env_find_mesh_objects(frag_obj)
@@ -162,6 +208,16 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
 
     edges = []
     edges_added = set()
+    def _create_verlet_edge(mesh_v0: int, mesh_v1: int) -> VerletClothEdge:
+        verlet_edge = VerletClothEdge()
+        verlet_edge.vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
+        verlet_edge.vertex1 = mesh_to_cloth_vertex_map[mesh_v1]
+        verlet_edge.length_sqr = Vector(vertices[verlet_edge.vertex0] -
+                                        vertices[verlet_edge.vertex1]).length_squared
+        verlet_edge.weight0 = 0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5
+        verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
+        return verlet_edge
+
     for tri in triangles:
         v0, v1, v2 = tri.vertices
         for edge_v0, edge_v1 in ((v0, v1), (v1, v2), (v2, v0)):
@@ -171,65 +227,29 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
             if pinned[edge_v0] and pinned[edge_v1]:
                 continue
 
-            verlet_edge = VerletClothEdge()
-            verlet_edge.vertex0 = mesh_to_cloth_vertex_map[edge_v0]
-            verlet_edge.vertex1 = mesh_to_cloth_vertex_map[edge_v1]
-            verlet_edge.length_sqr = Vector(vertices[verlet_edge.vertex0] -
-                                            vertices[verlet_edge.vertex1]).length_squared
-            verlet_edge.weight0 = 0.0 if pinned[edge_v0] else 1.0 if pinned[edge_v1] else 0.5
-            verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
+            verlet_edge = _create_verlet_edge(edge_v0, edge_v1)
             edges.append(verlet_edge)
             edges_added.add((edge_v0, edge_v1))
 
+    # Look for loose edges (not part of any triangle), these work as additional edges to keep the shape/structure
+    # of the object, stored in the custom edges array
+    custom_edges = []
+    for edge in cloth_mesh.edges:
+        v0, v1 = edge.vertices
+        if (v0, v1) in edges_added or (v1, v0) in edges_added:
+            continue
+
+        if pinned[v0] and pinned[v1]:
+            continue
+
+        verlet_edge = _create_verlet_edge(v0, v1)
+        custom_edges.append(verlet_edge)
+        edges_added.add((v0, v1))
+
     del edges_added
 
-    # Sort edges such that no vertex is repeated within chunks of 8 edges. Required due to how the cloth physics code
-    # is vectorized.
-    # fairly inefficient algorithm ahead, works for now
-    edge_buckets = [[] for _ in range(len(edges) * 4)]
-    last_bucket_index = -1
-    MAX_EDGES_IN_BUCKET = 8
-    for e in edges:
-        for bucket_index, bucket in enumerate(edge_buckets):
-            if len(bucket) >= MAX_EDGES_IN_BUCKET:
-                continue
-
-            can_add_to_bucket = True
-            for edge_in_bucket in bucket:
-                if (e.vertex0 == edge_in_bucket.vertex0 or e.vertex0 == edge_in_bucket.vertex1 or
-                        e.vertex1 == edge_in_bucket.vertex0 or e.vertex1 == edge_in_bucket.vertex1):
-                    can_add_to_bucket = False
-                    break
-
-            if can_add_to_bucket:
-                bucket.append(e)
-                if bucket_index > last_bucket_index:
-                    last_bucket_index = bucket_index
-                break
-
-    new_edges = []
-    for bucket_index, bucket in enumerate(edge_buckets):
-        if bucket_index > last_bucket_index:
-            break
-
-        for i in range(MAX_EDGES_IN_BUCKET):
-            if i < len(bucket):
-                new_edges.append(bucket[i])
-            else:
-                # insert dummy edge
-                verlet_edge = VerletClothEdge()
-                verlet_edge.vertex0 = 0
-                verlet_edge.vertex1 = 0
-                verlet_edge.length_sqr = 1e8
-                verlet_edge.weight0 = 0.0
-                verlet_edge.compression_weight = 0.0
-                new_edges.append(verlet_edge)
-
-    edges = new_edges
-
-    del edge_buckets
-    del last_bucket_index
-    del new_edges
+    edges = _cloth_sort_verlet_edges(edges)
+    custom_edges = _cloth_sort_verlet_edges(custom_edges)
 
     verlet = controller.cloth_high  # TODO(cloth): other lods
     verlet.vertex_positions = vertices
@@ -243,7 +263,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     verlet.cloth_weight = 1.0  # TODO(cloth): cloth weight
     verlet.edges = edges
     verlet.pinned_vertices_count = num_pinned
-    # verlet.custom_edges = ...  # TODO(cloth): custom edges
+    verlet.custom_edges = custom_edges
 
     # eds = []
     # for e in verlet.edges:
