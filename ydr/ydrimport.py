@@ -509,6 +509,7 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     drawable_xml.lights = None
 
     drawable_obj = create_drawable_obj(drawable_xml, filepath)
+    root_transform = drawable_obj.matrix_world.copy()
 
     model_objs = []
 
@@ -517,9 +518,14 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
             model_objs.append(child)
 
     joined_obj = join_objects(model_objs)
+    joined_transform = joined_obj.matrix_world.copy()
     joined_obj.parent = None
     joined_obj.name = name
     joined_obj.data.name = f"{name}.mesh"
+
+    # Fix origin of the drawable, the joined object ends up with the origin of the first model selected, which does not
+    # always have the same origin as the drawable itself
+    joined_obj.data.transform(root_transform.inverted_safe() @ joined_transform)
 
     for modifier in joined_obj.modifiers:
         if modifier.type == "ARMATURE":
