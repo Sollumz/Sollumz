@@ -9,7 +9,7 @@ from .properties import (
     GroupFlagBit,
 )
 from .operators import (
-    SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID,
+    SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CONVERT_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID,
     SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS
 )
 
@@ -48,9 +48,11 @@ class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(FragmentToolChildPanel, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(SOLLUMZ_OT_CREATE_FRAGMENT.bl_idname,
+        row = layout.row(align=True)
+        row.operator(SOLLUMZ_OT_CREATE_FRAGMENT.bl_idname,
                         icon="MOD_PHYSICS")
-
+        row.operator(SOLLUMZ_OT_CONVERT_FRAGMENT.bl_idname,
+                        icon="FILE_REFRESH", text="")
         layout.separator()
 
         row = layout.row()

@@ -35,6 +35,85 @@ class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
                 obj.parent = frag_obj
 
 
+class SOLLUMZ_OT_CONVERT_FRAGMENT(bpy.types.Operator):
+    """Convert a Drawable to a physics Fragment object"""
+    bl_idname = "sollumz.convertfragment"
+    bl_label = "Convert Fragment"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+
+        if len(context.selected_objects) < 1:
+            self.report({"INFO"}, "No object selected!")
+            return {"CANCELLED"}
+        if len(context.selected_objects) > 1:
+            self.report({"INFO"}, "More than one object selected!")
+            return {"CANCELLED"}
+        if not context.selected_objects[0].sollum_type == SollumType.DRAWABLE:
+            self.report({"INFO"}, "Object is not a drawable!")
+            return {"CANCELLED"}
+
+        bpy.ops.sollumz.createfragment()
+
+        drawable = context.selected_objects[0]
+        frag_obj = bpy.data.objects["Fragment"]
+        obj_name = drawable.name
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        bpy.context.scene.create_bones_parent_to_selected = True
+        bpy.context.scene.create_bones_fragment = frag_obj
+        frag_obj.data.name = f"{obj_name}.skel"
+        drawable.name = f"{obj_name}.mesh"
+        for mesh_obj in drawable.children:
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+            mesh_obj.name = mesh_obj.name.replace(".model", "")
+            bpy.ops.object.select_all(action="DESELECT")
+            mesh_obj.select_set(True)
+            bpy.ops.sollumz.createbonesatobjects()
+            for bone in frag_obj.data.bones:
+                bone.select = False
+            last_bone = frag_obj.data.bones[-1]
+            last_bone.select = True
+            frag_obj.data.bones.active = last_bone
+            print(last_bone.name)
+            
+        bpy.ops.object.posemode_toggle()
+        for bone in frag_obj.data.bones:
+            bone.select = True
+            bpy.ops.sollumz.rotationboneflags()
+            bpy.ops.sollumz.transformboneflags()
+        bpy.ops.object.posemode_toggle()
+
+        bpy.ops.object.select_all(action="DESELECT")
+        frag_obj.select_set(True)
+        bpy.ops.sollumz.createbound()
+        for child in frag_obj.children:
+            if child.name == "Bound Composite":
+                child.name = f"{obj_name}.col"
+
+        for col_obj in bpy.data.objects[f"{obj_name}.mesh"].children:
+            bpy.ops.object.select_all(action="DESELECT")
+            col_obj.select_set(True); bpy.context.view_layer.objects.active = col_obj
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.sollumz.createpolyboxfromverts(parent_name=f"{obj_name}.col", sollum_type='sollumz_bound_box')
+            bpy.ops.object.editmode_toggle()
+
+        for i, col_mesh in enumerate(bpy.data.objects[f"{obj_name}.col"].children):
+            bpy.ops.object.select_all(action="DESELECT")
+            col_mesh.select_set(True); bpy.context.view_layer.objects.active = col_mesh
+            col_mesh.name = f"{bpy.data.objects[f'{obj_name}.mesh'].children[i].name}.col"
+            col_mesh.location = (0, 0, 0)
+            bpy.ops.sollumz.clearandcreatecollisionmaterial()
+            bpy.ops.sollumz.calculate_mass()
+            bpy.ops.object.constraint_add(type='COPY_TRANSFORMS')
+            bpy.context.object.constraints["Copy Transforms"].target = frag_obj
+            bpy.context.object.constraints["Copy Transforms"].subtarget = col_mesh.name[:-4]
+            bpy.ops.sollumz.set_correct_child_of_space()
+        frag_obj.name = obj_name
+        return {"FINISHED"}
+
+
 class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
     """Create bones with physics enabled for all selected objects. Bones are positioned at the location of each object"""
     bl_idname = "sollumz.createbonesatobjects"
