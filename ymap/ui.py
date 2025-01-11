@@ -59,7 +59,7 @@ def draw_ymap_model_occluder_properties(self, context):
     obj = context.active_object
     if obj and obj.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
         layout = self.layout
-        layout.prop(obj.ymap_model_occl_properties, 'model_occl_flags')
+        layout.prop(obj.ymap_model_occl_properties, "is_water_only")
 
 
 def draw_ymap_car_generator_properties(self, context):

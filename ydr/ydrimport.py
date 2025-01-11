@@ -294,7 +294,6 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         filename = f"{shader.name}.sps"
 
     material = create_shader(filename)
-    material.name = shader.name
     material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
 
     for param in shader.parameters:
@@ -510,21 +509,26 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     drawable_xml.lights = None
 
     drawable_obj = create_drawable_obj(drawable_xml, filepath)
+    root_transform = drawable_obj.matrix_world.copy()
 
     model_objs = []
 
     for child in drawable_obj.children:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             model_objs.append(child)
-            child.parent = None
-
-    bpy.data.objects.remove(drawable_obj)
 
     joined_obj = join_objects(model_objs)
+    joined_transform = joined_obj.matrix_world.copy()
+    joined_obj.parent = None
     joined_obj.name = name
+    joined_obj.data.name = f"{name}.mesh"
+
+    # Fix origin of the drawable, the joined object ends up with the origin of the first model selected, which does not
+    # always have the same origin as the drawable itself
+    joined_obj.data.transform(root_transform.inverted_safe() @ joined_transform)
 
     for modifier in joined_obj.modifiers:
-        if modifier.type == 'ARMATURE':
+        if modifier.type == "ARMATURE":
             joined_obj.modifiers.remove(modifier)
 
     for constraint in joined_obj.constraints:
@@ -534,5 +538,10 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     joined_obj.asset_generate_preview()
 
     bpy.context.collection.objects.unlink(joined_obj)
+
+    armature = drawable_obj.data
+    bpy.data.objects.remove(drawable_obj)
+    if armature:
+        bpy.data.armatures.remove(armature)
 
     return joined_obj

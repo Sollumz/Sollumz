@@ -200,6 +200,8 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
 
     model_xml.bone_index = get_model_bone_index(model_obj)
 
+    obj_eval.to_mesh_clear()
+
     return model_xml
 
 

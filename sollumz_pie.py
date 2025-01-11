@@ -49,31 +49,34 @@ class SOLLUMZ_MT_view_pie_menu(Menu):
     bl_label = "Sollumz Object Visibility"
 
     def draw(self, context):
+        from .sollumz_ui import SOLLUMZ_UI_NAMES
+        from .lods import (
+            LODLevel,
+            SOLLUMZ_OT_set_lod_level,
+            SOLLUMZ_OT_hide_object,
+            SOLLUMZ_OT_HIDE_COLLISIONS,
+            SOLLUMZ_OT_HIDE_SHATTERMAPS,
+            SOLLUMZ_OT_SHOW_COLLISIONS,
+            SOLLUMZ_OT_SHOW_SHATTERMAPS
+        )
+
         layout = self.layout
+        scene = context.scene
 
         pie = layout.menu_pie()
         # Left
-        if context.scene.sollumz_show_collisions:
-            pie.operator("sollumz.hide_collisions")
-        else:
-            pie.operator("sollumz.show_collisions")
-        # Right
-        pie.operator("sollumz.set_lod_med")
-        # Bottom
-        pie.operator("sollumz.set_lod_vlow")
-        # Top
-        pie.operator("sollumz.set_lod_very_high")
+        pie.operator((SOLLUMZ_OT_HIDE_COLLISIONS if scene.sollumz_show_collisions else SOLLUMZ_OT_SHOW_COLLISIONS).bl_idname)
+        # Right, Bottom, Top
+        for lod in (LODLevel.MEDIUM, LODLevel.VERYLOW, LODLevel.VERYHIGH):
+            pie.operator(SOLLUMZ_OT_set_lod_level.bl_idname, text=SOLLUMZ_UI_NAMES[lod]).lod_level = lod
         # Top-left
-        if context.scene.sollumz_show_shattermaps:
-            pie.operator("sollumz.hide_shattermaps")
-        else:
-            pie.operator("sollumz.show_shattermaps")
+        pie.operator((SOLLUMZ_OT_HIDE_SHATTERMAPS if scene.sollumz_show_shattermaps else SOLLUMZ_OT_SHOW_SHATTERMAPS).bl_idname)
         # Top-right
-        pie.operator("sollumz.set_lod_high")
+        pie.operator(SOLLUMZ_OT_set_lod_level.bl_idname, text=SOLLUMZ_UI_NAMES[LODLevel.HIGH]).lod_level = LODLevel.HIGH
         # Bottom-left
-        pie.operator("sollumz.hide_object", text="Hide")
+        pie.operator(SOLLUMZ_OT_hide_object.bl_idname, text="Hide")
         # Bottom-right
-        pie.operator("sollumz.set_lod_low")
+        pie.operator(SOLLUMZ_OT_set_lod_level.bl_idname, text=SOLLUMZ_UI_NAMES[LODLevel.LOW]).lod_level = LODLevel.LOW
 
 
 addon_keymaps = []
