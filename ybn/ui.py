@@ -308,7 +308,10 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
         )
         subrow = split.row(align=True)
         subrow.prop(context.scene, "poly_bound_type_verts", text="")
-        subrow.prop(context.window_manager, "sz_create_bound_box_parent", text="", placeholder="Parent")
+        if bpy.app.version >= (4, 1, 0):
+            subrow.prop(context.window_manager, "sz_create_bound_box_parent", text="", placeholder="Parent")
+        else:
+            subrow.prop(context.window_manager, "sz_create_bound_box_parent", text="")
 
         box_parent = context.window_manager.sz_create_bound_box_parent
         box_from_verts_op.parent_name = box_parent.name if box_parent else ""
