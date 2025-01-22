@@ -1014,6 +1014,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
 
     if bpy.app.version < (4, 2, 0):
         mat.blend_method = blend_mode
+    else:
+        mat.surface_render_method = "BLENDED" if blend_mode != "OPAQUE" else "DITHERED"
 
 
 def create_terrain_shader(b: ShaderBuilder):
