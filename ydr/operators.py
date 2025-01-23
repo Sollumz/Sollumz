@@ -1355,6 +1355,7 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
             obj_lods.active_lod_level = lod_level
 
             bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.select_all(action="SELECT")
             bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
 
             last_mesh = mesh
