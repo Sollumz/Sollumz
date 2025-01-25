@@ -176,7 +176,7 @@ class PortalGizmo(bpy.types.Gizmo):
         if self.linked_portal not in portals:
             return
 
-        selected_archetype.portal_index = portals.index(self.linked_portal)
+        selected_archetype.portals.select(portals.index(self.linked_portal))
 
         return {'PASS_THROUGH'}
 

@@ -94,7 +94,7 @@ class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperator, bpy.types.Op
 
 class SOLLUMZ_OT_archetype_select_mlo_entity(MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_mlo_entity"
-    bl_label = "Select Archetype"
+    bl_label = "Select Entity"
 
     ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
     archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
@@ -146,6 +146,44 @@ class SOLLUMZ_OT_archetype_select_all_mlo_entity(MultiSelectAllOperator, bpy.typ
             self.use_filter_sort_reverse,
             self.use_filter_sort_alpha
         )
+
+
+class SOLLUMZ_OT_archetype_select_mlo_portal(MultiSelectOneOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_mlo_portal"
+    bl_label = "Select Portal"
+
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
+
+    def get_collection(self, context):
+        return (
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).portals
+
+
+class SOLLUMZ_OT_archetype_select_all_mlo_portal(MultiSelectAllOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_all_mlo_portal"
+    bl_label = "Select All Portals"
+
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
+
+    def get_collection(self, context):
+        return (
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).portals
 
 
 class SOLLUMZ_OT_set_flag_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):

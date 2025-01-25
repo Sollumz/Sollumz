@@ -101,6 +101,21 @@ class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
         update=TimeFlagsMixin.update_flag,
     )
 
+@define_multiselect_access(PortalProperties)
+class PortalSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+    corner1: MultiSelectProperty()
+    corner2: MultiSelectProperty()
+    corner3: MultiSelectProperty()
+    corner4: MultiSelectProperty()
+
+    room_from_id: MultiSelectProperty()
+    room_to_id: MultiSelectProperty()
+
+    mirror_priority: MultiSelectProperty()
+    opacity: MultiSelectProperty()
+    audio_occlusion: MultiSelectProperty()
+    # TODO(multiselect): portal flags: MultiSelectProperty()
+
 
 @define_multiselect_access(MloEntityProperties)
 class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
@@ -121,10 +136,11 @@ class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     attached_portal_id: MultiSelectProperty()
     attached_room_id: MultiSelectProperty()
     attached_entity_set_id: MultiSelectProperty()
-    # TODO: flags: MultiSelectProperty()
+    # TODO(multiselect): entity flags: MultiSelectProperty()
 
 
 @define_multiselect_collection("entities", {"name": "Entities"})
+@define_multiselect_collection("portals", {"name": "Portals"})
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
@@ -309,8 +325,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Mlo archetype
     mlo_flags: bpy.props.PointerProperty(type=MloFlags, name="MLO Flags")
     rooms: bpy.props.CollectionProperty(type=RoomProperties, name="Rooms")
-    portals: bpy.props.CollectionProperty(
-        type=PortalProperties, name="Portals")
+    portals: MultiSelectCollection[PortalProperties, PortalSelectionAccess]
     entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
     timecycle_modifiers: bpy.props.CollectionProperty(
         type=TimecycleModifierProperties, name="Timecycle Modifiers")
@@ -320,7 +335,14 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     # Selected room index
     room_index: bpy.props.IntProperty(name="Room")
     # Selected portal index
-    portal_index: bpy.props.IntProperty(name="Portal")
+    # TODO(multiselect): portal_index is deprecated, remove usages
+    def _set_portal_index(self, index: int):
+        self.portals.active_index = index
+    portal_index: bpy.props.IntProperty(
+        name="Portal",
+        get=lambda s: s.portals.active_index,
+        set=_set_portal_index
+    )
     # Selected entity index
     # TODO(multiselect): entity_index is deprecated, remove usages
     def _set_entity_index(self, index: int):

@@ -19,6 +19,7 @@ from bpy.props import (
     EnumProperty,
     CollectionProperty,
     PointerProperty,
+    FloatVectorProperty,
 )
 import typing
 from typing import Optional, NamedTuple, Generic, TypeVar
@@ -380,8 +381,20 @@ def define_multiselect_access(item_cls: type) -> type:
             return 0 # TODO(multiselect): should this be some other default?
 
         def _setter(self: MultiSelectAccessMixin, value: int):
+            # Need to convert the int value to the corresponding enum name string.
+            # We need to use setattr which only accepts the string form. We cannot use dictionary-like access
+            # (i.e. `item[attr_name] = value`) because it doesn't trigger the update callback if the property has one.
+            enum_items = dynamic_items_callback(self.active_item, bpy.context)
+            for i, enum_item in enumerate(enum_items):
+                n = len(enum_item)
+                if (n == 3 and i == value) or (n != 3 and enum_item[-1] == value):
+                    enum_str = enum_item[0]
+                    break
+            else:
+                enum_str = enum_items[0][0]
+
             for item in self.iter_selected_items():
-                item[attr_name] = value
+                setattr(item, attr_name, enum_str)
 
         def _dynamic_items_wrapper(self: MultiSelectAccessMixin, context: Optional[bpy.types.Context]) -> list:
             # Wrapper required to pass the active item to the enum items callback
@@ -391,6 +404,11 @@ def define_multiselect_access(item_cls: type) -> type:
 
         if dynamic_items_callback:
             kwargs["items"] = _dynamic_items_wrapper
+
+        # Do not copy the callbacks to the wrapper property
+        for callback in ("get", "set", "update"):
+            if callback in kwargs:
+                del kwargs[callback]
 
         return EnumProperty(
             **kwargs,
@@ -415,7 +433,7 @@ def define_multiselect_access(item_cls: type) -> type:
                 kwargs = dict(src_annotation.keywords)
                 if fn is EnumProperty:
                     wrapper_prop = _wrap_enum_property(name, **kwargs)
-                elif fn in {IntProperty, FloatProperty, StringProperty}:
+                elif fn in {IntProperty, FloatProperty, StringProperty, FloatVectorProperty}:
                     wrapper_prop = _wrap_basic_property(fn, name, **kwargs)
                 else:
                     assert False, f"Cannot wrap '{src_annotation.function.__name__}'"

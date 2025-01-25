@@ -5,6 +5,12 @@ from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import RoomProperties, PortalProperties, TimecycleModifierProperties
 from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_tcm, get_selected_ytyp
 from .archetype import ArchetypeChildPanel
+from ...shared.multiselection import (
+    MultiSelectCollection,
+    MultiSelectUIListMixin,
+    multiselect_ui_draw_list,
+)
+from ..operators import ytyp as ytyp_ops
 
 
 class SOLLUMZ_PT_MLO_PANEL(ArchetypeChildPanel, TabbedPanelHelper, bpy.types.Panel):
@@ -115,10 +121,11 @@ class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
         super().draw(context)
 
 
-class SOLLUMZ_UL_PORTAL_LIST(BasicListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_PORTAL_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_PORTAL_LIST"
-    item_icon = "OUTLINER_OB_LIGHTPROBE"
+    default_item_icon = "OUTLINER_OB_LIGHTPROBE"
     name_editable = False
+    multiselect_operator = ytyp_ops.SOLLUMZ_OT_archetype_select_mlo_portal.bl_idname
 
 
 class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
@@ -142,8 +149,12 @@ class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createportal", "sollumz.deleteportal",
-                                                SOLLUMZ_UL_PORTAL_LIST.bl_idname, "", selected_archetype, "portals", selected_archetype, "portal_index")
+        list_col, _ = multiselect_ui_draw_list(
+            self.layout, selected_archetype.portals,
+            "sollumz.createportal", "sollumz.deleteportal",
+            SOLLUMZ_UL_PORTAL_LIST, SOLLUMZ_MT_portals_list_context_menu,
+            "tool_panel"
+        )
 
         row = list_col.row()
         row.operator("sollumz.createportalfromselection",
@@ -173,32 +184,45 @@ class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
             row.alert = True
             row.label(text="Gizmo will not appear when no object is linked.")
 
-        selected_portal = get_selected_portal(context)
-
-        if not selected_portal:
+        if len(selected_archetype.portals) == 0:
             return
+
+        # has_multiple_selection = selected_archetype.portals.has_multiple_selection
+        selection = selected_archetype.portals.selection
+        # active = selected_archetype.portals.active_item
 
         layout.separator()
 
-        layout.prop(selected_portal, "corner1")
-        layout.prop(selected_portal, "corner2")
-        layout.prop(selected_portal, "corner3")
-        layout.prop(selected_portal, "corner4")
+        layout.prop(selection, "corner1")
+        layout.prop(selection, "corner2")
+        layout.prop(selection, "corner3")
+        layout.prop(selection, "corner4")
 
         layout.separator()
 
         row = layout.row()
-        row.prop(selected_portal, "room_from_id")
+        row.prop(selection, "room_from_id")
         row.operator("sollumz.search_portal_room_from",
                      text="", icon="VIEWZOOM")
         row = layout.row()
-        row.prop(selected_portal, "room_to_id")
+        row.prop(selection, "room_to_id")
         row.operator("sollumz.search_portal_room_to", text="", icon="VIEWZOOM")
 
         layout.separator()
-        layout.prop(selected_portal, "mirror_priority")
-        layout.prop(selected_portal, "opacity")
-        layout.prop(selected_portal, "audio_occlusion")
+        layout.prop(selection, "mirror_priority")
+        layout.prop(selection, "opacity")
+        layout.prop(selection, "audio_occlusion")
+
+
+class SOLLUMZ_MT_portals_list_context_menu(bpy.types.Menu):
+    bl_label = "Portals Specials"
+    bl_idname = "SOLLUMZ_MT_portals_list_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+        op = layout.operator(ytyp_ops.SOLLUMZ_OT_archetype_select_all_mlo_portal.bl_idname, text="Select All")
+        if (filter_opts := SOLLUMZ_UL_PORTAL_LIST.last_filter_options.get("portals_tool_panel", None)):
+            filter_opts.apply_to_operator(op)
 
 
 class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
@@ -219,7 +243,8 @@ class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
-        self.layout.enabled = not get_selected_ytyp(context).archetypes.has_multiple_selection
+        ytyp = get_selected_ytyp(context)
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection and not ytyp.archetypes.active_item.portals.has_multiple_selection
         super().draw(context)
 
 
