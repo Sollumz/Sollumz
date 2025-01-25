@@ -217,7 +217,7 @@ def polygons_from_object(navmesh_obj: Object) -> tuple[list[NavPolygon], bool]:
         compressed_centroid_x = min(max(compressed_centroid_x, 0), 255)
         compressed_centroid_y = min(max(compressed_centroid_y, 0), 255)
 
-        adjacent_polys = navmesh_poly_get_adjacent_polys_local(mesh, poly, mesh_edge_adjacency)
+        adjacent_polys = navmesh_poly_get_adjacent_polys_local(mesh, poly.index, mesh_edge_adjacency)
         adjacent_polys_with_cell_index = [
             (NAVMESH_ADJACENCY_INDEX_NONE, NAVMESH_ADJACENCY_INDEX_NONE)
             if poly_idx == NAVMESH_ADJACENCY_INDEX_NONE else (cell_index, poly_idx)
