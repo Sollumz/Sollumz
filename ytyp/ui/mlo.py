@@ -1,14 +1,14 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
-from ...sollumz_ui import BasicListHelper, FlagsPanel, draw_list_with_add_remove
+from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import RoomProperties, PortalProperties, TimecycleModifierProperties
 from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_tcm, get_selected_ytyp
 from .archetype import ArchetypeChildPanel
 from ...shared.multiselection import (
-    MultiSelectCollection,
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
+    MultiSelectUIFlagsPanel,
 )
 from ..operators import ytyp as ytyp_ops
 
@@ -28,8 +28,6 @@ class SOLLUMZ_PT_MLO_PANEL(ArchetypeChildPanel, TabbedPanelHelper, bpy.types.Pan
         return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO
 
     def draw_before(self, context: bpy.types.Context):
-        # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
-        self.layout.enabled = not get_selected_ytyp(context).archetypes.has_multiple_selection
         self.layout.label(text="MLO")
 
 
@@ -118,7 +116,7 @@ class SOLLUMZ_MT_rooms_list_context_menu(bpy.types.Menu):
             filter_opts.apply_to_operator(op)
 
 
-class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ROOM_FLAGS_PANEL(MultiSelectUIFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ROOM_FLAGS_PANEL"
     bl_label = "Room Flags"
     bl_space_type = "VIEW_3D"
@@ -130,14 +128,18 @@ class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     def poll(cls, context):
         return get_selected_room(context) is not None
 
-    def get_flags(self, context):
+    def get_flags_active(self, context):
         selected_room = get_selected_room(context)
         return selected_room.flags
+
+    def get_flags_selection(self, context):
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype.rooms.selection.flags
 
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
         ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.archetypes.has_multiple_selection and not ytyp.archetypes.active_item.rooms.has_multiple_selection
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
         super().draw(context)
 
 
@@ -245,7 +247,7 @@ class SOLLUMZ_MT_portals_list_context_menu(bpy.types.Menu):
             filter_opts.apply_to_operator(op)
 
 
-class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(MultiSelectUIFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_PORTAL_FLAGS_PANEL"
     bl_label = "Portal Flags"
     bl_space_type = "VIEW_3D"
@@ -257,14 +259,18 @@ class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
     def poll(cls, context):
         return get_selected_portal(context) is not None
 
-    def get_flags(self, context):
+    def get_flags_active(self, context):
         selected_portal = get_selected_portal(context)
         return selected_portal.flags
+
+    def get_flags_selection(self, context):
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype.portals.selection.flags
 
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
         ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.archetypes.has_multiple_selection and not ytyp.archetypes.active_item.portals.has_multiple_selection
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
         super().draw(context)
 
 
@@ -309,7 +315,7 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
             layout.prop(selected_tcm, prop_name)
 
 
-class SOLLUMZ_PT_MLO_FLAGS_PANEL(MloChildTabPanel, FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_MLO_FLAGS_PANEL(MloChildTabPanel, MultiSelectUIFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_MLO_FLAGS_PANEL"
     bl_label = "MLO Flags"
 
@@ -322,11 +328,10 @@ class SOLLUMZ_PT_MLO_FLAGS_PANEL(MloChildTabPanel, FlagsPanel, bpy.types.Panel):
         selected_archetype = get_selected_archetype(context)
         return selected_archetype.type == ArchetypeType.MLO
 
-    def get_flags(self, context):
+    def get_flags_active(self, context):
         selected_archetype = get_selected_archetype(context)
         return selected_archetype.mlo_flags
 
-    def draw(self, context):
-        # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
-        self.layout.enabled = not get_selected_ytyp(context).archetypes.has_multiple_selection
-        super().draw(context)
+    def get_flags_selection(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        return selected_ytyp.archetypes.selection.mlo_flags

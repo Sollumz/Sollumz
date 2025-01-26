@@ -1,9 +1,12 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
-from ...sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ...sollumz_properties import AssetType, ArchetypeType
 from ..utils import get_selected_archetype, get_selected_ytyp
 from .ytyp import YtypToolChildPanel
+from ...shared.multiselection import (
+    MultiSelectUIFlagsPanel,
+    MultiSelectUITimeFlagsPanel,
+)
 
 
 class SOLLUMZ_PT_ARCHETYPE_TABS_PANEL(YtypToolChildPanel, TabbedPanelHelper, bpy.types.Panel):
@@ -75,24 +78,22 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
         row.prop(active, "asset", text="Linked Object")
 
 
-class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, MultiSelectUIFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL"
     icon = "BOOKMARKS"
 
     bl_order = 2
 
-    def get_flags(self, context):
+    def get_flags_active(self, context):
         selected_archetype = get_selected_archetype(context)
         return selected_archetype.flags
 
-    def draw(self, context):
-        # TODO(multiselect): support multiselection
-        ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
-        super().draw(context)
+    def get_flags_selection(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        return selected_ytyp.archetypes.selection.flags
 
 
-class SOLLUMZ_PT_TIME_FlAGS_PANEL(ArchetypeChildPanel, TimeFlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_TIME_FlAGS_PANEL(ArchetypeChildPanel, MultiSelectUITimeFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_TIME_FLAGS_PANEL"
     bl_label = "Time Flags"
     select_operator = "sollumz.ytyp_time_flags_select_range"
@@ -108,11 +109,10 @@ class SOLLUMZ_PT_TIME_FlAGS_PANEL(ArchetypeChildPanel, TimeFlagsPanel, bpy.types
     def draw_header(self, context):
         self.layout.label(text="", icon="TIME")
 
-    def get_flags(self, context):
-        return get_selected_archetype(context).time_flags
+    def get_flags_active(self, context):
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype.time_flags
 
-    def draw(self, context):
-        # TODO(multiselect): support multiselection
-        ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
-        super().draw(context)
+    def get_flags_selection(self, context):
+        selected_ytyp = get_selected_ytyp(context)
+        return selected_ytyp.archetypes.selection.time_flags

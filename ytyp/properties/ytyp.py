@@ -15,12 +15,14 @@ from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
-from .flags import ArchetypeFlags, MloFlags
+from .flags import ArchetypeFlags, MloFlags, RoomFlags, PortalFlags, EntityFlags
 from .extensions import ExtensionsContainer, ExtensionType
 from ...shared.multiselection import (
     MultiSelectProperty,
+    MultiSelectPointerProperty,
     define_multiselect_access,
     MultiSelectAccessMixin,
+    MultiSelectNestedAccessMixin,
     define_multiselect_collection,
     MultiSelectCollection,
 )
@@ -101,6 +103,21 @@ class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
         update=TimeFlagsMixin.update_flag,
     )
 
+@define_multiselect_access(RoomFlags)
+class RoomFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+
+
 @define_multiselect_access(RoomProperties)
 class RoomSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     name: MultiSelectProperty()
@@ -111,7 +128,26 @@ class RoomSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     secondary_timecycle: MultiSelectProperty()
     floor_id: MultiSelectProperty()
     exterior_visibility_depth: MultiSelectProperty()
-    # TODO(multiselect): room flags: MultiSelectProperty()
+    flags: MultiSelectPointerProperty(RoomFlagsSelectionAccess)
+
+
+@define_multiselect_access(PortalFlags)
+class PortalFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
 
 
 @define_multiselect_access(PortalProperties)
@@ -127,7 +163,44 @@ class PortalSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     mirror_priority: MultiSelectProperty()
     opacity: MultiSelectProperty()
     audio_occlusion: MultiSelectProperty()
-    # TODO(multiselect): portal flags: MultiSelectProperty()
+    flags: MultiSelectPointerProperty(PortalFlagsSelectionAccess)
+
+
+@define_multiselect_access(EntityFlags)
+class MloEntityFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+    flag15: MultiSelectProperty()
+    flag16: MultiSelectProperty()
+    flag17: MultiSelectProperty()
+    flag18: MultiSelectProperty()
+    flag19: MultiSelectProperty()
+    flag20: MultiSelectProperty()
+    flag21: MultiSelectProperty()
+    flag22: MultiSelectProperty()
+    flag23: MultiSelectProperty()
+    flag24: MultiSelectProperty()
+    flag25: MultiSelectProperty()
+    flag26: MultiSelectProperty()
+    flag27: MultiSelectProperty()
+    flag28: MultiSelectProperty()
+    flag29: MultiSelectProperty()
+    flag30: MultiSelectProperty()
+    flag31: MultiSelectProperty()
+    flag32: MultiSelectProperty()
 
 
 @define_multiselect_access(MloEntityProperties)
@@ -149,7 +222,8 @@ class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     attached_portal_id: MultiSelectProperty()
     attached_room_id: MultiSelectProperty()
     attached_entity_set_id: MultiSelectProperty()
-    # TODO(multiselect): entity flags: MultiSelectProperty()
+
+    flags: MultiSelectPointerProperty(MloEntityFlagsSelectionAccess)
 
 
 @define_multiselect_collection("rooms", {"name": "Rooms"})
@@ -313,27 +387,19 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
     bs_center: bpy.props.FloatVectorProperty(name="Bound Center")
     bs_radius: bpy.props.FloatProperty(name="Bound Radius")
-    type: bpy.props.EnumProperty(
-        items=items_from_enums(ArchetypeType), name="Type")
+    type: bpy.props.EnumProperty(items=items_from_enums(ArchetypeType), name="Type")
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200, min=-1)
-    flags: bpy.props.PointerProperty(
-        type=ArchetypeFlags, name="Flags")
-    special_attribute: bpy.props.EnumProperty(
-        name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
-    hd_texture_dist: bpy.props.FloatProperty(
-        name="HD Texture Distance", default=100, min=0)
+    flags: bpy.props.PointerProperty(type=ArchetypeFlags, name="Flags")
+    special_attribute: bpy.props.EnumProperty(name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
+    hd_texture_dist: bpy.props.FloatProperty(name="HD Texture Distance", default=100, min=0)
     name: bpy.props.StringProperty(name="Name")
     texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
     clip_dictionary: bpy.props.StringProperty(name="Clip Dictionary")
     drawable_dictionary: bpy.props.StringProperty(name="Drawable Dictionary")
-    physics_dictionary: bpy.props.StringProperty(
-        name="Physics Dictionary")
-    asset_type: bpy.props.EnumProperty(
-        items=items_from_enums(AssetType), name="Asset Type")
-    asset: bpy.props.PointerProperty(
-        name="Asset", type=bpy.types.Object, update=update_asset)
-    asset_name: bpy.props.StringProperty(
-        name="Asset Name")
+    physics_dictionary: bpy.props.StringProperty(name="Physics Dictionary")
+    asset_type: bpy.props.EnumProperty(items=items_from_enums(AssetType), name="Asset Type")
+    asset: bpy.props.PointerProperty(name="Asset", type=bpy.types.Object, update=update_asset)
+    asset_name: bpy.props.StringProperty(name="Asset Name")
     # Time archetype
     time_flags: bpy.props.PointerProperty(type=ArchetypeTimeFlags, name="Time Flags")
     # Mlo archetype
@@ -467,6 +533,94 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
 
+@define_multiselect_access(ArchetypeFlags)
+class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+    flag15: MultiSelectProperty()
+    flag16: MultiSelectProperty()
+    flag17: MultiSelectProperty()
+    flag18: MultiSelectProperty()
+    flag19: MultiSelectProperty()
+    flag20: MultiSelectProperty()
+    flag21: MultiSelectProperty()
+    flag22: MultiSelectProperty()
+    flag23: MultiSelectProperty()
+    flag24: MultiSelectProperty()
+    flag25: MultiSelectProperty()
+    flag26: MultiSelectProperty()
+    flag27: MultiSelectProperty()
+    flag28: MultiSelectProperty()
+    flag29: MultiSelectProperty()
+    flag30: MultiSelectProperty()
+    flag31: MultiSelectProperty()
+    flag32: MultiSelectProperty()
+
+
+@define_multiselect_access(ArchetypeTimeFlags)
+class ArchetypeTimeFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+    total: MultiSelectProperty()
+    hour1: MultiSelectProperty()
+    hour2: MultiSelectProperty()
+    hour3: MultiSelectProperty()
+    hour4: MultiSelectProperty()
+    hour5: MultiSelectProperty()
+    hour6: MultiSelectProperty()
+    hour7: MultiSelectProperty()
+    hour8: MultiSelectProperty()
+    hour9: MultiSelectProperty()
+    hour10: MultiSelectProperty()
+    hour11: MultiSelectProperty()
+    hour12: MultiSelectProperty()
+    hour13: MultiSelectProperty()
+    hour14: MultiSelectProperty()
+    hour15: MultiSelectProperty()
+    hour16: MultiSelectProperty()
+    hour17: MultiSelectProperty()
+    hour18: MultiSelectProperty()
+    hour19: MultiSelectProperty()
+    hour20: MultiSelectProperty()
+    hour21: MultiSelectProperty()
+    hour22: MultiSelectProperty()
+    hour23: MultiSelectProperty()
+    hour24: MultiSelectProperty()
+    swap_while_visible: MultiSelectProperty()
+
+
+@define_multiselect_access(MloFlags)
+class ArchetypeMloFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+    flag15: MultiSelectProperty()
+    flag16: MultiSelectProperty()
+
+
 @define_multiselect_access(ArchetypeProperties)
 class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     type: MultiSelectProperty()
@@ -481,7 +635,9 @@ class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     asset_type: MultiSelectProperty()
     asset_name: MultiSelectProperty()
 
-    # TODO(multiselect): support flags
+    flags: MultiSelectPointerProperty(ArchetypeFlagsSelectionAccess)
+    time_flags: MultiSelectPointerProperty(ArchetypeTimeFlagsSelectionAccess)
+    mlo_flags: MultiSelectPointerProperty(ArchetypeMloFlagsSelectionAccess)
 
 
 @define_multiselect_collection("archetypes", {"name": "Archetypes"})
@@ -535,8 +691,6 @@ class CMapTypesProperties(PropertyGroup):
 
 
     name: bpy.props.StringProperty(name="Name")
-    all_flags: bpy.props.IntProperty(name="Flags: ")
-
     archetypes: MultiSelectCollection[ArchetypeProperties, ArchetypeSelectionAccess]
 
     # TODO(multiselect): archetype_index is deprecated, remove usages

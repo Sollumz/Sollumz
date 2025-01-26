@@ -131,30 +131,3 @@ class SOLLUMZ_MT_archetype_list_context_menu(bpy.types.Menu):
         op = layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
         if (filter_opts := SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options.get("archetypes_tool_panel", None)):
             filter_opts.apply_to_operator(op)
-
-
-class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
-    bl_label = "Tools"
-    bl_idname = "SOLLUMZ_PT_YTYP_TOOLS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_idname
-    bl_category = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_category
-
-    @classmethod
-    def poll(cls, context):
-        selected_ytyp = get_selected_ytyp(context)
-        return selected_ytyp is not None and selected_ytyp.archetypes
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="TOOL_SETTINGS")
-
-    def draw(self, context):
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-        selected_ytyp = get_selected_ytyp(context)
-        row = layout.row()
-        row.prop(selected_ytyp, "all_flags")
-        row.operator("sollumz.setflagsallarchs")

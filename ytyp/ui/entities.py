@@ -1,6 +1,5 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
-from ...sollumz_ui import BasicListHelper, FlagsPanel, FilterListHelper, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType, MloEntitySelectionAccess
 from ..properties.mlo import EntityProperties, MloEntityProperties
 from ..utils import get_selected_ytyp, get_selected_archetype, get_selected_entity
@@ -10,6 +9,7 @@ from ...shared.multiselection import (
     MultiSelectCollection,
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
+    MultiSelectUIFlagsPanel,
 )
 from ..operators import ytyp as ytyp_ops
 
@@ -241,7 +241,7 @@ class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(MloEntityChildTabPanel, ExtensionsPanel
         super().draw(context)
 
 
-class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(MloEntityChildTabPanel, FlagsPanel, bpy.types.Panel):
+class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(MloEntityChildTabPanel, MultiSelectUIFlagsPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_ENTITY_FLAGS_PANEL"
     bl_label = "Entity Flags"
 
@@ -249,12 +249,16 @@ class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(MloEntityChildTabPanel, FlagsPanel, bpy.type
 
     bl_order = 2
 
-    def get_flags(self, context):
+    def get_flags_active(self, context):
         selected_entity = get_selected_entity(context)
         return selected_entity.flags
+
+    def get_flags_selection(self, context):
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype.entities.selection.flags
 
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
         ytyp = get_selected_ytyp(context)
-        self.layout.enabled = not ytyp.archetypes.has_multiple_selection and not ytyp.archetypes.active_item.entities.has_multiple_selection
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
         super().draw(context)
