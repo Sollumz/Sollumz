@@ -133,7 +133,11 @@ class SOLLUMZ_OT_update_portal_from_selection(PortalCreatorHelper, bpy.types.Ope
 
     @classmethod
     def poll(cls, context):
-        return super().poll(context) and get_selected_portal(context) is not None
+        return (
+            super().poll(context) and
+            get_selected_portal(context) is not None and
+            not get_selected_archetype(context).portals.has_multiple_selection
+        )
 
     def get_portal(self, context):
         return get_selected_portal(context)

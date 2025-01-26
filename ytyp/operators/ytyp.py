@@ -186,6 +186,44 @@ class SOLLUMZ_OT_archetype_select_all_mlo_portal(MultiSelectAllOperator, bpy.typ
         ).portals
 
 
+class SOLLUMZ_OT_archetype_select_mlo_room(MultiSelectOneOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_mlo_room"
+    bl_label = "Select Room"
+
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
+
+    def get_collection(self, context):
+        return (
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).rooms
+
+
+class SOLLUMZ_OT_archetype_select_all_mlo_room(MultiSelectAllOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_all_mlo_room"
+    bl_label = "Select All Rooms"
+
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
+
+    def get_collection(self, context):
+        return (
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).rooms
+
+
 class SOLLUMZ_OT_set_flag_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets flags for all archetypes within the selected ytyp"""
     bl_idname = "sollumz.setflagsallarchs"

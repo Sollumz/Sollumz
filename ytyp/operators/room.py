@@ -51,7 +51,12 @@ class SOLLUMZ_OT_set_bounds_from_selection(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_room(context) is not None and (context.active_object and context.active_object.mode == "EDIT")
+        return (
+            get_selected_room(context) is not None and
+            not get_selected_archetype(context).rooms.has_multiple_selection and
+            context.active_object and
+            context.active_object.mode == "EDIT"
+        )
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
@@ -75,6 +80,7 @@ class SOLLUMZ_OT_set_bounds_from_selection(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
+# TODO(multiselect): delete_room support multiselection
 class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
     """Delete room from selected archetype"""
     bl_idname = "sollumz.deleteroom"

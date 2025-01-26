@@ -114,14 +114,11 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     bb_min: bpy.props.FloatVectorProperty(name="Bounds Min", subtype="XYZ")
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
     blend: bpy.props.FloatProperty(name="Blend", default=1)
-    timecycle: bpy.props.StringProperty(
-        name="Timecycle", default="int_gasstation")
-    secondary_timecycle: bpy.props.StringProperty(
-        name="Secondary Timecycle")
+    timecycle: bpy.props.StringProperty(name="Timecycle", default="int_gasstation")
+    secondary_timecycle: bpy.props.StringProperty(name="Secondary Timecycle")
     flags: bpy.props.PointerProperty(type=RoomFlags, name="Flags")
     floor_id: bpy.props.IntProperty(name="Floor ID")
-    exterior_visibility_depth: bpy.props.IntProperty(
-        name="Exterior Visibility Depth", default=-1)
+    exterior_visibility_depth: bpy.props.IntProperty(name="Exterior Visibility Depth", default=-1)
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")

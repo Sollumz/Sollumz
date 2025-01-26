@@ -43,9 +43,10 @@ class MloChildTabPanel(TabPanel):
     parent_tab_panel = SOLLUMZ_PT_MLO_PANEL
 
 
-class SOLLUMZ_UL_ROOM_LIST(BasicListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_ROOM_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ROOM_LIST"
-    item_icon = "CUBE"
+    default_item_icon = "CUBE"
+    multiselect_operator = ytyp_ops.SOLLUMZ_OT_archetype_select_mlo_room.bl_idname
 
 
 class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
@@ -70,8 +71,12 @@ class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createroom", "sollumz.deleteroom",
-                                                SOLLUMZ_UL_ROOM_LIST.bl_idname, "", selected_archetype, "rooms", selected_archetype, "room_index")
+        list_col, _ = multiselect_ui_draw_list(
+            self.layout, selected_archetype.rooms,
+            "sollumz.createroom", "sollumz.deleteroom",
+            SOLLUMZ_UL_ROOM_LIST, SOLLUMZ_MT_rooms_list_context_menu,
+            "tool_panel"
+        )
 
         list_col.operator("sollumz.createlimboroom")
 
@@ -85,18 +90,32 @@ class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
             row.label(
                 text="Gizmo will not appear when no object is linked.")
 
-        selected_room = get_selected_room(context)
-        if not selected_room:
+        if len(selected_archetype.rooms) == 0:
             return
+
+        # has_multiple_selection = selected_archetype.rooms.has_multiple_selection
+        selection = selected_archetype.rooms.selection
+        # active = selected_archetype.rooms.active_item
 
         layout.separator()
         for prop_name in RoomProperties.__annotations__:
             if prop_name in ["flags", "id", "uuid"]:
                 continue
-            layout.prop(selected_room, prop_name)
+            layout.prop(selection, prop_name)
 
         list_col.operator(
             "sollumz.setroomboundsfromselection", icon="GROUP_VERTEX")
+
+
+class SOLLUMZ_MT_rooms_list_context_menu(bpy.types.Menu):
+    bl_label = "Rooms Specials"
+    bl_idname = "SOLLUMZ_MT_rooms_list_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+        op = layout.operator(ytyp_ops.SOLLUMZ_OT_archetype_select_all_mlo_room.bl_idname, text="Select All")
+        if (filter_opts := SOLLUMZ_UL_ROOM_LIST.last_filter_options.get("rooms_tool_panel", None)):
+            filter_opts.apply_to_operator(op)
 
 
 class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
@@ -117,7 +136,8 @@ class SOLLUMZ_PT_ROOM_FLAGS_PANEL(FlagsPanel, bpy.types.Panel):
 
     def draw(self, context):
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
-        self.layout.enabled = not get_selected_ytyp(context).archetypes.has_multiple_selection
+        ytyp = get_selected_ytyp(context)
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection and not ytyp.archetypes.active_item.rooms.has_multiple_selection
         super().draw(context)
 
 
