@@ -705,7 +705,7 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
     intensity: FloatProperty(name="Intensity")
     flashiness: EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
-                                       default=Flashiness.CONSTANT.name)
+                             default=Flashiness.CONSTANT.name)
     flags: IntProperty(name="Flags")
     fade_in_time_start: FloatProperty(name="Fade In Time Start")
     fade_in_time_end: FloatProperty(name="Fade In Time End")

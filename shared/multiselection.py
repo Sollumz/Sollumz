@@ -126,7 +126,6 @@ def define_multiselect_collection(name: str, collection_kwargs: dict):
 
             del item_access_cls._nested_access_types
 
-
         def _collection_getter(self) -> MultiSelectCollection[item_cls, item_access_cls]:
             return MultiSelectCollection(self, collection_propname, active_index_propname, active_index_for_ui_propname, on_active_index_update_from_ui_callback_name, selection_indices_propname, selection_propname)
         setattr(cls, name, property(_collection_getter))

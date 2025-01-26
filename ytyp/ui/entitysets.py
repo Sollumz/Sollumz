@@ -1,5 +1,4 @@
 import bpy
-from ...tabbed_panels import TabPanel
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..utils import get_selected_ytyp, get_selected_archetype

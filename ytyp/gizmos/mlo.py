@@ -2,9 +2,7 @@ import bpy
 from ...sollumz_properties import ArchetypeType
 from mathutils import Vector, Matrix
 from ..utils import get_selected_archetype, get_selected_ytyp, get_selected_portal
-from ..properties.mlo import PortalProperties
 from ...tools.blenderhelper import find_parent
-from typing import Set
 
 
 def can_draw_gizmos(context):

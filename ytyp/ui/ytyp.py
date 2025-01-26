@@ -9,7 +9,6 @@ from ...sollumz_preferences import (
 )
 from ..utils import (
     get_selected_ytyp,
-    get_selected_archetype
 )
 from ...shared.multiselection import (
     MultiSelectUIListMixin,

@@ -1,16 +1,13 @@
 import bpy
 from bpy.types import (
     PropertyGroup,
-    bpy_prop_collection,
 )
 from bpy.props import (
     BoolProperty,
-    PointerProperty,
 )
 from enum import IntEnum
 from typing import Union, Optional
 from uuid import uuid4
-from ..utils import get_selected_archetype, get_selected_entity
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
@@ -102,6 +99,7 @@ class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
         ),
         update=TimeFlagsMixin.update_flag,
     )
+
 
 @define_multiselect_access(RoomFlags)
 class RoomFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
@@ -390,7 +388,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     type: bpy.props.EnumProperty(items=items_from_enums(ArchetypeType), name="Type")
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200, min=-1)
     flags: bpy.props.PointerProperty(type=ArchetypeFlags, name="Flags")
-    special_attribute: bpy.props.EnumProperty(name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
+    special_attribute: bpy.props.EnumProperty(
+        name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
     hd_texture_dist: bpy.props.FloatProperty(name="HD Texture Distance", default=100, min=0)
     name: bpy.props.StringProperty(name="Name")
     texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
@@ -421,6 +420,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     )
     # Selected portal index
     # TODO(multiselect): portal_index is deprecated, remove usages
+
     def _set_portal_index(self, index: int):
         self.portals.active_index = index
     portal_index: bpy.props.IntProperty(
@@ -430,6 +430,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     )
     # Selected entity index
     # TODO(multiselect): entity_index is deprecated, remove usages
+
     def _set_entity_index(self, index: int):
         self.entities.active_index = index
     entity_index: bpy.props.IntProperty(
@@ -688,7 +689,6 @@ class CMapTypesProperties(PropertyGroup):
 
     def on_archetypes_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()
-
 
     name: bpy.props.StringProperty(name="Name")
     archetypes: MultiSelectCollection[ArchetypeProperties, ArchetypeSelectionAccess]

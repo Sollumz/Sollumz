@@ -35,8 +35,8 @@ class ExtensionsPanelHelper:
         extensions_container = self.get_extensions_container(context)
 
         _, side_col = draw_list_with_add_remove(layout, self.ADD_OPERATOR_ID, self.DELETE_OPERATOR_ID,
-                                             self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
-                                             extensions_container, "extension_index")
+                                                self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
+                                                extensions_container, "extension_index")
         side_col.separator()
         side_col.operator(self.DUPLICATE_OPERATOR_ID, text="", icon="DUPLICATE")
 

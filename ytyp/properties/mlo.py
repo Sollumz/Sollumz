@@ -330,7 +330,6 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
             return room.name
         return ""
 
-
     def is_filtered(self) -> bool:
         """Returns true if this entity should be shown on UI list; false, otherwise."""
         scene = bpy.context.scene
