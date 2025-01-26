@@ -309,7 +309,7 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
             "tool_panel"
         )
 
-        if len(selected_archetype.portals) == 0:
+        if len(selected_archetype.timecycle_modifiers) == 0:
             return
 
         # has_multiple_selection = selected_archetype.portals.has_multiple_selection
