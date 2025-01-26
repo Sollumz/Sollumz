@@ -224,9 +224,20 @@ class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     flags: MultiSelectPointerProperty(MloEntityFlagsSelectionAccess)
 
 
+@define_multiselect_access(TimecycleModifierProperties)
+class TimecycleModifierSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+    name: MultiSelectProperty()
+    sphere: MultiSelectProperty()
+    percentage: MultiSelectProperty()
+    range: MultiSelectProperty()
+    start_hour: MultiSelectProperty()
+    end_hour: MultiSelectProperty()
+
+
 @define_multiselect_collection("rooms", {"name": "Rooms"})
 @define_multiselect_collection("portals", {"name": "Portals"})
 @define_multiselect_collection("entities", {"name": "Entities"})
+@define_multiselect_collection("timecycle_modifiers", {"name": "Timecycle Modifiers"})
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
@@ -298,6 +309,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
         item.id = item_id
         item.uuid = str(uuid4())
+
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
@@ -325,6 +337,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
+        self.tcm_index = len(self.timecycle_modifiers) - 1
+
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
@@ -338,6 +352,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
         item.id = item_id
         item.uuid = str(uuid4())
+
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
@@ -406,7 +421,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     rooms: MultiSelectCollection[RoomProperties, RoomSelectionAccess]
     portals: MultiSelectCollection[PortalProperties, PortalSelectionAccess]
     entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
-    timecycle_modifiers: bpy.props.CollectionProperty(type=TimecycleModifierProperties, name="Timecycle Modifiers")
+    timecycle_modifiers: MultiSelectCollection[TimecycleModifierProperties, TimecycleModifierSelectionAccess]
     entity_sets: bpy.props.CollectionProperty(type=EntitySetProperties, name="EntitySets")
 
     # Selected room index
@@ -439,8 +454,15 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         set=_set_entity_index
     )
     # Selected timecycle modifier index
+    # TODO(multiselect): tcm_index is deprecated, remove usages
+
+    def _set_tcm_index(self, index: int):
+        self.timecycle_modifiers.active_index = index
     tcm_index: bpy.props.IntProperty(
-        name="Timecycle Modifier")
+        name="Timecycle Modifier",
+        get=lambda s: s.timecycle_modifiers.active_index,
+        set=_set_tcm_index
+    )
     # Selected entityset
     entity_set_index: bpy.props.IntProperty(
         name="Entity Set")

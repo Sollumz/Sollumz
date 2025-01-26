@@ -478,8 +478,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.debug_fix_light_intensity")
         row.prop(context.scene, "debug_lights_only_selected")
-        row = layout.row()
-        row.operator("sollumz.debug_reload_entity_sets")
 
         layout.separator()
 

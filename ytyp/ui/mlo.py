@@ -274,9 +274,10 @@ class SOLLUMZ_PT_PORTAL_FLAGS_PANEL(MultiSelectUIFlagsPanel, bpy.types.Panel):
         super().draw(context)
 
 
-class SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST(BasicListHelper, bpy.types.UIList):
+class SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST"
-    item_icon = "MOD_TIME"
+    default_item_icon = "MOD_TIME"
+    multiselect_operator = ytyp_ops.SOLLUMZ_OT_archetype_select_mlo_tcm.bl_idname
 
 
 class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
@@ -301,18 +302,35 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        draw_list_with_add_remove(self.layout, "sollumz.createtimecyclemodifier", "sollumz.deletetimecyclemodifier",
-                                  SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST.bl_idname, "", selected_archetype, "timecycle_modifiers", selected_archetype, "tcm_index")
+        multiselect_ui_draw_list(
+            self.layout, selected_archetype.timecycle_modifiers,
+            "sollumz.createtimecyclemodifier", "sollumz.deletetimecyclemodifier",
+            SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST, SOLLUMZ_MT_timecycle_modifiers_list_context_menu,
+            "tool_panel"
+        )
 
-        selected_tcm = get_selected_tcm(context)
-
-        if not selected_tcm:
+        if len(selected_archetype.portals) == 0:
             return
+
+        # has_multiple_selection = selected_archetype.portals.has_multiple_selection
+        selection = selected_archetype.timecycle_modifiers.selection
+        # active = selected_archetype.portals.active_item
 
         layout.separator()
 
         for prop_name in TimecycleModifierProperties.__annotations__:
-            layout.prop(selected_tcm, prop_name)
+            layout.prop(selection, prop_name)
+
+
+class SOLLUMZ_MT_timecycle_modifiers_list_context_menu(bpy.types.Menu):
+    bl_label = "Timecycle Modifiers Specials"
+    bl_idname = "SOLLUMZ_MT_timecycle_modifiers_list_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+        op = layout.operator(ytyp_ops.SOLLUMZ_OT_archetype_select_all_mlo_tcm.bl_idname, text="Select All")
+        if (filter_opts := SOLLUMZ_UL_TIMECYCLE_MODIFIER_LIST.last_filter_options.get("timecycle_modifiers_tool_panel", None)):
+            filter_opts.apply_to_operator(op)
 
 
 class SOLLUMZ_PT_MLO_FLAGS_PANEL(MloChildTabPanel, MultiSelectUIFlagsPanel, bpy.types.Panel):

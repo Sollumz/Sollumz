@@ -402,8 +402,6 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         return archetype.entity_sets[0].name
 
     name: bpy.props.StringProperty(name="Name", update=MloArchetypeChild.update_mlo_archetype_caches)
-    entities: bpy.props.CollectionProperty(
-        type=MloEntityProperties, name="EntitySet Entities")
 
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")
