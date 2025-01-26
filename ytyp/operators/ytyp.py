@@ -224,24 +224,6 @@ class SOLLUMZ_OT_archetype_select_all_mlo_room(MultiSelectAllOperator, bpy.types
         ).rooms
 
 
-class SOLLUMZ_OT_set_flag_for_all_archetypes(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Sets flags for all archetypes within the selected ytyp"""
-    bl_idname = "sollumz.setflagsallarchs"
-    bl_label = "Set to All Archetypes"
-
-    @classmethod
-    def poll(cls, context):
-        return get_selected_ytyp(context) is not None
-
-    def execute(self, context):
-        selected_ytyp = get_selected_ytyp(context)
-        for archetype in selected_ytyp.archetypes:
-            if archetype.asset_type != AssetType.ASSETLESS:
-                archetype.flags.total = str(selected_ytyp.all_flags)
-
-        return {'FINISHED'}
-
-
 class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Operator):
     """Create archetype from selected"""
     bl_idname = "sollumz.createarchetypefromselected"
