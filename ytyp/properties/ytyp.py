@@ -680,21 +680,12 @@ class CMapTypesProperties(PropertyGroup):
     name: bpy.props.StringProperty(name="Name")
     archetypes: MultiSelectCollection[ArchetypeProperties, ArchetypeSelectionAccess]
 
-    # TODO(multiselect): archetype_index is deprecated, remove usages
-    def _set_archetype_index(self, index: int):
-        self.archetypes.active_index = index
-    archetype_index: bpy.props.IntProperty(
-        name="Archetype Index",
-        get=lambda s: s.archetypes.active_index,
-        set=_set_archetype_index
-    )
-
     # Unique archetype id
     last_archetype_id: bpy.props.IntProperty()
 
     @property
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
-        return get_list_item(self.archetypes, self.archetype_index)
+        return get_list_item(self.archetypes, self.archetypes.active_index)
 
 
 def register():
