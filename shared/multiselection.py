@@ -341,6 +341,8 @@ class MultiSelectOperatorBase:
 
 
 class MultiSelectOneOperator(MultiSelectOperatorBase):
+    bl_description = "Select item"
+
     index: IntProperty(name="Index")
     extend: BoolProperty(name="Extend")
     toggle: BoolProperty(name="Toggle")
@@ -371,6 +373,8 @@ class MultiSelectOneOperator(MultiSelectOperatorBase):
 
 
 class MultiSelectAllOperator(MultiSelectOperatorBase):
+    bl_description = "Select all items"
+
     def execute(self, context):
         collection = self.get_collection(context)
         filtered_items, _ = self.filter_items(context)
