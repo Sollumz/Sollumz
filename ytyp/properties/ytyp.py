@@ -424,48 +424,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     timecycle_modifiers: MultiSelectCollection[TimecycleModifierProperties, TimecycleModifierSelectionAccess]
     entity_sets: bpy.props.CollectionProperty(type=EntitySetProperties, name="EntitySets")
 
-    # Selected room index
-    # TODO(multiselect): room_index is deprecated, remove usages
-    def _set_room_index(self, index: int):
-        self.rooms.active_index = index
-    room_index: bpy.props.IntProperty(
-        name="Room",
-        get=lambda s: s.rooms.active_index,
-        set=_set_room_index
-    )
-    # Selected portal index
-    # TODO(multiselect): portal_index is deprecated, remove usages
-
-    def _set_portal_index(self, index: int):
-        self.portals.active_index = index
-    portal_index: bpy.props.IntProperty(
-        name="Portal",
-        get=lambda s: s.portals.active_index,
-        set=_set_portal_index
-    )
-    # Selected entity index
-    # TODO(multiselect): entity_index is deprecated, remove usages
-
-    def _set_entity_index(self, index: int):
-        self.entities.active_index = index
-    entity_index: bpy.props.IntProperty(
-        name="Entity",
-        get=lambda s: s.entities.active_index,
-        set=_set_entity_index
-    )
-    # Selected timecycle modifier index
-    # TODO(multiselect): tcm_index is deprecated, remove usages
-
-    def _set_tcm_index(self, index: int):
-        self.timecycle_modifiers.active_index = index
-    tcm_index: bpy.props.IntProperty(
-        name="Timecycle Modifier",
-        get=lambda s: s.timecycle_modifiers.active_index,
-        set=_set_tcm_index
-    )
     # Selected entityset
-    entity_set_index: bpy.props.IntProperty(
-        name="Entity Set")
+    entity_set_index: bpy.props.IntProperty(name="Entity Set")
 
     id: bpy.props.IntProperty(default=-1)
     uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
@@ -476,19 +436,19 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     @property
     def selected_room(self) -> Union[RoomProperties, None]:
-        return get_list_item(self.rooms, self.room_index)
+        return get_list_item(self.rooms, self.rooms.active_index)
 
     @property
     def selected_portal(self) -> Union[PortalProperties, None]:
-        return get_list_item(self.portals, self.portal_index)
+        return get_list_item(self.portals, self.portals.active_index)
 
     @property
     def selected_entity(self) -> Union[MloEntityProperties, None]:
-        return get_list_item(self.entities, self.entity_index)
+        return get_list_item(self.entities, self.entities.active_index)
 
     @property
     def selected_tcm(self) -> Union[TimecycleModifierProperties, None]:
-        return get_list_item(self.timecycle_modifiers, self.tcm_index)
+        return get_list_item(self.timecycle_modifiers, self.timecycle_modifiers.active_index)
 
     @property
     def selected_entity_set(self) -> Union[EntitySetProperties, None]:
