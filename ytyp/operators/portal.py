@@ -143,9 +143,8 @@ class SOLLUMZ_OT_update_portal_from_selection(PortalCreatorHelper, bpy.types.Ope
         return get_selected_portal(context)
 
 
-# TODO(multiselect): delete_portal support multiselection
 class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete portal from selected archetype"""
+    """Delete selected portal(s)"""
     bl_idname = "sollumz.deleteportal"
     bl_label = "Delete Portal"
 
@@ -155,17 +154,20 @@ class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.portals.remove(selected_archetype.portal_index)
-        selected_archetype.portal_index = max(selected_archetype.portal_index - 1, 0)
+
+        indices_to_remove = selected_archetype.portals.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_archetype.portals.remove(index_to_remove)
+        selected_archetype.portals.select(new_active_index)
+
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
 
-        validate_dynamic_enums(
-            selected_archetype.entities, "attached_portal_id", selected_archetype.portals)
-        validate_dynamic_enum(
-            context.scene, "sollumz_add_entity_portal", selected_archetype.portals)
-        validate_dynamic_enum(
-            context.scene, "sollumz_entity_filter_portal", selected_archetype.portals)
+        validate_dynamic_enums(selected_archetype.entities, "attached_portal_id", selected_archetype.portals)
+        validate_dynamic_enum(context.scene, "sollumz_add_entity_portal", selected_archetype.portals)
+        validate_dynamic_enum(context.scene, "sollumz_entity_filter_portal", selected_archetype.portals)
 
         return True
 

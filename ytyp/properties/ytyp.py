@@ -284,7 +284,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.portals)
 
         item = self.portals.add()
-        self.portal_index = len(self.portals) - 1
+        self.portals.select(len(self.portals) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
@@ -305,7 +305,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.rooms)
 
         item = self.rooms.add()
-        self.room_index = len(self.rooms) - 1
+        self.rooms.select(len(self.rooms) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
@@ -323,7 +323,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.entities)
 
         item = self.entities.add()
-        self.entity_index = len(self.entities) - 1
+        self.entities.select(len(self.entities) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
@@ -337,7 +337,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
-        self.tcm_index = len(self.timecycle_modifiers) - 1
+        self.timecycle_modifiers.select(len(self.timecycle_modifiers) - 1)
 
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
@@ -693,11 +693,13 @@ class CMapTypesProperties(PropertyGroup):
 
     def new_archetype(self):
         item = self.archetypes.add()
-        index = len(self.archetypes)
-        item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index}"
-        self.archetype_index = index - 1
+        index = len(self.archetypes) - 1
+        self.archetypes.select(index)
+
         item.id = self.last_archetype_id + 1
         item.uuid = str(uuid4())
+        item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index + 1}"
+
         self.last_archetype_id += 1
 
         return item

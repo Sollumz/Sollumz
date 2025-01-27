@@ -121,10 +121,13 @@ class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.entities.remove(
-            selected_archetype.entity_index)
-        selected_archetype.entity_index = max(
-            selected_archetype.entity_index - 1, 0)
+
+        indices_to_remove = selected_archetype.entities.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_archetype.entities.remove(index_to_remove)
+        selected_archetype.entities.select(new_active_index)
 
         return True
 

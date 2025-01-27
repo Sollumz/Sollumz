@@ -199,18 +199,35 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
     def active_item(self) -> TItem:
         return self[self.active_index]
 
+    def iter_selected_items_indices(self) -> Iterator[int]:
+        found_active_item = False
+        active_index = self.active_index
+        for s in self.selection_indices:
+            if s.index == active_index:
+                found_active_item = True
+            yield s.index
+
+        if not found_active_item:
+            # in some edge-cases cases where the active item may not appear in the selection list
+            yield active_index
+
     def iter_selected_items(self) -> Iterator[TItem]:
         found_active_item = False
+        active_index = self.active_index
         for s in self.selection_indices:
             item = self[s.index]
             if item is not None:
-                if s.index == self.active_index:
+                if s.index == active_index:
                     found_active_item = True
                 yield item
 
         if not found_active_item:
             # in some edge-cases cases where the active item may not appear in the selection list
             yield self.active_item
+
+    @property
+    def selected_items_indices(self) -> list[int]:
+        return list(self.iter_selected_items_indices())
 
     @property
     def selected_items(self) -> list[TItem]:

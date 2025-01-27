@@ -1,9 +1,8 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
-from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import RoomProperties, TimecycleModifierProperties
-from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_tcm, get_selected_ytyp
+from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_ytyp
 from .archetype import ArchetypeChildPanel
 from ...shared.multiselection import (
     MultiSelectUIListMixin,

@@ -57,7 +57,6 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return get_selected_ytyp(context) is not None
 
     def run(self, context):
-        # TODO(multiselect): consider selection indices when creating new items
         selected_ytyp = get_selected_ytyp(context)
         selected_ytyp.new_archetype()
 
@@ -318,7 +317,7 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
 
 
 class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete archetype from selected ytyp"""
+    """Delete selected archetype(s)"""
     bl_idname = "sollumz.deletearchetype"
     bl_label = "Delete Archetype"
 
@@ -328,11 +327,15 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return selected_ytyp is not None and len(selected_ytyp.archetypes) > 0
 
     def run(self, context):
-        # TODO(multiselect): consider selection indices when deleting items
         selected_ytyp = get_selected_ytyp(context)
-        selected_ytyp.archetypes.remove(selected_ytyp.archetype_index)
-        selected_ytyp.archetype_index = max(
-            selected_ytyp.archetype_index - 1, 0)
+
+        indices_to_remove = selected_ytyp.archetypes.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_ytyp.archetypes.remove(index_to_remove)
+        selected_ytyp.archetypes.select(new_active_index)
+
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
 
@@ -355,9 +358,8 @@ class SOLLUMZ_OT_create_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-# TODO(multiselect): delete_timecycle_modifier support multiselection
 class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete timecycle modifier from selected archetype"""
+    """Delete selected timecycle modifier(s)"""
     bl_idname = "sollumz.deletetimecyclemodifier"
     bl_label = "Delete Timecycle Modifier"
 
@@ -368,9 +370,14 @@ class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.timecycle_modifiers.remove(
-            selected_archetype.tcm_index)
-        selected_archetype.tcm_index = max(selected_archetype.tcm_index - 1, 0)
+
+        indices_to_remove = selected_archetype.timecycle_modifiers.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_archetype.timecycle_modifiers.remove(index_to_remove)
+        selected_archetype.timecycle_modifiers.select(new_active_index)
+
         return True
 
 
