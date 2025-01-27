@@ -234,10 +234,16 @@ class TimecycleModifierSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     end_hour: MultiSelectProperty()
 
 
+@define_multiselect_access(EntitySetProperties)
+class EntitySetSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+    name: MultiSelectProperty()
+
+
 @define_multiselect_collection("rooms", {"name": "Rooms"})
 @define_multiselect_collection("portals", {"name": "Portals"})
 @define_multiselect_collection("entities", {"name": "Entities"})
 @define_multiselect_collection("timecycle_modifiers", {"name": "Timecycle Modifiers"})
+@define_multiselect_collection("entity_sets", {"name": "Entity Sets"})
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
@@ -348,7 +354,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.entity_sets)
 
         item = self.entity_sets.add()
-        self.entity_set_index = len(self.entity_sets) - 1
+        self.entity_sets.select(len(self.entity_sets) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
@@ -422,10 +428,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     portals: MultiSelectCollection[PortalProperties, PortalSelectionAccess]
     entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
     timecycle_modifiers: MultiSelectCollection[TimecycleModifierProperties, TimecycleModifierSelectionAccess]
-    entity_sets: bpy.props.CollectionProperty(type=EntitySetProperties, name="EntitySets")
-
-    # Selected entityset
-    entity_set_index: bpy.props.IntProperty(name="Entity Set")
+    entity_sets: MultiSelectCollection[EntitySetProperties, EntitySetSelectionAccess]
 
     id: bpy.props.IntProperty(default=-1)
     uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
@@ -452,11 +455,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     @property
     def selected_entity_set(self) -> Union[EntitySetProperties, None]:
-        return get_list_item(self.entity_sets, self.entity_set_index)
+        return get_list_item(self.entity_sets, self.entity_sets.active_index)
 
     @property
     def selected_entity_set_id(self):
-        return self.entity_set_index
+        return self.entity_sets.active_index
 
     def get_portal_enum_items(self) -> list:
         if items := ArchetypeProperties.__portal_enum_items_cache.get(self.uuid, None):
