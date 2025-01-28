@@ -3,6 +3,7 @@ from typing import Optional
 from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
+from ...shared.multiselection import SelectMode
 from ..utils import get_selected_archetype, get_selected_entity
 from ..properties.mlo import (
     MloEntityProperties, get_portal_items_for_selected_archetype, get_room_items_for_selected_archetype
@@ -25,7 +26,7 @@ def set_entity_properties_from_filter(entity: MloEntityProperties, context: bpy.
 
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Add an entity to the selected mlo archetype"""
+    """Add an entity to the selected MLO archetype"""
     bl_idname = "sollumz.createmloentity"
     bl_label = "Create Entity"
 
@@ -53,9 +54,10 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
     def execute(self, context: bpy.types.Context):
         selected_archetype = get_selected_archetype(context)
 
+        first_new_entity_index = len(selected_archetype.entities)
+
         for obj in context.selected_objects:
-            existing_entity = self.get_entity_using_obj(
-                obj, selected_archetype)
+            existing_entity = self.get_entity_using_obj(obj, selected_archetype)
 
             if existing_entity is not None:
                 self.report(
@@ -67,6 +69,13 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
             entity.linked_object = obj
             set_entity_properties_from_filter(entity, context)
+
+        last_new_entity_index = len(selected_archetype.entities) - 1
+        if first_new_entity_index != last_new_entity_index and first_new_entity_index < len(selected_archetype.entities):
+            # Select all new entities, so the user can quickly assign them to a room/entity set/portal or modify any
+            # other property on all of them
+            selected_archetype.entities.select(first_new_entity_index)
+            selected_archetype.entities.select(last_new_entity_index, SelectMode.EXTEND)
 
         return {"FINISHED"}
 
