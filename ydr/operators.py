@@ -1315,7 +1315,10 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
     bl_idname = "sollumz.auto_lod"
     bl_label = "Generate LODs"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Generate Drawable Model LODs via decimate modifier. Uses object's current mesh as highest LOD level"
+    bl_description = (
+        "Generate drawable model LODs via decimate modifier. Starts from the selected reference mesh, generating a "
+        "new decimated mesh for each selected LOD level"
+    )
 
     @classmethod
     def poll(self, context):
@@ -1344,6 +1347,7 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
         previous_lod_level = obj_lods.active_lod_level
 
         for lod_level in lods:
+            bpy.ops.object.mode_set(mode="OBJECT") # make sure we are in object mode before switching LODs
             mesh = last_mesh.copy()
             mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
 
@@ -1351,12 +1355,15 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
             obj_lods.active_lod_level = lod_level
 
             bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.select_all(action="SELECT")
             bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
-            bpy.ops.object.mode_set(mode=previous_mode)
 
             last_mesh = mesh
 
+        bpy.ops.object.mode_set(mode="OBJECT")
         obj_lods.active_lod_level = previous_lod_level
+
+        bpy.ops.object.mode_set(mode=previous_mode)
 
         return {"FINISHED"}
 
