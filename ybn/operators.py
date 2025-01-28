@@ -230,8 +230,6 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
     bl_action = f"{bl_label}"
 
     def run(self, context):
-        convert_all = context.scene.convert_all_to_collision_material
-        print(convert_all)
         aobj = context.active_object
         if not aobj:
             self.message("No object selected!")
@@ -244,7 +242,7 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
 
         mat = create_collision_material_from_index(context.window_manager.sz_collision_material_index)
         
-        if convert_all:
+        if context.scene.convert_all_to_collision_material:
             for obj in bpy.data.objects:
                 if obj.type == 'MESH':
                     for i, slot in enumerate(obj.data.materials):
