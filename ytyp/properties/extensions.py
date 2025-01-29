@@ -847,7 +847,7 @@ class SpawnPointOverrideProperties(BaseExtensionProperties, PropertyGroup):
     group: StringProperty(name="Group")
     model_set: StringProperty(name="Model Set")
     radius: FloatProperty(name="Radius")
-    time_till_ped_leaves: StringProperty(name="Time Till Ped Leaves")
+    time_till_ped_leaves: FloatProperty(name="Time Till Ped Leaves")
 
     # TODO: Use enums
     available_in_mp_sp: StringProperty(name="Available in MP/SP")
