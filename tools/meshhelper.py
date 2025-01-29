@@ -452,8 +452,13 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
         if child.type != "MESH":
             continue
 
-        child_matrix = matrix @ (
-            child.matrix_world if use_world else child.matrix_basis)
+        if use_world:
+            child_matrix = matrix @ child.matrix_world
+        else:
+            if child == obj:
+                child_matrix = matrix
+            else:
+                child_matrix = matrix @ child.matrix_basis
 
         total_bounds.extend([child_matrix @ Vector(v)
                             for v in child.bound_box])

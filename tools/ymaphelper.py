@@ -127,7 +127,7 @@ def get_extents_data(obj, entity_extents_data):
                     return entity_extents_data[archetype_name]
 
     # No ytyp so we calculate bb
-    bbmin, bbmax = get_combined_bound_box(obj, use_world=True)
+    bbmin, bbmax = get_combined_bound_box(obj, use_world=False)
     bs_radius = get_sphere_radius(bbmin, bbmax)
     entity_extents_data[archetype_name] = ExtentsData(lod_dist=60, bb_min=bbmin, bb_max=bbmax, bs_radius=bs_radius, scale=Vector((1, 1, 1)))
 
@@ -167,9 +167,6 @@ def generate_ymap_extents(selected_ymap=None):
                         orientation @ Vector((bbmax.x, bbmax.y, bbmin.z)),
                         orientation @ Vector((bbmax.x, bbmax.y, bbmax.z))
                     ]
-
-                    emin = Vector(min(emin[i], bbmin[i]) for i in range(3))
-                    emax = Vector(max(emax[i], bbmax[i]) for i in range(3))
 
                     stream_bbmin = bbmin - Vector((lod_dist, lod_dist, lod_dist))
                     stream_bbmax = bbmax + Vector((lod_dist, lod_dist, lod_dist))
