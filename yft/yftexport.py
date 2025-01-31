@@ -210,6 +210,14 @@ def create_fragment_xml(frag: FragmentObjects, apply_transforms: bool = False) -
 
         if frag_xml.physics is None:
             frag_xml.physics = create_dummy_frag_physics_xml_for_cloth(frag, frag_xml, materials)
+        else:
+            # Cloths seem to always have an extra null bound in the composite
+            # Doesn't seem to be needed, but do it for consistency with original assets
+            composite = frag_xml.physics.lod1.archetype.bounds
+            composite.children.append(None)
+            if len(composite.children) == 1:
+                # ... and at least 2 children in the composite
+                composite.children.append(None)
 
     frag_armature.pose_position = original_pose
 
@@ -1388,6 +1396,11 @@ def create_dummy_frag_physics_xml_for_cloth(frag: FragmentObjects, frag_xml: Fra
     arch_xml.bounds.volume = 1
     arch_xml.bounds.inertia = Vector((1.0, 1.0, 1.0))
     arch_xml.bounds.sphere_radius = frag_xml.bounding_sphere_radius
+    arch_xml.bounds.ref_count = 2
+    # Cloths with no bounds seem to always have 2 null bounds in the composite
+    # Doesn't seem to be needed, but do it for consistency with original assets
+    arch_xml.bounds.children.append(None)
+    arch_xml.bounds.children.append(None)
     lod_xml.groups[0].mass = 1
 
     child_xml = PhysicsChild()

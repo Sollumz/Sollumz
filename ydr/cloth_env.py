@@ -393,7 +393,6 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
             f"Could not match cloth vertex for drawable geometry vertex #{geom_vertex_index} {Vector(geom_vertex)}"
 
         mesh_vertex_index = cloth_to_mesh_vertex_map[matching_cloth_vertex_index]
-        print(f"{geom_vertex_index=} {matching_cloth_vertex_index=} {mesh_vertex_index=}     {verlet.vertex_positions[cloth_vertex_index]}")
         assert geom_to_mesh_map[geom_vertex_index] == -1, f"Geometry vertex #{geom_vertex_index} already assigned"
         assert mesh_to_geom_map[mesh_vertex_index] == -1, f"Mesh vertex #{mesh_vertex_index} already assigned"
 
