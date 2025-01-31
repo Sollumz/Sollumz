@@ -85,32 +85,31 @@ def _cloth_sort_verlet_edges(edges: list[VerletClothEdge]) -> list[VerletClothEd
     is vectorized.
     """
     # fairly inefficient algorithm ahead, works for now
-    edge_buckets = [[] for _ in range(len(edges) * 4)]
-    last_bucket_index = -1
+    edge_buckets: list[list[VerletClothEdge]] = []
     MAX_EDGES_IN_BUCKET = 8
     for e in edges:
-        for bucket_index, bucket in enumerate(edge_buckets):
+        for bucket in edge_buckets:
             if len(bucket) >= MAX_EDGES_IN_BUCKET:
                 continue
 
             can_add_to_bucket = True
             for edge_in_bucket in bucket:
-                if (e.vertex0 == edge_in_bucket.vertex0 or e.vertex0 == edge_in_bucket.vertex1 or
-                        e.vertex1 == edge_in_bucket.vertex0 or e.vertex1 == edge_in_bucket.vertex1):
+                if (
+                    e.vertex0 == edge_in_bucket.vertex0 or e.vertex0 == edge_in_bucket.vertex1 or
+                    e.vertex1 == edge_in_bucket.vertex0 or e.vertex1 == edge_in_bucket.vertex1
+                ):
                     can_add_to_bucket = False
                     break
 
             if can_add_to_bucket:
                 bucket.append(e)
-                if bucket_index > last_bucket_index:
-                    last_bucket_index = bucket_index
                 break
+        else:
+            # Could not be added to any existing bucket, create a new bucket
+            edge_buckets.append([e])
 
     new_edges = []
-    for bucket_index, bucket in enumerate(edge_buckets):
-        if bucket_index > last_bucket_index:
-            break
-
+    for bucket in edge_buckets:
         for i in range(MAX_EDGES_IN_BUCKET):
             if i < len(bucket):
                 new_edges.append(bucket[i])
@@ -143,11 +142,18 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
             f"The following drawable models will be ignored: {other_cloth_objs_names}."
         )
 
+    cloth_bone = get_child_of_bone(cloth_obj)
+    if cloth_bone is None:
+        logger.error(
+            f"Fragment cloth '{cloth_obj.name}' is not attached to a bone! "
+            "Attach it to a bone via a Copy Transforms constraint."
+        )
+        return None
+
     from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, ClothAttr
 
     env_cloth = EnvironmentCloth()
     env_cloth.flags = 0
-    # env_cloth.user_data = TextListProperty("UnknownData")
     cloth_obj_eval = get_evaluated_obj(cloth_obj)
     cloth_mesh = cloth_obj_eval.to_mesh()
     cloth_mesh.calc_loop_triangles()
@@ -197,17 +203,16 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     bridge.pin_radius_high = [pin_radius[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.vertex_weights_high = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.inflation_scale_high = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
-    bridge.display_map_high = [-1] * num_vertices
+    # bridge.display_map_high = [-1] * num_vertices # Calculated later
     bridge.pinnable_list = [0] * int(np.ceil(num_vertices / 32))  # just need to allocate space for the pinnable list
 
     force_transform = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.FORCE_TRANSFORM)
     if (force_transform != 0).any():
         env_cloth.user_data = " ".join(str(force_transform[mi]) for mi in cloth_to_mesh_vertex_map)
+        env_cloth.user_data = None
     else:
         env_cloth.user_data = None
 
-    edges = []
-    edges_added = set()
     def _create_verlet_edge(mesh_v0: int, mesh_v1: int) -> VerletClothEdge:
         verlet_edge = VerletClothEdge()
         verlet_edge.vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
@@ -218,9 +223,12 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
         return verlet_edge
 
+    edges = []
+    edges_added = set()
     for tri in triangles:
         v0, v1, v2 = tri.vertices
         for edge_v0, edge_v1 in ((v0, v1), (v1, v2), (v2, v0)):
+        # for edge_v0, edge_v1 in ((v0, v2), (v2, v1), (v1, v0)):
             if (edge_v0, edge_v1) in edges_added or (edge_v1, edge_v0) in edges_added:
                 continue
 
@@ -245,6 +253,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         verlet_edge = _create_verlet_edge(v0, v1)
         custom_edges.append(verlet_edge)
         edges_added.add((v0, v1))
+        # cloth_obj.data.edges[edge.index].select = True
 
     del edges_added
 
@@ -335,16 +344,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
 
     # TODO(cloth): lods
     model_xml = create_model_xml(cloth_obj, LODLevel.HIGH, materials, transforms_to_apply=transforms_to_apply)
-
-    bone = get_child_of_bone(cloth_obj)
-    if bone is None:
-        logger.error(
-            f"Fragment cloth '{cloth_obj.name}' is not attached to a bone! "
-            "Attach it to a bone via a Copy Transforms constraint."
-        )
-        return None
-
-    model_xml.bone_index = get_bone_index(frag_obj.data, bone)
+    model_xml.bone_index = get_bone_index(frag_obj.data, cloth_bone)
 
     append_model_xml(cloth_drawable_xml, model_xml, LODLevel.HIGH)
 
@@ -371,6 +371,8 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         assert matching_cloth_vertex_index is not None
 
         bridge.display_map_high[mesh_vertex_index] = matching_cloth_vertex_index
+
+    assert len(set(bridge.display_map_high)) == len(bridge.display_map_high), "Some repeated cloth vertex in display map"
 
     cloth_obj_eval.to_mesh_clear()
 
