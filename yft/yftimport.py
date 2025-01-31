@@ -414,24 +414,24 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
             next_edge += 1
 
     # Debug code to visualize the verlet cloth edges.
-    debug_edges = [e for e in (cloth.controller.cloth_high.edges or []) if e.vertex0 != e.vertex1]
-    if debug_edges:
-        debug_mesh = bpy.data.meshes.new(f"{mesh.name}.debug")
-        debug_obj = bpy.data.objects.new(f"{mesh.name}.debug", debug_mesh)
-        debug_mesh.vertices.add(len(mesh.vertices))
-        for v in mesh.vertices:
-            debug_mesh.vertices[v.index].co = v.co
-        next_edge = len(debug_mesh.edges)
-        debug_mesh.edges.add(len(debug_edges))
-        for edge in debug_edges:
-            v0 = edge.vertex0
-            v1 = edge.vertex1
-            mv0 = int(cloth_to_mesh_map[v0])
-            mv1 = int(cloth_to_mesh_map[v1])
-            debug_mesh.edges[next_edge].vertices = mv0, mv1
-            next_edge += 1
-
-        bpy.context.collection.objects.link(debug_obj)
+    # debug_edges = [e for e in (cloth.controller.cloth_high.edges or []) if e.vertex0 != e.vertex1]
+    # if debug_edges:
+    #     debug_mesh = bpy.data.meshes.new(f"{mesh.name}.debug")
+    #     debug_obj = bpy.data.objects.new(f"{mesh.name}.debug", debug_mesh)
+    #     debug_mesh.vertices.add(len(mesh.vertices))
+    #     for v in mesh.vertices:
+    #         debug_mesh.vertices[v.index].co = v.co
+    #     next_edge = len(debug_mesh.edges)
+    #     debug_mesh.edges.add(len(debug_edges))
+    #     for edge in debug_edges:
+    #         v0 = edge.vertex0
+    #         v1 = edge.vertex1
+    #         mv0 = int(cloth_to_mesh_map[v0])
+    #         mv1 = int(cloth_to_mesh_map[v1])
+    #         debug_mesh.edges[next_edge].vertices = mv0, mv1
+    #         next_edge += 1
+    #
+    #     bpy.context.collection.objects.link(debug_obj)
 
     if cloth.tuning:
         tuning = cloth.tuning

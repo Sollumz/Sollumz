@@ -60,7 +60,7 @@ class ClothAttr(str, Enum):
             ):
                 return 0
             case ClothAttr.PIN_RADIUS:
-                return 1.0
+                return 0.0
             case ClothAttr.VERTEX_WEIGHT:
                 return 0.002025
             case ClothAttr.INFLATION_SCALE:
@@ -73,6 +73,8 @@ class ClothAttr(str, Enum):
         match self:
             case ClothAttr.PINNED:
                 return "Pinned"
+            case ClothAttr.PIN_RADIUS:
+                return "Pin Radius"
             case ClothAttr.VERTEX_WEIGHT:
                 return "Mass Per Vertex"
             case ClothAttr.INFLATION_SCALE:
@@ -87,6 +89,8 @@ class ClothAttr(str, Enum):
         match self:
             case ClothAttr.PINNED:
                 return "If set, the vertex will be static"
+            case ClothAttr.PIN_RADIUS:
+                return "TODO"
             case ClothAttr.VERTEX_WEIGHT:
                 return "Determines how heavy each vertex of the cloth mesh is"
             case ClothAttr.INFLATION_SCALE:

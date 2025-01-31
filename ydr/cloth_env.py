@@ -80,6 +80,7 @@ def cloth_env_find_mesh_objects(frag_obj: Object, silent: bool = False) -> list[
 
     return mesh_objs
 
+
 def _cloth_sort_verlet_edges(edges: list[VerletClothEdge]) -> list[VerletClothEdge]:
     """Sort edges such that no vertex is repeated within chunks of 8 edges. Required due to how the cloth physics code
     is vectorized.
@@ -150,7 +151,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         )
         return None
 
-    from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, ClothAttr
+    from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
 
     env_cloth = EnvironmentCloth()
     env_cloth.flags = 0
@@ -174,20 +175,30 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     mesh_to_cloth_vertex_map = [None] * num_vertices
     cloth_to_mesh_vertex_map = [None] * num_vertices
     vertices = [None] * num_vertices
-    cloth_pin_index = 0
-    cloth_unpin_index = num_pinned
     for v in cloth_mesh.vertices:
-        vi = None
-        if pinned[v.index]:
-            vi = cloth_pin_index
-            cloth_pin_index += 1
-        else:
-            vi = cloth_unpin_index
-            cloth_unpin_index += 1
-
+        vi = v.index
         vertices[vi] = Vector(v.co)
-        mesh_to_cloth_vertex_map[v.index] = vi
-        cloth_to_mesh_vertex_map[vi] = v.index
+        mesh_to_cloth_vertex_map[vi] = vi
+        cloth_to_mesh_vertex_map[vi] = vi
+
+    cloth_pin_index = 0
+    for v in cloth_mesh.vertices:
+        if pinned[v.index]:
+            if v.index != cloth_pin_index:
+                # Swap vertices so the pinned vertices are placed at the start of the array
+                vA = vertices[cloth_pin_index]
+                vB = vertices[v.index]
+
+                vertices[cloth_pin_index] = vB
+                vertices[v.index] = vA
+
+                mesh_to_cloth_vertex_map[cloth_to_mesh_vertex_map[cloth_pin_index]] = mesh_to_cloth_vertex_map[v.index]
+                cloth_to_mesh_vertex_map[v.index] = cloth_to_mesh_vertex_map[cloth_pin_index]
+
+                mesh_to_cloth_vertex_map[v.index] = cloth_pin_index
+                cloth_to_mesh_vertex_map[cloth_pin_index] = v.index
+
+            cloth_pin_index += 1
 
     triangles = cloth_mesh.loop_triangles
 
@@ -197,19 +208,22 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     controller.flags = 3  # owns morph controller + owns bridge
     bridge = controller.bridge
     bridge.vertex_count_high = num_vertices
-    pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
+    if mesh_has_cloth_attribute(cloth_mesh, ClothAttr.PIN_RADIUS):
+        pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
+        bridge.pin_radius_high = [pin_radius[mi] for mi in cloth_to_mesh_vertex_map]
+    else:
+        bridge.pin_radius_high = None
     vertex_weights = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.VERTEX_WEIGHT)
     inflation_scale = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.INFLATION_SCALE)
-    bridge.pin_radius_high = [pin_radius[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.vertex_weights_high = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
     bridge.inflation_scale_high = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
-    # bridge.display_map_high = [-1] * num_vertices # Calculated later
-    bridge.pinnable_list = [0] * int(np.ceil(num_vertices / 32))  # just need to allocate space for the pinnable list
+    bridge.display_map_high = mesh_to_cloth_vertex_map
+    # just need to allocate space for the pinnable list, unused
+    bridge.pinnable_list = [0] * int(np.ceil(num_vertices / 32))
 
     force_transform = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.FORCE_TRANSFORM)
     if (force_transform != 0).any():
         env_cloth.user_data = " ".join(str(force_transform[mi]) for mi in cloth_to_mesh_vertex_map)
-        env_cloth.user_data = None
     else:
         env_cloth.user_data = None
 
@@ -228,7 +242,6 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     for tri in triangles:
         v0, v1, v2 = tri.vertices
         for edge_v0, edge_v1 in ((v0, v1), (v1, v2), (v2, v0)):
-        # for edge_v0, edge_v1 in ((v0, v2), (v2, v1), (v1, v0)):
             if (edge_v0, edge_v1) in edges_added or (edge_v1, edge_v0) in edges_added:
                 continue
 
@@ -346,33 +359,55 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     model_xml = create_model_xml(cloth_obj, LODLevel.HIGH, materials, transforms_to_apply=transforms_to_apply)
     model_xml.bone_index = get_bone_index(frag_obj.data, cloth_bone)
 
+    # Given we are limited to CLOTH_MAX_VERTICES, it should always only generate a single geometry
+    assert len(model_xml.geometries) == 1, "Only a single geometry should be exported"
+    geom = model_xml.geometries[0]
+
     append_model_xml(cloth_drawable_xml, model_xml, LODLevel.HIGH)
 
     set_drawable_xml_extents(cloth_drawable_xml)
 
     # Cloth require a different FVF than the default one
-    model_xml.geometries[0].vertex_buffer.get_element(
-        "layout").type = "GTAV2" if get_tangent_required(cloth_obj_eval.data.materials[0]) else "GTAV3"
+    geom.vertex_buffer.get_element("layout").type = (
+        "GTAV2"
+        if get_tangent_required(cloth_obj_eval.data.materials[0])
+        else "GTAV3"
+    )
 
     from ..ydr.ydrexport import set_drawable_xml_flags, set_drawable_xml_properties
     set_drawable_xml_flags(cloth_drawable_xml)
     assert cloth_obj.parent.sollum_type == SollumType.DRAWABLE
     set_drawable_xml_properties(cloth_obj.parent, cloth_drawable_xml)
 
-    # Compute display map
-    bridge.display_map_high = [-1] * len(model_xml.geometries[0].vertex_buffer.data["Position"])
-    for mesh_vertex_index, mesh_vertex in enumerate(model_xml.geometries[0].vertex_buffer.data["Position"]):
+    # Sort the geometry vertices to match the display map
+    geom_to_mesh_map = [-1] * len(geom.vertex_buffer.data)
+    mesh_to_geom_map = [-1] * len(geom.vertex_buffer.data)
+    for geom_vertex_index, geom_vertex in enumerate(geom.vertex_buffer.data["Position"]):
         matching_cloth_vertex_index = None
         for cloth_vertex_index, cloth_vertex in enumerate(verlet.vertex_positions):
-            if np.allclose(mesh_vertex, cloth_vertex, atol=1e-3):
+            if np.allclose(geom_vertex, cloth_vertex, atol=1e-5):
                 matching_cloth_vertex_index = cloth_vertex_index
                 break
 
-        assert matching_cloth_vertex_index is not None
+        assert matching_cloth_vertex_index is not None, \
+            f"Could not match cloth vertex for drawable geometry vertex #{geom_vertex_index} {Vector(geom_vertex)}"
 
-        bridge.display_map_high[mesh_vertex_index] = matching_cloth_vertex_index
+        mesh_vertex_index = cloth_to_mesh_vertex_map[matching_cloth_vertex_index]
+        print(f"{geom_vertex_index=} {matching_cloth_vertex_index=} {mesh_vertex_index=}     {verlet.vertex_positions[cloth_vertex_index]}")
+        assert geom_to_mesh_map[geom_vertex_index] == -1, f"Geometry vertex #{geom_vertex_index} already assigned"
+        assert mesh_to_geom_map[mesh_vertex_index] == -1, f"Mesh vertex #{mesh_vertex_index} already assigned"
 
-    assert len(set(bridge.display_map_high)) == len(bridge.display_map_high), "Some repeated cloth vertex in display map"
+        geom_to_mesh_map[geom_vertex_index] = mesh_vertex_index
+        mesh_to_geom_map[mesh_vertex_index] = geom_vertex_index
+
+    geom_to_mesh_map = np.array(geom_to_mesh_map)
+    mesh_to_geom_map = np.array(mesh_to_geom_map)
+
+    geom.vertex_buffer.data = geom.vertex_buffer.data[mesh_to_geom_map]
+    geom.index_buffer.data = geom_to_mesh_map[geom.index_buffer.data]
+
+    del geom_to_mesh_map
+    del mesh_to_geom_map
 
     cloth_obj_eval.to_mesh_clear()
 
