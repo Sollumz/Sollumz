@@ -236,7 +236,15 @@ class VerletCloth(ElementTree):
         self.vertex_normals = VerletClothVerticesProperty("Vertices2")
         self.edges = VerletClothEdgeList("Constraints")
         self.custom_edges = VerletClothEdgeList("Constraints2")
-        # self.bounds = ...("Bounds")
+        self.bounds = BoundComposite()
+
+    @classmethod
+    def from_xml(cls, element: ET.Element) -> "VerletCloth":
+        new: VerletCloth = super().from_xml(element)
+        if not element.find(BoundComposite.tag_name):
+            # If there is no bounds in the xml, remove the default one
+            new.bounds = None
+        return new
 
     def to_xml(self):
         element = super().to_xml()

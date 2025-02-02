@@ -17,6 +17,7 @@ from ..cwxml.bound import (
     BoundCapsule,
     BoundCylinder,
     BoundDisc,
+    BoundPlane,
     PolyTriangle,
     PolyBox,
     PolySphere,
@@ -52,7 +53,8 @@ def export_ybn(obj: bpy.types.Object, filepath: str) -> bool:
 
 def create_composite_xml(
     obj: bpy.types.Object,
-    out_child_obj_to_index: dict[bpy.types.Object, int] = None
+    out_child_obj_to_index: dict[bpy.types.Object, int] = None,
+    allow_planes: bool = False,
 ) -> BoundComposite:
     assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
@@ -66,7 +68,7 @@ def create_composite_xml(
     cg = Vector()
     volume = 0.0
     for child in obj.children:
-        child_xml = create_bound_xml(child)
+        child_xml = create_bound_xml(child, allow_planes=allow_planes)
         if child_xml is None:
             continue
 
@@ -112,7 +114,7 @@ def create_composite_xml(
     return composite_xml
 
 
-def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[BoundChild]:
+def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes: bool = False) -> Optional[BoundChild]:
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
     if obj.sollum_type not in {
         SollumType.BOUND_BOX,
@@ -120,12 +122,20 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
         SollumType.BOUND_CYLINDER,
         SollumType.BOUND_CAPSULE,
         SollumType.BOUND_DISC,
+        SollumType.BOUND_PLANE,
         SollumType.BOUND_GEOMETRY,
         SollumType.BOUND_GEOMETRYBVH,
     }:
         logger.warning(
             f"'{obj.name}' is being exported as bound but has no bound Sollumz type! Please, use a bound type instead "
             f"of '{SOLLUMZ_UI_NAMES[obj.sollum_type]}'."
+        )
+        return None
+
+    if not allow_planes and obj.sollum_type == SollumType.BOUND_PLANE:
+        logger.warning(
+            f"'{obj.name}' is a {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} but planes are not supported in this "
+            f"context! Only fragment cloth world bounds may use planes."
         )
         return None
 
@@ -209,6 +219,20 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False) -> Optional[B
             centroid, radius_around_centroid = get_centroid_of_capsule(radius, length)
             volume, cg, inertia = get_mass_properties_of_capsule(radius, length)
             margin = radius  # in capsules the margin equals the capsule radius
+
+        case SollumType.BOUND_PLANE:
+            bound_xml = init_bound_child_xml(BoundPlane(), obj)
+            bound_xml.box_max = Vector((0, 0, 0))
+            bound_xml.box_min = Vector((0, 0, 0))
+            bound_xml.composite_transform = Matrix.Identity(4)
+
+            plane_transform = get_composite_transforms(obj)
+            centroid = plane_transform.to_translation()
+            cg = plane_transform.col[1].xyz.normalized() # normal is stored in the CG
+            radius_around_centroid = 0.0
+            volume = 1.0
+            inertia = Vector((1.0, 1.0, 1.0))
+            margin = 0.04
 
         case SollumType.BOUND_GEOMETRY:
             bound_xml = create_bound_geometry_xml(obj)

@@ -295,7 +295,7 @@ def get_object_with_children(obj):
 # Sollumz types for which Object.hide_render should be set to false when created.
 _types_to_hide_in_render = {
     SollumType.BOUND_BOX, SollumType.BOUND_SPHERE, SollumType.BOUND_CAPSULE, SollumType.BOUND_CYLINDER,
-    SollumType.BOUND_DISC, SollumType.BOUND_CLOTH, SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH,
+    SollumType.BOUND_DISC, SollumType.BOUND_PLANE, SollumType.BOUND_GEOMETRY, SollumType.BOUND_GEOMETRYBVH,
     SollumType.BOUND_COMPOSITE, SollumType.BOUND_POLY_BOX, SollumType.BOUND_POLY_CAPSULE,
     SollumType.BOUND_POLY_CYLINDER, SollumType.BOUND_POLY_SPHERE, SollumType.BOUND_POLY_TRIANGLE,
 

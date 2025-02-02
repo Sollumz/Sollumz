@@ -1,4 +1,7 @@
 import bpy
+from bpy.types import (
+    Object,
+)
 from bpy.props import (
     BoolProperty,
     IntProperty,
@@ -188,6 +191,23 @@ class ClothTuningFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 
 
 class ClothProperties(bpy.types.PropertyGroup):
+    def _world_bounds_filter(self, obj: Object) -> bool:
+        return obj.sollum_type == SollumType.BOUND_COMPOSITE and obj.parent is None
+
+    world_bounds: PointerProperty(
+        type=Object, poll=_world_bounds_filter,
+        name="World Bounds",
+        description=(
+            f"{SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]} the cloth will collide with. These bounds should be "
+            "positioned at world coordinates.\n\n"
+            f"Only {SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE]} and {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} "
+            "types are supported.\n\n"
+            "Cloth simulation does not interact with regular world collisions due to performance optimizations. "
+            "Instead, these simplified bounds are used, typically consisting of a single plane behind the cloth to "
+            "prevent it from clipping into buildings"
+        )
+    )
+
     enable_tuning: BoolProperty(name="Tuning")
     tuning_flags: PointerProperty(type=ClothTuningFlags)
     extra_force: FloatVectorProperty(

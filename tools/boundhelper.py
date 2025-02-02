@@ -7,10 +7,12 @@ from ..tools.meshhelper import (
     create_cylinder,
     create_capsule,
     create_disc,
+    create_plane,
 )
 from ..ybn.properties import load_flag_presets, flag_presets, BoundFlags
 from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
 from mathutils import Vector, Matrix
+from math import radians
 
 
 def create_bound_shape(bound_type: SollumType):
@@ -24,6 +26,8 @@ def create_bound_shape(bound_type: SollumType):
         return create_bound_cylinder()
     elif bound_type == SollumType.BOUND_DISC:
         return create_bound_disc()
+    elif bound_type == SollumType.BOUND_PLANE:
+        return create_bound_plane()
     elif bound_type == SollumType.BOUND_POLY_BOX:
         return create_bound_poly_box()
     elif bound_type == SollumType.BOUND_POLY_SPHERE:
@@ -87,6 +91,13 @@ def create_bound_poly_cylinder():
 def create_bound_disc():
     bound_obj = create_blender_object(SollumType.BOUND_DISC)
     create_disc(bound_obj.data, radius=1.0, length=0.04 * 2)
+    return bound_obj
+
+
+def create_bound_plane():
+    bound_obj = create_blender_object(SollumType.BOUND_PLANE)
+    # matrix to rotate plane so it faces towards +Y, by default faces +Z
+    create_plane(bound_obj.data, 2.0, matrix=Matrix.Rotation(radians(90.0), 4, "X"))
     return bound_obj
 
 

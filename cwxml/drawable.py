@@ -25,7 +25,7 @@ from .element import (
 from .bound import (
     BoundBox,
     BoundCapsule,
-    BoundCloth,
+    BoundPlane,
     BoundComposite,
     BoundCylinder,
     BoundDisc,
@@ -682,7 +682,7 @@ class Drawable(ElementTree, AbstractClass):
             elif bound_type == "Disc":
                 bound = BoundDisc.from_xml(bounds_elem)
             elif bound_type == "Cloth":
-                bound = BoundCloth.from_xml(bounds_elem)
+                bound = BoundPlane.from_xml(bounds_elem)
             elif bound_type == "Geometry":
                 bound = BoundGeometry.from_xml(bounds_elem)
             elif bound_type == "GeometryBVH":

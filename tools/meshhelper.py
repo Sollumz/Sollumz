@@ -185,6 +185,14 @@ def create_capsule(mesh, radius=0.5, length=2, axis="Y"):
     return mesh
 
 
+def create_plane(mesh, size: float, matrix: Matrix = None):
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, size=size, matrix=matrix or Matrix())
+    bm.to_mesh(mesh)
+    bm.free()
+    return mesh
+
+
 def get_tangent_required(material: bpy.types.Material):
     if material.sollum_type != MaterialType.SHADER:
         return False

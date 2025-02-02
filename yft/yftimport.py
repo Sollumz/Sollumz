@@ -13,7 +13,7 @@ from ..sollumz_preferences import get_import_settings
 from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype, GlassWindow
 from ..cwxml.drawable import Drawable, Bone
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
-from ..ybn.ybnimport import create_bound_object
+from ..ybn.ybnimport import create_bound_object, create_bound_composite
 from .. import logger
 from .properties import LODProperties, FragArchetypeProperties, GlassTypes, FragmentTemplateAsset
 from ..tools.blenderhelper import get_child_of_bone
@@ -433,9 +433,9 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     #
     #     bpy.context.collection.objects.link(debug_obj)
 
+    cloth_props = frag_obj.fragment_properties.cloth
     if cloth.tuning:
         tuning = cloth.tuning
-        cloth_props = frag_obj.fragment_properties.cloth
         cloth_props.enable_tuning = True
         cloth_props.tuning_flags.total = str(tuning.flags)
         cloth_props.extra_force = tuning.extra_force
@@ -447,6 +447,11 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
             cloth_props.pin_vert = cloth_to_mesh_map[tuning.pin_vert]
             cloth_props.non_pin_vert0 = cloth_to_mesh_map[tuning.non_pin_vert0]
             cloth_props.non_pin_vert1 = cloth_to_mesh_map[tuning.non_pin_vert1]
+
+    if cloth.controller.cloth_high.bounds:
+        cloth_bounds = create_bound_composite(cloth.controller.cloth_high.bounds)
+        cloth_bounds.name = f"{frag_obj.name}.cloth_world_bounds"
+        cloth_props.world_bounds = cloth_bounds
 
 
 def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):

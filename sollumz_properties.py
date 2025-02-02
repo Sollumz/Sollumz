@@ -27,7 +27,7 @@ class SollumType(str, Enum):
     BOUND_CAPSULE = "sollumz_bound_capsule"
     BOUND_CYLINDER = "sollumz_bound_cylinder"
     BOUND_DISC = "sollumz_bound_disc"
-    BOUND_CLOTH = "sollumz_bound_cloth"
+    BOUND_PLANE = "sollumz_bound_plane"
     BOUND_GEOMETRY = "sollumz_bound_geometry"
     BOUND_GEOMETRYBVH = "sollumz_bound_geometrybvh"
     BOUND_COMPOSITE = "sollumz_bound_composite"
@@ -161,7 +161,7 @@ BOUND_TYPES = [
     SollumType.BOUND_CYLINDER,
     SollumType.BOUND_CAPSULE,
     SollumType.BOUND_DISC,
-    SollumType.BOUND_CLOTH,
+    SollumType.BOUND_PLANE,
     SollumType.BOUND_GEOMETRY,
     SollumType.BOUND_GEOMETRYBVH,
 ]
@@ -214,7 +214,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_CAPSULE: "Bound Capsule",
     SollumType.BOUND_CYLINDER: "Bound Cylinder",
     SollumType.BOUND_DISC: "Bound Disc",
-    SollumType.BOUND_CLOTH: "Bound Cloth",
+    SollumType.BOUND_PLANE: "Bound Plane",
     SollumType.BOUND_GEOMETRY: "Bound Geometry",
     SollumType.BOUND_GEOMETRYBVH: "Bound GeometryBVH",
     SollumType.BOUND_COMPOSITE: "Bound Composite",

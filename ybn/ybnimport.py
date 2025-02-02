@@ -11,6 +11,7 @@ from ..cwxml.bound import (
     BoundChild,
     BoundGeometryBVH,
     BoundGeometry,
+    BoundPlane,
     PolyBox,
     PolySphere,
     PolyCapsule,
@@ -28,11 +29,13 @@ from ..tools.meshhelper import (
     create_cylinder,
     create_capsule,
     create_disc,
+    create_plane,
     create_color_attr,
 )
 from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
 from ..tools.blenderhelper import create_blender_object, create_empty_object
 from mathutils import Matrix, Vector
+from math import radians
 
 
 def import_ybn(filepath):
@@ -76,6 +79,9 @@ def create_bound_object(bound_xml: BoundChild | Bound):
 
     if bound_xml.type == "GeometryBVH":
         return create_bvh_obj(bound_xml)
+
+    if bound_xml.type == BoundPlane.type:
+        return create_bound_plane(bound_xml)
 
 
 def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh: Optional[bpy.types.Mesh] = None):
@@ -148,6 +154,14 @@ def create_bound_disc(bound_xml: BoundChild):
     obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_DISC)
     create_disc(obj.data, bound_xml.sphere_radius, bound_xml.margin * 2)
     obj.location += bound_xml.box_center
+    return obj
+
+
+def create_bound_plane(bound_xml: BoundPlane):
+    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_PLANE)
+    # matrix to rotate plane so it faces towards +Y, by default faces +Z
+    create_plane(obj.data, 2.0, matrix=Matrix.Rotation(radians(90.0), 4, "X"))
+    obj.matrix_world = Matrix.LocRotScale(bound_xml.box_center, bound_xml.normal.to_track_quat("Y", "Z"), None)
     return obj
 
 
@@ -314,6 +328,7 @@ def create_poly_sphere(poly, materials, vertices):
     sphere.location = vertices[poly.v]
     return sphere
 
+
 def create_poly_capsule(poly, materials, vertices):
     capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
     v1 = vertices[poly.v1]
@@ -326,6 +341,7 @@ def create_poly_capsule(poly, materials, vertices):
     capsule.rotation_euler = rot
 
     return capsule
+
 
 def create_poly_cylinder(poly, materials, vertices):
     cylinder = init_poly_obj(poly, SollumType.BOUND_POLY_CYLINDER, materials)
@@ -345,12 +361,14 @@ def create_poly_cylinder(poly, materials, vertices):
 
     return cylinder
 
+
 POLY_TO_OBJ_MAP = {
     PolyBox: create_poly_box,
     PolySphere: create_poly_sphere,
     PolyCapsule: create_poly_capsule,
     PolyCylinder: create_poly_cylinder,
 }
+
 
 def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
     return POLY_TO_OBJ_MAP[type(poly)](poly, materials, vertices)

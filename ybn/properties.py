@@ -148,7 +148,6 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         min=0.01,
     )
 
-
     def sphere_radius_getter(self) -> float:
         from .ybnexport import get_bound_extents
         from ..tools.meshhelper import get_inner_sphere_radius
@@ -171,7 +170,6 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         min=0.01,
     )
-
 
     def capsule_axis(self):
         obj = self.id_data
@@ -198,7 +196,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         extents = bbmax - bbmin
         radius = extents.x * 0.5
         length = extents.z if self.capsule_axis() == "Z" else extents.y
-        length = max(0.0, length - radius * 2.0) # Remove capsule caps from length
+        length = max(0.0, length - radius * 2.0)  # Remove capsule caps from length
         return length
 
     def capsule_radius_setter(self, value: float):
@@ -228,7 +226,6 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         min=0.0,
     )
-
 
     def cylinder_axis(self):
         obj = self.id_data
@@ -377,7 +374,8 @@ def register():
     bpy.types.Object.composite_flags2 = bpy.props.PointerProperty(type=BoundFlags)
 
     bpy.types.WindowManager.sz_collision_material_index = bpy.props.IntProperty(name="Material Index")
-    bpy.types.WindowManager.sz_collision_materials = bpy.props.CollectionProperty(type=CollisionMaterial, name="Collision Materials")
+    bpy.types.WindowManager.sz_collision_materials = bpy.props.CollectionProperty(
+        type=CollisionMaterial, name="Collision Materials")
 
     bpy.types.WindowManager.sz_flag_preset_index = bpy.props.IntProperty(name="Flag Preset Index")
     bpy.types.WindowManager.sz_flag_presets = bpy.props.CollectionProperty(type=FlagPresetProp, name="Flag Presets")
@@ -419,6 +417,11 @@ def register():
              SOLLUMZ_UI_NAMES[SollumType.BOUND_CYLINDER], "Create a bound cylinder object"),
             (SollumType.BOUND_DISC.value,
              SOLLUMZ_UI_NAMES[SollumType.BOUND_DISC], "Create a bound disc object"),
+            (SollumType.BOUND_PLANE.value,
+             SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE] + " (for cloth only)",
+             "Create a bound plane object. This is an infinite plane that can only be used as part of a fragment cloth "
+             "world bounds"
+             ),
         ],
         name="Type",
         default=SollumType.BOUND_COMPOSITE.value

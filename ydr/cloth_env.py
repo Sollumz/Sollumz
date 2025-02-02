@@ -24,9 +24,13 @@ from ..tools.blenderhelper import (
 from ..tools.meshhelper import get_tangent_required
 from ..sollumz_properties import (
     SollumType,
+    SOLLUMZ_UI_NAMES,
     LODLevel,
 )
-from ..ybn.ybnexport import get_scale_to_apply_to_bound
+from ..ybn.ybnexport import (
+    create_composite_xml,
+    get_scale_to_apply_to_bound,
+)
 from .ydrexport import (
     get_bone_index,
     create_model_xml,
@@ -433,5 +437,24 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
             t.non_pin_vert1 = 0
     else:
         env_cloth.tuning = None
+
+    if cloth_props.world_bounds:
+        verlet.bounds = create_composite_xml(cloth_props.world_bounds, allow_planes=True)
+
+        invalid_bounds = [
+            c for c in cloth_props.world_bounds.children
+            if c.sollum_type not in {SollumType.BOUND_PLANE, SollumType.BOUND_CAPSULE}
+        ]
+        if invalid_bounds:
+            invalid_bounds_names = [f"'{o.name}'" for o in invalid_bounds]
+            invalid_bounds_names = ", ".join(invalid_bounds_names)
+            logger.warning(
+                f"Fragment '{frag_obj.name}' has cloth world bounds with unsupported types! "
+                f"Only {SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE]} and {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} "
+                f"types are supported.\n"
+                f"The following bounds have unsupported types: {invalid_bounds_names}."
+            )
+    else:
+        verlet.bounds = None
 
     return env_cloth
