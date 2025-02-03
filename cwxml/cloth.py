@@ -186,7 +186,8 @@ class VerletClothVerticesProperty(ElementProperty):
 
         for vertex in self.value:
             if not isinstance(vertex, Vector):
-                raise TypeError(f"VerletClothVerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
+                raise TypeError(
+                    f"VerletClothVerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
             text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, NaN\n")  # padding component exported by CW
 
         element.text = "".join(text)
@@ -271,13 +272,12 @@ class ClothController(ElementTree):
         super().__init__()
         self.name = TextProperty("Name")
         self.flags = ValueProperty("Type")
-        self.unknown_78 = ValueProperty("Unknown78", 0.0)  # PinRadiusScale of characterClothController
         self.bridge = ClothBridgeSimGfx()
         self.morph_controller = MorphController()
         self.cloth_high = VerletCloth("VerletCloth1")
         self.cloth_med = VerletCloth("VerletCloth2")
         self.cloth_low = VerletCloth("VerletCloth3")
-        self.cloth_vlow = VerletCloth("VerletCloth4")  # not currently exported/imported by CW :(
+        # self.cloth_vlow = VerletCloth("VerletCloth4")  # not exported/imported by CW and unsupported by the game anyways
 
 
 class ClothInstanceTuning(ElementTree):
@@ -291,7 +291,7 @@ class ClothInstanceTuning(ElementTree):
         self.extra_force_x = ValueProperty("Unknown20", 0.0)
         self.extra_force_y = ValueProperty("Unknown24", 0.0)
         self.extra_force_z = ValueProperty("Unknown28", 0.0)
-        self.extra_force_w = ValueProperty("Unknown2C", 0.0) # just padding, extra_force is Vec3V
+        self.extra_force_w = ValueProperty("Unknown2C", 0.0)  # just padding, extra_force is Vec3V
         self.flags = ValueProperty("Flags", 0)
         self.weight = ValueProperty("Unknown34", 0.0)
         self.distance_threshold = ValueProperty("Unknown38", 0.0)
@@ -363,7 +363,7 @@ class CharacterClothBinding(ElementTree):
     def __init__(self):
         super().__init__()
         self.weights = Vector4Property("Weights")
-        self.index0 = ValueProperty("Index0") # indices into bone_ids/bone_indices arrays
+        self.index0 = ValueProperty("Index0")  # indices into bone_ids/bone_indices arrays
         self.index1 = ValueProperty("Index1")
         self.index2 = ValueProperty("Index2")
         self.index3 = ValueProperty("Index3")
@@ -383,7 +383,8 @@ class CharacterClothController(ClothController):
 
     def __init__(self):
         super().__init__()
-        self.pin_radius_set_threshold = ValueProperty("UnknownA0")
+        self.pin_radius_scale = ValueProperty("Unknown78")
+        self.pin_radius_threshold = ValueProperty("UnknownA0")
         self.wind_scale = ValueProperty("UnknownDC")
         self.vertices = VerletClothVerticesProperty("Vertices")
         self.indices = InlineValueListProperty("Indices")

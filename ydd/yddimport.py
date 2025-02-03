@@ -135,9 +135,9 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
     vertices = controller.vertices
     indices = controller.indices
 
+    # TODO(cloth): import verlet cloth normals? currently exported normals are different
     vertices = np.array(vertices)
     indices = np.array(indices).reshape((-1, 3))
-
 
     mesh = bpy.data.meshes.new(f"{cloth.name}.cloth")
     mesh.from_pydata(vertices, [], indices)
@@ -146,7 +146,9 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
     pin_radius = cloth.controller.bridge.pin_radius_high
     weights = cloth.controller.bridge.vertex_weights_high
     inflation_scale = cloth.controller.bridge.inflation_scale_high
-    display_map = np.array(cloth.controller.bridge.display_map_high)
+    mesh_to_cloth_map = np.array(cloth.controller.bridge.display_map_high)
+    cloth_to_mesh_map = np.empty_like(mesh_to_cloth_map)
+    cloth_to_mesh_map[mesh_to_cloth_map] = np.arange(len(mesh_to_cloth_map))
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
 
     has_pinned = pinned_vertices_count > 0
@@ -165,7 +167,7 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
     if has_inflation_scale:
         mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
 
-    for mesh_vert_index, cloth_vert_index in enumerate(display_map):
+    for mesh_vert_index, cloth_vert_index in enumerate(mesh_to_cloth_map):
         mesh_vert_index = cloth_vert_index # NOTE: in character cloths both are the same?
 
         if has_pinned:
@@ -183,16 +185,13 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
 
     custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
     if custom_edges:
-        cloth_to_mesh_map = [-1] * len(display_map)
-        for mesh_vert_index, cloth_vert_index in enumerate(display_map):
-            cloth_to_mesh_map[cloth_vert_index] = mesh_vert_index
         next_edge = len(mesh.edges)
         mesh.edges.add(len(custom_edges))
         for custom_edge in custom_edges:
             v0 = custom_edge.vertex0
             v1 = custom_edge.vertex1
-            mv0 = cloth_to_mesh_map[v0]
-            mv1 = cloth_to_mesh_map[v1]
+            mv0 = int(cloth_to_mesh_map[v0])
+            mv1 = int(cloth_to_mesh_map[v1])
             mesh.edges[next_edge].vertices = mv0, mv1
             next_edge += 1
 

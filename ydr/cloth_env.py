@@ -279,7 +279,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
 
     verlet = controller.cloth_high  # TODO(cloth): other lods
     verlet.vertex_positions = vertices
-    # verlet.vertex_normals = ...  # TODO(cloth): cloth vertex normals, when should be exported? they are not always there
+    verlet.vertex_normals = None  # env cloth never has vertex normals
     verlet.bb_min = Vector(np.min(vertices, axis=0))
     verlet.bb_max = Vector(np.max(vertices, axis=0))
     verlet.switch_distance_up = 500.0  # TODO(cloth): switch distance? think it is only needed with multiple lods
@@ -452,7 +452,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
                 f"Fragment '{frag_obj.name}' has cloth world bounds with unsupported types! "
                 f"Only {SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE]} and {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} "
                 f"types are supported.\n"
-                f"The following bounds have unsupported types: {invalid_bounds_names}."
+                f"The following bounds are unsupported: {invalid_bounds_names}."
             )
     else:
         verlet.bounds = None

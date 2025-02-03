@@ -384,7 +384,7 @@ def get_pose_inverse(obj: bpy.types.Object) -> Matrix:
     pose_bone = get_child_of_pose_bone(obj)
 
     if bone and pose_bone:
-        return (pose_bone.matrix @ bone.matrix_local.inverted()).inverted()
+        return (bone.matrix_local.inverted() @ pose_bone.matrix).inverted()
 
     return Matrix()
 
