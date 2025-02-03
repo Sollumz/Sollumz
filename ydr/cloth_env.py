@@ -39,6 +39,8 @@ from .ydrexport import (
 )
 from .. import logger
 
+CLOTH_ENV_MAX_VERTICES = 1000
+
 
 def cloth_env_find_mesh_objects(frag_obj: Object, silent: bool = False) -> list[Object]:
     """Returns a list of mesh objects that use a cloth material in the fragment. If not silent, warns the user if a mesh
@@ -155,7 +157,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         )
         return None
 
-    from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
+    from .cloth import mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
 
     env_cloth = EnvironmentCloth()
     env_cloth.flags = 0
@@ -164,10 +166,10 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     cloth_mesh.calc_loop_triangles()
 
     num_vertices = len(cloth_mesh.vertices)
-    if num_vertices > CLOTH_MAX_VERTICES:
+    if num_vertices > CLOTH_ENV_MAX_VERTICES:
         logger.error(
             f"Fragment '{frag_obj.name}' has cloth with too many vertices! "
-            f"The maximum is {CLOTH_MAX_VERTICES} vertices but drawable model '{cloth_obj.name}' has "
+            f"The maximum is {CLOTH_ENV_MAX_VERTICES} vertices but drawable model '{cloth_obj.name}' has "
             f"{num_vertices} vertices.\n"
             f"Cloth won't be exported!"
         )

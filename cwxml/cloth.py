@@ -1,6 +1,6 @@
 
 from abc import ABC as AbstractClass, abstractmethod
-from collections.abc import MutableSequence
+from collections.abc import MutableSequence, Sequence
 from collections import defaultdict
 from mathutils import Vector
 from xml.etree import ElementTree as ET
@@ -369,8 +369,12 @@ class CharacterClothBinding(ElementTree):
         self.index3 = ValueProperty("Index3")
 
     @property
-    def indices(self):
+    def indices(self) -> tuple[int, int, int, int]:
         return self.index0, self.index1, self.index2, self.index3
+
+    @indices.setter
+    def indices(self, values: Sequence[int]):
+        self.index0, self.index1, self.index2, self.index3 = values
 
 
 class CharacterClothBindingList(ListProperty):

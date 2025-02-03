@@ -73,6 +73,28 @@ def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uin
     return vertex_arr, index_arr
 
 
+def normalize_weights(weights_arr: NDArray[np.float32]) -> NDArray[np.float32]:
+    """Normalize weights such that their sum is 1."""
+    row_sums = weights_arr.sum(axis=1, keepdims=True)
+    return np.divide(weights_arr, row_sums, out=np.zeros_like(weights_arr), where=row_sums != 0)
+
+
+def get_sorted_vertex_group_elements(vertex: bpy.types.MeshVertex, bone_by_vgroup: dict) -> list[bpy.types.VertexGroupElement]:
+    elements = []
+    for element in vertex.groups:
+        bone_index = bone_by_vgroup.get(element.group, -1)
+
+        # skip the group that doesn't have a corresponding bone
+        if bone_index == -1:
+            continue
+
+        elements.append(element)
+
+    # sort by weight so the groups with less influence are to be ignored
+    elements = sorted(elements, reverse=True, key=lambda e: e.weight)
+    return elements
+
+
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
 
@@ -178,7 +200,7 @@ class VertexBufferBuilder:
                 "these vertices."
             )
 
-        weights_arr = self._normalize_weights(weights_arr)
+        weights_arr = normalize_weights(weights_arr)
         weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
 
         weights_arr = self._convert_to_int_range(weights_arr)
@@ -188,20 +210,7 @@ class VertexBufferBuilder:
         return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
 
     def _get_sorted_vertex_group_elements(self, vertex: bpy.types.MeshVertex) -> list[bpy.types.VertexGroupElement]:
-        elements = []
-        bone_by_vgroup = self._bone_by_vgroup
-        for element in vertex.groups:
-            bone_index = bone_by_vgroup.get(element.group, -1)
-
-            # skip the group that doesn't have a corresponding bone
-            if bone_index == -1:
-                continue
-
-            elements.append(element)
-
-        # sort by weight so the groups with less influence are to be ignored
-        elements = sorted(elements, reverse=True, key=lambda e: e.weight)
-        return elements
+        return get_sorted_vertex_group_elements(vertex, self._bone_by_vgroup)
 
     def _sort_weights_inds(self, weights_arr: NDArray[np.float32], ind_arr: NDArray[np.uint32]):
         """Sort BlendWeights and BlendIndices."""
@@ -215,12 +224,6 @@ class VertexBufferBuilder:
 
         # Return with index shifted by 3
         return np.roll(weights_sorted, 3, axis=1), np.roll(ind_sorted, 3, axis=1)
-
-    def _normalize_weights(self, weights_arr: NDArray[np.float32]) -> NDArray[np.float32]:
-        """Normalize weights such that their sum is 1."""
-        row_sums = weights_arr.sum(axis=1, keepdims=True)
-        return np.divide(weights_arr, row_sums, out=np.zeros_like(
-            weights_arr), where=row_sums != 0)
 
     def _convert_to_int_range(self, arr: NDArray[np.float32]) -> NDArray[np.uint32]:
         """Convert float array from range 0-1 to range 0-255"""

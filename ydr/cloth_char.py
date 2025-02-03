@@ -1,7 +1,11 @@
 import numpy as np
+from numpy.typing import NDArray
 from bpy.types import (
     Object,
     Material,
+    Mesh,
+    MeshVertex,
+    VertexGroupElement,
 )
 from typing import Optional
 from mathutils import (
@@ -14,6 +18,7 @@ from ..cwxml.drawable import (
 )
 from ..cwxml.cloth import (
     CharacterCloth,
+    CharacterClothBinding,
     ClothDictionary,
     VerletClothEdge,
 )
@@ -39,6 +44,8 @@ from .ydrexport import (
     set_drawable_xml_extents,
 )
 from .. import logger
+
+CLOTH_CHAR_MAX_VERTICES = 254
 
 
 def cloth_char_find_mesh_objects(drawable_obj: Object, silent: bool = False) -> list[Object]:
@@ -114,13 +121,13 @@ def cloth_char_export(
             f"The following bounds are unsupported: {invalid_bounds_names}."
         )
 
-    from .cloth import CLOTH_MAX_VERTICES, mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
+    from .cloth import mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
 
     char_cloth = CharacterCloth()
     char_cloth.name = remove_number_suffix(drawable_obj.name)
     bounds_to_index = {}
     char_cloth.bounds = create_composite_xml(cloth_bounds_obj, out_child_obj_to_index=bounds_to_index)
-    char_cloth.parent_matrix = Matrix.Identity(4) # TODO(cloth): char cloth parent matrix
+    char_cloth.parent_matrix = Matrix.Identity(4)  # TODO(cloth): char cloth parent matrix
     # char_cloth.poses = ... # TODO(cloth): char cloth poses
 
     bounds_bone_ids = [None] * len(bounds_to_index)
@@ -135,9 +142,9 @@ def cloth_char_export(
         else:
             bounds_bone_ids[bound_index] = bone.bone_properties.tag
 
-
         # Make bound transform relative to its bone
-        # TODO: refactor/optimize this, mostly copied from yftexport
+        # TODO(cloth): refactor/optimize this, mostly copied from yftexport
+
         def _get_bone_transforms(bone):
             return Matrix.LocRotScale(bone.translation, bone.rotation, bone.scale)
         bone_transforms = {}
@@ -164,10 +171,10 @@ def cloth_char_export(
     cloth_mesh.calc_loop_triangles()
 
     num_vertices = len(cloth_mesh.vertices)
-    if num_vertices > CLOTH_MAX_VERTICES:
+    if num_vertices > CLOTH_CHAR_MAX_VERTICES:
         logger.error(
             f"Drawable '{drawable_obj.name}' has cloth with too many vertices! "
-            f"The maximum is {CLOTH_MAX_VERTICES} vertices but cloth mesh '{cloth_obj.name}' has "
+            f"The maximum is {CLOTH_CHAR_MAX_VERTICES} vertices but cloth mesh '{cloth_obj.name}' has "
             f"{num_vertices} vertices.\n"
             f"Cloth won't be exported!"
         )
@@ -220,11 +227,6 @@ def cloth_char_export(
     controller.pin_radius_threshold = 0.04
     controller.wind_scale = 1.0
     controller.vertices = vertices
-    # TODO(cloth): controller stuff
-    # TODO(cloth): verify indices are not needed, pretty sure the game converts the IDs to indices when loading the cloth
-    # controller.bone_indices = InlineValueListProperty("UnknownB0")
-    # controller.bone_ids = InlineValueListProperty("BoneIDs")
-    # controller.bindings = CharacterClothBindingList()
     bridge = controller.bridge
     bridge.vertex_count_high = num_vertices
     # TODO(cloth): multiple pin radius sets support
@@ -314,6 +316,22 @@ def cloth_char_export(
     verlet.custom_edges = custom_edges
     verlet.bounds = None  # char cloth doesn't have embedded world bounds
 
+    # Cloth vertex bindings to bones
+    bind_weights, bind_indices, bind_bone_indices = _cloth_char_get_bindings(cloth_mesh, cloth_obj_eval, drawable_obj)
+    bind_bone_ids = [drawable_obj.data.bones[i].bone_properties.tag for i in bind_bone_indices]
+    bindings = [None] * num_vertices
+    for i in range(num_vertices):
+        binding = CharacterClothBinding()
+        binding.weights = Vector(bind_weights[i])
+        binding.indices = Vector(bind_indices[i])
+        bindings[i] = binding
+
+    controller.bone_indices = bind_bone_indices
+    controller.bone_ids = bind_bone_ids
+    controller.bindings = bindings
+
+    cloth_obj_eval.to_mesh_clear()
+
     # Remove elements for other LODs. Char cloth only supports a single LOD
     controller.cloth_med = None
     controller.cloth_low = None
@@ -335,71 +353,52 @@ def cloth_char_export(
     bridge.display_map_low = None
     bridge.display_map_vlow = None
 
-    # cloth_drawable_xml = env_cloth.drawable
-    # cloth_drawable_xml.name = "skel"
-    # cloth_drawable_xml.shader_group = drawable_xml.shader_group
-    # cloth_drawable_xml.skeleton = drawable_xml.skeleton
-    # cloth_drawable_xml.joints = drawable_xml.joints
-    #
-    # scale = get_scale_to_apply_to_bound(cloth_obj)
-    # transforms_to_apply = Matrix.Diagonal(scale).to_4x4()
-    #
-    # # TODO(cloth): lods
-    # model_xml = create_model_xml(cloth_obj, LODLevel.HIGH, materials, transforms_to_apply=transforms_to_apply)
-    # model_xml.bone_index = get_bone_index(frag_obj.data, cloth_bone)
-    #
-    # # Given we are limited to CLOTH_MAX_VERTICES, it should always only generate a single geometry
-    # assert len(model_xml.geometries) == 1, "Only a single geometry should be exported"
-    # geom = model_xml.geometries[0]
-    #
-    # append_model_xml(cloth_drawable_xml, model_xml, LODLevel.HIGH)
-    #
-    # set_drawable_xml_extents(cloth_drawable_xml)
-    #
-    # # Cloth require a different FVF than the default one
-    # geom.vertex_buffer.get_element("layout").type = (
-    #     "GTAV2"
-    #     if get_tangent_required(cloth_obj_eval.data.materials[0])
-    #     else "GTAV3"
-    # )
-    #
-    # from ..ydr.ydrexport import set_drawable_xml_flags, set_drawable_xml_properties
-    # set_drawable_xml_flags(cloth_drawable_xml)
-    # assert cloth_obj.parent.sollum_type == SollumType.DRAWABLE
-    # set_drawable_xml_properties(cloth_obj.parent, cloth_drawable_xml)
-    #
-    # # Sort the geometry vertices to match the display map
-    # geom_to_mesh_map = [-1] * len(geom.vertex_buffer.data)
-    # mesh_to_geom_map = [-1] * len(geom.vertex_buffer.data)
-    # for geom_vertex_index, geom_vertex in enumerate(geom.vertex_buffer.data["Position"]):
-    #     matching_cloth_vertex_index = None
-    #     for cloth_vertex_index, cloth_vertex in enumerate(verlet.vertex_positions):
-    #         if np.allclose(geom_vertex, cloth_vertex, atol=1e-5):
-    #             matching_cloth_vertex_index = cloth_vertex_index
-    #             break
-    #
-    #     assert matching_cloth_vertex_index is not None, \
-    #         f"Could not match cloth vertex for drawable geometry vertex #{geom_vertex_index} {Vector(geom_vertex)}"
-    #
-    #     mesh_vertex_index = cloth_to_mesh_vertex_map[matching_cloth_vertex_index]
-    #     assert geom_to_mesh_map[geom_vertex_index] == -1, f"Geometry vertex #{geom_vertex_index} already assigned"
-    #     assert mesh_to_geom_map[mesh_vertex_index] == -1, f"Mesh vertex #{mesh_vertex_index} already assigned"
-    #
-    #     geom_to_mesh_map[geom_vertex_index] = mesh_vertex_index
-    #     mesh_to_geom_map[mesh_vertex_index] = geom_vertex_index
-    #
-    # geom_to_mesh_map = np.array(geom_to_mesh_map)
-    # mesh_to_geom_map = np.array(mesh_to_geom_map)
-    #
-    # geom.vertex_buffer.data = geom.vertex_buffer.data[mesh_to_geom_map]
-    # geom.index_buffer.data = geom_to_mesh_map[geom.index_buffer.data]
-    #
-    # del geom_to_mesh_map
-    # del mesh_to_geom_map
-
-    cloth_obj_eval.to_mesh_clear()
-
     return char_cloth
+
+
+def _cloth_char_get_bindings(
+    cloth_mesh: Mesh,
+    cloth_obj: Object,
+    drawable_obj: Object
+) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[int]]:
+    from .vertex_buffer_builder import normalize_weights, get_sorted_vertex_group_elements, get_bone_by_vgroup
+
+    vertex_groups = cloth_obj.vertex_groups
+    bones = drawable_obj.data.bones
+    bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
+
+    num_verts = len(cloth_mesh.vertices)
+
+    ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
+    weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
+    bone_index_map = {}
+
+    ungrouped_verts = 0
+
+    for i, vert in enumerate(cloth_mesh.vertices):
+        groups = get_sorted_vertex_group_elements(vert, bone_by_vgroup)
+        if not groups:
+            ungrouped_verts += 1
+            continue
+
+        for j, grp in enumerate(groups):
+            if j > 3:
+                break
+
+            weights_arr[i][j] = grp.weight
+            bone_index = bone_by_vgroup[grp.group]
+            ind_arr[i][j] = bone_index_map.setdefault(bone_index, len(bone_index_map))
+
+    if ungrouped_verts != 0:
+        logger.warning(
+            f"Character cloth mesh '{cloth_mesh.name}' has {ungrouped_verts} vertices not weighted to any vertex group! "
+            "These vertices will be weighted to the root bone which may cause parts to float in-game. "
+            "In Edit Mode, you can use 'Select > Select All by Trait > Ungrouped vertices' to select "
+            "these vertices."
+        )
+
+    weights_arr = normalize_weights(weights_arr)
+    return weights_arr, ind_arr, list(bone_index_map.keys())
 
 
 def cloth_char_export_dictionary(dwd_obj: Object, drawable_obj_to_xml: dict[Object, Drawable]) -> Optional[ClothDictionary]:

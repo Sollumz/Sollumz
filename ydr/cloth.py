@@ -9,8 +9,6 @@ import numpy as np
 from ..cwxml.shader import ShaderManager
 from ..sollumz_properties import SollumType
 
-CLOTH_MAX_VERTICES = 1000
-
 
 class ClothAttr(str, Enum):
     PINNED = ".cloth.pinned"
