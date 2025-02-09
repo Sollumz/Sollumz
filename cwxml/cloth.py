@@ -188,7 +188,8 @@ class VerletClothVerticesProperty(ElementProperty):
             if not isinstance(vertex, Vector):
                 raise TypeError(
                     f"VerletClothVerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
-            text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, NaN\n")  # padding component exported by CW
+            # text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, NaN\n")  # padding component exported by CW
+            text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, 0.0\n")  # set padding to 0.0 for now, not all arrays have NaN here
 
         element.text = "".join(text)
 

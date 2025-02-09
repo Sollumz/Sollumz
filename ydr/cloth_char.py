@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from numpy.typing import NDArray
 from bpy.types import (
@@ -6,6 +7,7 @@ from bpy.types import (
     Mesh,
     MeshVertex,
     VertexGroupElement,
+    Armature,
 )
 from typing import Optional
 from mathutils import (
@@ -46,6 +48,7 @@ from .ydrexport import (
 from .. import logger
 
 CLOTH_CHAR_MAX_VERTICES = 254
+CLOTH_CHAR_VERTEX_GROUP_NAME = "CLOTH"
 
 
 def cloth_char_find_mesh_objects(drawable_obj: Object, silent: bool = False) -> list[Object]:
@@ -76,9 +79,7 @@ def cloth_char_find_bounds(char_cloth_obj: Object) -> list[Object]:
 
 def cloth_char_export(
     drawable_obj: Object,
-    drawable_xml: Drawable,
-    materials: list[Material],
-    controller_name: str
+    controller_name: str,
 ) -> Optional[CharacterCloth]:
     cloth_objs = cloth_char_find_mesh_objects(drawable_obj)
     if not cloth_objs:
@@ -121,6 +122,11 @@ def cloth_char_export(
             f"The following bounds are unsupported: {invalid_bounds_names}."
         )
 
+    # Need the bone transforms to calculate the bound transforms
+    from .ydrexport import create_skeleton_xml
+    assert drawable_obj.type == "ARMATURE"
+    skeleton = create_skeleton_xml(drawable_obj)
+
     from .cloth import mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
 
     char_cloth = CharacterCloth()
@@ -148,7 +154,7 @@ def cloth_char_export(
         def _get_bone_transforms(bone):
             return Matrix.LocRotScale(bone.translation, bone.rotation, bone.scale)
         bone_transforms = {}
-        bones = drawable_xml.skeleton.bones
+        bones = skeleton.bones
         for b in bones:
             transforms = _get_bone_transforms(b)
             if b.parent_index != -1:
@@ -317,7 +323,9 @@ def cloth_char_export(
     verlet.bounds = None  # char cloth doesn't have embedded world bounds
 
     # Cloth vertex bindings to bones
-    bind_weights, bind_indices, bind_bone_indices = _cloth_char_get_bindings(cloth_mesh, cloth_obj_eval, drawable_obj)
+    bind_weights, bind_indices, bind_bone_indices = _cloth_char_get_cloth_to_bone_bindings(
+        cloth_mesh, cloth_obj_eval, drawable_obj
+    )
     bind_bone_ids = [drawable_obj.data.bones[i].bone_properties.tag for i in bind_bone_indices]
     bindings = [None] * num_vertices
     for i in range(num_vertices):
@@ -356,7 +364,7 @@ def cloth_char_export(
     return char_cloth
 
 
-def _cloth_char_get_bindings(
+def _cloth_char_get_cloth_to_bone_bindings(
     cloth_mesh: Mesh,
     cloth_obj: Object,
     drawable_obj: Object
@@ -401,11 +409,93 @@ def _cloth_char_get_bindings(
     return weights_arr, ind_arr, list(bone_index_map.keys())
 
 
-def cloth_char_export_dictionary(dwd_obj: Object, drawable_obj_to_xml: dict[Object, Drawable]) -> Optional[ClothDictionary]:
+def _cloth_char_get_mesh_to_cloth_bindings(
+    cloth: CharacterCloth,
+    mesh_binded_verts: NDArray[np.float32],
+) -> tuple[NDArray[np.float32], NDArray[np.uint32]]:
+
+    from ..shared.geometry import (
+        tris_normals,
+        tris_areas,
+        tris_areas_from_verts,
+        distance_signed_point_to_planes,
+    )
+
+    # Max distance from mesh vertex to cloth triangle to be considered
+    MAX_DISTANCE_THRESHOLD = 0.05
+
+    num_binded_verts = len(mesh_binded_verts)
+
+    cloth_verts = np.array(cloth.controller.vertices)
+    cloth_tris = np.array(cloth.controller.indices).reshape((-1, 3))
+    cloth_tris_verts = cloth_verts[cloth_tris]
+    cloth_tris_normals = tris_normals(cloth_tris_verts)
+    cloth_tris_areas = tris_areas(cloth_tris_verts)
+    cloth_tris_v0, cloth_tris_v1, cloth_tris_v2 = cloth_tris_verts[:, 0], cloth_tris_verts[:, 1], cloth_tris_verts[:, 2]
+
+    ind_arr = np.empty((num_binded_verts, 4), dtype=np.uint32)
+    weights_arr = np.empty((num_binded_verts, 4), dtype=np.float32)
+
+    # Bind each mesh vertex to a cloth triangle
+    for mesh_vert_idx in range(num_binded_verts):
+        mesh_vert = mesh_binded_verts[mesh_vert_idx]
+
+        # Calculate the distance from the mesh vertex to every cloth triangle plane
+        distance_to_tris = distance_signed_point_to_planes(mesh_vert, cloth_tris_verts[:, 0], cloth_tris_normals)
+
+        # Project the mesh vertex onto every cloth triangle plane
+        projected_to_tris = mesh_vert - cloth_tris_normals * distance_to_tris[:, np.newaxis]
+
+        # Calculate the barycentric coordinates of each projected vertex
+        tris_areas0 = tris_areas_from_verts(cloth_tris_v1, cloth_tris_v2, projected_to_tris)
+        tris_areas1 = tris_areas_from_verts(cloth_tris_v2, cloth_tris_v0, projected_to_tris)
+        tris_areas2 = tris_areas_from_verts(cloth_tris_v0, cloth_tris_v1, projected_to_tris)
+
+        tris_w0 = tris_areas0 / cloth_tris_areas
+        tris_w1 = tris_areas1 / cloth_tris_areas
+        tris_w2 = tris_areas2 / cloth_tris_areas
+
+        # Use the squared distance between mesh vertex and projected vertex as error measure
+        err_to_tris = np.sum((mesh_vert - projected_to_tris) ** 2, axis=1)
+
+        # Triangles are considered valid if:
+        #  1. Projected vertex falls within the triangle, i.e. the barycentric coordinates sum 1 (with some leeway)
+        #  2. They are not too far away from the mesh vertex
+        valid_tris_mask = ((tris_w0 + tris_w1 + tris_w2) < 1.05) & (distance_to_tris < MAX_DISTANCE_THRESHOLD)
+        valid_tris_indices = np.where(valid_tris_mask)[0]
+
+        # Find the triangle to bind this vertex to, the valid triangle with the least error
+        bind_tri_index = valid_tris_indices[np.argmin(err_to_tris[valid_tris_mask])]
+
+        b0, b1, b2 = cloth_tris[bind_tri_index]
+        w0, w1, w2 = tris_w0[bind_tri_index], tris_w1[bind_tri_index], tris_w2[bind_tri_index]
+        d = distance_to_tris[bind_tri_index]
+
+        # TODO(cloth): triangle winding order needs to be flipped in some cases (b1-b0-255-b2) -> (b0-b1-255-b2)
+        ind_arr[mesh_vert_idx, 0] = b1
+        ind_arr[mesh_vert_idx, 1] = b0
+        ind_arr[mesh_vert_idx, 2] = 255
+        ind_arr[mesh_vert_idx, 3] = b2
+
+        weights_arr[mesh_vert_idx, 0] = w0
+        weights_arr[mesh_vert_idx, 1] = w1
+        weights_arr[mesh_vert_idx, 2] = w2
+        weights_arr[mesh_vert_idx, 3] = d * 10.0 + 0.5
+
+    # Make sure weights stay in the [0, 1] range
+    weights_arr.clip(0.0, 1.0, out=weights_arr)
+
+    return weights_arr, ind_arr
+
+
+def cloth_char_export_dictionary(dwd_obj: Object) -> Optional[ClothDictionary]:
     cloth_dict = None
 
-    for drawable_obj, drawable_xml in drawable_obj_to_xml.items():
-        cloth = cloth_char_export(drawable_obj, drawable_xml, [], remove_number_suffix(dwd_obj.name))
+    for drawable_obj in dwd_obj.children:
+        if drawable_obj.sollum_type != SollumType.DRAWABLE:
+            continue
+
+        cloth = cloth_char_export(drawable_obj, remove_number_suffix(dwd_obj.name))
         if cloth is None:
             continue
 

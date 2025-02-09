@@ -122,7 +122,8 @@ class MeshBuilder:
             bone_name = f"UNKNOWN_BONE.{bone_index}"
 
             if bone_index == 99999:
-                bone_name = "CLOTH"
+                from .cloth_char import CLOTH_CHAR_VERTEX_GROUP_NAME
+                bone_name = CLOTH_CHAR_VERTEX_GROUP_NAME
             elif bones and bone_index < len(bones):
                 bone_name = bones[bone_index].name
 

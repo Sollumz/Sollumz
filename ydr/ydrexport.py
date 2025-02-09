@@ -30,6 +30,7 @@ from ..cwxml.drawable import (
     TextureShaderParameter,
     VertexBuffer,
 )
+from ..cwxml.cloth import CharacterCloth
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
@@ -76,7 +77,13 @@ def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
     return True
 
 
-def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, apply_transforms: bool = False):
+def create_drawable_xml(
+    drawable_obj: bpy.types.Object,
+    armature_obj: Optional[bpy.types.Object] = None,
+    materials: Optional[list[bpy.types.Material]] = None,
+    apply_transforms: bool = False,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+):
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
     drawable_xml = Drawable()
     drawable_xml.frag_bound_matrix = None
@@ -110,7 +117,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
         bones = None
         original_pose = "POSE"
 
-    create_model_xmls(drawable_xml, drawable_obj, materials, bones)
+    create_model_xmls(drawable_xml, drawable_obj, materials, bones, char_cloth_xml)
 
     drawable_xml.lights = create_xml_lights(drawable_obj)
 
@@ -125,7 +132,13 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     return drawable_xml
 
 
-def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_model_xmls(
+    drawable_xml: Drawable,
+    drawable_obj: bpy.types.Object,
+    materials: list[bpy.types.Material],
+    bones: Optional[list[bpy.types.Bone]] = None,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+):
     model_objs = get_model_objs(drawable_obj)
 
     if bones is not None:
@@ -143,7 +156,7 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
             if lod.mesh is None:
                 continue
 
-            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply)
+            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply, char_cloth_xml)
             if not model_xml.geometries:
                 continue
 
@@ -183,7 +196,14 @@ def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[
 
 
 @operates_on_lod_level
-def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
+def create_model_xml(
+    model_obj: bpy.types.Object,
+    lod_level: LODLevel,
+    materials: list[bpy.types.Material],
+    bones: Optional[list[bpy.types.Bone]] = None,
+    transforms_to_apply: Optional[Matrix] = None,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+):
     model_xml = DrawableModel()
 
     set_model_xml_properties(model_obj, lod_level, bones, model_xml)
@@ -196,7 +216,8 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
         mesh_eval.transform(transforms_to_apply)
 
     geometries = create_geometries_xml(
-        mesh_eval, materials, bones, model_obj.vertex_groups)
+        mesh_eval, materials, bones, model_obj.vertex_groups, char_cloth_xml
+    )
     model_xml.geometries = geometries
 
     model_xml.bone_index = get_model_bone_index(model_obj)
@@ -244,7 +265,13 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, b
         model_xml.matrix_count = len(bones)
 
 
-def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
+def create_geometries_xml(
+    mesh_eval: bpy.types.Mesh,
+    materials: list[bpy.types.Material],
+    bones: Optional[list[bpy.types.Bone]] = None,
+    vertex_groups: Optional[list[bpy.types.VertexGroup]] = None,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+) -> list[Geometry]:
     is_cable = is_cable_mesh(mesh_eval)
     if len(mesh_eval.loops) == 0 and not is_cable: # cable mesh don't have faces, so no loops either
         logger.warning(f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
@@ -318,7 +345,7 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
     bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
 
-    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup).build()
+    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup, char_cloth_xml).build()
 
     for mat_index, loop_inds in loop_inds_by_mat.items():
         material = materials[mat_index]

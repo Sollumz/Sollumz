@@ -320,7 +320,7 @@ def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
     if "BlendIndices" not in vert_arr.dtype.names:
         return vert_arr
 
-    # TODO: assign cloth vertices to their vertex group instead of root bone
+    # Give vertices binded to cloth a magic number so mesh_builder knows it is cloth
     is_cloth = vert_arr['BlendIndices'][:, 2] == 255
     vert_arr["BlendIndices"][is_cloth] = 99999, 99999, 99999, 99999
 

@@ -11,14 +11,29 @@ from ..tools.meshhelper import (
     get_uv_map_name,
 )
 from ..cwxml.drawable import VertexBuffer
+from ..cwxml.cloth import CharacterCloth
 
 from .. import logger
+
+VGROUP_INVALID_BONE_ID = -1
+VGROUP_CLOTH_ID = -2
 
 
 def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bone]):
     bone_ind_by_name: dict[str, int] = {b.name: i for i, b in enumerate(bones)}
 
-    return {i: bone_ind_by_name[group.name] if group.name in bone_ind_by_name else -1 for i, group in enumerate(vgroups)}
+    from .cloth_char import CLOTH_CHAR_VERTEX_GROUP_NAME
+
+    return {
+        i: bone_ind_by_name[group.name]
+        if group.name in bone_ind_by_name
+        else (
+            VGROUP_CLOTH_ID
+            if group.name == CLOTH_CHAR_VERTEX_GROUP_NAME
+            else VGROUP_INVALID_BONE_ID
+        )
+        for i, group in enumerate(vgroups)
+    }
 
 
 def remove_arr_field(name: str, vertex_arr: NDArray):
@@ -82,10 +97,10 @@ def normalize_weights(weights_arr: NDArray[np.float32]) -> NDArray[np.float32]:
 def get_sorted_vertex_group_elements(vertex: bpy.types.MeshVertex, bone_by_vgroup: dict) -> list[bpy.types.VertexGroupElement]:
     elements = []
     for element in vertex.groups:
-        bone_index = bone_by_vgroup.get(element.group, -1)
+        bone_index = bone_by_vgroup.get(element.group, VGROUP_INVALID_BONE_ID)
 
         # skip the group that doesn't have a corresponding bone
-        if bone_index == -1:
+        if bone_index == VGROUP_INVALID_BONE_ID:
             continue
 
         elements.append(element)
@@ -98,7 +113,12 @@ def get_sorted_vertex_group_elements(vertex: bpy.types.MeshVertex, bone_by_vgrou
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
 
-    def __init__(self, mesh: bpy.types.Mesh, bone_by_vgroup: Optional[dict[int, int]] = None):
+    def __init__(
+        self,
+        mesh: bpy.types.Mesh,
+        bone_by_vgroup: Optional[dict[int, int]] = None,
+        char_cloth_xml: Optional[CharacterCloth] = None,
+    ):
         self.mesh = mesh
 
         self._bone_by_vgroup = bone_by_vgroup
@@ -108,6 +128,8 @@ class VertexBufferBuilder:
         self.mesh.loops.foreach_get("vertex_index", vert_inds)
 
         self._vert_inds = vert_inds
+
+        self._char_cloth = char_cloth_xml
 
     def build(self):
         if not self.mesh.loop_triangles:
@@ -177,12 +199,17 @@ class VertexBufferBuilder:
         ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
         weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
 
+        cloth_bind_verts = []
         ungrouped_verts = 0
 
         for i, vert in enumerate(self.mesh.vertices):
             groups = self._get_sorted_vertex_group_elements(vert)
             if not groups:
                 ungrouped_verts += 1
+                continue
+
+            if any(bone_by_vgroup[g.group] == VGROUP_CLOTH_ID for g in groups):
+                cloth_bind_verts.append(i)
                 continue
 
             for j, grp in enumerate(groups):
@@ -205,6 +232,23 @@ class VertexBufferBuilder:
 
         weights_arr = self._convert_to_int_range(weights_arr)
         weights_arr = self._renormalize_converted_weights(weights_arr)
+
+        if cloth_bind_verts:
+            cloth_bind_verts_mask = np.zeros(num_verts, dtype=bool)
+            cloth_bind_verts_mask[cloth_bind_verts] = 1
+
+            from .cloth_char import _cloth_char_get_mesh_to_cloth_bindings
+
+            cloth_bind_verts_pos = np.empty(num_verts * 3, dtype=np.float32)
+            self.mesh.attributes["position"].data.foreach_get("vector", cloth_bind_verts_pos)
+            cloth_bind_verts_pos = cloth_bind_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
+
+            cloth_bind_weights_arr, cloth_bind_ind_arr = _cloth_char_get_mesh_to_cloth_bindings(
+                self._char_cloth, cloth_bind_verts_pos
+            )
+
+            weights_arr[cloth_bind_verts_mask] = self._convert_to_int_range(cloth_bind_weights_arr)
+            ind_arr[cloth_bind_verts_mask] = cloth_bind_ind_arr
 
         # Return on loop domain
         return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
