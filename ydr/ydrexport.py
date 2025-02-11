@@ -395,6 +395,8 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
 
         loop_indices = all_loop_inds[tri_loop_inds]
 
+        if shader_index in loop_inds_by_mat:
+            logger.warning(f"Shader_index already in list, some geometry will be lost! This is most likely caused by a duplicate material for {mat.name} in {mesh.name}")
         loop_inds_by_mat[shader_index] = loop_indices
 
     return loop_inds_by_mat
