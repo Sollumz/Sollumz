@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 7
+SOLLUMZ_INTERNAL_VERSION = 8
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
