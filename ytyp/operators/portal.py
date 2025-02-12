@@ -133,14 +133,18 @@ class SOLLUMZ_OT_update_portal_from_selection(PortalCreatorHelper, bpy.types.Ope
 
     @classmethod
     def poll(cls, context):
-        return super().poll(context) and get_selected_portal(context) is not None
+        return (
+            super().poll(context) and
+            get_selected_portal(context) is not None and
+            not get_selected_archetype(context).portals.has_multiple_selection
+        )
 
     def get_portal(self, context):
         return get_selected_portal(context)
 
 
 class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete portal from selected archetype"""
+    """Delete selected portal(s)"""
     bl_idname = "sollumz.deleteportal"
     bl_label = "Delete Portal"
 
@@ -150,18 +154,20 @@ class SOLLUMZ_OT_delete_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.portals.remove(selected_archetype.portal_index)
-        selected_archetype.portal_index = max(
-            selected_archetype.portal_index - 1, 0)
+
+        indices_to_remove = selected_archetype.portals.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_archetype.portals.remove(index_to_remove)
+        selected_archetype.portals.select(new_active_index)
+
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
 
-        validate_dynamic_enums(
-            selected_archetype.entities, "attached_portal_id", selected_archetype.portals)
-        validate_dynamic_enum(
-            context.scene, "sollumz_add_entity_portal", selected_archetype.portals)
-        validate_dynamic_enum(
-            context.scene, "sollumz_entity_filter_portal", selected_archetype.portals)
+        validate_dynamic_enums(selected_archetype.entities, "attached_portal_id", selected_archetype.portals)
+        validate_dynamic_enum(context.scene, "sollumz_add_entity_portal", selected_archetype.portals)
+        validate_dynamic_enum(context.scene, "sollumz_entity_filter_portal", selected_archetype.portals)
 
         return True
 
@@ -176,43 +182,18 @@ class SOLLUMZ_OT_flip_portal(bpy.types.Operator):
         return get_selected_portal(context) is not None
 
     def execute(self, context):
-        selected_portal = get_selected_portal(context)
-        if selected_portal is not None:
-            corners = [selected_portal.corner1.copy(), selected_portal.corner2.copy(
-            ), selected_portal.corner3.copy(), selected_portal.corner4.copy()]
+        selected_archetype = get_selected_archetype(context)
+        for selected_portal in selected_archetype.portals.iter_selected_items():
+            corners = [
+                selected_portal.corner1.copy(), selected_portal.corner2.copy(),
+                selected_portal.corner3.copy(), selected_portal.corner4.copy()
+            ]
             selected_portal.corner4 = corners[0]
             selected_portal.corner3 = corners[1]
             selected_portal.corner2 = corners[2]
             selected_portal.corner1 = corners[3]
 
         return {"FINISHED"}
-
-
-class SetPortalRoomHelper(SOLLUMZ_OT_base):
-    bl_label = "Set to Selected"
-    room_from = False
-    room_to = False
-
-    @classmethod
-    def poll(cls, context):
-        return get_selected_portal(context) is not None
-
-    def run(self, context):
-        selected_room = get_selected_room(context)
-        selected_portal = get_selected_portal(context)
-        if selected_portal is None:
-            self.message("No portal selected!")
-            return False
-
-        if selected_room is None:
-            self.message("No room selected!")
-            return False
-
-        if self.room_from:
-            selected_portal.room_from_id = str(selected_room.id)
-        elif self.room_to:
-            selected_portal.room_to_id = str(selected_room.id)
-        return True
 
 
 class SOLLUMZ_OT_search_portal_room_from(SearchEnumHelper, bpy.types.Operator):
@@ -227,7 +208,8 @@ class SOLLUMZ_OT_search_portal_room_from(SearchEnumHelper, bpy.types.Operator):
         return get_selected_portal(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_portal(context)
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype.portals.selection
 
 
 class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
@@ -242,4 +224,5 @@ class SOLLUMZ_OT_search_portal_room_to(SearchEnumHelper, bpy.types.Operator):
         return get_selected_portal(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_portal(context)
+        selected_archetype = get_selected_archetype(context)
+        return selected_archetype.portals.selection

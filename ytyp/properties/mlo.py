@@ -114,14 +114,11 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     bb_min: bpy.props.FloatVectorProperty(name="Bounds Min", subtype="XYZ")
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
     blend: bpy.props.FloatProperty(name="Blend", default=1)
-    timecycle: bpy.props.StringProperty(
-        name="Timecycle", default="int_gasstation")
-    secondary_timecycle: bpy.props.StringProperty(
-        name="Secondary Timecycle")
+    timecycle: bpy.props.StringProperty(name="Timecycle", default="int_gasstation")
+    secondary_timecycle: bpy.props.StringProperty(name="Secondary Timecycle")
     flags: bpy.props.PointerProperty(type=RoomFlags, name="Flags")
     floor_id: bpy.props.IntProperty(name="Floor ID")
-    exterior_visibility_depth: bpy.props.IntProperty(
-        name="Exterior Visibility Depth", default=-1)
+    exterior_visibility_depth: bpy.props.IntProperty(name="Exterior Visibility Depth", default=-1)
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")
@@ -333,6 +330,29 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
             return room.name
         return ""
 
+    def is_filtered(self) -> bool:
+        """Returns true if this entity should be shown on UI list; false, otherwise."""
+        scene = bpy.context.scene
+        filter_type = scene.sollumz_entity_filter_type
+
+        if filter_type == "all":
+            return True
+
+        if filter_type == "room":
+            return scene.sollumz_entity_filter_room == self.attached_room_id
+        elif filter_type == "portal":
+            return scene.sollumz_entity_filter_portal == self.attached_portal_id
+        elif filter_type == "entity_set":
+            in_entity_set = scene.sollumz_entity_filter_entity_set == self.attached_entity_set_id
+
+            if scene.sollumz_do_entity_filter_entity_set_room:
+                in_room = scene.sollumz_entity_filter_entity_set_room == self.attached_room_id
+                return in_entity_set and in_room
+
+            return in_entity_set
+
+        return True
+
     # Transforms unused if no linked object
     position: bpy.props.FloatVectorProperty(name="Position")
     rotation: bpy.props.FloatVectorProperty(
@@ -382,8 +402,6 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         return archetype.entity_sets[0].name
 
     name: bpy.props.StringProperty(name="Name", update=MloArchetypeChild.update_mlo_archetype_caches)
-    entities: bpy.props.CollectionProperty(
-        type=MloEntityProperties, name="EntitySet Entities")
 
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")

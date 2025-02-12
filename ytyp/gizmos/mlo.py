@@ -2,9 +2,7 @@ import bpy
 from ...sollumz_properties import ArchetypeType
 from mathutils import Vector, Matrix
 from ..utils import get_selected_archetype, get_selected_ytyp, get_selected_portal
-from ..properties.mlo import PortalProperties
 from ...tools.blenderhelper import find_parent
-from typing import Set
 
 
 def can_draw_gizmos(context):
@@ -73,7 +71,7 @@ class RoomGizmo(bpy.types.Gizmo):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
         selected_archetype = selected_ytyp.selected_archetype
-        selected_room = selected_archetype.rooms[selected_archetype.room_index]
+        selected_room = selected_archetype.rooms.active_item
         room = self.linked_room
 
         self.color = 0.31, 0.38, 1
@@ -106,7 +104,7 @@ class RoomGizmoGroup(bpy.types.GizmoGroup):
         if can_draw_gizmos(context):
             selected_ytyp = get_selected_ytyp(context)
             selected_archetype = selected_ytyp.selected_archetype
-            return selected_archetype.room_index < len(selected_archetype.rooms)
+            return selected_archetype.rooms.active_index < len(selected_archetype.rooms)
         return False
 
     def setup(self, context):
@@ -176,7 +174,7 @@ class PortalGizmo(bpy.types.Gizmo):
         if self.linked_portal not in portals:
             return
 
-        selected_archetype.portal_index = portals.index(self.linked_portal)
+        selected_archetype.portals.select(portals.index(self.linked_portal))
 
         return {'PASS_THROUGH'}
 
@@ -240,7 +238,7 @@ class PortalGizmoGroup(bpy.types.GizmoGroup):
 
         selected_archetype = get_selected_archetype(context)
 
-        return selected_archetype.portal_index < len(selected_archetype.portals)
+        return selected_archetype.portals.active_index < len(selected_archetype.portals)
 
     def setup(self, context):
         pass

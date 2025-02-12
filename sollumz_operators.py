@@ -652,29 +652,6 @@ def parse_rotation_string(rotation_string):
     return None
 
 
-class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):
-    bl_idname = "sollumz.debug_reload_entity_sets"
-    bl_label = "Reload Entity Sets"
-    bl_description = "Reload old entity set entities"
-    bl_options = {"UNDO"}
-
-    def execute(self, context):
-        for ytyp in context.scene.ytyps:
-            for archetype in ytyp.archetypes:
-                if archetype.type != ArchetypeType.MLO:
-                    continue
-
-                for entity_set in archetype.entity_sets:
-                    for entity in entity_set.entities:
-                        new_entity = archetype.new_entity()
-                        for k, v in entity.items():
-                            new_entity[k] = v
-
-                        new_entity.attached_entity_set_id = str(entity_set.id)
-
-        return {"FINISHED"}
-
-
 class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
     """Convert old drawable model to use new LOD system"""
     bl_idname = "sollumz.migratedrawable"

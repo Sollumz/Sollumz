@@ -67,8 +67,8 @@ def update_lods(obj: Object):
 
 
 def update_mlo_tcmods_percentage(ytyp: CMapTypesProperties):
-    for arch in ytyp.archetypes:
-        for tcmod in arch.timecycle_modifiers:
+    for arch in ytyp.get("archetypes", []):
+        for tcmod in arch.get("timecycle_modifiers", []):
             old_percentage = tcmod.get("percentage", None)
             if old_percentage is None:
                 continue

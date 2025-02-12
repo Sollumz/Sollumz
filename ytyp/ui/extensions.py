@@ -4,7 +4,7 @@ from bpy.types import (
 )
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ..properties.extensions import ExtensionsContainer
-from ..utils import get_selected_archetype
+from ..utils import get_selected_archetype, get_selected_ytyp
 from .archetype import ArchetypeChildTabPanel
 
 
@@ -35,8 +35,8 @@ class ExtensionsPanelHelper:
         extensions_container = self.get_extensions_container(context)
 
         _, side_col = draw_list_with_add_remove(layout, self.ADD_OPERATOR_ID, self.DELETE_OPERATOR_ID,
-                                             self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
-                                             extensions_container, "extension_index")
+                                                self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
+                                                extensions_container, "extension_index")
         side_col.separator()
         side_col.operator(self.DUPLICATE_OPERATOR_ID, text="", icon="DUPLICATE")
 
@@ -81,3 +81,9 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(ArchetypeChildTabPanel, ExtensionsPa
     @classmethod
     def get_extensions_container(self, context):
         return get_selected_archetype(context)
+
+    def draw(self, context):
+        # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
+        ytyp = get_selected_ytyp(context)
+        self.layout.enabled = not ytyp.archetypes.has_multiple_selection
+        super().draw(context)

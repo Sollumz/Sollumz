@@ -9,8 +9,12 @@ from ...sollumz_preferences import (
 )
 from ..utils import (
     get_selected_ytyp,
-    get_selected_archetype
 )
+from ...shared.multiselection import (
+    MultiSelectUIListMixin,
+    multiselect_ui_draw_list,
+)
+from ..operators import ytyp as ytyp_ops
 
 
 class SOLLUMZ_UL_YTYP_LIST(BasicListHelper, bpy.types.UIList):
@@ -79,19 +83,17 @@ class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
         layout.prop(settings, "apply_transforms")
 
 
-class SOLLUMZ_UL_ARCHETYPE_LIST(bpy.types.UIList):
+class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_LIST"
+    multiselect_operator = ytyp_ops.SOLLUMZ_OT_ytyp_select_archetype.bl_idname
 
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
+    def get_item_icon(self, item) -> str:
         icon = "SEQ_STRIP_META"
         if item.type == ArchetypeType.MLO:
             icon = "HOME"
         elif item.type == ArchetypeType.TIME:
             icon = "TIME"
-
-        layout.prop(item, "name", text="", emboss=False, icon=icon)
+        return icon
 
 
 class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
@@ -106,62 +108,25 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        list_col, _ = draw_list_with_add_remove(
+        list_col, _ = multiselect_ui_draw_list(
             self.layout,
+            selected_ytyp.archetypes,
             "sollumz.createarchetype", "sollumz.deletearchetype",
-            SOLLUMZ_UL_ARCHETYPE_LIST.bl_idname, "",
-            selected_ytyp, "archetypes",
-            selected_ytyp, "archetype_index_with_select_linked_object",
-            rows=3
+            SOLLUMZ_UL_ARCHETYPE_LIST, SOLLUMZ_MT_archetype_list_context_menu,
+            "tool_panel"
         )
+
         row = list_col.row()
-        row.operator("sollumz.createarchetypefromselected",
-                     icon="FILE_REFRESH")
+        row.operator("sollumz.createarchetypefromselected", icon="FILE_REFRESH")
         row.prop(context.scene, "create_archetype_type", text="")
 
 
-class SOLLUMZ_PT_YTYP_TOOLS_PANEL(bpy.types.Panel):
-    bl_label = "Tools"
-    bl_idname = "SOLLUMZ_PT_YTYP_TOOLS_PANEL"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_idname
-    bl_category = SOLLUMZ_PT_ARCHETYPE_LIST_PANEL.bl_category
+class SOLLUMZ_MT_archetype_list_context_menu(bpy.types.Menu):
+    bl_label = "Archetypes Specials"
+    bl_idname = "SOLLUMZ_MT_archetype_list_context_menu"
 
-    @classmethod
-    def poll(cls, context):
-        selected_ytyp = get_selected_ytyp(context)
-        return selected_ytyp is not None and selected_ytyp.archetypes
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="TOOL_SETTINGS")
-
-    def draw(self, context):
+    def draw(self, _context):
         layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-        selected_ytyp = get_selected_ytyp(context)
-        row = layout.row()
-        row.prop(selected_ytyp, "all_texture_dictionary")
-        row.operator("sollumz.settexturedictionaryallarchs")
-        row = layout.row()
-        row.prop(selected_ytyp, "all_lod_dist")
-        row.operator("sollumz.setloddistallarchs")
-        row = layout.row()
-        row.prop(selected_ytyp, "all_hd_tex_dist")
-        row.operator("sollumz.sethdtexturedistallarchs")
-        row = layout.row()
-        row.prop(selected_ytyp, "all_flags")
-        row.operator("sollumz.setflagsallarchs")
-
-        selected_archetype = get_selected_archetype(context)
-
-        if not selected_archetype:
-            return
-
-        layout.separator()
-
-        row = layout.row()
-        row.prop(selected_archetype, "all_entity_lod_dist")
-        row.operator("sollumz.setentityloddistallarchs")
+        op = layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
+        if (filter_opts := SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options.get("archetypes_tool_panel", None)):
+            filter_opts.apply_to_operator(op)

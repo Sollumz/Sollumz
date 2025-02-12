@@ -51,7 +51,12 @@ class SOLLUMZ_OT_set_bounds_from_selection(SOLLUMZ_OT_base, bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return get_selected_room(context) is not None and (context.active_object and context.active_object.mode == "EDIT")
+        return (
+            get_selected_room(context) is not None and
+            not get_selected_archetype(context).rooms.has_multiple_selection and
+            context.active_object and
+            context.active_object.mode == "EDIT"
+        )
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
@@ -76,7 +81,7 @@ class SOLLUMZ_OT_set_bounds_from_selection(SOLLUMZ_OT_base, bpy.types.Operator):
 
 
 class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete room from selected archetype"""
+    """Delete selected room(s)"""
     bl_idname = "sollumz.deleteroom"
     bl_label = "Delete Room"
 
@@ -86,27 +91,24 @@ class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.rooms.remove(selected_archetype.room_index)
-        selected_archetype.room_index = max(
-            selected_archetype.room_index - 1, 0)
+
+        indices_to_remove = selected_archetype.rooms.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_archetype.rooms.remove(index_to_remove)
+        selected_archetype.rooms.select(new_active_index)
+
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
 
-        validate_dynamic_enums(selected_archetype.portals,
-                               "room_from_id", selected_archetype.rooms)
-        validate_dynamic_enums(selected_archetype.portals,
-                               "room_to_id", selected_archetype.rooms)
-        validate_dynamic_enums(selected_archetype.entities,
-                               "attached_room_id", selected_archetype.rooms)
-        validate_dynamic_enum(
-            context.scene, "sollumz_add_entity_room", selected_archetype.rooms)
-        validate_dynamic_enum(
-            context.scene, "sollumz_entity_filter_room", selected_archetype.rooms)
-        validate_dynamic_enum(
-            context.scene, "sollumz_entity_filter_entity_set_room", selected_archetype.rooms)
-        validate_dynamic_enum(
-            context.scene, "sollumz_add_portal_room_from", selected_archetype.rooms)
-        validate_dynamic_enum(
-            context.scene, "sollumz_add_portal_room_to", selected_archetype.rooms)
+        validate_dynamic_enums(selected_archetype.portals, "room_from_id", selected_archetype.rooms)
+        validate_dynamic_enums(selected_archetype.portals, "room_to_id", selected_archetype.rooms)
+        validate_dynamic_enums(selected_archetype.entities, "attached_room_id", selected_archetype.rooms)
+        validate_dynamic_enum(context.scene, "sollumz_add_entity_room", selected_archetype.rooms)
+        validate_dynamic_enum(context.scene, "sollumz_entity_filter_room", selected_archetype.rooms)
+        validate_dynamic_enum(context.scene, "sollumz_entity_filter_entity_set_room", selected_archetype.rooms)
+        validate_dynamic_enum(context.scene, "sollumz_add_portal_room_from", selected_archetype.rooms)
+        validate_dynamic_enum(context.scene, "sollumz_add_portal_room_to", selected_archetype.rooms)
 
         return True
