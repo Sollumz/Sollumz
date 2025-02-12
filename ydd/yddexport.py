@@ -52,4 +52,4 @@ def find_ydd_armature(ydd_obj: bpy.types.Object):
 
 
 def get_hash(item):
-    return jenkhash.Generate(item.name.split(".")[0])
+    return jenkhash.name_to_hash(item.name.split(".")[0])
