@@ -14,22 +14,22 @@ def test_versioning_archetype_uuids():
 
     for scene in data.scenes:
         for ytyp in scene.ytyps:
-            for arch in ytyp.get("archetypes", []):
+            for arch in ytyp.get("archetypes_", []):
                 arch_uuid = arch["uuid"]
                 _check_uuid(arch_uuid, arch)
-                for e in arch.get("entities", []):
+                for e in arch.get("entities_", []):
                     _check_uuid(e["uuid"], e)
                     assert e["mlo_archetype_uuid"] == arch_uuid
-                for s in arch.get("entity_sets", []):
+                for s in arch.get("entity_sets_", []):
                     _check_uuid(s["uuid"], s)
                     assert s["mlo_archetype_uuid"] == arch_uuid
-                for p in arch.get("portals", []):
+                for p in arch.get("portals_", []):
                     _check_uuid(p["uuid"], p)
                     assert p["mlo_archetype_uuid"] == arch_uuid
-                for r in arch.get("rooms", []):
+                for r in arch.get("rooms_", []):
                     _check_uuid(r["uuid"], r)
                     assert r["mlo_archetype_uuid"] == arch_uuid
-                for tcm in arch.get("timecycle_modifiers", []):
+                for tcm in arch.get("timecycle_modifiers_", []):
                     assert tcm["mlo_archetype_uuid"] == arch_uuid
 
 
