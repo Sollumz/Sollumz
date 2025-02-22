@@ -319,7 +319,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         n.image = texture
 
                     if is_non_color_texture(filename, param.name):
-                        n.image.colorspace_settings.name = "Non-Color"
+                        n.image.colorspace_settings.is_data = True
 
                     preferences = get_addon_preferences(bpy.context)
                     text_name = preferences.use_text_name_as_mat_name

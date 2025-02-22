@@ -453,7 +453,7 @@ def shader_preset_apply_to_material(material: bpy.types.Material, preset: Shader
                 texture_path = lookup_texture_file(param.texture, None)
                 img = texture_path and bpy.data.images.load(str(texture_path), check_existing=True)
                 if img and is_non_color_texture(shader_def.filename, param.name):
-                    img.colorspace_settings.name = "Non-Color"
+                    img.colorspace_settings.is_data = True
 
             if img:
                 node.image = img
