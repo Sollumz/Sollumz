@@ -29,12 +29,15 @@ def entities_filter_items(
         name_prop="archetype_name"
     )
 
-    if not filter_flags:
-        filter_flags = [0] * len(entities)
-
+    # After the initial name filtering, remove all entities that are filtered out
     for i, entity in enumerate(entities):
-        if entity.is_filtered():
-            filter_flags[i] |= _BITFLAG_FILTER_ITEM
+        if not entity.is_filtered():
+            if not filter_flags:
+                # Empty list is equivalent to all items visible
+                filter_flags = [_BITFLAG_FILTER_ITEM] * len(entities)
+
+            filter_flags[i] &= ~_BITFLAG_FILTER_ITEM
+
 
     return filter_flags, filter_order
 

@@ -148,6 +148,16 @@ class SOLLUMZ_UL_PORTAL_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     name_editable = False
     multiselect_operator = ytyp_ops.SOLLUMZ_OT_archetype_select_mlo_portal.bl_idname
 
+    def filter_items(self, context, data, propname):
+        # NOTE: for some unknown reason, the Blender default filter by name does not work with this list. As soon as
+        # you type something, all portals disappear. Even though, it works just fine in other lists like rooms or
+        # entity sets...
+        # So just override the filter but with our implementation of the default filter...
+        multiselect_collection_name = propname[:-1]  # remove '_' suffix
+        collection = getattr(data, multiselect_collection_name)
+        from ...shared.multiselection import _default_filter_items
+        return _default_filter_items(collection, self.filter_name, self.use_filter_sort_reverse, self.use_filter_sort_alpha)
+
 
 class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
     bl_label = "Portals"
