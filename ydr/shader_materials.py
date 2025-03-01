@@ -18,6 +18,7 @@ from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from .render_bucket import RenderBucket
 
+
 class ShaderBuilder(NamedTuple):
     shader: ShaderDef
     filename: str
@@ -716,7 +717,7 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(vcs.outputs["Alpha"], multi.inputs[0])
         links.new(texture.outputs["Alpha"], multi.inputs[1])
         links.new(multi.outputs["Value"], mix.inputs["Fac"])
-    elif decalflag == 2: # decal_dirt.sps
+    elif decalflag == 2:  # decal_dirt.sps
         # Here, the diffuse sampler represents an alpha map. DirtDecalMask indicates which channels to consider. Actual
         # color stored in the color0 attribute.
         #   alpha = dot(diffuseColor, DirtDecalMask)
@@ -744,7 +745,6 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
 
         links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
-
 
     links.new(trans.outputs["BSDF"], mix.inputs[1])
     links.remove(bsdf.outputs["BSDF"].links[0])
@@ -965,6 +965,13 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             decalflag = 3
         elif filename in {"decal_spec_only.sps", "spec_decal.sps"}:
             decalflag = 4
+        elif filename in {"vehicle_badges.sps", "vehicle_decal.sps"}:
+            decalflag = 1  # badges and decals need to multiply the texture alpha by the Color 1 Alpha component
+        elif filename.startswith("vehicle_"):
+            # Don't treat any other alpha vehicle shaders as decals (e.g. lightsemissive or vehglass).
+            # Particularly problematic with lightsemissive as Color 1 Alpha component contains the light ID,
+            # which previously was being incorrectly used to multiply the texture alpha.
+            use_decal = False
 
     is_emissive = True if filename in ShaderManager.em_shaders else False
 
