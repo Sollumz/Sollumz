@@ -56,6 +56,14 @@ class SollumType(str, Enum):
     YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
     YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
 
+    WATER_DATA = "sollumz_water_data"
+    WATER_QUADS = "sollumz_water_quads"
+    CALMING_QUADS = "sollumz_calming_quads"
+    WAVE_QUADS = "sollumz_wave_quads"
+    WATER_QUAD = "sollumz_water_quad"
+    CALMING_QUAD = "sollumz_calming_quad"
+    WAVE_QUAD = "sollumz_wave_quad"
+
 
 class LightType(str, Enum):
     NONE = "sollumz_light_none"
@@ -254,6 +262,14 @@ SOLLUMZ_UI_NAMES = {
     SollumType.YMAP_BOX_OCCLUDER: "Box Occluder",
     SollumType.YMAP_MODEL_OCCLUDER: "Model Occluder",
     SollumType.YMAP_CAR_GENERATOR: "Car Generator",
+
+    SollumType.WATER_DATA: "Water Data",
+    SollumType.WATER_QUADS: "Water Quads",
+    SollumType.WATER_QUAD: "Water Quad",
+    SollumType.CALMING_QUADS: "Calming Quads",
+    SollumType.CALMING_QUAD: "Calming Quad",
+    SollumType.WAVE_QUADS: "Wave Quads",
+    SollumType.WAVE_QUAD: "Wave Quad",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
