@@ -7,7 +7,16 @@ from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     SollumType,
     VehicleLightID,
+    MIN_VEHICLE_LIGHT_ID,
+    MAX_VEHICLE_LIGHT_ID,
     items_from_enums,
+)
+from ..ydr.shader_materials import (
+    VEHICLE_PREVIEW_NODE_DIRT_COLOR,
+    VEHICLE_PREVIEW_NODE_DIRT_LEVEL,
+    VEHICLE_PREVIEW_NODE_DIRT_WETNESS,
+    VEHICLE_PREVIEW_NODE_BODY_COLOR,
+    VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE,
 )
 
 
@@ -99,77 +108,6 @@ class VehicleWindowProperties(bpy.types.PropertyGroup):
     cracks_texture_tiling: bpy.props.FloatProperty(name="Cracks Texture Tiling", default=1.5)
 
 
-class FragmentTemplateAsset(IntEnum):
-    NONE = 0xFF
-    FRED = 0
-    WILMA = 1
-    FRED_LARGE = 2
-    WILMA_LARGE = 3
-    ALIEN = 4
-
-
-FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for enum, label, desc in (
-    (FragmentTemplateAsset.NONE, "None", "Use physics defined in this fragment"),
-    (FragmentTemplateAsset.FRED, "Fred", "Use 'z_z_fred' physics"),
-    (FragmentTemplateAsset.WILMA, "Wilma", "Use 'z_z_wilma' physics"),
-    (FragmentTemplateAsset.FRED_LARGE, "Fred (Large)", "Use 'z_z_fred_large' physics"),
-    (FragmentTemplateAsset.WILMA_LARGE, "Wilma (Large)", "Use 'z_z_wilma_large' physics"),
-    (FragmentTemplateAsset.ALIEN, "Alien", "Use 'z_z_alien' physics"),
-))
-
-
-class FragmentProperties(bpy.types.PropertyGroup):
-    unbroken_elasticity: bpy.props.FloatProperty(name="Unbroken Elasticity")
-    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
-    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1.0)
-    template_asset: bpy.props.EnumProperty(
-        name="Physics Template (Peds Only)", items=FragmentTemplateAssetEnumItems,
-        default=FragmentTemplateAsset.NONE.name
-    )
-
-    lod_properties: bpy.props.PointerProperty(type=LODProperties)
-
-
-def get_light_id_of_selection(self):
-    face_mode = bpy.context.scene.tool_settings.mesh_select_mode[2]
-
-    if not face_mode or bpy.context.mode != "EDIT_MESH":
-        return -1
-
-    mesh_objs = bpy.context.objects_in_mode_unique_data[:]
-    if not mesh_objs:
-        return -1
-
-    light_id = -1
-
-    for obj in mesh_objs:
-        mesh = obj.data
-        bm = bmesh.from_edit_mesh(mesh)
-        try:
-            if not bm.loops.layers.color:
-                continue
-
-            color_layer = bm.loops.layers.color[0]
-
-            for face in bm.faces:
-                if not face.select:
-                    continue
-
-                for loop in face.loops:
-                    loop_light_id = int(loop[color_layer][3] * 255)
-
-                    if light_id != -1 and loop_light_id != light_id:
-                        return -1
-                    elif loop_light_id != light_id and light_id == -1:
-                        light_id = loop_light_id
-        finally:
-            # Make sure the bmesh is freed after each loop iteration. It can crash
-            # while the user edits the mesh otherwise.
-            bm.free()
-
-    return light_id
-
-
 class VehiclePaintLayer(IntEnum):
     CUSTOM = 0
     PRIMARY = 1
@@ -222,6 +160,234 @@ VehiclePaintLayerEnumItems = tuple((enum.name, enum.ui_label, desc, enum.value) 
     (VehiclePaintLayer.INTERIOR_DASH,
         "Use Interior Dashboard paint color on this material"),
 ))
+
+
+class VehicleRenderPreview(bpy.types.PropertyGroup):
+    DEFAULT_DIRT_COLOR = (70/255, 60/255, 50/255)
+    DEFAULT_BODY_COLOR = (1.0, 1.0, 1.0)
+
+    def _on_each_node_tree(self, callback, callback_context):
+        obj = self.id_data
+        if not obj:
+            return
+
+        materials_visited = set()
+        for child_obj in obj.children_recursive:
+            if child_obj.type != "MESH":
+                continue
+
+            mesh = child_obj.data
+            for material in mesh.materials:
+                if material is None or material in materials_visited:
+                    continue
+
+                materials_visited.add(material)
+
+                node_tree = material.node_tree
+                if node_tree is None:
+                    continue
+
+                callback(node_tree, callback_context)
+
+    @staticmethod
+    def _dirt_level_update_callback():
+        def _apply(node_tree, value):
+            node = node_tree.nodes.get(VEHICLE_PREVIEW_NODE_DIRT_LEVEL, None)
+            if node is None:
+                return
+
+            node.outputs[0].default_value = value
+
+        def _update(self, context):
+            value = self.dirt_level
+            self._on_each_node_tree(_apply, value)
+
+        return _update
+
+    @staticmethod
+    def _dirt_wetness_update_callback():
+        def _apply(node_tree, value):
+            node = node_tree.nodes.get(VEHICLE_PREVIEW_NODE_DIRT_WETNESS, None)
+            if node is None:
+                return
+
+            node.outputs[0].default_value = value
+
+        def _update(self, context):
+            value = self.dirt_wetness
+            self._on_each_node_tree(_apply, value)
+
+        return _update
+
+    @staticmethod
+    def _dirt_color_update_callback():
+        def _apply(node_tree, value):
+            node = node_tree.nodes.get(VEHICLE_PREVIEW_NODE_DIRT_COLOR, None)
+            if node is None:
+                return
+
+            node.inputs[0].default_value = value[0]
+            node.inputs[1].default_value = value[1]
+            node.inputs[2].default_value = value[2]
+
+        def _update(self, context):
+            value = self.dirt_color
+            self._on_each_node_tree(_apply, value)
+
+        return _update
+
+    dirt_level: bpy.props.FloatProperty(
+        name="Dirt Level",
+        min=0.0, max=1.0,
+        subtype="FACTOR",
+        default=0.0,
+        update=_dirt_level_update_callback(),
+    )
+
+    dirt_wetness: bpy.props.FloatProperty(
+        name="Dirt Wetness",
+        min=0.0, max=1.0,
+        subtype="FACTOR",
+        default=0.0,
+        update=_dirt_wetness_update_callback(),
+    )
+
+    dirt_color: bpy.props.FloatVectorProperty(
+        name="Dirt Color",
+        min=0.0, max=1.0,
+        size=3, subtype="COLOR",
+        default=DEFAULT_DIRT_COLOR,
+        update=_dirt_color_update_callback(),
+    )
+
+    @staticmethod
+    def _define_light_id_property(light_id: int):
+        prop_name = f"light_id_{light_id}"
+        node_name = VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE[light_id]
+
+        def _apply(node_tree, value):
+            node = node_tree.nodes.get(node_name, None)
+            if node is None:
+                return
+
+            node.outputs[0].default_value = value
+
+        def _update(self, context):
+            value = 1.0 if self[prop_name] else 0.0
+
+            self._on_each_node_tree(_apply, value)
+
+        VehicleRenderPreview.__annotations__[prop_name] = bpy.props.BoolProperty(
+            name=SOLLUMZ_UI_NAMES[VehicleLightID(str(light_id))],
+            default=True,
+            update=_update,
+        )
+
+    @staticmethod
+    def _define_body_color_property(paint_layer_id: int):
+        prop_name = f"body_color_{paint_layer_id}"
+        node_name = VEHICLE_PREVIEW_NODE_BODY_COLOR[paint_layer_id]
+
+        def _apply(node_tree, value):
+            node = node_tree.nodes.get(node_name, None)
+            if node is None:
+                return
+
+            node.inputs[0].default_value = value[0]
+            node.inputs[1].default_value = value[1]
+            node.inputs[2].default_value = value[2]
+
+        def _update(self, context):
+            value = self[prop_name]
+
+            self._on_each_node_tree(_apply, value)
+
+        VehicleRenderPreview.__annotations__[prop_name] = bpy.props.FloatVectorProperty(
+            name=VehiclePaintLayer(paint_layer_id).ui_label,
+            min=0.0, max=1.0,
+            size=3, subtype="COLOR",
+            default=VehicleRenderPreview.DEFAULT_BODY_COLOR,
+            update=_update,
+        )
+
+
+for light_id in range(MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID+1):
+    VehicleRenderPreview._define_light_id_property(light_id)
+for paint_layer_id in range(1, 7+1):
+    VehicleRenderPreview._define_body_color_property(paint_layer_id)
+
+
+class FragmentTemplateAsset(IntEnum):
+    NONE = 0xFF
+    FRED = 0
+    WILMA = 1
+    FRED_LARGE = 2
+    WILMA_LARGE = 3
+    ALIEN = 4
+
+
+FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for enum, label, desc in (
+    (FragmentTemplateAsset.NONE, "None", "Use physics defined in this fragment"),
+    (FragmentTemplateAsset.FRED, "Fred", "Use 'z_z_fred' physics"),
+    (FragmentTemplateAsset.WILMA, "Wilma", "Use 'z_z_wilma' physics"),
+    (FragmentTemplateAsset.FRED_LARGE, "Fred (Large)", "Use 'z_z_fred_large' physics"),
+    (FragmentTemplateAsset.WILMA_LARGE, "Wilma (Large)", "Use 'z_z_wilma_large' physics"),
+    (FragmentTemplateAsset.ALIEN, "Alien", "Use 'z_z_alien' physics"),
+))
+
+
+class FragmentProperties(bpy.types.PropertyGroup):
+    unbroken_elasticity: bpy.props.FloatProperty(name="Unbroken Elasticity")
+    gravity_factor: bpy.props.FloatProperty(name="Gravity Factor", default=1.0)
+    buoyancy_factor: bpy.props.FloatProperty(name="Buoyancy Factor", default=1.0)
+    template_asset: bpy.props.EnumProperty(
+        name="Physics Template (Peds Only)", items=FragmentTemplateAssetEnumItems,
+        default=FragmentTemplateAsset.NONE.name
+    )
+
+    lod_properties: bpy.props.PointerProperty(type=LODProperties)
+
+    vehicle_render_preview: bpy.props.PointerProperty(type=VehicleRenderPreview)
+
+
+def get_light_id_of_selection(self):
+    face_mode = bpy.context.scene.tool_settings.mesh_select_mode[2]
+
+    if not face_mode or bpy.context.mode != "EDIT_MESH":
+        return -1
+
+    mesh_objs = bpy.context.objects_in_mode_unique_data[:]
+    if not mesh_objs:
+        return -1
+
+    light_id = -1
+
+    for obj in mesh_objs:
+        mesh = obj.data
+        bm = bmesh.from_edit_mesh(mesh)
+        try:
+            if not bm.loops.layers.color:
+                continue
+
+            color_layer = bm.loops.layers.color[0]
+
+            for face in bm.faces:
+                if not face.select:
+                    continue
+
+                for loop in face.loops:
+                    loop_light_id = int(loop[color_layer][3] * 255)
+
+                    if light_id != -1 and loop_light_id != light_id:
+                        return -1
+                    elif loop_light_id != light_id and light_id == -1:
+                        light_id = loop_light_id
+        finally:
+            # Make sure the bmesh is freed after each loop iteration. It can crash
+            # while the user edits the mesh otherwise.
+            bm.free()
+
+    return light_id
 
 
 def _get_mat_paint_layer(self: bpy.types.Material) -> int:

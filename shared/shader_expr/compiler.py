@@ -206,7 +206,8 @@ class Compiler:
         # tex.name = e.texture_name
         # tex.label = e.texture_name
 
-        self.connect_vector_input(e.uv, tex, 0)
+        if e.uv is not None:
+            self.connect_vector_input(e.uv, tex, 0)
 
         return CompiledExpr(tex, None)
 

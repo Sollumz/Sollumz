@@ -142,6 +142,10 @@ class VehicleLightID(str, Enum):
     CUSTOM = "custom"
 
 
+MIN_VEHICLE_LIGHT_ID = 0
+MAX_VEHICLE_LIGHT_ID = 17
+
+
 FRAGMENT_TYPES = [
     SollumType.FRAGMENT,
     SollumType.FRAGGROUP,

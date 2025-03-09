@@ -11,11 +11,12 @@ from ..cwxml.shader import (
     ShaderParameterFloat4Def,
     ShaderParameterFloat4x4Def,
 )
-from ..sollumz_properties import MaterialType
+from ..sollumz_properties import MaterialType, MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID
 from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
 from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
+from ..shared.shader_expr import expr, compile_expr
 from .render_bucket import RenderBucket
 
 
@@ -1226,8 +1227,146 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
     if shader.is_uv_animation_supported:
         add_global_anim_uv_nodes(mat)
 
+    if shader.filename.startswith("vehicle_"):
+        # Add additionals node to support vehicle render preview features
+        if shader.filename == "vehicle_lightsemissive.sps":
+            add_vehicle_lights_emissive_toggle_nodes(builder)
+
+        if "matDiffuseColor" in shader.parameter_map:
+            add_vehicle_body_color_nodes(builder)
+
+        if "DirtSampler" in shader.parameter_map:
+            add_vehicle_dirt_nodes(builder)
+
     link_uv_map_nodes_to_textures(builder)
 
     organize_node_tree(builder)
 
     return mat
+
+
+VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE = [
+    f"PreviewLightID{light_id}Toggle" for light_id in range(MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID+1)
+]
+VEHICLE_PREVIEW_NODE_BODY_COLOR = [
+    f"PreviewBodyColor{paint_layer_id}" for paint_layer_id in range(8)
+]
+VEHICLE_PREVIEW_NODE_DIRT_LEVEL = "PreviewDirtLevel"
+VEHICLE_PREVIEW_NODE_DIRT_WETNESS = "PreviewDirtWetness"
+VEHICLE_PREVIEW_NODE_DIRT_COLOR = "PreviewDirtColor"
+
+
+def add_vehicle_lights_emissive_toggle_nodes(builder: ShaderBuilder):
+    em = try_get_node_by_cls(builder.node_tree, bpy.types.ShaderNodeEmission)
+    if not em:
+        return
+
+    shader_expr = vehicle_lights_emissive_toggles()
+    compiled_shader_expr = compile_expr(builder.material.node_tree, shader_expr)
+
+    builder.node_tree.links.new(compiled_shader_expr.output, em.inputs["Strength"])
+
+
+def vehicle_lights_emissive_toggles() -> expr.ShaderExpr:
+    from ..shared.shader_expr.builtins import (
+        color_attribute,
+        float_param,
+        value,
+    )
+
+    attr_c0 = color_attribute(get_color_attr_name(0))
+    emissive_mult = float_param("emissiveMultiplier")
+
+    eps = 0.001
+    final_flag = 0.0
+    for light_id in range(MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID+1):
+        light_id_normalized = light_id / 255
+        flag_toggle = value(VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE[light_id], default_value=1.0)
+        flag_lower_bound = attr_c0.alpha > (light_id_normalized - eps)
+        flag_upper_bound = attr_c0.alpha < (light_id_normalized + eps)
+        flag = flag_toggle * flag_lower_bound * flag_upper_bound
+        final_flag += flag
+
+    final_mult = emissive_mult * final_flag
+    return final_mult
+
+
+def add_vehicle_dirt_nodes(builder: ShaderBuilder):
+    shader_expr = vehicle_dirt_overlay()
+    compiled_shader_expr = compile_expr(builder.material.node_tree, shader_expr)
+
+    orig_base_color = builder.bsdf.inputs["Base Color"].links[0].from_socket
+    builder.node_tree.links.new(orig_base_color, compiled_shader_expr.node.inputs["A"])
+    builder.node_tree.links.new(compiled_shader_expr.output, builder.bsdf.inputs["Base Color"])
+
+
+def vehicle_dirt_overlay() -> expr.ShaderExpr:
+    from ..shared.shader_expr.builtins import (
+        tex,
+        value,
+        vec,
+        vec_value,
+        mix_color,
+        map_range,
+    )
+
+    # Shader parameters 'dirtLevelMod' and 'dirtColor' are set at runtime. So ignore them and instead use our own values
+    dirt_color = vec_value(VEHICLE_PREVIEW_NODE_DIRT_COLOR, default_value=(70/255, 60/255, 50/255))
+    dirt_level = value(VEHICLE_PREVIEW_NODE_DIRT_LEVEL, default_value=0.0)
+    dirt_wetness = value(VEHICLE_PREVIEW_NODE_DIRT_WETNESS, default_value=0.0)
+
+    dirt_tex = tex("DirtSampler", None)  # will be linked to the correct UV map by `link_uv_map_nodes_to_textures`
+
+    dirt_level = dirt_level * map_range(
+        dirt_wetness,
+        0.0, 1.0,
+        dirt_tex.color.r, dirt_tex.color.g
+    )
+
+    dirt_mod = map_range(dirt_wetness, 0.0, 1.0, 1.0, 0.6)
+
+    dirt_color = dirt_color * dirt_mod
+
+    # this vec(0) will be replaced by the shader base color
+    final_color = mix_color(vec(0.0, 0.0, 0.0), dirt_color, dirt_level)
+
+    # TODO: increase alpha on vehglass
+
+    return final_color
+
+
+def add_vehicle_body_color_nodes(builder: ShaderBuilder):
+    shader_expr = vehicle_body_color()
+    compiled_shader_expr = compile_expr(builder.material.node_tree, shader_expr)
+
+    orig_base_color = builder.bsdf.inputs["Base Color"].links[0].from_socket
+    builder.node_tree.links.new(orig_base_color, compiled_shader_expr.node.inputs[0])
+    builder.node_tree.links.new(compiled_shader_expr.output, builder.bsdf.inputs["Base Color"])
+
+
+def vehicle_body_color() -> expr.ShaderExpr:
+    from ..shared.shader_expr.builtins import (
+        param,
+        vec,
+        vec_value,
+    )
+
+    mat_diffuse_color = param("matDiffuseColor").vec
+
+    final_paint_layer_color = vec(0.0, 0.0, 0.0)
+    eps = 0.0001
+    enable_paint_layer = (mat_diffuse_color.x > (2.0 - eps)) * (mat_diffuse_color.x < (2.0 + eps))
+    for paint_layer_id in range(1, 7+1):
+        default_color = (1.0, 1.0, 1.0)
+        if paint_layer_id == 5:
+            default_color = (0.5, 0.5, 0.5)
+        body_color = vec_value(VEHICLE_PREVIEW_NODE_BODY_COLOR[paint_layer_id], default_value=default_color)
+
+        use_this_paint_layer = (mat_diffuse_color.y > (paint_layer_id - eps)) * \
+            (mat_diffuse_color.y < (paint_layer_id + eps))
+
+        final_paint_layer_color += body_color * use_this_paint_layer
+
+    final_body_color = final_paint_layer_color * enable_paint_layer + mat_diffuse_color * (1.0 - enable_paint_layer)
+
+    return vec(1.0, 1.0, 1.0) * final_body_color  # this vec(1) will be replaced by the shader base color
