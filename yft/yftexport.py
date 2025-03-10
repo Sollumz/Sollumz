@@ -250,6 +250,7 @@ def create_hi_frag_xml(frag: FragmentObjects, frag_xml: Fragment, apply_transfor
         # we should change to a deep copy.
         bones = hi_frag_xml.drawable.skeleton.bones
         child_meshes = get_child_meshes(hi_frag)
+        groups_with_child_mesh = set()
         for child_xml in hi_frag_xml.physics.lod1.children:
             drawable = child_xml.drawable
             drawable.drawable_models_high.clear()
@@ -264,9 +265,11 @@ def create_hi_frag_xml(frag: FragmentObjects, frag_xml: Fragment, apply_transfor
                     bone_name = bone.name
                     break
 
+            group_index = child_xml.group_index
             mesh_objs = None
-            if bone_name in child_meshes:
+            if bone_name in child_meshes and group_index not in groups_with_child_mesh:
                 mesh_objs = child_meshes[bone_name]
+                groups_with_child_mesh.add(group_index)  # only one child per group should have the mesh
 
             create_phys_child_drawable(child_xml, materials, mesh_objs)
 
@@ -705,6 +708,7 @@ def create_phys_child_xmls(
     child_cols = get_child_cols(frag)
     damaged_child_cols = get_child_cols(frag, damaged=True) if frag.damaged_composite else {}
 
+    groups_with_child_mesh = set()
     bound_index_to_child_index = []
     damaged_bound_index_to_child_index = []
     for bone_name, col_objs in child_cols.items():
@@ -724,9 +728,10 @@ def create_phys_child_xmls(
 
             bone = frag_armature.bones.get(bone_name)
             bone_index = get_bone_index(frag_armature, bone) or 0
+            group_index = get_bone_group_index(lod_xml, bone_name)
 
             child_xml = PhysicsChild()
-            child_xml.group_index = get_bone_group_index(lod_xml, bone_name)
+            child_xml.group_index = group_index
             child_xml.pristine_mass = col_obj.child_properties.mass if col_obj else 0.0
             child_xml.damaged_mass = damaged_col_obj.child_properties.mass if damaged_col_obj else child_xml.pristine_mass
             child_xml.bone_tag = bones_xml[bone_index].tag
@@ -738,8 +743,9 @@ def create_phys_child_xmls(
                 if damaged_col_obj else Vector((0.0, 0.0, 0.0, 0.0))
 
             mesh_objs = None
-            if bone_name in child_meshes:
+            if bone_name in child_meshes and group_index not in groups_with_child_mesh:
                 mesh_objs = child_meshes[bone_name]
+                groups_with_child_mesh.add(group_index)  # only one child per group should have the mesh
 
             create_phys_child_drawable(child_xml, materials, mesh_objs)
             if damaged_col_obj:
