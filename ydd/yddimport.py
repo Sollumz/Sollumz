@@ -150,9 +150,11 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
     cloth_to_mesh_map = np.empty_like(mesh_to_cloth_map)
     cloth_to_mesh_map[mesh_to_cloth_map] = np.arange(len(mesh_to_cloth_map))
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
+    vertices_count = len(cloth.controller.cloth_high.vertex_positions)
 
     has_pinned = pinned_vertices_count > 0
     has_pin_radius = len(pin_radius) > 0
+    num_pin_radius_sets = len(pin_radius) // vertices_count
     has_weights = len(weights) > 0
     has_inflation_scale = len(inflation_scale) > 0
 
@@ -162,6 +164,9 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
         mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
     if has_pin_radius:
         mesh_add_cloth_attribute(mesh, ClothAttr.PIN_RADIUS)
+        if num_pin_radius_sets > 4:
+            logger.warning(f"Found {num_pin_radius_sets} pin radius sets, only up to 4 sets are supported!")
+            num_pin_radius_sets = 4
     if has_weights:
         mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
     if has_inflation_scale:
@@ -175,7 +180,12 @@ def create_character_cloth_mesh(cloth: CharacterCloth, bones: list[Bone]) -> Obj
             mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
 
         if has_pin_radius:
-            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].value = pin_radius[cloth_vert_index]
+            pin_radii = [
+                pin_radius[cloth_vert_index + (set_idx * vertices_count)]
+                if set_idx < num_pin_radius_sets else 0.0
+                for set_idx in range(4)
+            ]
+            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].color = pin_radii
 
         if has_weights:
             mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = weights[cloth_vert_index]

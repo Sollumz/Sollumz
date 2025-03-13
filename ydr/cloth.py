@@ -12,10 +12,10 @@ from ..sollumz_properties import SollumType
 
 class ClothAttr(str, Enum):
     PINNED = ".cloth.pinned"
-    PIN_RADIUS = ".cloth.pin_radius"
     VERTEX_WEIGHT = ".cloth.weight"
     INFLATION_SCALE = ".cloth.inflation_scale"
     FORCE_TRANSFORM = ".cloth.force_transform"
+    PIN_RADIUS = ".cloth.pin_radius"
 
     @property
     def type(self):
@@ -27,11 +27,13 @@ class ClothAttr(str, Enum):
             ):
                 return "INT"
             case (
-                ClothAttr.PIN_RADIUS |
                 ClothAttr.VERTEX_WEIGHT |
                 ClothAttr.INFLATION_SCALE
             ):
                 return "FLOAT"
+            case ClothAttr.PIN_RADIUS:
+                # really just 4 independent floats, representing up to 4 pin radius sets, not a color
+                return "FLOAT_COLOR"
             case _:
                 assert False, f"Type not set for cloth attribute '{self}'"
 
@@ -58,7 +60,7 @@ class ClothAttr(str, Enum):
             ):
                 return 0
             case ClothAttr.PIN_RADIUS:
-                return 0.0
+                return (0.0, 0.0, 0.0, 0.0)
             case ClothAttr.VERTEX_WEIGHT:
                 return 0.002025
             case ClothAttr.INFLATION_SCALE:
@@ -88,7 +90,7 @@ class ClothAttr(str, Enum):
             case ClothAttr.PINNED:
                 return "If set, the vertex will be static"
             case ClothAttr.PIN_RADIUS:
-                return "TODO"
+                return "Soft-pinning radius"
             case ClothAttr.VERTEX_WEIGHT:
                 return "Determines how heavy each vertex of the cloth mesh is"
             case ClothAttr.INFLATION_SCALE:
@@ -124,7 +126,10 @@ def mesh_get_cloth_attribute_values(mesh: Mesh, attr: ClothAttr) -> np.ndarray:
     values = np.array([attr.default_value] * num)
     mesh_attr = mesh.attributes.get(attr, None)
     if mesh_attr is not None:
-        mesh_attr.data.foreach_get("value", values)
+        if attr.type == "FLOAT_COLOR":
+            mesh_attr.data.foreach_get("color", values.ravel())
+        else:
+            mesh_attr.data.foreach_get("value", values)
 
     return values
 

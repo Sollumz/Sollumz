@@ -235,10 +235,13 @@ def cloth_char_export(
     controller.vertices = vertices
     bridge = controller.bridge
     bridge.vertex_count_high = num_vertices
-    # TODO(cloth): multiple pin radius sets support
     if mesh_has_cloth_attribute(cloth_mesh, ClothAttr.PIN_RADIUS):
         pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
-        bridge.pin_radius_high = [pin_radius[mi] for mi in cloth_to_mesh_vertex_map]
+        bridge.pin_radius_high = [
+            pin_radius[mi][set_idx]
+            for set_idx in range(4)  # TODO(cloth): don't always export 4 pin radius sets
+            for mi in cloth_to_mesh_vertex_map
+        ]
     else:
         bridge.pin_radius_high = None
     vertex_weights = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.VERTEX_WEIGHT)

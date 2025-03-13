@@ -216,7 +216,7 @@ def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Frag
             group_name_lower = group_xml.name.lower()
             for armature_bone in armature.bones:
                 if group_name_lower == armature_bone.name.lower():
-                    group_xml.name = armature_bone.name # update group name to match actual bone name
+                    group_xml.name = armature_bone.name  # update group name to match actual bone name
                     bone = armature_bone
                     break
             else:
@@ -329,11 +329,9 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     from ..cwxml.cloth import EnvironmentCloth
     from ..ydr.cloth import ClothAttr, mesh_add_cloth_attribute
 
-
     cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment
     if cloth.drawable.is_empty:
         return
-
 
     model_objs = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth")
     assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
@@ -357,6 +355,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     cloth_to_mesh_map = np.empty_like(mesh_to_cloth_map)
     cloth_to_mesh_map[mesh_to_cloth_map] = np.arange(len(mesh_to_cloth_map))
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
+    vertices_count = len(cloth.controller.cloth_high.vertex_positions)
     force_transform = np.fromstring(cloth.user_data or "", dtype=int, sep=" ")
     # TODO: store switch distances somewhere or maybe on export can be derived from existing LOD distances
     # switch_distance_up = cloth.controller.cloth_high.switch_distance_up
@@ -369,6 +368,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     #       Check if pin radius is only used with character cloth
     has_pinned = pinned_vertices_count > 0
     has_pin_radius = len(pin_radius) > 0
+    num_pin_radius_sets = len(pin_radius) // vertices_count
     has_weights = len(weights) > 0
     has_inflation_scale = len(inflation_scale) > 0
     has_force_transform = len(force_transform) > 0
@@ -377,6 +377,9 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
         mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
     if has_pin_radius:
         mesh_add_cloth_attribute(mesh, ClothAttr.PIN_RADIUS)
+        if num_pin_radius_sets > 4:
+            logger.warning(f"Found {num_pin_radius_sets} pin radius sets, only up to 4 sets are supported!")
+            num_pin_radius_sets = 4
     if has_weights:
         mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
     if has_inflation_scale:
@@ -390,7 +393,12 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
             mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
 
         if has_pin_radius:
-            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].value = pin_radius[cloth_vert_index]
+            pin_radii = [
+                pin_radius[cloth_vert_index + (set_idx * vertices_count)]
+                if set_idx < num_pin_radius_sets else 0.0
+                for set_idx in range(4)
+            ]
+            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].color = pin_radii
 
         if has_weights:
             mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = weights[cloth_vert_index]
