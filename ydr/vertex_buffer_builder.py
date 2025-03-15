@@ -118,6 +118,7 @@ class VertexBufferBuilder:
         mesh: bpy.types.Mesh,
         bone_by_vgroup: Optional[dict[int, int]] = None,
         char_cloth_xml: Optional[CharacterCloth] = None,
+        bones: Optional[list[bpy.types.Bone]] = None,
     ):
         self.mesh = mesh
 
@@ -130,6 +131,7 @@ class VertexBufferBuilder:
         self._vert_inds = vert_inds
 
         self._char_cloth = char_cloth_xml
+        self._bones = bones
 
     def build(self):
         if not self.mesh.loop_triangles:
@@ -240,11 +242,16 @@ class VertexBufferBuilder:
             from .cloth_char import _cloth_char_get_mesh_to_cloth_bindings
 
             cloth_bind_verts_pos = np.empty(num_verts * 3, dtype=np.float32)
+            cloth_bind_verts_normal = np.empty(num_verts * 3, dtype=np.float32)
             self.mesh.attributes["position"].data.foreach_get("vector", cloth_bind_verts_pos)
+            self.mesh.vertices.foreach_get("normal", cloth_bind_verts_normal)
             cloth_bind_verts_pos = cloth_bind_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
+            cloth_bind_verts_normal = cloth_bind_verts_normal.reshape((num_verts, 3))[cloth_bind_verts_mask]
+
+            skeleton_centroid = next(b for b in self._char_cloth._tmp_skeleton.bones if b.name == "SKEL_Spine0").translation
 
             cloth_bind_weights_arr, cloth_bind_ind_arr = _cloth_char_get_mesh_to_cloth_bindings(
-                self._char_cloth, cloth_bind_verts_pos
+                self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal, skeleton_centroid, cloth_bind_verts
             )
 
             weights_arr[cloth_bind_verts_mask] = self._convert_to_int_range(cloth_bind_weights_arr)

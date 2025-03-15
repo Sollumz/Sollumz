@@ -117,6 +117,9 @@ def create_drawable_xml(
         bones = None
         original_pose = "POSE"
 
+    if char_cloth_xml:
+        char_cloth_xml._tmp_skeleton = drawable_xml.skeleton
+
     create_model_xmls(drawable_xml, drawable_obj, materials, bones, char_cloth_xml)
 
     drawable_xml.lights = create_xml_lights(drawable_obj)
@@ -345,7 +348,7 @@ def create_geometries_xml(
 
     bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
 
-    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup, char_cloth_xml).build()
+    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup, char_cloth_xml, bones).build()
 
     for mat_index, loop_inds in loop_inds_by_mat.items():
         material = materials[mat_index]

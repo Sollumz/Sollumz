@@ -415,6 +415,9 @@ def _cloth_char_get_cloth_to_bone_bindings(
 def _cloth_char_get_mesh_to_cloth_bindings(
     cloth: CharacterCloth,
     mesh_binded_verts: NDArray[np.float32],
+    mesh_binded_verts_normals: NDArray[np.float32],
+    skeleton_centroid: Vector,
+    cloth_bind_verts,
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32]]:
 
     from ..shared.geometry import (
@@ -433,8 +436,28 @@ def _cloth_char_get_mesh_to_cloth_bindings(
     cloth_tris = np.array(cloth.controller.indices).reshape((-1, 3))
     cloth_tris_verts = cloth_verts[cloth_tris]
     cloth_tris_normals = tris_normals(cloth_tris_verts)
+    cloth_tris_normals_neg = -cloth_tris_normals
     cloth_tris_areas = tris_areas(cloth_tris_verts)
     cloth_tris_v0, cloth_tris_v1, cloth_tris_v2 = cloth_tris_verts[:, 0], cloth_tris_verts[:, 1], cloth_tris_verts[:, 2]
+    cloth_centroid = np.mean(cloth_verts, axis=0)
+    print(f"{cloth_centroid=}")
+    print(f"{skeleton_centroid=}")
+
+    cloth_centroid = np.array(skeleton_centroid)
+
+    # Compute the dot product
+    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals * (cloth_centroid - mesh_binded_verts), axis=1)
+    print(f"{mesh_binded_dot_product=}")
+    mesh_binded_verts_facing_inside = mesh_binded_dot_product > 0
+
+
+    with open("output.txt", "w") as f:
+        f.write("import bpy\n")
+        f.write("mesh: bpy.types.Mesh = bpy.data.meshes['']\n")
+        f.write("mesh.attributes.new('DEBUGCLOTH', 'INT', 'POINT')\n")
+        # for i in range(len(mesh_binded_verts_facing_inside)):
+        #     mi = cloth_bind_verts[i]
+        #     f.write(f"mesh.attributes['DEBUGCLOTH'].data[{mi}].value = {1 if mesh_binded_verts_facing_inside[i] else 0}\n")
 
     ind_arr = np.empty((num_binded_verts, 4), dtype=np.uint32)
     weights_arr = np.empty((num_binded_verts, 4), dtype=np.float32)
@@ -442,17 +465,25 @@ def _cloth_char_get_mesh_to_cloth_bindings(
     # Bind each mesh vertex to a cloth triangle
     for mesh_vert_idx in range(num_binded_verts):
         mesh_vert = mesh_binded_verts[mesh_vert_idx]
+        mesh_vert_normal = mesh_binded_verts_normals[mesh_vert_idx]
+        # mesh_vert_facing_inside = mesh_binded_verts_facing_inside[mesh_vert_idx]
+
+        # mesh_vert_cloth_tris_normals_dot_product = np.sum(mesh_vert_normal * cloth_tris_normals, axis=1)
+
+        this_cloth_tris_normals = cloth_tris_normals # cloth_tris_normals_neg if mesh_vert_facing_inside else cloth_tris_normals
+        this_cloth_tris_v0 = cloth_tris_v0  # cloth_tris_v1 if mesh_vert_facing_inside else cloth_tris_v0
+        this_cloth_tris_v1 = cloth_tris_v1  # cloth_tris_v0 if mesh_vert_facing_inside else cloth_tris_v1
 
         # Calculate the distance from the mesh vertex to every cloth triangle plane
-        distance_to_tris = distance_signed_point_to_planes(mesh_vert, cloth_tris_verts[:, 0], cloth_tris_normals)
+        distance_to_tris = distance_signed_point_to_planes(mesh_vert, this_cloth_tris_v0, this_cloth_tris_normals)
 
         # Project the mesh vertex onto every cloth triangle plane
-        projected_to_tris = mesh_vert - cloth_tris_normals * distance_to_tris[:, np.newaxis]
+        projected_to_tris = mesh_vert - this_cloth_tris_normals * distance_to_tris[:, np.newaxis]
 
         # Calculate the barycentric coordinates of each projected vertex
-        tris_areas0 = tris_areas_from_verts(cloth_tris_v1, cloth_tris_v2, projected_to_tris)
-        tris_areas1 = tris_areas_from_verts(cloth_tris_v2, cloth_tris_v0, projected_to_tris)
-        tris_areas2 = tris_areas_from_verts(cloth_tris_v0, cloth_tris_v1, projected_to_tris)
+        tris_areas0 = tris_areas_from_verts(this_cloth_tris_v1, cloth_tris_v2, projected_to_tris)
+        tris_areas1 = tris_areas_from_verts(cloth_tris_v2, this_cloth_tris_v0, projected_to_tris)
+        tris_areas2 = tris_areas_from_verts(this_cloth_tris_v0, this_cloth_tris_v1, projected_to_tris)
 
         tris_w0 = tris_areas0 / cloth_tris_areas
         tris_w1 = tris_areas1 / cloth_tris_areas
@@ -475,6 +506,19 @@ def _cloth_char_get_mesh_to_cloth_bindings(
         d = distance_to_tris[bind_tri_index]
 
         # TODO(cloth): triangle winding order needs to be flipped in some cases (b1-b0-255-b2) -> (b0-b1-255-b2)
+        # if mesh_vert_facing_inside:
+        #     b1, b0 = b0, b1
+            # w1, w0 = w0, w1
+        if Vector(cloth_tris_normals[bind_tri_index]).dot(Vector(mesh_vert_normal)) < 0:
+            # mesh vertex and cloth triangle facing opposite directions
+            # flip the tri verts
+            b1, b0 = b0, b1
+            w1, w0 = w0, w1
+
+            mi = cloth_bind_verts[mesh_vert_idx]
+            with open("output.txt", "a") as f:
+                f.write(f"mesh.attributes['DEBUGCLOTH'].data[{mi}].value = 1\n")
+
         ind_arr[mesh_vert_idx, 0] = b1
         ind_arr[mesh_vert_idx, 1] = b0
         ind_arr[mesh_vert_idx, 2] = 255
