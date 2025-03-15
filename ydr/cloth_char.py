@@ -451,10 +451,10 @@ def _cloth_char_get_mesh_to_cloth_bindings(
     mesh_binded_verts_facing_inside = mesh_binded_dot_product > 0
 
 
-    with open("output.txt", "w") as f:
-        f.write("import bpy\n")
-        f.write("mesh: bpy.types.Mesh = bpy.data.meshes['']\n")
-        f.write("mesh.attributes.new('DEBUGCLOTH', 'INT', 'POINT')\n")
+    # with open("output.txt", "w") as f:
+    #     f.write("import bpy\n")
+    #     f.write("mesh: bpy.types.Mesh = bpy.data.meshes['']\n")
+    #     f.write("mesh.attributes.new('DEBUGCLOTH', 'INT', 'POINT')\n")
         # for i in range(len(mesh_binded_verts_facing_inside)):
         #     mi = cloth_bind_verts[i]
         #     f.write(f"mesh.attributes['DEBUGCLOTH'].data[{mi}].value = {1 if mesh_binded_verts_facing_inside[i] else 0}\n")
@@ -515,9 +515,9 @@ def _cloth_char_get_mesh_to_cloth_bindings(
             b1, b0 = b0, b1
             w1, w0 = w0, w1
 
-            mi = cloth_bind_verts[mesh_vert_idx]
-            with open("output.txt", "a") as f:
-                f.write(f"mesh.attributes['DEBUGCLOTH'].data[{mi}].value = 1\n")
+            # mi = cloth_bind_verts[mesh_vert_idx]
+            # with open("output.txt", "a") as f:
+            #     f.write(f"mesh.attributes['DEBUGCLOTH'].data[{mi}].value = 1\n")
 
         ind_arr[mesh_vert_idx, 0] = b1
         ind_arr[mesh_vert_idx, 1] = b0
