@@ -46,6 +46,10 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
         col.use_property_decorate = False
         col.use_property_split = True
 
+        if obj.parent and obj.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+            col.prop(obj, "sz_dwd_export_with_skeleton")
+            col.separator()
+
         col.prop(drawable_props, "lod_dist_high", text="Lod Distance High")
         col.prop(drawable_props, "lod_dist_med", text="Med")
         col.prop(drawable_props, "lod_dist_low", text="Low")

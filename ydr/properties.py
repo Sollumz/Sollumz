@@ -692,6 +692,11 @@ def register():
         min=0, default=CableAttr.MATERIAL_INDEX.default_value,
     )
 
+    bpy.types.Object.sz_dwd_export_with_skeleton = bpy.props.BoolProperty(
+        name="Export with Skeleton",
+        default=False,
+    )
+
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
 
 
@@ -732,5 +737,6 @@ def unregister():
     del bpy.types.Scene.sz_ui_cable_phase_offset
     del bpy.types.Scene.sz_ui_cable_material_index_visualize
     del bpy.types.Scene.sz_ui_cable_material_index
+    del bpy.types.Object.sz_dwd_export_with_skeleton
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)

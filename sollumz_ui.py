@@ -243,14 +243,6 @@ class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
 #         pass
 
 
-class SOLLUMZ_PT_export_ydd(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Drawable Dictionary"
-    bl_order = 4
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "exclude_skeleton")
-
-
 class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
     bl_label = "Ymap"
     bl_order = 5

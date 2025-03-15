@@ -36,13 +36,6 @@ class SollumzExportSettings(PropertyGroup):
         update=_save_preferences_on_update
     )
 
-    exclude_skeleton: BoolProperty(
-        name="Exclude Skeleton",
-        description="Exclude skeleton from export. Usually done with mp ped components",
-        default=False,
-        update=_save_preferences_on_update
-    )
-
     export_with_ytyp: BoolProperty(
         name="Export with ytyp",
         description="Exports a .ytyp.xml with an archetype for every drawable or drawable dictionary being exported",

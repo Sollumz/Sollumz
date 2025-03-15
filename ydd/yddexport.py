@@ -4,12 +4,11 @@ from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
 from ..tools import jenkhash
 from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_export_settings
+from .. import logger
 
 
 def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
-    export_settings = get_export_settings()
-
-    ydd_xml = create_ydd_xml(ydd_obj, export_settings.exclude_skeleton)
+    ydd_xml = create_ydd_xml(ydd_obj)
 
     write_embedded_textures(ydd_obj, filepath)
 
@@ -17,24 +16,24 @@ def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
     return True
 
 
-def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
+def create_ydd_xml(ydd_obj: bpy.types.Object):
     ydd_xml = DrawableDictionary()
 
-    ydd_armature = find_ydd_armature(
-        ydd_obj) if ydd_obj.type != "ARMATURE" else ydd_obj
+    ydd_armature = ydd_obj if ydd_obj.type == "ARMATURE" else None
 
     for child in ydd_obj.children:
         if child.sollum_type != SollumType.DRAWABLE:
             continue
 
-        if child.type != "ARMATURE":
-            armature_obj = ydd_armature
-        else:
-            armature_obj = None
+        if child.type == "ARMATURE":
+            logger.warning(
+                f"Armature of drawable '{child.name}' will be ignored! The armature must be in the drawable dictionary "
+                f"'{ydd_obj.name}'."
+            )
 
-        drawable_xml = create_drawable_xml(child, armature_obj=armature_obj)
+        drawable_xml = create_drawable_xml(child, armature_obj=ydd_armature)
 
-        if exclude_skeleton or child.type != "ARMATURE":
+        if not child.sz_dwd_export_with_skeleton:
             drawable_xml.skeleton = None
 
         ydd_xml.append(drawable_xml)
@@ -42,13 +41,6 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
     ydd_xml.sort(key=get_hash)
 
     return ydd_xml
-
-
-def find_ydd_armature(ydd_obj: bpy.types.Object):
-    """Find first drawable with an armature in ``ydd_obj``."""
-    for child in ydd_obj.children:
-        if child.type == "ARMATURE":
-            return child
 
 
 def get_hash(item):
