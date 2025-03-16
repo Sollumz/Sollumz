@@ -1,7 +1,10 @@
 import bpy
+from bpy.types import (
+    Object,
+)
 import os
 from typing import Optional
-from ..cwxml.drawable import YDD, Drawable, DrawableDictionary, Skeleton
+from ..cwxml.drawable import YDD, Drawable, DrawableDictionary
 from ..cwxml.fragment import YFT, Fragment
 from ..ydr.ydrimport import create_drawable_obj, create_drawable_skel, apply_rotation_limits
 from ..sollumz_properties import SollumType
@@ -12,7 +15,7 @@ from ..tools.utils import get_filename
 from .. import logger
 
 
-def import_ydd(filepath: str):
+def import_ydd(filepath: str) -> Object:
     import_settings = get_import_settings()
 
     ydd_xml = YDD.from_xml_file(filepath)
@@ -43,28 +46,39 @@ def load_external_skeleton(ydd_filepath: str) -> Optional[Fragment]:
     return YFT.from_xml_file(yft_filepath)
 
 
-def get_first_yft_path(directory: str):
+def get_first_yft_path(directory: str) -> Optional[str]:
     for filepath in os.listdir(directory):
         if filepath.endswith(".yft.xml"):
             return os.path.join(directory, filepath)
 
+    return None
 
-def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, external_skel: Optional[Fragment]):
 
+def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, external_skel: Optional[Fragment]) -> Object:
     name = get_filename(filepath)
-    skel_drawable = find_first_drawable_with_skeleton(ydd_xml) if external_skel is None else external_skel.drawable
+    drawable_with_skeleton = (
+        find_first_drawable_with_skeleton(ydd_xml)
+        if external_skel is None
+        else external_skel.drawable
+    )
 
-    if skel_drawable is None:
+    if drawable_with_skeleton is None:
         dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
         external_armature = None
         external_bones = None
     else:
-        dict_obj = create_armature_parent(name, skel_drawable)
-        external_armature = dict_obj  # use the same skeleton for all drawables in the dictionary
-        external_bones = skel_drawable.skeleton.bones
+        # Use the same skeleton for all drawables in the dictionary. While drawables can technically have different
+        # skeletons each, this does not occur in the base game. All drawables with a skeleton in a dictionary have
+        # the same skeleton (same bones, same signature).
+        # Before we created a Blender armature for each of these skeletons but it is a better UX to have a single
+        # armature in the root object and instead have a per-drawable property to indicate if it should be exported
+        # with skeleton (`sz_dwd_export_with_skeleton`).
+        dict_obj = create_armature_parent(name, drawable_with_skeleton)
+        external_armature = dict_obj
+        external_bones = drawable_with_skeleton.skeleton.bones
 
     for drawable_xml in ydd_xml:
-        # checking it here because `create_drawable_obj` modifies the skeleton
+        # checking for skeleton here because `create_drawable_obj` assigns the external skeleton as the drawable skeleton
         has_its_own_skeleton = bool(drawable_xml.skeleton.bones)
 
         drawable_obj = create_drawable_obj(
@@ -79,7 +93,7 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, external_skel: Op
     return dict_obj
 
 
-def create_armature_parent(name: str, drawable_with_skeleton: Drawable):
+def create_armature_parent(name: str, drawable_with_skeleton: Drawable) -> Object:
     armature = bpy.data.armatures.new(f"{name}.skel")
     dict_obj = create_blender_object(SollumType.DRAWABLE_DICTIONARY, name, armature)
 
@@ -98,4 +112,4 @@ def find_first_drawable_with_skeleton(ydd_xml: DrawableDictionary) -> Optional[D
         if drawable_xml.skeleton.bones:
             return drawable_xml
 
-    return drawable_xml
+    return None

@@ -694,6 +694,7 @@ def register():
 
     bpy.types.Object.sz_dwd_export_with_skeleton = bpy.props.BoolProperty(
         name="Export with Skeleton",
+        description="Export with the shared skeleton found in the parent drawable dictionary",
         default=False,
     )
 

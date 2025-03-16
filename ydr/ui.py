@@ -40,13 +40,14 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         obj = context.active_object
+        parent = obj.parent
         drawable_props = obj.drawable_properties
 
         col = layout.column(align=True)
         col.use_property_decorate = False
         col.use_property_split = True
 
-        if obj.parent and obj.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+        if parent and parent.sollum_type == SollumType.DRAWABLE_DICTIONARY and parent.type == "ARMATURE":
             col.prop(obj, "sz_dwd_export_with_skeleton")
             col.separator()
 
