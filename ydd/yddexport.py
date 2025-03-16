@@ -24,6 +24,7 @@ def create_ydd_xml(ydd_obj: bpy.types.Object):
         if child.sollum_type != SollumType.DRAWABLE:
             continue
 
+        # TODO: export only the correct facial bones for the current head drawable
         if child.type == "ARMATURE":
             if ydd_armature is None:
                 logger.warning(
