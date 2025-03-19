@@ -534,14 +534,14 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     for constraint in joined_obj.constraints:
         joined_obj.constraints.remove(constraint)
 
-    joined_obj.asset_mark()
-    joined_obj.asset_generate_preview()
-
     bpy.context.collection.objects.unlink(joined_obj)
 
     armature = drawable_obj.data
     bpy.data.objects.remove(drawable_obj)
     if armature:
         bpy.data.armatures.remove(armature)
+
+    joined_obj.asset_mark()
+    joined_obj.asset_generate_preview()
 
     return joined_obj
