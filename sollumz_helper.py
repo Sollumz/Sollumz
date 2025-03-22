@@ -119,7 +119,7 @@ def duplicate_object_with_children(obj):
 def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType] = None) -> bpy.types.Object | None:
     """Find parent Fragment or Drawable if one exists. Returns None otherwise."""
     parent_types = [SollumType.FRAGMENT, SollumType.DRAWABLE, SollumType.DRAWABLE_DICTIONARY,
-                    SollumType.CLIP_DICTIONARY, SollumType.YMAP, SollumType.BOUND_COMPOSITE]
+                    SollumType.CLIP_DICTIONARY, SollumType.YMAP, SollumType.BOUND_COMPOSITE, SollumType.WATER_DATA]
 
     if parent_type is not None and obj.parent is not None and obj.parent.sollum_type == parent_type:
         return obj.parent
