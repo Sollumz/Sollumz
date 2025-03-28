@@ -881,6 +881,25 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
         return True
 
 
+class SOLLUMZ_OT_update_tinted_shader_graph(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Update the tinted shader graph"""
+    bl_idname = "sollumz.update_tinted_shader_graph"
+    bl_label = "Update Tinted Shader"
+    bl_action = "Update Tinted Shader"
+
+    def run(self, context): 
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if len(objs) == 0:
+            self.message(
+                f"No mesh objects selected!")
+            return False
+
+        for obj in objs:
+            create_tinted_shader_graph(obj)
+
+        return True
+
+
 class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.bone_flags_new_item"
     bl_label = "Add a new item"

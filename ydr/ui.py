@@ -410,6 +410,9 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
             ydr_ops.SOLLUMZ_OT_set_all_materials_embedded.bl_idname, icon="MATERIAL")
         grid.operator(
             ydr_ops.SOLLUMZ_OT_unset_all_materials_embedded.bl_idname)
+        grid = layout.grid_flow(align=True)
+        row.operator(
+            ydr_ops.SOLLUMZ_OT_update_tinted_shader_graph.bl_idname, icon="NODETREE")
 
 
 class SOLLUMZ_PT_CREATE_DRAWABLE_PANEL(bpy.types.Panel):
