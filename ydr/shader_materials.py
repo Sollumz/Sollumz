@@ -204,6 +204,29 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
 
 
 def create_tinted_shader_graph(obj: bpy.types.Object):
+    attribute_to_remove = []
+    modifiers_to_remove = []
+
+    for mod in obj.modifiers:
+        if mod.type == "NODES":
+            for mat in obj.data.materials:
+                tint_node = get_tint_sampler_node(mat)
+                if tint_node is not None:
+                    output_id = mod.node_group.interface.items_tree.get("Tint Color")
+                    if output_id:
+                        attr_name = mod[output_id.identifier + "_attribute_name"]
+                        if attr_name and attr_name in obj.data.attributes:
+                            attribute_to_remove.append(attr_name)
+
+                    modifiers_to_remove.append(mod)
+                    break
+
+    for attr_name in attribute_to_remove:
+        obj.data.attributes.remove(obj.data.attributes[attr_name])
+
+    for mod in modifiers_to_remove:
+        obj.modifiers.remove(mod)
+
     tint_mats = get_tinted_mats(obj)
 
     if not tint_mats:
