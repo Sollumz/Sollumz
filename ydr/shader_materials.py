@@ -226,29 +226,21 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
         # Blender still has space to append '.012' in case of duplicated names.
         tint_color_attr_name = tint_color_attr_name[:64-4]
 
-        if tint_color_attr_name in obj.data.attributes:
-            tint_color_attr = obj.data.attributes[tint_color_attr_name]
-        else:
-            tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
+        tint_color_attr = obj.data.attributes.new(name=tint_color_attr_name, type="BYTE_COLOR", domain="CORNER")
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
 
-        modifier_name = f"TintGeometry_{tint_color_attr_name}"
-        existing_modifier = obj.modifiers.get(modifier_name)
-        
-        if existing_modifier is None:
-            create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img, modifier_name)
+        create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img)
 
 
 def create_tint_geom_modifier(
     obj: bpy.types.Object,
     tint_color_attr_name: str,
     input_color_attr_name: Optional[str],
-    palette_img: Optional[bpy.types.Image],
-    modifier_name: str
+    palette_img: Optional[bpy.types.Image]
 ) -> bpy.types.NodesModifier:
     tnt_ng = create_tinted_geometry_graph()
-    mod = obj.modifiers.new(name=modifier_name, type="NODES")
+    mod = obj.modifiers.new("GeometryNodes", "NODES")
     mod.node_group = tnt_ng
 
     # set input / output variables
