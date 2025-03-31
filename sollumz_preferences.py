@@ -346,6 +346,34 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_save_preferences_on_update
     )
 
+    portal_default_flag: IntProperty(
+        name="Default Portal Flag",
+        description="The default flag for portals",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    room_default_flag: IntProperty(
+        name="Default Room Flag",
+        description="The default flag for rooms",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    entity_default_flag: IntProperty(
+        name="Default Entity Flag",
+        description="The default flag for entities",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    archetype_default_flag: IntProperty(
+        name="Default Archetype Flag",
+        description="The default flag for archetypes",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
         type=SzSharedTexturesDirectory,
@@ -424,6 +452,10 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(self, "sollumz_icon_header")
         layout.prop(self, "use_text_name_as_mat_name")
         layout.prop(self, "shader_preset_apply_textures")
+        layout.prop(self, "portal_default_flag")
+        layout.prop(self, "room_default_flag")
+        layout.prop(self, "ymap_entity_default_flag")
+        layout.prop(self, "ytyp_entity_default_flag")
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()

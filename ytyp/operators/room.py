@@ -1,4 +1,5 @@
 import bpy
+from ...sollumz_preferences import get_addon_preferences
 from ...sollumz_operators import SOLLUMZ_OT_base
 from ...sollumz_properties import ArchetypeType
 from ...tools.meshhelper import get_extents, get_min_vector_list, get_max_vector_list
@@ -18,7 +19,11 @@ class SOLLUMZ_OT_create_room(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.new_room()
+        room = selected_archetype.new_room()
+
+        preferences = get_addon_preferences(context)
+        if preferences.room_default_flag:
+            room.flags.total = str(preferences.room_default_flag)
 
         return True
 
@@ -40,6 +45,11 @@ class SOLLUMZ_OT_create_limbo_room(SOLLUMZ_OT_base, bpy.types.Operator):
         room.bb_min = bbmin
         room.bb_max = bbmax
         room.name = "limbo"
+        room.timecycle = ""
+
+        preferences = get_addon_preferences(context)
+        if preferences.room_default_flag:
+            room.flags.total = str(preferences.room_default_flag)
 
         return True
 

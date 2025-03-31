@@ -8,7 +8,7 @@ from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
-from ...sollumz_preferences import get_export_settings
+from ...sollumz_preferences import get_addon_preferences, get_export_settings
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
 from ..ytypexport import selected_ytyp_to_xml
@@ -58,7 +58,11 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_ytyp = get_selected_ytyp(context)
-        selected_ytyp.new_archetype()
+        archetype = selected_ytyp.new_archetype()
+
+        preferences = get_addon_preferences(context)
+        if preferences.archetype_default_flag:
+            archetype.flags.total = str(preferences.archetype_default_flag)
 
         return True
 
@@ -347,6 +351,12 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                 item.asset_type = AssetType.ASSETLESS
             elif obj.sollum_type == SollumType.FRAGMENT:
                 item.asset_type = AssetType.FRAGMENT
+
+            if archetype_type != ArchetypeType.MLO:
+                preferences = get_addon_preferences(context)
+                if preferences.archetype_default_flag:
+                    item.flags.total = str(preferences.archetype_default_flag)
+
         if not found:
             self.message(
                 f"No asset of type '{','.join([SOLLUMZ_UI_NAMES[type] for type in self.allowed_types])}' found!")

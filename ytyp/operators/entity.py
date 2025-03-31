@@ -1,6 +1,7 @@
 import bpy
 from typing import Optional
 from mathutils import Vector
+from ...sollumz_preferences import get_addon_preferences
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ...shared.multiselection import SelectMode
@@ -39,6 +40,10 @@ class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
         entity = selected_archetype.new_entity()
         set_entity_properties_from_filter(entity, context)
 
+        preferences = get_addon_preferences(context)
+        if preferences.entity_default_flag:
+            entity.flags.total = str(preferences.entity_default_flag)
+
         return True
 
 
@@ -66,6 +71,13 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
             entity = selected_archetype.new_entity()
             entity.archetype_name = remove_number_suffix(obj.name)
+
+            preferences = get_addon_preferences(context)
+            if preferences.entity_default_flag:
+                print('---------------------------------')
+                print(f"Current entity flag: {entity.flags.total}")
+                print(f"Setting entity flag to {preferences.entity_default_flag}")
+                entity.flags.total = str(preferences.entity_default_flag)
 
             entity.linked_object = obj
             set_entity_properties_from_filter(entity, context)
