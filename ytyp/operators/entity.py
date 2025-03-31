@@ -74,9 +74,6 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
             preferences = get_addon_preferences(context)
             if preferences.entity_default_flag:
-                print('---------------------------------')
-                print(f"Current entity flag: {entity.flags.total}")
-                print(f"Setting entity flag to {preferences.entity_default_flag}")
                 entity.flags.total = str(preferences.entity_default_flag)
 
             entity.linked_object = obj
