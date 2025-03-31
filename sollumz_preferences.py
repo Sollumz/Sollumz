@@ -454,8 +454,8 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(self, "shader_preset_apply_textures")
         layout.prop(self, "portal_default_flag")
         layout.prop(self, "room_default_flag")
-        layout.prop(self, "ymap_entity_default_flag")
-        layout.prop(self, "ytyp_entity_default_flag")
+        layout.prop(self, "entity_default_flag")
+        layout.prop(self, "archetype_default_flag")
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()
