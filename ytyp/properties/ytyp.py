@@ -8,6 +8,8 @@ from bpy.props import (
 from enum import IntEnum
 from typing import Union, Optional
 from uuid import uuid4
+
+from ...sollumz_preferences import get_addon_preferences
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
@@ -303,6 +305,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
+        preferences = get_addon_preferences(bpy.context)
+        if preferences.portal_default_flag:
+            item.flags.total = str(preferences.portal_default_flag)
+
         ArchetypeProperties.update_cached_portal_enum_items(self.uuid)
 
         return item
@@ -321,6 +327,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
         item.name = f"Room.{item.id}"
 
+        preferences = get_addon_preferences(bpy.context)
+        if preferences.room_default_flag:
+            item.flags.total = str(preferences.room_default_flag)
+
         ArchetypeProperties.update_cached_room_enum_items(self.uuid)
 
         return item
@@ -338,6 +348,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.mlo_archetype_uuid = self.uuid
 
         item.archetype_name = f"Entity.{item_id}"
+
+        preferences = get_addon_preferences(bpy.context)
+        if preferences.entity_default_flag:
+            item.flags.total = str(preferences.entity_default_flag)
 
         return item
 
@@ -662,6 +676,12 @@ class CMapTypesProperties(PropertyGroup):
         item.id = self.last_archetype_id + 1
         item.uuid = str(uuid4())
         item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index + 1}"
+
+        item.type = bpy.context.scene.create_archetype_type
+        if item.type != ArchetypeType.MLO:
+            preferences = get_addon_preferences(bpy.context)
+            if preferences.archetype_default_flag:
+                item.flags.total = str(preferences.archetype_default_flag)
 
         self.last_archetype_id += 1
 

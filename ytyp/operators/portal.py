@@ -6,7 +6,6 @@ from ...tools.blenderhelper import get_selected_vertices, get_selected_edit_vert
 from ..utils import get_selected_archetype, get_selected_portal, get_selected_room, validate_dynamic_enums, validate_dynamic_enum
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 from ..properties.mlo import PortalProperties, get_room_items_for_selected_archetype
-from ...sollumz_preferences import get_addon_preferences
 
 class SOLLUMZ_OT_create_portal(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add a portal to the selected archetype"""
@@ -23,10 +22,6 @@ class SOLLUMZ_OT_create_portal(SOLLUMZ_OT_base, bpy.types.Operator):
 
         portal.room_from_id = context.scene.sollumz_add_portal_room_from
         portal.room_to_id = context.scene.sollumz_add_portal_room_to
-
-        preferences = get_addon_preferences(context)
-        if preferences.portal_default_flag:
-            portal.flags.total = str(preferences.portal_default_flag)
 
         return True
 
@@ -125,10 +120,6 @@ class SOLLUMZ_OT_create_portal_from_selection(PortalCreatorHelper, bpy.types.Ope
 
         new_portal.room_from_id = context.scene.sollumz_add_portal_room_from
         new_portal.room_to_id = context.scene.sollumz_add_portal_room_to
-
-        preferences = get_addon_preferences(context)
-        if preferences.portal_default_flag:
-            new_portal.flags.total = str(preferences.portal_default_flag)
 
         return new_portal
 
