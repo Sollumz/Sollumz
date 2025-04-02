@@ -57,8 +57,9 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return get_selected_ytyp(context) is not None
 
     def run(self, context):
+        archetype_type = context.scene.create_archetype_type
         selected_ytyp = get_selected_ytyp(context)
-        selected_ytyp.new_archetype()
+        selected_ytyp.new_archetype(archetype_type)
 
         return True
 
@@ -325,13 +326,10 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                     continue
             found = True
             selected_ytyp = get_selected_ytyp(context)
-            item = selected_ytyp.new_archetype()
-
+            item = selected_ytyp.new_archetype(archetype_type)
             item.name = obj.name
             item.asset = obj
-            item.type = archetype_type
-            item.texture_dictionary = obj.name if has_embedded_textures(
-                obj) else ""
+            item.texture_dictionary = obj.name if has_embedded_textures(obj) else ""
             drawable_dictionary = ""
             if obj.parent:
                 if obj.parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
@@ -347,6 +345,7 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                 item.asset_type = AssetType.ASSETLESS
             elif obj.sollum_type == SollumType.FRAGMENT:
                 item.asset_type = AssetType.FRAGMENT
+
         if not found:
             self.message(
                 f"No asset of type '{','.join([SOLLUMZ_UI_NAMES[type] for type in self.allowed_types])}' found!")

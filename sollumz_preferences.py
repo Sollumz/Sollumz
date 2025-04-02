@@ -346,6 +346,34 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_save_preferences_on_update
     )
 
+    default_flags_portal: IntProperty(
+        name="Default Portal Flags",
+        description="The default flags for MLO portals",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_flags_room: IntProperty(
+        name="Default Room Flags",
+        description="The default flags for MLO rooms",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_flags_entity: IntProperty(
+        name="Default Entity Flags",
+        description="The default flags for MLO entities",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_flags_archetype: IntProperty(
+        name="Default Archetype Flags",
+        description="The default flags for archetypes",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
         type=SzSharedTexturesDirectory,
@@ -419,11 +447,21 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "show_vertex_painter")
-        layout.prop(self, "extra_color_swatches")
-        layout.prop(self, "sollumz_icon_header")
-        layout.prop(self, "use_text_name_as_mat_name")
-        layout.prop(self, "shader_preset_apply_textures")
+        row = layout.row()
+        col = row.column()
+        col.prop(self, "show_vertex_painter")
+        col.prop(self, "extra_color_swatches")
+        col.prop(self, "sollumz_icon_header")
+        col.prop(self, "use_text_name_as_mat_name")
+        col.prop(self, "shader_preset_apply_textures")
+
+        col = row.column(align=True)
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.prop(self, "default_flags_portal", text="Default Flags for Portals")
+        col.prop(self, "default_flags_room", text="Rooms")
+        col.prop(self, "default_flags_entity", text="Entities")
+        col.prop(self, "default_flags_archetype", text="Archetypes")
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()

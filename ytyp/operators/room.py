@@ -40,6 +40,7 @@ class SOLLUMZ_OT_create_limbo_room(SOLLUMZ_OT_base, bpy.types.Operator):
         room.bb_min = bbmin
         room.bb_max = bbmax
         room.name = "limbo"
+        room.timecycle = ""
 
         return True
 
