@@ -306,8 +306,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.mlo_archetype_uuid = self.uuid
 
         preferences = get_addon_preferences(bpy.context)
-        if preferences.portal_default_flag:
-            item.flags.total = str(preferences.portal_default_flag)
+        if preferences.default_flags_portal:
+            item.flags.total = str(preferences.default_flags_portal)
 
         ArchetypeProperties.update_cached_portal_enum_items(self.uuid)
 
@@ -328,8 +328,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.name = f"Room.{item.id}"
 
         preferences = get_addon_preferences(bpy.context)
-        if preferences.room_default_flag:
-            item.flags.total = str(preferences.room_default_flag)
+        if preferences.default_flags_room:
+            item.flags.total = str(preferences.default_flags_room)
 
         ArchetypeProperties.update_cached_room_enum_items(self.uuid)
 
@@ -350,8 +350,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.archetype_name = f"Entity.{item_id}"
 
         preferences = get_addon_preferences(bpy.context)
-        if preferences.entity_default_flag:
-            item.flags.total = str(preferences.entity_default_flag)
+        if preferences.default_flags_entity:
+            item.flags.total = str(preferences.default_flags_entity)
 
         return item
 
@@ -668,7 +668,7 @@ class CMapTypesProperties(PropertyGroup):
                     entity_set.mlo_archetype_id = archetype.id
                     entity_set.mlo_archetype_uuid = archetype.uuid
 
-    def new_archetype(self):
+    def new_archetype(self, archetype_type: ArchetypeType = ArchetypeType.BASE):
         item = self.archetypes.add()
         index = len(self.archetypes) - 1
         self.archetypes.select(index)
@@ -676,12 +676,12 @@ class CMapTypesProperties(PropertyGroup):
         item.id = self.last_archetype_id + 1
         item.uuid = str(uuid4())
         item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index + 1}"
+        item.type = archetype_type
 
-        item.type = bpy.context.scene.create_archetype_type
-        if item.type != ArchetypeType.MLO:
+        if archetype_type != ArchetypeType.MLO:
             preferences = get_addon_preferences(bpy.context)
-            if preferences.archetype_default_flag:
-                item.flags.total = str(preferences.archetype_default_flag)
+            if preferences.default_flags_archetype:
+                item.flags.total = str(preferences.default_flags_archetype)
 
         self.last_archetype_id += 1
 

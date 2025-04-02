@@ -7,6 +7,7 @@ from ..utils import get_selected_archetype, get_selected_portal, get_selected_ro
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 from ..properties.mlo import PortalProperties, get_room_items_for_selected_archetype
 
+
 class SOLLUMZ_OT_create_portal(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add a portal to the selected archetype"""
     bl_idname = "sollumz.createportal"
