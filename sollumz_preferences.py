@@ -97,6 +97,29 @@ class SollumzExportSettings(PropertyGroup):
         update=_save_preferences_on_update
     )
 
+    mesh_domain: EnumProperty(
+        name="Mesh Domain",
+        description="Domain considered for exporting meshes",
+        default="FACE_CORNER",
+        items=(
+            (
+            "FACE_CORNER", "Face Corner",
+            "Mesh is exported allowing each face corner to have their own set of "
+            "attributes. Recommended default setting."
+            ),
+            (
+            "VERTEX", "Vertex",
+            "Mesh is exported only allowing a single set of attributes per vertex. Recommended for when it is important "
+            "that the vertex order and count remains the same during import and export, such as with MP freemode head "
+            "models.\n\n"
+            "If face corners attached to the vertex have different attributes (vertex colors, UVs, etc.), only the "
+            "attributes of one of the face corners is used. In the case of normals, the average of the face corner "
+            "normals is used."
+            )
+        ),
+        update=_save_preferences_on_update
+    )
+
     @property
     def export_hi(self) -> bool:
         return "sollumz_export_very_high" in self.export_lods
@@ -549,7 +572,9 @@ def _load_preferences():
 def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
     def _prop_to_value(key: str):
         prop = getattr(struct, key)
-        if isinstance(prop, bpy_prop_collection):
+        if isinstance(prop, str):
+            prop = repr(prop)  # repr adds quotes and escapes the string, so ast.literal_eval can parse it correctly later
+        elif isinstance(prop, bpy_prop_collection):
             prop = _get_bpy_collection_as_list(prop)
         elif isinstance(prop, bpy_struct):
             prop = _get_bpy_struct_as_dict(prop)

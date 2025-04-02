@@ -57,7 +57,7 @@ from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
 from .render_bucket import RenderBucket
-from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
+from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
 from .lights import create_xml_lights
@@ -317,14 +317,22 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
     bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
 
-    total_vert_buffer = VertexBufferBuilder(mesh_eval, bone_by_vgroup).build()
+    domain = VBBuilderDomain[get_export_settings().mesh_domain]
+    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain)
+    total_vert_buffer = vb_builder.build()
+    if domain == VBBuilderDomain.VERTEX:
+        # bit dirty to use private data of the builder class, but we need this array here and it is already computed
+        loop_to_vert_inds = vb_builder._loop_to_vert_inds
 
     for mat_index, loop_inds in loop_inds_by_mat.items():
         material = materials[mat_index]
         tangent_required = get_tangent_required(material)
         normal_required = get_normal_required(material)
 
-        vert_buffer = total_vert_buffer[loop_inds]
+        if domain == VBBuilderDomain.FACE_CORNER:
+            vert_buffer = total_vert_buffer[loop_inds]
+        elif domain == VBBuilderDomain.VERTEX:
+            vert_buffer = total_vert_buffer[loop_to_vert_inds[loop_inds]]
         used_texcoords = get_used_texcoords(material)
         used_colors = get_used_colors(material)
 
@@ -341,8 +349,7 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
         geom_xml = Geometry()
 
-        geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(
-            vert_buffer["Position"])
+        geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(vert_buffer["Position"])
         geom_xml.shader_index = mat_index
 
         if bones and "BlendWeights" in vert_buffer.dtype.names:
