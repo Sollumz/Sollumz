@@ -607,6 +607,12 @@ class MaterialConverterHelper:
 
     def execute(self, context):
         for obj in context.selected_objects:
+            if obj.type != 'MESH':
+                continue
+
+            if not obj.data.materials:
+                continue
+
             materials = self.get_materials(obj)
 
             for material in materials:
@@ -616,7 +622,7 @@ class MaterialConverterHelper:
                     continue
 
                 self.report(
-                    {"INFO"}, f"Successfuly converted material '{new_material.name}'.")
+                    {"INFO"}, f"Successfully converted material '{new_material.name}'.")
 
         return {"FINISHED"}
 
