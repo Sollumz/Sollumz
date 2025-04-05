@@ -17,6 +17,7 @@ from .cwxml.navmesh import YNV
 from .cwxml.clipdictionary import YCD
 from .cwxml.ytyp import YTYP
 from .cwxml.ymap import YMAP
+from .cwxml.water import WATER
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd
@@ -31,6 +32,8 @@ from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
 from .ytyp.ytypimport import import_ytyp
+from .water.waterimport import import_water
+from .water.waterexport import export_water
 from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
 from .ybn.properties import BoundFlags
@@ -70,7 +73,7 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
     )
 
     filter_glob: bpy.props.StringProperty(
-        default="".join(f"*{filetype.file_extension};" for filetype in (YDR, YDD, YFT, YBN, YNV, YCD, YMAP, YTYP)),
+        default="".join(f"*{filetype.file_extension};" for filetype in (YDR, YDD, YFT, YBN, YNV, YCD, YMAP, YTYP, WATER)),
         options={"HIDDEN", "SKIP_SAVE"},
         maxlen=255,
     )
@@ -109,6 +112,8 @@ class SOLLUMZ_OT_import_assets(bpy.types.Operator, ImportHelper, TimedOperator):
                         import_ycd(filepath)
                     elif YMAP.file_extension in filepath:
                         import_ymap(filepath)
+                    elif WATER.file_extension in filepath:
+                        import_water(filepath)
                     else:
                         continue
 
@@ -244,6 +249,9 @@ class SOLLUMZ_OT_export_assets(bpy.types.Operator, TimedOperator):
                     elif obj.sollum_type == SollumType.YMAP:
                         filepath = self.get_filepath(obj, YMAP.file_extension)
                         success = export_ymap(obj, filepath)
+                    elif obj.sollum_type == SollumType.WATER_DATA:
+                        filepath = self.get_filepath(obj, WATER.file_extension)
+                        success = export_water(obj, filepath)
                     else:
                         continue
 
