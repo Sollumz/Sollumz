@@ -97,6 +97,29 @@ class SollumzExportSettings(PropertyGroup):
         update=_save_preferences_on_update
     )
 
+    mesh_domain: EnumProperty(
+        name="Mesh Domain",
+        description="Domain considered for exporting meshes",
+        default="FACE_CORNER",
+        items=(
+            (
+            "FACE_CORNER", "Face Corner",
+            "Mesh is exported allowing each face corner to have their own set of "
+            "attributes. Recommended default setting."
+            ),
+            (
+            "VERTEX", "Vertex",
+            "Mesh is exported only allowing a single set of attributes per vertex. Recommended for when it is important "
+            "that the vertex order and count remains the same during import and export, such as with MP freemode head "
+            "models.\n\n"
+            "If face corners attached to the vertex have different attributes (vertex colors, UVs, etc.), only the "
+            "attributes of one of the face corners is used. In the case of normals, the average of the face corner "
+            "normals is used."
+            )
+        ),
+        update=_save_preferences_on_update
+    )
+
     @property
     def export_hi(self) -> bool:
         return "sollumz_export_very_high" in self.export_lods
@@ -346,6 +369,34 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_save_preferences_on_update
     )
 
+    default_flags_portal: IntProperty(
+        name="Default Portal Flags",
+        description="The default flags for MLO portals",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_flags_room: IntProperty(
+        name="Default Room Flags",
+        description="The default flags for MLO rooms",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_flags_entity: IntProperty(
+        name="Default Entity Flags",
+        description="The default flags for MLO entities",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_flags_archetype: IntProperty(
+        name="Default Archetype Flags",
+        description="The default flags for archetypes",
+        default=0,
+        update=_save_preferences_on_update
+    )
+
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
         type=SzSharedTexturesDirectory,
@@ -419,11 +470,21 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "show_vertex_painter")
-        layout.prop(self, "extra_color_swatches")
-        layout.prop(self, "sollumz_icon_header")
-        layout.prop(self, "use_text_name_as_mat_name")
-        layout.prop(self, "shader_preset_apply_textures")
+        row = layout.row()
+        col = row.column()
+        col.prop(self, "show_vertex_painter")
+        col.prop(self, "extra_color_swatches")
+        col.prop(self, "sollumz_icon_header")
+        col.prop(self, "use_text_name_as_mat_name")
+        col.prop(self, "shader_preset_apply_textures")
+
+        col = row.column(align=True)
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.prop(self, "default_flags_portal", text="Default Flags for Portals")
+        col.prop(self, "default_flags_room", text="Rooms")
+        col.prop(self, "default_flags_entity", text="Entities")
+        col.prop(self, "default_flags_archetype", text="Archetypes")
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()
@@ -511,7 +572,9 @@ def _load_preferences():
 def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
     def _prop_to_value(key: str):
         prop = getattr(struct, key)
-        if isinstance(prop, bpy_prop_collection):
+        if isinstance(prop, str):
+            prop = repr(prop)  # repr adds quotes and escapes the string, so ast.literal_eval can parse it correctly later
+        elif isinstance(prop, bpy_prop_collection):
             prop = _get_bpy_collection_as_list(prop)
         elif isinstance(prop, bpy_struct):
             prop = _get_bpy_struct_as_dict(prop)

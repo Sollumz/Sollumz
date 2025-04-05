@@ -224,6 +224,7 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
         layout.prop(settings, "apply_transforms")
         layout.prop(settings, "export_with_ytyp")
+        layout.prop(settings, "mesh_domain", expand=True)
 
 
 class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):

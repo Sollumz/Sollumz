@@ -5,12 +5,20 @@ from bpy.types import (
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
-from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import (
+    MaterialType,
+    SollumType,
+    BOUND_TYPES,
+    SOLLUMZ_UI_NAMES,
+    MIN_VEHICLE_LIGHT_ID,
+    MAX_VEHICLE_LIGHT_ID,
+)
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_ui import FlagsPanel
 from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
     GroupFlagBit,
+    VehiclePaintLayer,
 )
 from .operators import (
     SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID,
@@ -167,7 +175,10 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
         obj = context.active_object
 
         for prop in FragmentProperties.__annotations__:
-            if prop == "lod_properties" or prop == "cloth":
+            if prop == "lod_properties" or prop == "cloth" or prop == "vehicle_render_preview":
+                continue
+            # skip flags because these don't look like they should be user-editable
+            if prop == "flags":
                 continue
 
             layout.prop(obj.fragment_properties, prop)
@@ -337,6 +348,41 @@ class SOLLUMZ_PT_FRAG_CLOTH_TUNING_FLAGS_PANEL(FlagsPanel, ClothPanel, bpy.types
         cloth_props = obj.fragment_properties.cloth
         self.layout.active = self.has_cloth and cloth_props.enable_tuning
         super().draw(context)
+
+
+class SOLLUMZ_PT_VEHICLE_RENDER_PREVIEW_PANEL(bpy.types.Panel):
+    bl_label = "Vehicle Render Preview"
+    bl_idname = "SOLLUMZ_PT_VEHICLE_RENDER_PREVIEW_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
+    bl_order = 3
+
+    # TODO: poll to only show this panel with vehicle fragments
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        render_preview = obj.fragment_properties.vehicle_render_preview
+
+        layout.prop(render_preview, "dirt_level")
+        layout.prop(render_preview, "dirt_wetness")
+        layout.prop(render_preview, "dirt_color")
+
+        for paint_layer_id in range(1, 7+1):
+            if paint_layer_id == VehiclePaintLayer.DEFAULT:
+                continue
+            layout.prop(render_preview, f"body_color_{paint_layer_id}")
+
+        layout.label(text="Lights Emissive")
+        grid = layout.grid_flow(columns=3)
+        for light_id in range(MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID+1):
+            grid.prop(render_preview, f"light_id_{light_id}")
 
 
 class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):

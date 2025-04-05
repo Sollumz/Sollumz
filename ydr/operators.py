@@ -453,7 +453,7 @@ def shader_preset_apply_to_material(material: bpy.types.Material, preset: Shader
                 texture_path = lookup_texture_file(param.texture, None)
                 img = texture_path and bpy.data.images.load(str(texture_path), check_existing=True)
                 if img and is_non_color_texture(shader_def.filename, param.name):
-                    img.colorspace_settings.name = "Non-Color"
+                    img.colorspace_settings.is_data = True
 
             if img:
                 node.image = img
@@ -877,6 +877,25 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
 
         for obj in objs:
             self.set_materials_unembedded(obj)
+
+        return True
+
+
+class SOLLUMZ_OT_update_tinted_shader_graph(SOLLUMZ_OT_base, bpy.types.Operator):
+    """Update the tinted shader graph"""
+    bl_idname = "sollumz.update_tinted_shader_graph"
+    bl_label = "Update Tinted Shader"
+    bl_action = "Update Tinted Shader"
+
+    def run(self, context): 
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
+        if len(objs) == 0:
+            self.message(
+                f"No mesh objects selected!")
+            return False
+
+        for obj in objs:
+            create_tinted_shader_graph(obj)
 
         return True
 
