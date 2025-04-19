@@ -408,10 +408,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     def select_entity_linked_object(self):
         entity = self.entities.active_item
-        if entity.linked_object:
-            bpy.context.view_layer.objects.active = entity.linked_object
+        obj = entity.linked_object
+        if obj and obj.name in bpy.context.view_layer.objects:
+            bpy.context.view_layer.objects.active = obj
             bpy.ops.object.select_all(action="DESELECT")
-            entity.linked_object.select_set(True)
+            obj.select_set(True)
 
     def on_entities_active_index_update_from_ui(self, context):
         self.select_entity_linked_object()
@@ -689,10 +690,11 @@ class CMapTypesProperties(PropertyGroup):
 
     def select_archetype_linked_object(self):
         archetype = self.archetypes.active_item
-        if archetype.asset:
-            bpy.context.view_layer.objects.active = archetype.asset
+        obj = archetype.asset
+        if obj and obj.name in bpy.context.view_layer.objects:
+            bpy.context.view_layer.objects.active = obj
             bpy.ops.object.select_all(action="DESELECT")
-            archetype.asset.select_set(True)
+            obj.select_set(True)
 
     def on_archetypes_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()
