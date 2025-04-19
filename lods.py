@@ -171,7 +171,7 @@ class SOLLUMZ_OT_set_lod_level(Operator):
     @classmethod
     def poll(cls, context):
         active_obj = context.view_layer.objects.active
-        return active_obj is not None and find_sollumz_parent(active_obj)
+        return active_obj is not None and active_obj.mode == "OBJECT" and find_sollumz_parent(active_obj)
 
     def execute(self, context):
         active_obj = context.view_layer.objects.active
@@ -188,7 +188,7 @@ class SOLLUMZ_OT_hide_object(Operator):
     @classmethod
     def poll(cls, context):
         active_obj = context.view_layer.objects.active
-        return active_obj is not None and find_sollumz_parent(active_obj)
+        return active_obj is not None and active_obj.mode == "OBJECT" and find_sollumz_parent(active_obj)
 
     def execute(self, context):
         active_obj = context.view_layer.objects.active
@@ -354,7 +354,7 @@ def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
     obj.hide_set(False)
 
     for child in obj.children_recursive:
-        if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
+        if child.type == "MESH" and child.mode == "OBJECT" and child.sollum_type == SollumType.DRAWABLE_MODEL:
             child.sz_lods.active_lod_level = lod_level
             continue
 
