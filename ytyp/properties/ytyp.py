@@ -409,13 +409,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     def select_entity_linked_object(self):
         entity = self.entities.active_item
         obj = entity.linked_object
-
         if obj and obj.name in bpy.context.view_layer.objects:
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.select_all(action="DESELECT")
             obj.select_set(True)
-        else:
-            print(f"Warning: Entity linked object '{obj.name if obj else 'None'}' not found in view layer.")
 
     def on_entities_active_index_update_from_ui(self, context):
         self.select_entity_linked_object()
@@ -694,13 +691,10 @@ class CMapTypesProperties(PropertyGroup):
     def select_archetype_linked_object(self):
         archetype = self.archetypes.active_item
         obj = archetype.asset
-
         if obj and obj.name in bpy.context.view_layer.objects:
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.select_all(action="DESELECT")
             obj.select_set(True)
-        else:
-            print(f"Warning: Archetype linked object '{obj.name if obj else 'None'}' not found in view layer.")
 
     def on_archetypes_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()
