@@ -7,7 +7,7 @@ from bpy.props import (
 from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
-from ...sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
+from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect
 from ...sollumz_preferences import get_export_settings
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
@@ -418,28 +418,26 @@ class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-# TODO(multiselect): ytyp_time_flags_select_range support multiselection
-class SOLLUMZ_OT_YTYP_TIME_FLAGS_select_range(SelectTimeFlagsRange, bpy.types.Operator):
+class SOLLUMZ_OT_YTYP_TIME_FLAGS_select_range(SelectTimeFlagsRangeMultiSelect, bpy.types.Operator):
     bl_idname = "sollumz.ytyp_time_flags_select_range"
 
     @classmethod
     def poll(cls, context):
         return get_selected_archetype(context) is not None
 
-    def get_flags(self, context):
-        return get_selected_archetype(context).time_flags
+    def iter_selection_flags(self, context):
+        yield from (arch.time_flags for arch in get_selected_ytyp(context).archetypes.iter_selected_items())
 
 
-# TODO(multiselect): ytyp_time_flags_clear support multiselection
-class SOLLUMZ_OT_YTYP_TIME_FLAGS_clear(ClearTimeFlags, bpy.types.Operator):
+class SOLLUMZ_OT_YTYP_TIME_FLAGS_clear(ClearTimeFlagsMultiSelect, bpy.types.Operator):
     bl_idname = "sollumz.ytyp_time_flags_clear"
 
     @classmethod
     def poll(cls, context):
         return get_selected_archetype(context) is not None
 
-    def get_flags(self, context):
-        return get_selected_archetype(context).time_flags
+    def iter_selection_flags(self, context):
+        yield from (arch.time_flags for arch in get_selected_ytyp(context).archetypes.iter_selected_items())
 
 
 class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):

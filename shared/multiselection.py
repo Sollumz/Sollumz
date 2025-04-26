@@ -740,10 +740,10 @@ class MultiSelectUITimeFlagsPanel(MultiSelectUIFlagsPanel):
         if self.select_operator is None or self.clear_operator is None:
             raise NotImplementedError(
                 f"'select_operator' and 'clear_operator' bl_idnames must be defined for {self.__class__.__name__}!")
-        flags = self.get_flags(context)
+        selection = self.get_flags_selection(context)
         row = self.layout.row()
         row.operator(self.select_operator)
-        row.prop(flags, "time_flags_start", text="from")
-        row.prop(flags, "time_flags_end", text="to")
+        row.prop(selection.owner, selection.propnames.time_flags_start, text="from")
+        row.prop(selection.owner, selection.propnames.time_flags_end, text="to")
         row = self.layout.row()
         row.operator(self.clear_operator)

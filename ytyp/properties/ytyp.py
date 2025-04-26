@@ -589,6 +589,9 @@ class ArchetypeTimeFlagsSelectionAccess(MultiSelectNestedAccess):
     hour24: MultiSelectProperty()
     swap_while_visible: MultiSelectProperty()
 
+    time_flags_start: MultiSelectProperty()
+    time_flags_end: MultiSelectProperty()
+
 
 class ArchetypeMloFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
