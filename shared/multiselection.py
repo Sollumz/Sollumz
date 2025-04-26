@@ -41,49 +41,44 @@ class SelectMode(Enum):
     TOGGLE = auto()
 
 
-class MultiSelectAccessMixin:
-    _collection_name = None
-    _path_split_str = None
-    _nested_access_types = None
+class MultiSelectAccess:
+    propnames = None
 
-    def find_owner(self) -> PropertyGroup:
-        id_data = self.id_data
-        path = self.path_from_id()
-        owner_path, _ = path.split(self._path_split_str)
-        owner = id_data.path_resolve(owner_path)
-        return owner
-
-    def find_owner_collection(self) -> 'MultiSelectCollection':
-        return getattr(self.find_owner(), self._collection_name)
-
-    @property
-    def active_item(self) -> bpy_struct:
-        return self.find_owner_collection().active_item
-
-    def iter_selected_items(self) -> Iterator[bpy_struct]:
-        return self.find_owner_collection().iter_selected_items()
-
-    @property
-    def selected_items(self) -> list[bpy_struct]:
-        return self.find_owner_collection().selected_items
+    def __init__(self, owner: bpy_struct):
+        self.owner = owner
 
 
-class MultiSelectNestedAccessMixin(MultiSelectAccessMixin):
-    _nested_path = None
+class MultiSelectNestedAccess(MultiSelectAccess):
+    pass
 
-    def _resolve_nested(self, active_item_root: bpy_struct) -> bpy_struct:
-        return active_item_root.path_resolve(self._nested_path)
 
-    @property
-    def active_item(self) -> bpy_struct:
-        return self._resolve_nested(self.find_owner_collection().active_item)
+class _MultiSelectAccessPropertyDescriptor:
+    """Descriptor to access the underlying Blender property from a MultiSelectAccess property."""
+    __slots__ = ("_propname",)
 
-    def iter_selected_items(self) -> Iterator[bpy_struct]:
-        yield from (self._resolve_nested(item) for item in self.find_owner_collection().iter_selected_items())
+    def __init__(self, propname: str):
+        self._propname = propname
 
-    @property
-    def selected_items(self) -> list[bpy_struct]:
-        return [self._resolve_nested(item) for item in self.find_owner_collection().selected_items]
+    def __get__(self, obj: MultiSelectAccess | None, objtype=None):
+        if obj is None:
+            return self
+        return getattr(obj.owner, self._propname)
+
+    def __set__(self, obj: MultiSelectAccess, value):
+        setattr(obj.owner, self._propname, value)
+
+
+class _MultiSelectNestedAccessPropertyDescriptor:
+    """Descriptor to access a MultiSelectNestedAccess property from a MultiSelectAccess property."""
+    __slots__ = ("_nested_access_cls",)
+
+    def __init__(self, nested_access_cls: type):
+        self._nested_access_cls = nested_access_cls
+
+    def __get__(self, obj: MultiSelectAccess | None, objtype=None):
+        if obj is None:
+            return self
+        return self._nested_access_cls(obj.owner)
 
 
 def define_multiselect_collection(name: str, collection_kwargs: dict):
@@ -95,14 +90,13 @@ def define_multiselect_collection(name: str, collection_kwargs: dict):
 
         assert issubclass(item_cls, PropertyGroup), \
             f"{item_cls.__name__} must be a PropertyGroup"
-        assert issubclass(item_access_cls, MultiSelectAccessMixin), \
-            f"{item_access_cls.__name__} must implement MultiSelectAccessMixin"
+        assert issubclass(item_access_cls, MultiSelectAccess), \
+            f"{item_access_cls.__name__} must implement MultiSelectAccess"
 
         collection_propname = f"{name}_"
         active_index_propname = f"{name}_active_index_"
         active_index_for_ui_propname = f"{name}_active_index_for_ui_"
         selection_indices_propname = f"{name}_selection_indices_"
-        selection_propname = f"{name}_selection_"
         on_active_index_update_from_ui_callback_name = f"on_{name}_active_index_update_from_ui"
         cls.__annotations__[collection_propname] = CollectionProperty(type=item_cls, **collection_kwargs)
         cls.__annotations__[active_index_propname] = IntProperty(name="Active Index")
@@ -112,41 +106,212 @@ def define_multiselect_collection(name: str, collection_kwargs: dict):
             set=lambda s, v: _collection_getter(s)._on_active_index_update_from_ui(v),
         )
         cls.__annotations__[selection_indices_propname] = CollectionProperty(type=SelectionIndex)
-        cls.__annotations__[selection_propname] = PointerProperty(type=item_access_cls)
-        item_access_cls._path_split_str = f".{selection_propname}"
-        item_access_cls._collection_name = name
-        if item_access_cls._nested_access_types:
-            for nested_access_cls, nested_propname in item_access_cls._nested_access_types:
-                assert nested_access_cls._path_split_str is None, \
-                    f"Nested access class {nested_access_cls.__name__} already used"
-                assert issubclass(nested_access_cls, MultiSelectNestedAccessMixin)
-                nested_access_cls._nested_path = f"{nested_propname}"
-                nested_access_cls._path_split_str = f".{selection_propname}.{nested_propname}"
-                nested_access_cls._collection_name = item_access_cls._collection_name
-
-            del item_access_cls._nested_access_types
+        _define_multiselect_access(cls, name, item_cls, item_access_cls)
 
         def _collection_getter(self) -> MultiSelectCollection[item_cls, item_access_cls]:
-            return MultiSelectCollection(self, collection_propname, active_index_propname, active_index_for_ui_propname, on_active_index_update_from_ui_callback_name, selection_indices_propname, selection_propname)
+            return MultiSelectCollection(
+                self, collection_propname, active_index_propname, active_index_for_ui_propname,
+                on_active_index_update_from_ui_callback_name, selection_indices_propname, item_access_cls(self)
+            )
         setattr(cls, name, property(_collection_getter))
         return cls
 
     return _decorator
 
 
+def _define_multiselect_access(cls: type, collection_name: str, item_cls: type, item_access_cls: type, nested_path: str = ""):
+    def _coll(s: bpy_struct) -> MultiSelectCollection:
+        return getattr(s, collection_name)
+
+    if issubclass(item_access_cls, MultiSelectNestedAccess):
+        assert nested_path
+
+        def _resolve_nested(item: bpy_struct) -> bpy_struct:
+            return item.path_resolve(nested_path)
+    else:
+        def _resolve_nested(item: bpy_struct) -> bpy_struct:
+            return item
+
+    def _active_item(s: bpy_struct) -> bpy_struct:
+        return _resolve_nested(_coll(s).active_item)
+
+    def _wrap_basic_property(prop_fn, attr_name: str, **kwargs):
+        def _getter(self: bpy_struct):
+            return getattr(_active_item(self), attr_name)
+
+        def _setter(self: bpy_struct, value):
+            for item in _coll(self).iter_selected_items():
+                setattr(_resolve_nested(item), attr_name, value)
+
+        return prop_fn(**kwargs, get=_getter, set=_setter)
+
+    def _wrap_enum_property(attr_name: str, **kwargs):
+        assert "ENUM_FLAG" not in kwargs.get("options", ()), \
+            "Flag enum properties not supported. Cannot wrap '{attr_name}'"
+
+        if (items := kwargs.get("items", None)) and callable(items):
+            dynamic_items_callback = items
+        else:
+            dynamic_items_callback = None
+
+        # Enum getters need to return the int value, but reading the properties gives the
+        # string name. So we need to lookup the value for the name.
+        def _getter(self: bpy_struct) -> int:
+            active = _active_item(self)
+            enum_str = getattr(active, attr_name)
+            enum_int = active.rna_type.properties[attr_name].enum_items[enum_str].value
+            return enum_int
+
+        def _setter(self: bpy_struct, value: int):
+            # Need to convert the int value to the corresponding enum name string.
+            # We need to use setattr which only accepts the string form. We cannot use dictionary-like access
+            # (i.e. `item[attr_name] = value`) because it doesn't trigger the update callback if the property has one.
+            coll = _coll(self)
+            enum_items = _active_item(self).rna_type.properties[attr_name].enum_items
+            for enum_item in enum_items:
+                if enum_item.value == value:
+                    enum_str = enum_item.identifier
+                    break
+            else:
+                enum_str = enum_items[0].identifier
+
+            for item in coll.iter_selected_items():
+                setattr(_resolve_nested(item), attr_name, enum_str)
+
+        def _getter_dynamic(self: bpy_struct) -> int:
+            # EnumProperty.enum_items is empty with dynamic enum items, we need to call
+            # the callback and search for the correct enum manually.
+            # See https://projects.blender.org/blender/blender/issues/86803
+            active = _active_item(self)
+            enum_str = getattr(active, attr_name)
+            enum_items = dynamic_items_callback(active, bpy.context)
+            for i, enum_item in enumerate(enum_items):
+                if enum_item[0] == enum_str:
+                    n = len(enum_item)
+                    if n == 3:
+                        return i
+                    else:
+                        return enum_item[-1]
+
+            return 0  # TODO(multiselect): should this be some other default?
+
+        def _setter_dynamic(self: bpy_struct, value: int):
+            # Need to convert the int value to the corresponding enum name string.
+            # We need to use setattr which only accepts the string form. We cannot use dictionary-like access
+            # (i.e. `item[attr_name] = value`) because it doesn't trigger the update callback if the property has one.
+            coll = _coll(self)
+            enum_items = dynamic_items_callback(_active_item(self), bpy.context)
+            for i, enum_item in enumerate(enum_items):
+                n = len(enum_item)
+                if (n == 3 and i == value) or (n != 3 and enum_item[-1] == value):
+                    enum_str = enum_item[0]
+                    break
+            else:
+                enum_str = enum_items[0][0]
+
+            for item in coll.iter_selected_items():
+                setattr(_resolve_nested(item), attr_name, enum_str)
+
+        def _dynamic_items_wrapper(self: bpy_struct, context: Optional[bpy.types.Context]) -> list:
+            # Wrapper required to pass the active item to the enum items callback
+            # Otherwise the callback is invoked with the property group with the collection as self
+            return dynamic_items_callback(_active_item(self), context)
+
+        if dynamic_items_callback:
+            kwargs["items"] = _dynamic_items_wrapper
+
+        return EnumProperty(
+            **kwargs,
+            get=_getter_dynamic if dynamic_items_callback else _getter,
+            set=_setter_dynamic if dynamic_items_callback else _setter,
+        )
+
+    assert issubclass(item_access_cls, MultiSelectAccess), \
+        f"Access class '{item_access_cls.__name__}' must inherit 'MultiSelectAccess'"
+    assert item_access_cls.propnames is None, \
+        f"Access class '{item_access_cls.__name__}' already used"
+    item_cls_annotations = _get_all_annotations(item_cls)
+    item_access_propnames = {}
+    nested_access_types = []
+    for name, annotation in item_access_cls.__annotations__.items():
+        if isinstance(annotation, MultiSelectProperty):
+            src_annotation = item_cls_annotations.get(name, None)
+            assert (
+                src_annotation is not None and
+                hasattr(src_annotation, "function") and
+                hasattr(src_annotation, "keywords")
+            ), f"No property '{name}' found in '{item_cls.__name__}'"
+
+            fn = src_annotation.function
+            kwargs = dict(src_annotation.keywords)
+
+            # Do not copy the callbacks to the wrapper property
+            for callback in ("get", "set", "update"):
+                if callback in kwargs:
+                    del kwargs[callback]
+
+            if fn is EnumProperty:
+                wrapper_prop = _wrap_enum_property(name, **kwargs)
+            elif fn in {BoolProperty, IntProperty, FloatProperty, StringProperty, FloatVectorProperty}:
+                wrapper_prop = _wrap_basic_property(fn, name, **kwargs)
+            elif fn in {PointerProperty}:
+                property_group_cls = kwargs["type"]
+                assert not issubclass(property_group_cls, ID) and issubclass(property_group_cls, PropertyGroup), \
+                    f"Cannot wrap 'PointerProperty' of '{kwargs['type'].__name__}' type"
+                assert isinstance(annotation, MultiSelectPointerProperty), \
+                    "Must annotate with 'MultiSelectPointerProperty' to wrap 'PointerProperty'"
+                assert issubclass(annotation.nested_access_cls, MultiSelectNestedAccess), \
+                    f"Nested selection access class '{annotation.nested_access_cls.__name__}' must inherit 'MultiSelectNestedAccess'"
+
+                nested_access_types.append((annotation.nested_access_cls, property_group_cls, name))
+                setattr(item_access_cls, name, _MultiSelectNestedAccessPropertyDescriptor(annotation.nested_access_cls))
+                wrapper_prop = None
+            else:
+                assert False, f"Cannot wrap '{src_annotation.function.__name__}'"
+
+            if wrapper_prop:
+                access_prop_name = (
+                    f"{collection_name}_access_{nested_path}_{name}_"
+                    if nested_path
+                    else f"{collection_name}_access_{name}_"
+                )
+                cls.__annotations__[access_prop_name] = wrapper_prop
+
+                setattr(item_access_cls, name, _MultiSelectAccessPropertyDescriptor(access_prop_name))
+                item_access_propnames[name] = access_prop_name
+
+        item_access_cls.propnames = type(f"{item_access_cls.__name__}PropNames", (), item_access_propnames)
+
+    if nested_access_types:
+        for nested_access_cls, property_group_cls, nested_propname in nested_access_types:
+            assert nested_access_cls.propnames is None, \
+                f"Nested access class '{nested_access_cls.__name__}' already used"
+            assert issubclass(nested_access_cls, MultiSelectNestedAccess)
+            _define_multiselect_access(cls, collection_name, property_group_cls, nested_access_cls, nested_propname)
+
+
 TItem = TypeVar("TItem", bound=PropertyGroup)
-TItemAccess = TypeVar("TItemAccess", bound=MultiSelectAccessMixin)
+TItemAccess = TypeVar("TItemAccess", bound=MultiSelectAccess)
 
 
 class MultiSelectCollection(Generic[TItem, TItemAccess]):
-    def __init__(self, owner: PropertyGroup, collection_propname: str, active_index_propname: str, active_index_for_ui_propname: str, on_active_index_update_from_ui_callback_name: str, selection_indices_propname: str, selection_propname: str):
+    __slots__ = (
+        "_owner", "_collection_propname", "_active_index_propname", "_active_index_for_ui_propname",
+        "_on_active_index_update_from_ui_callback_name", "_selection_indices_propname", "_selection_access"
+    )
+
+    def __init__(
+        self,
+        owner: PropertyGroup, collection_propname: str, active_index_propname: str, active_index_for_ui_propname: str,
+        on_active_index_update_from_ui_callback_name: str, selection_indices_propname: str, selection_access: TItemAccess
+    ):
         self._owner = owner
         self._collection_propname = collection_propname
         self._active_index_propname = active_index_propname
         self._active_index_for_ui_propname = active_index_for_ui_propname
         self._on_active_index_update_from_ui_callback_name = on_active_index_update_from_ui_callback_name
         self._selection_indices_propname = selection_indices_propname
-        self._selection_propname = selection_propname
+        self._selection_access = selection_access
 
     @property
     def collection(self) -> bpy_prop_collection:
@@ -166,7 +331,7 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
 
     @property
     def selection(self) -> TItemAccess:
-        return getattr(self._owner, self._selection_propname)
+        return self._selection_access
 
     def add(self) -> TItem:
         return self.collection.add()
@@ -387,147 +552,8 @@ class MultiSelectProperty:
 
 
 class MultiSelectPointerProperty(MultiSelectProperty):
-    def __init__(self, pointer_type: type):
-        self.pointer_type = pointer_type
-
-
-def define_multiselect_access(item_cls: type) -> type:
-    def _wrap_basic_property(prop_fn, attr_name: str, **kwargs):
-        def _getter(self: MultiSelectAccessMixin):
-            return getattr(self.active_item, attr_name)
-
-        def _setter(self: MultiSelectAccessMixin, value):
-            for item in self.iter_selected_items():
-                setattr(item, attr_name, value)
-
-        return prop_fn(**kwargs, get=_getter, set=_setter)
-
-    def _wrap_enum_property(attr_name: str, **kwargs):
-        assert "ENUM_FLAG" not in kwargs.get("options", ()), \
-            "Flag enum properties not supported. Cannot wrap '{attr_name}'"
-
-        if (items := kwargs.get("items", None)) and callable(items):
-            dynamic_items_callback = items
-        else:
-            dynamic_items_callback = None
-
-        # Enum getters need to return the int value, but reading the properties gives the
-        # string name. So we need to lookup the value for the name.
-        def _getter(self: MultiSelectAccessMixin) -> int:
-            active = self.active_item
-            enum_str = getattr(active, attr_name)
-            enum_int = active.rna_type.properties[attr_name].enum_items[enum_str].value
-            return enum_int
-
-        def _setter(self: MultiSelectAccessMixin, value: int):
-            # Need to convert the int value to the corresponding enum name string.
-            # We need to use setattr which only accepts the string form. We cannot use dictionary-like access
-            # (i.e. `item[attr_name] = value`) because it doesn't trigger the update callback if the property has one.
-            enum_items = self.active_item.rna_type.properties[attr_name].enum_items
-            for enum_item in enum_items:
-                if enum_item.value == value:
-                    enum_str = enum_item.identifier
-                    break
-            else:
-                enum_str = enum_items[0].identifier
-
-            for item in self.iter_selected_items():
-                setattr(item, attr_name, enum_str)
-
-        def _getter_dynamic(self: MultiSelectAccessMixin) -> int:
-            # EnumProperty.enum_items is empty with dynamic enum items, we need to call
-            # the callback and search for the correct enum manually.
-            # See https://projects.blender.org/blender/blender/issues/86803
-            active = self.active_item
-            enum_str = getattr(active, attr_name)
-            enum_items = dynamic_items_callback(active, bpy.context)
-            for i, enum_item in enumerate(enum_items):
-                if enum_item[0] == enum_str:
-                    n = len(enum_item)
-                    if n == 3:
-                        return i
-                    else:
-                        return enum_item[-1]
-
-            return 0  # TODO(multiselect): should this be some other default?
-
-        def _setter_dynamic(self: MultiSelectAccessMixin, value: int):
-            # Need to convert the int value to the corresponding enum name string.
-            # We need to use setattr which only accepts the string form. We cannot use dictionary-like access
-            # (i.e. `item[attr_name] = value`) because it doesn't trigger the update callback if the property has one.
-            enum_items = dynamic_items_callback(self.active_item, bpy.context)
-            for i, enum_item in enumerate(enum_items):
-                n = len(enum_item)
-                if (n == 3 and i == value) or (n != 3 and enum_item[-1] == value):
-                    enum_str = enum_item[0]
-                    break
-            else:
-                enum_str = enum_items[0][0]
-
-            for item in self.iter_selected_items():
-                setattr(item, attr_name, enum_str)
-
-        def _dynamic_items_wrapper(self: MultiSelectAccessMixin, context: Optional[bpy.types.Context]) -> list:
-            # Wrapper required to pass the active item to the enum items callback
-            # Otherwise the callback is invoked with the MultiSelectAccessMixin as self
-            active = self.active_item
-            return dynamic_items_callback(active, context)
-
-        if dynamic_items_callback:
-            kwargs["items"] = _dynamic_items_wrapper
-
-        return EnumProperty(
-            **kwargs,
-            get=_getter_dynamic if dynamic_items_callback else _getter,
-            set=_setter_dynamic if dynamic_items_callback else _setter,
-        )
-
-    def _decorator(cls: type) -> type:
-        assert issubclass(cls, MultiSelectAccessMixin), \
-            f"'{cls.__name__}' must inherit 'MultiSelectAccessMixin'"
-        item_cls_annotations = _get_all_annotations(item_cls)
-        for name, annotation in cls.__annotations__.items():
-            if isinstance(annotation, MultiSelectProperty):
-                src_annotation = item_cls_annotations.get(name, None)
-                assert (
-                    src_annotation is not None and
-                    hasattr(src_annotation, "function") and
-                    hasattr(src_annotation, "keywords")
-                ), f"No property '{name}' found in '{item_cls.__name__}'"
-
-                fn = src_annotation.function
-                kwargs = dict(src_annotation.keywords)
-
-                # Do not copy the callbacks to the wrapper property
-                for callback in ("get", "set", "update"):
-                    if callback in kwargs:
-                        del kwargs[callback]
-
-                if fn is EnumProperty:
-                    wrapper_prop = _wrap_enum_property(name, **kwargs)
-                elif fn in {BoolProperty, IntProperty, FloatProperty, StringProperty, FloatVectorProperty}:
-                    wrapper_prop = _wrap_basic_property(fn, name, **kwargs)
-                elif fn in {PointerProperty}:
-                    assert not issubclass(kwargs["type"], ID), \
-                        f"Cannot wrap 'PointerProperty' of '{kwargs['type'].__name__}' type"
-                    assert isinstance(annotation, MultiSelectPointerProperty), \
-                        "Must annotate with 'MultiSelectPointerProperty' to wrap 'PointerProperty'"
-                    assert issubclass(annotation.pointer_type, MultiSelectNestedAccessMixin), \
-                        f"Nested selection access class '{annotation.pointer_type.__name__}' must inherit 'MultiSelectNestedAccessMixin'"
-
-                    del kwargs["type"]
-                    wrapper_prop = PointerProperty(**kwargs, type=annotation.pointer_type)
-                    if cls._nested_access_types is None:
-                        cls._nested_access_types = []
-                    cls._nested_access_types.append((annotation.pointer_type, name))
-                else:
-                    assert False, f"Cannot wrap '{src_annotation.function.__name__}'"
-
-                cls.__annotations__[name] = wrapper_prop
-
-        return cls
-
-    return _decorator
+    def __init__(self, nested_access_cls: type):
+        self.nested_access_cls = nested_access_cls
 
 
 class MultiSelectFilterOptions(NamedTuple):
@@ -688,20 +714,20 @@ class MultiSelectUIFlagsPanel:
         raise NotImplementedError(
             f"Failed to display flags. '{self.__class__.__name__}.get_flags_active()' method not defined.")
 
-    def get_flags_selection(self, context) -> MultiSelectAccessMixin:
+    def get_flags_selection(self, context) -> MultiSelectAccess:
         raise NotImplementedError(
             f"Failed to display flags. '{self.__class__.__name__}.get_flags_selection()' method not defined.")
 
     def draw(self, context):
         active = self.get_flags_active(context)
         selection = self.get_flags_selection(context)
-        self.layout.prop(selection, "total")
+        self.layout.prop(selection.owner, selection.propnames.total)
         self.layout.separator()
         grid = self.layout.grid_flow(columns=2)
         for index, prop_name in enumerate(active.get_flag_names()):
             if index > active.size - 1:
                 break
-            grid.prop(selection, prop_name)
+            grid.prop(selection.owner, getattr(selection.propnames, prop_name))
 
 
 class MultiSelectUITimeFlagsPanel(MultiSelectUIFlagsPanel):

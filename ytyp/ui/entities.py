@@ -188,15 +188,15 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
         layout.separator()
 
         row = layout.row(align=True)
-        row.prop(selection, "attached_portal_id")
+        row.prop(selection.owner, selection.propnames.attached_portal_id)
         row.operator("sollumz.search_entity_portals", text="", icon="VIEWZOOM")
 
         row = layout.row(align=True)
-        row.prop(selection, "attached_room_id")
+        row.prop(selection.owner, selection.propnames.attached_room_id)
         row.operator("sollumz.search_entity_rooms", text="", icon="VIEWZOOM")
 
         row = layout.row(align=True)
-        row.prop(selection, "attached_entity_set_id")
+        row.prop(selection.owner, selection.propnames.attached_entity_set_id)
         row.operator("sollumz.search_entityset", text="", icon="VIEWZOOM")
 
         layout.separator()
@@ -213,7 +213,7 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
         for prop_name in EntityProperties.__annotations__:
             if prop_name == "flags":
                 continue
-            layout.prop(selection, prop_name)
+            layout.prop(selection.owner, getattr(selection.propnames, prop_name))
 
 
 class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(ExtensionsListHelper, bpy.types.UIList):

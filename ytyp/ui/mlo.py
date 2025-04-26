@@ -98,7 +98,7 @@ class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
         for prop_name in RoomProperties.__annotations__:
             if prop_name in ["flags", "id", "uuid"]:
                 continue
-            layout.prop(selection, prop_name)
+            layout.prop(selection.owner, getattr(selection.propnames, prop_name))
 
         list_col.operator(
             "sollumz.setroomboundsfromselection", icon="GROUP_VERTEX")
@@ -224,25 +224,25 @@ class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
 
         layout.separator()
 
-        layout.prop(selection, "corner1")
-        layout.prop(selection, "corner2")
-        layout.prop(selection, "corner3")
-        layout.prop(selection, "corner4")
+        layout.prop(selection.owner, selection.propnames.corner1)
+        layout.prop(selection.owner, selection.propnames.corner2)
+        layout.prop(selection.owner, selection.propnames.corner3)
+        layout.prop(selection.owner, selection.propnames.corner4)
 
         layout.separator()
 
         row = layout.row()
-        row.prop(selection, "room_from_id")
+        row.prop(selection.owner, selection.propnames.room_from_id)
         row.operator("sollumz.search_portal_room_from",
                      text="", icon="VIEWZOOM")
         row = layout.row()
-        row.prop(selection, "room_to_id")
+        row.prop(selection.owner, selection.propnames.room_to_id)
         row.operator("sollumz.search_portal_room_to", text="", icon="VIEWZOOM")
 
         layout.separator()
-        layout.prop(selection, "mirror_priority")
-        layout.prop(selection, "opacity")
-        layout.prop(selection, "audio_occlusion")
+        layout.prop(selection.owner, selection.propnames.mirror_priority)
+        layout.prop(selection.owner, selection.propnames.opacity)
+        layout.prop(selection.owner, selection.propnames.audio_occlusion)
 
 
 class SOLLUMZ_MT_portals_list_context_menu(bpy.types.Menu):
@@ -328,7 +328,7 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
         layout.separator()
 
         for prop_name in TimecycleModifierProperties.__annotations__:
-            layout.prop(selection, prop_name)
+            layout.prop(selection.owner, getattr(selection.propnames, prop_name))
 
 
 class SOLLUMZ_MT_timecycle_modifiers_list_context_menu(bpy.types.Menu):

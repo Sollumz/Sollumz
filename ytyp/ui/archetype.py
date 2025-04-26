@@ -58,20 +58,20 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
         ytyp = get_selected_ytyp(context)
         selection = ytyp.archetypes.selection
         active = ytyp.archetypes.active_item
-        layout.prop(selection, "type")
-        layout.prop(selection, "name")
-        layout.prop(selection, "special_attribute")
+        layout.prop(selection.owner, selection.propnames.type)
+        layout.prop(selection.owner, selection.propnames.name)
+        layout.prop(selection.owner, selection.propnames.special_attribute)
 
         if active.asset_type != AssetType.ASSETLESS:
-            layout.prop(selection, "texture_dictionary")
-            layout.prop(selection, "clip_dictionary")
-            layout.prop(selection, "drawable_dictionary")
-            layout.prop(selection, "physics_dictionary")
-            layout.prop(selection, "hd_texture_dist")
-            layout.prop(selection, "lod_dist")
+            layout.prop(selection.owner, selection.propnames.texture_dictionary)
+            layout.prop(selection.owner, selection.propnames.clip_dictionary)
+            layout.prop(selection.owner, selection.propnames.drawable_dictionary)
+            layout.prop(selection.owner, selection.propnames.physics_dictionary)
+            layout.prop(selection.owner, selection.propnames.hd_texture_dist)
+            layout.prop(selection.owner, selection.propnames.lod_dist)
 
-        layout.prop(selection, "asset_type")
-        layout.prop(selection, "asset_name")
+        layout.prop(selection.owner, selection.propnames.asset_type)
+        layout.prop(selection.owner, selection.propnames.asset_name)
 
         row = layout.row()
         row.enabled = not ytyp.archetypes.has_multiple_selection

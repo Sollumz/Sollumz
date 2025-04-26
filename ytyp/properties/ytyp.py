@@ -19,9 +19,8 @@ from .extensions import ExtensionsContainer, ExtensionType
 from ...shared.multiselection import (
     MultiSelectProperty,
     MultiSelectPointerProperty,
-    define_multiselect_access,
-    MultiSelectAccessMixin,
-    MultiSelectNestedAccessMixin,
+    MultiSelectAccess,
+    MultiSelectNestedAccess,
     define_multiselect_collection,
     MultiSelectCollection,
 )
@@ -103,8 +102,7 @@ class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
     )
 
 
-@define_multiselect_access(RoomFlags)
-class RoomFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+class RoomFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
     flag1: MultiSelectProperty()
     flag2: MultiSelectProperty()
@@ -118,8 +116,7 @@ class RoomFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
     flag10: MultiSelectProperty()
 
 
-@define_multiselect_access(RoomProperties)
-class RoomSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+class RoomSelectionAccess(MultiSelectAccess):
     name: MultiSelectProperty()
     bb_min: MultiSelectProperty()
     bb_max: MultiSelectProperty()
@@ -131,8 +128,7 @@ class RoomSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     flags: MultiSelectPointerProperty(RoomFlagsSelectionAccess)
 
 
-@define_multiselect_access(PortalFlags)
-class PortalFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+class PortalFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
     flag1: MultiSelectProperty()
     flag2: MultiSelectProperty()
@@ -150,8 +146,7 @@ class PortalFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
     flag14: MultiSelectProperty()
 
 
-@define_multiselect_access(PortalProperties)
-class PortalSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+class PortalSelectionAccess(MultiSelectAccess):
     corner1: MultiSelectProperty()
     corner2: MultiSelectProperty()
     corner3: MultiSelectProperty()
@@ -166,8 +161,7 @@ class PortalSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     flags: MultiSelectPointerProperty(PortalFlagsSelectionAccess)
 
 
-@define_multiselect_access(EntityFlags)
-class MloEntityFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+class MloEntityFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
     flag1: MultiSelectProperty()
     flag2: MultiSelectProperty()
@@ -203,8 +197,7 @@ class MloEntityFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup)
     flag32: MultiSelectProperty()
 
 
-@define_multiselect_access(MloEntityProperties)
-class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+class MloEntitySelectionAccess(MultiSelectAccess):
     # from EntityProperties
     archetype_name: MultiSelectProperty()
     guid: MultiSelectProperty()
@@ -226,8 +219,7 @@ class MloEntitySelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     flags: MultiSelectPointerProperty(MloEntityFlagsSelectionAccess)
 
 
-@define_multiselect_access(TimecycleModifierProperties)
-class TimecycleModifierSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+class TimecycleModifierSelectionAccess(MultiSelectAccess):
     name: MultiSelectProperty()
     sphere: MultiSelectProperty()
     percentage: MultiSelectProperty()
@@ -236,8 +228,7 @@ class TimecycleModifierSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
     end_hour: MultiSelectProperty()
 
 
-@define_multiselect_access(EntitySetProperties)
-class EntitySetSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+class EntitySetSelectionAccess(MultiSelectAccess):
     name: MultiSelectProperty()
 
 
@@ -534,8 +525,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
 
-@define_multiselect_access(ArchetypeFlags)
-class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
     flag1: MultiSelectProperty()
     flag2: MultiSelectProperty()
@@ -571,8 +561,7 @@ class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup)
     flag32: MultiSelectProperty()
 
 
-@define_multiselect_access(ArchetypeTimeFlags)
-class ArchetypeTimeFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+class ArchetypeTimeFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
     hour1: MultiSelectProperty()
     hour2: MultiSelectProperty()
@@ -601,8 +590,7 @@ class ArchetypeTimeFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGr
     swap_while_visible: MultiSelectProperty()
 
 
-@define_multiselect_access(MloFlags)
-class ArchetypeMloFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGroup):
+class ArchetypeMloFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
     flag1: MultiSelectProperty()
     flag2: MultiSelectProperty()
@@ -622,8 +610,7 @@ class ArchetypeMloFlagsSelectionAccess(MultiSelectNestedAccessMixin, PropertyGro
     flag16: MultiSelectProperty()
 
 
-@define_multiselect_access(ArchetypeProperties)
-class ArchetypeSelectionAccess(MultiSelectAccessMixin, PropertyGroup):
+class ArchetypeSelectionAccess(MultiSelectAccess):
     type: MultiSelectProperty()
     lod_dist: MultiSelectProperty()
     special_attribute: MultiSelectProperty()
