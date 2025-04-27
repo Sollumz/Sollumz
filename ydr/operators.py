@@ -177,10 +177,7 @@ class SOLLUMZ_OT_create_light(SOLLUMZ_OT_base, bpy.types.Operator):
 
         light_data = bpy.data.lights.new(name=SOLLUMZ_UI_NAMES[light_type], type=blender_light_type)
         light_data.sollum_type = light_type
-        light_obj = bpy.data.objects.new(name=SOLLUMZ_UI_NAMES[light_type], object_data=light_data)
-        light_obj.sollum_type = SollumType.LIGHT
-        context.collection.objects.link(light_obj)
-        context.view_layer.objects.active = light_obj
+        light_obj = create_blender_object(SollumType.LIGHT, SOLLUMZ_UI_NAMES[light_type], light_data)
 
         if active_obj and active_obj.sollum_type in [SollumType.DRAWABLE_MODEL, SollumType.DRAWABLE]:
             light_obj.parent = active_obj.parent if active_obj.sollum_type == SollumType.DRAWABLE_MODEL else active_obj
