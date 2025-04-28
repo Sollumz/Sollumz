@@ -3,6 +3,7 @@ from typing import Optional
 from mathutils import Vector
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
+from ...shared.multiselection import SelectMode
 from ..utils import get_selected_archetype, get_selected_entity
 from ..properties.mlo import (
     MloEntityProperties, get_portal_items_for_selected_archetype, get_room_items_for_selected_archetype
@@ -25,7 +26,7 @@ def set_entity_properties_from_filter(entity: MloEntityProperties, context: bpy.
 
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Add an entity to the selected mlo archetype"""
+    """Add an entity to the selected MLO archetype"""
     bl_idname = "sollumz.createmloentity"
     bl_label = "Create Entity"
 
@@ -53,9 +54,10 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
     def execute(self, context: bpy.types.Context):
         selected_archetype = get_selected_archetype(context)
 
+        first_new_entity_index = len(selected_archetype.entities)
+
         for obj in context.selected_objects:
-            existing_entity = self.get_entity_using_obj(
-                obj, selected_archetype)
+            existing_entity = self.get_entity_using_obj(obj, selected_archetype)
 
             if existing_entity is not None:
                 self.report(
@@ -67,6 +69,13 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
 
             entity.linked_object = obj
             set_entity_properties_from_filter(entity, context)
+
+        last_new_entity_index = len(selected_archetype.entities) - 1
+        if first_new_entity_index != last_new_entity_index and first_new_entity_index < len(selected_archetype.entities):
+            # Select all new entities, so the user can quickly assign them to a room/entity set/portal or modify any
+            # other property on all of them
+            selected_archetype.entities.select(first_new_entity_index)
+            selected_archetype.entities.select(last_new_entity_index, SelectMode.EXTEND)
 
         return {"FINISHED"}
 
@@ -121,10 +130,13 @@ class SOLLUMZ_OT_delete_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
-        selected_archetype.entities.remove(
-            selected_archetype.entity_index)
-        selected_archetype.entity_index = max(
-            selected_archetype.entity_index - 1, 0)
+
+        indices_to_remove = selected_archetype.entities.selected_items_indices
+        indices_to_remove.sort(reverse=True)
+        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
+        for index_to_remove in indices_to_remove:
+            selected_archetype.entities.remove(index_to_remove)
+        selected_archetype.entities.select(new_active_index)
 
         return True
 
@@ -141,7 +153,7 @@ class SOLLUMZ_OT_search_entity_portals(SearchEnumHelper, bpy.types.Operator):
         return get_selected_entity(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_entity(context)
+        return get_selected_archetype(context).entities.selection
 
 
 class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
@@ -156,4 +168,4 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
         return get_selected_entity(context) is not None
 
     def get_data_block(self, context):
-        return get_selected_entity(context)
+        return get_selected_archetype(context).entities.selection

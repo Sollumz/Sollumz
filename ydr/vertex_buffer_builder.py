@@ -2,6 +2,7 @@ import bpy
 import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple, Optional
+from enum import Enum, auto
 
 from ..tools.meshhelper import (
     flip_uvs,
@@ -73,19 +74,45 @@ def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uin
     return vertex_arr, index_arr
 
 
+class VBBuilderDomain(Enum):
+    FACE_CORNER = auto()
+    """Mesh is exported allowing each face corner to have their own set of attributes."""
+    VERTEX = auto()
+    """Mesh is exported only allowing a single set of attributes per vertex. If face corners attached to the vertex
+    have different attributes (vertex colors, UVs, etc.), only the attributes of one of the face corners is used. In the
+    case of normals, the average of the face corner normals is used.
+    """
+
+
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
 
-    def __init__(self, mesh: bpy.types.Mesh, bone_by_vgroup: Optional[dict[int, int]] = None):
+    def __init__(
+        self,
+        mesh: bpy.types.Mesh,
+        bone_by_vgroup: Optional[dict[int, int]] = None,
+        domain: VBBuilderDomain = VBBuilderDomain.FACE_CORNER,
+    ):
         self.mesh = mesh
+        self.domain = domain
 
         self._bone_by_vgroup = bone_by_vgroup
         self._has_weights = bone_by_vgroup is not None
 
-        vert_inds = np.empty(len(mesh.loops), dtype=np.uint32)
-        self.mesh.loops.foreach_get("vertex_index", vert_inds)
+        self._loop_to_vert_inds = np.empty(len(mesh.loops), dtype=np.uint32)
+        self.mesh.loops.foreach_get("vertex_index", self._loop_to_vert_inds)
 
-        self._vert_inds = vert_inds
+        if domain == VBBuilderDomain.VERTEX:
+            self._vert_to_loops = []
+            self._vert_to_first_loop = np.empty(len(mesh.vertices), dtype=np.uint32)
+            for vert_index in range(len(mesh.vertices)):
+                loop_indices = np.where(self._loop_to_vert_inds == vert_index)[0]
+                self._vert_to_loops.append(loop_indices.tolist())
+                self._vert_to_first_loop[vert_index] = loop_indices[0]
+        else:
+            self._vert_to_loops = None
+            self._vert_to_first_loop = None
+
 
     def build(self):
         if not self.mesh.loop_triangles:
@@ -125,10 +152,12 @@ class VertexBufferBuilder:
     def _structured_array_from_attrs(self, mesh_attrs: dict[str, NDArray]):
         """Combine ``mesh_attrs`` into single structured array."""
         # Data type for vertex data structured array
-        struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES[attr_name]
-                        for attr_name in mesh_attrs]
+        struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES[attr_name] for attr_name in mesh_attrs]
 
-        vertex_arr = np.empty(len(self._vert_inds), dtype=struct_dtype)
+        if self.domain == VBBuilderDomain.FACE_CORNER:
+            vertex_arr = np.empty(len(self.mesh.loops), dtype=struct_dtype)
+        elif self.domain == VBBuilderDomain.VERTEX:
+            vertex_arr = np.empty(len(self.mesh.vertices), dtype=struct_dtype)
 
         for attr_name, arr in mesh_attrs.items():
             vertex_arr[attr_name] = arr
@@ -138,14 +167,30 @@ class VertexBufferBuilder:
     def _get_positions(self):
         positions = np.empty(len(self.mesh.vertices) * 3, dtype=np.float32)
         self.mesh.attributes["position"].data.foreach_get("vector", positions)
-        positions = np.reshape(positions, (len(self.mesh.vertices), 3))
+        positions = positions.reshape((len(self.mesh.vertices), 3))
 
-        return positions[self._vert_inds]
+        if self.domain == VBBuilderDomain.FACE_CORNER:
+            return positions[self._loop_to_vert_inds]
+        elif self.domain == VBBuilderDomain.VERTEX:
+            return positions
 
     def _get_normals(self):
         normals = np.empty(len(self.mesh.loops) * 3, dtype=np.float32)
         self.mesh.loops.foreach_get("normal", normals)
-        return np.reshape(normals, (len(self.mesh.loops), 3))
+        normals = normals.reshape((len(self.mesh.loops), 3))
+
+        if self.domain == VBBuilderDomain.FACE_CORNER:
+            return normals
+        elif self.domain == VBBuilderDomain.VERTEX:
+            num_verts = len(self.mesh.vertices)
+            vertex_normals = np.empty((num_verts, 3), dtype=np.float32)
+            for vert_index in range(num_verts):
+                loops = self._vert_to_loops[vert_index]
+                avg_normal = np.average(normals[loops], axis=0)
+                avg_normal /= np.linalg.norm(avg_normal)
+                vertex_normals[vert_index] = avg_normal
+
+            return vertex_normals
 
     def _get_weights_indices(self) -> Tuple[NDArray[np.uint32], NDArray[np.uint32]]:
         """Get all BlendWeights and BlendIndices."""
@@ -184,8 +229,11 @@ class VertexBufferBuilder:
         weights_arr = self._convert_to_int_range(weights_arr)
         weights_arr = self._renormalize_converted_weights(weights_arr)
 
-        # Return on loop domain
-        return weights_arr[self._vert_inds], ind_arr[self._vert_inds]
+        if self.domain == VBBuilderDomain.FACE_CORNER:
+            # Return on loop domain
+            return weights_arr[self._loop_to_vert_inds], ind_arr[self._loop_to_vert_inds]
+        elif self.domain == VBBuilderDomain.VERTEX:
+            return weights_arr, ind_arr
 
     def _get_sorted_vertex_group_elements(self, vertex: bpy.types.MeshVertex) -> list[bpy.types.VertexGroupElement]:
         elements = []
@@ -257,6 +305,9 @@ class VertexBufferBuilder:
             colors = self._convert_to_int_range(colors)
             colors = np.reshape(colors, (num_loops, 4))
 
+            if self.domain == VBBuilderDomain.VERTEX:
+                colors = colors[self._vert_to_first_loop]
+
             color_layers[f"Colour{color_idx}"] = colors
 
         return color_layers
@@ -275,6 +326,9 @@ class VertexBufferBuilder:
             uvs = np.reshape(uvs, (num_loops, 2))
 
             flip_uvs(uvs)
+
+            if self.domain == VBBuilderDomain.VERTEX:
+                uvs = uvs[self._vert_to_first_loop]
 
             uv_layers[f"TexCoord{uvmap_idx}"] = uvs
 
@@ -298,4 +352,9 @@ class VertexBufferBuilder:
         tangents = np.reshape(tangents, (num_loops, 3))
         bitangent_signs = np.reshape(bitangent_signs, (-1, 1))
 
-        return np.concatenate((tangents, bitangent_signs), axis=1)
+        tangents_and_sign = np.concatenate((tangents, bitangent_signs), axis=1)
+
+        if self.domain == VBBuilderDomain.VERTEX:
+            tangents_and_sign = tangents_and_sign[self._vert_to_first_loop]
+
+        return tangents_and_sign

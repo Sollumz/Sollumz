@@ -595,6 +595,10 @@ class ParameterExpr(Expr):
     def w(self) -> ParameterComponentExpr:
         return self.get(3)
 
+    @property
+    def vec(self) -> VectorExpr:
+        return ConstructVectorExpr(self.x, self.y, self.z)
+
     def __str__(self):
         return f"param('{self.parameter_name}')"
 
@@ -606,9 +610,9 @@ class TextureExpr(Expr):
     """Sample a texture at the specified UV."""
 
     texture_name: str
-    uv: VectorExpr
+    uv: VectorExpr | None
 
-    def __init__(self, texture_name: str, uv: VectorExpr):
+    def __init__(self, texture_name: str, uv: VectorExpr | None):
         self.texture_name = texture_name
         self.uv = uv
 
@@ -617,7 +621,7 @@ class TextureExpr(Expr):
 
     def dump(self, ctx: ExprDumpContext) -> str:
         def g():
-            uv_id = self.uv.dump(ctx)
+            uv_id = self.uv.dump(ctx) if self.uv is not None else "None"
             return f"tex('{self.texture_name}', {uv_id})"
         var_id = ctx.get_var_id(self, g)
         return var_id

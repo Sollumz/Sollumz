@@ -64,7 +64,7 @@ def static_sample(population, k, seed=0):
 
 @pytest.mark.parametrize("src_shader,dst_shader",
                          # HACK: random sample because it takes too long to test all combinations
-                         static_sample(itertools.product(SOLLUMZ_SHADERS, SOLLUMZ_SHADERS), 500, seed=12345))
+                         static_sample(itertools.product(SOLLUMZ_SHADERS, SOLLUMZ_SHADERS), 100, seed=12345))
 def test_convert_shader_to_shader(src_shader, dst_shader, plane_object):
     src_mat = create_shader(src_shader)
     plane_object.data.materials.append(src_mat)

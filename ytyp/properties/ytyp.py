@@ -1,17 +1,29 @@
 import bpy
+from bpy.types import (
+    PropertyGroup,
+)
 from bpy.props import (
     BoolProperty,
 )
 from enum import IntEnum
 from typing import Union, Optional
 from uuid import uuid4
-from ..utils import get_selected_archetype, get_selected_entity
+
+from ...sollumz_preferences import get_addon_preferences
 from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
-from .flags import ArchetypeFlags, MloFlags
+from .flags import ArchetypeFlags, MloFlags, RoomFlags, PortalFlags, EntityFlags
 from .extensions import ExtensionsContainer, ExtensionType
+from ...shared.multiselection import (
+    MultiSelectProperty,
+    MultiSelectPointerProperty,
+    MultiSelectAccess,
+    MultiSelectNestedAccess,
+    define_multiselect_collection,
+    MultiSelectCollection,
+)
 
 
 class SpecialAttribute(IntEnum):
@@ -90,6 +102,141 @@ class ArchetypeTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
     )
 
 
+class RoomFlagsSelectionAccess(MultiSelectNestedAccess):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+
+
+class RoomSelectionAccess(MultiSelectAccess):
+    name: MultiSelectProperty()
+    bb_min: MultiSelectProperty()
+    bb_max: MultiSelectProperty()
+    blend: MultiSelectProperty()
+    timecycle: MultiSelectProperty()
+    secondary_timecycle: MultiSelectProperty()
+    floor_id: MultiSelectProperty()
+    exterior_visibility_depth: MultiSelectProperty()
+    flags: MultiSelectPointerProperty(RoomFlagsSelectionAccess)
+
+
+class PortalFlagsSelectionAccess(MultiSelectNestedAccess):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+
+
+class PortalSelectionAccess(MultiSelectAccess):
+    corner1: MultiSelectProperty()
+    corner2: MultiSelectProperty()
+    corner3: MultiSelectProperty()
+    corner4: MultiSelectProperty()
+
+    room_from_id: MultiSelectProperty()
+    room_to_id: MultiSelectProperty()
+
+    mirror_priority: MultiSelectProperty()
+    opacity: MultiSelectProperty()
+    audio_occlusion: MultiSelectProperty()
+    flags: MultiSelectPointerProperty(PortalFlagsSelectionAccess)
+
+
+class MloEntityFlagsSelectionAccess(MultiSelectNestedAccess):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+    flag15: MultiSelectProperty()
+    flag16: MultiSelectProperty()
+    flag17: MultiSelectProperty()
+    flag18: MultiSelectProperty()
+    flag19: MultiSelectProperty()
+    flag20: MultiSelectProperty()
+    flag21: MultiSelectProperty()
+    flag22: MultiSelectProperty()
+    flag23: MultiSelectProperty()
+    flag24: MultiSelectProperty()
+    flag25: MultiSelectProperty()
+    flag26: MultiSelectProperty()
+    flag27: MultiSelectProperty()
+    flag28: MultiSelectProperty()
+    flag29: MultiSelectProperty()
+    flag30: MultiSelectProperty()
+    flag31: MultiSelectProperty()
+    flag32: MultiSelectProperty()
+
+
+class MloEntitySelectionAccess(MultiSelectAccess):
+    # from EntityProperties
+    archetype_name: MultiSelectProperty()
+    guid: MultiSelectProperty()
+    parent_index: MultiSelectProperty()
+    lod_dist: MultiSelectProperty()
+    child_lod_dist: MultiSelectProperty()
+    lod_level: MultiSelectProperty()
+    num_children: MultiSelectProperty()
+    priority_level: MultiSelectProperty()
+    ambient_occlusion_multiplier: MultiSelectProperty()
+    artificial_ambient_occlusion: MultiSelectProperty()
+    tint_value: MultiSelectProperty()
+
+    # from MloEntityProperties
+    attached_portal_id: MultiSelectProperty()
+    attached_room_id: MultiSelectProperty()
+    attached_entity_set_id: MultiSelectProperty()
+
+    flags: MultiSelectPointerProperty(MloEntityFlagsSelectionAccess)
+
+
+class TimecycleModifierSelectionAccess(MultiSelectAccess):
+    name: MultiSelectProperty()
+    sphere: MultiSelectProperty()
+    percentage: MultiSelectProperty()
+    range: MultiSelectProperty()
+    start_hour: MultiSelectProperty()
+    end_hour: MultiSelectProperty()
+
+
+class EntitySetSelectionAccess(MultiSelectAccess):
+    name: MultiSelectProperty()
+
+
+@define_multiselect_collection("rooms", {"name": "Rooms"})
+@define_multiselect_collection("portals", {"name": "Portals"})
+@define_multiselect_collection("entities", {"name": "Entities"})
+@define_multiselect_collection("timecycle_modifiers", {"name": "Timecycle Modifiers"})
+@define_multiselect_collection("entity_sets", {"name": "Entity Sets"})
 class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
@@ -136,7 +283,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.portals)
 
         item = self.portals.add()
-        self.portal_index = len(self.portals) - 1
+        self.portals.select(len(self.portals) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
@@ -149,6 +296,10 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
+        preferences = get_addon_preferences(bpy.context)
+        if preferences.default_flags_portal:
+            item.flags.total = str(preferences.default_flags_portal)
+
         ArchetypeProperties.update_cached_portal_enum_items(self.uuid)
 
         return item
@@ -157,14 +308,19 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.rooms)
 
         item = self.rooms.add()
-        self.room_index = len(self.rooms) - 1
+        self.rooms.select(len(self.rooms) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
+
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
         item.name = f"Room.{item.id}"
+
+        preferences = get_addon_preferences(bpy.context)
+        if preferences.default_flags_room:
+            item.flags.total = str(preferences.default_flags_room)
 
         ArchetypeProperties.update_cached_room_enum_items(self.uuid)
 
@@ -174,7 +330,7 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.entities)
 
         item = self.entities.add()
-        self.entity_index = len(self.entities) - 1
+        self.entities.select(len(self.entities) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
@@ -184,10 +340,16 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
         item.archetype_name = f"Entity.{item_id}"
 
+        preferences = get_addon_preferences(bpy.context)
+        if preferences.default_flags_entity:
+            item.flags.total = str(preferences.default_flags_entity)
+
         return item
 
     def new_tcm(self) -> TimecycleModifierProperties:
         item = self.timecycle_modifiers.add()
+        self.timecycle_modifiers.select(len(self.timecycle_modifiers) - 1)
+
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
@@ -197,10 +359,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item_id = self.get_new_item_id(self.entity_sets)
 
         item = self.entity_sets.add()
-        self.entity_set_index = len(self.entity_sets) - 1
+        self.entity_sets.select(len(self.entity_sets) - 1)
 
         item.id = item_id
         item.uuid = str(uuid4())
+
         item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
@@ -235,74 +398,43 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         return ids[-1] + 1
 
     def select_entity_linked_object(self):
-        selected_entity = get_selected_entity(bpy.context)
-        if selected_entity.linked_object:
-            bpy.context.view_layer.objects.active = selected_entity.linked_object
+        entity = self.entities.active_item
+        obj = entity.linked_object
+        if obj and obj.name in bpy.context.view_layer.objects:
+            bpy.context.view_layer.objects.active = obj
             bpy.ops.object.select_all(action="DESELECT")
-            selected_entity.linked_object.select_set(True)
+            obj.select_set(True)
 
-    def _set_entity_index_with_select_linked_object(self, index: int):
-        self.entity_index = index
+    def on_entities_active_index_update_from_ui(self, context):
         self.select_entity_linked_object()
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
     bs_center: bpy.props.FloatVectorProperty(name="Bound Center")
     bs_radius: bpy.props.FloatProperty(name="Bound Radius")
-    type: bpy.props.EnumProperty(
-        items=items_from_enums(ArchetypeType), name="Type")
+    type: bpy.props.EnumProperty(items=items_from_enums(ArchetypeType), name="Type")
     lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200, min=-1)
-    flags: bpy.props.PointerProperty(
-        type=ArchetypeFlags, name="Flags")
+    flags: bpy.props.PointerProperty(type=ArchetypeFlags, name="Flags")
     special_attribute: bpy.props.EnumProperty(
         name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
-    hd_texture_dist: bpy.props.FloatProperty(
-        name="HD Texture Distance", default=100, min=0)
+    hd_texture_dist: bpy.props.FloatProperty(name="HD Texture Distance", default=100, min=0)
     name: bpy.props.StringProperty(name="Name")
     texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
     clip_dictionary: bpy.props.StringProperty(name="Clip Dictionary")
     drawable_dictionary: bpy.props.StringProperty(name="Drawable Dictionary")
-    physics_dictionary: bpy.props.StringProperty(
-        name="Physics Dictionary")
-    asset_type: bpy.props.EnumProperty(
-        items=items_from_enums(AssetType), name="Asset Type")
-    asset: bpy.props.PointerProperty(
-        name="Asset", type=bpy.types.Object, update=update_asset)
-    asset_name: bpy.props.StringProperty(
-        name="Asset Name")
+    physics_dictionary: bpy.props.StringProperty(name="Physics Dictionary")
+    asset_type: bpy.props.EnumProperty(items=items_from_enums(AssetType), name="Asset Type")
+    asset: bpy.props.PointerProperty(name="Asset", type=bpy.types.Object, update=update_asset)
+    asset_name: bpy.props.StringProperty(name="Asset Name")
     # Time archetype
     time_flags: bpy.props.PointerProperty(type=ArchetypeTimeFlags, name="Time Flags")
     # Mlo archetype
     mlo_flags: bpy.props.PointerProperty(type=MloFlags, name="MLO Flags")
-    rooms: bpy.props.CollectionProperty(type=RoomProperties, name="Rooms")
-    portals: bpy.props.CollectionProperty(
-        type=PortalProperties, name="Portals")
-    entities: bpy.props.CollectionProperty(
-        type=MloEntityProperties, name="Entities")
-    timecycle_modifiers: bpy.props.CollectionProperty(
-        type=TimecycleModifierProperties, name="Timecycle Modifiers")
-    entity_sets: bpy.props.CollectionProperty(
-        type=EntitySetProperties, name="EntitySets")
-
-    # Selected room index
-    room_index: bpy.props.IntProperty(name="Room")
-    # Selected portal index
-    portal_index: bpy.props.IntProperty(name="Portal")
-    # Selected entity index
-    entity_index: bpy.props.IntProperty(name="Entity")
-    entity_index_with_select_linked_object: bpy.props.IntProperty(
-        name="Entity",
-        get=lambda s: s.entity_index,
-        set=_set_entity_index_with_select_linked_object,
-    )
-    # Selected timecycle modifier index
-    tcm_index: bpy.props.IntProperty(
-        name="Timecycle Modifier")
-    # Selected entityset
-    entity_set_index: bpy.props.IntProperty(
-        name="Entity Set")
-
-    all_entity_lod_dist: bpy.props.FloatProperty(name="Entity Lod Distance: ")
+    rooms: MultiSelectCollection[RoomProperties, RoomSelectionAccess]
+    portals: MultiSelectCollection[PortalProperties, PortalSelectionAccess]
+    entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
+    timecycle_modifiers: MultiSelectCollection[TimecycleModifierProperties, TimecycleModifierSelectionAccess]
+    entity_sets: MultiSelectCollection[EntitySetProperties, EntitySetSelectionAccess]
 
     id: bpy.props.IntProperty(default=-1)
     uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
@@ -313,27 +445,27 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     @property
     def selected_room(self) -> Union[RoomProperties, None]:
-        return get_list_item(self.rooms, self.room_index)
+        return get_list_item(self.rooms, self.rooms.active_index)
 
     @property
     def selected_portal(self) -> Union[PortalProperties, None]:
-        return get_list_item(self.portals, self.portal_index)
+        return get_list_item(self.portals, self.portals.active_index)
 
     @property
     def selected_entity(self) -> Union[MloEntityProperties, None]:
-        return get_list_item(self.entities, self.entity_index)
+        return get_list_item(self.entities, self.entities.active_index)
 
     @property
     def selected_tcm(self) -> Union[TimecycleModifierProperties, None]:
-        return get_list_item(self.timecycle_modifiers, self.tcm_index)
+        return get_list_item(self.timecycle_modifiers, self.timecycle_modifiers.active_index)
 
     @property
     def selected_entity_set(self) -> Union[EntitySetProperties, None]:
-        return get_list_item(self.entity_sets, self.entity_set_index)
+        return get_list_item(self.entity_sets, self.entity_sets.active_index)
 
     @property
     def selected_entity_set_id(self):
-        return self.entity_set_index
+        return self.entity_sets.active_index
 
     def get_portal_enum_items(self) -> list:
         if items := ArchetypeProperties.__portal_enum_items_cache.get(self.uuid, None):
@@ -393,7 +525,114 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
 
-class CMapTypesProperties(bpy.types.PropertyGroup):
+class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccess):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+    flag15: MultiSelectProperty()
+    flag16: MultiSelectProperty()
+    flag17: MultiSelectProperty()
+    flag18: MultiSelectProperty()
+    flag19: MultiSelectProperty()
+    flag20: MultiSelectProperty()
+    flag21: MultiSelectProperty()
+    flag22: MultiSelectProperty()
+    flag23: MultiSelectProperty()
+    flag24: MultiSelectProperty()
+    flag25: MultiSelectProperty()
+    flag26: MultiSelectProperty()
+    flag27: MultiSelectProperty()
+    flag28: MultiSelectProperty()
+    flag29: MultiSelectProperty()
+    flag30: MultiSelectProperty()
+    flag31: MultiSelectProperty()
+    flag32: MultiSelectProperty()
+
+
+class ArchetypeTimeFlagsSelectionAccess(MultiSelectNestedAccess):
+    total: MultiSelectProperty()
+    hour1: MultiSelectProperty()
+    hour2: MultiSelectProperty()
+    hour3: MultiSelectProperty()
+    hour4: MultiSelectProperty()
+    hour5: MultiSelectProperty()
+    hour6: MultiSelectProperty()
+    hour7: MultiSelectProperty()
+    hour8: MultiSelectProperty()
+    hour9: MultiSelectProperty()
+    hour10: MultiSelectProperty()
+    hour11: MultiSelectProperty()
+    hour12: MultiSelectProperty()
+    hour13: MultiSelectProperty()
+    hour14: MultiSelectProperty()
+    hour15: MultiSelectProperty()
+    hour16: MultiSelectProperty()
+    hour17: MultiSelectProperty()
+    hour18: MultiSelectProperty()
+    hour19: MultiSelectProperty()
+    hour20: MultiSelectProperty()
+    hour21: MultiSelectProperty()
+    hour22: MultiSelectProperty()
+    hour23: MultiSelectProperty()
+    hour24: MultiSelectProperty()
+    swap_while_visible: MultiSelectProperty()
+
+    time_flags_start: MultiSelectProperty()
+    time_flags_end: MultiSelectProperty()
+
+
+class ArchetypeMloFlagsSelectionAccess(MultiSelectNestedAccess):
+    total: MultiSelectProperty()
+    flag1: MultiSelectProperty()
+    flag2: MultiSelectProperty()
+    flag3: MultiSelectProperty()
+    flag4: MultiSelectProperty()
+    flag5: MultiSelectProperty()
+    flag6: MultiSelectProperty()
+    flag7: MultiSelectProperty()
+    flag8: MultiSelectProperty()
+    flag9: MultiSelectProperty()
+    flag10: MultiSelectProperty()
+    flag11: MultiSelectProperty()
+    flag12: MultiSelectProperty()
+    flag13: MultiSelectProperty()
+    flag14: MultiSelectProperty()
+    flag15: MultiSelectProperty()
+    flag16: MultiSelectProperty()
+
+
+class ArchetypeSelectionAccess(MultiSelectAccess):
+    type: MultiSelectProperty()
+    lod_dist: MultiSelectProperty()
+    special_attribute: MultiSelectProperty()
+    hd_texture_dist: MultiSelectProperty()
+    name: MultiSelectProperty()
+    texture_dictionary: MultiSelectProperty()
+    clip_dictionary: MultiSelectProperty()
+    drawable_dictionary: MultiSelectProperty()
+    physics_dictionary: MultiSelectProperty()
+    asset_type: MultiSelectProperty()
+    asset_name: MultiSelectProperty()
+
+    flags: MultiSelectPointerProperty(ArchetypeFlagsSelectionAccess)
+    time_flags: MultiSelectPointerProperty(ArchetypeTimeFlagsSelectionAccess)
+    mlo_flags: MultiSelectPointerProperty(ArchetypeMloFlagsSelectionAccess)
+
+
+@define_multiselect_collection("archetypes", {"name": "Archetypes"})
+class CMapTypesProperties(PropertyGroup):
     def update_mlo_archetype_ids(self):
         for archetype in self.archetypes:
             if archetype.type == ArchetypeType.MLO:
@@ -420,55 +659,49 @@ class CMapTypesProperties(bpy.types.PropertyGroup):
                     entity_set.mlo_archetype_id = archetype.id
                     entity_set.mlo_archetype_uuid = archetype.uuid
 
-    def new_archetype(self):
+    def new_archetype(self, archetype_type: ArchetypeType = ArchetypeType.BASE):
         item = self.archetypes.add()
-        index = len(self.archetypes)
-        item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index}"
-        self.archetype_index = index - 1
+        index = len(self.archetypes) - 1
+        self.archetypes.select(index)
+
         item.id = self.last_archetype_id + 1
         item.uuid = str(uuid4())
+        item.name = f"{SOLLUMZ_UI_NAMES[ArchetypeType.BASE]}.{index + 1}"
+        item.type = archetype_type
+
+        if archetype_type != ArchetypeType.MLO:
+            preferences = get_addon_preferences(bpy.context)
+            if preferences.default_flags_archetype:
+                item.flags.total = str(preferences.default_flags_archetype)
+
         self.last_archetype_id += 1
 
         return item
 
     def select_archetype_linked_object(self):
-        selected_archetype = get_selected_archetype(bpy.context)
-        if selected_archetype.asset:
-            bpy.context.view_layer.objects.active = selected_archetype.asset
+        archetype = self.archetypes.active_item
+        obj = archetype.asset
+        if obj and obj.name in bpy.context.view_layer.objects:
+            bpy.context.view_layer.objects.active = obj
             bpy.ops.object.select_all(action="DESELECT")
-            selected_archetype.asset.select_set(True)
+            obj.select_set(True)
 
-    def _set_archetype_index_with_select_linked_object(self, index: int):
-        self.archetype_index = index
+    def on_archetypes_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()
 
     name: bpy.props.StringProperty(name="Name")
-    all_texture_dictionary: bpy.props.StringProperty(
-        name="Texture Dictionary: ")
-    all_lod_dist: bpy.props.FloatProperty(name="Lod Distance: ")
-    all_hd_tex_dist: bpy.props.FloatProperty(name="HD Texture Distance: ")
-    all_flags: bpy.props.IntProperty(name="Flags: ")
-    # extensions
-    archetypes: bpy.props.CollectionProperty(
-        type=ArchetypeProperties, name="Archetypes")
-    # Selected archetype index
-    archetype_index: bpy.props.IntProperty(name="Archetype Index")
-    archetype_index_with_select_linked_object: bpy.props.IntProperty(
-        name="Archetype Index",
-        get=lambda s: s.archetype_index,
-        set=_set_archetype_index_with_select_linked_object,
-    )
+    archetypes: MultiSelectCollection[ArchetypeProperties, ArchetypeSelectionAccess]
+
     # Unique archetype id
     last_archetype_id: bpy.props.IntProperty()
 
     @property
     def selected_archetype(self) -> Union[ArchetypeProperties, None]:
-        return get_list_item(self.archetypes, self.archetype_index)
+        return get_list_item(self.archetypes, self.archetypes.active_index)
 
 
 def register():
-    bpy.types.Scene.ytyps = bpy.props.CollectionProperty(
-        type=CMapTypesProperties, name="YTYPs")
+    bpy.types.Scene.ytyps = bpy.props.CollectionProperty(type=CMapTypesProperties, name="YTYPs")
     bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP")
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(
         name="Show Room Gizmo", default=True)

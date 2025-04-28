@@ -469,6 +469,36 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
     return get_min_vector_list(total_bounds), get_max_vector_list(total_bounds)
 
 
+def get_combined_bound_box_tight(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
+    """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returhs bbmin, bbmax.
+    This applies the transforms to the mesh vertices instead of the local AABB corners. Slower but produces smaller
+    world AABBs, specially when the transforms include rotation.
+    """
+    # TODO: for now this is separate from get_combined_bound_box because it was needed to fix an issue with bound BVH
+    # export, and I'm not sure if the other usages of get_combined_bound_box would keep working with this change
+    total_bounds: list[Vector] = []
+
+    for child in [obj, *obj.children_recursive]:
+        if child.type != "MESH":
+            continue
+
+        if use_world:
+            child_matrix = matrix @ child.matrix_world
+        else:
+            if child == obj:
+                child_matrix = matrix
+            else:
+                child_matrix = matrix @ child.matrix_basis
+
+        total_bounds.extend([child_matrix @ Vector(v.co)
+                            for v in child.data.vertices])
+
+    if not total_bounds:
+        return Vector(), Vector()
+
+    return get_min_vector_list(total_bounds), get_max_vector_list(total_bounds)
+
+
 def get_bound_center(obj):
     bbmin, bbmax = get_extents(obj)
     center = (bbmin + bbmax) / 2

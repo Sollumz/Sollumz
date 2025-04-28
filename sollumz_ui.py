@@ -224,6 +224,7 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
         layout.prop(settings, "apply_transforms")
         layout.prop(settings, "export_with_ytyp")
+        layout.prop(settings, "mesh_domain", expand=True)
 
 
 class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
@@ -478,8 +479,6 @@ class SOLLUMZ_PT_DEBUG_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.debug_fix_light_intensity")
         row.prop(context.scene, "debug_lights_only_selected")
-        row = layout.row()
-        row.operator("sollumz.debug_reload_entity_sets")
 
         layout.separator()
 

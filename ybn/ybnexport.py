@@ -29,7 +29,7 @@ from ..tools.meshhelper import (
     get_bound_center_from_bounds,
     get_corners_from_extents,
     get_inner_sphere_radius,
-    get_combined_bound_box,
+    get_combined_bound_box_tight,
     get_color_attr_name,
 )
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
@@ -757,10 +757,9 @@ def get_bound_extents(obj: bpy.types.Object):
 
 
 def get_bvh_extents(obj: bpy.types.Object, composite_transform: Matrix):
-    transforms_to_apply = get_bound_poly_transforms_to_apply(
-        obj, composite_transform)
+    transforms_to_apply = get_bound_poly_transforms_to_apply(obj, composite_transform)
 
-    bbmin, bbmax = get_combined_bound_box(obj, matrix=transforms_to_apply)
+    bbmin, bbmax = get_combined_bound_box_tight(obj, matrix=transforms_to_apply)
 
     return bbmin, bbmax
 

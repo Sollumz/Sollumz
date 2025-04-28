@@ -312,7 +312,16 @@ class ShaderManager:
                        "weapon_normal_spec_detail_palette.sps", "weapon_normal_spec_palette.sps"]
     em_shaders = ["normal_spec_emissive.sps", "normal_spec_reflect_emissivenight.sps", "emissive.sps", "emissive_speclum.sps", "emissive_tnt.sps", "emissivenight.sps",
                   "emissivenight_geomnightonly.sps", "emissivestrong_alpha.sps", "emissivestrong.sps", "glass_emissive.sps", "glass_emissivenight.sps", "glass_emissivenight_alpha.sps",
-                  "glass_emissive_alpha.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps"]
+                  "glass_emissive_alpha.sps", "decal_emissive_only.sps", "decal_emissivenight_only.sps",
+
+                  "vehicle_blurredrotor_emissive.sps",
+                  "vehicle_dash_emissive.sps", "vehicle_dash_emissive_opaque.sps",
+                  "vehicle_paint4_emissive.sps",
+                  "vehicle_emissive_alpha.sps", "vehicle_emissive_opaque.sps",
+                  "vehicle_tire_emissive.sps",
+                  "vehicle_track_emissive.sps", "vehicle_track2_emissive.sps", "vehicle_track_siren.sps",
+                  "vehicle_lightsemissive.sps", "vehicle_lightsemissive_siren.sps",
+                  ]
     water_shaders = ["water_fountain.sps",
                      "water_poolenv.sps", "water_decal.sps", "water_terrainfoam.sps", "water_riverlod.sps", "water_shallow.sps", "water_riverfoam.sps", "water_riverocean.sps", "water_rivershallow.sps"]
 

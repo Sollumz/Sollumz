@@ -31,9 +31,10 @@ def test_versioning_tcmod_percentage():
     data = load_blend_data("v240_tcmod_percentage.blend")
 
     ytyp = data.scenes[0].ytyps[0]
-    mlo = ytyp.archetypes[0]
-    tcmod = mlo.timecycle_modifiers[0]
-    assert tcmod.percentage == 75.0
+    mlo = ytyp["archetypes_"][0]
+    tcmod = mlo["timecycle_modifiers_"][0]
+    assert isinstance(tcmod["percentage"], float)
+    assert tcmod["percentage"] == 75.0
 
 
 def test_versioning_convert_child_of_to_copy_transform():

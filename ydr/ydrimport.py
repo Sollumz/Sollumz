@@ -319,7 +319,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         n.image = texture
 
                     if is_non_color_texture(filename, param.name):
-                        n.image.colorspace_settings.name = "Non-Color"
+                        n.image.colorspace_settings.is_data = True
 
                     preferences = get_addon_preferences(bpy.context)
                     text_name = preferences.use_text_name_as_mat_name
@@ -534,14 +534,14 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     for constraint in joined_obj.constraints:
         joined_obj.constraints.remove(constraint)
 
-    joined_obj.asset_mark()
-    joined_obj.asset_generate_preview()
-
     bpy.context.collection.objects.unlink(joined_obj)
 
     armature = drawable_obj.data
     bpy.data.objects.remove(drawable_obj)
     if armature:
         bpy.data.armatures.remove(armature)
+
+    joined_obj.asset_mark()
+    joined_obj.asset_generate_preview()
 
     return joined_obj

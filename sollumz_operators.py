@@ -415,6 +415,10 @@ class SelectTimeFlagsRange(SOLLUMZ_OT_base):
 
     def run(self, context):
         flags = self.get_flags(context)
+        return SelectTimeFlagsRange._process_one(flags, context)
+
+    @staticmethod
+    def _process_one(flags, context) -> bool:
         if not flags:
             return False
         start = int(flags.time_flags_start)
@@ -435,6 +439,21 @@ class SelectTimeFlagsRange(SOLLUMZ_OT_base):
         return True
 
 
+class SelectTimeFlagsRangeMultiSelect(SOLLUMZ_OT_base):
+    """Select range of time flags"""
+    bl_label = "Select"
+
+    def iter_selection_flags(self, context):
+        if False: # empty generator
+            yield
+
+    def run(self, context):
+        for flags in self.iter_selection_flags(context):
+            if not SelectTimeFlagsRange._process_one(flags, context):
+                return False
+        return True
+
+
 class ClearTimeFlags(SOLLUMZ_OT_base):
     """Clear all time flags"""
     bl_label = "Clear Selection"
@@ -444,11 +463,30 @@ class ClearTimeFlags(SOLLUMZ_OT_base):
 
     def run(self, context):
         flags = self.get_flags(context)
+        return ClearTimeFlags._process_one(flags, context)
+
+    @staticmethod
+    def _process_one(flags, context) -> bool:
         if not flags:
             return False
         for prop in TimeFlagsMixin.flag_names:
             flags[prop] = False
         flags.update_flag(context)
+        return True
+
+
+class ClearTimeFlagsMultiSelect(SOLLUMZ_OT_base):
+    """Clear all time flags"""
+    bl_label = "Clear Selection"
+
+    def iter_selection_flags(self, context):
+        if False: # empty generator
+            yield
+
+    def run(self, context):
+        for flags in self.iter_selection_flags(context):
+            if not ClearTimeFlags._process_one(flags, context):
+                return False
         return True
 
 
@@ -658,29 +696,6 @@ def parse_rotation_string(rotation_string):
         except ValueError:
             pass
     return None
-
-
-class SOLLUMZ_OT_debug_reload_entity_sets(bpy.types.Operator):
-    bl_idname = "sollumz.debug_reload_entity_sets"
-    bl_label = "Reload Entity Sets"
-    bl_description = "Reload old entity set entities"
-    bl_options = {"UNDO"}
-
-    def execute(self, context):
-        for ytyp in context.scene.ytyps:
-            for archetype in ytyp.archetypes:
-                if archetype.type != ArchetypeType.MLO:
-                    continue
-
-                for entity_set in archetype.entity_sets:
-                    for entity in entity_set.entities:
-                        new_entity = archetype.new_entity()
-                        for k, v in entity.items():
-                            new_entity[k] = v
-
-                        new_entity.attached_entity_set_id = str(entity_set.id)
-
-        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_debug_migrate_drawable_models(bpy.types.Operator):
