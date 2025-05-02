@@ -38,11 +38,10 @@ class IconManager:
                 panel.layout.label(text="", icon_value=self.get_icon(name))
 
     def register(self):
-        pcoll = bpy.utils.previews.new()
+        self._icons_preview_collection = pcoll = bpy.utils.previews.new()
         for icon_name in self._icons:
             icon_path = self._icon_dir / f"{icon_name}{ICON_EXT}"
             pcoll.load(icon_name, str(icon_path), "IMAGE")
-        self._icons_preview_collection = pcoll
 
     def unregister(self):
         bpy.utils.previews.remove(self._icons_preview_collection)

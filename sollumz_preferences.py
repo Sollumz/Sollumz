@@ -1,10 +1,12 @@
 import bpy
 from bpy.types import (
     bpy_struct,
+    bpy_prop_array,
     bpy_prop_collection,
     PropertyGroup,
     Operator,
     UIList,
+    UILayout,
     AddonPreferences,
 )
 from bpy.props import (
@@ -14,7 +16,9 @@ from bpy.props import (
     EnumProperty,
     CollectionProperty,
     PointerProperty,
+    FloatVectorProperty,
 )
+import rna_keymap_ui
 import os
 import ast
 from typing import Any
@@ -103,18 +107,18 @@ class SollumzExportSettings(PropertyGroup):
         default="FACE_CORNER",
         items=(
             (
-            "FACE_CORNER", "Face Corner",
-            "Mesh is exported allowing each face corner to have their own set of "
-            "attributes. Recommended default setting."
+                "FACE_CORNER", "Face Corner",
+                "Mesh is exported allowing each face corner to have their own set of "
+                "attributes. Recommended default setting."
             ),
             (
-            "VERTEX", "Vertex",
-            "Mesh is exported only allowing a single set of attributes per vertex. Recommended for when it is important "
-            "that the vertex order and count remains the same during import and export, such as with MP freemode head "
-            "models.\n\n"
-            "If face corners attached to the vertex have different attributes (vertex colors, UVs, etc.), only the "
-            "attributes of one of the face corners is used. In the case of normals, the average of the face corner "
-            "normals is used."
+                "VERTEX", "Vertex",
+                "Mesh is exported only allowing a single set of attributes per vertex. Recommended for when it is important "
+                "that the vertex order and count remains the same during import and export, such as with MP freemode head "
+                "models.\n\n"
+                "If face corners attached to the vertex have different attributes (vertex colors, UVs, etc.), only the "
+                "attributes of one of the face corners is used. In the case of normals, the average of the face corner "
+                "normals is used."
             )
         ),
         update=_save_preferences_on_update
@@ -201,6 +205,41 @@ class SollumzImportSettings(PropertyGroup):
         ),
         default=True,
         update=_save_preferences_on_update
+    )
+
+
+class SollumzThemeSettings(PropertyGroup):
+    mlo_gizmo_room: FloatVectorProperty(
+        name="Room",
+        subtype="COLOR",
+        min=0, max=1,
+        size=4,
+        default=(0.31, 0.38, 1.0, 0.7),
+        update=_save_preferences_on_update,
+    )
+    mlo_gizmo_room_selected: FloatVectorProperty(
+        name="Room Selected",
+        subtype="COLOR",
+        min=0, max=1,
+        size=4,
+        default=(0.62, 0.76, 1.0, 0.9),
+        update=_save_preferences_on_update,
+    )
+    mlo_gizmo_portal: FloatVectorProperty(
+        name="Portal",
+        subtype="COLOR",
+        min=0, max=1,
+        size=4,
+        default=(0.45, 0.98, 0.55, 0.5),
+        update=_save_preferences_on_update,
+    )
+    mlo_gizmo_portal_selected: FloatVectorProperty(
+        name="Portal Selected",
+        subtype="COLOR",
+        min=0, max=1,
+        size=4,
+        default=(0.93, 1.0, 1.0, 0.7),
+        update=_save_preferences_on_update,
     )
 
 
@@ -352,13 +391,6 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_save_preferences_on_update
     )
 
-    # experimental_shader_expressions: BoolProperty(
-    #     name="Shader Expressions",
-    #     description="[Experimental] Use shader expressions to create material node trees",
-    #     default=False,
-    #     update=_save_preferences_on_update
-    # )
-
     shader_preset_apply_textures: BoolProperty(
         name="Apply Textures from Shader Preset",
         description=(
@@ -417,6 +449,18 @@ class SollumzAddonPreferences(AddonPreferences):
 
     export_settings: PointerProperty(type=SollumzExportSettings, name="Export Settings")
     import_settings: PointerProperty(type=SollumzImportSettings, name="Import Settings")
+    theme: PointerProperty(type=SollumzThemeSettings, name="Theme")
+
+    tab: EnumProperty(
+        items=(
+            ("GENERAL", "General", "", "SETTINGS", 0),
+            ("IMPORT_EXPORT", "Import / Export", "", "IMPORT", 1),
+            ("KEYMAP", "Keymap", "", "KEY_TAB", 3),
+            ("UI", "UI", "", "WINDOW", 4),
+            ("THEME", "Theme", "", "COLOR", 5),
+            ("ABOUT", "About", "", "INFO_LARGE", 6),
+        )
+    )
 
     def swap_shared_textures_directories(self, indexA: int, indexB: int):
         a = self.shared_textures_directories[indexA]
@@ -470,17 +514,46 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        col = row.column()
-        col.prop(self, "show_vertex_painter")
-        col.prop(self, "extra_color_swatches")
-        col.prop(self, "sollumz_icon_header")
-        col.prop(self, "use_text_name_as_mat_name")
-        col.prop(self, "shader_preset_apply_textures")
+        layout.row().prop(self, "tab", expand=True)
 
-        col = row.column(align=True)
-        col.use_property_split = True
-        col.use_property_decorate = False
+        # Based on CenterAlignMixIn from Blender's scripts/startup/bl_ui/space_userpref.py
+        width = context.region.width
+        ui_scale = context.preferences.system.ui_scale
+        # No horizontal margin if region is rather small.
+        is_wide = width > (550 * ui_scale)
+
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        row = layout.row()
+        if is_wide:
+            row.label()  # Needed so col below is centered.
+
+        col = row.column()
+        col.ui_units_x = 95
+
+        match self.tab:
+            case "GENERAL":
+                self.draw_general(context, col)
+            case "IMPORT_EXPORT":
+                self.draw_import_export(context, col)
+            case "KEYMAP":
+                self.draw_keymap(context, col)
+            case "UI":
+                self.draw_ui(context, col)
+            case "THEME":
+                self.draw_theme(context, col)
+            case "ABOUT":
+                self.draw_about(context, col)
+
+        if is_wide:
+            row.label()  # Needed so col above is centered.
+
+    def draw_general(self, context, layout):
+        layout.prop(self, "use_text_name_as_mat_name")
+        layout.prop(self, "shader_preset_apply_textures")
+
+        col = layout.column(align=True)
         col.prop(self, "default_flags_portal", text="Default Flags for Portals")
         col.prop(self, "default_flags_room", text="Rooms")
         col.prop(self, "default_flags_entity", text="Entities")
@@ -490,7 +563,7 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.separator()
         layout.label(text="Shared Textures")
         _, side_col = draw_list_with_add_remove(
-            self.layout,
+            layout,
             SOLLUMZ_OT_prefs_shared_textures_directory_add.bl_idname,
             SOLLUMZ_OT_prefs_shared_textures_directory_remove.bl_idname,
             SOLLUMZ_UL_prefs_shared_textures_directories.bl_idname, "",
@@ -503,9 +576,113 @@ class SollumzAddonPreferences(AddonPreferences):
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_up.bl_idname, text="", icon="TRIA_UP")
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
 
-        # layout.separator()
-        # layout.label(text="Experimental:")
-        # layout.prop(self, "experimental_shader_expressions")
+    def draw_import_export(self, context, layout: UILayout):
+        def _section_header(layout: UILayout, text: str):
+            if bpy.app.version >= (4, 2, 0):
+                layout.separator(type="LINE")
+            else:
+                layout.separator()
+            row = layout.row()
+            row.alignment = "LEFT"
+            row.label(text="", icon="BLANK1")
+            row.label(text=text, icon="BLANK1")
+
+        # Import settings
+        box = layout.box()
+        box.label(text="Import", icon="IMPORT")
+        settings = self.import_settings
+        box.prop(settings, "import_as_asset")
+        _section_header(box, text="Fragment")
+        box.prop(settings, "split_by_group")
+        _section_header(box, "Drawable Dictionary")
+        box.prop(settings, "import_ext_skeleton")  # Drawable Dictionary
+
+        _section_header(box, "YTYP")
+        box.prop(settings, "ytyp_mlo_instance_entities")
+
+        _section_header(box, "YMAP")
+        box.prop(settings, "ymap_skip_missing_entities")
+        box.prop(settings, "ymap_exclude_entities")
+        box.prop(settings, "ymap_instance_entities")
+        box.prop(settings, "ymap_box_occluders")
+        box.prop(settings, "ymap_model_occluders")
+        box.prop(settings, "ymap_car_generators")
+
+        # Export settings
+        box = layout.box()
+        box.label(text="Export", icon="EXPORT")
+        settings = self.export_settings
+
+        row = box.row(heading="Limit To")
+        row.prop(settings, "limit_to_selected", text="Selected Objects")
+
+        _section_header(box, "Drawable")
+        box.prop(settings, "apply_transforms")
+        box.prop(settings, "export_with_ytyp")
+        box.prop(settings, "mesh_domain", expand=True)
+
+        _section_header(box, "Fragment")
+        box.column().prop(settings, "export_lods")
+
+        _section_header(box, "Drawable Dictionary")
+        box.prop(settings, "exclude_skeleton")
+
+        _section_header(box, "YMAP")
+        box.prop(settings, "ymap_exclude_entities")
+        box.prop(settings, "ymap_box_occluders")
+        box.prop(settings, "ymap_model_occluders")
+        box.prop(settings, "ymap_car_generators")
+
+    def draw_keymap(self, context, layout: UILayout):
+        wm = bpy.context.window_manager
+        kc = wm.keyconfigs.user
+
+        keymaps = (
+            "3D View",
+            "3D View Tool: Object, Edit Archetype Extensions",
+            "Dopesheet",
+            "NLA Editor"
+        )
+
+        for keymap in keymaps:
+            km = kc.keymaps.get(keymap)
+
+            column = layout.column(align=True)
+            row = column.row()
+            row.label(text=keymap)
+
+            for kmi in km.keymap_items:
+                if (
+                    (kmi.idname == "wm.call_menu_pie" and kmi.name.startswith("Sollumz")) or
+                    kmi.idname.startswith("sollumz.")
+                ):
+                    column = layout.column(align=True)
+                    row = column.row()
+                    rna_keymap_ui.draw_kmi(["ADDON", "USER", "DEFAULT"], kc, km, kmi, row, 1)
+
+            if keymap != keymaps[-1]:
+                if bpy.app.version >= (4, 2, 0):
+                    layout.separator(type="LINE")
+                else:
+                    layout.separator()
+
+    def draw_ui(self, context, layout: UILayout):
+        layout.prop(self, "show_vertex_painter")
+        layout.prop(self, "extra_color_swatches")
+        layout.prop(self, "sollumz_icon_header")
+
+    def draw_theme(self, context, layout: UILayout):
+        theme = self.theme
+        layout.prop(theme, "mlo_gizmo_room")
+        layout.prop(theme, "mlo_gizmo_room_selected")
+        layout.prop(theme, "mlo_gizmo_portal")
+        layout.prop(theme, "mlo_gizmo_portal_selected")
+
+    def draw_about(self, context, layout: UILayout):
+        layout.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/bZuWBWaQBg"
+        layout.operator("wm.url_open", text="Documentation", icon="URL").url = "https://docs.sollumz.org/"
+        layout.operator("wm.url_open", text="Issue Tracker", icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
+        pass
 
     def register():
         _load_preferences()
@@ -521,6 +698,10 @@ def get_import_settings(context: Optional[bpy.types.Context] = None) -> SollumzI
 
 def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzExportSettings:
     return get_addon_preferences(context or bpy.context).export_settings
+
+
+def get_theme_settings(context: Optional[bpy.types.Context] = None) -> SollumzThemeSettings:
+    return get_addon_preferences(context or bpy.context).theme
 
 
 def _save_preferences():
@@ -574,6 +755,8 @@ def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
         prop = getattr(struct, key)
         if isinstance(prop, str):
             prop = repr(prop)  # repr adds quotes and escapes the string, so ast.literal_eval can parse it correctly later
+        elif isinstance(prop, bpy_prop_array):
+            prop = tuple(prop)
         elif isinstance(prop, bpy_prop_collection):
             prop = _get_bpy_collection_as_list(prop)
         elif isinstance(prop, bpy_struct):

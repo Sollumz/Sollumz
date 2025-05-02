@@ -1,5 +1,6 @@
 import bpy
 from ...sollumz_properties import ArchetypeType
+from ...sollumz_preferences import get_theme_settings
 from mathutils import Vector, Matrix
 from ..utils import get_selected_archetype, get_selected_ytyp, get_selected_portal
 from ...tools.blenderhelper import find_parent
@@ -69,18 +70,21 @@ class RoomGizmo(bpy.types.Gizmo):
         ]
 
     def draw(self, context):
+        theme = get_theme_settings(context)
         selected_ytyp = get_selected_ytyp(context)
         selected_archetype = selected_ytyp.selected_archetype
         selected_room = selected_archetype.rooms.active_item
         room = self.linked_room
 
-        self.color = 0.31, 0.38, 1
-        self.alpha = 0.7
         self.use_draw_scale = False
 
         if room == selected_room:
-            self.color = self.color * 2
-            self.alpha = 0.9
+            r, g, b, a = theme.mlo_gizmo_room_selected
+        else:
+            r, g, b, a = theme.mlo_gizmo_room
+
+        self.color = r, g, b
+        self.alpha = a
 
         asset = selected_archetype.asset
         if asset and room:
@@ -142,17 +146,19 @@ class PortalGizmo(bpy.types.Gizmo):
         self.draw_select(context)
 
     def draw_select(self, context, select_id=None):
+        theme = get_theme_settings(context)
         selected_archetype = get_selected_archetype(context)
         selected_portal = get_selected_portal(context)
         portal = self.linked_portal
         asset = selected_archetype.asset
 
-        self.color = 0.45, 0.98, 0.55
-        self.alpha = 0.5
-
         if selected_portal == portal:
-            self.color = self.color * 1.5
-            self.alpha = 0.7
+            r, g, b, a = theme.mlo_gizmo_portal_selected
+        else:
+            r, g, b, a = theme.mlo_gizmo_portal
+
+        self.color = r, g, b
+        self.alpha = a
 
         self.color_highlight = self.color * 0.9
         self.alpha_highlight = self.alpha
