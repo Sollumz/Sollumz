@@ -785,7 +785,14 @@ def collect_parameter_nodes(mat: bpy.types.Material, filter_func) -> list[bpy.ty
     """Filters nodes from ``mat`` and sorts them based on ``ShaderDef.parameter_ui_order``."""
     shader = ShaderManager.find_shader(mat.shader_properties.filename)
 
-    nodes = [n for n in mat.node_tree.nodes if filter_func(n)]
+    def _valid(n: bpy.types.Node) -> bool:
+        if filter_func(n):
+            p = shader.parameter_map.get(n.name, None)
+            return p and not p.hidden
+
+        return False
+
+    nodes = [n for n in mat.node_tree.nodes if _valid(n)]
     if shader is not None:
         # order changes when the active node changes, sort so the UI stays stable
         nodes = sorted(nodes, key=lambda n: shader.parameter_ui_order.get(n.name, -1))

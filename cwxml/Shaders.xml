@@ -67,7 +67,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
@@ -79,10 +79,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -454,7 +454,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
@@ -476,10 +476,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -590,7 +590,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -605,11 +605,11 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
    <Item name="specular2Color" type="float3" subtype="rgb" x="0" y="0.5" z="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -679,7 +679,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="1" />
    <Item name="SnowSampler1" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="2" />
@@ -693,10 +693,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -820,7 +820,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
    <Item name="envEffScale" type="float2" x="1" y="0.001" />
@@ -829,10 +829,10 @@
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="specularFresnel" type="float" x="0.75" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -940,7 +940,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DetailSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="detailSettings" type="float4" x="1.5" y="1.5" z="13" w="13" />
@@ -951,10 +951,10 @@
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -982,7 +982,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -992,11 +992,11 @@
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
    <Item name="bumpiness" type="float" x="5" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1024,7 +1024,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="1" />
@@ -1042,10 +1042,10 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1073,7 +1073,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -1086,10 +1086,10 @@
    <Item name="specularFalloffMult" type="float" x="200" />
    <Item name="specularFresnel" type="float" x="0.75" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1121,7 +1121,7 @@
    <Item name="HardAlphaBlend" type="float" x="0" />
    <Item name="useTessellation" type="float" subtype="bool" x="0" />
    <Item name="wetnessMultiplier" type="float" x="1" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1149,7 +1149,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -1161,11 +1161,11 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="emissiveMultiplier" type="float" x="3.5" />
    <Item name="matDiffuseColor" type="float3" x="1" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="dimmerSetPacked" type="float4" count="5" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="dimmerSetPacked" type="float4" count="5" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1223,7 +1223,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -1234,10 +1234,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="1" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1324,7 +1324,7 @@
    <Item name="specularIntensityMult" type="float" x="1" />
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1443,7 +1443,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -1454,10 +1454,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="1" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1486,7 +1486,7 @@
    </Item>
   </Layout>
   <Parameters>
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="PlateBgSampler" type="Texture" uv="0" />
    <Item name="PlateBgBumpSampler" type="Texture" uv="0" />
@@ -1509,10 +1509,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="1" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1698,7 +1698,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
    <Item name="envEffScale" type="float2" x="1" y="0.001" />
@@ -1706,11 +1706,11 @@
    <Item name="reflectivePower" type="float" x="0.45" />
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="dimmerSetPacked" type="float4" count="5" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="dimmerSetPacked" type="float4" count="5" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1738,7 +1738,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -1750,10 +1750,10 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="emissiveMultiplier" type="float" x="16" />
    <Item name="matDiffuseColor" type="float3" x="2" y="7" z="7" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1785,7 +1785,7 @@
    <Item name="specularIntensityMult" type="float" x="0" />
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1841,7 +1841,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
    <Item name="envEffScale" type="float2" x="1" y="0.001" />
@@ -1849,10 +1849,10 @@
    <Item name="reflectivePower" type="float" x="0.45" />
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -1880,7 +1880,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
    <Item name="envEffScale" type="float2" x="1" y="0.001" />
@@ -1888,10 +1888,10 @@
    <Item name="reflectivePower" type="float" x="0.45" />
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2176,7 +2176,7 @@
    <Item name="specularIntensityMult" type="float" x="1" />
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2234,7 +2234,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -2249,10 +2249,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="2" z="2" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2293,7 +2293,7 @@
    <Item name="specularIntensityMult" type="float" x="1" />
    <Item name="specularFalloffMult" type="float" x="10" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2355,7 +2355,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="1" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -2382,10 +2382,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2622,7 +2622,7 @@
    <Item name="specularIntensityMult" type="float" x="0.125" />
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2758,7 +2758,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -2769,10 +2769,10 @@
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="specularFresnel" type="float" x="0.97" />
    <Item name="matDiffuseColor" type="float3" x="2" y="2" z="2" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -2833,7 +2833,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -2859,10 +2859,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="3" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3234,7 +3234,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DetailSampler" type="Texture" uv="0" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
@@ -3250,10 +3250,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3316,7 +3316,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -3330,10 +3330,10 @@
    <Item name="specularFresnel" type="float" x="0.97" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3361,7 +3361,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -3385,10 +3385,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
    <Item name="DiffuseTexTileUV" type="float" x="20" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3455,7 +3455,7 @@
    <Item name="specularIntensityMult" type="float" x="1" />
    <Item name="specularFalloffMult" type="float" x="20" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3487,7 +3487,7 @@
    <Item name="HardAlphaBlend" type="float" x="1" />
    <Item name="useTessellation" type="float" subtype="bool" x="0" />
    <Item name="emissiveMultiplier" type="float" x="4" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3519,7 +3519,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="2" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -3546,10 +3546,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -3680,7 +3680,7 @@
    <Item name="specularIntensityMult" type="float" x="0" />
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -4094,7 +4094,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
@@ -4108,10 +4108,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="2" z="2" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -4148,7 +4148,7 @@
    <Item name="specularIntensityMult" type="float" x="0.1" />
    <Item name="specularFalloffMult" type="float" x="20" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
    <Item name="umGlobalOverrideParams" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="umGlobalParams" type="float4" x="0.02" y="0.01" z="0.3" w="0.15" />
   </Parameters>
@@ -4178,7 +4178,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -4192,10 +4192,10 @@
    <Item name="specularFresnel" type="float" x="0.97" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -4457,7 +4457,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="BumpSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -4471,10 +4471,10 @@
    <Item name="specularFresnel" type="float" x="0.75" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -4705,7 +4705,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -4729,10 +4729,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="2" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -4808,7 +4808,7 @@
    <Item name="specularIntensityMult" type="float" x="1" />
    <Item name="specularFalloffMult" type="float" x="60" />
    <Item name="specularFresnel" type="float" x="0.75" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -5275,7 +5275,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="BumpSampler2" type="Texture" uv="1" />
@@ -5299,10 +5299,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -5385,7 +5385,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -5399,10 +5399,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -5470,7 +5470,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DirtSampler" type="Texture" uv="1" />
@@ -5488,10 +5488,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -5569,7 +5569,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="1" />
    <Item name="SnowSampler1" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="1" />
@@ -5583,10 +5583,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -5723,7 +5723,7 @@
    <Item name="UseTreeNormals" type="float" x="0" />
    <Item name="WindGlobalParams" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="umGlobalParams" type="float4" x="0.025" y="0.02" z="0.96" w="0.5" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6080,7 +6080,7 @@
    <Item name="specularIntensityMult" type="float" x="0.125" />
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6135,7 +6135,7 @@
    <Item name="specularIntensityMult" type="float" x="1" />
    <Item name="specularFalloffMult" type="float" x="50" />
    <Item name="specularFresnel" type="float" x="0.96" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6170,7 +6170,7 @@
    <Item name="bumpiness" type="float" x="1" />
    <Item name="specularIntensityMult" type="float" x="0" />
    <Item name="specularFalloffMult" type="float" x="5" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6198,7 +6198,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -6210,10 +6210,10 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="emissiveMultiplier" type="float" x="16" />
    <Item name="matDiffuseColor" type="float3" x="2" y="7" z="7" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6307,7 +6307,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -6320,11 +6320,11 @@
    <Item name="Track2AnimUV" type="float4" x="0" y="0" z="0" w="0" />
    <Item name="emissiveMultiplier" type="float" x="16" />
    <Item name="matDiffuseColor" type="float3" x="2" y="5" z="5" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="dimmerSetPacked" type="float4" count="5" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="dimmerSetPacked" type="float4" count="5" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6468,7 +6468,7 @@
    <Item name="specularIntensityMult" type="float" x="0.7" />
    <Item name="specularFalloffMult" type="float" x="350" />
    <Item name="specularFresnel" type="float" x="0.96" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6708,7 +6708,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -6729,10 +6729,10 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6767,7 +6767,7 @@
    <Item name="specularIntensityMult" type="float" x="0.15" />
    <Item name="specularFalloffMult" type="float" x="12" />
    <Item name="specularFresnel" type="float" x="0.2" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6880,7 +6880,7 @@
    <Item name="specularIntensityMult" type="float" x="0.125" />
    <Item name="specularFresnel" type="float" x="0.97" />
    <Item name="tessellationMultiplier" type="float" x="1" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -6967,7 +6967,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DirtSampler" type="Texture" uv="0" />
@@ -6985,10 +6985,10 @@
    <Item name="dirtColor" type="float3" subtype="rgb" x="0.231372" y="0.223529" z="0.203921" />
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="2" z="2" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7073,7 +7073,7 @@
    <Item name="bumpiness" type="float" x="1.2" />
    <Item name="specularIntensityMult" type="float" x="0.01" />
    <Item name="specularFalloffMult" type="float" x="32" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7117,7 +7117,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="SnowSampler0" type="Texture" uv="0" />
    <Item name="SnowSampler1" type="Texture" uv="0" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
@@ -7139,10 +7139,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7332,7 +7332,7 @@
    <Item name="specularFalloffMult" type="float" x="25" />
    <Item name="specularFresnel" type="float" x="0.9" />
    <Item name="tessellationMultiplier" type="float" x="1" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7446,7 +7446,7 @@
    <Item name="AlphaScale" type="float" x="1" />
    <Item name="SelfShadowing" type="float" x="0.8" />
    <Item name="UseTreeNormals" type="float" x="0" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7497,7 +7497,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="1" />
@@ -7516,10 +7516,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7540,7 +7540,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler2" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="0" />
@@ -7563,10 +7563,10 @@
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="1" z="1" />
    <Item name="DiffuseTexTileUV" type="float" x="8" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7601,7 +7601,7 @@
    <Item name="specularIntensityMult" type="float" x="0" />
    <Item name="specularFalloffMult" type="float" x="40" />
    <Item name="specularFresnel" type="float" x="0.96" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7672,7 +7672,7 @@
    <Item name="specularIntensityMult" type="float" x="0.4" />
    <Item name="specularFalloffMult" type="float" x="12" />
    <Item name="specularFresnel" type="float" x="0.8" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7799,7 +7799,7 @@
    <Item name="specularFalloffMult" type="float" x="100" />
    <Item name="specularFresnel" type="float" x="0.97" />
    <Item name="tessellationMultiplier" type="float" x="1" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7829,7 +7829,7 @@
    <Item name="specularIntensityMult" type="float" x="0.125" />
    <Item name="specularFalloffMult" type="float" x="10" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7917,7 +7917,7 @@
    <Item name="specularIntensityMult" type="float" x="0.01" />
    <Item name="specularFalloffMult" type="float" x="35" />
    <Item name="specularFresnel" type="float" x="0.65" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -7976,7 +7976,7 @@
    <Item name="HardAlphaBlend" type="float" x="1" />
    <Item name="useTessellation" type="float" subtype="bool" x="0" />
    <Item name="emissiveMultiplier" type="float" x="12" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -8052,7 +8052,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler3" type="Texture" uv="1" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="SpecSampler" type="Texture" uv="1" />
@@ -8070,10 +8070,10 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="2" y="6" z="6" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -8346,7 +8346,7 @@
    <Item name="specMapIntMask" type="float3" x="1" y="1" z="1" />
    <Item name="specularIntensityMult" type="float" x="0.5" />
    <Item name="specularFresnel" type="float" x="0.5" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -8400,7 +8400,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DiffuseSampler2" type="Texture" uv="0" />
    <Item name="DirtSampler" type="Texture" uv="0" />
    <Item name="BumpSampler" type="Texture" uv="0" />
@@ -8417,10 +8417,10 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor2" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="matDiffuseColor" type="float3" x="1" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -8450,7 +8450,7 @@
    <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
    <Item name="specularIntensityMult" type="float" x="0.125" />
    <Item name="specularFresnel" type="float" x="0.97" />
-   <Item name="tintPaletteSelector" type="float2" x="0" y="0" />
+   <Item name="tintPaletteSelector" type="float2" x="0" y="0" hidden="true" />
   </Parameters>
  </Item>
  <Item>
@@ -8849,7 +8849,7 @@
   </Layout>
   <Parameters>
    <Item name="DiffuseSampler" type="Texture" uv="0" />
-   <Item name="DamageSampler" type="Texture" />
+   <Item name="DamageSampler" type="Texture" hidden="true" />
    <Item name="DirtSampler" type="Texture" uv="1" />
    <Item name="SpecSampler" type="Texture" uv="0" />
    <Item name="envEffTexTileUV" type="float" x="8" />
@@ -8861,11 +8861,11 @@
    <Item name="dirtLevelMod" type="float4" x="1" y="1" z="1" w="1" />
    <Item name="emissiveMultiplier" type="float" x="3.5" />
    <Item name="matDiffuseColor" type="float3" x="1" y="1" z="1" />
-   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" />
-   <Item name="DamageMultiplier" type="float" x="0" />
-   <Item name="BoundRadius" type="float" x="0" />
-   <Item name="dimmerSetPacked" type="float4" count="5" />
-   <Item name="DamagedWheelOffsets" type="float4" count="2" />
+   <Item name="DamageTextureOffset" type="float3" x="0" y="0" z="0" hidden="true" />
+   <Item name="DamageMultiplier" type="float" x="0" hidden="true" />
+   <Item name="BoundRadius" type="float" x="0" hidden="true" />
+   <Item name="dimmerSetPacked" type="float4" count="5" hidden="true" />
+   <Item name="DamagedWheelOffsets" type="float4" count="2" hidden="true" />
   </Parameters>
  </Item>
 </Shaders>
