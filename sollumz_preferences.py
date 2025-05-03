@@ -17,11 +17,11 @@ from bpy.props import (
     CollectionProperty,
     PointerProperty,
     FloatVectorProperty,
-    FloatProperty,
 )
 import rna_keymap_ui
 import os
 import ast
+import textwrap
 from typing import Any
 from configparser import ConfigParser
 from typing import Optional
@@ -702,21 +702,84 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "cloth_overlay_binding_errors_size")
 
     def draw_about(self, context, layout: UILayout):
-        layout.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/bZuWBWaQBg"
-        layout.operator("wm.url_open", text="Documentation", icon="URL").url = "https://docs.sollumz.org/"
-        layout.operator("wm.url_open", text="Issue Tracker",
-                        icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
+        row = layout.row()
+        row.operator("wm.url_open", text="Discord", icon="COMMUNITY").url = "https://discord.gg/bZuWBWaQBg"
+        row.operator("wm.url_open", text="Documentation", icon="HELP").url = "https://docs.sollumz.org/"
+        row.operator("wm.url_open", text="Issue Tracker", icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
+
+        layout.separator(factor=4.0)
+
+        # TODO: should store benefactors lists somewhere else that can be easily updated
+        studio_benefactors = [("TStudio by TurboSaif", "https://turbosaif.tebex.io/")]
+        silver_benefactors = ["Tafé", "P-lauski", "Apollo"]
+        benefactors = "BrunX • Clementinise • Kuz • Eryxiz • rkangur • DOIIDAUM • L'kid • Unknown-TV • Ktoś • Reveler • SevenLife"
+
+        row = layout.row()
+        row.alignment = "CENTER"
+        row.label(text="Thank You")
+
+        row = layout.row()
+        row.alignment = "CENTER"
+        row.label(text="", icon="KEYTYPE_EXTREME_VEC")
+        row.label(text="Studio Benefactors")
+        row.label(text="", icon="KEYTYPE_EXTREME_VEC")
+        layout.separator()
+        for name, url in studio_benefactors:
+            row = layout.row()
+            row.alignment = "CENTER"
+            row.emboss = "PULLDOWN_MENU"
+            row.operator("wm.url_open", text=f"   {name}   ", icon="URL").url = url
+
+        _line_separator(layout, factor=2.0)
+        row = layout.row()
+        row.alignment = "CENTER"
+        row.label(text="", icon="HANDLETYPE_FREE_VEC")
+        row.label(text="Silver Benefactors")
+        row.label(text="", icon="HANDLETYPE_FREE_VEC")
+        layout.separator()
+        for name in silver_benefactors:
+            row = layout.row()
+            row.alignment = "CENTER"
+            row.label(text=name)
+
+        _line_separator(layout, factor=2.0)
+        row = layout.row()
+        row.alignment = "CENTER"
+        row.label(text="", icon="REMOVE")
+        row.label(text="Benefactors")
+        row.label(text="", icon="REMOVE")
+        layout.separator()
+        # https://b3d.interplanety.org/en/multiline-text-in-blender-interface-panels/
+        chars = int(context.region.width * 0.75 / 7)   # 7 pix on 1 character, 0.75 for margins
+        wrapper = textwrap.TextWrapper(width=chars)
+        text_lines = wrapper.wrap(text=benefactors)
+        for text_line in text_lines:
+            row = layout.row()
+            row.alignment = "CENTER"
+            row.label(text=text_line)
+
+        layout.separator(factor=4.0)
+
+        row = layout.row()
+        row.alignment = "CENTER"
+        row.label(text="Help Support Development")
+        row = layout.row()
+        row.operator("wm.url_open", text="Open Collective", icon="URL").url = "https://opencollective.com/sollumz"
+        row.operator("wm.url_open", text="GitHub Sponsors", icon="URL").url = "https://github.com/sponsors/Sollumz/"
+
+        layout.separator()
+
         pass
 
     def register():
         _load_preferences()
 
 
-def _line_separator(layout: UILayout):
+def _line_separator(layout: UILayout, factor: float = 1.0):
     if bpy.app.version >= (4, 2, 0):
-        layout.separator(type="LINE")
+        layout.separator(type="LINE", factor=factor)
     else:
-        layout.separator()
+        layout.separator(factor=factor)
 
 
 def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> SollumzAddonPreferences:
