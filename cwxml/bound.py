@@ -101,8 +101,16 @@ class BoundDisc(BoundChild):
     type = "Disc"
 
 
-class BoundCloth(BoundChild):
+class BoundPlane(BoundChild):
     type = "Cloth"
+
+    @property
+    def normal(self) -> Vector:
+        return self.sphere_center
+
+    @normal.setter
+    def normal(self, value: Vector):
+        self.sphere_center = Vector(value)
 
 
 class VerticesProperty(ElementProperty):
@@ -195,7 +203,7 @@ class BoundList(ListProperty):
                 elif bound_type == "Disc":
                     new.value.append(BoundDisc.from_xml(child))
                 elif bound_type == "Cloth":
-                    new.value.append(BoundCloth.from_xml(child))
+                    new.value.append(BoundPlane.from_xml(child))
                 elif bound_type == "Geometry":
                     new.value.append(BoundGeometry.from_xml(child))
                 elif bound_type == "GeometryBVH":

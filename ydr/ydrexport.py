@@ -30,6 +30,7 @@ from ..cwxml.drawable import (
     TextureShaderParameter,
     VertexBuffer,
 )
+from ..cwxml.cloth import CharacterCloth
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
@@ -60,6 +61,7 @@ from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
+from .cloth_diagnostics import cloth_char_export_context
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
 
@@ -76,7 +78,13 @@ def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
     return True
 
 
-def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None, materials: Optional[list[bpy.types.Material]] = None, apply_transforms: bool = False):
+def create_drawable_xml(
+    drawable_obj: bpy.types.Object,
+    armature_obj: Optional[bpy.types.Object] = None,
+    materials: Optional[list[bpy.types.Material]] = None,
+    apply_transforms: bool = False,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+):
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
     drawable_xml = Drawable()
     drawable_xml.frag_bound_matrix = None
@@ -110,7 +118,10 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
         bones = None
         original_pose = "POSE"
 
-    create_model_xmls(drawable_xml, drawable_obj, materials, bones)
+    if char_cloth_xml:
+        char_cloth_xml._tmp_skeleton = drawable_xml.skeleton
+
+    create_model_xmls(drawable_xml, drawable_obj, materials, bones, char_cloth_xml)
 
     drawable_xml.lights = create_xml_lights(drawable_obj)
 
@@ -125,7 +136,13 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     return drawable_xml
 
 
-def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_model_xmls(
+    drawable_xml: Drawable,
+    drawable_obj: bpy.types.Object,
+    materials: list[bpy.types.Material],
+    bones: Optional[list[bpy.types.Bone]] = None,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+):
     model_objs = get_model_objs(drawable_obj)
 
     if bones is not None:
@@ -143,7 +160,7 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
             if lod.mesh is None:
                 continue
 
-            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply)
+            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply, char_cloth_xml)
             if not model_xml.geometries:
                 continue
 
@@ -157,7 +174,8 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
 
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
     """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
-    return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh]
+    from .cloth import is_cloth_mesh_object
+    return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh and not is_cloth_mesh_object(obj)]
 
 
 def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[bpy.types.Bone]):
@@ -182,7 +200,15 @@ def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[
 
 
 @operates_on_lod_level
-def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, transforms_to_apply: Optional[Matrix] = None):
+def create_model_xml(
+    model_obj: bpy.types.Object,
+    lod_level: LODLevel,
+    materials: list[bpy.types.Material],
+    bones: Optional[list[bpy.types.Bone]] = None,
+    transforms_to_apply: Optional[Matrix] = None,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+    mesh_domain_override: Optional[VBBuilderDomain] = None,
+):
     model_xml = DrawableModel()
 
     set_model_xml_properties(model_obj, lod_level, bones, model_xml)
@@ -194,8 +220,12 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     if transforms_to_apply is not None:
         mesh_eval.transform(transforms_to_apply)
 
+    if char_cloth_xml:
+        cloth_char_export_context().diagnostics.drawable_model_obj_name = model_obj.name
+
     geometries = create_geometries_xml(
-        mesh_eval, materials, bones, model_obj.vertex_groups)
+        mesh_eval, materials, bones, model_obj.vertex_groups, char_cloth_xml, mesh_domain_override
+    )
     model_xml.geometries = geometries
 
     model_xml.bone_index = get_model_bone_index(model_obj)
@@ -243,9 +273,16 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, b
         model_xml.matrix_count = len(bones)
 
 
-def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
+def create_geometries_xml(
+    mesh_eval: bpy.types.Mesh,
+    materials: list[bpy.types.Material],
+    bones: Optional[list[bpy.types.Bone]] = None,
+    vertex_groups: Optional[list[bpy.types.VertexGroup]] = None,
+    char_cloth_xml: Optional[CharacterCloth] = None,
+    mesh_domain_override: Optional[VBBuilderDomain] = None,
+) -> list[Geometry]:
     is_cable = is_cable_mesh(mesh_eval)
-    if len(mesh_eval.loops) == 0 and not is_cable: # cable mesh don't have faces, so no loops either
+    if len(mesh_eval.loops) == 0 and not is_cable:  # cable mesh don't have faces, so no loops either
         logger.warning(f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
         return []
 
@@ -294,7 +331,7 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
     colors_incorrect_format = [
         (c, name) for c, name in colors
-        if (attr := mesh_eval.color_attributes.get(name, None)) and \
+        if (attr := mesh_eval.color_attributes.get(name, None)) and
            (attr.domain != "CORNER" or attr.data_type != "BYTE_COLOR")
     ]
     if colors_incorrect_format:
@@ -310,15 +347,14 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
     del colors_missing
     del colors_incorrect_format
 
-
     loop_inds_by_mat = get_loop_inds_by_material(mesh_eval, materials)
 
     geometries: list[Geometry] = []
 
     bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
 
-    domain = VBBuilderDomain[get_export_settings().mesh_domain]
-    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain)
+    domain = VBBuilderDomain[get_export_settings().mesh_domain] if mesh_domain_override is None else mesh_domain_override
+    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain, materials, char_cloth_xml, bones)
     total_vert_buffer = vb_builder.build()
     if domain == VBBuilderDomain.VERTEX:
         # bit dirty to use private data of the builder class, but we need this array here and it is already computed
@@ -403,7 +439,8 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
         loop_indices = all_loop_inds[tri_loop_inds]
 
         if shader_index in loop_inds_by_mat:
-            logger.warning(f"Shader_index already in list, some geometry will be lost! This is most likely caused by a duplicate material for {mat.name} in {mesh.name}")
+            logger.warning(
+                f"Shader_index already in list, some geometry will be lost! This is most likely caused by a duplicate material for {mat.name} in {mesh.name}")
         loop_inds_by_mat[shader_index] = loop_indices
 
     return loop_inds_by_mat

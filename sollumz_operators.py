@@ -538,7 +538,7 @@ class SOLLUMZ_OT_debug_hierarchy(bpy.types.Operator):
         for bound in obj.children:
             if bound.type == "EMPTY":
                 if "cloth" in bound.name.lower():
-                    bound.sollum_type = SollumType.BOUND_CLOTH
+                    bound.sollum_type = SollumType.BOUND_PLANE
                     continue
 
                 if "bvh" in bound.name.lower():

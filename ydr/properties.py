@@ -1,6 +1,15 @@
 import bpy
+from bpy.types import (
+    Object,
+    Scene,
+)
 from bpy.props import (
     BoolProperty,
+    IntProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    CollectionProperty,
+    PointerProperty,
 )
 import os
 from typing import Optional
@@ -85,6 +94,14 @@ class DrawableShaderOrder(bpy.types.PropertyGroup):
         self.active_index = list_ind
 
 
+class CharClothProperties(bpy.types.PropertyGroup):
+    weight: FloatProperty(name="Weight", default=1.0)
+    num_pin_radius_sets: IntProperty(name="Number of Pin Radius Sets", min=1, max=4, default=1)
+    pin_radius_scale: FloatProperty(name="Pin Radius Scale", default=1.0)
+    pin_radius_threshold: FloatProperty(name="Pin Radius Threshold", default=0.04)
+    wind_scale: FloatProperty(name="Wind Scale", default=1.0)
+
+
 class DrawableProperties(bpy.types.PropertyGroup):
     lod_dist_high: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Lod Distance High")
@@ -96,6 +113,8 @@ class DrawableProperties(bpy.types.PropertyGroup):
         min=0, max=10000, default=9998, name="Lod Distance Vlow")
 
     shader_order: bpy.props.PointerProperty(type=DrawableShaderOrder)
+
+    char_cloth: PointerProperty(type=CharClothProperties)
 
 
 class DrawableModelProperties(bpy.types.PropertyGroup):
@@ -649,47 +668,114 @@ def register():
     ), default=0)
 
     from .cable import CableAttr
-    bpy.types.Scene.sz_ui_cable_radius_visualize = bpy.props.BoolProperty(
+    bpy.types.WindowManager.sz_ui_cable_radius_visualize = bpy.props.BoolProperty(
         name="Show Radius", description="Display the cable radius values on the 3D Viewport",
         default=False
     )
-    bpy.types.Scene.sz_ui_cable_radius = bpy.props.FloatProperty(
+    bpy.types.WindowManager.sz_ui_cable_radius = bpy.props.FloatProperty(
         name=CableAttr.RADIUS.label, description=CableAttr.RADIUS.description,
         min=0.0001, default=CableAttr.RADIUS.default_value,
         subtype="DISTANCE"
     )
-    bpy.types.Scene.sz_ui_cable_diffuse_factor_visualize = bpy.props.BoolProperty(
+    bpy.types.WindowManager.sz_ui_cable_diffuse_factor_visualize = bpy.props.BoolProperty(
         name="Show Diffuse Factor", description="Display the cable diffuse factor values on the 3D Viewport",
         default=False
     )
-    bpy.types.Scene.sz_ui_cable_diffuse_factor = bpy.props.FloatProperty(
+    bpy.types.WindowManager.sz_ui_cable_diffuse_factor = bpy.props.FloatProperty(
         name=CableAttr.DIFFUSE_FACTOR.label, description=CableAttr.DIFFUSE_FACTOR.description,
         min=0.0, max=1.0, default=CableAttr.DIFFUSE_FACTOR.default_value,
         subtype="FACTOR"
     )
-    bpy.types.Scene.sz_ui_cable_um_scale_visualize = bpy.props.BoolProperty(
+    bpy.types.WindowManager.sz_ui_cable_um_scale_visualize = bpy.props.BoolProperty(
         name="Show Micromovements Scale", description="Display the cable micromovements scale values on the 3D Viewport",
         default=False
     )
-    bpy.types.Scene.sz_ui_cable_um_scale = bpy.props.FloatProperty(
+    bpy.types.WindowManager.sz_ui_cable_um_scale = bpy.props.FloatProperty(
         name=CableAttr.UM_SCALE.label, description=CableAttr.UM_SCALE.description,
         min=0.0, default=CableAttr.UM_SCALE.default_value
     )
-    bpy.types.Scene.sz_ui_cable_phase_offset_visualize = bpy.props.BoolProperty(
+    bpy.types.WindowManager.sz_ui_cable_phase_offset_visualize = bpy.props.BoolProperty(
         name="Show Phase Offset", description="Display the cable phase offset values on the 3D Viewport",
         default=False
     )
-    bpy.types.Scene.sz_ui_cable_phase_offset = bpy.props.FloatVectorProperty(
+    bpy.types.WindowManager.sz_ui_cable_phase_offset = bpy.props.FloatVectorProperty(
         name=CableAttr.PHASE_OFFSET.label, description=CableAttr.PHASE_OFFSET.description,
         size=2, min=0.0, max=1.0, default=CableAttr.PHASE_OFFSET.default_value[0:2]
     )
-    bpy.types.Scene.sz_ui_cable_material_index_visualize = bpy.props.BoolProperty(
+    bpy.types.WindowManager.sz_ui_cable_material_index_visualize = bpy.props.BoolProperty(
         name="Show Material Index", description="Display the cable material indices on the 3D Viewport",
         default=False
     )
-    bpy.types.Scene.sz_ui_cable_material_index = bpy.props.IntProperty(
+    bpy.types.WindowManager.sz_ui_cable_material_index = bpy.props.IntProperty(
         name=CableAttr.MATERIAL_INDEX.label, description=CableAttr.MATERIAL_INDEX.description,
         min=0, default=CableAttr.MATERIAL_INDEX.default_value,
+    )
+
+    from .cloth import ClothAttr
+
+    bpy.types.WindowManager.sz_ui_cloth_vertex_weight_visualize = bpy.props.BoolProperty(
+        name="Show Weights", description="Display the cloth weight values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_vertex_weight = bpy.props.FloatProperty(
+        name=ClothAttr.VERTEX_WEIGHT.label, description=ClothAttr.VERTEX_WEIGHT.description,
+        min=0.00001, max=1.0, default=ClothAttr.VERTEX_WEIGHT.default_value,
+        precision=6, step=1
+    )
+    bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize = bpy.props.BoolProperty(
+        name="Show Inflation Scale", description="Display the cloth inflation scale values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_inflation_scale = bpy.props.FloatProperty(
+        name=ClothAttr.INFLATION_SCALE.label, description=ClothAttr.INFLATION_SCALE.description,
+        min=0.0, max=1.0, default=ClothAttr.INFLATION_SCALE.default_value
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pinned_visualize = bpy.props.BoolProperty(
+        name="Show Pinned", description="Display the cloth pinned vertices on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pin_radius_set = bpy.props.IntProperty(
+        name="Pin Radius Set",
+        min=1, max=4, default=1
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pin_radius = bpy.props.FloatProperty(
+        name=ClothAttr.PIN_RADIUS.label, description=ClothAttr.PIN_RADIUS.description,
+        min=0.0, max=1.0, default=0.1, step=5,
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pin_radius_gradient_min = bpy.props.FloatProperty(
+        name="Pin Radius Gradient Minimum",
+        min=0.0, max=1.0, default=0.1, step=5,
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pin_radius_gradient_max = bpy.props.FloatProperty(
+        name="Pin Radius Gradient Maximum",
+        min=0.0, max=1.0, default=0.8, step=5,
+    )
+    bpy.types.WindowManager.sz_ui_cloth_pin_radius_visualize = bpy.props.BoolProperty(
+        name="Show Pin Radius", description="Display the cloth pin radius on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_force_transform_visualize = bpy.props.BoolProperty(
+        name="Show Force Transform", description="Display the cloth force transforms on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_force_transform = bpy.props.IntProperty(
+        name=ClothAttr.FORCE_TRANSFORM.label, description=ClothAttr.FORCE_TRANSFORM.description,
+        min=0, max=2, default=ClothAttr.FORCE_TRANSFORM.default_value
+    )
+    bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize = bpy.props.BoolProperty(
+        name="Show Material Errors",
+        description="Display faces that have a non-cloth material on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_diag_binding_errors_visualize = bpy.props.BoolProperty(
+        name="Show Binding Errors",
+        description="Display vertices of the drawable mesh that failed to bind to the cloth mesh on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize = bpy.props.BoolProperty(
+        name="Show Bindings",
+        description="",
+        default=False
     )
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
@@ -723,15 +809,32 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_decimate_step
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
-    del bpy.types.Scene.sz_ui_cable_radius_visualize
-    del bpy.types.Scene.sz_ui_cable_radius
-    del bpy.types.Scene.sz_ui_cable_diffuse_factor_visualize
-    del bpy.types.Scene.sz_ui_cable_diffuse_factor
-    del bpy.types.Scene.sz_ui_cable_um_scale_visualize
-    del bpy.types.Scene.sz_ui_cable_um_scale
-    del bpy.types.Scene.sz_ui_cable_phase_offset_visualize
-    del bpy.types.Scene.sz_ui_cable_phase_offset
-    del bpy.types.Scene.sz_ui_cable_material_index_visualize
-    del bpy.types.Scene.sz_ui_cable_material_index
+
+    del bpy.types.WindowManager.sz_ui_cable_radius_visualize
+    del bpy.types.WindowManager.sz_ui_cable_radius
+    del bpy.types.WindowManager.sz_ui_cable_diffuse_factor_visualize
+    del bpy.types.WindowManager.sz_ui_cable_diffuse_factor
+    del bpy.types.WindowManager.sz_ui_cable_um_scale_visualize
+    del bpy.types.WindowManager.sz_ui_cable_um_scale
+    del bpy.types.WindowManager.sz_ui_cable_phase_offset_visualize
+    del bpy.types.WindowManager.sz_ui_cable_phase_offset
+    del bpy.types.WindowManager.sz_ui_cable_material_index_visualize
+    del bpy.types.WindowManager.sz_ui_cable_material_index
+
+    del bpy.types.WindowManager.sz_ui_cloth_vertex_weight
+    del bpy.types.WindowManager.sz_ui_cloth_vertex_weight_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_inflation_scale
+    del bpy.types.WindowManager.sz_ui_cloth_inflation_scale_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_pinned_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_pin_radius_set
+    del bpy.types.WindowManager.sz_ui_cloth_pin_radius
+    del bpy.types.WindowManager.sz_ui_cloth_pin_radius_gradient_min
+    del bpy.types.WindowManager.sz_ui_cloth_pin_radius_gradient_max
+    del bpy.types.WindowManager.sz_ui_cloth_pin_radius_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_force_transform
+    del bpy.types.WindowManager.sz_ui_cloth_force_transform_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_diag_binding_errors_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)

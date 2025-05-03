@@ -27,6 +27,7 @@ from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import has_col_mats, bound_geom_has_mats
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures, get_bone_index, create_model_xml, append_model_xml, set_drawable_xml_extents
 from ..ydr.lights import create_xml_lights
+from ..ydr.cloth_env import cloth_env_export, cloth_env_find_mesh_objects
 from .. import logger
 from .properties import (
     LODProperties, FragArchetypeProperties, GroupProperties,
@@ -35,7 +36,8 @@ from .properties import (
 )
 
 
-def export_yft(frag_obj: Object, filepath: str) -> bool:
+def export_yft(frag_obj: Object, filepath: Optional[str]) -> bool:
+    """If filepath is None, a dry run is done and no files are written."""
     export_settings = get_export_settings()
 
     frag = locate_fragment_objects(frag_obj)
@@ -46,22 +48,25 @@ def export_yft(frag_obj: Object, filepath: str) -> bool:
     if frag_xml is None:
         return False
 
-    if export_settings.export_non_hi:
-        frag_xml.write_xml(filepath)
-        write_embedded_textures(frag_obj, filepath)
-
     if export_settings.export_hi and has_hi_lods(frag_obj):
-        hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
-
         hi_frag_xml = create_hi_frag_xml(frag, frag_xml, export_settings.apply_transforms)
-        hi_frag_xml.write_xml(hi_filepath)
+    else:
+        hi_frag_xml = None
 
-        write_embedded_textures(frag_obj, hi_filepath)
-        logger.info(f"Exported Very High LODs to '{hi_filepath}'")
-    elif export_settings.export_hi and not export_settings.export_non_hi:
-        logger.warning(f"Only Very High LODs selected to export but fragment '{frag_obj.name}' does not have Very High"
-                       " LODs. Nothing was exported.")
-        return False
+    if filepath:
+        if export_settings.export_non_hi:
+            frag_xml.write_xml(filepath)
+            write_embedded_textures(frag_obj, filepath)
+
+        if hi_frag_xml:
+            hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
+            hi_frag_xml.write_xml(hi_filepath)
+            write_embedded_textures(frag_obj, hi_filepath)
+            logger.info(f"Exported Very High LODs to '{hi_filepath}'")
+        elif export_settings.export_hi and not export_settings.export_non_hi:
+            logger.warning(f"Only Very High LODs selected to export but fragment '{frag_obj.name}' does not have Very High"
+                           " LODs. Nothing was exported.")
+            return False
 
     return True
 
@@ -197,6 +202,26 @@ def create_fragment_xml(frag: FragmentObjects, apply_transforms: bool = False) -
         frag_xml.physics = None
 
     frag_xml.lights = create_xml_lights(frag_obj)
+
+    env_cloth = cloth_env_export(frag_obj, drawable_xml, materials)
+    if env_cloth is not None:
+        frag_xml.cloths = [env_cloth]  # cloths is an array but game only supports 1 cloth
+        if frag_xml.drawable.is_empty:
+            # If it doesn't have other drawable models other than the cloth one, we can remove the main drawable
+            frag_xml.drawable = None
+            frag_xml.bounding_sphere_center = env_cloth.drawable.bounding_sphere_center
+            frag_xml.bounding_sphere_radius = env_cloth.drawable.bounding_sphere_radius
+
+        if frag_xml.physics is None:
+            frag_xml.physics = create_dummy_frag_physics_xml_for_cloth(frag, frag_xml, materials)
+        else:
+            # Cloths seem to always have an extra null bound in the composite
+            # Doesn't seem to be needed, but do it for consistency with original assets
+            composite = frag_xml.physics.lod1.archetype.bounds
+            composite.children.append(None)
+            if len(composite.children) == 1:
+                # ... and at least 2 children in the composite
+                composite.children.append(None)
 
     frag_armature.pose_position = original_pose
 
@@ -529,7 +554,7 @@ def create_phys_xml_groups(
         if not bone.sollumz_use_physics:
             continue
 
-        if not does_bone_have_collision(bone.name, frag_obj):
+        if not does_bone_have_collision(bone.name, frag_obj) and not does_bone_have_cloth(bone.name, frag_obj):
             logger.warning(
                 f"Bone '{bone.name}' has physics enabled, but no associated collision! A collision must be linked to the bone for physics to work.")
             continue
@@ -583,6 +608,18 @@ def does_bone_have_collision(bone_name: str, frag_obj: Object):
     col_objs = [obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
 
     for obj in col_objs:
+        bone = get_child_of_bone(obj)
+
+        if bone is not None and bone.name == bone_name:
+            return True
+
+    return False
+
+
+def does_bone_have_cloth(bone_name: str, frag_obj: bpy.types.Object) -> bool:
+    cloth_objs = cloth_env_find_mesh_objects(frag_obj, silent=True)
+
+    for obj in cloth_objs:
         bone = get_child_of_bone(obj)
 
         if bone is not None and bone.name == bone_name:
@@ -1355,3 +1392,37 @@ def calc_frag_glass_window_bounds_offset(
             offset_back = distance_point_to_plane(point, plane_co, plane_no)
 
     return offset_front, offset_back
+
+
+def create_dummy_frag_physics_xml_for_cloth(frag: FragmentObjects, frag_xml: Fragment, materials: list[bpy.types.Material]) -> Physics:
+    dummy_physics = Physics()
+    frag_obj = frag.fragment
+    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
+
+    lod_xml = create_phys_lod_xml(dummy_physics, lod_props)
+    arch_xml, _ = create_archetype_xml(lod_xml, frag)
+
+    create_phys_xml_groups(frag_obj, lod_xml, frag_xml.glass_windows, materials)
+    arch_xml.bounds.volume = 1
+    arch_xml.bounds.inertia = Vector((1.0, 1.0, 1.0))
+    arch_xml.bounds.sphere_radius = frag_xml.bounding_sphere_radius
+    arch_xml.bounds.ref_count = 2
+    # Cloths with no bounds seem to always have 2 null bounds in the composite
+    # Doesn't seem to be needed, but do it for consistency with original assets
+    arch_xml.bounds.children.append(None)
+    arch_xml.bounds.children.append(None)
+    lod_xml.groups[0].mass = 1
+
+    child_xml = PhysicsChild()
+    child_xml.group_index = 0
+    child_xml.pristine_mass = lod_xml.groups[0].mass
+    child_xml.damaged_mass = child_xml.pristine_mass
+    child_xml.bone_tag = 0
+    child_xml.inertia_tensor = Vector((0.0, 0.0, 0.0, 0.0))
+
+    create_phys_child_drawable(child_xml, materials, None)
+    child_xml.damaged_drawable = None
+
+    lod_xml.children.append(child_xml)
+
+    return dummy_physics

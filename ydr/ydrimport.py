@@ -71,16 +71,15 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     return drawable_obj
 
 
-def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], model_names: Optional[str] = None):
+def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], model_names: Optional[str] = None, return_model_data = False):
     model_datas = get_model_data(drawable_xml)
     model_names = model_names or SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]
-
-    return [create_model_obj(model_data, materials, name=model_names) for model_data in model_datas]
+    model_objs = [create_model_obj(model_data, materials, name=model_names) for model_data in model_datas]
+    return (model_objs, model_datas) if return_model_data else model_objs
 
 
 def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object, armature_obj: bpy.types.Object, split_by_group: bool = False):
-    model_datas = get_model_data(
-        drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
+    model_datas = get_model_data(drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
 
     set_skinned_model_properties(drawable_obj, drawable_xml)
 
@@ -509,13 +508,20 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
     drawable_xml.lights = None
 
     drawable_obj = create_drawable_obj(drawable_xml, filepath)
-    root_transform = drawable_obj.matrix_world.copy()
+    convert_object_to_asset(name, drawable_obj)
+
+
+def convert_object_to_asset(name: str, obj: bpy.types.Object) -> bpy.types.Object:
+    root_transform = obj.matrix_world.copy()
 
     model_objs = []
+    other_objs = []
 
-    for child in drawable_obj.children:
+    for child in obj.children_recursive:
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             model_objs.append(child)
+        else:
+            other_objs.append(child)
 
     joined_obj = join_objects(model_objs)
     joined_transform = joined_obj.matrix_world.copy()
@@ -536,10 +542,12 @@ def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
 
     bpy.context.collection.objects.unlink(joined_obj)
 
-    armature = drawable_obj.data
-    bpy.data.objects.remove(drawable_obj)
+    armature = obj.data
+    bpy.data.objects.remove(obj)
     if armature:
         bpy.data.armatures.remove(armature)
+    for other_obj in other_objs:
+        bpy.data.objects.remove(other_obj)
 
     joined_obj.asset_mark()
     joined_obj.asset_generate_preview()

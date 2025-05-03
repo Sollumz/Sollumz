@@ -6332,6 +6332,7 @@
   <FileName>
    <Item bucket="0">ped_cloth.sps</Item>
   </FileName>
+  <Flags>IS_PED_CLOTH</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7196,6 +7197,7 @@
   <FileName>
    <Item bucket="0">ped_wrinkle_cloth.sps</Item>
   </FileName>
+  <Flags>IS_PED_CLOTH</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7338,6 +7340,7 @@
   <FileName>
    <Item bucket="0">ped_wrinkle_cloth_enveff.sps</Item>
   </FileName>
+  <Flags>IS_PED_CLOTH</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -7677,6 +7680,7 @@
   <FileName>
    <Item bucket="0">ped_default_cloth.sps</Item>
   </FileName>
+  <Flags>IS_PED_CLOTH</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />
@@ -8789,6 +8793,7 @@
   <FileName>
    <Item bucket="0">ped_cloth_enveff.sps</Item>
   </FileName>
+  <Flags>IS_PED_CLOTH</Flags>
   <Layout>
    <Item type="GTAV1">
     <Position />

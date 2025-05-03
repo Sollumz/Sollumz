@@ -2,8 +2,10 @@
 Various functions related to geometry math.
 """
 import numpy as np
+from numpy.typing import NDArray
 from mathutils import Vector
 from typing import NamedTuple
+from collections.abc import Sequence
 
 
 class Centroid(NamedTuple):
@@ -550,3 +552,64 @@ def grow_sphere(center: Vector, radius: float, point: Vector, point_radius: floa
     """
     dist = (point - center).length + point_radius
     return dist if dist > radius else radius
+
+
+def tris_areas(tris_array: NDArray) -> NDArray:
+    """Calculate the area of each triangle in the array."""
+    assert tris_array.ndim == 3 and tris_array.shape[1:] == (3, 3), \
+        f"Expected shape (N, 3, 3) for 'tris_array', got: {tris_array.shape}"
+
+    v0, v1, v2 = tris_array[:, 0], tris_array[:, 1], tris_array[:, 2]
+
+    areas = np.linalg.norm(np.cross(v0 - v1, v2 - v1, axis=1), axis=1) / 2
+    return areas
+
+
+def tris_areas_from_verts(v0: NDArray, v1: NDArray, v2: NDArray) -> NDArray:
+    """Calculate the area of each triangle in the arrays. Triangle vertices passed as separate arrays."""
+    assert v0.ndim == 2 and v0.shape[1] == 3, \
+        f"Expected shape (N, 3) for 'v0', got: {v0.shape}"
+    assert v1.ndim == 2 and v1.shape[1] == 3, \
+        f"Expected shape (N, 3) for 'v1', got: {v1.shape}"
+    assert v2.ndim == 2 and v2.shape[1] == 3, \
+        f"Expected shape (N, 3) for 'v2', got: {v2.shape}"
+
+    areas = np.linalg.norm(np.cross(v0 - v1, v2 - v1, axis=1), axis=1) / 2
+    return areas
+
+
+def tris_normals(tris_array: NDArray) -> NDArray:
+    """Calculate the normal of each triangle in the array."""
+    assert tris_array.ndim == 3 and tris_array.shape[1:] == (3, 3), \
+        f"Expected shape (N, 3, 3), got: {tris_array.shape}"
+
+    v0, v1, v2 = tris_array[:, 0], tris_array[:, 1], tris_array[:, 2]
+
+    normals = np.cross(v0 - v1, v2 - v1)
+
+    # normalize normal vectors
+    lengths = np.linalg.norm(normals, axis=1, keepdims=True)
+    np.divide(normals, lengths, out=normals, where=lengths != 0)
+
+    return normals
+
+
+def distance_signed_point_to_planes(point_3d: Sequence[float], planes_co: NDArray, planes_normals: NDArray) -> NDArray[np.float32]:
+    """Calculate the signed distances of a point to each plane represented by the `planes_co` and `planes_normals` arrays."""
+    point_3d = np.array(point_3d)
+
+    assert point_3d.ndim == 1 and point_3d.shape[0] == 3, \
+        f"Expected shape (3) for 'point_3d', got: {point_3d.shape}"
+    assert planes_co.ndim == 2 and planes_co.shape[1] == 3, \
+        f"Expected shape (N, 3) for 'planes_co', got: {planes_co.shape}"
+    assert planes_normals.ndim == 2 and planes_normals.shape[1] == 3, \
+        f"Expected shape (N, 3) for 'planes_normals', got: {planes_normals.shape}"
+    assert len(planes_co) == len(planes_normals), \
+        f"Expected same number of plane coordinates and normals, got: {len(planes_co)} and {len(planes_normals)}"
+
+    D = -np.sum(planes_normals * planes_co, axis=1)
+
+    # Assumes plane normals are already normalized
+    distances = np.sum(planes_normals * point_3d, axis=1) + D
+
+    return distances

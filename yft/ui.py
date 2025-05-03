@@ -1,4 +1,7 @@
 import bpy
+from bpy.types import (
+    Object,
+)
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..ydr.ui import SOLLUMZ_PT_BONE_PANEL
 from ..ybn.ui import SOLLUMZ_PT_BOUND_PROPERTIES_PANEL
@@ -11,6 +14,7 @@ from ..sollumz_properties import (
     MAX_VEHICLE_LIGHT_ID,
 )
 from ..sollumz_helper import find_sollumz_parent
+from ..sollumz_ui import FlagsPanel
 from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
     GroupFlagBit,
@@ -171,13 +175,13 @@ class SOLLUMZ_PT_FRAGMENT_PANEL(bpy.types.Panel):
         obj = context.active_object
 
         for prop in FragmentProperties.__annotations__:
-            if prop == "lod_properties" or prop == "vehicle_render_preview":
+            if prop == "lod_properties" or prop == "cloth" or prop == "vehicle_render_preview":
                 continue
             # skip flags because these don't look like they should be user-editable
             if prop == "flags":
                 continue
 
-            self.layout.prop(obj.fragment_properties, prop)
+            layout.prop(obj.fragment_properties, prop)
 
 
 class SOLLUMZ_PT_PHYS_LODS_PANEL(bpy.types.Panel):
@@ -224,6 +228,127 @@ class SOLLUMZ_PT_FRAG_ARCHETYPE_PANEL(bpy.types.Panel):
 
         for prop in arch_props.__annotations__:
             layout.prop(arch_props, prop)
+
+
+class ClothPanel:
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @property
+    def has_cloth(self) -> bool:
+        from ..ydr.cloth_env import cloth_env_find_mesh_objects
+        obj = bpy.context.view_layer.objects.active
+        cloth_objs = cloth_env_find_mesh_objects(obj, silent=True)
+        return bool(cloth_objs)
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_PANEL(ClothPanel, bpy.types.Panel):
+    bl_label = "Cloth"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_PANEL"
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
+    bl_order = 3
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+
+        has_cloth = self.has_cloth
+        if not has_cloth:
+            layout.label(text="No cloth in the active fragment.", icon="ERROR")
+        col = layout.column()
+        col.active = has_cloth
+        col.prop(cloth_props, "weight")
+        col.prop(cloth_props, "world_bounds")
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL(ClothPanel, bpy.types.Panel):
+    bl_label = "Tuning"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL"
+    bl_parent_id = SOLLUMZ_PT_FRAG_CLOTH_PANEL.bl_idname
+    bl_order = 1
+
+    def draw_header(self, context):
+        layout = self.layout
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+
+        layout.active = self.has_cloth
+        layout.prop(cloth_props, "enable_tuning", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+
+        layout.active = self.has_cloth and cloth_props.enable_tuning
+        layout.prop(cloth_props, "extra_force")
+        layout.prop(cloth_props, "weight_override")
+        row = layout.row()
+        row.active = cloth_props.tuning_flags.use_distance_threshold or cloth_props.tuning_flags.force_vertex_resistance
+        row.prop(
+            cloth_props,
+            "distance_threshold",
+            text="Vertex Resistance" if cloth_props.tuning_flags.force_vertex_resistance else "Distance Threshold"
+        )
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_TUNING_WIND_FEEDBACK_PANEL(ClothPanel, bpy.types.Panel):
+    bl_label = "Wind Feedback"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_TUNING_WIND_FEEDBACK_PANEL"
+    bl_parent_id = SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL.bl_idname
+    bl_order = 1
+
+    def draw_header(self, context):
+        layout = self.layout
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+
+        layout.active = self.has_cloth and cloth_props.enable_tuning
+        layout.prop(cloth_props.tuning_flags, "wind_feedback", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+
+        layout.active = self.has_cloth and cloth_props.enable_tuning and cloth_props.tuning_flags.wind_feedback
+        layout.prop(cloth_props, "rotation_rate")
+        layout.prop(cloth_props, "angle_threshold")
+        layout.prop(cloth_props, "pin_vert")
+        layout.prop(cloth_props, "non_pin_vert0")
+        layout.prop(cloth_props, "non_pin_vert1")
+
+
+class SOLLUMZ_PT_FRAG_CLOTH_TUNING_FLAGS_PANEL(FlagsPanel, ClothPanel, bpy.types.Panel):
+    bl_label = "Flags"
+    bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_TUNING_FLAGS_PANEL"
+    bl_parent_id = SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL.bl_idname
+    bl_order = 2
+
+    def get_flags(self, context):
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        return cloth_props.tuning_flags
+
+    def draw(self, context):
+        obj = context.view_layer.objects.active
+        cloth_props = obj.fragment_properties.cloth
+        self.layout.active = self.has_cloth and cloth_props.enable_tuning
+        super().draw(context)
 
 
 class SOLLUMZ_PT_VEHICLE_RENDER_PREVIEW_PANEL(bpy.types.Panel):

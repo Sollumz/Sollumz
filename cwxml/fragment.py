@@ -14,6 +14,7 @@ from .element import (
     VectorProperty
 )
 from .drawable import Drawable, Lights, VertexLayoutList
+from .cloth import EnvironmentClothList
 from .bound import BoundComposite
 
 
@@ -288,6 +289,7 @@ class Fragment(ElementTree, AbstractClass):
         self.glass_windows = GlassWindows()
         self.lights = Lights()
         self.vehicle_glass_windows = VehicleGlassWindows()
+        self.cloths = EnvironmentClothList()
 
     def get_lods_by_id(self):
         return {1: self.physics.lod1, 2: self.physics.lod2, 3: self.physics.lod3}

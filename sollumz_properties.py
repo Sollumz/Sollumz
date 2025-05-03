@@ -4,6 +4,8 @@ from typing import Sequence
 from .tools.utils import flag_list_to_int, flag_prop_to_list, int_to_bool_list
 
 
+# NOTE: Do not reorder these enums or insert new entries in the middle. That will break compatibility with
+#       existing .blend and require new versioning code. New entries can be added at the end.
 class SollumType(str, Enum):
     NONE = "sollumz_none"
 
@@ -25,7 +27,7 @@ class SollumType(str, Enum):
     BOUND_CAPSULE = "sollumz_bound_capsule"
     BOUND_CYLINDER = "sollumz_bound_cylinder"
     BOUND_DISC = "sollumz_bound_disc"
-    BOUND_CLOTH = "sollumz_bound_cloth"
+    BOUND_PLANE = "sollumz_bound_plane"
     BOUND_GEOMETRY = "sollumz_bound_geometry"
     BOUND_GEOMETRYBVH = "sollumz_bound_geometrybvh"
     BOUND_COMPOSITE = "sollumz_bound_composite"
@@ -55,6 +57,8 @@ class SollumType(str, Enum):
     YMAP_BOX_OCCLUDER = "sollumz_ymap_box_occluder"
     YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
     YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
+
+    CHARACTER_CLOTH_MESH = "sollumz_character_cloth_mesh"
 
 
 class LightType(str, Enum):
@@ -161,7 +165,7 @@ BOUND_TYPES = [
     SollumType.BOUND_CYLINDER,
     SollumType.BOUND_CAPSULE,
     SollumType.BOUND_DISC,
-    SollumType.BOUND_CLOTH,
+    SollumType.BOUND_PLANE,
     SollumType.BOUND_GEOMETRY,
     SollumType.BOUND_GEOMETRYBVH,
 ]
@@ -214,7 +218,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_CAPSULE: "Bound Capsule",
     SollumType.BOUND_CYLINDER: "Bound Cylinder",
     SollumType.BOUND_DISC: "Bound Disc",
-    SollumType.BOUND_CLOTH: "Bound Cloth",
+    SollumType.BOUND_PLANE: "Bound Plane",
     SollumType.BOUND_GEOMETRY: "Bound Geometry",
     SollumType.BOUND_GEOMETRYBVH: "Bound GeometryBVH",
     SollumType.BOUND_COMPOSITE: "Bound Composite",
@@ -238,6 +242,7 @@ SOLLUMZ_UI_NAMES = {
     SollumType.DRAWABLE_GEOMETRY: "Drawable Geometry",
     SollumType.SKELETON: "Skeleton",
     SollumType.LIGHT: "Light",
+    SollumType.CHARACTER_CLOTH_MESH: "Character Cloth Mesh",
 
     SollumType.NAVMESH: "NavMesh",
     SollumType.NAVMESH_POLY_MESH: "NavMesh Poly Mesh",

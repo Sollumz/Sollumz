@@ -5,11 +5,14 @@ from ..cwxml.fragment import Fragment, PhysicsChild
 
 
 def get_all_frag_geoms(frag_xml: Fragment) -> list[Geometry]:
-    """Get all Geometries in a Fragment including those in Physics children."""
+    """Get all Geometries in a Fragment including those in Physics children and Cloths drawables."""
     geoms = frag_xml.drawable.all_geoms
 
     for child in frag_xml.physics.lod1.children:
         geoms.extend(child.drawable.all_geoms)
+
+    for cloth in frag_xml.cloths:
+        geoms.extend(cloth.drawable.all_geoms)
 
     return geoms
 
@@ -47,6 +50,8 @@ class FragmentMerger:
         self.frag.drawable.hi_models = self.hi_frag.drawable.drawable_models_high
 
         self.merge_hi_children()
+
+        # NOTE: we don't merge Cloth drawables because they have the same mesh in hi and non-hi fragments
 
         return self.frag
 

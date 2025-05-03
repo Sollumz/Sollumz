@@ -17,6 +17,7 @@ from bpy.props import (
     CollectionProperty,
     PointerProperty,
     FloatVectorProperty,
+    FloatProperty,
 )
 import rna_keymap_ui
 import os
@@ -209,38 +210,43 @@ class SollumzImportSettings(PropertyGroup):
 
 
 class SollumzThemeSettings(PropertyGroup):
-    mlo_gizmo_room: FloatVectorProperty(
-        name="Room",
-        subtype="COLOR",
-        min=0, max=1,
-        size=4,
-        default=(0.31, 0.38, 1.0, 0.7),
-        update=_save_preferences_on_update,
-    )
-    mlo_gizmo_room_selected: FloatVectorProperty(
-        name="Room Selected",
-        subtype="COLOR",
-        min=0, max=1,
-        size=4,
-        default=(0.62, 0.76, 1.0, 0.9),
-        update=_save_preferences_on_update,
-    )
-    mlo_gizmo_portal: FloatVectorProperty(
-        name="Portal",
-        subtype="COLOR",
-        min=0, max=1,
-        size=4,
-        default=(0.45, 0.98, 0.55, 0.5),
-        update=_save_preferences_on_update,
-    )
-    mlo_gizmo_portal_selected: FloatVectorProperty(
-        name="Portal Selected",
-        subtype="COLOR",
-        min=0, max=1,
-        size=4,
-        default=(0.93, 1.0, 1.0, 0.7),
-        update=_save_preferences_on_update,
-    )
+    def RGBAProperty(name: str, default: tuple[float, float, float]):
+        return FloatVectorProperty(
+            name=name,
+            subtype="COLOR",
+            min=0, max=1,
+            size=4,
+            default=default,
+            update=_save_preferences_on_update,
+        )
+
+    mlo_gizmo_room: RGBAProperty("Room", (0.31, 0.38, 1.0, 0.7))
+    mlo_gizmo_room_selected: RGBAProperty("Room Selected", (0.62, 0.76, 1.0, 0.9))
+    mlo_gizmo_portal: RGBAProperty("Portal", (0.45, 0.98, 0.55, 0.5))
+    mlo_gizmo_portal_selected: RGBAProperty("Portal Selected", (0.93, 1.0, 1.0, 0.7))
+
+    cable_overlay_radius: RGBAProperty("Radius", (1.0, 0.0, 0.0, 1.0))
+
+    cloth_overlay_pinned: RGBAProperty("Pinned", (1.0, 0.65, 0.0, 0.5))
+    cloth_overlay_pinned_size: IntProperty(name="Pinned Size", default=12, min=1, max=50)
+    cloth_overlay_material_errors: RGBAProperty("Material Errors", (1.0, 0.05, 0.025, 0.45))
+    cloth_overlay_binding_errors: RGBAProperty("Binding Errors", (1.0, 0.05, 0.025, 0.75))
+    cloth_overlay_binding_errors_size: IntProperty(name="Binding Errors Size", default=12, min=1, max=50)
+
+    def reset(self):
+        for prop_name, annotation in SollumzThemeSettings.__annotations__.items():
+            setattr(self, prop_name, annotation.keywords["default"])
+
+
+class SOLLUMZ_OT_prefs_theme_reset(Operator):
+    bl_idname = "sollumz.prefs_theme_reset"
+    bl_label = "Reset Theme"
+    bl_description = "Reset all theme settings to their default values"
+
+    def execute(self, context):
+        get_theme_settings(context).reset()
+        _save_preferences()
+        return {"FINISHED"}
 
 
 class SzSharedTexturesDirectory(PropertyGroup):
@@ -549,7 +555,7 @@ class SollumzAddonPreferences(AddonPreferences):
         if is_wide:
             row.label()  # Needed so col above is centered.
 
-    def draw_general(self, context, layout):
+    def draw_general(self, context, layout: UILayout):
         layout.prop(self, "use_text_name_as_mat_name")
         layout.prop(self, "shader_preset_apply_textures")
 
@@ -578,10 +584,7 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw_import_export(self, context, layout: UILayout):
         def _section_header(layout: UILayout, text: str):
-            if bpy.app.version >= (4, 2, 0):
-                layout.separator(type="LINE")
-            else:
-                layout.separator()
+            _line_separator(layout)
             row = layout.row()
             row.alignment = "LEFT"
             row.label(text="", icon="BLANK1")
@@ -661,10 +664,7 @@ class SollumzAddonPreferences(AddonPreferences):
                     rna_keymap_ui.draw_kmi(["ADDON", "USER", "DEFAULT"], kc, km, kmi, row, 1)
 
             if keymap != keymaps[-1]:
-                if bpy.app.version >= (4, 2, 0):
-                    layout.separator(type="LINE")
-                else:
-                    layout.separator()
+                _line_separator(layout)
 
     def draw_ui(self, context, layout: UILayout):
         layout.prop(self, "show_vertex_painter")
@@ -672,20 +672,51 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(self, "sollumz_icon_header")
 
     def draw_theme(self, context, layout: UILayout):
+        def _section_header(layout: UILayout, text: str, icon: str, first: bool = False):
+            if not first:
+                _line_separator(layout)
+            row = layout.row()
+            row.label(text=text, icon=icon)
+
+        row = layout.row()
+        row.alignment = "RIGHT"
+        row.operator(SOLLUMZ_OT_prefs_theme_reset.bl_idname, text="      Reset      ", icon="LOOP_BACK")
+
+        layout.separator()
+
         theme = self.theme
+        _section_header(layout, "MLO Gizmos", "HOME", True)
         layout.prop(theme, "mlo_gizmo_room")
         layout.prop(theme, "mlo_gizmo_room_selected")
         layout.prop(theme, "mlo_gizmo_portal")
         layout.prop(theme, "mlo_gizmo_portal_selected")
 
+        _section_header(layout, "Cable Overlays", "OUTLINER_DATA_GREASEPENCIL")
+        layout.prop(theme, "cable_overlay_radius")
+
+        _section_header(layout, "Cloth Overlays", "MATCLOTH")
+        layout.prop(theme, "cloth_overlay_pinned")
+        layout.prop(theme, "cloth_overlay_pinned_size")
+        layout.prop(theme, "cloth_overlay_material_errors")
+        layout.prop(theme, "cloth_overlay_binding_errors")
+        layout.prop(theme, "cloth_overlay_binding_errors_size")
+
     def draw_about(self, context, layout: UILayout):
         layout.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/bZuWBWaQBg"
         layout.operator("wm.url_open", text="Documentation", icon="URL").url = "https://docs.sollumz.org/"
-        layout.operator("wm.url_open", text="Issue Tracker", icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
+        layout.operator("wm.url_open", text="Issue Tracker",
+                        icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
         pass
 
     def register():
         _load_preferences()
+
+
+def _line_separator(layout: UILayout):
+    if bpy.app.version >= (4, 2, 0):
+        layout.separator(type="LINE")
+    else:
+        layout.separator()
 
 
 def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> SollumzAddonPreferences:

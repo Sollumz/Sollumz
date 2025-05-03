@@ -6,9 +6,14 @@ from bpy.props import (
     BoolProperty
 )
 import os
-from . import operators as ydr_ops
+from . import (
+    operators as ydr_ops,
+    cloth_operators as cloth_ops,
+)
 from .shader_materials import shadermats
 from .cable import is_cable_mesh
+from .cloth import ClothAttr
+from .cloth_diagnostics import cloth_char_last_export_contexts
 from ..cwxml.shader import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
@@ -80,6 +85,44 @@ class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
         filtered = [self.bitflag_filter_item] * len(items)
 
         return filtered, ordered
+
+
+class SOLLUMZ_PT_CHAR_CLOTH_PANEL(bpy.types.Panel):
+    bl_label = "Character Cloth"
+    bl_idname = "SOLLUMZ_PT_CHAR_CLOTH_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_PANEL.bl_idname
+    bl_order = 1
+
+    @property
+    def has_cloth(self) -> bool:
+        from ..ydr.cloth_char import cloth_char_find_mesh_objects
+        obj = bpy.context.view_layer.objects.active
+        cloth_objs = cloth_char_find_mesh_objects(obj, silent=True)
+        return bool(cloth_objs)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        obj = context.view_layer.objects.active
+        cloth_props = obj.drawable_properties.char_cloth
+
+        has_cloth = self.has_cloth
+        if not has_cloth:
+            layout.label(text="No character cloth in the active drawable.", icon="ERROR")
+        col = layout.column()
+        col.active = has_cloth
+        col.prop(cloth_props, "weight")
+        col.prop(cloth_props, "num_pin_radius_sets")
+        # These properties seem to be overwritten at runtime, so they won't have any effect
+        # col.prop(cloth_props, "pin_radius_scale")
+        # col.prop(cloth_props, "pin_radius_threshold")
+        # col.prop(cloth_props, "wind_scale")
 
 
 class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
@@ -919,7 +962,7 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         from . import cable_operators as cable_ops
         from .cable import CableAttr
 
-        scene = context.scene
+        wm = context.window_manager
 
         layout = self.layout
 
@@ -929,51 +972,165 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.label(text=CableAttr.RADIUS.label)
-        _visible_icon_prop(row, scene, "sz_ui_cable_radius_visualize")
+        _visible_icon_prop(row, wm, "sz_ui_cable_radius_visualize")
 
         row = layout.row(align=True)
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_radius.bl_idname, text="Set")
-        op.value = scene.sz_ui_cable_radius
-        row.prop(scene, "sz_ui_cable_radius", text="")
+        op.value = wm.sz_ui_cable_radius
+        row.prop(wm, "sz_ui_cable_radius", text="")
 
         row = layout.row(align=True)
         row.label(text=CableAttr.DIFFUSE_FACTOR.label)
-        _visible_icon_prop(row, scene, "sz_ui_cable_diffuse_factor_visualize")
+        _visible_icon_prop(row, wm, "sz_ui_cable_diffuse_factor_visualize")
 
         row = layout.row(align=True)
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_diffuse_factor.bl_idname, text="Set")
-        op.value = scene.sz_ui_cable_diffuse_factor
-        row.prop(scene, "sz_ui_cable_diffuse_factor", text="")
+        op.value = wm.sz_ui_cable_diffuse_factor
+        row.prop(wm, "sz_ui_cable_diffuse_factor", text="")
 
         row = layout.row(align=True)
         row.label(text=CableAttr.UM_SCALE.label)
-        _visible_icon_prop(row, scene, "sz_ui_cable_um_scale_visualize")
+        _visible_icon_prop(row, wm, "sz_ui_cable_um_scale_visualize")
 
         row = layout.row(align=True)
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="Set")
-        op.value = scene.sz_ui_cable_um_scale
-        row.prop(scene, "sz_ui_cable_um_scale", text="")
+        op.value = wm.sz_ui_cable_um_scale
+        row.prop(wm, "sz_ui_cable_um_scale", text="")
 
         row = layout.row(align=True)
         row.label(text=CableAttr.PHASE_OFFSET.label)
-        _visible_icon_prop(row, scene, "sz_ui_cable_phase_offset_visualize")
+        _visible_icon_prop(row, wm, "sz_ui_cable_phase_offset_visualize")
 
         row = layout.row(align=True)
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_phase_offset.bl_idname, text="Set")
-        op.value = scene.sz_ui_cable_phase_offset
-        row.prop(scene, "sz_ui_cable_phase_offset", text="")
+        op.value = wm.sz_ui_cable_phase_offset
+        row.prop(wm, "sz_ui_cable_phase_offset", text="")
 
         row = layout.row(align=True)
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_randomize_phase_offset.bl_idname, text="Randomize")
 
         row = layout.row(align=True)
         row.label(text=CableAttr.MATERIAL_INDEX.label)
-        _visible_icon_prop(row, scene, "sz_ui_cable_material_index_visualize")
+        _visible_icon_prop(row, wm, "sz_ui_cable_material_index_visualize")
 
         row = layout.row(align=True)
         op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_material_index.bl_idname, text="Set")
-        op.value = scene.sz_ui_cable_material_index
-        row.prop(scene, "sz_ui_cable_material_index", text="")
+        op.value = wm.sz_ui_cable_material_index
+        row.prop(wm, "sz_ui_cable_material_index", text="")
+
+
+def _visible_icon_prop(layout, obj, prop_name):
+    visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
+    layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
+
+
+class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
+    bl_label = "Cloth Tools"
+    bl_idname = "SOLLUMZ_PT_CLOTH_TOOLS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_DRAWABLE_TOOL_PANEL.bl_idname
+
+    bl_order = 6
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="MATCLOTH")
+
+    def draw(self, context):
+
+        wm = context.window_manager
+
+        layout = self.layout
+
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.VERTEX_WEIGHT.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_vertex_weight_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_vertex_weight.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_vertex_weight
+        row.prop(wm, "sz_ui_cloth_vertex_weight", text="")
+
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.INFLATION_SCALE.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_inflation_scale_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_inflation_scale
+        row.prop(wm, "sz_ui_cloth_inflation_scale", text="")
+
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.PINNED.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_pinned_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin")
+        op.value = True
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin")
+        op.value = False
+
+        row = layout.row(align=True)
+        split = row.split(factor=0.5)
+        row = split.row()
+        row.label(text=ClothAttr.PIN_RADIUS.label)
+        row = split.row()
+        split = row.split(factor=0.5)
+        row = split.row()
+        row.prop(wm, "sz_ui_cloth_pin_radius_set", text="")
+        row = split.row()
+        row.alignment = "RIGHT"
+        _visible_icon_prop(row, wm, "sz_ui_cloth_pin_radius_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius.bl_idname, text="Set")
+        op.set_number = wm.sz_ui_cloth_pin_radius_set
+        op.value = wm.sz_ui_cloth_pin_radius
+        row.prop(wm, "sz_ui_cloth_pin_radius", text="")
+
+        row = layout.row(align=True)
+        split = row.split(factor=0.5, align=True)
+        row = split.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname, text="Fill Gradient")
+        op.min_value = wm.sz_ui_cloth_pin_radius_gradient_min
+        op.max_value = wm.sz_ui_cloth_pin_radius_gradient_max
+        op.set_number = wm.sz_ui_cloth_pin_radius_set
+        row = split.row(align=True)
+        row.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
+        row.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
+
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.FORCE_TRANSFORM.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_force_transform_visualize")
+
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_force_transform.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_force_transform
+        row.prop(wm, "sz_ui_cloth_force_transform", text="")
+
+
+class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(bpy.types.Panel):
+    bl_label = "Diagnostics"
+    bl_idname = "SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_CLOTH_TOOLS_PANEL.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        layout.operator(cloth_ops.SOLLUMZ_OT_cloth_refresh_diagnostics.bl_idname, text="Refresh", icon="FILE_REFRESH")
+
+        if last := cloth_char_last_export_contexts():
+            for c in last.values():
+                for d in c.all_diagnostics.values():
+                    d.draw_ui(layout, context)
+        else:
+            layout.label(text="No diagnostics")
 
 
 def uv_maps_panel_draw(self, context):

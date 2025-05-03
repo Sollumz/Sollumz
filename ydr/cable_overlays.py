@@ -9,6 +9,7 @@ import blf
 from mathutils import Vector
 from collections.abc import Sequence
 from typing import NamedTuple
+from ..sollumz_preferences import get_theme_settings
 from .cable import (
     CableAttr,
     is_cable_mesh_object,
@@ -36,12 +37,14 @@ class CableOverlaysDrawHandler:
 
     def can_draw_anything(self) -> bool:
         context = bpy.context
-        scene = context.scene
-        if (not scene.sz_ui_cable_radius_visualize and
-            not scene.sz_ui_cable_diffuse_factor_visualize and
-            not scene.sz_ui_cable_um_scale_visualize and
-            not scene.sz_ui_cable_phase_offset_visualize and
-                not scene.sz_ui_cable_material_index_visualize):
+        wm = context.window_manager
+        if (
+            not wm.sz_ui_cable_radius_visualize and
+            not wm.sz_ui_cable_diffuse_factor_visualize and
+            not wm.sz_ui_cable_um_scale_visualize and
+            not wm.sz_ui_cable_phase_offset_visualize and
+            not wm.sz_ui_cable_material_index_visualize
+        ):
             return False
 
         obj = context.active_object
@@ -55,19 +58,19 @@ class CableOverlaysDrawHandler:
             return
 
         context = bpy.context
-        scene = context.scene
+        wm = context.window_manager
         obj = context.active_object
 
         attrs = []
-        if scene.sz_ui_cable_radius_visualize:
+        if wm.sz_ui_cable_radius_visualize:
             attrs.append(CableAttr.RADIUS)
-        if scene.sz_ui_cable_diffuse_factor_visualize:
+        if wm.sz_ui_cable_diffuse_factor_visualize:
             attrs.append(CableAttr.DIFFUSE_FACTOR)
-        if scene.sz_ui_cable_um_scale_visualize:
+        if wm.sz_ui_cable_um_scale_visualize:
             attrs.append(CableAttr.UM_SCALE)
-        if scene.sz_ui_cable_phase_offset_visualize:
+        if wm.sz_ui_cable_phase_offset_visualize:
             attrs.append(CableAttr.PHASE_OFFSET)
-        if scene.sz_ui_cable_material_index_visualize:
+        if wm.sz_ui_cable_material_index_visualize:
             attrs.append(CableAttr.MATERIAL_INDEX)
         self.draw_attribute_values(obj, attrs)
 
@@ -76,10 +79,10 @@ class CableOverlaysDrawHandler:
             return
 
         context = bpy.context
-        scene = context.scene
+        wm = context.window_manager
         obj = context.active_object
 
-        if scene.sz_ui_cable_radius_visualize:
+        if wm.sz_ui_cable_radius_visualize:
             self.draw_radius_geometry(obj)
 
     def draw_attribute_values(self, cable_obj: Object, attrs: Sequence[CableAttr]):
@@ -150,7 +153,7 @@ class CableOverlaysDrawHandler:
 
         shader = gpu.shader.from_builtin("UNIFORM_COLOR")
         batch = batch_for_shader(shader, "LINES", {"pos": coords})
-        shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
+        shader.uniform_float("color", get_theme_settings().cable_overlay_radius)
         batch.draw(shader)
 
     def build_radius_geometry_for_cable_piece(self, cable_obj: Object, piece: list[int]) -> list[Vector]:
