@@ -38,6 +38,11 @@ from .ydrexport import (
     append_model_xml,
     set_drawable_xml_extents,
 )
+from .cloth_diagnostics import (
+    ClothDiagMeshBindingError,
+    cloth_export_context,
+    cloth_enter_export_context,
+)
 from .. import logger
 
 CLOTH_ENV_MAX_VERTICES = 1000
@@ -150,6 +155,14 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
             f"The following drawable models will be ignored: {other_cloth_objs_names}."
         )
 
+    with cloth_enter_export_context(frag_obj) as export_context:
+        with export_context.enter_drawable_context(cloth_obj) as diagnostics:
+            diagnostics.drawable_model_obj_name = cloth_obj.name
+            diagnostics.cloth_obj_name = cloth_obj.name
+            return _cloth_env_export(frag_obj, cloth_obj, drawable_xml, materials)
+
+
+def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawable, materials: list[Material]) -> Optional[EnvironmentCloth]:
     cloth_bone = get_child_of_bone(cloth_obj)
     if cloth_bone is None:
         logger.error(
@@ -388,6 +401,7 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
     # Sort the geometry vertices to match the display map
     geom_to_mesh_map = [-1] * len(geom.vertex_buffer.data)
     mesh_to_geom_map = [-1] * len(geom.vertex_buffer.data)
+    num_extra_matches_per_cloth_vertex = [0] * len(verlet.vertex_positions)
     for geom_vertex_index, geom_vertex in enumerate(geom.vertex_buffer.data["Position"]):
         matching_cloth_vertex_index = None
         for cloth_vertex_index, cloth_vertex in enumerate(verlet.vertex_positions):
@@ -400,10 +414,25 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
 
         mesh_vertex_index = cloth_to_mesh_vertex_map[matching_cloth_vertex_index]
         assert geom_to_mesh_map[geom_vertex_index] == -1, f"Geometry vertex #{geom_vertex_index} already assigned"
-        assert mesh_to_geom_map[mesh_vertex_index] == -1, f"Mesh vertex #{mesh_vertex_index} already assigned"
+        if mesh_to_geom_map[mesh_vertex_index] != -1:
+            num_extra_matches_per_cloth_vertex[matching_cloth_vertex_index] += 1
 
         geom_to_mesh_map[geom_vertex_index] = mesh_vertex_index
         mesh_to_geom_map[mesh_vertex_index] = geom_vertex_index
+
+    num_extra_matches_per_mesh_vertex = np.array(num_extra_matches_per_cloth_vertex)
+    if (num_extra_matches_per_mesh_vertex > 0).any():
+        extra_matches_indices = np.where(num_extra_matches_per_mesh_vertex > 0)[0]
+        extra_matches_positions = np.array(verlet.vertex_positions)[extra_matches_indices]
+        cloth_export_context().diagnostics.mesh_binding_errors = [
+            ClothDiagMeshBindingError(Vector(p), False, False, True)
+            for p in extra_matches_positions
+        ]
+        n = len(extra_matches_positions)
+        logger.error(
+            f"Failed to bind {n} {'vertex' if n == 1 else 'vertices'} from cloth drawable model '{cloth_obj.name}'. "
+            "Found multiple vertices at the same location."
+        )
 
     geom_to_mesh_map = np.array(geom_to_mesh_map)
     mesh_to_geom_map = np.array(mesh_to_geom_map)

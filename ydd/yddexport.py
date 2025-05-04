@@ -5,8 +5,8 @@ from ..cwxml.cloth import ClothDictionary
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
 from ..ydr.cloth_char import cloth_char_export_dictionary
 from ..ydr.cloth_diagnostics import (
-    cloth_char_enter_export_context,
-    cloth_char_export_context,
+    cloth_enter_export_context,
+    cloth_export_context,
 )
 from ..tools import jenkhash
 from ..sollumz_properties import SollumType
@@ -17,7 +17,7 @@ def export_ydd(ydd_obj: bpy.types.Object, filepath: Optional[str]) -> bool:
     """If filepath is None, a dry run is done and no files are written."""
     export_settings = get_export_settings()
 
-    with cloth_char_enter_export_context(ydd_obj):
+    with cloth_enter_export_context(ydd_obj):
         # Export a cloth dictionary .yld.xml if there is any cloth in the drawable dictionary
         yld_xml = cloth_char_export_dictionary(ydd_obj)
 
@@ -61,13 +61,8 @@ def create_ydd_xml(
         else:
             cloth = None
 
-        with cloth_char_export_context().enter_drawable_context(child) as cloth_diag:
+        with cloth_export_context().enter_drawable_context(child):
             drawable_xml = create_drawable_xml(child, armature_obj=armature_obj, char_cloth_xml=cloth)
-
-            if cloth_diag.mesh_material_errors:
-                bpy.context.window_manager.sz_ui_cloth_diag_material_errors_visualize = True
-            if cloth_diag.mesh_binding_errors:
-                bpy.context.window_manager.sz_ui_cloth_diag_binding_errors_visualize = True
 
         if exclude_skeleton or child.type != "ARMATURE":
             drawable_xml.skeleton = None

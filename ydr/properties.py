@@ -772,11 +772,11 @@ def register():
         description="Display vertices of the drawable mesh that failed to bind to the cloth mesh on the 3D Viewport",
         default=False
     )
-    bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize = bpy.props.BoolProperty(
-        name="Show Bindings",
-        description="",
-        default=False
-    )
+    # bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize = bpy.props.BoolProperty(
+    #     name="Show Bindings",
+    #     description="",
+    #     default=False
+    # )
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
     refresh_ui_collections()
@@ -835,6 +835,6 @@ def unregister():
     del bpy.types.WindowManager.sz_ui_cloth_force_transform_visualize
     del bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize
     del bpy.types.WindowManager.sz_ui_cloth_diag_binding_errors_visualize
-    del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
+    # del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)

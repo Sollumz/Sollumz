@@ -24,7 +24,7 @@ from .cloth_env import (
     cloth_env_find_mesh_objects,
 )
 from .cloth_diagnostics import (
-    cloth_char_last_export_contexts,
+    cloth_last_export_contexts,
 )
 from ..sollumz_properties import SollumType
 from ..sollumz_helper import find_sollumz_parent
@@ -270,7 +270,7 @@ class SOLLUMZ_OT_cloth_refresh_diagnostics(Operator):
                 logger.info("No cloth objects in the scene")
                 return {"CANCELLED"}
 
-            cloth_char_last_export_contexts().clear()
+            cloth_last_export_contexts().clear()
 
             if cloth_objs:
                 from ..ydd.yddexport import export_ydd

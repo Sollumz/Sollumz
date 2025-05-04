@@ -15,8 +15,8 @@ from .cloth import (
     mesh_get_cloth_attribute_values,
 )
 from .cloth_diagnostics import (
-    ClothCharDiagnosticsOverlayFlags,
-    cloth_char_last_export_contexts,
+    ClothDiagnosticsOverlayFlags,
+    cloth_last_export_contexts,
 )
 import bmesh
 
@@ -81,8 +81,8 @@ class ClothOverlaysDrawHandler:
 
         if (
             wm.sz_ui_cloth_diag_material_errors_visualize or
-            wm.sz_ui_cloth_diag_binding_errors_visualize or
-            wm.sz_ui_cloth_diag_bindings_visualize
+            wm.sz_ui_cloth_diag_binding_errors_visualize
+            # wm.sz_ui_cloth_diag_bindings_visualize
         ):
             self.draw_diagnostics_overlays()
 
@@ -189,19 +189,19 @@ class ClothOverlaysDrawHandler:
         pinned_verts_batch.draw(shader)
 
     def draw_diagnostics_overlays(self):
-        last = cloth_char_last_export_contexts()
+        last = cloth_last_export_contexts()
         if not last:
             return
 
         wm = bpy.context.window_manager
 
-        flags = ClothCharDiagnosticsOverlayFlags(0)
+        flags = ClothDiagnosticsOverlayFlags(0)
         if wm.sz_ui_cloth_diag_material_errors_visualize:
-            flags |= ClothCharDiagnosticsOverlayFlags.MATERIAL_ERRORS
+            flags |= ClothDiagnosticsOverlayFlags.MATERIAL_ERRORS
         if wm.sz_ui_cloth_diag_binding_errors_visualize:
-            flags |= ClothCharDiagnosticsOverlayFlags.BINDING_ERRORS
-        if wm.sz_ui_cloth_diag_bindings_visualize:
-            flags |= ClothCharDiagnosticsOverlayFlags.BINDINGS
+            flags |= ClothDiagnosticsOverlayFlags.BINDING_ERRORS
+        # if wm.sz_ui_cloth_diag_bindings_visualize:
+        #     flags |= ClothDiagnosticsOverlayFlags.BINDINGS
 
         for context in last.values():
             for diagnostics in context.all_diagnostics.values():

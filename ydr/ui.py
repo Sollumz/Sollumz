@@ -13,7 +13,7 @@ from . import (
 from .shader_materials import shadermats
 from .cable import is_cable_mesh
 from .cloth import ClothAttr
-from .cloth_diagnostics import cloth_char_last_export_contexts
+from .cloth_diagnostics import cloth_last_export_contexts
 from ..cwxml.shader import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
@@ -1132,7 +1132,7 @@ class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(bpy.types.Panel):
 
         layout.operator(cloth_ops.SOLLUMZ_OT_cloth_refresh_diagnostics.bl_idname, text="Refresh", icon="FILE_REFRESH")
 
-        if last := cloth_char_last_export_contexts():
+        if last := cloth_last_export_contexts():
             for c in last.values():
                 for d in c.all_diagnostics.values():
                     d.draw_ui(layout, context)

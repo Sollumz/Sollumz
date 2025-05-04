@@ -21,9 +21,8 @@ from .cloth_char import (
     cloth_char_get_mesh_to_cloth_bindings,
 )
 from .cloth_diagnostics import (
-    ClothCharDiagMeshBinding,
-    ClothCharDiagMeshMaterialError,
-    cloth_char_export_context,
+    ClothDiagMeshMaterialError,
+    cloth_export_context,
 )
 
 from .. import logger
@@ -333,9 +332,9 @@ class VertexBufferBuilder:
                     v0 = Vector(v0)
                     v1 = Vector(v1)
                     v2 = Vector(v2)
-                    diag_materials.append(ClothCharDiagMeshMaterialError(v0, v1, v2))
+                    diag_materials.append(ClothDiagMeshMaterialError(v0, v1, v2))
 
-                cloth_char_export_context().diagnostics.mesh_material_errors = diag_materials
+                cloth_export_context().diagnostics.mesh_material_errors = diag_materials
 
             del tri_mat_indices
             del tri_verts
@@ -357,26 +356,28 @@ class VertexBufferBuilder:
             if cloth_bind_errors:
                 n = len(cloth_bind_errors)
                 logger.error(
-                    f"Failed to bind {n} {'vertex' if n == 1 else 'vertices'} from mesh '{self.mesh.name}' to cloth mesh.")
-                cloth_char_export_context().diagnostics.mesh_binding_errors = cloth_bind_errors
+                    f"Failed to bind {n} {'vertex' if n == 1 else 'vertices'} from mesh '{self.mesh.name}' to cloth mesh."
+                )
+                cloth_export_context().diagnostics.mesh_binding_errors = cloth_bind_errors
 
             weights_arr[cloth_bind_verts_mask] = self._convert_to_int_range(cloth_bind_weights_arr)
             ind_arr[cloth_bind_verts_mask] = cloth_bind_ind_arr
 
-            if not cloth_bind_errors:
-                diag_bindings = []
-                for i in range(len(ind_arr)):
-                    if cloth_bind_verts_mask[i]:
-                        co = Vector(self.mesh.vertices[i].co)
-                        i1, i0, _, i2 = ind_arr[i]
-                        v0 = Vector(self._char_cloth.controller.vertices[i0])
-                        v1 = Vector(self._char_cloth.controller.vertices[i1])
-                        v2 = Vector(self._char_cloth.controller.vertices[i2])
-                        n = Vector(tris_normals(np.array([[v0, v1, v2]]))[0])
-                        n.normalize()
-                        diag_bindings.append(ClothCharDiagMeshBinding(co, v0, v1, v2, n))
-
-                cloth_char_export_context().diagnostics.mesh_bindings = diag_bindings
+            # Bindings overlay is disabled for now
+            # if not cloth_bind_errors:
+            #     diag_bindings = []
+            #     for i in range(len(ind_arr)):
+            #         if cloth_bind_verts_mask[i]:
+            #             co = Vector(self.mesh.vertices[i].co)
+            #             i1, i0, _, i2 = ind_arr[i]
+            #             v0 = Vector(self._char_cloth.controller.vertices[i0])
+            #             v1 = Vector(self._char_cloth.controller.vertices[i1])
+            #             v2 = Vector(self._char_cloth.controller.vertices[i2])
+            #             n = Vector(tris_normals(np.array([[v0, v1, v2]]))[0])
+            #             n.normalize()
+            #             diag_bindings.append(ClothCharDiagMeshBinding(co, v0, v1, v2, n))
+            #
+            #     cloth_export_context().diagnostics.mesh_bindings = diag_bindings
 
         if self.domain == VBBuilderDomain.FACE_CORNER:
             # Return on loop domain

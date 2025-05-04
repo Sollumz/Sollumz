@@ -40,8 +40,8 @@ from .cloth import (
     ClothAttr,
 )
 from .cloth_diagnostics import (
-    ClothCharDiagMeshBindingError,
-    cloth_char_export_context,
+    ClothDiagMeshBindingError,
+    cloth_export_context,
 )
 from .. import logger
 
@@ -95,7 +95,7 @@ def cloth_char_export(
             f"The following cloth meshes will be ignored: {other_cloth_objs_names}."
         )
 
-    cloth_char_export_context().diagnostics.cloth_obj_name = cloth_obj.name
+    cloth_export_context().diagnostics.cloth_obj_name = cloth_obj.name
 
     cloth_bounds_objs = cloth_char_find_bounds(cloth_obj)
     cloth_bounds_obj = cloth_bounds_objs[0]
@@ -418,7 +418,7 @@ def cloth_char_get_mesh_to_cloth_bindings(
     mesh_binded_verts: NDArray[np.float32],
     mesh_binded_verts_normals: NDArray[np.float32],
     skeleton_centroid: Vector,
-) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothCharDiagMeshBindingError]]:
+) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
     # Max distance from mesh vertex to cloth triangle to be considered
     MAX_DISTANCE_THRESHOLD = 0.05
 
@@ -483,10 +483,11 @@ def cloth_char_get_mesh_to_cloth_bindings(
         valid_tris_mask = condition_projection & condition_distance
         valid_tris_indices = np.where(valid_tris_mask)[0]
         if not valid_tris_mask.any():
-            errors.append(ClothCharDiagMeshBindingError(
+            errors.append(ClothDiagMeshBindingError(
                 Vector(mesh_vert),
                 error_projection=not condition_projection.any(),
-                error_distance=not condition_distance.any()
+                error_distance=not condition_distance.any(),
+                error_multiple_matches=False,
             ))
             continue
 
@@ -524,7 +525,7 @@ def cloth_char_export_dictionary(dwd_obj: Object) -> Optional[ClothDictionary]:
         if drawable_obj.sollum_type != SollumType.DRAWABLE:
             continue
 
-        with cloth_char_export_context().enter_drawable_context(drawable_obj):
+        with cloth_export_context().enter_drawable_context(drawable_obj):
             cloth = cloth_char_export(dwd_obj, drawable_obj, remove_number_suffix(dwd_obj.name))
 
         if cloth is None:

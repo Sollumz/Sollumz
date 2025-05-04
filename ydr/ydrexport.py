@@ -61,7 +61,7 @@ from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
-from .cloth_diagnostics import cloth_char_export_context
+from .cloth_diagnostics import cloth_export_context
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
 
@@ -221,7 +221,7 @@ def create_model_xml(
         mesh_eval.transform(transforms_to_apply)
 
     if char_cloth_xml:
-        cloth_char_export_context().diagnostics.drawable_model_obj_name = model_obj.name
+        cloth_export_context().diagnostics.drawable_model_obj_name = model_obj.name
 
     geometries = create_geometries_xml(
         mesh_eval, materials, bones, model_obj.vertex_groups, char_cloth_xml, mesh_domain_override
