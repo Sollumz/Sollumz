@@ -9,6 +9,7 @@ from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collis
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect
 from ...sollumz_preferences import get_export_settings
+from ...ydr.cloth_env import cloth_env_find_mesh_objects
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
 from ..ytypexport import selected_ytyp_to_xml
@@ -345,6 +346,9 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
                 item.asset_type = AssetType.ASSETLESS
             elif obj.sollum_type == SollumType.FRAGMENT:
                 item.asset_type = AssetType.FRAGMENT
+
+                if cloth_env_find_mesh_objects(obj, silent=True):
+                    item.flags.flag26 = True  # set 'Has Cloth' flag
 
         if not found:
             self.message(
