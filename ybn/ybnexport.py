@@ -58,11 +58,6 @@ def create_composite_xml(
 ) -> BoundComposite:
     assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
-    if not obj.children:
-        # We only do a simple check for children here, if there are any other issues with them it will checked and
-        # reported by `create_bound_xml`
-        logger.warning(f"Bound composite '{obj.name}' has no children.")
-
     composite_xml = BoundComposite()
     centroid = Vector()
     cg = Vector()
