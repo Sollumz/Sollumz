@@ -17,7 +17,7 @@ bl_info = {
     "author": "Skylumz, Colton and alexguirre",
     "description": "Grand Theft Auto V modding suite for Blender",
     "blender": (4, 0, 0),
-    "version": (2, 6, 1),
+    "version": (2, 7, 0),
     "category": "Import-Export",
     "doc_url": "https://docs.sollumz.org/",
     "tracker_url": "https://github.com/Sollumz/Sollumz/issues",
