@@ -71,7 +71,7 @@ class GroupFlagBit(IntEnum):
     DAMAGE_WHEN_BROKEN = 2
     DOESNT_AFFECT_VEHICLES = 3
     DOESNT_PUSH_VEHICLES_DOWN = 4
-    HAS_CLOTH = 5
+    HAS_CLOTH = 5  # not needed, vanilla cloth don't have it set in the files
 
 
 class GroupProperties(bpy.types.PropertyGroup):
