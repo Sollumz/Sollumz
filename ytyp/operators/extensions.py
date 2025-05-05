@@ -136,6 +136,10 @@ class ExtensionUpdateFromSelectionHelper:
 
         me = aobj.data
         selected_vertices = [v.co for v in me.vertices if v.select]
+        if not selected_vertices:
+            self.report({"WARNING"}, "Please select at least one vertex.")
+            return {"CANCELLED"}
+
         verts_location = sum(selected_vertices, Vector()) / len(selected_vertices)
 
         self.set_extension_props(context, verts_location)
