@@ -17,6 +17,7 @@ from bpy.props import (
     CollectionProperty,
     PointerProperty,
     FloatVectorProperty,
+    FloatProperty,
 )
 import rna_keymap_ui
 import os
@@ -224,6 +225,8 @@ class SollumzThemeSettings(PropertyGroup):
     mlo_gizmo_room_selected: RGBAProperty("Room Selected", (0.62, 0.76, 1.0, 0.9))
     mlo_gizmo_portal: RGBAProperty("Portal", (0.45, 0.98, 0.55, 0.5))
     mlo_gizmo_portal_selected: RGBAProperty("Portal Selected", (0.93, 1.0, 1.0, 0.7))
+    mlo_gizmo_portal_direction: RGBAProperty("Portal Direction Arrow", (0.0, 0.6, 1.0, 0.3))
+    mlo_gizmo_portal_direction_size: FloatProperty(name="Portal Direction Arrow Size", default=0.3, min=0.1, max=5.0)
 
     cable_overlay_radius: RGBAProperty("Radius", (1.0, 0.0, 0.0, 1.0))
 
@@ -690,6 +693,8 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "mlo_gizmo_room_selected")
         layout.prop(theme, "mlo_gizmo_portal")
         layout.prop(theme, "mlo_gizmo_portal_selected")
+        layout.prop(theme, "mlo_gizmo_portal_direction")
+        layout.prop(theme, "mlo_gizmo_portal_direction_size")
 
         _section_header(layout, "Cable Overlays", "OUTLINER_DATA_GREASEPENCIL")
         layout.prop(theme, "cable_overlay_radius")

@@ -196,18 +196,20 @@ class PortalNormalGizmo(bpy.types.Gizmo):
         self.linked_portal = None
 
     def draw(self, context):
+        theme = get_theme_settings(context)
         selected_archetype = get_selected_archetype(context)
         selected_portal = get_selected_portal(context)
         portal = self.linked_portal
         asset = selected_archetype.asset
 
-        self.color = 0, 0.6, 1
+        r, g, b, a = theme.mlo_gizmo_portal_direction
+        self.color = r, g, b
 
         if selected_portal != portal:
             self.alpha = 0
 
         if selected_portal == portal:
-            self.alpha = 0.3
+            self.alpha = a
 
             if portal and asset:
                 corners = [portal.corner1, portal.corner2,
@@ -221,8 +223,9 @@ class PortalNormalGizmo(bpy.types.Gizmo):
                            ).cross(corners[1] - corners[0]).normalized()
                 default_axis = Vector((0, 0, 1))
                 rot = default_axis.rotation_difference(normal)
+                scale = theme.mlo_gizmo_portal_direction_size
                 arrow_mat = Matrix.LocRotScale(
-                    centroid, rot, Vector((0.3, 0.3, 0.3)))
+                    centroid, rot, Vector((scale, scale, scale)))
                 self.draw_preset_arrow(
                     matrix=asset.matrix_world @ arrow_mat)
 
