@@ -417,8 +417,7 @@ class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):
         col.prop(props, "flags", index=GroupFlagBit.DAMAGE_WHEN_BROKEN, text="Damage When Broken")
         col.prop(props, "flags", index=GroupFlagBit.DOESNT_AFFECT_VEHICLES, text="Doesn't Affect Vehicles")
         col.prop(props, "flags", index=GroupFlagBit.DOESNT_PUSH_VEHICLES_DOWN, text="Doesn't Push Vehicles Down")
-        # Not needed
-        # col.prop(props, "flags", index=GroupFlagBit.HAS_CLOTH, text="Has Cloth")
+        col.prop(props, "flags", index=GroupFlagBit.HAS_CLOTH, text="Has Cloth")
 
         col = layout.column(heading="Breakable Glass")
         row = col.row(align=True)

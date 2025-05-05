@@ -71,7 +71,10 @@ class GroupFlagBit(IntEnum):
     DAMAGE_WHEN_BROKEN = 2
     DOESNT_AFFECT_VEHICLES = 3
     DOESNT_PUSH_VEHICLES_DOWN = 4
-    HAS_CLOTH = 5  # not needed, vanilla cloth don't have it set in the files
+    # TODO: HAS_CLOTH is needed in some dynamic fragment props with cloth so the cloth stays attached to broken parts,
+    #       we might be able to automatically set it on export but I haven't seen a clear pattern yet, sometimes only
+    #       the direct parent from the cloth bone has it set, sometimes the whole parent tree.
+    HAS_CLOTH = 5
 
 
 class GroupProperties(bpy.types.PropertyGroup):
