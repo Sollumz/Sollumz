@@ -48,16 +48,19 @@ def export_yft(frag_obj: Object, filepath: Optional[str]) -> bool:
     if frag_xml is None:
         return False
 
+    if filepath:
+        if export_settings.export_non_hi:
+            frag_xml.write_xml(filepath)
+            write_embedded_textures(frag_obj, filepath)
+
+    # NOTE: the execution order here is important, the frag_xml must be written to a file before creating the hi_frag_xml.
+    #       This is because there are some shallow copies and some changes done to the hi_frag_xml affect the frag_xml too.
     if export_settings.export_hi and has_hi_lods(frag_obj):
         hi_frag_xml = create_hi_frag_xml(frag, frag_xml, export_settings.apply_transforms)
     else:
         hi_frag_xml = None
 
     if filepath:
-        if export_settings.export_non_hi:
-            frag_xml.write_xml(filepath)
-            write_embedded_textures(frag_obj, filepath)
-
         if hi_frag_xml:
             hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
             hi_frag_xml.write_xml(hi_filepath)
