@@ -86,13 +86,13 @@ Sollumz uses `pytest` for its test suite. The tests are located in the `tests/` 
 Tests are not required in pull requests due to the complexity of making good test cases with the Blender API, but they are greatly appreciated.
 
 You can execute the tests with the following steps:
-1. Install `pytest` and `pytest-blender` in your Blender Python environment:
+1. Install `pytest` in your Blender Python environment:
     ```ps
     > & $BLENDER_PYTHON -m pip install pytest pytest-blender
     ```
-2. Run `pytest` in the repository root directory:
+2. Run Blender with the test runner script from the repository root directory. Arguments after `--` are passed to `pytest`:
     ```ps
-    > & $BLENDER_PYTHON -m pytest --blender-executable $BLENDER -vv
+    > & $BLENDER --background --python .\tests\run.py -- -vv -s
     ```
 
 ### Debugging
@@ -127,7 +127,7 @@ Older parts of the codebase might not strictly adhere to PEP 8. When contributin
 
 ## Commit Guidelines
 
-We do not follow any specific commit messages convention. Just write meaningful commit messages to make the project history more understandable. If the change is significant or complex, please, include a commit description providing more details.
+We try to follow [Conventional Commits][conventional_commits] to make it easier to generate changelogs. Write meaningful commit messages to make the project history and release notes more understandable. If the change is significant or complex, please, include a commit description providing more details.
 
 ## License
 
@@ -137,3 +137,4 @@ By contributing to this project, you agree that your contributions will be licen
 [issue_tracker]: https://github.com/Skylumz/Sollumz/issues
 [wiki]: https://sollumz.gitbook.io/sollumz-wiki/
 [wiki_repo]: https://github.com/Sollumz/wiki
+[conventional_commits]: https://www.conventionalcommits.org/en/v1.0.0/

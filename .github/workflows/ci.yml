@@ -19,29 +19,35 @@ jobs:
         include:
           - blender-version: '4.0.2'
             python-version: '3.10'
-            pytest-version: '7.2.0'
-            pytest-blender-version: '3.0.5'
+            pytest-version: '8.3.5'
+            pytest-blender-versioe: '3.0.6'
+            pytest-cov-version: '6.1.1'
 
           - blender-version: '4.1.1'
             python-version: '3.11'
-            pytest-version: '7.2.0'
-            pytest-blender-version: '3.0.5'
+            pytest-version: '8.3.5'
+            pytest-blender-versioe: '3.0.6'
+            pytest-cov-version: '6.1.1'
 
           - blender-version: '4.2.8'
             python-version: '3.11'
-            pytest-version: '7.2.0'
-            pytest-blender-version: '3.0.5'
+            pytest-version: '8.3.5'
+            pytest-blender-versioe: '3.0.6'
+            pytest-cov-version: '6.1.1'
 
           - blender-version: '4.3.2'
             python-version: '3.11'
-            pytest-version: '7.2.0'
-            pytest-blender-version: '3.0.5'
+            pytest-version: '8.3.5'
+            pytest-blender-versioe: '3.0.6'
+            pytest-cov-version: '6.1.1'
 
           - blender-version: '4.4.0'
             python-version: '3.11'
-            pytest-version: '7.2.0'
-            pytest-blender-version: '3.0.5'
-
+            pytest-version: '8.3.5'
+            pytest-blender-versioe: '3.0.6'
+            pytest-cov-version: '6.1.1'
+    env:
+      BLENDER_VERSION: ${{ matrix.blender-version }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -76,12 +82,12 @@ jobs:
       - name: Install Dependencies
         run: |
           Set-PSDebug -Trace 2
-          python -m pip install pytest-blender==${{ matrix.pytest-blender-version }} pytest==${{ matrix.pytest-version }}
+          python -m pip install pytest-blender==${{ matrix.pytest-blender-version }} pytest==${{ matrix.pytest-version }} pytest-cov==${{ matrix.pytest-cov-version }}
           $BLENDER = get-content _blender-executable-path.txt
           pytest-blender --blender-executable "$BLENDER" | Out-File -FilePath _blender-python-executable-path.txt
           $BLENDER_PYTHON = get-content _blender-python-executable-path.txt
           echo "$BLENDER_PYTHON"
-          & "$BLENDER_PYTHON" -m pip install pytest-blender==${{ matrix.pytest-blender-version }} pytest==${{ matrix.pytest-version }}
+          & "$BLENDER_PYTHON" -m pip install pytest-blender==${{ matrix.pytest-blender-version }} pytest==${{ matrix.pytest-version }} pytest-cov==${{ matrix.pytest-cov-version }}
 
       - name: Install Sollumz
         run: |
@@ -89,14 +95,26 @@ jobs:
           $BLENDER_RELEASE_VERSION = python -c "print('.'.join('${{ matrix.blender-version }}'.split('.')[:2]))" # extract first two version numbers
           New-Item -ItemType Directory -Path "$env:APPDATA\Blender Foundation\Blender\$BLENDER_RELEASE_VERSION\scripts\addons" -Force
           New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Blender Foundation\Blender\$BLENDER_RELEASE_VERSION\scripts\addons" -Name Sollumz -Target $(Get-Location)
-          & "$BLENDER" -b --python-expr "import bpy; bpy.ops.preferences.addon_enable(module='Sollumz'); bpy.ops.wm.save_userpref()"
+          & "$BLENDER" --background --python-expr "import bpy; bpy.ops.preferences.addon_enable(module='Sollumz'); bpy.ops.wm.save_userpref()"
 
       - name: Run Tests
         run: |
           $BLENDER = get-content _blender-executable-path.txt
           $BLENDER_PYTHON = get-content _blender-python-executable-path.txt
           $env:SOLLUMZ_TEST_TMP_DIR = $(mkdir _test_tmp)
-          & "$BLENDER_PYTHON" -m pytest -svv --ignore _blender --ignore _test_tmp --blender-executable "$BLENDER"
+          & "$BLENDER" --background --python .\tests\run.py -- -vv -s --cov Sollumz --cov-report xml --ignore _blender --ignore _test_tmp
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage.xml
+          path: coverage.xml
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          env_vars: BLENDER_VERSION
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   trigger-extensions-repo-deploy:
     if: github.ref == 'refs/heads/main'

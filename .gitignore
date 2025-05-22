@@ -11,3 +11,5 @@ test_performance.py
 *.prof
 RELEASE_NOTES.md
 Sollumz.zip
+coverage.xml
+.coverage
