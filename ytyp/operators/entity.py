@@ -24,6 +24,19 @@ def set_entity_properties_from_filter(entity: MloEntityProperties, context: bpy.
         if scene.sollumz_do_entity_filter_entity_set_room:
             entity.attached_room_id = scene.sollumz_entity_filter_entity_set_room
 
+def set_entity_definition(obj: bpy.types.Object, entity: MloEntityProperties):
+    entity.linked_object = obj
+    entity.archetype_name = remove_number_suffix(obj.name)
+    entity.flags.total = str(obj.entity_properties.flags)
+    
+    properties = [
+        'guid', 'parent_index', 'lod_dist', 'child_lod_dist',
+        'num_children', 'ambient_occlusion_multiplier', 'artificial_ambient_occlusion',
+        'tint_value', 'lod_level', 'priority_level'
+    ]
+    
+    [setattr(entity, prop, getattr(obj.entity_properties, prop)) for prop in properties]
+
 
 class SOLLUMZ_OT_create_mlo_entity(SOLLUMZ_OT_base, bpy.types.Operator):
     """Add an entity to the selected MLO archetype"""
@@ -65,9 +78,7 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
                 continue
 
             entity = selected_archetype.new_entity()
-            entity.archetype_name = remove_number_suffix(obj.name)
-
-            entity.linked_object = obj
+            set_entity_definition(obj, entity)
             set_entity_properties_from_filter(entity, context)
 
         last_new_entity_index = len(selected_archetype.entities) - 1
