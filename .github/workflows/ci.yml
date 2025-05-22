@@ -20,31 +20,31 @@ jobs:
           - blender-version: '4.0.2'
             python-version: '3.10'
             pytest-version: '8.3.5'
-            pytest-blender-versioe: '3.0.6'
+            pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
 
           - blender-version: '4.1.1'
             python-version: '3.11'
             pytest-version: '8.3.5'
-            pytest-blender-versioe: '3.0.6'
+            pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
 
           - blender-version: '4.2.8'
             python-version: '3.11'
             pytest-version: '8.3.5'
-            pytest-blender-versioe: '3.0.6'
+            pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
 
           - blender-version: '4.3.2'
             python-version: '3.11'
             pytest-version: '8.3.5'
-            pytest-blender-versioe: '3.0.6'
+            pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
 
           - blender-version: '4.4.0'
             python-version: '3.11'
             pytest-version: '8.3.5'
-            pytest-blender-versioe: '3.0.6'
+            pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
     env:
       BLENDER_VERSION: ${{ matrix.blender-version }}
