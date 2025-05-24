@@ -130,6 +130,9 @@ def create_drawable_xml(
 
     create_embedded_collision_xmls(drawable_obj, drawable_xml)
 
+    if char_cloth_xml:
+        char_cloth_xml._tmp_skeleton = None
+
     if armature_obj is not None:
         armature_obj.data.pose_position = original_pose
 
