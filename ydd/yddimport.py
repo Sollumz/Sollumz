@@ -206,9 +206,7 @@ def create_character_cloth_mesh(cloth: CharacterCloth, drawable_obj: Object, bon
         for custom_edge in custom_edges:
             v0 = custom_edge.vertex0
             v1 = custom_edge.vertex1
-            mv0 = int(cloth_to_mesh_map[v0])
-            mv1 = int(cloth_to_mesh_map[v1])
-            mesh.edges[next_edge].vertices = mv0, mv1
+            mesh.edges[next_edge].vertices = v0, v1
             next_edge += 1
 
 
