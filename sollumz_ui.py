@@ -518,8 +518,9 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.paint_tex3")
         row.operator("sollumz.paint_tex4")
-        row = layout.row()
-        row.operator("sollumz.paint_a")
+        row = layout.row(align=True)
+        op = row.operator("sollumz.paint_a")
+        op.alpha = context.scene.vert_paint_alpha
         row.prop(context.scene, "vert_paint_alpha")
 
 
