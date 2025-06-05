@@ -227,6 +227,8 @@ class SollumzThemeSettings(PropertyGroup):
     mlo_gizmo_portal_selected: RGBAProperty("Portal Selected", (0.93, 1.0, 1.0, 0.7))
     mlo_gizmo_portal_direction: RGBAProperty("Portal Direction Arrow", (0.0, 0.6, 1.0, 0.3))
     mlo_gizmo_portal_direction_size: FloatProperty(name="Portal Direction Arrow Size", default=0.3, min=0.1, max=5.0)
+    mlo_gizmo_tcm: RGBAProperty("Timecycle Modifier", (0.45, 0.98, 0.55, 0.5))
+    mlo_gizmo_tcm_selected: RGBAProperty("Timecycle Modifier Selected", (0.93, 1.0, 1.0, 0.7))
 
     cable_overlay_radius: RGBAProperty("Radius", (1.0, 0.0, 0.0, 1.0))
 
@@ -695,6 +697,8 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "mlo_gizmo_portal_selected")
         layout.prop(theme, "mlo_gizmo_portal_direction")
         layout.prop(theme, "mlo_gizmo_portal_direction_size")
+        layout.prop(theme, "mlo_gizmo_tcm")
+        layout.prop(theme, "mlo_gizmo_tcm_selected")
 
         _section_header(layout, "Cable Overlays", "OUTLINER_DATA_GREASEPENCIL")
         layout.prop(theme, "cable_overlay_radius")

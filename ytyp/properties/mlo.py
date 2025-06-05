@@ -252,11 +252,37 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     name: bpy.props.StringProperty(name="Name")
+    # NOTE: [0] = radius, [1,2,3] = center, changing it would break backwards compatibility or require new versioning.
+    # Use the wrapper properties sphere_center and sphere_radius
     sphere: bpy.props.FloatVectorProperty(name="Sphere", subtype="QUATERNION", size=4)
     percentage: bpy.props.FloatProperty(name="Percentage", min=0.0, max=100.0, step=100)
     range: bpy.props.FloatProperty(name="Range")
     start_hour: bpy.props.IntProperty(name="Start Hour")
     end_hour: bpy.props.IntProperty(name="End Hour")
+
+    def _sphere_center_getter(self) -> tuple[float, float, float]:
+        s = self.sphere
+        return s[1:]
+
+    def _sphere_center_setter(self, value: tuple[float, float, float]):
+        self.sphere[1:] = value
+
+    def _sphere_radius_getter(self) -> float:
+        return self.sphere[0]
+
+    def _sphere_radius_setter(self, value: float):
+        self.sphere[0] = value
+
+    sphere_center: bpy.props.FloatVectorProperty(
+        name="Sphere Center", subtype="XYZ", size=3,
+        get=_sphere_center_getter,
+        set=_sphere_center_setter,
+    )
+    sphere_radius: bpy.props.FloatProperty(
+        name="Sphere Radius",
+        get=_sphere_radius_getter,
+        set=_sphere_radius_setter,
+    )
 
 
 class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):

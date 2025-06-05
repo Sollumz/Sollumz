@@ -1,7 +1,7 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ..properties.ytyp import ArchetypeType
-from ..properties.mlo import RoomProperties, TimecycleModifierProperties
+from ..properties.mlo import RoomProperties
 from ..utils import get_selected_archetype, get_selected_room, get_selected_portal, get_selected_ytyp
 from .archetype import ArchetypeChildPanel
 from ...shared.multiselection import (
@@ -318,17 +318,31 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
             "tool_panel"
         )
 
+        row = layout.row()
+        row.use_property_split = False
+        row.prop(context.scene, "show_mlo_tcm_gizmo")
+
+        if not selected_archetype.asset and context.scene.show_mlo_tcm_gizmo:
+            row = layout.row()
+            row.alert = True
+            row.label(text="Gizmo will not appear when no object is linked.")
+
         if len(selected_archetype.timecycle_modifiers) == 0:
             return
 
-        # has_multiple_selection = selected_archetype.portals.has_multiple_selection
+        # has_multiple_selection = selected_archetype.timecycle_modifiers.has_multiple_selection
         selection = selected_archetype.timecycle_modifiers.selection
-        # active = selected_archetype.portals.active_item
+        # active = selected_archetype.timecycle_modifiers.active_item
 
         layout.separator()
 
-        for prop_name in TimecycleModifierProperties.__annotations__:
-            layout.prop(selection.owner, getattr(selection.propnames, prop_name))
+        layout.prop(selection.owner, selection.propnames.name)
+        layout.prop(selection.owner, selection.propnames.sphere_center)
+        layout.prop(selection.owner, selection.propnames.sphere_radius)
+        layout.prop(selection.owner, selection.propnames.percentage)
+        layout.prop(selection.owner, selection.propnames.range)
+        layout.prop(selection.owner, selection.propnames.start_hour)
+        layout.prop(selection.owner, selection.propnames.end_hour)
 
 
 class SOLLUMZ_MT_timecycle_modifiers_list_context_menu(bpy.types.Menu):

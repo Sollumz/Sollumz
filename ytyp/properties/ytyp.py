@@ -221,7 +221,8 @@ class MloEntitySelectionAccess(MultiSelectAccess):
 
 class TimecycleModifierSelectionAccess(MultiSelectAccess):
     name: MultiSelectProperty()
-    sphere: MultiSelectProperty()
+    sphere_center: MultiSelectProperty()
+    sphere_radius: MultiSelectProperty()
     percentage: MultiSelectProperty()
     range: MultiSelectProperty()
     start_hour: MultiSelectProperty()
@@ -703,10 +704,9 @@ class CMapTypesProperties(PropertyGroup):
 def register():
     bpy.types.Scene.ytyps = bpy.props.CollectionProperty(type=CMapTypesProperties, name="YTYPs")
     bpy.types.Scene.ytyp_index = bpy.props.IntProperty(name="YTYP")
-    bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(
-        name="Show Room Gizmo", default=True)
-    bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(
-        name="Show Portal Gizmo", default=True)
+    bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(name="Show Room Gizmo", default=True)
+    bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(name="Show Portal Gizmo", default=True)
+    bpy.types.Scene.show_mlo_tcm_gizmo = bpy.props.BoolProperty(name="Show Timecycle Modifier Gizmo", default=True)
 
     bpy.types.Scene.create_archetype_type = bpy.props.EnumProperty(
         items=items_from_enums(ArchetypeType), name="Type")
@@ -720,5 +720,6 @@ def unregister():
     del bpy.types.Scene.ytyp_index
     del bpy.types.Scene.show_room_gizmo
     del bpy.types.Scene.show_portal_gizmo
+    del bpy.types.Scene.show_mlo_tcm_gizmo
     del bpy.types.Scene.create_archetype_type
     del bpy.types.Scene.ytyp_apply_transforms
