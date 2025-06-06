@@ -1,12 +1,13 @@
 import bpy
 from bpy.types import (
+    Object,
     PropertyGroup,
 )
 from bpy.props import (
     BoolProperty,
 )
 from enum import IntEnum
-from typing import Union, Optional
+from typing import Union, Optional, Sequence
 from uuid import uuid4
 
 from ...sollumz_preferences import get_addon_preferences
@@ -14,7 +15,7 @@ from ...tools.blenderhelper import get_children_recursive
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
-from .flags import ArchetypeFlags, MloFlags, RoomFlags, PortalFlags, EntityFlags
+from .flags import ArchetypeFlags, MloFlags
 from .extensions import ExtensionsContainer, ExtensionType
 from ...shared.multiselection import (
     MultiSelectProperty,
@@ -24,6 +25,27 @@ from ...shared.multiselection import (
     define_multiselect_collection,
     MultiSelectCollection,
 )
+
+
+def _sync_select_objects_in_scene(active_obj: Object | None, selected_objs: Sequence[Object | None]):
+    view_layer = bpy.context.view_layer
+    objs = [obj for obj in selected_objs if obj and obj.name in view_layer.objects]
+    if not objs:
+        return
+
+    # Need to suppress sync selection to avoid it modifying the multiselection lists again when setting the
+    # active object. It breaks multiselection with Ctrl+click.
+    # There are multiple depsgraph updates while selecting the objects...
+    from ..selection_handler import suppress_sync_selection_context, suppress_next_sync_selection
+    with suppress_sync_selection_context():
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj in objs:
+            obj.select_set(True)
+        if active_obj and active_obj.name in view_layer.objects:
+            view_layer.objects.active = active_obj
+            active_obj.select_set(True)
+    # ...and one more depsgraph update after executing this function (at least if done from the UI list callback)
+    suppress_next_sync_selection()
 
 
 class SpecialAttribute(IntEnum):
@@ -399,12 +421,12 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         return ids[-1] + 1
 
     def select_entity_linked_object(self):
-        entity = self.entities.active_item
-        obj = entity.linked_object
-        if obj and obj.name in bpy.context.view_layer.objects:
-            bpy.context.view_layer.objects.active = obj
-            bpy.ops.object.select_all(action="DESELECT")
-            obj.select_set(True)
+        if not self.id_data.sz_sync_mlo_entities_selection:
+            return
+
+        active = self.entities.active_item.linked_object
+        selected = [e.linked_object for e in self.entities.selected_items]
+        _sync_select_objects_in_scene(active, selected)
 
     def on_entities_active_index_update_from_ui(self, context):
         self.select_entity_linked_object()
@@ -680,12 +702,12 @@ class CMapTypesProperties(PropertyGroup):
         return item
 
     def select_archetype_linked_object(self):
-        archetype = self.archetypes.active_item
-        obj = archetype.asset
-        if obj and obj.name in bpy.context.view_layer.objects:
-            bpy.context.view_layer.objects.active = obj
-            bpy.ops.object.select_all(action="DESELECT")
-            obj.select_set(True)
+        if not self.id_data.sz_sync_archetypes_selection:
+            return
+
+        active = self.archetypes.active_item.asset
+        selected = [a.asset for a in self.archetypes.selected_items]
+        _sync_select_objects_in_scene(active, selected)
 
     def on_archetypes_active_index_update_from_ui(self, context):
         self.select_archetype_linked_object()
@@ -707,6 +729,14 @@ def register():
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(name="Show Room Gizmo", default=True)
     bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(name="Show Portal Gizmo", default=True)
     bpy.types.Scene.show_mlo_tcm_gizmo = bpy.props.BoolProperty(name="Show Timecycle Modifier Gizmo", default=True)
+    bpy.types.Scene.sz_sync_archetypes_selection = BoolProperty(
+        name="Sync Selection", description="Synchronize archetypes selection with objects selection in the scene.",
+        default=True
+    )
+    bpy.types.Scene.sz_sync_mlo_entities_selection = BoolProperty(
+        name="Sync Selection", description="Synchronize MLO entities selection with objects selection in the scene.",
+        default=True
+    )
 
     bpy.types.Scene.create_archetype_type = bpy.props.EnumProperty(
         items=items_from_enums(ArchetypeType), name="Type")
@@ -721,5 +751,7 @@ def unregister():
     del bpy.types.Scene.show_room_gizmo
     del bpy.types.Scene.show_portal_gizmo
     del bpy.types.Scene.show_mlo_tcm_gizmo
+    del bpy.types.Scene.sz_sync_archetypes_selection
+    del bpy.types.Scene.sz_sync_mlo_entities_selection
     del bpy.types.Scene.create_archetype_type
     del bpy.types.Scene.ytyp_apply_transforms
