@@ -6,7 +6,6 @@ from bpy.types import (
 )
 from typing import Sequence
 from contextlib import contextmanager
-from .utils import get_selected_ytyp
 from .properties.ytyp import ArchetypeType
 
 _suppress_sync = False
@@ -30,8 +29,9 @@ def suppress_next_sync_selection():
 
 def sync_selection(scene: Scene, active: Object, selected: Sequence[Object]):
     def _root_parent(obj: Object) -> Object:
-        p = obj.parent
-        return _root_parent(p) if p else obj
+        while p := obj.parent:
+            obj = p
+        return obj
 
     active_obj = _root_parent(active)
     all_objects = set(_root_parent(o) for o in selected)
