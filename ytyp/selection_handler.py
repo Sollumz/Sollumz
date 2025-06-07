@@ -28,7 +28,7 @@ def suppress_next_sync_selection():
     _suppress_sync_once = True
 
 
-def sync_selection(active: Object, selected: Sequence[Object]):
+def sync_selection(scene: Scene, active: Object, selected: Sequence[Object]):
     def _root_parent(obj: Object) -> Object:
         p = obj.parent
         return _root_parent(p) if p else obj
@@ -37,45 +37,50 @@ def sync_selection(active: Object, selected: Sequence[Object]):
     all_objects = set(_root_parent(o) for o in selected)
     all_objects.add(active_obj)
 
-    context = bpy.context
-    scene = context.scene
     sync_archetypes = scene.sz_sync_archetypes_selection
     sync_entities = scene.sz_sync_mlo_entities_selection
 
-    ytyp = get_selected_ytyp(bpy.context)
-    arch_indices = []
-    for arch_idx, arch in enumerate(ytyp.archetypes):
-        arch_obj = arch.asset
-        if sync_archetypes and arch_obj and arch_obj in all_objects:
-            if arch_obj == active_obj:
-                arch_indices.insert(0, arch_idx)  # first is the active object
-            else:
-                arch_indices.append(arch_idx)
-
-        if not sync_entities or arch.type != ArchetypeType.MLO:
-            continue
-
-        entity_indices = []
-        for entity_idx, entity in enumerate(arch.entities):
-            entity_obj = entity.linked_object
-            if entity_obj and entity_obj in all_objects:
-                if entity_obj == active_obj:
-                    entity_indices.insert(0, entity_idx)  # first is the active object
+    for ytyp_idx, ytyp in enumerate(scene.ytyps):
+        arch_indices = []
+        for arch_idx, arch in enumerate(ytyp.archetypes):
+            arch_obj = arch.asset
+            if sync_archetypes and arch_obj and arch_obj in all_objects:
+                if arch_obj == active_obj:
+                    arch_indices.insert(0, arch_idx)  # first is the active object
                 else:
-                    entity_indices.append(entity_idx)
+                    arch_indices.append(arch_idx)
 
-        if entity_indices:
-            ytyp.archetypes.select(arch_idx)
-            arch.entities.select_many(entity_indices)
-            arch_indices.clear()  # entities in a MLO have priority for selection
-            break  # assume all selection belong to the same MLO and break early
+            if not sync_entities or arch.type != ArchetypeType.MLO:
+                continue
 
-    if arch_indices:
-        ytyp.archetypes.select_many(arch_indices)
+            entity_indices = []
+            for entity_idx, entity in enumerate(arch.entities):
+                entity_obj = entity.linked_object
+                if entity_obj and entity_obj in all_objects:
+                    if entity_obj == active_obj:
+                        entity_indices.insert(0, entity_idx)  # first is the active object
+                    else:
+                        entity_indices.append(entity_idx)
+
+            if entity_indices:
+                scene.ytyp_index = ytyp_idx
+                ytyp.archetypes.select(arch_idx)
+                arch.entities.select_many(entity_indices)
+                arch_indices.clear()  # entities in a MLO have priority for selection
+                return  # assume all selection belong to the same MLO and exit early
+
+        if arch_indices:
+            scene.ytyp_index = ytyp_idx
+            ytyp.archetypes.select_many(arch_indices)
+            return
 
 
 @bpy.app.handlers.persistent
 def depsgraph_update_post_handler(scene: Scene, depsgraph: Depsgraph):
+    # Exit early if there is not map types in the scene
+    if not scene.ytyps:
+        return
+
     # Filter out unwanted depsgraph updates. When the selection changes, there is a single update entry
     # containing the scene. Other updates may look the same but can't check much more to differentiate them.
     scene_update = len(depsgraph.updates) == 1 and depsgraph.id_type_updated("SCENE")
@@ -96,7 +101,7 @@ def depsgraph_update_post_handler(scene: Scene, depsgraph: Depsgraph):
 
     active = depsgraph.view_layer.objects.active
     selected = depsgraph.view_layer.objects.selected
-    sync_selection(active, selected)
+    sync_selection(scene, active, selected)
 
 
 def register():
