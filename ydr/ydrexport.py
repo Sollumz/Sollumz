@@ -58,7 +58,7 @@ from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
 from .render_bucket import RenderBucket
-from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
+from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, try_get_bone_by_vgroup, remove_unused_uvs
 from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
 from .cloth_diagnostics import cloth_export_context
@@ -108,20 +108,18 @@ def create_drawable_xml(
         drawable_xml.skeleton = create_skeleton_xml(armature_obj, apply_transforms)
         drawable_xml.joints = create_joints_xml(armature_obj)
 
-        bones = armature_obj.data.bones
-
         original_pose = armature_obj.data.pose_position
         armature_obj.data.pose_position = "REST"
     else:
         drawable_xml.skeleton = None
         drawable_xml.joints = None
-        bones = None
+        armature_obj = None
         original_pose = "POSE"
 
     if char_cloth_xml:
         char_cloth_xml._tmp_skeleton = drawable_xml.skeleton
 
-    create_model_xmls(drawable_xml, drawable_obj, materials, bones, char_cloth_xml)
+    create_model_xmls(drawable_xml, drawable_obj, materials, armature_obj, char_cloth_xml)
 
     drawable_xml.lights = create_xml_lights(drawable_obj)
 
@@ -143,12 +141,13 @@ def create_model_xmls(
     drawable_xml: Drawable,
     drawable_obj: bpy.types.Object,
     materials: list[bpy.types.Material],
-    bones: Optional[list[bpy.types.Bone]] = None,
+    armature_obj: Optional[bpy.types.Object] = None,
     char_cloth_xml: Optional[CharacterCloth] = None,
 ):
     model_objs = get_model_objs(drawable_obj)
 
-    if bones is not None:
+    if armature_obj is not None:
+        bones = armature_obj.data.bones
         model_objs = sort_skinned_models_by_bone(model_objs, bones)
 
     for model_obj in model_objs:
@@ -163,7 +162,9 @@ def create_model_xmls(
             if lod.mesh is None:
                 continue
 
-            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply, char_cloth_xml)
+            model_xml = create_model_xml(
+                model_obj, lod_level, materials, armature_obj, transforms_to_apply, char_cloth_xml
+            )
             if not model_xml.geometries:
                 continue
 
@@ -207,13 +208,14 @@ def create_model_xml(
     model_obj: bpy.types.Object,
     lod_level: LODLevel,
     materials: list[bpy.types.Material],
-    bones: Optional[list[bpy.types.Bone]] = None,
+    armature_obj: Optional[bpy.types.Object] = None,
     transforms_to_apply: Optional[Matrix] = None,
     char_cloth_xml: Optional[CharacterCloth] = None,
     mesh_domain_override: Optional[VBBuilderDomain] = None,
 ):
     model_xml = DrawableModel()
 
+    bones = armature_obj.data.bones if armature_obj is not None else None
     set_model_xml_properties(model_obj, lod_level, bones, model_xml)
 
     obj_eval = get_evaluated_obj(model_obj)
@@ -227,7 +229,7 @@ def create_model_xml(
         cloth_export_context().diagnostics.drawable_model_obj_name = model_obj.name
 
     geometries = create_geometries_xml(
-        mesh_eval, materials, bones, model_obj.vertex_groups, char_cloth_xml, mesh_domain_override
+        model_obj, mesh_eval, materials, armature_obj, char_cloth_xml, mesh_domain_override
     )
     model_xml.geometries = geometries
 
@@ -277,12 +279,12 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, b
 
 
 def create_geometries_xml(
+    model_obj: bpy.types.Object,
     mesh_eval: bpy.types.Mesh,
     materials: list[bpy.types.Material],
-    bones: Optional[list[bpy.types.Bone]] = None,
-    vertex_groups: Optional[list[bpy.types.VertexGroup]] = None,
-    char_cloth_xml: Optional[CharacterCloth] = None,
-    mesh_domain_override: Optional[VBBuilderDomain] = None,
+    armature_obj: Optional[bpy.types.Object],
+    char_cloth_xml: Optional[CharacterCloth],
+    mesh_domain_override: Optional[VBBuilderDomain],
 ) -> list[Geometry]:
     is_cable = is_cable_mesh(mesh_eval)
     if len(mesh_eval.loops) == 0 and not is_cable:  # cable mesh don't have faces, so no loops either
@@ -354,7 +356,8 @@ def create_geometries_xml(
 
     geometries: list[Geometry] = []
 
-    bone_by_vgroup = get_bone_by_vgroup(vertex_groups, bones) if bones and vertex_groups else None
+    bones = armature_obj.data.bones if armature_obj is not None else None
+    bone_by_vgroup = try_get_bone_by_vgroup(model_obj, armature_obj)
 
     domain = VBBuilderDomain[get_export_settings().mesh_domain] if mesh_domain_override is None else mesh_domain_override
     vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain, materials, char_cloth_xml, bones)

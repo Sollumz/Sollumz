@@ -31,18 +31,35 @@ VGROUP_INVALID_BONE_ID = -1
 VGROUP_CLOTH_ID = -2
 
 
-def get_bone_by_vgroup(vgroups: bpy.types.VertexGroups, bones: list[bpy.types.Bone]):
+def try_get_bone_by_vgroup(obj: bpy.types.Object, armature_obj: bpy.types.Object | None) -> dict[int, int] | None:
+    vgroups = obj.vertex_groups
+    bones = armature_obj.data.bones if armature_obj is not None else None
+    if not vgroups or not bones:
+        return None
+
     bone_ind_by_name: dict[str, int] = {b.name: i for i, b in enumerate(bones)}
-    return {
-        i: bone_ind_by_name[group.name]
-        if group.name in bone_ind_by_name
-        else (
-            VGROUP_CLOTH_ID
-            if group.name == CLOTH_CHAR_VERTEX_GROUP_NAME
-            else VGROUP_INVALID_BONE_ID
+
+    bone_ind_by_vgroup: dict[int, int] = {}
+    unknown_vgroups: list[str] = []
+    for i, group in enumerate(vgroups):
+        if group.name in bone_ind_by_name:
+            bone_index = bone_ind_by_name[group.name]
+        elif group.name == CLOTH_CHAR_VERTEX_GROUP_NAME:
+            bone_index = VGROUP_CLOTH_ID
+        else:
+            unknown_vgroups.append(group.name)
+            bone_index = 0  # map unknown vertex group to root bone
+        bone_ind_by_vgroup[i] = bone_index
+
+    if unknown_vgroups:
+        unknown_vgroups_str = ", ".join(unknown_vgroups)
+        logger.warning(
+            f"Object '{obj.name}' has {len(unknown_vgroups)} unknown vertex groups! "
+            "Make sure the following vertex groups exist as bones in the armature "
+            f"'{armature_obj.name}': {unknown_vgroups_str}"
         )
-        for i, group in enumerate(vgroups)
-    }
+
+    return bone_ind_by_vgroup
 
 
 def remove_arr_field(name: str, vertex_arr: NDArray):
@@ -342,7 +359,6 @@ class VertexBufferBuilder:
             del cloth_bind_tris_mask
             del cloth_bind_tris_mat_indices
             del cloth_bind_tris_mat_not_ped_cloth_mask
-
 
             cloth_bind_verts_pos = mesh_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
             cloth_bind_verts_normal = mesh_verts_normal.reshape((num_verts, 3))[cloth_bind_verts_mask]
