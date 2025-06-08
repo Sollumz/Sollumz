@@ -20,6 +20,11 @@ from .cloth_diagnostics import (
 )
 import bmesh
 
+if bpy.app.version >= (4, 5, 0):
+    POINT_UNIFORM_COLOR_SHADER_NAME = "POINT_UNIFORM_COLOR"
+else:
+    POINT_UNIFORM_COLOR_SHADER_NAME = "UNIFORM_COLOR"
+
 
 class ClothOverlaysDrawHandler:
     """Manages drawing the cloth overlays used to display the attributes at each vertex."""
@@ -183,7 +188,7 @@ class ClothOverlaysDrawHandler:
         theme = get_theme_settings()
         gpu.state.point_size_set(theme.cloth_overlay_pinned_size)
         gpu.state.blend_set("ALPHA")
-        shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+        shader = gpu.shader.from_builtin(POINT_UNIFORM_COLOR_SHADER_NAME)
         pinned_verts_batch = batch.batch_for_shader(shader, "POINTS", {"pos": coords})
         shader.uniform_float("color", theme.cloth_overlay_pinned)
         pinned_verts_batch.draw(shader)
