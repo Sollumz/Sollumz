@@ -375,7 +375,7 @@ def _cloth_char_get_cloth_to_bone_bindings(
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[int]]:
     from .vertex_buffer_builder import normalize_weights, get_sorted_vertex_group_elements, try_get_bone_by_vgroup
 
-    bone_by_vgroup = try_get_bone_by_vgroup(cloth_mesh, armature_obj)
+    bone_by_vgroup = try_get_bone_by_vgroup(cloth_obj, armature_obj)
     assert bone_by_vgroup is not None
 
     num_verts = len(cloth_mesh.vertices)
