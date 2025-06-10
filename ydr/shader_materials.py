@@ -846,6 +846,7 @@ def link_value_shader_parameters(b: ShaderBuilder):
     spec_im = None
     spec_fm = None
     em_m = None
+    spec_m = None
 
     for param in shader.parameters:
         if param.name == "bumpiness":
@@ -856,6 +857,8 @@ def link_value_shader_parameters(b: ShaderBuilder):
             spec_fm = node_tree.nodes["specularFalloffMult"]
         elif param.name == "emissiveMultiplier":
             em_m = node_tree.nodes["emissiveMultiplier"]
+        elif param.name == "specMapIntMask":
+            spec_m = node_tree.nodes["specMapIntMask"]
 
     if bmp:
         nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
@@ -870,10 +873,26 @@ def link_value_shader_parameters(b: ShaderBuilder):
             map.clamp = True
             mult = node_tree.nodes.new("ShaderNodeMath")
             mult.operation = "MULTIPLY"
-            links.new(spec.outputs[0], mult.inputs[0])
-            links.new(map.outputs[0], mult.inputs[1])
-            links.new(spec_im.outputs["X"], map.inputs[0])
-            links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
+            if spec_m:
+                dot_prod = node_tree.nodes.new("ShaderNodeVectorMath")
+                dot_prod.operation = "DOT_PRODUCT"
+                links.new(dot_prod.inputs[0], spec.outputs[0])
+                combine_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+                spec_mask = try_get_node(node_tree, "specMapIntMask")
+                links.new(spec_mask.outputs["X"], combine_xyz.inputs["X"])
+                links.new(spec_mask.outputs["Y"], combine_xyz.inputs["Y"])
+                links.new(spec_mask.outputs["Z"], combine_xyz.inputs["Z"])
+                links.new(combine_xyz.outputs[0], dot_prod.inputs[1])
+                links.new(dot_prod.outputs["Value"], mult.inputs[0])
+                links.new(map.outputs[0], mult.inputs[1])
+                links.new(spec_im.outputs["X"], map.inputs[0])
+                links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
+            else:
+                links.new(spec.outputs[0], mult.inputs[0])
+                links.new(map.outputs[0], mult.inputs[1])
+                links.new(spec_im.outputs["X"], map.inputs[0])
+                links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
+
     if spec_fm:
         map = node_tree.nodes.new("ShaderNodeMapRange")
         map.inputs[2].default_value = 512
