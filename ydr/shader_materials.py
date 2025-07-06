@@ -770,6 +770,31 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
 
         links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
+    elif decalflag == 5:  # decal_amb_only.sps
+        ambient_decal_mask_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+        ambient_decal_mask = node_tree.nodes["AmbientDecalMask"]
+        dot_diffuse_mask = node_tree.nodes.new("ShaderNodeVectorMath")
+        dot_diffuse_mask.operation = "DOT_PRODUCT"
+        mult_alpha_color0a = node_tree.nodes.new("ShaderNodeMath")
+        mult_alpha_color0a.operation = "MULTIPLY"
+        color0_attr = node_tree.nodes.new("ShaderNodeVertexColor")
+        invert_color = node_tree.nodes.new("ShaderNodeInvert")
+        color0_attr.layer_name = get_color_attr_name(0)
+
+        links.new(ambient_decal_mask.outputs["X"], ambient_decal_mask_xyz.inputs["X"])
+        links.new(ambient_decal_mask.outputs["Y"], ambient_decal_mask_xyz.inputs["Y"])
+        links.new(ambient_decal_mask.outputs["Z"], ambient_decal_mask_xyz.inputs["Z"])
+
+        links.new(texture.outputs["Color"], invert_color.inputs[1])
+        links.new(invert_color.outputs["Color"], dot_diffuse_mask.inputs[0])
+        links.new(ambient_decal_mask_xyz.outputs["Vector"], dot_diffuse_mask.inputs[1])
+
+        links.new(dot_diffuse_mask.outputs["Value"], mult_alpha_color0a.inputs[0])
+        links.new(color0_attr.outputs["Alpha"], mult_alpha_color0a.inputs[1])
+
+        links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
+
+        links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
 
     links.new(trans.outputs["BSDF"], mix.inputs[1])
     links.remove(bsdf.outputs["BSDF"].links[0])
@@ -1011,6 +1036,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             decalflag = 3
         elif filename in {"decal_spec_only.sps", "spec_decal.sps"}:
             decalflag = 4
+        elif filename == "decal_amb_only.sps":
+            decalflag = 5
         elif filename in {"vehicle_badges.sps", "vehicle_decal.sps"}:
             decalflag = 1  # badges and decals need to multiply the texture alpha by the Color 1 Alpha component
         elif filename.startswith("vehicle_"):
