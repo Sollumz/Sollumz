@@ -140,6 +140,8 @@ def get_shader_config(shader: ShaderDef) -> LegacyShaderConfig:
             decalflag = 3
         elif shader.filename in {"decal_spec_only.sps", "spec_decal.sps"}:
             decalflag = 4
+        elif shader.filename == "decal_amb_only.sps":
+            decalflag = 5
 
     if is_distance_map:
         blend_mode = "BLEND"
