@@ -282,8 +282,9 @@ def create_tint_geom_modifier(
 
 
 def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
+    assert name.startswith("TintColor"), "Tint attributes should always be prefixed with 'TintColor'"
     for node in node_tree.nodes:
-        if not isinstance(node, bpy.types.ShaderNodeAttribute) or node.attribute_name != "TintColor":
+        if not isinstance(node, bpy.types.ShaderNodeAttribute) or not node.attribute_name.startswith("TintColor"):
             continue
 
         node.attribute_name = name
