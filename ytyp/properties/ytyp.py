@@ -729,13 +729,14 @@ def register():
     bpy.types.Scene.show_room_gizmo = bpy.props.BoolProperty(name="Show Room Gizmo", default=True)
     bpy.types.Scene.show_portal_gizmo = bpy.props.BoolProperty(name="Show Portal Gizmo", default=True)
     bpy.types.Scene.show_mlo_tcm_gizmo = bpy.props.BoolProperty(name="Show Timecycle Modifier Gizmo", default=True)
+    sync_default = get_addon_preferences().default_sync_selection_enabled
     bpy.types.Scene.sz_sync_archetypes_selection = BoolProperty(
         name="Sync Selection", description="Synchronize archetypes selection with objects selection in the scene.",
-        default=True
+        default=sync_default
     )
     bpy.types.Scene.sz_sync_mlo_entities_selection = BoolProperty(
         name="Sync Selection", description="Synchronize MLO entities selection with objects selection in the scene.",
-        default=True
+        default=sync_default
     )
 
     bpy.types.Scene.create_archetype_type = bpy.props.EnumProperty(

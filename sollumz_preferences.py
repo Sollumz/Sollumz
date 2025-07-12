@@ -440,6 +440,13 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_save_preferences_on_update
     )
 
+    default_sync_selection_enabled: BoolProperty(
+        name="Selection Sync Enabled by Default",
+        description="Enable archetype/entity selection sync by default in new scenes. Requires restart to take effect",
+        default=True,
+        update=_save_preferences_on_update
+    )
+
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
         type=SzSharedTexturesDirectory,
@@ -563,6 +570,7 @@ class SollumzAddonPreferences(AddonPreferences):
     def draw_general(self, context, layout: UILayout):
         layout.prop(self, "use_text_name_as_mat_name")
         layout.prop(self, "shader_preset_apply_textures")
+        layout.prop(self, "default_sync_selection_enabled")
 
         col = layout.column(align=True)
         col.prop(self, "default_flags_portal", text="Default Flags for Portals")
@@ -792,19 +800,19 @@ def _line_separator(layout: UILayout, factor: float = 1.0):
 
 
 def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> SollumzAddonPreferences:
-    return context.preferences.addons[__package__].preferences
+    return (context or bpy.context).preferences.addons[__package__].preferences
 
 
 def get_import_settings(context: Optional[bpy.types.Context] = None) -> SollumzImportSettings:
-    return get_addon_preferences(context or bpy.context).import_settings
+    return get_addon_preferences(context).import_settings
 
 
 def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzExportSettings:
-    return get_addon_preferences(context or bpy.context).export_settings
+    return get_addon_preferences(context).export_settings
 
 
 def get_theme_settings(context: Optional[bpy.types.Context] = None) -> SollumzThemeSettings:
-    return get_addon_preferences(context or bpy.context).theme
+    return get_addon_preferences(context).theme
 
 
 def _save_preferences():
