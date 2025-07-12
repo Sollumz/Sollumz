@@ -720,7 +720,7 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw_about(self, context, layout: UILayout):
         row = layout.row()
-        row.operator("wm.url_open", text="Discord", icon="COMMUNITY").url = "https://discord.gg/bZuWBWaQBg"
+        row.operator("wm.url_open", text="Discord", icon="COMMUNITY").url = "https://discord.sollumz.org/"
         row.operator("wm.url_open", text="Documentation", icon="HELP").url = "https://docs.sollumz.org/"
         row.operator("wm.url_open", text="Issue Tracker", icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
 
