@@ -375,6 +375,20 @@ class SzFavoriteEntry(PropertyGroup):
 class SollumzAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
+    def _on_show_version_update(self, context):
+        _save_preferences_on_update(self, context)
+        from .sollumz_ui import statusbar_register_draw, statusbar_unregister_draw
+        statusbar_unregister_draw()
+        if self.show_version_in_statusbar:
+            statusbar_register_draw()
+
+    show_version_in_statusbar: BoolProperty(
+        name="Show Sollumz Version in Status Bar",
+        description="Show the Sollumz version next to the Blender version in the status bar",
+        default=True,
+        update=_on_show_version_update
+    )
+
     show_vertex_painter: BoolProperty(
         name="Show Vertex Painter",
         description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)",
@@ -680,6 +694,7 @@ class SollumzAddonPreferences(AddonPreferences):
                 _line_separator(layout)
 
     def draw_ui(self, context, layout: UILayout):
+        layout.prop(self, "show_version_in_statusbar")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")

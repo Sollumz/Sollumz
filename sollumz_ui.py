@@ -1,4 +1,5 @@
 import bpy
+from bl_ui.space_statusbar import STATUSBAR_HT_header
 from typing import Optional
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
 from .sollumz_operators import SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location, SOLLUMZ_OT_paste_rotation
@@ -645,3 +646,27 @@ class TimeFlagsPanel(FlagsPanel):
         row.prop(flags, "time_flags_end", text="to")
         row = self.layout.row()
         row.operator(self.clear_operator)
+
+
+def statusbar_draw_sollumz_version(header, context):
+    from .meta import sollumz_version
+    layout = header.layout.row(align=True)
+    layout.label(text=sollumz_version(), icon_value=icon_manager.get_icon("sollumz_icon"))
+
+
+def statusbar_register_draw():
+    STATUSBAR_HT_header.append(statusbar_draw_sollumz_version)
+
+
+def statusbar_unregister_draw():
+    STATUSBAR_HT_header.remove(statusbar_draw_sollumz_version)
+
+
+def register():
+    statusbar_unregister_draw()
+    if get_addon_preferences().show_version_in_statusbar:
+        statusbar_register_draw()
+
+
+def unregister():
+    statusbar_unregister_draw()
