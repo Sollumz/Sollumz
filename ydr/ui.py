@@ -185,15 +185,10 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
     ):
         name = shadermats[item.index].ui_name
         # If the object is selected
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=name, icon="SHADING_TEXTURE")
-            favorite_icon = "SOLO_ON" if item.favorite else "SOLO_OFF"
-            row.prop(item, "favorite", text="", toggle=True, emboss=False, icon=favorite_icon)
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=name, emboss=False, icon="SHADING_TEXTURE")
+        row = layout.row()
+        row.label(text=name, icon="SHADING_TEXTURE")
+        favorite_icon = "SOLO_ON" if item.favorite else "SOLO_OFF"
+        row.prop(item, "favorite", text="", toggle=True, emboss=False, icon=favorite_icon)
 
     def draw_filter(self, context, layout):
         row = layout.row()
@@ -554,13 +549,8 @@ class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=item.name, icon="BOOKMARKS")
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="BOOKMARKS")
+        row = layout.row()
+        row.label(text=item.name, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
@@ -627,13 +617,8 @@ class SOLLUMZ_UL_SHADER_PRESET_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=item.name, icon="BOOKMARKS")
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="BOOKMARKS")
+        row = layout.row()
+        row.label(text=item.name, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
@@ -683,15 +668,7 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
 
 class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        custom_icon = "FILE"
-
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            layout.prop(item, "name", text="", icon=custom_icon,
-                        emboss=False, translate=False)
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name", text="", icon=custom_icon,
-                        emboss=False, translate=False)
+        layout.prop(item, "name", text="", icon="FILE", emboss=False, translate=False)
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):

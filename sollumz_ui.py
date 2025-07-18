@@ -174,28 +174,6 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
         layout.prop(settings, "import_ext_skeleton")
 
 
-class SOLLUMZ_UL_armature_list(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_armature_list"
-
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-
-            # Armature is contained in "skel" object, so we need its parent
-            armature_obj = get_armature_obj(item)
-            if armature_obj is not None:
-                armature_parent = armature_obj.parent
-
-                row.label(text=item.name if armature_parent is None else f"{armature_parent.name} - {item.name}",
-                          icon="OUTLINER_DATA_ARMATURE")
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
-
-
 class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Ymap"
     bl_order = 3
