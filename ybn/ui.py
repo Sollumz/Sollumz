@@ -46,6 +46,10 @@ class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
         grid = self.layout.grid_flow(columns=2, even_columns=True, even_rows=True)
         grid.prop(mat.collision_properties, "procedural_id")
         grid.prop(mat.collision_properties, "room_id")
+        if mat.collision_properties.check_room_id_enum_available(context):
+            row = grid.row().split(factor=0.4)
+            row.row()  # empty space on the left
+            row.row().prop(mat.collision_properties, "room_id_enum", text="")
         grid.prop(mat.collision_properties, "ped_density")
         grid.prop(mat.collision_properties, "material_color_index")
 
@@ -108,6 +112,7 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
                 grid.prop(shape, "cylinder_length")
             case _:
                 pass
+
 
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     bl_label = "Composite Flags"
