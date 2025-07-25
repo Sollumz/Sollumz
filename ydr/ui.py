@@ -437,7 +437,7 @@ class SOLLUMZ_PT_SHADER_TOOLS_PANEL(bpy.types.Panel):
 
         row = layout.row()
         row.operator(
-            ydr_ops.SOLLUMZ_OT_auto_convert_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
+            ydr_ops.SOLLUMZ_OT_auto_convert_materials.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
         grid = layout.grid_flow(align=True)
         grid.operator(
             ydr_ops.SOLLUMZ_OT_set_all_textures_embedded.bl_idname, icon="TEXTURE")

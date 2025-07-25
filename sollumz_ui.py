@@ -1,9 +1,10 @@
 import bpy
 from bl_ui.space_statusbar import STATUSBAR_HT_header
 from typing import Optional
+
+from .ydr.operators import SOLLUMZ_OT_convert_active_material_to_selected, SOLLUMZ_OT_auto_convert_current_material
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
 from .sollumz_operators import SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location, SOLLUMZ_OT_paste_rotation
-from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import (
     SollumType,
     MaterialType,
@@ -584,7 +585,23 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         mat = aobj.active_material
 
         if not mat or mat.sollum_type == MaterialType.NONE:
-            layout.label(text="No sollumz material active.", icon="ERROR")
+            layout.label(text="Material is not a Sollumz material.", icon="ERROR")
+
+            box = layout.box()
+
+            from .ydr.ui import SOLLUMZ_UL_SHADER_MATERIALS_LIST
+
+            wm = context.window_manager
+
+            box.template_list(
+                SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
+                wm, "sz_shader_materials", wm, "sz_shader_material_index",
+            )
+
+            row = box.row()
+            row.operator(SOLLUMZ_OT_convert_active_material_to_selected.bl_idname, text="Convert to Selected", icon="FILE_REFRESH")
+            row.operator(SOLLUMZ_OT_auto_convert_current_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
+
             return
 
 
