@@ -17,7 +17,7 @@ class SOLLUMZ_MT_pie_menu(Menu):
 
         pie = layout.menu_pie()
         # Left
-        pie.operator("sollumz.autoconvertmaterial",
+        pie.operator("sollumz.autoconvertmaterials",
                      text="Convert Material", icon='NODE_MATERIAL')
         # Right
         pie.operator("sollumz.addobjasentity", icon='OBJECT_DATA')

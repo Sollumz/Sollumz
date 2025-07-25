@@ -643,16 +643,71 @@ class SOLLUMZ_OT_convert_material_to_selected(bpy.types.Operator, MaterialConver
         return [obj.active_material]
 
 
-class SOLLUMZ_OT_auto_convert_material(bpy.types.Operator, MaterialConverterHelper):
-    """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material"""
-    bl_idname = "sollumz.autoconvertmaterial"
-    bl_label = "Convert Material To Shader Material"
+class SOLLUMZ_OT_convert_active_material_to_selected(bpy.types.Operator):
+    """Convert the active material of the active object to the selected sollumz shader"""
+    bl_idname = "sollumz.convert_active_material_to_selected"
+    bl_label = "Convert Active Material To Selected"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        return (aobj is not None and 
+                aobj.type == "MESH" and 
+                aobj.active_material is not None)
+
+    def execute(self, context):
+        aobj = context.active_object
+        mat = aobj.active_material
+
+        shader_name = shadermats[context.window_manager.sz_shader_material_index].value
+        new_material = MaterialConverter(aobj, mat).convert(shader_name)
+        
+        if new_material is None:
+            self.report({"ERROR"}, f"Failed to convert material '{mat.name}'!")
+            return {"CANCELLED"}
+        
+        self.report({"INFO"}, f"Successfully converted material '{new_material.name}' to {shader_name}")
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_auto_convert_materials(bpy.types.Operator, MaterialConverterHelper):
+    """Attempt to automatically determine shader name from material node setup and convert all materials to Sollumz materials\nAffects all selected objects"""
+    bl_idname = "sollumz.autoconvertmaterials"
+    bl_label = "Auto Convert All Materials"
 
     def convert_material(self, obj: bpy.types.Object, material: bpy.types.Material) -> bpy.types.Material | None:
         if material.sollum_type == MaterialType.SHADER:
             return None
 
         return MaterialConverter(obj, material).auto_convert()
+
+
+class SOLLUMZ_OT_auto_convert_current_material(bpy.types.Operator):
+    """Attempt to automatically determine shader name from current active material and convert it to a Sollumz material"""
+    bl_idname = "sollumz.auto_convert_current_material"
+    bl_label = "Auto Convert Current Material"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        aobj = context.active_object
+        return (aobj is not None and 
+                aobj.type == "MESH" and 
+                aobj.active_material is not None)
+
+    def execute(self, context):
+        aobj = context.active_object
+        mat = aobj.active_material
+
+        new_material = MaterialConverter(aobj, mat).auto_convert()
+        
+        if new_material is None:
+            self.report({"ERROR"}, f"Failed to auto-convert material '{mat.name}'!")
+            return {"CANCELLED"}
+        
+        self.report({"INFO"}, f"Successfully auto-converted material '{new_material.name}'")
+        return {"FINISHED"}
 
 
 def post_create_shader_add_default_images(material: bpy.types.Material):

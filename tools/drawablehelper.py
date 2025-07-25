@@ -100,10 +100,7 @@ class MaterialConverter:
 
         self.diffuse_node = self._get_diffuse_node()
 
-        if self.diffuse_node is None:
-            raise Exception("Failed to convert material: Material must have an image node linked to the base color.")
-
-        if not isinstance(self.diffuse_node, bpy.types.ShaderNodeTexImage):
+        if self.diffuse_node is not None and not isinstance(self.diffuse_node, bpy.types.ShaderNodeTexImage):
             raise Exception("Failed to convert material: Base color node is not an image node.")
 
         self.specular_node = self._get_specular_node()
