@@ -1,15 +1,13 @@
 import bpy
 from mathutils import Vector
+
+
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node
 from ..sollumz_properties import SollumType, MaterialType, LODLevel
 from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output
-from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
-from ..cwxml.shader import (
-    ShaderManager,
-    ShaderParameterType,
-    ShaderParameterDef,
-    ShaderParameterTextureDef,
-)
+from ..tools.meshhelper import mesh_add_missing_color_attrs, mesh_add_missing_uv_maps, mesh_rename_color_attrs_by_order, mesh_rename_uv_maps_by_order
+from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel
+from ..cwxml.shader import ShaderManager, ShaderParameterType
 from ..shared.shader_nodes import SzShaderNodeParameter
 from typing import Union
 
@@ -18,53 +16,57 @@ class MaterialConverter:
     def __init__(self, obj: bpy.types.Object, material: bpy.types.Material) -> None:
         self.obj = obj
         self.material: Union[bpy.types.Material, None] = material
-        self.new_material: Union[bpy.types.Material, None] = None
         self.bsdf: Union[bpy.types.ShaderNodeBsdfPrincipled, None] = None
         self.diffuse_node: Union[bpy.types.ShaderNodeTexImage, None] = None
         self.specular_node: Union[bpy.types.ShaderNodeTexImage, None] = None
         self.normal_node: Union[bpy.types.ShaderNodeTexImage, None] = None
 
-    def _convert_texture_node(self, param: ShaderParameterTextureDef):
-        src_node: bpy.types.ShaderNodeTexImage = try_get_node(self.material.node_tree, param.name)
-        if not src_node or not isinstance(src_node, bpy.types.ShaderNodeTexImage):
-            return
-
-        dst_node: bpy.types.ShaderNodeTexImage = try_get_node(self.new_material.node_tree, param.name)
-        if not dst_node or not isinstance(dst_node, bpy.types.ShaderNodeTexImage):
-            return
-
-        dst_node.image = src_node.image
-
-    def _convert_parameter_node(self, param: ShaderParameterDef):
-        src_node: SzShaderNodeParameter = try_get_node(self.material.node_tree, param.name)
-        if not src_node or not isinstance(src_node, SzShaderNodeParameter):
-            return
-
-        dst_node: SzShaderNodeParameter = try_get_node(self.new_material.node_tree, param.name)
-        if not dst_node or not isinstance(dst_node, SzShaderNodeParameter):
-            return
-
-        src_count = src_node.num_cols * src_node.num_rows
-        dst_count = dst_node.num_cols * dst_node.num_rows
-        for i in range(min(src_count, dst_count)):
-            dst_node.set(i, src_node.get(i))
-
     def convert_shader_to_shader(self, shader_name: str):
         shader = ShaderManager.find_shader(shader_name)
         assert shader is not None
 
+        # Store existing parameters before conversion
+        existing_params = {}
         for param in shader.parameters:
             match param.type:
                 case ShaderParameterType.TEXTURE:
-                    self._convert_texture_node(param)
+                    node = try_get_node(self.material.node_tree, param.name)
+                    if node and isinstance(node, bpy.types.ShaderNodeTexImage):
+                        existing_params[param.name] = node.image
                 case (ShaderParameterType.FLOAT |
                       ShaderParameterType.FLOAT2 |
                       ShaderParameterType.FLOAT3 |
                       ShaderParameterType.FLOAT4 |
                       ShaderParameterType.FLOAT4X4):
-                    self._convert_parameter_node(param)
-                case _:
-                    raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+                    node = try_get_node(self.material.node_tree, param.name)
+                    if node and isinstance(node, SzShaderNodeParameter):
+                        count = node.num_cols * node.num_rows
+                        existing_params[param.name] = [node.get(i) for i in range(count)]
+
+        # Convert material in-place
+        create_shader(shader_name, in_place_material=self.material)
+
+        # Restore existing parameters
+        for param in shader.parameters:
+            if param.name not in existing_params:
+                continue
+                
+            match param.type:
+                case ShaderParameterType.TEXTURE:
+                    node = try_get_node(self.material.node_tree, param.name)
+                    if node and isinstance(node, bpy.types.ShaderNodeTexImage):
+                        node.image = existing_params[param.name]
+                case (ShaderParameterType.FLOAT |
+                      ShaderParameterType.FLOAT2 |
+                      ShaderParameterType.FLOAT3 |
+                      ShaderParameterType.FLOAT4 |
+                      ShaderParameterType.FLOAT4X4):
+                    node = try_get_node(self.material.node_tree, param.name)
+                    if node and isinstance(node, SzShaderNodeParameter):
+                        values = existing_params[param.name]
+                        for i, value in enumerate(values):
+                            if i < node.num_cols * node.num_rows:
+                                node.set(i, value)
 
     def _get_diffuse_node(self):
         diffuse_input = self.bsdf.inputs["Base Color"]
@@ -106,38 +108,18 @@ class MaterialConverter:
         self.specular_node = self._get_specular_node()
         self.normal_node = self._get_normal_node()
 
-    def _create_new_material(self, shader_name):
-        self.new_material = create_shader(shader_name)
+    def _convert_in_place(self, shader_name):
+        create_shader(shader_name, in_place_material=self.material)
 
-    def _set_new_node_images(self):
-        if self.new_material is None:
-            raise Exception("Failed to set images: Sollumz material has not been created yet!")
-
+    def _set_converted_node_images(self):
         for node, name in {self.diffuse_node: "DiffuseSampler", self.specular_node: "SpecSampler", self.normal_node: "BumpSampler"}.items():
             new_node: bpy.types.ShaderNodeTexImage = try_get_node(
-                self.new_material.node_tree, name)
+                self.material.node_tree, name)
 
             if node is None or new_node is None:
                 continue
 
             new_node.image = node.image
-
-    def _get_material_slot(self):
-        for slot in self.obj.material_slots:
-            if slot.material == self.material:
-                return slot
-
-    def _replace_material(self):
-        if self.new_material is None:
-            raise Exception(
-                "Failed to replace material: Sollumz material has not been created yet!")
-
-        mat_name = f"{self.material.name}_{self.new_material.name}"
-
-        self.new_material.name = mat_name
-
-        slot = self._get_material_slot()
-        slot.material = self.new_material
 
     def _determine_shader_name(self):
         self._get_nodes()
@@ -159,23 +141,35 @@ class MaterialConverter:
             return "spec.sps"
 
         return "default.sps"
-
+            
     def convert(self, shader_name: str) -> bpy.types.Material:
         """Convert the material to a Sollumz material of the provided shader name."""
-        self._create_new_material(shader_name)
-
+        
         if self.material.sollum_type == MaterialType.SHADER:
             self.convert_shader_to_shader(shader_name)
         else:
+            # Get nodes from original material before conversion
             self._get_nodes()
-            self._set_new_node_images()
+            # Convert material in-place
+            self._convert_in_place(shader_name)
+            # Set images from original nodes to converted material
+            self._set_converted_node_images()
+        
+        mesh = self.obj.data
 
-        self._replace_material()
+        # Renaming UV maps and color attributes to avoid creating more attributes than needed if the mesh already has some
+        mesh_rename_uv_maps_by_order(mesh)
+        mesh_rename_color_attrs_by_order(mesh)
 
+        # Adding the remaining UV maps and color attributes required by the shader
+        mesh_add_missing_uv_maps(mesh)
+        mesh_add_missing_color_attrs(mesh)
+
+        # Creating tinted shader graph if the material has tinting
         if obj_has_tint_mats(self.obj):
             create_tinted_shader_graph(self.obj)
 
-        return self.new_material
+        return self.material
 
     def auto_convert(self) -> bpy.types.Material:
         """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material."""
