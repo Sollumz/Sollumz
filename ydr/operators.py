@@ -770,43 +770,6 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_change_shader(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Change the shader used by the active material"""
-    bl_idname = "sollumz.change_shader"
-    bl_label = "Change Shader"
-    bl_action = "Change Shader of Material"
-
-    shader_index: IntProperty(name="Shader Index", min=0, max=len(shadermats) - 1)
-
-    @classmethod
-    def poll(cls, context):
-        aobj = context.active_object
-        return (
-            aobj and
-            aobj.type == "MESH" and
-            aobj.active_material and
-            aobj.active_material.sollum_type == MaterialType.SHADER
-        )
-
-    def run(self, context):
-        aobj = context.active_object
-        mat = aobj.active_material
-        old_shader_filename = mat.shader_properties.filename
-        new_shader_filename = shadermats[self.shader_index].value
-
-        tmp_preset = shader_preset_from_material(mat)
-        create_shader(new_shader_filename, in_place_material=mat)
-        shader_preset_apply_to_material(mat, tmp_preset, apply_textures=True)
-
-        post_create_shader_add_default_images(mat)
-        for obj in bpy.data.objects:  # update all objects that are using this material
-            if obj.type == "MESH" and mat.name in obj.data.materials:
-                post_create_shader_update_object(obj, mat)
-
-        self.message(f"Changed {old_shader_filename} shader to {new_shader_filename}.")
-        return True
-
-
 class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
     """Sets all textures to embedded on the selected objects active material"""
     bl_idname = "sollumz.setallembedded"

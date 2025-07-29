@@ -1,5 +1,7 @@
 from typing import Optional, NamedTuple
 import bpy
+
+
 from ..cwxml.shader import (
     ShaderManager,
     ShaderDef,
@@ -12,8 +14,8 @@ from ..cwxml.shader import (
     ShaderParameterFloat4x4Def,
 )
 from ..sollumz_properties import MaterialType, MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID
-from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.animationhelper import add_global_anim_uv_nodes
+from ..tools.blenderhelper import find_bsdf_and_material_output
 from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from ..shared.shader_expr import expr, compile_expr
@@ -1260,16 +1262,6 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
         material_ouput = current_node_tree.nodes.new("ShaderNodeOutputMaterial")
         bsdf = current_node_tree.nodes.new("ShaderNodeBsdfPrincipled")
         current_node_tree.links.new(bsdf.outputs["BSDF"], material_ouput.inputs["Surface"])
-
-        # If the material had a default name based on its current shader, replace it with the new shader name
-        import re
-        current_filename = in_place_material.shader_properties.filename
-        if (
-            in_place_material.sollum_type == MaterialType.SHADER and
-            current_filename and
-            re.match(rf"{current_filename.replace('.sps', '')}(\.\d\d\d)?", in_place_material.name)
-        ):
-            in_place_material.name = material_name
 
     mat = in_place_material or bpy.data.materials.new(material_name)
     mat.sollum_type = MaterialType.SHADER

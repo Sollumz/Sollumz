@@ -70,8 +70,9 @@ def test_convert_shader_to_shader(src_shader, dst_shader, plane_object):
     plane_object.data.materials.append(src_mat)
     mat = MaterialConverter(plane_object, src_mat).convert(dst_shader)
     assert mat is not None
-    assert src_mat != mat
+    assert src_mat == mat
     assert plane_object.data.materials[0] == mat
+    assert mat.shader_properties.filename == dst_shader
 
 
 def test_ops_update_tint_shader_correctly_syncs_attribute_names(plane_object):

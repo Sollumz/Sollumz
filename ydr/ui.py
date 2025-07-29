@@ -754,7 +754,7 @@ class SOLLUMZ_PT_change_shader(bpy.types.Panel):
             SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
             wm, "sz_shader_materials", wm, "sz_shader_material_index"
         )
-        op = layout.operator(ydr_ops.SOLLUMZ_OT_change_shader.bl_idname)
+        op = layout.operator(ydr_ops.SOLLUMZ_OT_convert_active_material_to_selected.bl_idname, text="Convert")
         op.shader_index = wm.sz_shader_material_index
 
 
