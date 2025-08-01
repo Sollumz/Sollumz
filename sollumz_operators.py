@@ -32,7 +32,7 @@ from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
 from .ymap.ymapexport import export_ymap
 from .ytyp.ytypimport import import_ytyp
-from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, get_terrain_texture_brush, remove_number_suffix, create_blender_object, join_objects
+from .tools.blenderhelper import add_child_of_bone_constraint, get_child_of_pose_bone, apply_terrain_brush_setting_to_current_brush, remove_number_suffix, create_blender_object, join_objects
 from .tools.ytyphelper import ytyp_from_objects
 from .ybn.properties import BoundFlags
 
@@ -352,7 +352,7 @@ class SOLLUMZ_OT_paint_terrain_tex1(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 1"
 
     def run(self, context):
-        get_terrain_texture_brush(1)
+        apply_terrain_brush_setting_to_current_brush(1)
         return True
 
 
@@ -362,7 +362,7 @@ class SOLLUMZ_OT_paint_terrain_tex2(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 2"
 
     def run(self, context):
-        get_terrain_texture_brush(2)
+        apply_terrain_brush_setting_to_current_brush(2)
         return True
 
 
@@ -372,7 +372,7 @@ class SOLLUMZ_OT_paint_terrain_tex3(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 3"
 
     def run(self, context):
-        get_terrain_texture_brush(3)
+        apply_terrain_brush_setting_to_current_brush(3)
         return True
 
 
@@ -382,7 +382,7 @@ class SOLLUMZ_OT_paint_terrain_tex4(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_label = "Paint Texture 4"
 
     def run(self, context):
-        get_terrain_texture_brush(4)
+        apply_terrain_brush_setting_to_current_brush(4)
         return True
 
 
@@ -391,8 +391,10 @@ class SOLLUMZ_OT_paint_terrain_alpha(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.paint_a"
     bl_label = "Paint Alpha"
 
+    alpha: bpy.props.FloatProperty(name="Alpha", min=-1.0, max=1.0)
+
     def run(self, context):
-        get_terrain_texture_brush(5)
+        apply_terrain_brush_setting_to_current_brush(5, self.alpha)
         return True
 
 

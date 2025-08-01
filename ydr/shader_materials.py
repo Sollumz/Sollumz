@@ -282,8 +282,9 @@ def create_tint_geom_modifier(
 
 
 def rename_tint_attr_node(node_tree: bpy.types.NodeTree, name: str):
+    assert name.startswith("TintColor"), "Tint attributes should always be prefixed with 'TintColor'"
     for node in node_tree.nodes:
-        if not isinstance(node, bpy.types.ShaderNodeAttribute) or node.attribute_name != "TintColor":
+        if not isinstance(node, bpy.types.ShaderNodeAttribute) or not node.attribute_name.startswith("TintColor"):
             continue
 
         node.attribute_name = name
@@ -769,6 +770,31 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
 
         links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
+    elif decalflag == 5:  # decal_amb_only.sps
+        ambient_decal_mask_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+        ambient_decal_mask = node_tree.nodes["AmbientDecalMask"]
+        dot_diffuse_mask = node_tree.nodes.new("ShaderNodeVectorMath")
+        dot_diffuse_mask.operation = "DOT_PRODUCT"
+        mult_alpha_color0a = node_tree.nodes.new("ShaderNodeMath")
+        mult_alpha_color0a.operation = "MULTIPLY"
+        color0_attr = node_tree.nodes.new("ShaderNodeVertexColor")
+        invert_color = node_tree.nodes.new("ShaderNodeInvert")
+        color0_attr.layer_name = get_color_attr_name(0)
+
+        links.new(ambient_decal_mask.outputs["X"], ambient_decal_mask_xyz.inputs["X"])
+        links.new(ambient_decal_mask.outputs["Y"], ambient_decal_mask_xyz.inputs["Y"])
+        links.new(ambient_decal_mask.outputs["Z"], ambient_decal_mask_xyz.inputs["Z"])
+
+        links.new(texture.outputs["Color"], invert_color.inputs[1])
+        links.new(invert_color.outputs["Color"], dot_diffuse_mask.inputs[0])
+        links.new(ambient_decal_mask_xyz.outputs["Vector"], dot_diffuse_mask.inputs[1])
+
+        links.new(dot_diffuse_mask.outputs["Value"], mult_alpha_color0a.inputs[0])
+        links.new(color0_attr.outputs["Alpha"], mult_alpha_color0a.inputs[1])
+
+        links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
+
+        links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
 
     links.new(trans.outputs["BSDF"], mix.inputs[1])
     links.remove(bsdf.outputs["BSDF"].links[0])
@@ -846,6 +872,7 @@ def link_value_shader_parameters(b: ShaderBuilder):
     spec_im = None
     spec_fm = None
     em_m = None
+    spec_m = None
 
     for param in shader.parameters:
         if param.name == "bumpiness":
@@ -856,6 +883,8 @@ def link_value_shader_parameters(b: ShaderBuilder):
             spec_fm = node_tree.nodes["specularFalloffMult"]
         elif param.name == "emissiveMultiplier":
             em_m = node_tree.nodes["emissiveMultiplier"]
+        elif param.name == "specMapIntMask":
+            spec_m = node_tree.nodes["specMapIntMask"]
 
     if bmp:
         nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
@@ -870,10 +899,26 @@ def link_value_shader_parameters(b: ShaderBuilder):
             map.clamp = True
             mult = node_tree.nodes.new("ShaderNodeMath")
             mult.operation = "MULTIPLY"
-            links.new(spec.outputs[0], mult.inputs[0])
-            links.new(map.outputs[0], mult.inputs[1])
-            links.new(spec_im.outputs["X"], map.inputs[0])
-            links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
+            if spec_m:
+                dot_prod = node_tree.nodes.new("ShaderNodeVectorMath")
+                dot_prod.operation = "DOT_PRODUCT"
+                links.new(dot_prod.inputs[0], spec.outputs[0])
+                combine_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+                spec_mask = try_get_node(node_tree, "specMapIntMask")
+                links.new(spec_mask.outputs["X"], combine_xyz.inputs["X"])
+                links.new(spec_mask.outputs["Y"], combine_xyz.inputs["Y"])
+                links.new(spec_mask.outputs["Z"], combine_xyz.inputs["Z"])
+                links.new(combine_xyz.outputs[0], dot_prod.inputs[1])
+                links.new(dot_prod.outputs["Value"], mult.inputs[0])
+                links.new(map.outputs[0], mult.inputs[1])
+                links.new(spec_im.outputs["X"], map.inputs[0])
+                links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
+            else:
+                links.new(spec.outputs[0], mult.inputs[0])
+                links.new(map.outputs[0], mult.inputs[1])
+                links.new(spec_im.outputs["X"], map.inputs[0])
+                links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
+
     if spec_fm:
         map = node_tree.nodes.new("ShaderNodeMapRange")
         map.inputs[2].default_value = 512
@@ -991,6 +1036,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             decalflag = 3
         elif filename in {"decal_spec_only.sps", "spec_decal.sps"}:
             decalflag = 4
+        elif filename == "decal_amb_only.sps":
+            decalflag = 5
         elif filename in {"vehicle_badges.sps", "vehicle_decal.sps"}:
             decalflag = 1  # badges and decals need to multiply the texture alpha by the Color 1 Alpha component
         elif filename.startswith("vehicle_"):

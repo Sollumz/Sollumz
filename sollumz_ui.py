@@ -1,8 +1,10 @@
 import bpy
+from bl_ui.space_statusbar import STATUSBAR_HT_header
 from typing import Optional
+
+from .ydr.operators import SOLLUMZ_OT_convert_active_material_to_selected, SOLLUMZ_OT_auto_convert_current_material
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
 from .sollumz_operators import SOLLUMZ_OT_copy_location, SOLLUMZ_OT_copy_rotation, SOLLUMZ_OT_paste_location, SOLLUMZ_OT_paste_rotation
-from .tools.blenderhelper import get_armature_obj
 from .sollumz_properties import (
     SollumType,
     MaterialType,
@@ -171,28 +173,6 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "import_ext_skeleton")
-
-
-class SOLLUMZ_UL_armature_list(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_armature_list"
-
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-
-            # Armature is contained in "skel" object, so we need its parent
-            armature_obj = get_armature_obj(item)
-            if armature_obj is not None:
-                armature_parent = armature_obj.parent
-
-                row.label(text=item.name if armature_parent is None else f"{armature_parent.name} - {item.name}",
-                          icon="OUTLINER_DATA_ARMATURE")
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="OUTLINER_DATA_ARMATURE")
 
 
 class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
@@ -518,8 +498,9 @@ class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         row = layout.row()
         row.operator("sollumz.paint_tex3")
         row.operator("sollumz.paint_tex4")
-        row = layout.row()
-        row.operator("sollumz.paint_a")
+        row = layout.row(align=True)
+        op = row.operator("sollumz.paint_a")
+        op.alpha = context.scene.vert_paint_alpha
         row.prop(context.scene, "vert_paint_alpha")
 
 
@@ -604,7 +585,23 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
         mat = aobj.active_material
 
         if not mat or mat.sollum_type == MaterialType.NONE:
-            layout.label(text="No sollumz material active.", icon="ERROR")
+            layout.label(text="Material is not a Sollumz material.", icon="ERROR")
+
+            box = layout.box()
+
+            from .ydr.ui import SOLLUMZ_UL_SHADER_MATERIALS_LIST
+
+            wm = context.window_manager
+
+            box.template_list(
+                SOLLUMZ_UL_SHADER_MATERIALS_LIST.bl_idname, "",
+                wm, "sz_shader_materials", wm, "sz_shader_material_index",
+            )
+
+            row = box.row()
+            row.operator(SOLLUMZ_OT_convert_active_material_to_selected.bl_idname, text="Convert to Selected", icon="FILE_REFRESH")
+            row.operator(SOLLUMZ_OT_auto_convert_current_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
+
             return
 
 
@@ -644,3 +641,27 @@ class TimeFlagsPanel(FlagsPanel):
         row.prop(flags, "time_flags_end", text="to")
         row = self.layout.row()
         row.operator(self.clear_operator)
+
+
+def statusbar_draw_sollumz_version(header, context):
+    from .meta import sollumz_version
+    layout = header.layout.row(align=True)
+    layout.label(text=sollumz_version(), icon_value=icon_manager.get_icon("sollumz_icon"))
+
+
+def statusbar_register_draw():
+    STATUSBAR_HT_header.append(statusbar_draw_sollumz_version)
+
+
+def statusbar_unregister_draw():
+    STATUSBAR_HT_header.remove(statusbar_draw_sollumz_version)
+
+
+def register():
+    statusbar_unregister_draw()
+    if get_addon_preferences().show_version_in_statusbar:
+        statusbar_register_draw()
+
+
+def unregister():
+    statusbar_unregister_draw()

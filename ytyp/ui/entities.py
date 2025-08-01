@@ -38,7 +38,6 @@ def entities_filter_items(
 
             filter_flags[i] &= ~_BITFLAG_FILTER_ITEM
 
-
     return filter_flags, filter_order
 
 
@@ -76,12 +75,15 @@ class SOLLUMZ_PT_MLO_ENTITY_LIST_PANEL(MloChildTabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
 
-        list_col, _ = multiselect_ui_draw_list(
+        list_col, side_col = multiselect_ui_draw_list(
             self.layout, selected_archetype.entities,
             "sollumz.createmloentity", "sollumz.deletemloentity",
             SOLLUMZ_UL_ENTITIES_LIST, SOLLUMZ_MT_entities_list_context_menu,
-            "tool_panel"
+            "tool_panel",
         )
+
+        side_col.separator()
+        side_col.prop(context.scene, "sz_sync_mlo_entities_selection", icon="UV_SYNC_SELECT", text="", toggle=True)
 
         filter_type = context.scene.sollumz_entity_filter_type
 

@@ -105,7 +105,8 @@ def duplicate_object_with_children(obj):
         new_obj = o.copy()
         new_obj.animation_data_clear()
         new_objs.append(new_obj)
-    for i in range(len(objs)):
+    new_objs[0].parent = None
+    for i in range(1, len(objs)):
         if objs[i].parent:
             new_objs[i].parent = new_objs[objs.index(objs[i].parent)]
     for new_obj in new_objs:

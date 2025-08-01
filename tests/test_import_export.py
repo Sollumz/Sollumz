@@ -3,7 +3,6 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from pathlib import Path
 from xml.etree import ElementTree as ET
-from .test_fixtures import fps_dependent
 from .shared import is_tmp_dir_available, tmp_path as tmp_path_with_subdir, glob_assets, asset_path
 from ..ydr.ydrimport import import_ydr
 from ..ydr.ydrexport import export_ydr

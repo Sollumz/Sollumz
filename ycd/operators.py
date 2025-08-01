@@ -1068,9 +1068,9 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
                 pos = rects_pos[i]
                 color = rects_color[i]
                 if len(pos) > 0:
-                    batch = gpu_extras.batch.batch_for_shader(self._render_color_shader, "LINES",
+                    batch = gpu_extras.batch.batch_for_shader(self._render_color_line_shader, "LINES",
                                                               {"pos": pos, "color": color})
-                    batch.draw(self._render_color_shader)
+                    batch.draw(self._render_color_line_shader)
                     pos.clear()
                     color.clear()
 
@@ -1157,6 +1157,10 @@ class SOLLUMZ_OT_uv_sprite_sheet_anim(SOLLUMZ_OT_base, bpy.types.Operator):
 
         self._space = context.space_data
         self._render_color_shader = gpu.shader.from_builtin("FLAT_COLOR")
+        if bpy.app.version >= (4, 5, 0):
+            self._render_color_line_shader = gpu.shader.from_builtin("POLYLINE_FLAT_COLOR")
+        else:
+            self._render_color_line_shader = self._render_color_shader
         self._render_image_shader = gpu.shader.from_builtin("IMAGE")
         self._render_image_texture = gpu.texture.from_image(self._image)
         img_w, img_h = self._image.size

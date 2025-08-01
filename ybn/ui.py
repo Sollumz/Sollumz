@@ -46,6 +46,10 @@ class SOLLUMZ_PT_COL_MAT_PROPERTIES_PANEL(bpy.types.Panel):
         grid = self.layout.grid_flow(columns=2, even_columns=True, even_rows=True)
         grid.prop(mat.collision_properties, "procedural_id")
         grid.prop(mat.collision_properties, "room_id")
+        if mat.collision_properties.check_room_id_enum_available(context):
+            row = grid.row().split(factor=0.4)
+            row.row()  # empty space on the left
+            row.row().prop(mat.collision_properties, "room_id_enum", text="")
         grid.prop(mat.collision_properties, "ped_density")
         grid.prop(mat.collision_properties, "material_color_index")
 
@@ -109,6 +113,7 @@ class SOLLUMZ_PT_BOUND_SHAPE_PANEL(bpy.types.Panel):
             case _:
                 pass
 
+
 class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
     bl_label = "Composite Flags"
     bl_idname = "SOLLUMZ_PT_BOUND_FLAGS_PANEL"
@@ -170,15 +175,10 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         name = collisionmats[item.index].ui_name
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=name, icon="MATERIAL")
-            favorite_icon = "SOLO_ON" if item.favorite else "SOLO_OFF"
-            row.prop(item, "favorite", text="", toggle=True, emboss=False, icon=favorite_icon)
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=name, emboss=False, icon="MATERIAL")
+        row = layout.row()
+        row.label(text=name, icon="MATERIAL")
+        favorite_icon = "SOLO_ON" if item.favorite else "SOLO_OFF"
+        row.prop(item, "favorite", text="", toggle=True, emboss=False, icon=favorite_icon)
 
     def draw_filter(self, context, layout):
         row = layout.row()
@@ -233,13 +233,8 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        if self.layout_type in {"DEFAULT", "COMPACT"}:
-            row = layout.row()
-            row.label(text=item.name, icon="BOOKMARKS")
-        elif self.layout_type in {"GRID"}:
-            layout.alignment = "CENTER"
-            layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="BOOKMARKS")
+        row = layout.row()
+        row.label(text=item.name, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):

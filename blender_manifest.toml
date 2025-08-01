@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "sollumz_dev"
-version = "2.7.1-dev+$Format:%h$"
+version = "2.7.2-dev+$Format:%h$"
 name = "Sollumz (Development)"
 tagline = "Grand Theft Auto V modding suite for Blender"
 maintainer = "alexguirre <alexguirre.aa@gmail.com>"

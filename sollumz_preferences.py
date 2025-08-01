@@ -227,6 +227,8 @@ class SollumzThemeSettings(PropertyGroup):
     mlo_gizmo_portal_selected: RGBAProperty("Portal Selected", (0.93, 1.0, 1.0, 0.7))
     mlo_gizmo_portal_direction: RGBAProperty("Portal Direction Arrow", (0.0, 0.6, 1.0, 0.3))
     mlo_gizmo_portal_direction_size: FloatProperty(name="Portal Direction Arrow Size", default=0.3, min=0.1, max=5.0)
+    mlo_gizmo_tcm: RGBAProperty("Timecycle Modifier", (0.45, 0.98, 0.55, 0.5))
+    mlo_gizmo_tcm_selected: RGBAProperty("Timecycle Modifier Selected", (0.93, 1.0, 1.0, 0.7))
 
     cable_overlay_radius: RGBAProperty("Radius", (1.0, 0.0, 0.0, 1.0))
 
@@ -373,6 +375,20 @@ class SzFavoriteEntry(PropertyGroup):
 class SollumzAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
+    def _on_show_version_update(self, context):
+        _save_preferences_on_update(self, context)
+        from .sollumz_ui import statusbar_register_draw, statusbar_unregister_draw
+        statusbar_unregister_draw()
+        if self.show_version_in_statusbar:
+            statusbar_register_draw()
+
+    show_version_in_statusbar: BoolProperty(
+        name="Show Sollumz Version in Status Bar",
+        description="Show the Sollumz version next to the Blender version in the status bar",
+        default=True,
+        update=_on_show_version_update
+    )
+
     show_vertex_painter: BoolProperty(
         name="Show Vertex Painter",
         description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)",
@@ -435,6 +451,13 @@ class SollumzAddonPreferences(AddonPreferences):
         name="Default Archetype Flags",
         description="The default flags for archetypes",
         default=0,
+        update=_save_preferences_on_update
+    )
+
+    default_sync_selection_enabled: BoolProperty(
+        name="Selection Sync Enabled by Default",
+        description="Enable archetype/entity selection sync by default in new scenes. Requires restart to take effect",
+        default=True,
         update=_save_preferences_on_update
     )
 
@@ -561,6 +584,7 @@ class SollumzAddonPreferences(AddonPreferences):
     def draw_general(self, context, layout: UILayout):
         layout.prop(self, "use_text_name_as_mat_name")
         layout.prop(self, "shader_preset_apply_textures")
+        layout.prop(self, "default_sync_selection_enabled")
 
         col = layout.column(align=True)
         col.prop(self, "default_flags_portal", text="Default Flags for Portals")
@@ -670,6 +694,7 @@ class SollumzAddonPreferences(AddonPreferences):
                 _line_separator(layout)
 
     def draw_ui(self, context, layout: UILayout):
+        layout.prop(self, "show_version_in_statusbar")
         layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")
@@ -695,6 +720,8 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "mlo_gizmo_portal_selected")
         layout.prop(theme, "mlo_gizmo_portal_direction")
         layout.prop(theme, "mlo_gizmo_portal_direction_size")
+        layout.prop(theme, "mlo_gizmo_tcm")
+        layout.prop(theme, "mlo_gizmo_tcm_selected")
 
         _section_header(layout, "Cable Overlays", "OUTLINER_DATA_GREASEPENCIL")
         layout.prop(theme, "cable_overlay_radius")
@@ -708,7 +735,7 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw_about(self, context, layout: UILayout):
         row = layout.row()
-        row.operator("wm.url_open", text="Discord", icon="COMMUNITY").url = "https://discord.gg/bZuWBWaQBg"
+        row.operator("wm.url_open", text="Discord", icon="COMMUNITY").url = "https://discord.sollumz.org/"
         row.operator("wm.url_open", text="Documentation", icon="HELP").url = "https://docs.sollumz.org/"
         row.operator("wm.url_open", text="Issue Tracker", icon="URL").url = "https://github.com/Sollumz/Sollumz/issues"
 
@@ -788,19 +815,19 @@ def _line_separator(layout: UILayout, factor: float = 1.0):
 
 
 def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> SollumzAddonPreferences:
-    return context.preferences.addons[__package__].preferences
+    return (context or bpy.context).preferences.addons[__package__].preferences
 
 
 def get_import_settings(context: Optional[bpy.types.Context] = None) -> SollumzImportSettings:
-    return get_addon_preferences(context or bpy.context).import_settings
+    return get_addon_preferences(context).import_settings
 
 
 def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzExportSettings:
-    return get_addon_preferences(context or bpy.context).export_settings
+    return get_addon_preferences(context).export_settings
 
 
 def get_theme_settings(context: Optional[bpy.types.Context] = None) -> SollumzThemeSettings:
-    return get_addon_preferences(context or bpy.context).theme
+    return get_addon_preferences(context).theme
 
 
 def _save_preferences():

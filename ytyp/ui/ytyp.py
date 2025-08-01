@@ -108,13 +108,16 @@ class SOLLUMZ_PT_ARCHETYPE_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        list_col, _ = multiselect_ui_draw_list(
+        list_col, side_col = multiselect_ui_draw_list(
             self.layout,
             selected_ytyp.archetypes,
             "sollumz.createarchetype", "sollumz.deletearchetype",
             SOLLUMZ_UL_ARCHETYPE_LIST, SOLLUMZ_MT_archetype_list_context_menu,
             "tool_panel"
         )
+
+        side_col.separator()
+        side_col.prop(context.scene, "sz_sync_archetypes_selection", icon="UV_SYNC_SELECT", text="", toggle=True)
 
         row = list_col.row()
         row.operator("sollumz.createarchetypefromselected", icon="FILE_REFRESH")

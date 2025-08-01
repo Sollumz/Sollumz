@@ -280,7 +280,7 @@ def is_non_color_texture(shader_filename: str, param_name: str):
     return (
         "Bump" in param_name or  # ...to normal maps
         param_name == "distanceMapSampler" or  # ...to distance maps
-        (shader_filename == "decal_dirt.sps" and param_name == "DiffuseSampler") # ...to shadow maps
+        (shader_filename in {"decal_dirt.sps", "decal_amb_only.sps"} and param_name == "DiffuseSampler") # ...to shadow maps
     )
 
 

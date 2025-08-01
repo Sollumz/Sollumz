@@ -12,6 +12,11 @@ import gpu
 from gpu_extras import batch
 from ..sollumz_preferences import get_theme_settings
 
+if bpy.app.version >= (4, 5, 0):
+    POINT_UNIFORM_COLOR_SHADER_NAME = "POINT_UNIFORM_COLOR"
+else:
+    POINT_UNIFORM_COLOR_SHADER_NAME = "UNIFORM_COLOR"
+
 
 # class ClothCharDiagMeshBinding(NamedTuple):
 #    co: Vector
@@ -115,7 +120,7 @@ class ClothDiagnostics:
                 self._mesh_material_errors_batch.draw(shader)
 
         if ClothDiagnosticsOverlayFlags.BINDING_ERRORS in flags and mesh_binding_errors:
-            shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+            shader = gpu.shader.from_builtin(POINT_UNIFORM_COLOR_SHADER_NAME)
             if self._mesh_binding_errors_batch is None:
                 self._mesh_binding_errors_batch = batch.batch_for_shader(
                     shader, "POINTS", {"pos": [e.co for e in mesh_binding_errors]})

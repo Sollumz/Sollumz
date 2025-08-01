@@ -59,7 +59,7 @@ We'll review your pull request, provide feedback, and work with you to get it me
 
 1. Clone this repository:
    ```ps
-   > git clone https://github.com/Skylumz/Sollumz.git
+   > git clone https://github.com/Sollumz/Sollumz.git
    > cd Sollumz
    ```
 2. Install Sollumz as a Blender addon. It is recommend to create a symbolic link in the addons directory, so your changes are picked automatically when restarting Blender:
@@ -133,8 +133,8 @@ We try to follow [Conventional Commits][conventional_commits] to make it easier 
 
 By contributing to this project, you agree that your contributions will be licensed under the [project's license](LICENSE).
 
-[discord_server]: https://discord.gg/bZuWBWaQBg
-[issue_tracker]: https://github.com/Skylumz/Sollumz/issues
-[wiki]: https://sollumz.gitbook.io/sollumz-wiki/
+[discord_server]: https://discord.sollumz.org/
+[issue_tracker]: https://github.com/Sollumz/Sollumz/issues
+[wiki]: https://docs.sollumz.org/
 [wiki_repo]: https://github.com/Sollumz/wiki
 [conventional_commits]: https://www.conventionalcommits.org/en/v1.0.0/

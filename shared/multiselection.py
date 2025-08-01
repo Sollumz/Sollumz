@@ -436,6 +436,9 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
                     is_filtered_out = filtered_items and not filtered_items[i]
                     if not is_filtered_out:
                         self.selection_indices.add().index = i
+
+                if ui_callbacks:
+                    self.on_active_index_update_from_ui(bpy.context)
             case SelectMode.TOGGLE:
                 for i, s in enumerate(self.selection_indices):
                     if s.index == index:
@@ -467,6 +470,13 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
         is_active_item_filtered_out = filtered_items and not filtered_items[self.active_index]
         if is_active_item_filtered_out and len(self.selection_indices) > 0:
             self.active_index = self.selection_indices[0].index
+
+    def select_many(self, item_indices: Sequence[int]):
+        """Select multiple items by index. First item becomes the active item."""
+        self.selection_indices.clear()
+        for i in item_indices:
+            self.selection_indices.add().index = i
+        self.active_index = self.selection_indices[0].index
 
 
 class MultiSelectOperatorBase:

@@ -2,6 +2,7 @@ import bpy
 from bpy.props import (
     BoolProperty
 )
+from typing import TYPE_CHECKING
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
@@ -10,6 +11,9 @@ from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, crea
 from ..tools.blenderhelper import tag_redraw
 from mathutils import Vector, Matrix
 import os
+
+if TYPE_CHECKING:
+    from ..ytyp.properties.mlo import ArchetypeProperties
 
 
 class CollisionMatFlags(bpy.types.PropertyGroup):
@@ -77,13 +81,63 @@ def get_collision_mat_raw_flags(f: CollisionMatFlags) -> tuple[int, int]:
     # fmt: on
     return flags_lo, flags_hi
 
+_collision_material_room_items_refs = {}
+_collision_material_mlo_archetype_cache = {} # [material name] -> (ytyp index, archetype index)
 
 class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
     collision_index: bpy.props.IntProperty(name="Collision Index", default=0)
     procedural_id: bpy.props.IntProperty(name="Procedural ID", default=0)
-    room_id: bpy.props.IntProperty(name="Room ID", default=0)
+    room_id: bpy.props.IntProperty(name="Room ID", default=0, min=0)
     ped_density: bpy.props.IntProperty(name="Ped Density", default=0)
     material_color_index: bpy.props.IntProperty(name="Material Color Index", default=0)
+
+    def check_room_id_enum_available(self, context) -> bool:
+        """Call this before using the `room_id_enum` property."""
+        return self._find_mlo_archetype_for_active_object(context, False) is not None
+
+    def _find_mlo_archetype_for_active_object(self, context, lookup_cache: bool) -> "ArchetypeProperties | None":
+        if lookup_cache:
+            if (idx_pair := _collision_material_mlo_archetype_cache.get(self.id_data.name, None)) is not None:
+                ytyp_idx, archetype_idx = idx_pair
+                return context.scene.ytyps[ytyp_idx].archetypes[archetype_idx]
+            else:
+                return None
+
+        from ..sollumz_helper import find_sollumz_parent
+        # It is possible to have a mismatch here between the active object and the object that actually uses this
+        # collision material, but this should only be called from the UI where we use the active material of the
+        # active object, so should be ok in most cases.
+        # There isn't really a quick way to get the object from material, and there can be multiple objects using this
+        # material anyways (hopefully not in separate MLOs).
+        bound_obj = context.active_object
+        composite_obj = find_sollumz_parent(bound_obj, SollumType.BOUND_COMPOSITE)
+        if not composite_obj:
+            return None
+
+        for ytyp_idx, ytyp in enumerate(context.scene.ytyps):
+            if (archetype_idx := ytyp.find_mlo_archetype_index_with_asset(composite_obj)) is not None:
+                _collision_material_mlo_archetype_cache[self.id_data.name] = ytyp_idx, archetype_idx
+                return ytyp.archetypes[archetype_idx]
+
+        return None
+
+    def _get_room_items(self, context) -> list:
+        mlo = self._find_mlo_archetype_for_active_object(context, True)
+        if not mlo:
+            return []
+        from ..ytyp.properties.mlo import get_room_items_for_archetype
+        items = get_room_items_for_archetype(mlo)
+        items = [(name, f"{idx - 1} | {label}", desc, idx - 1) for idx, (name, label, desc, value) in enumerate(items) if idx > 0]
+        _collision_material_room_items_refs[mlo.uuid] = items  # need to keep a reference to the array on Python side while Blender uses it
+        return items
+
+    def _get_room(self) -> int:
+        return self.room_id
+
+    def _set_room(self, value: int):
+        self.room_id = value if value >= 0 else 0
+
+    room_id_enum: bpy.props.EnumProperty(name="Room ID", items=_get_room_items, get=_get_room, set=_set_room, default=0)
 
 
 class BoundFlags(bpy.types.PropertyGroup):
@@ -480,3 +534,6 @@ def unregister():
     del bpy.types.WindowManager.sz_create_bound_box_parent
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
+
+    _collision_material_room_items_refs.clear()
+    _collision_material_mlo_archetype_cache.clear()

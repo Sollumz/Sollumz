@@ -290,7 +290,7 @@ class SOLLUMZ_PT_POSE_BONE_ANIMATION_TRACKS(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         p_bone = context.active_pose_bone
-        return p_bone is not None and p_bone.parent is None # only root bone
+        return p_bone is not None and p_bone.parent is None  # only root bone
 
     def draw(self, context):
         layout = self.layout
@@ -653,7 +653,6 @@ class ClipTagsOnTimelineDrawHandler:
 
             num_visible_tags += 1
 
-        gpu.state.line_width_set(3)
         gpu.state.blend_set("ALPHA")
 
         shader_smooth_color = gpu.shader.from_builtin("SMOOTH_COLOR")
@@ -663,6 +662,9 @@ class ClipTagsOnTimelineDrawHandler:
         })
         batch.draw(shader_smooth_color)
 
+        if bpy.app.version >= (4, 5, 0):
+            shader_smooth_color = gpu.shader.from_builtin("POLYLINE_SMOOTH_COLOR")
+        gpu.state.line_width_set(3)
         batch = gpu_extras.batch.batch_for_shader(shader_smooth_color, "LINES", {
             "pos": self.marker_verts_pos[:num_visible_tags * 12],
             "color": self.marker_verts_color[:num_visible_tags * 12]
