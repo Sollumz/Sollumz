@@ -15,8 +15,11 @@ class NavMeshAttr(str, Enum):
     # See mesh_get/set_navmesh_poly_attributes for info on these attributes.
     POLY_DATA_0 = ".navmesh.poly_data0"
     POLY_DATA_1 = ".navmesh.poly_data1"
+    POLY_DATA_2 = ".navmesh.poly_data2"
 
-    EDGE_EXTERNAL_POLY = ".navmesh.edge_external_poly"
+    EDGE_DATA_0 = ".navmesh.edge_data0"
+    EDGE_DATA_1 = ".navmesh.edge_data1"
+    EDGE_ADJACENT_POLY = ".navmesh.edge_adjacent_poly"
 
     @property
     def type(self):
@@ -25,9 +28,11 @@ class NavMeshAttr(str, Enum):
     @property
     def domain(self):
         match self:
-            case NavMeshAttr.POLY_DATA_0 | NavMeshAttr.POLY_DATA_1:
+            case NavMeshAttr.POLY_DATA_0 | NavMeshAttr.POLY_DATA_1 | NavMeshAttr.POLY_DATA_2:
                 return "FACE"
-            case NavMeshAttr.EDGE_EXTERNAL_POLY:
+            case NavMeshAttr.EDGE_DATA_0 | NavMeshAttr.EDGE_DATA_1 | NavMeshAttr.EDGE_ADJACENT_POLY:
+                 # TODO: these should probably be on FACE_CORNER instead, but currently we don't merge vertices so each
+                 # polygon has its own edges not shared so should be fine for now
                 return "EDGE"
             case _:
                 assert False, f"Domain not set for navmesh attribute '{self}'"
@@ -52,7 +57,7 @@ class NavPolyCoverDirections(NamedTuple):
     dir7: bool  # +X +Y
 
 
-@dataclass
+@dataclass(slots=True)
 class NavPolyAttributes:
     is_small: bool
     is_large: bool
@@ -72,6 +77,17 @@ class NavPolyAttributes:
     audio_reverb_size: int  # 2 bits, 0..3
     audio_reverb_wet: int  # 2 bits, 0..3
     ped_density: int  # 3 bits, 0..7
+    is_dlc_stitch: bool
+
+
+@dataclass(slots=True)
+class NavEdgeAttributes:
+    data00: int
+    data01: int
+    data10: int
+    data11: int
+    adjacent_poly_area: int
+    adjacent_poly_index: int
 
 
 def mesh_get_navmesh_poly_attributes(mesh: Mesh, poly_idx: int) -> NavPolyAttributes:
@@ -81,20 +97,25 @@ def mesh_get_navmesh_poly_attributes(mesh: Mesh, poly_idx: int) -> NavPolyAttrib
 
         data0_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_0]
         data1_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_1]
+        data2_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_2]
 
         data0 = 0 if data0_layer is None else bm.faces[poly_idx][data0_layer]
         data1 = 0 if data1_layer is None else bm.faces[poly_idx][data1_layer]
+        data2 = 0 if data2_layer is None else bm.faces[poly_idx][data2_layer]
     else:
         data0_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_0, None)
         data1_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_1, None)
+        data2_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_2, None)
 
         data0 = 0 if data0_attr is None else data0_attr.data[poly_idx].value
         data1 = 0 if data1_attr is None else data1_attr.data[poly_idx].value
+        data2 = 0 if data2_attr is None else data2_attr.data[poly_idx].value
 
     flags0 = data0 & 0xFF
     flags1 = (data0 >> 8) & 0xFF
     flags2 = data1 & 0xFF
     flags3 = (data1 >> 8) & 0xFF
+    flags4 = data2 & 0xFF
 
     return NavPolyAttributes(
         is_small=(flags0 & 1) != 0,
@@ -119,7 +140,9 @@ def mesh_get_navmesh_poly_attributes(mesh: Mesh, poly_idx: int) -> NavPolyAttrib
 
         cover_directions=NavPolyCoverDirections(
             *((flags3 & (1 << i)) != 0 for i in range(8))
-        )
+        ),
+
+        is_dlc_stitch=(flags4 & 1) != 0,
     )
 
 
@@ -150,8 +173,12 @@ def mesh_set_navmesh_poly_attributes(mesh: Mesh, poly_idx: int, poly_attrs: NavP
     for i in range(8):
         flags3 |= (1 << i) if poly_attrs.cover_directions[i] else 0
 
+    flags4 = 0
+    flags4 |= 1 if poly_attrs.is_dlc_stitch else 0
+
     data0 = flags0 | (flags1 << 8)
     data1 = flags2 | (flags3 << 8)
+    data2 = flags4
 
     # TODO: add attributes if they don't exist in the mesh
     if mesh.is_editmode:
@@ -160,19 +187,89 @@ def mesh_set_navmesh_poly_attributes(mesh: Mesh, poly_idx: int, poly_attrs: NavP
 
         data0_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_0]
         data1_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_1]
+        data2_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_2]
 
         if data0_layer is not None:
             bm.faces[poly_idx][data0_layer] = data0
         if data1_layer is not None:
             bm.faces[poly_idx][data1_layer] = data1
+        if data2_layer is not None:
+            bm.faces[poly_idx][data2_layer] = data2
     else:
         data0_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_0, None)
         data1_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_1, None)
+        data2_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_2, None)
 
         if data0_attr is not None:
             data0_attr.data[poly_idx].value = data0
         if data1_attr is not None:
             data1_attr.data[poly_idx].value = data1
+        if data2_attr is not None:
+            data2_attr.data[poly_idx].value = data2
+
+
+def mesh_get_navmesh_edge_attributes(mesh: Mesh, edge_idx: int) -> NavEdgeAttributes:
+    if mesh.is_editmode:
+        bm = bmesh.from_edit_mesh(mesh)
+        bm.edges.ensure_lookup_table()
+
+        data0_layer = bm.edges.layers.int[NavMeshAttr.EDGE_DATA_0]
+        data1_layer = bm.edges.layers.int[NavMeshAttr.EDGE_DATA_1]
+        adj_poly_layer = bm.edges.layers.int[NavMeshAttr.EDGE_ADJACENT_POLY]
+
+        data0 = 0 if data0_layer is None else bm.edges[edge_idx][data0_layer]
+        data1 = 0 if data1_layer is None else bm.edges[edge_idx][data1_layer]
+        adj_poly = 0 if adj_poly_layer is None else bm.edges[edge_idx][adj_poly_layer]
+    else:
+        data0_attr = mesh.attributes.get(NavMeshAttr.EDGE_DATA_0, None)
+        data1_attr = mesh.attributes.get(NavMeshAttr.EDGE_DATA_1, None)
+        adj_poly_attr = mesh.attributes.get(NavMeshAttr.EDGE_ADJACENT_POLY, None)
+
+        data0 = 0 if data0_attr is None else data0_attr.data[edge_idx].value
+        data1 = 0 if data1_attr is None else data1_attr.data[edge_idx].value
+        adj_poly = 0 if adj_poly_attr is None else adj_poly_attr.data[edge_idx].value
+
+    return NavEdgeAttributes(
+        data00=data0 & 0xFFFF,
+        data01=(data0 >> 16) & 0xFFFF,
+        data10=data1 & 0xFFFF,
+        data11=(data1 >> 16) & 0xFFFF,
+        adjacent_poly_area=adj_poly & 0xFFFF,
+        adjacent_poly_index=(adj_poly >> 16) & 0xFFFF,
+    )
+
+
+def mesh_set_navmesh_edge_attributes(mesh: Mesh, edge_idx: int, edge_attrs: NavEdgeAttributes):
+    data0 = (edge_attrs.data00 & 0xFFFF) | ((edge_attrs.data01 << 16) & 0xFFFF0000)
+    data1 = (edge_attrs.data10 & 0xFFFF) | ((edge_attrs.data11 << 16) & 0xFFFF0000)
+    adj_poly = (edge_attrs.adjacent_poly_area & 0xFFFF) | ((edge_attrs.adjacent_poly_index << 16) & 0xFFFF0000)
+
+    # TODO: add attributes if they don't exist in the mesh
+    if mesh.is_editmode:
+        bm = bmesh.from_edit_mesh(mesh)
+        bm.edges.ensure_lookup_table()
+
+        data0_layer = bm.edges.layers.int[NavMeshAttr.EDGE_DATA_0]
+        data1_layer = bm.edges.layers.int[NavMeshAttr.EDGE_DATA_1]
+        adj_poly_layer = bm.edges.layers.int[NavMeshAttr.EDGE_ADJACENT_POLY]
+
+        if data0_layer is not None:
+            bm.edges[edge_idx][data0_layer] = data0
+        if data1_layer is not None:
+            bm.edges[edge_idx][data1_layer] = data1
+        if adj_poly_layer is not None:
+            bm.edges[edge_idx][adj_poly_layer] = adj_poly
+    else:
+        data0_attr = mesh.attributes.get(NavMeshAttr.EDGE_DATA_0, None)
+        data1_attr = mesh.attributes.get(NavMeshAttr.EDGE_DATA_1, None)
+        adj_poly_attr = mesh.attributes.get(NavMeshAttr.EDGE_ADJACENT_POLY, None)
+
+        if data0_attr is not None:
+            data0_attr.data[edge_idx].value = data0
+        if data1_attr is not None:
+            data1_attr.data[edge_idx].value = data1
+        if adj_poly_attr is not None:
+            adj_poly_attr.data[edge_idx].value = adj_poly
 
 
 #
@@ -219,6 +316,8 @@ def mesh_set_navmesh_poly_attributes(mesh: Mesh, poly_idx: int, poly_attrs: NavP
 #   CoverDir6 = 64
 #   CoverDir7 = 128
 #
+# Flag4
+#   IsDlcStitchPoly = 1
 #
 # +++++++++++++ POLY FLAGS +++++++++++++++
 #

@@ -73,6 +73,7 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
         grid.prop(poly_access, "is_network_spawn_candidate")
         grid.prop(poly_access, "is_isolated")
         grid.prop(poly_access, "lies_along_edge")
+        grid.prop(poly_access, "is_dlc_stitch")
 
         col = layout.column(align=True)
         col.prop(poly_access, "audio_reverb_size", slider=True)
@@ -95,6 +96,56 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
         row.prop(poly_access, "cover_directions", index=1, toggle=True, text="-X +Y")
 
 
+class SOLLUMZ_PT_NAVMESH_EDGE_ATTRS_PANEL(bpy.types.Panel):
+    bl_label = "Edge Attributes"
+    bl_idname = "SOLLUMZ_PT_NAVMESH_EDGE_ATTRS_PANEL"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_NAVMESH_PANEL.bl_idname
+    bl_order = 2
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        navmesh_obj = context.active_object
+        mesh = navmesh_obj.data
+
+        edge_access = mesh.sz_navmesh_edge_access
+
+        active_edge = edge_access.active_edge
+        selected_edges = list(edge_access.selected_edges)
+        layout.alignment = "RIGHT"
+        layout.label(
+            text=f"Edge #{active_edge} (+ {len(selected_edges)} selected)"
+                 if len(selected_edges) > 0
+                 else f"Edge #{active_edge}"
+        )
+
+        split = layout.split(factor=0.4)
+        row = split.row()
+        row.alignment = "RIGHT"
+        row.label(text="Data 0")
+        row = split.row(align=True)
+        row.prop(edge_access, "data00", text="")
+        row.prop(edge_access, "data01", text="")
+
+        split = layout.split(factor=0.4)
+        row = split.row()
+        row.alignment = "RIGHT"
+        row.label(text="Data 1")
+        row = split.row(align=True)
+        row.prop(edge_access, "data10", text="")
+        row.prop(edge_access, "data11", text="")
+
+        col = layout.column(align=True)
+        col.prop(edge_access, "adjacent_poly_area")
+        col.prop(edge_access, "adjacent_poly_index", text="Index")
+
+
 class SOLLUMZ_PT_NAVMESH_POLY_RENDER_PANEL(bpy.types.Panel):
     bl_label = "Polygon Render"
     bl_idname = "SOLLUMZ_PT_NAVMESH_POLY_RENDER_PANEL"
@@ -103,7 +154,7 @@ class SOLLUMZ_PT_NAVMESH_POLY_RENDER_PANEL(bpy.types.Panel):
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_NAVMESH_PANEL.bl_idname
-    bl_order = 2
+    bl_order = 3
 
     def draw(self, context):
         layout = self.layout

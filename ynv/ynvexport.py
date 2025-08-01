@@ -78,7 +78,7 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         navmesh_xml.bb_size = cell_max - cell_min
         navmesh_xml.area_id = navmesh_grid_get_cell_index(cell_x, cell_y)
 
-    navmesh_xml.polygons, has_water = polygons_from_object(navmesh_obj)
+    navmesh_xml.polygons, has_water, is_dlc = polygons_from_object(navmesh_obj)
 
     links_obj = None
     cover_points_obj = None
@@ -113,8 +113,8 @@ def navmesh_from_object(navmesh_obj: Object) -> Optional[NavMesh]:
         content_flags.append("Vehicle")
     if has_water:
         content_flags.append("Unknown8")
-    # if is_dlc:
-    #     content_flags.append("Unknown16")
+    if is_dlc:
+        content_flags.append("Unknown16")
     navmesh_xml.content_flags = ", ".join(content_flags)
 
     return navmesh_xml
@@ -188,13 +188,19 @@ def polygons_from_object(navmesh_obj: Object) -> tuple[list[NavPolygon], bool]:
 
     polygons_xml = []
     has_water = False
+    is_dlc = False
     navmesh_obj_eval = get_evaluated_obj(navmesh_obj)
     mesh = navmesh_obj_eval.to_mesh()
-    mesh_edge_adjacency = navmesh_compute_edge_adjacency(mesh)
+    # Disabled, manually stored in attributes for now
+    # mesh_edge_adjacency = navmesh_compute_edge_adjacency(mesh)
 
     mesh_verts = mesh.vertices
     poly_data0 = mesh.attributes[NavMeshAttr.POLY_DATA_0].data  # TODO: validate that attrs exist
     poly_data1 = mesh.attributes[NavMeshAttr.POLY_DATA_1].data
+    poly_data2 = mesh.attributes[NavMeshAttr.POLY_DATA_2].data
+    edge_data0 = mesh.attributes[NavMeshAttr.EDGE_DATA_0].data
+    edge_data1 = mesh.attributes[NavMeshAttr.EDGE_DATA_1].data
+    edge_adjacent_poly = mesh.attributes[NavMeshAttr.EDGE_ADJACENT_POLY].data
     for poly in mesh.polygons:
         poly_verts = [mesh_verts[v].co for v in poly.vertices]
 
@@ -217,30 +223,55 @@ def polygons_from_object(navmesh_obj: Object) -> tuple[list[NavPolygon], bool]:
         compressed_centroid_x = min(max(compressed_centroid_x, 0), 255)
         compressed_centroid_y = min(max(compressed_centroid_y, 0), 255)
 
-        adjacent_polys = navmesh_poly_get_adjacent_polys_local(mesh, poly.index, mesh_edge_adjacency)
-        adjacent_polys_with_cell_index = [
-            (NAVMESH_ADJACENCY_INDEX_NONE, NAVMESH_ADJACENCY_INDEX_NONE)
-            if poly_idx == NAVMESH_ADJACENCY_INDEX_NONE else (cell_index, poly_idx)
-            for poly_idx in adjacent_polys
-        ]
+        # adjacent_polys = navmesh_poly_get_adjacent_polys_local(mesh, poly.index, mesh_edge_adjacency)
+        # adjacent_polys_with_cell_index = [
+        #    (NAVMESH_ADJACENCY_INDEX_NONE, NAVMESH_ADJACENCY_INDEX_NONE)
+        #    if poly_idx == NAVMESH_ADJACENCY_INDEX_NONE else (cell_index, poly_idx)
+        #    for poly_idx in adjacent_polys
+        # ]
+        # Not calculating edge adjacency, get it from the attribute
+        assert len(poly.edge_keys) == len(poly.vertices)
+        edge_flags = []
+        adjacent_polys_with_cell_index = []
+        for v in poly.vertices:  # Currently every vertex has its own edge, so there should same number of vertices and edges
+            edata0 = edge_data0[v].value
+            edata00 = edata0 & 0xFFFF
+            edata01 = (edata0 >> 16) & 0xFFFF
+            edata1 = edge_data1[v].value
+            edata10 = edata1 & 0xFFFF
+            edata11 = (edata1 >> 16) & 0xFFFF
+            eadj_poly = edge_adjacent_poly[v].value
+            edge_flags.append((edata00, edata01, edata10, edata11))
+            adjacent_polys_with_cell_index.append((eadj_poly & 0xFFFF, (eadj_poly >> 16) & 0xFFFF))
 
         data0 = poly_data0[poly.index].value
         data1 = poly_data1[poly.index].value
+        data2 = poly_data2[poly.index].value
         flag0 = data0 & 0xFF
         flag1 = (data0 >> 8) & 0xFF
         flag2 = data1 & 0xFF
         flag3 = (data1 >> 8) & 0xFF
-        flag4 = 0  # is zero area dlc stitch poly
+        flag4 = data2 & 1  # is zero area dlc stitch poly
 
         if (flag0 & 128) != 0:
             has_water = True
 
+        if (flag4 & 1) != 0:
+            is_dlc = True
+
+        if (flag4 & 1) != 0 and len(poly_verts) == 3:
+            # Remove the extra vertex that was added to DLC stitch poly so they could form a polygon in the blender mesh
+            poly_verts.pop()
+            adjacent_polys_with_cell_index.pop()
+            edge_flags.pop()
+
         poly_xml = NavPolygon()
         poly_xml.vertices = poly_verts
         poly_xml.edges = "\n".join(map(lambda e: f"{e[0]}:{e[1]}, {e[0]}:{e[1]}", adjacent_polys_with_cell_index))
+        poly_xml.edges_flags = "\n".join(map(lambda e: f"{e[0]}:{e[1]}, {e[2]}:{e[3]}", edge_flags))
         poly_xml.flags = f"{flag0} {flag1} {flag2} {flag3} {compressed_centroid_x} {compressed_centroid_y} {flag4}"
         polygons_xml.append(poly_xml)
 
     navmesh_obj_eval.to_mesh_clear()
 
-    return polygons_xml, has_water
+    return polygons_xml, has_water, is_dlc

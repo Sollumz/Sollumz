@@ -74,6 +74,7 @@ ALL_FLAGS = tuple(FlagRenderInfo(*args) for args in (
     ("is_network_spawn_candidate", 1, 1,     False, (0.15, 0.0, 0.0)),
     ("is_isolated",                0, 32768, False, (0.3, 0.0, 0.0)),
     ("lies_along_edge",            1, 4,     False, (0.3, 0.3, 0.3)),
+    ("is_dlc_stitch",              2, 1,     False, (1.0, 0.0, 0.0)),
 ))
 
 ALL_VALUES = tuple(ValueRenderInfo(*args) for args in (
@@ -87,7 +88,8 @@ def navmesh_material_shader_expr() -> expr.ShaderExpr:
     # round to avoid precision issues due to the shader interpolating values
     data0 = roundf(attribute(NavMeshAttr.POLY_DATA_0).fac)
     data1 = roundf(attribute(NavMeshAttr.POLY_DATA_1).fac)
-    data = (data0, data1)
+    data2 = roundf(attribute(NavMeshAttr.POLY_DATA_2).fac)
+    data = (data0, data1, data2)
 
     eps = 0.00001
 

@@ -23,6 +23,9 @@ from .navmesh_attributes import (
     mesh_get_navmesh_poly_attributes,
     mesh_set_navmesh_poly_attributes,
     NavPolyAttributes,
+    mesh_get_navmesh_edge_attributes,
+    mesh_set_navmesh_edge_attributes,
+    NavEdgeAttributes,
 )
 from . import navmesh_material
 
@@ -85,7 +88,85 @@ class NavLinkProps(PropertyGroup):
     poly_to: IntProperty(name="Poly To")
 
 
-# Helper functions for NavMeshSelectedPolyProps
+def _edge_attr_getter(attr_name: str):
+    def fn(self):
+        return getattr(self.active_edge_attributes, attr_name)
+
+    return fn
+
+
+def _edge_attr_setter(attr_name: str):
+    def fn(self, value):
+        mesh = self.mesh
+        for selected_edge in self.selected_edges:
+            attrs = mesh_get_navmesh_edge_attributes(mesh, selected_edge)
+            setattr(attrs, attr_name, value)
+            mesh_set_navmesh_edge_attributes(mesh, selected_edge, attrs)
+
+        active_edge = self.active_edge
+        attrs = mesh_get_navmesh_edge_attributes(mesh, active_edge)
+        setattr(attrs, attr_name, value)
+        mesh_set_navmesh_edge_attributes(mesh, active_edge, attrs)
+
+        mesh.update_tag()
+        tag_redraw(bpy.context, space_type="VIEW_3D", region_type="WINDOW")
+
+    return fn
+
+
+def EdgeIntAttr(name: str, attr_name: str, min: int, max: int):
+    return IntProperty(
+        name=name,
+        get=_edge_attr_getter(attr_name), set=_edge_attr_setter(attr_name),
+        min=min, max=max,
+    )
+
+
+class NavMeshEdgeAccessor(PropertyGroup):
+    """Property group to allow to access navmesh edge attributes from the UI."""
+
+    @property
+    def mesh(self) -> Mesh:
+        assert self.id_data is not None and self.id_data.id_type == "MESH"
+        return self.id_data
+
+    @property
+    def active_edge(self) -> int:
+        mesh = self.mesh
+        if mesh.is_editmode:
+            bm = bmesh.from_edit_mesh(mesh)
+            bm.edges.index_update()
+            return bm.select_history.active.index if bm.select_mode == {"EDGE"} and bm.select_history.active else 0
+        else:
+            return 0
+
+    @property
+    def selected_edges(self) -> Iterator[int]:
+        mesh = self.mesh
+        active_edge = self.active_edge
+        if mesh.is_editmode:
+            bm = bmesh.from_edit_mesh(mesh)
+            bm.edges.index_update()
+            for edge in bm.edges:
+                if edge.index != active_edge and edge.select:
+                    yield edge.index
+        else:
+            # if not in edit mode, don't return anything
+            pass
+
+    @property
+    def active_edge_attributes(self) -> NavEdgeAttributes:
+        return mesh_get_navmesh_edge_attributes(self.mesh, self.active_edge)
+
+    data00: EdgeIntAttr("Data 0-0", "data00", min=0, max=0xFFFF)
+    data01: EdgeIntAttr("Data 0-1", "data01", min=0, max=0xFFFF)
+    data10: EdgeIntAttr("Data 1-0", "data10", min=0, max=0xFFFF)
+    data11: EdgeIntAttr("Data 1-1", "data11", min=0, max=0xFFFF)
+    adjacent_poly_area: EdgeIntAttr("Adjacent Poly Area", "adjacent_poly_area", min=0, max=0xFFFF)
+    adjacent_poly_index: EdgeIntAttr("Adjacent Poly Index", "adjacent_poly_index", min=0, max=0xFFFF)
+
+
+# Helper functions for NavMeshPolyAccessor
 def _attr_getter(attr_name: str):
     def fn(self):
         return getattr(self.active_poly_attributes, attr_name)
@@ -190,6 +271,7 @@ class NavMeshPolyAccessor(PropertyGroup):
     audio_reverb_size: IntAttr("Audio Reverb Size", "audio_reverb_size", min=0, max=3)
     audio_reverb_wet: IntAttr("Audio Reverb Wet", "audio_reverb_wet", min=0, max=3)
     ped_density: IntAttr("Ped Density", "ped_density", min=0, max=7)
+    is_dlc_stitch: BoolAttr("DLC Stitch", "is_dlc_stitch")
 
 
 class NavMeshPolyRender(PropertyGroup):
@@ -284,6 +366,7 @@ def register():
     Object.sz_nav_cover_point = PointerProperty(type=NavCoverPointProps)
     Object.sz_nav_link = PointerProperty(type=NavLinkProps)
     Mesh.sz_navmesh_poly_access = PointerProperty(type=NavMeshPolyAccessor)
+    Mesh.sz_navmesh_edge_access = PointerProperty(type=NavMeshEdgeAccessor)
     Mesh.sz_navmesh_poly_render = PointerProperty(type=NavMeshPolyRender)
 
     WindowManager.sz_ui_nav_view_bounds = BoolProperty(
@@ -296,5 +379,6 @@ def unregister():
     del Object.sz_nav_cover_point
     del Object.sz_nav_link
     del Mesh.sz_navmesh_poly_access
+    del Mesh.sz_navmesh_edge_access
     del Mesh.sz_navmesh_poly_render
     del WindowManager.sz_ui_nav_view_bounds
