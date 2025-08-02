@@ -4,6 +4,7 @@ from bpy.types import (
 import bmesh
 from enum import Enum
 from typing import NamedTuple
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 
@@ -31,8 +32,8 @@ class NavMeshAttr(str, Enum):
             case NavMeshAttr.POLY_DATA_0 | NavMeshAttr.POLY_DATA_1 | NavMeshAttr.POLY_DATA_2:
                 return "FACE"
             case NavMeshAttr.EDGE_DATA_0 | NavMeshAttr.EDGE_DATA_1 | NavMeshAttr.EDGE_ADJACENT_POLY:
-                 # TODO: these should probably be on FACE_CORNER instead, but currently we don't merge vertices so each
-                 # polygon has its own edges not shared so should be fine for now
+                # TODO: these should probably be on FACE_CORNER instead, but currently we don't merge vertices so each
+                # polygon has its own edges not shared so should be fine for now
                 return "EDGE"
             case _:
                 assert False, f"Domain not set for navmesh attribute '{self}'"
@@ -79,6 +80,77 @@ class NavPolyAttributes:
     ped_density: int  # 3 bits, 0..7
     is_dlc_stitch: bool
 
+    @staticmethod
+    def unpack(data0: int, data1: int, data2: int) -> "NavPolyAttributes":
+        flags0 = data0 & 0xFF
+        flags1 = (data0 >> 8) & 0xFF
+        flags2 = data1 & 0xFF
+        flags3 = (data1 >> 8) & 0xFF
+        flags4 = data2 & 0xFF
+
+        return NavPolyAttributes(
+            is_small=(flags0 & 1) != 0,
+            is_large=(flags0 & 2) != 0,
+            is_pavement=(flags0 & 4) != 0,
+            is_in_shelter=(flags0 & 8) != 0,
+            is_too_steep_to_walk_on=(flags0 & 64) != 0,
+            is_water=(flags0 & 128) != 0,
+
+            audio_reverb_size=flags1 & 3,
+            audio_reverb_wet=(flags1 >> 2) & 3,
+            is_near_car_node=(flags1 & 32) != 0,
+            is_interior=(flags1 & 64) != 0,
+            is_isolated=(flags1 & 128) != 0,
+
+            is_network_spawn_candidate=(flags2 & 1) != 0,
+            is_road=(flags2 & 2) != 0,
+            lies_along_edge=(flags2 & 4) != 0,
+            is_train_track=(flags2 & 8) != 0,
+            is_shallow_water=(flags2 & 16) != 0,
+            ped_density=(flags2 >> 5) & 7,
+
+            cover_directions=NavPolyCoverDirections(
+                *((flags3 & (1 << i)) != 0 for i in range(8))
+            ),
+
+            is_dlc_stitch=(flags4 & 1) != 0,
+        )
+
+    def pack(self) -> tuple[int, int, int]:
+        flags0 = 0
+        flags0 |= 1 if self.is_small else 0
+        flags0 |= 2 if self.is_large else 0
+        flags0 |= 4 if self.is_pavement else 0
+        flags0 |= 8 if self.is_in_shelter else 0
+        flags0 |= 64 if self.is_too_steep_to_walk_on else 0
+        flags0 |= 128 if self.is_water else 0
+
+        flags1 = self.audio_reverb_size & 3
+        flags1 |= (self.audio_reverb_wet & 3) << 2
+        flags1 |= 32 if self.is_near_car_node else 0
+        flags1 |= 64 if self.is_interior else 0
+        flags1 |= 128 if self.is_isolated else 0
+
+        flags2 = 0
+        flags2 |= 1 if self.is_network_spawn_candidate else 0
+        flags2 |= 2 if self.is_road else 0
+        flags2 |= 4 if self.lies_along_edge else 0
+        flags2 |= 8 if self.is_train_track else 0
+        flags2 |= 16 if self.is_shallow_water else 0
+        flags2 |= (self.ped_density & 7) << 5
+
+        flags3 = 0
+        for i in range(8):
+            flags3 |= (1 << i) if self.cover_directions[i] else 0
+
+        flags4 = 0
+        flags4 |= 1 if self.is_dlc_stitch else 0
+
+        data0 = flags0 | (flags1 << 8)
+        data1 = flags2 | (flags3 << 8)
+        data2 = flags4
+        return data0, data1, data2
+
 
 @dataclass(slots=True)
 class NavEdgeAttributes:
@@ -111,74 +183,38 @@ def mesh_get_navmesh_poly_attributes(mesh: Mesh, poly_idx: int) -> NavPolyAttrib
         data1 = 0 if data1_attr is None else data1_attr.data[poly_idx].value
         data2 = 0 if data2_attr is None else data2_attr.data[poly_idx].value
 
-    flags0 = data0 & 0xFF
-    flags1 = (data0 >> 8) & 0xFF
-    flags2 = data1 & 0xFF
-    flags3 = (data1 >> 8) & 0xFF
-    flags4 = data2 & 0xFF
+    return NavPolyAttributes.unpack(data0, data1, data2)
 
-    return NavPolyAttributes(
-        is_small=(flags0 & 1) != 0,
-        is_large=(flags0 & 2) != 0,
-        is_pavement=(flags0 & 4) != 0,
-        is_in_shelter=(flags0 & 8) != 0,
-        is_too_steep_to_walk_on=(flags0 & 64) != 0,
-        is_water=(flags0 & 128) != 0,
 
-        audio_reverb_size=flags1 & 3,
-        audio_reverb_wet=(flags1 >> 2) & 3,
-        is_near_car_node=(flags1 & 32) != 0,
-        is_interior=(flags1 & 64) != 0,
-        is_isolated=(flags1 & 128) != 0,
+def mesh_iter_navmesh_all_poly_attributes(mesh: Mesh) -> Iterator[NavPolyAttributes]:
+    if mesh.is_editmode:
+        bm = bmesh.from_edit_mesh(mesh)
+        try:
+            data0_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_0]
+            data1_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_1]
+            data2_layer = bm.faces.layers.int[NavMeshAttr.POLY_DATA_2]
 
-        is_network_spawn_candidate=(flags2 & 1) != 0,
-        is_road=(flags2 & 2) != 0,
-        lies_along_edge=(flags2 & 4) != 0,
-        is_train_track=(flags2 & 8) != 0,
-        is_shallow_water=(flags2 & 16) != 0,
-        ped_density=(flags2 >> 5) & 7,
+            for f in bm.faces:
+                data0 = 0 if data0_layer is None else f[data0_layer]
+                data1 = 0 if data1_layer is None else f[data1_layer]
+                data2 = 0 if data2_layer is None else f[data2_layer]
+                yield NavPolyAttributes.unpack(data0, data1, data2)
+        finally:
+            bm.free()
+    else:
+        data0_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_0, None)
+        data1_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_1, None)
+        data2_attr = mesh.attributes.get(NavMeshAttr.POLY_DATA_2, None)
 
-        cover_directions=NavPolyCoverDirections(
-            *((flags3 & (1 << i)) != 0 for i in range(8))
-        ),
-
-        is_dlc_stitch=(flags4 & 1) != 0,
-    )
+        for i in range(len(mesh.polygons)):
+            data0 = 0 if data0_attr is None else data0_attr.data[i].value
+            data1 = 0 if data1_attr is None else data1_attr.data[i].value
+            data2 = 0 if data2_attr is None else data2_attr.data[i].value
+            yield NavPolyAttributes.unpack(data0, data1, data2)
 
 
 def mesh_set_navmesh_poly_attributes(mesh: Mesh, poly_idx: int, poly_attrs: NavPolyAttributes):
-    flags0 = 0
-    flags0 |= 1 if poly_attrs.is_small else 0
-    flags0 |= 2 if poly_attrs.is_large else 0
-    flags0 |= 4 if poly_attrs.is_pavement else 0
-    flags0 |= 8 if poly_attrs.is_in_shelter else 0
-    flags0 |= 64 if poly_attrs.is_too_steep_to_walk_on else 0
-    flags0 |= 128 if poly_attrs.is_water else 0
-
-    flags1 = poly_attrs.audio_reverb_size & 3
-    flags1 |= (poly_attrs.audio_reverb_wet & 3) << 2
-    flags1 |= 32 if poly_attrs.is_near_car_node else 0
-    flags1 |= 64 if poly_attrs.is_interior else 0
-    flags1 |= 128 if poly_attrs.is_isolated else 0
-
-    flags2 = 0
-    flags2 |= 1 if poly_attrs.is_network_spawn_candidate else 0
-    flags2 |= 2 if poly_attrs.is_road else 0
-    flags2 |= 4 if poly_attrs.lies_along_edge else 0
-    flags2 |= 8 if poly_attrs.is_train_track else 0
-    flags2 |= 16 if poly_attrs.is_shallow_water else 0
-    flags2 |= (poly_attrs.ped_density & 7) << 5
-
-    flags3 = 0
-    for i in range(8):
-        flags3 |= (1 << i) if poly_attrs.cover_directions[i] else 0
-
-    flags4 = 0
-    flags4 |= 1 if poly_attrs.is_dlc_stitch else 0
-
-    data0 = flags0 | (flags1 << 8)
-    data1 = flags2 | (flags3 << 8)
-    data2 = flags4
+    data0, data1, data2 = poly_attrs.pack()
 
     # TODO: add attributes if they don't exist in the mesh
     if mesh.is_editmode:

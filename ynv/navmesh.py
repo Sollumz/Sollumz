@@ -28,9 +28,9 @@ NAVMESH_POLY_SMALL_MAX_AREA = 2.0
 NAVMESH_POLY_LARGE_MIN_AREA = 40.0
 
 
-def navmesh_is_valid(obj: Object) -> bool:
+def navmesh_is_valid(obj: Object | None) -> bool:
     """Gets whether the object is a navmesh."""
-    return obj.sollum_type == SollumType.NAVMESH and obj.type == "MESH"
+    return obj is not None and obj.sollum_type == SollumType.NAVMESH and obj.type == "MESH"
 
 
 def navmesh_is_map(obj: Object) -> bool:

@@ -7,6 +7,7 @@ from ..sollumz_properties import SollumType
 from .navmesh import (
     navmesh_is_valid
 )
+from . import operators as nav_ops
 
 
 class SOLLUMZ_PT_NAVMESH_PANEL(Panel):
@@ -54,9 +55,9 @@ class SOLLUMZ_PT_NAVMESH_POLY_ATTRS_PANEL(bpy.types.Panel):
                  else f"Polygon #{active_poly}"
         )
 
-        from . import operators as nav_ops
 
         layout.operator(nav_ops.SOLLUMZ_OT_navmesh_polys_update_flags.bl_idname)
+        layout.operator(nav_ops.SOLLUMZ_OT_navmesh_polys_select_similar.bl_idname)
 
         grid = layout.grid_flow(columns=-3)
         grid.prop(poly_access, "is_small")
@@ -275,6 +276,8 @@ class SOLLUMZ_PT_NAVMESH_TOOL_PANEL(Panel):
         layout = self.layout
         wm = context.window_manager
         layout.prop(wm, "sz_ui_nav_view_bounds")
+
+        layout.operator(nav_ops.SOLLUMZ_OT_navmesh_polys_select_similar.bl_idname)
 
 
 def register():
