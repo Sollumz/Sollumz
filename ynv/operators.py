@@ -93,13 +93,15 @@ class SOLLUMZ_OT_navmesh_polys_select_similar(Operator):
                 try:
                     bm.faces.ensure_lookup_table()
                     for poly_idx, poly_attrs in enumerate(mesh_iter_navmesh_all_poly_attributes(mesh)):
-                        bm.faces[poly_idx].select = self._is_similar(poly_attrs, target_poly_attrs, fields_to_consider)
+                        if self._is_similar(poly_attrs, target_poly_attrs, fields_to_consider):
+                            bm.faces[poly_idx].select = True
                 finally:
                     bm.free()
             else:
                 polys = mesh.polygons
                 for poly_idx, poly_attrs in enumerate(mesh_iter_navmesh_all_poly_attributes(mesh)):
-                    polys[poly_idx].select = self._is_similar(poly_attrs, target_poly_attrs, fields_to_consider)
+                    if self._is_similar(poly_attrs, target_poly_attrs, fields_to_consider):
+                        polys[poly_idx].select = True
 
             mesh.update_tag()
 
