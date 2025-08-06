@@ -277,50 +277,52 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
         if light.sollum_type != LightType.NONE:
             layout.separator()
 
+            light_props = light.light_properties
+
             box = layout.box()
             box.label(text="General Properties")
             box.prop(light, "color")
-            box.prop(light, "energy", text="Intensity")
-            box.prop(light, "cutoff_distance", text="Falloff")
-            box.prop(light, "shadow_soft_size", text="Falloff Exponent")
-            box.prop(light, "shadow_buffer_clip_start", text="Shadow Near Clip")
+            box.prop(light_props, "intensity")
+            box.prop(light_props, "falloff")
+            box.prop(light_props, "falloff_exponent")
+            box.prop(light_props, "shadow_near_clip")
 
             # Extra Properties
             match light.sollum_type:
                 case LightType.SPOT:
                     box = layout.box()
                     box.label(text="Spot Properties")
-                    box.prop(light, "spot_size", text="Cone Outer Angle")
-                    box.prop(light, "spot_blend", text="Cone Inner Angle")
+                    box.prop(light_props, "cone_outer_angle")
+                    box.prop(light_props, "cone_inner_angle")
                 case LightType.CAPSULE:
                     box = layout.box()
                     box.label(text="Capsule Properties")
-                    box.prop(light.light_properties, "extent", index=0)
+                    box.prop(light_props, "extent", index=0)
 
             # Misc Properties
             box = layout.box()
             box.label(text="Misc Properties")
-            box.prop(light.light_properties, "light_hash")
+            box.prop(light_props, "light_hash")
             # box.prop(light.light_properties, "group_id") # this property is unused
-            box.prop(light.light_properties, "projected_texture_hash")
-            box.prop(light.light_properties, "flashiness")
+            box.prop(light_props, "projected_texture_hash")
+            box.prop(light_props, "flashiness")
 
             # Volume properties
             box = layout.box()
             box.label(text="Volume Properties", icon="MOD_EXPLODE")
-            box.prop(light, "volume_factor", text="Volume Intensity")
-            box.prop(light.light_properties, "volume_size_scale")
-            box.prop(light.light_properties, "volume_outer_color")
-            box.prop(light.light_properties, "volume_outer_intensity")
-            box.prop(light.light_properties, "volume_outer_exponent")
+            box.prop(light_props, "volume_intensity")
+            box.prop(light_props, "volume_size_scale")
+            box.prop(light_props, "volume_outer_color")
+            box.prop(light_props, "volume_outer_intensity")
+            box.prop(light_props, "volume_outer_exponent")
 
             # Distance properties
             box = layout.box()
             box.label(text="Distance Properties", icon="DRIVER_DISTANCE")
-            box.prop(light.light_properties, "light_fade_distance")
-            box.prop(light.light_properties, "shadow_fade_distance")
-            box.prop(light.light_properties, "specular_fade_distance")
-            box.prop(light.light_properties, "volumetric_fade_distance")
+            box.prop(light_props, "light_fade_distance")
+            box.prop(light_props, "shadow_fade_distance")
+            box.prop(light_props, "specular_fade_distance")
+            box.prop(light_props, "volumetric_fade_distance")
 
             # Culling Plane
             box = layout.box()
@@ -331,20 +333,20 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
             row.label(text="Culling Plane")
             col = box.column()
             col.active = light.light_flags.enable_culling_plane
-            col.prop(light.light_properties, "culling_plane_normal", text="Normal")
-            col.prop(light.light_properties, "culling_plane_offset", text="Offset")
+            col.prop(light_props, "culling_plane_normal", text="Normal")
+            col.prop(light_props, "culling_plane_offset", text="Offset")
 
             # Corona Properties
             box = layout.box()
             box.label(text="Corona Properties", icon="LIGHT_SUN")
-            box.prop(light.light_properties, "corona_size")
-            box.prop(light.light_properties, "corona_intensity")
-            box.prop(light.light_properties, "corona_z_bias")
+            box.prop(light_props, "corona_size")
+            box.prop(light_props, "corona_intensity")
+            box.prop(light_props, "corona_z_bias")
 
             # Advanced Properties
             box = layout.box()
             box.label(text="Advanced Properties", icon="TOOL_SETTINGS")
-            box.prop(light.light_properties, "shadow_blur")
+            box.prop(light_props, "shadow_blur")
 
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):

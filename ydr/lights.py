@@ -10,8 +10,6 @@ from ..cwxml.ymap import LightInstance
 from .properties import LightProperties
 from .. import logger
 
-INTENSITY_SCALE_FACTOR = 500
-
 
 def create_light_objs(lights: list[Light], armature_obj: Optional[bpy.types.Object] = None):
     lights_parent = create_empty_object(SollumType.NONE, "Lights")
@@ -51,8 +49,7 @@ def create_light(light_xml: Light, armature_obj: Optional[bpy.types.Object] = No
     light_data.name = name
     light_obj.location = light_xml.position
 
-    set_light_bpy_properties(light_xml, light_data)
-    set_light_rage_properties(light_xml, light_data)
+    set_light_properties(light_xml, light_data)
 
     return light_obj
 
@@ -95,29 +92,24 @@ def set_light_rotation(light_xml: Light, light_obj: bpy.types.Object):
     light_obj.matrix_basis = mat.to_4x4()
 
 
-def set_light_bpy_properties(light_xml: Light, light_data: bpy.types.Light):
-    """Set Blender light properties of ``light_data`` based on ``light_xml``."""
+def set_light_properties(light_xml: Light, light_data: bpy.types.Light):
+    """Set the game properties of ``light_data`` based on ``light_xml``."""
     light_data.color = [channel / 255 for channel in light_xml.color]
-    light_data.energy = light_xml.intensity * INTENSITY_SCALE_FACTOR
-    light_data.use_custom_distance = True
-    light_data.cutoff_distance = light_xml.falloff
-    light_data.shadow_soft_size = light_xml.falloff_exponent / 5
-    light_data.volume_factor = light_xml.volume_intensity
 
-    light_data.shadow_buffer_clip_start = light_xml.shadow_near_clip
-
-    if light_data.sollum_type == LightType.SPOT:
-        light_data.spot_blend = abs(
-            (radians(light_xml.cone_inner_angle) / pi) - 1)
-        light_data.spot_size = radians(light_xml.cone_outer_angle) * 2
-
-
-def set_light_rage_properties(light_xml: Light, light_data: bpy.types.Light):
-    """Set the game properties of ``light_data`` based on ``light_xml``. These properties do not affect how the light appears in the scene."""
     light_data.time_flags.total = str(light_xml.time_flags)
     light_data.light_flags.total = str(light_xml.flags)
 
     light_props: LightProperties = light_data.light_properties
+
+    light_props.intensity = light_xml.intensity
+    light_props.falloff = light_xml.falloff
+    light_props.falloff_exponent = light_xml.falloff_exponent
+    light_props.volume_intensity = light_xml.volume_intensity
+    light_props.shadow_near_clip = light_xml.shadow_near_clip
+
+    if light_data.sollum_type == LightType.SPOT:
+        light_props.cone_inner_angle = radians(light_xml.cone_inner_angle)
+        light_props.cone_outer_angle = radians(light_xml.cone_outer_angle)
 
     light_props.flashiness = Flashiness(light_xml.flashiness).name
     light_props.flags = light_xml.flags
@@ -211,15 +203,15 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.flags = light_data.light_flags.total
 
     light_xml.color = light_data.color * 255
-    light_xml.intensity = light_data.energy / INTENSITY_SCALE_FACTOR
+    light_xml.intensity = light_props.intensity
 
     light_xml.flashiness = Flashiness[light_props.flashiness].value
     light_xml.group_id = light_props.group_id
-    light_xml.falloff = light_data.cutoff_distance
-    light_xml.falloff_exponent = light_data.shadow_soft_size * 5
+    light_xml.falloff = light_props.falloff
+    light_xml.falloff_exponent = light_props.falloff_exponent
     light_xml.culling_plane_normal = Vector(light_props.culling_plane_normal)
     light_xml.culling_plane_offset = light_props.culling_plane_offset
-    light_xml.volume_intensity = light_data.volume_factor
+    light_xml.volume_intensity = light_props.volume_intensity
     light_xml.shadow_blur = int(light_props.shadow_blur * 255)
     light_xml.volume_size_scale = light_props.volume_size_scale
     light_xml.volume_outer_color = light_props.volume_outer_color * 255
@@ -231,16 +223,15 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.shadow_fade_distance = light_props.shadow_fade_distance
     light_xml.specular_fade_distance = light_props.specular_fade_distance
     light_xml.volumetric_fade_distance = light_props.volumetric_fade_distance
-    light_xml.shadow_near_clip = light_data.shadow_buffer_clip_start
+    light_xml.shadow_near_clip = light_props.shadow_near_clip
     light_xml.corona_intensity = light_props.corona_intensity
     light_xml.corona_z_bias = light_props.corona_z_bias
     light_xml.extent = Vector(light_props.extent)
     light_xml.projected_texture_hash = light_props.projected_texture_hash
 
     if light_data.sollum_type == LightType.SPOT:
-        light_xml.cone_inner_angle = degrees(
-            abs((light_data.spot_blend * pi) - pi))
-        light_xml.cone_outer_angle = degrees(light_data.spot_size) / 2
+        light_xml.cone_inner_angle = degrees(light_props.cone_inner_angle)
+        light_xml.cone_outer_angle = degrees(light_props.cone_outer_angle)
 
 
 def duplicate_lights_for_light_effect(parent_obj: bpy.types.Object) -> bpy.types.Object:
