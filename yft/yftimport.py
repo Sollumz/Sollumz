@@ -114,16 +114,6 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
     if damaged_drawable_obj is not None:
         create_frag_collisions(frag_xml, frag_obj, damaged=True)
 
-        if frag_xml.physics.lod1.damaged_archetype is not None:
-            a = frag_xml.physics.lod1.archetype
-            b = frag_xml.physics.lod1.damaged_archetype
-            # We assume that these archetype properties are the same in both the undamaged and damaged archetypes so the
-            # user only has to set them once in the UI
-            assert a.unknown_48 == b.unknown_48, "gravity_factor different in damaged archetype. Open an issue!"
-            assert a.unknown_4c == b.unknown_4c, "max_speed factor different in damaged archetype. Open an issue!"
-            assert a.unknown_50 == b.unknown_50, "max_ang_speed different in damaged archetype. Open an issue!"
-            assert a.unknown_54 == b.unknown_54, "buoyancy_factor different in damaged archetype. Open an issue!"
-
     create_phys_lod(frag_xml, frag_obj)
     set_all_bone_physics_properties(frag_obj.data, frag_xml)
 
