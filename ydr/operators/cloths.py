@@ -13,22 +13,22 @@ from bpy.props import (
     BoolProperty,
 )
 from collections import deque
-from .cloth import (
+from ..cloth import (
     ClothAttr,
     is_cloth_mesh_object,
     mesh_add_cloth_attribute,
     mesh_has_cloth_attribute,
     mesh_get_cloth_attribute_values,
 )
-from .cloth_env import (
+from ..cloth_env import (
     cloth_env_find_mesh_objects,
 )
-from .cloth_diagnostics import (
+from ..cloth_diagnostics import (
     cloth_last_export_contexts,
 )
-from ..sollumz_properties import SollumType
-from ..sollumz_helper import find_sollumz_parent
-from .. import logger
+from ...sollumz_properties import SollumType
+from ...sollumz_helper import find_sollumz_parent
+from ... import logger
 
 
 class ClothEditRestrictedHelper:

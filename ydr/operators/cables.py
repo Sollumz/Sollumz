@@ -11,7 +11,7 @@ from bpy.props import (
 )
 from bpy_extras.mesh_utils import edge_loops_from_edges
 import numpy as np
-from .cable import (
+from ..cable import (
     CableAttr,
     mesh_add_cable_attribute,
     mesh_has_cable_attribute,
@@ -108,6 +108,7 @@ class SOLLUMZ_OT_cable_set_um_scale(Operator, CableSetAttributeBase):
         min=0.0, default=CableAttr.UM_SCALE.default_value
     )
 
+
 class SOLLUMZ_OT_cable_set_phase_offset(Operator, CableSetAttributeBase):
     bl_idname = "sollumz.cable_set_phase_offset"
     bl_label = "Set Cable Phase Offset"
@@ -124,7 +125,6 @@ class SOLLUMZ_OT_cable_set_phase_offset(Operator, CableSetAttributeBase):
     def do_set_attribute(self, vertex_index: int, attr: Attribute):
         x, y = self.value
         attr.data[vertex_index].vector = x, y, 0.0
-
 
 
 class SOLLUMZ_OT_cable_randomize_phase_offset(Operator, CableRestrictedHelper):
