@@ -442,38 +442,10 @@ class SOLLUMZ_PT_SET_SOLLUM_TYPE_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         row.prop(context.scene, "all_sollum_type", text="")
 
 
-class SOLLUMZ_PT_DEBUG_PANEL(GeneralToolChildPanel, bpy.types.Panel):
-    bl_label = "Debug"
-    bl_idname = "SOLLUMZ_PT_DEBUG_PANEL"
-    bl_order = 4
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="PREFERENCES")
-
-    def draw(self, context):
-        layout = self.layout
-
-        row = layout.row()
-        row.operator("sollumz.debug_hierarchy")
-        row.prop(context.scene, "debug_sollum_type")
-        row = layout.row()
-        row.operator("sollumz.debug_fix_light_intensity")
-        row.prop(context.scene, "debug_lights_only_selected")
-
-        layout.separator()
-
-        layout.label(text="Migration")
-        layout.operator("sollumz.migratedrawable")
-        layout.label(
-            text="This will join all geometries for each LOD Level into a single object.", icon="ERROR")
-        layout.operator("sollumz.migrateboundgeoms")
-        layout.operator("sollumz.replace_armature_constraints")
-
-
 class SOLLUMZ_PT_EXPORT_PATH_PANEL(GeneralToolChildPanel, bpy.types.Panel):
-    bl_label = "Export path"
+    bl_label = "Export Path"
     bl_idname = "SOLLUMZ_PT_EXPORT_PATH_PANEL"
-    bl_order = 5
+    bl_order = 4
 
     def draw_header(self, context):
         self.layout.label(text="", icon="FILEBROWSER")

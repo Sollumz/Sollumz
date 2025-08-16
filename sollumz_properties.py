@@ -540,24 +540,11 @@ def register():
     bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
         name="Alpha", min=-1, max=1)
 
-    bpy.types.Scene.debug_sollum_type = bpy.props.EnumProperty(
-        items=[(SollumType.DRAWABLE.value, SOLLUMZ_UI_NAMES[SollumType.DRAWABLE], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE]),
-               (SollumType.DRAWABLE_DICTIONARY.value,
-                SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY], SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_DICTIONARY]),
-               (SollumType.BOUND_COMPOSITE.value, SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE], SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE])],
-        name="Hierarchy Type",
-        default=SollumType.DRAWABLE,
-        options={"HIDDEN"}
-    )
-
     bpy.types.Scene.all_sollum_type = bpy.props.EnumProperty(
         items=sorted(items_from_enums(SollumType), key=lambda i: i[0]),
         name="Sollum Types",
         options={"HIDDEN"}
     )
-
-    bpy.types.Scene.debug_lights_only_selected = bpy.props.BoolProperty(
-        name="Limit to Selected", description="Only set intensity of the selected lights. (All instances will be affected)")
 
     bpy.types.Scene.sollumz_export_path = bpy.props.StringProperty(
         name="Export Path",
@@ -572,7 +559,5 @@ def unregister():
     del bpy.types.Material.sollum_type
     del bpy.types.Object.entity_properties
     del bpy.types.Scene.vert_paint_alpha
-    del bpy.types.Scene.debug_sollum_type
     del bpy.types.Scene.all_sollum_type
-    del bpy.types.Scene.debug_lights_only_selected
     del bpy.types.Scene.sollumz_export_path
