@@ -557,7 +557,14 @@ def register():
 def unregister():
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type
+    del bpy.types.ShaderNode.is_sollumz
     del bpy.types.Object.entity_properties
+    del bpy.types.Scene.vert_paint_color1
+    del bpy.types.Scene.vert_paint_color2
+    del bpy.types.Scene.vert_paint_color3
+    del bpy.types.Scene.vert_paint_color4
+    del bpy.types.Scene.vert_paint_color5
+    del bpy.types.Scene.vert_paint_color6
     del bpy.types.Scene.vert_paint_alpha
     del bpy.types.Scene.all_sollum_type
     del bpy.types.Scene.sollumz_export_path
