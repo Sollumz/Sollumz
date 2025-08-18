@@ -2,6 +2,8 @@ import traceback
 import bpy
 from bpy.types import (
     Material,
+    ShaderNodeBsdfPrincipled,
+    ShaderNodeTexImage,
 )
 from bpy.props import (
     IntProperty,
@@ -10,10 +12,7 @@ from bpy.props import (
 from ...cwxml.shader_preset import ShaderPreset, ShaderPresetParam
 from ...sollumz_helper import SOLLUMZ_OT_base
 from ...sollumz_properties import MaterialType
-from ...ydr.shader_materials import create_shader, create_tinted_shader_graph, is_tint_material, shadermats
-from ...tools.drawablehelper import MaterialConverter
 from ...tools.blenderhelper import tag_redraw
-from ..properties import get_shader_presets_path, load_shader_presets, shader_presets
 from ...tools.meshhelper import (
     mesh_add_missing_uv_maps,
     mesh_add_missing_color_attrs,
@@ -21,7 +20,23 @@ from ...tools.meshhelper import (
     mesh_rename_color_attrs_by_order,
 )
 from ...shared.shader_nodes import SzShaderNodeParameter
-from ...cwxml.shader import ShaderParameterFloatVectorDef, ShaderParameterTextureDef, ShaderManager
+from ...cwxml.shader import (
+    ShaderParameterFloatVectorDef,
+    ShaderParameterTextureDef,
+    ShaderParameterDef,
+    ShaderParameterType,
+    ShaderManager,
+)
+from ..properties import get_shader_presets_path, load_shader_presets, shader_presets
+from ..shader_materials import (
+    create_shader,
+    create_tinted_shader_graph,
+    is_tint_material,
+    shadermats,
+    try_get_node,
+    find_bsdf_and_material_output,
+    obj_has_tint_mats,
+)
 
 
 def shader_preset_from_material(material: Material) -> ShaderPreset:
@@ -46,7 +61,7 @@ def shader_preset_from_material(material: Material) -> ShaderPreset:
             param.w = node.get(3) if node.num_cols > 3 else None
             preset.params.append(param)
         elif (
-            isinstance(node, bpy.types.ShaderNodeTexImage) and
+            isinstance(node, ShaderNodeTexImage) and
             isinstance(param_def, ShaderParameterTextureDef)
         ):
             param = ShaderPresetParam()
@@ -83,7 +98,7 @@ def shader_preset_apply_to_material(material: Material, preset: ShaderPreset, ap
             if node.num_cols > 3 and param.w is not None:
                 node.set(3, param.w)
         elif apply_textures and (
-            isinstance(node, bpy.types.ShaderNodeTexImage) and
+            isinstance(node, ShaderNodeTexImage) and
             isinstance(param_def, ShaderParameterTextureDef)
         ):
             # Try to get a loaded image...
@@ -227,6 +242,175 @@ class SOLLUMZ_OT_delete_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             self.warning(
                 f"Shader preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
             return False
+
+
+class MaterialConverter:
+    def __init__(self, obj: bpy.types.Object, material: Material) -> None:
+        self.obj = obj
+        self.material: Material = material
+        self.new_material: Material | None = None
+        self.bsdf: ShaderNodeBsdfPrincipled | None = None
+        self.diffuse_node: ShaderNodeTexImage | None = None
+        self.specular_node: ShaderNodeTexImage | None = None
+        self.normal_node: ShaderNodeTexImage | None = None
+
+    def _convert_texture_node(self, param: ShaderParameterTextureDef):
+        src_node: bpy.types.ShaderNodeTexImage = try_get_node(self.material.node_tree, param.name)
+        if not src_node or not isinstance(src_node, ShaderNodeTexImage):
+            return
+
+        dst_node: bpy.types.ShaderNodeTexImage = try_get_node(self.new_material.node_tree, param.name)
+        if not dst_node or not isinstance(dst_node, ShaderNodeTexImage):
+            return
+
+        dst_node.image = src_node.image
+
+    def _convert_parameter_node(self, param: ShaderParameterDef):
+        src_node: SzShaderNodeParameter = try_get_node(self.material.node_tree, param.name)
+        if not src_node or not isinstance(src_node, SzShaderNodeParameter):
+            return
+
+        dst_node: SzShaderNodeParameter = try_get_node(self.new_material.node_tree, param.name)
+        if not dst_node or not isinstance(dst_node, SzShaderNodeParameter):
+            return
+
+        src_count = src_node.num_cols * src_node.num_rows
+        dst_count = dst_node.num_cols * dst_node.num_rows
+        for i in range(min(src_count, dst_count)):
+            dst_node.set(i, src_node.get(i))
+
+    def convert_shader_to_shader(self, shader_name: str):
+        shader = ShaderManager.find_shader(shader_name)
+        assert shader is not None
+
+        for param in shader.parameters:
+            match param.type:
+                case ShaderParameterType.TEXTURE:
+                    self._convert_texture_node(param)
+                case (ShaderParameterType.FLOAT |
+                      ShaderParameterType.FLOAT2 |
+                      ShaderParameterType.FLOAT3 |
+                      ShaderParameterType.FLOAT4 |
+                      ShaderParameterType.FLOAT4X4):
+                    self._convert_parameter_node(param)
+                case _:
+                    raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+
+    def _get_diffuse_node(self):
+        diffuse_input = self.bsdf.inputs["Base Color"]
+
+        if diffuse_input.is_linked:
+            return diffuse_input.links[0].from_node
+
+        return None
+
+    def _get_specular_node(self):
+        specular_input = self.bsdf.inputs["Specular IOR Level"]
+
+        if specular_input.is_linked:
+            return specular_input.links[0].from_node
+
+        return None
+
+    def _get_normal_node(self):
+        normal_input = self.bsdf.inputs["Normal"]
+        if len(normal_input.links) > 0:
+            normal_map_node = normal_input.links[0].from_node
+            normal_map_input = normal_map_node.inputs["Color"]
+            if len(normal_map_input.links) > 0:
+                return normal_map_input.links[0].from_node
+
+        return None
+
+    def _get_nodes(self):
+        self.bsdf, _ = find_bsdf_and_material_output(self.material)
+
+        if self.bsdf is None:
+            raise Exception("Failed to convert material: Node tree must contain a Princpled BSDF node.")
+
+        self.diffuse_node = self._get_diffuse_node()
+
+        if self.diffuse_node is not None and not isinstance(self.diffuse_node, bpy.types.ShaderNodeTexImage):
+            raise Exception("Failed to convert material: Base color node is not an image node.")
+
+        self.specular_node = self._get_specular_node()
+        self.normal_node = self._get_normal_node()
+
+    def _create_new_material(self, shader_name):
+        self.new_material = create_shader(shader_name)
+
+    def _set_new_node_images(self):
+        if self.new_material is None:
+            raise Exception("Failed to set images: Sollumz material has not been created yet!")
+
+        for node, name in {self.diffuse_node: "DiffuseSampler", self.specular_node: "SpecSampler", self.normal_node: "BumpSampler"}.items():
+            new_node: bpy.types.ShaderNodeTexImage = try_get_node(
+                self.new_material.node_tree, name)
+
+            if node is None or new_node is None:
+                continue
+
+            new_node.image = node.image
+
+    def _get_material_slot(self):
+        for slot in self.obj.material_slots:
+            if slot.material == self.material:
+                return slot
+
+    def _replace_material(self):
+        if self.new_material is None:
+            raise Exception(
+                "Failed to replace material: Sollumz material has not been created yet!")
+
+        mat_name = f"{self.material.name}_{self.new_material.name}"
+
+        self.new_material.name = mat_name
+
+        slot = self._get_material_slot()
+        slot.material = self.new_material
+
+    def _determine_shader_name(self):
+        self._get_nodes()
+
+        has_specular_node = self.specular_node is not None
+        has_normal_node = self.normal_node is not None
+
+        if has_specular_node and not isinstance(self.specular_node, bpy.types.ShaderNodeTexImage):
+            raise Exception("Failed to convert material: Specular node is not an image node.")
+
+        if has_normal_node and not isinstance(self.normal_node, bpy.types.ShaderNodeTexImage):
+            raise Exception("Failed to convert material: Normal map color input is not an image node.")
+
+        if has_normal_node and has_specular_node:
+            return "normal_spec.sps"
+        elif has_normal_node:
+            return "normal.sps"
+        elif has_specular_node:
+            return "spec.sps"
+
+        return "default.sps"
+
+    def convert(self, shader_name: str) -> bpy.types.Material:
+        """Convert the material to a Sollumz material of the provided shader name."""
+        self._create_new_material(shader_name)
+
+        if self.material.sollum_type == MaterialType.SHADER:
+            self.convert_shader_to_shader(shader_name)
+        else:
+            self._get_nodes()
+            self._set_new_node_images()
+
+        self._replace_material()
+
+        if obj_has_tint_mats(self.obj):
+            create_tinted_shader_graph(self.obj)
+
+        return self.new_material
+
+    def auto_convert(self) -> bpy.types.Material:
+        """Attempt to automatically determine shader name from material node setup and convert the material to a Sollumz material."""
+        shader_name = self._determine_shader_name()
+        return self.convert(shader_name)
 
 
 class MaterialConverterHelper:
