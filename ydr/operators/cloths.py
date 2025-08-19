@@ -273,7 +273,7 @@ class SOLLUMZ_OT_cloth_refresh_diagnostics(Operator):
             cloth_last_export_contexts().clear()
 
             if cloth_objs:
-                from ..ydd.yddexport import export_ydd
+                from ...ydd.yddexport import export_ydd
                 for cloth_obj in cloth_objs:
                     if not (dwd_obj := find_sollumz_parent(cloth_obj, SollumType.DRAWABLE_DICTIONARY)):
                         continue
@@ -281,7 +281,7 @@ class SOLLUMZ_OT_cloth_refresh_diagnostics(Operator):
                     export_ydd(dwd_obj, None)
 
             if frag_cloth_objs:
-                from ..yft.yftexport import export_yft
+                from ...yft.yftexport import export_yft
                 for frag_obj in frag_cloth_objs:
                     logger.info(f"Checking '{frag_obj.name}'...")
                     export_yft(frag_obj, None)

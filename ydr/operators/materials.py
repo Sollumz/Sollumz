@@ -105,7 +105,7 @@ def shader_preset_apply_to_material(material: Material, preset: ShaderPreset, ap
             img = bpy.data.images.get(param.texture, None) or bpy.data.images.get(f"{param.texture}.dds", None)
             if not img:
                 # Otherwise, search in the shared textures directories
-                from .ydrimport import lookup_texture_file, is_non_color_texture
+                from ..ydrimport import lookup_texture_file, is_non_color_texture
                 texture_path = lookup_texture_file(param.texture, None)
                 img = texture_path and bpy.data.images.load(str(texture_path), check_existing=True)
                 if img and is_non_color_texture(shader_def.filename, param.name):
