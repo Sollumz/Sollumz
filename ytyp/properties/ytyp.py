@@ -11,7 +11,7 @@ from typing import Union, Optional, Sequence
 from uuid import uuid4
 
 from ...sollumz_preferences import get_addon_preferences
-from ...tools.blenderhelper import get_children_recursive
+from ...tools.blenderhelper import get_children_recursive, tag_redraw
 from ...sollumz_properties import SollumType, items_from_enums, ArchetypeType, AssetType, TimeFlagsMixin, SOLLUMZ_UI_NAMES
 from ...tools.utils import get_list_item
 from .mlo import EntitySetProperties, RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties
@@ -430,6 +430,18 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
 
     def on_entities_active_index_update_from_ui(self, context):
         self.select_entity_linked_object()
+
+    def on_rooms_active_index_update_from_ui(self, context):
+        if context.scene.show_room_gizmo:
+            tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
+
+    def on_portals_active_index_update_from_ui(self, context):
+        if context.scene.show_portal_gizmo:
+            tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
+
+    def on_timecycle_modifiers_active_index_update_from_ui(self, context):
+        if context.scene.show_mlo_tcm_gizmo:
+            tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
 
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
