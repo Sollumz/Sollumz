@@ -33,7 +33,7 @@ def sync_selection(scene: Scene, active: Object, selected: Sequence[Object]):
             obj = p
         return obj
 
-    active_obj = _root_parent(active)
+    active_obj = active and _root_parent(active)
     all_objects = set(_root_parent(o) for o in selected)
     all_objects.add(active_obj)
 
