@@ -410,5 +410,3 @@ class CharacterCloth(ElementTree):
         self.bounds_bone_indices = InlineValueListProperty("Unknown90")
         self.controller = CharacterClothController()
         self.bounds = BoundComposite()
-
-        self._tmp_skeleton = None

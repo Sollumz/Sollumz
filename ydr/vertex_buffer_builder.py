@@ -362,12 +362,8 @@ class VertexBufferBuilder:
 
             cloth_bind_verts_pos = mesh_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
             cloth_bind_verts_normal = mesh_verts_normal.reshape((num_verts, 3))[cloth_bind_verts_mask]
-
-            skeleton_centroid = next(b for b in self._char_cloth._tmp_skeleton.bones if b.name ==
-                                     "SKEL_Spine0").translation
-
             cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
-                self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal, skeleton_centroid
+                self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
             )
             if cloth_bind_errors:
                 n = len(cloth_bind_errors)

@@ -416,7 +416,6 @@ def cloth_char_get_mesh_to_cloth_bindings(
     cloth: CharacterCloth,
     mesh_binded_verts: NDArray[np.float32],
     mesh_binded_verts_normals: NDArray[np.float32],
-    skeleton_centroid: Vector,
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
     # Max distance from mesh vertex to cloth triangle to be considered
     MAX_DISTANCE_THRESHOLD = 0.05
@@ -432,10 +431,14 @@ def cloth_char_get_mesh_to_cloth_bindings(
     cloth_tris_normals_neg = -cloth_tris_normals
     cloth_tris_areas = tris_areas(cloth_tris_verts)
     cloth_tris_v0, cloth_tris_v1, cloth_tris_v2 = cloth_tris_verts[:, 0], cloth_tris_verts[:, 1], cloth_tris_verts[:, 2]
-    cloth_centroid = np.array(skeleton_centroid)
 
-    # Compute the dot product
-    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals * (cloth_centroid - mesh_binded_verts), axis=1)
+    # Compute the dot product to determine which verts are facing inside or outside by comparing the normals and the
+    # direction to the origin (0,0). Flattened to 2D on the XY plane (ignore Z) to reduce issues with the angled cloth
+    # or cloth far from the origin (i.e. face bandanas). Most cloths wrap the ped model around the Z axis (i.e. vertical
+    # tube), so when the verts are flattened it will be kind of a circle around the origin. This probably won't work
+    # well if the cloth is placed more like a horizontal tube (on an animal maybe?). Will need more complex logic or
+    # some user input to handle that, we ignore it for now.
+    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals[:,:2] * -mesh_binded_verts[:,:2], axis=1)
     mesh_binded_verts_facing_inside = mesh_binded_dot_product > 0.0
 
     ind_arr = np.empty((num_binded_verts, 4), dtype=np.uint32)
