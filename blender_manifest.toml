@@ -13,8 +13,8 @@ tags = ["Import-Export"]
 
 blender_version_min = "4.2.0"
 
-license = ["SPDX:MIT"]
-copyright = ["2020-2024 Skylumz, Colton and alexguirre"]
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2020-2025 Skylumz, Colton and alexguirre"]
 
 [permissions]
 files = "Import/export CodeWalker XML files. Save/load presets."
