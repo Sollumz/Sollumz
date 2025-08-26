@@ -10,6 +10,7 @@ from .properties.ytyp import ArchetypeType
 
 _suppress_sync = False
 _suppress_sync_once = False
+_last_selection_hash = None
 
 
 @contextmanager
@@ -91,6 +92,15 @@ def depsgraph_update_post_handler(scene: Scene, depsgraph: Depsgraph):
     if not scene.sz_sync_archetypes_selection and not scene.sz_sync_mlo_entities_selection:
         return
 
+    active = depsgraph.view_layer.objects.active
+    selected = depsgraph.view_layer.objects.selected
+
+    # Build a hash of the selection state to avoid repeated syncing in too many unnecessary/incorrect cases
+    global _last_selection_hash
+    prev_selection_hash = _last_selection_hash
+    selection_hash = hash((active, *selected))
+    _last_selection_hash = selection_hash
+
     if _suppress_sync:
         return
 
@@ -99,9 +109,8 @@ def depsgraph_update_post_handler(scene: Scene, depsgraph: Depsgraph):
         _suppress_sync_once = False
         return
 
-    active = depsgraph.view_layer.objects.active
-    selected = depsgraph.view_layer.objects.selected
-    sync_selection(scene, active, selected)
+    if selection_hash != prev_selection_hash:
+        sync_selection(scene, active, selected)
 
 
 def register():
