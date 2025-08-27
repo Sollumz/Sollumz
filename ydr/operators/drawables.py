@@ -15,6 +15,7 @@ from ...tools.meshhelper import (
     mesh_rename_color_attrs_by_order,
 )
 
+
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
     """Create a Drawable empty"""
     bl_idname = "sollumz.createdrawable"
@@ -147,38 +148,6 @@ class SOLLUMZ_OT_convert_to_drawable_model(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_BONE_FLAGS_NewItem(SOLLUMZ_OT_base, bpy.types.Operator):
-    bl_idname = "sollumz.bone_flags_new_item"
-    bl_label = "Add a new item"
-    bl_action = "Add a Bone Flag"
-
-    def run(self, context):
-        bone = context.active_bone
-        bone.bone_properties.flags.add()
-        self.message(f"Added bone flag to bone: {bone.name}")
-        return True
-
-
-class SOLLUMZ_OT_BONE_FLAGS_DeleteItem(SOLLUMZ_OT_base, bpy.types.Operator):
-    bl_idname = "sollumz.bone_flags_delete_item"
-    bl_label = "Deletes an item"
-    bl_action = "Delete a Bone Flag"
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_bone is not None and context.active_bone.bone_properties.flags
-
-    def run(self, context):
-        bone = context.active_bone
-        list = bone.bone_properties.flags
-        index = bone.bone_properties.ul_index
-        list.remove(index)
-        bone.bone_properties.ul_index = min(
-            max(0, index - 1), len(list) - 1)
-        self.message(f"Deleted bone flag from: {bone.name}")
-        return True
-
-
 class SOLLUMZ_OT_apply_bone_properties_to_armature(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_idname = "sollumz.apply_bone_properties_to_armature"
     bl_label = "To Armature"
@@ -296,23 +265,6 @@ class SOLLUMZ_OT_scale_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelp
             new_flag.name = "ScaleZ"
         tag_redraw(context)
         self.report({'INFO'}, f'Scale Flags Added for {len(selected_bones)} bone(s)')
-        return {'FINISHED'}
-
-
-class SOLLUMZ_OT_limit_bone_flags(bpy.types.Operator, BonePoseModeRestrictedHelper):
-    bl_idname = "sollumz.limitboneflags"
-    bl_label = "Add Limit Flags"
-    bl_description = "Removes selected bone flags and adds the proper limit flags for custom bone locations"
-
-    def execute(self, context):
-        selected_bones = context.selected_pose_bones
-        for pBone in selected_bones:
-            new_flag = pBone.bone.bone_properties.flags.add()
-            new_flag.name = "LimitRotation"
-            new_flag = pBone.bone.bone_properties.flags.add()
-            new_flag.name = "LimitTranslation"
-        tag_redraw(context)
-        self.report({'INFO'}, f'Limit Flags Added for {len(selected_bones)} bone(s)')
         return {'FINISHED'}
 
 

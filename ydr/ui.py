@@ -650,12 +650,6 @@ class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):
         row.operator(drw_ops.SOLLUMZ_OT_rotation_bone_flags.bl_idname, text="Rotation")
         row.operator(drw_ops.SOLLUMZ_OT_translation_bone_flags.bl_idname, text="Translation")
         row.operator(drw_ops.SOLLUMZ_OT_scale_bone_flags.bl_idname, text="Scale")
-        row.operator(drw_ops.SOLLUMZ_OT_limit_bone_flags.bl_idname, text="Limit")
-
-
-class SOLLUMZ_UL_BONE_FLAGS(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        layout.prop(item, "name", text="", icon="FILE", emboss=False, translate=False)
 
 
 class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
@@ -682,15 +676,18 @@ class SOLLUMZ_PT_BONE_PANEL(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(bone.bone_properties, "tag")
         row.prop(bone.bone_properties, "use_manual_tag", toggle=True, icon="MODIFIER_ON", icon_only=True)
-        layout.separator()
 
         layout.label(text="Flags")
-        row = layout.row()
-        row.template_list("SOLLUMZ_UL_BONE_FLAGS", "Flags",
-                          bone.bone_properties, "flags", bone.bone_properties, "ul_index")
-        col = row.column(align=True)
-        col.operator("sollumz.bone_flags_new_item", text="", icon="ADD")
-        col.operator("sollumz.bone_flags_delete_item", text="", icon="REMOVE")
+        row = layout.row(align=True)
+        row.use_property_split = False
+        for flags in (
+            ("RotX", "RotY", "RotZ"),
+            ("TransX", "TransY", "TransZ"),
+            ("ScaleX", "ScaleY", "ScaleZ"),
+        ):
+            col = row.column(align=True)
+            for flag in flags:
+                col.prop_enum(bone.bone_properties, "flags_enum", flag, text=flag)
 
 
 class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):

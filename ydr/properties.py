@@ -10,6 +10,7 @@ from bpy.props import (
     FloatVectorProperty,
     CollectionProperty,
     PointerProperty,
+    EnumProperty,
 )
 import os
 import math
@@ -173,6 +174,21 @@ class BoneFlag(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(default="")
 
 
+BoneFlagEnumItems = (
+    ("RotX", "RotX", "", 0x1),
+    ("RotY", "RotY", "", 0x2),
+    ("RotZ", "RotZ", "", 0x4),
+
+    ("TransX", "TransX", "", 0x10),
+    ("TransY", "TransY", "", 0x20),
+    ("TransZ", "TransZ", "", 0x40),
+
+    ("ScaleX", "ScaleX", "", 0x100),
+    ("ScaleY", "ScaleY", "", 0x200),
+    ("ScaleZ", "ScaleZ", "", 0x400),
+)
+
+
 class BoneProperties(bpy.types.PropertyGroup):
     @staticmethod
     def calc_tag_hash(bone_name: str) -> int:
@@ -223,15 +239,43 @@ class BoneProperties(bpy.types.PropertyGroup):
         self.manual_tag = value
         self.use_manual_tag = value != self.calc_tag()
 
-    tag: bpy.props.IntProperty(
+    def get_flags_enum(self):
+        flag_set = set(f.name for f in self.flags)
+        flag_int = 0
+        for name, _, _, value in BoneFlagEnumItems:
+            if name in flag_set:
+                flag_int |= value
+
+        return flag_int
+
+    def set_flags_enum(self, flag_int: int):
+        flags = []
+        for name, _, _, value in BoneFlagEnumItems:
+            if (flag_int & value) != 0:
+                flags.append(name)
+
+        self.flags.clear()
+        for flag_name in flags:
+            new_flag = self.flags.add()
+            new_flag.name = flag_name
+
+    tag: IntProperty(
         name="Tag", description="Unique value that identifies this bone in the armature",
-        get=get_tag, set=set_tag, default=0, min=0, max=0xFFFF)
-    manual_tag: bpy.props.IntProperty(name="Manual Tag", default=0, min=0, max=0xFFFF)
-    use_manual_tag: bpy.props.BoolProperty(
+        get=get_tag, set=set_tag, default=0, min=0, max=0xFFFF
+    )
+    manual_tag: IntProperty(name="Manual Tag", default=0, min=0, max=0xFFFF)
+    use_manual_tag: BoolProperty(
         name="Use Manual Tag", description="Specify a tag instead of auto-calculating it",
         default=False)
-    flags: bpy.props.CollectionProperty(type=BoneFlag)
-    ul_index: bpy.props.IntProperty(name="UIListIndex", default=0)
+
+    # Just a wrapper around the flags collection property due to backwards compatibility, but it really doesn't make
+    # sense to have a collection for this
+    flags_enum: EnumProperty(
+        items=BoneFlagEnumItems, name="Flags", options={"ENUM_FLAG"},
+        get=get_flags_enum, set=set_flags_enum
+    )
+    flags: CollectionProperty(type=BoneFlag)
+    ul_index: IntProperty(name="UIListIndex", default=0)
 
 
 class ShaderMaterial(bpy.types.PropertyGroup):

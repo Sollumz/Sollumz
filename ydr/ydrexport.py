@@ -791,7 +791,9 @@ def set_bone_xml_flags(bone_xml: Bone, pose_bone: bpy.types.PoseBone):
     for constraint in pose_bone.constraints:
         if constraint.type == "LIMIT_ROTATION":
             bone_xml.flags.append("LimitRotation")
-            break
+
+        if constraint.type == "LIMIT_LOCATION":
+            bone_xml.flags.append("LimitTranslation")
 
     if bone.children:
         bone_xml.flags.append("Unk0")
