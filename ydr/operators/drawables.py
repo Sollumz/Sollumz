@@ -624,7 +624,7 @@ class SOLLUMZ_OT_uv_maps_rename_by_order(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+        return context.active_object is not None
 
     def execute(self, context: bpy.types.Context):
         selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
@@ -649,7 +649,7 @@ class SOLLUMZ_OT_uv_maps_add_missing(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+        return context.active_object is not None
 
     def execute(self, context: bpy.types.Context):
         selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
@@ -674,7 +674,7 @@ class SOLLUMZ_OT_color_attrs_rename_by_order(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+        return context.active_object is not None
 
     def execute(self, context: bpy.types.Context):
         selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
@@ -699,7 +699,7 @@ class SOLLUMZ_OT_color_attrs_add_missing(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
+        return context.active_object is not None
 
     def execute(self, context: bpy.types.Context):
         selected_meshes = [obj for obj in context.selected_objects if obj.type == "MESH"]
