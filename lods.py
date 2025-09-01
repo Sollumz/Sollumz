@@ -174,11 +174,21 @@ class SOLLUMZ_OT_set_lod_level(Operator):
         return active_obj is not None and active_obj.mode == "OBJECT" and find_sollumz_parent(active_obj)
 
     def execute(self, context):
+        objs = set()
+
         active_obj = context.view_layer.objects.active
-        obj = find_sollumz_parent(active_obj)
-        set_all_lods(obj, LODLevel(self.lod_level))
+        objs.add(find_sollumz_parent(active_obj))
+
+        for selected_obj in context.view_layer.objects.selected:
+            if obj := find_sollumz_parent(selected_obj):
+                objs.add(obj)
+
+        lod_level = LODLevel(self.lod_level)
+        for obj in objs:
+            set_all_lods(obj, lod_level)
 
         return {"FINISHED"}
+
 
 class SOLLUMZ_OT_hide_object(Operator):
     bl_idname = "sollumz.hide_object"
@@ -191,18 +201,25 @@ class SOLLUMZ_OT_hide_object(Operator):
         return active_obj is not None and active_obj.mode == "OBJECT" and find_sollumz_parent(active_obj)
 
     def execute(self, context):
+        objs = set()
+
         active_obj = context.view_layer.objects.active
-        obj = find_sollumz_parent(active_obj)
+        objs.add(find_sollumz_parent(active_obj))
 
-        do_hide = not obj.hide_get()
-        obj.hide_set(do_hide)
+        for selected_obj in context.view_layer.objects.selected:
+            if obj := find_sollumz_parent(selected_obj):
+                objs.add(obj)
 
-        for child in obj.children_recursive:
-            active_lod = child.sz_lods.active_lod
-            if child.sollum_type != SollumType.DRAWABLE_MODEL or active_lod.mesh is None:
-                continue
+        for obj in objs:
+            do_hide = not obj.hide_get()
+            obj.hide_set(do_hide)
 
-            child.hide_set(do_hide)
+            for child in obj.children_recursive:
+                active_lod = child.sz_lods.active_lod
+                if child.sollum_type != SollumType.DRAWABLE_MODEL or active_lod.mesh is None:
+                    continue
+
+                child.hide_set(do_hide)
 
         return {"FINISHED"}
 
