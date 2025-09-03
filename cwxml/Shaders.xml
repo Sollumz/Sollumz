@@ -2912,6 +2912,45 @@
   </Parameters>
  </Item>
  <Item>
+  <Name>ped_hair_cutout_alpha_cloth</Name>
+  <FileName>
+   <Item bucket="3">ped_hair_cutout_alpha_cloth.sps</Item>
+  </FileName>
+  <Flags>IS_PED_CLOTH</Flags>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <BlendWeights />
+    <BlendIndices />
+    <Normal />
+    <Colour0 />
+    <Colour1 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="TextureSamplerDiffPal" type="Texture" />
+   <Item name="AnisoNoiseSpecSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="umGlobalParams" type="float4" x="0.0025" y="0.0025" z="7" w="7" />
+   <Item name="AnisotropicAlphaBias" type="float" x="1" />
+   <Item name="envEffFatThickness" type="float2" x="25" y="25" />
+   <Item name="specularIntensityMult" type="float" x="1" />
+   <Item name="specularFalloffMult" type="float" x="100" />
+   <Item name="specularFresnel" type="float" x="0.97" />
+   <Item name="bumpiness" type="float" x="1" />
+   <Item name="specularNoiseMapUVScaleFactor" type="float4" x="2" y="1" z="3" w="1" />
+   <Item name="anisotropicSpecularColour" type="float4" x="0.1" y="0.1" z="0.1" w="1" />
+   <Item name="anisotropicSpecularExponent" type="float2" x="16" y="32" />
+   <Item name="anisotropicSpecularIntensity" type="float2" x="0.1" y="0.15" />
+   <Item name="detailSettings" type="float3" x="0.1" y="0.75" z="40" />
+   <Item name="StubbleControl" type="float2" x="2" y="0.6" />
+  </Parameters>
+ </Item>
+ <Item>
   <Name>decal_dirt</Name>
   <FileName>
    <Item bucket="2">decal_dirt.sps</Item>
