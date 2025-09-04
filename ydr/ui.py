@@ -882,9 +882,18 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
 
         box.prop(context.scene, "sollumz_auto_lod_levels")
         box.separator(factor=0.25)
-        box.prop(context.scene, "sollumz_auto_lod_ref_mesh",
-                 text="Reference Mesh")
+        row = box.row()
+        row.prop(context.scene, "sollumz_auto_lod_use_active_lod_as_ref")
+        sub = box.row()
+        sub.enabled = not context.scene.sollumz_auto_lod_use_active_lod_as_ref
+        sub.prop(context.scene, "sollumz_auto_lod_ref_mesh", text="Reference Mesh")
         box.prop(context.scene, "sollumz_auto_lod_decimate_step")
+        # Pre-steps
+        col = box.column(align=True)
+        col.label(text="Pre-steps before Decimate")
+        col.prop(context.scene, "sollumz_auto_lod_pre_merge_by_distance")
+        col.prop(context.scene, "sollumz_auto_lod_pre_reset_vectors")
+        col.prop(context.scene, "sollumz_auto_lod_pre_clear_custom_normals")
         box.separator()
         row = box.row(align=True)
         row.operator("sollumz.auto_lod", icon="MOD_DECIM", text="Active Only")

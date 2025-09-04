@@ -744,6 +744,27 @@ def register():
     bpy.types.Scene.sollumz_auto_lod_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
         name="Decimate Step", min=0.0, max=0.99, default=0.6)
+    bpy.types.Scene.sollumz_auto_lod_use_active_lod_as_ref = bpy.props.BoolProperty(
+        name="Use Visible LOD as Reference",
+        description="Start from the active/view LOD of the active object instead of the Reference Mesh",
+        default=False
+    )
+    # Auto LOD pre-steps
+    bpy.types.Scene.sollumz_auto_lod_pre_merge_by_distance = bpy.props.BoolProperty(
+        name="Merge by Distance",
+        description="Before decimation, merge overlapping vertices by distance",
+        default=False
+    )
+    bpy.types.Scene.sollumz_auto_lod_pre_reset_vectors = bpy.props.BoolProperty(
+        name="Reset Vectors",
+        description="Before decimation, recalculate normals to make them consistent",
+        default=False
+    )
+    bpy.types.Scene.sollumz_auto_lod_pre_clear_custom_normals = bpy.props.BoolProperty(
+        name="Clear Custom Split Normals",
+        description="Before decimation, clear custom split normals data",
+        default=False
+    )
 
     # LOD deletion selection for Delete LODs tool
     bpy.types.Scene.sollumz_delete_lods_levels = lod_level_enum_flag_prop_factory()
@@ -911,6 +932,10 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_ref_mesh
     del bpy.types.Scene.sollumz_auto_lod_levels
     del bpy.types.Scene.sollumz_auto_lod_decimate_step
+    del bpy.types.Scene.sollumz_auto_lod_use_active_lod_as_ref
+    del bpy.types.Scene.sollumz_auto_lod_pre_merge_by_distance
+    del bpy.types.Scene.sollumz_auto_lod_pre_reset_vectors
+    del bpy.types.Scene.sollumz_auto_lod_pre_clear_custom_normals
     del bpy.types.Scene.sollumz_delete_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type

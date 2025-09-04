@@ -568,7 +568,13 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
 
     def execute(self, context: Context):
         aobj = context.active_object
-        ref_mesh = context.scene.sollumz_auto_lod_ref_mesh
+        use_active_ref = context.scene.sollumz_auto_lod_use_active_lod_as_ref
+        ref_mesh = None
+        if use_active_ref:
+            # Use the currently visible LOD mesh of the active object
+            ref_mesh = aobj.sz_lods.active_lod.mesh
+        else:
+            ref_mesh = context.scene.sollumz_auto_lod_ref_mesh
 
         if ref_mesh is None:
             self.report(
@@ -597,6 +603,9 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
         context.view_layer.objects.active = aobj
 
         for lod_level in lods:
+            # If using active as reference and we're targeting that same LOD, skip (don't overwrite manual edits)
+            if use_active_ref and lod_level == aobj.sz_lods.active_lod_level:
+                continue
             bpy.ops.object.mode_set(mode="OBJECT")  # make sure we are in object mode before switching LODs
             mesh = last_mesh.copy()
             mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
@@ -606,6 +615,17 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
 
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.select_all(action="SELECT")
+            # Pre-steps
+            if context.scene.sollumz_auto_lod_pre_merge_by_distance:
+                # Use a small distance; users can adjust after if needed
+                bpy.ops.mesh.remove_doubles(threshold=0.0001)
+            if context.scene.sollumz_auto_lod_pre_reset_vectors:
+                bpy.ops.mesh.normals_make_consistent(inside=False)
+            if context.scene.sollumz_auto_lod_pre_clear_custom_normals:
+                try:
+                    bpy.ops.mesh.customdata_custom_splitnormals_clear()
+                except Exception:
+                    pass
             bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
 
             last_mesh = mesh
@@ -674,7 +694,11 @@ class SOLLUMZ_OT_auto_lod_multi(bpy.types.Operator):
 
         for obj in selected_model_objs:
             obj_lods: LODLevels = obj.sz_lods
-            ref_mesh = obj_lods.get_lod(LODLevel.VERYHIGH).mesh
+            # Per-object: optionally use that object's active/visible LOD as reference
+            if context.scene.sollumz_auto_lod_use_active_lod_as_ref:
+                ref_mesh = obj_lods.active_lod.mesh
+            else:
+                ref_mesh = obj_lods.get_lod(LODLevel.VERYHIGH).mesh
 
             if ref_mesh is None:
                 skipped += 1
@@ -692,9 +716,13 @@ class SOLLUMZ_OT_auto_lod_multi(bpy.types.Operator):
             last_mesh = ref_mesh
 
             for lod_level in lod_levels:
-                if lod_level == LODLevel.VERYHIGH:
-                    # Avoid modifying the reference mesh via decimation
-                    continue
+                # Avoid modifying the reference mesh via decimation
+                if context.scene.sollumz_auto_lod_use_active_lod_as_ref:
+                    if lod_level == obj_lods.active_lod_level:
+                        continue
+                else:
+                    if lod_level == LODLevel.VERYHIGH:
+                        continue
 
                 bpy.ops.object.mode_set(mode="OBJECT")
                 mesh = last_mesh.copy()
@@ -705,6 +733,16 @@ class SOLLUMZ_OT_auto_lod_multi(bpy.types.Operator):
 
                 bpy.ops.object.mode_set(mode="EDIT")
                 bpy.ops.mesh.select_all(action="SELECT")
+                # Pre-steps
+                if context.scene.sollumz_auto_lod_pre_merge_by_distance:
+                    bpy.ops.mesh.remove_doubles(threshold=0.0001)
+                if context.scene.sollumz_auto_lod_pre_reset_vectors:
+                    bpy.ops.mesh.normals_make_consistent(inside=False)
+                if context.scene.sollumz_auto_lod_pre_clear_custom_normals:
+                    try:
+                        bpy.ops.mesh.customdata_custom_splitnormals_clear()
+                    except Exception:
+                        pass
                 bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
 
                 last_mesh = mesh

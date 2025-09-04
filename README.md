@@ -60,6 +60,10 @@ Follow the [installation instructions on our wiki](https://docs.sollumz.org/gett
     - Generates only the levels selected in `Scene.sollumz_auto_lod_levels` and applies decimation by `Scene.sollumz_auto_lod_decimate_step`.
   - UI: Auto LOD now shows two buttons: “Active Only” (`sollumz.auto_lod`) and “Per-Object” (`sollumz.auto_lod_multi`).
   - Behavior fix: The currently active view LOD mesh (e.g., High/Very High) is preserved unless that exact LOD level is selected for generation. Applies to both single-object and multi-object runs.
+  - Optional pre-steps before decimation (toggle in Auto LOD panel):
+    - Merge by Distance (`Scene.sollumz_auto_lod_pre_merge_by_distance`)
+    - Reset Vectors / Recalculate Normals (`Scene.sollumz_auto_lod_pre_reset_vectors`)
+    - Clear Custom Split Normals (`Scene.sollumz_auto_lod_pre_clear_custom_normals`)
 
 - LOD Tools: LOD Materials (_low material creation)
   - New operator: `sollumz.create_low_materials` to duplicate a chosen material to a low variant and replace it on a chosen LOD level across all models using the original.
@@ -73,4 +77,5 @@ Follow the [installation instructions on our wiki](https://docs.sollumz.org/gett
 Usage tips
 - Delete LODs: select one or more Drawable Models, choose levels, click Delete LODs.
 - Auto LOD Per-Object: select multiple Drawable Models, choose target levels and decimate step, click Per-Object. The Very High mesh of each object is used as the reference; High/Very High remain untouched unless selected.
+ - Auto LOD pre-steps: in the Auto LOD panel, enable desired pre-steps (Merge by Distance, Reset Vectors, Clear Custom Split Normals) before running.
  - LOD Materials: choose the source material, pick target LOD and suffix, then click “Create _low Materials”. Only meshes at the selected LOD that use the source material will be updated.
