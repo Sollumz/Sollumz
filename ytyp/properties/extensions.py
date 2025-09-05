@@ -330,8 +330,8 @@ class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProper
     fx_name: StringProperty(name="FX Name")
     fx_type: IntProperty(name="FX Type", min=0, max=7, default=ParticleFxType.AMBIENT.value)
     bone_tag: IntProperty(name="Bone Tag", default=0)
-    scale: FloatProperty(name="Scale")
-    probability: IntProperty(name="Probability", min=0, max=100, subtype="PERCENTAGE")
+    scale: FloatProperty(name="Scale", min=0.0, default=1.0)
+    probability: IntProperty(name="Probability", min=0, max=100, default=100, subtype="PERCENTAGE")
     flags: IntProperty(name="Flags", subtype="UNSIGNED")
     color: FloatVectorProperty(name="Tint Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
 
