@@ -289,20 +289,22 @@ ParticleFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})",
     (
         ParticleFxType.SHOT,
         "Shot",
-        "Trigger when this object is shot at. Valid FX names are defined in the ENTITYFX_SHOT_PTFX block within "
+        "Trigger when this object is shot at. If no bone is set (or bone tag is -1), the effect triggers on any shot "
+        "bone; otherwise, only on the specified bone. Valid FX names are defined in the ENTITYFX_SHOT_PTFX block within "
         "entityfx.dat"
     ),
     (
         ParticleFxType.BREAK,
         "Break",
-        "Fragments only, trigger when this fragment breaks apart. Valid FX names are defined in the "
+        "Fragments only, trigger when this fragment breaks apart. If no bone is set (or bone tag is -1), the effect "
+        "triggers on any broken bone; otherwise, only on the specified bone. Valid FX names are defined in the "
         "FRAGMENTFX_BREAK_PTFX block within entityfx.dat"
-
     ),
     (
         ParticleFxType.DESTROY,
         "Destroy",
-        "Fragments only, trigger when this fragment is destroyed. Valid FX names are defined in the "
+        "Fragments only, trigger when this fragment is destroyed. If no bone is set (or bone tag is -1), the effect "
+        "triggers on any destroyed bone; otherwise, only on the specified bone. Valid FX names are defined in the "
         "FRAGMENTFX_DESTROY_PTFX block within entityfx.dat"
 
     ),
@@ -327,7 +329,7 @@ class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProper
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     fx_name: StringProperty(name="FX Name")
     fx_type: IntProperty(name="FX Type", min=0, max=7, default=ParticleFxType.AMBIENT.value)
-    bone_tag: IntProperty(name="Bone Tag", default=-1)
+    bone_tag: IntProperty(name="Bone Tag", default=0)
     scale: FloatProperty(name="Scale")
     probability: IntProperty(name="Probability", min=0, max=100, subtype="PERCENTAGE")
     flags: IntProperty(name="Flags", subtype="UNSIGNED")
@@ -458,22 +460,29 @@ ExplosionFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})"
     (
         ExplosionFxType.SHOT_POINT,
         "Shot (at impact point)",
-        "Trigger when this object is shot at. The explosion will be created at the point where the object was shot"
+        "Trigger when this object is shot at. The explosion will be created at the point where the object was shot. If "
+        "no bone is set (or bone tag is -1), the explosion triggers on any shot bone; otherwise, only on the specified "
+        "bone"
     ),
     (
         ExplosionFxType.SHOT_OFFSET,
         "Shot (at offset position)",
-        "Trigger when this object is shot at. The explosion will be created at the extension offset position"
+        "Trigger when this object is shot at. The explosion will be created at the extension offset position. If no "
+        "bone is set (or bone tag is -1), the explosion triggers on any shot bone; otherwise, only on the specified "
+        "bone"
+
     ),
     (
         ExplosionFxType.BREAK,
         "Break",
-        "Fragments only, trigger when this fragment breaks apart"
+        "Fragments only, trigger when this fragment breaks apart. If no bone is set (or bone tag is -1), the explosion "
+        "triggers on any broken bone; otherwise, only on the specified bone"
     ),
     (
         ExplosionFxType.DESTROY,
         "Destroy",
-        "Fragments only, trigger when this fragment is destroyed"
+        "Fragments only, trigger when this fragment is destroyed. If no bone is set (or bone tag is -1), the explosion "
+        "triggers on any destroyed bone; otherwise, only on the specified bone"
     ),
 ))
 
@@ -575,7 +584,7 @@ class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionPrope
         search=lambda s, c, v: KNOWN_EXPLOSION_NAMES,
         search_options={"SUGGESTION"}
     )
-    bone_tag: IntProperty(name="Bone Tag", default=-1)
+    bone_tag: IntProperty(name="Bone Tag", default=0)
     explosion_type: IntProperty(name="Explosion Type", min=0, max=3, default=ExplosionFxType.SHOT_POINT.value)
     flags: IntProperty(name="Flags", subtype="UNSIGNED")
 
@@ -857,7 +866,7 @@ class SpawnPointOverrideProperties(BaseExtensionProperties, PropertyGroup):
 class WindDisturbanceExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     disturbance_type: IntProperty(name="Disturbance Type")
-    bone_tag: IntProperty(name="Bone Tag", default=-1)
+    bone_tag: IntProperty(name="Bone Tag", default=0)
     size: FloatVectorProperty(name="Size", size=4, subtype="XYZ")
     strength: FloatProperty(name="Strength")
     flags: IntProperty(name="Flags")
