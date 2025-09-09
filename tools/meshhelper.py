@@ -158,7 +158,7 @@ def create_capsule(mesh, radius=0.5, length=2, axis="Y"):
         idx3 = idx1 + (segments + 1)
         idx4 = idx2 + (segments + 1)
 
-        indices = np.stack((idx1, idx3, idx4, idx2), axis=-1).reshape(-1, 4)
+        indices = np.stack((idx1, idx2, idx4, idx3), axis=-1).reshape(-1, 4)
 
         return vertices, indices
 
