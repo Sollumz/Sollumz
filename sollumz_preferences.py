@@ -479,6 +479,26 @@ class SollumzAddonPreferences(AddonPreferences):
         type=SzFavoriteEntry,
     )
 
+    # TODO: operator to create JSON from procedural.meta
+    # tree = ET.parse("procedural.meta")
+    # procids = [elem.text for elem in tree.getroot().findall("./procTagTable/Item/name")]
+    # with open("procids.json", "w") as f:
+    #     json.dump(procids, f, separators=(',', ':'))
+    def _on_custom_procids_path_update(self, context):
+        _save_preferences_on_update(self, context)
+        from .ybn.properties import ProceduralIdEnumItems
+        ProceduralIdEnumItems.reload()
+
+    custom_procids_path: StringProperty(
+        name="Custom Procedural IDs",
+        description=(
+            "Path to a JSON file with a custom list of procedural IDs names (a JSON array of strings with 255 entries). "
+            "Useful if you are using a modified procedural.meta file"
+        ),
+        subtype="FILE_PATH",
+        update=_on_custom_procids_path_update,
+    )
+
     export_settings: PointerProperty(type=SollumzExportSettings, name="Export Settings")
     import_settings: PointerProperty(type=SollumzImportSettings, name="Import Settings")
     theme: PointerProperty(type=SollumzThemeSettings, name="Theme")
@@ -608,6 +628,17 @@ class SollumzAddonPreferences(AddonPreferences):
         subcol = side_col.column(align=True)
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_up.bl_idname, text="", icon="TRIA_UP")
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
+
+        layout.separator()
+        if bpy.app.version >= (4, 1, 0):
+            header, body = layout.panel("prefs_general_advanced", default_closed=True)
+        else:
+            # Good enough to always display the panel contents when UILayout.panel is not available
+            header, body = layout, layout
+        header.label(text="Advanced")
+        if body:
+            # intentionally not using `body` here because it makes the panel look weird inside the prefs default box layout
+            layout.prop(self, "custom_procids_path")
 
     def draw_import_export(self, context, layout: UILayout):
         def _section_header(layout: UILayout, text: str):
