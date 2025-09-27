@@ -275,7 +275,7 @@ def create_mlo_archetype_children(archetype_xml: ytypxml.MloArchetype, archetype
 def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
     """Places all entities linked objects in collections. One collection per room."""
 
-    base_collection_name = f"{archetype.asset_name}.entities"
+    base_collection_name = f"{archetype.name}.entities"
     base_collection = bpy.data.collections.new(base_collection_name)
     bpy.context.collection.children.link(base_collection)
     mlo_collections = {base_collection_name: base_collection}
@@ -304,7 +304,7 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
 
         room_name = entity.get_room_name()
         if room_name:
-            entity_collection_name = f"{archetype.asset_name}.{room_name}"
+            entity_collection_name = f"{archetype.name}.{room_name}"
         else:
             entity_collection_name = base_collection_name
 
@@ -318,7 +318,7 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
 
     if light_effect_objs:
         # Place all light effect objects in their own collection
-        light_effect_collection_name = f"{archetype.asset_name}.light_effects"
+        light_effect_collection_name = f"{archetype.name}.light_effects"
         light_effect_collection = bpy.data.collections.new(light_effect_collection_name)
         bpy.context.collection.children.link(light_effect_collection)
         for lights_parent_obj in light_effect_objs:
