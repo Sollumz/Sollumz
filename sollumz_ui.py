@@ -454,28 +454,6 @@ class SOLLUMZ_PT_EXPORT_PATH_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         self.layout.prop(context.scene, "sollumz_export_path", text="")
 
 
-class SOLLUMZ_PT_TERRAIN_PAINTER_PANEL(GeneralToolChildPanel, bpy.types.Panel):
-    bl_label = "Terrain Painter"
-    bl_idname = "SOLLUMZ_PT_TERRAIN_PAINTER_PANEL"
-    bl_parent_id = SOLLUMZ_PT_VERTEX_TOOL_PANEL.bl_idname
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="IMAGE")
-
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.paint_tex1")
-        row.operator("sollumz.paint_tex2")
-        row = layout.row()
-        row.operator("sollumz.paint_tex3")
-        row.operator("sollumz.paint_tex4")
-        row = layout.row(align=True)
-        op = row.operator("sollumz.paint_a")
-        op.alpha = context.scene.vert_paint_alpha
-        row.prop(context.scene, "vert_paint_alpha")
-
-
 class SOLLUMZ_PT_OBJECT_PANEL(bpy.types.Panel):
     bl_label = "Sollumz"
     bl_idname = "SOLLUMZ_PT_MAIN_PANEL"

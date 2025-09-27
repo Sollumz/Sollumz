@@ -537,9 +537,6 @@ def register():
         size=4
     )
 
-    bpy.types.Scene.vert_paint_alpha = bpy.props.FloatProperty(
-        name="Alpha", min=-1, max=1)
-
     bpy.types.Scene.all_sollum_type = bpy.props.EnumProperty(
         items=sorted(items_from_enums(SollumType), key=lambda i: i[0]),
         name="Sollum Types",
@@ -565,6 +562,5 @@ def unregister():
     del bpy.types.Scene.vert_paint_color4
     del bpy.types.Scene.vert_paint_color5
     del bpy.types.Scene.vert_paint_color6
-    del bpy.types.Scene.vert_paint_alpha
     del bpy.types.Scene.all_sollum_type
     del bpy.types.Scene.sollumz_export_path

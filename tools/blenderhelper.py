@@ -28,38 +28,6 @@ def create_brush(name):
     return bpy.data.brushes[name]
 
 
-def apply_terrain_brush_settings(brush, idx: int, paint_alpha: float | None = None):
-    if idx < 5:
-        brush.blend = "MIX"
-    if idx == 1:
-        brush.color = (0, 0, 0)
-        brush.strength = 1
-    elif idx == 2:
-        brush.color = (0, 0, 1)
-        brush.strength = 1
-    elif idx == 3:
-        brush.color = (0, 1, 0)
-        brush.strength = 1
-    elif idx == 4:
-        brush.color = (0, 1, 1)
-        brush.strength = 1
-    elif idx == 5:
-        assert paint_alpha is not None, "paint_alpha required"
-        if paint_alpha > 0:
-            brush.color = (1, 1, 1)
-            brush.blend = "ADD_ALPHA"
-            brush.strength = paint_alpha
-        else:
-            brush.color = (0, 0, 0)
-            brush.blend = "ERASE_ALPHA"
-            brush.strength = paint_alpha * -1
-
-
-def apply_terrain_brush_setting_to_current_brush(idx: int, paint_alpha: float | None = None):
-    brush = bpy.context.scene.tool_settings.vertex_paint.brush
-    apply_terrain_brush_settings(brush, idx, paint_alpha)
-
-
 def material_from_image(img, name="Material", nodename="Image"):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True

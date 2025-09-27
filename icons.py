@@ -57,6 +57,7 @@ def icon(name: str) -> int:
 
 
 ICON_GEOM_TOOL = str(ICON_DIR / "sollumz.tool")
+ICON_GEOM_GRADIENT = str(ICON_DIR / "sollumz.gradient")
 
 
 def register():
