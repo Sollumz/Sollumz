@@ -29,7 +29,7 @@ jobs:
             pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
 
-          - blender-version: '4.2.8'
+          - blender-version: '4.2.14'
             python-version: '3.11'
             pytest-version: '8.3.5'
             pytest-blender-version: '3.0.6'
@@ -41,7 +41,13 @@ jobs:
             pytest-blender-version: '3.0.6'
             pytest-cov-version: '6.1.1'
 
-          - blender-version: '4.4.0'
+          - blender-version: '4.4.3'
+            python-version: '3.11'
+            pytest-version: '8.3.5'
+            pytest-blender-version: '3.0.6'
+            pytest-cov-version: '6.1.1'
+
+          - blender-version: '4.5.3'
             python-version: '3.11'
             pytest-version: '8.3.5'
             pytest-blender-version: '3.0.6'
