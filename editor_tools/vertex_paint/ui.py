@@ -43,7 +43,7 @@ class SOLLUMZ_PT_vertex_paint_isolate_channels(Panel):
             row.operator(
                 SOLLUMZ_OT_vertex_paint_isolate_toggle_channel.bl_idname,
                 text="",
-                icon=ch.icon,
+                icon_value=ch.icon,
                 depress=ch in isolated_channels,
             ).channel = ch.value
 
@@ -121,7 +121,7 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
             row.operator(
                 SOLLUMZ_OT_vertex_paint_isolate_toggle_channel.bl_idname,
                 text="",
-                icon=ch.icon,
+                icon_value=ch.icon,
                 depress=ch in isolated_channels,
             ).channel = ch.value
 

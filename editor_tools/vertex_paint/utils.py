@@ -1,7 +1,9 @@
 from enum import Enum
 
+from ...icons import icon
+
 CHANNEL_LABELS = ("Red", "Green", "Blue", "Alpha")
-CHANNEL_ICONS = ("RGB_RED", "RGB_GREEN", "RGB_BLUE", "EVENT_A")
+CHANNEL_ICONS = ("RGBA_RED", "RGBA_GREEN", "RGBA_BLUE", "RGBA_ALPHA")
 
 
 class Channel(Enum):
@@ -15,8 +17,8 @@ class Channel(Enum):
         return CHANNEL_LABELS[self.value]
 
     @property
-    def icon(self) -> str:
-        return CHANNEL_ICONS[self.value]
+    def icon(self) -> int:
+        return icon(CHANNEL_ICONS[self.value])
 
 
 def attr_domain_size(mesh, attr) -> int:
