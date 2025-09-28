@@ -296,6 +296,8 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
 
         color_attr.data.foreach_set("color_srgb", color_data.ravel())
 
+        mesh.update_tag()
+
     def _restore_verts(self, context):
         mesh = context.active_object.data
         color_attr = mesh.attributes.active_color
