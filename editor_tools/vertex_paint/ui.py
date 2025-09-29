@@ -3,8 +3,8 @@
 import bpy
 from bl_ui.space_view3d import VIEW3D_MT_paint_vertex
 from bpy.props import (
-    FloatProperty,
     EnumProperty,
+    FloatProperty,
 )
 from bpy.types import (
     Menu,
@@ -17,12 +17,12 @@ from .isolate import (
     SOLLUMZ_OT_vertex_paint_isolate_toggle_channel,
     isolate_get_state,
 )
-from .transfer import (
-    SOLLUMZ_OT_vertex_paint_transfer_channels,
-)
 from .terrain import (
     SOLLUMZ_OT_vertex_paint_terrain_alpha,
     SOLLUMZ_OT_vertex_paint_terrain_texture,
+)
+from .transfer import (
+    SOLLUMZ_OT_vertex_paint_transfer_channels,
 )
 from .utils import (
     Channel,

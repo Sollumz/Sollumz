@@ -1,17 +1,11 @@
 """Operators to transfer color channels between color attributes."""
 
-import re
-from typing import NamedTuple
-
 import numpy as np
 from bpy.props import (
-    BoolProperty,
-    IntProperty,
-    StringProperty,
     EnumProperty,
+    StringProperty,
 )
 from bpy.types import (
-    Context,
     Operator,
 )
 
