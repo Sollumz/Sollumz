@@ -25,6 +25,18 @@ def plane_object(context):
     obj.select_set(True)
     bpy.ops.object.delete()
 
+@pytest.fixture()
+def cube_object(context):
+    bpy.ops.mesh.primitive_cube_add()
+    obj = context.object
+
+    yield obj
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.ops.object.delete()
+
 
 @pytest.fixture(params=[
     (1, 1.0),

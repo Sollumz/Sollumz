@@ -4,6 +4,7 @@ import bpy
 from bl_ui.space_view3d import VIEW3D_MT_paint_vertex
 from bpy.props import (
     FloatProperty,
+    EnumProperty,
 )
 from bpy.types import (
     Menu,
@@ -16,11 +17,17 @@ from .isolate import (
     SOLLUMZ_OT_vertex_paint_isolate_toggle_channel,
     isolate_get_state,
 )
+from .transfer import (
+    SOLLUMZ_OT_vertex_paint_transfer_channels,
+)
 from .terrain import (
     SOLLUMZ_OT_vertex_paint_terrain_alpha,
     SOLLUMZ_OT_vertex_paint_terrain_texture,
 )
-from .utils import Channel
+from .utils import (
+    Channel,
+    ChannelWithNoneEnumItems,
+)
 
 
 class SOLLUMZ_PT_vertex_paint_isolate_channels(Panel):
@@ -48,6 +55,101 @@ class SOLLUMZ_PT_vertex_paint_isolate_channels(Panel):
             ).channel = ch.value
 
 
+class SOLLUMZ_PT_vertex_paint_transfer_channels(Panel):
+    bl_idname = "SOLLUMZ_PT_vertex_paint_transfer_channels"
+    bl_label = "Transfer Channels"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Vertex Paint"
+    bl_context = "vertexpaint"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 2
+
+    def draw(self, context):
+        layout = self.layout
+        wm = context.window_manager
+
+        row = layout.row()
+        split = row.split()
+        subrow = split.row(align=True)
+        subrow.prop(wm, "sz_ui_vertex_paint_transfer_src_attr", text="", icon="GROUP_VCOL")
+        subrow = split.row(align=True)
+        subrow.scale_x = 100.0
+        for dst_ch in Channel:
+            prop = f"sz_ui_vertex_paint_transfer_src_for_dst_{dst_ch.name[0].lower()}"
+            subrow.prop(wm, prop, text="")
+
+        row = layout.row()
+        split = row.split(factor=0.5)
+        subrow = split.row(align=True)
+        subrow.alignment = "CENTER"
+        subrow.label(text="↓")
+        subrow = split.row(align=True)
+        subrow.alignment = "CENTER"
+        subrow.label(text="↓")
+
+        row = layout.row(align=True)
+        split = row.split()
+        subrow = split.row(align=True)
+        subrow.prop(wm, "sz_ui_vertex_paint_transfer_dst_attr", text="", icon="GROUP_VCOL")
+        subrow = split.row(align=True)
+        subrow.scale_x = 100.0
+        for dst_ch in Channel:
+            subrow.label(text="")
+            subrow.label(text="", icon_value=dst_ch.icon)
+            subrow.label(text="")
+
+        op = layout.operator(SOLLUMZ_OT_vertex_paint_transfer_channels.bl_idname, text="Transfer")
+        op.src_attribute = wm.sz_ui_vertex_paint_transfer_src_attr
+        op.dst_attribute = wm.sz_ui_vertex_paint_transfer_dst_attr
+        op.src_for_dst_r = wm.sz_ui_vertex_paint_transfer_src_for_dst_r
+        op.src_for_dst_g = wm.sz_ui_vertex_paint_transfer_src_for_dst_g
+        op.src_for_dst_b = wm.sz_ui_vertex_paint_transfer_src_for_dst_b
+        op.src_for_dst_a = wm.sz_ui_vertex_paint_transfer_src_for_dst_a
+
+    @classmethod
+    def register(cls):
+        def _attr_enum_items(self, context):
+            mesh = context.active_object.data
+            active = mesh.color_attributes.active_color_name
+            items = tuple(
+                (attr.name, f"* {attr.name}", f"{attr.name} (Active)")
+                if attr.name == active
+                else (attr.name, attr.name, attr.name)
+                for i, attr in enumerate(mesh.color_attributes)
+            )
+            _attr_enum_items._last = items
+            return items
+
+        WindowManager.sz_ui_vertex_paint_transfer_src_attr = EnumProperty(
+            items=_attr_enum_items, name="Source Attribute", default=0
+        )
+        WindowManager.sz_ui_vertex_paint_transfer_dst_attr = EnumProperty(
+            items=_attr_enum_items, name="Destination Attribute", default=0
+        )
+        WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_r = EnumProperty(
+            items=ChannelWithNoneEnumItems, name="Source Channel for Destination Red Channel", default=0
+        )
+        WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_g = EnumProperty(
+            items=ChannelWithNoneEnumItems, name="Source Channel for Destination Green Channel", default=1
+        )
+        WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_b = EnumProperty(
+            items=ChannelWithNoneEnumItems, name="Source Channel for Destination Blue Channel", default=2
+        )
+        WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_a = EnumProperty(
+            items=ChannelWithNoneEnumItems, name="Source Channel for Destination Alpha Channel", default=3
+        )
+
+    @classmethod
+    def unregister(cls):
+        del WindowManager.sz_ui_vertex_paint_transfer_src_attr
+        del WindowManager.sz_ui_vertex_paint_transfer_dst_attr
+        del WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_r
+        del WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_g
+        del WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_b
+        del WindowManager.sz_ui_vertex_paint_transfer_src_for_dst_a
+
+
 class SOLLUMZ_PT_vertex_paint_terrain(Panel):
     bl_idname = "SOLLUMZ_PT_vertex_paint_terrain"
     bl_label = "Terrain Painter"
@@ -56,7 +158,7 @@ class SOLLUMZ_PT_vertex_paint_terrain(Panel):
     bl_category = "Vertex Paint"
     bl_context = "vertexpaint"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 2
+    bl_order = 3
 
     def draw_header(self, context):
         self.layout.label(text="", icon="IMAGE")
@@ -73,6 +175,14 @@ class SOLLUMZ_PT_vertex_paint_terrain(Panel):
         alpha = context.window_manager.sz_ui_vertex_paint_terrain_alpha
         row.operator(SOLLUMZ_OT_vertex_paint_terrain_alpha.bl_idname).alpha = alpha
         row.prop(context.window_manager, "sz_ui_vertex_paint_terrain_alpha")
+
+    @classmethod
+    def register(cls):
+        WindowManager.sz_ui_vertex_paint_terrain_alpha = FloatProperty(name="Alpha", min=-1, max=1)
+
+    @classmethod
+    def unregister(cls):
+        del WindowManager.sz_ui_vertex_paint_terrain_alpha
 
 
 class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
@@ -137,8 +247,6 @@ _addon_keymaps = []
 
 
 def register():
-    WindowManager.sz_ui_vertex_paint_terrain_alpha = FloatProperty(name="Alpha", min=-1, max=1)
-
     VIEW3D_MT_paint_vertex.append(_draw_vertex_paint_menu)
 
     # Keybinding for vertex paint pie menu
@@ -153,8 +261,6 @@ def register():
 
 
 def unregister():
-    del WindowManager.sz_ui_vertex_paint_terrain_alpha
-
     VIEW3D_MT_paint_vertex.remove(_draw_vertex_paint_menu)
 
     for km, kmi in _addon_keymaps:
