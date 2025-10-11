@@ -1,5 +1,6 @@
-import pytest
 import bpy
+import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 
 
@@ -521,3 +522,451 @@ def test_ops_vertex_paint_transfer_channels_between_attributes_on_different_doma
         assert_allclose(dst_attr.data[vertex.index].color_srgb, avg_color, atol=COLOR_ATOL)
 
     bpy.ops.object.mode_set(mode="OBJECT")
+
+
+@pytest.mark.parametrize("data_type", ("BYTE_COLOR", "FLOAT_COLOR"))
+@pytest.mark.parametrize("domain", ("CORNER", "POINT"))
+def test_ops_vertex_paint_multiproxy_enter_exit_without_modifications(data_type, domain, context, four_plane_objects):
+    """Simple sanity check, just enter & exit multiproxy shouldn't modify anything."""
+    src_colors = (
+        (0.1, 0.1, 0.1, 0.1),
+        (0.2, 0.2, 0.2, 0.2),
+        (0.3, 0.3, 0.3, 0.3),
+        (0.4, 0.4, 0.4, 0.4),
+    )
+    obj0, obj1, obj2, obj3 = four_plane_objects
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr = mesh.attributes.new("MyAttr", data_type, domain)
+        for i in range(len(attr.data)):
+            attr.data[i].color_srgb = src_colors[obj_idx]
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr = mesh.color_attributes["MyAttr"]
+        for i in range(len(attr.data)):
+            assert_allclose(attr.data[i].color_srgb, src_colors[obj_idx], atol=COLOR_ATOL)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+@pytest.mark.parametrize("data_type", ("BYTE_COLOR", "FLOAT_COLOR"))
+@pytest.mark.parametrize("domain", ("CORNER", "POINT"))
+def test_ops_vertex_paint_multiproxy_all_have_same_attribute_all_modified(
+    data_type, domain, context, four_plane_objects
+):
+    """All objects have the same attribute and can be modified in multiproxy."""
+    src_colors = (
+        (0.1, 0.1, 0.1, 0.1),
+        (0.2, 0.2, 0.2, 0.2),
+        (0.3, 0.3, 0.3, 0.3),
+        (0.4, 0.4, 0.4, 0.4),
+    )
+    expected_colors = (
+        (0.51, 0.52, 0.53, 0.54),
+        (0.61, 0.62, 0.63, 0.64),
+        (0.71, 0.72, 0.73, 0.74),
+        (0.81, 0.82, 0.83, 0.84),
+    )
+    obj0, obj1, obj2, obj3 = four_plane_objects
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr = mesh.attributes.new("MyAttr", data_type, domain)
+        for i in range(len(attr.data)):
+            attr.data[i].color_srgb = src_colors[obj_idx]
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+    proxy_obj = context.active_object
+    assert proxy_obj.name.startswith(".multiproxy")
+    assert len(proxy_obj.data.color_attributes) == 1
+    assert "MyAttr" in proxy_obj.data.color_attributes
+    proxy_attr = proxy_obj.data.color_attributes["MyAttr"]
+    assert len(proxy_attr.data) == (4 * 4)  # plane, both point and corner attributes have 4 elements on each plane
+    for i in range(4 * 4):
+        # use a different color for each part that corresponds to a different object
+        proxy_attr.data[i].color_srgb = expected_colors[i // 4]
+
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr = mesh.color_attributes["MyAttr"]
+        for i in range(len(attr.data)):
+            assert_allclose(attr.data[i].color_srgb, expected_colors[obj_idx], atol=COLOR_ATOL)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_vertex_paint_multiproxy_only_some_objects_selected(context, four_plane_objects):
+    """Only some objects selected and modified in multiproxy, other objects in the scene must remain unmodified."""
+    src_colors = (
+        (0.1, 0.1, 0.1, 0.1),
+        (0.2, 0.2, 0.2, 0.2),
+        (0.3, 0.3, 0.3, 0.3),
+        (0.4, 0.4, 0.4, 0.4),
+    )
+    expected_colors = (
+        (0.51, 0.52, 0.53, 0.54),
+        (0.2, 0.2, 0.2, 0.2),
+        (0.71, 0.72, 0.73, 0.74),
+        (0.4, 0.4, 0.4, 0.4),
+    )
+    obj0, obj1, obj2, obj3 = four_plane_objects
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr = mesh.attributes.new("MyAttr", "FLOAT_COLOR", "CORNER")
+        for i in range(len(attr.data)):
+            attr.data[i].color_srgb = src_colors[obj_idx]
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(False)
+    obj2.select_set(True)
+    obj3.select_set(False)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+    proxy_obj = context.active_object
+    assert proxy_obj.name.startswith(".multiproxy")
+    assert len(proxy_obj.data.color_attributes) == 1
+    assert "MyAttr" in proxy_obj.data.color_attributes
+    proxy_attr = proxy_obj.data.color_attributes["MyAttr"]
+    assert len(proxy_attr.data) == (4 * 2)
+    for i in range(4 * 2):
+        # use a different color for each part that corresponds to a different object
+        proxy_attr.data[i].color_srgb = expected_colors[(i // 4) * 2]
+
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr = mesh.color_attributes["MyAttr"]
+        for i in range(len(attr.data)):
+            assert_allclose(attr.data[i].color_srgb, expected_colors[obj_idx], atol=COLOR_ATOL)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_vertex_paint_multiproxy_multiple_attributes_all_can_be_modified(context, four_plane_objects):
+    """Objects have multiple color attributes and all of them can be modified in multiproxy."""
+    src_colors = (
+        (
+            (0.1, 0.1, 0.1, 0.1),
+            (0.2, 0.2, 0.2, 0.2),
+            (0.3, 0.3, 0.3, 0.3),
+            (0.4, 0.4, 0.4, 0.4),
+        ),
+        (
+            (0.5, 0.5, 0.5, 0.5),
+            (0.6, 0.6, 0.6, 0.6),
+            (0.7, 0.7, 0.7, 0.7),
+            (0.8, 0.8, 0.8, 0.8),
+        ),
+    )
+    expected_colors = (
+        (
+            (0.51, 0.52, 0.53, 0.54),
+            (0.61, 0.62, 0.63, 0.64),
+            (0.71, 0.72, 0.73, 0.74),
+            (0.81, 0.82, 0.83, 0.84),
+        ),
+        (
+            (0.11, 0.12, 0.13, 0.14),
+            (0.21, 0.22, 0.23, 0.24),
+            (0.31, 0.32, 0.33, 0.34),
+            (0.41, 0.42, 0.43, 0.44),
+        ),
+    )
+    obj0, obj1, obj2, obj3 = four_plane_objects
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr0 = mesh.attributes.new("MyAttr0", "BYTE_COLOR", "CORNER")
+        attr1 = mesh.attributes.new("MyAttr1", "FLOAT_COLOR", "POINT")
+        for i in range(len(attr0.data)):
+            attr0.data[i].color_srgb = src_colors[0][obj_idx]
+        for i in range(len(attr1.data)):
+            attr1.data[i].color_srgb = src_colors[1][obj_idx]
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+    proxy_obj = context.active_object
+    assert proxy_obj.name.startswith(".multiproxy")
+    assert len(proxy_obj.data.color_attributes) == 2
+    assert "MyAttr0" in proxy_obj.data.color_attributes
+    assert "MyAttr1" in proxy_obj.data.color_attributes
+    proxy_attr0 = proxy_obj.data.color_attributes["MyAttr0"]
+    proxy_attr1 = proxy_obj.data.color_attributes["MyAttr1"]
+    for i in range(len(proxy_attr0.data)):
+        proxy_attr0.data[i].color_srgb = expected_colors[0][i // 4]
+    for i in range(len(proxy_attr1.data)):
+        proxy_attr1.data[i].color_srgb = expected_colors[1][i // 4]
+
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    for obj_idx, obj in enumerate(four_plane_objects):
+        mesh = obj.data
+        attr0 = mesh.color_attributes["MyAttr0"]
+        attr1 = mesh.color_attributes["MyAttr1"]
+        for i in range(len(attr0.data)):
+            assert_allclose(attr0.data[i].color_srgb, expected_colors[0][obj_idx], atol=COLOR_ATOL)
+        for i in range(len(attr1.data)):
+            assert_allclose(attr1.data[i].color_srgb, expected_colors[1][obj_idx], atol=COLOR_ATOL)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+@pytest.mark.parametrize("subcase", ("ADD_MISSING", "SKIP_MISSING"))
+def test_ops_vertex_paint_multiproxy_multiple_different_attributes(subcase, context, four_plane_objects):
+    """Objects have different color attributes each, all of them can be modified in multiproxy. On exit ask the
+    user if he wants to:
+        - Add missing attributes to the mesh that don't have them (ADD_MISSING)
+        - Ignore them, only apply to meshes that already have them (SKIP_MISSING)
+    """
+    src_colors = (
+        (0.1, 0.1, 0.1, 0.1),
+        (0.2, 0.2, 0.2, 0.2),
+        (0.3, 0.3, 0.3, 0.3),
+        (0.4, 0.4, 0.4, 0.4),
+    )
+    expected_colors = (
+        (0.51, 0.52, 0.53, 0.54),
+        (0.61, 0.62, 0.63, 0.64),
+        (0.71, 0.72, 0.73, 0.74),
+        (0.81, 0.82, 0.83, 0.84),
+    )
+    obj0, obj1, obj2, obj3 = four_plane_objects
+    # A different attribute per object
+    obj0.data.attributes.new("MyAttr0", "FLOAT_COLOR", "CORNER").data.foreach_set(
+        "color_srgb", np.array([src_colors[0]] * 4).ravel()
+    )
+    obj1.data.attributes.new("MyAttr1", "FLOAT_COLOR", "POINT").data.foreach_set(
+        "color_srgb", np.array([src_colors[1]] * 4).ravel()
+    )
+    obj2.data.attributes.new("MyAttr2", "BYTE_COLOR", "CORNER").data.foreach_set(
+        "color_srgb", np.array([src_colors[2]] * 4).ravel()
+    )
+    obj3.data.attributes.new("MyAttr3", "BYTE_COLOR", "POINT").data.foreach_set(
+        "color_srgb", np.array([src_colors[3]] * 4).ravel()
+    )
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+
+    # Paint each attribute with a different color
+    proxy_obj = context.active_object
+    proxy_attrs = proxy_obj.data.color_attributes
+    assert "MyAttr0" in proxy_attrs
+    assert "MyAttr1" in proxy_attrs
+    assert "MyAttr2" in proxy_attrs
+    assert "MyAttr3" in proxy_attrs
+    assert len(proxy_attrs) == 4
+    proxy_attr0 = proxy_attrs["MyAttr0"]
+    proxy_attr1 = proxy_attrs["MyAttr1"]
+    proxy_attr2 = proxy_attrs["MyAttr2"]
+    proxy_attr3 = proxy_attrs["MyAttr3"]
+    assert proxy_attr0.data_type == "FLOAT_COLOR" and proxy_attr0.domain == "CORNER"
+    assert proxy_attr1.data_type == "FLOAT_COLOR" and proxy_attr1.domain == "POINT"
+    assert proxy_attr2.data_type == "BYTE_COLOR" and proxy_attr2.domain == "CORNER"
+    assert proxy_attr3.data_type == "BYTE_COLOR" and proxy_attr3.domain == "POINT"
+    proxy_attr0.data.foreach_set("color_srgb", np.array([expected_colors[0]] * 4 * 4).ravel())
+    proxy_attr1.data.foreach_set("color_srgb", np.array([expected_colors[1]] * 4 * 4).ravel())
+    proxy_attr2.data.foreach_set("color_srgb", np.array([expected_colors[2]] * 4 * 4).ravel())
+    proxy_attr3.data.foreach_set("color_srgb", np.array([expected_colors[3]] * 4 * 4).ravel())
+
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit(
+        missing_attributes_mode=subcase,  # This choice would be prompted to the user when called from the UI, here we just test each case directly
+    )
+
+    match subcase:
+        case "SKIP_MISSING":
+            # Each object only has its own attribute
+            for obj_idx, obj in enumerate(four_plane_objects):
+                mesh = obj.data
+                assert f"MyAttr{obj_idx}" in mesh.color_attributes
+                assert len(mesh.color_attributes) == 1
+                attr = mesh.color_attributes[f"MyAttr{obj_idx}"]
+                for i in range(len(attr.data)):
+                    assert_allclose(attr.data[i].color_srgb, expected_colors[obj_idx], atol=COLOR_ATOL)
+        case "ADD_MISSING":
+            # All objects have all 4 four attributes now
+            for obj_idx, obj in enumerate(four_plane_objects):
+                mesh = obj.data
+                assert "MyAttr0" in mesh.color_attributes
+                assert "MyAttr1" in mesh.color_attributes
+                assert "MyAttr2" in mesh.color_attributes
+                assert "MyAttr3" in mesh.color_attributes
+                assert len(mesh.color_attributes) == 4
+                attr0 = mesh.color_attributes["MyAttr0"]
+                attr1 = mesh.color_attributes["MyAttr1"]
+                attr2 = mesh.color_attributes["MyAttr2"]
+                attr3 = mesh.color_attributes["MyAttr3"]
+                assert attr0.data_type == "FLOAT_COLOR" and attr0.domain == "CORNER"
+                assert attr1.data_type == "FLOAT_COLOR" and attr1.domain == "POINT"
+                assert attr2.data_type == "BYTE_COLOR" and attr2.domain == "CORNER"
+                assert attr3.data_type == "BYTE_COLOR" and attr3.domain == "POINT"
+                for attr_idx, attr in enumerate((attr0, attr1, attr2, attr3)):
+                    for i in range(len(attr.data)):
+                        assert_allclose(attr.data[i].color_srgb, expected_colors[attr_idx], atol=COLOR_ATOL)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_vertex_paint_multiproxy_same_attribute_on_different_domains_not_allowed(context, four_plane_objects):
+    """Different meshes have an attribute with the same name but on different domains. No intuitive way to handle this,
+    warn and cancel the operation.
+    """
+    obj0, obj1, obj2, obj3 = four_plane_objects
+    obj0.data.attributes.new("MyAttr", "FLOAT_COLOR", "CORNER")
+    obj1.data.attributes.new("MyAttr", "FLOAT_COLOR", "POINT")
+    obj2.data.attributes.new("MyAttr", "FLOAT_COLOR", "CORNER")
+    obj3.data.attributes.new("MyAttr", "FLOAT_COLOR", "POINT")
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    ret = bpy.ops.sollumz.vertex_paint_multiproxy()
+    assert ret == {"CANCELLED"}
+    assert not context.active_object.name.startswith(".multiproxy")
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_vertex_paint_multiproxy_same_attribute_with_different_data_type_allowed(context, four_plane_objects):
+    """Different meshes have an attribute named the same but with a different data type each. The proxy should fallback
+    to FLOAT_COLOR. When always the same data type, it should maintain it.
+    """
+    obj0, obj1, obj2, obj3 = four_plane_objects
+    obj0.data.attributes.new("MyAttr", "FLOAT_COLOR", "POINT")
+    obj1.data.attributes.new("MyAttr", "BYTE_COLOR", "POINT")
+    obj2.data.attributes.new("MyAttr", "FLOAT_COLOR", "POINT")
+    obj3.data.attributes.new("MyAttr", "BYTE_COLOR", "POINT")
+    for obj in four_plane_objects:
+        obj.data.attributes.new("MyOtherAttrByte", "BYTE_COLOR", "POINT")
+    for obj in four_plane_objects:
+        obj.data.attributes.new("MyOtherAttrFloat", "FLOAT_COLOR", "POINT")
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj0.select_set(True)
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    ret = bpy.ops.sollumz.vertex_paint_multiproxy()
+    assert ret == {"FINISHED"}
+
+    proxy_obj = context.active_object
+    proxy_attrs = proxy_obj.data.color_attributes
+    assert len(proxy_attrs) == 3
+    assert "MyAttr" in proxy_attrs
+    assert "MyOtherAttrByte" in proxy_attrs
+    assert "MyOtherAttrFloat" in proxy_attrs
+    assert proxy_attrs["MyAttr"].data_type == "FLOAT_COLOR"
+    assert proxy_attrs["MyOtherAttrByte"].data_type == "BYTE_COLOR"
+    assert proxy_attrs["MyOtherAttrFloat"].data_type == "FLOAT_COLOR"
+
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+# TODO: handle modified mesh edge cases in multiproxy
+# def test_ops_vertex_paint_multiproxy_one_mesh_modified_before_exit_not_allowed(context, four_plane_objects):
+#     """User entered edit mode on an object managed by a multiproxy and modified it (added or deleted vertices), so TODO: warn and discard? trying to apply any color might be unreliable now. Can still apply on the objects"""
+#     raise NotImplementedError()
+#
+#
+# def test_ops_vertex_paint_multiproxy_proxy_mesh_modified_before_exit_not_allowed(context, four_plane_objects):
+#     """User entered edit mode and modified proxy mesh (added or deleted vertices), so TODO: warn and discard? trying to apply any color might be unreliable now"""
+#     raise NotImplementedError()
+
+
+def test_ops_vertex_paint_multiproxy_one_object_deleted_before_exit(context, four_plane_objects):
+    """Some object managed by the multiproxy got deleted before exiting, discard changes to deleted objects but still
+    apply to remaining objects.
+    """
+    obj0, obj1, obj2, obj3 = four_plane_objects
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+    proxy_obj = context.active_object
+    assert proxy_obj.name.startswith(".multiproxy")
+
+    bpy.data.objects.remove(obj2)
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_vertex_paint_multiproxy_all_objects_deleted_before_exit(context, four_plane_objects):
+    """All objects managed by the multiproxy get deleted before exiting, discard."""
+    obj0, obj1, obj2, obj3 = four_plane_objects
+
+    context.view_layer.objects.active = obj0
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    obj1.select_set(True)
+    obj2.select_set(True)
+    obj3.select_set(True)
+
+    bpy.ops.sollumz.vertex_paint_multiproxy()
+    proxy_obj = context.active_object
+    assert proxy_obj.name.startswith(".multiproxy")
+
+    bpy.data.objects.remove(obj0)
+    bpy.data.objects.remove(obj1)
+    bpy.data.objects.remove(obj2)
+    bpy.data.objects.remove(obj3)
+    bpy.ops.sollumz.vertex_paint_multiproxy_exit()
+
+    # bpy.ops.object.mode_set(mode="OBJECT") # no objects in the scene, can't change mode

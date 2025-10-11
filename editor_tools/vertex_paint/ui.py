@@ -17,6 +17,10 @@ from .isolate import (
     SOLLUMZ_OT_vertex_paint_isolate_toggle_channel,
     isolate_get_state,
 )
+from .multiproxy import (
+    SOLLUMZ_OT_vertex_paint_multiproxy,
+    SOLLUMZ_OT_vertex_paint_multiproxy_exit,
+)
 from .terrain import (
     SOLLUMZ_OT_vertex_paint_terrain_alpha,
     SOLLUMZ_OT_vertex_paint_terrain_texture,
@@ -55,6 +59,33 @@ class SOLLUMZ_PT_vertex_paint_isolate_channels(Panel):
             ).channel = ch.value
 
 
+class SOLLUMZ_PT_vertex_paint_multiproxy(Panel):
+    bl_idname = "SOLLUMZ_PT_vertex_paint_multiproxy"
+    bl_label = "Multi-Object Vertex Paint"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Vertex Paint"
+    bl_context = "vertexpaint"
+    bl_order = 2
+
+    def draw(self, context):
+        layout = self.layout
+
+        aobj = context.active_object
+        if aobj and aobj.mode == "VERTEX_PAINT" and aobj.type == "MESH":
+            proxy_state = aobj.sz_multiproxy_state
+            if proxy_state.is_multiproxy:
+                layout.operator(SOLLUMZ_OT_vertex_paint_multiproxy_exit.bl_idname, depress=True, icon="TRIA_LEFT")
+                col = layout.column(align=True)
+                col.scale_y = 0.9
+                col.label(text="Objects:")
+                for o in proxy_state.objects:
+                    n = o.ref.name if o.ref else "< Deleted >"
+                    col.label(text=n, icon="DOT")
+            else:
+                layout.operator(SOLLUMZ_OT_vertex_paint_multiproxy.bl_idname, icon="TRIA_RIGHT")
+
+
 class SOLLUMZ_PT_vertex_paint_transfer_channels(Panel):
     bl_idname = "SOLLUMZ_PT_vertex_paint_transfer_channels"
     bl_label = "Transfer Channels"
@@ -63,7 +94,7 @@ class SOLLUMZ_PT_vertex_paint_transfer_channels(Panel):
     bl_category = "Vertex Paint"
     bl_context = "vertexpaint"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 2
+    bl_order = 3
 
     def draw(self, context):
         layout = self.layout
@@ -158,7 +189,7 @@ class SOLLUMZ_PT_vertex_paint_terrain(Panel):
     bl_category = "Vertex Paint"
     bl_context = "vertexpaint"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 3
+    bl_order = 4
 
     def draw_header(self, context):
         self.layout.label(text="", icon="IMAGE")
@@ -215,7 +246,12 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
         subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_texture.bl_idname, text="Texture 4").texture = 4
 
         # Bottom
-        pie.column()
+        col = pie.column()
+        if aobj := context.active_object:
+            if aobj.sz_multiproxy_state.is_multiproxy:
+                col.operator(SOLLUMZ_OT_vertex_paint_multiproxy_exit.bl_idname, depress=True, icon="TRIA_LEFT")
+            else:
+                col.operator(SOLLUMZ_OT_vertex_paint_multiproxy.bl_idname, icon="TRIA_RIGHT")
 
         # Top
         isolated_channels = isolate_get_state(context).channels

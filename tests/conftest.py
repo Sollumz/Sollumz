@@ -17,25 +17,54 @@ def context():
 def plane_object(context):
     bpy.ops.mesh.primitive_plane_add()
     obj = context.object
+    obj_name = obj.name
 
     yield obj
 
-    bpy.ops.object.mode_set(mode="OBJECT")
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    bpy.ops.object.delete()
+    obj = bpy.data.objects.get(obj_name, None)
+    if obj:
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.ops.object.delete()
+
+@pytest.fixture()
+def four_plane_objects(context):
+    objs = []
+    bpy.ops.mesh.primitive_plane_add(location=(2.0, 0.0, 0.0))
+    objs.append(context.object)
+    bpy.ops.mesh.primitive_plane_add(location=(0.0, 2.0, 0.0))
+    objs.append(context.object)
+    bpy.ops.mesh.primitive_plane_add(location=(-2.0, 0.0, 0.0))
+    objs.append(context.object)
+    bpy.ops.mesh.primitive_plane_add(location=(0.0, -2.0, 0.0))
+    objs.append(context.object)
+    objs_names = [o.name for o in objs]
+
+    yield objs
+
+    objs = [o for oname in objs_names if (o := bpy.data.objects.get(oname, None))]
+    if objs:
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj in objs:
+            obj.select_set(True)
+        bpy.ops.object.delete()
 
 @pytest.fixture()
 def cube_object(context):
     bpy.ops.mesh.primitive_cube_add()
     obj = context.object
+    obj_name = obj.name
 
     yield obj
 
-    bpy.ops.object.mode_set(mode="OBJECT")
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    bpy.ops.object.delete()
+    obj = bpy.data.objects.get(obj_name, None)
+    if obj:
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.ops.object.delete()
 
 
 @pytest.fixture(params=[
