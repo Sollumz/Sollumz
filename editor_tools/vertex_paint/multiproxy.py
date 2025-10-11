@@ -213,6 +213,7 @@ class SOLLUMZ_OT_vertex_paint_multiproxy_exit(Operator):
 
         if not dry_run:
             for _, obj_orig in objs_orig:
+                obj_orig.data.update_tag()
                 obj_orig.hide_set(False)
 
             bpy.data.objects.remove(proxy_obj)
