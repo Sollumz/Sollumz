@@ -1150,9 +1150,10 @@ def create_terrain_shader(b: ShaderBuilder):
         mix = node_tree.nodes.new("ShaderNodeMixRGB")
         mixns.append(mix)
 
-    seprgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
+    seprgb = node_tree.nodes.new("ShaderNodeSeparateColor")
+    seprgb.mode = "RGB"
     if shader.is_terrain_mask_only:
-        links.new(tm.outputs[0], seprgb.inputs[0])
+        links.new(tm.outputs[0], seprgb.inputs["Color"])
     else:
         attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
         attr_c1.attribute_name = get_color_attr_name(1)
@@ -1162,34 +1163,34 @@ def create_terrain_shader(b: ShaderBuilder):
         attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
         attr_c0.attribute_name = get_color_attr_name(0)
         links.new(attr_c0.outputs[3], mixns[0].inputs[0])
-        links.new(mixns[0].outputs[0], seprgb.inputs[0])
+        links.new(mixns[0].outputs[0], seprgb.inputs["Color"])
 
     # t1 / t2
-    links.new(seprgb.outputs[2], mixns[1].inputs[0])
+    links.new(seprgb.outputs["Blue"], mixns[1].inputs[0])
     links.new(ts1.outputs[0], mixns[1].inputs[1])
     links.new(ts2.outputs[0], mixns[1].inputs[2])
 
     # t3 / t4
-    links.new(seprgb.outputs[2], mixns[2].inputs[0])
+    links.new(seprgb.outputs["Blue"], mixns[2].inputs[0])
     links.new(ts3.outputs[0], mixns[2].inputs[1])
     links.new(ts4.outputs[0], mixns[2].inputs[2])
 
-    links.new(seprgb.outputs[1], mixns[3].inputs[0])
+    links.new(seprgb.outputs["Green"], mixns[3].inputs[0])
     links.new(mixns[1].outputs[0], mixns[3].inputs[1])
     links.new(mixns[2].outputs[0], mixns[3].inputs[2])
 
     links.new(mixns[3].outputs[0], bsdf.inputs["Base Color"])
 
     if bs1:
-        links.new(seprgb.outputs[2], mixns[4].inputs[0])
+        links.new(seprgb.outputs["Blue"], mixns[4].inputs[0])
         links.new(bs1.outputs[0], mixns[4].inputs[1])
         links.new(bs2.outputs[0], mixns[4].inputs[2])
 
-        links.new(seprgb.outputs[2], mixns[5].inputs[0])
+        links.new(seprgb.outputs["Blue"], mixns[5].inputs[0])
         links.new(bs3.outputs[0], mixns[5].inputs[1])
         links.new(bs4.outputs[0], mixns[5].inputs[2])
 
-        links.new(seprgb.outputs[1], mixns[6].inputs[0])
+        links.new(seprgb.outputs["Green"], mixns[6].inputs[0])
         links.new(mixns[4].outputs[0], mixns[6].inputs[1])
         links.new(mixns[5].outputs[0], mixns[6].inputs[2])
 
