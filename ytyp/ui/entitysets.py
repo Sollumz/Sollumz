@@ -51,6 +51,8 @@ class SOLLUMZ_MT_entity_sets_list_context_menu(bpy.types.Menu):
 
     def draw(self, _context):
         layout = self.layout
-        op = layout.operator(ytyp_ops.SOLLUMZ_OT_archetype_select_all_mlo_entity_set.bl_idname, text="Select All")
+        op0 = layout.operator(ytyp_ops.SOLLUMZ_OT_archetype_select_all_mlo_entity_set.bl_idname, text="Select All")
+        op1 = layout.operator(ytyp_ops.SOLLUMZ_OT_archetype_select_invert_mlo_entity_set.bl_idname, text="Invert")
         if (filter_opts := SOLLUMZ_UL_ENTITY_SETS_LIST.last_filter_options.get("entity_sets_tool_panel", None)):
-            filter_opts.apply_to_operator(op)
+            filter_opts.apply_to_operator(op0)
+            filter_opts.apply_to_operator(op1)

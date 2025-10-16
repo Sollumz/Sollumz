@@ -339,6 +339,11 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
     def remove(self, index: int):
         self.collection.remove(index)
 
+    def clear(self):
+        self.collection.clear()
+        self.selection_indices.clear()
+        self.active_index = 0
+
     def _on_active_index_update_from_ui(self, value):
         # This callback is only triggered when clicking on the active item in the list once it switched to a textfield
         # instead of buttons
@@ -457,7 +462,11 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
                     # deselect
                     self.selection_indices.remove(index_in_selection)
 
-    def select_all(self, filtered_items: Optional[Sequence[bool]] = None):
+    def select_all(
+        self,
+        filtered_items: Optional[Sequence[bool]] = None,
+        ui_callbacks: bool = False,
+    ):
         if filtered_items:
             assert len(filtered_items) == len(self)
 
@@ -470,6 +479,31 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
         is_active_item_filtered_out = filtered_items and not filtered_items[self.active_index]
         if is_active_item_filtered_out and len(self.selection_indices) > 0:
             self.active_index = self.selection_indices[0].index
+
+        if ui_callbacks:
+            self.on_active_index_update_from_ui(bpy.context)
+
+    def select_invert(
+        self,
+        filtered_items: Optional[Sequence[bool]] = None,
+        ui_callbacks: bool = False,
+    ):
+        if filtered_items:
+            assert len(filtered_items) == len(self)
+
+        prev_selection = {s.index for s in self.selection_indices}
+        self.selection_indices.clear()
+        for i in range(len(self)):
+            is_filtered_out = filtered_items and not filtered_items[i]
+            if not is_filtered_out and i not in prev_selection:
+                self.selection_indices.add().index = i
+
+        is_active_item_filtered_out = filtered_items and not filtered_items[self.active_index]
+        if (is_active_item_filtered_out or self.active_index in prev_selection) and len(self.selection_indices) > 0:
+            self.active_index = self.selection_indices[0].index
+
+        if ui_callbacks:
+            self.on_active_index_update_from_ui(bpy.context)
 
     def select_many(self, item_indices: Sequence[int]):
         """Select multiple items by index. First item becomes the active item."""
@@ -487,6 +521,8 @@ class MultiSelectOperatorBase:
     use_filter_sort_reverse: BoolProperty()
     use_filter_sort_alpha: BoolProperty()
     use_filter_invert: BoolProperty()
+
+    trigger_ui_callbacks: BoolProperty(default=False)
 
     def get_collection(self, context) -> MultiSelectCollection:
         raise NotImplementedError("get_collection")
@@ -514,6 +550,10 @@ class MultiSelectOperatorBase:
             self.use_filter_sort_alpha
         )
 
+    def invoke(self, context, event: Event):
+        self.trigger_ui_callbacks = True
+        return self.execute(context)
+
 
 class MultiSelectOneOperator(MultiSelectOperatorBase):
     bl_description = "Select item"
@@ -521,8 +561,6 @@ class MultiSelectOneOperator(MultiSelectOperatorBase):
     index: IntProperty(name="Index")
     extend: BoolProperty(name="Extend")
     toggle: BoolProperty(name="Toggle")
-
-    trigger_ui_callbacks: BoolProperty(default=True)
 
     def execute(self, context):
         collection = self.get_collection(context)
@@ -544,7 +582,7 @@ class MultiSelectOneOperator(MultiSelectOperatorBase):
     def invoke(self, context, event: Event):
         self.extend = event.shift
         self.toggle = event.ctrl
-        return self.execute(context)
+        return super().invoke(context, event)
 
 
 class MultiSelectAllOperator(MultiSelectOperatorBase):
@@ -553,7 +591,17 @@ class MultiSelectAllOperator(MultiSelectOperatorBase):
     def execute(self, context):
         collection = self.get_collection(context)
         filtered_items, _ = self.filter_items(context)
-        collection.select_all(filtered_items=filtered_items)
+        collection.select_all(filtered_items=filtered_items, ui_callbacks=self.trigger_ui_callbacks)
+        return {"FINISHED"}
+
+
+class MultiSelectInvertOperator(MultiSelectOperatorBase):
+    bl_description = "Invert selected items"
+
+    def execute(self, context):
+        collection = self.get_collection(context)
+        filtered_items, _ = self.filter_items(context)
+        collection.select_invert(filtered_items=filtered_items, ui_callbacks=self.trigger_ui_callbacks)
         return {"FINISHED"}
 
 

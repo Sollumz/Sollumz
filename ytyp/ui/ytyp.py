@@ -130,6 +130,8 @@ class SOLLUMZ_MT_archetype_list_context_menu(bpy.types.Menu):
 
     def draw(self, _context):
         layout = self.layout
-        op = layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
+        op0 = layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_all_archetypes.bl_idname, text="Select All")
+        op1 = layout.operator(ytyp_ops.SOLLUMZ_OT_ytyp_select_invert_archetypes.bl_idname, text="Invert")
         if (filter_opts := SOLLUMZ_UL_ARCHETYPE_LIST.last_filter_options.get("archetypes_tool_panel", None)):
-            filter_opts.apply_to_operator(op)
+            filter_opts.apply_to_operator(op0)
+            filter_opts.apply_to_operator(op1)

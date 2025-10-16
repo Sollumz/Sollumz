@@ -13,7 +13,11 @@ from ...ydr.cloth_env import cloth_env_find_mesh_objects
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
 from ..ytypexport import selected_ytyp_to_xml
-from ...shared.multiselection import MultiSelectOneOperator, MultiSelectAllOperator
+from ...shared.multiselection import (
+    MultiSelectOneOperator,
+    MultiSelectAllOperator,
+    MultiSelectInvertOperator,
+)
 
 
 class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -65,66 +69,73 @@ class SOLLUMZ_OT_create_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
         return True
 
 
-class SOLLUMZ_OT_ytyp_select_archetype(MultiSelectOneOperator, bpy.types.Operator):
+class ArchetypesSelectMixin:
+    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+
+    def get_collection(self, context):
+        return (
+            get_selected_ytyp(context)
+            if self.ytyp_index == -1
+            else context.scene.ytyps[self.ytyp_index]
+        ).archetypes
+
+
+class SOLLUMZ_OT_ytyp_select_archetype(ArchetypesSelectMixin, MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.ytyp_select_archetype"
     bl_label = "Select Archetype"
 
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
 
-    def get_collection(self, context):
-        return (
-            get_selected_ytyp(context)
-            if self.ytyp_index == -1
-            else context.scene.ytyps[self.ytyp_index]
-        ).archetypes
-
-
-class SOLLUMZ_OT_ytyp_select_all_archetypes(MultiSelectAllOperator, bpy.types.Operator):
+class SOLLUMZ_OT_ytyp_select_all_archetypes(ArchetypesSelectMixin, MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.ytyp_select_all_archetypes"
     bl_label = "Select All Archetypes"
 
+
+class SOLLUMZ_OT_ytyp_select_invert_archetypes(ArchetypesSelectMixin, MultiSelectInvertOperator, bpy.types.Operator):
+    bl_idname = "sollumz.ytyp_select_invert_archetypes"
+    bl_label = "Invert Selected Archetypes"
+
+
+class MloEntitiesSelectMixin:
     ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
+    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
     def get_collection(self, context):
         return (
-            get_selected_ytyp(context)
-            if self.ytyp_index == -1
-            else context.scene.ytyps[self.ytyp_index]
-        ).archetypes
+            get_selected_archetype(context)
+            if self.archetype_index == -1
+            else (
+                get_selected_ytyp(context)
+                if self.ytyp_index == -1
+                else context.scene.ytyps[self.ytyp_index]
+            ).archetypes[self.archetype_index]
+        ).entities
+
+    def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
+        from ..ui.entities import entities_filter_items
+        return entities_filter_items(
+            self.get_collection(context),
+            self.filter_name,
+            self.use_filter_sort_reverse,
+            self.use_filter_sort_alpha
+        )
 
 
-class SOLLUMZ_OT_archetype_select_mlo_entity(MultiSelectOneOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_mlo_entity(MloEntitiesSelectMixin, MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_mlo_entity"
     bl_label = "Select Entity"
 
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
-    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
-    def get_collection(self, context):
-        return (
-            get_selected_archetype(context)
-            if self.archetype_index == -1
-            else (
-                get_selected_ytyp(context)
-                if self.ytyp_index == -1
-                else context.scene.ytyps[self.ytyp_index]
-            ).archetypes[self.archetype_index]
-        ).entities
-
-    def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
-        from ..ui.entities import entities_filter_items
-        return entities_filter_items(
-            self.get_collection(context),
-            self.filter_name,
-            self.use_filter_sort_reverse,
-            self.use_filter_sort_alpha
-        )
-
-
-class SOLLUMZ_OT_archetype_select_all_mlo_entity(MultiSelectAllOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_all_mlo_entity(MloEntitiesSelectMixin, MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_all_mlo_entity"
     bl_label = "Select All Entities"
 
+
+class SOLLUMZ_OT_archetype_select_invert_mlo_entity(MloEntitiesSelectMixin, MultiSelectInvertOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_invert_mlo_entity"
+    bl_label = "Invert Selected Entities"
+
+
+class MloPortalsSelectMixin:
     ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
     archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
@@ -137,41 +148,25 @@ class SOLLUMZ_OT_archetype_select_all_mlo_entity(MultiSelectAllOperator, bpy.typ
                 if self.ytyp_index == -1
                 else context.scene.ytyps[self.ytyp_index]
             ).archetypes[self.archetype_index]
-        ).entities
-
-    def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
-        from ..ui.entities import entities_filter_items
-        return entities_filter_items(
-            self.get_collection(context),
-            self.filter_name,
-            self.use_filter_sort_reverse,
-            self.use_filter_sort_alpha
-        )
+        ).portals
 
 
-class SOLLUMZ_OT_archetype_select_mlo_portal(MultiSelectOneOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_mlo_portal(MloPortalsSelectMixin, MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_mlo_portal"
     bl_label = "Select Portal"
 
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
-    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
-    def get_collection(self, context):
-        return (
-            get_selected_archetype(context)
-            if self.archetype_index == -1
-            else (
-                get_selected_ytyp(context)
-                if self.ytyp_index == -1
-                else context.scene.ytyps[self.ytyp_index]
-            ).archetypes[self.archetype_index]
-        ).portals
-
-
-class SOLLUMZ_OT_archetype_select_all_mlo_portal(MultiSelectAllOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_all_mlo_portal(MloPortalsSelectMixin, MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_all_mlo_portal"
     bl_label = "Select All Portals"
 
+
+class SOLLUMZ_OT_archetype_select_invert_mlo_portal(MloPortalsSelectMixin, MultiSelectInvertOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_invert_mlo_portal"
+    bl_label = "Invert Selected Portals"
+
+
+class MloRoomsSelectMixin:
     ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
     archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
@@ -184,32 +179,25 @@ class SOLLUMZ_OT_archetype_select_all_mlo_portal(MultiSelectAllOperator, bpy.typ
                 if self.ytyp_index == -1
                 else context.scene.ytyps[self.ytyp_index]
             ).archetypes[self.archetype_index]
-        ).portals
+        ).rooms
 
 
-class SOLLUMZ_OT_archetype_select_mlo_room(MultiSelectOneOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_mlo_room(MloRoomsSelectMixin, MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_mlo_room"
     bl_label = "Select Room"
 
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
-    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
-    def get_collection(self, context):
-        return (
-            get_selected_archetype(context)
-            if self.archetype_index == -1
-            else (
-                get_selected_ytyp(context)
-                if self.ytyp_index == -1
-                else context.scene.ytyps[self.ytyp_index]
-            ).archetypes[self.archetype_index]
-        ).rooms
-
-
-class SOLLUMZ_OT_archetype_select_all_mlo_room(MultiSelectAllOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_all_mlo_room(MloRoomsSelectMixin, MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_all_mlo_room"
     bl_label = "Select All Rooms"
 
+
+class SOLLUMZ_OT_archetype_select_invert_mlo_room(MloRoomsSelectMixin, MultiSelectInvertOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_invert_mlo_room"
+    bl_label = "Invert Selected Rooms"
+
+
+class MloTcmSelectMixin:
     ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
     archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
@@ -222,32 +210,25 @@ class SOLLUMZ_OT_archetype_select_all_mlo_room(MultiSelectAllOperator, bpy.types
                 if self.ytyp_index == -1
                 else context.scene.ytyps[self.ytyp_index]
             ).archetypes[self.archetype_index]
-        ).rooms
+        ).timecycle_modifiers
 
 
-class SOLLUMZ_OT_archetype_select_mlo_tcm(MultiSelectOneOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_mlo_tcm(MloTcmSelectMixin, MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_mlo_tcm"
-    bl_label = "Select Room"
-
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
-    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
-
-    def get_collection(self, context):
-        return (
-            get_selected_archetype(context)
-            if self.archetype_index == -1
-            else (
-                get_selected_ytyp(context)
-                if self.ytyp_index == -1
-                else context.scene.ytyps[self.ytyp_index]
-            ).archetypes[self.archetype_index]
-        ).timecycle_modifiers
+    bl_label = "Select Timecycle Modifiers"
 
 
-class SOLLUMZ_OT_archetype_select_all_mlo_tcm(MultiSelectAllOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_all_mlo_tcm(MloTcmSelectMixin, MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_all_mlo_tcm"
-    bl_label = "Select All Rooms"
+    bl_label = "Select All Timecycle Modifiers"
 
+
+class SOLLUMZ_OT_archetype_select_invert_mlo_tcm(MloTcmSelectMixin, MultiSelectInvertOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_invert_mlo_tcm"
+    bl_label = "Invert Selected Timecycle Modifiers"
+
+
+class MloEntitySetsSelectMixin:
     ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
     archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
@@ -260,45 +241,22 @@ class SOLLUMZ_OT_archetype_select_all_mlo_tcm(MultiSelectAllOperator, bpy.types.
                 if self.ytyp_index == -1
                 else context.scene.ytyps[self.ytyp_index]
             ).archetypes[self.archetype_index]
-        ).timecycle_modifiers
+        ).entity_sets
 
 
-class SOLLUMZ_OT_archetype_select_mlo_entity_set(MultiSelectOneOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_mlo_entity_set(MloEntitySetsSelectMixin, MultiSelectOneOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_mlo_entity_set"
     bl_label = "Select Entity Set"
 
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
-    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
-    def get_collection(self, context):
-        return (
-            get_selected_archetype(context)
-            if self.archetype_index == -1
-            else (
-                get_selected_ytyp(context)
-                if self.ytyp_index == -1
-                else context.scene.ytyps[self.ytyp_index]
-            ).archetypes[self.archetype_index]
-        ).entity_sets
-
-
-class SOLLUMZ_OT_archetype_select_all_mlo_entity_set(MultiSelectAllOperator, bpy.types.Operator):
+class SOLLUMZ_OT_archetype_select_all_mlo_entity_set(MloEntitySetsSelectMixin, MultiSelectAllOperator, bpy.types.Operator):
     bl_idname = "sollumz.archetype_select_all_mlo_entity_set"
     bl_label = "Select All Entity Sets"
 
-    ytyp_index: IntProperty(name="YTYP Index", min=-1, default=-1)
-    archetype_index: IntProperty(name="Archetype Index", min=-1, default=-1)
 
-    def get_collection(self, context):
-        return (
-            get_selected_archetype(context)
-            if self.archetype_index == -1
-            else (
-                get_selected_ytyp(context)
-                if self.ytyp_index == -1
-                else context.scene.ytyps[self.ytyp_index]
-            ).archetypes[self.archetype_index]
-        ).entity_sets
+class SOLLUMZ_OT_archetype_select_invert_mlo_entity_set(MloEntitySetsSelectMixin, MultiSelectInvertOperator, bpy.types.Operator):
+    bl_idname = "sollumz.archetype_select_invert_mlo_entity_set"
+    bl_label = "Invert Selected Entity Sets"
 
 
 class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Operator):
