@@ -68,15 +68,24 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_SHADER_ORDER_LIST"
 
+    FILTER_FLAG_HIGHLIGHT = 1
+
+    use_filter_invert_highlight: BoolProperty(name="Invert", description="Invert filtering")
+
     def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
+        self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag
     ):
-        split = layout.row().split(factor=0.5)
-        row = split.row()
-        col = row.column()
+        row = layout.row()
+        highlight = (flt_flag & self.FILTER_FLAG_HIGHLIGHT) != 0 or flt_flag == 0
+        if self.use_filter_invert_highlight:
+            highlight = not highlight
+        row.active = highlight
+        split = row.split(factor=0.5)
+        subrow = split.row()
+        col = subrow.column()
         col.label(text=f"{item.index}: {item.name}", icon_value=layout.icon(item.material))
 
-        col = row.column()
+        col = subrow.column()
         col.enabled = False
         col.label(text=item.filename)
 
@@ -89,7 +98,7 @@ class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
 
         subrow = row.row(align=True)
         subrow.prop(self, "filter_name", text="")
-        subrow.prop(self, "use_filter_invert", text="", toggle=True, icon="ARROW_LEFTRIGHT")
+        subrow.prop(self, "use_filter_invert_highlight", text="", toggle=True, icon="ARROW_LEFTRIGHT")
 
     def filter_items(self, context, data, propname):
         items = getattr(data, propname)
@@ -101,8 +110,9 @@ class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
 
         # Filtering by name
         if self.filter_name:
+            flt_flags = [self.bitflag_filter_item] * len(items)
             flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.bitflag_filter_item, items, "name",
+                self.filter_name, self.FILTER_FLAG_HIGHLIGHT, items, "name", flags=flt_flags
             )
 
         return flt_flags, flt_neworder
