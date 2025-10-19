@@ -14,6 +14,7 @@ from ...tools.meshhelper import (
     mesh_rename_uv_maps_by_order,
     mesh_rename_color_attrs_by_order,
 )
+from ..shader_materials import shadermats_by_filename
 
 
 class SOLLUMZ_OT_create_drawable(bpy.types.Operator):
@@ -403,11 +404,12 @@ class SOLLUMZ_OT_order_shaders(bpy.types.Operator):
         shader_order.order_items.clear()
 
         for mat in mats:
+            s = shadermats_by_filename.get(mat.shader_properties.filename, None)
             item = shader_order.order_items.add()
             item.index = mat.shader_properties.index
             item.material = mat
             item.name = mat.name
-            item.filename = mat.shader_properties.filename
+            item.shader = (s and s.ui_name) or mat.shader_properties.filename
             item.user_models = ", ".join(o.name for o in mat_to_model[mat])
 
     def validate_indices(self, mats: list[bpy.types.Material]):

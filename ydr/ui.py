@@ -68,29 +68,39 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_SHADER_ORDER_LIST"
 
-    FILTER_FLAG_HIGHLIGHT = 1
+    FILTER_FLAG_HIGHLIGHT_NAME = 1
+    FILTER_FLAG_HIGHLIGHT_SHADER = 2
+    FILTER_FLAG_HIGHLIGHT_MODEL = 4
 
     use_filter_invert_highlight: BoolProperty(name="Invert", description="Invert filtering")
 
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag
     ):
-        row = layout.row()
-        highlight = (flt_flag & self.FILTER_FLAG_HIGHLIGHT) != 0 or flt_flag == 0
+        highlight_name = (flt_flag & self.FILTER_FLAG_HIGHLIGHT_NAME) != 0 or flt_flag == 0
+        highlight_shader = (flt_flag & self.FILTER_FLAG_HIGHLIGHT_SHADER) != 0
+        highlight_model = (flt_flag & self.FILTER_FLAG_HIGHLIGHT_MODEL) != 0
         if self.use_filter_invert_highlight:
-            highlight = not highlight
-        row.active = highlight
+            # On invert only highlight the name, it becomes a bit confusing otherwise
+            if highlight_name or highlight_shader or highlight_model:
+                highlight_name = highlight_shader = highlight_model = False
+            else:
+                highlight_name = True
+                highlight_shader = highlight_model = False
+
+        row = layout.row()
+        row.enabled = highlight_name or highlight_shader or highlight_model
         split = row.split(factor=0.5)
         subrow = split.row()
         col = subrow.column()
         col.label(text=f"{item.index}: {item.name}", icon_value=layout.icon(item.material))
 
         col = subrow.column()
-        col.enabled = False
-        col.label(text=item.filename)
+        col.enabled = highlight_shader
+        col.label(text=item.shader)
 
         col = split.row().column()
-        col.enabled = False
+        col.enabled = highlight_model
         col.label(text=item.user_models)
 
     def draw_filter(self, context, layout):
@@ -112,7 +122,13 @@ class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
         if self.filter_name:
             flt_flags = [self.bitflag_filter_item] * len(items)
             flt_flags = helper_funcs.filter_items_by_name(
-                self.filter_name, self.FILTER_FLAG_HIGHLIGHT, items, "name", flags=flt_flags
+                self.filter_name, self.FILTER_FLAG_HIGHLIGHT_NAME, items, "name", flags=flt_flags
+            )
+            flt_flags = helper_funcs.filter_items_by_name(
+                self.filter_name, self.FILTER_FLAG_HIGHLIGHT_SHADER, items, "shader", flags=flt_flags
+            )
+            flt_flags = helper_funcs.filter_items_by_name(
+                self.filter_name, self.FILTER_FLAG_HIGHLIGHT_MODEL, items, "user_models", flags=flt_flags
             )
 
         return flt_flags, flt_neworder

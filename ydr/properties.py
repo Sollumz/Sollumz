@@ -33,7 +33,7 @@ class ShaderOrderItem(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty(min=0)
     material: bpy.props.PointerProperty(type=Material)
     name: bpy.props.StringProperty()
-    filename: bpy.props.StringProperty()
+    shader: bpy.props.StringProperty()
     user_models: bpy.props.StringProperty() # models using this shader, to display in UI
 
 
