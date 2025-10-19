@@ -292,6 +292,12 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
     if not filename:
         filename = f"{shader.name}.sps"
 
+    # Fix for importing gen9 assets using ped_decal_exp shader. Gen9 doesn't have preset files so CW just appends
+    # .sps to the shader name, which most of the time is correct, but for ped_decal_exp the preset file was
+    # ped_decal_expensive.sps and that's what we have in our shader definitions. Normalize the naming here.
+    if filename == "hash_1A87324E" or filename == "ped_decal_exp.sps":
+        filename = "ped_decal_expensive.sps"
+
     material = create_shader(filename)
     material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
 
