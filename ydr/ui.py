@@ -71,24 +71,41 @@ class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        row = layout.row()
+        split = layout.row().split(factor=0.5)
+        row = split.row()
         col = row.column()
-        col.label(text=f"{item.index}: {item.name}", icon="MATERIAL")
+        col.label(text=f"{item.index}: {item.name}", icon_value=layout.icon(item.material))
 
         col = row.column()
         col.enabled = False
         col.label(text=item.filename)
 
+        col = split.row().column()
+        col.enabled = False
+        col.label(text=item.user_models)
+
     def draw_filter(self, context, layout):
-        ...
+        row = layout.row()
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "filter_name", text="")
+        subrow.prop(self, "use_filter_invert", text="", toggle=True, icon="ARROW_LEFTRIGHT")
 
     def filter_items(self, context, data, propname):
         items = getattr(data, propname)
+        helper_funcs = bpy.types.UI_UL_list
 
-        ordered = [item.index for item in items]
-        filtered = [self.bitflag_filter_item] * len(items)
+        # Default return values.
+        flt_flags = []
+        flt_neworder = [item.index for item in items] # sort by shader index always
 
-        return filtered, ordered
+        # Filtering by name
+        if self.filter_name:
+            flt_flags = helper_funcs.filter_items_by_name(
+                self.filter_name, self.bitflag_filter_item, items, "name",
+            )
+
+        return flt_flags, flt_neworder
 
 
 class SOLLUMZ_PT_CHAR_CLOTH_PANEL(bpy.types.Panel):

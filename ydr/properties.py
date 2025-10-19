@@ -2,6 +2,7 @@ import bpy
 from bpy.types import (
     Object,
     Scene,
+    Material,
 )
 from bpy.props import (
     BoolProperty,
@@ -30,8 +31,10 @@ from bpy.path import basename
 class ShaderOrderItem(bpy.types.PropertyGroup):
     # For drawable shader order list
     index: bpy.props.IntProperty(min=0)
+    material: bpy.props.PointerProperty(type=Material)
     name: bpy.props.StringProperty()
     filename: bpy.props.StringProperty()
+    user_models: bpy.props.StringProperty() # models using this shader, to display in UI
 
 
 class DrawableShaderOrder(bpy.types.PropertyGroup):

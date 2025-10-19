@@ -134,10 +134,10 @@ def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType]
     return find_sollumz_parent(obj.parent, parent_type)
 
 
-def get_sollumz_materials(obj: bpy.types.Object):
+def get_sollumz_materials(obj: bpy.types.Object, out_material_to_models: dict[bpy.types.Material, list[bpy.types.Object]] | None = None):
     """Get all Sollumz materials used by ``drawable_obj``."""
     materials: list[bpy.types.Material] = []
-    used_materials: dict[bpy.types.Material, bool] = {}
+    used_materials: set[bpy.types.Material] = set()
 
     for child in get_children_recursive(obj):
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
@@ -158,7 +158,14 @@ def get_sollumz_materials(obj: bpy.types.Object):
 
                 if mat not in used_materials:
                     materials.append(mat)
-                    used_materials[mat] = True
+                    used_materials.add(mat)
+
+                if out_material_to_models is not None:
+                    if mat not in out_material_to_models:
+                        out_material_to_models[mat] = []
+
+                    if child not in out_material_to_models[mat]:
+                        out_material_to_models[mat].append(child)
 
     return sorted(materials, key=lambda m: m.shader_properties.index)
 
