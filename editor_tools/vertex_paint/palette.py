@@ -21,9 +21,16 @@ def get_all_image_editor_areas(context):
 def is_in_texture(area, position):
     x, y = position
     for region in area.regions:
-        if region.type == "WINDOW":
-            u, v = region.view2d.region_to_view(x - region.x, y - region.y)
-            if v >= 0 and v <= 1 and u >= 0 and u <= 1:
+        if region.type != "WINDOW":
+            continue
+
+        rx = region.x
+        ry = region.y
+        rw = region.width
+        rh = region.height
+        if rx <= x <= rx + rw and ry <= y <= ry + rh:
+            u, v = region.view2d.region_to_view(x - rx, y - ry)
+            if 0 <= v <= 1 and 0 <= u <= 1:
                 return (u, v)
             else:
                 return None
