@@ -291,17 +291,7 @@ class SOLLUMZ_PT_palette_picker(Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.operator(SOLLUMZ_OT_pick_palette_color.bl_idname, text="Pick")
-        row.label(text=f"Index: {context.window_manager.sz_ui_vertex_paint_pal_index}")
-
-    @classmethod
-    def register(cls):
-        WindowManager.sz_ui_vertex_paint_pal_index = IntProperty(name="Index")
-
-    @classmethod
-    def unregister(cls):
-        del WindowManager.sz_ui_vertex_paint_pal_index
+        layout.operator(SOLLUMZ_OT_pick_palette_color.bl_idname, text="Pick")
 
 
 def _draw_vertex_paint_menu(menu, context):
