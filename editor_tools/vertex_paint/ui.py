@@ -5,7 +5,6 @@ from bl_ui.space_view3d import VIEW3D_MT_paint_vertex
 from bpy.props import (
     EnumProperty,
     FloatProperty,
-    IntProperty,
 )
 from bpy.types import (
     Menu,

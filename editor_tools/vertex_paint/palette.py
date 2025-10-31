@@ -1,11 +1,11 @@
 """Modal Operator to pick the index of a palette texture on an open Image Editor"""
 
 import bpy
+from bl_ui.space_statusbar import STATUSBAR_HT_header
 from bpy.types import (
     Operator,
     SpaceImageEditor,
 )
-from bl_ui.space_statusbar import STATUSBAR_HT_header
 
 
 def get_all_image_editor_areas(context):
