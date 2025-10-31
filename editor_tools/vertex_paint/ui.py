@@ -5,6 +5,7 @@ from bl_ui.space_view3d import VIEW3D_MT_paint_vertex
 from bpy.props import (
     EnumProperty,
     FloatProperty,
+    IntProperty,
 )
 from bpy.types import (
     Menu,
@@ -27,6 +28,9 @@ from .terrain import (
 )
 from .transfer import (
     SOLLUMZ_OT_vertex_paint_transfer_channels,
+)
+from .palette import (
+    SOLLUMZ_OT_pick_palette_color,
 )
 from .utils import (
     Channel,
@@ -270,6 +274,34 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
                 icon_value=ch.icon,
                 depress=ch in isolated_channels,
             ).channel = ch.value
+
+
+class SOLLUMZ_PT_palette_picker(Panel):
+    bl_idname = "SOLLUMZ_PT_palette_picker"
+    bl_label = "Palette Picker"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Vertex Paint"
+    bl_context = "vertexpaint"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 5
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="EYEDROPPER")
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_pick_palette_color.bl_idname, text="Pick")
+        row.label(text=f"Index: {context.window_manager.sz_ui_vertex_paint_pal_index}")
+
+    @classmethod
+    def register(cls):
+        WindowManager.sz_ui_vertex_paint_pal_index = IntProperty(name="Index")
+
+    @classmethod
+    def unregister(cls):
+        del WindowManager.sz_ui_vertex_paint_pal_index
 
 
 def _draw_vertex_paint_menu(menu, context):
