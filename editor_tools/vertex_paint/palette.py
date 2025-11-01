@@ -41,7 +41,7 @@ def is_in_texture(area, position):
                 return None
 
 
-class SOLLUMZ_OT_pick_palette_color(Operator):
+class SOLLUMZ_OT_vertex_paint_pick_palette_color(Operator):
     bl_idname = "sollumz.vertex_paint_pick_palette_color"
     bl_label = "Palette Color Picker"
     bl_description = "Pick a tint index from a Image Editor and set the vertex brush color channel"

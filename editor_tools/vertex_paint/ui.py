@@ -22,7 +22,7 @@ from .multiproxy import (
     SOLLUMZ_OT_vertex_paint_multiproxy_exit,
 )
 from .palette import (
-    SOLLUMZ_OT_pick_palette_color,
+    SOLLUMZ_OT_vertex_paint_pick_palette_color,
 )
 from .terrain import (
     SOLLUMZ_OT_vertex_paint_terrain_alpha,
@@ -219,6 +219,24 @@ class SOLLUMZ_PT_vertex_paint_terrain(Panel):
         del WindowManager.sz_ui_vertex_paint_terrain_alpha
 
 
+class SOLLUMZ_PT_palette_picker(Panel):
+    bl_idname = "SOLLUMZ_PT_palette_picker"
+    bl_label = "Palette Picker"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Vertex Paint"
+    bl_context = "vertexpaint"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 5
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="EYEDROPPER")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_vertex_paint_pick_palette_color.bl_idname, text="Pick")
+
+
 class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
     bl_idname = "SOLLUMZ_MT_vertex_painter_pie_menu"
     bl_label = "Sollumz Vertex Painter"
@@ -236,7 +254,8 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
         pie.column()
 
         # Right
-        col = pie.column()
+        prow = pie.row()
+        col = prow.column()
         row = col.row(align=True)
         row.alignment = "CENTER"
         row.label(text="Terrain")
@@ -247,6 +266,17 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
         subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_texture.bl_idname, text="Texture 2").texture = 2
         subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_texture.bl_idname, text="Texture 3").texture = 3
         subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_texture.bl_idname, text="Texture 4").texture = 4
+
+        prow.separator()
+
+        col = prow.column()
+        row = col.row(align=True)
+        row.alignment = "CENTER"
+        row.label(text="Palette")
+        subcol = col.column(align=True)
+        subcol.scale_x = 1.0
+        subcol.scale_y = 1.6
+        subcol.operator(SOLLUMZ_OT_vertex_paint_pick_palette_color.bl_idname, text="Palette Pick", icon="EYEDROPPER")
 
         # Bottom
         col = pie.column()
@@ -273,24 +303,6 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
                 icon_value=ch.icon,
                 depress=ch in isolated_channels,
             ).channel = ch.value
-
-
-class SOLLUMZ_PT_palette_picker(Panel):
-    bl_idname = "SOLLUMZ_PT_palette_picker"
-    bl_label = "Palette Picker"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Vertex Paint"
-    bl_context = "vertexpaint"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 5
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="EYEDROPPER")
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator(SOLLUMZ_OT_pick_palette_color.bl_idname, text="Pick")
 
 
 def _draw_vertex_paint_menu(menu, context):
