@@ -4,32 +4,40 @@ import bpy
 from bpy.props import IntProperty
 from bpy.types import Operator
 
+from .utils import (
+    vertex_paint_unified_colors,
+    vertex_paint_unified_strength,
+)
+
 
 def apply_terrain_brush_settings(brush, idx: int, paint_alpha: float | None = None):
+    context = bpy.context
+    colors = vertex_paint_unified_colors(context, brush)
+    strength = vertex_paint_unified_strength(context, brush)
     if idx < 5:
         brush.blend = "MIX"
     if idx == 1:
-        brush.color = (0, 0, 0)
-        brush.strength = 1
+        colors.color = (0, 0, 0)
+        strength.strength = 1
     elif idx == 2:
-        brush.color = (0, 0, 1)
-        brush.strength = 1
+        colors.color = (0, 0, 1)
+        strength.strength = 1
     elif idx == 3:
-        brush.color = (0, 1, 0)
-        brush.strength = 1
+        colors.color = (0, 1, 0)
+        strength.strength = 1
     elif idx == 4:
-        brush.color = (0, 1, 1)
-        brush.strength = 1
+        colors.color = (0, 1, 1)
+        strength.strength = 1
     elif idx == 5:
         assert paint_alpha is not None, "paint_alpha required"
         if paint_alpha > 0:
-            brush.color = (1, 1, 1)
+            colors.color = (1, 1, 1)
             brush.blend = "ADD_ALPHA"
-            brush.strength = paint_alpha
+            strength.strength = paint_alpha
         else:
-            brush.color = (0, 0, 0)
+            colors.color = (0, 0, 0)
             brush.blend = "ERASE_ALPHA"
-            brush.strength = paint_alpha * -1
+            strength.strength = paint_alpha * -1
 
 
 def apply_terrain_brush_setting_to_current_brush(idx: int, paint_alpha: float | None = None):

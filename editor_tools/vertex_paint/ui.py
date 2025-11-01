@@ -21,15 +21,15 @@ from .multiproxy import (
     SOLLUMZ_OT_vertex_paint_multiproxy,
     SOLLUMZ_OT_vertex_paint_multiproxy_exit,
 )
+from .palette import (
+    SOLLUMZ_OT_pick_palette_color,
+)
 from .terrain import (
     SOLLUMZ_OT_vertex_paint_terrain_alpha,
     SOLLUMZ_OT_vertex_paint_terrain_texture,
 )
 from .transfer import (
     SOLLUMZ_OT_vertex_paint_transfer_channels,
-)
-from .palette import (
-    SOLLUMZ_OT_pick_palette_color,
 )
 from .utils import (
     Channel,

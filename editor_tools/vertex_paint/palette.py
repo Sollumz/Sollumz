@@ -7,6 +7,8 @@ from bpy.types import (
     SpaceImageEditor,
 )
 
+from .utils import vertex_paint_unified_colors
+
 
 def get_all_image_editor_areas(context):
     image_editors = []
@@ -74,7 +76,7 @@ class SOLLUMZ_OT_pick_palette_color(Operator):
             for image_editor, tex_width in self._image_editors:
                 if uv := is_in_texture(image_editor, (event.mouse_x, event.mouse_y)):
                     index = int(uv[0] * (tex_width))
-                    context.scene.tool_settings.unified_paint_settings.color.b = (index + 0.5) / tex_width
+                    vertex_paint_unified_colors(context).color.b = (index + 0.5) / tex_width
                     self.report({"INFO"}, f"Picked index: {index}")
                     self._cleanup(context)
                     return {"FINISHED"}

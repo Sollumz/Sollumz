@@ -41,7 +41,7 @@ from gpu_extras.batch import batch_for_shader
 from mathutils import Color, Matrix, Vector
 
 from ...icons import ICON_GEOM_GRADIENT
-from .utils import attr_domain_size
+from .utils import attr_domain_size, vertex_paint_unified_colors
 
 
 def _np_location_3d_to_region_2d(region, rv3d, coords):
@@ -376,9 +376,9 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
 
     def invoke(self, context, event):
         # Store the primary and secondary color from the current brush
-        brush = context.tool_settings.vertex_paint.brush
-        self.start_color = brush.color
-        self.end_color = brush.secondary_color
+        colors = vertex_paint_unified_colors(context)
+        self.start_color = colors.color
+        self.end_color = colors.secondary_color
 
         # Current mouse position as starting point
         mouse_position = Vector((event.mouse_region_x, event.mouse_region_y))
@@ -459,8 +459,9 @@ class VertexPaintGradientTool(WorkSpaceTool):
     def draw_settings(context, layout, tool):
         row = layout.row(align=True)
         row.ui_units_x = 4
-        row.prop(context.tool_settings.vertex_paint.brush, "color", text="")
-        row.prop(context.tool_settings.vertex_paint.brush, "secondary_color", text="")
+        colors = vertex_paint_unified_colors(context)
+        row.prop(colors, "color", text="")
+        row.prop(colors, "secondary_color", text="")
 
         props = tool.operator_properties(SOLLUMZ_OT_vertex_paint_gradient.bl_idname)
         row = layout.row(align=True)

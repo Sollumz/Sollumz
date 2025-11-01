@@ -3,6 +3,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+from ..editor_tools.vertex_paint.utils import vertex_paint_unified_settings
+
 
 @pytest.mark.parametrize(
     "texture_index, expected_color",
@@ -13,41 +15,69 @@ from numpy.testing import assert_allclose
         (4, (0.0, 1.0, 1.0)),
     ),
 )
-def test_ops_terrain_paint_texture(texture_index, expected_color, context, plane_object):
+@pytest.mark.parametrize("unified_color", (True, False))
+@pytest.mark.parametrize("unified_strength", (True, False))
+def test_ops_terrain_paint_texture(
+    texture_index, expected_color, unified_color, unified_strength, context, plane_object
+):
     bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    us = vertex_paint_unified_settings(context)
+    us.use_unified_color = unified_color
+    us.use_unified_strength = unified_strength
 
     bpy.ops.sollumz.vertex_paint_terrain_texture(texture=texture_index)
 
     brush = context.tool_settings.vertex_paint.brush
-    assert_allclose(brush.color, expected_color)
+    color = us.color if unified_color else brush.color
+    strength = us.strength if unified_strength else brush.strength
+    assert_allclose(color, expected_color)
     assert brush.blend == "MIX"
-    assert brush.strength == 1.0
+    assert strength == 1.0
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
 @pytest.mark.parametrize("alpha", (1.0, 0.5))
-def test_ops_terrain_paint_alpha_add(alpha, context, plane_object):
+@pytest.mark.parametrize("unified_color", (True, False))
+@pytest.mark.parametrize("unified_strength", (True, False))
+def test_ops_terrain_paint_alpha_add(alpha, unified_color, unified_strength, context, plane_object):
     bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    us = vertex_paint_unified_settings(context)
+    us.use_unified_color = unified_color
+    us.use_unified_strength = unified_strength
+
     bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=alpha)
 
     brush = context.tool_settings.vertex_paint.brush
-    assert_allclose(brush.color, (1.0, 1.0, 1.0))
+    color = us.color if unified_color else brush.color
+    strength = us.strength if unified_strength else brush.strength
+    assert_allclose(color, (1.0, 1.0, 1.0))
     assert brush.blend == "ADD_ALPHA"
-    assert brush.strength == alpha
+    assert strength == alpha
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
 @pytest.mark.parametrize("alpha", (1.0, 0.5))
-def test_ops_terrain_paint_alpha_remove(alpha, context, plane_object):
+@pytest.mark.parametrize("unified_color", (True, False))
+@pytest.mark.parametrize("unified_strength", (True, False))
+def test_ops_terrain_paint_alpha_remove(alpha, unified_color, unified_strength, context, plane_object):
     bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    us = vertex_paint_unified_settings(context)
+    us.use_unified_color = unified_color
+    us.use_unified_strength = unified_strength
+
     bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=-alpha)
 
     brush = context.tool_settings.vertex_paint.brush
-    assert_allclose(brush.color, (0.0, 0.0, 0.0))
+    color = us.color if unified_color else brush.color
+    strength = us.strength if unified_strength else brush.strength
+    assert_allclose(color, (0.0, 0.0, 0.0))
     assert brush.blend == "ERASE_ALPHA"
-    assert brush.strength == alpha
+    assert strength == alpha
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
