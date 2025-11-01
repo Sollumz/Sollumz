@@ -28,6 +28,9 @@ from .terrain import (
 from .transfer import (
     SOLLUMZ_OT_vertex_paint_transfer_channels,
 )
+from .palette import (
+    SOLLUMZ_OT_pick_palette_color,
+)
 from .utils import (
     Channel,
     ChannelWithNoneEnumItems,
@@ -270,6 +273,24 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
                 icon_value=ch.icon,
                 depress=ch in isolated_channels,
             ).channel = ch.value
+
+
+class SOLLUMZ_PT_palette_picker(Panel):
+    bl_idname = "SOLLUMZ_PT_palette_picker"
+    bl_label = "Palette Picker"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Vertex Paint"
+    bl_context = "vertexpaint"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 5
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon="EYEDROPPER")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_pick_palette_color.bl_idname, text="Pick")
 
 
 def _draw_vertex_paint_menu(menu, context):
