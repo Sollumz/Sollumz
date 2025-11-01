@@ -268,8 +268,7 @@ def create_tint_geom_modifier(
 
     # set input / output variables
     input_id = tnt_ng.interface.items_tree["Color Attribute"].identifier
-    mod[input_id + "_attribute_name"] = input_color_attr_name if input_color_attr_name is not None else ""
-    mod[input_id + "_use_attribute"] = True
+    mod[input_id] = input_color_attr_name if input_color_attr_name is not None else ""
 
     input_palette_id = tnt_ng.interface.items_tree["Palette Texture"].identifier
     mod[input_palette_id] = palette_img
@@ -322,7 +321,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # Create the necessary sockets for the node group
     gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="INPUT")
     gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="OUTPUT")
-    gnt.interface.new_socket("Color Attribute", socket_type="NodeSocketVector", in_out="INPUT")
+    gnt.interface.new_socket("Color Attribute", socket_type="NodeSocketString", in_out="INPUT")
     in_palette = gnt.interface.new_socket("Palette (Preview)",
                                           description="Index of the tint palette to preview. Has no effect on export",
                                           socket_type="NodeSocketInt", in_out="INPUT")
@@ -354,9 +353,38 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_img_info = gnt.nodes.new("GeometryNodeImageInfo")
     gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
 
+    # Read color attribute. We check if there is an isolated attribute for the input color attribute. If so, we
+    # read from the isolated attribute instead of the input, so the tint updates as the user paints.
+    from ..editor_tools.vertex_paint.isolate import ISOLATED_ATTR_FORMAT
+    color_attr = gnt.nodes.new("GeometryNodeInputNamedAttribute")
+    color_attr.data_type = "FLOAT_COLOR"
+    gnt.links.new(input.outputs["Color Attribute"], color_attr.inputs["Name"])
+    last_color_output = color_attr.outputs["Attribute"]
+    for r, g, b in (
+        # All possible isolation states with blue channel. Note: alpha cannot be isolated along with RGB, we can ignore it
+        ("", "", "B"),
+        ("", "G", "B"),
+        ("R", "", "B"),
+        ("R", "G", "B"),
+    ):
+        isolated_attr_prefix = gnt.nodes.new("FunctionNodeInputString")
+        isolated_attr_prefix.string = ISOLATED_ATTR_FORMAT.format(r, g, b, "", "")
+        str_join = gnt.nodes.new("GeometryNodeStringJoin")
+        isolated_attr = gnt.nodes.new("GeometryNodeInputNamedAttribute")
+        isolated_attr.data_type = "FLOAT_COLOR"
+        switch = gnt.nodes.new("GeometryNodeSwitch")
+        switch.input_type = "RGBA"
+        gnt.links.new(input.outputs["Color Attribute"], str_join.inputs["Strings"])
+        gnt.links.new(isolated_attr_prefix.outputs["String"], str_join.inputs["Strings"])
+        gnt.links.new(str_join.outputs["String"], isolated_attr.inputs["Name"])
+        gnt.links.new(isolated_attr.outputs["Exists"], switch.inputs["Switch"])
+        gnt.links.new(isolated_attr.outputs["Attribute"], switch.inputs["True"])
+        gnt.links.new(last_color_output, switch.inputs["False"])
+        last_color_output = switch.outputs["Output"]
+
     # separate colour0
     sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
-    gnt.links.new(input.outputs["Color Attribute"], sepn.inputs["Vector"])
+    gnt.links.new(last_color_output, sepn.inputs["Vector"])
 
     # create math nodes
     mathns = []
