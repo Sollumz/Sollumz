@@ -88,7 +88,7 @@ jobs:
           python -m pip install git+https://github.com/Sollumz/blender-downloader.git
           python -m pip list
           mkdir _blender
-          blender-downloader ${{ matrix.blender-version }} -d _blender --extract --remove-compressed --print-blender-executable --quiet | Out-File -FilePath _blender-executable-path.txt
+          blender-downloader ${{ matrix.blender-version }} -d _blender --extract --remove-compressed --print-blender-executable --arch amd64 --quiet | Out-File -FilePath _blender-executable-path.txt
           get-content _blender-executable-path.txt
 
       - name: Install Dependencies
