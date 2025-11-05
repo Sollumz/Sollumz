@@ -99,6 +99,7 @@ class SOLLUMZ_OT_vertex_paint_multiproxy(Operator):
         merged_obj = context.active_object
         merged_obj.name = ".multiproxy"
         merged_obj.data.name = ".multiproxy"
+        merged_obj.data.attributes.active_color_name = aobj.data.attributes.active_color_name
         proxy_state = merged_obj.sz_multiproxy_state
         proxy_state.objects.clear()
 
