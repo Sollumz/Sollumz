@@ -906,6 +906,60 @@ class SOLLUMZ_OT_delete_lods(bpy.types.Operator):
         self.report({"INFO"}, f"Deleted LODs from {len(selected_model_objs)} object(s).")
         return {"FINISHED"}
 
+
+class SOLLUMZ_OT_deselect_lods_with_meshes(bpy.types.Operator):
+    bl_idname = "sollumz.deselect_lods_with_meshes"
+    bl_label = "Deselect Objects With LODs"
+    bl_options = {"UNDO"}
+    bl_description = "Deselect Drawable Models that already have meshes on any of the selected LOD levels"
+
+    @classmethod
+    def poll(cls, context):
+        return bool(context.selected_objects)
+
+    def execute(self, context: Context):
+        levels_to_check = tuple(context.scene.sollumz_deselect_lods_levels)
+        if not levels_to_check:
+            self.report({"INFO"}, "No LOD levels selected!")
+            return {"CANCELLED"}
+
+        selected_model_objs = [
+            obj for obj in context.selected_objects
+            if obj.type == "MESH" and obj.sollum_type == SollumType.DRAWABLE_MODEL
+        ]
+
+        if not selected_model_objs:
+            self.report({"INFO"}, "No Drawable Model objects selected!")
+            return {"CANCELLED"}
+
+        deselected = 0
+
+        for obj in selected_model_objs:
+            obj_lods: LODLevels = obj.sz_lods
+            has_selected_lod_mesh = False
+            for lod_level in levels_to_check:
+                lod = obj_lods.get_lod(lod_level)
+                if lod.mesh is not None:
+                    has_selected_lod_mesh = True
+                    break
+
+            if has_selected_lod_mesh:
+                obj.select_set(False)
+                deselected += 1
+
+        if deselected == 0:
+            self.report({"INFO"}, "All selected Drawable Models are missing the chosen LOD levels.")
+        else:
+            active_obj = context.view_layer.objects.active
+            if active_obj and not active_obj.select_get():
+                remaining_selection = [obj for obj in context.selected_objects if obj.select_get()]
+                context.view_layer.objects.active = remaining_selection[0] if remaining_selection else None
+
+            self.report({"INFO"}, f"Deselected {deselected} object(s) with the selected LOD levels.")
+
+        return {"FINISHED"}
+
+
 class SOLLUMZ_OT_uv_maps_add_missing(bpy.types.Operator):
     """Add the missing UV maps used by the Sollumz shaders of the mesh"""
     bl_idname = "sollumz.uv_maps_add_missing"

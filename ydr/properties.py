@@ -766,8 +766,9 @@ def register():
         default=False
     )
 
-    # LOD deletion selection for Delete LODs tool
+    # LOD selection settings for LOD tools
     bpy.types.Scene.sollumz_delete_lods_levels = lod_level_enum_flag_prop_factory()
+    bpy.types.Scene.sollumz_deselect_lods_levels = lod_level_enum_flag_prop_factory()
 
     bpy.types.WindowManager.sz_light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
     bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Light Presets")
@@ -937,6 +938,7 @@ def unregister():
     del bpy.types.Scene.sollumz_auto_lod_pre_reset_vectors
     del bpy.types.Scene.sollumz_auto_lod_pre_clear_custom_normals
     del bpy.types.Scene.sollumz_delete_lods_levels
+    del bpy.types.Scene.sollumz_deselect_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
 
