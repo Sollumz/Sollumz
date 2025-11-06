@@ -10,6 +10,7 @@ from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from .meshhelper import get_uv_map_name
 from typing import Tuple
+from collections.abc import Iterator
 from ..cwxml.shader import ShaderManager
 
 from .. import logger
@@ -682,7 +683,7 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
 
     # If we have an armature, rename groups named with the bone ID after the bone in the armature
     if new_bone_map is not None:
-        for group in action.groups:
+        for group in action_groups(action):
             name = group.name
             if not name.startswith("#") or not name[1:].isnumeric():
                 continue
@@ -694,7 +695,7 @@ def retarget_animation(animation_obj: bpy.types.Object, old_target_id: bpy.types
 
             group.name = bone.name
 
-    for fcurve in action.fcurves:
+    for fcurve in action_fcurves(action):
         # TODO: can we somehow store the track ID in the F-Curve to avoid parsing the data paths?
         data_path = fcurve.data_path
 
@@ -847,9 +848,39 @@ def get_action_duration_secs(action: bpy.types.Action) -> float:
 
 def get_action_export_frame_count(action: bpy.types.Action) -> int:
     """Gets how many frames should be exported for the given action."""
-    max_num_keyframes = max((len(fc.keyframe_points) for fc in action.fcurves), default=0)
+    max_num_keyframes = max((len(fc.keyframe_points) for fc in action_fcurves(action)), default=0)
     duration_in_frames = get_action_duration_frames(action)
     if max_num_keyframes == 0 or duration_in_frames == 0.0:
         return 0
     num_frames = math.ceil(duration_in_frames + 1)
     return max(max_num_keyframes, num_frames)
+
+
+def action_fcurves(action: bpy.types.Action) -> Iterator[bpy.types.FCurve]:
+    if bpy.app.version >= (5, 0, 0):
+        fcurves = (
+            fcurve
+            for layer in action.layers
+            for strip in layer.strips
+            for channelbag in strip.channelbags
+            for fcurve in channelbag.fcurves
+        )
+    else:
+        fcurves = action.fcurves
+
+    return fcurves
+
+
+def action_groups(action: bpy.types.Action) -> Iterator[bpy.types.ActionGroup]:
+    if bpy.app.version >= (5, 0, 0):
+        groups = (
+            group
+            for layer in action.layers
+            for strip in layer.strips
+            for channelbag in strip.channelbags
+            for group in channelbag.groups
+        )
+    else:
+        groups = action.groups
+
+    return groups

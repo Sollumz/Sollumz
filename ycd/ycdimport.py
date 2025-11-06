@@ -161,8 +161,23 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
         assert len(track_data) == len(scaled_frame_ids)
         return [value for co in zip(scaled_frame_ids, track_data) for value in co]
 
+    if bpy.app.version >= (5, 0, 0):
+        from bpy_extras import anim_utils
+
+        action_idtype = "OBJECT"
+        if (uv_bone_data := action_data.get(0, {})) and (Track.UV0 in uv_bone_data or Track.UV1 in uv_bone_data):
+            action_idtype = "MATERIAL"
+        action_slot = action.slots.new(action_idtype, "Slot")
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
+        def _new_fcurve(data_path: str, index: int, group: str):
+            return channelbag.fcurves.new(data_path, index=index, group_name=group)
+    else:
+        def _new_fcurve(data_path: str, index: int, group: str):
+            return action.fcurves.new(data_path, index=index, action_group=group)
+
     for bone_id, bones_data in action_data.items():
-        group_item = action.groups.new(f"#{bone_id}")
+        group_name = f"#{bone_id}"
+
         for track, frames_data in bones_data.items():
             track_format = TrackFormatMap[track]
             data_path = get_canonical_track_data_path(track, bone_id)
@@ -171,13 +186,9 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
                 vec_tracks_y = list(map(lambda vec: vec.y, frames_data))
                 vec_tracks_z = list(map(lambda vec: vec.z, frames_data))
 
-                vec_curve_x = action.fcurves.new(data_path=data_path, index=0)
-                vec_curve_y = action.fcurves.new(data_path=data_path, index=1)
-                vec_curve_z = action.fcurves.new(data_path=data_path, index=2)
-
-                vec_curve_x.group = group_item
-                vec_curve_y.group = group_item
-                vec_curve_z.group = group_item
+                vec_curve_x = _new_fcurve(data_path, 0, group_name)
+                vec_curve_y = _new_fcurve(data_path, 1, group_name)
+                vec_curve_z = _new_fcurve(data_path, 2, group_name)
 
                 vec_curve_x.keyframe_points.add(len(frames_data))
                 vec_curve_y.keyframe_points.add(len(frames_data))
@@ -196,15 +207,10 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
                 quat_tracks_z = list(map(lambda rotation: rotation.z, frames_data))
                 quat_tracks_w = list(map(lambda rotation: rotation.w, frames_data))
 
-                quat_curve_w = action.fcurves.new(data_path=data_path, index=0)
-                quat_curve_x = action.fcurves.new(data_path=data_path, index=1)
-                quat_curve_y = action.fcurves.new(data_path=data_path, index=2)
-                quat_curve_z = action.fcurves.new(data_path=data_path, index=3)
-
-                quat_curve_w.group = group_item
-                quat_curve_x.group = group_item
-                quat_curve_y.group = group_item
-                quat_curve_z.group = group_item
+                quat_curve_w = _new_fcurve(data_path, 0, group_name)
+                quat_curve_x = _new_fcurve(data_path, 1, group_name)
+                quat_curve_y = _new_fcurve(data_path, 2, group_name)
+                quat_curve_z = _new_fcurve(data_path, 3, group_name)
 
                 quat_curve_w.keyframe_points.add(len(frames_data))
                 quat_curve_x.keyframe_points.add(len(frames_data))
@@ -221,8 +227,7 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
                 quat_curve_y.update()
                 quat_curve_z.update()
             elif track_format == TrackFormat.Float:
-                value_curve = action.fcurves.new(data_path=data_path)
-                value_curve.group = group_item
+                value_curve = _new_fcurve(data_path, 0, group_name)
 
                 value_curve.keyframe_points.add(len(frames_data))
                 value_curve.keyframe_points.foreach_set("co", _interleave_frame_ids(frames_data))
