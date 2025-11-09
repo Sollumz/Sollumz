@@ -1061,9 +1061,6 @@ def get_shattermap_obj(col_obj: bpy.types.Object) -> Optional[bpy.types.Object]:
 def find_shattermap_image(obj: bpy.types.Object) -> Optional[bpy.types.Image]:
     """Find shattermap material on ``obj`` and get the image attached to the base color node."""
     for mat in obj.data.materials:
-        if mat.sollum_type != MaterialType.SHATTER_MAP:
-            continue
-
         for node in mat.node_tree.nodes:
             if not isinstance(node, bpy.types.ShaderNodeTexImage):
                 continue
