@@ -481,7 +481,7 @@ def cloth_char_get_mesh_to_cloth_bindings(
         #  1. Projected vertex falls within the triangle, i.e. the barycentric coordinates sum 1 (with some leeway)
         #  2. They are not too far away from the mesh vertex
         condition_projection = (tris_w0 + tris_w1 + tris_w2) < 1.05
-        condition_distance = distance_to_tris < MAX_DISTANCE_THRESHOLD
+        condition_distance = np.abs(distance_to_tris) <= MAX_DISTANCE_THRESHOLD
         valid_tris_mask = condition_projection & condition_distance
         valid_tris_indices = np.where(valid_tris_mask)[0]
         if not valid_tris_mask.any():
