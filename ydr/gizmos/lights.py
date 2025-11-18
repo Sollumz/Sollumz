@@ -329,15 +329,21 @@ class SOLLUMZ_GGT_lights(GizmoGroup):
                     self.culling_plane_gizmos.append(gz)
                     gz.alpha = 0.9
 
-                light_mat = light_obj.matrix_world.normalized()
-                light_mat
+                light_translation_mat = Matrix.Translation(light_obj.matrix_world.translation)
 
-                normal = light.light_properties.culling_plane_normal
-                if normal == Vector((0.0, 0.0, 0.0)):
-                    normal = Vector((0.0, 0.0, 1.0))
-                plane_rot_mat = normal.to_track_quat("Z", "Y").to_matrix().to_4x4()
+                parent_rot_mat = (
+                    parent_obj.matrix_world.to_3x3().to_4x4()
+                    if (parent_obj := light_obj.parent)
+                    else Matrix.Identity(4)
+                )
+
+                plane_normal = light.light_properties.culling_plane_normal
+                if plane_normal == Vector((0.0, 0.0, 0.0)):
+                    plane_normal = Vector((0.0, 0.0, 1.0))
+
+                plane_rot_mat = plane_normal.to_track_quat("Z", "Y").to_matrix().to_4x4()
                 plane_offset_mat = Matrix.Translation((0.0, 0.0, -light.light_properties.culling_plane_offset))
-                plane_mat = Matrix.Translation(light_mat.translation) @ plane_rot_mat @ plane_offset_mat
+                plane_mat = light_translation_mat @ parent_rot_mat @ plane_rot_mat @ plane_offset_mat
 
                 gz.use_event_handle_all = False
                 gz.matrix_basis = plane_mat
