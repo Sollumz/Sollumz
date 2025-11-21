@@ -120,6 +120,9 @@ class LODLevelProps(PropertyGroup):
 
 class LODLevels(PropertyGroup):
     def on_lod_level_update(self, context: Context):
+        if self.disable_active_lod_level_callback:
+            return
+
         prev_lod = self.get_lod(self.active_lod_level_prev)
         curr_lod = self.get_lod(self.active_lod_level)
         prev_lod.on_lod_level_exit()
@@ -133,6 +136,8 @@ class LODLevels(PropertyGroup):
     medium: PointerProperty(type=LODLevelProps)
     low: PointerProperty(type=LODLevelProps)
     very_low: PointerProperty(type=LODLevelProps)
+
+    disable_active_lod_level_callback: BoolProperty(default=False)
 
     @property
     def active_lod(self) -> LODLevelProps:

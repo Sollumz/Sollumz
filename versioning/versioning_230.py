@@ -146,6 +146,30 @@ def get_src_props(rna_instance) -> PropertyGroup:
         return rna_instance
 
 
+def unsafe_move_renamed_prop(
+    props: PropertyGroup,
+    old_name: str,
+    new_name: str,
+):
+    """If ``old_name`` exists in ``props``, copy its value to ``new_name`` and delete ``old_name``.
+
+    NOTE: this is intended to copy large property groups after they have been renamed.
+    Since Blender 5.0, ``props`` is expected to be what `bl_system_properties_get()` returns, and we are writing to it
+    which is not supported but for now it still works. Will need to look into a better solution if this breaks (probably
+    copying each property one by one).
+
+    See the following (and check latest commit to see if there is a better solution):
+    https://projects.blender.org/Mets/blender_studio_utils/src/commit/8b178e4f2f4c3b3db917112d700c7a5cf6bc6a2c/properties.py#L67-L69
+    """
+    old_val = props.get(old_name, None)
+    if old_val is None:
+        return
+
+    props[new_name] = old_val
+    if bpy.app.version < (5, 0, 0):
+        del props[old_name]
+
+
 def move_renamed_prop(
     dst_props: PropertyGroup,
     src_props: PropertyGroup,
