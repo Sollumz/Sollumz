@@ -1,5 +1,6 @@
 """Handle changes between 2.3.0 and 2.4.0."""
 
+import bpy
 from bpy.types import (
     ShaderNode,
     ShaderNodeValue,
@@ -8,14 +9,14 @@ from bpy.types import (
     BlendData,
     Object,
     Bone,
-    Mesh,
     Light,
+    PropertyGroup,
 )
-from idprop.types import IDPropertyGroup
 from typing import Optional, NamedTuple, Callable, Any
 from ..sollumz_properties import MaterialType
 from ..cwxml.shader import ShaderManager
 from ..ydr.shader_materials import create_parameter_node
+from ..yft.properties import FragmentTemplateAsset
 
 
 class OldShaderParam(NamedTuple):
@@ -138,51 +139,73 @@ def upgrade_material_old_shader_parameters(material: Material):
             node_tree.nodes.remove(n)
 
 
+def get_src_props(rna_instance) -> PropertyGroup:
+    if bpy.app.version >= (5, 0, 0):
+        return rna_instance.bl_system_properties_get()
+    else:
+        return rna_instance
+
+
 def move_renamed_prop(
-    props: IDPropertyGroup,
+    dst_props: PropertyGroup,
+    src_props: PropertyGroup,
     old_name: str,
     new_name: str,
     map_fn: Optional[Callable[[Any], Any]] = None
 ):
-    """If ``old_name`` exists in ``props``, copy its value to ``new_name`` and delete ``old_name``.
+    """If ``old_name`` exists in ``src_props``, copy its value to ``dst_props.new_name`` and delete ``old_name``.
     ``map_fn`` can be used to transform the old value, in case the property type or value meaning changed.
     """
-    old_val = props.get(old_name, None)
+    old_val = src_props.get(old_name, None)
     if old_val is None:
         return
 
-    props[new_name] = old_val if map_fn is None else map_fn(old_val)
-    del props[old_name]
+    new_val = old_val if map_fn is None else map_fn(old_val)
+    setattr(dst_props, new_name, new_val)
+    if bpy.app.version < (5, 0, 0):
+        del dst_props[old_name]
 
 
 def upgrade_fragment_properties(obj: Object):
-    frag_props = obj.get("fragment_properties", None)
-    if frag_props is None:
+    src_props = get_src_props(obj)
+    if src_props is None:
         return
+
+    src_frag_props = src_props.get("fragment_properties", None)
+    if src_frag_props is None:
+        return
+    dst_frag_props = obj.fragment_properties
+
+    def _map_template_asset(v: float) -> str:
+        # was stored as a float, now an enum
+        enum_value_int = (int(v) >> 8) & 0xFF
+        try:
+            enum_value = FragmentTemplateAsset(enum_value_int)
+        except ValueError:
+            enum_value = FragmentTemplateAsset.NONE
+        return enum_value.name
 
     for old_prop, new_prop, map_fn in (
-        ("unk_c0", "template_asset", lambda v: (int(v) >> 8) & 0xFF),
-        ("unk_c4", "flags", lambda v: int(v)),
+        ("unk_c0", "template_asset", _map_template_asset),
         ("unk_cc", "unbroken_elasticity", None),
     ):
-        move_renamed_prop(frag_props, old_prop, new_prop, map_fn)
+        move_renamed_prop(dst_frag_props, src_frag_props, old_prop, new_prop, map_fn)
 
-    lod_props = frag_props.get("lod_properties", None)
-    if lod_props is None:
+    src_lod_props = src_frag_props.get("lod_properties", None)
+    if src_lod_props is None:
         return
+    dst_lod_props = dst_frag_props.lod_properties
 
     for old_prop, new_prop in (
-        ("unknown_14", "smallest_ang_inertia"),
-        ("unknown_18", "largest_ang_inertia"),
         ("unknown_1c", "min_move_force"),
-        ("unknown_40", "original_root_cg_offset"),
         ("unknown_50", "unbroken_cg_offset"),
     ):
-        move_renamed_prop(lod_props, old_prop, new_prop)
+        move_renamed_prop(dst_lod_props, src_lod_props, old_prop, new_prop)
 
-    arch_props = lod_props.get("archetype_properties", None)
-    if arch_props is None:
+    src_arch_props = src_lod_props.get("archetype_properties", None)
+    if src_arch_props is None:
         return
+    dst_arch_props = dst_lod_props.archetype_properties
 
     for old_prop, new_prop in (
         ("unknown_48", "gravity_factor"),
@@ -190,25 +213,35 @@ def upgrade_fragment_properties(obj: Object):
         ("unknown_50", "max_ang_speed"),
         ("unknown_54", "buoyancy_factor"),
     ):
-        move_renamed_prop(arch_props, old_prop, new_prop)
+        move_renamed_prop(dst_arch_props, src_arch_props, old_prop, new_prop)
 
 
 def upgrade_vehicle_window_properties(obj: Object):
-    window_props = obj.get("vehicle_window_properties", None)
-    if window_props is None:
+    src_props = get_src_props(obj)
+    if src_props is None:
         return
+
+    src_window_props = src_props.get("vehicle_window_properties", None)
+    if src_window_props is None:
+        return
+    dst_window_props = obj.vehicle_window_properties
 
     for old_prop, new_prop in (
         ("unk_float_17", "data_min"),
         ("unk_float_18", "data_max"),
     ):
-        move_renamed_prop(window_props, old_prop, new_prop)
+        move_renamed_prop(dst_window_props, src_window_props, old_prop, new_prop)
 
 
 def upgrade_bone_group_properties(bone: Bone):
-    group_props = bone.get("group_properties", None)
-    if group_props is None:
+    src_props = get_src_props(bone)
+    if src_props is None:
         return
+
+    src_group_props = src_props.get("group_properties", None)
+    if src_group_props is None:
+        return
+    dst_group_props = bone.group_properties
 
     for old_prop, new_prop in (
         ("unk_float_5c", "weapon_health"),
@@ -221,16 +254,20 @@ def upgrade_bone_group_properties(bone: Bone):
         ("unk_float_78", "ped_inv_mass_scale"),
         ("unk_float_a8", "melee_scale"),
     ):
-        move_renamed_prop(group_props, old_prop, new_prop)
+        move_renamed_prop(dst_group_props, src_group_props, old_prop, new_prop)
 
 
 def upgrade_bone_tag(bone: Bone):
-    bone_props = bone.bone_properties
-    old_tag = bone_props.get("tag", None)
+    src_props = get_src_props(bone.bone_properties)
+    if src_props is None:
+        return
+
+    old_tag = src_props.get("tag", None)
     if old_tag is None:
         # No stored 'tag' value, this is a newer bone, skip it
         return
 
+    bone_props = bone.bone_properties
     if bone_props.use_manual_tag:
         # User possibly already changed the tag to something else, skip it
         return
@@ -238,21 +275,15 @@ def upgrade_bone_tag(bone: Bone):
     bone_props.set_tag(old_tag)
 
 
-def upgrade_mesh_drawable_model_properties(mesh: Mesh):
-    model_props = mesh.get("drawable_model_properties", None)
-    if model_props is None:
-        return
-
-    for old_prop, new_prop in (
-        ("unknown_1", "matrix_count"),
-    ):
-        move_renamed_prop(model_props, old_prop, new_prop)
-
-
 def upgrade_light_flags(light: Light):
-    light_flags = light.get("light_flags", None)
-    if light_flags is None:
+    src_props = get_src_props(light)
+    if src_props is None:
         return
+
+    src_light_flags = src_props.get("light_flags", None)
+    if src_light_flags is None:
+        return
+    dst_light_flags = light.light_flags
 
     for old_prop, new_prop in (
         ("unk1", "interior_only"),
@@ -288,19 +319,24 @@ def upgrade_light_flags(light: Light):
         ("unk31", "delayed_render"),
         ("unk32", "already_tested_for_occlusion"),
     ):
-        move_renamed_prop(light_flags, old_prop, new_prop)
+        move_renamed_prop(dst_light_flags, src_light_flags, old_prop, new_prop)
 
 
 def upgrade_light_shadow_blur(light: Light):
-    light_props = light.get("light_properties", None)
-    if light_props is None:
+    src_props = get_src_props(light)
+    if src_props is None:
         return
 
-    shadow_blur_val = light_props.get("shadow_blur", None)
+    src_light_props = src_props.get("light_properties", None)
+    if src_light_props is None:
+        return
+
+    shadow_blur_val = src_light_props.get("shadow_blur", None)
     if shadow_blur_val is None:
         return
 
-    light_props["shadow_blur"] = max(0.0, min(1.0, shadow_blur_val / 255))
+    dst_light_props = light.light_properties
+    dst_light_props.shadow_blur = max(0.0, min(1.0, shadow_blur_val / 255))
 
 
 def do_versions(data_version: int, data: BlendData):
@@ -313,10 +349,6 @@ def do_versions(data_version: int, data: BlendData):
             # commit 268453b (tweak(yft): update fragment properties names)
             upgrade_fragment_properties(obj)
             upgrade_vehicle_window_properties(obj)
-
-        for mesh in data.meshes:
-            # commit 757fb68 (tweak(ydr): update unknown_1 name and remove unused unknown_9a)
-            upgrade_mesh_drawable_model_properties(mesh)
 
         for armature in data.armatures:
             for bone in armature.bones:

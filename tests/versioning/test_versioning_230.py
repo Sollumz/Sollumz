@@ -2,6 +2,7 @@ from numpy.testing import assert_array_equal
 from .shared import load_blend_data
 from ...shared.shader_nodes import SzShaderNodeParameter
 from ...ydr.render_bucket import RenderBucket
+from ...yft.properties import FragmentTemplateAsset
 
 
 def test_versioning_material_render_buckets():
@@ -52,31 +53,25 @@ def test_versioning_fragment_properties():
     archetype_properties = lod_properties.archetype_properties
     bone = frag_obj.data.bones["sollumz_cube_01"]
     group_properties = bone.group_properties
-    drawable_model_mesh = data.meshes["sollumz_cube_01_high"]
-    drawable_model_properties = drawable_model_mesh.drawable_model_properties
     col_obj = data.objects["sollumz_cube_01.col"]
     veh_window_properties = col_obj.vehicle_window_properties
 
     # fragment properties
     for prop_name, expected_value in (
-        ("flags", 12),
         ("unbroken_elasticity", 23.0),
-        ("template_asset", 3),
+        ("template_asset", FragmentTemplateAsset.WILMA_LARGE.name),
     ):
-        assert fragment_properties.get(prop_name, None) == expected_value, prop_name
+        assert getattr(fragment_properties, prop_name, None) == expected_value, prop_name
 
     # LOD properties
     for prop_name, expected_value in (
-        ("smallest_ang_inertia", 11.0),
-        ("largest_ang_inertia", 22.0),
         ("min_move_force", 33.0),
     ):
-        assert lod_properties.get(prop_name, None) == expected_value, prop_name
+        assert getattr(lod_properties, prop_name, None) == expected_value, prop_name
     for prop_name, expected_value in (
-        ("original_root_cg_offset", (4.0, 5.0, 6.0)),
         ("unbroken_cg_offset", (7.0, 8.0, 9.0)),
     ):
-        assert_array_equal(lod_properties.get(prop_name, None), expected_value, prop_name)
+        assert_array_equal(getattr(lod_properties, prop_name, None), expected_value, prop_name)
 
     # Archetype properties
     for prop_name, expected_value in (
@@ -85,7 +80,7 @@ def test_versioning_fragment_properties():
         ("max_ang_speed", 34.0),
         ("buoyancy_factor", 45.0),
     ):
-        assert archetype_properties.get(prop_name, None) == expected_value, prop_name
+        assert getattr(archetype_properties, prop_name, None) == expected_value, prop_name
 
     # Group properties
     for prop_name, expected_value in (
@@ -99,20 +94,14 @@ def test_versioning_fragment_properties():
         ("ped_inv_mass_scale", 88.0),
         ("melee_scale", 99.0),
     ):
-        assert group_properties.get(prop_name, None) == expected_value, prop_name
+        assert getattr(group_properties, prop_name, None) == expected_value, prop_name
 
     # Vehicle window properties
     for prop_name, expected_value in (
         ("data_min", 11.0),
         ("data_max", 22.0),
     ):
-        assert veh_window_properties.get(prop_name, None) == expected_value, prop_name
-
-    # Drawable model properties
-    for prop_name, expected_value in (
-        ("matrix_count", 123),
-    ):
-        assert drawable_model_properties.get(prop_name, None) == expected_value, prop_name
+        assert getattr(veh_window_properties, prop_name, None) == expected_value, prop_name
 
 
 def test_versioning_bone_tags():
