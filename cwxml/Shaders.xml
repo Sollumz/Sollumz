@@ -6009,6 +6009,36 @@
   </Parameters>
  </Item>
  <Item>
+  <Name>decal_normal_spec_um</Name>
+  <FileName>
+   <Item bucket="2">decal_normal_spec_um.sps</Item>
+  </FileName>
+  <Layout>
+   <Item type="GTAV1">
+    <Position />
+    <Normal />
+    <Colour0 />
+    <Colour1 />
+    <TexCoord0 />
+    <Tangent />
+   </Item>
+  </Layout>
+  <Parameters>
+   <Item name="DiffuseSampler" type="Texture" uv="0" />
+   <Item name="BumpSampler" type="Texture" uv="0" />
+   <Item name="SpecSampler" type="Texture" uv="0" />
+   <Item name="useTessellation" type="float" subtype="bool" x="0" />
+   <Item name="wetnessMultiplier" type="float" x="1" />
+   <Item name="bumpiness" type="float" x="1" />
+   <Item name="specMapIntMask" type="float3" x="1" y="0" z="0" />
+   <Item name="specularIntensityMult" type="float" x="1" />
+   <Item name="specularFalloffMult" type="float" x="32" />
+   <Item name="specularFresnel" type="float" x="0.8" />
+   <Item name="umGlobalOverrideParams" type="float4" x="1" y="1" z="1" w="1" />
+   <Item name="umGlobalParams" type="float4" x="0.05" y="0.05" z="1.2" w="1.2" />
+  </Parameters>
+ </Item>
+ <Item>
   <Name>decal_emissivenight_only</Name>
   <FileName>
    <Item bucket="2">decal_emissivenight_only.sps</Item>
