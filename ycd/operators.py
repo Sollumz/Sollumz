@@ -636,9 +636,6 @@ class SOLLUMZ_OT_uv_transform_add(SOLLUMZ_OT_base, bpy.types.Operator):
         return context.active_object is not None
 
     def run(self, context):
-        if len(bpy.context.selected_objects) <= 0:
-            return {"FINISHED"}
-
         obj = context.active_object
         animation_tracks = obj.active_material.animation_tracks
         animation_tracks.uv_transforms.add()
@@ -657,9 +654,6 @@ class SOLLUMZ_OT_uv_transform_remove(SOLLUMZ_OT_base, bpy.types.Operator):
         return context.active_object is not None
 
     def run(self, context):
-        if len(bpy.context.selected_objects) <= 0:
-            return {"FINISHED"}
-
         obj = context.active_object
         animation_tracks = obj.active_material.animation_tracks
         animation_tracks.uv_transforms.remove(animation_tracks.uv_transforms_active_index)
@@ -685,9 +679,6 @@ class SOLLUMZ_OT_uv_transform_move(SOLLUMZ_OT_base, bpy.types.Operator):
         return context.active_object is not None
 
     def run(self, context):
-        if len(bpy.context.selected_objects) <= 0:
-            return {"FINISHED"}
-
         obj = context.active_object
         animation_tracks = obj.active_material.animation_tracks
 
