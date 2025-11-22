@@ -762,6 +762,22 @@ def register():
         name=ClothAttr.FORCE_TRANSFORM.label, description=ClothAttr.FORCE_TRANSFORM.description,
         min=0, max=2, default=ClothAttr.FORCE_TRANSFORM.default_value
     )
+    bpy.types.WindowManager.sz_ui_cloth_edge_compression = bpy.props.FloatProperty(
+        name="Edge Compression", description="Compression weight for selected edges (0=flexible, 1=rigid)",
+        min=0.0, max=1.0, default=0.0, precision=2
+    )
+    bpy.types.WindowManager.sz_ui_cloth_edge_compression_visualize = bpy.props.BoolProperty(
+        name="Show Edge Compression", description="Display the cloth edge compression values on the 3D Viewport",
+        default=False
+    )
+    bpy.types.WindowManager.sz_ui_cloth_binding_distance = bpy.props.FloatProperty(
+        name="Binding Distance", description="Maximum distance from mesh vertex to cloth triangle for binding (in Blender units)",
+        min=0.001, max=1.0, default=0.05, precision=3
+    )
+    bpy.types.WindowManager.sz_ui_cloth_binding_distance_visualize = bpy.props.BoolProperty(
+        name="Show Binding Distance", description="Display the cloth binding distance as red circles on the 3D Viewport",
+        default=False
+    )
     bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize = bpy.props.BoolProperty(
         name="Show Material Errors",
         description="Display faces that have a non-cloth material on the 3D Viewport",
@@ -833,6 +849,10 @@ def unregister():
     del bpy.types.WindowManager.sz_ui_cloth_pin_radius_visualize
     del bpy.types.WindowManager.sz_ui_cloth_force_transform
     del bpy.types.WindowManager.sz_ui_cloth_force_transform_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_edge_compression
+    del bpy.types.WindowManager.sz_ui_cloth_edge_compression_visualize
+    del bpy.types.WindowManager.sz_ui_cloth_binding_distance
+    del bpy.types.WindowManager.sz_ui_cloth_binding_distance_visualize
     del bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize
     del bpy.types.WindowManager.sz_ui_cloth_diag_binding_errors_visualize
     # del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize

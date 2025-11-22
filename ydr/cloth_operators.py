@@ -77,6 +77,36 @@ class ClothSetAttributeBase(ClothEditRestrictedHelper):
         attr.data[vertex_index].value = self.value
 
 
+class ClothSetEdgeAttributeBase(ClothEditRestrictedHelper):
+    bl_options = {"REGISTER", "UNDO"}
+
+    attribute: ClothAttr
+
+    def execute(self, context):
+        obj = context.active_object
+
+        mode = obj.mode
+        # we need to switch from Edit mode to Object mode so the selection gets updated
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+        mesh = obj.data
+        if not mesh_has_cloth_attribute(mesh, self.attribute):
+            mesh_add_cloth_attribute(mesh, self.attribute)
+
+        attr = mesh.attributes[self.attribute]
+        for e in mesh.edges:
+            if not e.select:
+                continue
+
+            self.do_set_attribute(e.index, attr)
+
+        bpy.ops.object.mode_set(mode=mode)
+        return {"FINISHED"}
+
+    def do_set_attribute(self, edge_index: int, attr: Attribute):
+        attr.data[edge_index].value = self.value
+
+
 class SOLLUMZ_OT_cloth_set_vertex_weight(Operator, ClothSetAttributeBase):
     bl_idname = "sollumz.cloth_set_vertex_weight"
     bl_label = "Set Cloth Vertex Weight"
@@ -103,6 +133,20 @@ class SOLLUMZ_OT_cloth_set_inflation_scale(Operator, ClothSetAttributeBase):
     value: FloatProperty(
         name=ClothAttr.INFLATION_SCALE.label, description=ClothAttr.INFLATION_SCALE.description,
         min=0.0, max=1.0, default=ClothAttr.INFLATION_SCALE.default_value
+    )
+
+
+class SOLLUMZ_OT_cloth_set_edge_compression(Operator, ClothSetEdgeAttributeBase):
+    bl_idname = "sollumz.cloth_set_edge_compression"
+    bl_label = "Set Cloth Edge Compression"
+    bl_description = (
+        "Sets the compression weight of the cloth at the selected edges.\n\n"
+    ) + f"{ClothAttr.EDGE_COMPRESSION.label}: {ClothAttr.EDGE_COMPRESSION.description}"
+
+    attribute = ClothAttr.EDGE_COMPRESSION
+    value: FloatProperty(
+        name=ClothAttr.EDGE_COMPRESSION.label, description=ClothAttr.EDGE_COMPRESSION.description,
+        min=0.0, max=1.0, default=ClothAttr.EDGE_COMPRESSION.default_value
     )
 
 

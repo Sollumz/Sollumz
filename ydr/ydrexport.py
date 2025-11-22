@@ -116,9 +116,6 @@ def create_drawable_xml(
         armature_obj = None
         original_pose = "POSE"
 
-    if char_cloth_xml:
-        char_cloth_xml._tmp_skeleton = drawable_xml.skeleton
-
     create_model_xmls(drawable_xml, drawable_obj, materials, armature_obj, char_cloth_xml)
 
     drawable_xml.lights = create_xml_lights(drawable_obj)
@@ -127,9 +124,6 @@ def create_drawable_xml(
     set_drawable_xml_extents(drawable_xml)
 
     create_embedded_collision_xmls(drawable_obj, drawable_xml)
-
-    if char_cloth_xml:
-        char_cloth_xml._tmp_skeleton = None
 
     if armature_obj is not None:
         armature_obj.data.pose_position = original_pose

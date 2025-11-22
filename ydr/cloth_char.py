@@ -27,6 +27,30 @@ from ..shared.geometry import (
     tris_areas_from_verts,
     distance_signed_point_to_planes,
 )
+
+
+def calculate_smooth_vertex_normals(vertices: NDArray[np.float32], triangles: NDArray[np.uint32]) -> NDArray[np.float32]:
+    """Calculate smooth vertex normals by averaging face normals weighted by face area."""
+    num_verts = len(vertices)
+    vertex_normals = np.zeros((num_verts, 3), dtype=np.float32)
+    
+    # Get triangle vertices and calculate face normals
+    tri_verts = vertices[triangles]
+    face_normals = tris_normals(tri_verts)
+    face_areas = tris_areas(tri_verts)
+    
+    # Accumulate area-weighted normals for each vertex
+    for tri_idx, tri in enumerate(triangles):
+        normal = face_normals[tri_idx] * face_areas[tri_idx]
+        for vert_idx in tri:
+            vertex_normals[vert_idx] += normal
+    
+    # Normalize the accumulated normals
+    norms = np.linalg.norm(vertex_normals, axis=1, keepdims=True)
+    norms = np.where(norms > 0, norms, 1.0)  # Avoid division by zero
+    vertex_normals = vertex_normals / norms
+    
+    return vertex_normals
 from ..sollumz_properties import (
     SollumType,
     SOLLUMZ_UI_NAMES,
@@ -267,7 +291,20 @@ def cloth_char_export(
         verlet_edge.length_sqr = Vector(vertices[verlet_edge.vertex0] -
                                         vertices[verlet_edge.vertex1]).length_squared
         verlet_edge.weight0 = 0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5
-        verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
+        
+        # Get compression weight from edge attribute (default 0.8 if not set)
+        edge_index = None
+        for edge in cloth_mesh.edges:
+            if (edge.vertices[0] == mesh_v0 and edge.vertices[1] == mesh_v1) or \
+               (edge.vertices[0] == mesh_v1 and edge.vertices[1] == mesh_v0):
+                edge_index = edge.index
+                break
+        
+        if edge_index is not None and cloth_mesh.attributes.get(".cloth.edge_compression"):
+            verlet_edge.compression_weight = cloth_mesh.attributes[".cloth.edge_compression"].data[edge_index].value
+        else:
+            verlet_edge.compression_weight = 0.0  # Default for edges without manual compression set
+        
         return verlet_edge
 
     indices = [None] * (len(triangles) * 3)
@@ -310,9 +347,95 @@ def cloth_char_export(
     edges = _cloth_sort_verlet_edges(edges)
     custom_edges = _cloth_sort_verlet_edges(custom_edges)
 
+    # Calculate cloth thickness distances based on triangle normal casting
+    def calculate_cloth_vertex_distances():
+        MAX_CAST_DISTANCE = 0.05  # 5cm limit to prevent cross-binding
+        
+        # Initialize vertex distances (W component)
+        vertex_distances = np.zeros(num_vertices)
+        
+        # Get triangle data
+        cloth_tris = np.array(cloth_mesh.loop_triangles)
+        
+        for tri in cloth_tris:
+            # Get triangle vertices
+            v0_idx, v1_idx, v2_idx = tri.vertices
+            v0 = vertices[v0_idx]
+            v1 = vertices[v1_idx] 
+            v2 = vertices[v2_idx]
+            
+            # Calculate triangle center and normal
+            tri_center = (v0 + v1 + v2) / 3.0
+            tri_normal = (v1 - v0).cross(v2 - v0).normalized()
+            
+            # Cast rays in both directions from triangle center
+            forward_hit_distance = None
+            backward_hit_distance = None
+            
+            # Cast forward along normal
+            ray_origin = tri_center
+            ray_direction = tri_normal
+            
+            # Check intersection with other triangles within distance limit
+            for other_tri in cloth_tris:
+                if other_tri.index == tri.index:
+                    continue
+                    
+                # Get other triangle vertices
+                ov0_idx, ov1_idx, ov2_idx = other_tri.vertices
+                ov0 = vertices[ov0_idx]
+                ov1 = vertices[ov1_idx]
+                ov2 = vertices[ov2_idx]
+                
+                # Simple ray-triangle intersection check along normal direction
+                # Project other triangle center onto ray direction
+                other_center = (ov0 + ov1 + ov2) / 3.0
+                to_other = other_center - ray_origin
+                projection_dist = to_other.dot(ray_direction)
+                
+                # Check if within casting distance and in correct direction
+                if 0 < projection_dist <= MAX_CAST_DISTANCE:
+                    if forward_hit_distance is None or projection_dist < forward_hit_distance:
+                        forward_hit_distance = projection_dist
+                
+                # Check backward direction  
+                if -MAX_CAST_DISTANCE <= projection_dist < 0:
+                    backward_dist = abs(projection_dist)
+                    if backward_hit_distance is None or backward_dist < backward_hit_distance:
+                        backward_hit_distance = backward_dist
+            
+            # Calculate thickness for this triangle's vertices
+            if forward_hit_distance is not None and backward_hit_distance is not None:
+                # Use total distance between forward and backward hits
+                thickness = forward_hit_distance + backward_hit_distance
+            elif forward_hit_distance is not None:
+                # Only forward hit, use that distance
+                thickness = forward_hit_distance
+            elif backward_hit_distance is not None:
+                # Only backward hit, use that distance  
+                thickness = backward_hit_distance
+            else:
+                # No hits within range, use minimal thickness
+                thickness = 1.152031E-19  # Original minimal value
+            
+            # Apply thickness to triangle vertices
+            vertex_distances[v0_idx] = max(vertex_distances[v0_idx], thickness)
+            vertex_distances[v1_idx] = max(vertex_distances[v1_idx], thickness)
+            vertex_distances[v2_idx] = max(vertex_distances[v2_idx], thickness)
+        
+        # Create vertices with calculated distances as W component
+        vertices_with_distance = []
+        for i, (vertex, distance) in enumerate(zip(vertices, vertex_distances)):
+            vertex_with_w = Vector((vertex.x, vertex.y, vertex.z, distance))
+            vertices_with_distance.append(vertex_with_w)
+            
+        return vertices_with_distance
+    
+    vertices_with_distances = calculate_cloth_vertex_distances()
+
     controller.indices = indices
     verlet = controller.cloth_high
-    verlet.vertex_positions = vertices
+    verlet.vertex_positions = vertices_with_distances
     verlet.vertex_normals = normals
     verlet.bb_min = Vector(np.min(vertices, axis=0))
     verlet.bb_max = Vector(np.max(vertices, axis=0))
@@ -416,10 +539,13 @@ def cloth_char_get_mesh_to_cloth_bindings(
     cloth: CharacterCloth,
     mesh_binded_verts: NDArray[np.float32],
     mesh_binded_verts_normals: NDArray[np.float32],
-    skeleton_centroid: Vector,
+    max_distance: float | None = None,
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
     # Max distance from mesh vertex to cloth triangle to be considered
-    MAX_DISTANCE_THRESHOLD = 0.05
+    # Get from user property if not explicitly provided
+    if max_distance is None:
+        max_distance = bpy.context.window_manager.sz_ui_cloth_binding_distance
+    MAX_DISTANCE_THRESHOLD = max_distance
 
     errors = []
 
@@ -428,20 +554,30 @@ def cloth_char_get_mesh_to_cloth_bindings(
     cloth_verts = np.array(cloth.controller.vertices)
     cloth_tris = np.array(cloth.controller.indices).reshape((-1, 3))
     cloth_tris_verts = cloth_verts[cloth_tris]
+    
+    # Calculate smooth vertex normals for the cloth mesh
+    cloth_vertex_normals = calculate_smooth_vertex_normals(cloth_verts, cloth_tris)
+    cloth_tris_vertex_normals = cloth_vertex_normals[cloth_tris]  # Shape: (num_tris, 3, 3) - for each tri, 3 vertex normals
+    
+    # Still need flat normals for initial rough projection and face orientation
     cloth_tris_normals = tris_normals(cloth_tris_verts)
     cloth_tris_normals_neg = -cloth_tris_normals
     cloth_tris_areas = tris_areas(cloth_tris_verts)
     cloth_tris_v0, cloth_tris_v1, cloth_tris_v2 = cloth_tris_verts[:, 0], cloth_tris_verts[:, 1], cloth_tris_verts[:, 2]
-    cloth_centroid = np.array(skeleton_centroid)
 
-    # Compute the dot product
-    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals * (cloth_centroid - mesh_binded_verts), axis=1)
+    # Compute the dot product to determine which verts are facing inside or outside by comparing the normals and the
+    # direction to the origin (0,0). Flattened to 2D on the XY plane (ignore Z) to reduce issues with the angled cloth
+    # or cloth far from the origin (i.e. face bandanas). Most cloths wrap the ped model around the Z axis (i.e. vertical
+    # tube), so when the verts are flattened it will be kind of a circle around the origin. This probably won't work
+    # well if the cloth is placed more like a horizontal tube (on an animal maybe?). Will need more complex logic or
+    # some user input to handle that, we ignore it for now.
+    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals[:,:2] * -mesh_binded_verts[:,:2], axis=1)
     mesh_binded_verts_facing_inside = mesh_binded_dot_product > 0.0
 
     ind_arr = np.empty((num_binded_verts, 4), dtype=np.uint32)
     weights_arr = np.empty((num_binded_verts, 4), dtype=np.float32)
 
-    # Bind each mesh vertex to a cloth triangle
+    # Bind each mesh vertex to a cloth triangle using smooth normal interpolation
     for mesh_vert_idx in range(num_binded_verts):
         mesh_vert = mesh_binded_verts[mesh_vert_idx]
         mesh_vert_facing_inside = mesh_binded_verts_facing_inside[mesh_vert_idx]
@@ -449,20 +585,20 @@ def cloth_char_get_mesh_to_cloth_bindings(
         if mesh_vert_facing_inside:
             # Flip winding order
             this_cloth_tris_normals = cloth_tris_normals_neg
+            this_cloth_tris_vertex_normals = -cloth_tris_vertex_normals  # Flip smooth normals too
             this_cloth_tris_v0 = cloth_tris_v1
             this_cloth_tris_v1 = cloth_tris_v0
         else:
             this_cloth_tris_normals = cloth_tris_normals
+            this_cloth_tris_vertex_normals = cloth_tris_vertex_normals
             this_cloth_tris_v0 = cloth_tris_v0
             this_cloth_tris_v1 = cloth_tris_v1
 
-        # Calculate the distance from the mesh vertex to every cloth triangle plane
+        # Step 1: Initial projection using flat triangle normals (fast)
         distance_to_tris = distance_signed_point_to_planes(mesh_vert, this_cloth_tris_v0, this_cloth_tris_normals)
-
-        # Project the mesh vertex onto every cloth triangle plane
         projected_to_tris = mesh_vert - this_cloth_tris_normals * distance_to_tris[:, np.newaxis]
 
-        # Calculate the barycentric coordinates of each projected vertex
+        # Calculate initial barycentric coordinates
         tris_areas0 = tris_areas_from_verts(this_cloth_tris_v1, cloth_tris_v2, projected_to_tris)
         tris_areas1 = tris_areas_from_verts(cloth_tris_v2, this_cloth_tris_v0, projected_to_tris)
         tris_areas2 = tris_areas_from_verts(this_cloth_tris_v0, this_cloth_tris_v1, projected_to_tris)
@@ -471,16 +607,12 @@ def cloth_char_get_mesh_to_cloth_bindings(
         tris_w1 = tris_areas1 / cloth_tris_areas
         tris_w2 = tris_areas2 / cloth_tris_areas
 
-        # Use the squared distance between mesh vertex and projected vertex as error measure
-        err_to_tris = np.sum((mesh_vert - projected_to_tris) ** 2, axis=1)
-
-        # Triangles are considered valid if:
-        #  1. Projected vertex falls within the triangle, i.e. the barycentric coordinates sum 1 (with some leeway)
-        #  2. They are not too far away from the mesh vertex
+        # Filter to candidate triangles based on initial projection
         condition_projection = (tris_w0 + tris_w1 + tris_w2) < 1.05
-        condition_distance = distance_to_tris < MAX_DISTANCE_THRESHOLD
+        condition_distance = np.abs(distance_to_tris) < MAX_DISTANCE_THRESHOLD
         valid_tris_mask = condition_projection & condition_distance
         valid_tris_indices = np.where(valid_tris_mask)[0]
+        
         if not valid_tris_mask.any():
             errors.append(ClothDiagMeshBindingError(
                 Vector(mesh_vert),
@@ -490,15 +622,98 @@ def cloth_char_get_mesh_to_cloth_bindings(
             ))
             continue
 
-        # Find the triangle to bind this vertex to, the valid triangle with the least error
-        bind_tri_index = valid_tris_indices[np.argmin(err_to_tris[valid_tris_mask])]
+        # Step 2: Refine projection for candidate triangles using smooth normals
+        # For each candidate triangle, iteratively find the projection using interpolated smooth normals
+        best_tri_index = None
+        best_distance = float('inf')
+        best_weights = None
+        best_actual_distance = None
+        
+        for tri_idx in valid_tris_indices:
+            # Get triangle data
+            v0 = this_cloth_tris_v0[tri_idx]
+            v1 = this_cloth_tris_v1[tri_idx]
+            v2 = cloth_tris_v2[tri_idx]
+            n0, n1, n2 = this_cloth_tris_vertex_normals[tri_idx]
+            
+            # Start with initial barycentric weights from flat projection
+            w0, w1, w2 = tris_w0[tri_idx], tris_w1[tri_idx], tris_w2[tri_idx]
+            
+            # Iteratively refine projection using interpolated smooth normals
+            MAX_ITERATIONS = 3
+            for iteration in range(MAX_ITERATIONS):
+                # Clamp weights to valid range
+                w0 = max(0.0, min(1.0, w0))
+                w1 = max(0.0, min(1.0, w1))
+                w2 = max(0.0, min(1.0, w2))
+                
+                # Normalize weights to sum to 1
+                weight_sum = w0 + w1 + w2
+                if weight_sum > 0:
+                    w0 /= weight_sum
+                    w1 /= weight_sum
+                    w2 /= weight_sum
+                else:
+                    # Fallback to triangle center
+                    w0 = w1 = w2 = 1.0 / 3.0
+                
+                # Interpolate smooth normal at current barycentric position
+                interpolated_normal = (n0 * w0 + n1 * w1 + n2 * w2)
+                norm = np.linalg.norm(interpolated_normal)
+                if norm > 0:
+                    interpolated_normal = interpolated_normal / norm
+                else:
+                    interpolated_normal = this_cloth_tris_normals[tri_idx]
+                
+                # Project mesh vertex onto triangle using interpolated normal
+                projected_point = v0 * w0 + v1 * w1 + v2 * w2
+                vec_to_mesh = mesh_vert - projected_point
+                signed_distance = np.dot(vec_to_mesh, interpolated_normal)
+                projected_point = mesh_vert - interpolated_normal * signed_distance
+                
+                # Recalculate barycentric coordinates for new projection
+                area0 = tris_areas_from_verts(v1[np.newaxis], v2[np.newaxis], projected_point[np.newaxis])[0]
+                area1 = tris_areas_from_verts(v2[np.newaxis], v0[np.newaxis], projected_point[np.newaxis])[0]
+                area2 = tris_areas_from_verts(v0[np.newaxis], v1[np.newaxis], projected_point[np.newaxis])[0]
+                
+                tri_area = cloth_tris_areas[tri_idx]
+                new_w0 = area0 / tri_area
+                new_w1 = area1 / tri_area
+                new_w2 = area2 / tri_area
+                
+                # Check for convergence
+                if abs(new_w0 - w0) < 0.001 and abs(new_w1 - w1) < 0.001 and abs(new_w2 - w2) < 0.001:
+                    break
+                
+                w0, w1, w2 = new_w0, new_w1, new_w2
+            
+            # Calculate final error (3D distance from mesh vertex to projected point)
+            final_projected = v0 * w0 + v1 * w1 + v2 * w2
+            error = np.sum((mesh_vert - final_projected) ** 2)
+            
+            # Check if this triangle is better than current best
+            if error < best_distance:
+                best_tri_index = tri_idx
+                best_distance = error
+                best_weights = (w0, w1, w2)
+                best_actual_distance = signed_distance
 
-        b0, b1, b2 = cloth_tris[bind_tri_index]
-        w0, w1, w2 = tris_w0[bind_tri_index], tris_w1[bind_tri_index], tris_w2[bind_tri_index]
-        d = distance_to_tris[bind_tri_index]
+        if best_tri_index is None:
+            errors.append(ClothDiagMeshBindingError(
+                Vector(mesh_vert),
+                error_projection=True,
+                error_distance=False,
+                error_multiple_matches=False,
+            ))
+            continue
+
+        # Store the best binding
+        b0, b1, b2 = cloth_tris[best_tri_index]
+        w0, w1, w2 = best_weights
+        d = best_actual_distance
 
         if mesh_vert_facing_inside:
-            # Flip winding order
+            # Flip winding order back
             b1, b0 = b0, b1
 
         ind_arr[mesh_vert_idx, 0] = b1

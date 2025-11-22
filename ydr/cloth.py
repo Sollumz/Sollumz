@@ -16,6 +16,7 @@ class ClothAttr(str, Enum):
     INFLATION_SCALE = ".cloth.inflation_scale"
     FORCE_TRANSFORM = ".cloth.force_transform"
     PIN_RADIUS = ".cloth.pin_radius"
+    EDGE_COMPRESSION = ".cloth.edge_compression"
 
     @property
     def type(self):
@@ -28,7 +29,8 @@ class ClothAttr(str, Enum):
                 return "INT"
             case (
                 ClothAttr.VERTEX_WEIGHT |
-                ClothAttr.INFLATION_SCALE
+                ClothAttr.INFLATION_SCALE |
+                ClothAttr.EDGE_COMPRESSION
             ):
                 return "FLOAT"
             case ClothAttr.PIN_RADIUS:
@@ -48,6 +50,8 @@ class ClothAttr(str, Enum):
                 ClothAttr.FORCE_TRANSFORM
             ):
                 return "POINT"
+            case ClothAttr.EDGE_COMPRESSION:
+                return "EDGE"
             case _:
                 assert False, f"Domain not set for cloth attribute '{self}'"
 
@@ -65,6 +69,8 @@ class ClothAttr(str, Enum):
                 return 0.002025
             case ClothAttr.INFLATION_SCALE:
                 return 0.0
+            case ClothAttr.EDGE_COMPRESSION:
+                return 0.0
             case _:
                 assert False, f"Default value not set for cloth attribute '{self}'"
 
@@ -81,6 +87,8 @@ class ClothAttr(str, Enum):
                 return "Inflation Scale"
             case ClothAttr.FORCE_TRANSFORM:
                 return "Force Transform"
+            case ClothAttr.EDGE_COMPRESSION:
+                return "Edge Compression"
             case _:
                 assert False, f"Label not set for cloth attribute '{self}'"
 
@@ -100,6 +108,8 @@ class ClothAttr(str, Enum):
                     "Apply a transform to the force vector at this vertex. "
                     "0 = no transform, 1 = rotate right, 2 = rotate left"
                 )
+            case ClothAttr.EDGE_COMPRESSION:
+                return "Controls edge stiffness: 0=flexible, 1=rigid"
             case _:
                 assert False, f"Description not set for cloth attribute '{self}'"
 

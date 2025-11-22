@@ -199,11 +199,40 @@ def create_character_cloth_mesh(cloth: CharacterCloth, drawable_obj: Object, bon
         if has_inflation_scale:
             mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = inflation_scale[cloth_vert_index]
 
+    # Import edge compression weights
+    all_edges = []
+    
+    # Add regular edges (triangle edges)
+    regular_edges = cloth.controller.cloth_high.edges or []
+    all_edges.extend(regular_edges)
+    
+    # Add custom edges (loose edges)
     custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
+    all_edges.extend(custom_edges)
+    
+    if all_edges:
+        # Create edge compression attribute
+        mesh_add_cloth_attribute(mesh, ClothAttr.EDGE_COMPRESSION)
+        
+        # Map XML edges to mesh edges and set compression weights
+        for mesh_edge in mesh.edges:
+            v0, v1 = mesh_edge.vertices
+            
+            # Find corresponding XML edge
+            compression_weight = 1.0  # Import fallback for edges without explicit values
+            for xml_edge in all_edges:
+                if (xml_edge.vertex0 == v0 and xml_edge.vertex1 == v1) or \
+                   (xml_edge.vertex0 == v1 and xml_edge.vertex1 == v0):
+                    compression_weight = xml_edge.compression_weight
+                    break
+            
+            mesh.attributes[ClothAttr.EDGE_COMPRESSION].data[mesh_edge.index].value = compression_weight
+
+    # Handle custom edges that need to be added to mesh topology
     if custom_edges:
         next_edge = len(mesh.edges)
         mesh.edges.add(len(custom_edges))
-        for custom_edge in custom_edges:
+        for i, custom_edge in enumerate(custom_edges):
             v0 = custom_edge.vertex0
             v1 = custom_edge.vertex1
             mesh.edges[next_edge].vertices = v0, v1

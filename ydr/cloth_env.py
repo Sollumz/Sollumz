@@ -43,6 +43,7 @@ from .cloth_diagnostics import (
     cloth_export_context,
     cloth_enter_export_context,
 )
+from .cloth import ClothAttr
 from .. import logger
 
 CLOTH_ENV_MAX_VERTICES = 1000
@@ -250,14 +251,27 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
     else:
         env_cloth.user_data = None
 
-    def _create_verlet_edge(mesh_v0: int, mesh_v1: int) -> VerletClothEdge:
+    def _create_verlet_edge(mesh_v0: int, mesh_v1: int, is_primary_edge: bool = True) -> VerletClothEdge:
         verlet_edge = VerletClothEdge()
         verlet_edge.vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
         verlet_edge.vertex1 = mesh_to_cloth_vertex_map[mesh_v1]
         verlet_edge.length_sqr = Vector(vertices[verlet_edge.vertex0] -
                                         vertices[verlet_edge.vertex1]).length_squared
         verlet_edge.weight0 = 0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5
-        verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
+        
+        # Get compression weight from edge attribute (default 0.0 if not set)
+        edge_index = None
+        for edge in cloth_mesh.edges:
+            if (edge.vertices[0] == mesh_v0 and edge.vertices[1] == mesh_v1) or \
+               (edge.vertices[0] == mesh_v1 and edge.vertices[1] == mesh_v0):
+                edge_index = edge.index
+                break
+        
+        if edge_index is not None and cloth_mesh.attributes.get(ClothAttr.EDGE_COMPRESSION.value):
+            verlet_edge.compression_weight = cloth_mesh.attributes[ClothAttr.EDGE_COMPRESSION.value].data[edge_index].value
+        else:
+            verlet_edge.compression_weight = 0.0  # Default for edges without manual compression set
+        
         return verlet_edge
 
     edges = []
@@ -271,7 +285,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
             if pinned[edge_v0] and pinned[edge_v1]:
                 continue
 
-            verlet_edge = _create_verlet_edge(edge_v0, edge_v1)
+            verlet_edge = _create_verlet_edge(edge_v0, edge_v1, is_primary_edge=True)
             edges.append(verlet_edge)
             edges_added.add((edge_v0, edge_v1))
 
@@ -286,7 +300,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
         if pinned[v0] and pinned[v1]:
             continue
 
-        verlet_edge = _create_verlet_edge(v0, v1)
+        verlet_edge = _create_verlet_edge(v0, v1, is_primary_edge=False)
         custom_edges.append(verlet_edge)
         edges_added.add((v0, v1))
         # cloth_obj.data.edges[edge.index].select = True

@@ -407,6 +407,15 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
         if has_force_transform:
             mesh.attributes[ClothAttr.FORCE_TRANSFORM].data[mesh_vert_index].value = force_transform[cloth_vert_index]
 
+    # Add edge compression attribute for all edges (triangle edges + custom edges)
+    all_edges = []
+    all_edges.extend(cloth.controller.cloth_high.edges or [])
+    all_edges.extend(cloth.controller.cloth_high.custom_edges or [])
+    
+    edges_with_compression = [e for e in all_edges if e.vertex0 != e.vertex1]
+    if edges_with_compression:
+        mesh_add_cloth_attribute(mesh, ClothAttr.EDGE_COMPRESSION)
+
     custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
     if custom_edges:
         next_edge = len(mesh.edges)
@@ -418,6 +427,29 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
             mv1 = int(cloth_to_mesh_map[v1])
             mesh.edges[next_edge].vertices = mv0, mv1
             next_edge += 1
+
+    # Map edge compression values from cloth edges to mesh edges
+    if edges_with_compression:
+        edge_compression_attr = mesh.attributes[ClothAttr.EDGE_COMPRESSION]
+        
+        # Create a mapping from cloth vertex pairs to compression weights
+        cloth_edge_compression = {}
+        for edge in edges_with_compression:
+            v0, v1 = edge.vertex0, edge.vertex1
+            # Store both directions since edge lookup can go either way
+            cloth_edge_compression[(v0, v1)] = edge.compression_weight
+            cloth_edge_compression[(v1, v0)] = edge.compression_weight
+        
+        # Apply compression values to mesh edges
+        for mesh_edge in mesh.edges:
+            mv0, mv1 = mesh_edge.vertices
+            # Convert mesh vertex indices to cloth vertex indices
+            cv0 = mesh_to_cloth_map[mv0]
+            cv1 = mesh_to_cloth_map[mv1]
+            
+            # Look up compression weight (default 0.0 if not found)
+            compression_weight = cloth_edge_compression.get((cv0, cv1), 0.0)
+            edge_compression_attr.data[mesh_edge.index].value = compression_weight
 
     # Debug code to visualize the verlet cloth edges.
     # debug_edges = [e for e in (cloth.controller.cloth_high.edges or []) if e.vertex0 != e.vertex1]

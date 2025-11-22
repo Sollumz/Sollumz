@@ -1116,6 +1116,26 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         op.value = wm.sz_ui_cloth_force_transform
         row.prop(wm, "sz_ui_cloth_force_transform", text="")
 
+        layout.separator()
+
+        row = layout.row(align=True)
+        row.label(text=ClothAttr.EDGE_COMPRESSION.label)
+        _visible_icon_prop(row, wm, "sz_ui_cloth_edge_compression_visualize")
+        
+        row = layout.row(align=True)
+        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_edge_compression.bl_idname, text="Set")
+        op.value = wm.sz_ui_cloth_edge_compression
+        row.prop(wm, "sz_ui_cloth_edge_compression", text="")
+
+        layout.separator()
+
+        row = layout.row(align=True)
+        row.label(text="Binding Distance")
+        _visible_icon_prop(row, wm, "sz_ui_cloth_binding_distance_visualize")
+        
+        row = layout.row(align=True)
+        row.prop(wm, "sz_ui_cloth_binding_distance", text="")
+
 
 class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(bpy.types.Panel):
     bl_label = "Diagnostics"

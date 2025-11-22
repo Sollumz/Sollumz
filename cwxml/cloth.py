@@ -160,8 +160,9 @@ class VerletClothVerticesProperty(ElementProperty):
     """List of Vector3s including a padding NaN component"""
     value_types = (list)
 
-    def __init__(self, tag_name: str = "Vertices", value=None):
+    def __init__(self, tag_name: str = "Vertices", value=None, w_value=None):
         super().__init__(tag_name, value or [])
+        self.w_value = w_value  # Custom W component value
 
     @staticmethod
     def from_xml(element: ET.Element):
@@ -187,9 +188,23 @@ class VerletClothVerticesProperty(ElementProperty):
         for vertex in self.value:
             if not isinstance(vertex, Vector):
                 raise TypeError(
-                    f"VerletClothVerticesProperty can only contain Vector objects, not '{type(self.value)}'!")
-            # text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, NaN\n")  # padding component exported by CW
-            text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, 0.0\n")  # set padding to 0.0 for now, not all arrays have NaN here
+                    f"VerletClothVerticesProperty can only contain Vector objects, not '{type(vertex)}'!")
+            
+            # Check if vertex already has W component (Vector4)
+            if len(vertex) == 4:
+                # Use the existing W component from the vertex
+                w_component = str(vertex.w)
+            elif self.w_value is not None:
+                # Use custom W value if specified
+                if self.w_value == "NaN":
+                    w_component = "NaN"
+                else:
+                    w_component = str(self.w_value)
+            else:
+                # Default behavior
+                w_component = "0.0"
+                
+            text.append(f"{vertex.x}, {vertex.y}, {vertex.z}, {w_component}\n")
 
         element.text = "".join(text)
 
@@ -234,8 +249,8 @@ class VerletCloth(ElementTree):
         self.flags = ValueProperty("UnknownFA", 0)
         self.dynamic_pin_list_size = ValueProperty("Unknown148", 1)  # min: 1 - max: 31
         self.cloth_weight = ValueProperty("Unknown158", 1.0)
-        self.vertex_positions = VerletClothVerticesProperty("Vertices")
-        self.vertex_normals = VerletClothVerticesProperty("Vertices2")
+        self.vertex_positions = VerletClothVerticesProperty("Vertices", w_value=1.152031E-19)
+        self.vertex_normals = VerletClothVerticesProperty("Vertices2", w_value=0.0)
         self.edges = VerletClothEdgeList("Constraints")
         self.custom_edges = VerletClothEdgeList("Constraints2")
         self.bounds = BoundComposite()
@@ -391,7 +406,7 @@ class CharacterClothController(ClothController):
         self.pin_radius_scale = ValueProperty("Unknown78")
         self.pin_radius_threshold = ValueProperty("UnknownA0")
         self.wind_scale = ValueProperty("UnknownDC")
-        self.vertices = VerletClothVerticesProperty("Vertices")
+        self.vertices = VerletClothVerticesProperty("Vertices", w_value="NaN")
         self.indices = InlineValueListProperty("Indices")
         self.bone_indices = InlineValueListProperty("UnknownB0")
         self.bone_ids = InlineValueListProperty("BoneIDs")
@@ -410,5 +425,3 @@ class CharacterCloth(ElementTree):
         self.bounds_bone_indices = InlineValueListProperty("Unknown90")
         self.controller = CharacterClothController()
         self.bounds = BoundComposite()
-
-        self._tmp_skeleton = None
