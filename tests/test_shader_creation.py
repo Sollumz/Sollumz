@@ -50,7 +50,8 @@ class TestAllLanguages:
 
     def test_find_bsdf_and_material_output(self, use_every_language):
         mat = bpy.data.materials.new("Test")
-        mat.use_nodes = True
+        if bpy.app.version < (5, 0, 0):
+            mat.use_nodes = True
         bsdf, mo = find_bsdf_and_material_output(mat)
         assert bsdf is not None
         assert mo is not None

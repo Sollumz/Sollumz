@@ -84,7 +84,8 @@ def collect_material_old_shader_array_parameters(material: Material) -> dict[str
 
 def upgrade_material_old_shader_parameters(material: Material):
     """Update material shader parameters, changed in commit a588b5a (feat(shader): typed shader parameters)"""
-    if not material.use_nodes or material.sollum_type != MaterialType.SHADER:
+    use_nodes = material.use_nodes if bpy.app.version < (5, 0, 0) else True
+    if not use_nodes or material.sollum_type != MaterialType.SHADER:
         return
 
     params = collect_material_old_shader_parameters(material)

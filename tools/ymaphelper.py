@@ -69,7 +69,8 @@ def add_occluder_material(sollum_type=None):
 
     material = bpy.data.materials.get(mat_name) or bpy.data.materials.new(mat_name)
     material.blend_method = "BLEND"
-    material.use_nodes = True
+    if bpy.app.version < (5, 0, 0):
+        material.use_nodes = True
     bsdf, _ = find_bsdf_and_material_output(material)
     bsdf.inputs["Alpha"].default_value = mat_transparency
     bsdf.inputs["Base Color"].default_value = mat_color

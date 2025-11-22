@@ -30,7 +30,8 @@ def create_brush(name):
 
 def material_from_image(img, name="Material", nodename="Image"):
     mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
+    if bpy.app.version < (5, 0, 0):
+        mat.use_nodes = True
     node_tree = mat.node_tree
     links = node_tree.links
     bsdf, _ = find_bsdf_and_material_output(mat)

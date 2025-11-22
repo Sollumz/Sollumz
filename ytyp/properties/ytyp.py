@@ -294,7 +294,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
                     # Check for embedded textures
                     if child.sollum_type == SollumType.DRAWABLE_GEOMETRY:
                         for mat in child.data.materials:
-                            if not mat.use_nodes:
+                            use_nodes = mat.use_nodes if bpy.app.version < (5, 0, 0) else True
+                            if not use_nodes:
                                 continue
                             for node in mat.node_tree.nodes:
                                 if isinstance(node, bpy.types.ShaderNodeTexImage):

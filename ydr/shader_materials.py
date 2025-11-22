@@ -1282,7 +1282,7 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
     base_name = ShaderManager.find_shader_base_name(filename)
     material_name = filename.replace(".sps", "")
 
-    if in_place_material and in_place_material.use_nodes:
+    if in_place_material and (in_place_material.use_nodes if bpy.app.version < (5, 0, 0) else True):
         # If creating the shader in an existing material, setup the node tree to its default state
         current_node_tree = in_place_material.node_tree
         current_node_tree.nodes.clear()
@@ -1302,7 +1302,8 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
 
     mat = in_place_material or bpy.data.materials.new(material_name)
     mat.sollum_type = MaterialType.SHADER
-    mat.use_nodes = True
+    if bpy.app.version < (5, 0, 0):
+        mat.use_nodes = True
     mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename
     mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name

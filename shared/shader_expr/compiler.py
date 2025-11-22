@@ -461,7 +461,8 @@ def compile_to_material(name: str, shader_expr: expr.ShaderExpr, shader_def: Opt
     assert isinstance(shader_expr, expr.ShaderExpr)
 
     mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
+    if bpy.app.version < (5, 0, 0):
+        mat.use_nodes = True
     mat.node_tree.nodes.clear()
 
     if shader_def is not None:
