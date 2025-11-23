@@ -6,6 +6,7 @@ from bpy.types import (
     Operator,
     SpaceImageEditor,
 )
+from mathutils import Color
 
 from .utils import vertex_paint_unified_colors
 
@@ -76,7 +77,11 @@ class SOLLUMZ_OT_vertex_paint_pick_palette_color(Operator):
             for image_editor, tex_width in self._image_editors:
                 if uv := is_in_texture(image_editor, (event.mouse_x, event.mouse_y)):
                     index = int(uv[0] * (tex_width))
-                    vertex_paint_unified_colors(context).color.b = (index + 0.5) / tex_width
+                    b = (index + 0.5) / tex_width
+                    if bpy.app.version >= (5, 0, 0):
+                        # Since 5.0, brush colors are stored in scene linear color space
+                        b = Color((0.0, 0.0, b)).from_srgb_to_scene_linear().b
+                    vertex_paint_unified_colors(context).color.b = b
                     self.report({"INFO"}, f"Picked index: {index}")
                     self._cleanup(context)
                     return {"FINISHED"}
