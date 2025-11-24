@@ -3,6 +3,7 @@ import traceback
 import time
 from typing import Optional
 from abc import abstractmethod
+from enum import auto, Enum
 from mathutils import Matrix
 
 from .sollumz_properties import SollumType
@@ -122,29 +123,53 @@ def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType]
     parent_types = [SollumType.FRAGMENT, SollumType.DRAWABLE, SollumType.DRAWABLE_DICTIONARY,
                     SollumType.CLIP_DICTIONARY, SollumType.YMAP, SollumType.BOUND_COMPOSITE]
 
-    if parent_type is not None and obj.parent is not None and obj.parent.sollum_type == parent_type:
-        return obj.parent
+    parent = obj.parent
+    if parent is None:
+        if parent_type is not None and obj.sollum_type == parent_type:
+            return obj
 
-    if obj.parent is None and obj.sollum_type in parent_types:
-        return obj
+        if parent_type is None and obj.sollum_type in parent_types:
+            return obj
 
-    if obj.parent is None:
         return None
 
-    return find_sollumz_parent(obj.parent, parent_type)
+    return find_sollumz_parent(parent, parent_type)
 
 
-def get_sollumz_materials(obj: bpy.types.Object, out_material_to_models: dict[bpy.types.Material, list[bpy.types.Object]] | None = None):
-    """Get all Sollumz materials used by ``drawable_obj``."""
+class GetSollumzMaterialsMode(Enum):
+    ALL = auto()
+    """Get materials from all LODs."""
+    BASE = auto()
+    """Get materials from high to very low LODs."""
+    HI = auto()
+    """Get materials from very high LODs."""
+
+
+def get_sollumz_materials(
+    obj: bpy.types.Object,
+    mode: GetSollumzMaterialsMode = GetSollumzMaterialsMode.ALL,
+    out_material_to_models: dict[bpy.types.Material, list[bpy.types.Object]] | None = None,
+) -> list[bpy.types.Material]:
+    """Get Sollumz materials used by ``obj``."""
     materials: list[bpy.types.Material] = []
     used_materials: set[bpy.types.Material] = set()
+
+    match mode:
+        case GetSollumzMaterialsMode.ALL:
+            lod_levels = LODLevel
+        case GetSollumzMaterialsMode.BASE:
+            lod_levels = (LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW)
+        case GetSollumzMaterialsMode.HI:
+            lod_levels = (LODLevel.VERYHIGH,)
+        case _:
+            raise ValueError(f"Invalid mode '{mode}'")
 
     for child in get_children_recursive(obj):
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
         lods = child.sz_lods
-        for lod_level in LODLevel:
+        for lod_level in lod_levels:
             lod = lods.get_lod(lod_level)
             lod_mesh = lod.mesh
             if lod_mesh is None:

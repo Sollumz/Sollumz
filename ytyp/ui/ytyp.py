@@ -2,6 +2,7 @@ import bpy
 from ...sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
 from ...sollumz_properties import ArchetypeType
 from ...sollumz_preferences import (
+    get_addon_preferences,
     get_import_settings,
     get_export_settings,
     SollumzImportSettings,
@@ -54,14 +55,21 @@ class SOLLUMZ_PT_YTYP_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
     def draw(self, context):
         list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createytyp", "sollumz.deleteytyp",
                                                 SOLLUMZ_UL_YTYP_LIST.bl_idname, "", context.scene, "ytyps", context.scene, "ytyp_index", rows=3)
+
+        import_op, export_op = (
+            (ytyp_ops.SOLLUMZ_OT_import_ytyp, ytyp_ops.SOLLUMZ_OT_export_ytyp)
+            if get_addon_preferences(context).legacy_import_export
+            else (ytyp_ops.SOLLUMZ_OT_import_ytyp_io, ytyp_ops.SOLLUMZ_OT_export_ytyp_io)
+        )
+
         row = list_col.row()
-        row.operator("sollumz.importytyp", icon="IMPORT")
-        row.operator("sollumz.exportytyp", icon="EXPORT")
+        row.operator(import_op.bl_idname, icon="IMPORT")
+        row.operator(export_op.bl_idname, icon="EXPORT")
 
 
 class SOLLUMZ_PT_import_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
     bl_options = {"HIDE_HEADER"}
-    operator_id = "SOLLUMZ_OT_importytyp"
+    operator_id = {"SOLLUMZ_OT_importytyp", "SOLLUMZ_OT_import_ytyp_io"}
 
     def get_settings(self, context: bpy.types.Context) -> SollumzImportSettings:
         return get_import_settings(context)
@@ -73,7 +81,7 @@ class SOLLUMZ_PT_import_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
 
 class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
     bl_options = {"HIDE_HEADER"}
-    operator_id = "SOLLUMZ_OT_exportytyp"
+    operator_id = {"SOLLUMZ_OT_exportytyp", "SOLLUMZ_OT_export_ytyp_io"}
 
     def get_settings(self, context: bpy.types.Context) -> SollumzExportSettings:
         return get_export_settings(context)

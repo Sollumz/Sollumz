@@ -11,7 +11,7 @@ from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from .meshhelper import get_uv_map_name
 from typing import Tuple
 from collections.abc import Iterator
-from ..cwxml.shader import ShaderManager
+from szio.gta5 import ShaderManager
 
 from .. import logger
 

@@ -161,21 +161,6 @@ def get_filename(filepath: str):
     return os.path.basename(filepath).split(".")[0]
 
 
-def np_arr_to_str(arr: NDArray, fmt: str):
-    """Convert numpy array to formatted string (faster than np.savetxt)"""
-    n_fmt_chars = fmt.count('%')
-
-    if arr.ndim == 1 and n_fmt_chars == 1:
-        fmt = ' '.join([fmt] * arr.size)
-    else:
-        if n_fmt_chars == 1:
-            fmt = ' '.join([fmt] * arr.shape[1])
-
-        fmt = '\n'.join([fmt] * arr.shape[0])
-
-    return fmt % tuple(arr.ravel())
-
-
 def get_matrix_without_scale(matrix: Matrix) -> Matrix:
     """Apply scale to transformation matrix"""
     scale = matrix.to_scale()

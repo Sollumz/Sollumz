@@ -19,7 +19,8 @@ from typing import Union, Optional, TYPE_CHECKING
 from collections.abc import Iterator
 from enum import Enum, IntEnum
 from ...tools.utils import get_list_item
-from ...ydr.light_flashiness import Flashiness, LightFlashinessEnumItems
+from ...ydr.light_flashiness import LightFlashiness, LightFlashinessEnumItems
+from szio import gta5 as iogta5
 
 if TYPE_CHECKING:
     from .ytyp import ArchetypeProperties
@@ -40,6 +41,26 @@ class ExtensionType(str, Enum):
     PROC_OBJECT = "CExtensionDefProcObject"
     EXPRESSION = "CExtensionDefExpression"
     LIGHT_EFFECT = "CExtensionDefLightEffect"
+
+
+EXTENSION_DEF_CLASS_TO_TYPE = {
+    iogta5.ExtensionDoor: ExtensionType.DOOR,
+    iogta5.ExtensionParticleEffect: ExtensionType.PARTICLE,
+    iogta5.ExtensionAudioCollisionSettings: ExtensionType.AUDIO_COLLISION,
+    iogta5.ExtensionAudioEmitter: ExtensionType.AUDIO_EMITTER,
+    iogta5.ExtensionExplosionEffect: ExtensionType.EXPLOSION_EFFECT,
+    iogta5.ExtensionLadder: ExtensionType.LADDER,
+    iogta5.ExtensionBuoyancy: ExtensionType.BUOYANCY,
+    iogta5.ExtensionLightShaft: ExtensionType.LIGHT_SHAFT,
+    iogta5.ExtensionSpawnPoint: ExtensionType.SPAWN_POINT,
+    iogta5.ExtensionSpawnPointOverride: ExtensionType.SPAWN_POINT_OVERRIDE,
+    iogta5.ExtensionWindDisturbance: ExtensionType.WIND_DISTURBANCE,
+    iogta5.ExtensionProcObject: ExtensionType.PROC_OBJECT,
+    iogta5.ExtensionExpression: ExtensionType.EXPRESSION,
+    iogta5.ExtensionLightEffect: ExtensionType.LIGHT_EFFECT,
+}
+
+EXTENSION_TYPE_TO_DEF_CLASS = {v: k for k, v in EXTENSION_DEF_CLASS_TO_TYPE.items()}
 
 
 def ExtensionTypeEnumItems(self, context: Optional[Context]):
@@ -714,7 +735,7 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
     intensity: FloatProperty(name="Intensity")
     flashiness: EnumProperty(name="Flashiness", items=LightFlashinessEnumItems,
-                             default=Flashiness.CONSTANT.name)
+                             default=LightFlashiness.CONSTANT.name)
     flags: IntProperty(name="Flags")
     fade_in_time_start: FloatProperty(name="Fade In Time Start")
     fade_in_time_end: FloatProperty(name="Fade In Time End")
@@ -887,7 +908,7 @@ class ProcObjectExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class LightEffectExtensionProperties(BaseExtensionProperties, PropertyGroup):
-    ignored_in_import_export = {"parent_obj"}
+    ignored_in_import_export = {"linked_lights_object"}
 
     linked_lights_object: PointerProperty(name="Linked Lights", type=Object)
 

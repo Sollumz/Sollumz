@@ -2,13 +2,16 @@ from typing import Iterable
 import bpy
 from mathutils import Euler, Vector, Quaternion, Matrix
 
-from ..cwxml import ytyp as ytypxml, ymap as ymapxml
+from szio.gta5.cwxml import (
+    ytyp as ytypxml,
+    ymap as ymapxml,
+)
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType
-from ..ydr.light_flashiness import Flashiness
+from szio.gta5 import LightFlashiness
 
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
@@ -220,7 +223,7 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
 
         elif prop_name == "flashiness":
             # convert enum back to int
-            prop_value = Flashiness[prop_value].value
+            prop_value = LightFlashiness[prop_value].value
 
         setattr(extension_xml, prop_name, prop_value)
 
@@ -286,7 +289,7 @@ def set_archetype_xml_bounds(archetype: ArchetypeProperties, archetype_xml: ytyp
 def get_xml_asset_type(asset_type: AssetType) -> str:
     """Get xml asset type string from AssetType enum."""
 
-    if asset_type == AssetType.UNITIALIZED:
+    if asset_type == AssetType.UNINITIALIZED:
         return "ASSET_TYPE_UNINITIALIZED"
     elif asset_type == AssetType.FRAGMENT:
         return "ASSET_TYPE_FRAGMENT"

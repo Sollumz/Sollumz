@@ -6,7 +6,7 @@ from bpy.types import (
 from enum import Enum
 from typing import Optional
 import numpy as np
-from ..cwxml.shader import ShaderManager
+from szio.gta5 import ShaderManager
 from ..sollumz_properties import SollumType
 
 

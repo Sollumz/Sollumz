@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from typing import Sequence, Iterator
 from collections import defaultdict
 from contextlib import contextmanager
+import logging
 
 
 class LoggerBase(ABC):
@@ -83,3 +84,15 @@ def warning(msg: str):
 
 def error(msg: str):
     _log(msg, "ERROR")
+
+
+class LoggingHandlerRedirectToSollumzLogger(logging.Handler):
+    def emit(self, record):
+        msg = self.format(record)
+        level = record.levelno
+        if level >= logging.ERROR:
+            error(msg)
+        elif level >= logging.WARNING:
+            warning(msg)
+        else:
+            info(msg)

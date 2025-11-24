@@ -3,7 +3,7 @@ from mathutils import Vector, Quaternion
 import math
 import struct
 from typing import Optional
-from ..cwxml import clipdictionary as ycdxml
+from szio.gta5.cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SollumType
 from ..tools import jenkhash
 from ..tools.blenderhelper import build_name_bone_map, build_bone_map

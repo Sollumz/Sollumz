@@ -62,6 +62,9 @@ jobs:
       BLENDER_VERSION: ${{ matrix.blender-version }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          path: Sollumz
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
@@ -102,17 +105,19 @@ jobs:
           & "$BLENDER_PYTHON" -m pip install pytest-blender==${{ matrix.pytest-blender-version }} pytest==${{ matrix.pytest-version }} pytest-cov==${{ matrix.pytest-cov-version }}
 
       - name: Install Sollumz
+        working-directory: ./Sollumz
         run: |
-          $BLENDER = get-content _blender-executable-path.txt
+          $BLENDER = get-content ../_blender-executable-path.txt
           $BLENDER_RELEASE_VERSION = python -c "print('.'.join('${{ matrix.blender-version }}'.split('.')[:2]))" # extract first two version numbers
           New-Item -ItemType Directory -Path "$env:APPDATA\Blender Foundation\Blender\$BLENDER_RELEASE_VERSION\scripts\addons" -Force
           New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Blender Foundation\Blender\$BLENDER_RELEASE_VERSION\scripts\addons" -Name Sollumz -Target $(Get-Location)
           & "$BLENDER" --background --python-expr "import bpy; bpy.ops.preferences.addon_enable(module='Sollumz'); bpy.ops.wm.save_userpref()"
 
       - name: Run Tests
+        working-directory: ./Sollumz
         run: |
-          $BLENDER = get-content _blender-executable-path.txt
-          $BLENDER_PYTHON = get-content _blender-python-executable-path.txt
+          $BLENDER = get-content ../_blender-executable-path.txt
+          $BLENDER_PYTHON = get-content ../_blender-python-executable-path.txt
           $env:SOLLUMZ_TEST_TMP_DIR = $(mkdir _test_tmp)
           & "$BLENDER" --background --python .\tests\run.py -- -vv -s --cov Sollumz --cov-report xml --ignore _blender --ignore _test_tmp
 

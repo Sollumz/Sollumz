@@ -5,9 +5,17 @@ from bpy.types import (
 import os
 import numpy as np
 from typing import Optional
-from ..cwxml.drawable import YDD, DrawableDictionary, Skeleton, Bone
-from ..cwxml.fragment import YFT, Fragment
-from ..cwxml.cloth import YLD, ClothDictionary, CharacterCloth
+from szio.gta5.cwxml import (
+    YDD,
+    DrawableDictionary,
+    Skeleton,
+    Bone,
+    YFT,
+    Fragment,
+    YLD,
+    ClothDictionary,
+    CharacterCloth,
+)
 from ..ydr.ydrimport import create_drawable_obj, create_drawable_skel, apply_rotation_limits
 from ..ybn.ybnimport import create_bound_composite
 from ..sollumz_properties import SollumType
@@ -92,8 +100,10 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional
         if yld_xml is not None:
             cloth = next((c for c in yld_xml if c.name == drawable_xml.name), None)
             if cloth is not None:
-                cloth_obj = create_character_cloth_mesh(cloth, drawable_obj, drawable_xml.skeleton.bones or external_bones)
-                bounds_obj = create_character_cloth_bounds(cloth, external_armature or drawable_obj, drawable_xml.skeleton.bones or external_bones)
+                cloth_obj = create_character_cloth_mesh(
+                    cloth, drawable_obj, drawable_xml.skeleton.bones or external_bones)
+                bounds_obj = create_character_cloth_bounds(
+                    cloth, external_armature or drawable_obj, drawable_xml.skeleton.bones or external_bones)
                 bounds_obj.parent = cloth_obj
                 cloth_obj.parent = drawable_obj
 
@@ -118,7 +128,6 @@ def find_first_skel(ydd_xml: DrawableDictionary) -> Optional[Skeleton]:
     for drawable_xml in ydd_xml:
         if drawable_xml.skeleton.bones:
             return drawable_xml.skeleton
-
 
 
 def make_yld_filepath(ydd_filepath: str) -> str:
@@ -179,7 +188,7 @@ def create_character_cloth_mesh(cloth: CharacterCloth, drawable_obj: Object, bon
         mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
 
     for mesh_vert_index, cloth_vert_index in enumerate(mesh_to_cloth_map):
-        mesh_vert_index = cloth_vert_index # NOTE: in character cloths both are the same?
+        mesh_vert_index = cloth_vert_index  # NOTE: in character cloths both are the same?
 
         if has_pinned:
             pinned = cloth_vert_index < pinned_vertices_count
@@ -209,7 +218,6 @@ def create_character_cloth_mesh(cloth: CharacterCloth, drawable_obj: Object, bon
             mesh.edges[next_edge].vertices = v0, v1
             next_edge += 1
 
-
     def _create_group(bone_index: int):
         if bones and bone_index < len(bones):
             bone_name = bones[bone_index].name
@@ -234,7 +242,7 @@ def create_character_cloth_mesh(cloth: CharacterCloth, drawable_obj: Object, bon
     if cloth.poses:
         # TODO(cloth): export poses
         num_poses = len(cloth.poses) // 2 // vertices_count
-        poses = np.array(cloth.poses)[::2,:3]
+        poses = np.array(cloth.poses)[::2, :3]
         obj.show_only_shape_key = True
         obj.shape_key_add(name="Basis")
         for pose_idx in range(num_poses):
@@ -242,8 +250,8 @@ def create_character_cloth_mesh(cloth: CharacterCloth, drawable_obj: Object, bon
             sk.points.foreach_set("co", poses[pose_idx*vertices_count:(pose_idx+1)*vertices_count].ravel())
         mesh.shape_keys.use_relative = False
 
-
     return obj
+
 
 def create_character_cloth_bounds(cloth: CharacterCloth, armature_obj: Object, bones: list[Bone]) -> Object:
     bounds_obj = create_bound_composite(cloth.bounds)

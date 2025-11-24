@@ -1,13 +1,16 @@
 import bpy
 from typing import Union
 from mathutils import Vector, Quaternion
-from ..cwxml import ytyp as ytypxml, ymap as ymapxml
+from szio.gta5.cwxml import (
+    ytyp as ytypxml,
+    ymap as ymapxml,
+)
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
 from ..sollumz_preferences import get_import_settings
 from ..sollumz_helper import duplicate_object_with_children
 from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
-from ..ydr.light_flashiness import Flashiness
+from szio.gta5 import LightFlashiness
 
 
 def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties):
@@ -210,7 +213,7 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
 
         elif prop_name == "flashiness":
             # `flashiness` is now an enum property, we need the enum as string
-            prop_value = Flashiness(prop_value).name
+            prop_value = LightFlashiness(prop_value).name
 
 
         setattr(extension_properties, prop_name, prop_value)
@@ -339,7 +342,7 @@ def get_asset_type_enum(xml_asset_type: str) -> str:
     """Get asset type enum based on xml asset type string."""
 
     if xml_asset_type == "ASSET_TYPE_UNINITIALIZED":
-        return AssetType.UNITIALIZED
+        return AssetType.UNINITIALIZED
     elif xml_asset_type == "ASSET_TYPE_FRAGMENT":
         return AssetType.FRAGMENT
     elif xml_asset_type == "ASSET_TYPE_DRAWABLE":

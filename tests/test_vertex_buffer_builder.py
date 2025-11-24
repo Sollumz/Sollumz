@@ -2,11 +2,11 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 from ..ydr.vertex_buffer_builder import dedupe_and_get_indices
-from ..cwxml.drawable import VertexBuffer
+from szio.gta5 import STANDARD_VERTEX_ATTR_DTYPES
 
 
 def test_dedupe_repeated():
-    struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES["Position"], VertexBuffer.VERT_ATTR_DTYPES["Normal"]]
+    struct_dtype = [STANDARD_VERTEX_ATTR_DTYPES["Position"], STANDARD_VERTEX_ATTR_DTYPES["Normal"]]
     input_vertex_arr = np.empty(3, dtype=struct_dtype)
     input_vertex_arr["Position"] = [
         [1, 0.5, 0.25],
@@ -27,7 +27,7 @@ def test_dedupe_repeated():
 
 
 def test_dedupe_different_and_repeated():
-    struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES["Position"], VertexBuffer.VERT_ATTR_DTYPES["Normal"]]
+    struct_dtype = [STANDARD_VERTEX_ATTR_DTYPES["Position"], STANDARD_VERTEX_ATTR_DTYPES["Normal"]]
     input_vertex_arr = np.empty(6, dtype=struct_dtype)
     input_vertex_arr["Position"] = [
         [1, 0, 2.5],
@@ -54,7 +54,7 @@ def test_dedupe_different_and_repeated():
 
 
 def test_dedupe_same_integer_different_decimals():
-    struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES["Position"]]
+    struct_dtype = [STANDARD_VERTEX_ATTR_DTYPES["Position"]]
     input_vertex_arr = np.empty(3, dtype=struct_dtype)
     input_vertex_arr["Position"] = [
         [1.0, 0, 2.5],
@@ -73,7 +73,7 @@ def test_dedupe_repeated_but_with_rounding_errors():
     # From a real case, Blender calculated these normals and Sollumz wasn't deduplicating them on export
     # Technically different, but the difference is just rounding errors.
     # It was breaking cloth mesh export.
-    struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES["Normal"]]
+    struct_dtype = [STANDARD_VERTEX_ATTR_DTYPES["Normal"]]
     input_vertex_arr = np.empty(9, dtype=struct_dtype)
     input_vertex_arr["Normal"] = [
         [-1.0, -0.000000087422769468048500129953, -0.000000043711327890605389256962],

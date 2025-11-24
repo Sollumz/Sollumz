@@ -1,15 +1,4 @@
-from enum import IntEnum
-
-
-class RenderBucket(IntEnum):
-    OPAQUE = 0
-    ALPHA = 1
-    DECAL = 2
-    CUTOUT = 3
-    NO_SPLASH = 4
-    NO_WATER = 5
-    WATER = 6
-    DISPLACEMENT_ALPHA = 7
+from szio.gta5 import RenderBucket
 
 
 RenderBucketEnumItems = tuple((enum.name, f"{label} ({enum.value})", desc, enum.value) for enum, label, desc in (

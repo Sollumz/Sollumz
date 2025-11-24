@@ -18,12 +18,12 @@ import math
 from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
-from ..cwxml.light_preset import LightPresetsFile
-from ..cwxml.shader_preset import ShaderPresetsFile
+from .light_preset import LightPresetsFile
+from .shader_preset import ShaderPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats, shadermats_by_filename
 from .render_bucket import RenderBucket, RenderBucketEnumItems
-from .light_flashiness import Flashiness, LightFlashinessEnumItems
+from .light_flashiness import LightFlashiness, LightFlashinessEnumItems
 from bpy.app.handlers import persistent
 from bpy.path import basename
 
@@ -150,6 +150,8 @@ class SkinnedDrawableModelProperties(bpy.types.PropertyGroup):
             return self.low
         elif lod_level == LODLevel.VERYLOW:
             return self.very_low
+        else:
+            assert False, f"Unknown LOD level '{lod_level}'"
 
 
 class ShaderProperties(bpy.types.PropertyGroup):
@@ -307,7 +309,7 @@ LIGHT_INTENSITY_SCALE_FACTOR = 500
 
 class LightProperties(bpy.types.PropertyGroup):
     flashiness: bpy.props.EnumProperty(
-        name="Flashiness", items=LightFlashinessEnumItems, default=Flashiness.CONSTANT.name
+        name="Flashiness", items=LightFlashinessEnumItems, default=LightFlashiness.CONSTANT.name
     )
     group_id: bpy.props.IntProperty(name="Group ID")
     culling_plane_normal: bpy.props.FloatVectorProperty(name="Culling Plane Normal", subtype="XYZ")

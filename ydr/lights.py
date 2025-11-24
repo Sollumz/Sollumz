@@ -2,11 +2,13 @@ import bpy
 from math import radians, pi, degrees
 from typing import Optional
 from mathutils import Matrix, Vector
-from .light_flashiness import Flashiness
+from .light_flashiness import LightFlashiness
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, LightType
 from ..tools.blenderhelper import create_empty_object, create_blender_object, add_child_of_bone_constraint
-from ..cwxml.drawable import Light
-from ..cwxml.ymap import LightInstance
+from szio.gta5.cwxml import (
+    Light,
+    LightInstance,
+)
 from .properties import LightProperties
 from .. import logger
 
@@ -111,7 +113,7 @@ def set_light_properties(light_xml: Light, light_data: bpy.types.Light):
         light_props.cone_inner_angle = radians(light_xml.cone_inner_angle)
         light_props.cone_outer_angle = radians(light_xml.cone_outer_angle)
 
-    light_props.flashiness = Flashiness(light_xml.flashiness).name
+    light_props.flashiness = LightFlashiness(light_xml.flashiness).name
     light_props.flags = light_xml.flags
     light_props.group_id = light_xml.group_id
     light_props.time_flags = light_xml.time_flags
@@ -205,7 +207,7 @@ def set_light_xml_properties(light_xml: Light, light_data: bpy.types.Light):
     light_xml.color = light_data.color * 255
     light_xml.intensity = light_props.intensity
 
-    light_xml.flashiness = Flashiness[light_props.flashiness].value
+    light_xml.flashiness = LightFlashiness[light_props.flashiness].value
     light_xml.group_id = light_props.group_id
     light_xml.falloff = light_props.falloff
     light_xml.falloff_exponent = light_props.falloff_exponent

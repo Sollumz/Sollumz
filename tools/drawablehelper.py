@@ -1,11 +1,33 @@
+import os
 import bpy
 from mathutils import Vector
 from ..sollumz_properties import SollumType, LODLevel
 from ..tools.blenderhelper import create_empty_object
-from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel
+from szio.gta5.cwxml import (
+    Drawable,
+    DrawableModel,
+)
+
+
+class BonePropertiesManager:
+    dictionary_xml = os.path.join(os.path.dirname(__file__), "BoneProperties.xml")
+    bones = {}
+
+    @staticmethod
+    def load_bones():
+        from xml.etree import ElementTree as ET
+        from .cwxml import Bone
+
+        tree = ET.parse(BonePropertiesManager.dictionary_xml)
+        for node in tree.getroot():
+            bone = Bone.from_xml(node)
+            BonePropertiesManager.bones[bone.name] = bone
 
 
 def set_recommended_bone_properties(bone):
+    if not BonePropertiesManager.bones:
+        BonePropertiesManager.load_bones()
+
     bone_item = BonePropertiesManager.bones.get(bone.name)
     if bone_item is None:
         return
@@ -64,8 +86,7 @@ def convert_obj_to_model(obj: bpy.types.Object):
 
 
 def center_drawable_to_models(drawable_obj: bpy.types.Object):
-    model_objs = [
-        child for child in drawable_obj.children if child.sollum_type == SollumType.DRAWABLE_MODEL]
+    model_objs = [child for child in drawable_obj.children if child.sollum_type == SollumType.DRAWABLE_MODEL]
 
     center = Vector()
 

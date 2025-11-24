@@ -4,7 +4,7 @@ import math
 import numpy as np
 from mathutils import Vector
 from struct import pack
-from ..cwxml.ymap import *
+from szio.gta5.cwxml.ymap import *
 from binascii import hexlify
 from ..tools.blenderhelper import remove_number_suffix
 from ..tools.meshhelper import get_bound_center_from_bounds, get_extents

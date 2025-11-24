@@ -1,7 +1,11 @@
 from typing import Optional
 
-from ..cwxml.drawable import Geometry, Shader
-from ..cwxml.fragment import Fragment, PhysicsChild
+from szio.gta5.cwxml import (
+    Geometry,
+    Shader,
+    Fragment,
+    PhysicsChild,
+)
 
 
 def get_all_frag_geoms(frag_xml: Fragment) -> list[Geometry]:

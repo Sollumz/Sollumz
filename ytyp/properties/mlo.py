@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from .ytyp import ArchetypeProperties
 
 import bpy
+from mathutils import Vector
 from ...sollumz_properties import EntityProperties
 from ...tools.utils import get_list_item
 from ..utils import get_selected_ytyp, get_selected_archetype

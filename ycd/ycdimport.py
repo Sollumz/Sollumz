@@ -1,7 +1,7 @@
 import os
 import bpy
 from mathutils import Vector, Quaternion
-from ..cwxml import clipdictionary as ycdxml
+from szio.gta5.cwxml import clipdictionary as ycdxml
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.animationhelper import (
     Track,

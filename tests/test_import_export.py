@@ -189,3 +189,19 @@ if is_tmp_dir_available():
 
             curr_input_path = out_path
 
+
+@pytest.mark.parametrize("files, expected_deduped_files", (
+    ([], []),
+    (["test.ydr.xml", "test2.ydr"], ["test.ydr.xml", "test2.ydr"]),
+    (["test.yft.xml", "test2.yft"], ["test.yft.xml", "test2.yft"]),
+    (["test_hi.yft.xml", "test.yft.xml"], ["test.yft.xml"]),
+    (["test_hi.yft.xml", "test.yft"], ["test.yft"]),
+    (["test_hi.yft", "test.yft.xml"], ["test.yft.xml"]),
+    (["test_hi.yft", "test.yft"], ["test.yft"]),
+    (["test.yft", "test_hi.yft"], ["test.yft"]),
+    (["other.ydr", "test_hi.yft.xml", "something.ybn", "test.yft.xml"], ["other.ydr", "something.ybn", "test.yft.xml"]),
+))
+def test_import_dedupe_hi_yft_files(files: str, expected_deduped_files: str):
+    from ..sollumz_operators import SOLLUMZ_OT_import_assets
+    res = SOLLUMZ_OT_import_assets._dedupe_hi_yft_filenames(None, files)
+    assert_equal(res, expected_deduped_files)

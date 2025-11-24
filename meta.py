@@ -1,3 +1,8 @@
+"""Information about Sollumz and its dependencies."""
+
+import os
+
+
 def sollumz_version() -> str:
     CACHE_KEY = "_cached_version"
     if not (version := getattr(sollumz_version, CACHE_KEY, None)):
@@ -30,3 +35,6 @@ def sollumz_version() -> str:
         setattr(sollumz_version, CACHE_KEY, version)
 
     return version
+
+
+DEV_MODE = os.environ.get("SOLLUMZ_DEV", "false") == "true"

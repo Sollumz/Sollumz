@@ -21,6 +21,7 @@ from .lods import (
     SOLLUMZ_OT_SHOW_SHATTERMAPS
 )
 from .icons import icon_manager
+from .meta import DEV_MODE
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -115,7 +116,7 @@ class SollumzFileSettingsPanel:
         sfile = context.space_data
         operator = sfile.active_operator
 
-        return operator.bl_idname == cls.operator_id
+        return operator.bl_idname in cls.operator_id
 
     def draw(self, context):
         layout = self.layout
@@ -132,7 +133,7 @@ class SollumzFileSettingsPanel:
 
 
 class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
-    operator_id = "SOLLUMZ_OT_import_assets"
+    operator_id = {"SOLLUMZ_OT_import_assets_legacy", "SOLLUMZ_OT_import_assets"}
 
     def get_settings(self, context: bpy.types.Context):
         return get_import_settings(context)
@@ -142,7 +143,7 @@ class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
 
 
 class SollumzExportSettingsPanel(SollumzFileSettingsPanel):
-    operator_id = "SOLLUMZ_OT_export_assets"
+    operator_id = {"SOLLUMZ_OT_export_assets_legacy", "SOLLUMZ_OT_export_assets"}
 
     def get_settings(self, context: bpy.types.Context):
         return get_export_settings(context)
@@ -165,6 +166,7 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel, SollumzImportSettingsPanel):
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "split_by_group")
+        layout.prop(settings, "frag_import_vehicle_windows")
 
 
 class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
@@ -203,16 +205,16 @@ class SOLLUMZ_PT_export_drawable(bpy.types.Panel, SollumzExportSettingsPanel):
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
         layout.prop(settings, "apply_transforms")
-        layout.prop(settings, "export_with_ytyp")
         layout.prop(settings, "mesh_domain", expand=True)
 
 
-class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Fragment"
-    bl_order = 2
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.column().prop(settings, "export_lods")
+# Empty for now
+# class SOLLUMZ_PT_export_fragment(bpy.types.Panel, SollumzExportSettingsPanel):
+#     bl_label = "Fragment"
+#     bl_order = 2
+#
+#     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+#         pass
 
 
 # Empty for now
@@ -257,15 +259,22 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.operator("sollumz.import_assets")
 
+        import_op, export_op = (
+            ("sollumz.import_assets_legacy", "sollumz.export_assets_legacy")
+            if get_addon_preferences(context).legacy_import_export
+            else ("sollumz.import_assets", "sollumz.export_assets")
+        )
+
+        row = layout.row()
+        row.operator(import_op, icon="IMPORT")
+        op = row.operator(export_op, icon="EXPORT")
         if context.scene.sollumz_export_path != "":
-            op = row.operator("sollumz.export_assets")
             op.directory = context.scene.sollumz_export_path
             op.direct_export = True
-        else:
-            row.operator("sollumz.export_assets")
+
+        if DEV_MODE:
+            layout.operator("sollumz.dev_test_export_assets")
 
 
 class GeneralToolChildPanel:
@@ -549,7 +558,8 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
             )
 
             row = box.row()
-            row.operator(SOLLUMZ_OT_convert_active_material_to_selected.bl_idname, text="Convert to Selected", icon="FILE_REFRESH")
+            row.operator(SOLLUMZ_OT_convert_active_material_to_selected.bl_idname,
+                         text="Convert to Selected", icon="FILE_REFRESH")
             row.operator(SOLLUMZ_OT_auto_convert_current_material.bl_idname, text="Auto Convert", icon="FILE_REFRESH")
 
             return

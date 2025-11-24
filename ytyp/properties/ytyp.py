@@ -695,7 +695,7 @@ class CMapTypesProperties(PropertyGroup):
                     entity_set.mlo_archetype_id = archetype.id
                     entity_set.mlo_archetype_uuid = archetype.uuid
 
-    def new_archetype(self, archetype_type: ArchetypeType = ArchetypeType.BASE):
+    def new_archetype(self, archetype_type: ArchetypeType = ArchetypeType.BASE) -> ArchetypeProperties:
         item = self.archetypes.add()
         index = len(self.archetypes) - 1
         self.archetypes.select(index)

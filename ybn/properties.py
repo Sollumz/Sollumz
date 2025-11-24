@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
-from ..cwxml.flag_preset import FlagPresetsFile
+from .flag_preset import FlagPresetsFile
 from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
 from ..tools.blenderhelper import tag_redraw
 from ..sollumz_preferences import get_addon_preferences

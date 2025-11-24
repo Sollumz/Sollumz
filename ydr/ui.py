@@ -18,7 +18,7 @@ from .cable import CableAttr, is_cable_mesh
 from .cloth import ClothAttr
 from .cloth_char import cloth_char_find_mesh_objects
 from .cloth_diagnostics import cloth_last_export_contexts
-from ..cwxml.shader import ShaderManager
+from szio.gta5 import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel

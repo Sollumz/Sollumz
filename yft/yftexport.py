@@ -11,12 +11,24 @@ from sys import float_info
 import numpy as np
 
 from ..ybn.ybnexport import create_composite_xml, get_scale_to_apply_to_bound
-from ..cwxml.bound import Bound, BoundComposite
-from ..cwxml.fragment import (
-    Fragment, PhysicsLOD, Archetype, PhysicsChild, PhysicsGroup, Transform, Physics, BoneTransform, Window,
-    GlassWindow, GlassWindows,
+from szio.gta5.cwxml import (
+    Bound,
+    BoundComposite,
+    Fragment,
+    PhysicsLOD,
+    Archetype,
+    PhysicsChild,
+    PhysicsGroup,
+    Transform,
+    Physics,
+    BoneTransform,
+    Window,
+    GlassWindow,
+    GlassWindows,
+    Bone,
+    Drawable,
+    VertexLayoutList,
 )
-from ..cwxml.drawable import Bone, Drawable, VertexLayoutList
 from ..tools.blenderhelper import get_evaluated_obj, remove_number_suffix, delete_hierarchy, get_child_of_bone
 from ..tools.fragmenthelper import image_to_shattermap
 from ..tools.meshhelper import flip_uvs
@@ -49,27 +61,21 @@ def export_yft(frag_obj: Object, filepath: Optional[str]) -> bool:
         return False
 
     if filepath:
-        if export_settings.export_non_hi:
-            frag_xml.write_xml(filepath)
-            write_embedded_textures(frag_obj, filepath)
+        frag_xml.write_xml(filepath)
+        write_embedded_textures(frag_obj, filepath)
 
     # NOTE: the execution order here is important, the frag_xml must be written to a file before creating the hi_frag_xml.
     #       This is because there are some shallow copies and some changes done to the hi_frag_xml affect the frag_xml too.
-    if export_settings.export_hi and has_hi_lods(frag_obj):
+    if has_hi_lods(frag_obj):
         hi_frag_xml = create_hi_frag_xml(frag, frag_xml, export_settings.apply_transforms)
     else:
         hi_frag_xml = None
 
-    if filepath:
-        if hi_frag_xml:
-            hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
-            hi_frag_xml.write_xml(hi_filepath)
-            write_embedded_textures(frag_obj, hi_filepath)
-            logger.info(f"Exported Very High LODs to '{hi_filepath}'")
-        elif export_settings.export_hi and not export_settings.export_non_hi:
-            logger.warning(f"Only Very High LODs selected to export but fragment '{frag_obj.name}' does not have Very High"
-                           " LODs. Nothing was exported.")
-            return False
+    if filepath and hi_frag_xml:
+        hi_filepath = filepath.replace(".yft.xml", "_hi.yft.xml")
+        hi_frag_xml.write_xml(hi_filepath)
+        write_embedded_textures(frag_obj, hi_filepath)
+        logger.info(f"Exported Very High LODs to '{hi_filepath}'")
 
     return True
 
@@ -1194,7 +1200,7 @@ def set_frag_xml_properties(frag_obj: bpy.types.Object, frag_xml: Fragment):
     frag_xml.unknown_b0 = 0  # estimated cache sizes, these are set by the game when the fragCacheEntry is initialized
     frag_xml.unknown_b8 = 0
     frag_xml.unknown_bc = 0
-    frag_xml.unknown_c0 = (FragmentTemplateAsset[frag_obj.fragment_properties.template_asset] & 0xFF) << 8
+    frag_xml.unknown_c0 = (FragmentTemplateAsset[frag_obj.fragment_properties.template_asset].value & 0xFF) << 8
     frag_xml.unknown_cc = frag_obj.fragment_properties.unbroken_elasticity
     frag_xml.gravity_factor = frag_obj.fragment_properties.gravity_factor
     frag_xml.buoyancy_factor = frag_obj.fragment_properties.buoyancy_factor

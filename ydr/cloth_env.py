@@ -8,11 +8,9 @@ from mathutils import (
     Vector,
     Matrix,
 )
-from ..cwxml.shader import ShaderManager
-from ..cwxml.drawable import (
+from szio.gta5 import ShaderManager
+from szio.gta5.cwxml import (
     Drawable,
-)
-from ..cwxml.cloth import (
     EnvironmentCloth,
     VerletClothEdge,
 )
@@ -31,7 +29,7 @@ from ..ybn.ybnexport import (
     create_composite_xml,
     get_scale_to_apply_to_bound,
 )
-from .vertex_buffer_builder import VBBuilderDomain
+from .vertex_buffer_builder_domain import VBBuilderDomain
 from .ydrexport import (
     get_bone_index,
     create_model_xml,

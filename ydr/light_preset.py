@@ -1,4 +1,4 @@
-from .element import VectorProperty, AttributeProperty, ValueProperty, TextProperty, ElementTree, ListProperty
+from szio.xml import VectorProperty, AttributeProperty, ValueProperty, TextProperty, ElementTree, ListProperty
 
 
 class LightPresetsFile(ElementTree):

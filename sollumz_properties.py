@@ -2,6 +2,7 @@ import bpy
 from enum import Enum
 from typing import Sequence
 from .tools.utils import flag_list_to_int, flag_prop_to_list, int_to_bool_list
+from szio.gta5 import LodLevel as IOLodLevel, LightType as IOLightType
 
 
 # NOTE: Do not reorder these enums or insert new entries in the middle. That will break compatibility with
@@ -67,6 +68,31 @@ class LightType(str, Enum):
     SPOT = "sollumz_light_spot"
     CAPSULE = "sollumz_light_capsule"
 
+    def to_io(self) -> IOLodLevel:
+        match self:
+            case LightType.POINT:
+                return IOLightType.POINT
+            case LightType.SPOT:
+                return IOLightType.SPOT
+            case LightType.CAPSULE:
+                return IOLightType.CAPSULE
+            case LightType.NONE:
+                raise ValueError("Cannot to convert NONE to asset I/O format")
+            case _:
+                raise ValueError(f"Unknown light type '{self}'")
+
+    @staticmethod
+    def from_io(light_type: IOLightType) -> "LightType":
+        match light_type:
+            case IOLightType.POINT:
+                return LightType.POINT
+            case IOLightType.SPOT:
+                return LightType.SPOT
+            case IOLightType.CAPSULE:
+                return LightType.CAPSULE
+            case _:
+                raise ValueError(f"Unknown light type '{light_type}'")
+
 
 class MaterialType(str, Enum):
     NONE = "sollumz_material_none",
@@ -81,6 +107,35 @@ class LODLevel(str, Enum):
     MEDIUM = "sollumz_medium"
     LOW = "sollumz_low"
     VERYLOW = "sollumz_verylow"
+
+    def to_io(self) -> IOLodLevel:
+        match self:
+            case LODLevel.HIGH:
+                return IOLodLevel.HIGH
+            case LODLevel.MEDIUM:
+                return IOLodLevel.MEDIUM
+            case LODLevel.LOW:
+                return IOLodLevel.LOW
+            case LODLevel.VERYLOW:
+                return IOLodLevel.VERYLOW
+            case LODLevel.VERYHIGH:
+                return IOLodLevel.HIGH
+            case _:
+                raise ValueError(f"Unknown LOD '{self}'")
+
+    @staticmethod
+    def from_io(lod_level: IOLodLevel) -> "LODLevel":
+        match lod_level:
+            case IOLodLevel.HIGH:
+                return LODLevel.HIGH
+            case IOLodLevel.MEDIUM:
+                return LODLevel.MEDIUM
+            case IOLodLevel.LOW:
+                return LODLevel.LOW
+            case IOLodLevel.VERYLOW:
+                return LODLevel.VERYLOW
+            case _:
+                raise ValueError(f"Unknown LOD '{lod_level}'")
 
 
 LODLevelEnumItems = (
@@ -116,7 +171,7 @@ class ArchetypeType(str, Enum):
 
 
 class AssetType(str, Enum):
-    UNITIALIZED = "sollumz_asset_unintialized"
+    UNINITIALIZED = "sollumz_asset_unintialized"
     FRAGMENT = "sollumz_asset_fragment"
     DRAWABLE = "sollumz_asset_drawable"
     DRAWABLE_DICTIONARY = "sollumz_asset_drawable_dictionary"
@@ -297,7 +352,7 @@ SOLLUMZ_UI_NAMES = {
     ArchetypeType.TIME: "Time",
     ArchetypeType.MLO: "MLO",
 
-    AssetType.UNITIALIZED: "Uninitialized",
+    AssetType.UNINITIALIZED: "Uninitialized",
     AssetType.FRAGMENT: "Fragment",
     AssetType.DRAWABLE: "Drawable",
     AssetType.DRAWABLE_DICTIONARY: "Drawable Dictionary",

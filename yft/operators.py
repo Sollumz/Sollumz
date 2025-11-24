@@ -1,15 +1,19 @@
-from math import radians
 import bpy
 import bmesh
+import gpu
+import numpy as np
+from math import radians
 from mathutils import Matrix, Vector
 from itertools import chain
 
+from szio.gta5 import AssetFormat, AssetVersion, AssetTarget, FragVehicleWindow
 from ..tools.meshhelper import get_combined_bound_box
 from ..shared.geometry import get_mass_properties_of_box
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import BOUND_POLYGON_TYPES, BOUND_TYPES, MaterialType, SollumType, VehicleLightID
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, get_child_of_bone
 from ..ybn.collision_materials import collisionmats
+from ..dependencies import IS_SZIO_NATIVE_AVAILABLE
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
@@ -158,18 +162,20 @@ class SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
-    """
-    Set the vehicle light ID of the selected vertices (must be in edit mode). 
-    This determines which action causes the emissive shader to activate, and is stored in the alpha channel of the vertex colors
-    """
     bl_idname = "sollumz.setlightid"
     bl_label = "Set Light ID"
     bl_options = {"UNDO"}
+    bl_description = (
+        "Set the vehicle light ID of the selected vertices (must be in edit mode).\n\n"
+        "This determines which action causes the emissive shader to activate, and is stored in the alpha channel of "
+        "the vertex colors"
+    )
 
     @classmethod
     def poll(cls, context):
-        selected_mesh_objs = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+        cls.poll_message_set("Must be in Edit Mode > Face Selection")
+
+        selected_mesh_objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
 
         face_mode = context.scene.tool_settings.mesh_select_mode[2]
 
@@ -211,17 +217,16 @@ class SOLLUMZ_OT_SET_LIGHT_ID(bpy.types.Operator):
 
 
 class SOLLUMZ_OT_SELECT_LIGHT_ID(bpy.types.Operator):
-    """
-    Select vertices that have this light ID
-    """
+    """Select vertices that have this light ID"""
     bl_idname = "sollumz.selectlightid"
     bl_label = "Select Light ID"
     bl_options = {"UNDO"}
 
     @classmethod
     def poll(cls, context):
-        selected_mesh_objs = [
-            obj for obj in context.selected_objects if obj.type == "MESH"]
+        cls.poll_message_set("Must be in Edit Mode > Face Selection")
+
+        selected_mesh_objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
 
         face_mode = context.scene.tool_settings.mesh_select_mode[2]
 
@@ -425,3 +430,206 @@ class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
         for mat in obj.data.materials:
             if mat.sollum_type == MaterialType.COLLISION:
                 return mat
+
+
+class SOLLUMZ_OT_vehicle_preview_generated_windows(bpy.types.Operator):
+    bl_idname = "sollumz.vehicle_preview_generated_windows"
+    bl_label = "Preview Vehicle Windows"
+    bl_action = "Preview Vehicle Windows"
+    bl_description = "Preview the automatically generated window shattermaps for this vehicle"
+
+    @classmethod
+    def poll(cls, context):
+        if not IS_SZIO_NATIVE_AVAILABLE:
+            cls.poll_message_set(
+                "PyMateria is not available. Cannot automatically generate vehicle window shattermaps."
+            )
+            return False
+
+        obj = context.active_object
+        return obj is not None and find_sollumz_parent(obj, SollumType.FRAGMENT) is not None
+
+    def modal(self, context, event):
+        context.area.tag_redraw()
+
+        if event.type == "ESC":
+            bpy.types.SpaceView3D.draw_handler_remove(self._handle_px, "WINDOW")
+            bpy.types.SpaceView3D.draw_handler_remove(self._handle_view, "WINDOW")
+            return {"FINISHED"}
+
+        return {"PASS_THROUGH"}
+
+    def invoke(self, context, event):
+        if context.area.type == "VIEW_3D":
+            self._windows = self._generate_vehicle_windows(context)
+            self._aobj = find_sollumz_parent(context.active_object, SollumType.FRAGMENT)
+            self._handle_px = bpy.types.SpaceView3D.draw_handler_add(
+                self._draw_px, (context,), "WINDOW", "POST_PIXEL"
+            )
+            self._handle_view = bpy.types.SpaceView3D.draw_handler_add(
+                self._draw_view, (context,), "WINDOW", "POST_VIEW"
+            )
+
+            context.window_manager.modal_handler_add(self)
+            return {"RUNNING_MODAL"}
+        else:
+            self.report({"WARNING"}, "View3D not found, cannot run operator")
+            return {"CANCELLED"}
+
+    def _generate_vehicle_windows(
+        self, context
+    ) -> tuple[list[FragVehicleWindow], list[str], list[gpu.types.GPUTexture | None], list[gpu.types.GPUBatch | None]]:
+        obj = context.active_object
+        frag_obj = find_sollumz_parent(obj, SollumType.FRAGMENT)
+
+        from gpu_extras.batch import batch_for_shader
+        from ..tools.utils import multiply_homogeneous
+        from ..iecontext import export_context_scope, ExportContext, ExportSettings
+        from .yftexport_io import export_yft
+        with export_context_scope(ExportContext(frag_obj.name, ExportSettings((AssetTarget(AssetFormat.NATIVE, AssetVersion.GEN8),)))):
+            frag_bundle = export_yft(frag_obj)
+
+        if not frag_bundle:
+            self.report({"WARNING"}, "Found errors on fragment. Check Info Log for details.")
+            return {"CANCELLED"}
+
+        frag = frag_bundle.main_asset
+        vw: list[FragVehicleWindow] = frag.vehicle_windows
+        self.report({"INFO"}, f"Generated {len(vw)} windows!")
+
+        vw_bone_names = []
+        vw_textures = []
+        vw_batches = []
+        children = frag.physics.lod1.children
+        for w in vw:
+            child = children[w.component_id]
+            window_bone = None
+            for bone in frag_obj.data.bones:
+                if bone.bone_properties.tag != child.bone_tag:
+                    continue
+
+                window_bone = bone
+                break
+
+            vw_bone_names.append(window_bone.name)
+
+            shattermap = w.shattermap
+            height, width = shattermap.shape
+            if height != 0 and width != 0:
+                pixels = np.empty((height, width, 4), dtype=np.float32)
+                pixels[:, :, 0] = shattermap
+                pixels[:, :, 1] = shattermap
+                pixels[:, :, 2] = shattermap
+                pixels[:, :, 3] = 1.0  # shattermap != 0
+                pixels = gpu.types.Buffer("FLOAT", width * height * 4, pixels)
+
+                shattermap_tex = gpu.types.GPUTexture((width, height), format="RGBA32F", data=pixels)
+                vw_textures.append(shattermap_tex)
+
+                proj_mat = Matrix(w.basis)
+                proj_mat[3][3] = 1
+                proj_mat.transpose()
+                proj_mat.invert_safe()
+
+                vw_min = Vector((0, 0, 0))
+                vw_max = Vector((w.width, w.height, 1))
+
+                v0 = multiply_homogeneous(proj_mat, Vector((vw_min.x, vw_min.y, 0)))
+                v1 = multiply_homogeneous(proj_mat, Vector((vw_min.x, vw_max.y, 0)))
+                v2 = multiply_homogeneous(proj_mat, Vector((vw_max.x, vw_max.y, 0)))
+                v3 = multiply_homogeneous(proj_mat, Vector((vw_max.x, vw_min.y, 0)))
+
+                shader = gpu.shader.from_builtin("IMAGE")
+                batch = batch_for_shader(
+                    shader, "TRI_FAN",
+                    {
+                        "pos": (v0, v1, v2, v3),
+                        "texCoord": ((0, 1), (0, 0), (1, 0), (1, 1)),
+                    },
+                )
+                vw_batches.append(batch)
+            else:
+                vw_textures.append(None)
+                vw_batches.append(None)
+
+        # Sort by bone names
+        merge = list(zip(vw, vw_bone_names, vw_textures, vw_batches))
+        merge.sort(key=lambda x: x[1])
+        vw, vw_bone_names, vw_textures, vw_batches = map(list, zip(*merge))
+
+        return vw, vw_bone_names, vw_textures, vw_batches
+
+    def _draw_px(self, context):
+        import blf
+        from gpu_extras.presets import draw_texture_2d
+
+        vw, vw_bone_names, vw_textures, _ = self._windows
+
+        font_id = 0
+        font_size = 18.0
+
+        x = 25
+        xstart = x
+        blf.position(font_id, x, 15, 0)
+        blf.size(font_id, font_size)
+        blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
+        blf.draw(font_id, "Press Esc to stop preview.")
+
+        y = 40
+        ystart = y
+        ymax = y
+        xindent = 20
+        tex_scale = 1.5
+        for i, (name, tex) in enumerate(zip(vw_bone_names, vw_textures)):
+            blf.size(font_id, font_size)
+            _, h = blf.dimensions(font_id, name)
+            tex_height = tex.height if tex else 8
+            text_x = x + xindent
+            text_y = y + tex_height * tex_scale * 0.5 - h * 0.25
+            blf.position(font_id, text_x, text_y, 0)
+            blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
+            blf.draw(font_id, name)
+
+            if tex is not None:
+                draw_texture_2d(tex, (text_x + 125, y), tex.width * tex_scale, tex.height * tex_scale)
+            else:
+                # generated an empty shattermap which means it used the CAR_GLASS_BULLETPROOF collision material
+                blf.size(font_id, font_size - 4.0)
+                blf.position(font_id, text_x + 125, text_y, 0)
+                blf.color(font_id, 0.75, 0.75, 0.75, 1.0)
+                blf.draw(font_id, "BULLETPROOF")
+
+            y += tex_height * 1.5 + 10
+            ymax = max(ymax, y)
+            if ((i + 1) % 4) == 0:
+                y = ystart
+                x += 250
+
+        blf.position(font_id, xstart, ymax, 0)
+        blf.size(font_id, font_size)
+        blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
+        blf.draw(font_id, f"Generated {len(vw)} window(s):")
+
+    def _draw_view(self, context):
+
+        vw, _, vw_textures, vw_batches = self._windows
+
+        shader = gpu.shader.from_builtin("IMAGE")
+
+        old_depth_test, old_depth_mask = gpu.state.depth_test_get(), gpu.state.depth_mask_get()
+        gpu.state.depth_test_set("LESS_EQUAL")
+        gpu.state.depth_mask_set(True)
+
+        transform = self._aobj.matrix_world
+        with gpu.matrix.push_pop():
+            gpu.matrix.multiply_matrix(transform)
+            for w, tex, batch in zip(vw, vw_textures, vw_batches):
+                if tex is None or batch is None:
+                    continue
+
+                shader.bind()
+                shader.uniform_sampler("image", tex)
+                batch.draw(shader)
+
+        gpu.state.depth_test_set(old_depth_test)
+        gpu.state.depth_mask_set(old_depth_mask)

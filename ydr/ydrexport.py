@@ -13,7 +13,7 @@ from mathutils import Quaternion, Vector, Matrix
 from ..lods import operates_on_lod_level
 from .model_data import get_faces_subset
 
-from ..cwxml.drawable import (
+from szio.gta5.cwxml import (
     BoneLimit,
     Drawable,
     Texture,
@@ -30,7 +30,13 @@ from ..cwxml.drawable import (
     TextureShaderParameter,
     VertexBuffer,
 )
-from ..cwxml.cloth import CharacterCloth
+from szio.gta5.shader import (
+    ShaderManager,
+    ShaderDef,
+    ShaderParameterFloatVectorDef,
+    ShaderParameterType,
+)
+from szio.gta5.cwxml import CharacterCloth
 from ..tools import jenkhash
 from ..tools.meshhelper import (
     get_bound_center_from_bounds,
@@ -63,7 +69,6 @@ from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
 from .cloth_diagnostics import cloth_export_context
 from .lights import create_xml_lights
-from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterFloatVectorDef, ShaderParameterType
 
 from .. import logger
 
@@ -353,8 +358,9 @@ def create_geometries_xml(
     bones = armature_obj.data.bones if armature_obj is not None else None
     bone_by_vgroup = try_get_bone_by_vgroup(model_obj, armature_obj)
 
-    domain = VBBuilderDomain[get_export_settings().mesh_domain] if mesh_domain_override is None else mesh_domain_override
-    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain, materials, char_cloth_xml, bones)
+    domain = VBBuilderDomain[get_export_settings(
+    ).mesh_domain] if mesh_domain_override is None else mesh_domain_override
+    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain, materials, char_cloth_xml)
     total_vert_buffer = vb_builder.build()
     if domain == VBBuilderDomain.VERTEX:
         # bit dirty to use private data of the builder class, but we need this array here and it is already computed

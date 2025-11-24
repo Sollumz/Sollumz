@@ -1,4 +1,4 @@
-from .element import AttributeProperty, ElementTree, ListProperty, FlagsProperty
+from szio.xml import AttributeProperty, ElementTree, ListProperty, FlagsProperty
 
 
 class FlagPresetsFile(ElementTree):

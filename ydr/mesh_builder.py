@@ -71,8 +71,7 @@ class MeshBuilder:
     def create_mesh_materials(self, mesh: bpy.types.Mesh):
         drawable_mat_inds = np.unique(self.mat_inds)
         # Map drawable material indices to model material indices
-        model_mat_inds = np.zeros(
-            np.max(drawable_mat_inds) + 1, dtype=np.uint32)
+        model_mat_inds = np.zeros(np.max(drawable_mat_inds) + 1, dtype=np.uint32)
 
         for mat_ind in drawable_mat_inds:
             mesh.materials.append(self.materials[mat_ind])
@@ -80,8 +79,7 @@ class MeshBuilder:
 
         # Set material indices via attributes
         mesh.attributes.new("material_index", type="INT", domain="FACE")
-        mesh.attributes["material_index"].data.foreach_set(
-            "value", model_mat_inds[self.mat_inds])
+        mesh.attributes["material_index"].data.foreach_set("value", model_mat_inds[self.mat_inds])
 
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))

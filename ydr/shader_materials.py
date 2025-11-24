@@ -1,6 +1,6 @@
 from typing import Optional, NamedTuple
 import bpy
-from ..cwxml.shader import (
+from szio.gta5.shader import (
     ShaderManager,
     ShaderDef,
     ShaderParameterType,
@@ -1279,7 +1279,7 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
         raise AttributeError(f"Shader '{filename}' does not exist!")
 
     filename = shader.filename  # in case `filename` was hashed initially
-    base_name = ShaderManager.find_shader_base_name(filename)
+    base_name = shader.base_name
     material_name = filename.replace(".sps", "")
 
     if in_place_material and (in_place_material.use_nodes if bpy.app.version < (5, 0, 0) else True):

@@ -1,5 +1,5 @@
 # Sollumz
-Blender plugin to import, export, or create GTA V assets in the Codewalker XML format.
+Blender plugin to import, export, or create GTA V assets.
 
 By Skylumz, Colton Fox and alexguirre.
 
@@ -33,8 +33,8 @@ See the [wiki](https://docs.sollumz.org/) to get started. Make sure to read the 
   * Dynamic prop creation/editing
 
 ## Requirements ##
-  * Latest CodeWalker release from [their discord](https://discord.gg/codewalker)
   * [Blender 4.0 or newer](http://www.blender.org/download/)
+  * Recommended: latest CodeWalker release from [their discord](https://discord.gg/codewalker)
 
 ## Installation ##
 

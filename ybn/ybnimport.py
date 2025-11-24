@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 from .properties import CollisionMatFlags, set_collision_mat_raw_flags
-from ..cwxml.bound import (
+from szio.gta5.cwxml import (
     Bound,
     BoundFile,
     BoundComposite,
@@ -19,7 +19,7 @@ from ..cwxml.bound import (
     PolyTriangle,
     YBN,
     Polygon,
-    Material as ColMaterial
+    ColMaterial,
 )
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from .collision_materials import create_collision_material_from_index

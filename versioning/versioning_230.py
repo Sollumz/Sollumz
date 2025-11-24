@@ -14,7 +14,7 @@ from bpy.types import (
 )
 from typing import Optional, NamedTuple, Callable, Any
 from ..sollumz_properties import MaterialType
-from ..cwxml.shader import ShaderManager
+from szio.gta5 import ShaderManager
 from ..ydr.shader_materials import create_parameter_node
 from ..yft.properties import FragmentTemplateAsset
 

@@ -1,4 +1,4 @@
-from .element import ListProperty, AttributeProperty, ElementTree
+from szio.xml import ListProperty, AttributeProperty, ElementTree
 
 
 class ShaderPresetsFile(ElementTree):

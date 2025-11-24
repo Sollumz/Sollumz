@@ -1,7 +1,6 @@
 import bpy
 from typing import Optional
-from ..cwxml.drawable import DrawableDictionary
-from ..cwxml.cloth import ClothDictionary
+from szio.gta5.cwxml import DrawableDictionary, ClothDictionary
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
 from ..ydr.cloth_char import cloth_char_export_dictionary
 from ..ydr.cloth_diagnostics import (

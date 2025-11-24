@@ -9,7 +9,7 @@ from math import radians
 from ..sollumz_properties import SollumType, MaterialType
 from .utils import get_min_vector_list, get_max_vector_list
 from .blenderhelper import get_children_recursive
-from ..cwxml.shader import ShaderManager
+from szio.gta5 import ShaderManager
 
 
 def create_box_from_extents(mesh, bbmin, bbmax):

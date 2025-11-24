@@ -7,7 +7,7 @@ from bpy.types import (
 )
 from typing import NamedTuple, Optional
 from . import expr
-from ...cwxml.shader import (
+from szio.gta5.shader import (
     ShaderDef,
     ShaderParameterType,
     ShaderParameterSubtype,

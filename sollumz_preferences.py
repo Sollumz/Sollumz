@@ -19,88 +19,118 @@ from bpy.props import (
     FloatVectorProperty,
     FloatProperty,
 )
+from bpy_extras.io_utils import ImportHelper
 import rna_keymap_ui
 import os
+import sys
 import ast
 import textwrap
-from typing import Any
+from typing import Optional, Any, TYPE_CHECKING
 from configparser import ConfigParser
-from typing import Optional
-
-PREFS_FILE_NAME = "sollumz_prefs.ini"
+from pathlib import Path
+from .known_paths import prefs_file_path, config_directory_path, data_directory_path
+from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
+if TYPE_CHECKING:
+    from .iecontext import ImportSettings, ExportSettings
 
 
 def _save_preferences_on_update(self, context):
     _save_preferences()
 
 
-class SollumzExportSettings(PropertyGroup):
+def _on_update_thunk(self, context):
+    # Thunk to allow to override the callback
+    self._on_update(context)
+
+
+class ExportSettingsBase:
+    def _on_update(self, context):
+        ...
+
+    target_formats: bpy.props.EnumProperty(
+        name="Target Formats",
+        description="Formats to output during export",
+        items=(
+            (
+                "NATIVE", "Native",
+                "Binary resource format. The game's native format which can be used directly" +
+                ("" if IS_SZIO_NATIVE_AVAILABLE else ".\n\n" + PYMATERIA_REQUIRED_MSG),
+                1
+            ),
+            (
+                "CWXML", "CW XML",
+                "CodeWalker XML format. Human-readable text format but needs to be imported through CodeWalker before "
+                "it can be used by the game",
+                2
+            ),
+        ),
+        default={"NATIVE", "CWXML"},
+        options={"ENUM_FLAG"},
+        update=_on_update_thunk,
+    )
+
+    target_versions: bpy.props.EnumProperty(
+        name="Target Game Versions",
+        description=(
+            "Game versions to export for. If both are enabled, files are placed in separate 'gen8/' and 'gen9/' "
+            "subdirectories"
+        ),
+        items=(
+            ("GEN8", "Gen8", "GTAV Legacy", 1),
+            ("GEN9", "Gen9", "GTAV Enhanced", 2),
+        ),
+        default={"GEN8", "GEN9"},
+        options={"ENUM_FLAG"},
+        update=_on_update_thunk,
+    )
+
     limit_to_selected: BoolProperty(
         name="Limit to Selected",
         description="Export selected and visible objects only",
         default=True,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     exclude_skeleton: BoolProperty(
         name="Exclude Skeleton",
         description="Exclude skeleton from export. Usually done with mp ped components",
         default=False,
-        update=_save_preferences_on_update
-    )
-
-    export_with_ytyp: BoolProperty(
-        name="Export with ytyp",
-        description="Exports a .ytyp.xml with an archetype for every drawable or drawable dictionary being exported",
-        default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_exclude_entities: BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all Entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_box_occluders: BoolProperty(
         name="Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_model_occluders: BoolProperty(
         name="Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_car_generators: BoolProperty(
         name="Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
-    )
-
-    export_lods: EnumProperty(
-        name="Toggle LODs",
-        description="Toggle LODs to export",
-        options={"ENUM_FLAG"},
-        default=({"sollumz_export_very_high", "sollumz_export_main_lods"}),
-        items=(
-            ("sollumz_export_very_high", "Very High", "Export Very High LODs into a _hi.yft"),
-            ("sollumz_export_main_lods", "High - Very Low", "Export all LODs except Very High")
-        ),
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     apply_transforms: BoolProperty(
         name="Apply Parent Transforms",
         description="Apply Drawable/Fragment scale and rotation",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     mesh_domain: EnumProperty(
@@ -123,80 +153,100 @@ class SollumzExportSettings(PropertyGroup):
                 "normals is used."
             )
         ),
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
-    @property
-    def export_hi(self) -> bool:
-        return "sollumz_export_very_high" in self.export_lods
+    def to_export_context_settings(self) -> "ExportSettings":
+        import itertools
+        from .iecontext import ExportSettings, VBBuilderDomain
+        from szio.gta5 import is_provider_available, AssetFormat, AssetVersion, AssetTarget
+        return ExportSettings(
+            targets=tuple(
+                t
+                for format_id, version_id in itertools.product(self.target_formats, self.target_versions)
+                if is_provider_available(t := AssetTarget(AssetFormat[format_id], AssetVersion[version_id]))
+            ),
+            apply_transforms=self.apply_transforms,
+            exclude_skeleton=self.exclude_skeleton,
+            mesh_domain=VBBuilderDomain[self.mesh_domain],
+        )
 
-    @property
-    def export_non_hi(self) -> bool:
-        return "sollumz_export_main_lods" in self.export_lods
 
+class ImportSettingsBase:
+    def _on_update(self, context):
+        ...
 
-class SollumzImportSettings(PropertyGroup):
     import_as_asset: BoolProperty(
         name="Import To Asset Library",
         description="Imports the selected file as an asset to the current blend file asset library",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     split_by_group: BoolProperty(
         name="Split Mesh by Vertex Group",
         description="Splits the mesh by the vertex groups",
         default=True,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     import_ext_skeleton: BoolProperty(
         name="Import External Skeleton",
         description="Imports the first found yft skeleton in the same folder as the selected file",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
+    )
+
+    frag_import_vehicle_windows: BoolProperty(
+        name="Import Window Shattermaps",
+        description=(
+            "Import vehicle window shattermaps as objects in the scene. If not imported, shattermaps will be "
+            "automatically generated on export (recommended)"
+        ),
+        default=False,
+        update=_on_update_thunk,
     )
 
     ymap_skip_missing_entities: BoolProperty(
         name="Skip Missing Entities",
         description="If enabled, missing entities wont be created as an empty object",
         default=True,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_exclude_entities: BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_box_occluders: BoolProperty(
         name="Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_model_occluders: BoolProperty(
         name="Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_car_generators: BoolProperty(
         name="Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ymap_instance_entities: BoolProperty(
         name="Instance Entities",
         description="If enabled, instance all entities from the selected ymap(s)",
         default=False,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
 
     ytyp_mlo_instance_entities: BoolProperty(
@@ -206,8 +256,28 @@ class SollumzImportSettings(PropertyGroup):
             "the object itself"
         ),
         default=True,
-        update=_save_preferences_on_update
+        update=_on_update_thunk,
     )
+
+    def to_import_context_settings(self) -> "ImportSettings":
+        from .iecontext import ImportSettings
+        return ImportSettings(
+            import_as_asset=self.import_as_asset,
+            split_by_group=self.split_by_group,
+            mlo_instance_entities=self.ytyp_mlo_instance_entities,
+            import_external_skeleton=self.import_ext_skeleton,
+            frag_import_vehicle_windows=self.frag_import_vehicle_windows,
+        )
+
+
+class SollumzExportSettings(ExportSettingsBase, PropertyGroup):
+    def _on_update(self, context):
+        _save_preferences_on_update(self, context)
+
+
+class SollumzImportSettings(ImportSettingsBase, PropertyGroup):
+    def _on_update(self, context):
+        _save_preferences_on_update(self, context)
 
 
 class SollumzThemeSettings(PropertyGroup):
@@ -322,7 +392,6 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_remove(Operator):
     def execute(self, context):
         prefs = get_addon_preferences(context)
         prefs.shared_textures_directories.remove(prefs.shared_textures_directories_index)
-        context.scene.ytyps.remove(context.scene.ytyp_index)
         prefs.shared_textures_directories_index = max(prefs.shared_textures_directories_index - 1, 0)
         _save_preferences()
         return {"FINISHED"}
@@ -363,6 +432,107 @@ class SOLLUMZ_OT_prefs_shared_textures_directory_move_down(Operator):
         indexB = prefs.shared_textures_directories_index + 1
         prefs.swap_shared_textures_directories(indexA, indexB)
         prefs.shared_textures_directories_index += 1
+        return {"FINISHED"}
+
+
+def _update_name_tables():
+    import szio.gta5.jenkhash
+
+    nt_paths = [nt.path for nt in get_addon_preferences().name_table_paths]
+    cache_path = Path(data_directory_path()) / "nametable.cache"
+    szio.gta5.jenkhash.load_name_tables(nt_paths, cache_path)
+
+
+def _on_update_name_tables(self, context):
+    _save_preferences_on_update(self, context)
+    _update_name_tables()
+
+
+class SzNameTablePath(PropertyGroup):
+    path: StringProperty(
+        name="Path",
+        description="Path to a name table file",
+        subtype="FILE_PATH",
+        update=_on_update_name_tables,
+    )
+
+    # NOTE: this is here for forward compatibility to avoid breaking the preferences .ini, we will probably need to
+    #       split the name tables for different contexts (e.g. GTA5, RDR2, drawable dictionaries) at some point. For
+    #       now, they are all added to the same dictionary so default to GLOBAL.
+    category: EnumProperty(
+        items=(
+            ("GLOBAL", "Global", "", "", 0),
+        ),
+        default="GLOBAL",
+    )
+
+
+class SOLLUMZ_UL_prefs_name_table_paths(UIList):
+    bl_idname = "SOLLUMZ_UL_prefs_name_table_paths"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "path", text="", emboss=False)
+
+
+class SOLLUMZ_OT_prefs_name_table_path_add(Operator, ImportHelper):
+    bl_idname = "sollumz.prefs_name_table_path_add"
+    bl_label = "Add Name Tables"
+    bl_description = "Add new name tables"
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
+    files: bpy.props.CollectionProperty(
+        name="File Path",
+        type=bpy.types.OperatorFileListElement,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
+
+    filter_glob: bpy.props.StringProperty(
+        default="".join(f"*{ext};" for ext in (".txt", ".nametable")),
+        options={"HIDDEN", "SKIP_SAVE"},
+        maxlen=255,
+    )
+
+    def execute(self, context):
+        if not self.directory or len(self.files) == 0 or self.files[0].name == "":
+            # logger.info("No file selected for import!")
+            return {"CANCELLED"}
+
+        self.directory = bpy.path.abspath(self.directory)
+
+        from pathlib import Path
+        filenames = [f.name for f in self.files]
+        directory = Path(self.directory)
+        for filename in filenames:
+            filepath = (directory / filename).absolute()
+
+            prefs = get_addon_preferences(context)
+            d = prefs.name_table_paths.add()
+            d.path = str(filepath)
+
+        prefs.name_table_paths_index = len(prefs.name_table_paths) - 1
+        _save_preferences()
+        _update_name_tables()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_name_table_path_remove(Operator):
+    bl_idname = "sollumz.prefs_name_table_path_remove"
+    bl_label = "Remove Name Table Path"
+    bl_description = "Remove the selected name table"
+
+    @classmethod
+    def poll(cls, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.name_table_paths_index < len(prefs.name_table_paths)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.name_table_paths.remove(prefs.name_table_paths_index)
+        prefs.name_table_paths_index = max(prefs.name_table_paths_index - 1, 0)
+        _save_preferences()
+        _update_name_tables()
         return {"FINISHED"}
 
 
@@ -470,6 +640,15 @@ class SollumzAddonPreferences(AddonPreferences):
         min=0
     )
 
+    name_table_paths: CollectionProperty(
+        name="Name Tables",
+        type=SzNameTablePath,
+    )
+    name_table_paths_index: IntProperty(
+        name="Selected Name Table",
+        min=0
+    )
+
     favorite_shaders: CollectionProperty(
         name="Favorite Shaders",
         type=SzFavoriteEntry,
@@ -497,6 +676,22 @@ class SollumzAddonPreferences(AddonPreferences):
         ),
         subtype="FILE_PATH",
         update=_on_custom_procids_path_update,
+    )
+
+    legacy_import_export: BoolProperty(
+        name="Legacy Import/Export",
+        description=(
+            "Use the legacy import/export system, which only supports CodeWalker XML format. "
+            "Enable this option only if you experience issues or errors with the new import/export system "
+            "with binary resource formats support"
+        ),
+        default=False,
+        update=_save_preferences_on_update
+    )
+
+    popup_shown_install_dependencies: BoolProperty(
+        default=False,
+        update=_save_preferences_on_update
     )
 
     export_settings: PointerProperty(type=SollumzExportSettings, name="Export Settings")
@@ -615,6 +810,12 @@ class SollumzAddonPreferences(AddonPreferences):
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()
         layout.label(text="Shared Textures")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "Additional directories to search for textures when importing models. When a texture is not found in the "
+            "model's directory, these directories are searched in order for matching .dds files by name."
+        )
         _, side_col = draw_list_with_add_remove(
             layout,
             SOLLUMZ_OT_prefs_shared_textures_directory_add.bl_idname,
@@ -628,6 +829,24 @@ class SollumzAddonPreferences(AddonPreferences):
         subcol = side_col.column(align=True)
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_up.bl_idname, text="", icon="TRIA_UP")
         subcol.operator(SOLLUMZ_OT_prefs_shared_textures_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
+
+        layout.separator()
+        layout.label(text="Name Tables")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "Used to resolve hashed names. Accepts files where the names are separated by either "
+            "newlines (one name per line, .txt) or null characters (.nametable)."
+        )
+        draw_list_with_add_remove(
+            layout,
+            SOLLUMZ_OT_prefs_name_table_path_add.bl_idname,
+            SOLLUMZ_OT_prefs_name_table_path_remove.bl_idname,
+            SOLLUMZ_UL_prefs_name_table_paths.bl_idname, "",
+            self, "name_table_paths",
+            self, "name_table_paths_index",
+            rows=4
+        )
 
         layout.separator()
         if bpy.app.version >= (4, 1, 0):
@@ -648,13 +867,21 @@ class SollumzAddonPreferences(AddonPreferences):
             row.label(text="", icon="BLANK1")
             row.label(text=text, icon="BLANK1")
 
+        sublayout = layout
+        width = context.region.width
+        ui_scale = context.preferences.system.ui_scale
+        use_two_column_layout = width > (800 * ui_scale)
+        if use_two_column_layout:
+            sublayout = layout.split(factor=0.5)
+
         # Import settings
-        box = layout.box()
+        box = sublayout.box()
         box.label(text="Import", icon="IMPORT")
         settings = self.import_settings
         box.prop(settings, "import_as_asset")
         _section_header(box, text="Fragment")
         box.prop(settings, "split_by_group")
+        box.prop(settings, "frag_import_vehicle_windows")
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "import_ext_skeleton")  # Drawable Dictionary
 
@@ -670,20 +897,42 @@ class SollumzAddonPreferences(AddonPreferences):
         box.prop(settings, "ymap_car_generators")
 
         # Export settings
-        box = layout.box()
+        box = sublayout.box()
         box.label(text="Export", icon="EXPORT")
         settings = self.export_settings
+
+        if not self.legacy_import_export:
+            from szio.gta5 import AssetFormat, is_provider_available
+            row = box.row(align=True)
+            row.use_property_split = False
+            row.use_property_decorate = False
+            split = row.split(factor=0.4, align=True)
+            subrow = split.row(align=False)
+            subrow.alignment = "RIGHT"
+            subrow.label(text="Formats")
+            subrow = split.row(align=True)
+            for f in ("NATIVE", "CWXML"):
+                subsubrow = subrow.row(align=True)
+                subsubrow.enabled = is_provider_available(AssetFormat[f])
+                subsubrow.prop_enum(settings, "target_formats", f)
+
+            row = box.row(align=True)
+            row.use_property_split = False
+            row.use_property_decorate = False
+            split = row.split(factor=0.4, align=True)
+            subrow = split.row(align=False)
+            subrow.alignment = "RIGHT"
+            subrow.label(text="Versions")
+            subrow = split.row(align=True)
+            for f in ("GEN8", "GEN9"):
+                subrow.prop_enum(settings, "target_versions", f)
 
         row = box.row(heading="Limit To")
         row.prop(settings, "limit_to_selected", text="Selected Objects")
 
         _section_header(box, "Drawable")
         box.prop(settings, "apply_transforms")
-        box.prop(settings, "export_with_ytyp")
         box.prop(settings, "mesh_domain", expand=True)
-
-        _section_header(box, "Fragment")
-        box.column().prop(settings, "export_lods")
 
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "exclude_skeleton")
@@ -693,6 +942,9 @@ class SollumzAddonPreferences(AddonPreferences):
         box.prop(settings, "ymap_box_occluders")
         box.prop(settings, "ymap_model_occluders")
         box.prop(settings, "ymap_car_generators")
+
+        _line_separator(layout, factor=3.0)
+        layout.prop(self, "legacy_import_export")
 
     def draw_keymap(self, context, layout: UILayout):
         wm = bpy.context.window_manager
@@ -832,7 +1084,16 @@ class SollumzAddonPreferences(AddonPreferences):
 
         layout.separator()
 
-        pass
+    def _draw_help_text(self, context, layout: UILayout, text: str, width_percent: float = 0.95, dim: bool = True):
+        chars = int(context.region.width * width_percent / 7)   # 7 pix on 1 character, width_percent for margins
+        col = layout.column()
+        col.active = False if dim else True
+        col.scale_y = 0.65
+        for text_line in text.splitlines():
+            first_indent = len(text_line) - len(text_line.lstrip(" "))
+            wrapper = textwrap.TextWrapper(width=chars, subsequent_indent=" " * first_indent)
+            for wrapped_text_line in wrapper.wrap(text=text_line):
+                col.label(text=wrapped_text_line)
 
     def register():
         _load_preferences()
@@ -850,10 +1111,14 @@ def get_addon_preferences(context: Optional[bpy.types.Context] = None) -> Sollum
 
 
 def get_import_settings(context: Optional[bpy.types.Context] = None) -> SollumzImportSettings:
+    """Get import user preferences. Import code should use `import_context().settings` instead of accessing the
+    preferences directly (user scripts can override these settings)."""
     return get_addon_preferences(context).import_settings
 
 
 def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzExportSettings:
+    """Get export user preferences. Export code should use `export_context().settings` instead of accessing the
+    preferences directly (user scripts can override these settings)."""
     return get_addon_preferences(context).export_settings
 
 
@@ -983,15 +1248,18 @@ def _update_bpy_struct_from_tuple(struct: bpy_struct, values: tuple | object):
 
 
 def get_prefs_path():
-    return os.path.join(bpy.utils.user_resource(resource_type="CONFIG"), PREFS_FILE_NAME)
+    """Deprecated, use `known_paths.prefs_file_path` instead."""
+    return prefs_file_path()
 
 
 def get_config_directory_path() -> str:
-    return bpy.utils.user_resource(resource_type="CONFIG", path="sollumz", create=True)
+    """Deprecated, use `known_paths.config_directory_path` instead."""
+    return config_directory_path()
 
 
 def register():
     bpy.utils.register_class(SollumzAddonPreferences)
+    _update_name_tables()
 
 
 def unregister():

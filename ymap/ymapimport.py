@@ -7,7 +7,11 @@ from ..sollumz_helper import duplicate_object_with_children, set_object_collecti
 from ..tools.ymaphelper import add_occluder_material, get_cargen_mesh
 from ..sollumz_properties import SollumType
 from ..sollumz_preferences import get_import_settings
-from ..cwxml.ymap import CMapData, OccludeModel, YMAP
+from szio.gta5.cwxml import (
+    CMapData,
+    OccludeModel,
+    YMAP,
+)
 from ..tools.blenderhelper import create_blender_object, create_empty_object
 from ..tools.meshhelper import create_box
 from .. import logger

@@ -6,7 +6,13 @@ from typing import NamedTuple, Tuple
 
 from ..tools.drawablehelper import get_model_xmls_by_lod
 from ..sollumz_properties import LODLevel
-from ..cwxml.drawable import Bone, Drawable, DrawableModel, Geometry, VertexBuffer
+from szio.gta5.cwxml import (
+    Bone,
+    Drawable,
+    DrawableModel,
+    Geometry,
+    VertexBuffer,
+)
 
 
 class MeshData(NamedTuple):

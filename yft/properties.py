@@ -29,6 +29,9 @@ from ..ydr.shader_materials import (
     VEHICLE_PREVIEW_NODE_BODY_COLOR,
     VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE,
 )
+from szio.gta5 import (
+    FragmentTemplateAsset,
+)
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -468,15 +471,6 @@ class ClothProperties(bpy.types.PropertyGroup):
             "to determine the current cloth direction"
         )
     )
-
-
-class FragmentTemplateAsset(IntEnum):
-    NONE = 0xFF
-    FRED = 0
-    WILMA = 1
-    FRED_LARGE = 2
-    WILMA_LARGE = 3
-    ALIEN = 4
 
 
 FragmentTemplateAssetEnumItems = tuple((enum.name, label, desc, enum.value) for enum, label, desc in (

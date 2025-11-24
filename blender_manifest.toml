@@ -17,6 +17,7 @@ license = ["SPDX:GPL-3.0-or-later"]
 copyright = ["2020-2025 Skylumz, Colton and alexguirre"]
 
 [permissions]
-files = "Import/export CodeWalker XML files. Save/load presets."
+files = "Import/export RAGE asset files. Save/load presets."
 clipboard = "Copy/paste location and rotation of objects."
+network = "Install dependencies."
 

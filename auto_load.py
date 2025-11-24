@@ -6,7 +6,6 @@ import importlib
 from pathlib import Path
 
 __all__ = (
-    "init",
     "register",
     "unregister",
 )
@@ -15,15 +14,11 @@ modules = None
 ordered_classes = None
 
 
-def init():
-    global modules
-    global ordered_classes
-
+def register():
+    global modules, ordered_classes
     modules = get_all_submodules(Path(__file__).parent, __package__)
     ordered_classes = get_ordered_classes_to_register(modules)
 
-
-def register():
     for cls in ordered_classes:
         bpy.utils.register_class(cls)
 
@@ -63,6 +58,11 @@ def iter_submodules(path, package_name):
 
 def iter_submodule_names(path, root=""):
     for _, module_name, is_package in pkgutil.iter_modules([str(path)]):
+        if module_name == "io":
+            # io can be lazy loaded, there is no blender register/unregister stuff in this package
+            # Also io/gta5/native modules shouldn't be loaded if pymateria is not installed
+            continue
+
         yield root + module_name
         if is_package:
             if module_name == "tests":

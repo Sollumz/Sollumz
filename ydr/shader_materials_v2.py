@@ -1,15 +1,9 @@
 from typing import Optional, NamedTuple
 import bpy
-from ..cwxml.shader import (
+from szio.gta5.shader import (
     ShaderManager,
     ShaderDef,
     ShaderParameterType,
-    ShaderParameterSubtype,
-    ShaderParameterFloatDef,
-    ShaderParameterFloat2Def,
-    ShaderParameterFloat3Def,
-    ShaderParameterFloat4Def,
-    ShaderParameterFloat4x4Def,
 )
 from ..sollumz_properties import MaterialType
 from .render_bucket import RenderBucket
@@ -360,7 +354,7 @@ def create_shader(filename: str):
         raise AttributeError(f"Shader '{filename}' does not exist!")
 
     filename = shader.filename  # in case `filename` was hashed initially
-    base_name = ShaderManager.find_shader_base_name(filename)
+    base_name = shader.base_name
 
     shader_expr = get_shader_expr(shader)
     mat = compile_to_material(filename.replace(".sps", ""), shader_expr, shader_def=shader)

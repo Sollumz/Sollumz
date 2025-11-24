@@ -13,17 +13,26 @@ from ..tools.meshhelper import (
     get_color_attr_name,
     get_uv_map_name,
 )
-from ..cwxml.drawable import VertexBuffer
-from ..cwxml.cloth import CharacterCloth
-from ..cwxml.shader import ShaderManager
-from .cloth_char import (
+from szio.gta5 import (
+    ShaderManager,
+    STANDARD_VERTEX_ATTR_DTYPES,
+    CharacterCloth as IOCharacterCloth,
+)
+from szio.gta5.cwxml import (
+    CharacterCloth as CWXMLCharacterCloth,
+)
+from .cloth_char_io import (
     CLOTH_CHAR_VERTEX_GROUP_NAME,
     cloth_char_get_mesh_to_cloth_bindings,
+)
+from .cloth_char import (
+    cloth_char_get_mesh_to_cloth_bindings as legacy_cloth_char_get_mesh_to_cloth_bindings,
 )
 from .cloth_diagnostics import (
     ClothDiagMeshMaterialError,
     cloth_export_context,
 )
+from .vertex_buffer_builder_domain import VBBuilderDomain
 
 from .. import logger
 
@@ -136,16 +145,6 @@ def get_sorted_vertex_group_elements(vertex: bpy.types.MeshVertex, bone_by_vgrou
     return elements
 
 
-class VBBuilderDomain(Enum):
-    FACE_CORNER = auto()
-    """Mesh is exported allowing each face corner to have their own set of attributes."""
-    VERTEX = auto()
-    """Mesh is exported only allowing a single set of attributes per vertex. If face corners attached to the vertex
-    have different attributes (vertex colors, UVs, etc.), only the attributes of one of the face corners is used. In the
-    case of normals, the average of the face corner normals is used.
-    """
-
-
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
 
@@ -155,8 +154,7 @@ class VertexBufferBuilder:
         bone_by_vgroup: Optional[dict[int, int]] = None,
         domain: VBBuilderDomain = VBBuilderDomain.FACE_CORNER,
         materials: Optional[list[bpy.types.Material]] = None,
-        char_cloth_xml: Optional[CharacterCloth] = None,
-        bones: Optional[list[bpy.types.Bone]] = None,
+        char_cloth: IOCharacterCloth | CWXMLCharacterCloth | None = None,  # legacy export still passes cwxml instance directly
     ):
         self.mesh = mesh
         self.domain = domain
@@ -179,8 +177,7 @@ class VertexBufferBuilder:
             self._vert_to_loops = None
             self._vert_to_first_loop = None
 
-        self._char_cloth = char_cloth_xml
-        self._bones = bones
+        self._char_cloth = char_cloth
 
     def build(self):
         if not self.mesh.loop_triangles:
@@ -220,7 +217,7 @@ class VertexBufferBuilder:
     def _structured_array_from_attrs(self, mesh_attrs: dict[str, NDArray]):
         """Combine ``mesh_attrs`` into single structured array."""
         # Data type for vertex data structured array
-        struct_dtype = [VertexBuffer.VERT_ATTR_DTYPES[attr_name] for attr_name in mesh_attrs]
+        struct_dtype = [STANDARD_VERTEX_ATTR_DTYPES[attr_name] for attr_name in mesh_attrs]
 
         if self.domain == VBBuilderDomain.FACE_CORNER:
             vertex_arr = np.empty(len(self.mesh.loops), dtype=struct_dtype)
@@ -302,7 +299,13 @@ class VertexBufferBuilder:
         weights_arr = self._convert_to_int_range(weights_arr)
         weights_arr = self._renormalize_converted_weights(weights_arr)
 
-        if cloth_bind_verts:
+        if cloth_bind_verts and not self._char_cloth:
+            logger.warning(
+                f"Mesh '{self.mesh.name}' has {len(cloth_bind_verts)} vertices weighted to {CLOTH_CHAR_VERTEX_GROUP_NAME} "
+                f"vertex group but this is not a character cloth! These vertices will not be weighted correctly in-game. "
+                f"Remove {CLOTH_CHAR_VERTEX_GROUP_NAME} vertex group if making a character cloth is not intended."
+            )
+        elif cloth_bind_verts and self._char_cloth:
             cloth_bind_verts_mask = np.zeros(num_verts, dtype=bool)
             cloth_bind_verts_mask[cloth_bind_verts] = 1
 
@@ -362,9 +365,17 @@ class VertexBufferBuilder:
 
             cloth_bind_verts_pos = mesh_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
             cloth_bind_verts_normal = mesh_verts_normal.reshape((num_verts, 3))[cloth_bind_verts_mask]
-            cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
-                self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
-            )
+
+            if isinstance(self._char_cloth, IOCharacterCloth):
+                cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
+                    self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
+                )
+            else:
+                assert isinstance(self._char_cloth, CWXMLCharacterCloth)
+                cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = legacy_cloth_char_get_mesh_to_cloth_bindings(
+                    self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
+                )
+
             if cloth_bind_errors:
                 n = len(cloth_bind_errors)
                 logger.error(

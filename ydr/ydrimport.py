@@ -9,8 +9,19 @@ from .shader_materials import create_shader, get_detail_extra_sampler, create_ti
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_addon_preferences, get_import_settings
-from ..cwxml.drawable import YDR, BoneLimit, Joints, Shader, ShaderGroup, Drawable, Bone, Skeleton, RotationLimit, DrawableModel
-from ..cwxml.bound import Bound
+from szio.gta5.cwxml import (
+    YDR,
+    BoneLimit,
+    Joints,
+    Shader,
+    ShaderGroup,
+    Drawable,
+    Bone,
+    Skeleton,
+    RotationLimit,
+    DrawableModel,
+    Bound,
+)
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..tools.utils import get_filename
 from ..shared.shader_nodes import SzShaderNodeParameter
@@ -532,8 +543,6 @@ def convert_object_to_asset(name: str, obj: bpy.types.Object) -> bpy.types.Objec
     joined_obj = join_objects(model_objs)
     joined_transform = joined_obj.matrix_world.copy()
     joined_obj.parent = None
-    joined_obj.name = name
-    joined_obj.data.name = f"{name}.mesh"
 
     # Fix origin of the drawable, the joined object ends up with the origin of the first model selected, which does not
     # always have the same origin as the drawable itself
@@ -555,6 +564,8 @@ def convert_object_to_asset(name: str, obj: bpy.types.Object) -> bpy.types.Objec
     for other_obj in other_objs:
         bpy.data.objects.remove(other_obj)
 
+    joined_obj.name = name
+    joined_obj.data.name = f"{name}.mesh"
     joined_obj.asset_mark()
     joined_obj.asset_generate_preview()
 

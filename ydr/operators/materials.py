@@ -9,7 +9,14 @@ from bpy.props import (
     IntProperty,
     BoolProperty,
 )
-from ...cwxml.shader_preset import ShaderPreset, ShaderPresetParam
+from ..shader_preset import ShaderPreset, ShaderPresetParam
+from szio.gta5.shader import (
+    ShaderParameterFloatVectorDef,
+    ShaderParameterTextureDef,
+    ShaderParameterDef,
+    ShaderParameterType,
+    ShaderManager,
+)
 from ...sollumz_helper import SOLLUMZ_OT_base
 from ...sollumz_properties import MaterialType
 from ...tools.blenderhelper import tag_redraw
@@ -20,13 +27,6 @@ from ...tools.meshhelper import (
     mesh_rename_color_attrs_by_order,
 )
 from ...shared.shader_nodes import SzShaderNodeParameter
-from ...cwxml.shader import (
-    ShaderParameterFloatVectorDef,
-    ShaderParameterTextureDef,
-    ShaderParameterDef,
-    ShaderParameterType,
-    ShaderManager,
-)
 from ..properties import get_shader_presets_path, load_shader_presets, shader_presets
 from ..shader_materials import (
     create_shader,
@@ -104,8 +104,9 @@ def shader_preset_apply_to_material(material: Material, preset: ShaderPreset, ap
             # Try to get a loaded image...
             img = bpy.data.images.get(param.texture, None) or bpy.data.images.get(f"{param.texture}.dds", None)
             if not img:
+
                 # Otherwise, search in the shared textures directories
-                from ..ydrimport import lookup_texture_file, is_non_color_texture
+                from ..ydrimport_io import lookup_texture_file, is_non_color_texture
                 texture_path = lookup_texture_file(param.texture, None)
                 img = texture_path and bpy.data.images.load(str(texture_path), check_existing=True)
                 if img and is_non_color_texture(shader_def.filename, param.name):

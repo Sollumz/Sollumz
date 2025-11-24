@@ -15,6 +15,7 @@ from ..sollumz_properties import (
 )
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_ui import FlagsPanel
+from ..icons import icon
 from .properties import (
     GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
     GroupFlagBit,
@@ -22,7 +23,9 @@ from .properties import (
 )
 from .operators import (
     SOLLUMZ_OT_CREATE_FRAGMENT, SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS, SOLLUMZ_OT_SET_MASS, SOLLUMZ_OT_SET_LIGHT_ID,
-    SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS
+    SOLLUMZ_OT_SELECT_LIGHT_ID, SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS,
+    SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES,
+    SOLLUMZ_OT_vehicle_preview_generated_windows,
 )
 
 
@@ -72,11 +75,6 @@ class SOLLUMZ_PT_FRAGMENT_CREATE_PANEL(FragmentToolChildPanel, bpy.types.Panel):
         row.prop(context.scene, "create_bones_fragment")
         row.prop(context.scene, "create_bones_parent_to_selected")
 
-        layout.separator()
-        layout.label(text="Wheel Instances")
-        layout.operator("sollumz.generate_wheel_instances",
-                        icon="OUTLINER_OB_GROUP_INSTANCE")
-
 
 class SOLLUMZ_PT_FRAGMENT_SET_MASS_PANEL(FragmentToolChildPanel, bpy.types.Panel):
     bl_label = "Set Mass"
@@ -108,19 +106,26 @@ class SOLLUMZ_PT_FRAGMENT_COPY_BONE_PHYSICS_PANEL(FragmentToolChildPanel, bpy.ty
         row.operator(SOLLUMZ_OT_COPY_FRAG_BONE_PHYSICS.bl_idname, icon="BONE_DATA")
 
 
-class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
-    bl_label = "Vehicle Light IDs"
-    bl_idname = "SOLLUMZ_PT_LIGHT_ID_PANEL"
+class SOLLUMZ_PT_VEHICLE_TOOLS_PANEL(FragmentToolChildPanel, bpy.types.Panel):
+    bl_label = "Vehicle Tools"
+    bl_idname = "SOLLUMZ_PT_VEHICLE_TOOLS_PANEL"
     bl_order = 3
 
     def draw_header(self, context):
-        self.layout.label(text="", icon="OUTLINER_OB_LIGHT")
+        self.layout.label(text="", icon_value=icon("vehicle_tools"))
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_decorate = False
         layout.use_property_split = True
 
+        layout.operator(SOLLUMZ_OT_vehicle_preview_generated_windows.bl_idname, text="Preview Windows", icon="VIEWZOOM")
+        layout.operator(SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES.bl_idname,
+                        text="Preview Wheel Instances", icon_value=icon("wheel"))
+
+        layout.separator()
+
+        layout.label(text="Light IDs", icon="OUTLINER_OB_LIGHT")
         row = layout.row(align=True)
         row.operator(SOLLUMZ_OT_SET_LIGHT_ID.bl_idname, icon="OUTLINER_OB_LIGHT")
         row.prop(context.scene, "set_vehicle_light_id", text="")
@@ -139,11 +144,9 @@ class SOLLUMZ_PT_LIGHT_ID_PANEL(FragmentToolChildPanel, bpy.types.Panel):
             layout.separator()
 
         face_mode = context.scene.tool_settings.mesh_select_mode[2]
-        light_id = context.scene.selected_vehicle_light_id
 
-        layout.separator()
-
-        if face_mode:
+        if context.mode == "EDIT_MESH" and face_mode:
+            light_id = context.scene.selected_vehicle_light_id
             if light_id == -1:
                 light_id = "N/A"
             elif 0 <= light_id <= 17:
@@ -463,11 +466,11 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
-    bl_label = "Vehicle Window"
+    bl_label = "Manual Shattermap"
     bl_idname = "SOLLUMZ_PT_VEHICLE_WINDOW_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_options = {"HIDE_HEADER"}
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_PHYSICS_CHILD_PANEL.bl_idname
 
     @classmethod

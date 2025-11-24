@@ -98,7 +98,7 @@ def add_new_default_light_preset():
     """
     import os
     from ..ydr.properties import get_light_presets_path, get_default_light_presets_path, load_light_presets
-    from ..cwxml.light_preset import LightPresetsFile
+    from ..ydr.light_preset import LightPresetsFile
 
     user_path = get_light_presets_path()
     if not os.path.exists(user_path):

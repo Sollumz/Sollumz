@@ -10,7 +10,7 @@ from mathutils import (
     Vector,
     Matrix,
 )
-from ..cwxml.cloth import (
+from szio.gta5.cwxml import (
     CharacterCloth,
     CharacterClothBinding,
     ClothDictionary,
@@ -417,6 +417,20 @@ def cloth_char_get_mesh_to_cloth_bindings(
     mesh_binded_verts: NDArray[np.float32],
     mesh_binded_verts_normals: NDArray[np.float32],
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
+    return _cloth_char_get_mesh_to_cloth_bindings_impl(
+        cloth.controller.vertices,
+        cloth.controller.indices,
+        mesh_binded_verts,
+        mesh_binded_verts_normals,
+    )
+
+
+def _cloth_char_get_mesh_to_cloth_bindings_impl(
+    cloth_vertices: list[Vector],
+    cloth_indices: list[int],
+    mesh_binded_verts: NDArray[np.float32],
+    mesh_binded_verts_normals: NDArray[np.float32],
+) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
     # Max distance from mesh vertex to cloth triangle to be considered
     MAX_DISTANCE_THRESHOLD = 0.05
 
@@ -424,8 +438,8 @@ def cloth_char_get_mesh_to_cloth_bindings(
 
     num_binded_verts = len(mesh_binded_verts)
 
-    cloth_verts = np.array(cloth.controller.vertices)
-    cloth_tris = np.array(cloth.controller.indices).reshape((-1, 3))
+    cloth_verts = np.array(cloth_vertices)
+    cloth_tris = np.array(cloth_indices).reshape((-1, 3))
     cloth_tris_verts = cloth_verts[cloth_tris]
     cloth_tris_normals = tris_normals(cloth_tris_verts)
     cloth_tris_normals_neg = -cloth_tris_normals
@@ -438,7 +452,7 @@ def cloth_char_get_mesh_to_cloth_bindings(
     # tube), so when the verts are flattened it will be kind of a circle around the origin. This probably won't work
     # well if the cloth is placed more like a horizontal tube (on an animal maybe?). Will need more complex logic or
     # some user input to handle that, we ignore it for now.
-    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals[:,:2] * -mesh_binded_verts[:,:2], axis=1)
+    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals[:, :2] * -mesh_binded_verts[:, :2], axis=1)
     mesh_binded_verts_facing_inside = mesh_binded_dot_product > 0.0
 
     ind_arr = np.empty((num_binded_verts, 4), dtype=np.uint32)

@@ -30,10 +30,10 @@ def reload_sollumz_modules():
     print("Reloading Sollumz modules")
 
     # Remove the packages imported in this module from the scope, so they are loaded again when imported below
-    global auto_load, sollumz_tool, sollumz_debug, bpy
-    del sollumz_tool
+    global sollumz_debug, auto_load, dependencies, bpy
     del sollumz_debug
     del auto_load
+    del dependencies
     del bpy
 
     # Remove from `sys.modules` all Sollumz modules, so they are loaded again by auto_load
@@ -44,38 +44,61 @@ def reload_sollumz_modules():
             del sys.modules[name]
 
 
-if "auto_load" in locals():
+if "bpy" in locals():
     # If an imported name already exists before imports, it means that the addon has been reloaded by Blender.
     # Blender only reloads the main __init__.py file, so we reload all our modules now.
     reload_sollumz_modules()
 
 
-# These need to be here, not at the top of the file, to handle reload
-from . import sollumz_tool  # noqa: E402, F811
-from . import sollumz_debug  # noqa: E402, F811
-from . import auto_load  # noqa: E402, F811
+# Imports need to be here, not at the top of the file, to handle reload
 import bpy  # noqa: E402, F811
 
+from . import sollumz_debug  # noqa: E402, F811
+from . import auto_load  # noqa: E402, F811
+from . import dependencies  # noqa: E402, F811
 
 sollumz_debug.init_debug()  # first in case we need to debug initialization code
-auto_load.init()
 
 
 def register():
     check_blender_version()
     check_single_sollumz_instance()
 
-    auto_load.register()
+    dependencies.mount_dependencies()
+    dependencies.register_minimal()
 
-    # WorkSpaceTools need to be registered after normal modules so the keymaps
-    # detect the registed operators
-    sollumz_tool.register_tools()
+    if dependencies.has_required_dependencies():
+        # Setup szio library
+        import mathutils
+        import szio.types
+        szio.types.use_math_types(mathutils.Vector, mathutils.Quaternion, mathutils.Matrix)
+
+        import logging
+        from . import logger
+        szio_logger = logging.getLogger("szio")
+        while szio_logger.handlers:
+            szio_logger.removeHandler(szio_logger.handlers[0])
+        szio_logger.addHandler(logger.LoggingHandlerRedirectToSollumzLogger())
+        szio_logger.setLevel(logging.INFO)
+
+        # Initialize all sollumz modules
+        auto_load.register()
+
+        # WorkSpaceTools need to be registered after normal modules so the keymaps
+        # detect the registered operators
+        from . import sollumz_tool
+        sollumz_tool.register_tools()
 
 
 def unregister():
-    sollumz_tool.unregister_tools()
+    if dependencies.has_required_dependencies():
+        from . import sollumz_tool
+        sollumz_tool.unregister_tools()
 
-    auto_load.unregister()
+        auto_load.unregister()
+
+    dependencies.unregister_minimal()
+    dependencies.unmount_dependencies()
 
 
 def check_blender_version():
@@ -91,7 +114,7 @@ def check_blender_version():
         required_version_str = ".".join(map(str, required_version))
         raise_fatal_error(
             title="Incompatible Blender Version",
-            message=f"Sollumz requires Blender {required_version_str} or newer. Please update your Blender version."
+            message=f"Sollumz requires Blender {required_version_str} or newer. Please update your Blender version.",
         )
 
 
@@ -99,7 +122,7 @@ def check_single_sollumz_instance():
     if hasattr(bpy.types.Object, "sollum_type"):
         raise_fatal_error(
             title="Conflicting Sollumz Versions",
-            message="Only one version of Sollumz can be active at a time. Please disable any other installed versions in 'Preferences > Add-ons'."
+            message="Only one version of Sollumz can be active at a time. Please disable any other installed versions in 'Preferences > Add-ons'.",
         )
 
 

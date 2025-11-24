@@ -1,7 +1,7 @@
 import traceback
 import bpy
 from mathutils import Vector, Color
-from ...cwxml.light_preset import LightPreset
+from ..light_preset import LightPreset
 from ...sollumz_helper import SOLLUMZ_OT_base
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, LightType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags

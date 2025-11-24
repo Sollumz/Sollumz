@@ -5,7 +5,7 @@ import numpy as np
 
 from ..sollumz_helper import get_parent_inverse
 from ..tools.blenderhelper import get_pose_inverse, get_evaluated_obj
-from ..cwxml.bound import (
+from szio.gta5.cwxml import (
     BoundFile,
     Bound,
     BoundComposite,
@@ -23,7 +23,7 @@ from ..cwxml.bound import (
     PolySphere,
     PolyCapsule,
     PolyCylinder,
-    Material
+    ColMaterial,
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (
@@ -702,7 +702,7 @@ def create_poly_cylinder_capsule_xml(poly_type: Type[T_PolyCylCap], obj: bpy.typ
 
 
 def create_col_mat_xml(mat: bpy.types.Material):
-    mat_xml = Material()
+    mat_xml = ColMaterial()
     set_col_mat_xml_properties(mat_xml, mat)
     return mat_xml
 
@@ -747,7 +747,7 @@ def set_bound_col_mat_xml_properties(bound_xml: Bound, mat: bpy.types.Material):
     bound_xml.poly_flags = flags_hi
 
 
-def set_col_mat_xml_properties(mat_xml: Material, mat: bpy.types.Material):
+def set_col_mat_xml_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
     mat_xml.type = mat.collision_properties.collision_index
     mat_xml.procedural_id = mat.collision_properties.procedural_id
     mat_xml.room_id = mat.collision_properties.room_id

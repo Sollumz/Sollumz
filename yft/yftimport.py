@@ -10,8 +10,18 @@ from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType
 from ..sollumz_preferences import get_import_settings
-from ..cwxml.fragment import YFT, Fragment, PhysicsLOD, PhysicsGroup, PhysicsChild, Window, Archetype, GlassWindow
-from ..cwxml.drawable import Drawable, Bone
+from szio.gta5.cwxml import (
+    YFT,
+    Fragment,
+    PhysicsLOD,
+    PhysicsGroup,
+    PhysicsChild,
+    Window,
+    Archetype,
+    GlassWindow,
+    Drawable,
+    Bone,
+)
 from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
 from ..ybn.ybnimport import create_bound_object, create_bound_composite
 from .. import logger
@@ -316,7 +326,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     if not frag_xml.cloths:
         return
 
-    from ..cwxml.cloth import EnvironmentCloth
+    from szio.gta5.cwxml import EnvironmentCloth
     from ..ydr.cloth import ClothAttr, mesh_add_cloth_attribute
 
     cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment

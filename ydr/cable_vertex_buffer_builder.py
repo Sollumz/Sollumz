@@ -6,7 +6,7 @@ from bpy_extras.mesh_utils import edge_loops_from_edges
 import numpy as np
 from numpy.typing import NDArray
 
-from ..cwxml.drawable import VertexBuffer
+from szio.gta5.cwxml import VertexBuffer
 from ..shared.math import distance_point_to_line
 from .cable import CableAttr, is_cable_mesh, mesh_get_cable_attribute_values
 
