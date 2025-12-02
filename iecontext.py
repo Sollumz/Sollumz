@@ -1,7 +1,8 @@
 import contextlib
 import os
 import shutil
-from dataclasses import dataclass
+import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from collections.abc import Sequence
 from szio.gta5 import Asset, AssetFormat, AssetTarget, save_asset
@@ -47,6 +48,9 @@ class ExportBundle:
     files_to_copy: tuple[str | os.PathLike]
     """Files to copy to a folder with same name as the asset, generally embedded textures."""
 
+    temp_dir: str | None = None
+    """Temporary directory to clean up after saving files."""
+
     def save(self, directory: Path):
         """Writes the whole bundle to disk at the specified directory."""
 
@@ -61,20 +65,9 @@ class ExportBundle:
         for suffix, asset in self.secondary_assets:
             save_asset(asset, directory, self.asset_name + suffix, tool_metadata, gen8_directory, gen9_directory)
 
-        if main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and len(main_asset.target_versions()) > 1:
-            output_dirs = (gen8_directory, gen9_directory)
-        else:
-            output_dirs = (directory,)
-
-        for d in output_dirs:
-            res_directory = d / self.asset_name
-            for file in self.files_to_copy:
-                if os.path.isfile(file):
-                    res_directory.mkdir(exist_ok=True)
-                    dst_file = res_directory / os.path.basename(file)
-                    # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
-                    if not dst_file.exists() or not dst_file.samefile(file):
-                        shutil.copy(file, dst_file)
+        # Clean up temporary directory if it exists
+        if self.temp_dir and os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def is_valid(self) -> bool:
         """Checks whether the export operation was successful."""
@@ -91,6 +84,14 @@ class ExportSettings:
     apply_transforms: bool = False
     exclude_skeleton: bool = False
     mesh_domain: VBBuilderDomain = VBBuilderDomain.FACE_CORNER
+    _temp_dir: str | None = field(default=None, init=False)
+    """Temporary directory for embedded textures during export."""
+
+    def get_temp_dir(self) -> Path:
+        """Gets or creates a temporary directory for this export operation."""
+        if self._temp_dir is None:
+            self._temp_dir = tempfile.mkdtemp(prefix="sollumz_export_")
+        return Path(self._temp_dir)
 
 
 @dataclass(slots=True, frozen=True)
@@ -121,6 +122,7 @@ class ExportContext:
             main_asset,
             tuple(s for s in secondary_assets if s[1] is not None),
             tuple(files_to_copy),
+            temp_dir=self.settings._temp_dir,
         )
 
 
