@@ -1,5 +1,6 @@
 import traceback
 import os
+import tempfile
 import bpy
 from bpy.types import (
     Context,
@@ -27,6 +28,7 @@ from szio.gta5.cwxml import (
     YTYP,
     YMAP,
 )
+from szio.gta5.assets import get_providers
 from .ydr.ydrimport import import_ydr
 from .ydr.ydrexport import export_ydr
 from .ydd.yddimport import import_ydd
@@ -224,6 +226,38 @@ class ImportAssetsOperatorImpl(TimedOperator):
             import_settings = prefs_import_settings.to_import_context_settings()
 
             directory = Path(self.directory)
+            
+            # Determine texture extraction directory based on user preferences
+            texture_mode = import_settings.embedded_texture_mode
+            should_pack = texture_mode == "PACK"
+            cleanup_texture_dir = False
+            
+            if texture_mode == "PACK":
+                # Use temporary directory and pack textures into blend file
+                texture_dir = Path(tempfile.mkdtemp(prefix="sollumz_textures_"))
+                cleanup_texture_dir = True
+            elif texture_mode == "CUSTOM_DIR" and import_settings.embedded_texture_custom_path:
+                # Use custom directory specified by user
+                texture_dir = import_settings.embedded_texture_custom_path
+            else:
+                # Use import directory - no patching needed
+                texture_dir = None
+            
+            # Monkey-patch the szio _extract_textures method if needed
+            original_extract_methods = {}
+            
+            if texture_dir is not None:
+                for provider in get_providers().values():
+                    if hasattr(provider, '_extract_textures'):
+                        original_extract_methods[provider] = provider._extract_textures
+                        
+                        def create_patched_extract(original_method, target_dir):
+                            def patched_extract_textures(drawable, dest_dir):
+                                # Redirect to target directory instead of original location
+                                original_method(drawable, target_dir)
+                            return patched_extract_textures
+                        
+                        provider._extract_textures = create_patched_extract(original_extract_methods[provider], texture_dir)
 
             def _import_asset_legacy(filename: str) -> bool:
                 filepath = directory / filename
@@ -264,7 +298,7 @@ class ImportAssetsOperatorImpl(TimedOperator):
                         name = name[:i]
 
                     # Search asset external dependencies
-                    with import_context_scope(ImportContext(name, directory, import_settings)):
+                    with import_context_scope(ImportContext(name, directory, import_settings, texture_dir, should_pack)):
                         match asset.ASSET_TYPE:
                             case AssetType.DRAWABLE_DICTIONARY:
                                 asset_with_deps = find_ydd_external_dependencies(asset, name)
@@ -284,7 +318,7 @@ class ImportAssetsOperatorImpl(TimedOperator):
                         return False
 
                     # Import asset into Blender
-                    with import_context_scope(ImportContext(name, directory, import_settings)):
+                    with import_context_scope(ImportContext(name, directory, import_settings, texture_dir, should_pack)):
                         match asset.ASSET_TYPE:
                             case AssetType.BOUND:
                                 import_ybn_asset(asset, name)
@@ -305,13 +339,27 @@ class ImportAssetsOperatorImpl(TimedOperator):
                     logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
                     return False
 
-            for filename in filenames:
-                _import_asset(filename)
+            try:
+                for filename in filenames:
+                    _import_asset(filename)
 
-            # Import the .ytyps after all the assets to ensure that the archetypes get linked to their object in case
-            # they are imported together
-            for filename in ytyp_filenames:
-                _import_asset(filename)
+                # Import the .ytyps after all the assets to ensure that the archetypes get linked to their object in case
+                # they are imported together
+                for filename in ytyp_filenames:
+                    _import_asset(filename)
+            finally:
+                # Restore original _extract_textures methods (only if they were patched)
+                if original_extract_methods:
+                    for provider, original_method in original_extract_methods.items():
+                        provider._extract_textures = original_method
+                
+                # Clean up temporary textures directory if needed
+                if cleanup_texture_dir and texture_dir and texture_dir.exists():
+                    import shutil
+                    try:
+                        shutil.rmtree(texture_dir)
+                    except Exception as e:
+                        logger.warning(f"Failed to clean up temporary directory {texture_dir}: {e}")
 
             logger.info(f"Imported in {self.time_elapsed} seconds")
             return {"FINISHED"}

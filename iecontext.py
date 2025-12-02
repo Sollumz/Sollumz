@@ -21,6 +21,10 @@ class ImportSettings:
     """Look for a YFT to use as skeleton when importing a YDD."""
     frag_import_vehicle_windows: bool = False
     """Whether to import vehicle windows when importing a YFT."""
+    embedded_texture_mode: str = "PACK"
+    """How to handle embedded textures: 'PACK', 'IMPORT_DIR', or 'CUSTOM_DIR'."""
+    embedded_texture_custom_path: Path | None = None
+    """Custom directory for embedded textures when mode is 'CUSTOM_DIR'."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -30,6 +34,10 @@ class ImportContext:
     asset_name: str
     directory: Path
     settings: ImportSettings
+    temp_dir: Path | None = None
+    """Temporary directory for extracted embedded textures. If None, textures are extracted to directory/asset_name."""
+    pack_embedded_textures: bool = False
+    """Whether to pack embedded textures into the blend file after loading them."""
 
 
 @dataclass(slots=True, frozen=True)

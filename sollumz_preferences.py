@@ -259,14 +259,37 @@ class ImportSettingsBase:
         update=_on_update_thunk,
     )
 
+    embedded_texture_mode: EnumProperty(
+        name="Embedded Textures",
+        description="How to handle embedded textures during import",
+        items=(
+            ("PACK", "Pack into Blend File (default)", "Pack embedded textures into the .blend file (recommended)"),
+            ("IMPORT_DIR", "Extract to Import Directory", "Extract textures to a folder next to the imported file"),
+            ("CUSTOM_DIR", "Extract to Custom Directory", "Extract textures to a custom directory specified below"),
+        ),
+        default="PACK",
+        update=_on_update_thunk,
+    )
+
+    embedded_texture_custom_path: StringProperty(
+        name="Custom Texture Directory",
+        description="Custom directory path for extracting embedded textures (used when 'Extract to Custom Directory' is selected)",
+        subtype="DIR_PATH",
+        default="",
+        update=_on_update_thunk,
+    )
+
     def to_import_context_settings(self) -> "ImportSettings":
         from .iecontext import ImportSettings
+        from pathlib import Path
         return ImportSettings(
             import_as_asset=self.import_as_asset,
             split_by_group=self.split_by_group,
             mlo_instance_entities=self.ytyp_mlo_instance_entities,
             import_external_skeleton=self.import_ext_skeleton,
             frag_import_vehicle_windows=self.frag_import_vehicle_windows,
+            embedded_texture_mode=self.embedded_texture_mode,
+            embedded_texture_custom_path=Path(self.embedded_texture_custom_path) if self.embedded_texture_custom_path else None,
         )
 
 
@@ -879,6 +902,12 @@ class SollumzAddonPreferences(AddonPreferences):
         box.label(text="Import", icon="IMPORT")
         settings = self.import_settings
         box.prop(settings, "import_as_asset")
+        
+        _section_header(box, text="Textures")
+        box.prop(settings, "embedded_texture_mode")
+        if settings.embedded_texture_mode == "CUSTOM_DIR":
+            box.prop(settings, "embedded_texture_custom_path")
+        
         _section_header(box, text="Fragment")
         box.prop(settings, "split_by_group")
         box.prop(settings, "frag_import_vehicle_windows")

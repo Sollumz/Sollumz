@@ -278,7 +278,8 @@ def shader_group_to_materials_with_hi(
 
 def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Material:
     ctx = import_context()
-    texture_folder = ctx.directory / ctx.asset_name
+    # Use temp_textures_dir if available, otherwise use default location
+    texture_folder = ctx.temp_dir if ctx.temp_dir else (ctx.directory / ctx.asset_name)
 
     filename = shader.preset_filename or ShaderManager.find_shader_preset_name(shader.name, shader.render_bucket.value)
     if not filename:
@@ -327,6 +328,13 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
 
                     if param.value in shader_group.embedded_textures:
                         n.texture_properties.embedded = True
+                        
+                        # Pack embedded texture into the blend file if requested
+                        if ctx.pack_embedded_textures and n.image and n.image.filepath:
+                            try:
+                                n.image.pack()
+                            except Exception as e:
+                                logger.warning(f"Failed to pack embedded texture '{param.value}': {e}")
 
                     if not n.texture_properties.embedded and not n.image.filepath:
                         # Set external texture name for non-embedded textures
