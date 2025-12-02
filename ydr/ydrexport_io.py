@@ -667,18 +667,54 @@ def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> l
 
 
 def get_embedded_textures_from_materials(materials: list[Material]) -> dict[str, EmbeddedTexture]:
+    """Get embedded textures from the given materials. Returns a dictionary mapping texture names to `EmbeddedTexture` objects.
+    Packed textures are written to the temporary export directory. Only support DDS format."""
     textures = {}
+    temp_dir = export_context().settings.get_temp_dir()
 
     for node in get_embedded_texture_nodes_from_materials(materials):
         texture_name = node.sollumz_texture_name
 
-        if texture_name in textures or not texture_name:
+        if not texture_name or texture_name in textures:
             continue
 
-        texture_path = Path(bpy.path.abspath(node.image.filepath))
+        img = node.image
+        is_packed = img.packed_file is not None
+        original_filepath = Path(bpy.path.abspath(img.filepath)) if img.filepath else None
+        file_exists = original_filepath and original_filepath.is_file()
 
-        print(f"{texture_name=}    {texture_path=}")
-        w, h = node.image.size
+        # Only support DDS format for embedded textures (TODO: convert other formats to DDS?)
+        if not is_packed and file_exists:
+            file_ext = original_filepath.suffix.lower()
+            if file_ext != '.dds':
+                logger.error(f"Embedded texture '{texture_name}' has unsupported format '{file_ext}'. Please convert the texture to DDS format.")
+                return {}
+
+        # Write packed DDS data to temp directory
+        if is_packed:
+            if not img.packed_file or not img.packed_file.data:
+                logger.error(f"Embedded texture '{texture_name}' is packed but has no data.")
+                return {}
+
+            data = img.packed_file.data
+            
+            # Validate DDS bytes
+            if len(data) < 4 or data[:4] != b'DDS ':
+                logger.error(f"Embedded texture '{texture_name}' is packed but is not a valid DDS file.")
+                return {}
+            
+            texture_path = temp_dir / f"{texture_name}.dds"
+            with open(texture_path, "wb") as f:
+                f.write(data)
+
+        elif not file_exists:
+            logger.error(f"Embedded texture '{texture_name}' file not found on disk: {original_filepath}.")
+            return {}
+        else:
+            # Use existing DDS file on disk (not packed)
+            texture_path = original_filepath
+
+        w, h = img.size
         texture = EmbeddedTexture(texture_name, w, h, texture_path)
         textures[texture_name] = texture
 
