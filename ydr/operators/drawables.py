@@ -87,9 +87,16 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
         auto_embed_col: bool = False
     ):
         for obj in selected_meshes:
+            # store original scale before conversion
+            original_scale = obj.scale.copy()
             # override selected collection to create the drawable object in the same collection as the mesh
             with context.temp_override(collection=obj.users_collection[0]):
                 drawable_obj = convert_obj_to_drawable(obj)
+                # copy scale from the original mesh
+                drawable_obj.scale = original_scale
+                # reset the child models scale to (1,1,1)
+                # convert_obj_to_drawable already resets rotation, we just need to reset scale
+                obj.scale = (1.0, 1.0, 1.0)
 
                 if auto_embed_col:
                     composite_obj = convert_obj_to_composite(
@@ -111,8 +118,31 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
         # the active mesh collection has preference in case the selected meshes are in different collections
         target_coll_obj = context.active_object if context.active_object in selected_meshes else selected_meshes[0]
         target_coll = target_coll_obj.users_collection[0]
+        # use the active object as reference for rotation and scale, or first selected mesh if active is not in selection
+        reference_obj = context.active_object if context.active_object in selected_meshes else selected_meshes[0]
+        
+        # store original rotation and scale before conversion
+        original_rotation_mode = reference_obj.rotation_mode
+        original_rotation_euler = reference_obj.rotation_euler.copy()
+        original_rotation_quaternion = reference_obj.rotation_quaternion.copy()
+        original_rotation_axis_angle = reference_obj.rotation_axis_angle[:]
+        original_scale = reference_obj.scale.copy()
+        
         with context.temp_override(collection=target_coll):
             drawable_obj = convert_objs_to_single_drawable(selected_meshes)
+            
+            # copy rotation and scale from the reference mesh
+            drawable_obj.rotation_mode = original_rotation_mode
+            drawable_obj.rotation_euler = original_rotation_euler
+            drawable_obj.rotation_quaternion = original_rotation_quaternion
+            drawable_obj.rotation_axis_angle = original_rotation_axis_angle
+            drawable_obj.scale = original_scale
+            # reset rotation and scale for all child models
+            for obj in selected_meshes:
+                obj.rotation_euler = (0.0, 0.0, 0.0)
+                obj.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+                obj.rotation_axis_angle = (0.0, 0.0, 1.0, 0.0)
+                obj.scale = (1.0, 1.0, 1.0)
 
             if do_center:
                 center_drawable_to_models(drawable_obj)
