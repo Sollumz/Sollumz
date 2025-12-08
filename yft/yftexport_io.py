@@ -214,8 +214,8 @@ def create_fragment_asset_core(
     frag_armature.pose_position = original_pose
 
     if extra_targets:
-        frag.discard_formats(extra_targets)
-        hi_frag.discard_formats(extra_targets)
+        frag.discard_targets(extra_targets)
+        hi_frag.discard_targets(extra_targets)
         export_context().settings.targets = targets
 
     return frag, hi_frag
