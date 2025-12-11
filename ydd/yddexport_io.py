@@ -25,7 +25,7 @@ def export_ydd(dwd_obj: Object) -> ExportBundle:
         cld = cloth_char_export_dictionary(dwd_obj)
         dwd = create_drawable_dictionary_asset(dwd_obj, cld, out_embedded_textures=embedded_tex)
 
-    return export_context().make_bundle(dwd, ("", cld), files_to_copy=[t.source_filepath for t in embedded_tex])
+    return export_context().make_bundle(dwd, ("", cld))
 
 
 def create_drawable_dictionary_asset(
