@@ -84,7 +84,7 @@ from .. import logger
 def export_ydr(obj: Object) -> ExportBundle:
     embedded_tex = []
     d = create_drawable_asset(obj, out_embedded_textures=embedded_tex)
-    return export_context().make_bundle(d, files_to_copy=[t.source_filepath for t in embedded_tex])
+    return export_context().make_bundle(d)
 
 
 def create_drawable_asset(
