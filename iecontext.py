@@ -61,20 +61,31 @@ class ExportBundle:
         for suffix, asset in self.secondary_assets:
             save_asset(asset, directory, self.asset_name + suffix, tool_metadata, gen8_directory, gen9_directory)
 
-        if main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and len(main_asset.target_versions()) > 1:
-            output_dirs = (gen8_directory, gen9_directory)
-        else:
-            output_dirs = (directory,)
+        do_copy_files = self.files_to_copy and (
+            # We only use files_to_copy for embedded textures, which are only really needed for CWXML. Initially, these
+            # were always copied but users requested that this not be done for native format.
+            # If we start using files_to_copy for something else, we will need to rework this.
+            main_asset.ASSET_FORMAT == AssetFormat.CWXML
+            or (
+                main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and AssetFormat.CWXML in main_asset.target_formats()
+            )
+        )
 
-        for d in output_dirs:
-            res_directory = d / self.asset_name
-            for file in self.files_to_copy:
-                if os.path.isfile(file):
-                    res_directory.mkdir(exist_ok=True)
-                    dst_file = res_directory / os.path.basename(file)
-                    # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
-                    if not dst_file.exists() or not dst_file.samefile(file):
-                        shutil.copy(file, dst_file)
+        if do_copy_files:
+            if main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and len(main_asset.target_versions()) > 1:
+                output_dirs = (gen8_directory, gen9_directory)
+            else:
+                output_dirs = (directory,)
+
+            for d in output_dirs:
+                res_directory = d / self.asset_name
+                for file in self.files_to_copy:
+                    if os.path.isfile(file):
+                        res_directory.mkdir(exist_ok=True)
+                        dst_file = res_directory / os.path.basename(file)
+                        # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
+                        if not dst_file.exists() or not dst_file.samefile(file):
+                            shutil.copy(file, dst_file)
 
     def is_valid(self) -> bool:
         """Checks whether the export operation was successful."""
