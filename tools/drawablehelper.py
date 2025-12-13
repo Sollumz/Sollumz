@@ -50,6 +50,7 @@ def convert_obj_to_drawable(obj: bpy.types.Object):
     drawable_obj.rotation_euler = obj.rotation_euler
     drawable_obj.rotation_quaternion = obj.rotation_quaternion
     drawable_obj.rotation_axis_angle = obj.rotation_axis_angle
+    drawable_obj.scale = obj.scale
 
     obj_name = obj.name
 
@@ -64,6 +65,7 @@ def convert_obj_to_drawable(obj: bpy.types.Object):
     obj.rotation_euler = (0.0, 0.0, 0.0)
     obj.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
     obj.rotation_axis_angle = (0.0, 0.0, 1.0, 0.0)
+    obj.scale = (1.0, 1.0, 1.0)
 
     return drawable_obj
 
