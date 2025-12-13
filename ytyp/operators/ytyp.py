@@ -545,6 +545,13 @@ class SOLLUMZ_OT_export_ytyp_io(bpy.types.Operator):
             from ...iecontext import export_context_scope, ExportContext
 
             export_settings = prefs_export_settings.to_export_context_settings()
+            if not export_settings.targets:
+                from szio.gta5 import AssetFormat, AssetVersion, AssetTarget
+                export_settings.targets = (AssetTarget(AssetFormat.CWXML, AssetVersion.GEN8),)
+                logger.warning(
+                    "No export target found. Make sure you select both Format and Version in the export settings. "
+                    "Defaulting to CW XML / Gen 8."
+                )
 
             directory = Path(bpy.path.abspath(self.directory))
 

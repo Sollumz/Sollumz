@@ -272,6 +272,15 @@ class ImportSettingsBase:
 
 class SollumzExportSettings(ExportSettingsBase, PropertyGroup):
     def _on_update(self, context):
+        # Make sure there is always something selected in the target format/version
+        if not self.target_formats:
+            self.target_formats = {"CWXML"}
+            return # the assignment above will trigger this callback again
+
+        if not self.target_versions:
+            self.target_versions = {"GEN8"}
+            return # the assignment above will trigger this callback again
+
         _save_preferences_on_update(self, context)
 
 
