@@ -677,7 +677,6 @@ def get_embedded_textures_from_materials(materials: list[Material]) -> dict[str,
 
         texture_path = Path(bpy.path.abspath(node.image.filepath))
 
-        print(f"{texture_name=}    {texture_path=}")
         w, h = node.image.size
         texture = EmbeddedTexture(texture_name, w, h, texture_path)
         textures[texture_name] = texture
