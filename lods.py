@@ -387,15 +387,18 @@ def operates_on_lod_level(func: Callable):
     and will set it back to the original LOD level at the end."""
     def wrapper(model_obj: bpy.types.Object, lod_level: LODLevel, *args, **kwargs):
         current_lod_level = model_obj.sz_lods.active_lod_level
+        needs_to_change_lods = current_lod_level != lod_level
 
-        was_hidden = model_obj.hide_get()
-        model_obj.sz_lods.active_lod_level = lod_level
+        if needs_to_change_lods:
+            was_hidden = model_obj.hide_get()
+            model_obj.sz_lods.active_lod_level = lod_level
 
         res = func(model_obj, lod_level, *args, **kwargs)
 
-        # Set the lod level back to what it was
-        model_obj.sz_lods.active_lod_level = current_lod_level
-        model_obj.hide_set(was_hidden)
+        if needs_to_change_lods:
+            # Set the lod level back to what it was
+            model_obj.sz_lods.active_lod_level = current_lod_level
+            model_obj.hide_set(was_hidden)
 
         return res
 
