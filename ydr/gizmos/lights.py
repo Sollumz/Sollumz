@@ -26,6 +26,9 @@ class SOLLUMZ_OT_object_select(Operator):
         if obj is None:
             return {"CANCELLED"}
 
+        if context.mode != 'OBJECT':
+            return {"CANCELLED"}
+
         if not self.extend:
             bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(True)
