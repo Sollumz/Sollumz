@@ -167,7 +167,7 @@ def unsafe_move_renamed_prop(
         return
 
     props[new_name] = old_val
-    if bpy.app.version < (5, 0, 0):
+    if bpy.app.version < (5, 0, 0) and new_name != old_name:
         del props[old_name]
 
 
@@ -187,7 +187,7 @@ def move_renamed_prop(
 
     new_val = old_val if map_fn is None else map_fn(old_val)
     setattr(dst_props, new_name, new_val)
-    if bpy.app.version < (5, 0, 0):
+    if bpy.app.version < (5, 0, 0) and new_name != old_name:
         del dst_props[old_name]
 
 
