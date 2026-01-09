@@ -1062,7 +1062,7 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             decalflag = 2
         elif filename in {"decal_normal_only.sps", "mirror_decal.sps", "reflect_decal.sps"}:
             decalflag = 3
-        elif filename in {"decal_spec_only.sps", "spec_decal.sps"}:
+        elif filename in {"decal_spec_only.sps"}:
             decalflag = 4
         elif filename == "decal_amb_only.sps":
             decalflag = 5
