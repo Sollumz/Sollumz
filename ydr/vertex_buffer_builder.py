@@ -144,6 +144,13 @@ def get_sorted_vertex_group_elements(vertex: bpy.types.MeshVertex, bone_by_vgrou
     elements = sorted(elements, reverse=True, key=lambda e: e.weight)
     return elements
 
+def f32_to_bf16_and_back(x: np.ndarray) -> np.ndarray:
+    """Convert float32 to bfloat16 and back to float32"""
+    assert x.dtype == np.float32
+    u = x.view(np.uint32)
+    u = u + 0x00008000
+    u = u & 0xFFFF0000
+    return u.view(np.float32)
 
 class VertexBufferBuilder:
     """Builds Geometry vertex buffers from a mesh."""
@@ -245,7 +252,7 @@ class VertexBufferBuilder:
         normals = normals.reshape((len(self.mesh.loops), 3))
 
         if self.domain == VBBuilderDomain.FACE_CORNER:
-            return normals
+            return f32_to_bf16_and_back(normals)
         elif self.domain == VBBuilderDomain.VERTEX:
             num_verts = len(self.mesh.vertices)
             vertex_normals = np.empty((num_verts, 3), dtype=np.float32)
@@ -255,7 +262,7 @@ class VertexBufferBuilder:
                 avg_normal /= np.linalg.norm(avg_normal)
                 vertex_normals[vert_index] = avg_normal
 
-            return vertex_normals
+            return f32_to_bf16_and_back(vertex_normals)
 
     def _get_weights_indices(self) -> Tuple[NDArray[np.uint32], NDArray[np.uint32]]:
         """Get all BlendWeights and BlendIndices."""
