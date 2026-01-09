@@ -605,6 +605,8 @@ class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionPrope
         search=lambda s, c, v: KNOWN_EXPLOSION_NAMES,
         search_options={"SUGGESTION"}
     )
+    # Game only uses explosion_name, this is here only to avoid a special case in import/export code. Not shown in UI.
+    explosion_tag: IntProperty(name="Explosion Tag (Unused)", default=0)
     bone_tag: IntProperty(name="Bone Tag", default=0)
     explosion_type: IntProperty(name="Explosion Type", min=0, max=3, default=ExplosionFxType.SHOT_POINT.value)
     flags: IntProperty(name="Flags", subtype="UNSIGNED")
