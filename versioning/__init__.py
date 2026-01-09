@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 8
+SOLLUMZ_INTERNAL_VERSION = 9
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
@@ -32,6 +32,12 @@ Version History:
   - 6: removed "sollumz_paint_layer" property from Material. Uses 'matDiffuseColor' directly.
  == v2.6.0 ==
   - 7: add UUIDs to archetypes and MLO property groups (rooms, portals, entities and entity sets).
+  - 8: multiselection in archetype/MLO lists. Internal representation of the new collections
+       changed a bit (just renamed 'propname' to 'propname_').
+ == v2.7.0 ==
+  - No changes
+ == v2.8.0 ==
+  - 9: fixed Spawn Point extension (required_map -> required_imap, start/end float -> int)
   - <next>: <describe changes>
 """
 
@@ -73,11 +79,12 @@ def do_versions(data: bpy.types.BlendData):
 
     log(f"Upgrading Sollumz data from version {data_version} to version {SOLLUMZ_INTERNAL_VERSION}")
 
-    from . import versioning_230, versioning_240, versioning_250, versioning_260
+    from . import versioning_230, versioning_240, versioning_250, versioning_260, versioning_280
     versioning_230.do_versions(data_version, data)
     versioning_240.do_versions(data_version, data)
     versioning_250.do_versions(data_version, data)
     versioning_260.do_versions(data_version, data)
+    versioning_280.do_versions(data_version, data)
 
 
 def register():
