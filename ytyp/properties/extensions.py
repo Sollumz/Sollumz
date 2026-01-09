@@ -855,7 +855,7 @@ class SpawnPointExtensionProperties(BaseExtensionProperties, PropertyGroup):
     ped_type: StringProperty(name="Ped Type")
     group: StringProperty(name="Group")
     interior: StringProperty(name="Interior")
-    required_imap: StringProperty(name="Required iMap")
+    required_imap: StringProperty(name="Required Map")
     probability: FloatProperty(name="Probability")
     time_till_ped_leaves: FloatProperty(name="Time Till Ped Leaves")
     radius: FloatProperty(name="Radius")
