@@ -17,21 +17,36 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
     """Create a BVH bound child"""
     bl_idname = "sollumz.createpolygonbound"
     bl_label = "Create BVH Child"
+    bl_options = {"UNDO"}
 
     def execute(self, context):
         bound_type = context.scene.create_poly_bound_type
-
         selected = context.selected_objects
 
-        if selected:
-            parent = selected[0]
-        else:
-            parent = None
-
+        parent = selected[0] if selected else None
         bound_obj = create_bound_shape(bound_type)
+
         bound_obj.parent = parent
 
+        target_cols = []
+        if parent is not None and getattr(parent, "users_collection", None):
+            target_cols = list(parent.users_collection)
+        else:
+            if context.collection:
+                target_cols = [context.collection]
+            else:
+                target_cols = [context.scene.collection]
+
+        for col in target_cols:
+            if bound_obj.name not in col.objects:
+                col.objects.link(bound_obj)
+
+        for col in list(bound_obj.users_collection):
+            if col not in target_cols:
+                col.objects.unlink(bound_obj)
+
         return {"FINISHED"}
+
 
 
 class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
@@ -150,10 +165,7 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
         bound_type = context.scene.create_bound_type
         selected = context.selected_objects
 
-        if selected:
-            parent = selected[0]
-        else:
-            parent = None
+        parent = selected[0] if selected else None
 
         # Check the bound type and create the appropriate object
         if bound_type in [SollumType.BOUND_COMPOSITE, SollumType.BOUND_GEOMETRYBVH]:
@@ -162,6 +174,23 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
             bound_obj = create_bound_shape(bound_type)  # Create shape for other bounds
 
         bound_obj.parent = parent
+
+        target_cols = []
+        if parent is not None and getattr(parent, "users_collection", None):
+            target_cols = list(parent.users_collection)
+        else:
+            if context.collection:
+                target_cols = [context.collection]
+            else:
+                target_cols = [context.scene.collection]
+
+        for col in target_cols:
+            if bound_obj.name not in col.objects:
+                col.objects.link(bound_obj)
+
+        for col in list(bound_obj.users_collection):
+            if col not in target_cols:
+                col.objects.unlink(bound_obj)
 
         apply_flag_preset(bound_obj, context.window_manager.sz_flag_preset_index)
 
