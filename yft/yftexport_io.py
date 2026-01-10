@@ -73,7 +73,7 @@ from .yftexport import locate_fragment_objects, FragmentObjects
 def export_yft(obj: Object) -> ExportBundle:
     embedded_tex = []
     frag, hi_frag = create_fragment_asset(obj, out_embedded_textures=embedded_tex)
-    return export_context().make_bundle(frag, ("_hi", hi_frag), files_to_copy=[t.source_filepath for t in embedded_tex])
+    return export_context().make_bundle(frag, ("_hi", hi_frag), extra_files=[t.data for t in embedded_tex])
 
 
 def create_fragment_asset(

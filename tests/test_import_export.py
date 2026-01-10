@@ -1,9 +1,17 @@
+import bpy
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from pathlib import Path
 from xml.etree import ElementTree as ET
-from .shared import is_tmp_dir_available, tmp_path as tmp_path_with_subdir, glob_assets, asset_path
+from .shared import (
+    is_tmp_dir_available,
+    tmp_path as tmp_path_with_subdir,
+    glob_assets,
+    asset_path,
+    load_blend_data,
+    requires_szio_native,
+)
 from ..ydr.ydrimport import import_ydr
 from ..ydr.ydrexport import export_ydr
 from ..yft.yftimport import import_yft
@@ -205,3 +213,116 @@ def test_import_dedupe_hi_yft_files(files: str, expected_deduped_files: str):
     from ..sollumz_operators import SOLLUMZ_OT_import_assets
     res = SOLLUMZ_OT_import_assets._dedupe_hi_yft_filenames(None, files)
     assert_equal(res, expected_deduped_files)
+
+
+DEFAULT_EXPORT_SETTINGS = {
+    "target_formats": {"NATIVE", "CWXML"},
+    "target_versions": {"GEN8", "GEN9"},
+    "limit_to_selected": True,
+    "exclude_skeleton": False,
+    "ymap_exclude_entities": False,
+    "ymap_box_occluders": False,
+    "ymap_model_occluders": False,
+    "ymap_car_generators": False,
+    "apply_transforms": False,
+    "mesh_domain": "FACE_CORNER"
+}
+
+
+DEFAULT_IMPORT_SETTINGS = {
+    "import_as_asset": False,
+    "split_by_group": True,
+    "import_ext_skeleton": False,
+    "frag_import_vehicle_windows": False,
+    "ymap_skip_missing_entities": True,
+    "ymap_exclude_entities": False,
+    "ymap_box_occluders": False,
+    "ymap_model_occluders": False,
+    "ymap_car_generators": False,
+    "ymap_instance_entities": False,
+    "ytyp_mlo_instance_entities": True,
+}
+
+
+def test_export_model_with_packed_textures(tmp_path: Path):
+    data = load_blend_data("model_with_packed_textures.blend")
+
+    # .blend was saved with the object to export already selected
+    bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    expected_contents = data.images["test_image.dds"].packed_file.data
+    for expected_file in [
+        tmp_path / "gen8" / "test_model" / "test_image.dds",
+        tmp_path / "gen9" / "test_model" / "test_image.dds",
+    ]:
+        assert expected_file.is_file()
+        assert expected_file.read_bytes() == expected_contents
+
+
+@requires_szio_native
+@pytest.mark.parametrize("version_dir", ("gen8", "gen9"))
+def test_import_model_with_embedded_textures_extract_to_import_dir(tmp_path: Path, version_dir: str):
+    bpy.ops.wm.read_homefile()
+
+    ydr_filename = "model_with_embedded_textures.ydr"
+    ydr_path = asset_path(version_dir, ydr_filename)
+
+    # Copy to temp dir
+    (tmp_path / ydr_filename).write_bytes(ydr_path.read_bytes())
+
+    expected_file = tmp_path / "model_with_embedded_textures" / "test_image.dds"
+    assert not expected_file.is_file()
+
+    bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path.absolute()),
+        files=[{"name": ydr_path.name}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+
+    assert expected_file.is_file()
+    assert expected_file.read_bytes().startswith(b"DDS ")
+
+
+@requires_szio_native
+def test_export_to_same_dir_as_import_and_textures_are_exported_correctly(tmp_path: Path):
+    # Check that there are no errors when exporting embedded textures and their source and
+    # destination file paths are same.
+
+    bpy.ops.wm.read_homefile()
+
+    ydr_filename = "model_with_embedded_textures.ydr"
+    ydr_path = asset_path("gen8", ydr_filename)
+
+    # Copy to temp dir
+    (tmp_path / ydr_filename).write_bytes(ydr_path.read_bytes())
+
+    bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path.absolute()),
+        files=[{"name": ydr_path.name}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+
+    texture_file = tmp_path / "model_with_embedded_textures" / "test_image.dds"
+    texture_contents_after_import = texture_file.read_bytes()
+
+    bpy.data.objects["model_with_embedded_textures"].select_set(True)
+
+    bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS | {
+            "target_formats": {"CWXML"},
+            "target_versions": {"GEN8"},
+        },
+    )
+
+    texture_contents_after_export = texture_file.read_bytes()
+    assert texture_contents_after_export == texture_contents_after_import

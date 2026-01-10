@@ -1,10 +1,13 @@
 import contextlib
 import os
 import shutil
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Sequence
+
 from szio.gta5 import Asset, AssetFormat, AssetTarget, save_asset
+from szio.types import DataSource
+
 from .ydr.vertex_buffer_builder_domain import VBBuilderDomain
 
 
@@ -44,8 +47,8 @@ class ExportBundle:
     secondary_assets: tuple[tuple[str, Asset], ...]
     """Additional assets exported along with the main asset, e.g. _hi.yft or .yld. Tuple of tuples like (suffix, asset)."""
 
-    files_to_copy: tuple[str | os.PathLike]
-    """Files to copy to a folder with same name as the asset, generally embedded textures."""
+    extra_files: tuple[DataSource, ...]
+    """Additional files to write to a folder with same name as the asset, generally embedded textures."""
 
     def save(self, directory: Path):
         """Writes the whole bundle to disk at the specified directory."""
@@ -61,17 +64,17 @@ class ExportBundle:
         for suffix, asset in self.secondary_assets:
             save_asset(asset, directory, self.asset_name + suffix, tool_metadata, gen8_directory, gen9_directory)
 
-        do_copy_files = self.files_to_copy and (
-            # We only use files_to_copy for embedded textures, which are only really needed for CWXML. Initially, these
+        do_write_extra_files = self.extra_files and (
+            # We only use extra_files for embedded textures, which are only really needed for CWXML. Initially, these
             # were always copied but users requested that this not be done for native format.
-            # If we start using files_to_copy for something else, we will need to rework this.
+            # If we start using extra_files for something else, we will need to rework this.
             main_asset.ASSET_FORMAT == AssetFormat.CWXML
             or (
                 main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and AssetFormat.CWXML in main_asset.target_formats()
             )
         )
 
-        if do_copy_files:
+        if do_write_extra_files:
             if main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and len(main_asset.target_versions()) > 1:
                 output_dirs = (gen8_directory, gen9_directory)
             else:
@@ -79,13 +82,16 @@ class ExportBundle:
 
             for d in output_dirs:
                 res_directory = d / self.asset_name
-                for file in self.files_to_copy:
-                    if os.path.isfile(file):
-                        res_directory.mkdir(exist_ok=True)
-                        dst_file = res_directory / os.path.basename(file)
-                        # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
-                        if not dst_file.exists() or not dst_file.samefile(file):
-                            shutil.copy(file, dst_file)
+                for src_data in self.extra_files:
+                    res_directory.mkdir(exist_ok=True)
+                    dst_file = res_directory / src_data.name
+
+                    if (src_file := getattr(src_data, "filepath", None)) and dst_file.samefile(src_file):
+                        # If src_data is a file and paths are the same, no need to copy (and would break otherwise)
+                        continue
+
+                    with src_data.open() as src, dst_file.open("wb") as dst:
+                        shutil.copyfileobj(src, dst)
 
     def is_valid(self) -> bool:
         """Checks whether the export operation was successful."""
@@ -116,7 +122,7 @@ class ExportContext:
         main_asset: Asset | None,
         /,
         *secondary_assets: tuple[str, Asset | None],
-        files_to_copy: Sequence[str | os.PathLike] = (),
+        extra_files: Sequence[DataSource | None] = (),
     ) -> ExportBundle:
         """Creates an `ExportBundle` from the given assets and optional files.
 
@@ -124,14 +130,14 @@ class ExportContext:
             main_asset: The primary asset produced during export. Can be None if export failed.
             secondary_assets: Optional secondary assets represented as (suffix, asset) pairs. Only non-None assets will
                 be included in the bundle.
-            files_to_copy: Additional files to copy into a subdirectory named after the asset, typically used for
+            extra_files: Additional files to write into a subdirectory named after the asset, typically used for
                 embedded resources like textures.
         """
         return ExportBundle(
             self.asset_name,
             main_asset,
             tuple(s for s in secondary_assets if s[1] is not None),
-            tuple(files_to_copy),
+            tuple(f for f in extra_files if f is not None),
         )
 
 

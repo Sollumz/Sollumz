@@ -1,7 +1,13 @@
-import os
 import itertools
-from typing import Optional
+import os
 from pathlib import Path
+from typing import Optional
+
+import bpy
+import pytest
+from bpy.types import (
+    BlendData,
+)
 
 
 def get_env_path(name: str) -> Optional[Path]:
@@ -19,6 +25,7 @@ def get_env_path(name: str) -> Optional[Path]:
 SOLLUMZ_TEST_TMP_DIR = get_env_path("SOLLUMZ_TEST_TMP_DIR")
 SOLLUMZ_TEST_GAME_ASSETS_DIR = get_env_path("SOLLUMZ_TEST_GAME_ASSETS_DIR")
 SOLLUMZ_TEST_ASSETS_DIR = Path(__file__).parent.joinpath("assets/")
+SOLLUMZ_TEST_DATA_DIR = Path(__file__).parent.joinpath("data/")
 
 
 def is_tmp_dir_available() -> bool:
@@ -48,7 +55,31 @@ def glob_assets(ext: str) -> list[tuple[Path, str]]:
     return list(map(lambda p: (p, str(p)), assets))
 
 
-def asset_path(file_name: str) -> Path:
-    path = SOLLUMZ_TEST_ASSETS_DIR.joinpath(file_name)
+def asset_path(*path_segments: str) -> Path:
+    path = SOLLUMZ_TEST_ASSETS_DIR.joinpath(*path_segments)
     assert path.exists()
     return path
+
+
+def data_path(*path_segments: str) -> Path:
+    path = SOLLUMZ_TEST_DATA_DIR.joinpath(*path_segments)
+    assert path.exists()
+    return path
+
+
+def load_blend_data(file_name: str) -> BlendData:
+    bpy.ops.wm.open_mainfile(filepath=str(data_path(file_name)))
+    return bpy.data
+
+
+def _is_szio_native_available() -> bool:
+    import szio.gta5.native
+    return szio.gta5.native.IS_BACKEND_AVAILABLE
+
+
+requires_szio_native = pytest.mark.skipif(
+    not _is_szio_native_available(),
+    reason="test requires szio native backend to be available"
+)
+
+del _is_szio_native_available

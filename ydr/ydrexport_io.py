@@ -22,6 +22,7 @@ from mathutils import Quaternion, Vector, Matrix
 
 from ..lods import operates_on_lod_level
 
+from szio.types import DataSource
 from szio.gta5 import (
     create_asset_drawable,
     AssetBound,
@@ -84,7 +85,7 @@ from .. import logger
 def export_ydr(obj: Object) -> ExportBundle:
     embedded_tex = []
     d = create_drawable_asset(obj, out_embedded_textures=embedded_tex)
-    return export_context().make_bundle(d, files_to_copy=[t.source_filepath for t in embedded_tex])
+    return export_context().make_bundle(d, extra_files=[t.data for t in embedded_tex])
 
 
 def create_drawable_asset(
@@ -675,10 +676,36 @@ def get_embedded_textures_from_materials(materials: list[Material]) -> dict[str,
         if texture_name in textures or not texture_name:
             continue
 
-        texture_path = Path(bpy.path.abspath(node.image.filepath))
+        texture_name_dds = f"{texture_name}.dds"
+        texture_data = None
+        img = node.image
+        packed = img.packed_file
+        if packed and (packed_data := packed.data):
+            # Embed packed data
+            if not packed_data.startswith(b"DDS "):
+                logger.warning(
+                    f"Embedded texture '{img.name}' packed data is not in DDS format. Please, convert it to a DDS file."
+                )
+            else:
+                texture_data = DataSource.create(packed_data, texture_name_dds)
+        else:
+            # Embed external file
+            texture_path = Path(bpy.path.abspath(img.filepath))
+            if not texture_path.is_file():
+                logger.warning(
+                    f"Embedded texture '{img.name}' file does not exist and the image is not packed. "
+                    f"File path: {texture_path}"
+                )
+            elif texture_path.suffix != ".dds":
+                logger.warning(
+                    f"Embedded texture '{img.name}' is not in DDS format. Please, convert it to a DDS file."
+                    f"File path: {texture_path}"
+                )
+            else:
+                texture_data = DataSource.create(texture_path, texture_name_dds)
 
-        w, h = node.image.size
-        texture = EmbeddedTexture(texture_name, w, h, texture_path)
+        w, h = img.size
+        texture = EmbeddedTexture(texture_name, w, h, texture_data)
         textures[texture_name] = texture
 
     return textures

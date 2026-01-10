@@ -64,6 +64,9 @@ def create_drawable(
 ) -> Object:
     """Create a drawable object. . ``external_armature`` allows for bones to be rigged to an armature object that is not the parent drawable."""
     name = name or drawable.name
+
+    extract_embedded_textures(drawable.shader_group)
+
     materials = materials or shader_group_to_materials(drawable.shader_group)
     hi_materials = hi_materials or []
 
@@ -246,6 +249,29 @@ def create_drawable_root_empty(drawable: AssetDrawable, name: str) -> Object:
     set_drawable_properties(drawable_obj, drawable)
 
     return drawable_obj
+
+
+def extract_embedded_textures(shader_group: ShaderGroup):
+    import shutil
+
+    if not shader_group or not shader_group.embedded_textures:
+        return
+
+    textures = [t.data for t in shader_group.embedded_textures.values() if t.data is not None]
+    if not textures:
+        return
+
+    ctx = import_context()
+    texture_folder = ctx.directory / ctx.asset_name
+
+    texture_folder.mkdir(exist_ok=True)
+    for tex_data in textures:
+        tex_file = texture_folder / tex_data.name
+        if tex_file.exists():
+            continue
+
+        with tex_data.open() as src, tex_file.open("wb") as dst:
+            shutil.copyfileobj(src, dst)
 
 
 def shader_group_to_materials(shader_group: ShaderGroup) -> list[Material]:
