@@ -10,8 +10,8 @@ from bpy.props import (
 from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
-from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect, ImportAssetsOperatorImpl, ExportSettingsOverride
-from ...sollumz_preferences import get_export_settings, get_addon_preferences
+from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect, ImportAssetsOperatorImpl
+from ...sollumz_preferences import get_export_settings, get_addon_preferences, ExportSettingsBase
 from ...ydr.cloth_env import cloth_env_find_mesh_objects
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ..ytypimport import import_ytyp
@@ -493,7 +493,7 @@ class SOLLUMZ_OT_import_ytyp_io(ImportAssetsOperatorImpl, bpy.types.Operator):
     )
 
 
-class SOLLUMZ_OT_export_ytyp_io(bpy.types.Operator):
+class SOLLUMZ_OT_export_ytyp_io(ExportSettingsBase, bpy.types.Operator):
     """Export the selected YTYP"""
     bl_idname = "sollumz.export_ytyp_io"
     bl_label = "Export YTYP"
@@ -506,9 +506,12 @@ class SOLLUMZ_OT_export_ytyp_io(bpy.types.Operator):
     )
 
     # These are for scripts that use these operators to override the settings and avoid messing with the user preferences.
-    use_custom_settings: BoolProperty(name="Use Custom Settings", default=False, options={"HIDDEN", "SKIP_SAVE"})
-    custom_settings: PointerProperty(type=ExportSettingsOverride,
-                                     name="Custom Settings", options={"HIDDEN", "SKIP_SAVE"})
+    use_custom_settings: BoolProperty(
+        name="Use Custom Settings",
+        description="Use the settings defined in this operator instead of user preferences",
+        default=False,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
 
     def draw(self, context):
         prefs = get_addon_preferences(context)
@@ -538,7 +541,7 @@ class SOLLUMZ_OT_export_ytyp_io(bpy.types.Operator):
 
     def execute(self, context):
         with logger.use_operator_logger(self) as op_log:
-            prefs_export_settings = self.custom_settings if self.use_custom_settings else get_export_settings()
+            prefs_export_settings = self if self.use_custom_settings else get_export_settings()
 
             from pathlib import Path
             from ..ytypexport_io import export_ytyp as export_ytyp_asset

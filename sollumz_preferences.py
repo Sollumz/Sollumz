@@ -40,7 +40,8 @@ def _save_preferences_on_update(self, context):
 
 def _on_update_thunk(self, context):
     # Thunk to allow to override the callback
-    self._on_update(context)
+    if cb := getattr(self, "_on_update", None):
+        cb(context)
 
 
 class ExportSettingsBase:

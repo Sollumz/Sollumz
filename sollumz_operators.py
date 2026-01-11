@@ -66,14 +66,6 @@ class TimedOperator:
         ...
 
 
-class ExportSettingsOverride(ExportSettingsBase, PropertyGroup):
-    ...
-
-
-class ImportSettingsOverride(ImportSettingsBase, PropertyGroup):
-    ...
-
-
 class SOLLUMZ_OT_import_assets_legacy(TimedOperator, Operator):
     """Import XML files exported by CodeWalker"""
     bl_idname = "sollumz.import_assets_legacy"
@@ -173,7 +165,8 @@ class SOLLUMZ_OT_import_assets_legacy(TimedOperator, Operator):
         return asset_filenames, ytyp_filenames
 
 
-class ImportAssetsOperatorImpl(TimedOperator):
+
+class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
     """Import RAGE asset files"""
     directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
     files: bpy.props.CollectionProperty(
@@ -192,9 +185,12 @@ class ImportAssetsOperatorImpl(TimedOperator):
     )
 
     # These are for scripts that use these operators to override the settings and avoid messing with the user preferences.
-    use_custom_settings: BoolProperty(name="Use Custom Settings", default=False, options={"HIDDEN", "SKIP_SAVE"})
-    custom_settings: PointerProperty(type=ImportSettingsOverride,
-                                     name="Custom Settings", options={"HIDDEN", "SKIP_SAVE"})
+    use_custom_settings: BoolProperty(
+        name="Use Custom Settings",
+        description="Use the settings defined in this operator instead of user preferences",
+        default=False,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
 
     def draw(self, context):
         pass
@@ -220,7 +216,7 @@ class ImportAssetsOperatorImpl(TimedOperator):
             from .ytyp.ytypimport_io import import_ytyp as import_ytyp_asset
             from .iecontext import import_context_scope, ImportContext
 
-            prefs_import_settings = self.custom_settings if self.use_custom_settings else get_import_settings()
+            prefs_import_settings = self if self.use_custom_settings else get_import_settings()
             import_settings = prefs_import_settings.to_import_context_settings()
 
             directory = Path(self.directory)
@@ -499,7 +495,7 @@ class SOLLUMZ_OT_export_assets_legacy(TimedOperator, Operator):
                     return {"CANCELLED"}
 
             logger.info(f"Exported in {self.time_elapsed} seconds")
-            if any_warnings_or_errors:
+            if any_warnings_or_errors and bpy.ops.screen.info_log_show.poll():
                 bpy.ops.screen.info_log_show()
             return {"FINISHED"}
 
@@ -509,7 +505,7 @@ class SOLLUMZ_OT_export_assets_legacy(TimedOperator, Operator):
         return os.path.join(self.directory, name + extension)
 
 
-class SOLLUMZ_OT_export_assets(TimedOperator, Operator):
+class SOLLUMZ_OT_export_assets(ExportSettingsBase, TimedOperator, Operator):
     """Export RAGE asset files"""
     bl_idname = "sollumz.export_assets"
     bl_label = "Export RAGE Assets"
@@ -528,9 +524,12 @@ class SOLLUMZ_OT_export_assets(TimedOperator, Operator):
     )
 
     # These are for scripts that use these operators to override the settings and avoid messing with the user preferences.
-    use_custom_settings: BoolProperty(name="Use Custom Settings", default=False, options={"HIDDEN", "SKIP_SAVE"})
-    custom_settings: PointerProperty(type=ExportSettingsOverride,
-                                     name="Custom Settings", options={"HIDDEN", "SKIP_SAVE"})
+    use_custom_settings: BoolProperty(
+        name="Use Custom Settings",
+        description="Use the settings defined in this operator instead of user preferences",
+        default=False,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
 
     def draw(self, context):
         prefs = get_addon_preferences(context)
@@ -560,7 +559,7 @@ class SOLLUMZ_OT_export_assets(TimedOperator, Operator):
     def execute_timed(self, context: Context):
         with logger.use_operator_logger(self) as op_log:
             logger.info("Starting export...")
-            prefs_export_settings = self.custom_settings if self.use_custom_settings else get_export_settings()
+            prefs_export_settings = self if self.use_custom_settings else get_export_settings()
             objs = _collect_objects_for_export(context, prefs_export_settings.limit_to_selected)
 
             self.directory = bpy.path.abspath(self.directory)
@@ -644,7 +643,7 @@ class SOLLUMZ_OT_export_assets(TimedOperator, Operator):
                     return {"CANCELLED"}
 
             logger.info(f"Exported in {self.time_elapsed} seconds")
-            if any_warnings_or_errors:
+            if any_warnings_or_errors and bpy.ops.screen.info_log_show.poll():
                 bpy.ops.screen.info_log_show()
             return {"FINISHED"}
 
