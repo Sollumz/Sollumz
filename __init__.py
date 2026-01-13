@@ -29,8 +29,12 @@ def reload_sollumz_modules():
 
     print("Reloading Sollumz modules")
 
-    # Remove the packages imported in this module from the scope, so they are loaded again when imported below
+
     global sollumz_debug, auto_load, dependencies, bpy
+
+    dependencies.reload_dependencies()
+
+    # Remove the packages imported in this module from the scope, so they are loaded again when imported below
     del sollumz_debug
     del auto_load
     del dependencies
@@ -98,7 +102,6 @@ def unregister():
         auto_load.unregister()
 
     dependencies.unregister_minimal()
-    dependencies.unmount_dependencies()
 
 
 def check_blender_version():

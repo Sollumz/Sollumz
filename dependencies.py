@@ -3,6 +3,7 @@ import sys
 import textwrap
 from pathlib import Path
 from typing import NamedTuple
+from collections.abc import Sequence
 
 import bpy
 from bpy.props import (
@@ -19,37 +20,44 @@ from bpy.types import (
 class Dependency(NamedTuple):
     name: str
     ui_label: str
-    version: str
     required: bool
     supported: bool
     license_url: str
     description: str
     safe_to_reload: bool
     extra_index_url: str
+    version: str
+    hashes: tuple[str, ...]
 
 
 DEPENDENCIES = (
     Dependency(
         "szio",
         "szio",
-        "1.0.0",
         True,
         True,
         "",
         "Core functionality for import/export of asset files.",
         True,
         "",
+        "1.0.0",
+        ("2e9218506eeefa580e4b4c7fb87b076d6b1414f07608f2725c7a0616978b563a",),
     ),
     Dependency(
         "pymateria",
         "PyMateria",
-        "0.1.0",
         False,
         sys.platform == "win32",
         "https://static.cfx.re/PyMateria-License-Agreement.pdf",
         "Allows direct binary assets import/export and automatic vehicle shattermap generation using the Materia library.",
         False,
         "https://static.cfx.re/whl/",
+        "0.1.0",
+        (
+            "0e94584b791446e70dad1cbb2cb0c26fb6bdd9a11bc47cee59e37a12b83a9fe6",  # python 3.10, win amd64
+            "1f311584701bf3ce29aceb0fd7b4f59479965bdbd19b8f0280e637ecca1af2ea",  # python 3.11, win amd64
+            "cc5f5d4c9b9aa8726122546fb8abc7833246ddecb5f670ed86f584fb9f76b575",  # python 3.12+ (abi3), win amd64
+        ),
     ),
 )
 
@@ -75,6 +83,14 @@ def site_packages_path() -> Path:
     return Path(data_directory_path()) / "lib" / f"python{ver_major}.{ver_minor}" / "site-packages"
 
 
+def requirements_path() -> Path:
+    from .known_paths import data_directory_path
+
+    data_dir = Path(data_directory_path())
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir / "requirements.txt"
+
+
 def offline_index_path() -> Path:
     return Path(__file__).parent / "offline_index"
 
@@ -87,57 +103,59 @@ def has_required_dependencies() -> bool:
     return IS_SZIO_AVAILABLE
 
 
-def build_install_dependencies_command(
-    dependencies: list[Dependency],
-    optional_dependencies_to_install: set[str],
-    site_packages: str,
+def generate_requirements_file_contents(
+    dependencies: Sequence[Dependency],
     offline_index: str | None,
-) -> list[str]:
-    has_offline_index = bool(offline_index)
+) -> str:
+    r = ""
+    if offline_index:
+        r += "--no-index\n"
+        r += f"--find-links {offline_index}\n"
+    else:
+        for dep in dependencies:
+            if not dep.extra_index_url:
+                continue
 
-    packages = [
-        f"{dep.name}=={dep.version}"
-        for dep in dependencies
-        if dep.supported and (dep.required or dep.name in optional_dependencies_to_install)
+            r += f"--extra-index-url {dep.extra_index_url}\n"
+
+    for dep in dependencies:
+        assert dep.name
+        assert dep.version
+        assert dep.hashes
+
+        r += f"{dep.name}=={dep.version} "
+        r += " ".join(f"--hash=sha256:{h}" for h in dep.hashes)
+        r += "\n"
+
+    return r
+
+
+def filter_dependencies_to_install(
+    dependencies: Sequence[Dependency],
+    optional_dependencies_to_install: set[str],
+) -> list[Dependency]:
+    return [
+        d for d in dependencies if d.supported and (d.required or d.name in optional_dependencies_to_install)
     ]
-    offline_index_args = (
-        [
-            "--no-index",
-            "--find-links",
-            offline_index,
-        ]
-        if has_offline_index
-        else []
-    )
-    extra_index_args = (
-        [
-            arg
-            for dep in dependencies
-            if dep.supported and dep.extra_index_url
-            for arg in ("--extra-index-url", str(dep.extra_index_url))
-        ]
-        if not has_offline_index
-        else []
-    )
 
-    cmd = (
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-v",
-            "--target",
-            site_packages,
-            "--force-reinstall",
-            "--no-deps",
-        ]
-        + offline_index_args
-        + extra_index_args
-        + packages
-    )
 
-    return cmd
+def build_install_dependencies_command(
+    requirements_file: str,
+    site_packages: str,
+) -> list[str]:
+    return [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "-v",
+        "--target",
+        site_packages,
+        "--no-deps",
+        "--require-hashes",
+        "-r",
+        requirements_file,
+    ]
 
 
 def install_dependencies(online_access_override: bool = False, optional_dependencies_to_install: set[str] = set()):
@@ -150,11 +168,25 @@ def install_dependencies(online_access_override: bool = False, optional_dependen
     if not online_access_override and not has_online_access() and not has_offline_index:
         return False
 
+    if site_packages.is_dir():
+        # Rename existing site-packages instead of directly delete it because .pyd files may still be in use and
+        # wouldn't be possible to delete them
+        site_packages_old = site_packages.with_name("site-packages.old")
+        if site_packages_old.is_dir():
+            import shutil
+            shutil.rmtree(site_packages_old)
+
+        site_packages.rename(site_packages_old)
+
+    dependencies_to_install = filter_dependencies_to_install(DEPENDENCIES, optional_dependencies_to_install)
+    requirements_contents = generate_requirements_file_contents(
+        dependencies_to_install, str(offline_index) if has_offline_index else None
+    )
+    requirements_file = requirements_path()
+    requirements_file.write_text(requirements_contents)
     cmd = build_install_dependencies_command(
-        DEPENDENCIES,
-        optional_dependencies_to_install,
+        str(requirements_file),
         str(site_packages),
-        str(offline_index) if has_offline_index else None,
     )
     print(f"{cmd=}")
     retcode = subprocess.call(cmd)
@@ -200,11 +232,7 @@ def mount_dependencies():
         bpy.app.timers.register(_ask_to_install_dependencies, first_interval=0.5, persistent=True)
 
 
-def unmount_dependencies():
-    site_packages = str(site_packages_path())
-    if site_packages in sys.path:
-        sys.path.remove(site_packages)
-
+def reload_dependencies():
     module_names = list(sys.modules.keys())
     for dep in DEPENDENCIES:
         if not dep.safe_to_reload:
@@ -214,6 +242,14 @@ def unmount_dependencies():
         for name in module_names:
             if name == dep.name or name.startswith(dep_module_prefix):
                 del sys.modules[name]
+
+
+def unmount_dependencies():
+    site_packages = str(site_packages_path())
+    if site_packages in sys.path:
+        sys.path.remove(site_packages)
+
+    reload_dependencies()
 
 
 IS_SZIO_AVAILABLE = False
