@@ -1,5 +1,8 @@
 import itertools
 import os
+from collections import defaultdict
+from contextlib import AbstractContextManager
+from functools import wraps
 from pathlib import Path
 from typing import Optional
 
@@ -7,6 +10,11 @@ import bpy
 import pytest
 from bpy.types import (
     BlendData,
+)
+
+from ..logger import (
+    LoggerBase,
+    use_logger,
 )
 
 
@@ -83,3 +91,38 @@ requires_szio_native = pytest.mark.skipif(
 )
 
 del _is_szio_native_available
+
+
+class TestLogger(LoggerBase):
+    def __init__(self):
+        self._logs: dict[str, list[str]] = defaultdict(list)
+
+    def do_log(self, msg: str, level: str):
+        self._logs[level].append(msg)
+
+    def reset(self):
+        self._logs.clear()
+
+    @property
+    def has_warnings_or_errors(self) -> bool:
+        return self._logs["WARNING"] or self._logs["ERROR"]
+
+    def assert_no_warnings_or_errors(self):
+        assert not self.has_warnings_or_errors, \
+            f"{len(self._logs['WARNING'])} warning(s), {len(self._logs['ERROR'])} error(s)"
+
+
+def log_capture() -> AbstractContextManager[TestLogger]:
+    return use_logger(TestLogger())
+
+
+def assert_logs_no_warnings_or_errors(func):
+    """Decorator that asserts that no user-facing warnings or errors were logged."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with log_capture() as logs:
+            result = func(*args, **kwargs)
+        logs.assert_no_warnings_or_errors()
+        return result
+
+    return wrapper

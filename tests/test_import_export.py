@@ -1,26 +1,30 @@
-import bpy
-import pytest
-import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 from pathlib import Path
 from xml.etree import ElementTree as ET
+
+import bpy
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_equal
+
+from ..ybn.ybnexport import export_ybn
+from ..ybn.ybnimport import import_ybn
+from ..ycd.ycdexport import export_ycd
+from ..ycd.ycdimport import import_ycd
+from ..ydr.ydrexport import export_ydr
+from ..ydr.ydrimport import import_ydr
+from ..yft.yftexport import export_yft
+from ..yft.yftimport import import_yft
 from .shared import (
-    is_tmp_dir_available,
-    tmp_path as tmp_path_with_subdir,
-    glob_assets,
+    assert_logs_no_warnings_or_errors,
     asset_path,
+    glob_assets,
+    is_tmp_dir_available,
     load_blend_data,
     requires_szio_native,
 )
-from ..ydr.ydrimport import import_ydr
-from ..ydr.ydrexport import export_ydr
-from ..yft.yftimport import import_yft
-from ..yft.yftexport import export_yft
-from ..ybn.ybnimport import import_ybn
-from ..ybn.ybnexport import export_ybn
-from ..ycd.ycdimport import import_ycd
-from ..ycd.ycdexport import export_ycd
-
+from .shared import (
+    tmp_path as tmp_path_with_subdir,
+)
 
 if is_tmp_dir_available():
     def tmp_path(file_name: str) -> Path:
@@ -244,6 +248,7 @@ DEFAULT_IMPORT_SETTINGS = {
 }
 
 
+@assert_logs_no_warnings_or_errors
 def test_export_model_with_packed_textures(tmp_path: Path):
     data = load_blend_data("model_with_packed_textures.blend")
 
@@ -266,6 +271,7 @@ def test_export_model_with_packed_textures(tmp_path: Path):
 
 @requires_szio_native
 @pytest.mark.parametrize("version_dir", ("gen8", "gen9"))
+@assert_logs_no_warnings_or_errors
 def test_import_model_with_embedded_textures_extract_to_import_dir(tmp_path: Path, version_dir: str):
     bpy.ops.wm.read_homefile()
 
@@ -290,6 +296,7 @@ def test_import_model_with_embedded_textures_extract_to_import_dir(tmp_path: Pat
 
 
 @requires_szio_native
+@assert_logs_no_warnings_or_errors
 def test_export_to_same_dir_as_import_and_textures_are_exported_correctly(tmp_path: Path):
     # Check that there are no errors when exporting embedded textures and their source and
     # destination file paths are same.

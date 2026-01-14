@@ -6,7 +6,7 @@ from bpy.types import Operator
 from abc import ABC, abstractmethod
 from typing import Sequence, Iterator
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, AbstractContextManager
 import logging
 
 
@@ -70,7 +70,7 @@ def use_logger(logger: LoggerBase) -> Iterator[LoggerBase]:
         _root_logger.remove_logger(logger)
 
 
-def use_operator_logger(operator: Operator) -> Iterator[OperatorLogger]:
+def use_operator_logger(operator: Operator) -> AbstractContextManager[OperatorLogger]:
     return use_logger(OperatorLogger(operator))
 
 
