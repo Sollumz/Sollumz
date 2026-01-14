@@ -125,13 +125,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-blender-${{ matrix.blender-version }}
-          path: coverage.xml
+          path: Sollumz/coverage.xml
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
         with:
           env_vars: BLENDER_VERSION
           token: ${{ secrets.CODECOV_TOKEN }}
+          working-directory: ./Sollumz
 
   trigger-extensions-repo-deploy:
     if: github.ref == 'refs/heads/main'
