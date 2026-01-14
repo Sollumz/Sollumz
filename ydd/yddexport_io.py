@@ -59,10 +59,11 @@ def create_drawable_dictionary_asset(
                 char_cloth=cloth,
             )
 
-        if exclude_skeleton or child.type != "ARMATURE":
-            drawable.skeleton = None
+        if drawable:
+            if exclude_skeleton or child.type != "ARMATURE":
+                drawable.skeleton = None
 
-        drawables[drawable.name] = drawable
+            drawables[drawable.name] = drawable
 
     dwd = create_asset_drawable_dictionary(export_context().settings.targets)
     dwd.drawables = drawables
