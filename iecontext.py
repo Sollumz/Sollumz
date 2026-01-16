@@ -86,7 +86,11 @@ class ExportBundle:
                     res_directory.mkdir(exist_ok=True)
                     dst_file = res_directory / src_data.name
 
-                    if (src_file := getattr(src_data, "filepath", None)) and dst_file.samefile(src_file):
+                    if (
+                        (src_file := getattr(src_data, "filepath", None)) and
+                        dst_file.is_file() and
+                        dst_file.samefile(src_file)
+                    ):
                         # If src_data is a file and paths are the same, no need to copy (and would break otherwise)
                         continue
 

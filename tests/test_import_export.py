@@ -17,6 +17,7 @@ from ..yft.yftimport import import_yft
 from .shared import (
     assert_logs_no_warnings_or_errors,
     asset_path,
+    data_path,
     glob_assets,
     is_tmp_dir_available,
     load_blend_data,
@@ -261,6 +262,27 @@ def test_export_model_with_packed_textures(tmp_path: Path):
     )
 
     expected_contents = data.images["test_image.dds"].packed_file.data
+    for expected_file in [
+        tmp_path / "gen8" / "test_model" / "test_image.dds",
+        tmp_path / "gen9" / "test_model" / "test_image.dds",
+    ]:
+        assert expected_file.is_file()
+        assert expected_file.read_bytes() == expected_contents
+
+
+@assert_logs_no_warnings_or_errors
+def test_export_model_with_external_textures(tmp_path: Path):
+    data = load_blend_data("model_with_external_textures.blend")
+
+    # .blend was saved with the object to export already selected
+    bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    expected_contents = data_path("textures", "test_image.dds").read_bytes()
     for expected_file in [
         tmp_path / "gen8" / "test_model" / "test_image.dds",
         tmp_path / "gen9" / "test_model" / "test_image.dds",
