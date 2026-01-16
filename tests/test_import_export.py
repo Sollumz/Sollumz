@@ -15,12 +15,14 @@ from ..ydr.ydrimport import import_ydr
 from ..yft.yftexport import export_yft
 from ..yft.yftimport import import_yft
 from .shared import (
+    assert_logs_no_errors,
     assert_logs_no_warnings_or_errors,
     asset_path,
     data_path,
     glob_assets,
     is_tmp_dir_available,
     load_blend_data,
+    log_capture,
     requires_szio_native,
 )
 from .shared import (
@@ -355,3 +357,53 @@ def test_export_to_same_dir_as_import_and_textures_are_exported_correctly(tmp_pa
 
     texture_contents_after_export = texture_file.read_bytes()
     assert texture_contents_after_export == texture_contents_after_import
+
+
+@requires_szio_native
+@assert_logs_no_warnings_or_errors
+def test_export_vehicle_shattermaps(tmp_path: Path):
+    data = load_blend_data("shattermaps.blend")
+
+    bpy.ops.object.select_all(action="DESELECT")
+
+    data.objects["test_shattermaps"].select_set(True)
+
+    bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    tree = ET.ElementTree()
+    tree.parse(tmp_path / "gen8" / "test_shattermaps.yft.xml")
+    root = tree.getroot()
+    assert len(root.findall("./VehicleGlassWindows/Window/ShatterMap")) == 3
+
+
+@requires_szio_native
+@assert_logs_no_errors
+def test_export_vehicle_shattermaps_with_no_painted_edges(tmp_path: Path):
+    data = load_blend_data("shattermaps.blend")
+
+    bpy.ops.object.select_all(action="DESELECT")
+
+    data.objects["test_shattermaps_no_edges"].select_set(True)
+
+    with log_capture() as logs:
+        bpy.ops.sollumz.export_assets(
+            directory=str(tmp_path.absolute()),
+            direct_export=True,
+            use_custom_settings=True,
+            **DEFAULT_EXPORT_SETTINGS,
+        )
+
+        logs.assert_no_errors()
+        logs.assert_warning(match="Mesh 'window_lf_high.001'.*no blue channel data.*", num=3)
+        logs.assert_warning(match="Mesh 'window_rf_high.001'.*no blue channel data.*", num=3)
+        logs.assert_warning(match="Mesh 'windscreen_high.001'.*no blue channel data.*", num=3)
+
+    tree = ET.ElementTree()
+    tree.parse(tmp_path / "gen8" / "test_shattermaps_no_edges.yft.xml")
+    root = tree.getroot()
+    assert len(root.findall("./VehicleGlassWindows/Window/ShatterMap")) == 3

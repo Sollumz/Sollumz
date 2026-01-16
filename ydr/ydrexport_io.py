@@ -225,6 +225,9 @@ def create_model(
         model_obj, mesh_eval, materials, armature_obj, char_cloth, mesh_domain_override
     )
 
+    if lod_level == LODLevel.HIGH:
+        fix_vehglass_geometry_for_shattermap_generation(mesh_eval, materials, geometries)
+
     bone_index = get_model_bone_index(model_obj)
 
     obj_eval.to_mesh_clear()
@@ -378,6 +381,7 @@ def create_geometries(
         else:
             bone_ids = np.empty(0)
 
+
         geom = Geometry(
             vertex_data_type=VertexDataType.DEFAULT,
             vertex_buffer=vert_buffer,
@@ -404,6 +408,29 @@ def get_loop_inds_by_material(mesh: Mesh, drawable_mats: list[Material]) -> dict
 def get_bone_ids(bones: list[Bone]) -> list[int]:
     from .ydrexport import get_bone_ids as impl
     return impl(bones)
+
+
+def fix_vehglass_geometry_for_shattermap_generation(
+    mesh_eval: Mesh,
+    materials: list[Material],
+    geometries: list[Geometry]
+):
+    any_bad_geometry = False
+    for geometry in geometries:
+        material = materials[geometry.shader_index]
+        if material.shader_properties.name in {"vehicle_vehglass", "vehicle_vehglass_inner"}:
+            blue_channel = geometry.vertex_buffer['Colour0'][:, 2]
+            if np.all(blue_channel == 0):
+                any_bad_geometry = True
+                blue_channel[:] = 255
+
+    if any_bad_geometry:
+        logger.warning(
+            f"Mesh '{mesh_eval.name}' using VEHICLE VEHGLASS shader has color attribute 'Color 1' with no blue channel "
+            "data (all values are black). The blue channel is used to mark where vehicle glass borders connect to the "
+            "frame for shattermap generation. Please paint the blue channel on connected border vertices for correct "
+            "shattering behavior. Defaulting to treating the entire mesh as connected (blue = 255)."
+        )
 
 
 def join_skinned_models(models: list[Model]) -> list[Model]:

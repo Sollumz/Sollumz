@@ -1,5 +1,6 @@
 import itertools
 import os
+import re
 from collections import defaultdict
 from contextlib import AbstractContextManager
 from functools import wraps
@@ -104,12 +105,34 @@ class TestLogger(LoggerBase):
         self._logs.clear()
 
     @property
+    def warnings(self) -> list[str]:
+        return self._logs["WARNING"]
+
+    @property
+    def errors(self) -> list[str]:
+        return self._logs["ERROR"]
+
+    @property
     def has_warnings_or_errors(self) -> bool:
-        return self._logs["WARNING"] or self._logs["ERROR"]
+        return bool(self.warnings or self.errors)
+
+    @property
+    def has_errors(self) -> bool:
+        return bool(self.errors)
 
     def assert_no_warnings_or_errors(self):
         assert not self.has_warnings_or_errors, \
-            f"{len(self._logs['WARNING'])} warning(s), {len(self._logs['ERROR'])} error(s)"
+            f"{len(self.warnings)} warning(s), {len(self.errors)} error(s)"
+
+    def assert_no_errors(self):
+        assert not self.has_errors, \
+            f"{len(self.errors)} error(s)"
+
+    def assert_warning(self, *, match: str | re.Pattern[str] | None = None, num: int = 1):
+        warnings = self.warnings
+        assert len(warnings) == num, f"Expected {num} warning(s), got {len(warnings)} warning(s)"
+        if match is not None:
+            assert any(re.search(match, w) for w in warnings), f"Expected warning to match {match!r}."
 
 
 def log_capture() -> AbstractContextManager[TestLogger]:
@@ -123,6 +146,18 @@ def assert_logs_no_warnings_or_errors(func):
         with log_capture() as logs:
             result = func(*args, **kwargs)
         logs.assert_no_warnings_or_errors()
+        return result
+
+    return wrapper
+
+
+def assert_logs_no_errors(func):
+    """Decorator that asserts that no user-facing errors were logged."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with log_capture() as logs:
+            result = func(*args, **kwargs)
+        logs.assert_no_errors()
         return result
 
     return wrapper
