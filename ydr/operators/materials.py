@@ -265,6 +265,7 @@ class MaterialConverter:
             return
 
         dst_node.image = src_node.image
+        dst_node.texture_properties.embedded = src_node.texture_properties.embedded
 
     def _convert_parameter_node(self, param: ShaderParameterDef):
         src_node: SzShaderNodeParameter = try_get_node(self.material.node_tree, param.name)
