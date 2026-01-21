@@ -707,12 +707,43 @@ def create_tint_nodes(
 
 def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
     node_tree = b.node_tree
-    output = b.material_output
-    bsdf = b.bsdf
     links = node_tree.links
+
     mix = node_tree.nodes.new("ShaderNodeMixShader")
     trans = node_tree.nodes.new("ShaderNodeBsdfTransparent")
-    links.new(texture.outputs["Color"], bsdf.inputs["Base Color"])
+    links.new(texture.outputs["Color"], b.bsdf.inputs["Base Color"])
+
+    def math_node(operation):
+        node = node_tree.nodes.new("ShaderNodeMath")
+        node.operation = operation
+        return node
+
+    def create_mask_alpha_setup(mask_param_name, invert_diffuse=False):
+        """Shared logic for decalflag 2 (decal_dirt.sps) and 5 (decal_amb_only.sps)."""
+        mask = node_tree.nodes[mask_param_name]
+        combine_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
+        dot = node_tree.nodes.new("ShaderNodeVectorMath")
+        dot.operation = "DOT_PRODUCT"
+        mult = math_node("MULTIPLY")
+        color0 = node_tree.nodes.new("ShaderNodeVertexColor")
+        color0.layer_name = get_color_attr_name(0)
+
+        links.new(mask.outputs["X"], combine_xyz.inputs["X"])
+        links.new(mask.outputs["Y"], combine_xyz.inputs["Y"])
+        links.new(mask.outputs["Z"], combine_xyz.inputs["Z"])
+
+        diffuse_input = texture.outputs["Color"]
+        if invert_diffuse:
+            invert = node_tree.nodes.new("ShaderNodeInvert")
+            links.new(diffuse_input, invert.inputs[1])
+            diffuse_input = invert.outputs["Color"]
+
+        links.new(diffuse_input, dot.inputs[0])
+        links.new(combine_xyz.outputs["Vector"], dot.inputs[1])
+        links.new(dot.outputs["Value"], mult.inputs[0])
+        links.new(color0.outputs["Alpha"], mult.inputs[1])
+        links.new(mult.outputs["Value"], mix.inputs["Fac"])
+        links.new(color0.outputs["Color"], b.bsdf.inputs["Base Color"])
 
     if decalflag == 0:  # cutout
         # Handle alpha test logic for cutout shaders.
@@ -720,114 +751,62 @@ def create_decal_nodes(b: ShaderBuilder, texture, decalflag):
         # - trees shaders have AlphaTest and AlphaScale parameters
         # - grass_batch has gAlphaTest parameter
         # - ped_fur? has cutout render bucket but no alpha test-related parameter afaict
-        if (
-            (hard_alpha_blend := try_get_node(node_tree, "HardAlphaBlend")) and
-            isinstance(hard_alpha_blend, SzShaderNodeParameter)
-        ):
+        hard_alpha_blend = try_get_node(node_tree, "HardAlphaBlend")
+        if hard_alpha_blend and isinstance(hard_alpha_blend, SzShaderNodeParameter):
             # The HardAlphaBlend parameter is used to slightly smooth out the cutout edges.
             # 1.0 = hard edges, 0.0 = softer edges (some transparency in the edges)
             # Negative values invert the cutout but I don't think that's the intended use.
             ALPHA_REF = 90.0 / 255.0
             MIN_ALPHA_REF = 1.0 / 255.0
-            sub = node_tree.nodes.new("ShaderNodeMath")
-            sub.operation = "SUBTRACT"
+
+            sub = math_node("SUBTRACT")
             sub.inputs[1].default_value = ALPHA_REF
-            div = node_tree.nodes.new("ShaderNodeMath")
-            div.operation = "DIVIDE"
+            div = math_node("DIVIDE")
             div.inputs[1].default_value = (1.0 - ALPHA_REF) * 0.1
-            map_alpha_blend = node_tree.nodes.new("ShaderNodeMapRange")
-            map_alpha_blend.clamp = False
-            map_alpha_blend.inputs["From Min"].default_value = 0.0
-            map_alpha_blend.inputs["From Max"].default_value = 1.0
-            alpha_gt = node_tree.nodes.new("ShaderNodeMath")
-            alpha_gt.operation = "GREATER_THAN"
+            alpha_gt = math_node("GREATER_THAN")
             alpha_gt.inputs[1].default_value = MIN_ALPHA_REF
-            mul_alpha_test = node_tree.nodes.new("ShaderNodeMath")
-            mul_alpha_test.operation = "MULTIPLY"
+            mul_alpha_test = math_node("MULTIPLY")
+
+            map_range = node_tree.nodes.new("ShaderNodeMapRange")
+            map_range.clamp = False
+            map_range.inputs["From Min"].default_value = 0.0
+            map_range.inputs["From Max"].default_value = 1.0
 
             links.new(texture.outputs["Alpha"], sub.inputs[0])
             links.new(sub.outputs["Value"], div.inputs[0])
-            links.new(hard_alpha_blend.outputs["X"], map_alpha_blend.inputs["Value"])
-            links.new(texture.outputs["Alpha"], map_alpha_blend.inputs["To Min"])
-            links.new(div.outputs["Value"], map_alpha_blend.inputs["To Max"])
-            links.new(map_alpha_blend.outputs["Result"], alpha_gt.inputs[0])
-            links.new(map_alpha_blend.outputs["Result"], mul_alpha_test.inputs[0])
+            links.new(hard_alpha_blend.outputs["X"], map_range.inputs["Value"])
+            links.new(texture.outputs["Alpha"], map_range.inputs["To Min"])
+            links.new(div.outputs["Value"], map_range.inputs["To Max"])
+            links.new(map_range.outputs["Result"], alpha_gt.inputs[0])
+            links.new(map_range.outputs["Result"], mul_alpha_test.inputs[0])
             links.new(alpha_gt.outputs["Value"], mul_alpha_test.inputs[1])
             links.new(mul_alpha_test.outputs["Value"], mix.inputs["Fac"])
         else:
             # Fallback to simple alpha test
             # discard if alpha <= 0.5, else opaque
-            alpha_gt = node_tree.nodes.new("ShaderNodeMath")
-            alpha_gt.operation = "GREATER_THAN"
+            alpha_gt = math_node("GREATER_THAN")
             alpha_gt.inputs[1].default_value = 0.5
             links.new(texture.outputs["Alpha"], alpha_gt.inputs[0])
             links.new(alpha_gt.outputs["Value"], mix.inputs["Fac"])
+
     elif decalflag == 1:
         vcs = node_tree.nodes.new("ShaderNodeVertexColor")
         vcs.layer_name = get_color_attr_name(0)
-        multi = node_tree.nodes.new("ShaderNodeMath")
-        multi.operation = "MULTIPLY"
-        links.new(vcs.outputs["Alpha"], multi.inputs[0])
-        links.new(texture.outputs["Alpha"], multi.inputs[1])
-        links.new(multi.outputs["Value"], mix.inputs["Fac"])
+        mult = math_node("MULTIPLY")
+        links.new(vcs.outputs["Alpha"], mult.inputs[0])
+        links.new(texture.outputs["Alpha"], mult.inputs[1])
+        links.new(mult.outputs["Value"], mix.inputs["Fac"])
+
     elif decalflag == 2:  # decal_dirt.sps
-        # Here, the diffuse sampler represents an alpha map. DirtDecalMask indicates which channels to consider. Actual
-        # color stored in the color0 attribute.
-        #   alpha = dot(diffuseColor, DirtDecalMask)
-        #   alpha *= color0.a
-        #   baseColor = color0.rgb
-        dirt_decal_mask_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
-        dirt_decal_mask = node_tree.nodes["DirtDecalMask"]
-        dot_diffuse_mask = node_tree.nodes.new("ShaderNodeVectorMath")
-        dot_diffuse_mask.operation = "DOT_PRODUCT"
-        mult_alpha_color0a = node_tree.nodes.new("ShaderNodeMath")
-        mult_alpha_color0a.operation = "MULTIPLY"
-        color0_attr = node_tree.nodes.new("ShaderNodeVertexColor")
-        color0_attr.layer_name = get_color_attr_name(0)
+        create_mask_alpha_setup("DirtDecalMask", invert_diffuse=False)
 
-        links.new(dirt_decal_mask.outputs["X"], dirt_decal_mask_xyz.inputs["X"])
-        links.new(dirt_decal_mask.outputs["Y"], dirt_decal_mask_xyz.inputs["Y"])
-        links.new(dirt_decal_mask.outputs["Z"], dirt_decal_mask_xyz.inputs["Z"])
-
-        links.new(texture.outputs["Color"], dot_diffuse_mask.inputs[0])
-        links.new(dirt_decal_mask_xyz.outputs["Vector"], dot_diffuse_mask.inputs[1])
-
-        links.new(dot_diffuse_mask.outputs["Value"], mult_alpha_color0a.inputs[0])
-        links.new(color0_attr.outputs["Alpha"], mult_alpha_color0a.inputs[1])
-
-        links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
-
-        links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
     elif decalflag == 5:  # decal_amb_only.sps
-        ambient_decal_mask_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
-        ambient_decal_mask = node_tree.nodes["AmbientDecalMask"]
-        dot_diffuse_mask = node_tree.nodes.new("ShaderNodeVectorMath")
-        dot_diffuse_mask.operation = "DOT_PRODUCT"
-        mult_alpha_color0a = node_tree.nodes.new("ShaderNodeMath")
-        mult_alpha_color0a.operation = "MULTIPLY"
-        color0_attr = node_tree.nodes.new("ShaderNodeVertexColor")
-        invert_color = node_tree.nodes.new("ShaderNodeInvert")
-        color0_attr.layer_name = get_color_attr_name(0)
-
-        links.new(ambient_decal_mask.outputs["X"], ambient_decal_mask_xyz.inputs["X"])
-        links.new(ambient_decal_mask.outputs["Y"], ambient_decal_mask_xyz.inputs["Y"])
-        links.new(ambient_decal_mask.outputs["Z"], ambient_decal_mask_xyz.inputs["Z"])
-
-        links.new(texture.outputs["Color"], invert_color.inputs[1])
-        links.new(invert_color.outputs["Color"], dot_diffuse_mask.inputs[0])
-        links.new(ambient_decal_mask_xyz.outputs["Vector"], dot_diffuse_mask.inputs[1])
-
-        links.new(dot_diffuse_mask.outputs["Value"], mult_alpha_color0a.inputs[0])
-        links.new(color0_attr.outputs["Alpha"], mult_alpha_color0a.inputs[1])
-
-        links.new(mult_alpha_color0a.outputs["Value"], mix.inputs["Fac"])
-
-        links.new(color0_attr.outputs["Color"], bsdf.inputs["Base Color"])
+        create_mask_alpha_setup("AmbientDecalMask", invert_diffuse=True)
 
     links.new(trans.outputs["BSDF"], mix.inputs[1])
-    links.remove(bsdf.outputs["BSDF"].links[0])
-    links.new(bsdf.outputs["BSDF"], mix.inputs[2])
-    links.new(mix.outputs["Shader"], output.inputs["Surface"])
+    links.remove(b.bsdf.outputs["BSDF"].links[0])
+    links.new(b.bsdf.outputs["BSDF"], mix.inputs[2])
+    links.new(mix.outputs["Shader"], b.material_output.inputs["Surface"])
 
 
 def create_distance_map_nodes(b: ShaderBuilder, distance_map_texture: bpy.types.ShaderNodeTexImage):
@@ -990,9 +969,7 @@ def create_water_nodes(b: ShaderBuilder):
 def create_basic_shader_nodes(b: ShaderBuilder):
     shader = b.shader
     filename = b.filename
-    mat = b.material
     node_tree = b.node_tree
-    bsdf = b.bsdf
 
     texture = None
     texture2 = None
@@ -1024,9 +1001,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
                     is_distance_map = True
                 elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
                     texture2 = imgnode
-                else:
-                    if not texture:
-                        texture = imgnode
+                elif not texture:
+                    texture = imgnode
             case (ShaderParameterType.FLOAT |
                   ShaderParameterType.FLOAT2 |
                   ShaderParameterType.FLOAT3 |
@@ -1036,134 +1012,120 @@ def create_basic_shader_nodes(b: ShaderBuilder):
             case _:
                 raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
 
-    use_diff = True if texture else False
-    use_diff2 = True if texture2 else False
-    use_bump = True if bumptex else False
-    use_spec = True if spectex else False
-    use_detl = True if detltex else False
-    use_tint = True if tintpal else False
-
     # Some shaders have TextureSamplerDiffPal but don't actually use it, so we only create palette
     # shader nodes on the specific shaders that use it
-    use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
+    use_palette = diffpal and filename in ShaderManager.palette_shaders
 
+    # Determine decal mode and blend settings
     use_decal = shader.is_alpha or shader.is_decal or shader.is_cutout
     decalflag = 0
     blend_mode = "OPAQUE"
+
     if use_decal:
-        # set blend mode
-        if shader.is_cutout:
-            blend_mode = "CLIP"
-        else:
-            blend_mode = "BLEND"
-            decalflag = 1
-        # set flags
-        if filename == "decal_dirt.sps":
-            decalflag = 2
-        elif filename in {"decal_normal_only.sps", "mirror_decal.sps", "reflect_decal.sps"}:
-            decalflag = 3
-        elif filename in {"decal_spec_only.sps"}:
-            decalflag = 4
-        elif filename == "decal_amb_only.sps":
-            decalflag = 5
-        elif filename in {"vehicle_badges.sps", "vehicle_decal.sps"}:
-            decalflag = 1  # badges and decals need to multiply the texture alpha by the Color 1 Alpha component
+        blend_mode = "CLIP" if shader.is_cutout else "BLEND"
+        decalflag = 0 if shader.is_cutout else 1
+
+        # Decal flag overrides based on shader filename
+        decal_flag_map = {
+            "decal_dirt.sps": 2,
+            "decal_normal_only.sps": 3,
+            "mirror_decal.sps": 3,
+            "reflect_decal.sps": 3,
+            "decal_spec_only.sps": 4,
+            "spec_decal.sps": 4,
+            "decal_amb_only.sps": 5,
+            "vehicle_badges.sps": 1,
+            "vehicle_decal.sps": 1,
+        }
+
+        if filename in decal_flag_map:
+            decalflag = decal_flag_map[filename]
         elif filename.startswith("vehicle_"):
-            # Don't treat any other alpha vehicle shaders as decals (e.g. lightsemissive or vehglass).
+            # Don't treat other alpha vehicle shaders as decals (e.g. lightsemissive or vehglass).
             # Particularly problematic with lightsemissive as Color 1 Alpha component contains the light ID,
             # which previously was being incorrectly used to multiply the texture alpha.
             use_decal = False
 
-    is_emissive = True if filename in ShaderManager.em_shaders else False
-
-    if not use_decal:
-        if use_diff:
-            if use_diff2:
-                link_diffuses(b, texture, texture2)
-            else:
-                link_diffuse(b, texture)
-    else:
+    if use_decal:
         create_decal_nodes(b, texture, decalflag)
+    elif texture:
+        if texture2:
+            link_diffuses(b, texture, texture2)
+        else:
+            link_diffuse(b, texture)
 
-    if use_bump:
-        if use_detl:
+    if bumptex:
+        if detltex:
             link_detailed_normal(b, bumptex, detltex, spectex)
         else:
             link_normal(b, bumptex)
-    if use_spec:
+
+    if spectex:
         link_specular(b, spectex)
     else:
-        bsdf.inputs["Specular IOR Level"].default_value = 0
+        b.bsdf.inputs["Specular IOR Level"].default_value = 0
 
-    if use_tint:
+    if tintpal:
         create_tint_nodes(b, texture)
 
     if use_palette:
         create_diff_palette_nodes(b, diffpal, texture)
 
-    if is_emissive:
+    if filename in ShaderManager.em_shaders:
         create_emissive_nodes(b)
 
-    is_water = filename in ShaderManager.water_shaders
-    if is_water:
+    if filename in ShaderManager.water_shaders:
         create_water_nodes(b)
 
     if is_distance_map:
         blend_mode = "BLEND"
         create_distance_map_nodes(b, texture)
 
-    is_veh_shader = filename in ShaderManager.veh_paints
-    if is_veh_shader:
-        bsdf.inputs["Metallic"].default_value = 1.0
-        bsdf.inputs["Coat Weight"].default_value = 1.0
+    if filename in ShaderManager.veh_paints:
+        b.bsdf.inputs["Metallic"].default_value = 1.0
+        b.bsdf.inputs["Coat Weight"].default_value = 1.0
 
-    # link value parameters
     link_value_shader_parameters(b)
 
+    # material blend mode
     if bpy.app.version < (4, 2, 0):
-        mat.blend_method = blend_mode
+        b.material.blend_method = blend_mode
     else:
-        mat.surface_render_method = "BLENDED" if blend_mode != "OPAQUE" else "DITHERED"
+        b.material.surface_render_method = "BLENDED" if blend_mode != "OPAQUE" else "DITHERED"
 
 
 def create_terrain_shader(b: ShaderBuilder):
     shader = b.shader
     node_tree = b.node_tree
-    bsdf = b.bsdf
     links = node_tree.links
 
-    ts1 = None
-    ts2 = None
-    ts3 = None
-    ts4 = None
-    bs1 = None
-    bs2 = None
-    bs3 = None
-    bs4 = None
-    tm = None
+    texture_samplers = [None, None, None, None]  # layer 0-3
+    bump_samplers = [None, None, None, None]     # layer 0-3
+    lookup_sampler = None
+
+    texture_param_map = {
+        "TextureSampler_layer0": ("texture", 0),
+        "TextureSampler_layer1": ("texture", 1),
+        "TextureSampler_layer2": ("texture", 2),
+        "TextureSampler_layer3": ("texture", 3),
+        "BumpSampler_layer0": ("bump", 0),
+        "BumpSampler_layer1": ("bump", 1),
+        "BumpSampler_layer2": ("bump", 2),
+        "BumpSampler_layer3": ("bump", 3),
+    }
 
     for param in shader.parameters:
         match param.type:
             case ShaderParameterType.TEXTURE:
                 imgnode = create_image_node(node_tree, param)
-                if param.name == "TextureSampler_layer0":
-                    ts1 = imgnode
-                elif param.name == "TextureSampler_layer1":
-                    ts2 = imgnode
-                elif param.name == "TextureSampler_layer2":
-                    ts3 = imgnode
-                elif param.name == "TextureSampler_layer3":
-                    ts4 = imgnode
-                elif param.name == "BumpSampler_layer0":
-                    bs1 = imgnode
-                elif param.name == "BumpSampler_layer1":
-                    bs2 = imgnode
-                elif param.name == "BumpSampler_layer2":
-                    bs3 = imgnode
-                elif param.name == "BumpSampler_layer3":
-                    bs4 = imgnode
+                if param.name in texture_param_map:
+                    sampler_type, layer_idx = texture_param_map[param.name]
+                    if sampler_type == "texture":
+                        texture_samplers[layer_idx] = imgnode
+                    else:
+                        bump_samplers[layer_idx] = imgnode
                 elif param.name == "lookupSampler":
-                    tm = imgnode
+                    lookup_sampler = imgnode
             case (ShaderParameterType.FLOAT |
                   ShaderParameterType.FLOAT2 |
                   ShaderParameterType.FLOAT3 |
@@ -1173,67 +1135,62 @@ def create_terrain_shader(b: ShaderBuilder):
             case _:
                 raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
 
-    mixns = []
-    for _ in range(8 if tm else 7):
-        mix = node_tree.nodes.new("ShaderNodeMixRGB")
-        mixns.append(mix)
+    # Create mix nodes (8 if lookup sampler exists, else 7)
+    mix_nodes = [node_tree.nodes.new("ShaderNodeMixRGB") for _ in range(8 if lookup_sampler else 7)]
 
+    # Setup color separation from terrain mask
     seprgb = node_tree.nodes.new("ShaderNodeSeparateColor")
     seprgb.mode = "RGB"
+
     if shader.is_terrain_mask_only:
-        links.new(tm.outputs[0], seprgb.inputs["Color"])
+        links.new(lookup_sampler.outputs[0], seprgb.inputs["Color"])
     else:
         attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
         attr_c1.attribute_name = get_color_attr_name(1)
-        links.new(attr_c1.outputs[0], mixns[0].inputs[1])
-        links.new(attr_c1.outputs[0], mixns[0].inputs[2])
+        links.new(attr_c1.outputs[0], mix_nodes[0].inputs[1])
+        links.new(attr_c1.outputs[0], mix_nodes[0].inputs[2])
 
         attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
         attr_c0.attribute_name = get_color_attr_name(0)
-        links.new(attr_c0.outputs[3], mixns[0].inputs[0])
-        links.new(mixns[0].outputs[0], seprgb.inputs["Color"])
+        links.new(attr_c0.outputs[3], mix_nodes[0].inputs[0])
+        links.new(mix_nodes[0].outputs[0], seprgb.inputs["Color"])
 
-    # t1 / t2
-    links.new(seprgb.outputs["Blue"], mixns[1].inputs[0])
-    links.new(ts1.outputs[0], mixns[1].inputs[1])
-    links.new(ts2.outputs[0], mixns[1].inputs[2])
+    def link_layer_mix(mix_idx, fac_output, tex1, tex2):
+        """Link two texture layers through a mix node."""
+        links.new(fac_output, mix_nodes[mix_idx].inputs[0])
+        links.new(tex1.outputs[0], mix_nodes[mix_idx].inputs[1])
+        links.new(tex2.outputs[0], mix_nodes[mix_idx].inputs[2])
 
-    # t3 / t4
-    links.new(seprgb.outputs["Blue"], mixns[2].inputs[0])
-    links.new(ts3.outputs[0], mixns[2].inputs[1])
-    links.new(ts4.outputs[0], mixns[2].inputs[2])
+    # Mix texture layers, (0,1) and (2,3) by blue, then combine by green
+    link_layer_mix(1, seprgb.outputs["Blue"], texture_samplers[0], texture_samplers[1])
+    link_layer_mix(2, seprgb.outputs["Blue"], texture_samplers[2], texture_samplers[3])
 
-    links.new(seprgb.outputs["Green"], mixns[3].inputs[0])
-    links.new(mixns[1].outputs[0], mixns[3].inputs[1])
-    links.new(mixns[2].outputs[0], mixns[3].inputs[2])
+    links.new(seprgb.outputs["Green"], mix_nodes[3].inputs[0])
+    links.new(mix_nodes[1].outputs[0], mix_nodes[3].inputs[1])
+    links.new(mix_nodes[2].outputs[0], mix_nodes[3].inputs[2])
 
-    links.new(mixns[3].outputs[0], bsdf.inputs["Base Color"])
+    links.new(mix_nodes[3].outputs[0], b.bsdf.inputs["Base Color"])
 
-    if bs1:
-        links.new(seprgb.outputs["Blue"], mixns[4].inputs[0])
-        links.new(bs1.outputs[0], mixns[4].inputs[1])
-        links.new(bs2.outputs[0], mixns[4].inputs[2])
+    # Mix bump layers if present (same pattern as textures)
+    if bump_samplers[0]:
+        link_layer_mix(4, seprgb.outputs["Blue"], bump_samplers[0], bump_samplers[1])
+        link_layer_mix(5, seprgb.outputs["Blue"], bump_samplers[2], bump_samplers[3])
 
-        links.new(seprgb.outputs["Blue"], mixns[5].inputs[0])
-        links.new(bs3.outputs[0], mixns[5].inputs[1])
-        links.new(bs4.outputs[0], mixns[5].inputs[2])
-
-        links.new(seprgb.outputs["Green"], mixns[6].inputs[0])
-        links.new(mixns[4].outputs[0], mixns[6].inputs[1])
-        links.new(mixns[5].outputs[0], mixns[6].inputs[2])
+        links.new(seprgb.outputs["Green"], mix_nodes[6].inputs[0])
+        links.new(mix_nodes[4].outputs[0], mix_nodes[6].inputs[1])
+        links.new(mix_nodes[5].outputs[0], mix_nodes[6].inputs[2])
 
         nrm = node_tree.nodes.new("ShaderNodeNormalMap")
-        links.new(mixns[6].outputs[0], nrm.inputs[1])
-        links.new(nrm.outputs[0], bsdf.inputs["Normal"])
+        links.new(mix_nodes[6].outputs[0], nrm.inputs[1])
+        links.new(nrm.outputs[0], b.bsdf.inputs["Normal"])
 
-    # assign lookup sampler last so that it overwrites any socket connections
-    if tm:
+    # Assign lookup sampler last so it overwrites any socket connections
+    if lookup_sampler:
         uv_map1 = node_tree.nodes[get_uv_map_name(1)]
-        links.new(uv_map1.outputs[0], tm.inputs[0])
-        links.new(tm.outputs[0], mixns[0].inputs[1])
+        links.new(uv_map1.outputs[0], lookup_sampler.inputs[0])
+        links.new(lookup_sampler.outputs[0], mix_nodes[0].inputs[1])
 
-    # link value parameters
-    bsdf.inputs["Specular IOR Level"].default_value = 0
+    b.bsdf.inputs["Specular IOR Level"].default_value = 0
     link_value_shader_parameters(b)
 
 
