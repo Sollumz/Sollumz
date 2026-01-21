@@ -7,7 +7,6 @@ from ..tools.meshhelper import (
     create_color_attr,
     flip_uvs,
 )
-from mathutils import Vector
 from .. import logger
 
 
@@ -25,29 +24,32 @@ class MeshBuilder:
         # Triangles using the same vertex 2+ times are not valid topology for Blender and can potentially crash/hang
         # Blender before we have a chance to call `Mesh.validate()`. Some vanilla models and, often, modded models have
         # some of these degenerate triangles, so remove them.
-        faces = ind_arr.reshape((int(ind_arr.size / 3), 3))
-        invalid_faces_mask = (faces[:,0] == faces[:,1]) | (faces[:,0] == faces[:,2]) | (faces[:,1] == faces[:,2])
-        ind_arr = faces[~invalid_faces_mask].reshape((-1,))
-        mat_inds = mat_inds[~invalid_faces_mask]
+        faces = ind_arr.reshape((ind_arr.size // 3, 3))
+        invalid_faces_mask = (faces[:, 0] == faces[:, 1]) | (faces[:, 0] == faces[:, 2]) | (faces[:, 1] == faces[:, 2])
+        valid_faces_mask = ~invalid_faces_mask
+
+        self._faces = faces[valid_faces_mask]  # Cache reshaped faces for reuse in build()
+        self.ind_arr = self._faces.ravel()
+        self.mat_inds = mat_inds[valid_faces_mask]
 
         self.vertex_arr = vertex_arr
-        self.ind_arr = ind_arr
-        self.mat_inds = mat_inds
-
         self.name = name
         self.materials = drawable_mats
 
-        self._has_normals = "Normal" in vertex_arr.dtype.names
-        self._has_uvs = any("TexCoord" in name for name in vertex_arr.dtype.names)
-        self._has_colors = any("Colour" in name for name in vertex_arr.dtype.names)
+        # Cache dtype names and attribute lists to avoid repeated iteration
+        dtype_names = vertex_arr.dtype.names
+        self._has_normals = "Normal" in dtype_names
+        self._uv_attrs = tuple(name for name in dtype_names if name.startswith("TexCoord"))
+        self._color_attrs = tuple(name for name in dtype_names if name.startswith("Colour"))
+        self._has_uvs = len(self._uv_attrs) > 0
+        self._has_colors = len(self._color_attrs) > 0
 
     def build(self):
         mesh = bpy.data.meshes.new(self.name)
         vert_pos = self.vertex_arr["Position"]
-        faces = self.ind_arr.reshape((int(self.ind_arr.size / 3), 3))
 
         try:
-            mesh.from_pydata(vert_pos, [], faces)
+            mesh.from_pydata(vert_pos, [], self._faces)
         except Exception:
             logger.error(
                 f"Error during creation of fragment {self.name}:\n{format_exc()}\nEnsure the mesh data is not malformed.")
@@ -82,19 +84,21 @@ class MeshBuilder:
         mesh.attributes["material_index"].data.foreach_set("value", model_mat_inds[self.mat_inds])
 
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
-        mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+        mesh.polygons.foreach_set("use_smooth", np.ones(len(mesh.polygons), dtype=bool))
 
-        normals_normalized = [Vector(n).normalized() for n in self.vertex_arr["Normal"]]
-        mesh.normals_split_custom_set_from_vertices(normals_normalized)
+        # Vectorized normalization
+        normals = self.vertex_arr["Normal"].astype(np.float64)
+        lengths = np.linalg.norm(normals, axis=1, keepdims=True)
+        # Normalize in-place, avoiding division by zero for zero-length normals
+        np.divide(normals, lengths, out=normals, where=lengths != 0)
+        mesh.normals_split_custom_set_from_vertices(normals)
 
         if bpy.app.version < (4, 1, 0):
             # needed to use custom split normals pre-4.1
             mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
-        uv_attrs = [name for name in self.vertex_arr.dtype.names if name.startswith("TexCoord")]
-
-        for attr_name in uv_attrs:
+        for attr_name in self._uv_attrs:
             uvmap_idx = int(attr_name[8:])
             uvs = self.vertex_arr[attr_name]
             flip_uvs(uvs)
@@ -102,41 +106,70 @@ class MeshBuilder:
             create_uv_attr(mesh, uvmap_idx, initial_values=uvs[self.ind_arr])
 
     def set_mesh_vertex_colors(self, mesh: bpy.types.Mesh):
-        color_attrs = [name for name in self.vertex_arr.dtype.names if name.startswith("Colour")]
-
-        for attr_name in color_attrs:
+        for attr_name in self._color_attrs:
             color_idx = int(attr_name[6:])
             colors = self.vertex_arr[attr_name] / 255
 
             create_color_attr(mesh, color_idx, initial_values=colors[self.ind_arr])
 
     def create_vertex_groups(self, obj: bpy.types.Object, bones: list[bpy.types.Bone]):
-        weights = self.vertex_arr["BlendWeights"] / 255
-        indices = self.vertex_arr["BlendIndices"]
+        weights = self.vertex_arr["BlendWeights"] / 255  # Shape: (N, 4)
+        indices = self.vertex_arr["BlendIndices"]  # Shape: (N, 4)
 
-        vertex_groups: dict[int, bpy.types.VertexGroup] = {}
+        num_verts = len(weights)
 
-        def create_group(bone_index: int):
-            bone_name = f"UNKNOWN_BONE.{bone_index}"
-
+        def get_bone_name(bone_index: int) -> str:
             if bone_index == 99999:
                 from .cloth_char import CLOTH_CHAR_VERTEX_GROUP_NAME
-                bone_name = CLOTH_CHAR_VERTEX_GROUP_NAME
+                return CLOTH_CHAR_VERTEX_GROUP_NAME
             elif bones and bone_index < len(bones):
-                bone_name = bones[bone_index].name
+                return bones[bone_index].name
+            return f"UNKNOWN_BONE.{bone_index}"
 
-            return obj.vertex_groups.new(name=bone_name)
+        # Flatten arrays for vectorized processing
+        # Each vertex has 4 blend weights/indices, so we repeat vertex indices 4 times
+        vert_indices = np.repeat(np.arange(num_verts, dtype=np.uint32), 4)
+        flat_weights = weights.ravel()
+        flat_bone_indices = indices.ravel()
 
-        for vert_ind, bone_inds in enumerate(indices):
-            for i, bone_ind in enumerate(bone_inds):
-                weight = weights[vert_ind][i]
+        # Filter out invalid entries (zero weight with zero bone index)
+        valid_mask = ~((flat_weights == 0) & (flat_bone_indices == 0))
+        valid_vert_indices = vert_indices[valid_mask]
+        valid_weights = flat_weights[valid_mask]
+        valid_bone_indices = flat_bone_indices[valid_mask]
 
-                if weight == 0 and bone_ind == 0:
-                    continue
+        # Get unique bones and create all vertex groups upfront
+        unique_bones = np.unique(valid_bone_indices)
+        vertex_groups: dict[int, bpy.types.VertexGroup] = {}
+        for bone_idx in unique_bones:
+            bone_idx_int = int(bone_idx)
+            vertex_groups[bone_idx_int] = obj.vertex_groups.new(name=get_bone_name(bone_idx_int))
 
-                if bone_ind not in vertex_groups:
-                    vertex_groups[bone_ind] = create_group(bone_ind)
+        # Sort by bone index to group vertices per bone
+        sort_order = np.argsort(valid_bone_indices)
+        sorted_bone_indices = valid_bone_indices[sort_order]
+        sorted_vert_indices = valid_vert_indices[sort_order]
+        sorted_weights = valid_weights[sort_order]
 
-                vgroup = vertex_groups[bone_ind]
+        # Find boundaries between different bone indices
+        bone_changes = np.where(np.diff(sorted_bone_indices) != 0)[0] + 1
+        bone_boundaries = np.concatenate([[0], bone_changes, [len(sorted_bone_indices)]])
 
-                vgroup.add((vert_ind,), weight, "ADD")
+        # Batch add vertices to each bone group
+        for i in range(len(bone_boundaries) - 1):
+            start = bone_boundaries[i]
+            end = bone_boundaries[i + 1]
+
+            bone_idx = int(sorted_bone_indices[start])
+            vgroup = vertex_groups[bone_idx]
+
+            batch_vert_indices = sorted_vert_indices[start:end]
+            batch_weights = sorted_weights[start:end]
+
+            # Group by unique weights to batch vertices with the same weight
+            # vgroup.add() accepts a list of vertex indices, so we can add many at once
+            unique_weights = np.unique(batch_weights)
+            for weight in unique_weights:
+                weight_mask = batch_weights == weight
+                verts_with_weight = batch_vert_indices[weight_mask].tolist()
+                vgroup.add(verts_with_weight, float(weight), "ADD")
