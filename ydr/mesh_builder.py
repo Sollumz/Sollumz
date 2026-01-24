@@ -24,15 +24,16 @@ class MeshBuilder:
         # Triangles using the same vertex 2+ times are not valid topology for Blender and can potentially crash/hang
         # Blender before we have a chance to call `Mesh.validate()`. Some vanilla models and, often, modded models have
         # some of these degenerate triangles, so remove them.
-        faces = ind_arr.reshape((ind_arr.size // 3, 3))
-        invalid_faces_mask = (faces[:, 0] == faces[:, 1]) | (faces[:, 0] == faces[:, 2]) | (faces[:, 1] == faces[:, 2])
+        faces = ind_arr.reshape((int(ind_arr.size / 3), 3))
+        invalid_faces_mask = (faces[:,0] == faces[:,1]) | (faces[:,0] == faces[:,2]) | (faces[:,1] == faces[:,2])
         valid_faces_mask = ~invalid_faces_mask
-
-        self._faces = faces[valid_faces_mask]  # Cache reshaped faces for reuse in build()
-        self.ind_arr = self._faces.ravel()
-        self.mat_inds = mat_inds[valid_faces_mask]
+        ind_arr = faces[valid_faces_mask].reshape((-1,))
+        mat_inds = mat_inds[valid_faces_mask]
 
         self.vertex_arr = vertex_arr
+        self.ind_arr = ind_arr
+        self.mat_inds = mat_inds
+
         self.name = name
         self.materials = drawable_mats
 
@@ -47,12 +48,14 @@ class MeshBuilder:
     def build(self):
         mesh = bpy.data.meshes.new(self.name)
         vert_pos = self.vertex_arr["Position"]
+        faces = self.ind_arr.reshape((int(self.ind_arr.size / 3), 3))
 
         try:
-            mesh.from_pydata(vert_pos, [], self._faces)
+            mesh.from_pydata(vert_pos, [], faces)
         except Exception:
             logger.error(
-                f"Error during creation of fragment {self.name}:\n{format_exc()}\nEnsure the mesh data is not malformed.")
+                f"Error during creation of fragment {self.name}:\n{format_exc()}\nEnsure the mesh data is not malformed."
+            )
             return mesh
 
         self.create_mesh_materials(mesh)
@@ -86,10 +89,8 @@ class MeshBuilder:
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", np.ones(len(mesh.polygons), dtype=bool))
 
-        # Vectorized normalization
-        normals = self.vertex_arr["Normal"].astype(np.float64)
+        normals = self.vertex_arr["Normal"]
         lengths = np.linalg.norm(normals, axis=1, keepdims=True)
-        # Normalize in-place, avoiding division by zero for zero-length normals
         np.divide(normals, lengths, out=normals, where=lengths != 0)
         mesh.normals_split_custom_set_from_vertices(normals)
 
@@ -113,18 +114,18 @@ class MeshBuilder:
             create_color_attr(mesh, color_idx, initial_values=colors[self.ind_arr])
 
     def create_vertex_groups(self, obj: bpy.types.Object, bones: list[bpy.types.Bone]):
-        weights = self.vertex_arr["BlendWeights"] / 255  # Shape: (N, 4)
-        indices = self.vertex_arr["BlendIndices"]  # Shape: (N, 4)
-
-        num_verts = len(weights)
-
-        def get_bone_name(bone_index: int) -> str:
+        def _get_vertex_group_name(bone_index: int) -> str:
             if bone_index == 99999:
                 from .cloth_char import CLOTH_CHAR_VERTEX_GROUP_NAME
                 return CLOTH_CHAR_VERTEX_GROUP_NAME
             elif bones and bone_index < len(bones):
                 return bones[bone_index].name
             return f"UNKNOWN_BONE.{bone_index}"
+
+        weights = self.vertex_arr["BlendWeights"] / 255  # Shape: (N, 4)
+        indices = self.vertex_arr["BlendIndices"]  # Shape: (N, 4)
+
+        num_verts = len(weights)
 
         # Flatten arrays for vectorized processing
         # Each vertex has 4 blend weights/indices, so we repeat vertex indices 4 times
@@ -143,7 +144,7 @@ class MeshBuilder:
         vertex_groups: dict[int, bpy.types.VertexGroup] = {}
         for bone_idx in unique_bones:
             bone_idx_int = int(bone_idx)
-            vertex_groups[bone_idx_int] = obj.vertex_groups.new(name=get_bone_name(bone_idx_int))
+            vertex_groups[bone_idx_int] = obj.vertex_groups.new(name=_get_vertex_group_name(bone_idx_int))
 
         # Sort by bone index to group vertices per bone
         sort_order = np.argsort(valid_bone_indices)
