@@ -68,7 +68,7 @@ class LightType(str, Enum):
     SPOT = "sollumz_light_spot"
     CAPSULE = "sollumz_light_capsule"
 
-    def to_io(self) -> IOLodLevel:
+    def to_io(self) -> IOLightType:
         match self:
             case LightType.POINT:
                 return IOLightType.POINT

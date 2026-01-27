@@ -105,7 +105,7 @@ def get_group_face_inds(mesh_data: MeshData, bones: list[Bone]):
     face_weights = weights[faces]
     # Any given face could be in a maximum of 12 vertex groups (3 verts * 4 possible groups per vert)
     face_blend_inds = face_blend_inds.reshape((num_tris, 12))
-    face_weights = face_blend_inds.reshape((num_tris, 12))
+    face_weights = face_weights.reshape((num_tris, 12))
 
     # Mapping of blend indices in each face where (BlendIndex, BlendWeight) pairs are not (0, 0)
     blend_inds_mask = np.logical_or(face_blend_inds != 0, face_weights != 0)
@@ -276,7 +276,7 @@ def get_model_joined_ind_arr(geoms: list[Geometry]) -> NDArray[np.uint32]:
         ind_arr = geom.index_buffer.data
 
         if num_verts > 0:
-            ind_arr += num_verts
+            ind_arr = ind_arr + num_verts
 
         ind_arrs.append(ind_arr)
         num_verts += len(geom.vertex_buffer.data)
@@ -326,11 +326,15 @@ def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
     if "BlendIndices" not in vert_arr.dtype.names:
         return vert_arr
 
-    # Give vertices binded to cloth a magic number so mesh_builder knows it is cloth
-    is_cloth = vert_arr['BlendIndices'][:, 2] == 255
-    vert_arr["BlendIndices"][is_cloth] = 99999, 99999, 99999, 99999
+    blend_indices = vert_arr["BlendIndices"].copy()
 
-    vert_arr["BlendIndices"][~is_cloth] = bone_ids[vert_arr["BlendIndices"][~is_cloth]]
+    # Give vertices binded to cloth a magic number so mesh_builder knows it is cloth
+    is_cloth = blend_indices[:, 2] == 255
+    blend_indices[is_cloth] = 99999, 99999, 99999, 99999
+
+    blend_indices[~is_cloth] = bone_ids[blend_indices[~is_cloth]]
+
+    vert_arr["BlendIndices"] = blend_indices
 
 
 def get_model_poly_mat_inds(geoms: list[Geometry]):

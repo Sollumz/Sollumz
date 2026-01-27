@@ -78,8 +78,10 @@ def get_quaternion_from_sequence_data(
         rotation = channel_values[0]
     else:
         if len(sequence_data.channels) <= 4:
+            cached_channel = None
             for channel in sequence_data.channels:
                 if channel.type == "CachedQuaternion1" or channel.type == "CachedQuaternion2":
+                    cached_channel = channel
                     cached_value = channel.get_value(frame_id, channel_values)
 
                     if channel.quat_index == 0:
@@ -95,7 +97,7 @@ def get_quaternion_from_sequence_data(
                         channel_values = [
                             channel_values[0], channel_values[1], channel_values[2], cached_value]
 
-            if channel.type == "CachedQuaternion2":
+            if cached_channel is not None and cached_channel.type == "CachedQuaternion2":
                 rotation = Quaternion(
                     (channel_values[0], channel_values[1], channel_values[2], channel_values[3]))
             else:

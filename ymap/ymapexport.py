@@ -81,10 +81,10 @@ def model_from_obj(obj):
 
 def entity_from_obj(obj):
     # Removing " (not found)" suffix, created when importing ymaps while entity was not found in the view layer
-    obj.name = re.sub(" \(not found\)", "", obj.name.lower())
+    entity_name = re.sub(r" \(not found\)", "", obj.name.lower())
 
     entity = Entity()
-    entity.archetype_name = remove_number_suffix(obj.name)
+    entity.archetype_name = remove_number_suffix(entity_name)
     entity.flags = int(obj.entity_properties.flags)
     entity.guid = int(obj.entity_properties.guid)
     entity.position = obj.location
@@ -212,7 +212,7 @@ def ymap_from_object(obj):
     ymap.streaming_extents_max = obj.ymap_properties.streaming_extents_max
 
     ymap.block.version = obj.ymap_properties.block.version
-    ymap.block.versiflagson = obj.ymap_properties.block.flags
+    ymap.block.flags = obj.ymap_properties.block.flags
     ymap.block.name = obj.ymap_properties.block.name
     ymap.block.exported_by = obj.ymap_properties.block.exported_by
     ymap.block.owner = obj.ymap_properties.block.owner

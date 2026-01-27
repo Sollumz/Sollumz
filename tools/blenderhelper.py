@@ -150,10 +150,7 @@ def get_selected_vertices(obj):
 def get_selected_edit_vertices(mesh: bpy.types.Mesh) -> list[Vector]:
     """Get selected vertices of edit mode``mesh``."""
     bm = bmesh.from_edit_mesh(mesh)
-    try:
-        return [Vector(v.co) for v in bm.verts if v.select]
-    finally:
-        bm.free()
+    return [Vector(v.co) for v in bm.verts if v.select]
 
 
 def find_parent(obj, parent_name):

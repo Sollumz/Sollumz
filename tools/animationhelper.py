@@ -173,7 +173,7 @@ PropertyNameToTrackMap = {v: k for k, v in TrackToPropertyNameMap.items()}
 
 def get_quantum_and_min_val(nums):
     min_val = float_info.max
-    max_val = float_info.min
+    max_val = -float_info.max
     min_delta = float_info.max
     last_val = 0
 

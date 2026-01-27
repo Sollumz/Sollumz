@@ -897,6 +897,9 @@ class SOLLUMZ_OT_paste_location(Operator):
         location = parse_location_string(location_string)
         if location is not None:
             selected_object = bpy.context.object
+            if selected_object is None:
+                self.report({'ERROR'}, "No active object selected.")
+                return {'CANCELLED'}
 
             selected_object.location = location
             self.report({'INFO'}, "Location set successfully.")
@@ -918,6 +921,9 @@ class SOLLUMZ_OT_paste_rotation(Operator):
         rotation_quaternion = parse_rotation_string(rotation_string)
         if rotation_quaternion is not None:
             selected_object = bpy.context.object
+            if selected_object is None:
+                self.report({"ERROR"}, "No active object selected.")
+                return {"CANCELLED"}
 
             prev_rotation_mode = selected_object.rotation_mode
             selected_object.rotation_mode = "QUATERNION"
