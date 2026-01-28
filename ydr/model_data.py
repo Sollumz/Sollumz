@@ -326,15 +326,11 @@ def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
     if "BlendIndices" not in vert_arr.dtype.names:
         return vert_arr
 
-    blend_indices = vert_arr["BlendIndices"].copy()
-
     # Give vertices binded to cloth a magic number so mesh_builder knows it is cloth
-    is_cloth = blend_indices[:, 2] == 255
-    blend_indices[is_cloth] = 99999, 99999, 99999, 99999
+    is_cloth = vert_arr['BlendIndices'][:, 2] == 255
+    vert_arr["BlendIndices"][is_cloth] = 99999, 99999, 99999, 99999
 
-    blend_indices[~is_cloth] = bone_ids[blend_indices[~is_cloth]]
-
-    vert_arr["BlendIndices"] = blend_indices
+    vert_arr["BlendIndices"][~is_cloth] = bone_ids[vert_arr["BlendIndices"][~is_cloth]]
 
 
 def get_model_poly_mat_inds(geoms: list[Geometry]):

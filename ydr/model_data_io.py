@@ -103,7 +103,7 @@ def get_group_face_inds(mesh_data: MeshData, bones: list[SkelBone]):
     face_weights = weights[faces]
     # Any given face could be in a maximum of 12 vertex groups (3 verts * 4 possible groups per vert)
     face_blend_inds = face_blend_inds.reshape((num_tris, 12))
-    face_weights = face_blend_inds.reshape((num_tris, 12))
+    face_weights = face_weights.reshape((num_tris, 12))
 
     # Mapping of blend indices in each face where (BlendIndex, BlendWeight) pairs are not (0, 0)
     blend_inds_mask = np.logical_or(face_blend_inds != 0, face_weights != 0)
