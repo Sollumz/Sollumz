@@ -341,7 +341,14 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         obj = self.id_data
         bbmin, bbmax = get_bound_extents(obj)
         extents = bbmax - bbmin
-        radius = extents.x * 0.5
+
+        max_extent = max(extents.x, extents.y, extents.z)
+        if extents.x == max_extent:
+            radius = max(extents.y, extents.z) * 0.5
+        elif extents.y == max_extent:
+            radius = max(extents.x, extents.z) * 0.5
+        else:
+            radius = max(extents.x, extents.y) * 0.5
         return radius
 
     def capsule_length_getter(self) -> float:
@@ -350,9 +357,19 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         obj = self.id_data
         bbmin, bbmax = get_bound_extents(obj)
         extents = bbmax - bbmin
-        radius = extents.x * 0.5
-        length = extents.z if self.capsule_axis() == "Z" else extents.y
-        length = max(0.0, length - radius * 2.0)  # Remove capsule caps from length
+
+        max_extent = max(extents.x, extents.y, extents.z)
+        if extents.x == max_extent:
+            height = extents.x
+            radius = max(extents.y, extents.z) * 0.5
+        elif extents.y == max_extent:
+            height = extents.y
+            radius = max(extents.x, extents.z) * 0.5
+        else:
+            height = extents.z
+            radius = max(extents.x, extents.y) * 0.5
+
+        length = max(0.0, height - radius * 2.0)  # Remove capsule caps from length
         return length
 
     def capsule_radius_setter(self, value: float):

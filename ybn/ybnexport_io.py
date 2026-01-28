@@ -649,12 +649,13 @@ def create_primitive_sphere(
     mat_data = get_mat_data(obj.active_material)
     vert_ind = get_vert_index(transforms.translation)
 
-    # Assuming bounding box forms a cube. Get the sphere enclosed by the cube
-    # scale = transforms.to_scale()
     bbmin = get_min_vector_list(obj.bound_box)
     bbmax = get_max_vector_list(obj.bound_box)
 
-    radius = (bbmax.x - bbmin.x) / 2
+    local_radius = (bbmax.x - bbmin.x) / 2
+    local_horizontal = Vector((local_radius, 0, 0))
+    world_horizontal = transforms.to_3x3() @ local_horizontal
+    radius = world_horizontal.length
 
     return BoundPrimitive.new_sphere(vert_ind, radius, mat_data)
 
@@ -666,32 +667,52 @@ def _create_primitive_cylinder_or_capsule(
     get_vert_index: Callable[[Vector], int],
     get_mat_data: Callable[[Material], CollisionMaterial]
 ) -> BoundPrimitive:
-    position = transforms.translation
-
     mat_data = get_mat_data(obj.active_material)
 
-    # Only apply scale so we can get the oriented bounding box
-    # scale = transforms.to_scale()
     bbmin = get_min_vector_list(obj.bound_box)
     bbmax = get_max_vector_list(obj.bound_box)
+    extents = bbmax - bbmin
 
-    height = bbmax.z - bbmin.z
-    # Assumes X and Y scale are uniform
-    radius = (bbmax.x - bbmin.x) / 2
+    # Find the longest axis, thats the capsule height direction
+    if extents.x >= extents.y and extents.x >= extents.z:
+        local_height = extents.x
+        local_radius = max(extents.y, extents.z) / 2
+        axis_vector = Vector((1, 0, 0))
+        radius_vector = Vector((0, 1, 0)) if extents.y >= extents.z else Vector((0, 0, 1))
+    elif extents.y >= extents.x and extents.y >= extents.z:
+        local_height = extents.y
+        local_radius = max(extents.x, extents.z) / 2
+        axis_vector = Vector((0, 1, 0))
+        radius_vector = Vector((1, 0, 0)) if extents.x >= extents.z else Vector((0, 0, 1))
+    else:
+        local_height = extents.z
+        local_radius = max(extents.x, extents.y) / 2
+        axis_vector = Vector((0, 0, 1))
+        radius_vector = Vector((1, 0, 0)) if extents.x >= extents.y else Vector((0, 1, 0))
 
     if is_capsule:
-        height = height - (radius * 2)
+        local_length = max(0, local_height - (local_radius * 2))
+    else:
+        local_length = local_height
 
-    vertical = Vector((0, 0, height / 2))
-    vertical.rotate(transforms.to_euler("XYZ"))
+    local_center = (bbmin + bbmax) / 2
 
-    v0 = get_vert_index(position - vertical)
-    v1 = get_vert_index(position + vertical)
+    v1_local = local_center - axis_vector * (local_length / 2)
+    v2_local = local_center + axis_vector * (local_length / 2)
+
+    v1 = transforms @ v1_local
+    v2 = transforms @ v2_local
+
+    rot_scale = transforms.to_3x3()
+    radius = (rot_scale @ (radius_vector * local_radius)).length
+
+    v0_idx = get_vert_index(v1)
+    v1_idx = get_vert_index(v2)
 
     return (
-        BoundPrimitive.new_capsule(v0, v1, radius, mat_data)
+        BoundPrimitive.new_capsule(v0_idx, v1_idx, radius, mat_data)
         if is_capsule
-        else BoundPrimitive.new_cylinder(v0, v1, radius, mat_data)
+        else BoundPrimitive.new_cylinder(v0_idx, v1_idx, radius, mat_data)
     )
 
 
