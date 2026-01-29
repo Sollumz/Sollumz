@@ -883,6 +883,13 @@ class SOLLUMZ_OT_paste_location(Operator):
     bl_idname = "wm.sollumz_paste_location"
     bl_label = ""
 
+    @classmethod
+    def poll(cls, context):
+        if context.active_object is None:
+            cls.poll_message_set("No active object selected.")
+            return False
+        return True
+
     def execute(self, context):
         def parse_location_string(location_string):
             pattern = r"(-?\d+\.\d+)"
@@ -892,13 +899,11 @@ class SOLLUMZ_OT_paste_location(Operator):
             else:
                 return None
 
-        location_string = bpy.context.window_manager.clipboard
+        location_string = context.window_manager.clipboard
 
         location = parse_location_string(location_string)
         if location is not None:
-            selected_object = bpy.context.object
-
-            selected_object.location = location
+            context.active_object.location = location
             self.report({'INFO'}, "Location set successfully.")
         else:
             self.report({'ERROR'}, "Invalid location string.")
@@ -911,18 +916,23 @@ class SOLLUMZ_OT_paste_rotation(Operator):
     bl_idname = "wm.sollumz_paste_rotation"
     bl_label = "Paste Rotation"
 
-    def execute(self, context):
+    @classmethod
+    def poll(cls, context):
+        if context.active_object is None:
+            cls.poll_message_set("No active object selected.")
+            return False
+        return True
 
-        rotation_string = bpy.context.window_manager.clipboard
+    def execute(self, context):
+        rotation_string = context.window_manager.clipboard
 
         rotation_quaternion = parse_rotation_string(rotation_string)
         if rotation_quaternion is not None:
-            selected_object = bpy.context.object
-
-            prev_rotation_mode = selected_object.rotation_mode
-            selected_object.rotation_mode = "QUATERNION"
-            selected_object.rotation_quaternion = rotation_quaternion
-            selected_object.rotation_mode = prev_rotation_mode
+            obj = context.active_object
+            prev_rotation_mode = obj.rotation_mode
+            obj.rotation_mode = "QUATERNION"
+            obj.rotation_quaternion = rotation_quaternion
+            obj.rotation_mode = prev_rotation_mode
 
             self.report({"INFO"}, "Rotation set successfully.")
         else:

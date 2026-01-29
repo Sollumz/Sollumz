@@ -553,16 +553,13 @@ def join_vert_arrs(vert_arrs: list[NDArray]):
         row_start = 0
 
         for vert_arr in vert_arrs:
-            if attr_name not in vert_arr.dtype.names:
-                continue
+            num_attr_verts = len(vert_arr)
 
-            attr = vert_arr[attr_name]
-            num_attr_verts = len(attr)
-            row_end = row_start + num_attr_verts
+            if attr_name in vert_arr.dtype.names:
+                row_end = row_start + num_attr_verts
+                joined_arr[attr_name][row_start:row_end] = vert_arr[attr_name]
 
-            joined_arr[attr_name][row_start:row_end] = attr
-
-            row_start = row_end
+            row_start += num_attr_verts
 
     return joined_arr
 

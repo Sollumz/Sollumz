@@ -85,8 +85,9 @@ def create_drawable(
     if bounds is not None:
         create_embedded_collisions(bounds, drawable_obj)
 
+    armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else external_armature
+
     if not skip_models:
-        armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else external_armature
         if armature_obj is None:
             model_objs = create_drawable_models(
                 drawable, hi_drawable, materials, hi_materials, model_names=f"{name}.model"

@@ -234,10 +234,11 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
 
     for mat in tint_mats:
         tint_sampler_node = get_tint_sampler_node(mat)
-        palette_img = tint_sampler_node.image
 
         if tint_sampler_node is None:
             continue
+
+        palette_img = tint_sampler_node.image
 
         if mat.shader_properties.filename in ShaderManager.tint_colour1_shaders:
             input_color_attr_name = get_color_attr_name(1)

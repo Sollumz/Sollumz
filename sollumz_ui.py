@@ -93,8 +93,8 @@ class FilterListHelper:
     def _filter_item_name(self, item):
         try:
             name = getattr(item, self.order_by_name_key)
-        except:
-            AttributeError(
+        except AttributeError:
+            raise AttributeError(
                 f"Invalid order_by_name_key for {self.__class__.__name__}! This should be the 'name' attribute for the list item.")
 
         return not self.filter_name or self.filter_name.lower() in name.lower()

@@ -123,7 +123,8 @@ def create_entity_xml(entity: MloEntityProperties, archetype: ArchetypePropertie
 
     for extension in entity.extensions:
         extension_xml = create_extension_xml(extension)
-        entity_xml.extensions.append(extension_xml)
+        if extension_xml is not None:
+            entity_xml.extensions.append(extension_xml)
 
     return entity_xml
 
@@ -352,7 +353,8 @@ def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool 
 
     for extension in archetype.extensions:
         extension_xml = create_extension_xml(extension)
-        archetype_xml.extensions.append(extension_xml)
+        if extension_xml is not None:
+            archetype_xml.extensions.append(extension_xml)
 
     return archetype_xml
 
