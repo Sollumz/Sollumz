@@ -1,14 +1,20 @@
 import contextlib
-import os
 import shutil
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from enum import Enum, auto
 
 from szio.gta5 import Asset, AssetFormat, AssetTarget, save_asset
 from szio.types import DataSource
 
 from .ydr.vertex_buffer_builder_domain import VBBuilderDomain
+
+
+class ImportTexturesMode(Enum):
+    PACK = auto()
+    IMPORT_DIR = auto()
+    CUSTOM_DIR = auto()
 
 
 @dataclass(slots=True, frozen=True)
@@ -23,6 +29,10 @@ class ImportSettings:
     """Look for a YFT to use as skeleton when importing a YDD."""
     frag_import_vehicle_windows: bool = False
     """Whether to import vehicle windows when importing a YFT."""
+    textures_mode: ImportTexturesMode = ImportTexturesMode.PACK
+    """How to handle imported textures."""
+    textures_extract_custom_directory: Path | None = None
+    """Custom directory for textures when mode is 'CUSTOM_DIR'."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -32,6 +42,23 @@ class ImportContext:
     asset_name: str
     directory: Path
     settings: ImportSettings
+
+    @property
+    def textures_extract_directory(self) -> Path | None:
+        """Directory where embedded textures from this asset will be extracted to."""
+        match self.settings.textures_mode:
+            case ImportTexturesMode.IMPORT_DIR:
+                return self.textures_import_directory
+            case ImportTexturesMode.CUSTOM_DIR:
+                custom_dir = self.settings.textures_extract_custom_directory
+                assert custom_dir is not None, "Textures custom directory expected to be set"
+                return custom_dir / self.asset_name
+            case _:
+                return None
+
+    @property
+    def textures_import_directory(self) -> Path:
+        return self.directory / self.asset_name
 
 
 @dataclass(slots=True, frozen=True)

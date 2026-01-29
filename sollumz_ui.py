@@ -160,9 +160,43 @@ class SOLLUMZ_PT_import_asset(bpy.types.Panel, SollumzImportSettingsPanel):
         layout.prop(settings, "import_as_asset")
 
 
+class SOLLUMZ_PT_import_textures(bpy.types.Panel, SollumzImportSettingsPanel):
+    bl_label = "Textures"
+    bl_order = 1
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+        col = layout.column(align=True)
+        col.prop(settings, "textures_mode", text="Mode")
+        if settings.textures_mode == "CUSTOM_DIR":
+            split = col.split(factor=0.4)
+            split.column()
+            split.column().prop(bpy.context.window_manager, "sz_ui_import_textures_extract_custom_directory_wrapper", text="")
+
+    @classmethod
+    def register(cls):
+        def _get(self) -> str:
+            return get_import_settings().textures_extract_custom_directory
+        def _set(self, value: str):
+            get_import_settings().textures_extract_custom_directory = value
+
+        # Wrapper without subtype=DIR_PATH so it doesn't show the "open directory browser" button. Since we are
+        # already in a file dialog, it reports an error saying it cannot open another one. Having this wrapper seems to
+        # be the only way to hide that button.
+        kw = SollumzImportSettings.__bases__[0].__annotations__["textures_extract_custom_directory"].keywords
+        bpy.types.WindowManager.sz_ui_import_textures_extract_custom_directory_wrapper = bpy.props.StringProperty(
+            name=kw["name"],
+            description=kw["description"],
+            get=_get, set=_set,
+        )
+
+    @classmethod
+    def unregister(cls):
+        del bpy.types.WindowManager.sz_ui_import_textures_extract_custom_directory_wrapper
+
+
 class SOLLUMZ_PT_import_fragment(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Fragment"
-    bl_order = 1
+    bl_order = 2
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "split_by_group")
@@ -171,7 +205,7 @@ class SOLLUMZ_PT_import_fragment(bpy.types.Panel, SollumzImportSettingsPanel):
 
 class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Drawable Dictionary"
-    bl_order = 2
+    bl_order = 3
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "import_ext_skeleton")
@@ -179,7 +213,7 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
 
 class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Ymap"
-    bl_order = 3
+    bl_order = 4
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "ymap_skip_missing_entities")

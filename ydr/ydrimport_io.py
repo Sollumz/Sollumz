@@ -9,6 +9,7 @@ from bpy.types import (
     Bone,
     LimitLocationConstraint,
     LimitRotationConstraint,
+    ShaderNodeTexImage,
 )
 from typing import Optional
 from mathutils import Matrix
@@ -41,7 +42,7 @@ from .cable import CABLE_SHADER_NAME
 from ..lods import LODLevels, LODLevel
 from .lights_io import create_light_objs
 from .properties import DrawableModelProperties
-from ..iecontext import import_context
+from ..iecontext import import_context, ImportTexturesMode
 from .. import logger
 
 
@@ -252,23 +253,41 @@ def create_drawable_root_empty(drawable: AssetDrawable, name: str) -> Object:
     return drawable_obj
 
 
-def extract_embedded_textures(shader_group: ShaderGroup):
+def extract_embedded_textures(shader_group: ShaderGroup | None):
     import shutil
 
     if not shader_group or not shader_group.embedded_textures:
         return
 
+    ctx = import_context()
+    if ctx.settings.textures_mode == ImportTexturesMode.PACK:
+        return
+
     textures = [t.data for t in shader_group.embedded_textures.values() if t.data is not None]
+    if not textures and ctx.settings.textures_mode == ImportTexturesMode.CUSTOM_DIR:
+        # If no embedded textures data (e.g. importing CWXML), try to lookup external texture files in import directory
+        # so we can copy them to the user custom directory
+        textures_import_dir = ctx.textures_import_directory
+        if textures_import_dir.is_dir():
+            from szio.types import DataSource
+            textures = [
+                DataSource.create(p)
+                for t in shader_group.embedded_textures.values()
+                if (p := textures_import_dir / f"{t.name}.dds").is_file()
+            ]
+
     if not textures:
         return
 
-    ctx = import_context()
-    texture_folder = ctx.directory / ctx.asset_name
+    textures_extract_dir = ctx.textures_extract_directory
+    if textures_extract_dir is None:
+        return
 
-    texture_folder.mkdir(exist_ok=True)
+    textures_extract_dir.mkdir(parents=True, exist_ok=True)
     for tex_data in textures:
-        tex_file = texture_folder / tex_data.name
+        tex_file = textures_extract_dir / tex_data.name
         if tex_file.exists():
+            # Don't overwrite existing files
             continue
 
         with tex_data.open() as src, tex_file.open("wb") as dst:
@@ -305,7 +324,7 @@ def shader_group_to_materials_with_hi(
 
 def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Material:
     ctx = import_context()
-    texture_folder = ctx.directory / ctx.asset_name
+    textures_dir = ctx.textures_extract_directory or ctx.textures_import_directory
 
     filename = shader.preset_filename or ShaderManager.find_shader_preset_name(shader.name, shader.render_bucket.value)
     if not filename:
@@ -320,55 +339,82 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
     material = create_shader(filename)
     material.shader_properties.renderbucket = shader.render_bucket.name
 
+    nodes = {
+        n.name.lower(): n
+        for n in material.node_tree.nodes
+        if isinstance(n, (ShaderNodeTexImage, SzShaderNodeParameter))
+    }
     for param in shader.parameters:
         param_name = param.name.lower()
-        for n in material.node_tree.nodes:
-            if isinstance(n, bpy.types.ShaderNodeTexImage):
-                if param_name == n.name.lower():
-                    texture_path = lookup_texture_file(param.value, texture_folder)
-                    if texture_path is not None:
-                        img = bpy.data.images.load(str(texture_path), check_existing=True)
-                        n.image = img
+        n = nodes.get(param_name, None)
+        if n is None:
+            continue
 
-                    if not n.image:
-                        # for texture shader parameters with no name
-                        if not param.value:
-                            continue
-                        # Check for existing texture
-                        existing_texture = None
-                        for image in bpy.data.images:
-                            if image.name == param.value:
-                                existing_texture = image
-                        texture = bpy.data.images.new(
-                            name=param.value, width=512, height=512) if not existing_texture else existing_texture
-                        n.image = texture
+        if isinstance(n, ShaderNodeTexImage):
+            tex_name = param.value
+            if not tex_name:
+                # Skip unassigned texture shader parameters
+                continue
 
-                    if is_non_color_texture(filename, param_name):
-                        n.image.colorspace_settings.is_data = True
+            tex_name_dds = f"{tex_name}.dds"
+            pack = ctx.settings.textures_mode == ImportTexturesMode.PACK
+            img = None
 
-                    preferences = get_addon_preferences(bpy.context)
-                    text_name = preferences.use_text_name_as_mat_name
-                    if text_name:
-                        if param.value and param_name == "diffusesampler":
-                            material.name = param.value
+            if (
+                pack and
+                (etex := shader_group.embedded_textures.get(tex_name, None)) and
+                etex.data
+            ):
+                # If pack mode and we have embedded texture data, load it into a packed image directly
+                with etex.data.open() as src:
+                    etex_dds = src.read()
 
-                    if param.value in shader_group.embedded_textures:
-                        n.texture_properties.embedded = True
+                img = bpy.data.images.new(name=tex_name_dds, width=1, height=1)
+                img.source = "FILE"
+                img.filepath = f"//{tex_name_dds}"
+                img.pack(data=etex_dds, data_len=len(etex_dds))
 
-                    if not n.texture_properties.embedded and not n.image.filepath:
-                        # Set external texture name for non-embedded textures
-                        n.image.source = "FILE"
-                        n.image.filepath = "//" + param.value + ".dds"
+            if not img:
+                # Try to load texture from file
+                if texture_path := lookup_texture_file(tex_name, textures_dir):
+                    img = bpy.data.images.load(str(texture_path), check_existing=True)
+                    if pack:
+                        img.pack()
 
-            elif isinstance(n, SzShaderNodeParameter):
-                if param_name == n.name.lower() and n.num_rows == 1:
-                    n.set("X", param.value.x)
-                    if n.num_cols > 1:
-                        n.set("Y", param.value.y)
-                    if n.num_cols > 2:
-                        n.set("Z", param.value.z)
-                    if n.num_cols > 3:
-                        n.set("W", param.value.w)
+            if not img:
+                # Check for existing texture image
+                img = bpy.data.images.get(tex_name, None) or bpy.data.images.get(tex_name_dds, None)
+
+            if not img:
+                # Create placeholder image if still not found
+                img = bpy.data.images.new(name=tex_name, width=512, height=512)
+
+            if is_non_color_texture(filename, param_name):
+                img.colorspace_settings.is_data = True
+
+            preferences = get_addon_preferences(bpy.context)
+            if preferences.use_text_name_as_mat_name and param_name == "diffusesampler":
+                material.name = tex_name
+
+            if tex_name in shader_group.embedded_textures:
+                n.texture_properties.embedded = True
+
+            if not n.texture_properties.embedded and not img.filepath:
+                # Set external texture name for non-embedded textures
+                img.source = "FILE"
+                img.filepath = f"//{tex_name_dds}"
+
+            n.image = img
+
+        elif isinstance(n, SzShaderNodeParameter):
+            if n.num_rows == 1:
+                n.set("X", param.value.x)
+                if n.num_cols > 1:
+                    n.set("Y", param.value.y)
+                if n.num_cols > 2:
+                    n.set("Z", param.value.z)
+                if n.num_cols > 3:
+                    n.set("W", param.value.w)
 
     # assign extra detail node image for viewing
     dtl_ext = get_detail_extra_sampler(material)

@@ -248,6 +248,8 @@ DEFAULT_IMPORT_SETTINGS = {
     "ymap_car_generators": False,
     "ymap_instance_entities": False,
     "ytyp_mlo_instance_entities": True,
+    "textures_mode": "PACK",
+    "textures_extract_custom_directory": "",
 }
 
 
@@ -295,8 +297,9 @@ def test_export_model_with_external_textures(tmp_path: Path):
 
 @requires_szio_native
 @pytest.mark.parametrize("version_dir", ("gen8", "gen9"))
+@pytest.mark.parametrize("textures_mode", ("PACK", "IMPORT_DIR", "CUSTOM_DIR", "CUSTOM_DIR_NOT_SET"))
 @assert_logs_no_warnings_or_errors
-def test_import_model_with_embedded_textures_extract_to_import_dir(tmp_path: Path, version_dir: str):
+def test_import_model_with_embedded_textures(tmp_path: Path, version_dir: str, textures_mode: str):
     bpy.ops.wm.read_homefile()
 
     ydr_filename = "model_with_embedded_textures.ydr"
@@ -305,18 +308,128 @@ def test_import_model_with_embedded_textures_extract_to_import_dir(tmp_path: Pat
     # Copy to temp dir
     (tmp_path / ydr_filename).write_bytes(ydr_path.read_bytes())
 
-    expected_file = tmp_path / "model_with_embedded_textures" / "test_image.dds"
-    assert not expected_file.is_file()
+    custom_dir = (tmp_path / "my_textures_custom_dir").absolute()
+    texture_in_import_dir = tmp_path / "model_with_embedded_textures" / "test_image.dds"
+    texture_in_custom_dir = custom_dir / "model_with_embedded_textures" / "test_image.dds"
 
-    bpy.ops.sollumz.import_assets(
+    assert not texture_in_import_dir.is_file()
+    assert not texture_in_custom_dir.is_file()
+    assert "test_image.dds" not in bpy.data.images
+
+    res = bpy.ops.sollumz.import_assets(
         directory=str(tmp_path.absolute()),
         files=[{"name": ydr_path.name}],
         use_custom_settings=True,
-        **DEFAULT_IMPORT_SETTINGS,
+        **DEFAULT_IMPORT_SETTINGS | ({
+            "textures_mode": textures_mode,
+            "textures_extract_custom_directory": str(custom_dir),
+        } if textures_mode != "CUSTOM_DIR_NOT_SET" else {
+            "textures_mode": "CUSTOM_DIR",
+            "textures_extract_custom_directory": "",
+        }),
     )
+    assert res == {"FINISHED"}
 
-    assert expected_file.is_file()
-    assert expected_file.read_bytes().startswith(b"DDS ")
+    assert "test_image.dds" in bpy.data.images
+    img = bpy.data.images["test_image.dds"]
+    assert img.size[:] == (64, 64)
+    assert img.source == "FILE"
+
+    match textures_mode:
+        case "PACK":
+            # embedded textures loaded into a packed image directly, without creating any file
+            assert not texture_in_import_dir.is_file()
+            assert not texture_in_custom_dir.is_file()
+            assert img.filepath == "//test_image.dds"
+            assert img.packed_file
+            assert img.packed_file.data and img.packed_file.data.startswith(b"DDS ")
+
+        case "IMPORT_DIR" | "CUSTOM_DIR_NOT_SET":
+            # embedded textures are extracted to import directory
+            assert not texture_in_custom_dir.is_file()
+            assert texture_in_import_dir.is_file()
+            assert texture_in_import_dir.read_bytes().startswith(b"DDS ")
+            assert img.filepath == str(texture_in_import_dir)
+            assert not img.packed_file
+
+        case "CUSTOM_DIR":
+            # embedded textures are extracted to custom directory
+            assert not texture_in_import_dir.is_file()
+            assert texture_in_custom_dir.is_file()
+            assert texture_in_custom_dir.read_bytes().startswith(b"DDS ")
+            assert img.filepath == str(texture_in_custom_dir)
+            assert not img.packed_file
+
+
+@pytest.mark.parametrize("textures_mode", ("PACK", "IMPORT_DIR", "CUSTOM_DIR", "CUSTOM_DIR_NOT_SET"))
+@assert_logs_no_warnings_or_errors
+def test_import_model_with_embedded_textures_cwxml(tmp_path: Path, textures_mode: str):
+    # CWXML embedded textures are actually external textures in the import directory so the behaviour is slightly
+    # different than in native formats
+
+    bpy.ops.wm.read_homefile()
+
+    ydr_filename = "model_with_embedded_textures.ydr.xml"
+    ydr_path = asset_path("cwxml", ydr_filename)
+    ydr_external_tex_path = asset_path("cwxml", "model_with_embedded_textures", "test_image.dds")
+
+    # Copy to temp dir
+    (tmp_path / ydr_filename).write_bytes(ydr_path.read_bytes())
+    (tmp_path / "model_with_embedded_textures").mkdir()
+    (tmp_path / "model_with_embedded_textures" / "test_image.dds").write_bytes(ydr_external_tex_path.read_bytes())
+
+    custom_dir = (tmp_path / "my_textures_custom_dir").absolute()
+    texture_in_import_dir = tmp_path / "model_with_embedded_textures" / "test_image.dds"
+    texture_in_custom_dir = custom_dir / "model_with_embedded_textures" / "test_image.dds"
+
+    assert texture_in_import_dir.is_file(), "CWXML should already have textures in the import directory"
+    assert not texture_in_custom_dir.is_file()
+    assert "test_image.dds" not in bpy.data.images
+
+    res = bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path.absolute()),
+        files=[{"name": ydr_path.name}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS | ({
+            "textures_mode": textures_mode,
+            "textures_extract_custom_directory": str(custom_dir),
+        } if textures_mode != "CUSTOM_DIR_NOT_SET" else {
+            "textures_mode": "CUSTOM_DIR",
+            "textures_extract_custom_directory": "",
+        }),
+    )
+    assert res == {"FINISHED"}
+
+    assert "test_image.dds" in bpy.data.images
+    img = bpy.data.images["test_image.dds"]
+    assert img.size[:] == (64, 64)
+    assert img.source == "FILE"
+
+    match textures_mode:
+        case "PACK":
+            # embedded textures loaded from import directory and packed
+            assert texture_in_import_dir.is_file()
+            assert not texture_in_custom_dir.is_file()
+            assert img.filepath == str(texture_in_import_dir)
+            assert img.packed_file
+            assert img.packed_file.data and img.packed_file.data.startswith(b"DDS ")
+
+        case "IMPORT_DIR" | "CUSTOM_DIR_NOT_SET":
+            # embedded textures remain in import directory
+            assert not texture_in_custom_dir.is_file()
+            assert texture_in_import_dir.is_file()
+            assert texture_in_import_dir.read_bytes().startswith(b"DDS ")
+            assert img.filepath == str(texture_in_import_dir)
+            assert not img.packed_file
+
+        case "CUSTOM_DIR":
+            # embedded textures copied from import directory to custom directory
+            assert texture_in_import_dir.is_file()
+            assert texture_in_custom_dir.is_file()
+            assert texture_in_custom_dir.read_bytes().startswith(b"DDS ")
+            assert texture_in_import_dir.read_bytes() == texture_in_custom_dir.read_bytes()
+            assert img.filepath == str(texture_in_custom_dir)
+            assert not img.packed_file
 
 
 @requires_szio_native
@@ -337,7 +450,9 @@ def test_export_to_same_dir_as_import_and_textures_are_exported_correctly(tmp_pa
         directory=str(tmp_path.absolute()),
         files=[{"name": ydr_path.name}],
         use_custom_settings=True,
-        **DEFAULT_IMPORT_SETTINGS,
+        **DEFAULT_IMPORT_SETTINGS | {
+            "textures_mode": "IMPORT_DIR"
+        },
     )
 
     texture_file = tmp_path / "model_with_embedded_textures" / "test_image.dds"
