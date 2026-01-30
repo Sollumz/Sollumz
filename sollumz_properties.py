@@ -541,7 +541,7 @@ def register():
     bpy.types.Scene.vert_paint_color1 = bpy.props.FloatVectorProperty(
         name="Vert Color 1",
         subtype="COLOR_GAMMA",
-        default=(1.0, 1.0, 1.0, 1.0),
+        default=(0.0, 1.0, 1.0, 1.0),
         min=0,
         max=1,
         size=4
