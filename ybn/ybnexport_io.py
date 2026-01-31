@@ -43,7 +43,8 @@ def export_ybn(obj: Object) -> ExportBundle:
 
 def create_bound_composite_asset(
     obj: Object,
-    out_child_obj_to_index: dict[Object, int] = None
+    out_child_obj_to_index: dict[Object, int] = None,
+    allow_planes: bool = False,
 ) -> Optional[AssetBound]:
     assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
@@ -58,7 +59,7 @@ def create_bound_composite_asset(
     volume = 0.0
     extents_corners: list[Vector] = []
     for child_obj in obj.children:
-        child_bound = create_bound_asset(child_obj)
+        child_bound = create_bound_asset(child_obj, allow_planes=allow_planes)
         if child_bound is None:
             continue
 
@@ -158,7 +159,7 @@ def init_bound_bvh_asset(obj: Object) -> tuple[AssetBound, list[BoundVertex], li
     return bvh, vertices, primitives
 
 
-def create_bound_asset(obj: Object, is_root: bool = False) -> Optional[AssetBound]:
+def create_bound_asset(obj: Object, is_root: bool = False, allow_planes: bool = False) -> Optional[AssetBound]:
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
     if obj.sollum_type not in {
         SollumType.BOUND_BOX,
@@ -166,12 +167,20 @@ def create_bound_asset(obj: Object, is_root: bool = False) -> Optional[AssetBoun
         SollumType.BOUND_CYLINDER,
         SollumType.BOUND_CAPSULE,
         SollumType.BOUND_DISC,
+        SollumType.BOUND_PLANE,
         SollumType.BOUND_GEOMETRY,
         SollumType.BOUND_GEOMETRYBVH,
     }:
         logger.warning(
             f"'{obj.name}' is being exported as bound but has no bound Sollumz type! Please, use a bound type instead "
             f"of '{SOLLUMZ_UI_NAMES[obj.sollum_type]}'."
+        )
+        return None
+
+    if not allow_planes and obj.sollum_type == SollumType.BOUND_PLANE:
+        logger.warning(
+            f"'{obj.name}' is a {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} but planes are not supported in this "
+            f"context! Only fragment cloth world bounds may use planes."
         )
         return None
 
