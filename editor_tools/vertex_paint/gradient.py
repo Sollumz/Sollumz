@@ -140,6 +140,12 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
         default=False,
         options={"SKIP_SAVE"},
     )
+    truncate: BoolProperty(
+        name="Truncate",
+        description="Truncate the gradient to the drag area instead of applying it to the whole mesh",
+        default=False,
+        options={"SKIP_SAVE"},
+    )
 
     @classmethod
     def poll(cls, context) -> bool:
@@ -158,6 +164,7 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
 
         radial = self.type == "RADIAL"
         use_hue_blend = self.use_hue_blend
+        truncate = self.truncate
 
         region = context.region
         rv3d = context.region_data
@@ -237,6 +244,8 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
 
         trans_vector = trans_end - trans_start
         trans_len = trans_vector.length
+        if trans_len == 0.0:
+            trans_len = 0.000001
 
         # Calculate hue, saturation and value shift for blending
         if use_hue_blend:
@@ -267,6 +276,11 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
                 height_trans = 0.000001
             t = (trans_vecs[:, 1] - min_y) / height_trans
 
+        if truncate:
+            t_mask = (t >= -0.025) & (t <= 1.025)
+        else:
+            t_mask = slice(None)
+
         np.clip(t, 0.0, 1.0, out=t)
         np.abs(t, out=t)
 
@@ -274,23 +288,34 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
             h = np.fmod(1.0 + c1_hue + hue_separation * t, 1.0)
             s = c1_sat + sat_separation * t
             v = c1_val + val_separation * t
-            colors[:] = _np_hsv_to_rgb(h, s, v)
+            colors[t_mask] = _np_hsv_to_rgb(h[t_mask], s[t_mask], v[t_mask])
         else:
             s = np.array(start_color[:3])
             e = np.array(end_color[:3])
-            colors[:] = s + (e - s) * t[:, np.newaxis]
+            colors[t_mask] = s + (e - s) * t[t_mask, np.newaxis]
+
+        if truncate:
+            # If truncating we are only painting part of the mesh not all of it,
+            # so reset it to its original color first
+            color_data[:] = self._saved_color_data
 
         match color_attr.domain:
             case "POINT":
                 if vertex_mask is None:
-                    color_data[:, :3] = colors
+                    color_data[t_mask, :3] = colors[t_mask]
                 else:
-                    color_data[vertex_mask, :3] = colors[vertex_mask]
+                    m = (t_mask & vertex_mask) if truncate else vertex_mask
+                    color_data[m, :3] = colors[m]
             case "CORNER":
                 if loop_mask is None:
-                    color_data[:, :3] = colors[loop_vertex_index]
+                    if truncate:
+                        t_loop_mask = t_mask[loop_vertex_index]
+                        color_data[t_loop_mask, :3] = colors[loop_vertex_index][t_loop_mask]
+                    else:
+                        color_data[:, :3] = colors[loop_vertex_index]
                 else:
-                    color_data[loop_mask, :3] = colors[loop_vertex_index][loop_mask]
+                    m = (t_mask[loop_vertex_index] & loop_mask) if truncate else loop_mask
+                    color_data[m, :3] = colors[loop_vertex_index][m]
             case _:
                 raise AssertionError(f"Unsupported domain '{color_attr.domain}'")
 
@@ -324,6 +349,21 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
             self._move_prev = Vector((event.mouse_region_x, event.mouse_region_y))
             self._move = event.value != "RELEASE"
 
+        repaint = False
+        finish = False
+
+        if event.type == "R" and event.value == "PRESS":
+            self.type = "LINEAR" if self.type == "RADIAL" else "RADIAL"
+            repaint = True
+
+        if event.type == "H" and event.value == "PRESS":
+            self.use_hue_blend = not self.use_hue_blend
+            repaint = True
+
+        if event.type == "T" and event.value == "PRESS":
+            self.truncate = not self.truncate
+            repaint = True
+
         # Update gradient start/end points
         if event.type in {"MOUSEMOVE", "LEFTMOUSE"}:
             mouse_point = Vector((event.mouse_region_x, event.mouse_region_y))
@@ -347,15 +387,8 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
                     end_point = self._axis_snap(start_point, end_point, 20)
                 self.end_point = end_point
 
-            if end_point != start_point:
-                self._paint_verts(context)
-
+            repaint = True
             finish = event.type == "LEFTMOUSE" and event.value == "RELEASE"
-            if finish:
-                self._cleanup(context)
-                return {"FINISHED"}
-            else:
-                return {"RUNNING_MODAL"}
 
         # Allow camera navigation
         if event.type in {"MIDDLEMOUSE", "WHEELUPMOUSE", "WHEELDOWNMOUSE"}:
@@ -366,10 +399,25 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
             self._cleanup(context)
             return {"CANCELLED"}
 
+        if repaint and self.end_point != self.start_point:
+            self._paint_verts(context)
+
+        if finish:
+            self._cleanup(context)
+            return {"FINISHED"}
+
         # Keep running until completed or cancelled
         return {"RUNNING_MODAL"}
 
+    def _save_color_data(self, context):
+        # Save the current color attribute data to restore it if the user cancels
+        mesh = context.active_object.data
+        color_attr = mesh.attributes.active_color
+        self._saved_color_data = np.empty((attr_domain_size(mesh, color_attr), 4), dtype=np.float32)
+        color_attr.data.foreach_get("color_srgb", self._saved_color_data.ravel())
+
     def execute(self, context):
+        self._save_color_data(context)
         self._cached_data = None
         self._paint_verts(context)
         return {"FINISHED"}
@@ -385,15 +433,10 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
         self.start_point = mouse_position
         self.end_point = mouse_position
 
-        # Save the current color attribute data to restore it if the user cancels
-        mesh = context.active_object.data
-        color_attr = mesh.attributes.active_color
-        self._saved_color_data = np.empty((attr_domain_size(mesh, color_attr), 4), dtype=np.float32)
-        color_attr.data.foreach_get("color_srgb", self._saved_color_data.ravel())
-
         self._move_prev = Vector((0.0, 0.0))
         self._move = False
 
+        self._save_color_data(context)
         self._cached_data = None
 
         self._handle = SpaceView3D.draw_handler_add(self._draw_gradient_callback, (), "WINDOW", "POST_PIXEL")
@@ -408,6 +451,9 @@ class SOLLUMZ_OT_vertex_paint_gradient(Operator):
         layout.label(text=" Cancel", icon="EVENT_ESC")
         layout.label(text="    Move", icon="EVENT_SPACEKEY")
         layout.label(text=" Snap", icon="EVENT_CTRL")
+        layout.label(text="Linear" if self.type == "RADIAL" else "Radial", icon="EVENT_R")
+        layout.label(text="Hue Blend", icon="EVENT_H")
+        layout.label(text="Truncate", icon="EVENT_T")
 
     def _draw_gradient_callback(self):
         line_shader = gpu.shader.from_builtin("SMOOTH_COLOR")
@@ -467,3 +513,4 @@ class VertexPaintGradientTool(WorkSpaceTool):
         row = layout.row(align=True)
         row.prop(props, "type", expand=True)
         layout.prop(props, "use_hue_blend")
+        layout.prop(props, "truncate")

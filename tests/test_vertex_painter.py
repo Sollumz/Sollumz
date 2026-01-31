@@ -315,7 +315,8 @@ def test_ops_vertex_paint_isolate_channel_extend_from_alpha_to_rgb(data_type, do
 @pytest.mark.parametrize("domain", ("CORNER", "POINT"))
 @pytest.mark.parametrize("gradient_type", ("LINEAR", "RADIAL"))
 @pytest.mark.parametrize("use_hue_blend", (False, True))
-def test_ops_vertex_paint_gradient(data_type, domain, gradient_type, use_hue_blend, context, plane_object):
+@pytest.mark.parametrize("truncate", (False, True))
+def test_ops_vertex_paint_gradient(data_type, domain, gradient_type, use_hue_blend, truncate, context, plane_object):
     m = plane_object.data
     m.attributes.new("MyColor", data_type, domain)
     m.attributes.active_color_name = "MyColor"
@@ -337,6 +338,7 @@ def test_ops_vertex_paint_gradient(data_type, domain, gradient_type, use_hue_ble
             end_point=(context.region.width, context.region.height),
             type=gradient_type,
             use_hue_blend=use_hue_blend,
+            truncate=truncate,
         )
 
     for i in range(len(m.attributes.active_color.data)):
