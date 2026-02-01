@@ -89,7 +89,7 @@ def get_first_yft_path(directory: Path) -> Optional[Path]:
     return None
 
 
-def import_ydd(asset: AssetWithDependencies, name: str) -> Object:
+def import_ydd(asset: AssetWithDependencies, name: str) -> Object | list[Object]:
     dwd = asset.main_asset
     skel_frag = asset.dependencies.get("external_skel", None)
     cloth_dictionary = asset.dependencies.get("cloth", None)
@@ -102,11 +102,17 @@ def create_drawable_dictionary(
     name: str,
     cloth_dictionary: AssetClothDictionary | None,
     external_skel_frag: AssetFragment | None
-):
-    if external_skel_frag is not None:
-        dict_obj = create_armature_parent(name, external_skel_frag)
+) -> Object | list[Object]:
+    import_as_asset = import_context().settings.import_as_asset
+
+    if import_as_asset:
+        dict_obj = None
+        dict_assets = []
     else:
-        dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
+        if external_skel_frag is not None:
+            dict_obj = create_armature_parent(name, external_skel_frag)
+        else:
+            dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
 
     dwd_skel = find_first_skeleton(dwd)
 
@@ -133,17 +139,21 @@ def create_drawable_dictionary(
             external_skeleton=external_skeleton
         )
         drawable_obj.parent = dict_obj
+        if import_as_asset:
+            from ..ydr.ydrimport import convert_object_to_asset
+            drawable_obj_asset = convert_object_to_asset(name, drawable_obj)
+            dict_assets.append(drawable_obj_asset)
 
-        if cloths and (cloth := cloths.get(jenkhash.name_to_hash(name), None)):
+        if not import_as_asset and cloths and (cloth := cloths.get(jenkhash.name_to_hash(name), None)):
             cloth_obj = cloth_char_import_mesh(cloth, drawable_obj, external_armature or drawable_obj)
             cloth_obj.parent = drawable_obj
             bounds_obj = cloth_char_import_bounds(cloth, external_armature or drawable_obj)
             bounds_obj.parent = cloth_obj
 
-    return dict_obj
+    return dict_assets if import_as_asset else dict_obj
 
 
-def create_armature_parent(name: str, skel: AssetFragment):
+def create_armature_parent(name: str, skel: AssetFragment) -> Object:
     armature = bpy.data.armatures.new(f"{name}.skel")
     dict_obj = create_blender_object(SollumType.DRAWABLE_DICTIONARY, name, armature)
     create_drawable_skel(dict_obj, skel.drawable.skeleton)

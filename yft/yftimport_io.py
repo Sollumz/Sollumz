@@ -113,7 +113,7 @@ def try_load_hi_frag(name: str, prefers_xml: bool) -> AssetFragment | None:
     return hi_frag
 
 
-def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: Optional[str]):
+def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: Optional[str]) -> Object:
     shader_group = frag.base_drawable.shader_group
     hi_shader_group = hi_frag.base_drawable.shader_group if hi_frag else None
 
@@ -152,7 +152,7 @@ def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name:
     return frag_obj
 
 
-def create_frag_armature(frag: AssetFragment, name: Optional[str] = None):
+def create_frag_armature(frag: AssetFragment, name: Optional[str] = None) -> Object:
     """Create the fragment armature along with the bones and rotation limits."""
     name = name or frag.name.replace("pack:/", "")
     drawable = frag.base_drawable
@@ -707,7 +707,7 @@ def shattermap_to_image(shattermap: np.ndarray, name: str) -> Image:
     return img
 
 
-def create_fragment_as_asset(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: str):
+def create_fragment_as_asset(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: str) -> Object:
     """Create fragment as an asset with all meshes joined together."""
     # frag_xml.drawable.drawable_models_low = []
     # frag_xml.drawable.drawable_models_med = []
@@ -715,4 +715,4 @@ def create_fragment_as_asset(frag: AssetFragment, hi_frag: Optional[AssetFragmen
 
     from ..ydr.ydrimport import convert_object_to_asset
     frag_obj = create_fragment(frag, hi_frag, name)
-    convert_object_to_asset(name, frag_obj)
+    return convert_object_to_asset(name, frag_obj)

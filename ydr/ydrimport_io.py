@@ -604,4 +604,4 @@ def create_drawable_as_asset(drawable: AssetDrawable, name: str) -> Object:
     drawable_obj = create_drawable(drawable)
 
     from .ydrimport import convert_object_to_asset
-    convert_object_to_asset(name, drawable_obj)
+    return convert_object_to_asset(name, drawable_obj)
