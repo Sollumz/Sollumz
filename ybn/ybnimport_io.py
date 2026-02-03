@@ -23,11 +23,13 @@ from ..tools.meshhelper import (
     create_cylinder,
     create_capsule,
     create_disc,
+    create_plane,
     create_color_attr,
 )
 from ..tools.utils import get_direction_of_vectors, abs_vector
 from ..tools.blenderhelper import create_blender_object, create_empty_object
 from mathutils import Matrix, Vector
+from math import radians
 
 
 def import_ybn(asset: AssetBound, name: str):
@@ -64,6 +66,8 @@ def create_bound_object(bound: AssetBound) -> Object:
             return create_bound_cylinder(bound)
         case BoundType.DISC:
             return create_bound_disc(bound)
+        case BoundType.PLANE:
+            return create_bound_plane(bound)
         case BoundType.GEOMETRY:
             return create_bound_geometry(bound)
         case BoundType.BVH:
@@ -134,6 +138,14 @@ def create_bound_disc(bound: AssetBound):
     obj = create_bound_child_mesh(bound, SollumType.BOUND_DISC)
     create_disc(obj.data, bound.disc_radius, bound.margin * 2)
     obj.location += bound.centroid
+    return obj
+
+
+def create_bound_plane(bound: AssetBound):
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_PLANE)
+    # matrix to rotate plane so it faces towards +Y, by default faces +Z
+    create_plane(obj.data, 2.0, matrix=Matrix.Rotation(radians(90.0), 4, "X"))
+    obj.matrix_world = Matrix.LocRotScale(bound.centroid, bound.plane_normal.to_track_quat("Y", "Z"), None)
     return obj
 
 

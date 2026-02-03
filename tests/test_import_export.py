@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
 
+from ..sollumz_properties import SollumType
 from ..ybn.ybnexport import export_ybn
 from ..ybn.ybnimport import import_ybn
 from ..ycd.ycdexport import export_ycd
@@ -522,3 +523,115 @@ def test_export_vehicle_shattermaps_with_no_painted_edges(tmp_path: Path):
     tree.parse(tmp_path / "gen8" / "test_shattermaps_no_edges.yft.xml")
     root = tree.getroot()
     assert len(root.findall("./VehicleGlassWindows/Window/ShatterMap")) == 3
+
+
+@pytest.mark.parametrize(
+    "frag_obj_name",
+    (
+        "cloth_only",
+        "cloth_with_mesh",
+        "cloth_with_world_bounds_planes",
+        "cloth_with_world_bounds_capsules",
+        "cloth_with_world_bounds_planes_and_capsules",
+    ),
+)
+@assert_logs_no_warnings_or_errors
+def test_export_fragment_cloth(frag_obj_name: str, tmp_path: Path):
+    data = load_blend_data("fragment_cloth.blend")
+
+    bpy.ops.object.select_all(action="DESELECT")
+
+    data.objects[frag_obj_name].select_set(True)
+
+    bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    tree = ET.ElementTree()
+    tree.parse(tmp_path / "gen8" / f"{frag_obj_name}.yft.xml")
+    root = tree.getroot()
+
+    assert len(root.findall("./Cloths/Item/Controller")) == 1
+    assert len(root.findall("./Cloths/Item/Drawable")) == 1
+    ndrawable = len(root.findall("./Drawable"))
+    bounds_xpath = "./Cloths/Item/Controller/VerletCloth1/Bounds[@type='Composite']/Children/Item"
+    nbounds = len(root.findall(bounds_xpath))
+    nbounds_planes = len(root.findall(f"{bounds_xpath}[@type='Cloth']"))
+    nbounds_capsules = len(root.findall(f"{bounds_xpath}[@type='Capsule']"))
+    match frag_obj_name:
+        case "cloth_only":
+            assert ndrawable == 0
+            assert nbounds == 0
+        case "cloth_with_mesh":
+            assert ndrawable == 1
+            assert nbounds == 0
+        case "cloth_with_world_bounds_planes":
+            assert ndrawable == 0
+            assert nbounds == 2
+            assert nbounds_planes == 2
+            assert nbounds_capsules == 0
+        case "cloth_with_world_bounds_capsules":
+            assert ndrawable == 0
+            assert nbounds == 2
+            assert nbounds_planes == 0
+            assert nbounds_capsules == 2
+        case "cloth_with_world_bounds_planes_and_capsules":
+            assert ndrawable == 0
+            assert nbounds == 2
+            assert nbounds_planes == 1
+            assert nbounds_capsules == 1
+
+
+@requires_szio_native
+@pytest.mark.parametrize("version_dir", ("gen8", "gen9", "cwxml"))
+@pytest.mark.parametrize(
+    "model",
+    (
+        "cloth_only",
+        "cloth_with_mesh",
+        "cloth_with_world_bounds_planes",
+        "cloth_with_world_bounds_capsules",
+        "cloth_with_world_bounds_planes_and_capsules",
+    ),
+)
+@assert_logs_no_warnings_or_errors
+def test_import_fragment_cloth(version_dir: str, model: str, tmp_path: Path):
+    from ..ydr.cloth_env import cloth_env_find_mesh_objects
+
+    bpy.ops.wm.read_homefile()
+
+    yft_filename = f"{model}.yft"
+    if version_dir == "cwxml":
+        yft_filename += ".xml"
+    yft_path = asset_path(version_dir, yft_filename)
+
+    # Copy to temp dir
+    (tmp_path / yft_filename).write_bytes(yft_path.read_bytes())
+
+    res = bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path.absolute()),
+        files=[{"name": yft_path.name}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+    assert res == {"FINISHED"}
+
+    frag_obj = bpy.data.objects[model]
+    assert frag_obj.sollum_type == SollumType.FRAGMENT
+
+    cloth_objs = cloth_env_find_mesh_objects(frag_obj)
+    assert len(cloth_objs) == 1
+
+    cloth_props = frag_obj.fragment_properties.cloth
+    world_bounds_name = f"{model}.cloth_world_bounds"
+    match model:
+        case "cloth_only" | "cloth_with_mesh":
+            assert world_bounds_name not in bpy.data.objects
+            assert cloth_props.world_bounds is None
+        case "cloth_with_world_bounds_planes" | "cloth_with_world_bounds_capsules" | "cloth_with_world_bounds_planes_and_capsules":
+            world_bounds_obj = bpy.data.objects[world_bounds_name]
+            assert world_bounds_obj.sollum_type == SollumType.BOUND_COMPOSITE
+            assert cloth_props.world_bounds == world_bounds_obj

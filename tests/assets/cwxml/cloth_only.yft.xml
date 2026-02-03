@@ -1,0 +1,3448 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Fragment>
+  <Name>pack:/cloth_only</Name>
+  <BoundingSphereCenter x="0.0" y="-1.8193578" z="0.0" />
+  <BoundingSphereRadius value="1.8845223" />
+  <UnknownB0 value="0" />
+  <UnknownB8 value="0" />
+  <UnknownBC value="0" />
+  <UnknownC0 value="65280" />
+  <UnknownC4 value="1" />
+  <UnknownCC value="0" />
+  <GravityFactor value="1" />
+  <BuoyancyFactor value="1" />
+  <BoneTransforms unk="0">
+    <Item>
+      1.0 0.0 0.0 0.0
+      0.0 1.0 0.0 0.0
+      0.0 0.0 1.0 0.0
+    </Item>
+  </BoneTransforms>
+  <Physics>
+    <LOD1>
+      <Unknown14 value="0" />
+      <Unknown18 value="0" />
+      <Unknown1C value="0" />
+      <PositionOffset x="0.0" y="0.0" z="0.0" />
+      <Unknown40 x="0.0" y="0.0" z="0.0" />
+      <Unknown50 x="0.0" y="0.0" z="0.0" />
+      <DampingLinearC x="0.02" y="0.02" z="0.02" />
+      <DampingLinearV x="0.02" y="0.02" z="0.02" />
+      <DampingLinearV2 x="0.01" y="0.01" z="0.01" />
+      <DampingAngularC x="0.02" y="0.02" z="0.02" />
+      <DampingAngularV x="0.02" y="0.02" z="0.02" />
+      <DampingAngularV2 x="0.01" y="0.01" z="0.01" />
+      <Archetype>
+        <Name>cloth_only</Name>
+        <Mass value="0" />
+        <MassInv value="0" />
+        <Unknown48 value="1" />
+        <Unknown4C value="150" />
+        <Unknown50 value="6.2831855" />
+        <Unknown54 value="1" />
+        <InertiaTensor x="0.0" y="0.0" z="0.0" />
+        <InertiaTensorInv x="0.0" y="0.0" z="0.0" />
+        <Bounds type="Composite">
+          <BoxMin x="0.0" y="0.0" z="0.0" />
+          <BoxMax x="0.0" y="0.0" z="0.0" />
+          <BoxCenter x="0.0" y="0.0" z="0.0" />
+          <SphereCenter x="0.0" y="0.0" z="0.0" />
+          <SphereRadius value="0" />
+          <Margin value="0" />
+          <Volume value="1" />
+          <Inertia x="1.0" y="1.0" z="1.0" />
+          <MaterialIndex value="0" />
+          <MaterialColourIndex value="0" />
+          <ProceduralID value="0" />
+          <RoomID value="0" />
+          <PedDensity value="0" />
+          <UnkFlags value="0" />
+          <PolyFlags value="0" />
+          <UnkType value="2" />
+          <Children>
+            <Item type="None" />
+            <Item type="None" />
+          </Children>
+        </Bounds>
+      </Archetype>
+      <Groups>
+        <Item>
+          <Name>cloth_root</Name>
+          <ParentIndex value="255" />
+          <GlassWindowIndex value="0" />
+          <GlassFlags value="0" />
+          <Strength value="0" />
+          <ForceTransmissionScaleUp value="0.2" />
+          <ForceTransmissionScaleDown value="0.2" />
+          <JointStiffness value="0" />
+          <MinSoftAngle1 value="1" />
+          <MaxSoftAngle1 value="-1" />
+          <MaxSoftAngle2 value="1" />
+          <MaxSoftAngle3 value="1" />
+          <RotationSpeed value="0" />
+          <RotationStrength value="0" />
+          <RestoringStrength value="0" />
+          <RestoringMaxTorque value="0" />
+          <LatchStrength value="0" />
+          <Mass value="1" />
+          <MinDamageForce value="0" />
+          <DamageHealth value="0" />
+          <UnkFloat5C value="0" />
+          <UnkFloat60 value="1" />
+          <UnkFloat64 value="1" />
+          <UnkFloat68 value="1" />
+          <UnkFloat6C value="1" />
+          <UnkFloat70 value="1" />
+          <UnkFloat74 value="1" />
+          <UnkFloat78 value="1" />
+          <UnkFloatA8 value="1" />
+        </Item>
+      </Groups>
+      <Children>
+        <Item>
+          <GroupIndex value="0" />
+          <BoneTag value="0" />
+          <PristineMass value="1" />
+          <DamagedMass value="1" />
+          <UnkFloat value="0" />
+          <UnkVec x="0.0" y="0.0" z="0.0" w="0.0" />
+          <InertiaTensor x="0.0" y="0.0" z="0.0" w="0.0" />
+          <Drawable>
+            <Matrix>
+              1.0 0.0 0.0 0.0
+              0.0 1.0 0.0 0.0
+              0.0 0.0 1.0 0.0
+              0.0 0.0 0.0 1.0
+            </Matrix>
+            <BoundingSphereCenter x="0.0" y="0.0" z="0.0" />
+            <BoundingSphereRadius value="0" />
+            <BoundingBoxMin x="0.0" y="0.0" z="0.0" />
+            <BoundingBoxMax x="0.0" y="0.0" z="0.0" />
+            <LodDistHigh value="0" />
+            <LodDistMed value="0" />
+            <LodDistLow value="0" />
+            <LodDistVlow value="0" />
+            <FlagsHigh value="0" />
+            <FlagsMed value="0" />
+            <FlagsLow value="0" />
+            <FlagsVlow value="0" />
+          </Drawable>
+        </Item>
+      </Children>
+    </LOD1>
+  </Physics>
+  <Cloths>
+    <Item>
+      <Unknown78 value="0" />
+      <Controller>
+        <Name>cloth_only_cloth</Name>
+        <Type value="3" />
+        <BridgeSimGfx>
+          <VertexCount value="144" />
+          <Unknown14 value="0" />
+          <Unknown18 value="0" />
+          <Unknown1C value="0" />
+          <Unknown60>0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805 0.0004000000189989805</Unknown60>
+          <UnknownA0>0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</UnknownA0>
+          <UnknownE0>46 47 48 51 54 57 110 113 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 0 1 2 49 50 3 52 53 4 55 56 5 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 6 111 112 7 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143</UnknownE0>
+          <Unknown128>0 0 0 0 0</Unknown128>
+        </BridgeSimGfx>
+        <MorphController>
+          <Unknown18>
+            <Unknown180 value="240" />
+          </Unknown18>
+        </MorphController>
+        <VerletCloth1>
+          <BBMin x="0.0" y="-3.638064" z="-0.49369314" />
+          <BBMax x="0.0" y="-0.0006516613" z="0.49369314" />
+          <UnknownA8 value="500" />
+          <UnknownAC value="0" />
+          <UnknownE8 value="8" />
+          <UnknownFA value="0" />
+          <Unknown148 value="5" />
+          <Unknown158 value="1" />
+          <Vertices>
+            0.0, -0.0006516613066196442, 0.49369314312934875, 0.0
+            0.0, -0.0006516613066196442, 0.37026986479759216, 0.0
+            0.0, -0.0006516613066196442, 0.24684657156467438, 0.0
+            0.0, -0.0006516613066196442, 0.12342328578233719, 0.0
+            0.0, -0.0006516613066196442, 0.0, 0.0
+            0.0, -0.0006516613066196442, -0.12342328578233719, 0.0
+            0.0, -3.638063907623291, -0.49369314312934875, 0.0
+            0.0, -3.638063907623291, -0.37026986479759216, 0.0
+            0.0, -3.2919044494628906, 0.37026986479759216, 0.0
+            0.0, -3.1188244819641113, 0.37026986479759216, 0.0
+            0.0, -3.1188244819641113, 0.49369314312934875, 0.0
+            0.0, -3.2919044494628906, 0.24684657156467438, 0.0
+            0.0, -2.9450607299804688, 0.37026986479759216, 0.0
+            0.0, -2.9450607299804688, 0.49369314312934875, 0.0
+            0.0, -2.7719807624816895, 0.49369314312934875, 0.0
+            0.0, -3.1188244819641113, 0.24684657156467438, 0.0
+            0.0, -2.9450607299804688, 0.24684657156467438, 0.0
+            0.0, -2.7719807624816895, 0.37026986479759216, 0.0
+            0.0, -2.5989010334014893, 0.49369314312934875, 0.0
+            0.0, -2.9450607299804688, 0.12342328578233719, 0.0
+            0.0, -2.7719807624816895, 0.24684657156467438, 0.0
+            0.0, -2.5989010334014893, 0.37026986479759216, 0.0
+            0.0, -2.425821304321289, 0.37026986479759216, 0.0
+            0.0, -2.425821304321289, 0.49369314312934875, 0.0
+            0.0, -2.5989010334014893, 0.24684657156467438, 0.0
+            0.0, -2.252741575241089, 0.37026986479759216, 0.0
+            0.0, -2.252741575241089, 0.49369314312934875, 0.0
+            0.0, -2.078977584838867, 0.49369314312934875, 0.0
+            0.0, -2.425821304321289, 0.24684657156467438, 0.0
+            0.0, -2.252741575241089, 0.24684657156467438, 0.0
+            0.0, -2.078977584838867, 0.37026986479759216, 0.0
+            0.0, -1.7328178882598877, 0.37026986479759216, 0.0
+            0.0, -1.7328178882598877, 0.49369314312934875, 0.0
+            0.0, -1.3866584300994873, 0.49369314312934875, 0.0
+            0.0, -2.078977584838867, 0.24684657156467438, 0.0
+            0.0, -1.3866584300994873, 0.37026986479759216, 0.0
+            0.0, -1.0398147106170654, 0.49369314312934875, 0.0
+            0.0, -1.7328178882598877, 0.24684657156467438, 0.0
+            0.0, -1.0398147106170654, 0.37026986479759216, 0.0
+            0.0, -0.6936549544334412, 0.49369314312934875, 0.0
+            0.0, -1.3866584300994873, 0.24684657156467438, 0.0
+            0.0, -1.7328178882598877, 0.12342328578233719, 0.0
+            0.0, -0.6936549544334412, 0.37026986479759216, 0.0
+            0.0, -0.3474953770637512, 0.49369314312934875, 0.0
+            0.0, -1.0398147106170654, 0.24684657156467438, 0.0
+            0.0, -0.3474953770637512, 0.37026986479759216, 0.0
+            0.0, -3.638063907623291, 0.37026986479759216, 0.0
+            0.0, -3.638063907623291, 0.49369314312934875, 0.0
+            0.0, -3.46498441696167, 0.49369314312934875, 0.0
+            0.0, -0.6936549544334412, 0.24684657156467438, 0.0
+            0.0, -0.3474953770637512, 0.24684657156467438, 0.0
+            0.0, -3.638063907623291, 0.24684657156467438, 0.0
+            0.0, -0.6936549544334412, 0.12342328578233719, 0.0
+            0.0, -0.3474953770637512, 0.12342328578233719, 0.0
+            0.0, -3.46498441696167, 0.37026986479759216, 0.0
+            0.0, -1.0398147106170654, 0.12342328578233719, 0.0
+            0.0, -0.3474953770637512, 0.0, 0.0
+            0.0, -3.2919044494628906, 0.49369314312934875, 0.0
+            0.0, -0.6936549544334412, 0.0, 0.0
+            0.0, -0.3474953770637512, -0.12342328578233719, 0.0
+            0.0, -0.0006516613066196442, -0.24684657156467438, 0.0
+            0.0, -0.6936549544334412, -0.12342328578233719, 0.0
+            0.0, -0.3474953770637512, -0.24684657156467438, 0.0
+            0.0, -0.0006516613066196442, -0.37026986479759216, 0.0
+            0.0, -0.6936549544334412, -0.24684657156467438, 0.0
+            0.0, -1.0398147106170654, 0.0, 0.0
+            0.0, -1.0398147106170654, -0.12342328578233719, 0.0
+            0.0, -0.3474953770637512, -0.37026986479759216, 0.0
+            0.0, -0.0006516613066196442, -0.49369314312934875, 0.0
+            0.0, -0.3474953770637512, -0.49369314312934875, 0.0
+            0.0, -0.6936549544334412, -0.49369314312934875, 0.0
+            0.0, -0.6936549544334412, -0.37026986479759216, 0.0
+            0.0, -1.0398147106170654, -0.37026986479759216, 0.0
+            0.0, -1.0398147106170654, -0.49369314312934875, 0.0
+            0.0, -1.3866584300994873, -0.49369314312934875, 0.0
+            0.0, -1.0398147106170654, -0.24684657156467438, 0.0
+            0.0, -1.3866584300994873, -0.37026986479759216, 0.0
+            0.0, -1.7328178882598877, -0.49369314312934875, 0.0
+            0.0, -1.3866584300994873, -0.24684657156467438, 0.0
+            0.0, -1.7328178882598877, -0.37026986479759216, 0.0
+            0.0, -2.078977584838867, -0.49369314312934875, 0.0
+            0.0, -1.3866584300994873, -0.12342328578233719, 0.0
+            0.0, -2.078977584838867, -0.37026986479759216, 0.0
+            0.0, -2.252741575241089, -0.49369314312934875, 0.0
+            0.0, -1.7328178882598877, -0.24684657156467438, 0.0
+            0.0, -2.078977584838867, -0.24684657156467438, 0.0
+            0.0, -2.252741575241089, -0.37026986479759216, 0.0
+            0.0, -2.425821304321289, -0.49369314312934875, 0.0
+            0.0, -2.078977584838867, -0.12342328578233719, 0.0
+            0.0, -2.425821304321289, -0.37026986479759216, 0.0
+            0.0, -2.252741575241089, -0.24684657156467438, 0.0
+            0.0, -2.425821304321289, -0.24684657156467438, 0.0
+            0.0, -2.5989010334014893, -0.37026986479759216, 0.0
+            0.0, -2.5989010334014893, -0.49369314312934875, 0.0
+            0.0, -2.7719807624816895, -0.49369314312934875, 0.0
+            0.0, -2.5989010334014893, -0.24684657156467438, 0.0
+            0.0, -2.7719807624816895, -0.37026986479759216, 0.0
+            0.0, -2.9450607299804688, -0.49369314312934875, 0.0
+            0.0, -2.5989010334014893, -0.12342328578233719, 0.0
+            0.0, -2.7719807624816895, -0.24684657156467438, 0.0
+            0.0, -2.9450607299804688, -0.37026986479759216, 0.0
+            0.0, -3.1188244819641113, -0.37026986479759216, 0.0
+            0.0, -3.1188244819641113, -0.49369314312934875, 0.0
+            0.0, -2.9450607299804688, -0.24684657156467438, 0.0
+            0.0, -3.2919044494628906, -0.37026986479759216, 0.0
+            0.0, -3.2919044494628906, -0.49369314312934875, 0.0
+            0.0, -3.46498441696167, -0.49369314312934875, 0.0
+            0.0, -3.1188244819641113, -0.24684657156467438, 0.0
+            0.0, -3.2919044494628906, -0.24684657156467438, 0.0
+            0.0, -3.46498441696167, -0.37026986479759216, 0.0
+            0.0, -3.638063907623291, 0.12342328578233719, 0.0
+            0.0, -3.2919044494628906, -0.12342328578233719, 0.0
+            0.0, -3.46498441696167, -0.24684657156467438, 0.0
+            0.0, -3.46498441696167, 0.24684657156467438, 0.0
+            0.0, -3.638063907623291, -0.24684657156467438, 0.0
+            0.0, -3.638063907623291, -0.12342328578233719, 0.0
+            0.0, -3.638063907623291, 0.0, 0.0
+            0.0, -3.46498441696167, 0.12342328578233719, 0.0
+            0.0, -3.46498441696167, 0.0, 0.0
+            0.0, -3.2919044494628906, 0.12342328578233719, 0.0
+            0.0, -3.46498441696167, -0.12342328578233719, 0.0
+            0.0, -3.2919044494628906, 0.0, 0.0
+            0.0, -3.1188244819641113, -0.12342328578233719, 0.0
+            0.0, -3.1188244819641113, 0.0, 0.0
+            0.0, -3.1188244819641113, 0.12342328578233719, 0.0
+            0.0, -2.9450607299804688, -0.12342328578233719, 0.0
+            0.0, -2.9450607299804688, 0.0, 0.0
+            0.0, -2.7719807624816895, 0.12342328578233719, 0.0
+            0.0, -2.7719807624816895, 0.0, 0.0
+            0.0, -2.7719807624816895, -0.12342328578233719, 0.0
+            0.0, -2.5989010334014893, 0.12342328578233719, 0.0
+            0.0, -2.5989010334014893, 0.0, 0.0
+            0.0, -2.425821304321289, -0.12342328578233719, 0.0
+            0.0, -2.425821304321289, 0.0, 0.0
+            0.0, -2.425821304321289, 0.12342328578233719, 0.0
+            0.0, -2.252741575241089, -0.12342328578233719, 0.0
+            0.0, -2.252741575241089, 0.0, 0.0
+            0.0, -2.252741575241089, 0.12342328578233719, 0.0
+            0.0, -2.078977584838867, 0.0, 0.0
+            0.0, -2.078977584838867, 0.12342328578233719, 0.0
+            0.0, -1.7328178882598877, -0.12342328578233719, 0.0
+            0.0, -1.7328178882598877, 0.0, 0.0
+            0.0, -1.3866584300994873, 0.0, 0.0
+            0.0, -1.3866584300994873, 0.12342328578233719, 0.0
+          </Vertices>
+          <Constraints>
+            <Item>
+              <Unknown0 value="46" />
+              <Unknown2 value="47" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="48" />
+              <Unknown2 value="54" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="113" />
+              <Unknown2 value="51" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="57" />
+              <Unknown2 value="8" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="10" />
+              <Unknown2 value="9" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="13" />
+              <Unknown2 value="12" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="15" />
+              <Unknown2 value="11" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="14" />
+              <Unknown2 value="17" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="47" />
+              <Unknown2 value="48" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="54" />
+              <Unknown2 value="46" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="110" />
+              <Unknown2 value="51" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="8" />
+              <Unknown2 value="113" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="57" />
+              <Unknown2 value="9" />
+              <Unknown4 value="0.04518998" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="10" />
+              <Unknown2 value="12" />
+              <Unknown4 value="0.045427147" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="13" />
+              <Unknown2 value="14" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="16" />
+              <Unknown2 value="15" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="48" />
+              <Unknown2 value="46" />
+              <Unknown4 value="0.045189817" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="54" />
+              <Unknown2 value="51" />
+              <Unknown4 value="0.04518982" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="113" />
+              <Unknown2 value="110" />
+              <Unknown4 value="0.045189817" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="9" />
+              <Unknown2 value="8" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="57" />
+              <Unknown2 value="10" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="14" />
+              <Unknown2 value="12" />
+              <Unknown4 value="0.04518998" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="17" />
+              <Unknown2 value="16" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="19" />
+              <Unknown2 value="15" />
+              <Unknown4 value="0.045427147" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="51" />
+              <Unknown2 value="46" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="48" />
+              <Unknown2 value="57" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="54" />
+              <Unknown2 value="113" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="8" />
+              <Unknown2 value="11" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="12" />
+              <Unknown2 value="9" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="10" />
+              <Unknown2 value="13" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="14" />
+              <Unknown2 value="18" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="16" />
+              <Unknown2 value="19" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="57" />
+              <Unknown2 value="54" />
+              <Unknown4 value="0.04518998" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="11" />
+              <Unknown2 value="113" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="9" />
+              <Unknown2 value="15" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="12" />
+              <Unknown2 value="16" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="18" />
+              <Unknown2 value="17" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="20" />
+              <Unknown2 value="19" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="22" />
+              <Unknown2 value="21" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="23" />
+              <Unknown2 value="25" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="8" />
+              <Unknown2 value="54" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="16" />
+              <Unknown2 value="9" />
+              <Unknown4 value="0.04542715" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="17" />
+              <Unknown2 value="12" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="18" />
+              <Unknown2 value="21" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="23" />
+              <Unknown2 value="22" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="24" />
+              <Unknown2 value="20" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="26" />
+              <Unknown2 value="25" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="29" />
+              <Unknown2 value="28" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="15" />
+              <Unknown2 value="8" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="17" />
+              <Unknown2 value="20" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="18" />
+              <Unknown2 value="22" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="21" />
+              <Unknown2 value="24" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="23" />
+              <Unknown2 value="26" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="27" />
+              <Unknown2 value="25" />
+              <Unknown4 value="0.04542723" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="30" />
+              <Unknown2 value="29" />
+              <Unknown4 value="0.045427233" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="32" />
+              <Unknown2 value="31" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="20" />
+              <Unknown2 value="16" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="21" />
+              <Unknown2 value="17" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="18" />
+              <Unknown2 value="23" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="25" />
+              <Unknown2 value="22" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="26" />
+              <Unknown2 value="27" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="28" />
+              <Unknown2 value="24" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="31" />
+              <Unknown2 value="30" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="32" />
+              <Unknown2 value="33" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="21" />
+              <Unknown2 value="20" />
+              <Unknown4 value="0.045189902" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="22" />
+              <Unknown2 value="28" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="25" />
+              <Unknown2 value="29" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="27" />
+              <Unknown2 value="30" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="33" />
+              <Unknown2 value="31" />
+              <Unknown4 value="0.13505967" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="36" />
+              <Unknown2 value="35" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="37" />
+              <Unknown2 value="34" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="39" />
+              <Unknown2 value="38" />
+              <Unknown4 value="0.13505988" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="28" />
+              <Unknown2 value="21" />
+              <Unknown4 value="0.045189902" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="29" />
+              <Unknown2 value="22" />
+              <Unknown4 value="0.045189902" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="30" />
+              <Unknown2 value="25" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="27" />
+              <Unknown2 value="31" />
+              <Unknown4 value="0.13505983" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="33" />
+              <Unknown2 value="35" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="36" />
+              <Unknown2 value="38" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="40" />
+              <Unknown2 value="37" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="41" />
+              <Unknown2 value="34" />
+              <Unknown4 value="0.13505983" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="27" />
+              <Unknown2 value="32" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="30" />
+              <Unknown2 value="34" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="35" />
+              <Unknown2 value="31" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="33" />
+              <Unknown2 value="36" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="38" />
+              <Unknown2 value="40" />
+              <Unknown4 value="0.13553388" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="37" />
+              <Unknown2 value="41" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="39" />
+              <Unknown2 value="42" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="43" />
+              <Unknown2 value="45" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="34" />
+              <Unknown2 value="29" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="31" />
+              <Unknown2 value="37" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="38" />
+              <Unknown2 value="35" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="36" />
+              <Unknown2 value="39" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="40" />
+              <Unknown2 value="41" />
+              <Unknown4 value="0.13505967" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="43" />
+              <Unknown2 value="42" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="45" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="49" />
+              <Unknown2 value="44" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="37" />
+              <Unknown2 value="30" />
+              <Unknown4 value="0.13505985" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="35" />
+              <Unknown2 value="40" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="42" />
+              <Unknown2 value="38" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="39" />
+              <Unknown2 value="43" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="1" />
+              <Unknown2 value="45" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="2" />
+              <Unknown2 value="50" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="52" />
+              <Unknown2 value="49" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="3" />
+              <Unknown2 value="53" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="35" />
+              <Unknown2 value="37" />
+              <Unknown4 value="0.13505968" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="38" />
+              <Unknown2 value="44" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="45" />
+              <Unknown2 value="42" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="43" />
+              <Unknown2 value="0" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="1" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="50" />
+              <Unknown2 value="49" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="53" />
+              <Unknown2 value="52" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="4" />
+              <Unknown2 value="56" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="58" />
+              <Unknown2 value="55" />
+              <Unknown4 value="0.13505988" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="44" />
+              <Unknown2 value="40" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="2" />
+              <Unknown2 value="45" />
+              <Unknown4 value="0.13553388" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="42" />
+              <Unknown2 value="49" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="3" />
+              <Unknown2 value="50" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="4" />
+              <Unknown2 value="53" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="52" />
+              <Unknown2 value="55" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="5" />
+              <Unknown2 value="56" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="60" />
+              <Unknown2 value="59" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="49" />
+              <Unknown2 value="38" />
+              <Unknown4 value="0.1350599" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="50" />
+              <Unknown2 value="45" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="52" />
+              <Unknown2 value="44" />
+              <Unknown4 value="0.13505988" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="56" />
+              <Unknown2 value="53" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="5" />
+              <Unknown2 value="59" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="61" />
+              <Unknown2 value="58" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="60" />
+              <Unknown2 value="62" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="65" />
+              <Unknown2 value="55" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="45" />
+              <Unknown2 value="49" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="50" />
+              <Unknown2 value="52" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="55" />
+              <Unknown2 value="44" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="53" />
+              <Unknown2 value="58" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="59" />
+              <Unknown2 value="56" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="5" />
+              <Unknown2 value="60" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="63" />
+              <Unknown2 value="62" />
+              <Unknown4 value="0.13553388" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="64" />
+              <Unknown2 value="61" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="53" />
+              <Unknown2 value="50" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="58" />
+              <Unknown2 value="52" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="56" />
+              <Unknown2 value="61" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="62" />
+              <Unknown2 value="59" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="60" />
+              <Unknown2 value="63" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="64" />
+              <Unknown2 value="66" />
+              <Unknown4 value="0.13505988" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="68" />
+              <Unknown2 value="67" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="69" />
+              <Unknown2 value="70" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="56" />
+              <Unknown2 value="58" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="59" />
+              <Unknown2 value="61" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="62" />
+              <Unknown2 value="64" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="66" />
+              <Unknown2 value="65" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="63" />
+              <Unknown2 value="67" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="68" />
+              <Unknown2 value="69" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="70" />
+              <Unknown2 value="71" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="73" />
+              <Unknown2 value="72" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="59" />
+              <Unknown2 value="64" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="65" />
+              <Unknown2 value="58" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="66" />
+              <Unknown2 value="61" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="67" />
+              <Unknown2 value="62" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="63" />
+              <Unknown2 value="68" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="72" />
+              <Unknown2 value="71" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="70" />
+              <Unknown2 value="73" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="74" />
+              <Unknown2 value="76" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="61" />
+              <Unknown2 value="65" />
+              <Unknown4 value="0.13505988" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="69" />
+              <Unknown2 value="67" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="71" />
+              <Unknown2 value="62" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="70" />
+              <Unknown2 value="72" />
+              <Unknown4 value="0.13505988" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="73" />
+              <Unknown2 value="74" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="75" />
+              <Unknown2 value="64" />
+              <Unknown4 value="0.11982658" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="77" />
+              <Unknown2 value="76" />
+              <Unknown4 value="0.13505967" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="78" />
+              <Unknown2 value="66" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="70" />
+              <Unknown2 value="67" />
+              <Unknown4 value="0.13505976" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="71" />
+              <Unknown2 value="64" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="74" />
+              <Unknown2 value="72" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="75" />
+              <Unknown2 value="66" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="76" />
+              <Unknown2 value="78" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="77" />
+              <Unknown2 value="79" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="81" />
+              <Unknown2 value="65" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="80" />
+              <Unknown2 value="82" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="67" />
+              <Unknown2 value="71" />
+              <Unknown4 value="0.11982645" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="72" />
+              <Unknown2 value="75" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="74" />
+              <Unknown2 value="77" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="79" />
+              <Unknown2 value="76" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="78" />
+              <Unknown2 value="81" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="80" />
+              <Unknown2 value="83" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="82" />
+              <Unknown2 value="85" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="87" />
+              <Unknown2 value="86" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="71" />
+              <Unknown2 value="75" />
+              <Unknown4 value="0.1350599" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="76" />
+              <Unknown2 value="72" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="79" />
+              <Unknown2 value="78" />
+              <Unknown4 value="0.13505968" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="77" />
+              <Unknown2 value="80" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="81" />
+              <Unknown2 value="66" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="83" />
+              <Unknown2 value="82" />
+              <Unknown4 value="0.04542723" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="85" />
+              <Unknown2 value="84" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="87" />
+              <Unknown2 value="89" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="76" />
+              <Unknown2 value="75" />
+              <Unknown4 value="0.13553388" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="80" />
+              <Unknown2 value="79" />
+              <Unknown4 value="0.13505983" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="84" />
+              <Unknown2 value="78" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="83" />
+              <Unknown2 value="86" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="85" />
+              <Unknown2 value="88" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="89" />
+              <Unknown2 value="91" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="87" />
+              <Unknown2 value="92" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="93" />
+              <Unknown2 value="94" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="75" />
+              <Unknown2 value="78" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="82" />
+              <Unknown2 value="79" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="84" />
+              <Unknown2 value="81" />
+              <Unknown4 value="0.13505967" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="86" />
+              <Unknown2 value="85" />
+              <Unknown4 value="0.045427233" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="83" />
+              <Unknown2 value="87" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="90" />
+              <Unknown2 value="88" />
+              <Unknown4 value="0.045427233" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="92" />
+              <Unknown2 value="89" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="95" />
+              <Unknown2 value="91" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="79" />
+              <Unknown2 value="84" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="86" />
+              <Unknown2 value="82" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="90" />
+              <Unknown2 value="85" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="87" />
+              <Unknown2 value="93" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="94" />
+              <Unknown2 value="92" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="95" />
+              <Unknown2 value="89" />
+              <Unknown4 value="0.045189902" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="97" />
+              <Unknown2 value="96" />
+              <Unknown4 value="0.04518998" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="98" />
+              <Unknown2 value="91" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="85" />
+              <Unknown2 value="79" />
+              <Unknown4 value="0.13505985" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="88" />
+              <Unknown2 value="84" />
+              <Unknown4 value="0.13505983" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="89" />
+              <Unknown2 value="86" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="91" />
+              <Unknown2 value="90" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="93" />
+              <Unknown2 value="92" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="94" />
+              <Unknown2 value="96" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="95" />
+              <Unknown2 value="98" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="97" />
+              <Unknown2 value="100" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="86" />
+              <Unknown2 value="90" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="92" />
+              <Unknown2 value="95" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="94" />
+              <Unknown2 value="97" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="96" />
+              <Unknown2 value="99" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="101" />
+              <Unknown2 value="100" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="102" />
+              <Unknown2 value="104" />
+              <Unknown4 value="0.04518998" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="105" />
+              <Unknown2 value="106" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="107" />
+              <Unknown2 value="103" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="91" />
+              <Unknown2 value="86" />
+              <Unknown4 value="0.045189902" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="96" />
+              <Unknown2 value="92" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="99" />
+              <Unknown2 value="95" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="97" />
+              <Unknown2 value="101" />
+              <Unknown4 value="0.045427147" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="100" />
+              <Unknown2 value="103" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="102" />
+              <Unknown2 value="105" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="106" />
+              <Unknown2 value="104" />
+              <Unknown4 value="0.04518998" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="108" />
+              <Unknown2 value="107" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="96" />
+              <Unknown2 value="95" />
+              <Unknown4 value="0.045189902" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="99" />
+              <Unknown2 value="98" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="97" />
+              <Unknown2 value="102" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="104" />
+              <Unknown2 value="101" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="107" />
+              <Unknown2 value="100" />
+              <Unknown4 value="0.04542715" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="106" />
+              <Unknown2 value="109" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="108" />
+              <Unknown2 value="111" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="7" />
+              <Unknown2 value="112" />
+              <Unknown4 value="0.04518982" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="100" />
+              <Unknown2 value="96" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="102" />
+              <Unknown2 value="101" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="103" />
+              <Unknown2 value="99" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="105" />
+              <Unknown2 value="104" />
+              <Unknown4 value="0.015233305" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="109" />
+              <Unknown2 value="108" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="106" />
+              <Unknown2 value="6" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="1" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="111" />
+              <Unknown2 value="107" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="7" />
+              <Unknown2 value="114" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="100" />
+              <Unknown2 value="99" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="101" />
+              <Unknown2 value="107" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="104" />
+              <Unknown2 value="108" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="6" />
+              <Unknown2 value="109" />
+              <Unknown4 value="0.045189817" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="112" />
+              <Unknown2 value="111" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="116" />
+              <Unknown2 value="110" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="113" />
+              <Unknown2 value="117" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="118" />
+              <Unknown2 value="115" />
+              <Unknown4 value="0.045189817" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="108" />
+              <Unknown2 value="101" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="109" />
+              <Unknown2 value="104" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="114" />
+              <Unknown2 value="112" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="110" />
+              <Unknown2 value="117" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="115" />
+              <Unknown2 value="116" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="11" />
+              <Unknown2 value="119" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="118" />
+              <Unknown2 value="120" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="121" />
+              <Unknown2 value="111" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="109" />
+              <Unknown2 value="112" />
+              <Unknown4 value="0.015233309" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="117" />
+              <Unknown2 value="116" />
+              <Unknown4 value="0.045189817" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="119" />
+              <Unknown2 value="118" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="120" />
+              <Unknown2 value="115" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="122" />
+              <Unknown2 value="111" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="123" />
+              <Unknown2 value="121" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="11" />
+              <Unknown2 value="124" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="125" />
+              <Unknown2 value="103" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="112" />
+              <Unknown2 value="108" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="7" />
+              <Unknown2 value="109" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="11" />
+              <Unknown2 value="117" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="116" />
+              <Unknown2 value="118" />
+              <Unknown4 value="0.02995651" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="114" />
+              <Unknown2 value="115" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="120" />
+              <Unknown2 value="111" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="119" />
+              <Unknown2 value="121" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="122" />
+              <Unknown2 value="107" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="117" />
+              <Unknown2 value="118" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="120" />
+              <Unknown2 value="114" />
+              <Unknown4 value="0.045189817" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="121" />
+              <Unknown2 value="122" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="119" />
+              <Unknown2 value="123" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="15" />
+              <Unknown2 value="124" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="19" />
+              <Unknown2 value="126" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="20" />
+              <Unknown2 value="127" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="128" />
+              <Unknown2 value="125" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="119" />
+              <Unknown2 value="117" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="120" />
+              <Unknown2 value="112" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="118" />
+              <Unknown2 value="121" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="122" />
+              <Unknown2 value="103" />
+              <Unknown4 value="0.045427147" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="124" />
+              <Unknown2 value="123" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="126" />
+              <Unknown2 value="125" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="19" />
+              <Unknown2 value="127" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="128" />
+              <Unknown2 value="129" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="121" />
+              <Unknown2 value="120" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="123" />
+              <Unknown2 value="122" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="124" />
+              <Unknown2 value="119" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="127" />
+              <Unknown2 value="126" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="125" />
+              <Unknown2 value="129" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="130" />
+              <Unknown2 value="128" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="131" />
+              <Unknown2 value="98" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="132" />
+              <Unknown2 value="91" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="19" />
+              <Unknown2 value="124" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="125" />
+              <Unknown2 value="122" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="126" />
+              <Unknown2 value="123" />
+              <Unknown4 value="0.030193841" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="24" />
+              <Unknown2 value="127" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="129" />
+              <Unknown2 value="103" />
+              <Unknown4 value="0.045189984" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="128" />
+              <Unknown2 value="131" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="132" />
+              <Unknown2 value="98" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="130" />
+              <Unknown2 value="133" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="123" />
+              <Unknown2 value="125" />
+              <Unknown4 value="0.045427147" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="124" />
+              <Unknown2 value="126" />
+              <Unknown4 value="0.045427147" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="127" />
+              <Unknown2 value="128" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="129" />
+              <Unknown2 value="99" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="24" />
+              <Unknown2 value="130" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="131" />
+              <Unknown2 value="132" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="134" />
+              <Unknown2 value="133" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="135" />
+              <Unknown2 value="90" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="126" />
+              <Unknown2 value="128" />
+              <Unknown4 value="0.029956676" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="129" />
+              <Unknown2 value="98" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="127" />
+              <Unknown2 value="130" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="132" />
+              <Unknown2 value="90" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="133" />
+              <Unknown2 value="131" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="24" />
+              <Unknown2 value="134" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="135" />
+              <Unknown2 value="88" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="28" />
+              <Unknown2 value="137" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="131" />
+              <Unknown2 value="129" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="133" />
+              <Unknown2 value="132" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="134" />
+              <Unknown2 value="130" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="136" />
+              <Unknown2 value="135" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="29" />
+              <Unknown2 value="137" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="138" />
+              <Unknown2 value="88" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="34" />
+              <Unknown2 value="139" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="140" />
+              <Unknown2 value="84" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="130" />
+              <Unknown2 value="131" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="28" />
+              <Unknown2 value="134" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="132" />
+              <Unknown2 value="135" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="136" />
+              <Unknown2 value="133" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="34" />
+              <Unknown2 value="137" />
+              <Unknown4 value="0.045427233" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="139" />
+              <Unknown2 value="138" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="140" />
+              <Unknown2 value="88" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="41" />
+              <Unknown2 value="141" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="133" />
+              <Unknown2 value="135" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="134" />
+              <Unknown2 value="136" />
+              <Unknown4 value="0.0451899" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="137" />
+              <Unknown2 value="139" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="138" />
+              <Unknown2 value="140" />
+              <Unknown4 value="0.13505983" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="142" />
+              <Unknown2 value="81" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="41" />
+              <Unknown2 value="143" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="137" />
+              <Unknown2 value="134" />
+              <Unknown4 value="0.029956592" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="136" />
+              <Unknown2 value="138" />
+              <Unknown4 value="0.030193925" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="41" />
+              <Unknown2 value="139" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="140" />
+              <Unknown2 value="81" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="141" />
+              <Unknown2 value="142" />
+              <Unknown4 value="0.11982637" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="143" />
+              <Unknown2 value="55" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="137" />
+              <Unknown2 value="136" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="138" />
+              <Unknown2 value="135" />
+              <Unknown4 value="0.045427233" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="139" />
+              <Unknown2 value="141" />
+              <Unknown4 value="0.13505983" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="140" />
+              <Unknown2 value="142" />
+              <Unknown4 value="0.13505967" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="40" />
+              <Unknown2 value="143" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="139" />
+              <Unknown2 value="136" />
+              <Unknown4 value="0.045427233" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="141" />
+              <Unknown2 value="138" />
+              <Unknown4 value="0.11982653" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="142" />
+              <Unknown2 value="65" />
+              <Unknown4 value="0.12030057" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="143" />
+              <Unknown2 value="44" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="141" />
+              <Unknown2 value="140" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="142" />
+              <Unknown2 value="55" />
+              <Unknown4 value="0.13553387" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="143" />
+              <Unknown2 value="141" />
+              <Unknown4 value="0.13505967" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="143" />
+              <Unknown2 value="142" />
+              <Unknown4 value="0.015233307" />
+              <Unknown8 value="0.5" />
+              <UnknownC value="0.25" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+            <Item>
+              <Unknown0 value="0" />
+              <Unknown2 value="0" />
+              <Unknown4 value="100000000" />
+              <Unknown8 value="0" />
+              <UnknownC value="0" />
+            </Item>
+          </Constraints>
+          <Behaviour />
+          <Unknown140 />
+        </VerletCloth1>
+      </Controller>
+      <Drawable>
+        <Matrix>
+          1.0 0.0 0.0 0.0
+          0.0 1.0 0.0 0.0
+          0.0 0.0 1.0 0.0
+          0.0 0.0 0.0 1.0
+        </Matrix>
+        <Name>skel</Name>
+        <BoundingSphereCenter x="0.0" y="-1.8193578" z="0.0" />
+        <BoundingSphereRadius value="1.8845223" />
+        <BoundingBoxMin x="0.0" y="-3.638064" z="-0.49369314" />
+        <BoundingBoxMax x="0.0" y="-0.0006516613" z="0.49369314" />
+        <LodDistHigh value="40" />
+        <LodDistMed value="80" />
+        <LodDistLow value="120" />
+        <LodDistVlow value="9998" />
+        <FlagsHigh value="1" />
+        <FlagsMed value="0" />
+        <FlagsLow value="0" />
+        <FlagsVlow value="0" />
+        <ShaderGroup>
+          <TextureDictionary>
+            <Item>
+              <Name>test_image</Name>
+              <Unk32 value="0" />
+              <Usage>UNKNOWN</Usage>
+              <ExtraFlags value="0" />
+              <Width value="64" />
+              <Height value="64" />
+              <MipLevels value="0" />
+              <Format>D3DFMT_DXT1</Format>
+              <FileName>test_image.dds</FileName>
+            </Item>
+          </TextureDictionary>
+          <Shaders>
+            <Item>
+              <Name>cloth_default</Name>
+              <FileName>cloth_default.sps</FileName>
+              <RenderBucket value="0" />
+              <Parameters>
+                <Item name="DiffuseSampler" type="Texture">
+                  <Name>test_image</Name>
+                </Item>
+                <Item name="useTessellation" type="Vector" x="0.0" y="0.0" z="0.0" w="0.0" />
+              </Parameters>
+            </Item>
+          </Shaders>
+        </ShaderGroup>
+        <Skeleton>
+          <Unknown1C value="16777216" />
+          <Unknown50 value="239958909" />
+          <Unknown54 value="1483433655" />
+          <Unknown58 value="1578145239" />
+          <Bones>
+            <Item>
+              <Name>cloth_root</Name>
+              <Tag value="0" />
+              <Index value="0" />
+              <ParentIndex value="-1" />
+              <SiblingIndex value="-1" />
+              <Flags>RotX, RotY, RotZ, TransX, TransY, TransZ</Flags>
+              <Translation x="0.0" y="0.0" z="0.0" />
+              <Rotation x="0.0" y="0.0" z="0.0" w="1.0" />
+              <Scale x="1.0" y="1.0" z="1.0" />
+              <TransformUnk x="0.0" y="0.0" z="0.0" w="1.0" />
+            </Item>
+          </Bones>
+        </Skeleton>
+        <DrawableModelsHigh>
+          <Item>
+            <RenderMask value="255" />
+            <Flags value="0" />
+            <HasSkin value="0" />
+            <BoneIndex value="0" />
+            <Unknown1 value="0" />
+            <Geometries>
+              <Item>
+                <ShaderIndex value="0" />
+                <BoundingBoxMin x="0.0" y="-3.638064" z="-0.49369314" />
+                <BoundingBoxMax x="0.0" y="-0.0006516613" z="0.49369314" />
+                <VertexBuffer>
+                  <Flags value="0" />
+                  <Layout type="GTAV3">
+                    <Position />
+                    <Normal />
+                    <Colour0 />
+                    <TexCoord0 />
+                  </Layout>
+                  <Data>
+                    0.0000000 -3.6380639 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.1253662
+                    0.0000000 -3.6380639 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.0005035
+                    0.0000000 -3.4649844 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.0005035
+                    0.0000000 -3.6380639 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.2502441
+                    0.0000000 -3.4649844 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.1253662
+                    0.0000000 -3.2919044 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.0005035
+                    0.0000000 -3.6380639 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.3750000
+                    0.0000000 -3.4649844 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.2502441
+                    0.0000000 -3.2919044 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.1253662
+                    0.0000000 -3.1188245 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.1253662
+                    0.0000000 -3.1188245 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.0005035
+                    0.0000000 -3.2919044 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.2502441
+                    0.0000000 -2.9450607 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.1253662
+                    0.0000000 -2.9450607 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.0005035
+                    0.0000000 -2.7719808 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.0005035
+                    0.0000000 -3.1188245 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.2502441
+                    0.0000000 -2.9450607 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.2502441
+                    0.0000000 -2.7719808 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.1253662
+                    0.0000000 -2.5989010 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.0005035
+                    0.0000000 -2.9450607 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.3750000
+                    0.0000000 -2.7719808 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.2502441
+                    0.0000000 -2.5989010 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.1253662
+                    0.0000000 -2.4258213 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.1253662
+                    0.0000000 -2.4258213 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.0005035
+                    0.0000000 -2.5989010 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.2502441
+                    0.0000000 -2.2527416 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.1253662
+                    0.0000000 -2.2527416 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.0005035
+                    0.0000000 -2.0789776 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.0005035
+                    0.0000000 -2.4258213 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.2502441
+                    0.0000000 -2.2527416 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.2502441
+                    0.0000000 -2.0789776 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.1253662
+                    0.0000000 -1.7328179 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.1253662
+                    0.0000000 -1.7328179 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.0005035
+                    0.0000000 -1.3866584 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.0005035
+                    0.0000000 -2.0789776 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.2502441
+                    0.0000000 -1.3866584 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.1253662
+                    0.0000000 -1.0398147 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.0005035
+                    0.0000000 -1.7328179 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.2502441
+                    0.0000000 -1.0398147 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.1253662
+                    0.0000000 -0.6936550 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.0005035
+                    0.0000000 -1.3866584 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.2502441
+                    0.0000000 -1.7328179 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.3750000
+                    0.0000000 -0.6936550 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.1253662
+                    0.0000000 -0.3474954 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.0005035
+                    0.0000000 -1.0398147 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.2502441
+                    0.0000000 -0.3474954 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.1253662
+                    0.0000000 -0.0006517 0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.0005035
+                    0.0000000 -0.0006517 0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.1253662
+                    0.0000000 -0.0006517 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.2502441
+                    0.0000000 -0.6936550 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.2502441
+                    0.0000000 -0.3474954 0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.2502441
+                    0.0000000 -0.0006517 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.3750000
+                    0.0000000 -0.6936550 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.3750000
+                    0.0000000 -0.3474954 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.3750000
+                    0.0000000 -0.0006517 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.5000000
+                    0.0000000 -1.0398147 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.3750000
+                    0.0000000 -0.3474954 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.5000000
+                    0.0000000 -0.0006517 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.6250000
+                    0.0000000 -0.6936550 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.5000000
+                    0.0000000 -0.3474954 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.6250000
+                    0.0000000 -0.0006517 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.7500000
+                    0.0000000 -0.6936550 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.6250000
+                    0.0000000 -0.3474954 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.7500000
+                    0.0000000 -0.0006517 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.8745117
+                    0.0000000 -0.6936550 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.7500000
+                    0.0000000 -1.0398147 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.5000000
+                    0.0000000 -1.0398147 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.6250000
+                    0.0000000 -0.3474954 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.8745117
+                    0.0000000 -0.0006517 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0005035 0.9995117
+                    0.0000000 -0.3474954 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.0837402 0.9995117
+                    0.0000000 -0.6936550 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.9995117
+                    0.0000000 -0.6936550 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.1669922 0.8745117
+                    0.0000000 -1.0398147 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.8745117
+                    0.0000000 -1.0398147 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.9995117
+                    0.0000000 -1.3866584 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.9995117
+                    0.0000000 -1.0398147 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.2502441 0.7500000
+                    0.0000000 -1.3866584 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.8745117
+                    0.0000000 -1.7328179 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.9995117
+                    0.0000000 -1.3866584 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.7500000
+                    0.0000000 -1.7328179 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.8745117
+                    0.0000000 -2.0789776 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.9995117
+                    0.0000000 -1.3866584 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.6250000
+                    0.0000000 -2.0789776 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.8745117
+                    0.0000000 -2.2527416 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.9995117
+                    0.0000000 -1.7328179 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.7500000
+                    0.0000000 -2.0789776 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.7500000
+                    0.0000000 -2.2527416 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.8745117
+                    0.0000000 -2.4258213 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.9995117
+                    0.0000000 -2.0789776 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.6250000
+                    0.0000000 -2.4258213 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.8745117
+                    0.0000000 -2.2527416 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.7500000
+                    0.0000000 -2.4258213 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.7500000
+                    0.0000000 -2.5989010 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.8745117
+                    0.0000000 -2.5989010 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.9995117
+                    0.0000000 -2.7719808 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.9995117
+                    0.0000000 -2.5989010 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.7500000
+                    0.0000000 -2.7719808 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.8745117
+                    0.0000000 -2.9450607 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.9995117
+                    0.0000000 -2.5989010 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.6250000
+                    0.0000000 -2.7719808 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.7500000
+                    0.0000000 -2.9450607 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.8745117
+                    0.0000000 -3.1188245 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.8745117
+                    0.0000000 -3.1188245 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.9995117
+                    0.0000000 -2.9450607 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.7500000
+                    0.0000000 -3.2919044 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.8745117
+                    0.0000000 -3.2919044 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.9995117
+                    0.0000000 -3.4649844 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.9995117
+                    0.0000000 -3.1188245 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.7500000
+                    0.0000000 -3.2919044 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.7500000
+                    0.0000000 -3.4649844 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.8745117
+                    0.0000000 -3.6380639 -0.4936931   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.9995117
+                    0.0000000 -3.2919044 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.6250000
+                    0.0000000 -3.4649844 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.7500000
+                    0.0000000 -3.6380639 -0.3702699   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.8745117
+                    0.0000000 -3.6380639 -0.2468466   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.7500000
+                    0.0000000 -3.6380639 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.6250000
+                    0.0000000 -3.6380639 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8745117 0.5000000
+                    0.0000000 -3.4649844 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.3750000
+                    0.0000000 -3.4649844 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.5000000
+                    0.0000000 -3.2919044 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.3750000
+                    0.0000000 -3.4649844 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.8330078 0.6250000
+                    0.0000000 -3.2919044 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7915039 0.5000000
+                    0.0000000 -3.1188245 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.6250000
+                    0.0000000 -3.1188245 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.5000000
+                    0.0000000 -3.1188245 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7500000 0.3750000
+                    0.0000000 -2.9450607 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.6250000
+                    0.0000000 -2.9450607 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.7080078 0.5000000
+                    0.0000000 -2.7719808 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.3750000
+                    0.0000000 -2.7719808 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.5000000
+                    0.0000000 -2.7719808 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6665039 0.6250000
+                    0.0000000 -2.5989010 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.3750000
+                    0.0000000 -2.5989010 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.6250000 0.5000000
+                    0.0000000 -2.4258213 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.6250000
+                    0.0000000 -2.4258213 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.5000000
+                    0.0000000 -2.4258213 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5830078 0.3750000
+                    0.0000000 -2.2527416 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.6250000
+                    0.0000000 -2.2527416 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.5000000
+                    0.0000000 -2.2527416 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5415039 0.3750000
+                    0.0000000 -2.0789776 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.5000000
+                    0.0000000 -2.0789776 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.5000000 0.3750000
+                    0.0000000 -1.7328179 -0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.6250000
+                    0.0000000 -1.7328179 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.4167480 0.5000000
+                    0.0000000 -1.3866584 0.0000000   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.5000000
+                    0.0000000 -1.3866584 0.1234233   -1.0000000 0.0000000 0.0000000   255 255 255 255   0.3334961 0.3750000
+                  </Data>
+                </VertexBuffer>
+                <IndexBuffer>
+                  <Data>
+                    0 1 2 2 4 0 3 0 4 4 2 5 4 7 3 6 3 7 5 8 4 7 4 8
+                    9 8 5 5 10 9 8 11 7 12 9 10 10 13 12 12 13 14 8 9 15 15 11 8
+                    9 12 16 16 15 9 14 17 12 16 12 17 17 14 18 15 16 19 17 20 16 19 16 20
+                    18 21 17 20 17 21 22 21 18 18 23 22 21 24 20 25 22 23 23 26 25 25 26 27
+                    21 22 28 28 24 21 22 25 29 29 28 22 27 30 25 29 25 30 31 30 27 27 32 31
+                    31 32 33 30 34 29 33 35 31 35 33 36 30 31 37 37 31 35 37 34 30 36 38 35
+                    38 36 39 35 40 37 40 35 38 34 37 41 41 37 40 39 42 38 42 39 43 38 44 40
+                    43 45 42 45 43 46 46 47 45 45 47 48 38 42 49 49 42 45 49 44 38 48 50 45
+                    45 50 49 50 48 51 52 49 50 44 49 52 51 53 50 50 53 52 53 51 54 52 55 44
+                    54 56 53 56 54 57 58 52 53 53 56 58 55 52 58 57 59 56 59 57 60 61 58 56
+                    56 59 61 60 62 59 62 60 63 64 61 59 59 62 64 65 58 61 58 65 55 66 61 64
+                    61 66 65 63 67 62 67 63 68 68 69 67 67 69 70 62 67 71 70 71 67 71 64 62
+                    72 71 70 70 73 72 72 73 74 75 64 71 71 72 75 64 75 66 74 76 72 75 72 76
+                    76 74 77 66 75 78 76 78 75 77 79 76 78 76 79 79 77 80 78 81 66 65 66 81
+                    80 82 79 82 80 83 79 84 78 81 78 84 79 82 85 85 84 79 83 86 82 85 82 86
+                    86 83 87 84 85 88 87 89 86 86 90 85 88 85 90 86 89 91 91 90 86 92 89 87
+                    87 93 92 92 93 94 89 92 95 95 91 89 94 96 92 95 92 96 96 94 97 91 95 98
+                    96 99 95 98 95 99 97 100 96 99 96 100 101 100 97 97 102 101 100 103 99 104 101 102
+                    102 105 104 104 105 106 100 101 107 107 103 100 101 104 108 108 107 101 106 109 104 108 104 109
+                    109 106 110 107 108 111 109 112 108 111 108 112 110 113 109 112 109 113 113 114 112 116 6 117
+                    7 117 6 117 7 11 115 116 118 117 118 116 11 119 117 118 117 119 118 120 115 114 115 120
+                    120 112 114 112 120 111 120 118 121 121 111 120 119 121 118 122 111 121 111 122 107 103 107 122
+                    123 121 119 121 123 122 124 119 11 119 124 123 11 15 124 19 124 15 125 122 123 122 125 103
+                    126 123 124 124 19 126 123 126 125 126 19 127 20 127 19 127 20 24 125 126 128 127 128 126
+                    103 125 129 128 129 125 129 99 103 99 129 98 128 127 130 24 130 127 129 128 131 131 98 129
+                    130 131 128 132 98 131 98 132 91 90 91 132 133 131 130 131 133 132 134 130 24 130 134 133
+                    24 28 134 132 135 90 135 132 133 90 135 88 136 133 134 133 136 135 137 134 28 134 137 136
+                    28 29 137 137 29 34 135 136 138 138 88 135 136 137 139 34 139 137 139 138 136 41 139 34
+                    140 88 138 88 140 84 84 140 81 141 138 139 138 141 140 139 41 141 142 81 140 140 141 142
+                    81 142 65 55 65 142 141 41 143 143 142 141 142 143 55 40 143 41 44 55 143 143 40 44
+                  </Data>
+                </IndexBuffer>
+              </Item>
+            </Geometries>
+          </Item>
+        </DrawableModelsHigh>
+      </Drawable>
+    </Item>
+  </Cloths>
+</Fragment>

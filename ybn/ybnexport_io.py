@@ -254,6 +254,22 @@ def create_bound_asset(obj: Object, is_root: bool = False, allow_planes: bool = 
             volume, cg, inertia = get_mass_properties_of_capsule(radius, length)
             margin = radius  # in capsules the margin equals the capsule radius
 
+        case SollumType.BOUND_PLANE:
+            bound = init_bound_asset(BoundType.PLANE, obj)
+            bound.extent = Vector((0, 0, 0)), Vector((0, 0, 0))
+            bound.composite_transform = Matrix.Identity(4)
+
+            plane_transform = calc_composite_transforms(obj)
+            centroid = plane_transform.to_translation()
+            normal = plane_transform.col[1].xyz.normalized()
+            bound.plane_normal = normal
+
+            radius_around_centroid = 0.0
+            volume = 1.0
+            cg = normal # normal is stored in the CG
+            inertia = Vector((1.0, 1.0, 1.0))
+            margin = 0.04
+
         case SollumType.BOUND_GEOMETRY:
             bound, vertices, primitives = init_bound_geometry_asset(obj)
 
