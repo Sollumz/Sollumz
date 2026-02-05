@@ -12,6 +12,7 @@ from .operators import (
     drawables as drw_ops,
     lights as light_ops,
     materials as mat_ops,
+    lod_tools as lod_ops,
 )
 from .shader_materials import shadermats
 from .cable import CableAttr, is_cable_mesh
@@ -953,6 +954,46 @@ class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
         box.separator()
 
         box.operator("sollumz.extract_lods", icon="EXPORT")
+
+
+class SOLLUMZ_PT_MATERIAL_MERGE_PANEL(bpy.types.Panel):
+    bl_label = "Material Merge"
+    bl_idname = "SOLLUMZ_PT_MATERIAL_MERGE_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
+
+    bl_order = 2
+
+    def draw(self, context: Context):
+        layout = self.layout
+        settings = context.scene.sollumz_material_merge_settings
+        obj = context.active_object
+
+        layout.label(text="Material Merge")
+        box = layout.box()
+
+        box.prop(settings, "texture_size")
+        box.prop(settings, "bake_type")
+        box.prop(settings, "uv_margin")
+        box.prop(settings, "samples")
+
+        box.separator()
+
+        if obj is not None and obj.type == "MESH":
+            mat_count = len(obj.data.materials)
+            box.label(text=f"Object: {obj.name}")
+            box.label(text=f"Materials: {mat_count}")
+        else:
+            box.label(text="Select a mesh object", icon="ERROR")
+
+        box.separator()
+
+        row = box.row(align=True)
+        row.scale_y = 1.5
+        row.operator(lod_ops.SOLLUMZ_OT_material_merge_bake.bl_idname, icon="RENDER_STILL")
 
 
 class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):

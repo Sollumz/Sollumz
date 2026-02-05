@@ -28,13 +28,60 @@ from bpy.app.handlers import persistent
 from bpy.path import basename
 
 
+class MaterialMergeSettings(bpy.types.PropertyGroup):
+    """Settings for material merge baking"""
+
+    texture_size: EnumProperty(
+        name="Texture Size",
+        description="Resolution of the baked texture",
+        items=[
+            ("256", "256", "256x256 pixels"),
+            ("512", "512", "512x512 pixels"),
+            ("1024", "1024", "1024x1024 pixels"),
+            ("2048", "2048", "2048x2048 pixels"),
+            ("4096", "4096", "4096x4096 pixels"),
+            ("8192", "8192", "8192x8192 pixels"),
+        ],
+        default="1024"
+    )
+
+    bake_type: EnumProperty(
+        name="Bake Type",
+        description="Type of texture to bake",
+        items=[
+            ("DIFFUSE", "Diffuse", "Diffuse color only"),
+            ("NORMAL", "Normal", "Normal map"),
+            ("ROUGHNESS", "Roughness", "Roughness map"),
+            ("METALLIC", "Metallic", "Metallic map"),
+        ],
+        default="DIFFUSE"
+    )
+
+    uv_margin: FloatProperty(
+        name="UV Margin",
+        description="Margin between UV islands",
+        default=0.0,
+        min=0.0,
+        max=0.1,
+        precision=3
+    )
+
+    samples: IntProperty(
+        name="Samples",
+        description="Number of render samples for baking",
+        default=128,
+        min=1,
+        max=2048
+    )
+
+
 class ShaderOrderItem(bpy.types.PropertyGroup):
     # For drawable shader order list
     index: bpy.props.IntProperty(min=0)
     material: bpy.props.PointerProperty(type=Material)
     name: bpy.props.StringProperty()
     shader: bpy.props.StringProperty()
-    user_models: bpy.props.StringProperty() # models using this shader, to display in UI
+    user_models: bpy.props.StringProperty()  # models using this shader, to display in UI
 
 
 class DrawableShaderOrder(bpy.types.PropertyGroup):
@@ -918,6 +965,10 @@ def register():
     #     default=False
     # )
 
+    bpy.types.Scene.sollumz_material_merge_settings = bpy.props.PointerProperty(
+        type=MaterialMergeSettings
+    )
+
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
     refresh_ui_collections()
 
@@ -976,5 +1027,7 @@ def unregister():
     del bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize
     del bpy.types.WindowManager.sz_ui_cloth_diag_binding_errors_visualize
     # del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
+
+    del bpy.types.Scene.sollumz_material_merge_settings
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
