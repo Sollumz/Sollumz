@@ -9,7 +9,7 @@ from ..sollumz_properties import MaterialType, SollumType
 from ..tools import jenkhash
 from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
 from .meshhelper import get_uv_map_name
-from typing import Tuple
+from typing import Tuple, Callable
 from collections.abc import Iterator
 from szio.gta5 import ShaderManager
 
@@ -884,3 +884,26 @@ def action_groups(action: bpy.types.Action) -> Iterator[bpy.types.ActionGroup]:
         groups = action.groups
 
     return groups
+
+
+def action_remove_fcurves(action: bpy.types.Action, predicate: Callable[[bpy.types.FCurve], bool]):
+    if bpy.app.version >= (5, 0, 0):
+        to_delete = []
+        for layer in action.layers:
+            for strip in layer.strips:
+                for channelbag in strip.channelbags:
+                    to_delete.clear()
+                    for fcurve in channelbag.fcurves:
+                        if predicate(fcurve):
+                            to_delete.append(fcurve)
+
+                    for fcurve in to_delete:
+                        channelbag.fcurves.remove(fcurve)
+    else:
+        to_delete = []
+        for fcurve in action.fcurves:
+            if predicate(fcurve):
+                to_delete.append(fcurve)
+
+        for fcurve in to_delete:
+            action.fcurves.remove(fcurve)
