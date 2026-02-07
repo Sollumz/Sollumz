@@ -112,7 +112,27 @@ def dedupe_and_get_indices(vertex_arr: NDArray) -> Tuple[NDArray, NDArray[np.uin
     # Convert vertex array to a 2D unstructured array of float64 to be able to use np.round, it doesn't work on the
     # structured array.
     # Each vertex is converted to a float64 array by concatenating the struct fields: [x, y, z, nx, ny, nz, r, g, b, a, ...]
-    vertex_arr_flatten = np.concatenate([vertex_arr[name] for name in vertex_arr.dtype.names], axis=1, dtype=np.float64)
+
+    # Pre-allocate flattened array
+    names = vertex_arr.dtype.names
+    num_verts = len(vertex_arr)
+    total_cols = sum(
+        vertex_arr[name].shape[1] if vertex_arr[name].ndim > 1 else 1
+        for name in names
+    )
+
+    vertex_arr_flatten = np.empty((num_verts, total_cols), dtype=np.float64)
+    col = 0
+    for name in names:
+        arr = vertex_arr[name]
+        if arr.ndim == 1:
+            vertex_arr_flatten[:, col] = arr
+            col += 1
+        else:
+            width = arr.shape[1]
+            vertex_arr_flatten[:, col:col + width] = arr
+            col += width
+
     np.round(vertex_arr_flatten, out=vertex_arr_flatten, decimals=6)
 
     _, unique_indices, inverse_indices = np.unique(vertex_arr_flatten, axis=0, return_index=True, return_inverse=True)
@@ -167,12 +187,19 @@ class VertexBufferBuilder:
         self.mesh.loops.foreach_get("vertex_index", self._loop_to_vert_inds)
 
         if domain == VBBuilderDomain.VERTEX:
-            self._vert_to_loops = []
-            self._vert_to_first_loop = np.empty(len(mesh.vertices), dtype=np.uint32)
-            for vert_index in range(len(mesh.vertices)):
-                loop_indices = np.where(self._loop_to_vert_inds == vert_index)[0]
-                self._vert_to_loops.append(loop_indices.tolist())
-                self._vert_to_first_loop[vert_index] = loop_indices[0]
+            # Build vert->loops mapping by sorting loop indices by their vertex index
+            num_verts = len(mesh.vertices)
+            sorted_loop_indices = np.argsort(self._loop_to_vert_inds)
+            sorted_vert_indices = self._loop_to_vert_inds[sorted_loop_indices]
+
+            # Find boundaries between vertices using searchsorted
+            vert_boundaries = np.searchsorted(sorted_vert_indices, np.arange(num_verts + 1))
+
+            self._vert_to_loops = [
+                sorted_loop_indices[vert_boundaries[i]:vert_boundaries[i + 1]].tolist()
+                for i in range(num_verts)
+            ]
+            self._vert_to_first_loop = sorted_loop_indices[vert_boundaries[:-1]]
         else:
             self._vert_to_loops = None
             self._vert_to_first_loop = None
@@ -248,14 +275,24 @@ class VertexBufferBuilder:
             return normals
         elif self.domain == VBBuilderDomain.VERTEX:
             num_verts = len(self.mesh.vertices)
-            vertex_normals = np.empty((num_verts, 3), dtype=np.float32)
-            for vert_index in range(num_verts):
-                loops = self._vert_to_loops[vert_index]
-                avg_normal = np.average(normals[loops], axis=0)
-                avg_normal /= np.linalg.norm(avg_normal)
-                vertex_normals[vert_index] = avg_normal
 
-            return vertex_normals
+            # Vectorized accumulation
+            vertex_normals = np.zeros((num_verts, 3), dtype=np.float64)
+            np.add.at(vertex_normals, self._loop_to_vert_inds, normals)
+
+            # Count loops per vertex for averaging
+            loop_counts = np.bincount(self._loop_to_vert_inds, minlength=num_verts)
+
+            # Average and normalize
+            vertex_normals /= loop_counts[:, np.newaxis]
+            norms = np.linalg.norm(vertex_normals, axis=1, keepdims=True)
+            vertex_normals = np.divide(
+                vertex_normals, norms,
+                out=np.zeros_like(vertex_normals),
+                where=norms != 0
+            )
+
+            return vertex_normals.astype(np.float32)
 
     def _get_weights_indices(self) -> Tuple[NDArray[np.uint32], NDArray[np.uint32]]:
         """Get all BlendWeights and BlendIndices."""
@@ -268,22 +305,52 @@ class VertexBufferBuilder:
         cloth_bind_verts = []
         ungrouped_verts = 0
 
-        for i, vert in enumerate(self.mesh.vertices):
-            groups = self._get_sorted_vertex_group_elements(vert)
-            if not groups:
+        # Collect all vertex group data in flat arrays for batch processing
+        vert_indices_list = []
+        bone_indices_list = []
+        weights_list = []
+        slot_indices_list = []
+
+        for vi, vert in enumerate(self.mesh.vertices):
+            vert_groups = vert.groups
+            if not vert_groups:
                 ungrouped_verts += 1
                 continue
 
-            if any(bone_by_vgroup[g.group] == VGROUP_CLOTH_ID for g in groups):
-                cloth_bind_verts.append(i)
+            # Collect valid groups for this vertex
+            valid_groups = []
+            has_cloth = False
+            for ge in vert_groups:
+                bone_index = bone_by_vgroup.get(ge.group, VGROUP_INVALID_BONE_ID)
+                if bone_index == VGROUP_INVALID_BONE_ID:
+                    continue
+                if bone_index == VGROUP_CLOTH_ID:
+                    has_cloth = True
+                    break
+                valid_groups.append((ge.weight, bone_index))
+
+            if has_cloth:
+                cloth_bind_verts.append(vi)
                 continue
 
-            for j, grp in enumerate(groups):
-                if j > 3:
-                    break
+            if not valid_groups:
+                ungrouped_verts += 1
+                continue
 
-                weights_arr[i][j] = grp.weight
-                ind_arr[i][j] = bone_by_vgroup[grp.group]
+            # Sort by weight descending and take top 4
+            valid_groups.sort(reverse=True, key=lambda x: x[0])
+            for j, (weight, bone_idx) in enumerate(valid_groups[:4]):
+                vert_indices_list.append(vi)
+                bone_indices_list.append(bone_idx)
+                weights_list.append(weight)
+                slot_indices_list.append(j)
+
+        # Batch assign to arrays
+        if vert_indices_list:
+            vert_indices = np.array(vert_indices_list, dtype=np.uint32)
+            slot_indices = np.array(slot_indices_list, dtype=np.uint32)
+            weights_arr[vert_indices, slot_indices] = weights_list
+            ind_arr[vert_indices, slot_indices] = bone_indices_list
 
         if ungrouped_verts != 0:
             logger.warning(
@@ -430,14 +497,12 @@ class VertexBufferBuilder:
 
     def _renormalize_converted_weights(self, weights_arr: NDArray[np.uint32]) -> NDArray[np.uint32]:
         """Re-normalize converted weights to ensure their sum to be 255."""
-        row_sums = weights_arr.sum(axis=1, keepdims=True)
-        to_be_subtracted = np.full_like(row_sums, 255, dtype=np.int32)
-        deltas = np.subtract(to_be_subtracted, row_sums)
-        max_indices = weights_arr.argmax(axis=1, keepdims=True)
-        max_values = weights_arr.max(axis=1, keepdims=True)
-        normalized_max_values = np.add(max_values, deltas)
-        result = np.copy(weights_arr)
-        np.put_along_axis(result, max_indices, normalized_max_values, axis=1)
+        row_sums = weights_arr.sum(axis=1)
+        deltas = 255 - row_sums
+        max_indices = weights_arr.argmax(axis=1)
+
+        result = weights_arr.copy()
+        result[np.arange(len(result)), max_indices] += deltas
         return result
 
     def _get_colors(self) -> dict[str, NDArray[np.uint32]]:
@@ -453,11 +518,14 @@ class VertexBufferBuilder:
                 # Not in the correct format, ignore it
                 continue
 
-            colors = np.empty(num_loops * 4, dtype=np.float32)
-            color_attr.data.foreach_get("color_srgb", colors)
+            # Pre-allocate with final shape
+            colors = np.empty((num_loops, 4), dtype=np.float32)
+            color_attr.data.foreach_get("color_srgb", colors.ravel())
 
-            colors = self._convert_to_int_range(colors)
-            colors = np.reshape(colors, (num_loops, 4))
+            # In-place multiply and round to reduce allocations
+            colors *= 255.0
+            np.rint(colors, out=colors)
+            colors = colors.astype(np.uint32)
 
             if self.domain == VBBuilderDomain.VERTEX:
                 colors = colors[self._vert_to_first_loop]
@@ -475,9 +543,9 @@ class VertexBufferBuilder:
             if uvmap_attr is None:
                 continue
 
-            uvs = np.empty(num_loops * 2, dtype=np.float32)
-            uvmap_attr.uv.foreach_get("vector", uvs)
-            uvs = np.reshape(uvs, (num_loops, 2))
+            # Pre-allocate with final shape
+            uvs = np.empty((num_loops, 2), dtype=np.float32)
+            uvmap_attr.uv.foreach_get("vector", uvs.ravel())
 
             flip_uvs(uvs)
 
