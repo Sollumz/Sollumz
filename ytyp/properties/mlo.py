@@ -429,6 +429,7 @@ class EntitySetProperties(bpy.types.PropertyGroup, MloArchetypeChild):
         return archetype.entity_sets[0].name
 
     name: bpy.props.StringProperty(name="Name", update=MloArchetypeChild.update_mlo_archetype_caches)
+    visible: bpy.props.BoolProperty(name="Visible", default=True)
 
     # Blender use obly
     id: bpy.props.IntProperty(name="Id")

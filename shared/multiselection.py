@@ -694,6 +694,13 @@ class MultiSelectUIListMixin:
             )
             _set_op_properties(op)
 
+        self.draw_item_extra(context, layout, data, item, icon, active_data, active_propname, index)
+
+    def draw_item_extra(
+        context, layout: UILayout, data, item, icon, active_data, active_propname, index
+    ):
+        pass
+
     def get_item_icon(self, item) -> str | int:
         return self.default_item_icon
 

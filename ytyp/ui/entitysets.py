@@ -7,12 +7,22 @@ from ...shared.multiselection import (
     multiselect_ui_draw_list,
 )
 from ..operators import ytyp as ytyp_ops
+from ..operators import entitysets as entitysets_ops
 
 
 class SOLLUMZ_UL_ENTITY_SETS_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ENTITY_SETS_LIST"
     default_item_icon = "ASSET_MANAGER"
     multiselect_operator = ytyp_ops.SOLLUMZ_OT_archetype_select_mlo_entity_set.bl_idname
+
+    def draw_item_extra(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        visible_icon = "HIDE_OFF" if item.visible else "HIDE_ON"
+        op = layout.operator(
+            entitysets_ops.SOLLUMZ_OT_entityset_toggle_visibility.bl_idname, emboss=False, icon=visible_icon, text=""
+        )
+        op.index = index
 
 
 class SOLLUMZ_PT_ENTITY_SETS_PANEL(MloChildTabPanel, bpy.types.Panel):
@@ -39,7 +49,7 @@ class SOLLUMZ_PT_ENTITY_SETS_PANEL(MloChildTabPanel, bpy.types.Panel):
 
         multiselect_ui_draw_list(
             self.layout, selected_archetype.entity_sets,
-            "sollumz.createentityset", "sollumz.deleteentityset",
+            entitysets_ops.SOLLUMZ_OT_create_entityset.bl_idname, entitysets_ops.SOLLUMZ_OT_delete_entityset.bl_idname,
             SOLLUMZ_UL_ENTITY_SETS_LIST, SOLLUMZ_MT_entity_sets_list_context_menu,
             "tool_panel"
         )
