@@ -1,9 +1,10 @@
 import os
 import sys
 import textwrap
+from collections.abc import Sequence
+from enum import Enum, auto
 from pathlib import Path
 from typing import NamedTuple
-from collections.abc import Sequence
 
 import bpy
 from bpy.props import (
@@ -65,15 +66,37 @@ DEPENDENCIES_REQUIRED = tuple(d for d in DEPENDENCIES if d.required)
 DEPENDENCIES_OPTIONAL = tuple(d for d in DEPENDENCIES if not d.required)
 
 
-def check_module(name: str, version: str) -> bool:
+class DependencyState(Enum):
+    UNINSTALLED = auto()
+    INSTALLED = auto()
+    INSTALLED_OUTDATED = auto()
+
+
+def get_module_version(name: str) -> str | None:
     import importlib.metadata
+
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+def check_module(name: str, version: str) -> DependencyState:
     import importlib.util
 
-    return importlib.util.find_spec(name) is not None and importlib.metadata.version(name) == version
+    if importlib.util.find_spec(name) is not None:
+        if get_module_version(name) != version:
+            return DependencyState.INSTALLED_OUTDATED
+        return DependencyState.INSTALLED
+
+    return DependencyState.UNINSTALLED
 
 
-def dependencies_available_state() -> dict[str, bool]:
-    return {dep.name: dep.supported and check_module(dep.name, dep.version) for dep in DEPENDENCIES}
+def dependencies_available_state() -> dict[str, DependencyState]:
+    return {
+        dep.name: check_module(dep.name, dep.version) if dep.supported else DependencyState.UNINSTALLED
+        for dep in DEPENDENCIES
+    }
 
 
 def site_packages_path() -> Path:
@@ -99,8 +122,15 @@ def has_online_access() -> bool:
     return bpy.app.version < (4, 2, 0) or bpy.app.online_access
 
 
+_needs_restart = False
+
+
 def has_required_dependencies() -> bool:
-    return IS_SZIO_AVAILABLE
+    return (
+        not _needs_restart
+        and IS_SZIO_AVAILABLE
+        and all(s != DependencyState.INSTALLED_OUTDATED for s in dependencies_available_state().values())
+    )
 
 
 def generate_requirements_file_contents(
@@ -134,9 +164,7 @@ def filter_dependencies_to_install(
     dependencies: Sequence[Dependency],
     optional_dependencies_to_install: set[str],
 ) -> list[Dependency]:
-    return [
-        d for d in dependencies if d.supported and (d.required or d.name in optional_dependencies_to_install)
-    ]
+    return [d for d in dependencies if d.supported and (d.required or d.name in optional_dependencies_to_install)]
 
 
 def build_install_dependencies_command(
@@ -174,6 +202,7 @@ def install_dependencies(online_access_override: bool = False, optional_dependen
         site_packages_old = site_packages.with_name("site-packages.old")
         if site_packages_old.is_dir():
             import shutil
+
             shutil.rmtree(site_packages_old)
 
         site_packages.rename(site_packages_old)
@@ -206,7 +235,7 @@ def mount_dependencies():
 
     if os.getenv("CI"):
         # On CI, force install the dependencies
-        any_missing_dependencies = any(not available for available in state.values())
+        any_missing_dependencies = any(s != DependencyState.INSTALLED for s in state.values())
         if any_missing_dependencies:
             unmount_dependencies()
             install_dependencies(online_access_override=True, optional_dependencies_to_install={"pymateria"})
@@ -214,8 +243,10 @@ def mount_dependencies():
             state = dependencies_available_state()
 
     global IS_SZIO_AVAILABLE, IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
-    IS_SZIO_AVAILABLE = state.get("szio", False)
-    IS_SZIO_NATIVE_AVAILABLE = IS_SZIO_AVAILABLE and state.get("pymateria", False)
+    IS_SZIO_AVAILABLE = state.get("szio", DependencyState.UNINSTALLED) == DependencyState.INSTALLED
+    IS_SZIO_NATIVE_AVAILABLE = (
+        IS_SZIO_AVAILABLE and state.get("pymateria", DependencyState.UNINSTALLED) == DependencyState.INSTALLED
+    )
     PYMATERIA_REQUIRED_MSG = (
         ""
         if IS_SZIO_NATIVE_AVAILABLE
@@ -289,12 +320,22 @@ def register_minimal():
             optional_dependencies_to_install = {
                 DEPENDENCIES_OPTIONAL[i].name for i, enabled in enumerate(self.optional_dependencies) if enabled
             }
+            state = dependencies_available_state()
+            should_restart = any(
+                (not dep.safe_to_reload and state[dep.name] == DependencyState.INSTALLED_OUTDATED)
+                for dep in DEPENDENCIES_OPTIONAL
+            )
 
             if install_dependencies(
                 online_access_override=True, optional_dependencies_to_install=optional_dependencies_to_install
             ):
-                self.report({"INFO"}, "Successfully installed dependencies. Reloading add-ons...")
-                bpy.ops.script.reload()
+                global _needs_restart
+                _needs_restart = should_restart
+                if _needs_restart:
+                    self.report({"INFO"}, "Successfully installed dependencies. Please, restart Blender.")
+                else:
+                    self.report({"INFO"}, "Successfully installed dependencies. Reloading add-ons...")
+                    bpy.ops.script.reload()
                 return {"FINISHED"}
             else:
                 self.report({"ERROR"}, "Failed to install dependencies.")
@@ -324,10 +365,19 @@ def register_minimal():
                 dim=False,
             )
 
+            state = dependencies_available_state()
+
+            def _is_outdated(dep: Dependency) -> bool:
+                return state.get(dep.name, DependencyState.UNINSTALLED) == DependencyState.INSTALLED_OUTDATED
+
             col = main_col.column()
             col.label(text="Required:")
             for dep in DEPENDENCIES_REQUIRED:
-                col.label(text=f"{dep.ui_label}  {dep.version}", icon="DOT")
+                label = f"{dep.ui_label}  {dep.version}"
+                if _is_outdated(dep) and (installed_version := get_module_version(dep.name)):
+                    label += f"  (installed {installed_version})"
+
+                col.label(text=label, icon="DOT")
                 _draw_wrapped_text(
                     context,
                     col,
@@ -342,12 +392,16 @@ def register_minimal():
             col = main_col.column()
             col.label(text="Optional:")
             for i, dep in enumerate(DEPENDENCIES_OPTIONAL):
+                label = f"   {dep.ui_label}  {dep.version}"
+                if _is_outdated(dep) and (installed_version := get_module_version(dep.name)):
+                    label += f"  (installed {installed_version})"
+
                 row = col.row()
                 row.alignment = "LEFT"
                 subrow = row.row()
                 subrow.alignment = "LEFT"
                 subrow.enabled = dep.supported
-                subrow.prop(self, "optional_dependencies", index=i, text=f"   {dep.ui_label}  {dep.version}")
+                subrow.prop(self, "optional_dependencies", index=i, text=label)
                 subrow = row.row()
                 subrow.alignment = "LEFT"
                 subrow.emboss = "PULLDOWN_MENU"
@@ -398,7 +452,10 @@ def register_minimal():
 
         def draw(self, context):
             layout = self.layout
-            layout.operator(SOLLUMZ_OT_install_dependencies.bl_idname, text="Install Dependencies")
+            if _needs_restart:
+                layout.label(text="Dependencies upgraded. Restart Blender.")
+            else:
+                layout.operator(SOLLUMZ_OT_install_dependencies.bl_idname, text="Install Dependencies")
 
     class SollumzDepsMinimalAddonPreferences(AddonPreferences):
         bl_idname = __package__
@@ -429,8 +486,11 @@ def register_minimal():
 
         def _draw_install_dependencies(self, context, layout: UILayout):
             row = layout.row()
-            row.label(text="Missing dependencies", icon="ERROR")
-            row.operator(SOLLUMZ_OT_install_dependencies.bl_idname, text="Install")
+            if _needs_restart:
+                row.label(text="Dependencies upgraded. Restart Blender.")
+            else:
+                row.label(text="Missing dependencies", icon="ERROR")
+                row.operator(SOLLUMZ_OT_install_dependencies.bl_idname, text="Install")
 
     def _draw_wrapped_text(
         context,
