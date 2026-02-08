@@ -697,7 +697,7 @@ class MultiSelectUIListMixin:
         self.draw_item_extra(context, layout, data, item, icon, active_data, active_propname, index)
 
     def draw_item_extra(
-        context, layout: UILayout, data, item, icon, active_data, active_propname, index
+        self, context, layout: UILayout, data, item, icon, active_data, active_propname, index
     ):
         pass
 
