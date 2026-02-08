@@ -53,11 +53,16 @@ DEPENDENCIES = (
         "Allows direct binary assets import/export and automatic vehicle shattermap generation using the Materia library.",
         False,
         "https://static.cfx.re/whl/",
-        "0.1.0",
+        "0.1.1",
         (
-            "0e94584b791446e70dad1cbb2cb0c26fb6bdd9a11bc47cee59e37a12b83a9fe6",  # python 3.10, win amd64
-            "1f311584701bf3ce29aceb0fd7b4f59479965bdbd19b8f0280e637ecca1af2ea",  # python 3.11, win amd64
-            "cc5f5d4c9b9aa8726122546fb8abc7833246ddecb5f670ed86f584fb9f76b575",  # python 3.12+ (abi3), win amd64
+            {
+                # win amd64
+                (3, 10): "830867304a8986d89cfe4dc49f26c8e014f2c2558dd4e208ba3247588cf6ba16",
+                (3, 11): "c204fafc411dfd85992565c8fe1c16af0ee4e7af47620e8403e25d5103103795",
+                (3, 12): "24bfd244b95e2fa519116b62dcb1f49387e67da8032c1c9934769956d19f4135",
+                (3, 13): "232052dd8c6942fa8a96af8bbaa5133708640e6008035ae3a32be285d52f297d",
+                (3, 14): "91d384a543521089b0f4abb214e64b1839ef6afbedfa6574ee90be826944dbad",
+            }.get(sys.version_info[:2], "unknown"),
         ),
     ),
 )
