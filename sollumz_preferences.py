@@ -308,7 +308,8 @@ class ImportSettingsBase:
 class SollumzExportSettings(ExportSettingsBase, PropertyGroup):
     def _on_update(self, context):
         # Make sure there is always something selected in the target format/version
-        if not self.target_formats:
+        from szio.gta5 import is_provider_available, AssetFormat
+        if not self.target_formats or (not is_provider_available(AssetFormat.NATIVE) and "CWXML" not in self.target_formats):
             self.target_formats = {"CWXML"}
             return # the assignment above will trigger this callback again
 

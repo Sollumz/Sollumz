@@ -541,9 +541,8 @@ class SOLLUMZ_OT_export_assets(ExportSettingsBase, TimedOperator, Operator):
         row = self.layout.row(align=False)
         col = row.column(align=True, heading="Format")
         for f in ("NATIVE", "CWXML"):
-            subrow = col.row(align=True)
-            subrow.enabled = is_provider_available(AssetFormat[f])
-            subrow.prop_enum(export_prefs, "target_formats", f)
+            if is_provider_available(AssetFormat[f]):
+                col.prop_enum(export_prefs, "target_formats", f)
 
         col = row.column(align=True, heading="Version")
         for f in ("GEN8", "GEN9"):
