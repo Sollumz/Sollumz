@@ -98,5 +98,7 @@ class SOLLUMZ_OT_entityset_toggle_visibility(bpy.types.Operator):
 
             obj = entity.linked_object
             obj.hide_set(visibility)
+            for child_obj in obj.children_recursive:
+                child_obj.hide_set(visibility)
 
         return {"FINISHED"}

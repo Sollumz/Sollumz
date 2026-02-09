@@ -10,12 +10,12 @@ from .shared import (
 def test_mlo_entityset_toggle_visibility():
     data = load_blend_data("entitysets_visibility.blend")
 
-    objs = [data.objects[n] for n in ("Cube", "Cube.001", "Cube.002", "Cube.003")]
+    objs = [data.objects[n] for n in ("Cube", "Cube.001", "Cube.002", "Cube.003", "Cube.003.child")]
 
     def _hide_state():
         return [o.hide_get() for o in objs]
 
-    assert _hide_state() == ([False] * 4)
+    assert _hide_state() == ([False] * len(objs))
 
     # entity set indices in the .blend
     set_with_multiple_entities = 0
@@ -24,22 +24,22 @@ def test_mlo_entityset_toggle_visibility():
     set_with_no_entities = 3
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_multiple_entities, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [True, True, False, False]
+    assert _hide_state() == [True, True, False, False, False]
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_single_entities, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [True, True, True, False]
+    assert _hide_state() == [True, True, True, False, False]
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_unlinked_entity, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [True, True, True, True]
+    assert _hide_state() == [True, True, True, True, True]
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_no_entities, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [True, True, True, True]
+    assert _hide_state() == [True, True, True, True, True]
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_unlinked_entity, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [True, True, True, False]
+    assert _hide_state() == [True, True, True, False, False]
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_single_entities, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [True, True, False, False]
+    assert _hide_state() == [True, True, False, False, False]
 
     bpy.ops.sollumz.entityset_toggle_visibility(index=set_with_multiple_entities, ytyp_index=0, archetype_index=0)
-    assert _hide_state() == [False, False, False, False]
+    assert _hide_state() == [False, False, False, False, False]
