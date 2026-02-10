@@ -376,6 +376,16 @@ if bpy.app.version >= (4, 1, 0):
             return a is not None and get_addon_preferences(context).legacy_import_export and (a.type == "VIEW_3D" or a.type == "OUTLINER")
 
 
+_EXPORTABLE_SOLLUM_TYPES = frozenset((
+    SollumType.FRAGMENT,
+    SollumType.DRAWABLE,
+    SollumType.DRAWABLE_DICTIONARY,
+    SollumType.CLIP_DICTIONARY,
+    SollumType.YMAP,
+    SollumType.BOUND_COMPOSITE
+))
+
+
 def _collect_objects_for_export(context, limit_to_selected: bool) -> list[Object]:
 
     objs = context.scene.objects
@@ -383,15 +393,34 @@ def _collect_objects_for_export(context, limit_to_selected: bool) -> list[Object
     if limit_to_selected:
         objs = context.selected_objects
 
-    return _get_only_parent_objs(objs)
+    return _get_only_parent_objs(objs, limit_to_selected)
 
 
-def _get_only_parent_objs(objs: list[Object]) -> list[Object]:
+def _find_exportable_parent_in_selected(obj: Object, selected_objs: set[Object]) -> Object | None:
+    highest_selected_exportable = None
+    nearest_exportable = None
+
+    current = obj
+    while current is not None:
+        if current.sollum_type in _EXPORTABLE_SOLLUM_TYPES:
+            if nearest_exportable is None:
+                nearest_exportable = current
+            if current in selected_objs:
+                highest_selected_exportable = current
+        current = current.parent
+
+    return highest_selected_exportable or nearest_exportable
+
+
+def _get_only_parent_objs(objs: list[Object], limit_to_selected: bool = False) -> list[Object]:
     parent_objs = set()
     objs = set(objs)
 
     for obj in objs:
-        parent_obj = find_sollumz_parent(obj)
+        if limit_to_selected:
+            parent_obj = _find_exportable_parent_in_selected(obj, objs)
+        else:
+            parent_obj = find_sollumz_parent(obj)
 
         if parent_obj is None or parent_obj in parent_objs:
             continue
