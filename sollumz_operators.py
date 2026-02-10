@@ -381,7 +381,7 @@ def _collect_objects_for_export(context, limit_to_selected: bool) -> list[Object
     objs = context.scene.objects
 
     if limit_to_selected:
-        objs = context.selected_objects
+        objs = context.view_layer.objects.selected
 
     return _get_only_parent_objs(objs)
 
