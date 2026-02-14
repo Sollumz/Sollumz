@@ -215,7 +215,8 @@ def create_fragment_asset_core(
 
     if extra_targets:
         frag.discard_targets(extra_targets)
-        hi_frag.discard_targets(extra_targets)
+        if hi_frag:
+            hi_frag.discard_targets(extra_targets)
         export_context().settings.targets = targets
 
     return frag, hi_frag
