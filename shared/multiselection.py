@@ -140,8 +140,17 @@ def _define_multiselect_access(cls: type, collection_name: str, item_cls: type, 
             return getattr(_active_item(self), attr_name)
 
         def _setter(self: bpy_struct, value):
-            for item in _coll(self).iter_selected_items():
-                setattr(_resolve_nested(item), attr_name, value)
+            # In Blender 5.0+, property set callbacks cannot write to other
+            # properties on the same ID. Defer writes to the next event loop
+            # iteration where the context is unrestricted.
+            def _deferred():
+                try:
+                    for item in _coll(self).iter_selected_items():
+                        setattr(_resolve_nested(item), attr_name, value)
+                except (ReferenceError, AttributeError):
+                    pass
+                return None
+            bpy.app.timers.register(_deferred, first_interval=0)
 
         return prop_fn(**kwargs, get=_getter, set=_setter)
 
@@ -175,8 +184,14 @@ def _define_multiselect_access(cls: type, collection_name: str, item_cls: type, 
             else:
                 enum_str = enum_items[0].identifier
 
-            for item in coll.iter_selected_items():
-                setattr(_resolve_nested(item), attr_name, enum_str)
+            def _deferred():
+                try:
+                    for item in coll.iter_selected_items():
+                        setattr(_resolve_nested(item), attr_name, enum_str)
+                except (ReferenceError, AttributeError):
+                    pass
+                return None
+            bpy.app.timers.register(_deferred, first_interval=0)
 
         def _getter_dynamic(self: bpy_struct) -> int:
             # EnumProperty.enum_items is empty with dynamic enum items, we need to call
@@ -209,8 +224,14 @@ def _define_multiselect_access(cls: type, collection_name: str, item_cls: type, 
             else:
                 enum_str = enum_items[0][0]
 
-            for item in coll.iter_selected_items():
-                setattr(_resolve_nested(item), attr_name, enum_str)
+            def _deferred():
+                try:
+                    for item in coll.iter_selected_items():
+                        setattr(_resolve_nested(item), attr_name, enum_str)
+                except (ReferenceError, AttributeError):
+                    pass
+                return None
+            bpy.app.timers.register(_deferred, first_interval=0)
 
         def _dynamic_items_wrapper(self: bpy_struct, context: Optional[bpy.types.Context]) -> list:
             # Wrapper required to pass the active item to the enum items callback

@@ -48,18 +48,26 @@ def log(text: str):
 
 @persistent
 def on_load_post(file_path):
-    if not file_path:
-        # Skip startup file
-        return
+    if file_path:
+        do_versions(bpy.data)
 
-    do_versions(bpy.data)
+    # Set the current version after upgrading.
+    # In Blender 5.0+, save_pre handlers can no longer modify ID data,
+    # so the version must be set here instead.
+    for scene in bpy.data.scenes:
+        scene.sollumz_internal_version = SOLLUMZ_INTERNAL_VERSION
 
 
 @persistent
 def on_save_pre(file_path):
-    # Assign the current version before saving
-    for scene in bpy.data.scenes:
-        scene.sollumz_internal_version = SOLLUMZ_INTERNAL_VERSION
+    # Assign the current version before saving.
+    # In Blender 5.0+, this write may fail due to ID write restrictions,
+    # but the version is already set in on_load_post as a fallback.
+    try:
+        for scene in bpy.data.scenes:
+            scene.sollumz_internal_version = SOLLUMZ_INTERNAL_VERSION
+    except AttributeError:
+        pass
 
 
 def determine_data_version(data: bpy.types.BlendData) -> int:
