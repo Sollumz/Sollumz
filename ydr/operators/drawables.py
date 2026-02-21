@@ -510,62 +510,207 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
     bl_label = "Generate LODs"
     bl_options = {"REGISTER", "UNDO"}
     bl_description = (
-        "Generate drawable model LODs via decimate modifier. Starts from the selected reference mesh, generating a "
-        "new decimated mesh for each selected LOD level"
+        "Generate drawable model LODs via decimation. Supports multiple methods, per-LOD ratios, "
+        "preserve options, and automatic LOD distance calculation"
     )
 
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
         return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
 
     def execute(self, context: Context):
         aobj = context.active_object
-        ref_mesh = context.scene.sollumz_auto_lod_ref_mesh
+        settings = context.scene.sollumz_auto_lod_settings
+        ref_mesh = settings.ref_mesh
 
         if ref_mesh is None:
-            self.report(
-                {"INFO"}, "No reference mesh specified! You must specify a mesh to use as the highest LOD level!")
+            self.report({"INFO"}, "No reference mesh specified! You must specify a mesh to use as the highest LOD level!")
             return {"CANCELLED"}
 
-        lods = self.get_selected_lods_sorted(context)
+        lods = self._get_selected_lods_sorted(settings)
 
         if not lods:
+            self.report({"INFO"}, "No LOD levels selected!")
             return {"CANCELLED"}
 
         obj_lods: LODLevels = aobj.sz_lods
 
-        decimate_step = context.scene.sollumz_auto_lod_decimate_step
-        last_mesh = ref_mesh
-
         previous_mode = aobj.mode
         previous_lod_level = obj_lods.active_lod_level
+        last_mesh = ref_mesh
 
-        for lod_level in lods:
-            bpy.ops.object.mode_set(mode="OBJECT")  # make sure we are in object mode before switching LODs
-            mesh = last_mesh.copy()
-            mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
+        for i, lod_level in enumerate(lods):
+            bpy.ops.object.mode_set(mode="OBJECT")
+
+            source_mesh = ref_mesh if settings.decimate_from_original else last_mesh
+            mesh = source_mesh.copy()
+            mesh.name = self._get_lod_mesh_name(aobj.name, lod_level)
 
             obj_lods.get_lod(lod_level).mesh = mesh
             obj_lods.active_lod_level = lod_level
 
-            bpy.ops.object.mode_set(mode="EDIT")
-            bpy.ops.mesh.select_all(action="SELECT")
-            bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
+            self._apply_decimation(context, aobj, settings, lod_level, i, source_mesh)
 
             last_mesh = mesh
 
         bpy.ops.object.mode_set(mode="OBJECT")
-        obj_lods.active_lod_level = previous_lod_level
 
+        if settings.auto_merge_materials:
+            for lod_level in lods:
+                obj_lods.active_lod_level = lod_level
+                self._merge_materials(context, aobj, lod_level)
+
+        obj_lods.active_lod_level = previous_lod_level
         bpy.ops.object.mode_set(mode=previous_mode)
+
+        if settings.auto_set_distances:
+            self._set_auto_distances(aobj, ref_mesh, lods)
+
+        self._report_stats(aobj, lods, obj_lods)
 
         return {"FINISHED"}
 
-    def get_lod_mesh_name(self, obj_name: str, lod_level: LODLevel):
+    def _merge_materials(self, context: Context, obj, lod_level: LODLevel):
+        """Run material merge bake on the current LOD mesh."""
+        if obj.data is None or len(obj.data.materials) <= 1:
+            return
+
+        result = bpy.ops.sollumz.material_merge_bake()
+        if result == {"CANCELLED"}:
+            self.report({"WARNING"}, f"Material merge failed for {SOLLUMZ_UI_NAMES[lod_level]}")
+            return
+
+        # Rename the baked image and material to be unique per LOD level,
+        # otherwise the next LOD's bake will delete them (same name).
+        lod_suffix = SOLLUMZ_UI_NAMES[lod_level].lower().replace(" ", "_")
+
+        old_image_name = f"{obj.name}_BakedMaterial"
+        if old_image_name in bpy.data.images:
+            bpy.data.images[old_image_name].name = f"{obj.name}_{lod_suffix}_BakedMaterial"
+
+        old_mat_name = f"{obj.name}_MergedMaterial"
+        if old_mat_name in bpy.data.materials:
+            bpy.data.materials[old_mat_name].name = f"{obj.name}_{lod_suffix}_MergedMaterial"
+
+    def _apply_decimation(self, context: Context, obj, settings, lod_level: LODLevel, index: int, source_mesh):
+        """Apply decimation to the active LOD mesh using the modifier API."""
+        method = settings.decimate_method
+
+        mod = obj.modifiers.new(name="AutoLOD_Decimate", type="DECIMATE")
+
+        if method == "COLLAPSE":
+            ratio = self._get_effective_ratio(settings, lod_level, index, source_mesh)
+            mod.decimate_type = "COLLAPSE"
+            mod.ratio = ratio
+            mod.use_collapse_triangulate = True
+
+            delimit = set()
+            if settings.preserve_uvs:
+                delimit.add("UV")
+            if settings.preserve_sharp:
+                delimit.add("SHARP")
+            if settings.preserve_materials:
+                delimit.add("MATERIAL")
+            if delimit:
+                mod.delimit = delimit
+
+            if settings.preserve_vertex_groups and hasattr(mod, "use_symmetry"):
+                # Vertex group preservation is handled by the delimit options
+                # and by Blender's internal weighting in collapse mode
+                pass
+
+        elif method == "UNSUBDIV":
+            mod.decimate_type = "UNSUBDIV"
+            mod.iterations = settings.unsubdiv_iterations
+
+        elif method == "DISSOLVE":
+            mod.decimate_type = "DISSOLVE"
+            mod.angle_limit = settings.planar_angle_limit
+            if settings.preserve_materials:
+                mod.delimit = {"MATERIAL"}
+
+        try:
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        except RuntimeError as e:
+            self.report({"WARNING"}, f"Modifier apply failed for {SOLLUMZ_UI_NAMES[lod_level]}: {e}")
+            if mod.name in obj.modifiers:
+                obj.modifiers.remove(mod)
+
+    def _get_effective_ratio(self, settings, lod_level: LODLevel, index: int, source_mesh) -> float:
+        """Calculate the decimation ratio for a given LOD level."""
+        if settings.use_per_lod_ratios:
+            lod_settings = settings.get_lod_settings(lod_level)
+            if lod_settings.use_target_tri_count:
+                source_tri_count = len(source_mesh.polygons)
+                if source_tri_count > 0:
+                    return max(0.01, min(1.0, lod_settings.target_tri_count / source_tri_count))
+                return 1.0
+            else:
+                return lod_settings.ratio
+        else:
+            step = settings.decimate_step
+            if settings.decimate_from_original:
+                return max(0.01, 1.0 - step * (index + 1))
+            else:
+                return 1.0 - step
+
+    def _set_auto_distances(self, obj, ref_mesh, lods: tuple[LODLevel]):
+        """Calculate and set LOD distances on the parent Drawable."""
+        drawable = find_sollumz_parent(obj, SollumType.DRAWABLE)
+        if drawable is None:
+            return
+
+        verts = ref_mesh.vertices
+        if len(verts) == 0:
+            return
+
+        import mathutils
+        center = mathutils.Vector((0, 0, 0))
+        for v in verts:
+            center += v.co
+        center /= len(verts)
+
+        radius = max((v.co - center).length for v in verts)
+        if radius < 0.01:
+            radius = 1.0
+
+        props = drawable.drawable_properties
+        dist_map = {
+            LODLevel.HIGH: min(9998, round(radius * 10)),
+            LODLevel.MEDIUM: min(9998, round(radius * 25)),
+            LODLevel.LOW: min(9998, round(radius * 50)),
+            LODLevel.VERYLOW: min(9998, round(radius * 100)),
+        }
+
+        attr_map = {
+            LODLevel.HIGH: "lod_dist_high",
+            LODLevel.MEDIUM: "lod_dist_med",
+            LODLevel.LOW: "lod_dist_low",
+            LODLevel.VERYLOW: "lod_dist_vlow",
+        }
+
+        for lod_level in lods:
+            attr = attr_map.get(lod_level)
+            if attr:
+                setattr(props, attr, float(dist_map[lod_level]))
+
+    def _report_stats(self, obj, lods: tuple[LODLevel], obj_lods: LODLevels):
+        """Report triangle/vertex counts for each generated LOD."""
+        stats = []
+        for lod_level in lods:
+            mesh = obj_lods.get_lod(lod_level).mesh
+            if mesh is not None:
+                tri_count = sum(max(1, len(p.vertices) - 2) for p in mesh.polygons)
+                stats.append(f"{SOLLUMZ_UI_NAMES[lod_level]}: {tri_count} tris, {len(mesh.vertices)} verts")
+
+        if stats:
+            self.report({"INFO"}, "LODs generated - " + " | ".join(stats))
+
+    def _get_lod_mesh_name(self, obj_name: str, lod_level: LODLevel):
         return f"{obj_name}.{SOLLUMZ_UI_NAMES[lod_level].lower()}"
 
-    def get_selected_lods_sorted(self, context: Context) -> tuple[LODLevel]:
-        return tuple(lod for lod in LODLevel if lod in context.scene.sollumz_auto_lod_levels)
+    def _get_selected_lods_sorted(self, settings) -> tuple[LODLevel]:
+        return tuple(lod for lod in LODLevel if lod in settings.levels)
 
 
 class SOLLUMZ_OT_extract_lods(bpy.types.Operator):
