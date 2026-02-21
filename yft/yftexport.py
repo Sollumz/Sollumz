@@ -530,12 +530,14 @@ def create_collision_xml(
 
         # With damaged fragments we have to make space in both composites to fit all bounds (both damaged and undamaged)
         # so indices remain consistent between them. Extra spaces are just left empty (none)
-        composite_xml.children = composite_xml.children + [None] * len(damaged_composite_xml.children)
-        damaged_composite_xml.children = [None] * len(composite_xml.children) + damaged_composite_xml.children
+        num_children = len(composite_xml.children)
+        num_damaged_children = len(damaged_composite_xml.children)
+        composite_xml.children = composite_xml.children + [None] * num_damaged_children
+        damaged_composite_xml.children = [None] * num_children + damaged_composite_xml.children
 
         # Include the damaged bounds in the output obj->index mapping
         for damaged_col_obj, bound_index in damaged_col_obj_to_bound_index.items():
-            col_obj_to_bound_index[damaged_col_obj] = bound_index + len(composite_xml.children)
+            col_obj_to_bound_index[damaged_col_obj] = bound_index + num_children
     else:
         damaged_composite_xml = None
 

@@ -404,11 +404,12 @@ def create_frag_phys_collisions(
 
         # With damaged fragments we have to make space in both composites to fit all bounds (both damaged and undamaged)
         # so indices remain consistent between them. Extra spaces are just left empty (none)
-        composite.children = composite.children + [None] * len(damaged_composite.children)
-        damaged_composite.children = [None] * len(composite.children) + damaged_composite.children
+        num_children = len(composite.children)
+        num_damaged_children = len(damaged_composite.children)
+        composite.children = composite.children + [None] * num_damaged_children
+        damaged_composite.children = [None] * num_children + damaged_composite.children
 
         # Include the damaged bounds in the output obj->index mapping
-        num_children = len(composite.children)
         for damaged_col_obj, bound_index in damaged_col_obj_to_bound_index.items():
             col_obj_to_bound_index[damaged_col_obj] = bound_index + num_children
     else:
