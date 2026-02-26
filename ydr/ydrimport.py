@@ -53,6 +53,11 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
     name = name or drawable_xml.name
     materials = materials or shadergroup_to_materials(drawable_xml.shader_group, filepath)
 
+    for mat in materials:
+        if "matDiffuseColor" in mat.node_tree.nodes:
+            from ..yft.properties import _update_mat_paint_name
+            _update_mat_paint_name(mat)
+
     has_skeleton = len(drawable_xml.skeleton.bones) > 0
 
     if external_bones:

@@ -71,6 +71,12 @@ def create_drawable(
     materials = materials or shader_group_to_materials(drawable.shader_group)
     hi_materials = hi_materials or []
 
+    for mat in set(materials) | set(hi_materials):
+        if "matDiffuseColor" in mat.node_tree.nodes:
+            from ..yft.properties import _update_mat_paint_name
+            _update_mat_paint_name(mat)
+
+
     skeleton = drawable.skeleton
     has_skeleton = skeleton and len(skeleton.bones) > 0
 

@@ -542,9 +542,10 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
             return False
 
         has_frag_parent = find_sollumz_parent(aobj, parent_type=SollumType.FRAGMENT) is not None
+        has_drawable_parent = find_sollumz_parent(aobj, parent_type=SollumType.DRAWABLE) is not None
         mat = aobj.active_material
 
-        return mat is not None and mat.sollum_type == MaterialType.SHADER and has_frag_parent
+        return mat is not None and mat.sollum_type == MaterialType.SHADER and (has_frag_parent or has_drawable_parent)
 
     def draw(self, context):
         layout = self.layout
