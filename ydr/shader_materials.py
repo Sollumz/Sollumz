@@ -12,7 +12,7 @@ from szio.gta5.shader import (
     ShaderParameterFloat4x4Def,
 )
 from ..sollumz_properties import MaterialType, MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID
-from ..tools.blenderhelper import find_bsdf_and_material_output
+from ..tools.blenderhelper import find_bsdf_and_material_output, remove_number_suffix
 from ..tools.animationhelper import add_global_anim_uv_nodes
 from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
@@ -1473,3 +1473,76 @@ def vehicle_body_color() -> expr.ShaderExpr:
     final_body_color = final_paint_layer_color * enable_paint_layer + mat_diffuse_color * (1.0 - enable_paint_layer)
 
     return vec(1.0, 1.0, 1.0) * final_body_color  # this vec(1) will be replaced by the shader base color
+
+
+def get_vehicle_material_paint_layer(mat: bpy.types.Material) -> int:
+    """Get material paint layer (i.e Primary, Secondary) based on the value of matDiffuseColor."""
+    from ..yft.properties import VehiclePaintLayer
+
+    paint_layer_int = VehiclePaintLayer.CUSTOM.value
+    if mat.node_tree is None:
+        return paint_layer_int
+
+    mat_diffuse_color = mat.node_tree.nodes.get("matDiffuseColor", None)
+    if mat_diffuse_color is None:
+        return paint_layer_int
+
+    x = mat_diffuse_color.get("X")
+    if x != 2.0:
+        return paint_layer_int
+
+    y = mat_diffuse_color.get("Y")
+    z = mat_diffuse_color.get("Z")
+
+    if y != z:
+        return paint_layer_int
+
+    for paint_layer in VehiclePaintLayer:
+        if y == paint_layer.value:
+            paint_layer_int = paint_layer.value
+            break
+
+    return paint_layer_int
+
+
+def set_vehicle_material_paint_layer(mat: bpy.types.Material, value_int: int):
+    """Set matDiffuseColor value from paint layer selection."""
+
+    if mat.node_tree is None or not 0 <= value_int <= 7:
+        return
+
+    mat_diffuse_color = mat.node_tree.nodes.get("matDiffuseColor", None)
+    if mat_diffuse_color is None:
+        return
+
+    if value_int == 0:
+        mat_diffuse_color.set_vec3((1.0, 1.0, 1.0))
+        return
+
+    mat_diffuse_color.set("X", 2.0)
+    mat_diffuse_color.set("Y", float(value_int))
+    mat_diffuse_color.set("Z", float(value_int))
+
+
+def update_vehicle_material_paint_name(mat: bpy.types.Material):
+    """Update material name to have [PAINT_LAYER] extension at the end."""
+    from ..yft.properties import VehiclePaintLayer
+
+    def _get_paint_layer_name(_paint_layer: VehiclePaintLayer):
+        if _paint_layer == VehiclePaintLayer.CUSTOM or _paint_layer == VehiclePaintLayer.DEFAULT:
+            return ""
+        return f"[{_paint_layer.ui_label.upper()}]"
+
+    new_name_ext = _get_paint_layer_name(VehiclePaintLayer[mat.sz_paint_layer])
+    mat_base_name = remove_number_suffix(mat.name).strip()
+
+    # Replace existing extension
+    for paint_layer in VehiclePaintLayer:
+        name_ext = _get_paint_layer_name(paint_layer)
+        if name_ext in mat_base_name:
+            mat_base_name = mat_base_name.replace(name_ext, "").strip()
+
+    if new_name_ext:
+        mat.name = f"{mat_base_name} {new_name_ext}"
+    else:
+        mat.name = mat_base_name

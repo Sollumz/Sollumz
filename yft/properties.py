@@ -28,6 +28,9 @@ from ..ydr.shader_materials import (
     VEHICLE_PREVIEW_NODE_DIRT_WETNESS,
     VEHICLE_PREVIEW_NODE_BODY_COLOR,
     VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE,
+    get_vehicle_material_paint_layer,
+    set_vehicle_material_paint_layer,
+    update_vehicle_material_paint_name,
 )
 from szio.gta5 import (
     FragmentTemplateAsset,
@@ -184,6 +187,7 @@ class VehicleRenderPreview(bpy.types.PropertyGroup):
     DEFAULT_BODY_COLOR = (1.0, 1.0, 1.0)
 
     def _on_each_node_tree(self, callback, callback_context):
+        # NOTE: obj may be a fragment or drawable, both can use vehicle shaders
         obj = self.id_data
         if not obj:
             return
@@ -539,75 +543,6 @@ def get_light_id_of_selection(self):
     return light_id
 
 
-def _get_mat_paint_layer(self: bpy.types.Material) -> int:
-    """Get material paint layer (i.e Primary, Secondary) based on the value of matDiffuseColor."""
-    paint_layer_int = VehiclePaintLayer.CUSTOM.value
-    if self.node_tree is None:
-        return paint_layer_int
-
-    matDiffuseColor = self.node_tree.nodes.get("matDiffuseColor", None)
-    if matDiffuseColor is None:
-        return paint_layer_int
-
-    x = matDiffuseColor.get("X")
-    if x != 2.0:
-        return paint_layer_int
-
-    y = matDiffuseColor.get("Y")
-    z = matDiffuseColor.get("Z")
-
-    if y != z:
-        return paint_layer_int
-
-    for paint_layer in VehiclePaintLayer:
-        if y == paint_layer.value:
-            paint_layer_int = paint_layer.value
-            break
-
-    return paint_layer_int
-
-
-def _set_mat_paint_layer(self: bpy.types.Material, value_int: int):
-    """Set matDiffuseColor value from paint layer selection."""
-
-    if self.node_tree is None or not 0 <= value_int <= 7:
-        return
-
-    matDiffuseColor = self.node_tree.nodes.get("matDiffuseColor", None)
-    if matDiffuseColor is None:
-        return
-
-    if value_int == 0:
-        matDiffuseColor.set_vec3((1.0, 1.0, 1.0))
-        return
-
-    matDiffuseColor.set("X", 2.0)
-    matDiffuseColor.set("Y", float(value_int))
-    matDiffuseColor.set("Z", float(value_int))
-
-
-def _update_mat_paint_name(mat: bpy.types.Material):
-    """Update material name to have [PAINT_LAYER] extension at the end."""
-    def _get_paint_layer_name(_paint_layer: VehiclePaintLayer):
-        if _paint_layer == VehiclePaintLayer.CUSTOM or _paint_layer == VehiclePaintLayer.DEFAULT:
-            return ""
-        return f"[{_paint_layer.ui_label.upper()}]"
-
-    new_name_ext = _get_paint_layer_name(VehiclePaintLayer[mat.sz_paint_layer])
-    mat_base_name = remove_number_suffix(mat.name).strip()
-
-    # Replace existing extension
-    for paint_layer in VehiclePaintLayer:
-        name_ext = _get_paint_layer_name(paint_layer)
-        if name_ext in mat_base_name:
-            mat_base_name = mat_base_name.replace(name_ext, "").strip()
-
-    if new_name_ext:
-        mat.name = f"{mat_base_name} {new_name_ext}"
-    else:
-        mat.name = mat_base_name
-
-
 def register():
     bpy.types.Object.fragment_properties = bpy.props.PointerProperty(
         type=FragmentProperties)
@@ -660,9 +595,9 @@ def register():
         name="Paint Layer",
         items=VehiclePaintLayerEnumItems,
         default=VehiclePaintLayer.CUSTOM.value,
-        get=_get_mat_paint_layer,
-        set=_set_mat_paint_layer,
-        update=lambda self, context: _update_mat_paint_name(self),
+        get=get_vehicle_material_paint_layer,
+        set=set_vehicle_material_paint_layer,
+        update=lambda self, context: update_vehicle_material_paint_name(self),
     )
 
 

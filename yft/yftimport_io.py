@@ -119,12 +119,6 @@ def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name:
 
     materials, hi_materials = shader_group_to_materials_with_hi(shader_group, hi_shader_group)
 
-    # Need to append [PAINT_LAYER] extension at the end of the material names
-    for mat in set(materials) | set(hi_materials):
-        if "matDiffuseColor" in mat.node_tree.nodes:
-            from .properties import _update_mat_paint_name
-            _update_mat_paint_name(mat)
-
     frag_obj = create_frag_armature(frag, name)
 
     drawable_obj = create_frag_drawable(frag, hi_frag, frag_obj,  materials, hi_materials)

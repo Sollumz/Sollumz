@@ -354,39 +354,72 @@ class SOLLUMZ_PT_FRAG_CLOTH_TUNING_FLAGS_PANEL(FlagsPanel, ClothPanel, bpy.types
         super().draw(context)
 
 
-class SOLLUMZ_PT_VEHICLE_RENDER_PREVIEW_PANEL(bpy.types.Panel):
+class VehicleRenderPreviewPanelImpl:
     bl_label = "Vehicle Render Preview"
-    bl_idname = "SOLLUMZ_PT_VEHICLE_RENDER_PREVIEW_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
-    bl_order = 3
-
-    # TODO: poll to only show this panel with vehicle fragments
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
 
+        # NOTE: obj may be a fragment or drawable, both can use vehicle shaders.
+        # It is okay to access fragment_properties because it is registered on the blender Object type,
+        # so it is always available even on objects that are not actually fragments.
         obj = context.view_layer.objects.active
-        render_preview = obj.fragment_properties.vehicle_render_preview
 
-        layout.prop(render_preview, "dirt_level")
-        layout.prop(render_preview, "dirt_wetness")
-        layout.prop(render_preview, "dirt_color")
+        has_vehicle_shaders = self.has_vehicle_shaders(obj)
+        if not has_vehicle_shaders:
+            what = "fragment" if obj.sollum_type == SollumType.FRAGMENT else "drawable"
+            layout.label(text=f"No vehicle shaders in the active {what}.", icon="ERROR")
+        col = layout.column()
+        col.active = has_vehicle_shaders
+
+        if obj.parent and obj.parent.sollum_type == SollumType.FRAGMENT:
+            # If we are the drawable of a fragment, use the vehicle_render_preview of the fragment, so selecting either
+            # the fragment or its drawable show the same stored preview colors/values
+            obj = obj.parent
+        render_preview = obj.fragment_properties.vehicle_render_preview
+        col.prop(render_preview, "dirt_level")
+        col.prop(render_preview, "dirt_wetness")
+        col.prop(render_preview, "dirt_color")
 
         for paint_layer_id in range(1, 7+1):
             if paint_layer_id == VehiclePaintLayer.DEFAULT:
                 continue
-            layout.prop(render_preview, f"body_color_{paint_layer_id}")
+            col.prop(render_preview, f"body_color_{paint_layer_id}")
 
-        layout.label(text="Lights Emissive")
-        grid = layout.grid_flow(columns=3)
+        col.label(text="Lights Emissive")
+        grid = col.grid_flow(columns=3)
         for light_id in range(MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID+1):
             grid.prop(render_preview, f"light_id_{light_id}")
+
+    def has_vehicle_shaders(self, obj: Object):
+        for obj in obj.children_recursive:
+            if obj.sollum_type != SollumType.DRAWABLE_MODEL or obj.type != "MESH":
+                continue
+
+            mesh = obj.data
+            if any(m.shader_properties.filename.startswith("vehicle_") for m in mesh.materials):
+                return True
+
+        return False
+
+
+class SOLLUMZ_PT_FRAGMENT_VEHICLE_RENDER_PREVIEW_PANEL(VehicleRenderPreviewPanelImpl, bpy.types.Panel):
+    bl_idname = "SOLLUMZ_PT_FRAGMENT_VEHICLE_RENDER_PREVIEW_PANEL"
+    bl_parent_id = SOLLUMZ_PT_FRAGMENT_PANEL.bl_idname
+    bl_order = 3
+
+
+# Wheel drawables also use the vehicle shaders, not just fragments, so make another panel for drawables
+class SOLLUMZ_PT_DRAWABLE_VEHICLE_RENDER_PREVIEW_PANEL(VehicleRenderPreviewPanelImpl, bpy.types.Panel):
+    bl_idname = "SOLLUMZ_PT_DRAWABLE_VEHICLE_RENDER_PREVIEW_PANEL"
+    bl_parent_id = "SOLLUMZ_PT_DRAWABLE_PANEL"
+    bl_order = 3
 
 
 class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):
@@ -526,7 +559,9 @@ class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
-    bl_label = "Fragment"
+    # "Fragment" is not a really good name because drawables like wheels can also use vehicle shaders with paint
+    # layers, but keep it for now because it is probably mentioned in tutorials
+    bl_label = "Fragment (Vehicle Paint)"
     bl_idname = "SOLLUMZ_PT_FRAGMENT_MAT_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -541,13 +576,14 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         if aobj is None or aobj.sollum_type != SollumType.DRAWABLE_MODEL:
             return False
 
-        has_frag_parent = find_sollumz_parent(aobj, parent_type=SollumType.FRAGMENT) is not None
         mat = aobj.active_material
-
-        return mat is not None and mat.sollum_type == MaterialType.SHADER and has_frag_parent
+        return mat and mat.sollum_type == MaterialType.SHADER and mat.shader_properties.filename.startswith("vehicle_")
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
         mat = context.active_object.active_material
 
         has_mat_diffuse_color = "matDiffuseColor" in mat.node_tree.nodes
@@ -555,4 +591,4 @@ class SOLLUMZ_PT_FRAGMENT_MAT_PANEL(bpy.types.Panel):
         row.enabled = has_mat_diffuse_color
         row.prop(mat, "sz_paint_layer")
         if not has_mat_diffuse_color:
-            layout.label(text="Not a paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")
+            layout.label(text="Not a vehicle paint shader. Shader must have a matDiffuseColor parameter.", icon="ERROR")

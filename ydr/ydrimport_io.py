@@ -14,7 +14,12 @@ from bpy.types import (
 from typing import Optional
 from mathutils import Matrix
 from pathlib import Path
-from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
+from .shader_materials import (
+    create_shader,
+    get_detail_extra_sampler,
+    create_tinted_shader_graph,
+    update_vehicle_material_paint_name,
+)
 from ..ybn.ybnimport_io import create_bound_composite, create_bound_object
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_addon_preferences
@@ -421,6 +426,10 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
     if dtl_ext:
         dtl = material.node_tree.nodes["DetailSampler"]
         dtl_ext.image = dtl.image
+
+    # For vehicle shaders, append [PAINT_LAYER] extension at the end of the material names
+    if "matdiffusecolor" in nodes:
+        update_vehicle_material_paint_name(material)
 
     return material
 

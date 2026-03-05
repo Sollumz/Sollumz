@@ -29,8 +29,8 @@ def update_mat_paint_layer(mat: Material):
     new_paint_layer_int = old_to_new.get(old_paint_layer_int, 0)
 
     if new_paint_layer_int != 0:
-        from ..yft.properties import _set_mat_paint_layer
-        _set_mat_paint_layer(mat, new_paint_layer_int)
+        from ..ydr.shader_materials import set_vehicle_material_paint_layer
+        set_vehicle_material_paint_layer(mat, new_paint_layer_int)
 
     if bpy.app.version < (5, 0, 0):
         del mat["sollumz_paint_layer"]

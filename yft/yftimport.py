@@ -108,12 +108,6 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
 
     materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
 
-    # Need to append [PAINT_LAYER] extension at the end of the material names
-    for mat in materials:
-        if "matDiffuseColor" in mat.node_tree.nodes:
-            from .properties import _update_mat_paint_name
-            _update_mat_paint_name(mat)
-
     frag_obj = create_frag_armature(frag_xml, name)
 
     drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
