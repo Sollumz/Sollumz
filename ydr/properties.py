@@ -28,13 +28,215 @@ from bpy.app.handlers import persistent
 from bpy.path import basename
 
 
+class MaterialMergeSettings(bpy.types.PropertyGroup):
+    """Settings for material merge baking"""
+
+    texture_size: EnumProperty(
+        name="Texture Size",
+        description="Resolution of the baked texture",
+        items=[
+            ("256", "256", "256x256 pixels"),
+            ("512", "512", "512x512 pixels"),
+            ("1024", "1024", "1024x1024 pixels"),
+            ("2048", "2048", "2048x2048 pixels"),
+            ("4096", "4096", "4096x4096 pixels"),
+            ("8192", "8192", "8192x8192 pixels"),
+        ],
+        default="1024"
+    )
+
+    bake_type: EnumProperty(
+        name="Bake Type",
+        description="Type of texture to bake",
+        items=[
+            ("DIFFUSE", "Diffuse", "Diffuse color only"),
+            ("NORMAL", "Normal", "Normal map"),
+            ("ROUGHNESS", "Roughness", "Roughness map"),
+            ("METALLIC", "Metallic", "Metallic map"),
+        ],
+        default="DIFFUSE"
+    )
+
+    uv_margin: FloatProperty(
+        name="UV Margin",
+        description="Margin between UV islands",
+        default=0.0,
+        min=0.0,
+        max=0.1,
+        precision=3
+    )
+
+    samples: IntProperty(
+        name="Samples",
+        description="Number of render samples for baking",
+        default=128,
+        min=1,
+        max=2048
+    )
+
+
+class AutoLODLevelSettings(bpy.types.PropertyGroup):
+    """Per-LOD-level settings for auto LOD generation."""
+
+    ratio: FloatProperty(
+        name="Ratio",
+        description="Decimation ratio for this LOD level (1.0 = no reduction, 0.0 = maximum reduction)",
+        min=0.01, max=1.0, default=0.5,
+        subtype="FACTOR"
+    )
+
+    use_target_tri_count: BoolProperty(
+        name="Use Target Tri Count",
+        description="Use a target triangle count instead of a ratio",
+        default=False
+    )
+
+    target_tri_count: IntProperty(
+        name="Target Tris",
+        description="Target number of triangles for this LOD level",
+        min=4, default=1000
+    )
+
+
+class AutoLODSettings(bpy.types.PropertyGroup):
+    """Settings for the auto LOD generation tool."""
+
+    ref_mesh: PointerProperty(
+        type=bpy.types.Mesh,
+        name="Reference Mesh",
+        description="The mesh to copy and decimate for each LOD level. Usually the highest quality LOD"
+    )
+
+    levels: lod_level_enum_flag_prop_factory()
+
+    decimate_method: EnumProperty(
+        name="Method",
+        description="Decimation method to use",
+        items=[
+            ("COLLAPSE", "Collapse", "Edge collapse decimation - best general-purpose method"),
+            ("UNSUBDIV", "Un-Subdivide", "Reverse subdivision - best for meshes created via subdivision"),
+            ("DISSOLVE", "Planar", "Planar decimation - dissolves geometry on flat surfaces"),
+        ],
+        default="COLLAPSE"
+    )
+
+    use_per_lod_ratios: BoolProperty(
+        name="Per-LOD Ratios",
+        description="Use individual settings for each LOD level instead of a uniform step",
+        default=False,
+        update=lambda self, ctx: self._on_per_lod_ratios_changed()
+    )
+
+    decimate_step: FloatProperty(
+        name="Decimate Step",
+        description="Uniform decimation step applied for each LOD level",
+        min=0.0, max=0.99, default=0.6
+    )
+
+    decimate_from_original: BoolProperty(
+        name="Decimate from Original",
+        description="Always decimate from the reference mesh instead of cascading from the previous LOD",
+        default=False
+    )
+
+    lod_very_high: PointerProperty(type=AutoLODLevelSettings)
+    lod_high: PointerProperty(type=AutoLODLevelSettings)
+    lod_medium: PointerProperty(type=AutoLODLevelSettings)
+    lod_low: PointerProperty(type=AutoLODLevelSettings)
+    lod_very_low: PointerProperty(type=AutoLODLevelSettings)
+
+    preserve_uvs: BoolProperty(
+        name="Preserve UVs",
+        description="Preserve UV seam boundaries during decimation",
+        default=True
+    )
+
+    preserve_sharp: BoolProperty(
+        name="Preserve Sharp",
+        description="Preserve edges marked as sharp",
+        default=False
+    )
+
+    preserve_vertex_groups: BoolProperty(
+        name="Preserve Vertex Groups",
+        description="Preserve vertex group boundaries",
+        default=False
+    )
+
+    preserve_materials: BoolProperty(
+        name="Preserve Materials",
+        description="Preserve material slot boundaries",
+        default=False
+    )
+
+    planar_angle_limit: FloatProperty(
+        name="Angle Limit",
+        description="Maximum angle between face normals for planar decimation",
+        min=0.0, max=3.14159,
+        default=0.087266,
+        subtype="ANGLE"
+    )
+
+    unsubdiv_iterations: IntProperty(
+        name="Iterations",
+        description="Number of un-subdivide iterations",
+        min=1, max=10, default=2
+    )
+
+    auto_set_distances: BoolProperty(
+        name="Auto-Set LOD Distances",
+        description="Automatically calculate and set LOD distances on the parent Drawable based on mesh size",
+        default=False
+    )
+
+    auto_merge_materials: BoolProperty(
+        name="Merge Materials",
+        description="Automatically bake and merge all materials into a single material for each generated LOD, using the Material Merge settings",
+        default=False
+    )
+
+    _RECOMMENDED_RATIOS = {
+        LODLevel.VERYHIGH: 0.90,
+        LODLevel.HIGH: 0.70,
+        LODLevel.MEDIUM: 0.50,
+        LODLevel.LOW: 0.30,
+        LODLevel.VERYLOW: 0.15,
+    }
+
+    def _on_per_lod_ratios_changed(self):
+        """Set recommended per-LOD ratios when per-LOD mode is enabled."""
+        if self.use_per_lod_ratios:
+            self.reset_ratios()
+
+    def reset_ratios(self):
+        """Reset per-LOD ratios to recommended defaults."""
+        for lod_level, ratio in self._RECOMMENDED_RATIOS.items():
+            lod_settings = self.get_lod_settings(lod_level)
+            lod_settings.ratio = ratio
+            lod_settings.use_target_tri_count = False
+
+    def get_lod_settings(self, lod_level) -> "AutoLODLevelSettings":
+        """Get the per-LOD settings for a given LODLevel."""
+        match lod_level:
+            case LODLevel.VERYHIGH:
+                return self.lod_very_high
+            case LODLevel.HIGH:
+                return self.lod_high
+            case LODLevel.MEDIUM:
+                return self.lod_medium
+            case LODLevel.LOW:
+                return self.lod_low
+            case LODLevel.VERYLOW:
+                return self.lod_very_low
+
+
 class ShaderOrderItem(bpy.types.PropertyGroup):
     # For drawable shader order list
     index: bpy.props.IntProperty(min=0)
     material: bpy.props.PointerProperty(type=Material)
     name: bpy.props.StringProperty()
     shader: bpy.props.StringProperty()
-    user_models: bpy.props.StringProperty() # models using this shader, to display in UI
+    user_models: bpy.props.StringProperty()  # models using this shader, to display in UI
 
 
 class DrawableShaderOrder(bpy.types.PropertyGroup):
@@ -788,11 +990,7 @@ def register():
     bpy.types.Light.time_flags = bpy.props.PointerProperty(type=LightTimeFlags)
     bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
-    bpy.types.Scene.sollumz_auto_lod_ref_mesh = bpy.props.PointerProperty(
-        type=bpy.types.Mesh, name="Reference Mesh", description="The mesh to copy and decimate for each LOD level. You'd usually want to set this as the highest LOD then run the tool for all lower LODs")
-    bpy.types.Scene.sollumz_auto_lod_levels = lod_level_enum_flag_prop_factory()
-    bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
-        name="Decimate Step", min=0.0, max=0.99, default=0.6)
+    bpy.types.Scene.sollumz_auto_lod_settings = bpy.props.PointerProperty(type=AutoLODSettings)
 
     bpy.types.WindowManager.sz_light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
     bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Light Presets")
@@ -918,6 +1116,10 @@ def register():
     #     default=False
     # )
 
+    bpy.types.Scene.sollumz_material_merge_settings = bpy.props.PointerProperty(
+        type=MaterialMergeSettings
+    )
+
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
     refresh_ui_collections()
 
@@ -944,9 +1146,7 @@ def unregister():
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection
-    del bpy.types.Scene.sollumz_auto_lod_ref_mesh
-    del bpy.types.Scene.sollumz_auto_lod_levels
-    del bpy.types.Scene.sollumz_auto_lod_decimate_step
+    del bpy.types.Scene.sollumz_auto_lod_settings
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
 
@@ -976,5 +1176,7 @@ def unregister():
     del bpy.types.WindowManager.sz_ui_cloth_diag_material_errors_visualize
     del bpy.types.WindowManager.sz_ui_cloth_diag_binding_errors_visualize
     # del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
+
+    del bpy.types.Scene.sollumz_material_merge_settings
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
