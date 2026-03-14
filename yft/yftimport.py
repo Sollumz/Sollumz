@@ -108,7 +108,7 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
 
     materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
 
-    frag_obj = create_frag_armature(frag_xml, name)
+    frag_obj, bone_names = create_frag_armature(frag_xml, name)
 
     drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
     damaged_drawable_obj = create_fragment_drawable(
@@ -119,9 +119,9 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
         create_frag_collisions(frag_xml, frag_obj, damaged=True)
 
     create_phys_lod(frag_xml, frag_obj)
-    set_all_bone_physics_properties(frag_obj.data, frag_xml)
+    set_all_bone_physics_properties(frag_obj.data, frag_xml, bone_names)
 
-    create_phys_child_meshes(frag_xml, frag_obj, drawable_obj, materials)
+    create_phys_child_meshes(frag_xml, frag_obj, drawable_obj, materials, bone_names)
 
     create_env_cloth_meshes(frag_xml, frag_obj, drawable_obj, materials)
 
@@ -137,16 +137,16 @@ def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] =
     return frag_obj
 
 
-def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
+def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None) -> tuple[bpy.types.Object, dict[int, str]]:
     """Create the fragment armature along with the bones and rotation limits."""
     name = name or frag_xml.name.replace("pack:/", "")
     drawable_xml = frag_xml.drawable
-    frag_obj = create_armature_obj_from_skel(drawable_xml.skeleton, name, SollumType.FRAGMENT)
+    frag_obj, bone_names = create_armature_obj_from_skel(drawable_xml.skeleton, name, SollumType.FRAGMENT)
     create_joint_constraints(frag_obj, drawable_xml.joints)
 
     set_fragment_properties(frag_xml, frag_obj)
 
-    return frag_obj
+    return frag_obj, bone_names
 
 
 def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, materials: list[bpy.types.Material], split_by_group: bool = False, damaged: bool = False) -> Optional[bpy.types.Object]:
@@ -200,13 +200,23 @@ def create_phys_lod(frag_xml: Fragment, frag_obj: bpy.types.Object):
     set_archetype_properties(lod_xml.archetype, lod_props.archetype_properties)
 
 
-def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Fragment):
+def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Fragment, bone_names: dict[int, str]):
     """Set the physics group properties for all bones in the armature."""
     groups_xml: list[PhysicsGroup] = frag_xml.physics.lod1.groups
+    skeleton_bones = frag_xml.drawable.skeleton.bones
 
     for group_xml in groups_xml:
-        if group_xml.name not in armature.bones:
-            # Bone not found, try a case-insensitive search
+        bone = None
+        # Try to find the bone by matching the group name to the original skeleton bone names
+        for i, skel_bone in enumerate(skeleton_bones):
+            if skel_bone.name == group_xml.name:
+                if i in bone_names:
+                    actual_name = bone_names[i]
+                    bone = armature.bones.get(actual_name, None)
+                break
+
+        if bone is None:
+            # Bone not found by exact mapping, try a case-insensitive search on actual Blender bone names
             group_name_lower = group_xml.name.lower()
             for armature_bone in armature.bones:
                 if group_name_lower == armature_bone.name.lower():
@@ -217,8 +227,6 @@ def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Frag
                 # Still no bone found
                 logger.warning(f"No bone exists for the physics group {group_xml.name}! Skipping...")
                 continue
-        else:
-            bone = armature.bones[group_xml.name]
 
         bone.sollumz_use_physics = True
         set_group_properties(group_xml, bone)
@@ -277,25 +285,25 @@ def find_bound_bone(bound_index: int, frag_xml: Fragment) -> Bone | None:
         return bone
 
 
-def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
+def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_names: dict[int, str]):
     """Create all Fragment.Physics.LOD1.Children meshes. (Only LOD1 currently supported)"""
     lod_xml = frag_xml.physics.lod1
     children_xml: list[PhysicsChild] = lod_xml.children
     bones = frag_xml.drawable.skeleton.bones
 
-    bone_name_by_tag: dict[str, Bone] = {
-        bone.tag: bone.name for bone in bones}
+    bone_index_by_tag: dict[int, int] = {bone.tag: i for i, bone in enumerate(bones)}
 
     for child_xml in children_xml:
         if child_xml.drawable.is_empty:
             continue
 
-        if child_xml.bone_tag not in bone_name_by_tag:
+        if child_xml.bone_tag not in bone_index_by_tag:
             logger.warning(
                 "A fragment child has an invalid bone tag! Skipping...")
             continue
 
-        bone_name = bone_name_by_tag[child_xml.bone_tag]
+        bone_index = bone_index_by_tag[child_xml.bone_tag]
+        bone_name = bone_names[bone_index]
 
         create_phys_child_models(
             child_xml.drawable, frag_obj, materials, bone_name, drawable_obj)
