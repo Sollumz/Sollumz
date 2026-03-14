@@ -156,7 +156,7 @@ def create_drawable_dictionary(
 def create_armature_parent(name: str, skel: AssetFragment) -> Object:
     armature = bpy.data.armatures.new(f"{name}.skel")
     dict_obj = create_blender_object(SollumType.DRAWABLE_DICTIONARY, name, armature)
-    create_drawable_skel(dict_obj, skel.drawable.skeleton)
+    bone_names = create_drawable_skel(dict_obj, skel.drawable.skeleton)
     return dict_obj
 
 

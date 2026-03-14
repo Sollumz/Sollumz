@@ -236,19 +236,19 @@ def set_drawable_model_properties(model_props: DrawableModelProperties, model: M
 
 
 def create_drawable_root_armature(drawable: AssetDrawable, name: str) -> Object:
-    drawable_obj = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.DRAWABLE)
+    drawable_obj, _ = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.DRAWABLE)
     set_drawable_properties(drawable_obj, drawable)
 
     return drawable_obj
 
 
-def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType) -> Object:
+def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType) -> tuple[Object, dict[int, str]]:
     armature = bpy.data.armatures.new(f"{name}.skel")
     obj = create_blender_object(sollum_type, name, armature)
 
-    create_drawable_skel(obj, skeleton)
+    bone_names = create_drawable_skel(obj, skeleton)
 
-    return obj
+    return obj, bone_names
 
 
 def create_drawable_root_empty(drawable: AssetDrawable, name: str) -> Object:
@@ -488,27 +488,31 @@ def is_non_color_texture(shader_filename: str, param_name: str) -> bool:
     )
 
 
-def create_drawable_skel(armature_obj: Object, skeleton: Skeleton):
+def create_drawable_skel(armature_obj: Object, skeleton: Skeleton) -> dict[int, str]:
     bpy.context.view_layer.objects.active = armature_obj
     bones = skeleton.bones
 
     # Need to go into edit mode to modify edit bones
     bpy.ops.object.mode_set(mode="EDIT")
 
-    for b in bones:
-        add_bone(armature_obj.data, b)
+    bone_names = {}
+    for i, b in enumerate(bones):
+        actual_name = add_bone(armature_obj.data, b)
+        bone_names[i] = actual_name
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    for b in bones:
-        set_bone_properties(armature_obj.data, b)
-        add_bone_constraints(armature_obj, b)
+    for i, b in enumerate(bones):
+        actual_name = bone_names[i]
+        set_bone_properties(armature_obj.data, b, actual_name)
+        add_bone_constraints(armature_obj, b, actual_name)
 
-    return armature_obj
+    return bone_names
 
 
-def add_bone(armature: Armature, bone: SkelBone):
+def add_bone(armature: Armature, bone: SkelBone) -> str:
     edit_bone = armature.edit_bones.new(bone.name)
+    actual_name = edit_bone.name
     if bone.parent_index != -1:
         edit_bone.parent = armature.edit_bones[bone.parent_index]
 
@@ -524,9 +528,11 @@ def add_bone(armature: Armature, bone: SkelBone):
     if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
+    return actual_name
 
-def set_bone_properties(armature: Armature, bone: SkelBone):
-    bl_bone = armature.bones[bone.name]
+
+def set_bone_properties(armature: Armature, bone: SkelBone, name: str):
+    bl_bone = armature.bones[name]
     bl_bone.bone_properties.tag = bone.tag
 
     for _flag in bone.flags:
@@ -540,8 +546,8 @@ def set_bone_properties(armature: Armature, bone: SkelBone):
         flag.name = CW_BONE_FLAGS_INVERSE_MAP[_flag]
 
 
-def add_bone_constraints(armature_obj: Object, bone: SkelBone):
-    pose_bone = armature_obj.pose.bones[bone.name]
+def add_bone_constraints(armature_obj: Object, bone: SkelBone, name: str):
+    pose_bone = armature_obj.pose.bones[name]
 
     if bone.translation_limit:
         add_bone_constraint_translation_limit(pose_bone, bone.translation_limit)
