@@ -54,7 +54,7 @@ class TabPanel:
 
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        return cls._is_active and cls.poll_tab(context)
+        return cls._is_active() and cls.poll_tab(context)
 
     @classmethod
     def poll_tab(cls, context: bpy.types.Context):
@@ -84,7 +84,6 @@ class TabPanel:
         setattr(bpy.context.scene, cls._get_active_tab_propname(), tab_id)
 
     @classmethod
-    @property
     def _is_active(cls):
         return cls._get_active_tab() == cls.bl_idname
 
