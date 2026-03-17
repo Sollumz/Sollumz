@@ -19,45 +19,51 @@ jobs:
         include:
           - blender-version: '4.0.2'
             python-version: '3.10'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
 
           - blender-version: '4.1.1'
             python-version: '3.11'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
 
-          - blender-version: '4.2.16'
+          - blender-version: '4.2.19'
             python-version: '3.11'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
 
           - blender-version: '4.3.2'
             python-version: '3.11'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
 
           - blender-version: '4.4.3'
             python-version: '3.11'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
 
-          - blender-version: '4.5.5'
+          - blender-version: '4.5.8'
             python-version: '3.11'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
 
-          - blender-version: '5.0.0'
+          - blender-version: '5.0.1'
             python-version: '3.11'
-            pytest-version: '8.3.5'
-            pytest-blender-version: '3.0.6'
-            pytest-cov-version: '6.1.1'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
+
+          - blender-version: '5.1.0'
+            python-version: '3.13'
+            pytest-version: '9.0.2'
+            pytest-blender-version: '3.0.7'
+            pytest-cov-version: '7.0.0'
     env:
       BLENDER_VERSION: ${{ matrix.blender-version }}
     steps:
@@ -102,7 +108,7 @@ jobs:
           pytest-blender --blender-executable "$BLENDER" | Out-File -FilePath _blender-python-executable-path.txt
           $BLENDER_PYTHON = get-content _blender-python-executable-path.txt
           echo "$BLENDER_PYTHON"
-          & "$BLENDER_PYTHON" -m pip install pytest-blender==${{ matrix.pytest-blender-version }} pytest==${{ matrix.pytest-version }} pytest-cov==${{ matrix.pytest-cov-version }}
+          & "$BLENDER_PYTHON" -m pip install pytest==${{ matrix.pytest-version }} pytest-cov==${{ matrix.pytest-cov-version }}
 
       - name: Install Sollumz
         working-directory: ./Sollumz

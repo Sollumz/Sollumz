@@ -1,5 +1,5 @@
 fake-bpy-module-latest==20230904
 numpy==1.23.5
-pytest==8.3.5
-pytest-blender==3.0.6
-pytest-cov==6.1.1
+pytest==9.0.2
+pytest-blender==3.0.7
+pytest-cov==7.0.0
