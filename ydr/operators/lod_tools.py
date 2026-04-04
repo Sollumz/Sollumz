@@ -20,6 +20,7 @@ from ...lods import LODLevels
 from ...sollumz_helper import find_sollumz_parent
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, SollumType
 from ...tools.blenderhelper import lod_level_enum_flag_prop_factory
+from ...tools.meshhelper import get_mesh_tri_count
 
 
 class MaterialMergeSettingsMixin:
@@ -631,7 +632,7 @@ class SOLLUMZ_OT_auto_lod(AutoLODSettingsMixin, Operator):
         if self.use_per_lod_ratios:
             ratio, target_tri_count, use_target_tri_count = self.get_per_lod_ratio_settings(lod_level)
             if use_target_tri_count:
-                source_tri_count = len(source_mesh.polygons)
+                source_tri_count = get_mesh_tri_count(source_mesh)
                 if source_tri_count > 0:
                     return max(0.01, min(1.0, target_tri_count / source_tri_count))
                 return 1.0
@@ -691,7 +692,7 @@ class SOLLUMZ_OT_auto_lod(AutoLODSettingsMixin, Operator):
         for lod_level in lods:
             mesh = obj_lods.get_lod(lod_level).mesh
             if mesh is not None:
-                tri_count = sum(max(1, len(p.vertices) - 2) for p in mesh.polygons)
+                tri_count = get_mesh_tri_count(mesh)
                 stats.append(f"{SOLLUMZ_UI_NAMES[lod_level]}: {tri_count} tris, {len(mesh.vertices)} verts")
 
         if stats:
