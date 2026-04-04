@@ -1045,7 +1045,7 @@ class SOLLUMZ_PT_MATERIAL_MERGE_PANEL(bpy.types.Panel):
 
     def draw(self, context: Context):
         layout = self.layout
-        settings = context.scene.sollumz_material_merge_settings
+        settings = context.scene.sz_material_merge_settings
         obj = context.active_object
 
         box = layout.box()

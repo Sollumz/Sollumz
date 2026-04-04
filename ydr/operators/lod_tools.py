@@ -1,9 +1,73 @@
 import bpy
-from bpy.types import Operator
+from bpy.types import (
+    Operator,
+    PropertyGroup,
+    Scene,
+)
+from bpy.props import (
+    IntProperty,
+    FloatProperty,
+    EnumProperty,
+    PointerProperty,
+)
 
 
-class SOLLUMZ_OT_material_merge_bake(Operator):
+class MaterialMergeSettingsMixin:
+    texture_size: EnumProperty(
+        name="Texture Size",
+        description="Resolution of the baked texture",
+        items=[
+            ("256", "256", "256x256 pixels"),
+            ("512", "512", "512x512 pixels"),
+            ("1024", "1024", "1024x1024 pixels"),
+            ("2048", "2048", "2048x2048 pixels"),
+            ("4096", "4096", "4096x4096 pixels"),
+            ("8192", "8192", "8192x8192 pixels"),
+        ],
+        default="1024",
+    )
+
+    bake_type: EnumProperty(
+        name="Bake Type",
+        description="Type of texture to bake",
+        items=[
+            ("DIFFUSE", "Diffuse", "Diffuse color only"),
+            ("NORMAL", "Normal", "Normal map"),
+            ("ROUGHNESS", "Roughness", "Roughness map"),
+            # NOTE: METALLIC removed for now, cycles has no direct equivalent so it needs some additional workaround
+            #       to bake metallic map
+            # ("METALLIC", "Metallic", "Metallic map"),
+        ],
+        default="DIFFUSE",
+    )
+
+    uv_margin: FloatProperty(
+        name="UV Margin",
+        description="Margin between UV islands to reduce bleed from adjacent islands",
+        default=0.0,
+        min=0.0,
+        max=0.1,
+        precision=3,
+    )
+
+    samples: IntProperty(
+        name="Samples", description="Number of render samples for baking", default=128, min=1, max=2048
+    )
+
+
+class MaterialMergeSettings(MaterialMergeSettingsMixin, PropertyGroup):
+    @classmethod
+    def register(cls):
+        Scene.sz_material_merge_settings = PointerProperty(type=MaterialMergeSettings)
+
+    @classmethod
+    def unregister(cls):
+        del Scene.sz_material_merge_settings
+
+
+class SOLLUMZ_OT_material_merge_bake(MaterialMergeSettingsMixin, Operator):
     """Bake all materials from selected object into a single material with unified texture"""
+
     bl_idname = "sollumz.material_merge_bake"
     bl_label = "Bake Materials"
     bl_options = {"REGISTER", "UNDO"}
@@ -11,19 +75,23 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return (obj is not None and obj.type == "MESH" and len(obj.data.materials) > 0)
+        return obj is not None and obj.type == "MESH" and len(obj.data.materials) > 0
 
     def execute(self, context):
         obj = context.active_object
-        settings = context.scene.sollumz_material_merge_settings
+        scene = context.scene
 
-        original_engine = context.scene.render.engine
-        original_samples = context.scene.cycles.samples if hasattr(context.scene, "cycles") else 128
+        for prop in MaterialMergeSettingsMixin.__annotations__.keys():
+            if not self.properties.is_property_set(prop):
+                setattr(self, prop, getattr(scene.sz_material_merge_settings, prop))
+
+        original_engine = scene.render.engine
+        original_samples = scene.cycles.samples if hasattr(scene, "cycles") else 128
 
         try:
-            context.scene.render.engine = "CYCLES"
-            context.scene.cycles.samples = settings.samples
-            tex_size = int(settings.texture_size)
+            scene.render.engine = "CYCLES"
+            scene.cycles.samples = self.samples
+            tex_size = int(self.texture_size)
 
             uv_layer_name = "MaterialMerge_UV"
             if uv_layer_name not in obj.data.uv_layers:
@@ -32,34 +100,29 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
             obj.data.uv_layers[uv_layer_name].active = True
             obj.data.uv_layers[uv_layer_name].active_render = True
 
-            self.smart_unwrap_object(context, obj, settings.uv_margin)
+            self.smart_unwrap_object(context, obj, self.uv_margin)
 
-            image_name = f"{obj.name}_BakedMaterial"
+            image_name = f"{obj.name}_BakedMaterial_{self.bake_type}"
             if image_name in bpy.data.images:
                 bpy.data.images.remove(bpy.data.images[image_name])
 
-            bake_image = bpy.data.images.new(
-                name=image_name,
-                width=tex_size,
-                height=tex_size,
-                alpha=True
-            )
-            bake_image.colorspace_settings.name = "sRGB" if settings.bake_type != "NORMAL" else "Non-Color"
+            bake_image = bpy.data.images.new(name=image_name, width=tex_size, height=tex_size, alpha=True)
+            bake_image.colorspace_settings.name = "sRGB" if self.bake_type != "NORMAL" else "Non-Color"
 
             original_nodes = self.setup_bake_nodes(obj, bake_image)
 
-            bake = context.scene.render.bake
-            bake.margin = int(settings.uv_margin * tex_size)
+            bake = scene.render.bake
+            bake.margin = int(self.uv_margin * tex_size)
             bake.use_clear = True
 
-            if settings.bake_type == "DIFFUSE":
+            if self.bake_type == "DIFFUSE":
                 bake.use_pass_direct = False
                 bake.use_pass_indirect = False
                 bake.use_pass_color = True
 
-            bpy.ops.object.bake(type=settings.bake_type)
+            bpy.ops.object.bake(type=self.bake_type)
 
-            merged_mat = self.create_merged_material(obj.name, bake_image, settings.bake_type)
+            merged_mat = self.create_merged_material(obj.name, bake_image)
 
             self.restore_original_nodes(obj, original_nodes)
 
@@ -73,9 +136,9 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
             return {"CANCELLED"}
 
         finally:
-            context.scene.render.engine = original_engine
-            if hasattr(context.scene, "cycles"):
-                context.scene.cycles.samples = original_samples
+            scene.render.engine = original_engine
+            if hasattr(scene, "cycles"):
+                scene.cycles.samples = original_samples
 
         return {"FINISHED"}
 
@@ -97,7 +160,7 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
             island_margin=margin,
             area_weight=0.0,
             correct_aspect=True,
-            scale_to_bounds=True
+            scale_to_bounds=True,
         )
 
         bpy.ops.object.mode_set(mode=original_mode if original_mode != "EDIT" else "OBJECT")
@@ -107,15 +170,15 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
 
         for mat_slot in obj.material_slots:
             mat = mat_slot.material
-            if mat is None or not mat.use_nodes:
+            if mat is None:
+                continue
+
+            if bpy.app.version < (5, 0, 0) and not mat.use_nodes:
                 continue
 
             tree = mat.node_tree
 
-            original_nodes[mat.name] = {
-                "active": tree.nodes.active,
-                "added_node": None
-            }
+            original_nodes[mat.name] = {"active": tree.nodes.active, "added_node": None}
 
             img_node = tree.nodes.new(type="ShaderNodeTexImage")
             img_node.image = bake_image
@@ -142,14 +205,15 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
             if node_info["active"] is not None:
                 tree.nodes.active = node_info["active"]
 
-    def create_merged_material(self, obj_name, bake_image, bake_type):
-        mat_name = f"{obj_name}_MergedMaterial"
+    def create_merged_material(self, obj_name, bake_image):
+        mat_name = f"{obj_name}_BakedMaterial_{self.bake_type}"
 
         if mat_name in bpy.data.materials:
             bpy.data.materials.remove(bpy.data.materials[mat_name])
 
         mat = bpy.data.materials.new(name=mat_name)
-        mat.use_nodes = True
+        if bpy.app.version < (5, 0, 0):
+            mat.use_nodes = True
 
         tree = mat.node_tree
         nodes = tree.nodes
@@ -172,15 +236,16 @@ class SOLLUMZ_OT_material_merge_bake(Operator):
 
         links.new(tex_coord.outputs["UV"], img_node.inputs["Vector"])
 
-        if bake_type == "NORMAL":
+        if self.bake_type == "NORMAL":
             normal_map = nodes.new(type="ShaderNodeNormalMap")
             normal_map.location = (-100, -200)
             links.new(img_node.outputs["Color"], normal_map.inputs["Color"])
             links.new(normal_map.outputs["Normal"], principled.inputs["Normal"])
-        elif bake_type == "ROUGHNESS":
+        elif self.bake_type == "ROUGHNESS":
             links.new(img_node.outputs["Color"], principled.inputs["Roughness"])
-        elif bake_type == "METALLIC":
-            links.new(img_node.outputs["Color"], principled.inputs["Metallic"])
+        # NOTE: METALLIC removed for now
+        # elif self.bake_type == "METALLIC":
+        #     links.new(img_node.outputs["Color"], principled.inputs["Metallic"])
         else:
             links.new(img_node.outputs["Color"], principled.inputs["Base Color"])
 
