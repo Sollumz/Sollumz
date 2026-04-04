@@ -32,6 +32,7 @@ from ..tools.meshhelper import (
     get_color_attr_name,
     get_mesh_used_texcoords_indices,
     get_mesh_used_colors_indices,
+    get_mesh_tri_count,
 )
 
 
@@ -941,7 +942,7 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
                         stats_col = stats_box.column(align=True)
                         stats_col.label(text="LOD Statistics", icon="INFO")
                         has_any = True
-                    tri_count = self._count_tris(mesh)
+                    tri_count = get_mesh_tri_count(mesh)
                     split = stats_col.split(factor=0.4)
                     row = split.row()
                     row.alignment = "RIGHT"
@@ -949,11 +950,6 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
                     row = split.row()
                     row.alignment = "LEFT"
                     row.label(text=f"{tri_count} tris / {len(mesh.vertices)} verts")
-
-    @staticmethod
-    def _count_tris(mesh):
-        """Count triangles in a mesh (accounting for n-gons)."""
-        return sum(max(1, len(p.vertices) - 2) for p in mesh.polygons)
 
 
 class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
