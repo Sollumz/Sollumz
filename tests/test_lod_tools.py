@@ -43,3 +43,4 @@ def test_ops_lod_tools_material_merge_bake(bake_type, context):
 
 def test_ops_lod_tools_auto_lod(context):
     # TODO: test_ops_lod_tools_auto_lod
+    pass
