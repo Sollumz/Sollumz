@@ -40,3 +40,6 @@ def test_ops_lod_tools_material_merge_bake(bake_type, context):
             #       While roughness in the materials' BSDF is set to 0.5.
             # assert_allclose(pixels[128, 128], [0.5, 0.5, 0.5, 1.0])
             pass
+
+def test_ops_lod_tools_auto_lod(context):
+    # TODO: test_ops_lod_tools_auto_lod
