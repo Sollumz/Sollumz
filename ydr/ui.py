@@ -910,96 +910,45 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"HIDE_HEADER"}
     bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
 
     bl_order = 0
 
     def draw(self, context: Context):
         layout = self.layout
-        settings = context.scene.sollumz_auto_lod_settings
-        obj = context.active_object
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-        layout.label(text="Auto LOD")
         box = layout.box()
 
-        box.prop(settings, "levels")
-        box.separator(factor=0.25)
-        box.prop(settings, "ref_mesh", text="Reference Mesh")
-        box.separator(factor=0.25)
+        settings = context.scene.sz_auto_lod_settings
+        settings.draw_settings(context, box)
 
-        box.prop(settings, "decimate_method")
-
-        if settings.decimate_method == "DISSOLVE":
-            box.prop(settings, "planar_angle_limit")
-        elif settings.decimate_method == "UNSUBDIV":
-            box.prop(settings, "unsubdiv_iterations")
-
-        box.separator(factor=0.25)
-        box.prop(settings, "decimate_from_original")
-
-        if settings.decimate_method == "COLLAPSE":
-            box.separator(factor=0.25)
-            box.prop(settings, "use_per_lod_ratios")
-
-            if settings.use_per_lod_ratios:
-                col = box.column(align=True)
-                for lod_level in LODLevel:
-                    if lod_level.value not in settings.levels:
-                        continue
-                    lod_settings = settings.get_lod_settings(lod_level)
-                    row = col.row(align=True)
-                    row.label(text=SOLLUMZ_UI_NAMES[lod_level] + ":")
-                    if lod_settings.use_target_tri_count:
-                        row.prop(lod_settings, "target_tri_count", text="")
-                    else:
-                        row.prop(lod_settings, "ratio", text="")
-                    row.prop(lod_settings, "use_target_tri_count",
-                             text="", icon="MESH_DATA", toggle=True)
-            else:
-                box.prop(settings, "decimate_step")
-
-            box.separator(factor=0.25)
-            col = box.column(align=True)
-            col.label(text="Preserve:", icon="LOCKED")
-            row = col.row(align=True)
-            row.prop(settings, "preserve_uvs", text="UVs", toggle=True)
-            row.prop(settings, "preserve_sharp", text="Sharp", toggle=True)
-            row = col.row(align=True)
-            row.prop(settings, "preserve_vertex_groups", text="Groups", toggle=True)
-            row.prop(settings, "preserve_materials", text="Materials", toggle=True)
-        else:
-            # Un-Subdivide and Dissolve don't use ratio-based per-LOD settings
-            if settings.decimate_method == "DISSOLVE" and settings.preserve_materials:
-                pass  # preserve_materials is handled in the operator for dissolve
-            if settings.decimate_method != "UNSUBDIV":
-                box.separator(factor=0.25)
-                box.prop(settings, "preserve_materials")
-
-        box.separator(factor=0.25)
-        box.prop(settings, "auto_set_distances")
-        box.prop(settings, "auto_merge_materials")
+        row = box.row(align=True)
+        row.scale_y = 1.3
+        row.operator(lod_ops.SOLLUMZ_OT_auto_lod.bl_idname, icon="MOD_DECIM")
 
         # LOD Stats Display
-        if obj is not None and hasattr(obj, "sollum_type") and obj.sollum_type == SollumType.DRAWABLE_MODEL:
+        obj = context.active_object
+        if obj is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL:
             lods = obj.sz_lods
             has_any = False
             for lod_level in LODLevel:
                 mesh = lods.get_lod(lod_level).mesh
                 if mesh is not None:
                     if not has_any:
-                        box.separator(factor=0.25)
                         stats_box = box.box()
                         stats_col = stats_box.column(align=True)
-                        stats_col.label(text="LOD Stats:", icon="INFO")
+                        stats_col.label(text="LOD Statistics", icon="INFO")
                         has_any = True
                     tri_count = self._count_tris(mesh)
-                    row = stats_col.row()
-                    row.label(text=f"{SOLLUMZ_UI_NAMES[lod_level]}:")
+                    split = stats_col.split(factor=0.4)
+                    row = split.row()
+                    row.alignment = "RIGHT"
+                    row.label(text=f"{SOLLUMZ_UI_NAMES[lod_level]}")
+                    row = split.row()
+                    row.alignment = "LEFT"
                     row.label(text=f"{tri_count} tris / {len(mesh.vertices)} verts")
-
-        box.separator()
-        box.operator("sollumz.auto_lod", icon="MOD_DECIM")
 
     @staticmethod
     def _count_tris(mesh):
@@ -1067,7 +1016,7 @@ class SOLLUMZ_PT_MATERIAL_MERGE_PANEL(bpy.types.Panel):
         box.separator()
 
         row = box.row(align=True)
-        row.scale_y = 1.5
+        row.scale_y = 1.3
         row.operator(lod_ops.SOLLUMZ_OT_material_merge_bake.bl_idname, icon="RENDER_STILL")
 
 
