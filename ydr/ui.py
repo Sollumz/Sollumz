@@ -994,30 +994,37 @@ class SOLLUMZ_PT_MATERIAL_MERGE_PANEL(bpy.types.Panel):
 
     def draw(self, context: Context):
         layout = self.layout
-        settings = context.scene.sz_material_merge_settings
-        obj = context.active_object
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
         box = layout.box()
 
-        box.prop(settings, "texture_size")
-        box.prop(settings, "bake_type")
-        box.prop(settings, "uv_margin")
-        box.prop(settings, "samples")
-
-        box.separator()
-
-        if obj is not None and obj.type == "MESH":
-            mat_count = len(obj.data.materials)
-            box.label(text=f"Object: {obj.name}")
-            box.label(text=f"Materials: {mat_count}")
-        else:
-            box.label(text="Select a mesh object", icon="ERROR")
-
-        box.separator()
+        settings = context.scene.sz_material_merge_settings
+        col = box.column()
+        col.prop(settings, "texture_size")
+        col.prop(settings, "bake_type")
+        col.prop(settings, "uv_margin")
+        col.prop(settings, "samples")
 
         row = box.row(align=True)
         row.scale_y = 1.3
         row.operator(lod_ops.SOLLUMZ_OT_material_merge_bake.bl_idname, icon="RENDER_STILL")
+
+        obj = context.active_object
+        if obj is not None and obj.type == "MESH":
+            mat_count = len(obj.data.materials)
+            col = box.column(align=True)
+            for left_side, right_side in (("Object", obj.name), ("Materials", f"{mat_count}")):
+                split = col.split(factor=0.4)
+                row = split.row()
+                row.alignment = "RIGHT"
+                row.label(text=left_side)
+                row = split.row()
+                row.alignment = "LEFT"
+                row.label(text=right_side)
+        else:
+            box.label(text="Select a mesh object", icon="ERROR")
+
 
 
 class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
