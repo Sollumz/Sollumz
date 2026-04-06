@@ -217,6 +217,7 @@ class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "ymap_skip_missing_entities")
+        layout.prop(settings, "ymap_use_asset_browser")
         layout.prop(settings, "ymap_exclude_entities")
         layout.prop(settings, "ymap_instance_entities")
         layout.prop(settings, "ymap_box_occluders")

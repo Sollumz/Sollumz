@@ -1,3 +1,4 @@
+import os
 import math
 import bpy
 import numpy as np
@@ -30,6 +31,68 @@ def occlude_model_to_mesh_data(model: OccludeModel) -> tuple[NDArray, NDArray]:
     verts = data[:num_verts_in_bytes].view(dtype=np.float32).reshape((num_verts, 3))
     faces = data[num_verts_in_bytes:].reshape((num_tris, 3))
     return verts, faces
+
+
+ASSET_CACHE = {}
+ASSET_CACHE_BUILT = False
+
+def build_asset_cache():
+    global ASSET_CACHE, ASSET_CACHE_BUILT
+    if ASSET_CACHE_BUILT:
+        return
+    
+    file_paths = bpy.context.preferences.filepaths
+    if hasattr(file_paths, "asset_libraries"):
+        for lib in file_paths.asset_libraries:
+            for root, dirs, files in os.walk(lib.path):
+                for file in files:
+                    if file.endswith(".blend"):
+                        filepath = os.path.join(root, file)
+                        try:
+                            # Just peek at the object names, don't link yet
+                            with bpy.data.libraries.load(filepath) as (data_from, data_to):
+                                for obj_name in data_from.objects:
+                                    ASSET_CACHE[(obj_name, "OBJECT")] = filepath
+                                for col_name in data_from.collections:
+                                    ASSET_CACHE[(col_name, "COLLECTION")] = filepath
+                        except Exception as e:
+                            logger.warning(f"Sollumz Asset Browser Support: Failed to parse {filepath}: {e}")
+    ASSET_CACHE_BUILT = True
+
+def link_asset_from_cache(name: str) -> bpy.types.Object | None:
+    build_asset_cache()
+    
+    if (name, "OBJECT") in ASSET_CACHE:
+        filepath = ASSET_CACHE[(name, "OBJECT")]
+        try:
+            # We link ALL objects from the file because the hierarchy (LODs, Collisions) 
+            # might be represented as separate objects in the same file. 
+            # This is extremely memory-efficient since they are Library Linked.
+            with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
+                data_to.objects = data_from.objects
+            # Return the base linked object so it can be duplicated into the scene
+            return bpy.data.objects.get(name)
+        except Exception as e:
+            logger.error(f"Failed to link object '{name}' from {filepath}: {e}")
+            
+    elif (name, "COLLECTION") in ASSET_CACHE:
+        filepath = ASSET_CACHE[(name, "COLLECTION")]
+        try:
+            with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
+                data_to.collections.append(name)
+            col = data_to.collections[-1] if data_to.collections else None
+            if col:
+                empty = bpy.data.objects.new(name, None)
+                empty.instance_type = 'COLLECTION'
+                empty.instance_collection = col
+                # Note: This returns a collection instance Empty. Sollumz's duplicate_object_with_children
+                # might handle it fine, or might not if it explicitly expects Drawables.
+                return empty
+        except Exception as e:
+            logger.error(f"Failed to link collection '{name}' from {filepath}: {e}")
+            
+    return None
+
 
 
 def apply_entity_properties(obj, entity):
@@ -92,12 +155,18 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
     bpy.context.collection.objects.link(group_obj)
     bpy.context.view_layer.objects.active = group_obj
 
+    import_settings = get_import_settings()
+
     if ymap.entities:
         entities_amount = len(ymap.entities)
         count = 0
 
         for entity in ymap.entities:
             obj = bpy.data.objects.get(entity.archetype_name, None)
+            
+            if obj is None and import_settings.ymap_use_asset_browser:
+                obj = link_asset_from_cache(entity.archetype_name)
+
             if obj is None:
                 # No object with the given archetype name found
                 continue
@@ -115,7 +184,7 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
                     f"Cannot use your '{obj.name}' object because it is not a 'Drawable' type!")
 
         # Creating empty entity if no object was found for reference, and notify user
-        import_settings = get_import_settings()
+
 
         if not import_settings.ymap_skip_missing_entities:
             for entity in ymap.entities:

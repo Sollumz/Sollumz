@@ -214,6 +214,13 @@ class ImportSettingsBase:
         update=_on_update_thunk,
     )
 
+    ymap_use_asset_browser: BoolProperty(
+        name="Search in Asset Browser",
+        description="Link missing entities from Blender Asset Libraries (Warning: first search may take time to build cache)",
+        default=False,
+        update=_on_update_thunk,
+    )
+
     ymap_exclude_entities: BoolProperty(
         name="Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s)",
