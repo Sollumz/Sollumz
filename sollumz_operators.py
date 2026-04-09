@@ -204,8 +204,8 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             self.directory = bpy.path.abspath(self.directory)
 
             filenames = [f.name for f in self.files]
-            filenames, ytyp_filenames = self._separate_ytyp_filenames(filenames)
-            filenames = self._dedupe_hi_yft_filenames(filenames)
+            asset_filenames, ytyp_filenames, ymap_filenames = self._separate_asset_filenames(filenames)
+            asset_filenames = self._dedupe_hi_yft_filenames(asset_filenames)
 
             from pathlib import Path
             from szio.gta5 import try_load_asset, AssetType, AssetWithDependencies
@@ -301,12 +301,16 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                     logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
                     return False
 
-            for filename in filenames:
+            for filename in asset_filenames:
                 _import_asset(filename)
 
             # Import the .ytyps after all the assets to ensure that the archetypes get linked to their object in case
             # they are imported together
             for filename in ytyp_filenames:
+                _import_asset(filename)
+
+            # Import the .ymaps at the end to ensure all the assets get instantiated correctly
+            for filename in ymap_filenames:
                 _import_asset(filename)
 
             logger.info(f"Imported in {self.time_elapsed} seconds")
@@ -334,13 +338,18 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             )
         ]
 
-    def _separate_ytyp_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
-        """Separate the filenames list into two lists, one with all the assets and another one only with .ytyps."""
-        asset_filenames, ytyp_filenames = [], []
+    def _separate_asset_filenames(self, filenames: list[str]) -> tuple[list[str], list[str], list[str]]:
+        """Separate the filenames list into three lists, one with all the assets, one with only .ymaps and another one only with .ytyps."""
+        asset_filenames, ytyp_filenames, ymap_filenames = [], [], []
         for f in filenames:
-            dest = ytyp_filenames if f.endswith(".ytyp") or f.endswith(".ytyp.xml") else asset_filenames
-            dest.append(f)
-        return asset_filenames, ytyp_filenames
+            if f.endswith((".ytyp", ".ytyp.xml")):
+                ytyp_filenames.append(f)
+            elif f.endswith((".ymap", ".ymap.xml")):
+                ymap_filenames.append(f)
+            else:
+                asset_filenames.append(f)
+
+        return asset_filenames, ytyp_filenames, ymap_filenames
 
 
 class SOLLUMZ_OT_import_assets(ImportAssetsOperatorImpl, Operator):
