@@ -9,3 +9,6 @@ line-ending = "lf"
 
 [tool.black]
 line-length = 120
+
+[tool.basedpyright]
+typeCheckingMode = "off"
