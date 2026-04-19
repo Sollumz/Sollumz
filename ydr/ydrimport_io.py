@@ -40,6 +40,7 @@ from szio.gta5 import (
 )
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..shared.shader_nodes import SzShaderNodeParameter
+from ..shared.import_skel import create_drawable_skel
 from .model_data_io import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
 from .cable_mesh_builder import CableMeshBuilder
@@ -486,101 +487,6 @@ def is_non_color_texture(shader_filename: str, param_name: str) -> bool:
         (shader_filename in {"decal_dirt.sps", "decal_amb_only.sps"}
          and param_name == "diffusesampler")  # ...to shadow maps
     )
-
-
-def create_drawable_skel(armature_obj: Object, skeleton: Skeleton):
-    bpy.context.view_layer.objects.active = armature_obj
-    bones = skeleton.bones
-
-    # Need to go into edit mode to modify edit bones
-    bpy.ops.object.mode_set(mode="EDIT")
-
-    for b in bones:
-        add_bone(armature_obj.data, b)
-
-    bpy.ops.object.mode_set(mode="OBJECT")
-
-    for b in bones:
-        set_bone_properties(armature_obj.data, b)
-        add_bone_constraints(armature_obj, b)
-
-    return armature_obj
-
-
-def add_bone(armature: Armature, bone: SkelBone):
-    edit_bone = armature.edit_bones.new(bone.name)
-    if bone.parent_index != -1:
-        edit_bone.parent = armature.edit_bones[bone.parent_index]
-
-    # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
-    mat_rot = bone.rotation.to_matrix().to_4x4()
-    mat_loc = Matrix.Translation(bone.position)
-    mat_sca = Matrix.Scale(1, 4, bone.scale)
-
-    edit_bone.head = (0, 0, 0)
-    edit_bone.tail = (0, 0.05, 0)
-    edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
-
-    if edit_bone.parent is not None:
-        edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
-
-
-def set_bone_properties(armature: Armature, bone: SkelBone):
-    bl_bone = armature.bones[bone.name]
-    bl_bone.bone_properties.tag = bone.tag
-
-    for _flag in bone.flags:
-        # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
-        if _flag & (SkelBoneFlags.HAS_ROTATE_LIMITS | SkelBoneFlags.HAS_CHILD):
-            continue
-
-        # flags still use the CW names for backwards compatibility
-        from szio.gta5.cwxml.adapters.drawable import CW_BONE_FLAGS_INVERSE_MAP
-        flag = bl_bone.bone_properties.flags.add()
-        flag.name = CW_BONE_FLAGS_INVERSE_MAP[_flag]
-
-
-def add_bone_constraints(armature_obj: Object, bone: SkelBone):
-    pose_bone = armature_obj.pose.bones[bone.name]
-
-    if bone.translation_limit:
-        add_bone_constraint_translation_limit(pose_bone, bone.translation_limit)
-
-    if bone.rotation_limit:
-        add_bone_constraint_rotation_limit(pose_bone, bone.rotation_limit)
-
-
-def add_bone_constraint_rotation_limit(pose_bone: PoseBone, limit: SkelBoneRotationLimit) -> LimitRotationConstraint:
-    constraint = pose_bone.constraints.new("LIMIT_ROTATION")
-    constraint.owner_space = "LOCAL"
-    constraint.use_limit_x = True
-    constraint.use_limit_y = True
-    constraint.use_limit_z = True
-    constraint.max_x = limit.max.x
-    constraint.max_y = limit.max.y
-    constraint.max_z = limit.max.z
-    constraint.min_x = limit.min.x
-    constraint.min_y = limit.min.y
-    constraint.min_z = limit.min.z
-    return constraint
-
-
-def add_bone_constraint_translation_limit(pose_bone: PoseBone, limit: SkelBoneTranslationLimit) -> LimitLocationConstraint:
-    constraint = pose_bone.constraints.new("LIMIT_LOCATION")
-    constraint.owner_space = "LOCAL"
-    constraint.use_min_x = True
-    constraint.use_min_y = True
-    constraint.use_min_z = True
-    constraint.use_max_x = True
-    constraint.use_max_y = True
-    constraint.use_max_z = True
-    constraint.max_x = limit.max.x
-    constraint.max_y = limit.max.y
-    constraint.max_z = limit.max.z
-    constraint.min_x = limit.min.x
-    constraint.min_y = limit.min.y
-    constraint.min_z = limit.min.z
-    return constraint
 
 
 def create_embedded_collisions(bounds: AssetBound, drawable_obj: bpy.types.Object):
