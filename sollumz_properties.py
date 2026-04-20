@@ -526,6 +526,12 @@ def register():
         options={"HIDDEN"}
     )
 
+    bpy.types.Object.sz_original_name = bpy.props.StringProperty(
+        name="Original Name",
+        description="Original name before truncation/collisions",
+        default=""
+    )
+
     bpy.types.Material.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(MaterialType),
         name="Sollumz Material Type",
@@ -608,6 +614,7 @@ def register():
 
 def unregister():
     del bpy.types.Object.sollum_type
+    del bpy.types.Object.sz_original_name
     del bpy.types.Material.sollum_type
     del bpy.types.ShaderNode.is_sollumz
     del bpy.types.Object.entity_properties

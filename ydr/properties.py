@@ -280,6 +280,7 @@ class BoneProperties(bpy.types.PropertyGroup):
         get=get_flags_enum, set=set_flags_enum
     )
     flags: CollectionProperty(type=BoneFlag)
+    original_name: bpy.props.StringProperty(name="Original Name", default="")
     ul_index: IntProperty(name="UIListIndex", default=0)
 
 
