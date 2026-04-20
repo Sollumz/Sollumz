@@ -180,7 +180,7 @@ def create_fragment_xml(frag: FragmentObjects, apply_transforms: bool = False) -
     frag_obj = frag.fragment
 
     frag_xml = Fragment()
-    frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
+    frag_xml.name = f"pack:/{remove_number_suffix(frag_obj.sz_original_name or frag_obj.name)}"
     frag_xml.flags = 1  # all fragments need this flag (uses cache entry)
 
     set_frag_xml_properties(frag_obj, frag_xml)
@@ -475,7 +475,7 @@ def calculate_physics_lod_inertia_limits(lod_xml: PhysicsLOD):
 def create_archetype_xml(lod_xml: PhysicsLOD, frag: FragmentObjects) -> tuple[Archetype, Optional[Archetype]]:
     frag_obj = frag.fragment
     archetype_props: FragArchetypeProperties = frag_obj.fragment_properties.lod_properties.archetype_properties
-    archetype_name = remove_number_suffix(frag_obj.name)
+    archetype_name = remove_number_suffix(frag_obj.sz_original_name or frag_obj.name)
 
     set_archetype_xml_properties(archetype_props, lod_xml.archetype, archetype_name)
 
@@ -571,7 +571,7 @@ def create_phys_xml_groups(
             continue
 
         group_xml = PhysicsGroup()
-        group_xml.name = bone.name
+        group_xml.name = bone.bone_properties.original_name or bone.name
         bone_index = get_bone_index(frag_obj.data, bone)
 
         groups_by_bone[bone_index].append(group_xml)
@@ -595,12 +595,12 @@ def create_phys_xml_groups(
         if parent_bone is None:
             return 255
 
-        parent_name = parent_bone.name
-        if not parent_bone.sollumz_use_physics or parent_name not in group_ind_by_name:
+        parent_original_name = parent_bone.bone_properties.original_name or parent_bone.name
+        if not parent_bone.sollumz_use_physics or parent_original_name not in group_ind_by_name:
             # Parent has no frag group, try with grandparent
             return get_group_parent_index(parent_bone)
 
-        return group_ind_by_name[parent_name]
+        return group_ind_by_name[parent_original_name]
 
     # Set group parent indices
     for bone_index, groups in groups_by_bone.items():

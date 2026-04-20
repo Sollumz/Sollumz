@@ -200,7 +200,7 @@ def set_drawable_model_properties(model_props: DrawableModelProperties, model_xm
 
 
 def create_drawable_armature(drawable_xml: Drawable, name: str):
-    drawable_obj, _ = create_armature_obj_from_skel(
+    drawable_obj = create_armature_obj_from_skel(
         drawable_xml.skeleton, name, SollumType.DRAWABLE)
     create_joint_constraints(drawable_obj, drawable_xml.joints)
 
@@ -209,13 +209,13 @@ def create_drawable_armature(drawable_xml: Drawable, name: str):
     return drawable_obj
 
 
-def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType) -> tuple[bpy.types.Object, dict[int, str]]:
+def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType):
     armature = bpy.data.armatures.new(f"{name}.skel")
     obj = create_blender_object(sollum_type, name, armature)
 
-    bone_names = create_drawable_skel(skeleton, obj)
+    create_drawable_skel(skeleton, obj)
 
-    return obj, bone_names
+    return obj
 
 
 def create_joint_constraints(armature_obj: bpy.types.Object, joints: Joints):
@@ -373,31 +373,29 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
     return material
 
 
-def create_drawable_skel(skeleton_xml: Skeleton, armature_obj: bpy.types.Object) -> dict[int, str]:
+def create_drawable_skel(skeleton_xml: Skeleton, armature_obj: bpy.types.Object):
     bpy.context.view_layer.objects.active = armature_obj
     bones = skeleton_xml.bones
 
     # Need to go into edit mode to modify edit bones
     bpy.ops.object.mode_set(mode="EDIT")
 
-    bone_names = {}
-    for i, bone_xml in enumerate(bones):
-        actual_name = create_bpy_bone(bone_xml, armature_obj.data)
-        bone_names[i] = actual_name
+    bone_names = []
+    for bone_xml in bones:
+        blender_name = create_bpy_bone(bone_xml, armature_obj.data)
+        bone_names.append(blender_name)
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    for i, bone_xml in enumerate(bones):
-        actual_name = bone_names[i]
-        set_bone_properties(bone_xml, armature_obj.data, actual_name)
+    for bone_xml, blender_name in zip(bones, bone_names):
+        set_bone_properties(bone_xml, armature_obj.data, blender_name)
 
-    return bone_names
+    return armature_obj
 
 
-def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature) -> str:
+def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature):
     # bpy.context.view_layer.objects.active = armature
     edit_bone = armature.edit_bones.new(bone_xml.name)
-    actual_name = edit_bone.name
     if bone_xml.parent_index != -1:
         edit_bone.parent = armature.edit_bones[bone_xml.parent_index]
 
@@ -410,15 +408,22 @@ def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature) -> str:
     edit_bone.tail = (0, 0.05, 0)
     edit_bone.matrix = mat_loc @ mat_rot @ mat_sca
 
+    if edit_bone.name != bone_xml.name:
+        # We handle property setting in OBJECT mode, see set_bone_properties
+        pass
+
     if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
-    return actual_name
+    return edit_bone.name
 
 
-def set_bone_properties(bone_xml: Bone, armature: bpy.types.Armature, name: str):
-    bl_bone = armature.bones[name]
+def set_bone_properties(bone_xml: Bone, armature: bpy.types.Armature, blender_name: str):
+    bl_bone = armature.bones[blender_name]
     bl_bone.bone_properties.tag = bone_xml.tag
+
+    if blender_name != bone_xml.name:
+        bl_bone.bone_properties.original_name = bone_xml.name
 
     # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
     flags_restricted = set(["LimitRotation", "Unk0"])

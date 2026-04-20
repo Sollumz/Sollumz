@@ -40,6 +40,7 @@ from szio.gta5 import (
 )
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..shared.shader_nodes import SzShaderNodeParameter
+from ..shared.import_skel import create_drawable_skel
 from .model_data_io import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
 from .cable_mesh_builder import CableMeshBuilder
@@ -236,105 +237,19 @@ def set_drawable_model_properties(model_props: DrawableModelProperties, model: M
 
 
 def create_drawable_root_armature(drawable: AssetDrawable, name: str) -> Object:
-    drawable_obj, _ = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.DRAWABLE)
+    drawable_obj = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.DRAWABLE)
     set_drawable_properties(drawable_obj, drawable)
 
     return drawable_obj
 
 
-def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType) -> tuple[Object, dict[int, str]]:
+def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType) -> Object:
     armature = bpy.data.armatures.new(f"{name}.skel")
     obj = create_blender_object(sollum_type, name, armature)
 
-    bone_names = create_drawable_skel(obj, skeleton)
+    create_drawable_skel(obj, skeleton)
 
-    return obj, bone_names
-
-
-def create_drawable_skel(armature_obj: Object, skeleton: Skeleton) -> dict[int, str]:
-    bpy.context.view_layer.objects.active = armature_obj
-    bones = skeleton.bones
-
-    # Need to go into edit mode to modify edit bones
-    bpy.ops.object.mode_set(mode="EDIT")
-
-    bone_names = {}
-    for i, b in enumerate(bones):
-        actual_name = add_bone(armature_obj.data, b)
-        bone_names[i] = actual_name
-
-    bpy.ops.object.mode_set(mode="OBJECT")
-
-    for i, b in enumerate(bones):
-        actual_name = bone_names[i]
-        set_bone_properties(armature_obj.data, b, actual_name)
-        add_bone_constraints(armature_obj, b, actual_name)
-
-    return bone_names
-
-
-def add_bone(armature: Armature, bone: SkelBone) -> str:
-    edit_bone = armature.edit_bones.new(bone.name)
-    actual_name = edit_bone.name
-    if bone.parent_index != -1:
-        edit_bone.parent = armature.edit_bones[bone.parent_index]
-
-    if edit_bone.parent is not None:
-        edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
-
-    return actual_name
-
-
-def set_bone_properties(armature: Armature, bone: SkelBone, name: str):
-    bl_bone = armature.bones[name]
-    bl_bone.bone_properties.tag = bone.tag
-
-    for _flag in bone.flags:
-        if _flag >= len(SkelBoneFlags):
-            continue
-        # bl_bone.bone_properties.flags.add().name = SkelBoneFlags(_flag).name
-        pass
-
-
-def add_bone_constraints(armature_obj: Object, bone: SkelBone, name: str):
-    pose_bone = armature_obj.pose.bones[name]
-
-    if bone.translation_limit:
-        add_bone_constraint_translation_limit(pose_bone, bone.translation_limit)
-
-    if bone.rotation_limit:
-        add_bone_constraint_rotation_limit(pose_bone, bone.rotation_limit)
-
-
-def add_bone_constraint_translation_limit(pose_bone: PoseBone, limit: SkelBoneTranslationLimit):
-    constraint: LimitLocationConstraint = pose_bone.constraints.new("LIMIT_LOCATION")
-    constraint.use_min_x = True
-    constraint.min_x = limit.min.x
-    constraint.use_max_x = True
-    constraint.max_x = limit.max.x
-    constraint.use_min_y = True
-    constraint.min_y = limit.min.y
-    constraint.use_max_y = True
-    constraint.max_y = limit.max.y
-    constraint.use_min_z = True
-    constraint.min_z = limit.min.z
-    constraint.use_max_z = True
-    constraint.max_z = limit.max.z
-    constraint.owner_space = "LOCAL"
-
-
-def add_bone_constraint_rotation_limit(pose_bone: PoseBone, limit: SkelBoneRotationLimit):
-    constraint: LimitRotationConstraint = pose_bone.constraints.new("LIMIT_ROTATION")
-    constraint.use_limit_x = True
-    constraint.min_x = limit.min.x
-    constraint.max_x = limit.max.x
-    constraint.use_limit_y = True
-    constraint.min_y = limit.min.y
-    constraint.max_y = limit.max.y
-    constraint.use_limit_z = True
-    constraint.min_z = limit.min.z
-    constraint.max_z = limit.max.z
-    constraint.owner_space = "LOCAL"
+    return obj
 
 
 def create_drawable_root_empty(drawable: AssetDrawable, name: str) -> Object:
