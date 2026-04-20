@@ -124,7 +124,7 @@ def create_fragment_asset_core(
     export_context().settings.targets = targets + extra_targets
 
     frag = create_asset_fragment(export_context().settings.targets)
-    frag.name = f"pack:/{remove_number_suffix(frag_obj.sz_original_name or frag_obj.name)}"
+    frag.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
     frag.flags = 1  # all fragments need this flag (uses cache entry)
     frag.template_asset = FragmentTemplateAsset[frag_obj.fragment_properties.template_asset]
     frag.unbroken_elasticity = frag_obj.fragment_properties.unbroken_elasticity
@@ -438,7 +438,7 @@ def create_frag_phys_groups(
             continue
 
         bone_index = get_bone_index(frag_obj.data, bone)
-        group = init_frag_phys_group(bone.bone_properties.original_name or bone.name, bone.group_properties)
+        group = init_frag_phys_group(bone.name, bone.group_properties)
         groups_by_bone[bone_index].append(group)
 
         if bone.group_properties.flags[GroupFlagBit.USE_GLASS_WINDOW]:
@@ -462,12 +462,12 @@ def create_frag_phys_groups(
         if parent_bone is None:
             return 255
 
-        parent_original_name = parent_bone.bone_properties.original_name or parent_bone.name
-        if not parent_bone.sollumz_use_physics or parent_original_name not in group_ind_by_name:
+        parent_name = parent_bone.name
+        if not parent_bone.sollumz_use_physics or parent_name not in group_ind_by_name:
             # Parent has no frag group, try with grandparent
             return _get_group_parent_index(parent_bone)
 
-        return group_ind_by_name[parent_original_name]
+        return group_ind_by_name[parent_name]
 
     # Set group parent indices
     final_groups = []

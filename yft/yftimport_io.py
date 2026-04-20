@@ -119,7 +119,7 @@ def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name:
 
     materials, hi_materials = shader_group_to_materials_with_hi(shader_group, hi_shader_group)
 
-    frag_obj = create_frag_armature(frag, name)
+    frag_obj, bone_names = create_frag_armature(frag, name)
 
     drawable_obj = create_frag_drawable(frag, hi_frag, frag_obj,  materials, hi_materials)
     damaged_drawable_obj = create_frag_drawable(frag, hi_frag, frag_obj, materials, hi_materials, damaged=True)
@@ -130,9 +130,9 @@ def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name:
             create_frag_collisions(frag, frag_obj, damaged=True)
 
         create_phys_lod(frag, frag_obj)
-        apply_phys_groups_to_bones(frag, frag_obj)
+        apply_phys_groups_to_bones(frag, frag_obj, bone_names)
 
-        create_phys_child_meshes(frag, hi_frag, frag_obj, drawable_obj, materials, hi_materials)
+        create_phys_child_meshes(frag, hi_frag, frag_obj, drawable_obj, materials, hi_materials, bone_names)
 
     create_frag_env_cloth(frag, frag_obj, drawable_obj, materials)
 
@@ -146,16 +146,16 @@ def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name:
     return frag_obj
 
 
-def create_frag_armature(frag: AssetFragment, name: Optional[str] = None) -> Object:
+def create_frag_armature(frag: AssetFragment, name: Optional[str] = None) -> tuple[Object, dict[int, str]]:
     """Create the fragment armature along with the bones and rotation limits."""
     name = name or frag.name.replace("pack:/", "")
     drawable = frag.base_drawable
-    frag_obj = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.FRAGMENT)
+    frag_obj, bone_names = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.FRAGMENT)
     frag_obj.fragment_properties.template_asset = frag.template_asset.name
     frag_obj.fragment_properties.unbroken_elasticity = frag.unbroken_elasticity
     frag_obj.fragment_properties.gravity_factor = frag.gravity_factor
     frag_obj.fragment_properties.buoyancy_factor = frag.buoyancy_factor
-    return frag_obj
+    return frag_obj, bone_names
 
 
 def create_frag_drawable(
@@ -290,24 +290,28 @@ def create_phys_lod(frag: AssetFragment, frag_obj: Object):
     arch_props.buoyancy_factor = arch.buoyancy_factor
 
 
-def apply_phys_groups_to_bones(frag: AssetFragment, frag_obj: Object):
+def apply_phys_groups_to_bones(frag: AssetFragment, frag_obj: Object, bone_names: dict[int, str]):
     """Set the physics group properties for all bones in the armature."""
     armature = frag_obj.data
     groups = frag.physics.lod1.groups
+    skeleton_bones = frag.base_drawable.skeleton.bones
+
+    # Pre-map original bone names to actual Blender names
+    bone_name_map = {skeleton_bones[i].name: name for i, name in bone_names.items()}
 
     for group in groups:
-        bone = armature.bones.get(group.name, None)
+        bone = None
+        if group.name in bone_name_map:
+            bone = armature.bones.get(bone_name_map[group.name])
+
         if bone is None:
-            # Bone not found, try a case-insensitive search
+            # Fallback to case-insensitive match on Blender names
             group_name_lower = group.name.lower()
-            for armature_bone in armature.bones:
-                if group_name_lower == armature_bone.name.lower():
-                    bone = armature_bone
-                    break
-            else:
-                # Still no bone found
-                logger.warning(f"No bone exists for the physics group {group.name}! Skipping...")
-                continue
+            bone = next((b for b in armature.bones if b.name.lower() == group_name_lower), None)
+
+        if bone is None:
+            logger.warning(f"No bone exists for the physics group {group.name}! Skipping...")
+            continue
 
         bone.sollumz_use_physics = True
         apply_phys_group_to_bone(frag, group, bone)
@@ -369,6 +373,7 @@ def create_phys_child_meshes(
     drawable_obj: Object,
     materials: list[Material],
     hi_materials: list[Material],
+    bone_names: dict[int, str]
 ):
     """Create all Fragment.Physics.LOD1.Children meshes. (Only LOD1 currently supported)"""
     lod = frag.physics.lod1
@@ -376,17 +381,18 @@ def create_phys_child_meshes(
     hi_children = hi_frag.physics.lod1.children if hi_frag else []
     bones = frag.base_drawable.skeleton.bones
 
-    bone_name_by_tag: dict[str, SkelBone] = {bone.tag: bone.name for bone in bones}
+    bone_index_by_tag: dict[int, int] = {bone.tag: i for i, bone in enumerate(bones)}
 
     for i, child in enumerate(children):
         if not child.drawable.models:
             continue
 
-        if child.bone_tag not in bone_name_by_tag:
+        if child.bone_tag not in bone_index_by_tag:
             logger.warning("A fragment child has an invalid bone tag! Skipping...")
             continue
 
-        bone_name = bone_name_by_tag[child.bone_tag]
+        bone_index = bone_index_by_tag[child.bone_tag]
+        bone_name = bone_names[bone_index]
 
         child_drawable = child.drawable
         hi_child_drawable = None

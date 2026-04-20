@@ -116,7 +116,7 @@ def create_drawable_asset(
             out_embedded_textures.extend(shader_group.embedded_textures.values())
 
     drawable = create_asset_drawable(export_context().settings.targets, is_frag, parent_drawable)
-    drawable.name = remove_number_suffix((drawable_obj.sz_original_name or drawable_obj.name).lower())
+    drawable.name = remove_number_suffix(drawable_obj.name).lower()
     drawable.lod_thresholds = {
         IOLodLevel.HIGH: drawable_obj.drawable_properties.lod_dist_high,
         IOLodLevel.MEDIUM: drawable_obj.drawable_properties.lod_dist_med,
@@ -779,7 +779,7 @@ def create_bone(pose_bone: PoseBone, armature: Armature, armature_matrix: Matrix
     pos, rot, scale = get_bone_transforms(bone, armature_matrix)
 
     return SkelBone(
-        name=bone.bone_properties.original_name or bone.name,
+        name=bone.name,
         tag=bone.bone_properties.tag,
         flags=flags,
         position=pos,

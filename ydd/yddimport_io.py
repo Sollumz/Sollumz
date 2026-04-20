@@ -154,10 +154,8 @@ def create_drawable_dictionary(
 
 
 def create_armature_parent(name: str, skel: AssetFragment) -> Object:
-    armature = bpy.data.armatures.new(f"{name}.skel")
-    dict_obj = create_blender_object(SollumType.DRAWABLE_DICTIONARY, name, armature)
-    create_drawable_skel(dict_obj, skel.drawable.skeleton)
-    return dict_obj
+    obj, _ = create_armature_obj_from_skel(skel.drawable.skeleton, name, SollumType.DRAWABLE_DICTIONARY)
+    return obj
 
 
 def find_first_skeleton(dwd: AssetDrawableDictionary) -> Optional[Skeleton]:
