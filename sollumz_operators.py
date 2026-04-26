@@ -177,8 +177,8 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
 
     filter_glob: bpy.props.StringProperty(
         default="".join(f"*{ext};" for ext in (
-            ".ybn", ".ydr", ".ydd", ".yft", ".ytyp",
-            ".ybn.xml", ".ydr.xml", ".ydd.xml", ".yft.xml", ".ytyp.xml", ".ymap.xml", ".ycd.xml", ".ynv.xml"
+            ".ybn", ".ydr", ".ydd", ".yft", ".ytyp", ".ytd",
+            ".ybn.xml", ".ydr.xml", ".ydd.xml", ".yft.xml", ".ytyp.xml", ".ytd.xml", ".ymap.xml", ".ycd.xml", ".ynv.xml"
         )),
         options={"HIDDEN", "SKIP_SAVE"},
         maxlen=255,
@@ -204,6 +204,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             self.directory = bpy.path.abspath(self.directory)
 
             filenames = [f.name for f in self.files]
+            filenames, ytd_filenames = self._separate_ytd_filenames(filenames)
             filenames, ytyp_filenames = self._separate_ytyp_filenames(filenames)
             filenames = self._dedupe_hi_yft_filenames(filenames)
 
@@ -214,6 +215,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             from .ydd.yddimport_io import import_ydd as import_ydd_asset, find_ydd_external_dependencies
             from .yft.yftimport_io import import_yft as import_yft_asset, find_yft_external_dependencies
             from .ytyp.ytypimport_io import import_ytyp as import_ytyp_asset
+            from .ytd.ytdimport import import_ytd as import_ytd_asset
             from .iecontext import import_context_scope, ImportContext
 
             prefs_import_settings = self if self.use_custom_settings else get_import_settings()
@@ -247,7 +249,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         return True
 
                     if (load_result := try_load_asset(filepath, return_target=True)) is None:
-                        if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp"}:
+                        if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp", ".ytd"}:
                             logger.warning(f"Could not import '{filepath}'. {PYMATERIA_REQUIRED_MSG}")
                         else:
                             logger.warning(f"Could not import '{filepath}'. Unsupported file format.")
@@ -293,6 +295,8 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                                 import_yft_asset(asset_with_deps, name)
                             case AssetType.MAP_TYPES:
                                 import_ytyp_asset(asset, name)
+                            case AssetType.TEXTURE_DICTIONARY:
+                                import_ytd_asset(asset, name)
                             case _:
                                 assert False, f"Unsupported asset type '{asset.ASSET_TYPE}'"
 
@@ -301,6 +305,10 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                 except:
                     logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
                     return False
+
+            # Import the .ytds before all the assets to ensure that their images are used
+            for filename in ytd_filenames:
+                _import_asset(filename)
 
             for filename in filenames:
                 _import_asset(filename)
@@ -335,6 +343,14 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             )
         ]
 
+    def _separate_ytd_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
+        """Separate the filenames list into two lists, one with all the assets and another one only with .ytds."""
+        asset_filenames, ytd_filenames = [], []
+        for f in filenames:
+            dest = ytd_filenames if f.endswith(".ytd") or f.endswith(".ytd.xml") else asset_filenames
+            dest.append(f)
+        return asset_filenames, ytd_filenames
+
     def _separate_ytyp_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
         """Separate the filenames list into two lists, one with all the assets and another one only with .ytyps."""
         asset_filenames, ytyp_filenames = [], []
@@ -358,7 +374,7 @@ if bpy.app.version >= (4, 1, 0):
         bl_import_operator = SOLLUMZ_OT_import_assets.bl_idname
         # Supports handling multiple extensions, but doesn't support multi-dot extensions like .yft.xml. `.xml` should
         # be fine because the operator checks the extension, but it is a bit broad.
-        bl_file_extensions = ".ybn;.ydr;.ydd;.yft;.ytyp;.xml;"
+        bl_file_extensions = ".ybn;.ydr;.ydd;.yft;.ytyp;.ytd;.xml;"
 
         @classmethod
         def poll_drop(cls, context):

@@ -71,7 +71,7 @@ def create_drawable(
     """Create a drawable object. . ``external_armature`` allows for bones to be rigged to an armature object that is not the parent drawable."""
     name = name or drawable.name
 
-    extract_embedded_textures(drawable.shader_group)
+    extract_embedded_textures_from_shader_group(drawable.shader_group)
 
     materials = materials or shader_group_to_materials(drawable.shader_group)
     hi_materials = hi_materials or []
@@ -258,45 +258,12 @@ def create_drawable_root_empty(drawable: AssetDrawable, name: str) -> Object:
     return drawable_obj
 
 
-def extract_embedded_textures(shader_group: ShaderGroup | None):
-    import shutil
-
+def extract_embedded_textures_from_shader_group(shader_group: ShaderGroup | None):
     if not shader_group or not shader_group.embedded_textures:
         return
 
-    ctx = import_context()
-    if ctx.settings.textures_mode == ImportTexturesMode.PACK:
-        return
-
-    textures = [t.data for t in shader_group.embedded_textures.values() if t.data is not None]
-    if not textures and ctx.settings.textures_mode == ImportTexturesMode.CUSTOM_DIR:
-        # If no embedded textures data (e.g. importing CWXML), try to lookup external texture files in import directory
-        # so we can copy them to the user custom directory
-        textures_import_dir = ctx.textures_import_directory
-        if textures_import_dir.is_dir():
-            from szio.types import DataSource
-            textures = [
-                DataSource.create(p)
-                for t in shader_group.embedded_textures.values()
-                if (p := textures_import_dir / f"{t.name}.dds").is_file()
-            ]
-
-    if not textures:
-        return
-
-    textures_extract_dir = ctx.textures_extract_directory
-    if textures_extract_dir is None:
-        return
-
-    textures_extract_dir.mkdir(parents=True, exist_ok=True)
-    for tex_data in textures:
-        tex_file = textures_extract_dir / tex_data.name
-        if tex_file.exists():
-            # Don't overwrite existing files
-            continue
-
-        with tex_data.open() as src, tex_file.open("wb") as dst:
-            shutil.copyfileobj(src, dst)
+    from ..ytd.ytdimport import extract_embedded_textures
+    extract_embedded_textures(shader_group.embedded_textures)
 
 
 def shader_group_to_materials(shader_group: ShaderGroup) -> list[Material]:
@@ -435,44 +402,8 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
 
 
 def lookup_texture_file(texture_name: str, model_textures_directory: Optional[Path]) -> Optional[Path]:
-    """Searches for a DDS file with the given ``texture_name``.
-    The search order is as follows:
-      1. Check if file exists in ``model_textures_directory``.
-      2. Check the shared textures directories defined by the user in the add-on preferences.
-        2.1. These are searched in the priority order set by the user.
-        2.2. The user can also set whether the search is recursive or not.
-      3. If not found, returns ``None``.
-    """
-    texture_filename = f"{texture_name}.dds"
-
-    def _lookup_in_directory(directory: Path, recursive: bool) -> Optional[Path]:
-        if not directory.is_dir():
-            return None
-
-        if recursive:
-            # NOTE: rglob returns files in arbitrary order. We are just taking whatever is the first one it returns.
-            #       Maybe we should enforce some kind of sort (i.e. alphabetical), but really only makes sense to have
-            #       a single texture with this the name in the directory tree.
-            texture_path = next(directory.rglob(texture_filename), None)
-        else:
-            texture_path = directory.joinpath(texture_filename)
-
-        return texture_path if texture_path is not None and texture_path.is_file() else None
-
-    # First, check the textures directory next to the model we imported
-    found_texture_path = model_textures_directory and _lookup_in_directory(model_textures_directory, False)
-    if found_texture_path is not None:
-        return found_texture_path
-
-    # Texture not found, search the shared textures directories listed in preferences
-    prefs = get_addon_preferences(bpy.context)
-    for d in prefs.shared_textures_directories:
-        found_texture_path = _lookup_in_directory(Path(d.path), d.recursive)
-        if found_texture_path is not None:
-            return found_texture_path
-
-    # Texture still not found
-    return None
+    from ..ytd.ytdimport import lookup_texture_file as _lookup_texture_file_impl
+    return _lookup_texture_file_impl(texture_name, model_textures_directory, use_shared_textures_directories=True)
 
 
 def is_non_color_texture(shader_filename: str, param_name: str) -> bool:

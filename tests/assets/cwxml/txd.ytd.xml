@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>test_image</Name>
+  <Unk32 value="0" />
+  <Usage>UNKNOWN</Usage>
+  <UsageFlags>0</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="64" />
+  <Height value="64" />
+  <MipLevels value="1" />
+  <Format>D3DFMT_DXT5</Format>
+  <FileName>test_image.dds</FileName>
+ </Item>
+</TextureDictionary>
