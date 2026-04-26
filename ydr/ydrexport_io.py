@@ -1,11 +1,9 @@
-import bmesh
 import bpy
 from bpy.types import (
     Object,
     Material,
     Mesh,
     Bone,
-    VertexGroup,
     Armature,
     PoseBone,
     ShaderNodeTexImage,
@@ -24,9 +22,9 @@ from ..lods import operates_on_lod_level
 
 from szio.types import DataSource
 from szio.gta5 import (
-    create_asset_drawable,
     AssetBound,
     AssetDrawable,
+    AssetFragDrawable,
     LodLevel as IOLodLevel,
     EmbeddedTexture,
     ShaderGroup,
@@ -90,14 +88,14 @@ def export_ydr(obj: Object) -> ExportBundle:
 
 def create_drawable_asset(
     drawable_obj: Object,
-    armature_obj: Optional[Object] = None,
-    materials: Optional[list[Material]] = None,
+    armature_obj: Object | None = None,
+    materials: list[Material] | None = None,
     is_frag: bool = False,
-    parent_drawable: Optional[AssetDrawable] = None,
+    parent_drawable: AssetDrawable | None = None,
     out_embedded_textures: list[EmbeddedTexture] | None = None,
     hi: bool = False,
     char_cloth: CharacterCloth | None = None,
-) -> Optional[AssetDrawable]:
+) -> AssetDrawable | None:
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
 
     materials = materials or get_sollumz_materials(drawable_obj)
@@ -115,7 +113,7 @@ def create_drawable_asset(
         if out_embedded_textures is not None:
             out_embedded_textures.extend(shader_group.embedded_textures.values())
 
-    drawable = create_asset_drawable(export_context().settings.targets, is_frag, parent_drawable)
+    drawable = AssetFragDrawable() if is_frag else AssetDrawable()
     drawable.name = remove_number_suffix(drawable_obj.name.lower())
     drawable.lod_thresholds = {
         IOLodLevel.HIGH: drawable_obj.drawable_properties.lod_dist_high,

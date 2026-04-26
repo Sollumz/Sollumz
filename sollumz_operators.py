@@ -246,13 +246,14 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                     if _import_asset_legacy(str(filepath)):
                         return True
 
-                    asset = try_load_asset(filepath)
-                    if asset is None:
+                    if (load_result := try_load_asset(filepath, return_target=True)) is None:
                         if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp"}:
                             logger.warning(f"Could not import '{filepath}'. {PYMATERIA_REQUIRED_MSG}")
                         else:
                             logger.warning(f"Could not import '{filepath}'. Unsupported file format.")
                         return False
+
+                    asset, asset_target = load_result
 
                     name = filepath.name
                     i = name.find('.')
@@ -260,7 +261,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         name = name[:i]
 
                     # Search asset external dependencies
-                    with import_context_scope(ImportContext(name, directory, import_settings)):
+                    with import_context_scope(ImportContext(name, asset_target, directory, import_settings)):
                         match asset.ASSET_TYPE:
                             case AssetType.DRAWABLE_DICTIONARY:
                                 asset_with_deps = find_ydd_external_dependencies(asset, name)
@@ -280,7 +281,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         return False
 
                     # Import asset into Blender
-                    with import_context_scope(ImportContext(name, directory, import_settings)):
+                    with import_context_scope(ImportContext(name, asset_target, directory, import_settings)):
                         match asset.ASSET_TYPE:
                             case AssetType.BOUND:
                                 import_ybn_asset(asset, name)
@@ -621,7 +622,7 @@ class SOLLUMZ_OT_export_assets(ExportSettingsBase, TimedOperator, Operator):
 
                     if success:
                         if export_bundle:
-                            export_bundle.save(directory)
+                            export_bundle.save(directory, export_settings.targets)
 
                         if op_log.has_warnings_or_errors:
                             logger.info(

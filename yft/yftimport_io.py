@@ -35,7 +35,7 @@ from .. import logger
 
 
 def find_yft_external_dependencies(asset: AssetFragment, name: str) -> AssetWithDependencies | None:
-    prefers_xml = asset.ASSET_FORMAT == AssetFormat.CWXML
+    prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
     if is_hi_frag(name):
         # User selected a _hi.yft, look for the base .yft file
         non_hi_frag = try_load_non_hi_frag(name, prefers_xml)

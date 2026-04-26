@@ -17,7 +17,6 @@ from szio.gta5 import (
     CharacterClothBinding,
     CharacterClothController,
     CharacterCloth,
-    create_asset_cloth_dictionary,
 )
 from ..tools.blenderhelper import (
     get_evaluated_obj,
@@ -378,8 +377,7 @@ def cloth_char_export_dictionary(dwd_obj: Object) -> AssetClothDictionary | None
         cloths[cloth.name] = cloth
 
     if cloths:
-        cld = create_asset_cloth_dictionary(export_context().settings.targets)
-        cld.cloths = cloths
+        cld = AssetClothDictionary(cloths=cloths)
         return cld
     else:
         return None

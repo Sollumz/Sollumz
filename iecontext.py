@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from enum import Enum, auto
 
-from szio.gta5 import Asset, AssetFormat, AssetTarget, save_asset
+from szio.gta5 import Asset, AssetFormat, AssetTarget, SaveOptions, save_asset
 from szio.types import DataSource
 
 from .ydr.vertex_buffer_builder_domain import VBBuilderDomain
@@ -40,6 +40,7 @@ class ImportContext:
     """Context of an import operation."""
 
     asset_name: str
+    asset_target: AssetTarget
     directory: Path
     settings: ImportSettings
 
@@ -77,33 +78,29 @@ class ExportBundle:
     extra_files: tuple[DataSource, ...]
     """Additional files to write to a folder with same name as the asset, generally embedded textures."""
 
-    def save(self, directory: Path):
+    def save(self, directory: Path, targets: Sequence[AssetTarget]):
         """Writes the whole bundle to disk at the specified directory."""
 
         from .meta import sollumz_version
 
-        tool_metadata = "Sollumz", sollumz_version()
-
-        gen8_directory = directory / "gen8"
-        gen9_directory = directory / "gen9"
-        main_asset = self.main_asset
-        save_asset(main_asset, directory, self.asset_name, tool_metadata, gen8_directory, gen9_directory)
-        for suffix, asset in self.secondary_assets:
-            save_asset(asset, directory, self.asset_name + suffix, tool_metadata, gen8_directory, gen9_directory)
-
-        do_write_extra_files = self.extra_files and (
-            # We only use extra_files for embedded textures, which are only really needed for CWXML. Initially, these
-            # were always copied but users requested that this not be done for native format.
-            # If we start using extra_files for something else, we will need to rework this.
-            main_asset.ASSET_FORMAT == AssetFormat.CWXML
-            or (
-                main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and AssetFormat.CWXML in main_asset.target_formats()
-            )
+        options = SaveOptions(
+            gen8_directory=directory / "gen8",
+            gen9_directory=directory / "gen9",
+            tool_metadata=("Sollumz", sollumz_version()),
         )
+        main_asset = self.main_asset
+        save_asset(main_asset, targets, directory, self.asset_name, options)
+        for suffix, asset in self.secondary_assets:
+            save_asset(asset, targets, directory, self.asset_name + suffix, options)
+
+        # We only use extra_files for embedded textures, which are only really needed for CWXML. Initially, these
+        # were always copied but users requested that this not be done for native format.
+        # If we start using extra_files for something else, we will need to rework this.
+        do_write_extra_files = self.extra_files and any(t.format == AssetFormat.CWXML for t in targets)
 
         if do_write_extra_files:
-            if main_asset.ASSET_FORMAT == AssetFormat.MULTI_TARGET and len(main_asset.target_versions()) > 1:
-                output_dirs = (gen8_directory, gen9_directory)
+            if len({t.version for t in targets}) > 1:
+                output_dirs = (options.gen8_directory, options.gen9_directory)
             else:
                 output_dirs = (directory,)
 

@@ -583,7 +583,7 @@ class SOLLUMZ_OT_export_ytyp_io(ExportSettingsBase, bpy.types.Operator):
                     export_bundle = export_ytyp_asset(context.scene, context.scene.ytyp_index)
                 success = bool(export_bundle)
                 if success:
-                    export_bundle.save(directory)
+                    export_bundle.save(directory, export_settings.targets)
                     if op_log.has_warnings_or_errors:
                         logger.info(
                             f"Exported '{ytyp_name}' with WARNINGS or ERRORS! Please check the Info Log for details."

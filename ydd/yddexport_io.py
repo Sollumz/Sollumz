@@ -6,7 +6,6 @@ from szio.gta5 import (
     EmbeddedTexture,
     AssetDrawableDictionary,
     AssetClothDictionary,
-    create_asset_drawable_dictionary,
 )
 from ..ydr.ydrexport_io import create_drawable_asset
 from ..ydr.cloth_char_io import cloth_char_export_dictionary
@@ -65,8 +64,7 @@ def create_drawable_dictionary_asset(
 
             drawables[drawable.name] = drawable
 
-    dwd = create_asset_drawable_dictionary(export_context().settings.targets)
-    dwd.drawables = drawables
+    dwd = AssetDrawableDictionary(drawables=drawables)
     return dwd
 
 

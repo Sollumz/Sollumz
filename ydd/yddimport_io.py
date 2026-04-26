@@ -26,7 +26,7 @@ from .. import logger
 
 
 def find_ydd_external_dependencies(asset: AssetDrawableDictionary, name: str) -> AssetWithDependencies | None:
-    prefers_xml = asset.ASSET_FORMAT == AssetFormat.CWXML
+    prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
     deps = {}
     if import_context().settings.import_external_skeleton:
         # TODO: if multiple .yft, match by name and show a popup to allow the user to select the correct one

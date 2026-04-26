@@ -13,6 +13,7 @@ from ..sollumz_helper import get_parent_inverse
 from ..tools.blenderhelper import get_pose_inverse, get_evaluated_obj
 from szio.gta5 import (
     AssetBound,
+    AssetBoundComposite,
     BoundType,
     BoundPrimitive,
     BoundPrimitiveType,
@@ -20,7 +21,6 @@ from szio.gta5 import (
     CollisionMaterial,
     CollisionFlags,
     CollisionMaterialFlags,
-    create_asset_bound,
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (
@@ -45,7 +45,7 @@ def create_bound_composite_asset(
     obj: Object,
     out_child_obj_to_index: dict[Object, int] = None,
     allow_planes: bool = False,
-) -> Optional[AssetBound]:
+) -> AssetBoundComposite:
     assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
     if not obj.children:
@@ -96,7 +96,7 @@ def create_bound_composite_asset(
     else:
         inertia = Vector((1.0, 1.0, 1.0))
 
-    composite = create_asset_bound(export_context().settings.targets, BoundType.COMPOSITE)
+    composite = AssetBoundComposite()
     composite.children = children
     composite.extent = bbmin, bbmax
     composite.centroid = centroid
@@ -111,7 +111,7 @@ def create_bound_composite_asset(
 
 def init_bound_asset(bound_type: BoundType, obj: Object) -> AssetBound:
     """Create an ``AssetBound`` instance and set base properties from the Blender object properties."""
-    bound = create_asset_bound(export_context().settings.targets, bound_type)
+    bound = AssetBound.create(bound_type)
     bound.composite_transform = calc_composite_transforms(obj).transposed()
 
     if obj.type == "MESH":
@@ -147,14 +147,14 @@ def init_bound_asset(bound_type: BoundType, obj: Object) -> AssetBound:
 
 def init_bound_geometry_asset(obj: Object) -> tuple[AssetBound, list[BoundVertex], list[BoundPrimitive]]:
     geom = init_bound_asset(BoundType.GEOMETRY, obj)
-    geom.material = replace(geom.material, material_index=0)
+    geom.material = None
     vertices, primitives = init_bound_geometry_primitives(geom, obj)
     return geom, vertices, primitives
 
 
 def init_bound_bvh_asset(obj: Object) -> tuple[AssetBound, list[BoundVertex], list[BoundPrimitive]]:
     bvh = init_bound_asset(BoundType.BVH, obj)
-    bvh.material = replace(bvh.material, material_index=0)
+    bvh.material = None
     vertices, primitives = init_bound_geometry_primitives(bvh, obj)
     return bvh, vertices, primitives
 
