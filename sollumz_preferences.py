@@ -156,6 +156,34 @@ class ExportSettingsBase:
         update=_on_update_thunk,
     )
 
+    export_ytyps: BoolProperty(
+        name="Export YTYPs",
+        update=_on_update_thunk,
+    )
+    export_ytyps_include: EnumProperty(
+        name="Include YTYPs",
+        default="ALL",
+        items=(
+            ("ALL", "All", "Export all YTYPs in the scene"),
+            ("SELECTED", "Selected", "Export the selected YTYP"),
+        ),
+        update=_on_update_thunk,
+    )
+
+    export_ytds: BoolProperty(
+        name="Export Texture Dictionaries",
+        update=_on_update_thunk,
+    )
+    export_ytds_include: EnumProperty(
+        name="Include Texture Dictionaries",
+        default="ALL",
+        items=(
+            ("ALL", "All", "Export all texture dictionaries in the scene"),
+            ("SELECTED", "Selected", "Export the selected texture dictionaries"),
+        ),
+        update=_on_update_thunk,
+    )
+
     def to_export_context_settings(self) -> "ExportSettings":
         import itertools
         from .iecontext import ExportSettings, VBBuilderDomain

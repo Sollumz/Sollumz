@@ -10,7 +10,7 @@ from bpy.props import (
 from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
-from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect, ImportAssetsOperatorImpl
+from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect, ImportAssetsOperatorImpl, ExportAssetsOperatorImpl
 from ...sollumz_preferences import get_export_settings, get_addon_preferences, ExportSettingsBase
 from ...ydr.cloth_env import cloth_env_find_mesh_objects
 from ..utils import get_selected_ytyp, get_selected_archetype
@@ -512,90 +512,12 @@ class SOLLUMZ_OT_import_ytyp_io(ImportAssetsOperatorImpl, bpy.types.Operator):
     )
 
 
-class SOLLUMZ_OT_export_ytyp_io(ExportSettingsBase, bpy.types.Operator):
+class SOLLUMZ_OT_export_ytyp_io(ExportAssetsOperatorImpl, bpy.types.Operator):
     """Export the selected YTYP"""
     bl_idname = "sollumz.export_ytyp_io"
     bl_label = "Export YTYP"
-
-    directory: StringProperty(
-        name="Output directory",
-        description="Select export output directory",
-        subtype="DIR_PATH",
-        options={"HIDDEN"}
-    )
-
-    # These are for scripts that use these operators to override the settings and avoid messing with the user preferences.
-    use_custom_settings: BoolProperty(
-        name="Use Custom Settings",
-        description="Use the settings defined in this operator instead of user preferences",
-        default=False,
-        options={"HIDDEN", "SKIP_SAVE"}
-    )
-
-    def draw(self, context):
-        prefs = get_addon_preferences(context)
-        if prefs.legacy_import_export:
-            return
-
-        export_prefs = prefs.export_settings
-        from szio.gta5 import AssetFormat, is_provider_available
-        row = self.layout.row(align=False)
-        col = row.column(align=True, heading="Format")
-        for f in ("NATIVE", "CWXML"):
-            subrow = col.row(align=True)
-            subrow.enabled = is_provider_available(AssetFormat[f])
-            subrow.prop_enum(export_prefs, "target_formats", f)
-
-        col = row.column(align=True, heading="Version")
-        for f in ("GEN8", "GEN9"):
-            col.prop_enum(export_prefs, "target_versions", f)
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
+    sz_export_types = {"YTYP"}
 
     @classmethod
     def poll(cls, context):
-        return 0 <= context.scene.ytyp_index < len(context.scene.ytyps)
-
-    def execute(self, context):
-        with logger.use_operator_logger(self) as op_log:
-            prefs_export_settings = self if self.use_custom_settings else get_export_settings()
-
-            from pathlib import Path
-            from ..ytypexport_io import export_ytyp as export_ytyp_asset
-            from ...iecontext import export_context_scope, ExportContext
-
-            export_settings = prefs_export_settings.to_export_context_settings()
-            if not export_settings.targets:
-                from szio.gta5 import AssetFormat, AssetVersion, AssetTarget
-                export_settings.targets = (AssetTarget(AssetFormat.CWXML, AssetVersion.GEN8),)
-                logger.warning(
-                    "No export target found. Make sure you select both Format and Version in the export settings. "
-                    "Defaulting to CW XML / Gen 8."
-                )
-
-            directory = Path(bpy.path.abspath(self.directory))
-
-            ytyp_name = context.scene.ytyps[context.scene.ytyp_index].name
-            try:
-                with export_context_scope(ExportContext(ytyp_name, export_settings)):
-                    export_bundle = export_ytyp_asset(context.scene, context.scene.ytyp_index)
-                success = bool(export_bundle)
-                if success:
-                    export_bundle.save(directory, export_settings.targets)
-                    if op_log.has_warnings_or_errors:
-                        logger.info(
-                            f"Exported '{ytyp_name}' with WARNINGS or ERRORS! Please check the Info Log for details."
-                        )
-                    else:
-                        logger.info(f"Successfully exported '{ytyp_name}'")
-                else:
-                    if op_log.has_warnings_or_errors:
-                        logger.info(
-                            f"Failed to export '{ytyp_name}', ERRORS found! Please check the Info Log for details."
-                        )
-                return {"FINISHED"}
-            except Exception:
-                logger.error(f"Error exporting: {ytyp_name} \n {traceback.format_exc()}")
-                return {"CANCELLED"}
+        return context.scene.ytyps

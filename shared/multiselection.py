@@ -754,7 +754,8 @@ def multiselect_ui_draw_list(
         rows=3
     )
 
-    side_col.separator()
+    if add_operator or remove_operator:
+        side_col.separator()
     side_col.menu(context_menu_cls.bl_idname, icon="DOWNARROW_HLT", text="")
 
     return list_col, side_col

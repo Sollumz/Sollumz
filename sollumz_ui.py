@@ -31,8 +31,10 @@ def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, rem
     list_col.template_list(*temp_list_args, **temp_list_kwargs)
     side_col = row.column()
     col = side_col.column(align=True)
-    col.operator(add_operator, text="", icon="ADD")
-    col.operator(remove_operator, text="", icon="REMOVE")
+    if add_operator:
+        col.operator(add_operator, text="", icon="ADD")
+    if remove_operator:
+        col.operator(remove_operator, text="", icon="REMOVE")
 
     return list_col, side_col
 
@@ -277,6 +279,96 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
         layout.prop(settings, "ymap_box_occluders")
         layout.prop(settings, "ymap_model_occluders")
         layout.prop(settings, "ymap_car_generators")
+
+
+class _SollumzExportYtypPanel(SollumzExportSettingsPanel):
+    bl_label = "Archetype Definitions"
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+        layout.enabled = self.is_enabled(settings)
+        layout.prop(settings, "export_ytyps_include", text="Include", expand=True)
+        if settings.export_ytyps_include == "SELECTED":
+            from .ytyp.ui.ytyp import SOLLUMZ_UL_YTYP_LIST
+
+            layout.template_list(
+                SOLLUMZ_UL_YTYP_LIST.bl_idname,
+                "",
+                bpy.context.scene, "ytyps",
+                bpy.context.scene, "ytyp_index",
+                rows=3
+            )
+
+        layout.separator()
+        layout.prop(settings, "apply_transforms")
+
+    def is_enabled(self, settings: SollumzExportSettings):
+        return True
+
+
+class SOLLUMZ_PT_export_ytyp_generic(bpy.types.Panel, _SollumzExportYtypPanel):
+    """Panel with YTYP export settings used in the 'Export RAGE Assets' button."""
+    bl_order = 6
+
+    def draw_header(self, context):
+        settings = self.get_settings(context)
+        self.layout.prop(settings, "export_ytyps", text="")
+
+    def is_enabled(self, settings: SollumzExportSettings):
+        return settings.export_ytyps
+
+
+class SOLLUMZ_PT_export_ytyp_concrete(bpy.types.Panel, _SollumzExportYtypPanel):
+    """Panel with YTYP export settings used in the 'Export YTYP' button.
+    Same as the generic one but without the header.
+    """
+    operator_id = {"SOLLUMZ_OT_export_ytyp_io"}
+    bl_options = {"HIDE_HEADER"}
+    bl_order = 0
+
+
+class _SollumzExportYtdPanel(SollumzExportSettingsPanel):
+    bl_label = "Texture Dictionaries"
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+        layout.enabled = self.is_enabled(settings)
+        layout.prop(settings, "export_ytds_include", text="Include", expand=True)
+        if settings.export_ytds_include == "SELECTED":
+            from .shared.multiselection import multiselect_ui_draw_list
+            from .ytd.ui import SOLLUMZ_UL_txd_list, SOLLUMZ_MT_txd_list_context_menu
+
+            multiselect_ui_draw_list(
+                layout,
+                bpy.context.scene.sz_txds.texture_dictionaries,
+                "",
+                "",
+                SOLLUMZ_UL_txd_list,
+                SOLLUMZ_MT_txd_list_context_menu,
+                "tool_panel",
+            )
+
+    def is_enabled(self, settings: SollumzExportSettings):
+        return True
+
+
+class SOLLUMZ_PT_export_ytd_generic(bpy.types.Panel, _SollumzExportYtdPanel):
+    """Panel with YTD export settings used in the 'Export RAGE Assets' button."""
+    bl_order = 7
+
+    def draw_header(self, context):
+        settings = self.get_settings(context)
+        self.layout.prop(settings, "export_ytds", text="")
+
+    def is_enabled(self, settings: SollumzExportSettings):
+        return settings.export_ytds
+
+
+class SOLLUMZ_PT_export_ytd_concrete(bpy.types.Panel, _SollumzExportYtdPanel):
+    """Panel with YTD export settings used in the 'Export YTD' button.
+    Same as the generic one but without the header.
+    """
+    operator_id = {"SOLLUMZ_OT_export_ytd"}
+    bl_options = {"HIDE_HEADER"}
+    bl_order = 0
 
 
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):

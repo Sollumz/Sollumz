@@ -79,18 +79,6 @@ class SOLLUMZ_PT_import_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
         layout.prop(settings, "ytyp_mlo_instance_entities")
 
 
-class SOLLUMZ_PT_export_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
-    bl_options = {"HIDE_HEADER"}
-    operator_id = {"SOLLUMZ_OT_exportytyp", "SOLLUMZ_OT_export_ytyp_io"}
-
-    def get_settings(self, context: bpy.types.Context) -> SollumzExportSettings:
-        return get_export_settings(context)
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.use_property_split = False
-        layout.prop(settings, "apply_transforms")
-
-
 class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_LIST"
     multiselect_operator = ytyp_ops.SOLLUMZ_OT_ytyp_select_archetype.bl_idname

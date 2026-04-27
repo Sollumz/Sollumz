@@ -2,13 +2,13 @@ import traceback
 from pathlib import Path
 
 import bpy
-from bpy.props import BoolProperty, CollectionProperty, StringProperty
+from bpy.props import CollectionProperty, StringProperty
 from bpy.types import Operator, OperatorFileListElement
 from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
-from ...sollumz_operators import ImportAssetsOperatorImpl, TimedOperator
-from ...sollumz_preferences import ExportSettingsBase, get_addon_preferences, get_export_settings
+from ...sollumz_operators import ImportAssetsOperatorImpl, ExportAssetsOperatorImpl
+from ...sollumz_preferences import get_export_settings
 from ..utils import get_selected_txd
 
 
@@ -167,103 +167,13 @@ class SOLLUMZ_OT_import_ytd(ImportAssetsOperatorImpl, Operator):
     )
 
 
-class SOLLUMZ_OT_export_ytd(ExportSettingsBase, TimedOperator, Operator):
+class SOLLUMZ_OT_export_ytd(ExportAssetsOperatorImpl, Operator):
     """Export the selected texture dictionaries"""
 
     bl_idname = "sollumz.export_ytd"
     bl_label = "Export YTD"
-
-    directory: StringProperty(
-        name="Output directory",
-        description="Select export output directory",
-        subtype="DIR_PATH",
-        options={"HIDDEN"},
-    )
-
-    use_custom_settings: BoolProperty(
-        name="Use Custom Settings",
-        description="Use the settings defined in this operator instead of user preferences",
-        default=False,
-        options={"HIDDEN", "SKIP_SAVE"},
-    )
+    sz_export_types = {"YTD"}
 
     @classmethod
     def poll(cls, context):
-        collection = context.scene.sz_txds.texture_dictionaries
-        return collection and collection.selected_items_indices
-
-    def draw(self, context):
-        prefs = get_addon_preferences(context)
-        if prefs.legacy_import_export:
-            return
-
-        export_prefs = prefs.export_settings
-        from szio.gta5 import AssetFormat, is_provider_available
-
-        row = self.layout.row(align=False)
-        col = row.column(align=True, heading="Format")
-        for f in ("NATIVE", "CWXML"):
-            subrow = col.row(align=True)
-            subrow.enabled = is_provider_available(AssetFormat[f])
-            subrow.prop_enum(export_prefs, "target_formats", f)
-
-        col = row.column(align=True, heading="Version")
-        for f in ("GEN8", "GEN9"):
-            col.prop_enum(export_prefs, "target_versions", f)
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
-
-    def execute_timed(self, context):
-        from ..ytdexport import export_ytd as export_ytd_asset
-        from ...iecontext import ExportContext, export_context_scope
-
-        with logger.use_operator_logger(self) as op_log:
-            prefs_export_settings = self if self.use_custom_settings else get_export_settings()
-            export_settings = prefs_export_settings.to_export_context_settings()
-            if not export_settings.targets:
-                from szio.gta5 import AssetFormat, AssetTarget, AssetVersion
-
-                export_settings.targets = (AssetTarget(AssetFormat.CWXML, AssetVersion.GEN8),)
-                logger.warning(
-                    "No export target found. Make sure you select both Format and Version in the export settings. "
-                    "Defaulting to CW XML / Gen 8."
-                )
-
-            directory = Path(bpy.path.abspath(self.directory))
-
-            any_warnings_or_errors = False
-            txds = context.scene.sz_txds
-            for txd in txds.texture_dictionaries.iter_selected_items():
-                op_log.clear_log_counts()
-                try:
-                    asset_name = txd.name.lower()
-                    with export_context_scope(ExportContext(asset_name, export_settings)):
-                        export_bundle = export_ytd_asset(txd)
-
-                    success = export_bundle and export_bundle.is_valid()
-                    if success:
-                        export_bundle.save(directory, export_settings.targets)
-                        if op_log.has_warnings_or_errors:
-                            logger.info(
-                                f"Exported '{asset_name}' with WARNINGS or ERRORS! Please check the Info Log for details."
-                            )
-                            any_warnings_or_errors = True
-                        else:
-                            logger.info(f"Successfully exported '{txd.name}'")
-                    else:
-                        if op_log.has_warnings_or_errors:
-                            logger.info(
-                                f"Failed to export '{txd.name}', ERRORS found! Please check the Info Log for details."
-                            )
-                            any_warnings_or_errors = True
-                except Exception:
-                    logger.error(f"Error exporting: {txd.name} \n {traceback.format_exc()}")
-                    any_warnings_or_errors = True
-                    return {"CANCELLED"}
-
-            logger.info(f"Exported in {self.time_elapsed} seconds")
-            if any_warnings_or_errors and bpy.ops.screen.info_log_show.poll():
-                bpy.ops.screen.info_log_show()
-            return {"FINISHED"}
+        return context.scene.sz_txds.texture_dictionaries
