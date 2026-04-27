@@ -7,7 +7,7 @@ from bpy.types import Operator, OperatorFileListElement
 from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
-from ...sollumz_operators import ImportAssetsOperatorImpl, ExportAssetsOperatorImpl
+from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
 from ...sollumz_preferences import get_export_settings
 from ..utils import get_selected_txd
 

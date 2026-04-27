@@ -1,14 +1,16 @@
 from bpy.types import (
-    UILayout,
-    UIList,
     Menu,
     Panel,
+    UILayout,
+    UIList,
 )
 
 from ..shared.multiselection import MultiSelectUIListMixin, multiselect_ui_draw_list
 from .operators import (
-    txd as txd_ops,
     selection as txd_select_ops,
+)
+from .operators import (
+    txd as txd_ops,
 )
 from .utils import (
     get_selected_txd,
@@ -30,7 +32,7 @@ class SOLLUMZ_UL_txd_texture_list(MultiSelectUIListMixin, UIList):
     name_editable = False
 
     def draw_item(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
-        from ..shared.multiselection import MultiSelectFilterOptions, MultiSelectCollection
+        from ..shared.multiselection import MultiSelectCollection, MultiSelectFilterOptions
 
         multiselect_collection_name = active_propname[:-21]  # remove '_active_index_for_ui_' suffix
 

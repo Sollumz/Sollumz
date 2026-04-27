@@ -1,23 +1,23 @@
 import os
 import re
+
 import bpy
+from bpy.props import (
+    PointerProperty,
+    StringProperty,
+)
 from bpy.types import (
+    Image,
     PropertyGroup,
     Scene,
-    Image,
-)
-from bpy.props import (
-    StringProperty,
-    PointerProperty,
 )
 
 from ..shared.multiselection import (
-    MultiSelectProperty,
     MultiSelectAccess,
     MultiSelectCollection,
+    MultiSelectProperty,
     define_multiselect_collection,
 )
-
 
 _TRAILING_BLENDER_SUFFIX_RE = re.compile(r"\.\d{3}$")
 

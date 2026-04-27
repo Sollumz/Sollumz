@@ -1,9 +1,9 @@
-import bpy
 from pathlib import Path
 
+import bpy
 from szio.gta5 import AssetTextureDictionary, EmbeddedTexture
 
-from ..iecontext import import_context, ImportTexturesMode
+from ..iecontext import ImportTexturesMode, import_context
 from .properties import TextureDictionary
 
 
@@ -60,7 +60,9 @@ def _create_or_get_image(tex: EmbeddedTexture) -> bpy.types.Image:
     return img
 
 
-def lookup_texture_file(texture_name: str, textures_directory: Path | None, use_shared_textures_directories: bool = False) -> Path | None:
+def lookup_texture_file(
+    texture_name: str, textures_directory: Path | None, use_shared_textures_directories: bool = False
+) -> Path | None:
     """Searches for a DDS file with the given ``texture_name``.
     The search order is as follows:
       1. Check if file exists in ``textures_directory``.
@@ -93,6 +95,7 @@ def lookup_texture_file(texture_name: str, textures_directory: Path | None, use_
     if use_shared_textures_directories:
         # Texture not found, search the shared textures directories listed in preferences
         from ..sollumz_preferences import get_addon_preferences
+
         prefs = get_addon_preferences(bpy.context)
         for d in prefs.shared_textures_directories:
             found_texture_path = _lookup_in_directory(Path(d.path), d.recursive)

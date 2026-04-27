@@ -3,12 +3,11 @@ from typing import Optional
 
 import bpy
 from bpy.types import Image, Scene
-
 from szio.gta5 import AssetTextureDictionary, EmbeddedTexture
 from szio.types import DataSource
 
-from ..iecontext import ExportBundle, export_context
 from .. import logger
+from ..iecontext import ExportBundle, export_context
 from .properties import TextureDictionary
 
 
