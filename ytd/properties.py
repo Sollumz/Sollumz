@@ -27,7 +27,7 @@ from ..shared.multiselection import (
 _TRAILING_BLENDER_SUFFIX_RE = re.compile(r"\.\d{3}$")
 
 
-def _derive_texture_name(image: Image | None) -> str:
+def get_texture_name(image: Image | None) -> str:
     if image:
         return os.path.splitext(bpy.path.basename(image.filepath))[0]
     return ""
@@ -37,7 +37,7 @@ class TextureSlot(PropertyGroup):
     image: PointerProperty(type=Image, name="Image")
 
     def get_name(self) -> str:
-        return _derive_texture_name(self.image)
+        return get_texture_name(self.image)
 
     name: StringProperty(name="Name", get=get_name)
 
