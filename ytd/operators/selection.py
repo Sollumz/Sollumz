@@ -5,7 +5,10 @@ from ...shared.multiselection import (
     MultiSelectInvertOperator,
     MultiSelectOneOperator,
 )
-from ..utils import get_selected_txd
+from ..utils import (
+    get_selected_txd,
+    get_selected_txd_source,
+)
 
 
 class TxdsSelectMixin:
@@ -47,3 +50,45 @@ class SOLLUMZ_OT_txd_texture_select_all(TxdTexturesSelectMixin, MultiSelectAllOp
 class SOLLUMZ_OT_txd_texture_select_invert(TxdTexturesSelectMixin, MultiSelectInvertOperator, Operator):
     bl_idname = "sollumz.txd_texture_select_invert"
     bl_label = "Invert Selected Textures"
+
+
+class TxdSourcesSelectMixin:
+    def get_collection(self, context):
+        txd = get_selected_txd(context)
+        return txd.sources if txd is not None else None
+
+
+class SOLLUMZ_OT_txd_source_select_one(TxdSourcesSelectMixin, MultiSelectOneOperator, Operator):
+    bl_idname = "sollumz.txd_source_select_one"
+    bl_label = "Select Source"
+
+
+class SOLLUMZ_OT_txd_source_select_all(TxdSourcesSelectMixin, MultiSelectAllOperator, Operator):
+    bl_idname = "sollumz.txd_source_select_all"
+    bl_label = "Select All Sources"
+
+
+class SOLLUMZ_OT_txd_source_select_invert(TxdSourcesSelectMixin, MultiSelectInvertOperator, Operator):
+    bl_idname = "sollumz.txd_source_select_invert"
+    bl_label = "Invert Selected Sources"
+
+
+class TxdSourceImagesSelectMixin:
+    def get_collection(self, context):
+        src = get_selected_txd_source(context)
+        return src.images if src is not None else None
+
+
+class SOLLUMZ_OT_txd_source_image_select_one(TxdSourceImagesSelectMixin, MultiSelectOneOperator, Operator):
+    bl_idname = "sollumz.txd_source_image_select_one"
+    bl_label = "Select Image"
+
+
+class SOLLUMZ_OT_txd_source_image_select_all(TxdSourceImagesSelectMixin, MultiSelectAllOperator, Operator):
+    bl_idname = "sollumz.txd_source_image_select_all"
+    bl_label = "Select All Images"
+
+
+class SOLLUMZ_OT_txd_source_image_select_invert(TxdSourceImagesSelectMixin, MultiSelectInvertOperator, Operator):
+    bl_idname = "sollumz.txd_source_image_select_invert"
+    bl_label = "Invert Selected Images"

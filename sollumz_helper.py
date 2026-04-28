@@ -149,6 +149,7 @@ def get_sollumz_materials(
     obj: bpy.types.Object,
     mode: GetSollumzMaterialsMode = GetSollumzMaterialsMode.ALL,
     out_material_to_models: dict[bpy.types.Material, list[bpy.types.Object]] | None = None,
+    include_root_obj: bool = False,
 ) -> list[bpy.types.Material]:
     """Get Sollumz materials used by ``obj``."""
     materials: list[bpy.types.Material] = []
@@ -164,7 +165,8 @@ def get_sollumz_materials(
         case _:
             raise ValueError(f"Invalid mode '{mode}'")
 
-    for child in get_children_recursive(obj):
+    children = get_object_with_children(obj) if include_root_obj else get_children_recursive(obj)
+    for child in children:
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
