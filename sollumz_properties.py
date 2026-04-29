@@ -171,7 +171,7 @@ class ArchetypeType(str, Enum):
 
 
 class AssetType(str, Enum):
-    UNINITIALIZED = "sollumz_asset_unintialized"
+    UNINITIALIZED = "sollumz_asset_uninitialized"
     FRAGMENT = "sollumz_asset_fragment"
     DRAWABLE = "sollumz_asset_drawable"
     DRAWABLE_DICTIONARY = "sollumz_asset_drawable_dictionary"
