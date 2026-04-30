@@ -808,3 +808,49 @@ def test_import_fragment_cloth(version_dir: str, model: str, tmp_path: Path):
             world_bounds_obj = bpy.data.objects[world_bounds_name]
             assert world_bounds_obj.sollum_type == SollumType.BOUND_COMPOSITE
             assert cloth_props.world_bounds == world_bounds_obj
+
+
+@requires_szio_native
+@pytest.mark.parametrize("version_dir", ("gen8", "gen9", "cwxml"))
+@assert_logs_no_warnings_or_errors
+def test_import_drawable_with_simple_bounds(version_dir: str, tmp_path: Path):
+    bpy.ops.wm.read_homefile()
+
+    ydr_filename = "model_with_simple_bounds.ydr"
+    if version_dir == "cwxml":
+        ydr_filename += ".xml"
+    ydr_path = asset_path(version_dir, ydr_filename)
+
+    # Copy to temp dir
+    (tmp_path / ydr_filename).write_bytes(ydr_path.read_bytes())
+
+    res = bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path.absolute()),
+        files=[{"name": ydr_path.name}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+    assert res == {"FINISHED"}
+
+    drw_obj = bpy.data.objects["model_with_simple_bounds"]
+    assert drw_obj.sollum_type == SollumType.DRAWABLE
+
+    col_obj = bpy.data.objects["Bound Box"]
+    assert col_obj.sollum_type == SollumType.BOUND_BOX
+
+    drw_obj.select_set(True)
+
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+
+    bpy.ops.sollumz.export_assets(
+        directory=str(export_dir.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    assert (export_dir / "gen8" / "model_with_simple_bounds.ydr").is_file()
+    assert (export_dir / "gen8" / "model_with_simple_bounds.ydr.xml").is_file()
+    assert (export_dir / "gen9" / "model_with_simple_bounds.ydr").is_file()
+    assert (export_dir / "gen9" / "model_with_simple_bounds.ydr.xml").is_file()
