@@ -787,12 +787,6 @@ def register():
     bpy.types.Light.time_flags = bpy.props.PointerProperty(type=LightTimeFlags)
     bpy.types.Light.light_flags = bpy.props.PointerProperty(type=LightFlags)
 
-    bpy.types.Scene.sollumz_auto_lod_ref_mesh = bpy.props.PointerProperty(
-        type=bpy.types.Mesh, name="Reference Mesh", description="The mesh to copy and decimate for each LOD level. You'd usually want to set this as the highest LOD then run the tool for all lower LODs")
-    bpy.types.Scene.sollumz_auto_lod_levels = lod_level_enum_flag_prop_factory()
-    bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
-        name="Decimate Step", min=0.0, max=0.99, default=0.6)
-
     bpy.types.WindowManager.sz_light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
     bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Light Presets")
 
@@ -943,9 +937,6 @@ def unregister():
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection
-    del bpy.types.Scene.sollumz_auto_lod_ref_mesh
-    del bpy.types.Scene.sollumz_auto_lod_levels
-    del bpy.types.Scene.sollumz_auto_lod_decimate_step
     del bpy.types.Scene.sollumz_extract_lods_levels
     del bpy.types.Scene.sollumz_extract_lods_parent_type
 

@@ -12,6 +12,7 @@ from .operators import (
     drawables as drw_ops,
     lights as light_ops,
     materials as mat_ops,
+    lod_tools as lod_ops,
 )
 from .shader_materials import shadermats
 from .cable import CableAttr, is_cable_mesh
@@ -20,7 +21,7 @@ from .cloth_char import cloth_char_find_mesh_objects
 from .cloth_diagnostics import cloth_last_export_contexts
 from szio.gta5 import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
-from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
+from ..sollumz_properties import SollumType, MaterialType, LightType, LODLevel, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_preferences import get_addon_preferences
@@ -31,6 +32,7 @@ from ..tools.meshhelper import (
     get_color_attr_name,
     get_mesh_used_texcoords_indices,
     get_mesh_used_colors_indices,
+    get_mesh_tri_count,
 )
 
 
@@ -909,24 +911,45 @@ class SOLLUMZ_PT_AUTO_LOD_PANEL(bpy.types.Panel):
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"HIDE_HEADER"}
     bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
 
     bl_order = 0
 
     def draw(self, context: Context):
         layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-        layout.label(text="Auto LOD")
         box = layout.box()
 
-        box.prop(context.scene, "sollumz_auto_lod_levels")
-        box.separator(factor=0.25)
-        box.prop(context.scene, "sollumz_auto_lod_ref_mesh",
-                 text="Reference Mesh")
-        box.prop(context.scene, "sollumz_auto_lod_decimate_step")
-        box.separator()
-        box.operator("sollumz.auto_lod", icon="MOD_DECIM")
+        settings = context.scene.sz_auto_lod_settings
+        settings.draw_settings(context, box)
+
+        row = box.row(align=True)
+        row.scale_y = 1.3
+        row.operator(lod_ops.SOLLUMZ_OT_auto_lod.bl_idname, icon="MOD_DECIM")
+
+        # LOD Stats Display
+        obj = context.active_object
+        if obj is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL:
+            lods = obj.sz_lods
+            has_any = False
+            for lod_level in LODLevel:
+                mesh = lods.get_lod(lod_level).mesh
+                if mesh is not None:
+                    if not has_any:
+                        stats_box = box.box()
+                        stats_col = stats_box.column(align=True)
+                        stats_col.label(text="LOD Statistics", icon="INFO")
+                        has_any = True
+                    tri_count = get_mesh_tri_count(mesh)
+                    split = stats_col.split(factor=0.4)
+                    row = split.row()
+                    row.alignment = "RIGHT"
+                    row.label(text=f"{SOLLUMZ_UI_NAMES[lod_level]}")
+                    row = split.row()
+                    row.alignment = "LEFT"
+                    row.label(text=f"{tri_count} tris / {len(mesh.vertices)} verts")
 
 
 class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
@@ -935,7 +958,7 @@ class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
     bl_category = "Sollumz Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_options = {"HIDE_HEADER"}
+    bl_options = {"DEFAULT_CLOSED"}
     bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
 
     bl_order = 1
@@ -943,7 +966,6 @@ class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
     def draw(self, context: Context):
         layout = self.layout
 
-        layout.label(text="Extract LODs")
         box = layout.box()
         box.separator(factor=0.25)
 
@@ -953,6 +975,52 @@ class SOLLUMZ_PT_EXTRACT_LODS_PANEL(bpy.types.Panel):
         box.separator()
 
         box.operator("sollumz.extract_lods", icon="EXPORT")
+
+
+class SOLLUMZ_PT_MATERIAL_MERGE_PANEL(bpy.types.Panel):
+    bl_label = "Material Merge"
+    bl_idname = "SOLLUMZ_PT_MATERIAL_MERGE_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_parent_id = SOLLUMZ_PT_LOD_TOOLS_PANEL.bl_idname
+
+    bl_order = 2
+
+    def draw(self, context: Context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        box = layout.box()
+
+        settings = context.scene.sz_material_merge_settings
+        col = box.column()
+        col.prop(settings, "texture_size")
+        col.prop(settings, "bake_type")
+        col.prop(settings, "uv_margin")
+        col.prop(settings, "samples")
+
+        row = box.row(align=True)
+        row.scale_y = 1.3
+        row.operator(lod_ops.SOLLUMZ_OT_material_merge_bake.bl_idname, icon="RENDER_STILL")
+
+        obj = context.active_object
+        if obj is not None and obj.type == "MESH":
+            mat_count = len(obj.data.materials)
+            col = box.column(align=True)
+            for left_side, right_side in (("Object", obj.name), ("Materials", f"{mat_count}")):
+                split = col.split(factor=0.4)
+                row = split.row()
+                row.alignment = "RIGHT"
+                row.label(text=left_side)
+                row = split.row()
+                row.alignment = "LEFT"
+                row.label(text=right_side)
+        else:
+            box.label(text="Select a mesh object", icon="ERROR")
+
 
 
 class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
