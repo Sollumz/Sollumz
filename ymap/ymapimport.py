@@ -16,6 +16,7 @@ from ..tools.blenderhelper import create_blender_object, create_empty_object
 from ..tools.meshhelper import create_box
 from .. import logger
 
+from szio.gta5.jenkhash import try_resolve_maybe_hashed_name
 # TODO: Make better?
 
 
@@ -33,7 +34,7 @@ def occlude_model_to_mesh_data(model: OccludeModel) -> tuple[NDArray, NDArray]:
 
 
 def apply_entity_properties(obj, entity):
-    obj.entity_properties.archetype_name = entity.archetype_name
+    obj.entity_properties.archetype_name = try_resolve_maybe_hashed_name(entity.archetype_name)
     obj.entity_properties.flags = entity.flags
     obj.entity_properties.guid = entity.guid
     obj.entity_properties.parent_index = entity.parent_index
@@ -67,7 +68,9 @@ def entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
     if ymap.entities:
         for obj in bpy.context.collection.all_objects:
             for entity in ymap.entities:
-                if entity.archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
+                resolved_archetype_name = try_resolve_maybe_hashed_name(entity.archetype_name)
+
+                if resolved_archetype_name == obj.name and obj.name in bpy.context.view_layer.objects:
                     found = True
                     apply_entity_properties(obj, entity)
         if found:
@@ -97,7 +100,9 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
         count = 0
 
         for entity in ymap.entities:
-            obj = bpy.data.objects.get(entity.archetype_name, None)
+            resolved_archetype_name = try_resolve_maybe_hashed_name(entity.archetype_name)
+
+            obj = bpy.data.objects.get(resolved_archetype_name, None)
             if obj is None:
                 # No object with the given archetype name found
                 continue
@@ -119,14 +124,16 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
 
         if not import_settings.ymap_skip_missing_entities:
             for entity in ymap.entities:
+                resolved_archetype_name = try_resolve_maybe_hashed_name(entity.archetype_name)
+
                 if entity.found is None:
                     empty_obj = bpy.data.objects.new(
-                        entity.archetype_name + " (not found)", None)
+                        resolved_archetype_name + " (not found)", None)
                     empty_obj.parent = group_obj
                     apply_entity_properties(empty_obj, entity)
                     empty_obj.sollum_type = SollumType.DRAWABLE
                     logger.error(
-                        f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
+                        f"'{resolved_archetype_name}' is missing in scene, creating an empty drawable instead.")
         if count > 0:
             logger.info(
                 f"Succesfully placed {count}/{entities_amount} entities from scene!")
