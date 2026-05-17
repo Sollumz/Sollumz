@@ -248,7 +248,8 @@ def get_children_recursive(obj) -> list[bpy.types.Object]:
 def get_object_with_children(obj):
     """Get the object including the whole child hierarchy"""
     objs = [obj]
-    objs.extend(get_children_recursive(obj))
+    for child in get_children_recursive(obj):
+        objs.append(child)
     return objs
 
 

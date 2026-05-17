@@ -121,7 +121,8 @@ def duplicate_object_with_children(obj):
 def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType] = None) -> bpy.types.Object | None:
     """Find parent Fragment or Drawable if one exists. Returns None otherwise."""
     parent_types = [SollumType.FRAGMENT, SollumType.DRAWABLE, SollumType.DRAWABLE_DICTIONARY,
-                    SollumType.CLIP_DICTIONARY, SollumType.YMAP, SollumType.BOUND_COMPOSITE]
+                    SollumType.CLIP_DICTIONARY, SollumType.YMAP, SollumType.BOUND_COMPOSITE,
+                    SollumType.NAVMESH]
 
     parent = obj.parent
     if parent is None:
@@ -149,7 +150,6 @@ def get_sollumz_materials(
     obj: bpy.types.Object,
     mode: GetSollumzMaterialsMode = GetSollumzMaterialsMode.ALL,
     out_material_to_models: dict[bpy.types.Material, list[bpy.types.Object]] | None = None,
-    include_root_obj: bool = False,
 ) -> list[bpy.types.Material]:
     """Get Sollumz materials used by ``obj``."""
     materials: list[bpy.types.Material] = []
@@ -165,8 +165,7 @@ def get_sollumz_materials(
         case _:
             raise ValueError(f"Invalid mode '{mode}'")
 
-    children = get_object_with_children(obj) if include_root_obj else get_children_recursive(obj)
-    for child in children:
+    for child in get_children_recursive(obj):
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 

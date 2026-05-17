@@ -16,13 +16,17 @@ from dataclasses import replace
 from mathutils import Vector, Matrix
 
 from szio.gta5 import (
+    create_asset_fragment,
+    create_asset_drawable,
+    create_asset_bound,
     is_provider_available,
     AssetFormat,
+    AssetVersion,
+    AssetTarget,
     LodLevel as IOLodLevel,
     BoundType,
     AssetBound,
-    AssetBoundComposite,
-    AssetFragDrawable,
+    AssetDrawable,
     AssetFragment,
     FragmentTemplateAsset,
     PhysLod,
@@ -101,6 +105,8 @@ def create_fragment_asset_core(
     materials = get_sollumz_materials(frag_obj, GetSollumzMaterialsMode.BASE)
     hi_materials = get_sollumz_materials(frag_obj, GetSollumzMaterialsMode.HI) if has_hi else None
 
+    targets = export_context().settings.targets
+
     # Check if we going to automatically generate vehicle windows
     has_vehglass_material = any("vehicle_vehglass" in mat.shader_properties.name for mat in materials)
     has_manual_shattermaps = (
@@ -109,8 +115,15 @@ def create_fragment_asset_core(
         else False
     )
     gen_vehicle_windows = has_vehglass_material and not has_manual_shattermaps
+    # If we are generating vehicle windows, we need a NATIVE asset as the CWXML backend does not support it directly
+    extra_targets = (
+        (AssetTarget(AssetFormat.NATIVE, AssetVersion.GEN8),)
+        if gen_vehicle_windows and all(t.format == AssetFormat.CWXML for t in targets) and is_provider_available(AssetFormat.NATIVE)
+        else ()
+    )
+    export_context().settings.targets = targets + extra_targets
 
-    frag = AssetFragment()
+    frag = create_asset_fragment(export_context().settings.targets)
     frag.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
     frag.flags = 1  # all fragments need this flag (uses cache entry)
     frag.template_asset = FragmentTemplateAsset[frag_obj.fragment_properties.template_asset]
@@ -118,7 +131,7 @@ def create_fragment_asset_core(
     frag.gravity_factor = frag_obj.fragment_properties.gravity_factor
     frag.buoyancy_factor = frag_obj.fragment_properties.buoyancy_factor
 
-    hi_frag = AssetFragment() if has_hi else None
+    hi_frag = create_asset_fragment(export_context().settings.targets) if has_hi else None
     if hi_frag:
         hi_frag.name = f"{frag.name}_hi"
         hi_frag.flags = frag.flags
@@ -200,6 +213,12 @@ def create_fragment_asset_core(
 
     frag_armature.pose_position = original_pose
 
+    if extra_targets:
+        frag.discard_targets(extra_targets)
+        if hi_frag:
+            hi_frag.discard_targets(extra_targets)
+        export_context().settings.targets = targets
+
     return frag, hi_frag
 
 
@@ -220,7 +239,7 @@ def create_frag_drawable(
     materials: list[Material],
     out_embedded_textures: list[EmbeddedTexture] | None = None,
     hi: bool = False,
-) -> AssetFragDrawable | None:
+) -> Optional[AssetDrawable]:
     drawable = create_drawable_asset(
         frag_objs.drawable, frag_objs.fragment,
         materials,
@@ -235,7 +254,7 @@ def create_frag_drawable(
     return drawable
 
 
-def create_frag_damaged_drawable(frag_objs: FragmentObjects, main_drawable: AssetFragDrawable, materials: list[Material]) -> AssetFragDrawable | None:
+def create_frag_damaged_drawable(frag_objs: FragmentObjects, main_drawable: AssetDrawable, materials: list[Material]) -> Optional[AssetDrawable]:
     assert frag_objs.damaged_drawable is not None, "Caller must ensure that there is a damaged drawable"
     drawable = create_drawable_asset(frag_objs.damaged_drawable, frag_objs.fragment, materials,
                                      is_frag=True, parent_drawable=main_drawable)
@@ -249,7 +268,7 @@ def create_frag_damaged_drawable(frag_objs: FragmentObjects, main_drawable: Asse
     return drawable
 
 
-def create_bone_transforms_set(drawable: AssetFragDrawable) -> MatrixSet:
+def create_bone_transforms_set(drawable: AssetDrawable) -> MatrixSet:
     def _get_bone_transforms(bone: SkelBone) -> Matrix:
         return Matrix.LocRotScale(bone.position, bone.rotation, bone.scale)
 
@@ -273,8 +292,8 @@ def create_bone_transforms_set(drawable: AssetFragDrawable) -> MatrixSet:
 
 def create_frag_physics(
     frag_objs: FragmentObjects,
-    main_drawable: AssetFragDrawable,
-    main_hi_drawable: AssetFragDrawable | None,
+    main_drawable: AssetDrawable,
+    main_hi_drawable: AssetDrawable | None,
     bone_transforms_set: list[Matrix],
     materials: list[Material],
     hi_materials: list[Material] | None,
@@ -290,8 +309,8 @@ def create_frag_physics(
 
 def create_frag_phys_lod(
     frag_objs: FragmentObjects,
-    main_drawable: AssetFragDrawable,
-    main_hi_drawable: AssetFragDrawable | None,
+    main_drawable: AssetDrawable,
+    main_hi_drawable: AssetDrawable | None,
     bone_transforms_set: list[Matrix],
     materials: list[Material],
     hi_materials: list[Material] | None,
@@ -375,7 +394,7 @@ def create_frag_phys_lod(
 def create_frag_phys_collisions(
     frag_objs: FragmentObjects,
     col_obj_to_bound_index: dict[Object, int]
-) -> tuple[AssetBoundComposite, AssetBoundComposite | None]:
+) -> tuple[AssetBound, Optional[AssetBound]]:
     assert frag_objs.composite is not None, "Caller must ensure that there is a composite"
 
     composite = create_bound_composite_asset(frag_objs.composite, col_obj_to_bound_index)
@@ -504,12 +523,12 @@ def init_frag_phys_group(name: str, group_props: GroupProperties) -> PhysGroup:
 
 def create_frag_phys_children(
     frag_objs: FragmentObjects,
-    main_drawable: AssetFragDrawable,
-    main_hi_drawable: AssetFragDrawable | None,
+    main_drawable: AssetDrawable,
+    main_hi_drawable: AssetDrawable | None,
     skeleton: Skeleton,
     groups: list[PhysGroup],
-    bound_composite: AssetBoundComposite,
-    damaged_bound_composite: AssetBoundComposite | None,
+    bound_composite: AssetBound,
+    damaged_bound_composite: AssetBound | None,
     materials: list[Material],
     hi_materials: list[Material] | None,
     col_obj_to_bound_index: dict[Object, int],
@@ -619,7 +638,7 @@ def create_frag_phys_children(
     return children, hi_children, has_child_meshes
 
 
-def calculate_frag_phys_child_inertia(bound_composite: AssetBoundComposite, mass: float, bound_index: int) -> Vector:
+def calculate_frag_phys_child_inertia(bound_composite: AssetBound, mass: float, bound_index: int) -> Vector:
     bounds = bound_composite.children
     if not bounds or bound_index >= len(bounds):
         return Vector((0.0, 0.0, 0.0, 0.0))
@@ -639,8 +658,8 @@ def calculate_frag_phys_groups_total_masses(groups: list[PhysGroup], children: l
 def sort_frag_phys_children_and_collisions_inplace(
     children: list[PhysChild],
     hi_children: list[PhysChild] | None,
-    bound_composite: AssetBoundComposite,
-    damaged_bound_composite: AssetBoundComposite | None,
+    bound_composite: AssetBound,
+    damaged_bound_composite: Optional[AssetBound],
 ):
     children_by_group: dict[int, list[int]] = defaultdict(list)
     if not children:
@@ -681,8 +700,8 @@ def sort_frag_phys_children_and_collisions_inplace(
 
 def calculate_frag_phys_child_drawable_matrices(
     children: list[PhysChild],
-    bound_composite: AssetBoundComposite,
-    damaged_bound_composite: AssetBoundComposite | None,
+    bound_composite: AssetBound,
+    damaged_bound_composite: Optional[AssetBound],
     skeleton: Skeleton,
     bone_transforms_set: list[Matrix],
 ):
@@ -717,8 +736,8 @@ def calculate_frag_phys_child_drawable_matrices(
 
 def create_child_mat_arrays(
     children: list[PhysChild],
-    bound_composite: AssetBoundComposite,
-    damaged_bound_composite: AssetBoundComposite | None,
+    bound_composite: AssetBound,
+    damaged_bound_composite: Optional[AssetBound],
 ):
     """Create the matrix arrays for each child. This appears to be in the first child of multiple children that
     share the same group. Each matrix in the array is just the matrix for each child in that group."""
@@ -750,8 +769,8 @@ def create_child_mat_arrays(
 def create_frag_phys_archetypes(
     frag_objs: FragmentObjects,
     phys_children: list[PhysChild],
-    composite: AssetBoundComposite,
-    damaged_composite: AssetBoundComposite | None,
+    composite: AssetBound,
+    damaged_composite: AssetBound | None,
     root_cg_offset: Vector,
 ) -> tuple[PhysArchetype, PhysArchetype | None]:
     frag_obj = frag_objs.fragment
@@ -775,7 +794,7 @@ def create_frag_phys_archetype(
     archetype_props: FragArchetypeProperties,
     frag_name: str,
     phys_children: list[PhysChild],
-    bound_composite: AssetBoundComposite,
+    bound_composite: AssetBound,
     root_cg_offset: Vector,
     damaged: bool = False
 ) -> PhysArchetype:
@@ -1001,8 +1020,8 @@ def find_phys_group_index_by_name(groups: list[PhysGroup], name: str) -> int:
     return -1
 
 
-def create_frag_phys_child_drawable(main_drawable: AssetFragDrawable | None, materials: list[Material], model_objs: Optional[list[Object]] = None, hi: bool = False) -> AssetFragDrawable:
-    drawable = AssetFragDrawable()
+def create_frag_phys_child_drawable(main_drawable: AssetDrawable | None, materials: list[Material], model_objs: Optional[list[Object]] = None, hi: bool = False) -> AssetDrawable:
+    drawable = create_asset_drawable(export_context().settings.targets, is_frag=True, parent_drawable=main_drawable)
     drawable.shader_group = None
     drawable.skeleton = None
 
@@ -1039,11 +1058,17 @@ def generate_frag_vehicle_windows(frag: AssetFragment) -> list[FragVehicleWindow
         logger.warning("PyMateria is not installed. Cannot automatically generate vehicle window shattermaps.")
         return []
 
-    from szio.gta5.native import generate_vehicle_windows
-    return generate_vehicle_windows(frag)
+    # Only NATIVE assets implement generate_vehicle_windows()
+    native_frag = (
+        frag.with_format(AssetFormat.NATIVE)
+        if frag.ASSET_FORMAT == AssetFormat.MULTI_TARGET
+        else frag
+    )
+    assert native_frag and native_frag.ASSET_FORMAT == AssetFormat.NATIVE
+    return native_frag.generate_vehicle_windows()
 
 
-def create_frag_vehicle_windows(frag_obj: Object, main_drawable: AssetFragDrawable, phys_children: list[PhysChild], materials: list[Material]) -> list[FragVehicleWindow]:
+def create_frag_vehicle_windows(frag_obj: Object, main_drawable: AssetDrawable, phys_children: list[PhysChild], materials: list[Material]) -> list[FragVehicleWindow]:
     """Exports all the manually defined vehicle windows found in ``frag_obj`` hierarchy."""
     child_id_by_bone_tag: dict[str, int] = {c.bone_tag: i for i, c in enumerate(phys_children)}
     mat_ind_by_name: dict[str, int] = {mat.name: i for i, mat in enumerate(materials)}
@@ -1183,7 +1208,7 @@ def find_frag_vehicle_window_shattermap_image(obj: Object) -> Image | None:
     return None
 
 
-def get_frag_vehicle_window_geometry_index(drawable: AssetFragDrawable, window_shader_index: int) -> int:
+def get_frag_vehicle_window_geometry_index(drawable: AssetDrawable, window_shader_index: int) -> int:
     """Get index of the geometry using the window material."""
     models = drawable.models.get(IOLodLevel.HIGH, [])
     if not models:
@@ -1407,7 +1432,7 @@ def create_dummy_frag_physics_for_cloth(frag_objs: FragmentObjects, materials: l
         damaged_inertia=vec4_zero,
     )
 
-    composite = AssetBoundComposite()
+    composite = create_asset_bound(export_context().settings.targets, BoundType.COMPOSITE)
     # Cloths with no bounds seem to always have 2 null bounds in the composite
     # Doesn't seem to be needed, but do it for consistency with original assets
     composite.children = [None, None]

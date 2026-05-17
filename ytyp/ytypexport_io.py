@@ -4,6 +4,7 @@ from bpy.types import (
 )
 from mathutils import Vector, Quaternion, Matrix, Euler
 from szio.gta5 import (
+    create_asset_map_types,
     AssetMapTypes,
     Archetype,
     ArchetypeType,
@@ -49,11 +50,11 @@ def export_ytyp(scene: Scene, ytyp_index: int) -> ExportBundle:
 
 def create_map_types_asset(
     map_types: CMapTypesProperties,
-) -> AssetMapTypes | None:
-    return AssetMapTypes(
-        name=map_types.name,
-        archetypes=[create_archetype(a) for a in map_types.archetypes],
-    )
+) -> Optional[AssetMapTypes]:
+    t = create_asset_map_types(export_context().settings.targets)
+    t.name = map_types.name
+    t.archetypes = [create_archetype(a) for a in map_types.archetypes]
+    return t
 
 
 def create_archetype(archetype: ArchetypeProperties) -> Archetype:

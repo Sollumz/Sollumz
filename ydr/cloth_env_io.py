@@ -8,7 +8,10 @@ from mathutils import (
     Matrix,
 )
 from szio.gta5 import (
-    AssetFragDrawable,
+    ShaderManager,
+    AssetFormat,
+    AssetDrawable,
+    create_asset_drawable,
     EnvCloth,
     EnvClothTuning,
     VerletCloth,
@@ -99,7 +102,7 @@ def _cloth_sort_verlet_edges(edges: list[VerletClothEdge]) -> list[VerletClothEd
     return new_edges
 
 
-def cloth_env_export(frag_obj: Object, drawable: AssetFragDrawable, materials: list[Material]) -> EnvCloth | None:
+def cloth_env_export(frag_obj: Object, drawable: AssetDrawable, materials: list[Material]) -> EnvCloth | None:
     cloth_objs = cloth_env_find_mesh_objects(frag_obj)
     if not cloth_objs:
         return None
@@ -122,7 +125,7 @@ def cloth_env_export(frag_obj: Object, drawable: AssetFragDrawable, materials: l
             return _cloth_env_export(frag_obj, cloth_obj, drawable, materials)
 
 
-def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetFragDrawable, materials: list[Material]) -> EnvCloth | None:
+def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetDrawable, materials: list[Material]) -> EnvCloth | None:
     cloth_bone = get_child_of_bone(cloth_obj)
     if cloth_bone is None:
         logger.error(
@@ -298,7 +301,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetFragDr
         morph_high_poly_count=len(triangles),
     )
 
-    cloth_drawable = AssetFragDrawable()
+    cloth_drawable = create_asset_drawable(export_context().settings.targets, is_frag=True)
     cloth_drawable.name = "skel"
     cloth_drawable.shader_group = create_shader_group(materials)
     cloth_drawable.skeleton = drawable.skeleton

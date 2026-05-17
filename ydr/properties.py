@@ -686,8 +686,9 @@ def load_shader_presets():
 
 
 def get_texture_name(self):
-    from ..ytd.properties import get_texture_name as impl
-    return impl(self.image)
+    if self.image:
+        return os.path.splitext(basename(self.image.filepath))[0]
+    return ""
 
 
 def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> DrawableModelProperties:
