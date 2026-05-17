@@ -151,20 +151,50 @@ def get_mass_properties_of_box(box_min: Vector, box_max: Vector) -> MassProperti
     return MassProperties(volume, cg, inertia)
 
 
+def _bounding_ball_ritter(points: NDArray[np.float64]):
+    """
+    Compute a tight bounding ball using Ritter's algorithm.
+    Returns the center and squared radius. The result is typically within a few percent
+    of the minimum enclosing ball, which is sufficient for collision bound spheres.
+    """
+    n = len(points)
+    if n == 0:
+        return np.zeros(points.shape[1]), 0.0
+    if n == 1:
+        return points[0].copy(), 0.0
+
+    # Find approximate diameter, pick arbitrary point, find farthest, find farthest from that
+    dists_sq = np.sum((points - points[0]) ** 2, axis=1)
+    i = np.argmax(dists_sq)
+    dists_sq = np.sum((points - points[i]) ** 2, axis=1)
+    j = np.argmax(dists_sq)
+
+    # Initial ball from diameter endpoints
+    center = (points[i] + points[j]) * 0.5
+    radius_sq = np.sum((points[i] - center) ** 2)
+
+    # Expand ball to include all points
+    for _ in range(50):
+        dists_sq = np.sum((points - center) ** 2, axis=1)
+        max_idx = np.argmax(dists_sq)
+        max_dist_sq = dists_sq[max_idx]
+        if max_dist_sq <= radius_sq * (1 + 1e-10):
+            break
+
+        max_dist = np.sqrt(max_dist_sq)
+        radius = np.sqrt(radius_sq)
+        new_radius = (radius + max_dist) * 0.5
+        shift_ratio = (new_radius - radius) / max_dist
+        center = center + (points[max_idx] - center) * shift_ratio
+        radius_sq = new_radius * new_radius
+
+    return center, radius_sq
+
+
 def get_centroid_of_mesh(mesh_vertices) -> Centroid:
-    from . import miniball
+    mesh_vertices = np.asarray(mesh_vertices, dtype=np.float64)
 
-    # miniball may throw errors if there are duplicated vertices, so remove them first
-    mesh_vertices = np.unique(mesh_vertices, axis=0)
-
-    try:
-        C, r2 = miniball.get_bounding_ball(mesh_vertices)
-    except np.linalg.LinAlgError:
-        # Fallback to sphere enclosing the bounding box
-        bb_min = np.min(mesh_vertices, axis=0)
-        bb_max = np.max(mesh_vertices, axis=0)
-        C = (bb_max + bb_min) * 0.5
-        r2 = np.linalg.norm(C - bb_min) ** 2
+    C, r2 = _bounding_ball_ritter(mesh_vertices)
 
     centroid = Vector(C)
     radius_around_centroid = np.sqrt(r2)
@@ -195,35 +225,23 @@ def get_mass_properties_of_mesh(mesh_vertices, mesh_faces):
 
     cg = Vector(cg)
 
-    ixx = 0.0
-    iyy = 0.0
-    izz = 0.0
-    for tri_idx, (v0, v1, v2) in enumerate(triangles):
-        # Based on https://github.com/bulletphysics/bullet3/blob/e9c461b0ace140d5c73972760781d94b7b5eee53/src/BulletCollision/CollisionShapes/btConvexTriangleMeshShape.cpp#L236
-        # TODO: vectorize with numpy
-        a = Vector(v0) - cg
-        b = Vector(v1) - cg
-        c = Vector(v2) - cg
+    # Based on https://github.com/bulletphysics/bullet3/blob/e9c461b0ace140d5c73972760781d94b7b5eee53/src/BulletCollision/CollisionShapes/btConvexTriangleMeshShape.cpp#L236
+    cg_np = np.array(cg, dtype=np.float64)
+    a = v0 - cg_np
+    b = v1 - cg_np
+    c = v2 - cg_np
 
-        i = [0.0, 0.0, 0.0]
-        vol_neg = -tri_tetrahedron_volumes[tri_idx]
-        for j in range(3):
-            i[j] = vol_neg * (
-                0.1 * (a[j] * a[j] + b[j] * b[j] + c[j] * c[j]) +
-                0.05 * (a[j] * b[j] + a[j] * b[j] + a[j] * c[j] + a[j] * c[j] + b[j] * c[j] + b[j] * c[j])
-            )
+    # Per-axis: a^2 + b^2 + c^2 + a*b + a*c + b*c (simplification of the original formula
+    # where each cross-term appeared twice with 0.05 coefficient, equivalent to once with 0.1)
+    axis_sums = a * a + b * b + c * c + a * b + a * c + b * c  # (N_tris, 3)
 
-        i00 = -i[0]
-        i11 = -i[1]
-        i22 = -i[2]
+    # i_pos[j] = vol * 0.1 * axis_sums[j] (negation of the original i[j] = -vol * 0.1 * ...)
+    i_pos = tri_tetrahedron_volumes[:, np.newaxis] * 0.1 * axis_sums  # (N_tris, 3)
+    i_sum = i_pos.sum(axis=0)  # (3,) = [sum_i00, sum_i11, sum_i22]
 
-        ixx += i11 + i22
-        iyy += i22 + i00
-        izz += i00 + i11
-
-    ixx /= volume
-    iyy /= volume
-    izz /= volume
+    ixx = (i_sum[1] + i_sum[2]) / volume
+    iyy = (i_sum[2] + i_sum[0]) / volume
+    izz = (i_sum[0] + i_sum[1]) / volume
 
     inertia = Vector((ixx, iyy, izz))
     return MassProperties(volume, cg, inertia)
@@ -231,48 +249,18 @@ def get_mass_properties_of_mesh(mesh_vertices, mesh_faces):
 
 def is_mesh_solid(mesh_vertices, mesh_faces) -> bool:
     """Gets whether the mesh is a closed oriented manifold."""
+    faces = np.asarray(mesh_faces)
 
-    # TODO: this can be optimized, we're doing a lot of unnecesary work for easier debugging
+    e0 = faces[:, [0, 1]]
+    e1 = faces[:, [1, 2]]
+    e2 = faces[:, [2, 0]]
+    edges = np.vstack([e0, e1, e2])
 
-    def _get_edge_to_neighbour_faces_map():
-        """Returns an array indexed by edge indices, with a list of faces connected to each edge."""
-        from collections import defaultdict
-        edge_to_neighbour_faces = defaultdict(list)
-        for face_index, (v0, v1, v2) in enumerate(mesh_faces):
-            e0 = (v0, v1)
-            e1 = (v1, v2)
-            e2 = (v2, v0)
-            for edge in (e0, e1, e2):
-                edge_reversed = (edge[1], edge[0])
-                if edge_reversed in edge_to_neighbour_faces:
-                    edge_to_neighbour_faces[edge_reversed].append(face_index)
-                else:
-                    edge_to_neighbour_faces[edge].append(face_index)
+    edges_sorted = np.sort(edges, axis=1)
 
-        return edge_to_neighbour_faces
+    _, counts = np.unique(edges_sorted, axis=0, return_counts=True)
 
-    def _classify_edges_by_manifold():
-        edge_to_neighbour_faces = _get_edge_to_neighbour_faces_map()
-
-        # Boundary edges: Edges that are connected to only one face.
-        # Manifold edges: Edges that are connected to exactly two faces.
-        # Non-manifold edges: Edges that are connected to more than two faces, or no faces at all.
-        boundary_edges = []
-        manifold_edges = []
-        non_manifold_edges = []
-        for edge, neighbour_faces in edge_to_neighbour_faces.items():
-            num_faces = len(neighbour_faces)
-            if num_faces == 1:
-                boundary_edges.append(edge)
-            elif num_faces == 2:
-                manifold_edges.append(edge)
-            else:
-                non_manifold_edges.append(edge)
-
-        return boundary_edges, manifold_edges, non_manifold_edges
-
-    boundary_edges, manifold_edges, non_manifold_edges = _classify_edges_by_manifold()
-    return len(boundary_edges) == 0 and len(non_manifold_edges) == 0
+    return bool(np.all(counts == 2))
 
 
 def transform_inertia(inertia: Vector, mass: float, translation: Vector) -> Vector:
