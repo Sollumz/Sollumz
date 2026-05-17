@@ -382,3 +382,17 @@ class SOLLUMZ_PT_MLO_FLAGS_PANEL(MloChildTabPanel, MultiSelectUIFlagsPanel, bpy.
     def get_flags_selection(self, context):
         selected_ytyp = get_selected_ytyp(context)
         return selected_ytyp.archetypes.selection.mlo_flags
+
+    def draw(self, context):
+        active = self.get_flags_active(context)
+        selection = self.get_flags_selection(context)
+        self.layout.prop(selection.owner, selection.propnames.total)
+        self.layout.separator()
+        grid = self.layout.grid_flow(columns=2)
+        active_props = active.bl_rna.properties
+        for index, prop_name in enumerate(active.get_flag_names()):
+            if index > active.size - 1:
+                break
+            if active_props[prop_name].name == "Unused":
+                continue
+            grid.prop(selection.owner, getattr(selection.propnames, prop_name))
