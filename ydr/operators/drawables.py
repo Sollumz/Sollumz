@@ -1,8 +1,7 @@
 import bpy
 from bpy.types import Context
-from ...lods import LODLevels
 from ...sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
-from ...sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel, SollumType
+from ...sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ...tools.drawablehelper import set_recommended_bone_properties, convert_obj_to_drawable, convert_obj_to_model, convert_objs_to_single_drawable, center_drawable_to_models
 from ...tools.boundhelper import convert_obj_to_composite, convert_objs_to_single_composite
 from ...tools.blenderhelper import add_armature_modifier, add_child_of_bone_constraint, create_blender_object, create_empty_object, duplicate_object, get_child_of_constraint, set_child_of_constraint_space, tag_redraw
@@ -503,69 +502,6 @@ class SOLLUMZ_OT_set_correct_child_of_space(bpy.types.Operator):
         set_child_of_constraint_space(constraint)
 
         return {"FINISHED"}
-
-
-class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
-    bl_idname = "sollumz.auto_lod"
-    bl_label = "Generate LODs"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = (
-        "Generate drawable model LODs via decimate modifier. Starts from the selected reference mesh, generating a "
-        "new decimated mesh for each selected LOD level"
-    )
-
-    @classmethod
-    def poll(self, context):
-        return context.active_object is not None and context.active_object.sollum_type == SollumType.DRAWABLE_MODEL
-
-    def execute(self, context: Context):
-        aobj = context.active_object
-        ref_mesh = context.scene.sollumz_auto_lod_ref_mesh
-
-        if ref_mesh is None:
-            self.report(
-                {"INFO"}, "No reference mesh specified! You must specify a mesh to use as the highest LOD level!")
-            return {"CANCELLED"}
-
-        lods = self.get_selected_lods_sorted(context)
-
-        if not lods:
-            return {"CANCELLED"}
-
-        obj_lods: LODLevels = aobj.sz_lods
-
-        decimate_step = context.scene.sollumz_auto_lod_decimate_step
-        last_mesh = ref_mesh
-
-        previous_mode = aobj.mode
-        previous_lod_level = obj_lods.active_lod_level
-
-        for lod_level in lods:
-            bpy.ops.object.mode_set(mode="OBJECT")  # make sure we are in object mode before switching LODs
-            mesh = last_mesh.copy()
-            mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
-
-            obj_lods.get_lod(lod_level).mesh = mesh
-            obj_lods.active_lod_level = lod_level
-
-            bpy.ops.object.mode_set(mode="EDIT")
-            bpy.ops.mesh.select_all(action="SELECT")
-            bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
-
-            last_mesh = mesh
-
-        bpy.ops.object.mode_set(mode="OBJECT")
-        obj_lods.active_lod_level = previous_lod_level
-
-        bpy.ops.object.mode_set(mode=previous_mode)
-
-        return {"FINISHED"}
-
-    def get_lod_mesh_name(self, obj_name: str, lod_level: LODLevel):
-        return f"{obj_name}.{SOLLUMZ_UI_NAMES[lod_level].lower()}"
-
-    def get_selected_lods_sorted(self, context: Context) -> tuple[LODLevel]:
-        return tuple(lod for lod in LODLevel if lod in context.scene.sollumz_auto_lod_levels)
 
 
 class SOLLUMZ_OT_extract_lods(bpy.types.Operator):
