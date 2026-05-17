@@ -38,6 +38,7 @@ from .yft.yftexport import export_yft
 from .ybn.ybnimport import import_ybn
 from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
+from .ynv.ynvexport import export_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapimport import import_ymap
@@ -493,6 +494,9 @@ class SOLLUMZ_OT_export_assets_legacy(TimedOperator, Operator):
                     elif obj.sollum_type == SollumType.YMAP:
                         filepath = self.get_filepath(obj, YMAP.file_extension)
                         success = export_ymap(obj, filepath)
+                    elif obj.sollum_type == SollumType.NAVMESH:
+                        filepath = self.get_filepath(obj, YNV.file_extension)
+                        success = export_ynv(obj, filepath)
                     else:
                         continue
 
@@ -673,6 +677,9 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
                         case SollumType.YMAP:
                             filepath = SOLLUMZ_OT_export_assets_legacy.get_filepath(self, obj, YMAP.file_extension)
                             legacy_success = export_ymap(obj, filepath)
+                        case SollumType.NAVMESH:
+                            filepath = SOLLUMZ_OT_export_assets_legacy.get_filepath(self, obj, YNV.file_extension)
+                            legacy_success = export_ynv(obj, filepath)
 
                         case _:
                             assert False, f"Unsupported asset type '{obj.sollum_type}'"
