@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 9
+SOLLUMZ_INTERNAL_VERSION = 10
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
@@ -38,6 +38,8 @@ Version History:
   - No changes
  == v2.8.0 ==
   - 9: fixed Spawn Point extension (required_map -> required_imap, start/end float -> int)
+  - 10: restore is_sollumz / num_cols / num_rows / display_type on shader parameter nodes for
+        files saved by Blender 4.x and opened in Blender 5.x.
   - <next>: <describe changes>
 """
 
