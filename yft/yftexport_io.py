@@ -183,6 +183,8 @@ def create_fragment_asset_core(
             frag.drawable = None
 
         frag.cloths = [env_cloth]  # cloths is an array but game only supports 1 cloth
+        if hi_frag:
+            hi_frag.cloths = frag.cloths
 
         if frag.physics is None:
             # No collisions, create some dummy physics data for the cloth to work
@@ -190,13 +192,19 @@ def create_fragment_asset_core(
         else:
             # Cloths seem to always have an extra null bound in the composite
             # Doesn't seem to be needed, but do it for consistency with original assets
-            composite = frag.physics.lod1.archetype.bounds
-            bounds = composite.children
-            bounds.append(None)
-            if len(bounds) == 1:
-                # ... and at least 2 children in the composite
-                bounds.append(None)
-            composite.children = bounds
+            # composite = frag.physics.lod1.archetype.bounds
+            # composite.children.append(None)
+            # if len(composite.children) == 1:
+            #     # ... and at least 2 children in the composite
+            #     composite.children.append(None)
+            #
+            # Actually, don't... We don't have a way to set the number of active bounds separate from the number of
+            # allocated bound entries in the composite. Some vehicle glass code (see `48 89 5C 24 ? 48 89 6C 24 ? 48 89
+            # 74 24 ? 57 48 83 EC ? 80 79 ? ? 48 63 F2`) expects `number of active bounds == number of physics children`,
+            # and crashes when it reaches the extra null bound entry.
+            # This extra null bound doesn't seem to be used, so skipping it should be safe. Probably used to add a
+            # cloth-related bound at runtime at some point, but not anymore.
+            pass
 
     frag_armature.pose_position = original_pose
 
@@ -1410,7 +1418,9 @@ def create_dummy_frag_physics_for_cloth(frag_objs: FragmentObjects, materials: l
     composite = AssetBoundComposite()
     # Cloths with no bounds seem to always have 2 null bounds in the composite
     # Doesn't seem to be needed, but do it for consistency with original assets
-    composite.children = [None, None]
+    # composite.children = [None, None]
+    # Just do 1 null bound to match the number of physics children, see explanation in create_fragment_asset_core
+    composite.children = [None]
     composite.extent = vec3_zero, vec3_zero
     composite.centroid = vec3_zero
     composite.radius_around_centroid = 0.0

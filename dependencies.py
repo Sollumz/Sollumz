@@ -41,8 +41,8 @@ DEPENDENCIES = (
         "Core functionality for import/export of asset files.",
         True,
         "",
-        "1.3.0.dev4",
-        ("dd5d5ba0b0d1a92a1d4f6629ad9362454091935d23fa70b972899362ec4330b7",),
+        "1.3.0.dev5",
+        ("ae807e172de25e7d64bececcf7e069d612f362e77825a5a271212cbec9a601dd",),
     ),
     Dependency(
         "pymateria",
