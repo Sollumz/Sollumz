@@ -162,7 +162,7 @@ class ExportSettingsBase:
     )
     export_ytyps_include: EnumProperty(
         name="Include YTYPs",
-        default="ALL",
+        default="SELECTED",
         items=(
             ("ALL", "All", "Export all YTYPs in the scene"),
             ("SELECTED", "Selected", "Export the selected YTYP"),
