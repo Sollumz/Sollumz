@@ -176,7 +176,7 @@ class ExportSettingsBase:
     )
     export_ytds_include: EnumProperty(
         name="Include Texture Dictionaries",
-        default="ALL",
+        default="SELECTED",
         items=(
             ("ALL", "All", "Export all texture dictionaries in the scene"),
             ("SELECTED", "Selected", "Export the selected texture dictionaries"),
