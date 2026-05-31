@@ -44,10 +44,6 @@ class MaterialMergeSettingsMixin:
         items=[
             ("DIFFUSE", "Diffuse", "Diffuse color only"),
             ("NORMAL", "Normal", "Normal map"),
-            ("ROUGHNESS", "Roughness", "Roughness map"),
-            # NOTE: METALLIC removed for now, cycles has no direct equivalent so it needs some additional workaround
-            #       to bake metallic map
-            # ("METALLIC", "Metallic", "Metallic map"),
         ],
         default="DIFFUSE",
     )
@@ -252,11 +248,6 @@ class SOLLUMZ_OT_material_merge_bake(MaterialMergeSettingsMixin, Operator):
             normal_map.location = (-100, -200)
             links.new(img_node.outputs["Color"], normal_map.inputs["Color"])
             links.new(normal_map.outputs["Normal"], principled.inputs["Normal"])
-        elif self.bake_type == "ROUGHNESS":
-            links.new(img_node.outputs["Color"], principled.inputs["Roughness"])
-        # NOTE: METALLIC removed for now
-        # elif self.bake_type == "METALLIC":
-        #     links.new(img_node.outputs["Color"], principled.inputs["Metallic"])
         else:
             links.new(img_node.outputs["Color"], principled.inputs["Base Color"])
 
@@ -330,20 +321,6 @@ class AutoLODSettingsMixin:
         default=(1000,) * len(LODLevel),
     )
 
-    preserve_uvs: BoolProperty(
-        name="Preserve UVs", description="Preserve UV seam boundaries during decimation", default=True
-    )
-
-    preserve_sharp: BoolProperty(name="Preserve Sharp", description="Preserve edges marked as sharp", default=False)
-
-    preserve_vertex_groups: BoolProperty(
-        name="Preserve Vertex Groups", description="Preserve vertex group boundaries", default=False
-    )
-
-    preserve_materials: BoolProperty(
-        name="Preserve Materials", description="Preserve material slot boundaries", default=False
-    )
-
     planar_angle_limit: FloatProperty(
         name="Angle Limit",
         description="Maximum angle between face normals for planar decimation",
@@ -409,7 +386,6 @@ class AutoLODSettingsMixin:
 
         if self.decimate_method == "DISSOLVE":
             layout.prop(self, "planar_angle_limit")
-            layout.prop(self, "preserve_materials")
         elif self.decimate_method == "UNSUBDIV":
             layout.prop(self, "unsubdiv_iterations")
         elif self.decimate_method == "COLLAPSE":
@@ -439,14 +415,6 @@ class AutoLODSettingsMixin:
                     )
             else:
                 col.prop(self, "decimate_step")
-
-            col = layout.column(align=True, heading="Preserve")
-            row = col.row(align=True)
-            row.prop(self, "preserve_uvs", text="UVs", toggle=True)
-            row.prop(self, "preserve_sharp", text="Sharp", toggle=True)
-            row = col.row(align=True)
-            row.prop(self, "preserve_vertex_groups", text="Groups", toggle=True)
-            row.prop(self, "preserve_materials", text="Materials", toggle=True)
 
         layout.separator(factor=0.3)
         col = layout.column(align=True)
@@ -488,7 +456,7 @@ class SOLLUMZ_OT_auto_lod(AutoLODSettingsMixin, Operator):
     bl_options = {"REGISTER", "UNDO"}
     bl_description = (
         "Generate drawable model LODs via decimation. Supports multiple methods, per-LOD ratios, "
-        "preserve options, and automatic LOD distance calculation"
+        "and automatic LOD distance calculation"
     )
 
     @classmethod
@@ -594,22 +562,6 @@ class SOLLUMZ_OT_auto_lod(AutoLODSettingsMixin, Operator):
             mod.ratio = ratio
             mod.use_collapse_triangulate = True
 
-            delimit = set()
-            if self.preserve_uvs:
-                delimit.add("UV")
-            if self.preserve_sharp:
-                delimit.add("SHARP")
-            if self.preserve_materials:
-                delimit.add("MATERIAL")
-
-            if delimit:
-                mod.delimit = delimit
-
-            if self.preserve_vertex_groups and hasattr(mod, "use_symmetry"):
-                # Vertex group preservation is handled by the delimit options
-                # and by Blender's internal weighting in collapse mode
-                pass
-
         elif method == "UNSUBDIV":
             mod.decimate_type = "UNSUBDIV"
             mod.iterations = self.unsubdiv_iterations
@@ -617,8 +569,6 @@ class SOLLUMZ_OT_auto_lod(AutoLODSettingsMixin, Operator):
         elif method == "DISSOLVE":
             mod.decimate_type = "DISSOLVE"
             mod.angle_limit = self.planar_angle_limit
-            if self.preserve_materials:
-                mod.delimit = {"MATERIAL"}
 
         try:
             bpy.ops.object.modifier_apply(modifier=mod.name)
