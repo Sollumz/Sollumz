@@ -531,6 +531,16 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
             self.selection_indices.add().index = i
         self.active_index = self.selection_indices[0].index
 
+    def remove_selected(self):
+        """Remove all selected items and reselect the nearest remaining item."""
+        indices = self.selected_items_indices
+        indices.sort(reverse=True)
+        new_active = max(indices[-1] - 1, 0) if indices else 0
+        for i in indices:
+            self.remove(i)
+        if len(self) > 0:
+            self.select(new_active)
+
 
 class MultiSelectOperatorBase:
     bl_options = {"UNDO"}
@@ -755,7 +765,8 @@ def multiselect_ui_draw_list(
     remove_operator: str,
     uilist_cls: type,
     context_menu_cls: type,
-    list_id: str
+    list_id: str,
+    rows: int = 3,
 ) -> tuple[UILayout, UILayout]:
     from ..sollumz_ui import draw_list_with_add_remove
     full_list_id = f"{collection._collection_propname}{list_id}"
@@ -770,7 +781,7 @@ def multiselect_ui_draw_list(
         uilist_cls.bl_idname, list_id,
         owner, collection._collection_propname,
         owner, collection._active_index_for_ui_propname,
-        rows=3
+        rows=rows
     )
 
     if add_operator or remove_operator:

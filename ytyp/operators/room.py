@@ -93,12 +93,7 @@ class SOLLUMZ_OT_delete_room(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
 
-        indices_to_remove = selected_archetype.rooms.selected_items_indices
-        indices_to_remove.sort(reverse=True)
-        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
-        for index_to_remove in indices_to_remove:
-            selected_archetype.rooms.remove(index_to_remove)
-        selected_archetype.rooms.select(new_active_index)
+        selected_archetype.rooms.remove_selected()
 
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo

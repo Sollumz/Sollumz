@@ -49,12 +49,7 @@ class SOLLUMZ_OT_delete_entityset(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
 
-        indices_to_remove = selected_archetype.entity_sets.selected_items_indices
-        indices_to_remove.sort(reverse=True)
-        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
-        for index_to_remove in indices_to_remove:
-            selected_archetype.entity_sets.remove(index_to_remove)
-        selected_archetype.entity_sets.select(new_active_index)
+        selected_archetype.entity_sets.remove_selected()
 
         validate_dynamic_enums(selected_archetype.entities, "attached_entity_set_id", selected_archetype.entity_sets)
         validate_dynamic_enum(context.scene, "sollumz_add_entity_entityset", selected_archetype.entity_sets)
