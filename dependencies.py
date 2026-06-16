@@ -41,8 +41,8 @@ DEPENDENCIES = (
         "Core functionality for import/export of asset files.",
         True,
         "",
-        "1.3.0.dev5",
-        ("ae807e172de25e7d64bececcf7e069d612f362e77825a5a271212cbec9a601dd",),
+        "1.3.0.dev6",
+        ("d4155b34d768387706e46d6f4c08353ffef25b5383536546359982807264577b",),
     ),
     Dependency(
         "pymateria",
@@ -53,15 +53,15 @@ DEPENDENCIES = (
         "Allows direct binary assets import/export and automatic vehicle shattermap generation using the Materia library.",
         False,
         "https://static.cfx.re/whl/",
-        "0.1.1",
+        "0.2.0",
         (
             {
                 # win amd64
-                (3, 10): "830867304a8986d89cfe4dc49f26c8e014f2c2558dd4e208ba3247588cf6ba16",
-                (3, 11): "c204fafc411dfd85992565c8fe1c16af0ee4e7af47620e8403e25d5103103795",
-                (3, 12): "24bfd244b95e2fa519116b62dcb1f49387e67da8032c1c9934769956d19f4135",
-                (3, 13): "232052dd8c6942fa8a96af8bbaa5133708640e6008035ae3a32be285d52f297d",
-                (3, 14): "91d384a543521089b0f4abb214e64b1839ef6afbedfa6574ee90be826944dbad",
+                (3, 10): "335469ddc3df95475eec2d3d5eec490294e77b3eb644267e68c21645fe948e69",
+                (3, 11): "e476d7a96984861c72b15780b981d7f8be0bb75e449032e63910d24595e0ac1d",
+                (3, 12): "d3eedb90c6c5d6475f8283f0a67ecdb830699d16d25623e132f94a86bb74fa17",
+                (3, 13): "64f881613c57835c84cf0cd1bc1c4d6e2aa3bac927886d90ccf623e523b365d5",
+                (3, 14): "84bf34ca88456597ce5181d45da9e6d57f28d91cc4fb20790c875ff370d98902",
             }.get(sys.version_info[:2], "unknown"),
         ),
     ),
