@@ -3,9 +3,10 @@ from bpy.types import (
     UILayout
 )
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
-from ..properties.extensions import ExtensionsContainer
+from ..properties.extensions import ExtensionsContainer, ExtensionType
 from ..utils import get_selected_archetype, get_selected_ytyp
 from .archetype import ArchetypeChildTabPanel
+from ..gta5.presets.extension import EXTENSION_PRESET_PANEL_BY_TYPE_AND_HOST, HOST_ARCHETYPE
 
 
 class ExtensionsListHelper(BasicListHelper):
@@ -18,6 +19,12 @@ class ExtensionsPanelHelper:
     DELETE_OPERATOR_ID = ""
     DUPLICATE_OPERATOR_ID = ""
     EXTENSIONS_LIST_ID = ""
+
+    # Subclasses set this to one of HOST_ARCHETYPE / HOST_MLO_ENTITY / HOST_MAP_ENTITY
+    # so the preset popover dispatch in draw() can pick the panel matching the host
+    # context. Entity-only extension types can live on either MLO or map entities,
+    # so the host identifier disambiguates.
+    extension_host: str = None
 
     @classmethod
     def get_extensions_container(self, context) -> ExtensionsContainer:
@@ -53,6 +60,14 @@ class ExtensionsPanelHelper:
             row = layout.row()
             row.prop(selected_extension, "name")
 
+            if self.extension_host is not None:
+                ext_type = ExtensionType(selected_extension.extension_type)
+                preset_panel_cls = EXTENSION_PRESET_PANEL_BY_TYPE_AND_HOST.get((ext_type, self.extension_host))
+                if preset_panel_cls is not None:
+                    row = layout.row()
+                    row.alignment = "RIGHT"
+                    preset_panel_cls.draw_panel_header(row)
+
             layout.separator()
 
             extension_properties = selected_extension.get_properties()
@@ -72,6 +87,8 @@ class SOLLUMZ_PT_ARCHETYPE_EXTENSIONS_PANEL(ArchetypeChildTabPanel, ExtensionsPa
     bl_order = 1
 
     icon = "CON_TRACKTO"
+
+    extension_host = HOST_ARCHETYPE
 
     ADD_OPERATOR_ID = "sollumz.addarchetypeextension"
     DELETE_OPERATOR_ID = "sollumz.deletearchetypeextension"

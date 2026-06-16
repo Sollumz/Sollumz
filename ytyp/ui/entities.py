@@ -12,6 +12,8 @@ from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
 )
 from ..operators import ytyp as ytyp_ops
+from ..gta5.presets.mlo_entity import SOLLUMZ_PT_mlo_entity_presets
+from ..gta5.presets.extension import HOST_MLO_ENTITY
 
 
 def entities_filter_items(
@@ -186,6 +188,11 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
         active = selected_archetype.entities.active_item
 
         row = layout.row()
+        row.alignment = "RIGHT"
+        row.enabled = not has_multiple_selection
+        SOLLUMZ_PT_mlo_entity_presets.draw_panel_header(row)
+
+        row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "linked_object")
 
@@ -232,6 +239,8 @@ class SOLLUMZ_PT_ENTITY_EXTENSIONS_PANEL(MloEntityChildTabPanel, ExtensionsPanel
 
     bl_order = 1
 
+    extension_host = HOST_MLO_ENTITY
+
     ADD_OPERATOR_ID = "sollumz.addentityextension"
     DELETE_OPERATOR_ID = "sollumz.deleteentityextension"
     DUPLICATE_OPERATOR_ID = "sollumz.duplicateentityextension"
@@ -268,4 +277,9 @@ class SOLLUMZ_PT_ENTITY_FLAGS_PANEL(MloEntityChildTabPanel, MultiSelectUIFlagsPa
         # TODO(multiselect): think how we should manage disabling panels when multiple selection enabled
         ytyp = get_selected_ytyp(context)
         self.layout.enabled = not ytyp.archetypes.has_multiple_selection
+
+        row = self.layout.row()
+        row.alignment = "RIGHT"
+        SOLLUMZ_PT_mlo_entity_presets.draw_panel_header(row)
+
         super().draw(context)
