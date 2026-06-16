@@ -7,7 +7,7 @@ from ..ydr.shader_materials import create_shader
 from ..ydr.operators.materials import MaterialConverter
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..ynv.ynvimport import get_material as ynv_get_material
-from ..tools.ymaphelper import add_occluder_material
+from ..ymap_next.ymapimport import _get_occluder_material
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import find_bsdf_and_material_output, material_from_image
 
@@ -38,9 +38,8 @@ class TestAllLanguages:
         mat = ynv_get_material("0 204 0 255 161 107", {})
         assert mat is not None
 
-    @pytest.mark.parametrize("sollum_type", (SollumType.YMAP_MODEL_OCCLUDER, SollumType.YMAP_BOX_OCCLUDER))
-    def test_create_occluder_material(self, sollum_type, use_every_language):
-        mat = add_occluder_material(sollum_type)
+    def test_create_occluder_material(self, use_every_language):
+        mat = _get_occluder_material()
         assert mat is not None
 
     def test_material_from_image(self, use_every_language):

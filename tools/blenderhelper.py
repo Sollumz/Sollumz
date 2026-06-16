@@ -265,14 +265,15 @@ _types_to_hide_in_render = {
 }
 
 
-def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, object_data: Optional[bpy.types.Mesh] = None) -> bpy.types.Object:
+def create_blender_object(sollum_type: SollumType, name: Optional[str] = None, object_data: Optional[bpy.types.Mesh] = None, link_to_context_collection: bool = True) -> bpy.types.Object:
     """Create a bpy object of the given sollum type and link it to the scene."""
     name = name or SOLLUMZ_UI_NAMES[sollum_type]
     object_data = object_data or bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, object_data)
     obj.sollum_type = sollum_type
     obj.hide_render = sollum_type in _types_to_hide_in_render
-    bpy.context.collection.objects.link(obj)
+    if link_to_context_collection:
+        bpy.context.collection.objects.link(obj)
 
     return obj
 

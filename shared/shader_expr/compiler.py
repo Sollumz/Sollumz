@@ -241,6 +241,10 @@ class Compiler:
         attr_expr = self.visit(e.attribute)
         return CompiledExpr(attr_expr.node, "Vector")
 
+    def visit_AttributeColorExpr(self, e: expr.AttributeColorExpr) -> CompiledExpr:
+        attr_expr = self.visit(e.attribute)
+        return CompiledExpr(attr_expr.node, "Color")
+
     def visit_AttributeFacExpr(self, e: expr.AttributeFacExpr) -> CompiledExpr:
         attr_expr = self.visit(e.attribute)
         return CompiledExpr(attr_expr.node, "Fac")

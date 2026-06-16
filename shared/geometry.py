@@ -5,8 +5,9 @@ import numpy as np
 from numpy.typing import NDArray
 from mathutils import Vector
 from typing import NamedTuple
-from collections.abc import Sequence
-
+from collections.abc import Sequence, Iterator
+from enum import Enum
+from dataclasses import dataclass
 
 class Centroid(NamedTuple):
     centroid: Vector
@@ -613,3 +614,101 @@ def distance_signed_point_to_planes(point_3d: Sequence[float], planes_co: NDArra
     distances = np.sum(planes_normals * point_3d, axis=1) + D
 
     return distances
+
+
+@dataclass(slots=True, frozen=True)
+class KDNode:
+    axis: int
+    split: float
+    left: "KDNode | KDLeaf"
+    right: "KDNode | KDLeaf"
+
+
+@dataclass(slots=True, frozen=True)
+class KDLeaf:
+    indices: NDArray
+
+
+@dataclass(slots=True, frozen=True)
+class KDTree:
+    root: KDNode | KDLeaf
+
+    def iter_leaves(self) -> Iterator[KDLeaf]:
+        stack = [self.root]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, KDLeaf):
+                yield node
+            else:
+                stack.append(node.right)
+                stack.append(node.left)
+
+
+class KDTreeSplitStrategy(Enum):
+    LONGEST_AXIS = 0
+    """Split along longest side of the bounding box at each step."""
+
+
+def kdtree_build(points: NDArray, strategy: KDTreeSplitStrategy, max_points_in_leaf: int) -> KDTree:
+    assert points.ndim == 2, f"Expected shape (N, K) for 'points', got: {points.shape}"
+    K = points.shape[1]
+
+    def _build(idx: NDArray) -> KDNode | KDLeaf:
+        if len(idx) <= max_points_in_leaf:
+            return KDLeaf(idx)
+
+        pts = points[idx]
+        bmin = pts.min(axis=0)
+        bmax = pts.max(axis=0)
+
+        if strategy == KDTreeSplitStrategy.LONGEST_AXIS:
+            axis = int(np.argmax(bmax - bmin))
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+
+        for attempt in range(K):
+            ax = (axis + attempt) % K
+            mid = 0.5 * (bmin[ax] + bmax[ax])
+            mask = pts[:, ax] < mid
+
+            # Avoid empty partitions: if everything falls on one side, try again on a the next axis
+            if mask.all() or not mask.any():
+                continue
+
+            return KDNode(
+                axis=ax,
+                split=mid,
+                left=_build(idx[mask]),
+                right=_build(idx[~mask]),
+            )
+
+        # Degenerate, identical coords on all axes → leaf
+        return KDLeaf(idx)
+
+    return KDTree(_build(np.arange(len(points))))
+
+
+def kdtree_merge_leaves(tree: KDTree, points: NDArray, max_points_in_leaf: int) -> KDTree:
+    """Collapse subtrees whose combined points fit in one leaf, to undo dust from midpoint splits."""
+    assert points.ndim == 2, f"Expected shape (N, K) for 'points', got: {points.shape}"
+
+    def _merge(node: KDNode | KDLeaf) -> tuple[KDNode | KDLeaf, int]:
+        if isinstance(node, KDLeaf):
+            return node, len(node.indices)
+
+        new_left, n_left = _merge(node.left)
+        new_right, n_right = _merge(node.right)
+        total = n_left + n_right
+
+        if total <= max_points_in_leaf:
+            # Invariant: a surviving KDNode always has > cap points, so both children are KDLeafs here.
+            merged_indices = np.concatenate([new_left.indices, new_right.indices])
+            return KDLeaf(merged_indices), total
+
+        if new_left is node.left and new_right is node.right:
+            return node, total
+
+        return KDNode(axis=node.axis, split=node.split, left=new_left, right=new_right), total
+
+    new_root, _ = _merge(tree.root)
+    return KDTree(new_root)

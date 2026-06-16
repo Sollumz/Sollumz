@@ -214,17 +214,53 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
         layout.prop(settings, "import_ext_skeleton")
 
 
-class SOLLUMZ_PT_import_ymap(bpy.types.Panel, SollumzImportSettingsPanel):
-    bl_label = "Ymap"
-    bl_order = 4
+class _SollumzImportYtypPanel(SollumzImportSettingsPanel):
+    bl_label = "Archetype Definitions"
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        layout.prop(settings, "ymap_skip_missing_entities")
-        layout.prop(settings, "ymap_exclude_entities")
+        layout.prop(settings, "ytyp_mlo_instance_entities")
+
+
+class SOLLUMZ_PT_import_ytyp_generic(bpy.types.Panel, _SollumzImportYtypPanel):
+    """Panel with YTYP import settings used in the 'Export RAGE Assets' button."""
+    bl_order = 4
+
+
+class SOLLUMZ_PT_import_ytyp_concrete(bpy.types.Panel, _SollumzImportYtypPanel):
+    """Panel with YMAP import settings used in the 'Import YTYP' button.
+    Same as the generic one but without the header.
+    """
+    operator_id = {"SOLLUMZ_OT_importytyp", "SOLLUMZ_OT_import_ytyp_io"}
+    bl_options = {"HIDE_HEADER"}
+    bl_order = 0
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+        layout.use_property_split = False
+        super().draw_settings(layout, settings)
+
+class _SollumzImportYmapPanel(SollumzImportSettingsPanel):
+    bl_label = "Maps"
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
         layout.prop(settings, "ymap_instance_entities")
-        layout.prop(settings, "ymap_box_occluders")
-        layout.prop(settings, "ymap_model_occluders")
-        layout.prop(settings, "ymap_car_generators")
+
+
+class SOLLUMZ_PT_import_ymap_generic(bpy.types.Panel, _SollumzImportYmapPanel):
+    """Panel with YMAP import settings used in the 'Export RAGE Assets' button."""
+    bl_order = 5
+
+
+class SOLLUMZ_PT_import_ymap_concrete(bpy.types.Panel, _SollumzImportYmapPanel):
+    """Panel with YMAP import settings used in the 'Import YMAP' button.
+    Same as the generic one but without the header.
+    """
+    operator_id = {"SOLLUMZ_OT_import_ymap", "SOLLUMZ_OT_import_ymap_from_directory"}
+    bl_options = {"HIDE_HEADER"}
+    bl_order = 0
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
+        layout.use_property_split = False
+        super().draw_settings(layout, settings)
 
 
 class SOLLUMZ_PT_export_include(bpy.types.Panel, SollumzExportSettingsPanel):
@@ -269,17 +305,6 @@ class SOLLUMZ_PT_export_ydd(bpy.types.Panel, SollumzExportSettingsPanel):
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
         layout.prop(settings, "exclude_skeleton")
-
-
-class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
-    bl_label = "Ymap"
-    bl_order = 5
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
-        layout.prop(settings, "ymap_exclude_entities")
-        layout.prop(settings, "ymap_box_occluders")
-        layout.prop(settings, "ymap_model_occluders")
-        layout.prop(settings, "ymap_car_generators")
 
 
 class _SollumzExportYtypPanel(SollumzExportSettingsPanel):
@@ -327,6 +352,54 @@ class SOLLUMZ_PT_export_ytyp_concrete(bpy.types.Panel, _SollumzExportYtypPanel):
     bl_order = 0
 
 
+class _SollumzExportYmapPanel(SollumzExportSettingsPanel):
+    bl_label = "Maps"
+
+    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
+        layout.enabled = self.is_enabled(settings)
+        layout.prop(settings, "export_ymaps_include", text="Include", expand=True)
+        if settings.export_ymaps_include == "SELECTED":
+            from .shared.multiselection import multiselect_ui_draw_list
+            from .ymap_next.properties.map import get_maps
+            from .ymap_next.ui.map import SOLLUMZ_UL_maps_group_list, SOLLUMZ_MT_maps_group_list_context_menu
+
+            if maps := get_maps(bpy.context):
+                multiselect_ui_draw_list(
+                    layout,
+                    maps.groups,
+                    "",
+                    "",
+                    SOLLUMZ_UL_maps_group_list,
+                    SOLLUMZ_MT_maps_group_list_context_menu,
+                    "tool_panel",
+                )
+
+
+    def is_enabled(self, settings: SollumzExportSettings):
+        return True
+
+
+class SOLLUMZ_PT_export_ymap_generic(bpy.types.Panel, _SollumzExportYmapPanel):
+    """Panel with YMAP export settings used in the 'Export RAGE Assets' button."""
+    bl_order = 7
+
+    def draw_header(self, context):
+        settings = self.get_settings(context)
+        self.layout.prop(settings, "export_ymaps", text="")
+
+    def is_enabled(self, settings: SollumzExportSettings):
+        return settings.export_ymaps
+
+
+class SOLLUMZ_PT_export_ymap_concrete(bpy.types.Panel, _SollumzExportYmapPanel):
+    """Panel with YMAP export settings used in the 'Export YMAP' button.
+    Same as the generic one but without the header.
+    """
+    operator_id = {"SOLLUMZ_OT_export_ymap"}
+    bl_options = {"HIDE_HEADER"}
+    bl_order = 0
+
+
 class _SollumzExportYtdPanel(SollumzExportSettingsPanel):
     bl_label = "Texture Dictionaries"
 
@@ -353,7 +426,7 @@ class _SollumzExportYtdPanel(SollumzExportSettingsPanel):
 
 class SOLLUMZ_PT_export_ytd_generic(bpy.types.Panel, _SollumzExportYtdPanel):
     """Panel with YTD export settings used in the 'Export RAGE Assets' button."""
-    bl_order = 7
+    bl_order = 8
 
     def draw_header(self, context):
         settings = self.get_settings(context)
@@ -663,6 +736,14 @@ class SOLLUMZ_PT_MAT_PANEL(bpy.types.Panel):
 
     def draw_header(self, context):
         icon_manager.icon_label("sollumz_icon", self)
+
+    def draw_header_preset(self, context):
+        from .ydr.gta5.presets.shader import SHADER_PRESET_CATEGORY, SOLLUMZ_PT_shader_presets
+        from .ybn.gta5.presets.collision_material import COLLISION_MATERIAL_PRESET_CATEGORY, SOLLUMZ_PT_collision_material_presets
+        if SHADER_PRESET_CATEGORY.poll(context)[0]:
+            SOLLUMZ_PT_shader_presets.draw_panel_header(self.layout)
+        elif COLLISION_MATERIAL_PRESET_CATEGORY.poll(context)[0]:
+            SOLLUMZ_PT_collision_material_presets.draw_panel_header(self.layout)
 
     def draw(self, context):
         layout = self.layout

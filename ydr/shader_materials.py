@@ -1341,11 +1341,51 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
         if "DirtSampler" in shader.parameter_map:
             add_vehicle_dirt_nodes(builder)
 
+    if shader.filename == "grass_batch.sps":
+        add_grass_batch_color_nodes(builder)
+
     link_uv_map_nodes_to_textures(builder)
 
     organize_node_tree(builder)
 
     return mat
+
+
+def grass_batch_color_tint() -> expr.ShaderExpr:
+    from ..shared.shader_expr.expr import ColorBlend
+    from ..shared.shader_expr.builtins import (
+        color_attribute,
+        attribute,
+        mix_color,
+        vec,
+    )
+    from ..ymap_next.grass import GrassBatchAttr
+
+    attr_c1 = color_attribute(get_color_attr_name(1))
+    attr_grass_color = attribute(GrassBatchAttr.COLOR_AO)
+
+    placeholder = vec(1.0, 1.0, 1.0)  # will be replaced with the color from the diffuse texture
+
+    # Texture color tinted with grass color. `fac > 0.0` is a workaround to "detect" if the attribute exists and only
+    # apply the tint if it exists. It won't be applied if the actual tint is black, but this shouldn't be too common
+    # for grass colors.
+    tinted = mix_color(placeholder, attr_grass_color.color, attr_grass_color.fac > 0.0, ColorBlend.MULTIPLY)
+
+    # R channel of colour1 determines how much tint is applied
+    final = mix_color(placeholder, tinted, attr_c1.r, ColorBlend.MIX)
+
+    return final
+
+
+def add_grass_batch_color_nodes(builder: ShaderBuilder):
+    shader_expr = grass_batch_color_tint()
+    compiled_shader_expr = compile_expr(builder.material.node_tree, shader_expr)
+
+    orig_base_color = builder.bsdf.inputs["Base Color"].links[0].from_socket
+    # Link mix color nodes
+    builder.node_tree.links.new(orig_base_color, compiled_shader_expr.node.inputs["A"])
+    builder.node_tree.links.new(orig_base_color, compiled_shader_expr.node.inputs["B"].links[0].from_node.inputs["A"])
+    builder.node_tree.links.new(compiled_shader_expr.output, builder.bsdf.inputs["Base Color"])
 
 
 VEHICLE_PREVIEW_NODE_LIGHT_EMISSIVE_TOGGLE = [

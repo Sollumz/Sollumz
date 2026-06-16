@@ -235,7 +235,13 @@ DEFAULT_EXPORT_SETTINGS = {
     "ymap_model_occluders": False,
     "ymap_car_generators": False,
     "apply_transforms": False,
-    "mesh_domain": "FACE_CORNER"
+    "mesh_domain": "FACE_CORNER",
+    "export_ytyps": False,
+    "export_ytyps_include": "ALL",
+    "export_ymaps": False,
+    "export_ymaps_include": "ALL",
+    "export_ytds": False,
+    "export_ytds_include": "ALL",
 }
 
 
@@ -249,7 +255,7 @@ DEFAULT_IMPORT_SETTINGS = {
     "ymap_box_occluders": False,
     "ymap_model_occluders": False,
     "ymap_car_generators": False,
-    "ymap_instance_entities": False,
+    "ymap_instance_entities": True,
     "ytyp_mlo_instance_entities": True,
     "textures_mode": "PACK",
     "textures_extract_custom_directory": "",

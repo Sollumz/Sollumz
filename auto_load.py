@@ -143,7 +143,7 @@ def get_register_base_types():
     type_names = [
         "Panel", "Operator", "PropertyGroup",
         "Header", "Menu",
-        "Node", "NodeSocket", "NodeTree",
+        "Node", "NodeSocket", "NodeTreeInterfaceSocket", "NodeTree",
         "UIList", "RenderEngine",
         "Gizmo", "GizmoGroup",
     ]

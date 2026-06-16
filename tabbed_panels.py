@@ -3,8 +3,8 @@ from typing import Optional, Type
 
 
 class TabbedPanelHelper:
-    _tab_panels: dict[str, bpy.types.Panel] = {}
-    _panel_toggle_ops: dict[str, bpy.types.Operator] = {}
+    _tab_panels: dict[str, type[bpy.types.Panel]] = {}
+    _panel_toggle_ops: dict[str, type[bpy.types.Operator]] = {}
 
     use_grid: bool = True
     default_tab: Optional[str] = None
@@ -37,8 +37,17 @@ class TabbedPanelHelper:
 
             is_active = tab_panel._get_active_tab() == op_cls.tab_id
 
-            layout.operator(op_cls.bl_idname, text=tab_panel.bl_label,
-                            icon=tab_panel.icon, depress=is_active)
+            icon = tab_panel.get_tab_icon()
+            match icon:
+                case str():
+                    icon_str, icon_value = icon, 0
+                case int():
+                    icon_str, icon_value = "NONE", icon
+                case _:
+                    raise ValueError(f"Invalid item icon. Only str or int supported, got '{icon}'")
+
+            layout.operator(op_cls.bl_idname, text=tab_panel.get_label(context),
+                            depress=is_active, icon=icon_str, icon_value=icon_value)
 
     @classmethod
     def register(cls):
@@ -53,13 +62,21 @@ class TabPanel:
     bl_options = {"HIDE_HEADER"}
 
     @classmethod
+    def get_tab_icon(cls) -> str | int:
+        return cls.icon
+
+    @classmethod
     def poll(cls, context: bpy.types.Context):
-        return cls._is_active() and cls.poll_tab(context)
+        return cls.is_active() and cls.poll_tab(context)
 
     @classmethod
     def poll_tab(cls, context: bpy.types.Context):
         """Poll method for tabs (do not override poll)"""
         return True
+
+    @classmethod
+    def get_label(cls, context: bpy.types.Context) -> str:
+        return cls.bl_label
 
     @classmethod
     def _get_active_tab_propname(cls):
@@ -84,8 +101,12 @@ class TabPanel:
         setattr(bpy.context.scene, cls._get_active_tab_propname(), tab_id)
 
     @classmethod
-    def _is_active(cls):
+    def is_active(cls):
         return cls._get_active_tab() == cls.bl_idname
+
+    @classmethod
+    def make_active_tab(cls):
+        return cls._set_active_tab(cls.bl_idname)
 
     @classmethod
     def register(cls):

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMapData>
+ <name>test_cargens</name>
+ <parent />
+ <flags value="0" />
+ <contentFlags value="0" />
+ <streamingExtentsMin x="50" y="250" z="100" />
+ <streamingExtentsMax x="250" y="450" z="200" />
+ <entitiesExtentsMin x="0" y="0" z="0" />
+ <entitiesExtentsMax x="0" y="0" z="0" />
+ <entities />
+ <containerLods itemType="rage__fwContainerLodDef" />
+ <boxOccluders itemType="BoxOccluder" />
+ <occludeModels itemType="OccludeModel" />
+ <physicsDictionaries />
+ <instancedData>
+  <ImapLink />
+  <PropInstanceList itemType="rage__fwPropInstanceListDef" />
+  <GrassInstanceList itemType="rage__fwGrassInstanceListDef" />
+ </instancedData>
+ <timeCycleModifiers itemType="CTimeCycleModifier" />
+ <carGenerators itemType="CCarGen">
+  <Item>
+   <position x="100" y="300" z="110" />
+   <orientX value="1.921284" />
+   <orientY value="4.396545" />
+   <perpendicularLength value="3.198676" />
+   <carModel>sultan</carModel>
+   <flags value="3680" />
+   <bodyColorRemap1 value="-1" />
+   <bodyColorRemap2 value="-1" />
+   <bodyColorRemap3 value="-1" />
+   <bodyColorRemap4 value="-1" />
+   <popGroup />
+   <livery value="-1" />
+  </Item>
+  <Item>
+   <position x="105" y="298" z="110" />
+   <orientX value="-1.820751" />
+   <orientY value="-4.439122" />
+   <perpendicularLength value="3.198676" />
+   <carModel>sultan</carModel>
+   <flags value="3680" />
+   <bodyColorRemap1 value="-1" />
+   <bodyColorRemap2 value="-1" />
+   <bodyColorRemap3 value="-1" />
+   <bodyColorRemap4 value="-1" />
+   <popGroup />
+   <livery value="-1" />
+  </Item>
+  <Item>
+   <position x="110" y="305" z="110" />
+   <orientX value="2.5" />
+   <orientY value="3.0" />
+   <perpendicularLength value="2.5" />
+   <carModel>police</carModel>
+   <flags value="536872961" />
+   <bodyColorRemap1 value="0" />
+   <bodyColorRemap2 value="-1" />
+   <bodyColorRemap3 value="-1" />
+   <bodyColorRemap4 value="-1" />
+   <popGroup>POPGRP_PRISONERS</popGroup>
+   <livery value="2" />
+  </Item>
+ </carGenerators>
+ <LODLightsSOA>
+  <direction itemType="FloatXYZ" />
+  <falloff />
+  <falloffExponent />
+  <timeAndStateFlags />
+  <hash />
+  <coneInnerAngle />
+  <coneOuterAngleOrCapExt />
+  <coronaIntensity />
+ </LODLightsSOA>
+ <DistantLODLightsSOA>
+  <position itemType="FloatXYZ" />
+  <RGBI />
+  <numStreetLights value="0" />
+  <category value="0" />
+ </DistantLODLightsSOA>
+ <block>
+  <version value="0" />
+  <flags value="0" />
+  <name></name>
+  <exportedBy></exportedBy>
+  <owner></owner>
+  <time></time>
+ </block>
+</CMapData>

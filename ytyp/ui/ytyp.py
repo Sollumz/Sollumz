@@ -1,16 +1,8 @@
 import bpy
-from ...sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
+from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ...sollumz_properties import ArchetypeType
-from ...sollumz_preferences import (
-    get_addon_preferences,
-    get_import_settings,
-    get_export_settings,
-    SollumzImportSettings,
-    SollumzExportSettings
-)
-from ..utils import (
-    get_selected_ytyp,
-)
+from ...sollumz_preferences import get_addon_preferences
+from ..utils import get_selected_ytyp
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -65,18 +57,6 @@ class SOLLUMZ_PT_YTYP_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
         row = list_col.row()
         row.operator(import_op.bl_idname, icon="IMPORT")
         row.operator(export_op.bl_idname, icon="EXPORT")
-
-
-class SOLLUMZ_PT_import_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):
-    bl_options = {"HIDE_HEADER"}
-    operator_id = {"SOLLUMZ_OT_importytyp", "SOLLUMZ_OT_import_ytyp_io"}
-
-    def get_settings(self, context: bpy.types.Context) -> SollumzImportSettings:
-        return get_import_settings(context)
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        layout.use_property_split = False
-        layout.prop(settings, "ytyp_mlo_instance_entities")
 
 
 class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):

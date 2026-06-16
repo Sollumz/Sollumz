@@ -40,12 +40,19 @@ from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
-from .ymap.ymapimport import import_ymap
-from .ymap.ymapexport import export_ymap
+from .ymap.ymapimport import import_ymap as deprecated_import_ymap
+from .ymap.ymapexport import export_ymap as deprecated_export_ymap
 from .ytyp.ytypimport import import_ytyp
 from .tools.blenderhelper import remove_number_suffix
 from .meta import DEV_MODE
 from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
+from .iecontext import (
+    export_context_scope,
+    ExportContext,
+    ExportBundle,
+    import_context_scope,
+    ImportContext,
+)
 
 from . import logger
 
@@ -120,7 +127,7 @@ class SOLLUMZ_OT_import_assets_legacy(TimedOperator, Operator):
                     elif YCD.file_extension in filepath:
                         import_ycd(filepath)
                     elif YMAP.file_extension in filepath:
-                        import_ymap(filepath)
+                        deprecated_import_ymap(filepath)
                     else:
                         continue
 
@@ -203,11 +210,13 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                 logger.info("No file selected for import!")
                 return {"CANCELLED"}
 
+            print(f"{self.directory=}")
             self.directory = bpy.path.abspath(self.directory)
 
             filenames = [f.name for f in self.files]
             filenames, ytd_filenames = self._separate_ytd_filenames(filenames)
             filenames, ytyp_filenames = self._separate_ytyp_filenames(filenames)
+            filenames, ymap_filenames = self._separate_ymap_filenames(filenames)
             filenames = self._dedupe_hi_yft_filenames(filenames)
 
             from pathlib import Path
@@ -219,7 +228,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             from .yft.yftimport_io import import_yft as import_yft_asset, find_yft_external_dependencies
             from .ytyp.ytypimport_io import import_ytyp as import_ytyp_asset
             from .ytd.ytdimport import import_ytd as import_ytd_asset
-            from .iecontext import import_context_scope, ImportContext
+            from .ymap_next.ymapimport import import_ymap as import_ymap_asset, begin_import_ymap_group, end_import_ymap_group
 
             prefs_import_settings = self if self.use_custom_settings else get_import_settings()
             import_settings = prefs_import_settings.to_import_context_settings()
@@ -230,11 +239,9 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                 filepath = directory / filename
                 if filename.endswith(YCD.file_extension):
                     import_ycd(str(filepath))
-                elif filename.endswith(YMAP.file_extension):
-                    import_ymap(str(filepath))
                 elif filename.endswith(YNV.file_extension):
                     import_ynv(str(filepath))
-                elif filepath.suffix in {".ycd", ".ymap", ".ynv"}:
+                elif filepath.suffix in {".ycd", ".ynv"}:
                     logger.warning(
                         f"Binary resource format '{filepath.suffix}' is not supported yet. "
                         f"Export them to XML with CodeWalker first."
@@ -252,7 +259,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         return True
 
                     if (load_result := try_load_asset(VPath(filepath), return_target=True)) is None:
-                        if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp", ".ytd"}:
+                        if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp", ".ytd", ".ymap"}:
                             logger.warning(f"Could not import '{filepath}'. {PYMATERIA_REQUIRED_MSG}")
                         else:
                             logger.warning(f"Could not import '{filepath}'. Unsupported file format.")
@@ -300,6 +307,8 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                                 import_ytyp_asset(asset, name)
                             case AssetType.TEXTURE_DICTIONARY:
                                 import_ytd_asset(asset, name)
+                            case AssetType.MAP_DATA:
+                                import_ymap_asset(asset, name)
                             case _:
                                 assert False, f"Unsupported asset type '{asset.ASSET_TYPE}'"
 
@@ -316,10 +325,15 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             for filename in filenames:
                 _import_asset(filename)
 
-            # Import the .ytyps after all the assets to ensure that the archetypes get linked to their object in case
-            # they are imported together
+            # Import the .ytyps and .ymaps after all the assets to ensure that the archetypes get linked to their object
+            # in case they are imported together
             for filename in ytyp_filenames:
                 _import_asset(filename)
+
+            begin_import_ymap_group()
+            for filename in ymap_filenames:
+                _import_asset(filename)
+            end_import_ymap_group()
 
             logger.info(f"Imported in {self.time_elapsed} seconds")
             return {"FINISHED"}
@@ -346,21 +360,26 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             )
         ]
 
+    def _separate_filenames_with_extension(self, ext: str, filenames: list[str]) -> tuple[list[str], list[str]]:
+        """Separate the filenames list into two lists, one with all the assets and another one only with the specified extension."""
+        other_filenames, filenames_with_ext = [], []
+        ext_xml = f"{ext}.xml"
+        for f in filenames:
+            dest = filenames_with_ext if f.endswith(ext) or f.endswith(ext_xml) else other_filenames
+            dest.append(f)
+        return other_filenames, filenames_with_ext
+
     def _separate_ytd_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
         """Separate the filenames list into two lists, one with all the assets and another one only with .ytds."""
-        asset_filenames, ytd_filenames = [], []
-        for f in filenames:
-            dest = ytd_filenames if f.endswith(".ytd") or f.endswith(".ytd.xml") else asset_filenames
-            dest.append(f)
-        return asset_filenames, ytd_filenames
+        return self._separate_filenames_with_extension(".ytd", filenames)
 
     def _separate_ytyp_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
         """Separate the filenames list into two lists, one with all the assets and another one only with .ytyps."""
-        asset_filenames, ytyp_filenames = [], []
-        for f in filenames:
-            dest = ytyp_filenames if f.endswith(".ytyp") or f.endswith(".ytyp.xml") else asset_filenames
-            dest.append(f)
-        return asset_filenames, ytyp_filenames
+        return self._separate_filenames_with_extension(".ytyp", filenames)
+
+    def _separate_ymap_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
+        """Separate the filenames list into two lists, one with all the assets and another one only with .ymaps."""
+        return self._separate_filenames_with_extension(".ymap", filenames)
 
 
 class SOLLUMZ_OT_import_assets(ImportAssetsOperatorImpl, Operator):
@@ -377,7 +396,7 @@ if bpy.app.version >= (4, 1, 0):
         bl_import_operator = SOLLUMZ_OT_import_assets.bl_idname
         # Supports handling multiple extensions, but doesn't support multi-dot extensions like .yft.xml. `.xml` should
         # be fine because the operator checks the extension, but it is a bit broad.
-        bl_file_extensions = ".ybn;.ydr;.ydd;.yft;.ytyp;.ytd;.xml;"
+        bl_file_extensions = ".ybn;.ydr;.ydd;.yft;.ytyp;.ytd;.ymap;.xml;"
 
         @classmethod
         def poll_drop(cls, context):
@@ -491,9 +510,9 @@ class SOLLUMZ_OT_export_assets_legacy(TimedOperator, Operator):
                     elif obj.sollum_type == SollumType.BOUND_COMPOSITE:
                         filepath = self.get_filepath(obj, YBN.file_extension)
                         success = export_ybn(obj, filepath)
-                    elif obj.sollum_type == SollumType.YMAP:
+                    elif obj.sollum_type == SollumType.DEPRECATED__YMAP:
                         filepath = self.get_filepath(obj, YMAP.file_extension)
-                        success = export_ymap(obj, filepath)
+                        success = deprecated_export_ymap(obj, filepath)
                     else:
                         continue
 
@@ -528,7 +547,7 @@ class SOLLUMZ_OT_export_assets_legacy(TimedOperator, Operator):
 class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
     """Export RAGE asset files"""
 
-    sz_export_types = {"OBJECT", "YTYP", "YTD"}
+    sz_export_types = {"OBJECT", "YTYP", "YMAP", "YTD"}
     """Types of exports to handle in this operator."""
 
     directory: bpy.props.StringProperty(
@@ -594,6 +613,16 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
             else:
                 export_ytyps = False
 
+            if "YMAP" in self.sz_export_types:
+                from .ymap_next.properties.map import get_maps
+                export_ymaps = (
+                    # only consider prefs in the generic export operator, the concrete one for YMAPs always exports them
+                    (self.sz_export_types == {"YMAP"} or prefs_export_settings.export_ymaps) and
+                    (maps := get_maps(context)) and maps.groups
+                )
+            else:
+                export_ymaps = False
+
             if "YTD" in self.sz_export_types:
                 export_ytds = (
                     # only consider prefs in the generic export operator, the concrete one for YTDs always exports them
@@ -605,7 +634,7 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
             self.directory = bpy.path.abspath(self.directory)
 
-            if not objs and not export_ytyps and not export_ytds:
+            if not objs and not export_ytyps and not export_ymaps and not export_ytds:
                 if prefs_export_settings.limit_to_selected:
                     logger.info("No Sollumz objects selected for export!")
                 else:
@@ -632,6 +661,10 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
                 ytyps = self._collect_ytyps_for_export(context, prefs_export_settings.export_ytyps_include)
                 any_warnings_or_errors = self._export_ytyps(context, ytyps, directory, export_settings, op_log) or any_warnings_or_errors
 
+            if export_ymaps:
+                ymaps = self._collect_ymaps_for_export(context, prefs_export_settings.export_ymaps_include)
+                any_warnings_or_errors = self._export_ymaps(context, ymaps, directory, export_settings, op_log) or any_warnings_or_errors
+
             if export_ytds:
                 ytds = self._collect_ytds_for_export(context, prefs_export_settings.export_ytds_include)
                 any_warnings_or_errors = self._export_ytds(context, ytds, directory, export_settings, op_log) or any_warnings_or_errors
@@ -646,7 +679,6 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
         from .ydr.ydrexport_io import export_ydr as export_ydr_asset
         from .ydd.yddexport_io import export_ydd as export_ydd_asset
         from .yft.yftexport_io import export_yft as export_yft_asset
-        from .iecontext import export_context_scope, ExportContext
 
         any_warnings_or_errors = False
 
@@ -671,9 +703,9 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
                         case SollumType.CLIP_DICTIONARY:
                             filepath = SOLLUMZ_OT_export_assets_legacy.get_filepath(self, obj, YCD.file_extension)
                             legacy_success = export_ycd(obj, filepath)
-                        case SollumType.YMAP:
+                        case SollumType.DEPRECATED__YMAP:
                             filepath = SOLLUMZ_OT_export_assets_legacy.get_filepath(self, obj, YMAP.file_extension)
-                            legacy_success = export_ymap(obj, filepath)
+                            legacy_success = deprecated_export_ymap(obj, filepath)
 
                         case _:
                             assert False, f"Unsupported asset type '{obj.sollum_type}'"
@@ -697,7 +729,6 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
     def _export_ytyps(self, context, ytyp_indices: list[int], directory: Path, export_settings, op_log) -> bool:
         from .ytyp.ytypexport_io import export_ytyp as export_ytyp_asset
-        from .iecontext import export_context_scope, ExportContext
 
         any_warnings_or_errors = False
 
@@ -715,6 +746,42 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
         return any_warnings_or_errors
 
+    def _collect_ymaps_for_export(self, context, include: Literal["ALL", "SELECTED"]) -> list[int]:
+        from .ymap_next.properties.map import get_maps
+
+        map_groups = get_maps(context).groups
+        if include == "SELECTED":
+            return map_groups.selected_items_indices
+        else:
+            return list(range(len(map_groups)))
+
+    def _export_ymaps(self, context, ymap_indices: list[int], directory: Path, export_settings, op_log) -> bool:
+        from .ymap_next.properties.map import get_maps
+        from .ymap_next.ymapexport import export_ymap as export_ymap_asset
+
+        any_warnings_or_errors = False
+        maps = get_maps(context)
+        for map_group_index in ymap_indices:
+            op_log.clear_log_counts()
+            map_group = maps.groups[map_group_index]
+            if map_group.incomplete_lod_hierarchy_lock:
+                logger.warning(
+                    f"Map group '{map_group.name}' has an incomplete LOD hierarchy: its LOD "
+                    f"hierarchy values (parent index, number of children, parent map) are exported "
+                    f"as-is instead of being recomputed."
+                )
+            try:
+                asset_name = map_group.name.lower()
+                with export_context_scope(ExportContext(asset_name, export_settings)):
+                    export_bundles = export_ymap_asset(map_group)
+
+                any_warnings_or_errors = self._save_bundle(map_group.name, export_bundles, directory, export_settings, op_log) or any_warnings_or_errors
+            except Exception:
+                logger.error(f"Error exporting: {map_group.name} \n {traceback.format_exc()}")
+                any_warnings_or_errors = True
+
+        return any_warnings_or_errors
+
     def _collect_ytds_for_export(self, context, include: Literal["ALL", "SELECTED"]) -> list[int]:
         txds = context.scene.sz_txds.texture_dictionaries
         if include == "SELECTED":
@@ -724,7 +791,6 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
     def _export_ytds(self, context, txd_indices: list[int], directory: Path, export_settings, op_log) -> bool:
         from .ytd.ytdexport import export_ytd as export_ytd_asset
-        from .iecontext import export_context_scope, ExportContext
 
         any_warnings_or_errors = False
 
@@ -743,12 +809,14 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
         return any_warnings_or_errors
 
-    def _save_bundle(self, name: str, export_bundle, directory: Path, export_settings, op_log, legacy_success=False) -> bool:
+    def _save_bundle(self, name: str, export_bundle: ExportBundle | list[ExportBundle], directory: Path, export_settings, op_log, legacy_success=False) -> bool:
         any_warnings_or_errors = False
-        success = export_bundle or legacy_success
+        export_bundles = export_bundle if isinstance(export_bundle, list) else [export_bundle]
+        success = (export_bundles and all(b.is_valid() for b in export_bundles)) or legacy_success
         if success:
-            if export_bundle:
-                export_bundle.save(directory, export_settings.targets)
+            for b in export_bundles:
+                if b:
+                    b.save(directory, export_settings.targets)
 
             if op_log.has_warnings_or_errors:
                 logger.info(
