@@ -99,28 +99,28 @@ class ExportSettingsBase:
     )
 
     ymap_exclude_entities: BoolProperty(
-        name="Exclude Entities",
+        name="(Deprecated) Exclude Entities",
         description="If enabled, ignore all Entities from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_box_occluders: BoolProperty(
-        name="Exclude Box Occluders",
+        name="(Deprecated) Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_model_occluders: BoolProperty(
-        name="Exclude Model Occluders",
+        name="(Deprecated) Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_car_generators: BoolProperty(
-        name="Exclude Car Generators",
+        name="(Deprecated) Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
@@ -158,6 +158,7 @@ class ExportSettingsBase:
 
     export_ytyps: BoolProperty(
         name="Export YTYPs",
+        default=False,
         update=_on_update_thunk,
     )
     export_ytyps_include: EnumProperty(
@@ -170,8 +171,24 @@ class ExportSettingsBase:
         update=_on_update_thunk,
     )
 
+    export_ymaps: BoolProperty(
+        name="Export Maps",
+        default=False,
+        update=_on_update_thunk,
+    )
+    export_ymaps_include: EnumProperty(
+        name="Include Maps",
+        default="SELECTED",
+        items=(
+            ("ALL", "All", "Export all maps in the scene"),
+            ("SELECTED", "Selected", "Export the selected maps"),
+        ),
+        update=_on_update_thunk,
+    )
+
     export_ytds: BoolProperty(
         name="Export Texture Dictionaries",
+        default=False,
         update=_on_update_thunk,
     )
     export_ytds_include: EnumProperty(
@@ -236,35 +253,35 @@ class ImportSettingsBase:
     )
 
     ymap_skip_missing_entities: BoolProperty(
-        name="Skip Missing Entities",
+        name="(Deprecated) Skip Missing Entities",
         description="If enabled, missing entities wont be created as an empty object",
         default=True,
         update=_on_update_thunk,
     )
 
     ymap_exclude_entities: BoolProperty(
-        name="Exclude Entities",
+        name="(Deprecated) Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_box_occluders: BoolProperty(
-        name="Exclude Box Occluders",
+        name="(Deprecated) Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_model_occluders: BoolProperty(
-        name="Exclude Model Occluders",
+        name="(Deprecated) Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_car_generators: BoolProperty(
-        name="Exclude Car Generators",
+        name="(Deprecated) Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
@@ -272,8 +289,8 @@ class ImportSettingsBase:
 
     ymap_instance_entities: BoolProperty(
         name="Instance Entities",
-        description="If enabled, instance all entities from the selected ymap(s)",
-        default=False,
+        description="If enabled, instance all entities from the imported ymap(s)",
+        default=True,
         update=_on_update_thunk,
     )
 
@@ -328,6 +345,7 @@ class ImportSettingsBase:
             mlo_instance_entities=self.ytyp_mlo_instance_entities,
             import_external_skeleton=self.import_ext_skeleton,
             frag_import_vehicle_windows=self.frag_import_vehicle_windows,
+            map_instance_entities=self.ymap_instance_entities,
             textures_mode=textures_mode,
             textures_extract_custom_directory=textures_extract_custom_dir,
         )
@@ -394,6 +412,108 @@ class SOLLUMZ_OT_prefs_theme_reset(Operator):
     def execute(self, context):
         get_theme_settings(context).reset()
         _save_preferences()
+        return {"FINISHED"}
+
+
+class SzSharedAssetsDirectory(PropertyGroup):
+    name: StringProperty(name="Name")
+    path: StringProperty(
+        name="Path",
+        description="Path to a directory where to store the asset library",
+        subtype="DIR_PATH",
+        update=_save_preferences_on_update,
+    )
+
+
+class SOLLUMZ_UL_prefs_shared_assets_directories(UIList):
+    bl_idname = "SOLLUMZ_UL_prefs_shared_assets_directories"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "name", text="", emboss=False)
+        layout.prop(item, "path", text="", emboss=False)
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_add(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_add"
+    bl_label = "Add Shared Assets Directory"
+    bl_description = "Add a new directory to search assets in"
+
+    name: StringProperty(name="Name")
+    path: StringProperty(
+        name="Path",
+        description="Path to a directory where to store the asset library",
+        subtype="DIR_PATH",
+    )
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        d = prefs.shared_assets_directories.add()
+        d.name = self.name
+        d.path = self.path
+        prefs.shared_assets_directories_index = len(prefs.shared_assets_directories) - 1
+        _save_preferences()
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_remove(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_remove"
+    bl_label = "Remove Shared Assets Directory"
+    bl_description = "Remove the selected directory"
+
+    @classmethod
+    def poll(cls, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.shared_assets_directories_index < len(prefs.shared_assets_directories)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.shared_assets_directories.remove(prefs.shared_assets_directories_index)
+        prefs.shared_assets_directories_index = max(prefs.shared_assets_directories_index - 1, 0)
+        _save_preferences()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_move_up(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_move_up"
+    bl_label = "Increase Shared Texture Directory Priority"
+    bl_description = "Increase search priority of this directory"
+
+    @classmethod
+    def poll(self, context):
+        prefs = get_addon_preferences(context)
+        return 0 < prefs.shared_assets_directories_index < len(prefs.shared_assets_directories)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        indexA = prefs.shared_assets_directories_index
+        indexB = prefs.shared_assets_directories_index - 1
+        prefs.swap_shared_assets_directories(indexA, indexB)
+        prefs.shared_assets_directories_index -= 1
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_move_down(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_move_down"
+    bl_label = "Decrease Shared Texture Directory Priority"
+    bl_description = "Decrease search priority of this directory"
+
+    @classmethod
+    def poll(self, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.shared_assets_directories_index < (len(prefs.shared_assets_directories) - 1)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        indexA = prefs.shared_assets_directories_index
+        indexB = prefs.shared_assets_directories_index + 1
+        prefs.swap_shared_assets_directories(indexA, indexB)
+        prefs.shared_assets_directories_index += 1
         return {"FINISHED"}
 
 
@@ -713,6 +833,15 @@ class SollumzAddonPreferences(AddonPreferences):
         min=0
     )
 
+    shared_assets_directories: CollectionProperty(
+        name="Game Asset Libraries",
+        type=SzSharedAssetsDirectory,
+    )
+    shared_assets_directories_index: IntProperty(
+        name="Selected Shared Assets Directory",
+        min=0
+    )
+
     name_table_paths: CollectionProperty(
         name="Name Tables",
         type=SzNameTablePath,
@@ -781,6 +910,14 @@ class SollumzAddonPreferences(AddonPreferences):
             ("ABOUT", "About", "", "INFO_LARGE", 6),
         )
     )
+
+    def swap_shared_assets_directories(self, indexA: int, indexB: int):
+        a = self.shared_assets_directories[indexA]
+        b = self.shared_assets_directories[indexB]
+        nameA, pathA = a.name, a.path
+        nameB, pathB = b.name, b.path
+        a.name, a.path = nameB, pathB
+        b.name, b.path = nameA, pathA
 
     def swap_shared_textures_directories(self, indexA: int, indexB: int):
         a = self.shared_textures_directories[indexA]
@@ -882,6 +1019,27 @@ class SollumzAddonPreferences(AddonPreferences):
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()
+        layout.label(text="Game Asset Libraries")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "Directories where .blend libraries containing game assets are stored. Used when importing maps and interiors."
+        )
+        _, side_col = draw_list_with_add_remove(
+            layout,
+            SOLLUMZ_OT_prefs_shared_assets_directory_add.bl_idname,
+            SOLLUMZ_OT_prefs_shared_assets_directory_remove.bl_idname,
+            SOLLUMZ_UL_prefs_shared_assets_directories.bl_idname, "",
+            self, "shared_assets_directories",
+            self, "shared_assets_directories_index",
+            rows=4
+        )
+        side_col.separator()
+        subcol = side_col.column(align=True)
+        subcol.operator(SOLLUMZ_OT_prefs_shared_assets_directory_move_up.bl_idname, text="", icon="TRIA_UP")
+        subcol.operator(SOLLUMZ_OT_prefs_shared_assets_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
+
+        layout.separator()
         layout.label(text="Shared Textures")
         row = layout.row()
         self._draw_help_text(
@@ -974,13 +1132,8 @@ class SollumzAddonPreferences(AddonPreferences):
         _section_header(box, "YTYP")
         box.prop(settings, "ytyp_mlo_instance_entities")
 
-        _section_header(box, "YMAP")
-        box.prop(settings, "ymap_skip_missing_entities")
-        box.prop(settings, "ymap_exclude_entities")
+        _section_header(box, "Maps")
         box.prop(settings, "ymap_instance_entities")
-        box.prop(settings, "ymap_box_occluders")
-        box.prop(settings, "ymap_model_occluders")
-        box.prop(settings, "ymap_car_generators")
 
         # Export settings
         box = sublayout.box()
@@ -1022,12 +1175,6 @@ class SollumzAddonPreferences(AddonPreferences):
 
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "exclude_skeleton")
-
-        _section_header(box, "YMAP")
-        box.prop(settings, "ymap_exclude_entities")
-        box.prop(settings, "ymap_box_occluders")
-        box.prop(settings, "ymap_model_occluders")
-        box.prop(settings, "ymap_car_generators")
 
         _line_separator(layout, factor=3.0)
         layout.prop(self, "legacy_import_export")
@@ -1324,7 +1471,8 @@ def _update_bpy_struct_from_tuple(struct: bpy_struct, values: tuple | object):
     values_is_tuple = isinstance(values, tuple)
     num_values = len(values) if values_is_tuple else 1
     if len(keys) != num_values:
-        raise ValueError(f"Incorrect number of values in tuple: expected {len(keys)}, got {len(values)}")
+        # raise ValueError(f"Incorrect number of values in tuple: expected {len(keys)}, got {len(values)}")
+        return
 
     if not values_is_tuple:
         values = (values,)

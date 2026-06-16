@@ -12,7 +12,7 @@ from bpy.types import (
     ShaderNodeTexImage,
 )
 from typing import Optional
-from mathutils import Matrix
+from mathutils import Matrix, Vector, Quaternion
 from pathlib import Path
 from .shader_materials import (
     create_shader,
@@ -45,7 +45,7 @@ from .mesh_builder import MeshBuilder
 from .cable_mesh_builder import CableMeshBuilder
 from .cable import CABLE_SHADER_NAME
 from ..lods import LODLevels, LODLevel
-from .lights_io import create_light_objs
+from .lights_io import create_light_objs, serialize_lights_to_asset
 from .properties import DrawableModelProperties
 from ..iecontext import import_context, ImportTexturesMode
 from .. import logger
@@ -328,6 +328,7 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
                 # Skip unassigned texture shader parameters
                 continue
 
+            tex_name = tex_name.lower()
             tex_name_dds = f"{tex_name}.dds"
             pack = ctx.settings.textures_mode == ImportTexturesMode.PACK
             img = None
@@ -533,6 +534,12 @@ def set_drawable_properties(obj: Object, drawable: AssetDrawable):
 
 def create_drawable_as_asset(drawable: AssetDrawable, name: str) -> Object:
     """Create drawable as an asset with all the high LODs joined together."""
+
+    from .ydrimport import convert_object_to_asset
+
+    skel = drawable.skeleton
+    lights = drawable.lights
+    bounds = drawable.bounds
     models = drawable.models
     models.pop(IOLodLevel.MEDIUM, None)
     models.pop(IOLodLevel.LOW, None)
@@ -540,8 +547,55 @@ def create_drawable_as_asset(drawable: AssetDrawable, name: str) -> Object:
     drawable.models = models
     drawable.bounds = None
     drawable.lights = []
-
     drawable_obj = create_drawable(drawable)
+    asset_obj = convert_object_to_asset(name, drawable_obj)
+    serialize_lights_to_asset(asset_obj, lights)
+    if bounds:
+        import json
 
-    from .ydrimport import convert_object_to_asset
-    return convert_object_to_asset(name, drawable_obj)
+        COLS_KEY = "sz_asset_collisions"
+
+        cols_serialized = {
+            "bb_min": tuple(bounds.bb_min),
+            "bb_max": tuple(bounds.bb_max),
+        }
+        cols_serialized_str = json.dumps(
+            cols_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[COLS_KEY] = cols_serialized_str
+        if data := asset_obj.data:
+                data[COLS_KEY] = cols_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[COLS_KEY] = cols_serialized_str
+
+    if skel:
+        import json
+        from dataclasses import asdict
+        SKEL_KEY = "sz_asset_skeleton"
+
+        skel_serialized = asdict(skel)
+        for bone in skel_serialized["bones"]:
+            bone.pop("translation_limit")
+            bone.pop("rotation_limit")
+            for k, v in bone.items():
+                match v:
+                    case Vector() | Quaternion():
+                        bone[k] = tuple(v)
+
+        skel_serialized_str = json.dumps(
+            skel_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[SKEL_KEY] = skel_serialized_str
+        if data := asset_obj.data:
+                data[SKEL_KEY] = skel_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[SKEL_KEY] = skel_serialized_str
+
+
+    return asset_obj

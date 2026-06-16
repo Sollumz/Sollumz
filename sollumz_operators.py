@@ -211,6 +211,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             filenames = self._dedupe_hi_yft_filenames(filenames)
 
             from pathlib import Path
+            from szio import VPath
             from szio.gta5 import try_load_asset, AssetType, AssetWithDependencies
             from .ybn.ybnimport_io import import_ybn as import_ybn_asset
             from .ydr.ydrimport_io import import_ydr as import_ydr_asset
@@ -250,7 +251,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                     if _import_asset_legacy(str(filepath)):
                         return True
 
-                    if (load_result := try_load_asset(filepath, return_target=True)) is None:
+                    if (load_result := try_load_asset(VPath(filepath), return_target=True)) is None:
                         if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp", ".ytd"}:
                             logger.warning(f"Could not import '{filepath}'. {PYMATERIA_REQUIRED_MSG}")
                         else:

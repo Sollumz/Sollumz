@@ -27,7 +27,7 @@ from szio.gta5 import (
 )
 from ..ydr.ydrimport_io import create_drawable, create_drawable_models, shader_group_to_materials_with_hi, create_armature_obj_from_skel
 from ..ybn.ybnimport_io import create_bound_object, create_bound_composite
-from ..ydr.lights_io import create_light_objs
+from ..ydr.lights_io import create_light_objs, serialize_lights_to_asset
 from .properties import LODProperties, GroupFlagBit, GlassTypes
 from ..tools.blenderhelper import get_child_of_bone
 from ..iecontext import import_context
@@ -703,10 +703,60 @@ def shattermap_to_image(shattermap: np.ndarray, name: str) -> Image:
 
 def create_fragment_as_asset(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: str) -> Object:
     """Create fragment as an asset with all meshes joined together."""
-    # frag_xml.drawable.drawable_models_low = []
-    # frag_xml.drawable.drawable_models_med = []
-    # frag_xml.drawable.drawable_models_vlow = []
 
     from ..ydr.ydrimport import convert_object_to_asset
+    skel = frag.base_drawable.skeleton
+    lights = frag.lights
+    bounds = frag.physics and frag.physics.lod1 and frag.physics.lod1.archetype and frag.physics.lod1.archetype.bounds
+    frag.lights = []
     frag_obj = create_fragment(frag, hi_frag, name)
-    return convert_object_to_asset(name, frag_obj)
+    asset_obj = convert_object_to_asset(name, frag_obj)
+    serialize_lights_to_asset(asset_obj, lights)
+    if bounds:
+        import json
+
+        COLS_KEY = "sz_asset_collisions"
+
+        cols_serialized = {
+            "bb_min": tuple(bounds.bb_min),
+            "bb_max": tuple(bounds.bb_max),
+        }
+        cols_serialized_str = json.dumps(
+            cols_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[COLS_KEY] = cols_serialized_str
+        if data := asset_obj.data:
+                data[COLS_KEY] = cols_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[COLS_KEY] = cols_serialized_str
+
+    if skel:
+        import json
+        from dataclasses import asdict
+        SKEL_KEY = "sz_asset_skeleton"
+
+        skel_serialized = asdict(skel)
+        for bone in skel_serialized["bones"]:
+            bone.pop("translation_limit")
+            bone.pop("rotation_limit")
+            for k, v in bone.items():
+                match v:
+                    case Vector() | Quaternion():
+                        bone[k] = tuple(v)
+
+        skel_serialized_str = json.dumps(
+            skel_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[SKEL_KEY] = skel_serialized_str
+        if data := asset_obj.data:
+                data[SKEL_KEY] = skel_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[SKEL_KEY] = skel_serialized_str
+
+    return asset_obj

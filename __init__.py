@@ -29,7 +29,6 @@ def reload_sollumz_modules():
 
     print("Reloading Sollumz modules")
 
-
     global sollumz_debug, auto_load, dependencies, bpy
 
     dependencies.reload_dependencies()
@@ -54,14 +53,21 @@ if "bpy" in locals():
     reload_sollumz_modules()
 
 
-# Imports need to be here, not at the top of the file, to handle reload
-import bpy  # noqa: E402, F811
+def is_subprocess():
+    import multiprocessing
 
-from . import sollumz_debug  # noqa: E402, F811
-from . import auto_load  # noqa: E402, F811
-from . import dependencies  # noqa: E402, F811
+    return multiprocessing.current_process().name != "MainProcess"
 
-sollumz_debug.init_debug()  # first in case we need to debug initialization code
+# If this is a multiprocessing subprocess, we don't want to import bpy
+if not is_subprocess():
+    # Imports need to be here, not at the top of the file, to handle reload
+    import bpy  # noqa: E402, F811
+
+    from . import sollumz_debug  # noqa: E402, F811
+    from . import auto_load  # noqa: E402, F811
+    from . import dependencies  # noqa: E402, F811
+
+    sollumz_debug.init_debug()  # first in case we need to debug initialization code
 
 
 def register():
@@ -75,10 +81,12 @@ def register():
         # Setup szio library
         import mathutils
         import szio.types
+
         szio.types.use_math_types(mathutils.Vector, mathutils.Quaternion, mathutils.Matrix)
 
         import logging
         from . import logger
+
         szio_logger = logging.getLogger("szio")
         while szio_logger.handlers:
             szio_logger.removeHandler(szio_logger.handlers[0])
@@ -91,12 +99,14 @@ def register():
         # WorkSpaceTools need to be registered after normal modules so the keymaps
         # detect the registered operators
         from . import sollumz_tool
+
         sollumz_tool.register_tools()
 
 
 def unregister():
     if dependencies.has_required_dependencies():
         from . import sollumz_tool
+
         sollumz_tool.unregister_tools()
 
         auto_load.unregister()

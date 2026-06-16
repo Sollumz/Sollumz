@@ -1,6 +1,7 @@
 import bpy
 from . import (
     command_perf_ie,
+    command_create_asset_library,
 )
 
 
@@ -10,7 +11,10 @@ cli_commands = []
 if bpy.app.version >= (4, 2, 0):
 
     def register():
-        for cmd_id, cmd_exec in (command_perf_ie.CMD,):
+        for cmd_id, cmd_exec in (
+            command_perf_ie.CMD,
+            command_create_asset_library.CMD,
+        ):
             cli_commands.append(bpy.utils.register_cli_command(cmd_id, cmd_exec))
 
     def unregister():
