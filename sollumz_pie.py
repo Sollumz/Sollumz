@@ -31,8 +31,7 @@ class SOLLUMZ_MT_pie_menu(Menu):
         pie.operator("sollumz.addobjasentity", icon='OBJECT_DATA')
 
         # Bottom
-        pie.operator("sollumz.load_flag_preset",
-                     text="Apply Flag Preset", icon='ALIGN_TOP')
+        pie.separator()
         # Top
         pie.operator("file.find_missing_files",
                      text="Find Missing Textures", icon='VIEWZOOM')

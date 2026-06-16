@@ -18,8 +18,6 @@ import math
 from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
-from .light_preset import LightPresetsFile
-from .shader_preset import ShaderPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats, shadermats_by_filename
 from .render_bucket import RenderBucket, RenderBucketEnumItems
@@ -431,11 +429,6 @@ class LightProperties(bpy.types.PropertyGroup):
     )
 
 
-class PresetEntry(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty("Index")
-    name: bpy.props.StringProperty("Name")
-
-
 class LightTimeFlags(TimeFlagsMixin, bpy.types.PropertyGroup):
     pass
 
@@ -623,68 +616,6 @@ def set_light_type(self, value):
         self.is_capsule = False
 
 
-def get_light_presets_path() -> str:
-    from ..sollumz_preferences import get_config_directory_path
-    return os.path.join(get_config_directory_path(), "light_presets.xml")
-
-
-def get_shader_presets_path() -> str:
-    from ..sollumz_preferences import get_config_directory_path
-    return os.path.join(get_config_directory_path(), "shader_presets.xml")
-
-
-_default_light_presets_path = os.path.join(os.path.dirname(__file__), "light_presets.xml")
-
-_default_shader_presets_path = os.path.join(os.path.dirname(__file__), "shader_presets.xml")
-
-
-def get_default_light_presets_path() -> str:
-    return _default_light_presets_path
-
-
-def get_default_shader_presets_path() -> str:
-    return _default_shader_presets_path
-
-
-light_presets = LightPresetsFile()
-
-shader_presets = ShaderPresetsFile()
-
-
-def load_light_presets():
-    bpy.context.window_manager.sz_light_presets.clear()
-
-    path = get_light_presets_path()
-    if not os.path.exists(path):
-        path = get_default_light_presets_path()
-        if not os.path.exists(path):
-            return
-
-    file = LightPresetsFile.from_xml_file(path)
-    light_presets.presets = file.presets
-    for index, preset in enumerate(light_presets.presets):
-        item = bpy.context.window_manager.sz_light_presets.add()
-        item.name = str(preset.name)
-        item.index = index
-
-
-def load_shader_presets():
-    bpy.context.window_manager.sz_shader_presets.clear()
-
-    path = get_shader_presets_path()
-    if not os.path.exists(path):
-        path = get_default_shader_presets_path()
-        if not os.path.exists(path):
-            return
-
-    file = ShaderPresetsFile.from_xml_file(path)
-    shader_presets.presets = file.presets
-    for index, preset in enumerate(shader_presets.presets):
-        item = bpy.context.window_manager.sz_shader_presets.add()
-        item.name = str(preset.name)
-        item.index = index
-
-
 def get_texture_name(self):
     from ..ytd.properties import get_texture_name as impl
     return impl(self.image)
@@ -715,9 +646,6 @@ def refresh_ui_collections():
         item.index = index
         item.name = mat.name
         item.search_name = mat.ui_name.replace(" ", "").replace("_", "")
-
-    load_light_presets()
-    load_shader_presets()
 
 
 @persistent
@@ -793,11 +721,6 @@ def register():
     bpy.types.Scene.sollumz_auto_lod_decimate_step = bpy.props.FloatProperty(
         name="Decimate Step", min=0.0, max=0.99, default=0.6)
 
-    bpy.types.WindowManager.sz_light_preset_index = bpy.props.IntProperty(name="Light Preset Index")
-    bpy.types.WindowManager.sz_light_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Light Presets")
-
-    bpy.types.WindowManager.sz_shader_preset_index = bpy.props.IntProperty(name="Shader Preset Index")
-    bpy.types.WindowManager.sz_shader_presets = bpy.props.CollectionProperty(type=PresetEntry, name="Shader Presets")
 
     bpy.types.Scene.sollumz_extract_lods_levels = lod_level_enum_flag_prop_factory()
     bpy.types.Scene.sollumz_extract_lods_parent_type = bpy.props.EnumProperty(name="Parent Type", items=(
@@ -936,10 +859,6 @@ def unregister():
     del bpy.types.Light.time_flags
     del bpy.types.Light.light_flags
     del bpy.types.Light.is_capsule
-    del bpy.types.WindowManager.sz_light_presets
-    del bpy.types.WindowManager.sz_light_preset_index
-    del bpy.types.WindowManager.sz_shader_presets
-    del bpy.types.WindowManager.sz_shader_preset_index
     del bpy.types.Scene.create_seperate_drawables
     del bpy.types.Scene.auto_create_embedded_col
     del bpy.types.Scene.center_drawable_to_selection

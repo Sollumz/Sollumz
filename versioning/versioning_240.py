@@ -93,39 +93,42 @@ def update_mlo_tcmods_percentage(ytyp: CMapTypesProperties):
 
 
 def add_new_default_light_preset():
-    """Adds the new "Default" light preset. Not really part of the .blend data, but this is probably the best place to
-    check for this.
-    """
-    import os
-    from ..ydr.properties import get_light_presets_path, get_default_light_presets_path, load_light_presets
-    from ..ydr.light_preset import LightPresetsFile
+    """Ensure the 'Default' light preset is present in the user's preset
+    store. Originally added to backfill legacy XML installations; still useful
+    after the JSON migration in case the user's saved presets predate the
+    bundled 'Default'."""
+    import json
+    from ..shared.presets import store as preset_store
+    from ..ydr.gta5.presets.light import LIGHT_PRESET_CATEGORY
 
-    user_path = get_light_presets_path()
-    if not os.path.exists(user_path):
-        # No custom light presets, don't need to do anything, the default light presets file will be loaded
+    user_path = preset_store.user_preset_path(LIGHT_PRESET_CATEGORY)
+    if not user_path.exists():
+        # No user file; bundled defaults are used as-is and already include "Default".
         return
 
-    default_path = get_default_light_presets_path()
-    if not os.path.exists(default_path):
-        # The default light presets file doesn't exist, worrying but can't do anything about it
+    presets = preset_store.load_presets(LIGHT_PRESET_CATEGORY)
+    if any(p.get("name") == "Default" for p in presets):
         return
 
-    user_presets = LightPresetsFile.from_xml_file(user_path)
-    if any(p.name == "Default" for p in user_presets.presets):
-        # Already have the "Default" preset
+    bundled_path = LIGHT_PRESET_CATEGORY.bundled_defaults_path
+    if not bundled_path or not bundled_path.is_file():
         return
 
-    default_presets = LightPresetsFile.from_xml_file(default_path)
-    preset = next((p for p in default_presets.presets if p.name == "Default"), None)
-    if preset is None:
-        # "Default" preset missing
+    try:
+        with bundled_path.open("r", encoding="utf-8") as f:
+            bundled = json.load(f)
+    except (OSError, json.JSONDecodeError):
         return
 
-    user_presets.presets.insert(0, preset)
-    user_presets.write_xml(user_path)
+    default_preset = next(
+        (p for p in bundled.get("presets", []) if p.get("name") == "Default"),
+        None,
+    )
+    if default_preset is None:
+        return
 
-    # Refresh presets UI
-    load_light_presets()
+    presets = [default_preset] + list(presets)
+    preset_store.save_presets(LIGHT_PRESET_CATEGORY, presets)
 
 
 def convert_constraint_child_of_to_copy_transform(obj: Object):

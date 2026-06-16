@@ -7,6 +7,7 @@ from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
     MultiSelectUITimeFlagsPanel,
 )
+from ..gta5.presets.archetype import SOLLUMZ_PT_archetype_presets
 
 
 class SOLLUMZ_PT_ARCHETYPE_TABS_PANEL(YtypToolChildPanel, TabbedPanelHelper, bpy.types.Panel):
@@ -58,6 +59,12 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
         ytyp = get_selected_ytyp(context)
         selection = ytyp.archetypes.selection
         active = ytyp.archetypes.active_item
+
+        row = layout.row()
+        row.alignment = "RIGHT"
+        row.enabled = not ytyp.archetypes.has_multiple_selection
+        SOLLUMZ_PT_archetype_presets.draw_panel_header(row)
+
         layout.prop(selection.owner, selection.propnames.type)
         layout.prop(selection.owner, selection.propnames.name)
         layout.prop(selection.owner, selection.propnames.special_attribute)
@@ -91,6 +98,15 @@ class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, MultiSelectUIFlag
     def get_flags_selection(self, context):
         selected_ytyp = get_selected_ytyp(context)
         return selected_ytyp.archetypes.selection.flags
+
+    def draw(self, context):
+        ytyp = get_selected_ytyp(context)
+        row = self.layout.row()
+        row.alignment = "RIGHT"
+        row.enabled = not ytyp.archetypes.has_multiple_selection
+        SOLLUMZ_PT_archetype_presets.draw_panel_header(row)
+
+        super().draw(context)
 
 
 class SOLLUMZ_PT_TIME_FlAGS_PANEL(ArchetypeChildPanel, MultiSelectUITimeFlagsPanel, bpy.types.Panel):

@@ -111,6 +111,10 @@ class MloArchetypeChild:
 
 
 class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
+    __sz_preset_capture__ = (
+        "flags", "blend", "timecycle", "secondary_timecycle", "exterior_visibility_depth",
+    )
+
     name: bpy.props.StringProperty(name="Name", update=MloArchetypeChild.update_mlo_archetype_caches)
     bb_min: bpy.props.FloatVectorProperty(name="Bounds Min", subtype="XYZ")
     bb_max: bpy.props.FloatVectorProperty(name="Bounds Max", subtype="XYZ")
@@ -128,6 +132,10 @@ class RoomProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     __name_cache: dict[str, str] = {}
+
+    __sz_preset_capture__ = (
+        "flags", "mirror_priority", "opacity", "audio_occlusion",
+    )
 
     def get_room_from_index(self):
         archetype = self.get_mlo_archetype()
@@ -252,6 +260,10 @@ class PortalProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 
 
 class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
+    __sz_preset_capture__ = (
+        "name", "percentage", "range", "start_hour", "end_hour",
+    )
+
     name: bpy.props.StringProperty(name="Name")
     # NOTE: [0] = radius, [1,2,3] = center, changing it would break backwards compatibility or require new versioning.
     # Use the wrapper properties sphere_center and sphere_radius
@@ -289,6 +301,12 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
 class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):
     IS_ARCHETYPE = False
     DEFAULT_EXTENSION_TYPE = ExtensionType.DOOR
+
+    __sz_preset_capture__ = (
+        "flags",
+        "lod_dist", "child_lod_dist", "lod_level", "priority_level",
+        "ambient_occlusion_multiplier", "artificial_ambient_occlusion", "tint_value",
+    )
 
     def get_portal_index(self):
         selected_archetype = self.get_mlo_archetype()

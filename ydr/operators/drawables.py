@@ -95,7 +95,7 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
                     composite_obj = convert_obj_to_composite(
                         duplicate_object(obj),
                         SollumType.BOUND_GEOMETRYBVH,
-                        context.window_manager.sz_flag_preset_index
+                        context.scene.sz_default_flag_preset_name
                     )
                     composite_obj.parent = drawable_obj
                     composite_obj.name = f"{drawable_obj.name}.col"
@@ -122,7 +122,7 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
                 composite_obj = convert_objs_to_single_composite(
                     col_objs,
                     SollumType.BOUND_GEOMETRYBVH,
-                    context.window_manager.sz_flag_preset_index
+                    context.scene.sz_default_flag_preset_name
                 )
                 composite_obj.parent = drawable_obj
 

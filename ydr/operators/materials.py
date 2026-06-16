@@ -1,4 +1,3 @@
-import traceback
 import bpy
 from bpy.types import (
     Material,
@@ -7,27 +6,22 @@ from bpy.types import (
 )
 from bpy.props import (
     IntProperty,
-    BoolProperty,
 )
-from ..shader_preset import ShaderPreset, ShaderPresetParam
 from szio.gta5.shader import (
-    ShaderParameterFloatVectorDef,
-    ShaderParameterTextureDef,
     ShaderParameterDef,
+    ShaderParameterTextureDef,
     ShaderParameterType,
     ShaderManager,
 )
 from ...sollumz_helper import SOLLUMZ_OT_base
 from ...sollumz_properties import MaterialType
-from ...tools.blenderhelper import tag_redraw
+from ...shared.shader_nodes import SzShaderNodeParameter
 from ...tools.meshhelper import (
     mesh_add_missing_uv_maps,
     mesh_add_missing_color_attrs,
     mesh_rename_uv_maps_by_order,
     mesh_rename_color_attrs_by_order,
 )
-from ...shared.shader_nodes import SzShaderNodeParameter
-from ..properties import get_shader_presets_path, load_shader_presets, shader_presets
 from ..shader_materials import (
     create_shader,
     create_tinted_shader_graph,
@@ -37,212 +31,7 @@ from ..shader_materials import (
     find_bsdf_and_material_output,
     obj_has_tint_mats,
 )
-
-
-def shader_preset_from_material(material: Material) -> ShaderPreset:
-    preset = ShaderPreset()
-    shader_def = ShaderManager.find_shader(material.shader_properties.filename)
-
-    for node in material.node_tree.nodes:
-        param_def = shader_def.parameter_map.get(node.name, None)
-        if param_def is None:
-            continue
-
-        if (
-            isinstance(node, SzShaderNodeParameter) and
-            isinstance(param_def, ShaderParameterFloatVectorDef) and
-            not param_def.is_array
-        ):
-            param = ShaderPresetParam()
-            param.name = node.name
-            param.x = node.get(0)
-            param.y = node.get(1) if node.num_cols > 1 else None
-            param.z = node.get(2) if node.num_cols > 2 else None
-            param.w = node.get(3) if node.num_cols > 3 else None
-            preset.params.append(param)
-        elif (
-            isinstance(node, ShaderNodeTexImage) and
-            isinstance(param_def, ShaderParameterTextureDef)
-        ):
-            param = ShaderPresetParam()
-            param.name = node.name
-            param.texture = node.sollumz_texture_name
-            preset.params.append(param)
-
-    return preset
-
-
-def shader_preset_apply_to_material(material: Material, preset: ShaderPreset, apply_textures: bool = True):
-    shader_def = ShaderManager.find_shader(material.shader_properties.filename)
-
-    for param in preset.params:
-        param_def = shader_def.parameter_map.get(param.name, None)
-        if param_def is None:
-            continue
-
-        node = material.node_tree.nodes.get(param.name, None)
-        if node is None:
-            continue
-
-        if (
-            isinstance(node, SzShaderNodeParameter) and
-            isinstance(param_def, ShaderParameterFloatVectorDef) and
-            not param_def.is_array
-        ):
-            if node.num_cols > 0 and param.x is not None:
-                node.set(0, param.x)
-            if node.num_cols > 1 and param.y is not None:
-                node.set(1, param.y)
-            if node.num_cols > 2 and param.z is not None:
-                node.set(2, param.z)
-            if node.num_cols > 3 and param.w is not None:
-                node.set(3, param.w)
-        elif apply_textures and (
-            isinstance(node, ShaderNodeTexImage) and
-            isinstance(param_def, ShaderParameterTextureDef)
-        ):
-            # Try to get a loaded image...
-            img = bpy.data.images.get(param.texture, None) or bpy.data.images.get(f"{param.texture}.dds", None)
-            if not img:
-
-                # Otherwise, search in the shared textures directories
-                from ..ydrimport_io import lookup_texture_file, is_non_color_texture
-                texture_path = lookup_texture_file(param.texture, None)
-                img = texture_path and bpy.data.images.load(str(texture_path), check_existing=True)
-                if img and is_non_color_texture(shader_def.filename, param.name):
-                    img.colorspace_settings.is_data = True
-
-            if img:
-                node.image = img
-
-
-class SOLLUMZ_OT_save_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Save a shader preset of the active material"""
-    bl_idname = "sollumz.save_shader_preset"
-    bl_label = "Save Shader Preset"
-    bl_action = f"{bl_label}"
-
-    name: bpy.props.StringProperty(name="Name")
-
-    @classmethod
-    def poll(cls, context):
-        aobj = context.active_object
-        mat = aobj and aobj.active_material
-        if mat is None or mat.sollum_type != MaterialType.SHADER:
-            cls.poll_message_set("No Sollumz shader material selected.")
-            return False
-
-        return True
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
-
-    def run(self, context):
-        self.name = self.name.strip()
-
-        if len(self.name) == 0:
-            self.warning("Please specify a name for the new shader preset.")
-            return False
-
-        mat = context.active_object.active_material
-        if not mat:
-            self.warning("No material selected!")
-            return False
-
-        load_shader_presets()
-
-        for preset in shader_presets.presets:
-            if preset.name == self.name:
-                self.warning(
-                    "A preset with that name already exists! If you wish to overwrite this preset, delete the original.")
-                return False
-
-        shader_preset = shader_preset_from_material(mat)
-        shader_preset.name = self.name
-        shader_presets.presets.append(shader_preset)
-
-        filepath = get_shader_presets_path()
-        shader_presets.write_xml(filepath)
-        load_shader_presets()
-
-        self.message(f"Saved preset '{shader_preset.name}'!")
-
-        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
-        return True
-
-
-class SOLLUMZ_OT_load_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Apply a shader preset to the active material"""
-    bl_idname = "sollumz.load_shader_preset"
-    bl_label = "Apply Shader Preset to Selected"
-    bl_context = "object"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_action = f"{bl_label}"
-
-    apply_textures: BoolProperty(name="Apply Textures", default=True)
-
-    @classmethod
-    def poll(cls, context):
-        aobj = context.active_object
-        mat = aobj and aobj.active_material
-        if mat is None or mat.sollum_type != MaterialType.SHADER:
-            cls.poll_message_set("No Sollumz shader material selected.")
-            return False
-
-        wm = context.window_manager
-        if not (0 <= wm.sz_shader_preset_index < len(wm.sz_shader_presets)):
-            cls.poll_message_set("No shader preset available.")
-            return False
-
-        return True
-
-    def run(self, context):
-        index = context.window_manager.sz_shader_preset_index
-        mat = context.active_object.active_material
-        if not mat:
-            self.warning("No shaders selected!")
-            return False
-
-        load_shader_presets()
-        shader_preset: ShaderPreset = shader_presets.presets[index]
-        shader_preset_apply_to_material(mat, shader_preset, apply_textures=self.apply_textures)
-        self.message(f"Applied preset '{shader_preset.name}' to {mat.name} material.")
-        return True
-
-
-class SOLLUMZ_OT_delete_shader_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete the selected shader preset"""
-    bl_idname = "sollumz.delete_shader_preset"
-    bl_label = "Delete Shader Preset"
-    bl_action = f"{bl_label}"
-
-    @classmethod
-    def poll(cls, context):
-        wm = context.window_manager
-        return 0 <= wm.sz_shader_preset_index < len(wm.sz_shader_presets)
-
-    def run(self, context):
-        index = context.window_manager.sz_shader_preset_index
-        load_shader_presets()
-        filepath = get_shader_presets_path()
-
-        try:
-            preset = shader_presets.presets[index]
-            shader_presets.presets.remove(preset)
-
-            try:
-                shader_presets.write_xml(filepath)
-                load_shader_presets()
-
-                return True
-            except:
-                self.error(f"Error during deletion of shader preset: {traceback.format_exc()}")
-                return False
-
-        except IndexError:
-            self.warning(
-                f"Shader preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-            return False
+from ..gta5.presets.shader import shader_preset_apply_dict, shader_preset_capture_dict
 
 
 class MaterialConverter:
@@ -624,9 +413,9 @@ class SOLLUMZ_OT_change_shader(SOLLUMZ_OT_base, bpy.types.Operator):
         old_shader_filename = mat.shader_properties.filename
         new_shader_filename = shadermats[self.shader_index].value
 
-        tmp_preset = shader_preset_from_material(mat)
+        tmp_preset = shader_preset_capture_dict(mat)
         create_shader(new_shader_filename, in_place_material=mat)
-        shader_preset_apply_to_material(mat, tmp_preset, apply_textures=True)
+        shader_preset_apply_dict(mat, tmp_preset, apply_textures=True)
 
         post_create_shader_add_default_images(mat)
         for obj in bpy.data.objects:  # update all objects that are using this material

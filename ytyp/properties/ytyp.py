@@ -264,6 +264,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
 
+    __sz_preset_capture__ = (
+        "lod_dist", "hd_texture_dist", "special_attribute",
+        "flags", "time_flags", "mlo_flags",
+    )
+
     __portal_enum_items_cache: dict[str, list] = {}
     __room_enum_items_cache: dict[str, list] = {}
     __entity_set_enum_items_cache: dict[str, list] = {}

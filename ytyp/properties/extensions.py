@@ -271,6 +271,10 @@ class ExtensionWithBoneTagMixin:
 
 
 class DoorExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "enable_limit_angle", "starts_locked", "can_break", "limit_angle", "door_target_ratio", "audio_hash"
+    )
+
     enable_limit_angle: BoolProperty(name="Enable Limit Angle")
     starts_locked: BoolProperty(name="Starts Locked")
     can_break: BoolProperty(name="Can Break")
@@ -347,6 +351,10 @@ ParticleFxTypeEnumItems = tuple(label and (enum.name, f"{label} ({enum.value})",
 
 
 class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "fx_name", "fx_type", "scale", "probability", "flags", "color"
+    )
+
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     fx_name: StringProperty(name="FX Name")
     fx_type: IntProperty(name="FX Type", min=0, max=7, default=ParticleFxType.AMBIENT.value)
@@ -462,10 +470,14 @@ class ParticleExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProper
 
 
 class AudioCollisionExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ("settings",)
+
     settings: StringProperty(name="Settings")
 
 
 class AudioEmitterExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ("effect_hash",)
+
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     effect_hash: StringProperty(name="Effect Hash")
 
@@ -594,6 +606,8 @@ KNOWN_EXPLOSION_NAMES = (
 
 
 class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ("explosion_name", "explosion_type", "flags")
+
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     explosion_name: StringProperty(
         name="Explosion Name",
@@ -699,6 +713,8 @@ class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionPrope
 
 
 class LadderExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ("material_type", "template", "can_get_off_at_top", "can_get_off_at_bottom")
+
     bottom: FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
     top: FloatVectorProperty(name="Top", subtype="TRANSLATION")
     normal: FloatVectorProperty(name="Normal", subtype="TRANSLATION")
@@ -716,11 +732,16 @@ class LadderExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class BuoyancyExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ()
     # No additional properties
     pass
 
 
 class ExpressionExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "expression_dictionary_name", "expression_name", "creature_metadata_name", "initialize_on_collision"
+    )
+
     expression_dictionary_name: StringProperty(name="Expression Dictionary Name")
     expression_name: StringProperty(name="Expression Name")
     creature_metadata_name: StringProperty(name="Creature Metadata Name")
@@ -728,6 +749,12 @@ class ExpressionExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "density_type", "volume_type", "scale_by_sun_intensity", "direction_amount", "color", "intensity", "flashiness",
+        "flags", "fade_in_time_start", "fade_in_time_end", "fade_out_time_start", "fade_out_time_end",
+        "fade_distance_start", "fade_distance_end", "softness",
+    )
+
     density_type: EnumProperty(items=LightShaftDensityTypeEnumItems, name="Density Type")
     volume_type: EnumProperty(items=LightShaftVolumeTypeEnumItems, name="Volume Type")
     scale_by_sun_intensity: BoolProperty(name="Scale by Sun Intensity")
@@ -852,6 +879,11 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class SpawnPointExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "spawn_type", "ped_type", "group", "interior", "required_imap", "probability", "time_till_ped_leaves",
+        "radius", "start", "end", "high_pri", "extended_range", "short_range", "available_in_mp_sp", "scenario_flags"
+    )
+
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     spawn_type: StringProperty(name="Spawn Type")
     ped_type: StringProperty(name="Ped Type")
@@ -873,6 +905,11 @@ class SpawnPointExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class SpawnPointOverrideProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "scenario_type", "itime_start_override", "itime_end_override", "group", "model_set", "radius",
+        "time_till_ped_leaves", "available_in_mp_sp", "scenario_flags",
+    )
+
     scenario_type: StringProperty(name="Scenario Type")
     itime_start_override: FloatProperty(name="iTime Start Override")
     itime_end_override: FloatProperty(name="iTime End Override")
@@ -887,6 +924,8 @@ class SpawnPointOverrideProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class WindDisturbanceExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ("disturbance_type", "size", "strength", "flags")
+
     offset_rotation: FloatVectorProperty(name="Offset Rotation", subtype="EULER")
     disturbance_type: IntProperty(name="Disturbance Type")
     bone_tag: IntProperty(name="Bone Tag", default=0)
@@ -896,6 +935,11 @@ class WindDisturbanceExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensio
 
 
 class ProcObjectExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = (
+        "radius_inner", "radius_outer", "spacing", "min_scale", "max_scale", "min_scale_z", "max_scale_z",
+        "min_z_offset", "max_z_offset", "flags",
+    )
+
     radius_inner: FloatProperty(name="Radius Inner")
     radius_outer: FloatProperty(name="Radius Outer")
     spacing: FloatProperty(name="Spacing")
@@ -910,6 +954,7 @@ class ProcObjectExtensionProperties(BaseExtensionProperties, PropertyGroup):
 
 
 class LightEffectExtensionProperties(BaseExtensionProperties, PropertyGroup):
+    __sz_preset_capture__ = ()
     ignored_in_import_export = {"linked_lights_object"}
 
     linked_lights_object: PointerProperty(name="Linked Lights", type=Object)
