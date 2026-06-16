@@ -21,6 +21,7 @@ from bpy.props import (
     CollectionProperty,
     PointerProperty,
     FloatVectorProperty,
+    IntVectorProperty,
 )
 import typing
 from typing import Optional, NamedTuple, Generic, TypeVar
@@ -135,6 +136,13 @@ def _define_multiselect_access(cls: type, collection_name: str, item_cls: type, 
     def _active_item(s: bpy_struct) -> bpy_struct:
         return _resolve_nested(_coll(s).active_item)
 
+    def _wrap_search_cb(search_cb):
+        def _search(self: bpy_struct, context, edit_text: str):
+            active = _active_item(self)
+            return search_cb(active, context, edit_text)
+
+        return _search
+
     def _wrap_basic_property(prop_fn, attr_name: str, **kwargs):
         def _getter(self: bpy_struct):
             return getattr(_active_item(self), attr_name)
@@ -245,14 +253,18 @@ def _define_multiselect_access(cls: type, collection_name: str, item_cls: type, 
             fn = src_annotation.function
             kwargs = dict(src_annotation.keywords)
 
-            # Do not copy the callbacks to the wrapper property
+            # Do not copy these callbacks to the wrapper property
             for callback in ("get", "set", "update"):
                 if callback in kwargs:
                     del kwargs[callback]
 
+            # Wrap search callback, if any
+            if "search" in kwargs:
+                kwargs["search"] = _wrap_search_cb(kwargs["search"])
+
             if fn is EnumProperty:
                 wrapper_prop = _wrap_enum_property(name, **kwargs)
-            elif fn in {BoolProperty, IntProperty, FloatProperty, StringProperty, FloatVectorProperty}:
+            elif fn in {BoolProperty, IntProperty, FloatProperty, StringProperty, IntVectorProperty, FloatVectorProperty}:
                 wrapper_prop = _wrap_basic_property(fn, name, **kwargs)
             elif fn in {PointerProperty}:
                 property_group_cls = kwargs["type"]
