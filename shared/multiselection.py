@@ -373,6 +373,13 @@ class MultiSelectCollection(Generic[TItem, TItemAccess]):
     def __getitem__(self, index: int) -> TItem:
         return self.collection[index]
 
+    def __iter__(self) -> Iterator[TItem]:
+        # Delegate to bpy_prop_collection's C-level forward iterator, which walks link->next in
+        # O(1) per step. Without this, Python falls back to the sequence protocol via __getitem__,
+        # but CollectionProperty index lookup is done by iterating the linked list until it reaches
+        # the index, causing O(n²) total for a full iteration.
+        return iter(self.collection)
+
     @property
     def has_multiple_selection(self) -> bool:
         return len(self.selection_indices) > 1
