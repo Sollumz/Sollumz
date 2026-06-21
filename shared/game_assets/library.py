@@ -179,7 +179,7 @@ def link_objects_from_library(object_names: list[str]) -> tuple[list[BlendData],
 
 
 def build_library(
-    source_directory: Path, output_directory: Path, game_catalog: str, typ_pattern: str | None = None, report_progress_cb=None
+    source_directory: Path, output_directory: Path, game_catalog: str, num_subprocesses: int, typ_pattern: str | None = None, report_progress_cb=None
 ) -> Iterator[float]:
     """Build a Blender asset library from the .ytyp and asset files found in `source_directory` recursively. For each
     .ytyp, a separate .blend library file is created.
@@ -407,7 +407,7 @@ def build_library(
         catalog_def.save(catalog_filepath)
         if report_progress_cb:
             report_progress_cb(0, total)
-        proc_pool = ProcessPool(cmds)
+        proc_pool = ProcessPool(cmds, max_parallel=num_subprocesses)
         while proc_pool.update():
             if report_progress_cb:
                 report_progress_cb(proc_pool.num_completed, total)
@@ -423,7 +423,7 @@ def build_library(
 
         if interior_cmds:
             # Process interiors after so they can use assets imported to the library
-            interior_proc_pool = ProcessPool(interior_cmds)
+            interior_proc_pool = ProcessPool(interior_cmds, max_parallel=num_subprocesses)
             while interior_proc_pool.update():
                 if report_progress_cb:
                     report_progress_cb(proc_pool.num_completed + interior_proc_pool.num_completed, total)

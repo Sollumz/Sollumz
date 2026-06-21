@@ -1,3 +1,4 @@
+import os
 import functools
 from pathlib import Path
 
@@ -5,6 +6,7 @@ import bpy
 from bpy.props import (
     EnumProperty,
     StringProperty,
+    IntProperty,
 )
 from bpy.types import (
     Operator,
@@ -17,6 +19,8 @@ from .library import (
     build_library_cache,
 )
 
+NEW_TAG = "<<NEW>>"
+
 
 def _output_directory_choice_items(self, context):
     prefs = get_addon_preferences(context)
@@ -25,7 +29,8 @@ def _output_directory_choice_items(self, context):
         if not d.path:
             continue
         items.append((d.path, f"{d.name} | {d.path}", ""))
-    return items or [("", "", "")]
+    items.append((NEW_TAG, "New...", "Save it to a new asset library directory"))
+    return items
 
 
 _build_library_progress = None
@@ -75,23 +80,42 @@ class SOLLUMZ_OT_build_game_asset_library(Operator):
 
     output_directory_choice: EnumProperty(
         name="Output Library",
-        description="Which configured Shared Assets directory to write the .blend libraries into",
+        description="Which directory to write the .blend libraries into",
         items=_output_directory_choice_items,
         options={"SKIP_SAVE"},
     )
+    new_output_directory_name: StringProperty(
+        name="Name",
+        description="Name of the new asset library",
+    )
+    new_output_directory_path: StringProperty(
+        name="Path",
+        description="Path to a directory where to store the new asset library",
+    )
 
-    pattern: StringProperty(name="Pattern")
+    pattern: StringProperty(
+        name="Pattern",
+        description=(
+            "Regular expression matched against .ytyp file names to filter which ones are imported. "
+            "Leave empty to import all"
+        ),
+    )
+    num_subprocesses: IntProperty(
+        name="Subprocesses",
+        description=(
+            "Number of Blender subprocesses to spawn for building libraries in parallel. "
+            "Each worker runs a separate Blender instance, so higher values build faster but use more memory and CPU"
+        ),
+        default=max(1, os.cpu_count() // 4),
+        min=1,
+        max=os.cpu_count(),
+    )
 
     @classmethod
     def poll(cls, context):
         if bpy.app.version < (4, 2, 0):
             # Currently, we use Blender CLI commands to spawn the subprocess workers which were added in 4.2.
             cls.poll_message_set("Cannot build library on this Blender version. Update to Blender 4.2 or newer.")
-            return False
-
-        prefs = get_addon_preferences(context)
-        if len(prefs.shared_assets_directories) == 0:
-            cls.poll_message_set("No Game Asset Library directory set in preferences.")
             return False
 
         return True
@@ -105,28 +129,44 @@ class SOLLUMZ_OT_build_game_asset_library(Operator):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        prefs = get_addon_preferences(context)
-        if len(prefs.shared_assets_directories) > 1:
-            layout.prop(self, "output_directory_choice")
+        col = layout.column(align=True)
+        col.prop(self, "output_directory_choice")
+        if self.output_directory_choice == NEW_TAG:
+            col.prop(self, "new_output_directory_name")
+            col.prop(self, "new_output_directory_path")
 
         layout.prop(self, "pattern")
+        layout.prop(self, "num_subprocesses")
 
     def execute(self, context):
-        prefs = get_addon_preferences(context)
-        if not prefs.shared_assets_directories:
-            self.report({"ERROR"}, "No Shared Assets directory configured. Add one in Preferences > Sollumz.")
-            return {"CANCELLED"}
-
         if not self.output_directory:
-            configured_paths = [d.path for d in prefs.shared_assets_directories if d.path]
-            if len(configured_paths) > 1:
-                if self.output_directory_choice and self.output_directory_choice in configured_paths:
-                    self.output_directory = self.output_directory_choice
-                else:
-                    self.report({"WARNING"}, "No output library selected; using the first configured directory.")
-                    self.output_directory = configured_paths[0]
+            prefs = get_addon_preferences(context)
+            if self.output_directory_choice == NEW_TAG:
+                new_directory = Path(bpy.path.abspath(self.new_output_directory_path))
+                try:
+                    new_directory.mkdir(parents=True, exist_ok=True)
+                except FileExistsError:
+                    self.report({"ERROR"}, f"Expected a directory, not a file: {str(new_directory)}")
+                    return {"CANCELLED"}
+
+                self.output_directory = self.new_output_directory_path
+                bpy.ops.sollumz.prefs_shared_assets_directory_add(
+                    name=self.new_output_directory_name, path=self.new_output_directory_path
+                )
             else:
-                self.output_directory = configured_paths[0]
+                if not prefs.shared_assets_directories:
+                    self.report({"ERROR"}, "No Shared Assets directory configured. Add one in Preferences > Sollumz.")
+                    return {"CANCELLED"}
+
+                configured_paths = [d.path for d in prefs.shared_assets_directories if d.path]
+                if len(configured_paths) > 1:
+                    if self.output_directory_choice and self.output_directory_choice in configured_paths:
+                        self.output_directory = self.output_directory_choice
+                    else:
+                        self.report({"WARNING"}, "No output library selected; using the first configured directory.")
+                        self.output_directory = configured_paths[0]
+                else:
+                    self.output_directory = configured_paths[0]
 
         output_directory = Path(bpy.path.abspath(self.output_directory))
         output_directory.mkdir(parents=True, exist_ok=True)
@@ -137,7 +177,12 @@ class SOLLUMZ_OT_build_game_asset_library(Operator):
             return {"CANCELLED"}
 
         work_iter = build_library(
-            source_directory, output_directory, game_catalog="GTA5", typ_pattern=self.pattern, report_progress_cb=_report_build_library_progress
+            source_directory,
+            output_directory,
+            game_catalog="GTA5",
+            num_subprocesses=self.num_subprocesses,
+            typ_pattern=self.pattern,
+            report_progress_cb=_report_build_library_progress,
         )
         bpy.app.timers.register(functools.partial(_timer_do_work, work_iter), first_interval=0.0, persistent=True)
         return {"FINISHED"}
