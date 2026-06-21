@@ -27,21 +27,14 @@ class ProcessPool:
         self._processes = still_running
 
     def update(self) -> bool:
-        while self._remaining_commands:
+        self._collect_finished()
+
+        # Launch new processes until we reach the limit
+        while self._remaining_commands and len(self._processes) < self.max_parallel:
             cmd = self._remaining_commands.pop()
             logger.info(f"Launching subprocess: {cmd}")
             p = subprocess.Popen(cmd)
             self._processes.append(p)
 
-            # If we reached the concurrency limit, wait until one finishes
-            if len(self._processes) >= self.max_parallel:
-                self._collect_finished()
-                if len(self._processes) >= self.max_parallel:
-                    return True
-
-        # Wait for remaining processes to finish
-        if self.num_completed < len(self.commands):
-            self._collect_finished()
-            return True
-
-        return False
+        # Still busy while anything is running or queued
+        return bool(self._processes or self._remaining_commands)
