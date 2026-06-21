@@ -24,13 +24,19 @@ import rna_keymap_ui
 import os
 import ast
 import textwrap
+import traceback
 from typing import Optional, Any, TYPE_CHECKING
 from configparser import ConfigParser
 from pathlib import Path
-from .known_paths import prefs_file_path, config_directory_path, data_directory_path
+from .known_paths import prefs_file_path, data_directory_path
 from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
 if TYPE_CHECKING:
     from .iecontext import ImportSettings, ExportSettings
+
+
+# Set while preferences are being loaded from disk so the property update callbacks don't trigger a
+# redundant save (and full-file rewrite) for every property being loaded. See `_load_preferences`.
+_is_loading_preferences = False
 
 
 def _save_preferences_on_update(self, context):
@@ -1129,7 +1135,7 @@ class SollumzAddonPreferences(AddonPreferences):
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "import_ext_skeleton")  # Drawable Dictionary
 
-        _section_header(box, "YTYP")
+        _section_header(box, "Archetype Definitions")
         box.prop(settings, "ytyp_mlo_instance_entities")
 
         _section_header(box, "Maps")
@@ -1360,10 +1366,17 @@ def get_theme_settings(context: Optional[bpy.types.Context] = None) -> SollumzTh
 
 
 def _save_preferences():
-    addon_prefs = get_addon_preferences(bpy.context)
-    prefs_path = get_prefs_path()
+    if _is_loading_preferences:
+        # Don't save while loading preferences from disk; otherwise each setattr in the property
+        # update callbacks would trigger a redundant full-file rewrite.
+        return
 
-    config = ConfigParser()
+    addon_prefs = get_addon_preferences(bpy.context)
+    prefs_path = prefs_file_path()
+
+    # interpolation=None so values containing '%' are written and read verbatim instead of being
+    # treated as interpolation tokens.
+    config = ConfigParser(interpolation=None)
     prefs_dict = _get_bpy_struct_as_dict(addon_prefs)
     main_prefs: dict[str, Any] = {}
 
@@ -1376,33 +1389,65 @@ def _save_preferences():
 
     config["main"] = main_prefs
 
-    with open(prefs_path, "w") as f:
-        config.write(f)
+    # Write atomically (temp file + os.replace) so an interrupted or failed write never truncates or
+    # corrupts the existing preferences file.
+    tmp_path = prefs_path + ".tmp"
+    try:
+        with open(tmp_path, "w") as f:
+            config.write(f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, prefs_path)
+    except OSError:
+        from . import logger
+        logger.error(f"Failed to save Sollumz preferences to '{prefs_path}'.\n{traceback.format_exc()}")
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
 
 
 def _load_preferences():
     # Preferences are loaded via an ini file in <user_blender_path>/<version>/config/sollumz_prefs.ini
-    addon_prefs = get_addon_preferences(bpy.context)
-    if addon_prefs is None:
-        return
+    global _is_loading_preferences
 
-    prefs_path = get_prefs_path()
+    addon_prefs = get_addon_preferences(bpy.context)
+
+    prefs_path = prefs_file_path()
     if not os.path.isfile(prefs_path):
         return
 
-    config = ConfigParser()
-    config.read(prefs_path)
-    config_dict = {}
-    for section in config.keys():
-        if section == "DEFAULT":
-            continue
+    try:
+        config = ConfigParser(interpolation=None)
+        config.read(prefs_path)
+        config_dict = {}
+        for section in config.keys():
+            if section == "DEFAULT":
+                continue
 
-        if section == "main":
-            config_dict.update(config["main"])
-        else:
-            config_dict[section] = dict(config[section])
+            if section == "main":
+                config_dict.update(config["main"])
+            else:
+                config_dict[section] = dict(config[section])
 
-    _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
+        _is_loading_preferences = True
+        try:
+            _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
+        finally:
+            _is_loading_preferences = False
+    except Exception:
+        # Loading runs from register(), so any error here would propagate out of the add-on registration and prevent it
+        # from being enabled. Catch everything, fall back to the default preferences, and back up the unreadable file
+        # so it isn't silently lost.
+        from . import logger
+        logger.error(
+            f"Failed to load Sollumz preferences from '{prefs_path}'. Falling back to default "
+            f"preferences.\n{traceback.format_exc()}"
+        )
+        try:
+            os.replace(prefs_path, prefs_path + ".bak")
+        except OSError:
+            pass
 
 
 def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
@@ -1468,27 +1513,17 @@ def _get_bpy_struct_as_tuple(struct: bpy_struct) -> tuple:
 
 def _update_bpy_struct_from_tuple(struct: bpy_struct, values: tuple | object):
     keys = list(struct.__annotations__.keys())
-    values_is_tuple = isinstance(values, tuple)
-    num_values = len(values) if values_is_tuple else 1
-    if len(keys) != num_values:
-        # raise ValueError(f"Incorrect number of values in tuple: expected {len(keys)}, got {len(values)}")
-        return
+    values = values if isinstance(values, tuple) else (values,)
 
-    if not values_is_tuple:
-        values = (values,)
+    if len(keys) != len(values):
+        from . import logger
+        logger.warning(
+            f"Sollumz preferences: entry for '{type(struct).__name__}' has {len(values)} value(s), "
+            f"expected {len(keys)}. Loading overlapping fields and leaving the rest at their defaults."
+        )
 
     for key, value in zip(keys, values):
         setattr(struct, key, value)
-
-
-def get_prefs_path():
-    """Deprecated, use `known_paths.prefs_file_path` instead."""
-    return prefs_file_path()
-
-
-def get_config_directory_path() -> str:
-    """Deprecated, use `known_paths.config_directory_path` instead."""
-    return config_directory_path()
 
 
 def register():
