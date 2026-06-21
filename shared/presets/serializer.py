@@ -2,8 +2,8 @@
 PropertyGroup <-> dict serialization for presets.
 
 Walks `__annotations__` recursively. Vectors/Colors become plain lists. Nested
-PropertyGroups become nested dicts. CollectionProperty becomes a list of
-dicts.
+PropertyGroups become nested dicts. CollectionProperty (and MultiSelectCollection)
+become a list of dicts.
 
 A class can opt out of the default annotation walk by declaring a class-level
 `__sz_preset_capture__` tuple of field names, only those are captured/applied.
@@ -12,6 +12,8 @@ A class can opt out of the default annotation walk by declaring a class-level
 from typing import Iterable
 from bpy.types import bpy_struct, bpy_prop_array, bpy_prop_collection
 from mathutils import Vector, Color, Euler, Quaternion, Matrix
+
+from ..multiselection import MultiSelectCollection
 
 
 # mathutils types that FloatVectorProperty returns when a `subtype` is set
@@ -47,7 +49,7 @@ def struct_to_dict(struct: bpy_struct, skip: Iterable[str] | None = None) -> dic
             return list(prop)
         if isinstance(prop, Matrix):
             return [list(row) for row in prop]
-        if isinstance(prop, bpy_prop_collection):
+        if isinstance(prop, (bpy_prop_collection, MultiSelectCollection)):
             return [struct_to_dict(item) for item in prop]
         if isinstance(prop, bpy_struct):
             return struct_to_dict(prop)
@@ -75,13 +77,15 @@ def dict_to_struct(struct: bpy_struct, data: dict, skip: Iterable[str] | None = 
             prop = getattr(struct, key)
         except AttributeError:
             continue
-        if isinstance(prop, bpy_prop_collection):
+        if isinstance(prop, (bpy_prop_collection, MultiSelectCollection)):
             if isinstance(value, list):
                 prop.clear()
                 for item in value:
                     entry = prop.add()
                     if isinstance(item, dict):
                         dict_to_struct(entry, item)
+                if len(prop) > 0 and isinstance(prop, MultiSelectCollection):
+                    prop.select(0)
         elif isinstance(prop, bpy_struct):
             if isinstance(value, dict):
                 dict_to_struct(prop, value)

@@ -353,6 +353,8 @@ class MapGrassTemplateSelectionAccess(MultiSelectAccess):
 
 @define_multiselect_collection("templates", {"name": "Templates"})
 class MapGrassBatch(MapItemMixin, PropertyGroup):
+    __sz_preset_capture__ = ("templates",)
+
     name: StringProperty(name="Name")
     templates: MultiSelectCollection[MapGrassTemplate, MapGrassTemplateSelectionAccess]
     linked_object: PointerProperty(type=Object, name="Linked Object")

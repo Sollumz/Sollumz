@@ -110,6 +110,13 @@ class SOLLUMZ_PT_map_grass_batches(MapChildTabPanel, Panel):
 
         layout.separator()
 
+        # Preset popover for grass batch properties.
+        row = layout.row()
+        row.alignment = "RIGHT"
+        from ..gta5.presets.grass_batch import SOLLUMZ_PT_grass_batch_presets
+
+        SOLLUMZ_PT_grass_batch_presets.draw_panel_header(row)
+
         split = layout.split(factor=0.2)
         row = split.row()
         row.alignment = "RIGHT"
