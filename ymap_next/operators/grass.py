@@ -6,9 +6,14 @@ from bpy.types import (
 
 from ...sollumz_properties import SollumType
 from ...tools.blenderhelper import create_blender_object
+from ..context import (
+    active_grass_batch,
+    active_group,
+)
 from ..grass.geonodes import (
     add_grass_batch_modifier,
     create_grass_batch_geonodes,
+    is_grass_batch_geonodes_supported,
 )
 from ..properties.map import get_maps
 
@@ -104,13 +109,18 @@ class SOLLUMZ_OT_map_grass_create_geonodes(Operator):
     bl_description = "Create or refresh the geometry nodes for this grass batch based on its templates"
     bl_options = {"UNDO"}
 
-    # @classmethod
-    # def poll(cls, context):
-    #     aobj = context.active_object
-    #     return aobj and aobj.type == "MESH" and aobj.mode == "OBJECT" and context.selected_objects
+    @classmethod
+    def poll(cls, context):
+        if not is_grass_batch_geonodes_supported():
+            cls.poll_message_set("Grass geometry nodes require Blender 5.0 or newer.")
+            return False
+
+        group = active_group(context)
+        return group and group.grass_batches
 
     def execute(self, context):
-        for grass_batch in get_maps(context).groups.active_item.grass_batches.selected_items:
+        group = active_group(context)
+        for grass_batch in group.grass_batches.selected_items:
             create_grass_batch_geonodes(grass_batch)
         return {"FINISHED"}
 
@@ -125,14 +135,14 @@ class SOLLUMZ_OT_map_grass_add_modifier(Operator):
     def poll(cls, context):
         aobj = context.active_object
         if aobj and aobj.type == "MESH" and aobj.mode == "OBJECT":
-            grass_batch = get_maps(context).groups.active_item.grass_batches.active_item
+            grass_batch = active_grass_batch(context)
             return grass_batch and grass_batch.modifier_ng is not None
 
         return False
 
     def execute(self, context):
         aobj = context.active_object
-        grass_batch = get_maps(context).groups.active_item.grass_batches.active_item
+        grass_batch = active_grass_batch(context)
         add_grass_batch_modifier(aobj, grass_batch)
         return {"FINISHED"}
 
@@ -145,18 +155,18 @@ class SOLLUMZ_OT_map_grass_create_instances_mesh(Operator):
 
     @classmethod
     def poll(cls, context):
-        grass_batch = get_maps(context).groups.active_item.grass_batches.active_item
+        grass_batch = active_grass_batch(context)
         return grass_batch and grass_batch.linked_object is None
 
     def execute(self, context):
-        grass_batch = get_maps(context).groups.active_item.grass_batches.active_item
+        grass_batch = active_grass_batch(context)
 
         # TODO(ymap): link new grass instances mesh to correct collection
         name = f"{grass_batch.name}.instances"
         mesh = bpy.data.meshes.new(name)
         obj = create_blender_object(SollumType.NONE, name, mesh)
         grass_batch.linked_object = obj
-        if grass_batch.modifier_ng is None:
+        if grass_batch.modifier_ng is None and is_grass_batch_geonodes_supported():
             create_grass_batch_geonodes(grass_batch)
         add_grass_batch_modifier(obj, grass_batch)
 

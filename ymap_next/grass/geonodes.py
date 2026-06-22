@@ -15,7 +15,14 @@ from ..properties.map import MapGrassBatch
 LIBRARY_PATH = Path(__file__).parent / "assets/grass_batch_geonodes.blend"
 
 
+def is_grass_batch_geonodes_supported() -> bool:
+    """The geonodes use new features added in Blender 5.0."""
+    return bpy.app.version >= (5, 0, 0)
+
+
 def create_grass_batch_geonodes(grass_batch: MapGrassBatch):
+    assert is_grass_batch_geonodes_supported()
+
     archetype_names = [t.archetype_name for t in grass_batch.templates]
 
     res = link_objects_from_library(archetype_names)
@@ -66,18 +73,21 @@ def create_grass_batch_geonodes(grass_batch: MapGrassBatch):
             templates_ng.links.new(template_geo_to_inst_node_input, template_object_info_node_0.outputs["Geometry"])
 
     # Setup template selector node group
+    num_templates = len(grass_batch.templates)
     spawn_weights = np.array([t.spawn_weight for t in grass_batch.templates])
-    spawn_thresholds = spawn_weights.cumsum() / spawn_weights.sum()
+    spawn_weights_sum = spawn_weights.sum()
+    spawn_thresholds = spawn_weights.cumsum() / spawn_weights_sum if spawn_weights_sum else spawn_weights
 
     selector_group_input_node = template_selector_ng.nodes["Group Input"]
     selector_group_input_random_value_output = selector_group_input_node.outputs["Random Value"]
+    selector_output_node = template_selector_ng.nodes["Group Output"]
     selector_threshold_node_0 = template_selector_ng.nodes["Threshold0"]
     selector_threshold_node_1 = template_selector_ng.nodes["Threshold1"]
     selector_cmp_node_0 = template_selector_ng.nodes["CompareThreshold0"]
+    selector_cmp_node_1 = template_selector_ng.nodes["CompareThreshold1"]
     selector_switch_node_0 = template_selector_ng.nodes["Switch0"]
     selector_switch_node_1 = template_selector_ng.nodes["Switch1"]
     selector_switch_node_iprev = None
-    # TODO: len(templates) == 0 or == 1 need special case handling (need to delete existing nodes)
     # don't need extra nodes for the last one, previous one already handles it
     for i, template in enumerate(grass_batch.templates[:-1]):
         if i > 1:
@@ -115,6 +125,25 @@ def create_grass_batch_geonodes(grass_batch: MapGrassBatch):
             selector_threshold_node_0.outputs[0].default_value = spawn_thresholds[0]
             selector_switch_node_iprev = selector_switch_node_0
 
+    if num_templates <= 1:
+        # Zero or one template: the selector always resolves to index 0.
+        # Remove every comparison/switch node. The output falls back to its default value.
+        selector_output_node.inputs["Template Index"].default_value = 0
+        for node in (
+            selector_threshold_node_0,
+            selector_threshold_node_1,
+            selector_cmp_node_0,
+            selector_cmp_node_1,
+            selector_switch_node_0,
+            selector_switch_node_1,
+        ):
+            template_selector_ng.nodes.remove(node)
+    elif num_templates == 2:
+        # Only Switch0 is needed
+        selector_switch_node_0.inputs["False"].default_value = 1
+        for node in (selector_threshold_node_1, selector_cmp_node_1, selector_switch_node_1):
+            template_selector_ng.nodes.remove(node)
+
     if grass_batch.modifier_ng is not None:
         # Remove all existing node groups, replace all their references with the new ones
         old_modifier_ng = grass_batch.modifier_ng
@@ -136,11 +165,15 @@ def create_grass_batch_geonodes(grass_batch: MapGrassBatch):
     grass_batch.modifier_ng = modifier_ng
 
 
-def add_grass_batch_modifier(obj: Object, grass_batch: MapGrassBatch) -> NodesModifier:
+def add_grass_batch_modifier(obj: Object, grass_batch: MapGrassBatch) -> NodesModifier | None:
+    modifier_ng = grass_batch.modifier_ng
+    if modifier_ng is None:
+        return None
+
     mod: NodesModifier = obj.modifiers.new("GrassBatchGen", "NODES")
-    mod.node_group = grass_batch.modifier_ng  # TODO: decide what to do if it doesn't exist
-    mod["Socket_7_attribute_name"] = ".grass.source_density"
-    mod["Socket_14_attribute_name"] = ".grass.source_color_ao"
+    mod.node_group = modifier_ng
+    mod["Socket_7_use_attribute"] = False
+    mod["Socket_14_use_attribute"] = False
     mod.show_group_selector = False
     if bpy.app.version >= (5, 0, 0):
         mod.show_manage_panel = False
@@ -149,10 +182,13 @@ def add_grass_batch_modifier(obj: Object, grass_batch: MapGrassBatch) -> NodesMo
 
 def disable_grass_batch_modifier_preview(obj: Object, grass_batch: MapGrassBatch):
     modifier_ng = grass_batch.modifier_ng
+    if modifier_ng is None:
+        return
+
     for mod in obj.modifiers:
         if not isinstance(mod, NodesModifier) or mod.node_group != modifier_ng:
             continue
 
         if mod["Socket_6"] != 0:
-            mod["Socket_6"] = 0  # Socket_6 = 'Preview Grass': 0 = No, 1 = Simplified, 2 = Yes
+            mod["Socket_6"] = 0  # Socket_6 = 'Preview Grass': 0 = Off, 1 = Simplified, 2 = Full
             obj.update_tag()

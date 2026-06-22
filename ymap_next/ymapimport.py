@@ -745,11 +745,12 @@ def _create_map_grass_batch(
         obj = create_blender_object(SollumType.NONE, name, mesh)
         b.linked_object = obj
 
-    from .grass.geonodes import add_grass_batch_modifier, create_grass_batch_geonodes
+    from .grass.geonodes import add_grass_batch_modifier, create_grass_batch_geonodes, is_grass_batch_geonodes_supported
 
-    create_grass_batch_geonodes(b)
-    if b.linked_object:
-        add_grass_batch_modifier(b.linked_object, b)
+    if is_grass_batch_geonodes_supported():
+        create_grass_batch_geonodes(b)
+        if b.linked_object:
+            add_grass_batch_modifier(b.linked_object, b)
 
     return b
 
