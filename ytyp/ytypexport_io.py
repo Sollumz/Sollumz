@@ -138,7 +138,7 @@ def create_mlo_entity(entity: MloEntityProperties, archetype: ArchetypePropertie
         rotation=rot,
         scale_xy=scale_xy,
         scale_z=scale_z,
-        flags=EntityFlags(entity.flags.total),
+        flags=EntityFlags(int(entity.flags.total)),
         guid=int(entity.guid),
         parent_index=entity.parent_index,
         lod_dist=entity.lod_dist,
