@@ -43,6 +43,7 @@ from ..iecontext import ExportBundle, export_context
 from ..shared.game_assets.asset_info import AssetInfoCache
 from ..tools.blenderhelper import remove_number_suffix
 from .extents import calc_map_data_extents
+from .occluders.box import recover_box_occluder, box_island_is_valid
 from .grass import evaluated_grass_batch_instances_from_object, partition_grass_batch_instances
 from .grass.geonodes import disable_grass_batch_modifier_preview
 from .properties.map import (
@@ -559,12 +560,14 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
                 continue
 
             island_tris = np.array([lt.vertices[:] for lt in island], dtype=np.int32)
-            tri_flags = np.fromiter((face_flags[lt.polygon_index] for lt in island), dtype=np.int32, count=len(island))
-            uniq_island_tris = np.unique(island_tris)
-            island_verts = world_co[uniq_island_tris]
+            tri_flags = np.fromiter((face_flags[tri.polygon_index] for tri in island), dtype=np.int32, count=len(island))
+            uniq_vert_indices_in_island_tris, uniq_inverse = np.unique(island_tris, return_inverse=True)
 
-            if len(uniq_island_tris) == 8 and bool(np.all(tri_flags == 0)):
-                if box := _try_export_box_occluder(island_verts):
+            # A box occluder is a cube (8 verts) or a plane (4 verts).
+            if len(uniq_vert_indices_in_island_tris) in (4, 8) and bool(np.all(tri_flags == 0)):
+                box_verts = world_co[uniq_vert_indices_in_island_tris]
+                box_tris = uniq_inverse.reshape(-1, 3)  # island_tris remapped to 0..len(uniq)-1
+                if box := _try_export_box_occluder(box_verts, box_tris):
                     boxes.append(box)
                     continue
 
@@ -590,74 +593,21 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
         obj_eval.to_mesh_clear()
 
 
-def _try_export_box_occluder(verts: np.ndarray) -> MapBoxOccluder | None:
-    """Recover a MapBoxOccluder from 8 vertices iff they form a Z-axis-rotated cuboid."""
-    assert verts.shape == (8, 3)
-    center = verts.mean(axis=0)
-    local = verts - center
-
-    z = local[:, 2]
-    z_top = float(z.max())
-    z_bot = float(z.min())
-    height = z_top - z_bot
-    if height <= 0.0:
-        return None
-    tol = max(1e-3, height * 1e-3)
-
-    top_mask = z > 0.0
-
-    # Top and bottom have 4 vertices each
-    if int(top_mask.sum()) != 4:
+def _try_export_box_occluder(verts: np.ndarray, tris: np.ndarray) -> MapBoxOccluder | None:
+    """Build a box occluder from a mesh island if its vertices form a Z-rotated cube or a vertical/horizontal plane."""
+    recovered = recover_box_occluder(verts)
+    if recovered is None:
         return None
 
-    bot_mask = ~top_mask
-
-    # All top/bottom vertices are at the same Z top/bottom coord
-    if not np.all(np.abs(local[top_mask, 2] - z_top) < tol):
-        return None
-    if not np.all(np.abs(local[bot_mask, 2] - z_bot) < tol):
+    # Vertices form a valid box, make sure the topology is actually a solid cube/plane
+    if not box_island_is_valid(verts, tris, recovered):
         return None
 
-    top_xy = local[top_mask, :2]
-    bot_xy = local[bot_mask, :2]
-
-    # Top and bottom vertices are directly above each other
-    top_sorted = top_xy[np.lexsort(top_xy.T)]
-    bot_sorted = bot_xy[np.lexsort(bot_xy.T)]
-    if not np.allclose(top_sorted, bot_sorted, atol=tol):
-        return None
-
-    xy_center = top_xy.mean(axis=0)
-    angles = np.arctan2(top_xy[:, 1] - xy_center[1], top_xy[:, 0] - xy_center[0])
-    corners = top_xy[np.argsort(angles)]  # Sort around the center for consistency
-
-    e1 = corners[1] - corners[0]
-    e2 = corners[2] - corners[1]
-    e3 = corners[3] - corners[2]
-    e4 = corners[0] - corners[3]
-
-    # Corners form a parallelogram, opposite edges are antiparallel
-    if not np.allclose(e1, -e3, atol=tol):
-        return None
-    if not np.allclose(e2, -e4, atol=tol):
-        return None
-
-    length = float(np.linalg.norm(e1))
-    width = float(np.linalg.norm(e2))
-    if length <= 0.0 or width <= 0.0:
-        return None
-
-    # Edges form a right-angle
-    if abs(float(e1 @ e2)) > tol * max(length, width):
-        return None
-
-    s = float(e1[0]) / length
-    c = float(e1[1]) / length
-
+    center, size, cos, sin = recovered
     box = MapBoxOccluder(0, 0, 0, 0, 0, 0, 0, 0)
-    box.center = Vector(center)
-    box.size = Vector((length, width, height))
-    box.cos_sin_z = (c, s)
+    box.center = center
+    box.size = size
+    box.cos_sin_z = (cos, sin)
     return box
 
 

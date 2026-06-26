@@ -51,6 +51,7 @@ from .properties.map import (
     get_maps,
 )
 from .instancing import batch_add_map_entity, batch_instance_map_entities
+from .occluders.box import box_occluder_world_geometry
 
 _import_maps = []
 _import_instance_entities = None
@@ -790,52 +791,35 @@ def _create_map_occluder(
     box_occluders: list[MapBoxOccluder],
     model_occluders: list[MapModelOccluder],
 ) -> MapOccluder:
-    _CUBE_VERTS = np.array(
-        [
-            [-0.5, -0.5, -0.5],
-            [0.5, -0.5, -0.5],
-            [0.5, 0.5, -0.5],
-            [-0.5, 0.5, -0.5],
-            [-0.5, -0.5, 0.5],
-            [0.5, -0.5, 0.5],
-            [0.5, 0.5, 0.5],
-            [-0.5, 0.5, 0.5],
-        ],
-        dtype=np.float32,
-    )
-
-    _CUBE_FACES = np.array(
-        [
-            (3, 2, 1, 0),
-            (5, 6, 7, 4),
-            (1, 5, 4, 0),
-            (3, 7, 6, 2),
-            (4, 7, 3, 0),
-            (2, 6, 5, 1),
-        ],
-        dtype=np.int32,
-    )
-
     all_verts = []
     all_faces_quads = []
     all_faces_tris = []
+    num_box_faces = 0
     offset = 0
+    dropped_boxes = 0
 
     for box in box_occluders:
-        verts = _CUBE_VERTS * np.array(box.size, dtype=np.float32)
-
         c, s = box.cos_sin_z
-        rot = np.array([[s, -c, 0], [c, s, 0], [0, 0, 1]], dtype=np.float32)
-        verts = verts @ rot.T
-
-        verts += np.array(box.center, dtype=np.float32)
+        verts, quads = box_occluder_world_geometry(box.center, box.size, c, s)
+        vert_count = len(verts)
+        if vert_count == 0:
+            # Didn't generate any geometry, >= 2 zero dimensions (only 1 case in vanilla game files, see sp1_occl_01.ymap)
+            dropped_boxes += 1
+            continue
 
         all_verts.append(verts)
-        all_faces_quads.append(_CUBE_FACES + offset)
-        offset += 8
+        all_faces_quads.append(quads + offset)
+        num_box_faces += len(quads)
+        offset += vert_count
+
+    if dropped_boxes:
+        logger.warning(
+            f"Map '{map_data.name}' has {dropped_boxes} degenerate line/point box occluder(s) "
+            "(two or more zero dimensions). These occlude nothing and were skipped."
+        )
 
     # Box occluders cannot have flags, always 0
-    box_face_flags = np.zeros(len(box_occluders) * len(_CUBE_FACES), dtype=np.int32)
+    box_face_flags = np.zeros(num_box_faces, dtype=np.int32)
 
     if model_occluders:
         sizes = [len(m.vertices) for m in model_occluders]

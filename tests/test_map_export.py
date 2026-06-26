@@ -506,6 +506,135 @@ def test_ymap_export_manual_extents_preserved(tmp_path: Path):
     assert_allclose(_get_vector(xml, "streamingExtentsMax"), (10.0, 11.0, 12.0), atol=1e-5)
 
 
+def _box_occluder_key(item: ET.Element):
+    """Identity that is stable across a roundtrip: center is preserved exactly, length/width may swap
+    (a box is rotationally ambiguous), height is preserved exactly."""
+
+    def g(tag: str) -> int:
+        return int(_get_value(item, tag))
+
+    return (g("iCenterX"), g("iCenterY"), g("iCenterZ"), tuple(sorted((g("iLength"), g("iWidth")))), g("iHeight"))
+
+
+def _box_occluder_keys(path: Path) -> list:
+    return [_box_occluder_key(item) for item in _parse_xml(path).findall("./boxOccluders/Item")]
+
+
+def _make_occluder_group(name: str, verts, faces):
+    """Create a map group with a single occluder object built from the given mesh data."""
+    maps = get_maps(bpy.context, create_if_missing=True)
+    group = maps.new_group()
+    group.name = name
+    md = group.new_map()
+    md.name = name
+    md_uuid = md.uuid
+
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+
+    occl = group.new_occluder()
+    occl.name = name
+    occl.map_data_uuid = md_uuid
+    occl.linked_object = obj
+    return group
+
+
+def test_ymap_export_box_occluders(tmp_path: Path):
+    """Import box occluders (solid + degenerate planes/walls + a line), export, verify they survive.
+
+    The asset has 7 boxes; the Length=0 & Width=0 line occluder is dropped on import (with a
+    warning), the other 6 must round-trip as box occluders (not degrade to model occluders).
+    """
+    with log_capture() as logs:
+        _import_ymaps("test_occluders.ymap.xml")
+
+    assert not logs.errors, "Importing occluders must not log errors"
+    assert any("degenerate line" in w for w in logs.warnings), "Expected a warning about the dropped line occluder"
+
+    with log_capture() as export_logs:
+        _export_last_map_group(tmp_path)
+    assert not export_logs.errors, "Exporting occluders must not log errors"
+
+    exported = tmp_path / "test_occluders.ymap.xml"
+    assert exported.exists(), f"Expected exported file: {exported}"
+    root = _parse_xml(exported)
+
+    assert root.findall("./occludeModels/Item") == [], "No box occluder should degrade to a model occluder"
+
+    original = _box_occluder_keys(YMAP_ASSETS_DIR / "test_occluders.ymap.xml")
+    surviving = [k for k in original if k[3] != (0, 0)]  # drop the line (both horizontal dims zero)
+    assert sorted(_box_occluder_keys(exported)) == sorted(surviving)
+
+
+@assert_logs_no_errors
+def test_ymap_flat_plane_exports_as_box_occluder(tmp_path: Path):
+    """A flat rectangular plane that fits the box-occluder constraints exports as a box occluder."""
+    import math
+
+    angle = math.radians(20.0)
+    cos, sin = math.cos(angle), math.sin(angle)
+    # 4 x 2 horizontal rectangle rotated about Z, centered at (10, 20, 5).
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+    verts = [(10.0 + bx * cos - by * sin, 20.0 + bx * sin + by * cos, 5.0) for bx, by in base]
+    _make_occluder_group("test_plane_occluder", verts, [(0, 1, 2, 3)])
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_plane_occluder.ymap.xml")
+    boxes = root.findall("./boxOccluders/Item")
+    assert len(boxes) == 1, f"Expected the plane to export as 1 box occluder, got {len(boxes)}"
+    assert root.findall("./occludeModels/Item") == [], "A box-shaped plane must not become a model occluder"
+    assert int(_get_value(boxes[0], "iHeight")) == 0, "A horizontal plane is a height-0 box occluder"
+    assert int(_get_value(boxes[0], "iLength")) > 0
+    assert int(_get_value(boxes[0], "iWidth")) > 0
+
+
+@assert_logs_no_errors
+def test_ymap_tilted_plane_exports_as_model_occluder(tmp_path: Path):
+    """A tilted plane cannot be a box occluder (boxes are upright) and stays a model occluder."""
+    import math
+
+    angle = math.radians(30.0)
+    cos, sin = math.cos(angle), math.sin(angle)
+    # Horizontal rectangle tilted about X -> its normal is neither vertical nor horizontal.
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+    verts = [(30.0 + bx, 30.0 + by * cos, 10.0 + by * sin) for bx, by in base]
+    _make_occluder_group("test_tilted_occluder", verts, [(0, 1, 2, 3)])
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_tilted_occluder.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == [], "A tilted plane must not become a box occluder"
+    assert len(root.findall("./occludeModels/Item")) == 1, "A tilted plane should export as one model occluder"
+
+
+def test_ymap_box_shaped_model_stays_model_occluder(tmp_path: Path):
+    """A model occluder whose corners happen to form cubes but whose faces don't (open shells) must
+    not degrade to box occluders. The asset has 6 real boxes + 1 model that splits into 3 box-shaped
+    (8-corner) but topologically-open islands, only the corner positions match a box, not the faces."""
+    with log_capture() as logs:
+        _import_ymaps("test_occluders_box_shaped_models.ymap.xml")
+    assert not logs.errors, "Importing occluders must not log errors"
+
+    with log_capture() as export_logs:
+        _export_last_map_group(tmp_path)
+    assert not export_logs.errors, "Exporting occluders must not log errors"
+
+    root = _parse_xml(tmp_path / "test_occluders_box_shaped_models.ymap.xml")
+
+    # The box-shaped model islands must survive as a model occluder, not be re-emitted as boxes.
+    assert len(root.findall("./occludeModels/Item")) >= 1, "Box-shaped model occluders must stay models"
+
+    # The 6 genuine box occluders must still round-trip as boxes (and nothing extra from the model).
+    exported_boxes = _box_occluder_keys(tmp_path / "test_occluders_box_shaped_models.ymap.xml")
+    original_boxes = _box_occluder_keys(YMAP_ASSETS_DIR / "test_occluders_box_shaped_models.ymap.xml")
+    assert len(exported_boxes) == len(original_boxes), "The genuine box occluders must be preserved"
+    assert sorted(exported_boxes) == sorted(original_boxes)
+
+
 # Incomplete LOD hierarchy
 #
 # These tests import a SUBSET of a related .ymap set (missing parent and/or child maps, or an
